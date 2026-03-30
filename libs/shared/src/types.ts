@@ -1,8 +1,25 @@
 export interface Engine {
-	app_id: string;
-	app_name: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_display_name?: string;
+	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_subtype?: string;
+	engine_favorite?: number;
+	engine_global?: boolean;
+	engine_discoverable?: boolean;
+	engine_user_permission?: number;
+	engine_group_permission?: number;
+	engine_date_created?: string;
+	engine_cost?: string;
+	low_engine_name?: string;
 	description?: string;
+
+	/** @deprecated legacy keys from MyEngines */
+	app_id?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_name?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 }
 
 export interface App {
@@ -35,6 +52,7 @@ export interface ThemeMap {
 			logo: string;
 			login: string;
 			landing: string;
+			tabIcon: string;
 			workspace: string;
 		};
 
@@ -59,6 +77,7 @@ export interface ThemeMap {
 		 * Content to show in the sidebar
 		 */
 		sidebar: {
+			chatHistoryDate: boolean;
 			headerItems: {
 				name: string;
 				icon: string;
@@ -104,6 +123,23 @@ export interface ThemeMap {
 		allowedFileTypes?: string[];
 
 		/**
+		 * Whether to run MakeEngineMCP after creating a new knowledge source.
+		 * Defaults to true when not set.
+		 */
+		enableKnowledgeMCP?: boolean;
+
+		/**
+		 * Default embedding engine UUID to use when allowEmbeddingOptions is false.
+		 */
+		defaultEmbedderId?: string;
+
+		/**
+		 * Whether to show the embedding model selector in the new knowledge form.
+		 * Defaults to true when not set.
+		 */
+		allowEmbeddingOptions?: boolean;
+
+		/**
 		 * Default tools to show in the room
 		 */
 		defaultTools: {
@@ -122,6 +158,26 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
+
+		/**
+		 * When false, hides external links that navigate users to the SEMOSS platform.
+		 * Defaults to true (links shown).
+		 */
+		showPlatformLinks?: boolean;
+
+		/**
+		 * Graceful error messages to show in the UI
+		 */
+		gracefulErrors: (
+			| {
+					pattern: string;
+					errorKey: string;
+			  }
+			| {
+					pattern: string;
+					text: string;
+			  }
+		)[];
 	};
 }
 

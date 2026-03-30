@@ -4,7 +4,7 @@ import {
 	RefreshCwIcon,
 	SearchIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -31,6 +31,71 @@ import {
 import type { FileItem, FileMode } from "./file.types";
 import { FileExplorerItem } from "./file-explorer-item";
 import { NewFileOverlay } from "./new-file-overlay";
+
+interface StoragePathEntry {
+	Name?: string;
+	name?: string;
+	Path?: string;
+	path?: string;
+	IsDir?: boolean;
+	isDir?: boolean;
+	ModTime?: string;
+	lastModified?: string;
+	last_modified?: string;
+}
+
+const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
+	if (!Array.isArray(entries)) {
+		return [];
+	}
+
+	return entries.reduce<FileItem[]>((acc, entry) => {
+		if (typeof entry === "string") {
+			if (!entry) {
+				return acc;
+			}
+
+			const normalizedEntry = entry.replace(/\/+$/, "");
+			const name =
+				normalizedEntry.split("/").filter(Boolean).pop() ||
+				normalizedEntry;
+			const isDirectory = entry.endsWith("/");
+
+			acc.push({
+				name: name,
+				path: entry,
+				type: isDirectory ? "directory" : undefined,
+			});
+
+			return acc;
+		}
+
+		if (!entry || typeof entry !== "object") {
+			return acc;
+		}
+
+		const details = entry as StoragePathEntry;
+		const name = details.Name || details.name || "";
+		const path = details.Path || details.path || "";
+		if (!path) {
+			return acc;
+		}
+		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
+		const isDirectory = details.IsDir || details.isDir;
+
+		acc.push({
+			name: name || fallbackName,
+			path: path,
+			type: isDirectory ? "directory" : undefined,
+			lastModified:
+				details.ModTime ||
+				details.lastModified ||
+				details.last_modified,
+		});
+
+		return acc;
+	}, []);
+};
 
 interface FileExplorerProps {
 	/** Mode of file editor */
@@ -72,6 +137,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
 
 	const debouncedSearch = useDebouncedValue(search);
+	const canMutateFiles = mode.type !== "STORAGE";
 
 	let getFilesPixel = "";
 	if (mode.type === "APP") {
@@ -86,7 +152,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		} else {
 			getFilesPixel = `BrowseEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
 		}
-	} else if (mode.type === "INSIGHT") {
+	} else if (mode.type === "STORAGE") {
+		getFilesPixel = `ListStoragePathDetails(storage=["${mode.storage}"], storagePath=["${path}"]);`;
+	} else if (mode.type === "INSIGHT" && insight.insightId) {
 		if (debouncedSearch) {
 			getFilesPixel = `SearchInsightAssets(filePath=["${searchType === "all" ? "" : path}"], search=["${debouncedSearch}"]);`;
 		} else {
@@ -94,13 +162,39 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 	}
 
-	const getFiles = usePixel<FileItem[]>(getFilesPixel, {}, insight.insightId);
+	const getFiles = usePixel<unknown[]>(
+		getFilesPixel,
+		{
+			data: [],
+		},
+		insight.insightId,
+	);
+
+	const files = useMemo(() => {
+		const mappedFiles =
+			mode.type === "STORAGE"
+				? mapStorageEntriesToFileItems(getFiles.data)
+				: (getFiles.data as FileItem[]);
+
+		if (mode.type !== "STORAGE" || !debouncedSearch) {
+			return mappedFiles;
+		}
+
+		const normalizedSearch = debouncedSearch.toLowerCase();
+		return mappedFiles.filter((item) =>
+			item.name.toLowerCase().includes(normalizedSearch),
+		);
+	}, [mode.type, getFiles.data, debouncedSearch]);
 
 	/**
 	 * Upload a file to the path
 	 */
 	const uploadFile = async (files: File[]) => {
 		try {
+			if (!canMutateFiles) {
+				return;
+			}
+
 			setIsUploading(true);
 
 			// upload the files
@@ -130,7 +224,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		.concat("/");
 
 	// track if we should show search
-	const showSearch = isSearchActive || debouncedSearch;
+	const showSearch =
+		mode.type !== "STORAGE" && (isSearchActive || debouncedSearch);
 
 	return (
 		// biome-ignore lint/a11y/noStaticElementInteractions: TODO: Fix accessibility issues
@@ -138,6 +233,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1"
 			onDrop={(e) => {
 				e.preventDefault();
+				if (!canMutateFiles) {
+					return;
+				}
 
 				// set the new files
 				const files = Array.from(e.dataTransfer.files);
@@ -148,12 +246,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			}}
 			onDragOver={(e) => {
 				e.preventDefault();
+				if (!canMutateFiles) {
+					return;
+				}
 
 				// turn on dragging
 				setIsDragging(true);
 			}}
 			onDragLeave={(e) => {
 				e.preventDefault();
+				if (!canMutateFiles) {
+					return;
+				}
 
 				// turn off dragging
 				setIsDragging(false);
@@ -220,46 +324,52 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						</DropdownMenu>
 					</div>
 
-					<InputGroup
-						className={`${showSearch ? "flex-1" : "w-24"} transition-all duration-300 ease-in-out`}
-					>
-						<InputGroupInput
-							type="search"
-							placeholder="Search"
-							value={search}
-							onChange={(e) => {
-								setSearch(e.target.value);
-								setExpandedPaths([]);
-							}}
-							onFocus={() => setIsSearchActive(true)}
-							onBlur={() => setIsSearchActive(false)}
-						/>
-						<InputGroupAddon align="inline-end">
-							<SearchIcon />
-						</InputGroupAddon>
-					</InputGroup>
+					{mode.type !== "STORAGE" && (
+						<InputGroup
+							className={`${showSearch ? "flex-1" : "w-32"} transition-all duration-300 ease-in-out`}
+						>
+							<InputGroupInput
+								type="search"
+								placeholder="Search"
+								value={search}
+								onChange={(e) => {
+									setSearch(e.target.value);
+									setExpandedPaths([]);
+								}}
+								onFocus={() => setIsSearchActive(true)}
+								onBlur={() => setIsSearchActive(false)}
+							/>
+							<InputGroupAddon align="inline-end">
+								<SearchIcon />
+							</InputGroupAddon>
+						</InputGroup>
+					)}
 
 					<div
 						className={`${showSearch ? "w-0" : ""} flex flex-row items-center gap-1 overflow-hidden transition-all duration-300 ease-in-out`}
 					>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => {
-										setIsNewFile(true);
-									}}
-								>
-									<FilePlus2Icon className="size-3" />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>Create at {path}</TooltipContent>
-						</Tooltip>
+						{canMutateFiles && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										onClick={() => {
+											setIsNewFile(true);
+										}}
+									>
+										<FilePlus2Icon className="size-3" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									Create at {path}
+								</TooltipContent>
+							</Tooltip>
+						)}
 						{headerActions}
 					</div>
 				</div>
-				{showSearch && (
+				{showSearch && mode.type !== "STORAGE" && (
 					<div className="flex w-full flex-row items-center justify-between gap-1">
 						<ToggleGroup
 							type="single"
@@ -314,8 +424,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						onItemSelect={(item) => {
 							if (item.type === "directory") {
 								setExpandedPaths((prev) => {
-									return prev.filter((p) =>
-										p.startsWith(item.path),
+									const pathPrefix = `${item.path}/`;
+									return prev.filter(
+										(p) =>
+											p === item.path ||
+											p.startsWith(pathPrefix),
 									);
 								});
 								setPath(item.path);
@@ -327,7 +440,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							onItemSelect(item);
 						}}
 					>
-						{getFiles.data.map((i) => {
+						{files.map((i) => {
 							return (
 								<ItemComponent
 									key={i.path}
@@ -342,24 +455,26 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				)}
 			</ScrollArea>
 
-			{isDragging && (
+			{canMutateFiles && isDragging && (
 				<div className="absolute inset-0 flex items-center justify-center bg-accent/50 p-4 text-accent-foreground">
 					<Muted>Release to upload files to {path}</Muted>
 				</div>
 			)}
 
-			<NewFileOverlay
-				mode={mode}
-				path={path}
-				open={isNewFile}
-				onClose={(success) => {
-					if (success) {
-						getFiles.refresh();
-					}
+			{canMutateFiles && (
+				<NewFileOverlay
+					mode={mode}
+					path={path}
+					open={isNewFile}
+					onClose={(success) => {
+						if (success) {
+							getFiles.refresh();
+						}
 
-					setIsNewFile(false);
-				}}
-			/>
+						setIsNewFile(false);
+					}}
+				/>
+			)}
 		</div>
 	);
 };

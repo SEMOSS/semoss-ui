@@ -552,7 +552,7 @@ stepNumber=["${step.step_number}"]
 		message: ResponseMessageStore,
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	) => {
 		const step = this.step;
@@ -584,6 +584,8 @@ stepNumber=["${step.step_number}"]
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";
+			} else if (toolStatus === "paused") {
+				tool.status = "PAUSED";
 			}
 		});
 

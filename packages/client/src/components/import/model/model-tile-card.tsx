@@ -7,7 +7,56 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import AZURE_OPEN_AI from "@/assets/img/AZURE_OPEN_AI.svg";
+import BEDROCK from "@/assets/img/BEDROCK.svg";
+import BRAIN from "@/assets/img/BRAIN.png";
+import CLAUDE_AI from "@/assets/img/CLAUDE_AI.svg";
+import FALCON_AI from "@/assets/img/FALCON_AI.png";
+import FLAN from "@/assets/img/FLAN.jpg";
+import GEMINI_COLOR from "@/assets/img/GEMINI_COLOR.svg";
+import HUGGINGFACE_COLOR from "@/assets/img/HUGGINGFACE_COLOR.svg";
+import META_COLOR from "@/assets/img/META_COLOR.svg";
+import MOSAIC from "@/assets/img/MOSAIC.png";
+import NEMO from "@/assets/img/NEMO.png";
+import OPEN_AI from "@/assets/img/OPEN_AI.svg";
+import ORCA from "@/assets/img/ORCA.png";
+import PERPLEXITY from "@/assets/img/PERPLEXITY.svg";
+import REPLIT_CODE from "@/assets/img/REPLIT_CODE.png";
+import STABILITY_AI from "@/assets/img/STABILITY_AI.png";
 import { formatToDataTestId } from "@/utility";
+
+const MODEL_ICON_BY_FILE_NAME: Record<string, string> = {
+	// Stable provider/brand keys (keep alphabetical)
+	"AZURE_OPEN_AI.svg": AZURE_OPEN_AI,
+	"BEDROCK.svg": BEDROCK,
+	"CLAUDE_AI.svg": CLAUDE_AI,
+	"GEMINI_COLOR.svg": GEMINI_COLOR,
+	"HUGGINGFACE_COLOR.svg": HUGGINGFACE_COLOR,
+	"META_COLOR.svg": META_COLOR,
+	"NEMO.png": NEMO,
+	"OPEN_AI.svg": OPEN_AI,
+	"PERPLEXITY.svg": PERPLEXITY,
+
+	// Self-hosted / long-tail keys (keep alphabetical)
+	"FALCON_AI.png": FALCON_AI,
+	"FLAN.jpg": FLAN,
+	"MOSAIC.png": MOSAIC,
+	"ORCA.png": ORCA,
+	"REPLIT_CODE.png": REPLIT_CODE,
+	"STABILITY_AI.png": STABILITY_AI,
+
+	// Fallback/default
+	"BRAIN.png": BRAIN,
+};
+
+const resolveModelIcon = (icon?: string) => {
+	if (!icon) return "";
+	if (icon.startsWith("/src/assets/img/")) {
+		const fileName = icon.split("/").pop() || "";
+		return MODEL_ICON_BY_FILE_NAME[fileName] || "";
+	}
+	return icon;
+};
 
 function hashString(str: string): number {
 	let h = 0;
@@ -35,7 +84,7 @@ function buildInitials(label: string): string {
 interface Model {
 	name: string;
 	display: string;
-	icon: string; // kept for backward compatibility though no longer rendered
+	icon: string;
 	disable?: boolean;
 	description?: string;
 	embedding: boolean;
@@ -78,6 +127,8 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 	// Special case: "Others" tile should always show a single 'O'
 	const isOthers = model.name === "Others";
 	const initials = isOthers ? "O" : buildInitials(label);
+	const resolvedIcon = resolveModelIcon(model.icon);
+	const hasIcon = Boolean(resolvedIcon);
 	// Dynamic gradient based on model name for visual distinction
 	const avatarGradient = pickGradient(model.name);
 
@@ -95,10 +146,10 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 	};
 
 	const cardContent = (
-		// biome-ignore lint/a11y/useSemanticElements: <explanation>
+		// biome-ignore lint/a11y/useSemanticElements: legacy clickable card container
 		<div
 			className={cn(
-				"flex min-h-[204px] max-w-[215px] cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4",
+				"flex min-h-[204px] w-full cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4 sm:w-[215px]",
 				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
 				model.disable &&
 					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
@@ -117,7 +168,15 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
 						style={{ background: avatarGradient }}
 					>
-						{initials}
+						{hasIcon ? (
+							<img
+								src={resolvedIcon}
+								alt={label}
+								className="h-8 w-8 object-contain"
+							/>
+						) : (
+							initials
+						)}
 					</div>
 					<div className="flex flex-wrap items-center gap-1">
 						{model.disable && (
@@ -174,7 +233,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 				<Button
 					type="button"
 					variant="link"
-					className="mt-2 flex justify-end p-0 text-sm"
+					className="mt-2 ml-auto h-auto w-fit self-end p-0 text-sm"
 					onClick={(e) => {
 						e.stopPropagation();
 						window.open(
@@ -205,7 +264,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 	return isTruncated ? (
 		<Tooltip>
 			<TooltipTrigger asChild>
-				<span className="block">{cardContent}</span>
+				<span className="block w-full sm:w-[215px]">{cardContent}</span>
 			</TooltipTrigger>
 			<TooltipContent side="bottom">{label}</TooltipContent>
 		</Tooltip>

@@ -1,7 +1,7 @@
-import { ChevronRight, Copy, Download } from "lucide-react";
+import { ChevronRight, Copy, Download, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
 	Badge,
 	Breadcrumb,
@@ -27,7 +27,7 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
-import { EditEngineDetails, EngineAccessButton } from ".";
+import { EngineAccessButton } from ".";
 
 /**
  * Engine Header
@@ -35,6 +35,9 @@ import { EditEngineDetails, EngineAccessButton } from ".";
 export const EngineHeader: React.FC = () => {
 	// get the engine information
 	const { name, active, type } = useEngine();
+
+	// navigation
+	const navigate = useNavigate();
 
 	// Service for Axios calls
 	const { monolithStore } = useRootStore();
@@ -44,16 +47,53 @@ export const EngineHeader: React.FC = () => {
 	// export loading state
 	const [exportLoading, setExportLoading] = useState(false);
 
+	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
+
+	const normalizeEngineKey = (value?: string) =>
+		(value || "")
+			.trim()
+			.replace(/[^A-Za-z0-9]+/g, "_")
+			.toUpperCase();
+
 	const findDBImage = (appType: string, appSubType: string) => {
-		const obj = ENGINE_IMAGES[appType]?.find(
-			(ele) => ele.name === appSubType,
-		);
+		const typeKey = normalizeEngineKey(appType);
+		const subtypeKeyRaw = normalizeEngineKey(appSubType);
+		const subtypeKey =
+			subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
+		const images = ENGINE_IMAGES[typeKey] || [];
+		const obj = images.find((ele) => {
+			return normalizeEngineKey(ele.name) === subtypeKey;
+		});
 
 		if (!obj) {
 			return BRAIN;
 		}
 
 		return obj.icon;
+	};
+
+	const formatEngineTimestamp = (rawValue?: string) => {
+		if (!rawValue) {
+			return "N/A";
+		}
+
+		const normalizedValue = rawValue.includes("T")
+			? rawValue
+			: rawValue.replace(" ", "T");
+		const parsedDate = new Date(normalizedValue);
+
+		if (Number.isNaN(parsedDate.getTime())) {
+			return rawValue;
+		}
+
+		return parsedDate.toLocaleString("en-US", {
+			month: "long",
+			day: "2-digit",
+			year: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true,
+		});
 	};
 
 	/**
@@ -97,36 +137,43 @@ export const EngineHeader: React.FC = () => {
 				<BreadcrumbList>
 					<BreadcrumbItem>
 						<BreadcrumbLink asChild>
-							<Link to={".."} className="text-inherit">
+							<Link
+								to={".."}
+								className="inline-flex items-center text-inherit leading-none"
+							>
 								{name} Catalog
 							</Link>
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					<BreadcrumbSeparator>
+					<BreadcrumbSeparator className="inline-flex items-center [&>svg]:translate-y-[0.5px]">
 						<ChevronRight />
 					</BreadcrumbSeparator>
 					<BreadcrumbItem>
-						<BreadcrumbPage>{active.name}</BreadcrumbPage>
+						<BreadcrumbPage className="inline-flex items-center leading-none">
+							{active.name}
+						</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
 
-			<div className="flex w-full flex-row items-center gap-4">
+			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 				{/* Image placeholder - space for engine/database icon */}
-				<div className="h-16 w-16 flex-shrink-0 rounded-lg bg-muted">
+				<div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-muted/30 p-2">
 					<img
 						src={findDBImage(
 							type,
-							active.metadata.database_subtype as string,
+							(active.engine_subtype ||
+								(active.metadata
+									.engine_subtype as string)) as string,
 						)}
 						alt={name}
-						className="size-full object-cover"
+						className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 					/>
 				</div>
 
 				<div className="flex min-w-0 flex-1 flex-col gap-1">
 					<h1
-						className="overflow-hidden text-ellipsis whitespace-nowrap font-semibold text-[30px] text-foreground leading-normal"
+						className="break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
 						data-testid="Title"
 					>
 						{active.name}
@@ -173,7 +220,7 @@ export const EngineHeader: React.FC = () => {
 					</div>
 				</div>
 
-				<div className="flex flex-shrink-0 flex-row gap-2">
+				<div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap md:justify-end">
 					<EngineAccessButton />
 					{active.role === "OWNER" && (
 						<Button
@@ -185,7 +232,8 @@ export const EngineHeader: React.FC = () => {
 							)}
 							onClick={() => {
 								const engineType =
-									active.metadata.database_subtype;
+									active.engine_subtype ||
+									(active.metadata.engine_subtype as string);
 								if (engineType === "H2_DB") {
 									setOpenExportModal(true);
 								} else {
@@ -201,7 +249,22 @@ export const EngineHeader: React.FC = () => {
 							Export
 						</Button>
 					)}
-					<EditEngineDetails />
+					{canEdit && (
+						<Button
+							variant="default"
+							onClick={() => {
+								navigate(
+									`/engine/${type.toLowerCase()}/${active.id}/edit`,
+								);
+							}}
+							data-testid={formatToDataTestId(
+								`editEngineDetails-${name}-edit-btn`,
+							)}
+						>
+							<Pencil className="size-4" />
+							Edit
+						</Button>
+					)}
 				</div>
 			</div>
 
@@ -235,7 +298,7 @@ export const EngineHeader: React.FC = () => {
 				</DialogContent>
 			</Dialog>
 
-			<div className="mt-4 flex w-full justify-between gap-4">
+			<div className="mt-4 flex w-full flex-col gap-4 md:flex-row md:justify-between">
 				<div className="flex flex-1 flex-col gap-4">
 					<p
 						className="overflow-hidden whitespace-normal text-muted-foreground"
@@ -247,7 +310,7 @@ export const EngineHeader: React.FC = () => {
 
 					<div className="flex flex-row flex-wrap gap-2">
 						{active.metadata.tag &&
-							(active.metadata.tag as string[]).map((tag, i) => {
+							(active.metadata.tag as string[]).map((tag) => {
 								if (tag === "") return null;
 								return (
 									<Badge
@@ -262,28 +325,23 @@ export const EngineHeader: React.FC = () => {
 							})}
 					</div>
 				</div>
-				<div className="flex flex-col items-end gap-1 text-right">
-					{active?.PERMISSIONGRANTEDBY ? (
-						<span
-							className="text-muted-foreground text-sm"
-							data-testid="PublishedBy"
-						>
-							Published by: {active.PERMISSIONGRANTEDBY}
-						</span>
-					) : (
-						<span
-							className="text-muted-foreground text-sm"
-							data-testid="CreatedBy"
-						>
-							Created by: {active.database_created_by}
-						</span>
-					)}
-					{active?.DATEADDED && (
+				<div className="flex flex-col items-start gap-1 text-left md:items-end md:text-right">
+					<span
+						className="text-muted-foreground text-sm"
+						data-testid="CreatedBy"
+					>
+						Created by: {active.engine_created_by || "Unknown"}
+					</span>
+					{(active.last_updated || active.engine_date_created) && (
 						<span
 							className="text-muted-foreground text-sm"
 							data-testid="DateAdded"
 						>
-							Updated {`on ${active.DATEADDED}`}
+							Updated{" "}
+							{formatEngineTimestamp(
+								active.last_updated ||
+									active.engine_date_created,
+							)}
 						</span>
 					)}
 				</div>

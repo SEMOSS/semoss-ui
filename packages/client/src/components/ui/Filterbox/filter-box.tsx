@@ -1,21 +1,38 @@
 import { ChevronDown, ChevronUp, Search as SearchIcon } from "lucide-react";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 	Input,
-	Separator,
 } from "@semoss/ui/next";
 import { usePixel, useRootStore } from "@/hooks";
 import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
 
+const FILTER_OPTION_COLORS = [
+	"blue",
+	"orange",
+	"teal",
+	"purple",
+	"yellow",
+	"pink",
+	"violet",
+	"olive",
+];
+
+const getFieldOptionColor = (value: string): string => {
+	return FILTER_OPTION_COLORS[
+		value
+			.split("")
+			.map((x) => x.charCodeAt(0))
+			.reduce((a, b) => a + b, 0) % FILTER_OPTION_COLORS.length
+	];
+};
+
 export interface FilterboxProps {
-	/** Determined to get metakeys for Engines/App */
+	/** Determined to get filter keys for Engines/App */
 	type:
 		| "PROJECT"
 		| "MODEL"
@@ -29,6 +46,9 @@ export interface FilterboxProps {
 	filteredCatalogIds?: string[];
 	filterBoxRefresh?: boolean;
 	onfilterBoxRefreshCompleted?: () => void;
+	applyOnMount?: boolean;
+	showHeader?: boolean;
+	hideHeaderToggleFrom?: "md" | "lg";
 }
 
 const initialState = {
@@ -56,6 +76,9 @@ export const Filterbox = (props: FilterboxProps) => {
 		filteredCatalogIds = [],
 		filterBoxRefresh = false,
 		onfilterBoxRefreshCompleted = () => {},
+		applyOnMount = true,
+		showHeader = true,
+		hideHeaderToggleFrom,
 	} = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -63,17 +86,8 @@ export const Filterbox = (props: FilterboxProps) => {
 	const [state, dispatch] = useReducer(reducer, initialState);
 	const { filterSearch } = state;
 	const [showCollapsible, setShowCollapsible] = useState({});
-
-	const tagColors = [
-		"blue",
-		"orange",
-		"teal",
-		"purple",
-		"yellow",
-		"pink",
-		"violet",
-		"olive",
-	];
+	const [headerOpen, setHeaderOpen] = useState(true);
+	const [isDesktopFilterLayout, setIsDesktopFilterLayout] = useState(false);
 
 	const list =
 		type === "PROJECT"
@@ -81,7 +95,7 @@ export const Filterbox = (props: FilterboxProps) => {
 			: configStore.store.config.databaseMetaKeys;
 
 	// get a list of the keys
-	const metaKeyList = list.filter((k) => {
+	const fieldList = list.filter((k) => {
 		return (
 			k.display_options === "single-checklist" ||
 			k.display_options === "multi-checklist" ||
@@ -93,8 +107,8 @@ export const Filterbox = (props: FilterboxProps) => {
 		);
 	});
 
-	// get metakeys to the ones we want
-	const metaKeys = metaKeyList.map((k) => {
+	// get filter keys to the ones we want
+	const fieldKeys = fieldList.map((k) => {
 		if (!k.display_values) {
 			return k.metakey;
 		}
@@ -102,7 +116,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	});
 
 	// Filter out nulls
-	metaKeys.filter((v) => v);
+	fieldKeys.filter((v) => v);
 
 	// track the options
 	const [filterOptions, setFilterOptions] = useState<
@@ -113,7 +127,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	const [filterVisibility, setFilterVisibility] = useState<
 		Record<string, { open: boolean; value: string[]; search: string }>
 	>(() => {
-		return metaKeyList.reduce((prev, current) => {
+		return fieldList.reduce((prev, current) => {
 			prev[current.metakey] = {
 				open: false,
 				value: [],
@@ -123,8 +137,12 @@ export const Filterbox = (props: FilterboxProps) => {
 			return prev;
 		}, {});
 	});
-	const [filterByVisibility, setFilterByVisibility] = useState(true);
-
+	const appliedParamsRef = useRef<string | null>(null);
+	const skipParamSyncRef = useRef(false);
+	const refreshHandledRef = useRef(false);
+	const allowedKeys = useMemo(() => {
+		return new Set(fieldList.map((field) => field.metakey));
+	}, [fieldList]);
 	const getCatalogFilters = usePixel<
 		{
 			METAKEY: string;
@@ -132,17 +150,17 @@ export const Filterbox = (props: FilterboxProps) => {
 			count: number;
 		}[]
 	>(
-		metaKeys.length > 0
+		fieldKeys.length > 0
 			? type === "PROJECT"
 				? `GetProjectMetaValues(metaKeys=${JSON.stringify(
-						metaKeys.filter((mk) => mk),
+						fieldKeys.filter((mk) => mk),
 					)}${
 						filteredCatalogIds.length > 0
 							? `, projectIdList = ${JSON.stringify(filteredCatalogIds)}`
 							: ""
 					}) ;`
 				: `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
-						metaKeys.filter((mk) => mk),
+						fieldKeys.filter((mk) => mk),
 					)}${
 						filteredCatalogIds.length > 0
 							? `, engineIdList = ${JSON.stringify(filteredCatalogIds)}`
@@ -150,23 +168,132 @@ export const Filterbox = (props: FilterboxProps) => {
 					}) ;`
 			: "",
 	);
+
+	useEffect(() => {
+		if (!hideHeaderToggleFrom || typeof window === "undefined") {
+			setIsDesktopFilterLayout(false);
+			return;
+		}
+
+		const query =
+			hideHeaderToggleFrom === "md"
+				? "(min-width: 768px)"
+				: "(min-width: 1024px)";
+		const mediaQuery = window.matchMedia(query);
+		const updateMatch = (event: MediaQueryListEvent | MediaQueryList) => {
+			setIsDesktopFilterLayout(event.matches);
+		};
+
+		updateMatch(mediaQuery);
+
+		if (mediaQuery.addEventListener) {
+			mediaQuery.addEventListener("change", updateMatch);
+		} else {
+			mediaQuery.addListener(updateMatch);
+		}
+
+		return () => {
+			if (mediaQuery.removeEventListener) {
+				mediaQuery.removeEventListener("change", updateMatch);
+			} else {
+				mediaQuery.removeListener(updateMatch);
+			}
+		};
+	}, [hideHeaderToggleFrom]);
+
+	useEffect(() => {
+		if (isDesktopFilterLayout) {
+			setHeaderOpen(true);
+		}
+	}, [isDesktopFilterLayout]);
+
 	//Refresh the pixel call, if any tagrefresh is needed
 	useEffect(() => {
-		if (filterBoxRefresh && filteredCatalogIds.length === 0) {
+		if (!filterBoxRefresh) {
+			refreshHandledRef.current = false;
+			return;
+		}
+
+		if (refreshHandledRef.current) {
+			return;
+		}
+
+		refreshHandledRef.current = true;
+
+		if (filteredCatalogIds.length === 0) {
 			getCatalogFilters.refresh();
 		}
+
 		onfilterBoxRefreshCompleted();
-	}, [filterBoxRefresh]);
+	}, [
+		filterBoxRefresh,
+		filteredCatalogIds.length,
+		getCatalogFilters.refresh,
+		onfilterBoxRefreshCompleted,
+	]);
 
 	// Apply the URL's query params to the filters' state on component mount.
 	useEffect(() => {
-		if (searchParams.size > 0) {
-			searchParams.forEach((value, key) => {
-				setSelectedFilters(key, { value, count: 0 });
-			});
+		if (skipParamSyncRef.current) {
+			skipParamSyncRef.current = false;
+			return;
 		}
-		handleFiltersSideEffects();
-	}, []);
+
+		const paramsString = searchParams.toString();
+
+		if (paramsString.length === 0) {
+			if (applyOnMount && appliedParamsRef.current !== "") {
+				onChange({});
+				appliedParamsRef.current = "";
+			}
+			return;
+		}
+
+		const constructedFilters: Record<string, string[]> = {};
+		searchParams.forEach((value, key) => {
+			if (!allowedKeys.has(key)) {
+				return;
+			}
+			if (!constructedFilters[key]) {
+				constructedFilters[key] = [];
+			}
+			if (!constructedFilters[key].includes(value)) {
+				constructedFilters[key].push(value);
+			}
+		});
+
+		if (Object.keys(constructedFilters).length === 0) {
+			return;
+		}
+
+		setFilterVisibility((prevVisibility) => {
+			let changed = false;
+			const nextVisibility = { ...prevVisibility };
+			Object.entries(constructedFilters).forEach(([key, values]) => {
+				const existing = prevVisibility[key];
+				if (!existing) {
+					return;
+				}
+				const same =
+					existing.value.length === values.length &&
+					values.every((value) => existing.value.includes(value));
+				if (!same) {
+					changed = true;
+					nextVisibility[key] = {
+						...existing,
+						value: values,
+					};
+				}
+			});
+
+			return changed ? nextVisibility : prevVisibility;
+		});
+
+		if (applyOnMount && appliedParamsRef.current !== paramsString) {
+			onChange(constructedFilters);
+			appliedParamsRef.current = paramsString;
+		}
+	}, [searchParams, allowedKeys, applyOnMount, onChange]);
 
 	/**
 	 * @desc Catalog filters
@@ -184,13 +311,13 @@ export const Filterbox = (props: FilterboxProps) => {
 			prev[current.METAKEY].push({
 				value: current.METAVALUE,
 				count: current.count,
-				color: setFieldOptionColor(current.METAVALUE),
+				color: getFieldOptionColor(current.METAVALUE),
 			});
 			return prev;
 		}, {});
 
-		// add metakeys that don't get options from projects/engines but stored in config call
-		const metaKeysWithOpts = list.filter((k) => {
+		// add filter keys that don't get options from projects/engines but stored in config call
+		const fieldKeysWithOptions = list.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||
 				k.display_options === "multi-checklist" ||
@@ -202,13 +329,13 @@ export const Filterbox = (props: FilterboxProps) => {
 			);
 		});
 
-		metaKeysWithOpts.forEach((filter) => {
+		fieldKeysWithOptions.forEach((filter) => {
 			if (filter.display_values) {
 				const split = filter.display_values.split(",");
 				const formatted = split.map((val) => ({ value: val }));
 				updated[filter.metakey] = formatted;
 			}
-			// Initialize filter metakey collapsibles to be open
+			// Initialize filter collapsibles to be open
 			setShowCollapsible((set) => ({
 				...set,
 				[filter.metakey]: true,
@@ -228,15 +355,15 @@ export const Filterbox = (props: FilterboxProps) => {
 		// 1) Clean up filterVisibility: remove selected values that no longer exist
 		setFilterVisibility((prevVisibility) => {
 			const newVisibility = { ...prevVisibility };
-			Object.entries(prevVisibility).forEach(([metaKey, metaVal]) => {
-				const validValues = validMap[metaKey] || [];
-				const filteredValues = metaVal.value.filter((val) =>
+			Object.entries(prevVisibility).forEach(([fieldKey, fieldValue]) => {
+				const validValues = validMap[fieldKey] || [];
+				const filteredValues = fieldValue.value.filter((val) =>
 					validValues.includes(val),
 				);
 
-				if (filteredValues.length !== metaVal.value.length) {
-					newVisibility[metaKey] = {
-						...metaVal,
+				if (filteredValues.length !== fieldValue.value.length) {
+					newVisibility[fieldKey] = {
+						...fieldValue,
 						value: filteredValues,
 					};
 				}
@@ -277,20 +404,13 @@ export const Filterbox = (props: FilterboxProps) => {
 		}
 
 		setFilterOptions(updated);
-	}, [getCatalogFilters.status, getCatalogFilters.data, filteredCatalogIds]);
-	/**
-	 *
-	 * @param opt - option for the field color
-	 * @returns color
-	 */
-	const setFieldOptionColor = (opt: string): string => {
-		return tagColors[
-			opt
-				.split("")
-				.map((x) => x.charCodeAt(0))
-				.reduce((a, b) => a + b, 0) % 8
-		];
-	};
+	}, [
+		getCatalogFilters.status,
+		getCatalogFilters.data,
+		list,
+		searchParams,
+		setSearchParams,
+	]);
 
 	/**
 	 * @name setSelectedFilters
@@ -320,236 +440,246 @@ export const Filterbox = (props: FilterboxProps) => {
 
 		Object.entries(filterVisibility).forEach((obj) => {
 			if (obj[1].value.length) {
-				constructedFilters[obj[0]] = obj[1].value;
+				constructedFilters[obj[0]] = [...obj[1].value];
 			}
 		});
 		// Pass filters to parent
 		onChange(constructedFilters);
 		// Update query params in the URL
-		setSearchParams(constructedFilters);
+		skipParamSyncRef.current = true;
+		const nextParams = new URLSearchParams();
+		Object.entries(constructedFilters).forEach(([key, value]) => {
+			const values = Array.isArray(value) ? value : [value];
+			values.forEach((val) => {
+				nextParams.append(key, String(val));
+			});
+		});
+		setSearchParams(nextParams);
 	};
 
-	return (
-		<div className="flex h-fit w-[352px] flex-col bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
-			<div className="w-full">
-				<Collapsible
-					open={filterByVisibility}
-					onOpenChange={setFilterByVisibility}
-				>
-					<div className="flex items-center justify-between p-4">
-						<h6 className="flex-1 font-semibold text-lg">
-							Filter By
-						</h6>
-						<CollapsibleTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={() =>
-									setFilterByVisibility(!filterByVisibility)
+	const filterBody = (
+		<>
+			{/* Is there any filters */}
+			{Object.entries(filterOptions).length ? (
+				<div className={showHeader ? "mx-2 mt-0" : "mx-2 mt-4"}>
+					<div className="relative">
+						<SearchIcon className="-translate-y-1/2 absolute top-1/2 left-[10px] h-[13px] w-[13px] text-[var(--color-text-tertiary)]" />
+						<Input
+							placeholder="Search by..."
+							value={filterSearch}
+							onChange={(e) => {
+								dispatch({
+									type: "field",
+									field: "filterSearch",
+									value: e.target.value,
+								});
+							}}
+							className="w-full rounded-[8px] border-none bg-[var(--color-background-secondary)] py-[7px] pr-[10px] pl-8 text-[13px] placeholder:text-[13px] placeholder:text-[var(--color-text-tertiary)] focus-visible:ring-0 focus-visible:ring-offset-0"
+							data-testid="filterbox-search"
+						/>
+					</div>
+				</div>
+			) : null}
+
+			{type !== "BROWSETEMPLATES" &&
+				Object.entries(filterOptions).map((entries, i) => {
+					const totalFilters = Object.entries(filterOptions).length;
+					const list = entries[1];
+					let shownListItems = 0; // for show more
+					return (
+						<div key={entries[0]} className="px-4 py-1">
+							<Collapsible
+								open={showCollapsible[entries[0]]}
+								onOpenChange={(open) =>
+									setShowCollapsible((prev) => ({
+										...prev,
+										[entries[0]]: open,
+									}))
 								}
 							>
-								{filterByVisibility ? (
-									<ChevronUp className="size-4" />
-								) : (
-									<ChevronDown className="size-4" />
-								)}
-							</Button>
-						</CollapsibleTrigger>
-					</div>
+								<CollapsibleTrigger asChild>
+									<Button
+										type="button"
+										variant="default"
+										className="flex h-auto w-full items-center justify-between bg-transparent px-2 py-[6px] text-[var(--color-text-primary)] hover:bg-transparent has-[>svg]:px-2"
+									>
+										<h6 className="font-medium text-[13px] text-[var(--color-text-primary)]">
+											{toTitleCase(
+												removeUnderscores(entries[0]),
+											)}
+										</h6>
+										{showCollapsible[entries[0]] ? (
+											<ChevronUp className="size-4" />
+										) : (
+											<ChevronDown className="size-4" />
+										)}
+									</Button>
+								</CollapsibleTrigger>
 
-					<CollapsibleContent>
-						{/* Is there any filters */}
-						{Object.entries(filterOptions).length ? (
-							<div className="mx-2 mt-2">
-								<div className="relative">
-									<SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-									<Input
-										placeholder="Search by..."
-										value={filterSearch}
-										onChange={(e) => {
-											dispatch({
-												type: "field",
-												field: "filterSearch",
-												value: e.target.value,
-											});
-										}}
-										className="w-full border-none pl-9"
-										data-testid="filterbox-search"
-									/>
-								</div>
-							</div>
-						) : null}
+								<CollapsibleContent>
+									{list.map((filterOption) => {
+										if (
+											shownListItems > 4 &&
+											!filterVisibility[entries[0]].open
+										) {
+											return null;
+										}
+										if (
+											filterOption.value
+												.toLowerCase()
+												.includes(
+													filterSearch.toLowerCase(),
+												)
+										) {
+											shownListItems += 1;
+											const isSelected =
+												filterVisibility[
+													entries[0]
+												].value.indexOf(
+													filterOption.value,
+												) > -1;
 
-						{type !== "BROWSETEMPLATES" &&
-							Object.entries(filterOptions).map((entries, i) => {
-								const totalFilters =
-									Object.entries(filterOptions).length;
-								const list = entries[1];
-								let shownListItems = 0; // for show more
-								return (
-									<div key={entries[0]} className="px-6 py-2">
-										<Collapsible
-											open={showCollapsible[entries[0]]}
-											onOpenChange={(open) =>
-												setShowCollapsible((prev) => ({
-													...prev,
-													[entries[0]]: open,
-												}))
-											}
-										>
-											<CollapsibleTrigger asChild>
+											return (
 												<Button
 													type="button"
-													variant="default"
-													className="flex w-full items-center justify-between bg-transparent p-2 text-(--foreground) hover:bg-accent"
+													variant="ghost"
+													key={filterOption.value}
+													className={`mb-[2px] flex h-auto w-full items-center justify-between rounded-[6px] bg-transparent px-3 py-[5px] text-[13px] hover:bg-[var(--color-background-secondary)] ${
+														isSelected
+															? "bg-[var(--color-background-secondary)]"
+															: ""
+													}`}
+													onClick={() => {
+														dispatch({
+															type: "field",
+															field: "databases",
+															value: [],
+														});
+
+														setSelectedFilters(
+															entries[0],
+															filterOption,
+														);
+														handleFiltersSideEffects();
+													}}
+													aria-label={
+														isSelected
+															? `Unfilter ${filterOption.value}`
+															: `Filter ${filterOption.value}`
+													}
 												>
-													<h6 className="font-semibold text-base">
-														{toTitleCase(
-															removeUnderscores(
-																entries[0],
-															),
+													<span
+														className={`text-[13px] text-[var(--color-text-secondary)] ${isSelected ? "font-medium" : "font-normal"}`}
+														data-testid={formatToDataTestId(
+															`filterbox-${filterOption.value}-filterBtn`,
 														)}
-													</h6>
-													{showCollapsible[
-														entries[0]
-													] ? (
-														<ChevronUp className="size-4" />
-													) : (
-														<ChevronDown className="size-4" />
+													>
+														{filterOption.value}
+													</span>
+
+													{filterOption.count && (
+														<span className="text-[11px] text-[var(--color-text-tertiary)]">
+															{filterOption.count}
+														</span>
 													)}
 												</Button>
-											</CollapsibleTrigger>
-
-											<CollapsibleContent>
-												{list.map((filterOption) => {
-													if (
-														shownListItems > 4 &&
-														!filterVisibility[
+											);
+										}
+										return null;
+									})}
+									{shownListItems > 4 && (
+										<Button
+											type="button"
+											variant="ghost"
+											className="px-2 py-1 font-normal text-[#2563eb] text-[12px] no-underline hover:bg-transparent hover:text-[#2563eb]"
+											onClick={() => {
+												const visibleFilters = {
+													...filterVisibility,
+												};
+												visibleFilters[entries[0]] = {
+													open:
+														!visibleFilters[
 															entries[0]
-														].open
-													) {
-														return null;
-													}
-													if (
-														filterOption.value
-															.toLowerCase()
-															.includes(
-																filterSearch.toLowerCase(),
-															)
-													) {
-														shownListItems += 1;
-														const isSelected =
-															filterVisibility[
-																entries[0]
-															].value.indexOf(
-																filterOption.value,
-															) > -1;
+														].open,
+													value: visibleFilters[
+														entries[0]
+													].value,
+													search: visibleFilters[
+														entries[0]
+													].search,
+												};
+												setFilterVisibility(
+													visibleFilters,
+												);
+											}}
+										>
+											+ Show more
+										</Button>
+									)}
+								</CollapsibleContent>
+							</Collapsible>
+							{i + 1 !== totalFilters && (
+								<div className="my-2 h-[0.5px] w-full bg-[var(--color-border-tertiary)]" />
+							)}
+						</div>
+					);
+				})}
+		</>
+	);
 
-														return (
-															<Button
-																type="button"
-																variant="ghost"
-																key={
-																	filterOption.value
-																}
-																className={`mb-2 flex w-full items-center justify-between bg-transparent px-4 py-2 font-medium text-(--sidebar-foreground) text-sm hover:bg-(--accent) ${
-																	isSelected
-																		? "bg-(--accent) font-medium"
-																		: ""
-																}`}
-																onClick={() => {
-																	dispatch({
-																		type: "field",
-																		field: "databases",
-																		value: [],
-																	});
-
-																	setSelectedFilters(
-																		entries[0],
-																		filterOption,
-																	);
-																	handleFiltersSideEffects();
-																}}
-																aria-label={
-																	isSelected
-																		? `Unfilter ${filterOption.value}`
-																		: `Filter ${filterOption.value}`
-																}
-															>
-																<span
-																	className={`text-(--sidebar-foreground) text-sm ${isSelected ? "font-medium" : "font-normal"}`}
-																	data-testid={formatToDataTestId(
-																		`filterbox-${filterOption.value}-filterBtn`,
-																	)}
-																>
-																	{
-																		filterOption.value
-																	}
-																</span>
-
-																{filterOption.count && (
-																	<Avatar className="size-4">
-																		<AvatarFallback className="bg-secondary font-medium text-foreground text-xs">
-																			{
-																				filterOption.count
-																			}
-																		</AvatarFallback>
-																	</Avatar>
-																)}
-															</Button>
-														);
-													}
-													return null;
-												})}
-												{shownListItems > 4 && (
-													<Button
-														type="button"
-														variant="ghost"
-														className="text-(--primary) hover:bg-transparent hover:text-(--primary)"
-														onClick={() => {
-															const visibleFilters =
-																{
-																	...filterVisibility,
-																};
-															visibleFilters[
-																entries[0]
-															] = {
-																open:
-																	!visibleFilters[
-																		entries[0]
-																	].open,
-																value: visibleFilters[
-																	entries[0]
-																].value,
-																search: visibleFilters[
-																	entries[0]
-																].search,
-															};
-															setFilterVisibility(
-																visibleFilters,
-															);
-														}}
-													>
-														Show{" "}
-														{filterVisibility[
-															entries[0]
-														].open
-															? "Less"
-															: "More"}
-													</Button>
-												)}
-											</CollapsibleContent>
-										</Collapsible>
-										{i + 1 !== totalFilters && (
-											<div className="w-full">
-												<Separator />
-											</div>
+	return (
+		<div className="filterbox-scroll flex w-full flex-col overflow-y-auto overflow-x-hidden rounded-lg bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)] md:max-h-[calc(100vh-220px)] md:w-[352px]">
+			<div className="w-full">
+				{showHeader ? (
+					<Collapsible
+						open={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? true
+								: headerOpen
+						}
+						onOpenChange={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? undefined
+								: setHeaderOpen
+						}
+					>
+						<div
+							className={`flex items-center px-4 pt-3 pb-1 ${
+								hideHeaderToggleFrom && isDesktopFilterLayout
+									? "justify-start"
+									: "justify-between"
+							}`}
+						>
+							<h6 className="flex-1 font-semibold text-lg">
+								Filter By
+							</h6>
+							{!(
+								hideHeaderToggleFrom && isDesktopFilterLayout
+							) ? (
+								<CollapsibleTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={
+											headerOpen
+												? "Collapse filters"
+												: "Expand filters"
+										}
+									>
+										{headerOpen ? (
+											<ChevronUp className="size-4" />
+										) : (
+											<ChevronDown className="size-4" />
 										)}
-									</div>
-								);
-							})}
-					</CollapsibleContent>
-				</Collapsible>
+									</Button>
+								</CollapsibleTrigger>
+							) : null}
+						</div>
+						<CollapsibleContent>{filterBody}</CollapsibleContent>
+					</Collapsible>
+				) : (
+					filterBody
+				)}
 			</div>
 		</div>
 	);

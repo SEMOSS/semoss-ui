@@ -1,5 +1,5 @@
 import { SearchIcon } from "lucide-react";
-import React, { Suspense, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import {
 	Badge,
 	Button,
@@ -19,15 +19,25 @@ import {
 import { PlatformSearchApp } from "./platform-search-app";
 import { PlatformSearchEngine } from "./platform-search-engine";
 
+type SearchCategoryType =
+	| "PROJECT"
+	| "DATABASE"
+	| "FUNCTION"
+	| "GUARDRAIL"
+	| "MODEL"
+	| "STORAGE"
+	| "VECTOR";
+
 // Categories we can search
 const CATEGORIES = [
 	{ name: "Apps", type: "PROJECT" },
-	{ name: "Model", type: "MODEL" },
-	{ name: "Vector", type: "VECTOR" },
 	{ name: "Database", type: "DATABASE" },
 	{ name: "Function", type: "FUNCTION" },
+	{ name: "Guardrail", type: "GUARDRAIL" },
+	{ name: "Model", type: "MODEL" },
 	{ name: "Storage", type: "STORAGE" },
-] as const;
+	{ name: "Vector", type: "VECTOR" },
+] as const satisfies ReadonlyArray<{ name: string; type: SearchCategoryType }>;
 
 interface PromptSearchProps {
 	/** Css to pass to the toggle */
@@ -49,12 +59,42 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 		(c) => isAll || selectedCategories[c.type],
 	);
 
+	// Add keyboard shortcut: Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			// Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+			if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+				// Don't trigger if user is typing in an input/textarea
+				const target = e.target as HTMLElement;
+				if (
+					target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable
+				) {
+					return;
+				}
+
+				// Prevent default browser behavior
+				e.preventDefault();
+
+				// Toggle the search dialog
+				setOpen((prev) => !prev);
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, []);
+
 	return (
 		<>
 			<Button
 				variant="outline"
 				className={cn(
-					"w-full justify-start overflow-hidden",
+					"h-10 w-full justify-start overflow-hidden rounded-lg border-2 border-border bg-background/95 text-muted-foreground shadow-sm hover:text-foreground",
 					className,
 				)}
 				onClick={() => setOpen(true)}
@@ -64,7 +104,7 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 			</Button>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent
-					className="overflow-hidden p-0"
+					className="overflow-hidden p-0 sm:max-w-2xl [&>[data-slot=dialog-close]]:z-20 [&>[data-slot=dialog-close]]:rounded-md [&>[data-slot=dialog-close]]:bg-background/95 [&>[data-slot=dialog-close]]:p-1"
 					showCloseButton={true}
 				>
 					<DialogHeader className="sr-only">
@@ -74,13 +114,19 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 						</DialogDescription>
 					</DialogHeader>
 					<Command
-						className="**:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+						className="bg-background **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-1 [&_[cmdk-group]]:px-2 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:rounded-md [&_[cmdk-item]]:px-2.5 [&_[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:h-4.5 [&_[cmdk-item]_svg]:w-4.5 [&_[data-slot=command-input-wrapper]]:mx-3 [&_[data-slot=command-input-wrapper]]:my-3 [&_[data-slot=command-input-wrapper]]:rounded-md [&_[data-slot=command-input-wrapper]]:border [&_[data-slot=command-input-wrapper]]:border-border [&_[data-slot=command-input-wrapper]]:border-b [&_[data-slot=command-input-wrapper]]:bg-background [&_[data-slot=command-input-wrapper]]:shadow-sm"
 						shouldFilter={false}
 					>
-						<div className="border-b p-3">
-							<div className="flex flex-wrap gap-2">
+						<div className="border-b bg-muted/20 p-3 pr-14">
+							<div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-9">
 								<Badge
 									variant={isAll ? "default" : "outline"}
+									className={cn(
+										"h-8 w-full cursor-pointer justify-center rounded-md border-border text-[11px] transition-colors",
+										!isAll &&
+											"bg-background hover:bg-accent",
+										isAll && "shadow-sm",
+									)}
 									asChild
 								>
 									<button
@@ -112,6 +158,12 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 													? "default"
 													: "outline"
 											}
+											className={cn(
+												"h-8 w-full cursor-pointer justify-center rounded-md border-border text-[11px] transition-colors",
+												!isSelected &&
+													"bg-background hover:bg-accent",
+												isSelected && "shadow-sm",
+											)}
 											asChild
 										>
 											<button
@@ -163,12 +215,13 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 						</div>
 
 						<CommandInput
-							placeholder="Search"
+							placeholder="Search apps, engines, and tools"
+							value={search}
 							onValueChange={(s) => setSearch(s)}
 							autoFocus={true}
 						/>
 
-						<CommandList>
+						<CommandList className="max-h-[420px] p-2">
 							<Suspense
 								fallback={
 									<CommandEmpty>Loading...</CommandEmpty>

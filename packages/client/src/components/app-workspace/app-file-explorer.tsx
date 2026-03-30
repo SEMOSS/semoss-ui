@@ -86,9 +86,28 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
 			);
 
-			let json = {};
+			let json: { _meta: Record<string, string>; tools: unknown[] } = {
+				_meta: {},
+				tools: [],
+			};
 			try {
-				json = JSON.parse(pixelReturn[0].output);
+				const output = pixelReturn[0].output;
+				if (output && typeof output === "object") {
+					const o = output as Record<string, unknown>;
+					json = {
+						_meta: (o._meta as Record<string, string>) ?? {},
+						tools: (o.tools as unknown[]) ?? [],
+					};
+				} else if (typeof output === "string" && output.trim()) {
+					const parsed = JSON.parse(output) as Record<
+						string,
+						unknown
+					>;
+					json = {
+						_meta: (parsed._meta as Record<string, string>) ?? {},
+						tools: (parsed.tools as unknown[]) ?? [],
+					};
+				}
 			} catch (e) {
 				console.error(`Failed to parse MCP JSON: ${e}`);
 			}
@@ -185,6 +204,9 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					});
 				}}
 				ItemComponent={({ item, refresh, ...otherProps }) => {
+					const isDriverFile =
+						item.type !== "directory" &&
+						MCP.DRIVER_PATHS.some((f) => item.path === f);
 					return (
 						<FileExplorerItem
 							draggable={item.type !== "directory"}
@@ -211,10 +233,9 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 									},
 								);
 							}}
+							{...otherProps}
 							actions={[
-								MCP.DRIVER_PATHS.some((f) =>
-									item.path.startsWith(f),
-								) && item.type !== "directory"
+								isDriverFile
 									? {
 											name: "Create",
 											icon: <HammerIcon />,
@@ -229,7 +250,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 													refresh();
 
 													// add it
-													addMCPEditorTab(
+													await addMCPEditorTab(
 														"/mcp/py_mcp.json",
 													);
 												} catch (e) {
@@ -318,7 +339,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 									},
 								},
 							]}
-							{...otherProps}
 						/>
 					);
 				}}

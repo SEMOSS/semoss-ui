@@ -3,17 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
-import {
-	Button,
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
-	Label,
-	Textarea,
-} from "@semoss/ui/next";
+import { Button, Label, Textarea } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
 import { ToolField } from "./tool-field";
 
@@ -146,7 +136,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 				room.processTool(
 					m.id,
 					tool.id,
-					tool.name,
 					output,
 					success ? "success" : "error",
 					data,
@@ -191,51 +180,75 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		}, [getMCP, tool.original_name]);
 
 		return (
-			<div className="flex h-full w-full flex-col items-center justify-center overflow-auto p-4">
-				<Card className="h-full w-full">
-					<CardHeader>
-						<CardTitle className="font-semibold text-2xl">
-							{title}
-						</CardTitle>
-						{!!description && (
-							<CardDescription className="mt-2">
-								{description}
-							</CardDescription>
-						)}
-					</CardHeader>
-					<CardContent className="max-h-[60vh] overflow-y-auto">
-						<div className="space-y-4">
-							{hasBeenExecuted && (
-								<div className="flex h-full flex-col space-y-2">
-									<Label
-										htmlFor="tool-response"
-										className="shrink-0 font-semibold"
+			// px-3 because applying padding on this div was clipping the shadow of the textareas
+			// so we apply px-1 to the inner divs instead
+			<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4">
+				<div className="space-y-2 px-1">
+					<h2 className="font-semibold text-2xl">{title}</h2>
+					{!!description && (
+						<p className="text-muted-foreground">{description}</p>
+					)}
+				</div>
+
+				<div className="flex-1 space-y-4 overflow-y-auto px-1">
+					{hasBeenExecuted && (
+						<div className="flex flex-col space-y-2">
+							<Label
+								htmlFor="tool-response"
+								className="shrink-0 font-semibold"
+							>
+								Result
+							</Label>
+							<Textarea
+								readOnly
+								className="w-full flex-1 resize-none"
+								value={response}
+							/>
+						</div>
+					)}
+					{getMCP.status === "ERROR" ? (
+						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+							<div className="text-destructive">
+								<p className="font-semibold text-lg">
+									Failed to load tool schema
+								</p>
+								<p className="text-muted-foreground text-sm">
+									Unable to retrieve tool configuration.
+									Please try again later.
+								</p>
+							</div>
+						</div>
+					) : getMCP.status === "SUCCESS" ? (
+						hasBeenExecuted ? (
+							Object.keys(properties).length > 0 && (
+								<>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											setShowOptional(!showOptional)
+										}
+										className="w-full"
 									>
-										Result
-									</Label>
-									<Textarea
-										readOnly
-										className="w-full resize-none"
-										value={response}
-									/>
-								</div>
-							)}
-							{getMCP.status === "ERROR" ? (
-								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-									<div className="text-destructive">
-										<p className="font-semibold text-lg">
-											Failed to load tool schema
-										</p>
-										<p className="text-muted-foreground text-sm">
-											Unable to retrieve tool
-											configuration. Please try again
-											later.
-										</p>
-									</div>
-								</div>
-							) : getMCP.status === "SUCCESS" ? (
-								hasBeenExecuted ? (
-									Object.keys(properties).length > 0 && (
+										{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
+									</Button>
+
+									{showOptional &&
+										renderFields(
+											Object.entries(properties),
+											false,
+										)}
+								</>
+							)
+						) : (
+							<form onSubmit={handleSubmit}>
+								<div className="space-y-4">
+									{/* Required fields */}
+									{renderFields(requiredFields, true)}
+
+									{/* Optional fields toggle */}
+									{optionalFields.length > 0 && (
 										<>
 											<Button
 												type="button"
@@ -248,81 +261,51 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 												}
 												className="w-full"
 											>
-												{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
+												{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
 											</Button>
+
 											{showOptional &&
 												renderFields(
-													Object.entries(properties),
+													optionalFields,
 													false,
 												)}
 										</>
-									)
-								) : (
-									<form onSubmit={handleSubmit}>
-										<div className="space-y-4">
-											{/* Required fields */}
-											{renderFields(requiredFields, true)}
-
-											{/* Optional fields toggle */}
-											{optionalFields.length > 0 && (
-												<>
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														onClick={() =>
-															setShowOptional(
-																!showOptional,
-															)
-														}
-														className="w-full"
-													>
-														{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
-													</Button>
-
-													{showOptional &&
-														renderFields(
-															optionalFields,
-															false,
-														)}
-												</>
-											)}
-										</div>
-									</form>
-								)
-							) : (
-								<div className="flex flex-col items-center justify-center gap-2 py-12">
-									<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-									<p className="text-muted-foreground text-sm">
-										Loading tool schema...
-									</p>
+									)}
 								</div>
-							)}
+							</form>
+						)
+					) : (
+						<div className="flex flex-col items-center justify-center gap-2 py-12">
+							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+							<p className="text-muted-foreground text-sm">
+								Loading tool schema...
+							</p>
 						</div>
-					</CardContent>
-					{!hasBeenExecuted && getMCP.status === "SUCCESS" && (
-						<CardFooter>
-							<Button
-								type="button"
-								className="w-full"
-								size="lg"
-								onClick={() => {
-									handleSubmit();
-								}}
-								disabled={isSubmitting}
-							>
-								{isSubmitting ? (
-									<>
-										<Loader2 className="animate-spin" />
-										Executing...
-									</>
-								) : (
-									"Execute Tool"
-								)}
-							</Button>
-						</CardFooter>
 					)}
-				</Card>
+				</div>
+
+				{!hasBeenExecuted && getMCP.status === "SUCCESS" && (
+					<div className="shrink-0 px-1">
+						<Button
+							type="button"
+							className="w-full"
+							size="lg"
+							onClick={() => {
+								handleSubmit();
+							}}
+							disabled={isSubmitting}
+						>
+							{isSubmitting ? (
+								<>
+									<Loader2 className="animate-spin" />
+									Executing...
+								</>
+							) : (
+								"Execute Tool"
+							)}
+						</Button>
+					</div>
+				)}
 			</div>
 		);
 	},

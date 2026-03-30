@@ -110,6 +110,7 @@ export const RoomPage = observer(() => {
 		chat.loadRoom,
 		chat.setSelectedModel,
 		setBreadcrumbs,
+		t,
 	]);
 
 	const { setNavbarActions } = useGlobalBreadcrumbs({});
@@ -143,7 +144,11 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<InsightProvider key={roomId} options={{ insightId: room.insightId }}>
+		<InsightProvider
+			key={room.roomId}
+			options={{ insightId: room.insightId }}
+			destroyOnUnmount={false}
+		>
 			<div className="flex h-full w-full flex-col overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"
@@ -157,7 +162,8 @@ export const RoomPage = observer(() => {
 							<ResizableHandle />
 							<ResizablePanel
 								className={"relative p-2"}
-								defaultSize={70}
+								defaultSize={50}
+								minSize={20}
 							>
 								<RoomSidebar room={room} />
 							</ResizablePanel>

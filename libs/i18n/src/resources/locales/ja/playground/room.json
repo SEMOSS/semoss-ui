@@ -47,12 +47,13 @@
 		"enterQuestion": "質問を入力してください",
 		"completeTool": "続行するにはツールを完了してください",
 		"ask": "質問",
-		"errorProcessing": "チャットの処理中にエラーが発生しました"
+		"errorProcessing": "チャットの処理中にエラーが発生しました",
+		"pauseTools": "ツールを一時停止",
+		"pauseToolsTooltip": "次のメッセージの後まですべてのツール実行を一時停止"
 	},
 	"content": {
 		"scrollToTop": "一番上にスクロール",
-		"scrollToBottom": "一番下にスクロール",
-		"errorDefault": "リクエストを処理できません。接続を確認し、メッセージをコピーしてから更新してください。"
+		"scrollToBottom": "一番下にスクロール"
 	},
 	"inlineTool": {
 		"openInSidebar": "サイドバーで開く",
@@ -79,7 +80,7 @@
 	},
 	"menuWorkspace": {
 		"selectAgent": "エージェントを選択",
-		"searchPlaceholder": "ワークスペースを検索",
+		"searchPlaceholder": "エージェントを検索",
 		"notFound": "見つかりません"
 	},
 	"menuUpload": {
@@ -92,5 +93,13 @@
 	},
 	"errors": {
 		"createRoom": "ルームの作成中にエラーが発生しました。エラー: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "すべての会話には上限があります。非常に長い会話は、最終的にモデルが以前のメッセージを忘れる原因になります。",
+		"descriptionMedium": "この会話が長くなっています。続けると、モデルは以前のメッセージを忘れ始めます。まもなく新しいチャットを始めることをご検討ください。",
+		"descriptionHigh": "この会話はほぼ満杯です。モデルはまもなく以前のメッセージを忘れ始めます。新しいチャットを始めることをご検討ください。",
+		"descriptionExceeded": "この会話は上限を超えました。モデルは現在、応答を生成する際に以前のメッセージを忘れています。最良の結果を得るには、新しいチャットを開始してください。",
+		"memoryUsedTitle": "使用メモリ:",
+		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)"
 	}
 }

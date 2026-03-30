@@ -34,8 +34,13 @@ export class ToolStore {
 	/**
 	 * Status for the tool
 	 */
-	status: "INITIAL" | "LOADING" | "CANCELLED" | "SUCCESS" | "ERROR" =
-		"INITIAL";
+	status:
+		| "INITIAL"
+		| "LOADING"
+		| "CANCELLED"
+		| "SUCCESS"
+		| "ERROR"
+		| "PAUSED" = "INITIAL";
 
 	/**
 	 * Parameters for the tool
@@ -72,6 +77,11 @@ export class ToolStore {
 	 * Track if the tool is open
 	 */
 	isOpen: boolean = false;
+
+	/**
+	 * Track if the tool is expanded (fullscreen) in inline mode
+	 */
+	isExpanded: boolean = false;
 
 	/**
 	 * Display information for the tool
@@ -135,18 +145,14 @@ export class ToolStore {
 			this.parameters = part.toolResult.toolParameterValues || {};
 			this.response = part.toolResult.output;
 
-			// @ts-expect-error - TODO: Fix this. tool status should not be undefined
-			if (part.toolResult.toolStatus === "undefined") {
-				this.status = "SUCCESS";
-				console.error(
-					"TODO: Fix this. tool status should not be undefined",
-				);
-			} else if (part.toolResult.toolStatus === "success") {
-				this.status = "SUCCESS";
-			} else if (part.toolResult.toolStatus === "error") {
+			if (part.toolResult.toolStatus === "error") {
 				this.status = "ERROR";
 			} else if (part.toolResult.toolStatus === "cancelled") {
 				this.status = "CANCELLED";
+			} else if (part.toolResult.toolStatus === "paused") {
+				this.status = "PAUSED";
+			} else {
+				this.status = "SUCCESS";
 			}
 
 			// update the tool result information
@@ -166,14 +172,20 @@ export class ToolStore {
 	};
 
 	/**
+	 * Set the isExpanded state
+	 */
+	setIsExpanded = (isExpanded: boolean) => {
+		this.isExpanded = isExpanded;
+	};
+
+	/**
 	 * Update the parameters of the tool
 	 */
 	openTool = (display?: "inline" | "sidebar" | "hidden") => {
 		if (this.isOpen) {
-			// already open in the requested location
-			if (this.display === display) {
-				return;
-			} else {
+			// Tool is already open. If the new display is the same or undefined, move to front
+			// if the new display is different, close and reopen in the new location
+			if (display !== undefined && display !== this.display) {
 				this.closeTool();
 			}
 		}
@@ -215,6 +227,7 @@ export class ToolStore {
 	closeTool = () => {
 		// close it
 		this.isOpen = false;
+		this.isExpanded = false;
 
 		// close the previous location
 		if (this.display === "inline") {

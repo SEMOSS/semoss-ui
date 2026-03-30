@@ -1,7 +1,4 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-import { FileUploadOutlined } from "@mui/icons-material";
-import { Download, Plus, Search, Trash2 } from "lucide-react";
+import { Download, Plus, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -167,7 +164,7 @@ export const FileTable = (props: FileTableProps) => {
 			setValue("FILES", []);
 			setSelectedFiles([]);
 		};
-	}, [getFileDetails.status, getFileDetails.data, searchFilter]);
+	}, [getFileDetails.status, getFileDetails.data, searchFilter, setValue]);
 
 	// File upload handlers
 	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -368,18 +365,18 @@ export const FileTable = (props: FileTableProps) => {
 	return (
 		<div className="flex w-full shrink-0 flex-col items-start justify-between gap-[25px]">
 			<div className="w-full rounded-xl shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
-				<div className="flex items-center justify-between self-stretch bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
+				<div className="flex flex-wrap items-center justify-between gap-y-2 self-stretch bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
 					<div className="flex items-center gap-2.5 px-4 py-3">
 						<H4>Files</H4>
 					</div>
 
-					<div className="flex items-center gap-2 px-4">
+					<div className="flex flex-wrap items-center gap-2 px-4 pb-2 sm:pb-0">
 						<div className="relative">
 							<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
 							<Input
 								ref={fileSearchRef}
 								placeholder="Search Files"
-								className="h-9 w-[200px] pl-9"
+								className="h-9 w-[140px] pl-9 sm:w-[200px]"
 								value={searchFilter}
 								onChange={(e) => {
 									setValue("SEARCH_FILTER", e.target.value);
@@ -422,250 +419,277 @@ export const FileTable = (props: FileTableProps) => {
 							data-testid="embed-new-document-btn"
 						>
 							<Plus className="size-4" />
-							Embed New Document
+							<span className="hidden sm:inline">
+								Embed New Document
+							</span>
+							<span className="sm:hidden">Embed</span>
 						</Button>
 					</div>
 				</div>
 
-				<Table className="bg-background">
-					<TableHeader>
-						<TableRow>
-							<TableHead className="w-12">
-								<Checkbox
-									checked={
-										selectedFiles.length ===
-											verifiedFiles.length &&
-										verifiedFiles.length > 0
-									}
-									onCheckedChange={() => {
-										if (
-											selectedFiles.length !==
-											verifiedFiles.length
-										) {
-											setSelectedFiles(verifiedFiles);
-										} else {
-											setSelectedFiles([]);
+				<div className="overflow-x-auto">
+					<Table className="bg-background">
+						<TableHeader>
+							<TableRow>
+								<TableHead className="w-12">
+									<Checkbox
+										checked={
+											selectedFiles.length ===
+												verifiedFiles.length &&
+											verifiedFiles.length > 0
 										}
-									}}
-									data-testid="files-checkbox"
-								/>
-							</TableHead>
-							<TableHead>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={createSortHandler(headCell[0].id)}
-									className="h-8 gap-1"
-								>
-									Name
-									{orderBy === headCell[0].id &&
-										(order === "asc" ? " ↑" : " ↓")}
-								</Button>
-							</TableHead>
-							<TableHead>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={createSortHandler(headCell[1].id)}
-									className="h-8 gap-1"
-								>
-									Date Uploaded
-									{orderBy === headCell[1].id &&
-										(order === "asc" ? " ↑" : " ↓")}
-								</Button>
-							</TableHead>
-							<TableHead>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={createSortHandler(headCell[2].id)}
-									className="h-8 gap-1"
-								>
-									Size
-									{orderBy === headCell[2].id &&
-										(order === "asc" ? " ↑" : " ↓")}
-								</Button>
-							</TableHead>
-							<TableHead>Action</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{verifiedFiles.map((_x, i) => {
-							if (
-								i >=
-									filePage * NUM_RESULTS_PER_PAGE -
-										NUM_RESULTS_PER_PAGE &&
-								i < filePage * NUM_RESULTS_PER_PAGE
-							) {
-								const file = verifiedFiles[i];
-
-								let isSelected = false;
-
-								if (file) {
-									isSelected = selectedFiles.some((value) => {
-										return value.fileName === file.fileName;
-									});
-								}
-								if (file) {
-									return (
-										<TableRow key={`${file.fileName}-${i}`}>
-											<TableCell>
-												<Checkbox
-													checked={isSelected}
-													onCheckedChange={() => {
-														if (isSelected) {
-															const selFiles = [];
-															selectedFiles.forEach(
-																(u) => {
-																	if (
-																		u.fileName !==
-																		file.fileName
-																	) {
-																		selFiles.push(
-																			u,
-																		);
-																	}
-																},
-															);
-															setSelectedFiles(
-																selFiles,
-															);
-														} else {
-															setSelectedFiles([
-																...selectedFiles,
-																file,
-															]);
-														}
-													}}
-													data-testid={`file-checkbox-${file.fileName}`}
-												/>
-											</TableCell>
-											<TableCell>
-												{file.fileName}
-											</TableCell>
-											<TableCell>
-												{file.lastModified}
-											</TableCell>
-											<TableCell>
-												{Math.round(
-													file.fileSize * 10,
-												) / 10}{" "}
-												KB
-											</TableCell>
-											<TableCell>
-												<Button
-													variant="ghost"
-													size="icon"
-													onClick={() => {
-														setDeleteFileModal(
-															true,
-														);
-														setFileToDelete(file);
-													}}
-												>
-													<Trash2 className="size-4" />
-												</Button>
-											</TableCell>
-										</TableRow>
-									);
-								}
-							}
-
-							return null;
-						})}
-					</TableBody>
-					<TableFooter>
-						<TableRow>
-							<TableCell colSpan={5}>
-								<div className="flex items-center justify-end gap-4 px-2">
-									<div className="text-sm">
-										{(filePage - 1) * NUM_RESULTS_PER_PAGE +
-											1}
-										-
-										{Math.min(
-											filePage * NUM_RESULTS_PER_PAGE,
-											filteredFileCount,
-										)}{" "}
-										of {filteredFileCount}
-									</div>
-									<div className="flex gap-1">
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() => setFilePage(1)}
-											disabled={filePage === 1}
-										>
-											{"<<"}
-										</Button>
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() =>
-												setFilePage(
-													Math.max(1, filePage - 1),
-												)
+										onCheckedChange={() => {
+											if (
+												selectedFiles.length !==
+												verifiedFiles.length
+											) {
+												setSelectedFiles(verifiedFiles);
+											} else {
+												setSelectedFiles([]);
 											}
-											disabled={filePage === 1}
-										>
-											{"<"}
-										</Button>
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() =>
-												setFilePage(
-													Math.min(
+										}}
+										data-testid="files-checkbox"
+									/>
+								</TableHead>
+								<TableHead>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={createSortHandler(
+											headCell[0].id,
+										)}
+										className="h-8 gap-1"
+									>
+										Name
+										{orderBy === headCell[0].id &&
+											(order === "asc" ? " ↑" : " ↓")}
+									</Button>
+								</TableHead>
+								<TableHead>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={createSortHandler(
+											headCell[1].id,
+										)}
+										className="h-8 gap-1"
+									>
+										Date Uploaded
+										{orderBy === headCell[1].id &&
+											(order === "asc" ? " ↑" : " ↓")}
+									</Button>
+								</TableHead>
+								<TableHead>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={createSortHandler(
+											headCell[2].id,
+										)}
+										className="h-8 gap-1"
+									>
+										Size
+										{orderBy === headCell[2].id &&
+											(order === "asc" ? " ↑" : " ↓")}
+									</Button>
+								</TableHead>
+								<TableHead>Action</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{verifiedFiles.map((_x, i) => {
+								if (
+									i >=
+										filePage * NUM_RESULTS_PER_PAGE -
+											NUM_RESULTS_PER_PAGE &&
+									i < filePage * NUM_RESULTS_PER_PAGE
+								) {
+									const file = verifiedFiles[i];
+
+									let isSelected = false;
+
+									if (file) {
+										isSelected = selectedFiles.some(
+											(value) => {
+												return (
+													value.fileName ===
+													file.fileName
+												);
+											},
+										);
+									}
+									if (file) {
+										return (
+											<TableRow
+												key={`${file.fileName}-${i}`}
+											>
+												<TableCell>
+													<Checkbox
+														checked={isSelected}
+														onCheckedChange={() => {
+															if (isSelected) {
+																const selFiles =
+																	[];
+																selectedFiles.forEach(
+																	(u) => {
+																		if (
+																			u.fileName !==
+																			file.fileName
+																		) {
+																			selFiles.push(
+																				u,
+																			);
+																		}
+																	},
+																);
+																setSelectedFiles(
+																	selFiles,
+																);
+															} else {
+																setSelectedFiles(
+																	[
+																		...selectedFiles,
+																		file,
+																	],
+																);
+															}
+														}}
+														data-testid={`file-checkbox-${file.fileName}`}
+													/>
+												</TableCell>
+												<TableCell>
+													{file.fileName}
+												</TableCell>
+												<TableCell>
+													{file.lastModified}
+												</TableCell>
+												<TableCell>
+													{Math.round(
+														file.fileSize * 10,
+													) / 10}{" "}
+													KB
+												</TableCell>
+												<TableCell>
+													<Button
+														variant="ghost"
+														size="icon"
+														onClick={() => {
+															setDeleteFileModal(
+																true,
+															);
+															setFileToDelete(
+																file,
+															);
+														}}
+													>
+														<Trash2 className="size-4" />
+													</Button>
+												</TableCell>
+											</TableRow>
+										);
+									}
+								}
+
+								return null;
+							})}
+						</TableBody>
+						<TableFooter>
+							<TableRow>
+								<TableCell colSpan={5}>
+									<div className="flex items-center justify-end gap-4 px-2">
+										<div className="text-sm">
+											{(filePage - 1) *
+												NUM_RESULTS_PER_PAGE +
+												1}
+											-
+											{Math.min(
+												filePage * NUM_RESULTS_PER_PAGE,
+												filteredFileCount,
+											)}{" "}
+											of {filteredFileCount}
+										</div>
+										<div className="flex gap-1">
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() => setFilePage(1)}
+												disabled={filePage === 1}
+											>
+												{"<<"}
+											</Button>
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() =>
+													setFilePage(
+														Math.max(
+															1,
+															filePage - 1,
+														),
+													)
+												}
+												disabled={filePage === 1}
+											>
+												{"<"}
+											</Button>
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() =>
+													setFilePage(
+														Math.min(
+															Math.ceil(
+																filteredFileCount /
+																	NUM_RESULTS_PER_PAGE,
+															),
+															filePage + 1,
+														),
+													)
+												}
+												disabled={
+													filePage >=
+													Math.ceil(
+														filteredFileCount /
+															NUM_RESULTS_PER_PAGE,
+													)
+												}
+											>
+												{">"}
+											</Button>
+											<Button
+												variant="outline"
+												size="icon-sm"
+												onClick={() =>
+													setFilePage(
 														Math.ceil(
 															filteredFileCount /
 																NUM_RESULTS_PER_PAGE,
 														),
-														filePage + 1,
-													),
-												)
-											}
-											disabled={
-												filePage >=
-												Math.ceil(
-													filteredFileCount /
-														NUM_RESULTS_PER_PAGE,
-												)
-											}
-										>
-											{">"}
-										</Button>
-										<Button
-											variant="outline"
-											size="icon-sm"
-											onClick={() =>
-												setFilePage(
+													)
+												}
+												disabled={
+													filePage >=
 													Math.ceil(
 														filteredFileCount /
 															NUM_RESULTS_PER_PAGE,
-													),
-												)
-											}
-											disabled={
-												filePage >=
-												Math.ceil(
-													filteredFileCount /
-														NUM_RESULTS_PER_PAGE,
-												)
-											}
-										>
-											{">>"}
-										</Button>
+													)
+												}
+											>
+												{">>"}
+											</Button>
+										</div>
 									</div>
-								</div>
-							</TableCell>
-						</TableRow>
-					</TableFooter>
-				</Table>
+								</TableCell>
+							</TableRow>
+						</TableFooter>
+					</Table>
+				</div>
 			</div>
 
 			{/* Upload Files Modal */}
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent
-					className="w-[600px]"
+					className="w-full max-w-[600px]"
 					data-testid="file-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
@@ -676,8 +700,9 @@ export const FileTable = (props: FileTableProps) => {
 							rules={{}}
 							render={({ field }) => {
 								return (
-									<div
-										className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+									<button
+										type="button"
+										className="flex min-h-[200px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
 										onClick={() =>
 											fileInputRef.current?.click()
 										}
@@ -713,7 +738,7 @@ export const FileTable = (props: FileTableProps) => {
 											</div>
 										) : (
 											<div className="text-center">
-												<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+												<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 												<P className="font-medium text-foreground">
 													Drop your files here or
 													click to browse
@@ -724,7 +749,7 @@ export const FileTable = (props: FileTableProps) => {
 												</P>
 											</div>
 										)}
-									</div>
+									</button>
 								);
 							}}
 						/>

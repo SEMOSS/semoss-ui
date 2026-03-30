@@ -85,13 +85,30 @@ interface Option {
 	display: string;
 	group: string;
 	engineId?: string;
-	app_name?: string;
+	engine_name?: string;
 }
 
+interface AppOption {
+	name: string;
+	path: string;
+}
+
+type SetPdfViewerData = (
+	path: "engineId" | "selectedPdf",
+	value: string,
+	tempOverrideMode?: boolean,
+) => void;
+
+type EngineAsset = {
+	type?: string;
+	name?: string;
+	path?: string;
+};
+
 type engineIdType = {
-	app_id: string;
-	app_type: string;
-	app_name: string;
+	engine_id: string;
+	engine_type: string;
+	engine_name: string;
 };
 
 interface PDFViewerSettings<D extends BlockDef = BlockDef> {
@@ -111,15 +128,15 @@ export const PDFViewerSettings = observer(
 		const { data, setData, insightId } = useBlock<PDFViewerBlockDef>(id);
 		const notification = useNotification();
 		const { appId } = useParams();
-		const [appOptions, setAppOptions] = useState([]);
+		const [appOptions, setAppOptions] = useState<AppOption[]>([]);
 		const [engineOptions, setEngineOptions] = useState<
 			{
 				file_name: string;
 				file_type: string;
-				app_type: string;
+				engine_type: string;
 				file_path: string;
 				engineId: string;
-				app_name: string;
+				engine_name: string;
 			}[]
 		>([]);
 		const tabs = ["Insight", "Engine", "App"];
@@ -242,11 +259,11 @@ export const PDFViewerSettings = observer(
 						? Array.from(
 								new Map(
 									output.map((item) => [
-										item.app_id,
+										item.engine_id,
 										{
-											app_id: item.app_id,
-											app_type: item.app_type,
-											app_name: item.app_name,
+											engine_id: item.engine_id,
+											engine_type: item.engine_type,
+											engine_name: item.engine_name,
 										},
 									]),
 								).values(),
@@ -264,33 +281,35 @@ export const PDFViewerSettings = observer(
 		const fetchEngineOptions = async (engineIdsList: engineIdType[]) => {
 			let pdfFiles: {
 				file_name: string;
-				app_type: string;
+				engine_type: string;
 				file_type: string;
 				file_path: string;
 				engineId: string;
-				app_name: string;
+				engine_name: string;
 			}[] = [];
 			const getFiles = engineIdsList.map((id) => ({
-				promise: runPixel<any>(
-					`BrowseEngineAssets(engine=["${id.app_id}"], filePath=["/"]);`,
+				promise: runPixel<unknown>(
+					`BrowseEngineAssets(engine=["${id.engine_id}"], filePath=["/"]);`,
 				),
-				app_type: id.app_type,
-				app_id: id.app_id,
-				app_name: id.app_name,
+				engine_type: id.engine_type,
+				engine_id: id.engine_id,
+				engine_name: id.engine_name,
 			}));
 
 			for (const obj of getFiles) {
 				try {
 					const resolvedResult = await obj.promise;
-					const output =
-						resolvedResult.pixelReturn?.[0]?.output || [];
-					const files = output.map((item: any) => ({
-						file_name: item.type === "pdf" ? item.name : "",
-						file_path: item.type === "pdf" ? item.path : "",
-						file_type: item.type === "pdf" ? item.type : "",
-						app_type: obj.app_type || "",
-						engineId: obj.app_id || "",
-						app_name: obj.app_name || "",
+					const output = resolvedResult.pixelReturn?.[0]?.output;
+					const outputList = Array.isArray(output)
+						? (output as EngineAsset[])
+						: [];
+					const files = outputList.map((item) => ({
+						file_name: item.type === "pdf" ? item.name || "" : "",
+						file_path: item.type === "pdf" ? item.path || "" : "",
+						file_type: item.type === "pdf" ? item.type || "" : "",
+						engine_type: obj.engine_type || "",
+						engineId: obj.engine_id || "",
+						engine_name: obj.engine_name || "",
 					}));
 					pdfFiles = [...pdfFiles, ...files];
 				} catch (e) {
@@ -313,15 +332,15 @@ export const PDFViewerSettings = observer(
 			});
 
 			engineOptions.forEach((item, idx) => {
-				if (!filesByType[item.app_type])
-					filesByType[item.app_type] = [];
-				filesByType[item.app_type].push({
-					id: `${item.app_type}-${item.file_name}-${idx}`,
+				if (!filesByType[item.engine_type])
+					filesByType[item.engine_type] = [];
+				filesByType[item.engine_type].push({
+					id: `${item.engine_type}-${item.file_name}-${idx}`,
 					path: item.file_path,
 					display: item.file_name,
-					group: groupAliasMapper(item.app_type, "engine"),
+					group: groupAliasMapper(item.engine_type, "engine"),
 					engineId: item.engineId,
-					app_name: item.app_name,
+					engine_name: item.engine_name,
 				});
 			});
 
@@ -341,11 +360,11 @@ export const PDFViewerSettings = observer(
 
 		const nestedEngineOptions = engineOptionList.reduce(
 			(acc, option) => {
-				if (!option.group || !option.app_name) return acc;
+				if (!option.group || !option.engine_name) return acc;
 				if (!acc[option.group]) acc[option.group] = {};
-				if (!acc[option.group][option.app_name])
-					acc[option.group][option.app_name] = [];
-				acc[option.group][option.app_name].push(option);
+				if (!acc[option.group][option.engine_name])
+					acc[option.group][option.engine_name] = [];
+				acc[option.group][option.engine_name].push(option);
 				return acc;
 			},
 			{} as Record<string, Record<string, Option[]>>,
@@ -400,9 +419,9 @@ export const PDFViewerSettings = observer(
 						},
 					}}
 				>
-					{tabs.map((key, idx: number) => (
+					{tabs.map((key) => (
 						<Tabs.Item
-							key={`${key}-${idx}`}
+							key={key}
 							label={
 								<Box
 									sx={{
@@ -539,7 +558,7 @@ const EngineTab: React.FC<{
 	selectedPdfPath: string;
 	engineAutocompleteOpen: boolean;
 	setEngineAutocompleteOpen: (open: boolean) => void;
-	setData: any;
+	setData: SetPdfViewerData;
 	setSelectedPdfPath: (path: string) => void;
 }> = ({
 	engineOptionList,
@@ -632,43 +651,69 @@ const EngineTab: React.FC<{
 														</StyledTypographyEror>
 													) : (
 														optionsForApp.map(
-															(option) =>
-																option.display?.trim() ? (
+															(option) => {
+																if (
+																	!option.display?.trim()
+																) {
+																	return null;
+																}
+
+																const selectOption =
+																	() => {
+																		setData(
+																			"engineId",
+																			option.engineId ||
+																				"",
+																			true,
+																		);
+																		setData(
+																			"selectedPdf",
+																			option.path,
+																			true,
+																		);
+																		setSelectedPdfPath(
+																			option.path,
+																		);
+																		setEngineAutocompleteOpen(
+																			false,
+																		);
+																	};
+
+																return (
 																	<li
 																		key={
-																			option.engineId
+																			option.engineId ||
+																			option.path
 																		}
 																		style={{
 																			paddingLeft:
 																				"32px",
-																			cursor: "pointer",
-																		}}
-																		onClick={() => {
-																			setData(
-																				"engineId",
-																				option.engineId,
-																				true,
-																			);
-																			setData(
-																				"selectedPdf",
-																				option.path,
-																				true,
-																			);
-																			setSelectedPdfPath(
-																				option.path,
-																			);
-																			setEngineAutocompleteOpen(
-																				false,
-																			);
 																		}}
 																	>
-																		<Typography variant="body2">
-																			{
-																				option.display
+																		<button
+																			type="button"
+																			onClick={
+																				selectOption
 																			}
-																		</Typography>
+																			style={{
+																				cursor: "pointer",
+																				padding: 0,
+																				border: "none",
+																				background:
+																					"transparent",
+																				textAlign:
+																					"left",
+																			}}
+																		>
+																			<Typography variant="body2">
+																				{
+																					option.display
+																				}
+																			</Typography>
+																		</button>
 																	</li>
-																) : null,
+																);
+															},
 														)
 													)}
 												</List>
@@ -694,9 +739,9 @@ const EngineTab: React.FC<{
 );
 
 const AppTab: React.FC<{
-	appOptions: any[];
+	appOptions: AppOption[];
 	selectedPdfPath: string;
-	setData: any;
+	setData: SetPdfViewerData;
 	setSelectedPdfPath: (path: string) => void;
 	uploadFiles: File | null;
 	setUploadFiles: (file: File | null) => void;

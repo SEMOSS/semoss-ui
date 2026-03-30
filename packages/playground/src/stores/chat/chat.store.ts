@@ -183,6 +183,9 @@ export class ChatStore {
 		// set the mode
 		room.setMode(mode);
 
+		// set default name
+		room.setMetadata({ name: prompt.substring(0, 15) });
+
 		// initialize the room
 		await room.initialize();
 
@@ -214,6 +217,9 @@ export class ChatStore {
 	 * @param roomId - Room to remove
 	 */
 	closeRoom = async (roomId: string): Promise<void> => {
+		const room = this._store.rooms[roomId];
+		const insightId = room?.insightId;
+
 		// wait for the pixel to run
 		await this._actions.run<[boolean]>(
 			`RemoveUserRoom(roomId=["${roomId}"]);`,
@@ -222,6 +228,18 @@ export class ChatStore {
 		// throw errors
 		if (this._error) {
 			throw new Error(this._error.message);
+		}
+
+		// only drop if the room was opened and has a real insightId
+		if (insightId && insightId !== "new") {
+			try {
+				await runPixel<[Record<string, unknown>]>(
+					"DropInsight()",
+					insightId,
+				);
+			} catch (e) {
+				console.warn(e);
+			}
 		}
 
 		runInAction(() => {
@@ -248,6 +266,12 @@ export class ChatStore {
 
 		// initialize the room
 		await room.initialize();
+
+		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
+		// This happens if CreateRoom succeeds but the first AskPlayground call fails
+		if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
+			throw new Error("Room not found");
+		}
 
 		runInAction(() => {
 			// save it to the cache
@@ -277,7 +301,7 @@ export class ChatStore {
 			);
 		}
 
-		this.loadEngineContextWindow(model.app_id);
+		this.loadEngineContextWindow(model.engine_id);
 	};
 
 	private loadEngineContextWindow = async (engineId: string) => {
@@ -294,7 +318,7 @@ export class ChatStore {
 			throw new Error(this._error.message);
 		}
 
-		if (this.models.selected?.app_id === engineId) {
+		if (this.models.selected?.engine_id === engineId) {
 			runInAction(() => {
 				this._store.models.contextWindow = pixelReturn[0].output;
 			});
@@ -376,16 +400,18 @@ export class ChatStore {
 	 */
 	private getDefaultModel = async (): Promise<void> => {
 		const defaultModelId =
-			this._theme.defaultRoomSettings.model?.app_id || DEFAUlT_MODEL_ID;
+			this._theme.defaultRoomSettings.model?.engine_id ||
+			DEFAUlT_MODEL_ID;
 		const defaultModelName =
-			this._theme.defaultRoomSettings.model?.app_name ||
+			this._theme.defaultRoomSettings.model?.engine_display_name ||
+			this._theme.defaultRoomSettings.model?.engine_name ||
 			DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
 		if (!ENABLE_MODEL_SELECT) {
 			this.setSelectedModel({
-				app_id: defaultModelId,
-				app_name: defaultModelName,
-				app_type: "MODEL",
+				engine_id: defaultModelId,
+				engine_name: defaultModelName,
+				engine_type: "MODEL",
 			});
 			return;
 		}
@@ -410,7 +436,7 @@ export class ChatStore {
 			// set to default if it is an option
 			if (defaultModelId) {
 				for (const m of output) {
-					if (m.app_id === defaultModelId) {
+					if (m.engine_id === defaultModelId) {
 						this.setSelectedModel(m);
 						isSelected = true;
 						break;
@@ -424,9 +450,15 @@ export class ChatStore {
 					if (localStorage) {
 						const storedItem = localStorage.getItem(MODEL_KEY);
 						if (storedItem) {
-							const storedModel = JSON.parse(storedItem);
+							const storedModel = JSON.parse(storedItem) as
+								| string
+								| Engine;
+							const storedModelId =
+								typeof storedModel === "string"
+									? storedModel
+									: storedModel?.engine_id || "";
 							for (const m of output) {
-								if (storedModel === m.app_id) {
+								if (storedModelId === m.engine_id) {
 									this.setSelectedModel(m);
 									isSelected = true;
 									break;
