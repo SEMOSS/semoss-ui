@@ -2,8 +2,21 @@ import { ChevronDown, Download, Loader2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { download, runPixel } from "@semoss/sdk/react";
-import { Button, Card, cn, P, toast } from "@semoss/ui/next";
-import type { QueryResult } from "@/hooks/useDatabaseQueryExecution";
+import {
+	Button,
+	Card,
+	cn,
+	P,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
+import {
+	getErrorMessage,
+	isErrorResponse,
+	type QueryResult,
+} from "@/hooks/useDatabaseQueryExecution";
 import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
 
 interface QueryResultsPanelProps {
@@ -40,7 +53,9 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 			const response = await runPixel(pixelToCsv);
 			const firstResult = response?.pixelReturn?.[0];
 
-			if (firstResult?.operationType?.includes("FILE_DOWNLOAD")) {
+			if (isErrorResponse(firstResult)) {
+				toast.error(getErrorMessage(firstResult));
+			} else if (firstResult?.operationType?.includes("FILE_DOWNLOAD")) {
 				await download(
 					response.insightId,
 					firstResult.output as string,
@@ -95,19 +110,25 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 				</h3>
 				<div className="flex items-center gap-2">
 					{previewData && (
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={handleExportToCsvClick}
-							title="Export Results to CSV"
-							className={cn(
-								"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
-								"hover:shadow-md",
-							)}
-							data-testid="query-results-export-btn"
-						>
-							<Download className="size-4 text-muted-foreground" />
-						</Button>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={handleExportToCsvClick}
+									className={cn(
+										"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
+										"hover:shadow-md",
+									)}
+									data-testid="query-results-export-btn"
+								>
+									<Download className="size-4 text-muted-foreground" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								Export Results to CSV
+							</TooltipContent>
+						</Tooltip>
 					)}
 					{previewData && (
 						<Button
