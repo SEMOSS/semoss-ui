@@ -1,5 +1,12 @@
 import type { OnMount } from "@monaco-editor/react";
-import { DownloadIcon, RefreshCwIcon, SaveIcon } from "lucide-react";
+import {
+	AlertCircleIcon,
+	ChevronDownIcon,
+	ChevronUpIcon,
+	DownloadIcon,
+	RefreshCwIcon,
+	SaveIcon,
+} from "lucide-react";
 import type * as monaco from "monaco-editor";
 import { Suspense, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
@@ -48,6 +55,9 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const wordWrapRef = useRef<boolean>(false);
+	const decorationsRef = useRef<string[]>([]);
+	const [jsonErrors, setJsonErrors] = useState<monaco.editor.IMarker[]>([]);
+	const [errorsExpanded, setErrorsExpanded] = useState(true);
 
 	let getFilePixel = "";
 	if (mode.type === "APP") {
@@ -218,6 +228,56 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				});
 			},
 		});
+
+		// JSON error highlighting
+		if (language === "json") {
+			const syncErrors = () => {
+				const model = editor.getModel();
+				if (!model) return;
+				const markers = monaco.editor.getModelMarkers({
+					resource: model.uri,
+				});
+				setJsonErrors(markers);
+				decorationsRef.current = editor.deltaDecorations(
+					decorationsRef.current,
+					markers.map((m) => ({
+						range: new monaco.Range(
+							m.startLineNumber,
+							1,
+							m.endLineNumber,
+							Number.MAX_SAFE_INTEGER,
+						),
+						options: {
+							isWholeLine: true,
+							overviewRuler: {
+								color: "rgba(220,38,38,0.8)",
+								position: monaco.editor.OverviewRulerLane.Right,
+							},
+							minimap: {
+								color: "rgba(220,38,38,0.8)",
+								position: monaco.editor.MinimapPosition.Inline,
+							},
+							linesDecorationsClassName:
+								"json-error-line-decoration",
+						},
+					})),
+				);
+			};
+
+			const disposable = monaco.editor.onDidChangeMarkers((uris) => {
+				const model = editor.getModel();
+				if (
+					model &&
+					uris.some((uri) => uri.toString() === model.uri.toString())
+				) {
+					syncErrors();
+				}
+			});
+
+			// initial pass after worker has had time to validate
+			setTimeout(syncErrors, 500);
+			editor.onDidDispose(() => disposable.dispose());
+		}
 	};
 
 	/**
@@ -314,46 +374,79 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	return (
 		<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
 			{/* Toolbar */}
-			<div className="flex w-full shrink-0 items-center justify-end gap-1 border-border border-b px-1.5 py-0.5">
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							disabled={isLoading || getFile.status !== "SUCCESS"}
-							onClick={() => getFile.refresh()}
+			<div className="flex w-full shrink-0 items-center justify-between gap-1 border-border border-b px-1.5 py-0.5">
+				<div className="flex items-center gap-1">
+					{language === "json" && jsonErrors.length > 0 && (
+						<button
+							type="button"
+							className="flex items-center gap-1 rounded px-1 py-0.5 text-destructive text-xs hover:bg-destructive/10"
+							onClick={() => setErrorsExpanded((v) => !v)}
 						>
-							<RefreshCwIcon className="size-3" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Refresh</TooltipContent>
-				</Tooltip>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							disabled={isLoading || getFile.status !== "SUCCESS"}
-							onClick={() => saveFile()}
-						>
-							<SaveIcon className="size-3" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Save (Ctrl+S)</TooltipContent>
-				</Tooltip>
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							disabled={isLoading || getFile.status !== "SUCCESS"}
-							onClick={() => downloadFile()}
-						>
-							<DownloadIcon className="size-3" />
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Download (Ctrl+D)</TooltipContent>
-				</Tooltip>
+							<AlertCircleIcon className="size-3" />
+							{jsonErrors.length} error
+							{jsonErrors.length > 1 ? "s" : ""}
+							{errorsExpanded ? (
+								<ChevronDownIcon className="size-3" />
+							) : (
+								<ChevronUpIcon className="size-3" />
+							)}
+						</button>
+					)}
+					{language === "json" &&
+						jsonErrors.length === 0 &&
+						getFile.status === "SUCCESS" && (
+							<span className="text-success text-xs">
+								Valid JSON
+							</span>
+						)}
+				</div>
+				<div className="flex items-center gap-1">
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								disabled={
+									isLoading || getFile.status !== "SUCCESS"
+								}
+								onClick={() => getFile.refresh()}
+							>
+								<RefreshCwIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Refresh</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								disabled={
+									isLoading || getFile.status !== "SUCCESS"
+								}
+								onClick={() => saveFile()}
+							>
+								<SaveIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Save (Ctrl+S)</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								disabled={
+									isLoading || getFile.status !== "SUCCESS"
+								}
+								onClick={() => downloadFile()}
+							>
+								<DownloadIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Download (Ctrl+D)</TooltipContent>
+					</Tooltip>
+				</div>
 			</div>
 			<Suspense
 				fallback={
@@ -382,6 +475,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 						language={language}
 						options={{
 							readOnly: getFile.status !== "SUCCESS",
+							accessibilitySupport: "off",
 						}}
 						onChange={(value) => {
 							onChange(value, value !== getFile.data);
@@ -390,6 +484,36 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 					/>
 				)}
 			</Suspense>
+			{language === "json" && jsonErrors.length > 0 && errorsExpanded && (
+				<div className="max-h-[140px] w-full shrink-0 overflow-y-auto border-border border-t bg-destructive/5">
+					{jsonErrors.map((err) => (
+						<button
+							key={`${err.startLineNumber}-${err.startColumn}-${err.message}`}
+							type="button"
+							className="flex w-full items-start gap-2 px-3 py-1 text-left text-xs hover:bg-destructive/10"
+							onClick={() => {
+								editorRef.current?.revealLineInCenter(
+									err.startLineNumber,
+								);
+								editorRef.current?.setPosition({
+									lineNumber: err.startLineNumber,
+									column: err.startColumn,
+								});
+								editorRef.current?.focus();
+							}}
+						>
+							<AlertCircleIcon className="mt-0.5 size-3 shrink-0 text-destructive" />
+							<span className="text-destructive">
+								Line {err.startLineNumber}, Col{" "}
+								{err.startColumn}:
+							</span>
+							<span className="text-foreground">
+								{err.message}
+							</span>
+						</button>
+					))}
+				</div>
+			)}
 		</div>
 	);
 };
