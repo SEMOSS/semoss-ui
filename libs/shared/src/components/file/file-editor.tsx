@@ -12,8 +12,6 @@ const NON_RENDERED_EXTENSIONS = new Set([
 	"pptx",
 	"xls",
 	"xlsx",
-	"html",
-	"htm",
 ]);
 
 interface FileEditorProps {
