@@ -193,9 +193,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	/**
-	 * Auto-scroll when dependency changes (new messages added)
-	 */
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		setIsScrollLocked(false);
+
+		const timeout = setTimeout(() => {
+			requestAnimationFrame(() => {
+				scrollEle.scrollTop = scrollEle.scrollHeight;
+			});
+		}, 150);
+
+		return () => clearTimeout(timeout);
+	}, [room, scrollEle]);
+
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
 			return;
