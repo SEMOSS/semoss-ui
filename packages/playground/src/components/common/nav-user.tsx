@@ -27,7 +27,7 @@ import {
 	useSidebar,
 	useTheme,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import { toInitials } from "@/utility";
 
 export function NavUser() {
@@ -35,6 +35,7 @@ export function NavUser() {
 	const { isMobile } = useSidebar();
 	const { actions } = useInsight();
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	const navigate = useNavigate();
 
@@ -44,7 +45,7 @@ export function NavUser() {
 		(lang) => lang.code === i18n.language,
 	);
 	const { theme, setTheme } = useTheme();
-	const isDarkModeEnabled = "true";
+	const isDarkModeEnabled = root.theme.showThemeModeToggle !== false;
 
 	return (
 		<DropdownMenu>

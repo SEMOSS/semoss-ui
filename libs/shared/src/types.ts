@@ -150,6 +150,12 @@ export interface ThemeMap {
 		showPlatformLinks?: boolean;
 
 		/**
+		 * When false, hides the dark/light/system theme menu in the user navigation.
+		 * Defaults to true (menu shown).
+		 */
+		showThemeModeToggle?: boolean;
+
+		/**
 		 * Graceful error messages to show in the UI
 		 */
 		gracefulErrors: (
