@@ -130,7 +130,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		return (
 			<div className="group">
-				<div className="mb-0 flex w-full flex-col gap-4 pr-3 sm:pr-10">
+				<div className="mb-0 flex w-full flex-col gap-2 pr-3 sm:pr-10">
 					{message.parts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
 						const isLast = pIdx === message.parts.length - 1;
