@@ -29,6 +29,8 @@ import {
 import { useChat } from "@/hooks";
 import { toInitials } from "@/utility";
 
+const isDarkModeEnabled = import.meta.env.VITE_ENABLE_DARKMODE === "true";
+
 export const NavUser = () => {
 	const { t, i18n } = useTranslation("common");
 	const { isMobile } = useSidebar();
@@ -66,65 +68,67 @@ export const NavUser = () => {
 				align="end"
 				sideOffset={4}
 			>
-				<DropdownMenuSub>
-					<DropdownMenuSubTrigger>
-						{theme === "dark" ? (
-							<MoonIcon />
-						) : theme === "system" ? (
-							<MonitorIcon />
-						) : (
-							<SunIcon />
-						)}
-						{theme === "dark" ? (
-							<>
-								Dark
-								<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-									BETA
-								</span>
-							</>
-						) : theme === "system" ? (
-							<>
-								System
-								<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-									BETA
-								</span>
-							</>
-						) : (
-							"Light"
-						)}
-					</DropdownMenuSubTrigger>
-					<DropdownMenuPortal>
-						<DropdownMenuSubContent>
-							<DropdownMenuCheckboxItem
-								checked={theme === "light"}
-								onCheckedChange={() => setTheme("light")}
-							>
-								<SunIcon />
-								Light
-							</DropdownMenuCheckboxItem>
-							<DropdownMenuCheckboxItem
-								checked={theme === "dark"}
-								onCheckedChange={() => setTheme("dark")}
-							>
+				{isDarkModeEnabled && (
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger>
+							{theme === "dark" ? (
 								<MoonIcon />
-								Dark
-								<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-									BETA
-								</span>
-							</DropdownMenuCheckboxItem>
-							<DropdownMenuCheckboxItem
-								checked={theme === "system"}
-								onCheckedChange={() => setTheme("system")}
-							>
+							) : theme === "system" ? (
 								<MonitorIcon />
-								System
-								<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
-									BETA
-								</span>
-							</DropdownMenuCheckboxItem>
-						</DropdownMenuSubContent>
-					</DropdownMenuPortal>
-				</DropdownMenuSub>
+							) : (
+								<SunIcon />
+							)}
+							{theme === "dark" ? (
+								<>
+									Dark
+									<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</>
+							) : theme === "system" ? (
+								<>
+									System
+									<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</>
+							) : (
+								"Light"
+							)}
+						</DropdownMenuSubTrigger>
+						<DropdownMenuPortal>
+							<DropdownMenuSubContent>
+								<DropdownMenuCheckboxItem
+									checked={theme === "light"}
+									onCheckedChange={() => setTheme("light")}
+								>
+									<SunIcon />
+									Light
+								</DropdownMenuCheckboxItem>
+								<DropdownMenuCheckboxItem
+									checked={theme === "dark"}
+									onCheckedChange={() => setTheme("dark")}
+								>
+									<MoonIcon />
+									Dark
+									<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</DropdownMenuCheckboxItem>
+								<DropdownMenuCheckboxItem
+									checked={theme === "system"}
+									onCheckedChange={() => setTheme("system")}
+								>
+									<MonitorIcon />
+									System
+									<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</DropdownMenuCheckboxItem>
+							</DropdownMenuSubContent>
+						</DropdownMenuPortal>
+					</DropdownMenuSub>
+				)}
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>
 						<LanguagesIcon />
