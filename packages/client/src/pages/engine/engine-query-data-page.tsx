@@ -69,6 +69,7 @@ export const EngineQueryDataPage = observer(() => {
 		clearQuery: clearQueryInternal,
 		clearResults,
 		executeQuery: executeQueryInternal,
+		pixelQuery,
 	} = useQueryExecution(active.id || "", {
 		onSchemaChange: () => {
 			refreshDatabaseStructure();
@@ -403,6 +404,7 @@ export const EngineQueryDataPage = observer(() => {
 							previewLoading={previewLoading}
 							clearResults={clearResults}
 							onExpandChange={setIsQueryResultsExpanded}
+							pixelQuery={pixelQuery}
 						/>
 					</div>
 				</div>
