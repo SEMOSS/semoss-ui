@@ -2,6 +2,16 @@ import { observer } from "mobx-react-lite";
 import { Badge, H4, Markdown, P } from "@semoss/ui/next";
 import { useEngine, useRootStore } from "@/hooks";
 
+const formatMetaLabel = (value: string) => {
+	return value
+		.replace(/[_-]+/g, " ")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+};
+
 export const EngineOverviewPage = observer(() => {
 	const { active } = useEngine();
 	const { configStore } = useRootStore();
@@ -61,7 +71,9 @@ export const EngineOverviewPage = observer(() => {
 						key={k.metakey}
 						className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0"
 					>
-						<H4 className="mb-2">{k.metakey}</H4>
+						<H4 className="mb-2">
+							{formatMetaLabel(String(k.metakey))}
+						</H4>
 						{k.display_options === "multi-checklist" ||
 						k.display_options === "multi-select" ||
 						k.display_options === "multi-typeahead" ||

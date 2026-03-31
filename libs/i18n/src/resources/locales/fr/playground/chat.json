@@ -37,8 +37,16 @@
 		"completed": "Terminé",
 		"ready": "Prêt",
 		"autoExecute": "Cet outil est configuré pour s'exécuter automatiquement",
+		"paused": "En pause",
+		"queued": "En file d'attente pour l'exécution automatique",
 		"cancel": "Annuler",
-		"paused": "En pause"
+		"expand": "Développer",
+		"openInSidebar": "Ouvrir dans le panneau latéral",
+		"closeInSidebar": "Fermer le panneau latéral",
+		"collapse": "Réduire",
+		"openInline": "Ouvrir en ligne",
+		"groupLabel": "Exécuté",
+		"groupSuffix": "outil(s)"
 	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",
