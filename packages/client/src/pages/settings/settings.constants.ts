@@ -36,7 +36,7 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Settings",
 		path: "",
-		description: "View and edit settings for the application",
+		description: "View and make changes to settings to engines and apps",
 		adminDescription:
 			"View and make changes to settings to engines and apps. As an admin, view and manage platform settings.",
 		icon: mdiCog,

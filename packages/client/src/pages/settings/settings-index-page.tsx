@@ -1,12 +1,28 @@
-import { EllipsisVertical, Search, Users2 } from "lucide-react";
+import {
+	Archive,
+	Bolt,
+	Bot,
+	Briefcase,
+	CircleUserRound,
+	Database,
+	DatabaseZap,
+	FileText,
+	LayoutGrid,
+	Link2,
+	Palette,
+	Search,
+	Settings,
+	ShieldCheck,
+	ShieldUser,
+	Sigma,
+	Users2,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Button,
 	Card,
 	CardContent,
-	CardFooter,
 	CardHeader,
 	CardTitle,
 	Input,
@@ -16,22 +32,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { AdminPanel } from "@/assets/img/AdminPanel";
-import { ArchiveBox } from "@/assets/img/ArchiveBox";
-import { Construction } from "@/assets/img/Construction";
-import { DatabaseLayers } from "@/assets/img/DatabaseLayers";
-import { Folder } from "@/assets/img/Folder";
-import { Function as FunctionImg } from "@/assets/img/Function";
-import { Group } from "@/assets/img/Group";
-import { GroupRounded } from "@/assets/img/GroupRounded";
-import { GuardrailIcon } from "@/assets/img/Guardrail";
-import { Jobs } from "@/assets/img/Jobs";
-import { Link } from "@/assets/img/Link";
-import { ModelBrain } from "@/assets/img/ModelBrain";
-import { PaintRounded } from "@/assets/img/PaintRounded";
-import { PersonRounded } from "@/assets/img/PersonRounded";
-import { SEMOSS } from "@/assets/img/SEMOSS";
-import { Vector } from "@/assets/img/Vector";
 import { useSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -40,28 +40,28 @@ const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
 	(r) => !!r.path && r.history.length < 2 && !r.hidden,
 );
 
+const SIDEBAR_ICON_CLASS = "size-4";
+
 const IconMapper: Record<string, ReactNode> = {
-	"Database Settings": <DatabaseLayers />,
-	"Model Settings": (
-		<ModelBrain color={"#0471F0"} width={"50"} height={"50"} />
-	),
-	"Storage Settings": <ArchiveBox />,
-	"App Settings": <Folder />,
-	"Vector Settings": <Vector />,
-	"Function Settings": <FunctionImg />,
-	"Insight Settings": <SEMOSS />,
-	"Member Settings": <Group />,
-	Configuration: <Construction />,
-	"Admin Query": <AdminPanel />,
-	"Admin Theme": <PaintRounded />,
-	"External Connections": <Link />,
-	Teams: <GroupRounded />,
-	"Teams Management": <GroupRounded />,
-	"Team Permissions": <Users2 />,
-	"My Profile": <PersonRounded />,
-	Jobs: <Jobs />,
-	"View RDF Map": <Folder />,
-	"Guardrail Settings": <GuardrailIcon />,
+	"Database Settings": <Database className={SIDEBAR_ICON_CLASS} />,
+	"Model Settings": <Bot className={SIDEBAR_ICON_CLASS} />,
+	"Storage Settings": <Archive className={SIDEBAR_ICON_CLASS} />,
+	"App Settings": <LayoutGrid className={SIDEBAR_ICON_CLASS} />,
+	"Vector Settings": <Bolt className={SIDEBAR_ICON_CLASS} />,
+	"Function Settings": <Sigma className={SIDEBAR_ICON_CLASS} />,
+	"Guardrail Settings": <ShieldCheck className={SIDEBAR_ICON_CLASS} />,
+	"Insight Settings": <FileText className={SIDEBAR_ICON_CLASS} />,
+	"Member Settings": <Users2 className={SIDEBAR_ICON_CLASS} />,
+	Configuration: <Settings className={SIDEBAR_ICON_CLASS} />,
+	"Admin Query": <DatabaseZap className={SIDEBAR_ICON_CLASS} />,
+	"Admin Theme": <Palette className={SIDEBAR_ICON_CLASS} />,
+	"External Connections": <Link2 className={SIDEBAR_ICON_CLASS} />,
+	Teams: <Users2 className={SIDEBAR_ICON_CLASS} />,
+	"Teams Management": <Users2 className={SIDEBAR_ICON_CLASS} />,
+	"Team Permissions": <ShieldUser className={SIDEBAR_ICON_CLASS} />,
+	"My Profile": <CircleUserRound className={SIDEBAR_ICON_CLASS} />,
+	Jobs: <Briefcase className={SIDEBAR_ICON_CLASS} />,
+	"View RDF Map": <FileText className={SIDEBAR_ICON_CLASS} />,
 };
 
 export const SettingsIndexPage = () => {
@@ -121,7 +121,7 @@ export const SettingsIndexPage = () => {
 				</div>
 			</div>
 
-			<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+			<div className="grid w-full grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
 				{cards.map((c, i) => {
 					return (
 						<Card
@@ -132,36 +132,21 @@ export const SettingsIndexPage = () => {
 							data-testid={formatToDataTestId(
 								`settingsIndexPage-${c.title}-card`,
 							)}
-							className="flex h-full min-h-[180px] w-full cursor-pointer flex-col justify-between rounded-3xl border bg-card shadow-sm transition-shadow hover:shadow-md"
+							className="flex h-full min-h-[112px] w-full cursor-pointer flex-col rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md"
 						>
-							<CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-3">
-								<div className="flex size-12 shrink-0 items-center justify-center rounded-md bg-muted/40 [&_svg]:h-9 [&_svg]:w-9">
+							<CardHeader className="-mt-1 flex flex-row items-center gap-2 space-y-0 px-3.5 pt-0 pb-0">
+								<div className="flex w-7 min-w-0 shrink-0 items-center text-muted-foreground [&_svg]:size-4">
 									{IconMapper[c.title]}
 								</div>
-								<CardTitle className="line-clamp-2 leading-tight">
+								<CardTitle className="line-clamp-2 text-sm leading-tight">
 									{c.title}
 								</CardTitle>
 							</CardHeader>
-							<CardContent className="pb-2">
-								<p className="line-clamp-2 text-foreground text-sm">
+							<CardContent className="px-3.5 pt-0 pb-2">
+								<p className="line-clamp-2 text-foreground text-xs leading-snug">
 									{c.description}
 								</p>
 							</CardContent>
-							<CardFooter className="justify-end pt-0">
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									disabled={true}
-									data-testid={
-										"settingsIndexPage-setting-btn"
-									}
-									onClick={(e) => {
-										e.stopPropagation();
-									}}
-								>
-									<EllipsisVertical className="size-4 text-muted-foreground" />
-								</Button>
-							</CardFooter>
 						</Card>
 					);
 				})}
