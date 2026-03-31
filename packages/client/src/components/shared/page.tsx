@@ -1,8 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { Help } from "@/components/help";
+import { Sidebar } from "./app-sidebar";
 import { Navbar } from "./Navbar";
 import { PlatformMessages } from "./PlatformMessages";
-import { Sidebar } from "./Sidebar";
 
 export interface PageProps {
 	/** Content to include in the main section of the page */
