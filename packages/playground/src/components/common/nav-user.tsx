@@ -29,7 +29,7 @@ import {
 import { useChat } from "@/hooks";
 import { toInitials } from "@/utility";
 
-const isDarkModeEnabled = import.meta.env.VITE_ENABLE_DARKMODE === "true";
+const isDarkModeEnabled = import.meta.env.VITE_ENABLE_DARK_MODE === "true";
 
 export const NavUser = () => {
 	const { t, i18n } = useTranslation("common");

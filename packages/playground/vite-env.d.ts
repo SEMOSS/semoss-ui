@@ -12,7 +12,7 @@ interface ImportMetaEnv {
 	readonly VITE_ENABLE_WORKSPACE: string;
 	readonly VITE_ENABLE_SUGGESTIONS: string;
 	readonly VITE_ENABLE_PLAN: string;
-	readonly VITE_ENABLE_DARKMODE: string;
+	readonly VITE_ENABLE_DARK_MODE: string;
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: this is actually used
