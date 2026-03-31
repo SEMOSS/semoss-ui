@@ -216,7 +216,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			cell.parameters.dataLimit || null,
 		);
 
-		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
+		const myDbs = usePixel<{ engine_id: string; engine_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
 		);
 
@@ -250,8 +250,8 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			const dbDisplay = {};
 
 			myDbs.data.forEach((db) => {
-				dbIds.push(db.app_id);
-				dbDisplay[db.app_id] = db.app_name;
+				dbIds.push(db.engine_id);
+				dbDisplay[db.engine_id] = db.engine_name;
 			});
 
 			setCfgLibraryDatabases({
@@ -400,7 +400,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		const handleDataLimitUpdate = (
 			e: React.ChangeEvent<HTMLInputElement>,
 		) => {
-			let value = parseInt(e.target.value);
+			let value = parseInt(e.target.value, 10);
 			if (Number.isNaN(value)) {
 				value = -1;
 			} else {

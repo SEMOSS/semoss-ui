@@ -68,13 +68,12 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 			(key) => key !== "description",
 		);
 	}, []);
-	const allDatabases = useMemo(() => {
-		return [...(GuardrailOptions.GUARDRAIL || [])];
-	}, [GuardrailOptions]);
+	const hasMultipleTabs = tabLabels.length > 1;
+	const activeTab = selectedTab || tabLabels[0] || "";
 
 	const DatabasesForTab = useMemo(() => {
-		return GuardrailOptions[selectedTab] || [];
-	}, [selectedTab, GuardrailOptions, allDatabases]);
+		return GuardrailOptions[activeTab] || [];
+	}, [activeTab, GuardrailOptions]);
 
 	// Set initial tab
 	useEffect(() => {
@@ -199,23 +198,22 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 
 	const renderDatabaseGrid = (Databases: guardrail[]) => (
 		<div
-			className="mt-4 grid grid-cols-6 gap-2"
+			className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
 			data-testid="guardrail-grid"
 		>
 			{Databases.filter((v) =>
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
-				<div key={v.id}>
-					<GuardrailTitleCard
-						guardrail={{
-							...v,
-							display: v.name,
-						}}
-						onGuardrailSelect={() => {
-							setSelectedDatabase(v);
-						}}
-					/>
-				</div>
+				<GuardrailTitleCard
+					key={v.id}
+					guardrail={{
+						...v,
+						display: v.name,
+					}}
+					onGuardrailSelect={() => {
+						setSelectedDatabase(v);
+					}}
+				/>
 			))}
 		</div>
 	);
@@ -245,7 +243,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 				onOpenChange={setIsFileUploadModalOpen}
 			>
 				<DialogContent
-					className="w-[600px]"
+					className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
 					data-testid="guardrail-zip-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
@@ -290,13 +288,13 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							)}
 						</div>
-						<div className="flex flex-row justify-end gap-2">
+						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 							<Button
 								size="sm"
 								variant="ghost"
 								onClick={() => setIsFileUploadModalOpen(false)}
 								data-testid="guardrail-upload-close-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Close
 							</Button>
@@ -306,7 +304,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 								disabled={!filedata || loading}
 								onClick={() => onSubmit(filedata)}
 								data-testid="guardrail-upload-submit-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Upload
 							</Button>
@@ -342,8 +340,8 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 						</P>
 					</div>
 
-					<div className="flex w-auto flex-col items-start">
-						<div className="mt-3 mb-4 flex w-full items-start gap-2">
+					<div className="flex w-full flex-col items-start">
+						<div className="mt-3 mb-4 flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-start">
 							<InputGroup className="flex-1 border-b-2 border-none">
 								<InputGroupAddon>
 									<SearchIcon className="size-4 text-muted-foreground" />
@@ -360,39 +358,50 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 								variant="outline"
 								onClick={() => handleFileUpload(true)}
 								data-testid="guardrail-upload-file-button"
-								className="rounded-md"
+								className="w-full rounded-md sm:w-auto"
 							>
 								<UploadIcon className="size-5" />
 							</Button>
 						</div>
 
 						<div className="w-full">
-							<Tabs
-								value={selectedTab}
-								onValueChange={(newValue) =>
-									setSelectedTab(newValue)
-								}
-								className="mt-1"
-							>
-								<TabsList data-testid="tabs">
-									{tabLabels.map((label) => (
-										<TabsTrigger
-											key={label}
-											value={label}
-											data-testid={`tab-${label.toLowerCase()}`}
-											className="text-sm"
-										>
-											{label}
-										</TabsTrigger>
-									))}
-								</TabsList>
+							{hasMultipleTabs ? (
+								<Tabs
+									value={activeTab}
+									onValueChange={(newValue) =>
+										setSelectedTab(newValue)
+									}
+									className="mt-1"
+								>
+									<TabsList
+										data-testid="tabs"
+										className="w-full justify-start overflow-x-auto sm:w-auto"
+									>
+										{tabLabels.map((label) => (
+											<TabsTrigger
+												key={label}
+												value={label}
+												data-testid={`tab-${label.toLowerCase()}`}
+												className="shrink-0 text-sm"
+											>
+												{label}
+											</TabsTrigger>
+										))}
+									</TabsList>
 
-								{tabLabels.map((label) => (
-									<TabsContent key={label} value={label}>
-										{renderDatabaseGrid(DatabasesForTab)}
-									</TabsContent>
-								))}
-							</Tabs>
+									{tabLabels.map((label) => (
+										<TabsContent key={label} value={label}>
+											{renderDatabaseGrid(
+												DatabasesForTab,
+											)}
+										</TabsContent>
+									))}
+								</Tabs>
+							) : (
+								<div className="mt-1">
+									{renderDatabaseGrid(DatabasesForTab)}
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

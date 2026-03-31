@@ -136,9 +136,14 @@ export const FunctionForm = ({
 			}
 			toast.success("Successfully added function database to catalog");
 
-			navigate(
-				`/engine/function/${(pixelOutput as { database_id: string }).database_id}`,
-			);
+			{
+				// engine_id is the current key; database_id is the legacy fallback
+				const o = pixelOutput as {
+					engine_id?: string;
+					database_id?: string;
+				};
+				navigate(`/engine/function/${o.engine_id || o.database_id}`);
+			}
 			setLoading(false);
 		});
 	};
@@ -569,7 +574,7 @@ export const FunctionForm = ({
 									onValueChange={(value) =>
 										field.onChange(value)
 									}
-									className="flex flex-row gap-4"
+									className="flex flex-wrap gap-4"
 									data-testid={`function-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
@@ -675,47 +680,53 @@ export const FunctionForm = ({
 												selected:
 											</P>
 											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
-												{field.value.map((file, index) => (
-													<div
-														key={`${file.name}-${index}`}
-														className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
-														data-testid={`uploaded-file-item-${index}`}
-													>
-														<div className="flex min-w-0 flex-1 items-center gap-2">
-															<div className="min-w-0 flex-1">
-																<P className="truncate text-foreground text-sm">
-																	{file.name}
-																</P>
-																<P className="text-muted-foreground text-xs">
-																	{(
-																		file.size /
-																		1024
-																	).toFixed(
-																		2,
-																	)}{" "}
-																	KB
-																</P>
-															</div>
-														</div>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															onClick={(e) => {
-																e.stopPropagation();
-																removeFile(
-																	index,
-																	field.onChange,
-																	field.value,
-																);
-															}}
-															className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
-															data-testid={`remove-file-btn-${index}`}
+												{field.value.map(
+													(file, index) => (
+														<div
+															key={`${file.name}-${index}`}
+															className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+															data-testid={`uploaded-file-item-${index}`}
 														>
-															<X className="size-4" />
-														</Button>
-													</div>
-												))}
+															<div className="flex min-w-0 flex-1 items-center gap-2">
+																<div className="min-w-0 flex-1">
+																	<P className="truncate text-foreground text-sm">
+																		{
+																			file.name
+																		}
+																	</P>
+																	<P className="text-muted-foreground text-xs">
+																		{(
+																			file.size /
+																			1024
+																		).toFixed(
+																			2,
+																		)}{" "}
+																		KB
+																	</P>
+																</div>
+															</div>
+															<Button
+																type="button"
+																variant="ghost"
+																size="icon"
+																onClick={(
+																	e,
+																) => {
+																	e.stopPropagation();
+																	removeFile(
+																		index,
+																		field.onChange,
+																		field.value,
+																	);
+																}}
+																className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+																data-testid={`remove-file-btn-${index}`}
+															>
+																<X className="size-4" />
+															</Button>
+														</div>
+													),
+												)}
 											</div>
 										</div>
 									)}
@@ -841,7 +852,7 @@ export const FunctionForm = ({
 							key={category}
 							className="mb-4 flex flex-col gap-4"
 						>
-							<div className="flex items-start gap-4">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
 									<H4 data-testId="function-importForm-category-title">
 										{category}
@@ -866,7 +877,7 @@ export const FunctionForm = ({
 								open={openAdvanced}
 								onOpenChange={setOpenAdvanced}
 							>
-								<div className="flex flex-row items-center justify-between py-2">
+								<div className="flex flex-row items-center justify-between gap-2 py-2">
 									<H4 data-testid="function-form-advanced-header">
 										ADVANCED SETTINGS
 									</H4>
@@ -886,7 +897,7 @@ export const FunctionForm = ({
 								</div>
 								<CollapsibleContent>
 									<div className="mb-4 flex flex-col gap-4">
-										<div className="flex items-start gap-4">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 											<div className="flex flex-1 flex-col gap-1">
 												<Muted>
 													Add advanced settings here
@@ -913,7 +924,7 @@ export const FunctionForm = ({
 				</div>
 
 				<div
-					className="mt-8 flex justify-end gap-2"
+					className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-end"
 					data-testid="function-form-actions"
 				>
 					<Button
@@ -921,7 +932,7 @@ export const FunctionForm = ({
 						variant="default"
 						data-testid="function-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="min-w-[128px] capitalize"
+						className="w-full min-w-[128px] capitalize sm:w-auto"
 					>
 						Connect
 					</Button>

@@ -37,7 +37,16 @@
 		"completed": "Completado",
 		"ready": "Listo",
 		"autoExecute": "Esta herramienta está configurada para ejecutarse automáticamente",
-		"cancel": "Cancelar"
+		"paused": "En pausa",
+		"queued": "En cola para ejecutarse automáticamente",
+		"cancel": "Cancelar",
+		"expand": "Expandir",
+		"openInSidebar": "Abrir en barra lateral",
+		"closeInSidebar": "Cerrar barra lateral",
+		"collapse": "Colapsar",
+		"openInline": "Abrir en línea",
+		"groupLabel": "Ejecutado",
+		"groupSuffix": "herramienta(s)"
 	},
 	"notifications": {
 		"feedbackSuccess": "¡Gracias por tus comentarios!",
