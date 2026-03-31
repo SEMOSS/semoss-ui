@@ -54,6 +54,7 @@ export interface ThemeMap {
 			landing: string;
 			tabIcon: string;
 			workspace: string;
+			loginDark: string;
 		};
 
 		/**

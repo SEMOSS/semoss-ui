@@ -44,13 +44,9 @@ export const LoginPage = observer(() => {
 	}
 
 	// handling the login image source based on theme
-	let src: string;
-
-	if (isDark) {
-		src = loginImageDark;
-	} else {
-		src = root.theme.images.login || loginImage;
-	}
+	const src = isDark
+		? root.theme.images.loginDark || loginImageDark
+		: root.theme.images.login || loginImage;
 
 	return (
 		<div className="grid min-h-svh lg:grid-cols-2">

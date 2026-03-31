@@ -58,6 +58,7 @@ export class RootStore {
 				landing: "",
 				tabIcon: "",
 				workspace: "",
+				loginDark: "",
 			},
 			overrides: {
 				"main-layout": {},
