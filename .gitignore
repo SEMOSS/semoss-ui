@@ -31,7 +31,3 @@ packages/playground/theme.local.json
 
 # Ignore legacy
 packages/legacy
-
-# Ignore portal files
-portals/
-portals.zip
