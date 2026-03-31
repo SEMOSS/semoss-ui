@@ -148,36 +148,21 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 							model={room.sidebar.model}
 							onRenderTab={(node, renderValues) => {
 								const component = node.getComponent();
-								const iconStyle = {
-									color: "var(--foreground)",
-								};
 								if (component === "room-tool") {
 									renderValues.leading = (
-										<HammerIcon
-											className="size-4"
-											style={iconStyle}
-										/>
+										<HammerIcon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-configuration") {
 									renderValues.leading = (
-										<Settings2Icon
-											className="size-4"
-											style={iconStyle}
-										/>
+										<Settings2Icon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-file-explorer") {
 									renderValues.leading = (
-										<FolderTreeIcon
-											className="size-4"
-											style={iconStyle}
-										/>
+										<FolderTreeIcon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-file-editor") {
 									renderValues.leading = (
-										<FileIcon
-											className="size-4"
-											style={iconStyle}
-										/>
+										<FileIcon className="size-4 text-foreground" />
 									);
 								}
 								renderValues.content = (
@@ -214,10 +199,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 							}}
 							icons={{
 								close: (
-									<XIcon
-										className="size-4"
-										style={{ color: "var(--foreground)" }}
-									/>
+									<XIcon className="size-4 text-foreground" />
 								),
 							}}
 						/>
