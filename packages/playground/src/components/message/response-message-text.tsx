@@ -136,13 +136,23 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
 	code: ({ children, className, ...props }) => {
 		const { t } = useTranslation("chat");
+		// react-markdown sets className to "language-<lang>" on fenced code blocks.
+		// Inline code (single backtick) has no className, so match will be null.
 		const match = /language-(\w+)/.exec(className || "");
 		const code = children as string;
 
-		let lang: string = "";
-		if (match?.[1]) {
-			lang = match[1];
+		// Inline code — no language class means this is a `backtick` snippet inside
+		// a paragraph. Return a plain <code> so we don't nest a <div> inside a <p>.
+		if (!match?.[1]) {
+			return (
+				<code className={className} {...props}>
+					{children}
+				</code>
+			);
 		}
+
+		// Fenced code block — render the full UI with copy button and syntax highlighting.
+		const lang = match[1];
 
 		return (
 			<div className="group/response-markdown relative">
