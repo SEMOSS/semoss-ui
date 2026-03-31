@@ -648,17 +648,21 @@ paramValues=[${JSON.stringify({
 			responseMessage = this.toolResponseMessage;
 		}
 
+		type PartialResponse = {
+			responseMessage: string;
+		};
+		type TotalResponse = {
+			responseMessage: ResponsePixelMessage;
+			inputMessage: InputPixelMessage;
+		};
+
 		try {
 			// turn on thinking
 			responseMessage.isThinking = true;
 
 			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
-				[
-					{
-						responseMessage: ResponsePixelMessage | string;
-					},
-				]
+				[PartialResponse | TotalResponse]
 			>(
 				`AddPlaygroundToolExecution(
 engine=["${room.model.app_id}"],
@@ -709,8 +713,17 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				// Keep executing tools
 				this.continueToolExecution();
 			} else {
+				const inputMessage = (output as TotalResponse).inputMessage;
+
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
+
+				// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
+				// input token count onto this response message as a proxy. tokensUsed() in
+				// room.store relies on finding a (cumulative, incremental) pair when walking back.
+				runInAction(() => {
+					this.tokens = inputMessage.tokens;
+				});
 
 				// edge case handling: it's possible that the user paused tools while this tool was running
 				// mark the new response as paused if that is the case
