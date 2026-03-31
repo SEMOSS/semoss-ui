@@ -3,14 +3,13 @@ import {
 	ArrowUp,
 	LayoutGrid,
 	List,
-	Menu,
 	Plus,
 	Search,
 	X,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { debounced, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -36,8 +35,8 @@ import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { usePage, useRootStore } from "@/hooks";
-import { NavbarLeft } from "../../components/shared";
+import { useRootStore } from "@/hooks";
+import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 type TabMode = "Bookmarked" | "Mine" | "Discoverable" | "System";
 type ViewMode = "grid" | "list";
@@ -139,47 +138,6 @@ const SYSTEM_APPS: Record<string, AppMetadata> = {
 		description: "Execute commands and see a response",
 	},
 };
-
-const AppCatalogNavbarHeader = observer((): JSX.Element | null => {
-	const { page } = usePage();
-	const { configStore } = useRootStore();
-
-	if (page.sidebar.pinned) {
-		return null;
-	}
-
-	return (
-		<div className="flex min-w-0 max-w-full items-center gap-1 sm:gap-2">
-			<Button
-				variant="outline"
-				size="icon-sm"
-				className="h-8 w-8 shrink-0 rounded-md border border-border"
-				onClick={() => page.openSidebar()}
-				onMouseOver={() => page.openSidebar()}
-				aria-label="Open sidebar"
-			>
-				<Menu className="size-4" />
-			</Button>
-			<Link
-				to="/"
-				aria-label="Go Home"
-				className="flex min-w-0 max-w-full items-center gap-1 rounded-md px-1 py-1 text-foreground no-underline hover:bg-muted/50 sm:gap-2 sm:px-2"
-			>
-				{configStore.theme.logo ? (
-					<img
-						alt="logo"
-						src={configStore.theme.logo}
-						className="h-4 w-auto sm:h-5"
-					/>
-				) : null}
-				<span className="hidden truncate font-semibold text-sm sm:block">
-					{configStore.theme.landingPageName ||
-						configStore.theme.name}
-				</span>
-			</Link>
-		</div>
-	);
-});
 
 /**
  * Hook to manage app favoriting
@@ -767,7 +725,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	return (
 		<>
 			<NavbarLeft>
-				<AppCatalogNavbarHeader />
+				<NavbarHeader />
 			</NavbarLeft>
 			<div className="flex flex-col gap-6">
 				{/* Header */}

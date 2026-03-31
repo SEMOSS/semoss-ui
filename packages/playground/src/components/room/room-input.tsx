@@ -403,9 +403,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 									// set empty state
 									setIsEmpty(
-										root.getTextContent().trim().length ===
-											0,
+										root.getTextContent().trim().length === 0,
 									);
+
+									// Scroll to bottom after content changes
+									setTimeout(() => {
+										if (contentEditableRef.current) {
+											contentEditableRef.current.scrollTop = 
+												contentEditableRef.current.scrollHeight;
+										}
+									}, 0);
 								});
 							}}
 						/>

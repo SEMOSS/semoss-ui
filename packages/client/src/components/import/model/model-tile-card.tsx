@@ -164,18 +164,22 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		>
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
-					<div
-						className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
-						style={{ background: avatarGradient }}
-					>
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center">
 						{hasIcon ? (
-							<img
-								src={resolvedIcon}
-								alt={label}
-								className="h-8 w-8 object-contain"
-							/>
+							<div className="h-10 w-10 overflow-hidden rounded-lg">
+								<img
+									src={resolvedIcon}
+									alt={label}
+									className="h-full w-full object-cover"
+								/>
+							</div>
 						) : (
-							initials
+							<div
+								className="flex h-10 w-10 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
+								style={{ background: avatarGradient }}
+							>
+								{initials}
+							</div>
 						)}
 					</div>
 					<div className="flex flex-wrap items-center gap-1">
