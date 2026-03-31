@@ -1204,7 +1204,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		return (
 			<div className="w-full">
 				<Card
-					className="relative h-full cursor-pointer overflow-hidden rounded-xl border bg-card p-0 shadow-sm"
+					className="relative h-full min-h-[184px] cursor-pointer overflow-hidden rounded-xl border bg-card p-0 shadow-sm"
 					onClick={handleCardClick}
 					data-testid={formatToDataTestId(
 						`appTileCard-${displayName}-filler`,
