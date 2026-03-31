@@ -523,18 +523,8 @@ export class RoomStore {
 			// store the last model
 			let activeModelId = this._store.model?.app_id;
 
-			// This is done as separate loops because of linking
+			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
-				// FIX: Skip messages with missing or null io field to prevent
-				// Pydantic validation errors (SEMOSSMessage requires 'INPUT' or 'OUTPUT')
-				if (!pixelMessage.io) {
-					console.warn(
-						"Skipping message with missing io field",
-						pixelMessage,
-					);
-					continue;
-				}
-
 				if (pixelMessage.io === "INPUT") {
 					activeModelId = pixelMessage.modelId;
 				}
@@ -556,9 +546,7 @@ export class RoomStore {
 				const parent = messages[m.parentMessageId];
 				if (parent) {
 					parent.message.addChild(m.message);
-				} else if (root) {
-					// FIX: Guard against null root before calling addChild
-					// root can be null if mode is not 'chat' or 'planning'
+				} else {
 					root.addChild(m.message);
 				}
 			}
