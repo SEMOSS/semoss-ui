@@ -9,6 +9,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { InputMessageStore, RoomStore } from "@/stores";
+import { DateDisplay } from "../common";
 
 interface InputMessageProps {
 	/** Room */
@@ -82,6 +83,9 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 					})}
 				</div>
 				<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+					<span className="px-2 text-muted-foreground text-xs">
+						<DateDisplay date={message.dateCreated} smart />
+					</span>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button

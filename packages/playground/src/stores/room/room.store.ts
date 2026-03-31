@@ -980,6 +980,7 @@ export class RoomStore {
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
