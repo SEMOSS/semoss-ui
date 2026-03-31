@@ -7,6 +7,7 @@ import {
 	ChevronRight,
 	Copy,
 	Expand,
+	ListCollapse,
 	X,
 	XCircle,
 } from "lucide-react";
@@ -168,6 +169,8 @@ const DetailContent = ({
 	log: AuditLog;
 	isExpanded?: boolean;
 }) => {
+	const [jsonExpanded, setJsonExpanded] = useState(false);
+
 	const rows: [string, string, boolean][] = [
 		["Span ID", log.spanId, true],
 		["Session ID", log.sessionId, true],
@@ -211,7 +214,7 @@ const DetailContent = ({
 											return (
 												<JSONTreeView
 													data={jsonData}
-													expandAll={isExpanded}
+													expandAll={jsonExpanded}
 												/>
 											);
 										}
@@ -219,8 +222,27 @@ const DetailContent = ({
 									})()}
 								</div>
 
-								{/* Copy button */}
-								<div className="absolute top-1 right-3 bg-transparent">
+								{/* Expand all + Copy buttons */}
+								<div className="absolute top-1 right-3 flex items-center gap-1 bg-transparent">
+									<Button
+										onClick={(e) => {
+											e.stopPropagation();
+											setJsonExpanded((prev) => !prev);
+										}}
+										variant="link"
+										className="flex h-5 items-center text-muted-foreground hover:rounded-none hover:border-none hover:bg-none hover:text-primary"
+										title={
+											jsonExpanded
+												? "Collapse all"
+												: "Expand all"
+										}
+									>
+										{jsonExpanded ? (
+											<ListCollapse size={5} />
+										) : (
+											<Expand size={5} />
+										)}
+									</Button>
 									<CopyButton text={value} />
 								</div>
 							</div>
