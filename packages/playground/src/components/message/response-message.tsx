@@ -128,6 +128,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		});
 
+		const hasText = message.parts.some((part) => part.type === "TEXT");
+		const parentHasText = inputMessage?.parts.some(
+			(part) => part.type === "TEXT",
+		);
+
 		return (
 			<div className="group">
 				<div className="mb-0 flex w-full flex-col gap-2 pr-3 sm:pr-10">
@@ -293,7 +298,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						</div>
 					)}
 
-					{inputMessage && (
+					{parentHasText && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
@@ -362,70 +367,84 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						</TooltipContent>
 					</Tooltip>
 
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								disabled={message.parts.length === 0}
-								onClick={() => {
-									const text = message.parts
-										.map((part) => {
-											if (part.type === "TEXT") {
-												return part.text;
-											} else if (part.type === "MEDIA") {
-												return `<${part.mediaInfo.fileName}?`;
-											} else if (
-												part.type === "TOOL_CALL"
-											) {
-												return `<${part.toolCall.name}?`;
+					{hasText && (
+						<>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={message.parts.length === 0}
+										onClick={() => {
+											const text = message.parts
+												.map((part) => {
+													if (part.type === "TEXT") {
+														return part.text;
+													} else if (
+														part.type === "MEDIA"
+													) {
+														return `<${part.mediaInfo.fileName}?`;
+													} else if (
+														part.type ===
+														"TOOL_CALL"
+													) {
+														return `<${part.toolCall.name}?`;
+													}
+
+													return "";
+												})
+												.join("\n");
+
+											if (!text) {
+												toast.warning(
+													t(
+														"notifications.noCopyContent",
+													),
+												);
+												return;
 											}
 
-											return "";
-										})
-										.join("\n");
+											try {
+												navigator.clipboard.writeText(
+													text,
+												);
 
-									if (!text) {
-										toast.warning(
-											t("notifications.noCopyContent"),
-										);
-										return;
-									}
-
-									try {
-										navigator.clipboard.writeText(text);
-
-										toast.success(
-											t("notifications.copySuccess"),
-										);
-									} catch (e) {
-										toast.error(e.message);
-									}
-								}}
-							>
-								<CopyIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.copyResponse")}
-						</TooltipContent>
-					</Tooltip>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								disabled={message.parts.length === 0}
-								onClick={() => setIsDownloadDialogOpen(true)}
-							>
-								<DownloadIcon />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("Download Response")}
-						</TooltipContent>
-					</Tooltip>
+												toast.success(
+													t(
+														"notifications.copySuccess",
+													),
+												);
+											} catch (e) {
+												toast.error(e.message);
+											}
+										}}
+									>
+										<CopyIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.copyResponse")}
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={message.parts.length === 0}
+										onClick={() =>
+											setIsDownloadDialogOpen(true)
+										}
+									>
+										<DownloadIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("Download Response")}
+								</TooltipContent>
+							</Tooltip>
+						</>
+					)}
 				</div>
 
 				<Dialog
