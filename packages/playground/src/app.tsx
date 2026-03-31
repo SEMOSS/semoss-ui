@@ -13,7 +13,7 @@ Env.update({
 // create a new i18n instance for the playground
 const i18n = new I18nBuilder("playground").i18n;
 
-const isDarkModeEnabled = import.meta.env.VITE_ENABLE_DARKMODE === "true";
+const isDarkModeEnabled = import.meta.env.VITE_ENABLE_DAR_KMODE === "true";
 
 if (!isDarkModeEnabled) {
 	localStorage.removeItem("vite-ui-theme");

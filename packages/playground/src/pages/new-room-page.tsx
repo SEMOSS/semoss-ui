@@ -25,6 +25,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
@@ -54,6 +55,16 @@ const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN === "true";
 export const NewRoomPage = observer(() => {
 	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
 	const { root } = useRoot();
+	const { theme: colorMode } = useTheme();
+
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+	const landingSrc = isDark
+		? root.theme.images.landingDark || landingDarkImage
+		: root.theme.images.landing || landingImage;
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
@@ -309,14 +320,9 @@ export const NewRoomPage = observer(() => {
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={root.theme.images.landing || landingImage}
+						src={landingSrc}
 						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover dark:hidden"
-					/>
-					<img
-						src={landingDarkImage}
-						alt="Background"
-						className="absolute inset-0 hidden h-full w-full select-none object-cover dark:block"
+						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 						{root.theme.landing ? (

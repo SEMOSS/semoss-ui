@@ -55,6 +55,10 @@ export interface ThemeMap {
 			tabIcon: string;
 			workspace: string;
 			loginDark: string;
+			landingDark: string;
+			workspaceDark: string;
+			error: string;
+			errorDark: string;
 		};
 
 		/**

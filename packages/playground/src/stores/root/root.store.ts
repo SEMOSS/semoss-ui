@@ -59,6 +59,10 @@ export class RootStore {
 				tabIcon: "",
 				workspace: "",
 				loginDark: "",
+				landingDark: "",
+				workspaceDark: "",
+				error: "",
+				errorDark: "",
 			},
 			overrides: {
 				"main-layout": {},

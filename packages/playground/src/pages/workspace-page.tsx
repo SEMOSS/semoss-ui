@@ -20,7 +20,7 @@ import {
 import workspaceImage from "@/assets/img/workspace.png";
 import workspaceImageDark from "@/assets/img/workspace-darkmode.png";
 import { WorkspaceCard } from "@/components";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App } from "@/types";
 
 /**
@@ -31,6 +31,7 @@ import type { App } from "@/types";
 export const WorkspacePage = observer(() => {
 	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const navigate = useNavigate();
+	const { root } = useRoot();
 	const { theme: colorMode } = useTheme();
 	// set the breadcrumbs
 	useGlobalBreadcrumbs({
@@ -83,19 +84,15 @@ export const WorkspacePage = observer(() => {
 		},
 	});
 
-	let src: string;
-
 	// theme == dark or system matches
 	const isDark =
 		colorMode === "dark" ||
 		(colorMode === "system" &&
 			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-	if (isDark) {
-		src = workspaceImageDark;
-	} else {
-		src = workspaceImage;
-	}
+	const src = isDark
+		? root.theme.images.workspaceDark || workspaceImageDark
+		: root.theme.images.workspace || workspaceImage;
 
 	return (
 		<div className="relative h-full w-full overflow-hidden">

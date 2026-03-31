@@ -5,9 +5,11 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 	SidebarTrigger,
+	useTheme,
 } from "@semoss/ui/next";
-import background from "@/assets/img/render-error-background.png";
 import backgroundDark from "@/assets/img/render-error-background-darkmode.jpg";
+import { useRoot } from "@/hooks";
+import background from "@ render-error-background.png";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;
@@ -18,6 +20,17 @@ export interface ErrorPageProps {
  */
 export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	const navigate = useNavigate();
+	const { root } = useRoot();
+	const { theme: colorMode } = useTheme();
+
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+	const src = isDark
+		? root.theme.images.errorDark || backgroundDark
+		: root.theme.images.error || background;
 
 	const content = (
 		<div className="max-w-md p-8 text-center">
@@ -59,14 +72,9 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 				<ResizablePanelGroup direction="horizontal">
 					<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 						<img
-							src={background}
+							src={src}
 							alt="Background"
-							className="absolute inset-0 h-full w-full object-cover dark:hidden"
-						/>
-						<img
-							src={backgroundDark}
-							alt="Background"
-							className="absolute inset-0 hidden h-full w-full object-cover dark:block"
+							className="absolute inset-0 h-full w-full object-cover"
 						/>
 						<div className="z-10">{content}</div>
 					</ResizablePanel>
@@ -78,14 +86,9 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	return (
 		<div className="relative flex min-h-screen items-center justify-center overflow-hidden">
 			<img
-				src={background}
+				src={src}
 				alt="Background"
-				className="absolute inset-0 h-full w-full object-cover dark:hidden"
-			/>
-			<img
-				src={backgroundDark}
-				alt="Background"
-				className="absolute inset-0 hidden h-full w-full object-cover dark:block"
+				className="absolute inset-0 h-full w-full object-cover"
 			/>
 			<div className="z-10">{content}</div>
 		</div>
