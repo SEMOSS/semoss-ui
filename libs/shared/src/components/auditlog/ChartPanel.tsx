@@ -66,9 +66,9 @@ export const ChartPanel = ({
 	];
 
 	return (
-		<div className="flex min-h-0 flex-col gap-2">
+		<div className="flex max-h-[670px] flex-col gap-2">
 			{/* ── Chart Panel ── */}
-			<div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
+			<div className="flex max-h-[300px] flex-1 flex-col rounded-lg border border-border bg-card">
 				{/* Tab bar */}
 				<div className="flex flex-shrink-0 items-center gap-0 border-border border-b px-3 pt-1">
 					{tabs.map((t) => (
@@ -101,7 +101,7 @@ export const ChartPanel = ({
 				</div>
 
 				{/* Chart body */}
-				<div className="flex min-h-0 flex-1 flex-col p-3">
+				<div className="flex flex-1 flex-col p-3">
 					{loading ? (
 						<div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-xs">
 							<Loader2 size={14} className="animate-spin" />
@@ -158,7 +158,7 @@ export const ChartPanel = ({
 						</>
 					) : (
 						/* Timeline view */
-						<div className="min-h-0 flex-1 space-y-0.5 overflow-y-auto [scrollbar-width:thin]">
+						<div className="flex-1 space-y-0.5 overflow-y-auto [scrollbar-width:thin]">
 							{logs.map((log) => (
 								<div
 									key={log.spanId}
