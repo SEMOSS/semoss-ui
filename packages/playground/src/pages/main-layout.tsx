@@ -15,7 +15,7 @@ import {
 	useCacheState,
 	useTheme,
 } from "@semoss/ui/next";
-import { GlobalFooter, GlobalNav, ThemeToggle } from "@/components";
+import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { ChatContext, NavbarContext } from "@/contexts";
 import { useRoot } from "@/hooks";
@@ -164,7 +164,6 @@ const MainLayoutContent = observer(
 							<div className="flex-1" />
 							<div className="flex items-center gap-2">
 								{actions ?? null}
-								<ThemeToggle />
 							</div>
 						</div>
 						<Separator className="dark:bg-black/40" />

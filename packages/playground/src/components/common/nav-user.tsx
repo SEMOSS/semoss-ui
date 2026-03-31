@@ -1,6 +1,12 @@
 "use client";
 
-import { LanguagesIcon, LogOutIcon } from "lucide-react";
+import {
+	LanguagesIcon,
+	LogOutIcon,
+	MonitorIcon,
+	MoonIcon,
+	SunIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { LANGUAGES, useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
@@ -19,6 +25,7 @@ import {
 	DropdownMenuSubTrigger,
 	DropdownMenuTrigger,
 	useSidebar,
+	useTheme,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 import { toInitials } from "@/utility";
@@ -36,6 +43,8 @@ export function NavUser() {
 	const selectedLanguage = LANGUAGES.find(
 		(lang) => lang.code === i18n.language,
 	);
+	const { theme, setTheme } = useTheme();
+	const isDarkModeEnabled = "true";
 
 	return (
 		<DropdownMenu>
@@ -56,6 +65,67 @@ export function NavUser() {
 				align="end"
 				sideOffset={4}
 			>
+				{isDarkModeEnabled && (
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger>
+							{theme === "dark" ? (
+								<MoonIcon />
+							) : theme === "system" ? (
+								<MonitorIcon />
+							) : (
+								<SunIcon />
+							)}
+							{theme === "dark" ? (
+								<>
+									Dark
+									<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</>
+							) : theme === "system" ? (
+								<>
+									System
+									<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</>
+							) : (
+								"Light"
+							)}
+						</DropdownMenuSubTrigger>
+						<DropdownMenuPortal>
+							<DropdownMenuSubContent>
+								<DropdownMenuCheckboxItem
+									checked={theme === "light"}
+									onCheckedChange={() => setTheme("light")}
+								>
+									<SunIcon />
+									Light
+								</DropdownMenuCheckboxItem>
+								<DropdownMenuCheckboxItem
+									checked={theme === "dark"}
+									onCheckedChange={() => setTheme("dark")}
+								>
+									<MoonIcon />
+									Dark
+									<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</DropdownMenuCheckboxItem>
+								<DropdownMenuCheckboxItem
+									checked={theme === "system"}
+									onCheckedChange={() => setTheme("system")}
+								>
+									<MonitorIcon />
+									System
+									<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+										BETA
+									</span>
+								</DropdownMenuCheckboxItem>
+							</DropdownMenuSubContent>
+						</DropdownMenuPortal>
+					</DropdownMenuSub>
+				)}
 				<DropdownMenuSub>
 					<DropdownMenuSubTrigger>
 						<LanguagesIcon />
