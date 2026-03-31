@@ -310,7 +310,7 @@ export const NewRoomPage = observer(() => {
 					<img
 						src={root.theme.images.landing || landingImage}
 						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover opacity-75 dark:opacity-55 dark:brightness-[0.6] dark:grayscale-[0.1]"
+						className="absolute inset-0 h-full w-full select-none object-cover dark:opacity-55 dark:brightness-[0.6] dark:grayscale-[0.1]"
 					/>
 					<div className="absolute inset-0 bg-background/40 dark:bg-background/50" />
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
