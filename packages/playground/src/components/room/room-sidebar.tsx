@@ -212,7 +212,12 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								return null;
 							}}
 							icons={{
-								close: <XIcon className="size-4" />,
+								close: (
+									<XIcon
+										className="size-4"
+										style={{ color: "var(--foreground)" }}
+									/>
+								),
 							}}
 						/>
 					</div>
