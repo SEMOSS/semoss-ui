@@ -7,9 +7,9 @@ import {
 	SidebarTrigger,
 	useTheme,
 } from "@semoss/ui/next";
+import background from "@/assets/img/render-error-background.png";
 import backgroundDark from "@/assets/img/render-error-background-darkmode.jpg";
 import { useRoot } from "@/hooks";
-import background from "@ render-error-background.png";
 
 export interface ErrorPageProps {
 	isInnerComponent?: boolean;
