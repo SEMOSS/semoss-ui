@@ -13,11 +13,7 @@ import LatencyChart from "./LatencyChart";
 import LogDetailPanel from "./LogDetailPanel";
 import { type AuditLog, latencyColor, parseArg } from "./types/audit";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const CHART_PAGE_SIZE = 15;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ChartPanelProps {
 	logs: AuditLog[];
@@ -31,8 +27,6 @@ export interface ChartPanelProps {
 	onSetChartPage: (updater: number | ((prev: number) => number)) => void;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export const ChartPanel = ({
 	logs,
 	loading,
@@ -44,7 +38,6 @@ export const ChartPanel = ({
 	onSetChartTab,
 	onSetChartPage,
 }: ChartPanelProps) => {
-	// Derived values kept local — they only depend on the props above
 	const maxLat = Math.max(...logs.map((l) => l.latency), 1);
 	const chartTotalPages = Math.ceil(logs.length / CHART_PAGE_SIZE);
 	const chartData = logs.slice(
@@ -66,7 +59,7 @@ export const ChartPanel = ({
 	];
 
 	return (
-		<div className="flex max-h-[670px] flex-col gap-2">
+		<div className="flex h-[670px] flex-col gap-2">
 			{/* ── Chart Panel ── */}
 			<div className="flex max-h-[300px] flex-1 flex-col rounded-lg border border-border bg-card">
 				{/* Tab bar */}
@@ -206,7 +199,7 @@ export const ChartPanel = ({
 			</div>
 
 			{/* ── Detail Panel ── */}
-			<div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
+			<div className="h-[370px] flex-1 overflow-hidden rounded-lg border border-border bg-card">
 				<LogDetailPanel log={logs.length === 0 ? null : selected} />
 			</div>
 		</div>

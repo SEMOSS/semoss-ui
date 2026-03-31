@@ -41,10 +41,7 @@ export interface FiltersRowProps {
 	onEngineTypeChange: (type: string) => void;
 	onEngineChange: (id: string) => void;
 	onDateChange: (from: string, to: string, preset?: string) => void;
-	onClearFilters: () => void;
 }
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const FiltersRow = ({
 	totalCount,
@@ -54,13 +51,11 @@ export const FiltersRow = ({
 	engineType,
 	engineId,
 	engineNames,
-	hasFilters,
 	dateFrom,
 	dateTo,
 	onEngineTypeChange,
 	onEngineChange,
 	onDateChange,
-	onClearFilters,
 }: FiltersRowProps) => {
 	const statCards = [
 		{
@@ -88,14 +83,12 @@ export const FiltersRow = ({
 			accent: "text-primary",
 		},
 	];
-	// default engine type
 	useEffect(() => {
 		if (!engineType) {
 			onEngineTypeChange("APP");
 		}
 	}, [engineType, onEngineTypeChange]);
 
-	// default first engine
 	useEffect(() => {
 		if (engineType && !engineId && engineNames.length > 0) {
 			onEngineChange(engineNames[0].value);

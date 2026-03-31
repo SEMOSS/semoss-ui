@@ -18,39 +18,28 @@ import {
 	parseArg,
 } from "./types/audit";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 export interface EventHistoryProps {
-	// ── Data ──
 	loading: boolean;
 	logs: AuditLog[];
-	searchFiltered: AuditLog[]; // logs after search query applied
-	sessions: [string, AuditLog[]][]; // grouped by sessionId
+	searchFiltered: AuditLog[];
+	sessions: [string, AuditLog[]][];
 	totalCount: number;
 	totalPages: number;
 
-	// ── Selection / hover ──
 	selected: AuditLog | null;
 	hoveredIdx: number | null;
 
-	// ── Search ──
 	searchQuery: string;
 
-	// ── Pagination ──
 	page: number;
 
-	// ── Handlers ──
 	onSelectLog: (log: AuditLog) => void;
 	onHoverLog: (idx: number | null) => void;
 	onSearchChange: (query: string) => void;
 	onPageChange: (updater: number | ((prev: number) => number)) => void;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const ROWS_PER_PAGE = 10;
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export const EventHistory = ({
 	loading,
@@ -69,7 +58,7 @@ export const EventHistory = ({
 	onPageChange,
 }: EventHistoryProps) => {
 	return (
-		<div className="flex max-h-[670px] flex-col rounded-lg border border-border bg-card">
+		<div className="flex h-[670px] flex-col rounded-lg border border-border bg-card">
 			{/* ── Header: title + search box ── */}
 			<div className="flex-shrink-0 border-border border-b">
 				<div className="flex items-center justify-between px-3 py-2">

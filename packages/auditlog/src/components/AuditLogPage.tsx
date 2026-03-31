@@ -16,12 +16,8 @@ import {
 import { Button } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 type EngineOption = { value: string; label: string };
 type EngineDetails = Record<string, EngineOption[]>;
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ROWS_PER_PAGE = 10;
 
@@ -63,14 +59,11 @@ const DASHBOARD_DURATIONS = [
 
 type DurationValue = (typeof DASHBOARD_DURATIONS)[number]["value"];
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export const AuditLogPage = () => {
 	const { insightId } = useInsight();
 	const rootStore = useUserRootStore(insightId);
 	const userId = rootStore?.user?.id ?? "";
 
-	// ── UI state ──
 	const [dark, setDark] = useState(true);
 	const [chartTab, setChartTab] = useState<"bar" | "timeline">("timeline");
 	const [chartPage, setChartPage] = useState(0);
@@ -78,7 +71,6 @@ export const AuditLogPage = () => {
 	const [selected, setSelected] = useState<AuditLog | null>(null);
 	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-	// ── Data state ──
 	const [logs, setLogs] = useState<AuditLog[]>([]);
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState(false);
@@ -87,7 +79,6 @@ export const AuditLogPage = () => {
 		...INITIAL_ENGINE_DETAILS,
 	});
 
-	// ── Filter state ──
 	const [engineType, setEngType] = useState("");
 	const [engineId, setEngId] = useState("");
 	const todayStr = new Date().toISOString().split("T")[0];
@@ -95,8 +86,6 @@ export const AuditLogPage = () => {
 	const [dateTo, setDateTo] = useState(todayStr);
 	const [durationValue, setDurationValue] = useState<DurationValue>("today");
 
-	// Mutable ref so fetchLogs always reads the latest filter values
-	// without needing them as useCallback dependencies (avoids re-subscribing)
 	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
@@ -105,7 +94,6 @@ export const AuditLogPage = () => {
 			DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
 	});
 
-	// ── Dark mode setup ──
 	useEffect(() => {
 		document.documentElement.classList.add("dark");
 	}, []);
@@ -116,7 +104,6 @@ export const AuditLogPage = () => {
 
 	const toggleDark = () => setDark((d) => !d);
 
-	// ── Debug: log filter changes ──
 	useEffect(() => {
 		console.log("Filters:", {
 			engineType,
@@ -209,9 +196,11 @@ export const AuditLogPage = () => {
 
 				setLogs(logsArray);
 				setTotalCount(count);
+				setSelected(logsArray[0] ?? null);
 			} catch (err) {
 				console.error("Error fetching audit logs:", err);
 				setLogs([]);
+				setSelected(null);
 			} finally {
 				setLoading(false);
 			}
@@ -219,7 +208,6 @@ export const AuditLogPage = () => {
 		[insightId, userId],
 	);
 
-	// Refetch when page changes
 	useEffect(() => {
 		fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 	}, [page, fetchLogs]);
@@ -267,10 +255,6 @@ export const AuditLogPage = () => {
 		[insightId],
 	);
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// Filter handlers (passed down to FiltersRow)
-	// ─────────────────────────────────────────────────────────────────────────
-
 	const handleEngineTypeChange = (type: string) => {
 		setEngType(type);
 		setEngId("");
@@ -306,20 +290,6 @@ export const AuditLogPage = () => {
 		setPage(0);
 		fetchLogs(ROWS_PER_PAGE, 0);
 	};
-
-	const clearFilters = () => {
-		setEngType("");
-		setEngId("");
-		setChartPage(0);
-		filteredData.current.engineType = "";
-		filteredData.current.engineId = "";
-		setPage(0);
-		fetchLogs(ROWS_PER_PAGE, 0);
-	};
-
-	// ─────────────────────────────────────────────────────────────────────────
-	// Derived values
-	// ─────────────────────────────────────────────────────────────────────────
 
 	const engineNames = useMemo(
 		() => (engineType ? (engineDetails[engineType] ?? []) : []),
@@ -364,12 +334,9 @@ export const AuditLogPage = () => {
 		return Array.from(map.entries());
 	}, [searchFiltered]);
 
-	// ─────────────────────────────────────────────────────────────────────────
-	// Render
-	// ─────────────────────────────────────────────────────────────────────────
-
+	console.log(logs, "logs");
 	return (
-		<div className="h-screen flex flex-col bg-background overflow-hidden">
+		<div className="min-h-screen lg:h-screen flex flex-col bg-background overflow-auto lg:overflow-hidden">
 			{/* ── Top Bar ── */}
 			<div className="flex-shrink-0 border-b border-border bg-card">
 				<div className="max-w-[1600px] mx-auto px-4 flex items-center justify-between h-10">
@@ -415,59 +382,57 @@ export const AuditLogPage = () => {
 
 			{/* ── Main Content ── */}
 			<div className="flex-1 min-h-0 max-w-[1600px] mx-auto w-full px-4 py-2 flex flex-col gap-2">
-				{/* Row 1: Stats + Filters */}
 				<FiltersRow
-					// stat card values
 					totalCount={totalCount}
 					successPct={successPct}
 					failCount={failCount}
 					avgLat={avgLat}
-					// engine filter state
 					engineType={engineType}
 					engineId={engineId}
 					engineNames={engineNames}
 					hasFilters={hasFilters}
-					// date range state
 					dateFrom={dateFrom}
 					dateTo={dateTo}
-					// handlers
 					onEngineTypeChange={handleEngineTypeChange}
 					onEngineChange={handleEngineChange}
 					onDateChange={handleDateChange}
-					onClearFilters={clearFilters}
 				/>
 
 				{/* Row 2: Chart (65%) + Event History (35%) */}
-				<div className="flex-1 min-h-0 grid grid-cols-[65fr_35fr] gap-2">
-					{/* Left: Chart + Detail panel */}
-					<ChartPanel
-						logs={logs}
-						loading={loading}
-						dark={dark}
-						selected={selected}
-						chartTab={chartTab}
-						chartPage={chartPage}
-						onSelectLog={setSelected}
-						onSetChartTab={setChartTab}
-						onSetChartPage={setChartPage}
-					/>
-					{/* Right: Event History + pagination */}
-					<EventHistory
-						loading={loading}
-						logs={logs}
-						searchFiltered={searchFiltered}
-						sessions={sessions}
-						totalCount={totalCount}
-						totalPages={totalPages}
-						selected={selected}
-						hoveredIdx={hoveredIdx}
-						searchQuery={searchQuery}
-						page={page}
-						onSelectLog={setSelected}
-						onHoverLog={setHoveredIdx}
-						onSearchChange={setSearchQuery}
-						onPageChange={setPage}
-					/>
+				<div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-2">
+					{/* Right: Event History + pagination — first on small screens */}
+					<div className="order-1 lg:order-2">
+						<EventHistory
+							loading={loading}
+							logs={logs}
+							searchFiltered={searchFiltered}
+							sessions={sessions}
+							totalCount={totalCount}
+							totalPages={totalPages}
+							selected={selected}
+							hoveredIdx={hoveredIdx}
+							searchQuery={searchQuery}
+							page={page}
+							onSelectLog={setSelected}
+							onHoverLog={setHoveredIdx}
+							onSearchChange={setSearchQuery}
+							onPageChange={setPage}
+						/>
+					</div>
+					{/* Left: Chart + Detail panel — second on small screens */}
+					<div className="order-2 lg:order-1">
+						<ChartPanel
+							logs={logs}
+							loading={loading}
+							dark={dark}
+							selected={selected}
+							chartTab={chartTab}
+							chartPage={chartPage}
+							onSelectLog={setSelected}
+							onSetChartTab={setChartTab}
+							onSetChartPage={setChartPage}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

@@ -1,6 +1,6 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 
-import { Calendar, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Button,
@@ -56,7 +56,6 @@ const DateRangeFilter = ({
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const calendarRef = useRef<HTMLDivElement>(null);
 
-	// Close calendar on outside click
 	useEffect(() => {
 		const handler = (e: MouseEvent) => {
 			if (
@@ -96,7 +95,6 @@ const DateRangeFilter = ({
 
 	const presetLabel = PRESETS.find(([id]) => id === preset)?.[1] ?? "Today";
 
-	// Calendar helpers
 	const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 	const firstDay = new Date(calYear, calMonth, 1).getDay();
 	const calDays: (number | null)[] = [];
@@ -162,17 +160,6 @@ const DateRangeFilter = ({
 
 	return (
 		<div className="relative min-w-0 flex-1 p-2">
-			{/* Label row */}
-			<div className="mb-0.5 flex items-center gap-1.5">
-				<Calendar
-					size={10}
-					className="flex-shrink-0 text-muted-foreground"
-				/>
-				<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
-					Date Range
-				</span>
-			</div>
-
 			{/* shadcn DropdownMenu trigger */}
 			<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
 				<DropdownMenuTrigger asChild>
