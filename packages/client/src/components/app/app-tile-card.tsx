@@ -23,6 +23,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
+import DevBanner from "@/assets/img/DevBanner.png";
 import { AppDeleteModal } from "@/components/app";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import { formatToDataTestId } from "@/utility";
@@ -42,7 +43,7 @@ interface AppTileCardProps {
 	isLoading?: boolean;
 	showSkeleton?: boolean;
 	layout?: "fixed" | "responsive";
-	variant?: "classic" | "catalog" | "row";
+	variant?: "classic" | "catalog" | "row" | "fillerCard";
 	onCloneComplete?: (appId?: string) => void;
 }
 
@@ -329,6 +330,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	const showInfo = app.project_created_by !== "SYSTEM";
 	const isCatalog = variant === "catalog";
 	const isRow = variant === "row";
+	const isFillerCard = variant === "fillerCard";
 	const canEdit = app?.user_permission != null && app.user_permission < 2;
 
 	// Style classes
@@ -1194,6 +1196,76 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						handleClose={handleCloneModalClose}
 					/>
 				)}
+			</div>
+		);
+	}
+
+	if (isFillerCard) {
+		return (
+			<div className="w-full">
+				<Card
+					className="relative h-full cursor-pointer overflow-hidden rounded-xl border bg-card p-0 shadow-sm"
+					onClick={handleCardClick}
+					data-testid={formatToDataTestId(
+						`appTileCard-${displayName}-filler`,
+					)}
+				>
+					<div className="flex h-full flex-row">
+						{/* Left content */}
+						<div className="flex w-1/2 flex-col p-4">
+							<div className="flex items-start justify-between">
+								<h3 className="font-semibold text-lg">
+									{displayName}
+								</h3>
+								{displayTags.length > 0 && (
+									<Badge
+										variant="secondary"
+										style={getTagPillStyles(displayTags[0])}
+									>
+										{displayTags[0]}
+									</Badge>
+								)}
+							</div>
+
+							{hasDescription ? (
+								<P className="my-2 line-clamp-3 text-muted-foreground text-sm">
+									{descriptionText}
+								</P>
+							) : (
+								<P className="mt-2 text-muted-foreground text-sm">
+									No description available
+								</P>
+							)}
+
+							<div className="mt-auto flex items-center gap-3">
+								<Button
+									variant="default"
+									size="sm"
+									className="flex items-center gap-2"
+									onClick={(e) => {
+										e.stopPropagation();
+										handleOpenApp(e);
+									}}
+								>
+									Open
+									<ExternalLink className="size-4" />
+								</Button>
+							</div>
+						</div>
+
+						{/* Right illustration - fills right half on md+ and sits below on small */}
+						<div className="relative w-1/2">
+							<div className="absolute inset-0 h-full w-full overflow-hidden">
+								<img
+									src={DevBanner}
+									alt={`${displayName} illustration`}
+									// generate a random number for scale which should not exceed 250 to add some variation to the illustrations
+									className={`absolute inset-0 h-full w-full origin-right scale-[1.5] transform object-cover object-right`}
+								/>
+							</div>
+						</div>
+					</div>
+				</Card>
 			</div>
 		);
 	}
