@@ -643,7 +643,7 @@ export const GlobalNav = observer(() => {
 							embed={item.embed}
 						/>
 					))}
-					<SidebarMenuItem className="">
+					<SidebarMenuItem>
 						<NavUser />
 					</SidebarMenuItem>
 				</SidebarMenu>

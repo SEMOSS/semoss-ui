@@ -474,7 +474,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<TooltipTrigger asChild>
 										<DropdownMenuTrigger asChild>
 											<Button
-												className=""
 												variant="ghost"
 												size="icon-sm"
 												disabled={isLoading}
