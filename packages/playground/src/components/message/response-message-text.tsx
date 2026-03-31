@@ -68,7 +68,7 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 	),
 	a: ({ children, href, ...props }) => {
 		if (href?.startsWith("room://") && room) {
-			const path = "/" + href.slice("room://".length);
+			const path = `/${href.slice("room://".length)}`;
 			const filename = path.split("/").filter(Boolean).pop() ?? path;
 			return (
 				<button

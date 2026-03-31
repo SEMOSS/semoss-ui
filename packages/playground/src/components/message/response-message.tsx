@@ -129,7 +129,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		});
 
 		return (
-			<div>
+			<div className="group">
 				<div className="mb-0 flex w-full flex-col gap-4 pr-3 sm:pr-10">
 					{message.parts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
@@ -240,7 +240,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					)}
 				</div>
 
-				<div className="flex flex-row items-center gap-0.5 pt-1">
+				<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
 					{inputMessage?.siblings.length > 1 && (
 						<div className="flex flex-row items-center gap-0.5">
 							<Tooltip>
