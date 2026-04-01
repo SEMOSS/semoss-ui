@@ -51,7 +51,7 @@ export const toInitials = (str: string | undefined) => {
 	).toUpperCase();
 };
 
-export function setFavicon(href: string) {
+export const setFavicon = (href: string) => {
 	// Remove existing icon links
 	document
 		.querySelectorAll(
@@ -71,8 +71,8 @@ export function setFavicon(href: string) {
 	// Only cache-bust normal URLs, not data: URLs
 	const finalHref = href.startsWith("data:")
 		? href
-		: href + (href.includes("?") ? "&" : "?") + "v=" + Date.now();
+		: `${href}${href.includes("?") ? "&" : "?"}v=${Date.now()}`;
 
 	link.href = finalHref;
 	document.head.appendChild(link);
-}
+};

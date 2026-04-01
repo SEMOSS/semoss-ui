@@ -119,6 +119,7 @@ export interface AbstractPixelMessage {
 
 export interface InputPixelMessage extends AbstractPixelMessage {
 	io: "INPUT";
+	type: "INPUT_TEXT" | "INPUT_TOOL_EXEC";
 	parts: (
 		| PixelMessageTextPart
 		| PixelMessageMediaPart
