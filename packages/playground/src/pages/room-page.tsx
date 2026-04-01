@@ -21,11 +21,9 @@ import type { Engine } from "@/types";
  */
 export const RoomPage = observer(() => {
 	const { t } = useTranslation("workspace");
-
-	// set the get the room based on the params
+	const { setNavbarActions } = useGlobalBreadcrumbs({});
 	const { roomId } = useParams();
 	const { chat } = useChat();
-	// const { setBreadcrumbs } = useGlobalBreadcrumbs();
 	const navigate = useNavigate();
 
 	/**
@@ -59,15 +57,11 @@ export const RoomPage = observer(() => {
 		selectedModelRef.current = chat.models.selected;
 	}, [chat.models.selected]);
 
-	// Reset room state when roomId changes to prevent stale content flash
-	// biome-ignore lint/correctness/useExhaustiveDependencies: Valid to update room when roomId changes
-	useEffect(() => {
-		setRoom(null);
-	}, [roomId]);
-
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
+			// Reset room state when roomId changes to prevent stale content flash
+			setRoom(null);
 			try {
 				const room = await chat.loadRoom(roomId);
 
@@ -118,8 +112,6 @@ export const RoomPage = observer(() => {
 		setBreadcrumbs,
 		t,
 	]);
-
-	const { setNavbarActions } = useGlobalBreadcrumbs({});
 
 	const navbarActions = useMemo<React.ReactNode>(() => {
 		if (room?.options) {
