@@ -354,7 +354,7 @@ export const GlobalNav = observer(() => {
 					</SidebarMenuItem>
 
 					{ENABLE_AGENT && (
-						<SidebarMenuItem>
+						<SidebarMenuItem data-tour="tour-agents">
 							<SidebarMenuButton
 								asChild
 								isActive={!!matchPath("/agent", pathname)}

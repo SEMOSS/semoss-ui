@@ -38,6 +38,13 @@ const TOUR_STEPS: TourStep[] = [
 			"Start a fresh conversation at any time by clicking here. Your previous chats are always saved in the sidebar.",
 		placement: "right",
 	},
+	{
+		target: "tour-agents",
+		title: "Agents",
+		content:
+			"Build and manage AI agents — customizable assistants powered by your own prompts, tools, and knowledge bases.",
+		placement: "right",
+	},
 ];
 
 const CARD_WIDTH = 320;
