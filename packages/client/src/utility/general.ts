@@ -57,8 +57,9 @@ export const toTitleCase = (str) => {
  * "this_is_a_string" --> "This is a string"
  */
 export const removeUnderscores = (str: string) => {
+	let i;
 	const frags = str.split("_");
-	for (let i = 0; i < frags.length; i++) {
+	for (i = 0; i < frags.length; i++) {
 		frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
 	}
 	return frags.join(" ");
@@ -140,7 +141,7 @@ SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"
 };
 
 const debounce = (func, wait) => {
-	let timeout: ReturnType<typeof setTimeout>;
+	let timeout;
 
 	return function executedFunction(...args) {
 		const later = () => {
@@ -165,7 +166,6 @@ export const debounced = (callback, delay) => {
 		ref.current = callback;
 	}, [callback]);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const debouncedCallback = useMemo(() => {
 		const func = () => {
 			ref.current?.();

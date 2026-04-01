@@ -999,7 +999,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 					>
 						{buffer.command !== "" &&
 							showOptionList.map((suggestion) => (
-								// biome-ignore lint/a11y/useKeyWithClickEvents: TODO
+								// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
 								<li
 									key={suggestion}
 									onClick={() =>

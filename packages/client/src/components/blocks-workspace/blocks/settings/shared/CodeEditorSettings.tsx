@@ -1,5 +1,5 @@
 // CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";

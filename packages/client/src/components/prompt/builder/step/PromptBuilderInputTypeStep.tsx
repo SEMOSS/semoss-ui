@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { useEffect, useMemo, useState } from "react";
 // import { StyledStepPaper } from '../../prompt.styled';
 import { Box, Paper, Stack, styled, Typography } from "@semoss/ui";
@@ -100,8 +99,10 @@ export const PromptBuilderInputTypeStep = (props: {
 		);
 		if (!builderInputTypes) {
 			const keyedInputs = filteredTokens.reduce((acc, token: Token) => {
-				acc[token.index] = { type: INPUT_TYPE_TEXT, meta: null };
-				return acc;
+				return {
+					...acc,
+					[token.index]: { type: INPUT_TYPE_TEXT, meta: null },
+				};
 			}, {});
 
 			setInputTypes(keyedInputs);

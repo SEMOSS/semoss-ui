@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { PreviewRounded, SaveRounded, ShareRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";

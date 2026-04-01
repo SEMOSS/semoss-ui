@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { Add } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -41,9 +40,9 @@ export interface LLMCellDef extends CellDef<"llm"> {
 //     length: number;
 // };
 
-const StyledStack = styled(Stack)({
+const StyledStack = styled(Stack)(({ theme }) => ({
 	width: "100%",
-});
+}));
 
 const StyledActionButtons = styled("div")(({ theme }) => ({
 	width: "100%",

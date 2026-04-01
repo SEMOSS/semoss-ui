@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	Add,
 	ArrowDownward,
@@ -79,7 +78,7 @@ const StyledMenuScroll = styled("div")(({ theme }) => ({
 	overflowY: "auto",
 }));
 
-const StyledBox = styled(Box)({
+const StyledBox = styled(Box)(({ theme }) => ({
 	height: "752px",
 	width: "344px",
 	display: "inline-flex",
@@ -89,7 +88,7 @@ const StyledBox = styled(Box)({
 	background: "var(--Background-Paper-1, #FFF)",
 	boxShadow: "0 5px 8px 0 rgba(0, 0, 0, 0.08)",
 	gap: "8px",
-});
+}));
 
 const StyledTitle = styled("div")(({ theme }) => ({
 	borderRadius: "16px",

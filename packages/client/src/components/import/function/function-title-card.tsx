@@ -90,7 +90,7 @@ export const FunctionTitleCard = ({
 	};
 
 	const cardContent = (
-		// biome-ignore lint/a11y/useSemanticElements: TODO
+		// biome-ignore lint/a11y/useSemanticElements: <explanation>
 		<div
 			className={cn(
 				"flex min-h-[204px] w-full cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4 sm:w-[215px]",

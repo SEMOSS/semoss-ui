@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -330,7 +329,7 @@ const ColumnEditModal = ({
 													(name, index) => (
 														<TableRow
 															key={`${name}-${
-																// biome-ignore lint/suspicious/noArrayIndexKey: TODO
+																// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 																index
 															}`}
 															data-testid={`logical-name-row-${index}`}

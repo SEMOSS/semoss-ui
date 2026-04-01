@@ -1,6 +1,6 @@
-/** biome-ignore-all lint/a11y/noNoninteractiveTabindex: TODO */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
-/** biome-ignore-all lint/nursery/useSortedClasses: TODO */
+/** biome-ignore-all lint/a11y/noNoninteractiveTabindex: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/nursery/useSortedClasses: <explanation> */
 import { ExternalLinkIcon, TrashIcon } from "lucide-react";
 import type React from "react";
 import { Badge, Button, cn } from "@semoss/ui/next";

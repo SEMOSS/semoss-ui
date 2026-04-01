@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDown } from "lucide-react";
 import type React from "react";
 import {
@@ -238,14 +237,14 @@ export const ConfigurationsPage = () => {
 		);
 	}
 
-	const onTabChange = (_: SyntheticEvent, newValue: number) => {
+	const onTabChange = (event: SyntheticEvent, newValue: number) => {
 		setTabValue(newValue);
 	};
 
 	const updateSocialProps = (
 		fieldName: string,
 		value: string,
-		_label: string,
+		label: string,
 		index,
 	) => {
 		const socialPropsCopy = socialProps;

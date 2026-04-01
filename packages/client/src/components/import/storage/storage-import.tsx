@@ -1,6 +1,5 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { FileUploadOutlined } from "@mui/icons-material";
 import { Search } from "lucide-react";
 import type React from "react";
@@ -88,7 +87,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 			}
 
 			const pixelExpressions = uploadedFiles.map(
-				() =>
+				(file) =>
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["STORAGE"])`,
 			);
 

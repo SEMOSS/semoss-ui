@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -738,7 +737,7 @@ export const StorageForm = ({
 									"No description available."}
 							</Muted>
 						</div>
-						<div className="flex flex-2 flex-col gap-2 py-2">
+						<div className="flex flex-[2] flex-col gap-2 py-2">
 							{grouped[category].map((f) =>
 								renderControllerField(f),
 							)}
@@ -780,7 +779,7 @@ export const StorageForm = ({
 											Configure advanced storage settings
 										</Muted>
 									</div>
-									<div className="flex flex-2 flex-col gap-2">
+									<div className="flex flex-[2] flex-col gap-2">
 										{advancedFields.map((f) =>
 											renderControllerField(f),
 										)}

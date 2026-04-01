@@ -1,5 +1,5 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: TODO */
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
+
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CloseIcon from "@mui/icons-material/Close";
 import { useEffect, useMemo, useState } from "react";
@@ -349,7 +349,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 				style={{
 					width: "100% !important",
 				}}
-				onChange={(_, val: string) => {
+				onChange={(e: React.SyntheticEvent, val: string) => {
 					setSelectedTab(val);
 				}}
 			>
@@ -524,7 +524,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 											? `Filter of ${localState.column}`
 											: "") || localState.filterLabel
 									}
-									onChange={() =>
+									onChange={(e) =>
 										updateField(
 											"filterLabel",
 											(localState.column
@@ -682,7 +682,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 							<Autocomplete
 								options={DATA.colors}
 								value={localState.color || null}
-								onChange={(_, value) => {
+								onChange={(event, value) => {
 									setData("color", value);
 									setLocalState((prev) => ({
 										...prev,
@@ -704,7 +704,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 							<Autocomplete
 								options={DATA.sizes}
 								value={localState.size || null}
-								onChange={(_, value) => {
+								onChange={(event, value) => {
 									setData("size", value);
 									setLocalState((prev) => ({
 										...prev,

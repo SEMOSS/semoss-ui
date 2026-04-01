@@ -1,6 +1,5 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -294,7 +293,7 @@ export const VectorForm = ({
 				required: val?.required,
 				pattern: val.rules?.pattern,
 			}}
-			render={({ field, fieldState: { error } }) => {
+			render={({ field, fieldState: { error }, formState }) => {
 				switch (val.component) {
 					case "text":
 						return (
@@ -776,7 +775,7 @@ export const VectorForm = ({
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-2 flex-col gap-2">
+								<div className="flex flex-[2] flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
@@ -817,7 +816,7 @@ export const VectorForm = ({
 													Add advanced settings here
 												</Muted>
 											</div>
-											<div className="flex flex-2 flex-col gap-2">
+											<div className="flex flex-[2] flex-col gap-2">
 												{advancedFields.map((val) => (
 													<div
 														key={val.key}
@@ -846,7 +845,7 @@ export const VectorForm = ({
 						variant="default"
 						data-testid="vector-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="w-full min-w-32 capitalize sm:w-auto"
+						className="w-full min-w-[128px] capitalize sm:w-auto"
 					>
 						Connect
 					</Button>

@@ -1,6 +1,5 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -118,7 +117,7 @@ export const FunctionForm = ({
 				}
 				pixel = pixel.replace(
 					");",
-					`,filePaths=["${uploadedFiles[0].fileLocation}"]);`,
+					`,filePaths=["${uploadedFiles[0].fileLocation}"]` + ");",
 				);
 			} catch {
 				toast.error("Upload failed or returned invalid response.");
@@ -351,7 +350,7 @@ export const FunctionForm = ({
 				required: val?.required,
 				pattern: val.rules?.pattern,
 			}}
-			render={({ field, fieldState: { error } }) => {
+			render={({ field, fieldState: { error }, formState }) => {
 				switch (val.type) {
 					case "text":
 						return (
@@ -720,7 +719,7 @@ export const FunctionForm = ({
 																		field.value,
 																	);
 																}}
-																className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+																className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
 																data-testid={`remove-file-btn-${index}`}
 															>
 																<X className="size-4" />
@@ -863,7 +862,7 @@ export const FunctionForm = ({
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-2 flex-col gap-2">
+								<div className="flex flex-[2] flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
@@ -904,7 +903,7 @@ export const FunctionForm = ({
 													Add advanced settings here
 												</Muted>
 											</div>
-											<div className="flex flex-2 flex-col gap-2">
+											<div className="flex flex-[2] flex-col gap-2">
 												{advancedFields.map((val) => (
 													<div
 														key={val.key}
@@ -933,7 +932,7 @@ export const FunctionForm = ({
 						variant="default"
 						data-testid="function-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="w-full min-w-32 capitalize sm:w-auto"
+						className="w-full min-w-[128px] capitalize sm:w-auto"
 					>
 						Connect
 					</Button>

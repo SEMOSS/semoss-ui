@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	CropFree,
 	DriveFileRenameOutlineRounded,
@@ -51,10 +50,10 @@ const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
-const StyledContent = styled("div")({
+const StyledContent = styled("div")(({ theme }) => ({
 	position: "relative",
 	width: "100%",
-});
+}));
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	"& .MuiInputBase-root": {
@@ -64,6 +63,8 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 		height: "30px",
 	},
 }));
+
+const StyledContainer = styled("div")(({ theme }) => ({}));
 
 export interface QueryImportCellDef extends CellDef<"query-import"> {
 	widget: "query-import";
@@ -368,7 +369,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							) : null}
 						</Stack>
 					)}
-					<div>
+					<StyledContainer>
 						<Suspense fallback={<>...</>}>
 							<MonacoEditor
 								value={cell.parameters.selectQuery}
@@ -393,7 +394,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								onMount={handleEditorMount}
 							/>
 						</Suspense>
-					</div>
+					</StyledContainer>
 					{isExpanded && (
 						<Stack
 							direction="row"

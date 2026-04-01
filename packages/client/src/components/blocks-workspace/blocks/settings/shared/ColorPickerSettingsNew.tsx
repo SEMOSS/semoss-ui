@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -119,7 +118,7 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 			optiontimeoutRef.current = setTimeout(() => {
 				try {
 					const options = JSON.parse(optionComputedValue);
-					options.lastUpdatedTime = Date.now();
+					options["lastUpdatedTime"] = Date.now();
 					setData(
 						optionPathVal,
 						options as PathValue<D["data"], typeof path>,

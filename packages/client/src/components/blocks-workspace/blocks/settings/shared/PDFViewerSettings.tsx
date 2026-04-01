@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	DeleteOutline,
 	ExpandMore,
@@ -125,7 +124,7 @@ interface PDFViewerSettings<D extends BlockDef = BlockDef> {
 }
 
 export const PDFViewerSettings = observer(
-	<D extends BlockDef = BlockDef>({ id }: PDFViewerSettings<D>) => {
+	<D extends BlockDef = BlockDef>({ id, path }: PDFViewerSettings<D>) => {
 		const { data, setData, insightId } = useBlock<PDFViewerBlockDef>(id);
 		const notification = useNotification();
 		const { appId } = useParams();
@@ -289,7 +288,7 @@ export const PDFViewerSettings = observer(
 				engine_name: string;
 			}[] = [];
 			const getFiles = engineIdsList.map((id) => ({
-				promise: runPixel<unknown[]>(
+				promise: runPixel<unknown>(
 					`BrowseEngineAssets(engine=["${id.engine_id}"], filePath=["/"]);`,
 				),
 				engine_type: id.engine_type,

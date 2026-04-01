@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/correctness/useUniqueElementIds: TODO */
+/** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
 import {
 	ArrowLeft,
 	ChevronDown,

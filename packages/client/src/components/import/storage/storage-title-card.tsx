@@ -1,6 +1,5 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
 import { useEffect, useRef, useState } from "react";
 import {
 	Tooltip,
@@ -41,7 +40,7 @@ export const StorageTitleCard: React.FC<StorageTileCardProps> = ({
 			onClick={!storage.disable ? () => onSelect?.(storage) : undefined}
 		>
 			<div className="flex w-full items-start justify-between">
-				<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary/10 to-primary/5">
+				<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
 					<img
 						src={storage.icon}
 						alt={storage.name}
