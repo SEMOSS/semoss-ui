@@ -60,6 +60,7 @@ export const RoomPage = observer(() => {
 	}, [chat.models.selected]);
 
 	// Reset room state when roomId changes to prevent stale content flash
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Valid to update room when roomId changes
 	useEffect(() => {
 		setRoom(null);
 	}, [roomId]);
@@ -115,6 +116,7 @@ export const RoomPage = observer(() => {
 		chat.loadRoom,
 		chat.setSelectedModel,
 		setBreadcrumbs,
+		t,
 	]);
 
 	const { setNavbarActions } = useGlobalBreadcrumbs({});

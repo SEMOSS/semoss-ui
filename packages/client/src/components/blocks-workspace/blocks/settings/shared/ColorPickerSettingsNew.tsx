@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -53,7 +54,8 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 	}) => {
 		const [showPopover, setShowPopover] =
 			useState<HTMLButtonElement | null>(null); //show and hide the color picker
-		const [color, setColor] = useState(colorValue); //default color and state to maintain color value
+		const [_color, setColor] = useState(colorValue); //default color and state to maintain color value
+		// biome-ignore lint/suspicious/noExplicitAny: TODO
 		const { data, setData } = useBlockSettings<any>(id); //data to update the color of the chart
 		const [value, setValue] = useState<string | null>(null); //local state to store a copy of main state
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to delay update of state
@@ -62,7 +64,7 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 			"initial" | "updated"
 		>("initial");
 		const optionPathVal = "option";
-		const [optionValue, setOptionValue] = useState(data.option);
+		const [_optionValue, setOptionValue] = useState(data.option);
 		//get the latest value of state and store it in computedValue
 		const computedValue = useMemo(() => {
 			return computed(() => {
@@ -117,7 +119,7 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 			optiontimeoutRef.current = setTimeout(() => {
 				try {
 					const options = JSON.parse(optionComputedValue);
-					options["lastUpdatedTime"] = Date.now();
+					options.lastUpdatedTime = Date.now();
 					setData(
 						optionPathVal,
 						options as PathValue<D["data"], typeof path>,
@@ -145,6 +147,7 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 		const open = Boolean(showPopover);
 		return (
 			<StyledMainContainer>
+				{/* biome-ignore lint/correctness/useUniqueElementIds: TODO */}
 				<OutlinedInput
 					size="small"
 					id="outlined-adornment-password"

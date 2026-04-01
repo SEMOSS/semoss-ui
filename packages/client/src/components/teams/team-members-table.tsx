@@ -40,8 +40,8 @@ import {
 	getTeamUsers,
 	getTeamUsersCount,
 } from "@/api/teams";
-import type { ApiResponse } from "@/types";
 import { useServerPagination } from "@/hooks";
+import type { ApiResponse } from "@/types";
 
 interface MembersTableProps {
 	/**

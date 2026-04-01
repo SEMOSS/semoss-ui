@@ -178,9 +178,9 @@ export const SettingsTab = (props: AppSettingsProps) => {
 				}
 
 				if (release == null) {
-					toast.success("Successfully recompile");
+					toast.success("Successfully compiled");
 				} else {
-					toast.success("Successfully redeployed");
+					toast.success("Successfully compiled and deployed");
 				}
 			})
 			.catch((error) => {
@@ -208,7 +208,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 					...portalDetails,
 					project_portal_url: output,
 				});
-				toast.success("Successfully publiched");
+				toast.success("Successfully published");
 			})
 			.catch((error) => {
 				toast.error(error);

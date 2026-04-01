@@ -1,4 +1,3 @@
-import { Button, Stack, styled, Typography } from "@semoss/ui";
 import { type AppMetadata, AppTileCard } from "../app";
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
@@ -53,37 +52,15 @@ const TERMINAL_APP: AppMetadata = {
 	description: "Execute commands and see a response",
 };
 
-const StyledSeeAllButton = styled(Button)(({ theme }) => ({
-	justifyContent: "flex-end",
-	color: theme.palette.text.primary,
-	fontWeight: 500,
-	"&.MuiButtonBase-root: hover": {
-		backgroundColor: "#F5F5F5",
-	},
-}));
-
 export const FanFavoritesSection = () => {
 	return (
-		<Stack gap={1}>
-			<Stack
-				direction={"row"}
-				justifyContent={"space-between"}
-				alignItems={"baseline"}
-				width={"100%"}
-			>
-				<Typography variant={"body1"}>
+		<div className="flex w-full flex-col gap-3">
+			<div className="flex w-full items-baseline justify-between">
+				<p className="font-medium text-foreground text-sm">
 					Try these fan favorites
-				</Typography>
-				{/* <StyledSeeAllButton
-          type="button"
-          size="small"
-          variant="text"
-          color="secondary"
-        >
-          See All
-        </StyledSeeAllButton> */}
-			</Stack>
-			<Stack direction={"row"} gap={3}>
+				</p>
+			</div>
+			<div className="flex w-full flex-wrap items-start gap-4">
 				<AppTileCard
 					app={BUSINESS_INTELLIGENCE_APP}
 					background="#BADEFF"
@@ -102,7 +79,7 @@ export const FanFavoritesSection = () => {
 					isLoading={false}
 					showSkeleton={false}
 				/>
-			</Stack>
-		</Stack>
+			</div>
+		</div>
 	);
 };
