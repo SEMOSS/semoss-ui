@@ -26,10 +26,7 @@ export const GlobalDialog: React.FC = observer(() => {
 
 	return (
 		<Dialog open={visible}>
-			<DialogContent
-				className="max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden sm:max-w-4xl"
-				showCloseButton={false}
-			>
+			<DialogContent className="sm:max-w-4xl max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden" showCloseButton={false}>
 				<DialogHeader>
 					<DialogTitle>{root.theme.dialog.title}</DialogTitle>
 				</DialogHeader>
