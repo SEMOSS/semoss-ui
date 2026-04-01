@@ -3,15 +3,14 @@ import { useState } from "react";
 import { Navigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { Skeleton } from "@semoss/ui/next";
-import { useEmbedPreload } from "@/contexts";
-import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RootStore } from "@/stores";
 
 export const EmbedPage: React.FC = observer(() => {
 	const { t } = useTranslation("workspace");
 	const { path } = useParams();
 	const { root } = useRoot();
-	const preloadedPaths = useEmbedPreload();
+	const { chat } = useChat();
 
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -45,13 +44,42 @@ export const EmbedPage: React.FC = observer(() => {
 		],
 	});
 
+	/*
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			if (event.data?.type === "SMSS_NEW_CHAT") {
+				const { workspaceId, knowledgeId } =
+					event.data.payload ?? {};
+				if (workspaceId) {
+					navigate(`/new?workspaceId=${workspaceId}`);
+				} else if (knowledgeId) {
+					navigate(`/new?knowledgeId=${knowledgeId}`);
+				} else {
+					navigate(`/new`);
+				}
+			} else if (event.data?.type === "SMSS_OPEN_ROOM") {
+				const { roomId, jobId, prompt } = event.data.payload ?? {};
+				if (roomId) {
+					const params = new URLSearchParams();
+					if (jobId) params.set("jobId", jobId);
+					if (prompt) params.set("prompt", prompt);
+					const qs = params.toString();
+					navigate(
+						qs ? `/room/${roomId}?${qs}` : `/room/${roomId}`,
+					);
+				}
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [navigate]);
+	*/
+
 	if (!matched) {
 		return <Navigate to="/" replace />;
-	}
-
-	// MainLayout has already pre-loaded this iframe and will show it on top —
-	// render nothing here to avoid running a duplicate instance of the app.
-	if (preloadedPaths.has(path)) {
+	} else if (chat.preloadedEmbedPathMap[path]) {
+		// MainLayout has already pre-loaded this iframe and will show it on top —
+		// render nothing here to avoid running a duplicate instance of the app.
 		return null;
 	}
 

@@ -42,6 +42,12 @@ interface ChatStoreInterface {
 	};
 
 	/**
+	 * Preloaded embedded paths
+	 * path -> url
+	 */
+	preloadedEmbedPathMap: Record<string, string>;
+
+	/**
 	 * Current user info
 	 */
 	user: {
@@ -71,6 +77,7 @@ export class ChatStore {
 			id: "",
 			name: "",
 		},
+		preloadedEmbedPathMap: {},
 	};
 
 	constructor(
@@ -86,6 +93,18 @@ export class ChatStore {
 		if (user) {
 			this._store.user = user;
 		}
+		this._store.preloadedEmbedPathMap = [
+			...theme.sidebar.headerItems,
+			...theme.sidebar.footerItems,
+		]
+			.filter((item) => item.embed && item.url)
+			.reduce(
+				(acc, item) => {
+					acc[item.path] = item.url;
+					return acc;
+				},
+				{} as Record<string, string>,
+			);
 
 		// make it observable
 		makeAutoObservable(this);
@@ -120,6 +139,13 @@ export class ChatStore {
 	 */
 	get user() {
 		return this._store.user;
+	}
+
+	/**
+	 * Get the map of preloaded embed paths
+	 */
+	get preloadedEmbedPathMap() {
+		return this._store.preloadedEmbedPathMap;
 	}
 
 	/**
