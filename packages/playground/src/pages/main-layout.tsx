@@ -1,6 +1,12 @@
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link, matchPath, Outlet, useLocation, useNavigate } from "react-router-dom";
+import {
+	Link,
+	matchPath,
+	Outlet,
+	useLocation,
+	useNavigate,
+} from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -99,7 +105,10 @@ const MainLayoutContent = observer(
 
 		// Map of path → src; derived immediately so iframes start loading right away.
 		const preloadedSrcs = useMemo(
-			() => Object.fromEntries(embedItems.map((item) => [item.path, item.url])),
+			() =>
+				Object.fromEntries(
+					embedItems.map((item) => [item.path, item.url]),
+				),
 			[embedItems],
 		);
 
@@ -177,7 +186,8 @@ const MainLayoutContent = observer(
 													const isLast =
 														index ===
 														root.breadcrumbs
-															.length - 1;
+															.length -
+															1;
 
 													return (
 														<React.Fragment
@@ -233,8 +243,8 @@ const MainLayoutContent = observer(
 											}
 											title={item.name}
 											className="absolute inset-0 h-full w-full border-none"
-										// @ts-expect-error fetchpriority is not yet in React's typings
-										fetchpriority="high"
+											// @ts-expect-error fetchpriority is not yet in React's typings
+											fetchpriority="high"
 											style={{
 												opacity: isActive ? 1 : 0,
 												pointerEvents: isActive
