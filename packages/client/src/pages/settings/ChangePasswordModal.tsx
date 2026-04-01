@@ -1,5 +1,4 @@
-import { CheckCircle, Visibility, VisibilityOff } from "@mui/icons-material";
-import LockIcon from "@mui/icons-material/Lock";
+import { CircleCheck, Eye, EyeOff, Lock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Env } from "@semoss/sdk/react";
 import {
@@ -270,7 +269,7 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 				InputProps={{
 					startAdornment: (
 						<InputAdornment position="start">
-							<LockIcon sx={{ color: "#666" }} />
+							<Lock color="#666" size={18} />
 						</InputAdornment>
 					),
 					endAdornment: (
@@ -279,7 +278,11 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 								onClick={() => setShow(!show)}
 								edge="end"
 							>
-								{show ? <Visibility /> : <VisibilityOff />}
+								{show ? (
+									<Eye size={18} />
+								) : (
+									<EyeOff size={18} />
+								)}
 							</IconButton>
 						</InputAdornment>
 					),
@@ -290,9 +293,10 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 
 	const renderValidationItem = (label: string, isValid: boolean) => (
 		<StyledValidationMessage variant="body2">
-			<CheckCircle
-				sx={{ color: isValid ? "green" : "gray", mr: 1 }}
-				fontSize="small"
+			<CircleCheck
+				color={isValid ? "green" : "gray"}
+				size={16}
+				style={{ marginRight: "8px" }}
 			/>
 			{label}
 		</StyledValidationMessage>

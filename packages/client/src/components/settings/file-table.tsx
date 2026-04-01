@@ -1,5 +1,4 @@
-import { FileUploadOutlined } from "@mui/icons-material";
-import { Download, Plus, Search, Trash2 } from "lucide-react";
+import { Download, Plus, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -187,6 +186,10 @@ export const FileTable = (props: FileTableProps) => {
 				".ppt",
 				".docx",
 				".pptx",
+				".json",
+				".xml",
+				".eml",
+				".msg",
 			].includes(extension);
 		});
 		setValue("PROJECT_UPLOAD", validFiles);
@@ -713,7 +716,7 @@ export const FileTable = (props: FileTableProps) => {
 										<input
 											ref={fileInputRef}
 											type="file"
-											accept=".pdf,.csv,.txt,.doc,.ppt,.docx,.pptx"
+											accept=".pdf,.csv,.txt,.doc,.ppt,.docx,.pptx,.json,.xml,.eml,.msg"
 											className="hidden"
 											onChange={handleFileChange}
 											multiple={true}
@@ -739,14 +742,15 @@ export const FileTable = (props: FileTableProps) => {
 											</div>
 										) : (
 											<div className="text-center">
-												<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+												<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 												<P className="font-medium text-foreground">
 													Drop your files here or
 													click to browse
 												</P>
 												<P className="text-muted-foreground text-sm">
 													Supports PDF, CSV, TXT, DOC,
-													PPT, DOCX, PPTX
+													PPT, DOCX, PPTX, JSON, XML,
+													EML, MSG
 												</P>
 											</div>
 										)}

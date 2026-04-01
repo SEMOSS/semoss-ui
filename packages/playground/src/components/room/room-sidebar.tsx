@@ -176,6 +176,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 										<RoomFileExplorer
 											layout={layoutRef.current}
 											room={room}
+											node={node}
 										/>
 									);
 								} else if (component === "room-configuration") {

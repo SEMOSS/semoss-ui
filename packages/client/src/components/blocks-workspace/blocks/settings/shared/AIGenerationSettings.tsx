@@ -75,8 +75,8 @@ export const AIGenerationSettings = observer(
 		const modelIdRef = useRef("");
 		const [modelId, setModelId] = useState<string>("");
 
-		const [models, setModels] = useState<
-			{ app_id: string; app_name: string }[]
+		const [_models, setModels] = useState<
+			{ engine_id: string; engine_name: string }[]
 		>([]);
 
 		useEffect(() => {
@@ -91,7 +91,7 @@ export const AIGenerationSettings = observer(
 			});
 		const [selectedModel, setSelectedModel] = useState<string>("");
 		const myModels = usePixel<
-			{ app_id: string; app_name: string; tag: string }[]
+			{ engine_id: string; engine_name: string; tag: string }[]
 		>(`MyEngines(engineTypes=['MODEL']);`);
 		useMemo(() => {
 			if (myModels.status !== "SUCCESS") {
@@ -103,8 +103,8 @@ export const AIGenerationSettings = observer(
 			myModels.data.forEach((model) => {
 				// embeddings models are not set up for response generation
 				if (model.tag !== "embeddings") {
-					modelIds.push(model.app_id);
-					modelDisplay[model.app_id] = model.app_name;
+					modelIds.push(model.engine_id);
+					modelDisplay[model.engine_id] = model.engine_name;
 				}
 			});
 			setCfgLibraryModels({
@@ -124,12 +124,14 @@ export const AIGenerationSettings = observer(
 
 			setModels(
 				myModels.data.map((d) => ({
-					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-					app_id: d.app_id,
+					engine_name: d.engine_name
+						? d.engine_name.replace(/_/g, " ")
+						: "",
+					engine_id: d.engine_id,
 				})),
 			);
 			if (myModels.data.length) {
-				setModelId(myModels.data[0].app_id);
+				setModelId(myModels.data[0].engine_id);
 			}
 		}, [myModels.status, myModels.data]);
 
@@ -140,12 +142,14 @@ export const AIGenerationSettings = observer(
 
 			setModels(
 				myModels.data.map((d) => ({
-					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-					app_id: d.app_id,
+					engine_name: d.engine_name
+						? d.engine_name.replace(/_/g, " ")
+						: "",
+					engine_id: d.engine_id,
 				})),
 			);
 			if (myModels.data.length) {
-				setModelId(myModels.data[0].app_id);
+				setModelId(myModels.data[0].engine_id);
 			}
 		}, [myModels.status, myModels.data]);
 
@@ -160,7 +164,7 @@ export const AIGenerationSettings = observer(
 				flattenedPrompt = flattenedPrompt.replace(/"/g, "'");
 				const pixel = `LLM(engine = "${modelIdRef.current}", command = "${flattenedPrompt}", paramValues = [ {} ] );`;
 				const res = await runPixel(pixel);
-				const LLMResponse = res.pixelReturn[0].output["response"];
+				const LLMResponse = res.pixelReturn[0].output.response;
 
 				let trimmedStarterCode = LLMResponse;
 				trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
