@@ -298,7 +298,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 		return (
 			<>
-				<div className="relative w-full" ref={ref}>
+				<div className="relative w-full" ref={ref} data-tour="tour-input">
 					<input
 						ref={fileRef}
 						type="file"
@@ -456,7 +456,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							/>
 						)}
 					</LexicalComposer>
-					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
+					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2" data-tour="tour-input-menu">
 						{!isLoading && (
 							<DropdownMenu
 								open={menuOpen}

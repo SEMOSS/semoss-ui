@@ -16,7 +16,8 @@ import {
 } from "@semoss/ui/next";
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
-import { ChatContext, NavbarContext } from "@/contexts";
+import { LandingTour } from "@/components/common/landing-tour";
+import { ChatContext, NavbarContext, TourContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useNavbar } from "@/hooks/use-navbar";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -28,6 +29,7 @@ export const MainLayout = observer(() => {
 	const { root } = useRoot();
 	const theme = root.theme;
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
+	const [isTourOpen, setIsTourOpen] = useState(false);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		false,
@@ -64,10 +66,19 @@ export const MainLayout = observer(() => {
 			<NavbarContext.Provider
 				value={{ actions: navbarActions, setActions: setNavbarActions }}
 			>
-				<MainLayoutContent
-					isSidebarOpen={isSidebarOpen}
-					setIsSidebarOpen={setIsSidebarOpen}
-				/>
+				<TourContext.Provider
+					value={{
+						isOpen: isTourOpen,
+						startTour: () => setIsTourOpen(true),
+						stopTour: () => setIsTourOpen(false),
+					}}
+				>
+					<LandingTour />
+					<MainLayoutContent
+						isSidebarOpen={isSidebarOpen}
+						setIsSidebarOpen={setIsSidebarOpen}
+					/>
+				</TourContext.Provider>
 			</NavbarContext.Provider>
 		</ChatContext.Provider>
 	);

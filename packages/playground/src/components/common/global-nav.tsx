@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import {
 	ComputerIcon,
+	MapIcon,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -47,7 +48,7 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
+import { useChat, useRoot, useTour } from "@/hooks";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -77,6 +78,7 @@ export const GlobalNav = observer(() => {
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 	const { chat } = useChat();
+	const { startTour } = useTour();
 	const { open } = useSidebar();
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
@@ -97,6 +99,11 @@ export const GlobalNav = observer(() => {
 	const systemDate = dayjs(system.config.systemDate);
 
 	const navigate = useNavigate();
+
+	const handleStartTour = () => {
+		navigate("/new");
+		startTour();
+	};
 
 	const getRooms = useIteratorPixel<
 		{
@@ -334,7 +341,7 @@ export const GlobalNav = observer(() => {
 						</InputGroupAddon>
 					</InputGroup>
 
-					<SidebarMenuItem>
+					<SidebarMenuItem data-tour="tour-new-chat">
 						<SidebarMenuButton
 							asChild
 							isActive={!!matchPath("/new", pathname)}
@@ -626,6 +633,14 @@ export const GlobalNav = observer(() => {
 							embed={item.embed}
 						/>
 					))}
+				</SidebarMenu>
+				<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
+					<SidebarMenuItem>
+						<SidebarMenuButton onClick={handleStartTour}>
+							<MapIcon className="size-4" />
+							Take a tour
+						</SidebarMenuButton>
+					</SidebarMenuItem>
 				</SidebarMenu>
 				<SidebarMenu className="gap-2 p-2">
 					<SidebarMenuItem>
