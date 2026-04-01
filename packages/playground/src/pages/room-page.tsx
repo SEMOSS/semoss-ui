@@ -21,9 +21,11 @@ import type { Engine } from "@/types";
  */
 export const RoomPage = observer(() => {
 	const { t } = useTranslation("workspace");
-	const { setNavbarActions } = useGlobalBreadcrumbs({});
+
+	// set the get the room based on the params
 	const { roomId } = useParams();
 	const { chat } = useChat();
+	// const { setBreadcrumbs } = useGlobalBreadcrumbs();
 	const navigate = useNavigate();
 
 	/**
@@ -60,8 +62,6 @@ export const RoomPage = observer(() => {
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
-			// Reset room state when roomId changes to prevent stale content flash
-			setRoom(null);
 			try {
 				const room = await chat.loadRoom(roomId);
 
@@ -112,6 +112,8 @@ export const RoomPage = observer(() => {
 		setBreadcrumbs,
 		t,
 	]);
+
+	const { setNavbarActions } = useGlobalBreadcrumbs({});
 
 	const navbarActions = useMemo<React.ReactNode>(() => {
 		if (room?.options) {
