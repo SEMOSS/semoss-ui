@@ -81,7 +81,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
-			sync: action,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -92,14 +91,16 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			toggleIsPaused: action,
 		});
 
-		// sync the message (must be after makeObservable so sync action is registered)
+		// sync the message
 		this.sync(message);
 	}
 
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: ResponsePixelMessage) => {
+	sync(message: ResponsePixelMessage) {
+		super.sync(message);
+
 		// set the id
 		this.id = message.messageId;
 
@@ -129,7 +130,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				feedbackText: message.feedback.feedbackText,
 			};
 		}
-	};
+	}
 
 	/**
 	 * Execute a user message and stream the AI response
@@ -429,6 +430,7 @@ paramValues=[${JSON.stringify({
 		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "REWRITE_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
