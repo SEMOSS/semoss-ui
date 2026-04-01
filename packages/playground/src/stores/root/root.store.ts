@@ -7,8 +7,8 @@ configure({
 	enforceActions: "always",
 });
 
-const NAME = import.meta.env.VITE_NAME ? import.meta.env.VITE_NAME : "";
-const THEME = import.meta.env.VITE_THEME ? import.meta.env.VITE_THEME : "{}";
+const NAME = import.meta.env.VITE_NAME || "";
+const THEME = import.meta.env.VITE_THEME || "{}";
 
 interface RootStoreInterface {
 	/**
@@ -210,6 +210,14 @@ export class RootStore {
 					theme?.sidebar?.chatHistoryDate !== undefined
 						? theme.sidebar.chatHistoryDate
 						: this._store.theme.sidebar.chatHistoryDate,
+				headerItems: [
+					...this._store.theme.sidebar.headerItems,
+					...(theme?.sidebar?.headerItems || []),
+				],
+				footerItems: [
+					...this._store.theme.sidebar.footerItems,
+					...(theme?.sidebar?.footerItems || []),
+				],
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {
