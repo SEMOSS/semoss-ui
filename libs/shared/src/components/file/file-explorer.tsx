@@ -115,6 +115,11 @@ interface FileExplorerProps {
 	 * Override for the file item component
 	 */
 	ItemComponent?: typeof FileExplorerItem;
+
+	/**
+	 * Initial directory path to open to (defaults to "/")
+	 */
+	initialPath?: string;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -122,10 +127,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	headerActions = null,
 	onItemSelect = () => null,
 	ItemComponent = FileExplorerItem,
+	initialPath,
 }) => {
 	const insight = useInsight();
 
-	const [path, setPath] = useState<string>("/");
+	const [path, setPath] = useState<string>(
+		initialPath ? initialPath.replace(/\/$/, "") || "/" : "/",
+	);
 	const [search, setSearch] = useState("");
 	const [isSearchActive, setIsSearchActive] = useState(false);
 	const [searchType, setSearchType] = useState<string>("all");
