@@ -44,6 +44,28 @@ const PanelApp: React.FC = () => {
 		setIsLoading(false);
 	}, []);
 
+	useEffect(() => {
+		console.log("[PANEL] 📢 Panel opened - sending SMSS_EXTENSION_PANEL_OPENED message");
+		
+		chrome.runtime.sendMessage({
+			type: "SMSS_EXTENSION_PANEL_OPENED",
+			timestamp: Date.now(),
+		}).catch((error) => {
+			console.error("[PANEL] ❌ Failed to send open message:", error);
+		});
+
+		return () => {
+			console.log("[PANEL] 📢 Panel closing - sending SMSS_EXTENSION_PANEL_CLOSED message");
+			
+			chrome.runtime.sendMessage({
+				type: "SMSS_EXTENSION_PANEL_CLOSED",
+				timestamp: Date.now(),
+			}).catch((error) => {
+				console.error("[PANEL] ❌ Failed to send close message:", error);
+			});
+		};
+	}, []);
+
 	// Listen for playground chat events from content script
 	useEffect(() => {
 		const messageListener = (
@@ -323,6 +345,21 @@ const PanelApp: React.FC = () => {
 					]);
 				}
 			}
+			
+			// Handle field input detected from webpage
+			if (message.type === "FIELD_INPUT_DETECTED") {
+				console.log(
+					"[PANEL] 📝 Field input detected on webpage - auto-continuing",
+					{ value: message.value || "(password hidden)" }
+				);
+				
+				// If we're waiting for user input, auto-submit with the detected value
+				if (waitingForUserInput && userInputCallback) {
+					const valueToUse = message.isPassword ? "••••••••" : (message.value || "");
+					console.log("[PANEL] ✅ Auto-submitting user input from webpage");
+					userInputCallback(valueToUse);
+				}
+			}
 		};
 
 		chrome.runtime.onMessage.addListener(messageListener);
@@ -330,7 +367,8 @@ const PanelApp: React.FC = () => {
 		return () => {
 			chrome.runtime.onMessage.removeListener(messageListener);
 		};
-	}, [mode, autoExecutePlayground, isRunning]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isRunning, waitingForUserInput, userInputCallback]);
 
 	// Close dropdown when clicking outside
 
@@ -638,6 +676,8 @@ const PanelApp: React.FC = () => {
 				const onAskUser = async (
 					label: string,
 					isPassword: boolean,
+					selector?: string,
+					targetTabId?: number,
 				): Promise<string> => {
 					return new Promise<string>((resolve) => {
 						setUserInputPrompt(
@@ -645,7 +685,76 @@ const PanelApp: React.FC = () => {
 						);
 						setIsPasswordInput(isPassword);
 						setWaitingForUserInput(true);
+						
+						// Highlight the field on the webpage while the dialog is open
+						if (selector && targetTabId) {
+							console.log(`[PANEL] ✨ Highlighting field on webpage: ${selector}`);
+							chrome.runtime.sendMessage({
+								type: "HIGHLIGHT_FIELD",
+								tabId: targetTabId,
+								selector: selector,
+							}).then(response => {
+								if (response?.success) {
+									console.log("[PANEL] ✅ Field highlighted successfully");
+								} else {
+									console.log("[PANEL] ⚠️ Could not highlight field:", response?.error);
+								}
+							}).catch(err => {
+								console.log("[PANEL] ⚠️ Highlight unavailable:", err.message);
+							});
+						}
+						
+						// Start monitoring the field on the webpage
+						if (selector && targetTabId) {
+							console.log(`[PANEL] 🔍 Starting field monitoring for selector: ${selector}`);
+							chrome.runtime.sendMessage({
+								type: "START_FIELD_MONITORING",
+								tabId: targetTabId,
+								selector: selector,
+								isPassword: isPassword,
+							}).then(response => {
+								if (response?.success && response?.fieldFound !== false) {
+									console.log("[PANEL] ✅ Field monitoring active - user can type on webpage");
+								} else if (response?.fieldFound === false) {
+									// Field not found - this is OK, just means monitoring unavailable
+									console.log("[PANEL] ℹ️ Field not found for monitoring - user must use extension input");
+								} else {
+									// Other error (e.g., tab in bfcache) - not critical
+									console.log("[PANEL] ℹ️ Field monitoring unavailable - user must use extension input");
+								}
+							}).catch(err => {
+								// This is not critical - user can still input via extension dialog
+								console.log("[PANEL] ℹ️ Field monitoring unavailable:", err.message);
+							});
+						}
+						
 						setUserInputCallback(() => (value: string) => {
+							// Remove highlight when input is received
+							if (selector && targetTabId) {
+								console.log(`[PANEL] 🧹 Removing field highlight`);
+								chrome.runtime.sendMessage({
+									type: "REMOVE_HIGHLIGHT",
+									tabId: targetTabId,
+									selector: selector,
+								}).catch(err => {
+									// Not critical
+									console.log("[PANEL] ℹ️ Could not remove highlight:", err.message);
+								});
+							}
+							
+							// Stop monitoring when input is received
+							if (selector && targetTabId) {
+								console.log(`[PANEL] 🛑 Stopping field monitoring`);
+								chrome.runtime.sendMessage({
+									type: "STOP_FIELD_MONITORING",
+									tabId: targetTabId,
+									selector: selector,
+								}).catch(err => {
+									// Not critical - monitoring will cleanup on its own
+									console.log("[PANEL] ℹ️ Could not stop field monitoring:", err.message);
+								});
+							}
+							
 							setWaitingForUserInput(false);
 							setUserInputPrompt("");
 							setUserInputValue("");

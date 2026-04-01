@@ -71,6 +71,134 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true;
 	}
 
+	// Forward script execution completion from extension (panel) back to all tabs (content scripts)
+	// This allows the playground to receive execution status
+	if (
+		!sender.tab &&
+		message.type === "SCRIPT_EXECUTION_COMPLETE"
+	) {
+		console.log(
+			`[BACKGROUND] 🔄 Forwarding SCRIPT_EXECUTION_COMPLETE to all tabs`,
+			{ success: message.success, message: message.message }
+		);
+		
+		// Send to all tabs
+		chrome.tabs.query({}, (tabs) => {
+			tabs.forEach((tab) => {
+				if (tab.id) {
+					chrome.tabs
+						.sendMessage(tab.id, message)
+						.then(() => {
+							console.log(
+								`[BACKGROUND] ✅ Sent completion to tab ${tab.id}`,
+							);
+						})
+						.catch((err) => {
+							// Ignore errors (tab might not have content script)
+							console.log(
+								`[BACKGROUND] ⚠️ Could not send to tab ${tab.id}:`,
+								err.message,
+							);
+						});
+				}
+			});
+		});
+		
+		sendResponse({ success: true });
+		return true;
+	}
+
+	// Forward extension panel open/close signals to all tabs
+	if (
+		!sender.tab &&
+		(message.type === "SMSS_EXTENSION_PANEL_OPENED" ||
+			message.type === "SMSS_EXTENSION_PANEL_CLOSED")
+	) {
+		console.log(`[BACKGROUND] 🔄 Forwarding ${message.type} to all tabs`);
+
+		chrome.tabs.query({}, (tabs) => {
+			tabs.forEach((tab) => {
+				if (tab.id) {
+					chrome.tabs
+						.sendMessage(tab.id, message)
+						.then(() => {
+							console.log(`[BACKGROUND] ✅ Sent to tab ${tab.id}`);
+						})
+						.catch(() => {
+							console.log(`[BACKGROUND] ⚠️ Could not send to tab ${tab.id}`);
+						});
+				}
+			});
+		});
+
+		sendResponse({ success: true });
+		return true;
+	}
+
+	// Forward field monitoring messages from panel to specific tab
+	if (
+		!sender.tab &&
+		(message.type === "START_FIELD_MONITORING" || message.type === "STOP_FIELD_MONITORING")
+	) {
+		console.log(
+			`[BACKGROUND] 🔄 Forwarding ${message.type} to tab ${message.tabId}`,
+			{ selector: message.selector }
+		);
+		
+		if (message.tabId) {
+			chrome.tabs
+				.sendMessage(message.tabId, message)
+				.then((response) => {
+					console.log(`[BACKGROUND] ✅ Field monitoring message forwarded:`, response);
+					sendResponse(response);
+				})
+				.catch((err) => {
+					// Check if this is a bfcache error (tab moved to back/forward cache)
+					const isBfcacheError = err.message && (
+						err.message.includes("back/forward cache") ||
+						err.message.includes("message channel is closed")
+					);
+					
+					if (isBfcacheError) {
+						// This is expected when tab is in bfcache - not a critical error
+						console.log(`[BACKGROUND] ⚠️ Tab ${message.tabId} in bfcache, field monitoring unavailable`);
+						sendResponse({ success: false, error: "Tab in back/forward cache" });
+					} else {
+						console.error(`[BACKGROUND] ❌ Failed to forward field monitoring:`, err);
+						sendResponse({ success: false, error: err.message });
+					}
+				});
+		} else {
+			sendResponse({ success: false, error: "No tabId provided" });
+		}
+		
+		return true; // Keep channel open for async response
+	}
+
+	// Forward field input detected from content script to panel
+	if (
+		sender.tab &&
+		message.type === "FIELD_INPUT_DETECTED"
+	) {
+		console.log(
+			`[BACKGROUND] 🔄 Forwarding FIELD_INPUT_DETECTED from tab ${sender.tab.id} to panel`,
+			{ selector: message.selector, isPassword: message.isPassword }
+		);
+		
+		// Broadcast to all extension contexts (panel, popup, etc.)
+		chrome.runtime
+			.sendMessage(message)
+			.then(() => {
+				console.log(`[BACKGROUND] ✅ Field input notification sent to panel`);
+			})
+			.catch((err) => {
+				console.error(`[BACKGROUND] ❌ Failed to notify panel:`, err);
+			});
+		
+		sendResponse({ success: true });
+		return true;
+	}
+
 	switch (message.type) {
 		case "GET_CURRENT_TAB":
 			chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -114,6 +242,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			// Execute script-based actions (from JSON)
 			executeScriptAction(message.tabId, message.action, message.payload)
 				.then((result) => sendResponse({ success: true, result }))
+				.catch((error) =>
+					sendResponse({ success: false, error: error.message }),
+				);
+			return true;
+
+		case "HIGHLIGHT_FIELD":
+			// Highlight a field on the webpage
+			highlightElement(message.tabId, message.selector)
+				.then(() => sendResponse({ success: true }))
+				.catch((error) =>
+					sendResponse({ success: false, error: error.message }),
+				);
+			return true;
+
+		case "REMOVE_HIGHLIGHT":
+			// Remove highlight from a field on the webpage
+			removeHighlight(message.tabId, message.selector)
+				.then(() => sendResponse({ success: true }))
 				.catch((error) =>
 					sendResponse({ success: false, error: error.message }),
 				);
@@ -225,6 +371,122 @@ function wait(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Highlight an element on the page
+async function highlightElement(
+	tabId: number,
+	selector: string,
+): Promise<void> {
+	const maxRetries = 5;
+	let lastError: string | undefined;
+
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			const result = (await sendDebuggerCommand(
+				tabId,
+				"Runtime.evaluate",
+				{
+					expression: `
+				(function() {
+					const element = document.querySelector(${JSON.stringify(selector)});
+					if (!element) {
+						return { success: false, error: 'Element not found' };
+					}
+					
+					// Store original styles
+					if (!element.dataset.originalBorder) {
+						element.dataset.originalBorder = element.style.border || '';
+						element.dataset.originalBoxShadow = element.style.boxShadow || '';
+						element.dataset.originalOutline = element.style.outline || '';
+						element.dataset.originalBackgroundColor = element.style.backgroundColor || '';
+					}
+					
+					// Apply highlight styles
+					element.style.border = '3px solid #007bff';
+					element.style.boxShadow = '0 0 10px 2px rgba(0, 123, 255, 0.6)';
+					element.style.outline = '2px solid #0056b3';
+					element.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
+					element.style.transition = 'all 0.2s ease-in-out';
+					
+					// Scroll into view
+					element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					
+					return { success: true };
+				})()
+			`,
+					returnByValue: true,
+				},
+			)) as { result?: { value?: { success: boolean; error?: string } } };
+
+			if (result?.result?.value?.success) {
+				// Wait a bit for the highlight to be visible
+				await wait(300);
+				return; // Success, exit function
+			}
+
+			lastError = result?.result?.value?.error || "Unknown error";
+			console.log(
+				`Highlight attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+			);
+		} catch (error) {
+			lastError =
+				error instanceof Error ? error.message : "Unknown error";
+			console.log(
+				`Highlight attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+			);
+		}
+
+		// Wait before retry (longer delay for first few attempts)
+		if (attempt < maxRetries) {
+			const delay = attempt <= 2 ? 800 : 500; // Longer initial delays
+			await wait(delay);
+		}
+	}
+
+	// All retries failed - log but don't throw
+	console.warn(
+		`Failed to highlight element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`,
+	);
+}
+
+// Remove highlight from an element
+async function removeHighlight(
+	tabId: number,
+	selector: string,
+): Promise<void> {
+	try {
+		await sendDebuggerCommand(tabId, "Runtime.evaluate", {
+			expression: `
+				(function() {
+					const element = document.querySelector(${JSON.stringify(selector)});
+					if (!element) {
+						return { success: false };
+					}
+					
+					// Restore original styles
+					if (element.dataset.originalBorder !== undefined) {
+						element.style.border = element.dataset.originalBorder;
+						element.style.boxShadow = element.dataset.originalBoxShadow;
+						element.style.outline = element.dataset.originalOutline;
+						element.style.backgroundColor = element.dataset.originalBackgroundColor;
+						
+						// Clean up data attributes
+						delete element.dataset.originalBorder;
+						delete element.dataset.originalBoxShadow;
+						delete element.dataset.originalOutline;
+						delete element.dataset.originalBackgroundColor;
+					}
+					
+					return { success: true };
+				})()
+			`,
+			returnByValue: true,
+		});
+	} catch (error) {
+		console.warn("Failed to remove highlight:", error);
+		// Don't throw - cleanup is not critical
+	}
+}
+
 // Execute script-based actions (from Playwright JSON)
 async function executeScriptAction(
 	tabId: number,
@@ -302,13 +564,13 @@ async function clickBySelector(tabId: number, selector: string): Promise<void> {
 	let lastError: string | undefined;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
-		try {
-			// Use Runtime.evaluate to directly call .click() on the element
-			const result = (await sendDebuggerCommand(
-				tabId,
-				"Runtime.evaluate",
-				{
-					expression: `
+			try {
+				// Use Runtime.evaluate to directly call .click() on the element
+				const result = (await sendDebuggerCommand(
+					tabId,
+					"Runtime.evaluate",
+					{
+						expression: `
 					(function() {
 						const element = document.querySelector(${JSON.stringify(selector)});
 						if (!element) {
@@ -324,34 +586,36 @@ async function clickBySelector(tabId: number, selector: string): Promise<void> {
 						return { success: true };
 					})()
 				`,
-					returnByValue: true,
-					awaitPromise: false,
-				},
-			)) as { result?: { value?: { success: boolean; error?: string } } };
+						returnByValue: true,
+						awaitPromise: false,
+					},
+				)) as {
+					result?: { value?: { success: boolean; error?: string } };
+				};
 
-			if (result?.result?.value?.success) {
-				// Wait for click to process
-				await wait(150);
-				return; // Success, exit function
+				if (result?.result?.value?.success) {
+					// Wait for click to process
+					await wait(150);
+					return; // Success, exit function
+				}
+
+				lastError = result?.result?.value?.error || "Unknown error";
+				console.log(
+					`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+				);
+			} catch (error) {
+				lastError =
+					error instanceof Error ? error.message : "Unknown error";
+				console.log(
+					`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+				);
 			}
 
-			lastError = result?.result?.value?.error || "Unknown error";
-			console.log(
-				`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-			);
-		} catch (error) {
-			lastError =
-				error instanceof Error ? error.message : "Unknown error";
-			console.log(
-				`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-			);
+			// Wait before retry (but not after last attempt)
+			if (attempt < maxRetries) {
+				await wait(1500);
+			}
 		}
-
-		// Wait before retry (but not after last attempt)
-		if (attempt < maxRetries) {
-			await wait(1500);
-		}
-	}
 
 	// All retries failed
 	throw new Error(
@@ -392,13 +656,13 @@ async function typeBySelector(
 	let lastError: string | undefined;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
-		try {
-			// Use Runtime.evaluate to directly set value and trigger events
-			const result = (await sendDebuggerCommand(
-				tabId,
-				"Runtime.evaluate",
-				{
-					expression: `
+			try {
+				// Use Runtime.evaluate to directly set value and trigger events
+				const result = (await sendDebuggerCommand(
+					tabId,
+					"Runtime.evaluate",
+					{
+						expression: `
 					(function() {
 						const element = document.querySelector(${JSON.stringify(selector)});
 						if (!element) {
@@ -431,33 +695,35 @@ async function typeBySelector(
 						return { success: true };
 					})()
 				`,
-					returnByValue: true,
-				},
-			)) as { result?: { value?: { success: boolean; error?: string } } };
+						returnByValue: true,
+					},
+				)) as {
+					result?: { value?: { success: boolean; error?: string } };
+				};
 
-			if (result?.result?.value?.success) {
-				// Add small delay after typing to let the page react
-				await wait(200);
-				return; // Success, exit function
+				if (result?.result?.value?.success) {
+					// Add small delay after typing to let the page react
+					await wait(200);
+					return; // Success, exit function
+				}
+
+				lastError = result?.result?.value?.error || "Unknown error";
+				console.log(
+					`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+				);
+			} catch (error) {
+				lastError =
+					error instanceof Error ? error.message : "Unknown error";
+				console.log(
+					`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
+				);
 			}
 
-			lastError = result?.result?.value?.error || "Unknown error";
-			console.log(
-				`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-			);
-		} catch (error) {
-			lastError =
-				error instanceof Error ? error.message : "Unknown error";
-			console.log(
-				`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-			);
+			// Wait before retry (but not after last attempt)
+			if (attempt < maxRetries) {
+				await wait(1500);
+			}
 		}
-
-		// Wait before retry (but not after last attempt)
-		if (attempt < maxRetries) {
-			await wait(1500);
-		}
-	}
 
 	// All retries failed
 	throw new Error(

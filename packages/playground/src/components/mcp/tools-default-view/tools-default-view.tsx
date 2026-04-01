@@ -1,7 +1,7 @@
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -11,10 +11,17 @@ import {
 	CardFooter,
 	CardHeader,
 	CardTitle,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Label,
 	Textarea,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
+import type { MCPTool } from "@/types";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -29,6 +36,9 @@ export interface ToolsDefaultViewProps {
 
 	/** Connected tool */
 	tool: ToolStore["json"];
+
+	/** MCP schema for the tool */
+	mcp?: MCPTool;
 
 	/** Response to the tool, if already completed */
 	toolResponse?: string;
@@ -52,7 +62,7 @@ interface FieldSchema {
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, toolResponse, toolParameters }) => {
+	({ room, app, message, tool, mcp, toolResponse, toolParameters }) => {
 		/*
 		 * Library hooks
 		 */
@@ -81,8 +91,8 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		/*
 		 * Constants
 		 */
-		const title = tool?.title || "";
-		const description = tool?.description || "";
+		const title = tool?.title || mcp?.title || tool?.name || "";
+		const description = tool?.description || mcp?.description || "";
 
 		/*
 		 * State
@@ -92,11 +102,47 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
-		const [required, setRequired] = useState<string[]>([]);
-		const [properties, setProperties] = useState<
-			Record<string, FieldSchema>
-		>({});
-		const [response, setResponse] = useState<string>(toolResponse);
+		const [response, setResponse] = useState<string | undefined>(
+			toolResponse,
+		);
+		const [showExtensionDialog, setShowExtensionDialog] =
+			useState<boolean>(false);
+		const [extensionCheckRetrying, setExtensionCheckRetrying] =
+			useState<boolean>(false);
+		const extensionIsOpen = useRef<boolean>(false);
+
+		const required = mcp?.inputSchema?.required || [];
+		const properties =
+			(mcp?.inputSchema?.properties as Record<string, FieldSchema>) || {};
+
+		const selectedRecordedFile =
+			typeof data.recordedFile === "string" ? data.recordedFile : "";
+
+		useEffect(() => {
+			console.log("[PLAYGROUND] 🎧 Setting up listener for extension open signal");
+
+			const handleMessage = (event: MessageEvent) => {
+				if (event.origin !== window.location.origin) {
+					return;
+				}
+
+				if (event.data?.type === "SMSS_EXTENSION_OPENED") {
+					console.log("[PLAYGROUND] ✅ EXTENSION IS OPEN - Received signal from extension!");
+					extensionIsOpen.current = true;
+				}
+
+				if (event.data?.type === "SMSS_EXTENSION_CLOSED") {
+					console.log("[PLAYGROUND] ❌ EXTENSION IS CLOSED - Received signal from extension!");
+					extensionIsOpen.current = false;
+				}
+			};
+
+			window.addEventListener("message", handleMessage);
+
+			return () => {
+				window.removeEventListener("message", handleMessage);
+			};
+		}, []);
 
 		/*
 		 * Constants
@@ -117,25 +163,106 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			setData((prev) => ({ ...prev, [field]: value }));
 		};
 
+		/**
+		 * Check if extension panel is open
+		 */
+		const checkExtensionAvailable = async (): Promise<boolean> => {
+			if (!selectedRecordedFile) {
+				console.log("[PLAYGROUND] Not a Playwright script - skipping extension check");
+				return true;
+			}
+
+			const isOpen = extensionIsOpen.current;
+			
+			console.log("[PLAYGROUND] 🔍 Checking if extension is open:", isOpen);
+
+			if (!isOpen) {
+				console.warn("[PLAYGROUND] ❌ Extension is NOT open - showing popup");
+				return false;
+			}
+
+			console.log("[PLAYGROUND] ✅ Extension is open - can execute");
+			return true;
+		};
+
 		// Tool Execution
 		const handleSubmit = async () => {
+			// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
+			if (selectedRecordedFile) {
+				console.log(
+					"[PLAYGROUND] 🎯 This is a Playwright script - checking extension availability...",
+				);
+				const extensionAvailable = await checkExtensionAvailable();
+
+				if (!extensionAvailable) {
+					console.warn(
+						"[PLAYGROUND] ⚠️ Browser extension not available - showing dialog",
+					);
+					setShowExtensionDialog(true);
+					return; // Stop execution until user opens extension
+				}
+				console.log(
+					"[PLAYGROUND] ✅ Extension check passed - proceeding with execution",
+				);
+			}
+
 			setIsSubmitting(true);
 			let success = false;
 			let output = "";
 			try {
-				const response = await room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${app}" ], function=[ "${
-						tool.name
-					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-					false,
-					false,
-				);
-				const rawOutput = response.pixelReturn[0].output;
-				output =
-					typeof rawOutput === "string"
-						? rawOutput
-						: JSON.stringify(rawOutput);
-				success = true;
+				// Check if this is a Playwright script execution
+				if (selectedRecordedFile) {
+					// Get session ID first
+					const sessionIdResponse = await room.runRoomPixel<[string]>(
+						"Session();",
+						false,
+						false,
+					);
+					const sessionId = sessionIdResponse.pixelReturn[0].output;
+
+					// Fetch the complete Playwright script
+					const scriptResponse = await room.runRoomPixel<[unknown]>(
+						`GetAllSteps(project=["${app}"], sessionId=["${sessionId}"], fileName=["${selectedRecordedFile}"]);`,
+						false,
+						false,
+					);
+					const scriptJson = scriptResponse.pixelReturn[0].output;
+
+					// Log the fetched script to console
+					console.log("Fetched Playwright Script:", scriptJson);
+
+					// Send script to browser extension
+					window.postMessage(
+						{
+							type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+							script: {
+								projectId: app,
+								name: selectedRecordedFile,
+								autoExecute: false,
+								scriptContent: scriptJson,
+							},
+						},
+						"*",
+					);
+
+					output = `Successfully fetched Playwright script: ${selectedRecordedFile}`;
+					success = true;
+				} else {
+					// Normal MCP tool execution for non-Playwright tools
+					const response = await room.runRoomPixel<[unknown]>(
+						`RunMCPTool(project = [ "${app}" ], function=[ "${
+							tool.name
+						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+						false,
+						false,
+					);
+					const rawOutput = response.pixelReturn[0].output;
+					output =
+						typeof rawOutput === "string"
+							? rawOutput
+							: JSON.stringify(rawOutput);
+					success = true;
+				}
 			} catch (error) {
 				output = error.toString();
 				success = false;
@@ -175,19 +302,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		/*
 		 * Effects
 		 */
-
-		// Load tool schema
-		useEffect(() => {
-			if (getMCP.status === "SUCCESS" && tool?.original_name) {
-				const foundTool = getMCP.data.tools.find(
-					(t) => t.name === tool.original_name,
-				);
-				if (foundTool) {
-					setProperties(foundTool.inputSchema.properties);
-					setRequired(foundTool.inputSchema.required);
-				}
-			}
-		}, [getMCP, tool.original_name]);
+		// No effects needed for now
 
 		return (
 			<div className="flex h-full w-full flex-col items-center justify-center overflow-auto p-4">
@@ -262,6 +377,36 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 											{/* Required fields */}
 											{renderFields(requiredFields, true)}
 
+											{/* Playwright Script Details */}
+											{selectedRecordedFile && (
+												<div className="space-y-3 rounded-md border bg-muted/50 p-4">
+													<h3 className="font-semibold text-base">
+														Playwright Script
+														Details
+													</h3>
+													<div className="space-y-2 text-sm">
+														<div>
+															<span className="font-medium">
+																Project ID:
+															</span>
+															<span className="ml-2 text-muted-foreground">
+																{app}
+															</span>
+														</div>
+														<div>
+															<span className="font-medium">
+																Recorded File:
+															</span>
+															<span className="ml-2 text-muted-foreground">
+																{
+																	selectedRecordedFile
+																}
+															</span>
+														</div>
+													</div>
+												</div>
+											)}
+
 											{/* Optional fields toggle */}
 											{optionalFields.length > 0 && (
 												<>
@@ -322,6 +467,82 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						</CardFooter>
 					)}
 				</Card>
+
+				{/* Extension Not Available Dialog */}
+				<Dialog
+					open={showExtensionDialog}
+					onOpenChange={setShowExtensionDialog}
+				>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle className="flex items-center gap-2">
+								<AlertCircle className="h-5 w-5 text-warning" />
+								Browser Extension Required
+							</DialogTitle>
+							<DialogDescription>
+								The browser extension is not responding. To
+								execute Playwright scripts, please ensure the
+								SEMOSS Chrome Extension is installed and the
+								side panel is open.
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-3 py-4">
+							<p className="font-medium text-sm">
+								Steps to open the extension:
+							</p>
+							{/* biome-ignore lint/nursery/useSortedClasses: order is correct */}
+							<ol className="ml-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
+								<li>
+									Look for the SEMOSS extension icon in your
+									browser toolbar (puzzle piece icon)
+								</li>
+								<li>
+									Click the extension icon to open the side
+									panel
+								</li>
+								<li>Wait for the panel to load completely</li>
+								<li>Click "Retry" below to continue</li>
+							</ol>
+						</div>
+						<DialogFooter className="gap-2">
+							<Button
+								variant="outline"
+								onClick={() => setShowExtensionDialog(false)}
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={async () => {
+									setExtensionCheckRetrying(true);
+									const available =
+										await checkExtensionAvailable();
+									setExtensionCheckRetrying(false);
+
+									if (available) {
+										setShowExtensionDialog(false);
+										// Retry the execution
+										handleSubmit();
+									} else {
+										// Still not available - user needs to open it
+										console.warn(
+											"[PLAYGROUND] ⚠️ Extension still not available after retry",
+										);
+									}
+								}}
+								disabled={extensionCheckRetrying}
+							>
+								{extensionCheckRetrying ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Checking...
+									</>
+								) : (
+									"Retry"
+								)}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</div>
 		);
 	},

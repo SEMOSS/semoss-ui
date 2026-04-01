@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { usePixel } from "@semoss/sdk/react";
 
-interface PlaywrightScript {
+export interface PlaywrightScript {
 	name: string;
 	path: string;
 	description?: string;

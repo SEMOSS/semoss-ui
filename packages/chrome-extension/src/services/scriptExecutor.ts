@@ -485,7 +485,7 @@ export class ScriptExecutor {
 			isPassword?: boolean;
 			waitAfterMs?: number;
 		},
-		onAskUser?: (label: string, isPassword: boolean) => Promise<string>,
+		onAskUser?: (label: string, isPassword: boolean, selector?: string, tabId?: number) => Promise<string>,
 	): Promise<void> {
 		console.log("=".repeat(80));
 		console.log(
@@ -547,6 +547,8 @@ export class ScriptExecutor {
 				textToType = await onAskUser(
 					action.label,
 					action.isPassword || false,
+					action.selector,
+					tabId,
 				);
 				console.log(
 					`[ScriptExecutor] TYPE - User provided: "${textToType}"`,
