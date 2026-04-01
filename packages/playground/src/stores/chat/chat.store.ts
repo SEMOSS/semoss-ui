@@ -45,7 +45,11 @@ interface ChatStoreInterface {
 	 * Preloaded embedded paths
 	 * path -> url
 	 */
-	preloadedEmbedPathMap: Record<string, string>;
+	embeddedPageMap: Record<
+		string,
+		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
+		| ThemeMap["playground"]["sidebar"]["footerItems"][number]
+	>;
 
 	/**
 	 * Current user info
@@ -77,7 +81,7 @@ export class ChatStore {
 			id: "",
 			name: "",
 		},
-		preloadedEmbedPathMap: {},
+		embeddedPageMap: {},
 	};
 
 	constructor(
@@ -93,17 +97,21 @@ export class ChatStore {
 		if (user) {
 			this._store.user = user;
 		}
-		this._store.preloadedEmbedPathMap = [
+		this._store.embeddedPageMap = [
 			...theme.sidebar.headerItems,
 			...theme.sidebar.footerItems,
 		]
 			.filter((item) => item.embed && item.url)
 			.reduce(
 				(acc, item) => {
-					acc[item.path] = item.url;
+					acc[item.path] = item;
 					return acc;
 				},
-				{} as Record<string, string>,
+				{} as Record<
+					string,
+					| ThemeMap["playground"]["sidebar"]["headerItems"][number]
+					| ThemeMap["playground"]["sidebar"]["footerItems"][number]
+				>,
 			);
 
 		// make it observable
@@ -144,8 +152,8 @@ export class ChatStore {
 	/**
 	 * Get the map of preloaded embed paths
 	 */
-	get preloadedEmbedPathMap() {
-		return this._store.preloadedEmbedPathMap;
+	get embeddedPageMap() {
+		return this._store.embeddedPageMap;
 	}
 
 	/**

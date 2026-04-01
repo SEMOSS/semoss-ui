@@ -143,30 +143,30 @@ export const MainLayout = observer(() => {
 							<Separator />
 							<div className="relative w-full flex-1 overflow-hidden">
 								<Outlet />
-								{Object.entries(
-									chatStore.preloadedEmbedPathMap,
-								).map(([path, url]) => {
-									const isActive = matchPath(
-										`/embed/${path}`,
-										pathname,
-									);
-									return (
-										<iframe
-											key={path}
-											src={url}
-											title={path}
-											className="absolute inset-0 h-full w-full border-none"
-											// @ts-expect-error fetchpriority is not yet in React's typings
-											fetchpriority="high"
-											style={{
-												opacity: isActive ? 1 : 0,
-												pointerEvents: isActive
-													? "auto"
-													: "none",
-											}}
-										/>
-									);
-								})}
+								{Object.values(chatStore.embeddedPageMap).map(
+									(item) => {
+										const isActive = matchPath(
+											`/embed/${item.path}`,
+											pathname,
+										);
+										return (
+											<iframe
+												key={item.path}
+												src={item.url}
+												title={item.path}
+												className="absolute inset-0 h-full w-full border-none"
+												// @ts-expect-error fetchpriority is not yet in React's typings
+												fetchpriority="high"
+												style={{
+													opacity: isActive ? 1 : 0,
+													pointerEvents: isActive
+														? "auto"
+														: "none",
+												}}
+											/>
+										);
+									},
+								)}
 							</div>
 							<GlobalFooter />
 						</div>
