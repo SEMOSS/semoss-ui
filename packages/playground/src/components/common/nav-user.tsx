@@ -50,7 +50,7 @@ export const NavUser = () => {
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
 				<div className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 hover:bg-accent">
-					<Avatar className="h-8 w-8 flex-shrink-0 rounded-lg">
+					<Avatar className="h-8 w-8 shrink-0 rounded-lg">
 						<AvatarImage src={""} alt={userName} />
 						<AvatarFallback className="rounded-lg bg-primary/10">
 							{toInitials(userName)}

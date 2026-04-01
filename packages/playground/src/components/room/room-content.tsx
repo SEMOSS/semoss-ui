@@ -317,7 +317,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
+						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
