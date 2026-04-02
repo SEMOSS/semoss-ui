@@ -94,6 +94,8 @@ export const GlobalNav = observer(() => {
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 	const [editingName, setEditingName] = useState("");
 
+	const [deletedSet, setDeletedSet] = useState(new Set<string>());
+
 	const systemDate = dayjs(system.config.systemDate);
 
 	const navigate = useNavigate();
@@ -177,7 +179,7 @@ export const GlobalNav = observer(() => {
 
 	useEffect(() => {
 		// keep this counter
-		chat.keys.roomCounter;
+		console.log(chat.keys.roomCounter);
 		getRooms.reset();
 	}, [getRooms.reset, chat.keys.roomCounter]);
 
@@ -433,6 +435,11 @@ export const GlobalNav = observer(() => {
 										const isEditing =
 											editingRoomId === roomId;
 
+										// if the room is in the deleted set, don't render it
+										if (deletedSet.has(roomId)) {
+											return null;
+										}
+
 										return (
 											<SidebarMenuItem
 												key={roomId}
@@ -569,6 +576,19 @@ export const GlobalNav = observer(() => {
 																		e.stopPropagation();
 
 																		try {
+																			// optimistically add to deleted set to remove from UI immediately
+																			setDeletedSet(
+																				(
+																					prev,
+																				) =>
+																					new Set(
+																						[
+																							...prev,
+																							roomId,
+																						],
+																					),
+																			);
+
 																			await chat.closeRoom(
 																				roomId,
 																			);
@@ -590,8 +610,29 @@ export const GlobalNav = observer(() => {
 																			// Refetch rooms after deletion
 																			getRooms.reset();
 																		} catch (e) {
-																			toast.error(
-																				e.message,
+																			if (
+																				e instanceof
+																				Error
+																			) {
+																				toast.error(
+																					e.message,
+																				);
+																			}
+																		} finally {
+																			// remove from deleted set after attempting deletion to allow re-render if deletion failed
+																			setDeletedSet(
+																				(
+																					prev,
+																				) => {
+																					const newSet =
+																						new Set(
+																							prev,
+																						);
+																					newSet.delete(
+																						roomId,
+																					);
+																					return newSet;
+																				},
 																			);
 																		}
 																	}}
