@@ -10,6 +10,7 @@ import {
 	Input,
 	P,
 	Progress,
+	Skeleton,
 	Spinner,
 	Table,
 	TableBody,
@@ -357,6 +358,68 @@ export const FileTable = (props: FileTableProps) => {
 		setValue("FILES", sortedFiles);
 	};
 
+	/**
+	 * Render loading skeleton rows for the table.
+	 * Shows placeholder content while files are being fetched.
+	 */
+	const renderLoadingRows = () => {
+		return Array.from({ length: NUM_RESULTS_PER_PAGE }, () => (
+			<TableRow key={`skeleton-${crypto.randomUUID()}`}>
+				<TableCell>
+					<Skeleton className="h-4 w-4" />
+				</TableCell>
+				<TableCell>
+					<Skeleton className="h-4 w-[200px]" />
+				</TableCell>
+				<TableCell>
+					<Skeleton className="h-4 w-[120px]" />
+				</TableCell>
+				<TableCell>
+					<Skeleton className="h-4 w-20" />
+				</TableCell>
+				<TableCell>
+					<Skeleton className="h-8 w-8" />
+				</TableCell>
+			</TableRow>
+		));
+	};
+
+	/**
+	 * Render empty state when no files match the current filter.
+	 */
+	const renderEmptyState = () => {
+		const isFiltered = searchFilter.length > 0;
+		return (
+			<TableRow>
+				<TableCell colSpan={5} className="h-[200px]">
+					<div className="flex flex-col items-center justify-center gap-2 text-center">
+						<Upload className="h-12 w-12 text-muted-foreground" />
+						<P className="font-medium text-foreground">
+							{isFiltered
+								? "No files match your search"
+								: "No files uploaded yet"}
+						</P>
+						<P className="text-muted-foreground text-sm">
+							{isFiltered
+								? "Try adjusting your search terms"
+								: "Upload your first document to get started"}
+						</P>
+						{!isFiltered && (
+							<Button
+								onClick={() => setOpen(true)}
+								size="sm"
+								className="mt-2"
+							>
+								<Plus className="size-4" />
+								Embed New Document
+							</Button>
+						)}
+					</div>
+				</TableCell>
+			</TableRow>
+		);
+	};
+
 	return (
 		<div className="flex w-full shrink-0 flex-col items-start justify-between gap-[25px]">
 			<div className="w-full rounded-xl shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
@@ -492,101 +555,118 @@ export const FileTable = (props: FileTableProps) => {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{verifiedFiles.map((_x, i) => {
-								if (
-									i >=
-										filePage * NUM_RESULTS_PER_PAGE -
-											NUM_RESULTS_PER_PAGE &&
-									i < filePage * NUM_RESULTS_PER_PAGE
-								) {
-									const file = verifiedFiles[i];
+							{getFileDetails.status === "LOADING"
+								? renderLoadingRows()
+								: verifiedFiles.length === 0
+									? renderEmptyState()
+									: verifiedFiles.map((_x, i) => {
+											if (
+												i >=
+													filePage *
+														NUM_RESULTS_PER_PAGE -
+														NUM_RESULTS_PER_PAGE &&
+												i <
+													filePage *
+														NUM_RESULTS_PER_PAGE
+											) {
+												const file = verifiedFiles[i];
 
-									let isSelected = false;
+												let isSelected = false;
 
-									if (file) {
-										isSelected = selectedFiles.some(
-											(value) => {
-												return (
-													value.fileName ===
-													file.fileName
-												);
-											},
-										);
-									}
-									if (file) {
-										return (
-											<TableRow
-												key={`${file.fileName}-${i}`}
-											>
-												<TableCell>
-													<Checkbox
-														checked={isSelected}
-														onCheckedChange={() => {
-															if (isSelected) {
-																const selFiles: FileExplorerProps[] =
-																	[];
-																selectedFiles.forEach(
-																	(u) => {
+												if (file) {
+													isSelected =
+														selectedFiles.some(
+															(value) => {
+																return (
+																	value.fileName ===
+																	file.fileName
+																);
+															},
+														);
+												}
+												if (file) {
+													return (
+														<TableRow
+															key={`${file.fileName}-${i}`}
+														>
+															<TableCell>
+																<Checkbox
+																	checked={
+																		isSelected
+																	}
+																	onCheckedChange={() => {
 																		if (
-																			u.fileName !==
-																			file.fileName
+																			isSelected
 																		) {
-																			selFiles.push(
-																				u,
+																			const selFiles: FileExplorerProps[] =
+																				[];
+																			selectedFiles.forEach(
+																				(
+																					u,
+																				) => {
+																					if (
+																						u.fileName !==
+																						file.fileName
+																					) {
+																						selFiles.push(
+																							u,
+																						);
+																					}
+																				},
+																			);
+																			setSelectedFiles(
+																				selFiles,
+																			);
+																		} else {
+																			setSelectedFiles(
+																				[
+																					...selectedFiles,
+																					file,
+																				],
 																			);
 																		}
-																	},
-																);
-																setSelectedFiles(
-																	selFiles,
-																);
-															} else {
-																setSelectedFiles(
-																	[
-																		...selectedFiles,
-																		file,
-																	],
-																);
-															}
-														}}
-														data-testid={`file-checkbox-${file.fileName}`}
-													/>
-												</TableCell>
-												<TableCell>
-													{file.fileName}
-												</TableCell>
-												<TableCell>
-													{file.lastModified}
-												</TableCell>
-												<TableCell>
-													{Math.round(
-														file.fileSize * 10,
-													) / 10}{" "}
-													KB
-												</TableCell>
-												<TableCell>
-													<Button
-														variant="ghost"
-														size="icon"
-														onClick={() => {
-															setDeleteFileModal(
-																true,
-															);
-															setFileToDelete(
-																file,
-															);
-														}}
-													>
-														<Trash2 className="size-4" />
-													</Button>
-												</TableCell>
-											</TableRow>
-										);
-									}
-								}
+																	}}
+																	data-testid={`file-checkbox-${file.fileName}`}
+																/>
+															</TableCell>
+															<TableCell>
+																{file.fileName}
+															</TableCell>
+															<TableCell>
+																{
+																	file.lastModified
+																}
+															</TableCell>
+															<TableCell>
+																{Math.round(
+																	file.fileSize *
+																		10,
+																) / 10}{" "}
+																KB
+															</TableCell>
+															<TableCell>
+																<Button
+																	variant="ghost"
+																	size="icon"
+																	onClick={() => {
+																		setDeleteFileModal(
+																			true,
+																		);
+																		setFileToDelete(
+																			file,
+																		);
+																	}}
+																>
+																	<Trash2 className="size-4" />
+																</Button>
+															</TableCell>
+														</TableRow>
+													);
+												}
+											}
 
-								return null;
-							})}
+											return null;
+										})}
 						</TableBody>
 						<TableFooter>
 							<TableRow>
