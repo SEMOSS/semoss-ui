@@ -623,20 +623,24 @@ export const GlobalNav = observer(() => {
 					);
 				})}
 			</SidebarContent>
-			<SidebarFooter>
-				<Separator className="group-data-[collapsible=icon]:hidden" />
-				<SidebarMenu className="gap-2 p-2 group-data-[collapsible=icon]:hidden">
-					{root.theme.sidebar.footerItems.map((item, index) => (
-						<GlobalNavItem
-							key={`footer-${item.name}-${index}`}
-							name={item.name}
-							icon={item.icon}
-							path={item.path}
-							url={item.url}
-							embed={item.embed}
-						/>
-					))}
-					<SidebarMenuItem className="">
+			<SidebarFooter className="gap-0">
+				<Separator className="mb-2 group-data-[collapsible=icon]:hidden" />
+				{root.theme.sidebar.footerItems.length > 0 && (
+					<SidebarMenu className="gap-2 p-2 pb-0 group-data-[collapsible=icon]:hidden">
+						{root.theme.sidebar.footerItems.map((item, index) => (
+							<GlobalNavItem
+								key={`footer-${item.name}-${index}`}
+								name={item.name}
+								icon={item.icon}
+								path={item.path}
+								url={item.url}
+								embed={item.embed}
+							/>
+						))}
+					</SidebarMenu>
+				)}
+				<SidebarMenu className="gap-2 p-2">
+					<SidebarMenuItem>
 						<NavUser />
 					</SidebarMenuItem>
 				</SidebarMenu>
