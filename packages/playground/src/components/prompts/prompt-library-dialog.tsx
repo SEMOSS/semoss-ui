@@ -1,6 +1,7 @@
 import { SearchIcon } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Dialog,
 	DialogContent,
@@ -37,6 +38,7 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 	isLoading = false,
 	onSelectPrompt,
 }) => {
+	const { t } = useTranslation("workspace");
 	const [search, setSearch] = useState("");
 	const [activeTag, setActiveTag] = useState<string | null>(null);
 
@@ -101,7 +103,7 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 			<DialogContent className="flex h-[85vh] w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
 				{/* Header */}
 				<DialogHeader className="shrink-0 border-b px-4 pt-5 pb-4 sm:px-6">
-					<DialogTitle>Prompt Library</DialogTitle>
+					<DialogTitle>{t("form.promptsLabel")}</DialogTitle>
 
 					{/* Search row */}
 					<div className="mt-3">
@@ -110,7 +112,7 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 								<SearchIcon className="size-4 text-muted-foreground" />
 							</InputGroupAddon>
 							<InputGroupInput
-								placeholder="Search prompts..."
+								placeholder={t("prompts.searchPlaceholder")}
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 								autoFocus
