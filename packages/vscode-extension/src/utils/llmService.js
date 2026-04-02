@@ -201,8 +201,7 @@ class LLMService {
 			const res = await fetch(url, {
 				method: "POST",
 				headers: hdrs,
-				body: body,
-				timeout: 30000,
+				body: typeof body === "string" ? body : JSON.stringify(body),
 			});
 			return { res, attemptLabel };
 		};

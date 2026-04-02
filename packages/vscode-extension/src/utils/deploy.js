@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const fs = require("node:fs");
-const axios = require("axios");
+const fetch = require("node-fetch");
 const FormData = require("form-data");
 
 let SEMOSS_URL = "";
@@ -9,8 +9,8 @@ let encoded = "";
 let outputFilePath = "";
 
 /**
- * Helper function to get meaningful error messages from axios errors
- * @param {Error} error - The axios error
+ * Helper function to get meaningful error messages from fetch errors
+ * @param {Error} error - The fetch error
  * @returns {string} - A user-friendly error message
  */
 function getErrorMessage(error) {
@@ -67,12 +67,21 @@ async function deployProject(projectId, progressCallback) {
 				params.append("expression", "true");
 				params.append("insightId", "new");
 
-				response = await axios.post(
-					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
-					{ headers },
-				);
-				insightId = response.data.insightID;
+			const res1 = await fetch(
+				`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
+				{
+					method: "POST",
+					headers,
+					body: params,
+				},
+			);
+			response = await res1.json();
+			// Try both insightID and insightId (case variations)
+			insightId = response.insightID || response.insightId;
+			
+			if (!insightId) {
+				throw new Error("No insight ID returned from server");
+			}
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Failed to create new insight: ${getErrorMessage(error)}`,
@@ -104,11 +113,15 @@ async function deployProject(projectId, progressCallback) {
 				params.append("insightId", insightId);
 
 				console.log(`Deleting assets for project: ${projectId}`);
-				response = await axios.post(
-					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
-					{ headers },
-				);
+			const res2 = await fetch(
+				`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
+				{
+					method: "POST",
+					headers,
+					body: params,
+				},
+			);
+			response = await res2.json();
 			} catch (error) {
 				console.error("Delete assets error:", error);
 				vscode.window.showErrorMessage(
@@ -121,8 +134,8 @@ async function deployProject(projectId, progressCallback) {
 			}
 
 			// Check if deletion was successful or if assets didn't exist (both are OK)
-			if (response.data.pixelReturn[0].operationType[0] !== "SUCCESS") {
-				const errorOutput = response.data.pixelReturn[0].output;
+		if (response.pixelReturn[0].operationType[0] !== "SUCCESS") {
+			const errorOutput = response.pixelReturn[0].output;
 				console.error("Delete assets failed:", errorOutput);
 
 				// If the error is just that the folder doesn't exist, that's fine - continue
@@ -180,17 +193,18 @@ async function deployProject(projectId, progressCallback) {
 				console.log(
 					`Uploading file: ${outputFilePath} (${Math.round(stats.size / 1024)} KB) to project: ${projectId}`,
 				);
-				response = await axios.post(
+				const res3 = await fetch(
 					`${SEMOSS_URL}/Monolith/api/uploadFile/baseUpload?insightId=${insightId}&projectId=${projectId}&path=version/assets/`,
-					formData,
 					{
+						method: "POST",
 						headers: {
 							...formData.getHeaders(),
 							Authorization: `Basic ${encoded}`,
 						},
-						timeout: 60000, // 60 second timeout for large files
+						body: formData,
 					},
 				);
+				response = await res3.json();
 			} catch (error) {
 				console.error("Upload assets error:", error);
 				vscode.window.showErrorMessage(
@@ -203,11 +217,11 @@ async function deployProject(projectId, progressCallback) {
 			}
 
 			if (
-				!response.data ||
-				!response.data[0] ||
-				!response.data[0].fileLocation
+			!response ||
+			!response[0] ||
+			!response[0].fileLocation
 			) {
-				console.error("Upload response:", response.data);
+				console.error("Upload response:", response);
 				vscode.window.showErrorMessage(
 					"Failed to upload assets: Invalid response from server",
 				);
@@ -219,14 +233,14 @@ async function deployProject(projectId, progressCallback) {
 
 			console.log(
 				"Assets uploaded successfully:",
-				response.data[0].fileLocation,
-			);
+			response[0].fileLocation,
+		);
 
-			progress.report({ increment: 50 });
-			progressCallback?.("Unzipping assets on server...");
+		progress.report({ increment: 50 });
+		progressCallback?.("Unzipping assets on server...");
 
-			// Unzip the uploaded file
-			const fileLocation = response.data[0].fileLocation;
+		// Unzip the uploaded file
+		const fileLocation = response[0].fileLocation;
 			try {
 				params = new URLSearchParams();
 				params.append(
@@ -235,11 +249,15 @@ async function deployProject(projectId, progressCallback) {
 				);
 				params.append("insightId", insightId);
 
-				response = await axios.post(
+				const res4 = await fetch(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
-					{ headers },
+					{
+						method: "POST",
+						headers,
+						body: params,
+					},
 				);
+				response = await res4.json();
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Failed to unzip file: ${getErrorMessage(error)}`,
@@ -250,8 +268,8 @@ async function deployProject(projectId, progressCallback) {
 				return;
 			}
 
-			if (response.data.pixelReturn[0].output !== true) {
-				const apiError = response.data.pixelReturn[0].output;
+		if (response.pixelReturn[0].output !== true) {
+			const apiError = response.pixelReturn[0].output;
 				vscode.window.showErrorMessage(
 					`Failed to unzip the uploaded file on the server. API response: ${apiError}`,
 				);
@@ -273,11 +291,15 @@ async function deployProject(projectId, progressCallback) {
 				);
 				params.append("insightId", insightId);
 
-				response = await axios.post(
+				const res5 = await fetch(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
-					{ headers },
+					{
+						method: "POST",
+						headers,
+						body: params,
+					},
 				);
+				response = await res5.json();
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Failed to reload insight classes: ${getErrorMessage(error)}`,
@@ -288,7 +310,7 @@ async function deployProject(projectId, progressCallback) {
 				return;
 			}
 
-			if (!response.data.pixelReturn[0].output) {
+			if (!response.pixelReturn[0].output) {
 				vscode.window.showErrorMessage(
 					"Failed to reload insight classes",
 				);
@@ -305,11 +327,15 @@ async function deployProject(projectId, progressCallback) {
 				params.append("projectId", projectId);
 				params.append("hasPortal", true);
 
-				response = await axios.post(
+				const res6 = await fetch(
 					`${SEMOSS_URL}/Monolith/api/auth/project/setProjectPortal`,
-					params,
-					{ headers },
+					{
+						method: "POST",
+						headers,
+						body: params,
+					},
 				);
+				response = await res6.json();
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Failed to set project portal: ${getErrorMessage(error)}`,
@@ -320,7 +346,7 @@ async function deployProject(projectId, progressCallback) {
 				return;
 			}
 
-			if (!response.data) {
+			if (!response) {
 				vscode.window.showErrorMessage("Failed to set project portal");
 				progressCallback?.("Failed to set project portal");
 				return;
@@ -338,11 +364,15 @@ async function deployProject(projectId, progressCallback) {
 				);
 				params.append("insightId", insightId);
 
-				response = await axios.post(
+				const res7 = await fetch(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
-					{ headers },
+					{
+						method: "POST",
+						headers,
+						body: params,
+					},
 				);
+				response = await res7.json();
 			} catch (error) {
 				vscode.window.showErrorMessage(
 					`Failed to publish project: ${getErrorMessage(error)}`,
@@ -356,7 +386,7 @@ async function deployProject(projectId, progressCallback) {
 			progress.report({ increment: 100 });
 
 			if (
-				response.data.pixelReturn[0].additionalOutput[0]
+				response.pixelReturn[0].additionalOutput[0]
 					.operationType[0] !== "SUCCESS"
 			) {
 				vscode.window.showErrorMessage("Failed to publish project");

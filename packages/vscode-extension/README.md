@@ -65,7 +65,7 @@ The chatbot is built using modern React architecture:
 - **Vite**: Fast build system with hot module replacement
 - **CSS Modules**: Scoped styling with CSS variables
 
-For detailed migration information, see [REACT_MIGRATION.md](./REACT_MIGRATION.md).
+<!-- For detailed migration information, see REACT_MIGRATION.md. -->
 
 ## Development
 

@@ -5,13 +5,7 @@ test/**
 .gitignore
 .github/**
 .yarnrc
-node_modules/**
-!node_modules/form-data/**
-!node_modules/axios/**
-!node_modules/archiver/**
-!node_modules/unzipper/**
-!node_modules/ncp/**
-!node_modules/@aws-sdk/client-s3/**
+**/node_modules/**
 out/**/*.map
 examples/**
 vsc-extension-quickstart.md
@@ -43,8 +37,14 @@ logs/**
 
 # Source files since we're bundling
 src/**
+!src/webviews/
+!src/webviews/chatbot-react/
+src/webviews/chatbot-react/**
+!src/webviews/chatbot-react/dist/**
+!src/webviews/chatbot-react/dist/index.html
+!src/webviews/chatbot-react/dist/assets/**
 # But keep the Chatbot-ui files
-!src/components/Chatbot-ui/**
+# !src/components/Chatbot-ui/**
 # Only include bundled files from out directory
 !out/main.js
 .yarn/**

@@ -7,7 +7,7 @@
  * @module createApp
  */
 
-const axios = require("axios");
+const fetch = require("node-fetch");
 const fs = require("fs");
 const http = require("http");
 const https = require("https");
@@ -306,18 +306,21 @@ async function createAppOnServer(secrets, headers, appDetails) {
 	params.append("insightId", "new");
 
 	try {
-		const response = await axios.post(
+		const res = await fetch(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-			params,
-			{ headers },
+			{
+				method: "POST",
+				headers,
+				body: params,
+			},
 		);
+		const response = await res.json();
 
 		if (
-			!response.data ||
-			!response.data.pixelReturn ||
-			!response.data.pixelReturn[0] ||
-			!response.data.pixelReturn[0].output ||
-			!response.data.pixelReturn[0].output.project_id
+			!response ||
+			!response.pixelReturn ||
+			!response.pixelReturn[0] ||
+			!response.pixelReturn[0].output
 		) {
 			logError(
 				"CreateProject response invalid",
@@ -326,7 +329,17 @@ async function createAppOnServer(secrets, headers, appDetails) {
 			throw new Error("Failed to create app: Invalid response");
 		}
 
-		const projectId = response.data.pixelReturn[0].output.project_id;
+		// Extract project ID - try both property name variations
+		const output = response.pixelReturn[0].output;
+		const projectId = output.project_id || output.projectId || output.projectID;
+		
+		if (!projectId) {
+			logError(
+				"CreateProject missing project ID",
+				new Error("No project ID in response"),
+			);
+			throw new Error("Failed to create app: No project ID returned");
+		}
 
 		// Set description using SetProjectMetadata if description is provided
 		if (appDetails.description) {
@@ -335,33 +348,23 @@ async function createAppOnServer(secrets, headers, appDetails) {
 				"expression",
 				`SetProjectMetadata(project=["${projectId}"], meta=[{"tag":[],"description":"${appDetails.description}"}])`,
 			);
-			metadataParams.append(
-				"insightId",
-				response.data.insightID || "new",
-			);
+			// Get insight ID from response, checking both possible property names
+			const responseInsightId = response.insightID || response.insightId || "new";
+			metadataParams.append("insightId", responseInsightId);
 
-			await axios.post(
+			await fetch(
 				`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-				metadataParams,
-				{ headers },
+				{
+					method: "POST",
+					headers,
+					body: metadataParams,
+				},
 			);
 		}
 
 		return projectId;
 	} catch (err) {
-		if (err.isAxiosError) {
-			logError("Axios error during CreateProject", err);
-			const url = err.config && err.config.url ? err.config.url : "N/A";
-			const status =
-				err.response && err.response.status
-					? err.response.status
-					: "N/A";
-			vscode.window.showErrorMessage(
-				`Network/API error: ${err.message}\nURL: ${url}\nStatus: ${status}`,
-			);
-		} else {
-			logError("App creation failed", err);
-		}
+		logError("App creation failed", err);
 		throw err;
 	}
 }
@@ -385,10 +388,13 @@ async function addPlaceholderAsset(secrets, headers, projectId, appName) {
 	saveAssetParams.append("insightId", "new");
 
 	try {
-		await axios.post(
+		await fetch(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-			saveAssetParams,
-			{ headers },
+			{
+				method: "POST",
+				headers,
+				body: saveAssetParams,
+			},
 		);
 		vscode.window.showInformationMessage(
 			"Placeholder asset (index.html) added to the project.",
@@ -429,23 +435,33 @@ async function exportAndDownloadProject(
 	);
 	exportParams.append("insightId", "new");
 
-	const exportResponse = await axios.post(
+	const res = await fetch(
 		`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-		exportParams,
-		{ headers },
+		{
+			method: "POST",
+			headers,
+			body: exportParams,
+		},
 	);
+	const exportResponse = await res.json();
 
 	if (
-		!exportResponse.data ||
-		!exportResponse.data.pixelReturn ||
-		!exportResponse.data.pixelReturn[0] ||
-		!exportResponse.data.pixelReturn[0].output
+		!exportResponse ||
+		!exportResponse.pixelReturn ||
+		!exportResponse.pixelReturn[0] ||
+		!exportResponse.pixelReturn[0].output
 	) {
 		throw new Error("Export failed: Invalid response from server.");
 	}
 
-	const fileKey = exportResponse.data.pixelReturn[0].output;
-	const insightId = exportResponse.data.insightID;
+	const fileKey = exportResponse.pixelReturn[0].output;
+	// Try both insightID and insightId (case variations) or fallback to "new"
+	const insightId = exportResponse.insightID || exportResponse.insightId || "new";
+	
+	if (!insightId || insightId === "new") {
+		console.warn("No valid insightId in export response, using 'new'");
+	}
+	
 	const filePath = path.join(downloadsDir, `${appName}.zip`);
 	const downloadUrl = `${secrets.semossUrl}/Monolith/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(fileKey)}`;
 

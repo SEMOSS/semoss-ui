@@ -1,4 +1,4 @@
-const axios = require("axios");
+const fetch = require("node-fetch");
 const fs = require("node:fs");
 const https = require("node:https");
 const ncp = require("ncp");
@@ -61,8 +61,9 @@ async function processGithubAssets(
 					headers.Authorization = `token ${accessToken}`;
 				}
 
-				const res = await axios.get(apiUrl, { headers });
-				usedBranch = res.data.default_branch;
+				const res = await fetch(apiUrl, { headers });
+				const data = await res.json();
+				usedBranch = data.default_branch;
 			} catch (apiError) {
 				if (apiError.response?.status === 404) {
 					throw new Error(
@@ -239,30 +240,30 @@ async function processGithubAssets(
 	}
 }
 
-// Helper to download private repositories using axios
+// Helper to download private repositories using fetch
 const downloadPrivateRepo = async (url, dest, accessToken) => {
 	try {
-		const response = await axios({
+		const response = await fetch(url, {
 			method: "GET",
-			url: url,
 			headers: {
 				Authorization: `token ${accessToken}`,
 				"User-Agent": "node.js",
 			},
-			responseType: "stream",
-			maxRedirects: 5,
-			timeout: 30000,
 		});
 
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`);
+		}
+
 		const writer = fs.createWriteStream(dest);
-		response.data.pipe(writer);
+		response.body.pipe(writer);
 
 		return new Promise((resolve, reject) => {
 			writer.on("finish", () => {
 				resolve();
 			});
 			writer.on("error", reject);
-			response.data.on("error", reject);
+			response.body.on("error", reject);
 		});
 	} catch (error) {
 		const status = error.response?.status || "unknown";
