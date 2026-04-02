@@ -7,7 +7,6 @@ import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -390,7 +389,7 @@ export class ChatStore {
 			this._theme.defaultRoomSettings?.model?.engine_name ||
 			DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
-		if (!ENABLE_MODEL_SELECT) {
+		if (!this._theme.featureFlags?.enableModelSelect) {
 			this.setSelectedModel({
 				engine_id: defaultModelId,
 				engine_name: defaultModelName,

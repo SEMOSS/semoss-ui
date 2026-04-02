@@ -52,8 +52,6 @@ import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
-
 /**
  * Renders a sidebar allowing users to navigate between pages
  *
@@ -348,7 +346,7 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
-					{ENABLE_AGENT && (
+					{root.theme.featureFlags?.enableAgent && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								asChild
