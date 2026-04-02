@@ -40,29 +40,28 @@ interface FileExplorerProps {
 	lastModified: string;
 }
 
+/**
+ * FileTable component manages files within a Vector Database.
+ * Supports file upload, embedding, deletion, download, search, and pagination.
+ * Files are embedded into the vector database for semantic search capabilities.
+ */
 export const FileTable = (props: FileTableProps) => {
 	const NUM_RESULTS_PER_PAGE = 5;
-	// embed modal
-	const [open, setOpen] = useState<boolean>(false);
 
-	//delete one file
+	const [open, setOpen] = useState<boolean>(false);
 	const [deleteFileModal, setDeleteFileModal] = useState<boolean>(false);
 	const [fileToDelete, setFileToDelete] = useState<FileExplorerProps | null>(
 		null,
 	);
-	//deleting multiple files modal
 	const [deleteFilesModal, setDeleteFilesModal] = useState<boolean>(false);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [selectedFiles, setSelectedFiles] = useState<FileExplorerProps[]>([]);
 	const [filePage, setFilePage] = useState<number>(1);
-	const [fileCount, setFileCount] = useState<number>(0);
 	const [filteredFileCount, setFilteredFileCount] = useState<number>(0);
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
 	const { monolithStore, configStore } = useRootStore();
-
-	//download multiple files modal
 	const [exportLoading, setExportLoading] = useState(false);
 
 	const [order, setOrder] = useState<"asc" | "desc">("asc");
@@ -88,27 +87,30 @@ export const FileTable = (props: FileTableProps) => {
 		},
 	];
 
-	//grabbing ID out of props
 	const { id } = props;
 
-	//for the pagination of the files page
-	const paginationOptions = {
-		filePageCounts: [NUM_RESULTS_PER_PAGE],
+	/**
+	 * Helper function to format file names for Pixel query syntax.
+	 * Converts array of files into comma-separated quoted strings.
+	 * Example: ['file1.pdf', 'file2.txt'] -> '"file1.pdf", "file2.txt"'
+	 */
+	const buildFileArrayString = (files: FileExplorerProps[]): string => {
+		return files
+			.map((file, index) =>
+				index + 1 === files.length
+					? `"${file.fileName}"`
+					: `"${file.fileName}", `,
+			)
+			.join("");
 	};
 
-	//adjusting for instance where there are more than 10 files
-	fileCount > 9 && paginationOptions.filePageCounts.push(10);
-
-	//For filtering files
 	const { control, watch, setValue, handleSubmit } = useForm<{
 		FILES: FileExplorerProps[];
 		PROJECT_UPLOAD: File[];
 		SEARCH_FILTER: string;
 	}>({
 		defaultValues: {
-			// Files Table
 			FILES: [],
-			// Filters for Files table
 			SEARCH_FILTER: "",
 			PROJECT_UPLOAD: [],
 		},
@@ -117,28 +119,22 @@ export const FileTable = (props: FileTableProps) => {
 	const searchFilter = watch("SEARCH_FILTER");
 	const verifiedFiles = watch("FILES");
 
-	//Grabbing list of files in a Vector Database
+	// Fetch all files from the vector database
 	const getFileDetails = usePixel<FileExplorerProps[]>(`
         ListDocumentsInVectorDatabase(engine="${id}")
     `);
-	//updating the file details list
+
 	/**
-	 * @name useEffect
-	 * @desc - sets files in react hook form
+	 * Effect to filter and sort files based on search term.
+	 * Runs whenever files are fetched or search filter changes.
+	 * Focuses search input after rendering for better UX.
 	 */
 	useEffect(() => {
 		if (getFileDetails.status !== "SUCCESS" || !getFileDetails.data) {
 			return;
 		}
 
-		const files = [];
-		// push files into file array
-		getFileDetails.data.forEach((file) => {
-			files.push(file);
-		});
-
-		//filter using search term
-		const filteredFiles = files.filter((file) =>
+		const filteredFiles = getFileDetails.data.filter((file) =>
 			file.fileName.toLowerCase().includes(searchFilter.toLowerCase()),
 		);
 
@@ -150,29 +146,32 @@ export const FileTable = (props: FileTableProps) => {
 
 		setValue("FILES", filteredFiles);
 
+		// Track initial mount to prevent unnecessary state updates
 		if (!didMount.current) {
-			// set total members
-			setFileCount(getFileDetails.data.length);
 			didMount.current = true;
 		}
-		// Needed for total pages on pagination
-		setFilteredFileCount(filteredFiles.length);
 
+		// Update pagination based on filtered results
+		setFilteredFileCount(filteredFiles.length);
 		fileSearchRef.current?.focus();
+
 		return () => {
-			console.log("Cleaning files table");
 			setValue("FILES", []);
 			setSelectedFiles([]);
 		};
 	}, [getFileDetails.status, getFileDetails.data, searchFilter, setValue]);
 
-	// File upload handlers
-	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+	const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
 	};
 
-	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+	/**
+	 * Handle drag and drop file upload.
+	 * Validates file types to ensure only supported formats are accepted.
+	 * Supported formats: PDF, CSV, TXT, DOC/X, PPT/X, JSON, XML, EML, MSG
+	 */
+	const handleDrop = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
 		const droppedFiles = Array.from(e.dataTransfer.files);
@@ -201,32 +200,31 @@ export const FileTable = (props: FileTableProps) => {
 		}
 	};
 
-	//Method that is called for embedding a file
+	/**
+	 * Upload and embed files into the vector database.
+	 * Steps: 1) Upload files to server, 2) Create embeddings from uploaded documents
+	 * This enables semantic search across the file contents.
+	 */
 	const embedFile = handleSubmit(async (data: FileUploadForm) => {
 		setIsLoading(true);
 
-		//string that will become the filePaths
-		let fileLocations = "";
-
 		try {
-			//upload the file
+			// Upload files to the server first
 			const upload = await uploadFile(
 				data.PROJECT_UPLOAD,
 				configStore.store.insightID,
 			);
 
-			upload.forEach((file, index) => {
-				const { fileLocation } = file;
-				if (index + 1 === upload.length) {
-					//last member
-					fileLocations = fileLocations += `"${fileLocation}"`;
-				} else {
-					//all other members
-					fileLocations = fileLocations += `"${fileLocation}", `;
-				}
-			});
+			// Format file locations for Pixel query
+			const fileLocations = upload
+				.map((file, index) =>
+					index + 1 === upload.length
+						? `"${file.fileLocation}"`
+						: `"${file.fileLocation}", `,
+				)
+				.join("");
 
-			// Embedding the File
+			// Create embeddings from the uploaded documents
 			const response = await monolithStore.runQuery(`
                 CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
             `);
@@ -241,7 +239,6 @@ export const FileTable = (props: FileTableProps) => {
 		} catch (e) {
 			toast.error(String(e));
 		} finally {
-			//turn off loading
 			getFileDetails.refresh();
 			setIsLoading(false);
 			setValue("PROJECT_UPLOAD", []);
@@ -249,6 +246,10 @@ export const FileTable = (props: FileTableProps) => {
 		}
 	});
 
+	/**
+	 * Delete a single file from the vector database.
+	 * This removes both the file metadata and its embeddings.
+	 */
 	const deleteFile = async (file: FileExplorerProps) => {
 		const { fileName } = file;
 		setIsLoading(true);
@@ -273,20 +274,13 @@ export const FileTable = (props: FileTableProps) => {
 		}
 	};
 
+	/**
+	 * Delete multiple selected files from the vector database.
+	 * Batch operation for efficiency when removing multiple files.
+	 */
 	const deleteSelectedFiles = async (files: FileExplorerProps[]) => {
-		// construct the string of files
 		setIsLoading(true);
-		let fileArray = "";
-		files.forEach((file, index) => {
-			const { fileName } = file;
-			if (index + 1 === files.length) {
-				//structuring the last element
-				fileArray = `${fileArray}"${fileName}"`;
-			} else {
-				// all but the last element
-				fileArray = `${fileArray}"${fileName}", `;
-			}
-		});
+		const fileArray = buildFileArrayString(files);
 
 		try {
 			const response = await monolithStore.runQuery(`
@@ -303,7 +297,6 @@ export const FileTable = (props: FileTableProps) => {
 		} catch (e) {
 			toast.warning(String(e));
 		} finally {
-			//refresh files list, null the file to Delete, and close modal
 			getFileDetails.refresh();
 			setIsLoading(false);
 			setFileToDelete(null);
@@ -311,32 +304,30 @@ export const FileTable = (props: FileTableProps) => {
 		}
 	};
 
+	/**
+	 * Download selected files from the vector database.
+	 * Initiates a download of the original files (not embeddings).
+	 */
 	const downloadSelectedFiles = async (files: FileExplorerProps[]) => {
-		// construct the string of files
 		setExportLoading(true);
-		let fileArray = "";
-		files.forEach((file, index) => {
-			const { fileName } = file;
-			if (index + 1 === files.length) {
-				//structuring the last element
-				fileArray = `${fileArray}"${fileName}"`;
-			} else {
-				// all but the last element
-				fileArray = `${fileArray}"${fileName}", `;
-			}
-		});
-
+		const fileArray = buildFileArrayString(files);
 		const pixel = `META | VectorFileDownload(engine = "${id}", fileNames=[${fileArray}]);`;
 
-		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn[0].output,
-				insightId = response.insightId;
-
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const { output } = response.pixelReturn[0];
+			const { insightId } = response;
 			monolithStore.download(insightId, String(output));
-		});
-		setExportLoading(false);
+		} finally {
+			setExportLoading(false);
+		}
 	};
 
+	/**
+	 * Create sort handler for table columns.
+	 * Toggles between ascending and descending order.
+	 * Supports sorting by name, size, and date.
+	 */
 	const createSortHandler = (property: string) => () => {
 		const isAsc = order === "asc";
 		const newOrder = isAsc ? "desc" : "asc";
@@ -532,7 +523,7 @@ export const FileTable = (props: FileTableProps) => {
 														checked={isSelected}
 														onCheckedChange={() => {
 															if (isSelected) {
-																const selFiles =
+																const selFiles: FileExplorerProps[] =
 																	[];
 																selectedFiles.forEach(
 																	(u) => {
