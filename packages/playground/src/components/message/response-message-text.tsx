@@ -68,7 +68,30 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 	),
 	a: ({ children, href, ...props }) => {
 		if (href?.startsWith("room://") && room) {
-			const path = "/" + href.slice("room://".length);
+			const path = `/${href.slice("room://".length)}`;
+
+			// Folder link — ends with "/"
+			if (path.endsWith("/")) {
+				return (
+					<button
+						type="button"
+						className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
+						onClick={() => {
+							room.addSidebarNode(`FILE_EXPLORER--${path}`, {
+								type: "tab",
+								name: "Files",
+								component: "room-file-explorer",
+								config: { initialPath: path },
+								enableClose: true,
+							});
+						}}
+					>
+						{children}
+					</button>
+				);
+			}
+
+			// File link
 			const filename = path.split("/").filter(Boolean).pop() ?? path;
 			return (
 				<button

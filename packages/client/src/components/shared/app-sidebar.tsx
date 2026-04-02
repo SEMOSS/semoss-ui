@@ -159,6 +159,9 @@ export const Sidebar: React.FC = observer(() => {
 									asChild
 									isActive={!!matchPath("/", pathname)}
 									className={NAV_BUTTON_CLASS}
+									data-testid={formatToDataTestId(
+										"sidebar-home-btn",
+									)}
 								>
 									<Link
 										to={"/"}
@@ -238,6 +241,9 @@ export const Sidebar: React.FC = observer(() => {
 										!!matchPath("/settings/*", pathname)
 									}
 									className={NAV_BUTTON_CLASS}
+									data-testid={formatToDataTestId(
+										"sidebar-settings-btn",
+									)}
 								>
 									<Link
 										to={"/settings"}
@@ -269,6 +275,9 @@ export const Sidebar: React.FC = observer(() => {
 								<SidebarMenuButton
 									aria-label="Login"
 									className={NAV_BUTTON_CLASS}
+									data-testid={formatToDataTestId(
+										"sidebar-login-btn",
+									)}
 								>
 									<span className="flex w-7 min-w-0 shrink-0 items-center">
 										<CircleUserRound className="size-6" />

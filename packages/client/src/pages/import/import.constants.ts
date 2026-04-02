@@ -4510,7 +4510,7 @@ export const CONNECTION_OPTIONS = {
 				],
 			},
 			{
-				name: "DATABRICKS",
+				name: "Databricks",
 				disable: false,
 				icon: DATABRICKS,
 				fields: [

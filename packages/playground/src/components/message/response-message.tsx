@@ -20,9 +20,6 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
-	HoverCard,
-	HoverCardContent,
-	HoverCardTrigger,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -131,102 +128,97 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		});
 
-		return (
-			<div>
-				<HoverCard>
-					<HoverCardTrigger asChild>
-						<div className="mb-0 flex w-full flex-col gap-4 pr-3 sm:pr-10">
-							{message.parts.map((p, pIdx) => {
-								const key = `message-part-${pIdx}`;
-								const isLast =
-									pIdx === message.parts.length - 1;
+		const hasText = message.parts.some((part) => part.type === "TEXT");
+		const parentHasText = inputMessage?.parts.some(
+			(part) => part.type === "TEXT",
+		);
 
-								if (p.type === "TEXT") {
-									return (
-										<ResponseMessageText
-											key={key}
-											message={message}
-											part={p}
-											isLast={isLast}
-										/>
-									);
-								} else if (p.type === "MEDIA") {
-									return (
-										<div key={`${message.id}-part-${pIdx}`}>
-											<button
-												type="button"
-												className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
-												onClick={() => {
-													// this will select if there or open if not
-													room.addSidebarNode(
-														`FILE--${p.mediaInfo.fileLocation}`,
-														{
-															type: "tab",
-															name: p.mediaInfo
-																.fileName,
-															component:
-																"room-file-editor",
-															config: {
-																name: p
-																	.mediaInfo
-																	.fileName,
-																path: p
-																	.mediaInfo
-																	.fileLocation,
-															},
-															enableClose: true,
-														},
-													);
-												}}
-												aria-label={`View ${p.mediaInfo.fileName}`}
-											>
-												{p.mediaInfo.mimeType?.startsWith(
-													"image/",
-												) ? (
-													<img
-														className="w-full"
-														src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
-														alt={
-															p.mediaInfo.fileName
-														}
-													/>
-												) : (
-													<FileIcon className="size-6 text-muted-foreground" />
-												)}
-											</button>
-										</div>
-									);
-								} else if (p.type === "THINKING") {
-									return (
-										<ResponseMessageThinking
-											key={key}
-											message={message}
-											part={p}
-											isStreaming={
-												isLast && message.isThinking
-											}
-										/>
-									);
-								} else if (p.type === "TOOL_CALL") {
-									const tool = room.getTool(p.toolCall.id);
-									const isGrouped = getShouldGroupTool(tool);
-									return (
-										<Fragment key={key}>
-											{pIdx === firstToolPartIdx &&
-												groupedTools.length >= 1 && (
-													<ResponseMessageToolGroup
-														key={`${key}-group`}
-														message={message}
-														tools={groupedTools}
-													/>
-												)}
-											{tool && !isGrouped && (
-												<div className="flex flex-col gap-2">
-													<ResponseMessageTool
-														message={message}
-														tool={tool}
-													/>
-													{/* {tool.display ===
+		return (
+			<div className="group">
+				<div className="mb-0 flex w-full flex-col gap-2 pr-3 sm:pr-10">
+					{message.parts.map((p, pIdx) => {
+						const key = `message-part-${pIdx}`;
+						const isLast = pIdx === message.parts.length - 1;
+
+						if (p.type === "TEXT") {
+							return (
+								<ResponseMessageText
+									key={key}
+									message={message}
+									part={p}
+									isLast={isLast}
+								/>
+							);
+						} else if (p.type === "MEDIA") {
+							return (
+								<div key={`${message.id}-part-${pIdx}`}>
+									<button
+										type="button"
+										className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
+										onClick={() => {
+											// this will select if there or open if not
+											room.addSidebarNode(
+												`FILE--${p.mediaInfo.fileLocation}`,
+												{
+													type: "tab",
+													name: p.mediaInfo.fileName,
+													component:
+														"room-file-editor",
+													config: {
+														name: p.mediaInfo
+															.fileName,
+														path: p.mediaInfo
+															.fileLocation,
+													},
+													enableClose: true,
+												},
+											);
+										}}
+										aria-label={`View ${p.mediaInfo.fileName}`}
+									>
+										{p.mediaInfo.mimeType?.startsWith(
+											"image/",
+										) ? (
+											<img
+												className="w-full"
+												src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
+												alt={p.mediaInfo.fileName}
+											/>
+										) : (
+											<FileIcon className="size-6 text-muted-foreground" />
+										)}
+									</button>
+								</div>
+							);
+						} else if (p.type === "THINKING") {
+							return (
+								<ResponseMessageThinking
+									key={key}
+									message={message}
+									part={p}
+									isStreaming={isLast && message.isThinking}
+								/>
+							);
+						} else if (p.type === "TOOL_CALL") {
+							const tool = room.getTool(p.toolCall.id);
+							const isGrouped = getShouldGroupTool(tool);
+							return (
+								<Fragment key={key}>
+									{pIdx === firstToolPartIdx &&
+										groupedTools.length >= 1 && (
+											<ResponseMessageToolGroup
+												key={`${key}-group`}
+												message={message}
+												tools={groupedTools}
+											/>
+										)}
+									{tool && !isGrouped && (
+										<div className="flex flex-col gap-2">
+											<ResponseMessageTool
+												message={message}
+												tool={tool}
+											/>
+											{/* {tool.display ===
 														"inline" &&
 														tool.isOpen && (
 															<RoomInlineTool
@@ -237,224 +229,223 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 																tool={tool}
 															/>
 														)} */}
-												</div>
-											)}
-										</Fragment>
-									);
-								}
+										</div>
+									)}
+								</Fragment>
+							);
+						}
 
-								return null;
-							})}
-							{message.hasUnfinishedTools && (
-								<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
-									<CircleAlert className="size-4" />
-									{t("response.completeTools")}
-								</p>
-							)}
-						</div>
-					</HoverCardTrigger>
-					<HoverCardContent
-						className="flex w-auto flex-col items-center gap-0.5 p-1"
-						side="right"
-						align="start"
-					>
-						{inputMessage?.siblings.length > 1 && (
-							<div className="flex flex-row items-center gap-0.5">
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={
-												!inputMessage.previousSibling
-											}
-											onClick={() => {
-												if (
-													!inputMessage.previousSibling
-												) {
-													return;
-												}
+						return null;
+					})}
+					{message.hasUnfinishedTools && (
+						<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
+							<CircleAlert className="size-4" />
+							{t("response.completeTools")}
+						</p>
+					)}
+				</div>
 
-												inputMessage.previousSibling.activateMessage();
-											}}
-										>
-											<ArrowLeftIcon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="bottom">
-										{t("response.previousMessage")}
-									</TooltipContent>
-								</Tooltip>
-								<span className="text-muted-foreground text-xs">
-									{inputMessage.position + 1}/
-									{inputMessage.siblings.length}
-								</span>
-
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={!inputMessage.nextSibling}
-											onClick={() => {
-												if (!inputMessage.nextSibling) {
-													return;
-												}
-
-												inputMessage.nextSibling.activateMessage();
-											}}
-										>
-											<ArrowRightIcon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="bottom">
-										{t("response.nextMessage")}
-									</TooltipContent>
-								</Tooltip>
-							</div>
-						)}
-
-						{inputMessage && (
+				<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+					{inputMessage?.siblings.length > 1 && (
+						<div className="flex flex-row items-center gap-0.5">
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
-										disabled={
-											!inputMessage.parent?.parent ||
-											message.room.mode === "executing"
-										}
 										variant="ghost"
 										size="icon"
+										disabled={!inputMessage.previousSibling}
 										onClick={() => {
-											rewriteMessage();
+											if (!inputMessage.previousSibling) {
+												return;
+											}
+
+											inputMessage.previousSibling.activateMessage();
 										}}
 									>
-										<RefreshCwIcon />
+										<ArrowLeftIcon />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									{t("response.rewriteMessage")}
+									{t("response.previousMessage")}
 								</TooltipContent>
 							</Tooltip>
-						)}
+							<span className="text-muted-foreground text-xs">
+								{inputMessage.position + 1}/
+								{inputMessage.siblings.length}
+							</span>
 
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={!inputMessage.nextSibling}
+										onClick={() => {
+											if (!inputMessage.nextSibling) {
+												return;
+											}
+
+											inputMessage.nextSibling.activateMessage();
+										}}
+									>
+										<ArrowRightIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.nextMessage")}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+					)}
+
+					{parentHasText && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										recordFeedback(true);
-									}}
-								>
-									<ThumbsUpIcon
-										fill={
-											message.feedback?.rating === true
-												? "currentColor"
-												: "none"
-										}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.goodResponse")}
-							</TooltipContent>
-						</Tooltip>
-
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										recordFeedback(false);
-									}}
-								>
-									<ThumbsDownIcon
-										fill={
-											message.feedback?.rating === false
-												? "currentColor"
-												: "none"
-										}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.poorResponse")}
-							</TooltipContent>
-						</Tooltip>
-
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									disabled={message.parts.length === 0}
-									onClick={() => {
-										const text = message.parts
-											.map((part) => {
-												if (part.type === "TEXT") {
-													return part.text;
-												} else if (
-													part.type === "MEDIA"
-												) {
-													return `<${part.mediaInfo.fileName}?`;
-												} else if (
-													part.type === "TOOL_CALL"
-												) {
-													return `<${part.toolCall.name}?`;
-												}
-
-												return "";
-											})
-											.join("\n");
-
-										if (!text) {
-											toast.warning(
-												t(
-													"notifications.noCopyContent",
-												),
-											);
-											return;
-										}
-
-										try {
-											navigator.clipboard.writeText(text);
-
-											toast.success(
-												t("notifications.copySuccess"),
-											);
-										} catch (e) {
-											toast.error(e.message);
-										}
-									}}
-								>
-									<CopyIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.copyResponse")}
-							</TooltipContent>
-						</Tooltip>
-
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									disabled={message.parts.length === 0}
-									onClick={() =>
-										setIsDownloadDialogOpen(true)
+									disabled={
+										!inputMessage.parent?.parent ||
+										message.room.mode === "executing"
 									}
+									variant="ghost"
+									size="icon"
+									onClick={() => {
+										rewriteMessage();
+									}}
 								>
-									<DownloadIcon />
+									<RefreshCwIcon />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								{t("Download Response")}
+								{t("response.rewriteMessage")}
 							</TooltipContent>
 						</Tooltip>
-					</HoverCardContent>
-				</HoverCard>
+					)}
+
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => {
+									recordFeedback(true);
+								}}
+							>
+								<ThumbsUpIcon
+									fill={
+										message.feedback?.rating === true
+											? "currentColor"
+											: "none"
+									}
+								/>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							{t("response.goodResponse")}
+						</TooltipContent>
+					</Tooltip>
+
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => {
+									recordFeedback(false);
+								}}
+							>
+								<ThumbsDownIcon
+									fill={
+										message.feedback?.rating === false
+											? "currentColor"
+											: "none"
+									}
+								/>
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							{t("response.poorResponse")}
+						</TooltipContent>
+					</Tooltip>
+
+					{hasText && (
+						<>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={message.parts.length === 0}
+										onClick={() => {
+											const text = message.parts
+												.map((part) => {
+													if (part.type === "TEXT") {
+														return part.text;
+													} else if (
+														part.type === "MEDIA"
+													) {
+														return `<${part.mediaInfo.fileName}?`;
+													} else if (
+														part.type ===
+														"TOOL_CALL"
+													) {
+														return `<${part.toolCall.name}?`;
+													}
+
+													return "";
+												})
+												.join("\n");
+
+											if (!text) {
+												toast.warning(
+													t(
+														"notifications.noCopyContent",
+													),
+												);
+												return;
+											}
+
+											try {
+												navigator.clipboard.writeText(
+													text,
+												);
+
+												toast.success(
+													t(
+														"notifications.copySuccess",
+													),
+												);
+											} catch (e) {
+												toast.error(e.message);
+											}
+										}}
+									>
+										<CopyIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.copyResponse")}
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										disabled={message.parts.length === 0}
+										onClick={() =>
+											setIsDownloadDialogOpen(true)
+										}
+									>
+										<DownloadIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("Download Response")}
+								</TooltipContent>
+							</Tooltip>
+						</>
+					)}
+				</div>
 
 				<Dialog
 					open={isDownloadDialogOpen}
