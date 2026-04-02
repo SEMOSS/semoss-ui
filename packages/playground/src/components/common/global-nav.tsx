@@ -179,7 +179,7 @@ export const GlobalNav = observer(() => {
 
 	useEffect(() => {
 		// keep this counter
-		console.log(chat.keys.roomCounter);
+		chat.keys.roomCounter;
 		getRooms.reset();
 	}, [getRooms.reset, chat.keys.roomCounter]);
 
