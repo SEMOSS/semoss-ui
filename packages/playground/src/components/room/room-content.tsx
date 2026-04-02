@@ -29,7 +29,7 @@ import {
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat } from "@/hooks";
+import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
@@ -50,6 +50,7 @@ interface RoomContentProps {
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
+	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 
@@ -67,6 +68,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 		// ask the room
 		await room.askMessage(prompt, files);
+
+		// re-sync room options from backend after message completes,
+		// preserving workspace MCPs that are only held in memory
+		await room.syncRoomOptions();
 
 		return true;
 	};
@@ -188,24 +193,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	/**
-	 * Auto-scroll when dependency changes (new messages added)
-	 */
+	// Initial scroll to bottom when scroll element is first available
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		setIsScrollLocked(false);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle]);
+
+	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
+	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
 			return;
 		}
 
-		const timeout = setTimeout(() => {
-			const animationFrame = requestAnimationFrame(() => {
-				scrollToTarget(contentHeight);
-			});
-
-			return () => cancelAnimationFrame(animationFrame);
-		}, 100); // ~100ms delay to allow for rendering
-
-		return () => clearTimeout(timeout);
-	}, [scrollEle, scrollToTarget, isScrollLocked, contentHeight]);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
 
 	/**
 	 * Set up scroll event listener
@@ -262,6 +272,37 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [contentEle]);
 
+	/**
+	 * Constants
+	 */
+	const isAutoExecutingTools = ((): boolean => {
+		// Check the latest response message for auto-executing tools
+		if (!room.latestResponseMessage) {
+			return false;
+		}
+
+		for (const part of room.latestResponseMessage.parts) {
+			if (
+				part.type === "TOOL_CALL" &&
+				part.toolCall._meta.SMSS_MCP_EXECUTION === "auto"
+			) {
+				const tool = room.getTool(part.toolCall.id);
+				if (
+					tool &&
+					(tool.status === "INITIAL" || tool.status === "LOADING")
+				) {
+					return true;
+				}
+			}
+		}
+		return false;
+	})();
+
+	const showLoadingState =
+		room.isLoading ||
+		room.latestResponseMessage.isThinking ||
+		isAutoExecutingTools;
+
 	return (
 		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -276,7 +317,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
+						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -327,8 +368,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
 								<span>
-									{room.error.message ||
-										t("content.errorDefault")}
+									{getGracefulErrorMessage(room.error)}
 								</span>
 							</div>
 						) : null}
@@ -382,7 +422,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
 					className="max-h-56 min-h-24"
-					isLoading={room.isLoading}
+					isLoading={showLoadingState}
+					hidePauseButton={!room.numberOfTools}
 					model={room.model}
 					setModel={(model) => {
 						room.setModel(model);
@@ -441,7 +482,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
-					hasOutstandingTools={room.hasUnfinishedTools}
+					hasOutstandingTools={
+						room.latestResponseMessage.hasUnfinishedTools
+					}
+					hasToolsPaused={room.latestResponseMessage.isPaused}
+					toggleToolsPaused={
+						room.latestResponseMessage.toggleIsPaused
+					}
 					footer={
 						<RoomContextChart
 							tokensUsed={room.tokensUsed}

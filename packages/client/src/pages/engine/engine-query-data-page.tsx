@@ -12,19 +12,30 @@ import {
 	useQueryEditor,
 	useQueryExecution,
 } from "@/hooks";
+import { hasTabularData } from "@/hooks/useDatabaseQueryExecution";
 
 export const EngineQueryDataPage = observer(() => {
 	const { active } = useEngine();
 	const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 	const [isQueryResultsExpanded, setIsQueryResultsExpanded] = useState(false);
+	const [isUserModifiedQuery, setIsUserModifiedQuery] = useState(false);
 
 	// Resize states
-	const [leftPanelWidth, setLeftPanelWidth] = useState(32); // percentage
 	const [bottomPanelHeight, setBottomPanelHeight] = useState(300); // pixels
-	const [isResizingHorizontal, setIsResizingHorizontal] = useState(false);
 	const [isResizingVertical, setIsResizingVertical] = useState(false);
 
+	const [isMobile, setIsMobile] = useState(
+		() => typeof window !== "undefined" && window.innerWidth < 768,
+	);
+
 	const containerRef = useRef<HTMLDivElement>(null);
+	const ignoreProgrammaticQueryValueRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		const handleResize = () => setIsMobile(window.innerWidth < 768);
+		window.addEventListener("resize", handleResize);
+		return () => window.removeEventListener("resize", handleResize);
+	}, []);
 
 	const handleRefresh = () => {
 		setRefreshMessage("Refreshing database structure...");
@@ -38,7 +49,6 @@ export const EngineQueryDataPage = observer(() => {
 		setSearchTerm,
 		searchedStructure,
 		expandedTables,
-		toggleState,
 		toggleTable,
 		toggleAllTables,
 		isLoading,
@@ -59,6 +69,7 @@ export const EngineQueryDataPage = observer(() => {
 		clearQuery: clearQueryInternal,
 		clearResults,
 		executeQuery: executeQueryInternal,
+		pixelQuery,
 	} = useQueryExecution(active.id || "", {
 		onSchemaChange: () => {
 			refreshDatabaseStructure();
@@ -79,18 +90,52 @@ export const EngineQueryDataPage = observer(() => {
 	const clearQuery = () => {
 		clearQueryInternal();
 		setValue("");
+		setIsUserModifiedQuery(false);
 	};
+
+	const setQueryProgrammatically = useCallback(
+		(nextQuery: string) => {
+			ignoreProgrammaticQueryValueRef.current = nextQuery;
+			setQuery(nextQuery);
+			setValue(nextQuery);
+		},
+		[setQuery, setValue],
+	);
+
+	const setGeneratedQuery = useCallback(
+		(nextQuery: string) => {
+			setQueryProgrammatically(nextQuery);
+			setIsUserModifiedQuery(false);
+		},
+		[setQueryProgrammatically],
+	);
+
+	const appendQueryToken = useCallback(
+		(token: string) => {
+			const trimmedToken = token.trim();
+			if (!trimmedToken) {
+				return;
+			}
+
+			const shouldAddSpace = query.length > 0 && !/[\s(,]$/.test(query);
+			const nextQuery = shouldAddSpace
+				? `${query} ${trimmedToken}`
+				: `${query}${trimmedToken}`;
+
+			setQueryProgrammatically(nextQuery);
+		},
+		[query, setQueryProgrammatically],
+	);
 
 	const generateTableQuery = (tableName: string) => {
-		const sql = `SELECT * FROM ${tableName}`;
-		setQuery(sql);
-		setValue(sql);
-		clearColumnSelection();
-	};
+		if (!query.trim() || !isUserModifiedQuery) {
+			const sql = `SELECT * FROM ${tableName}`;
+			setGeneratedQuery(sql);
+			clearColumnSelection();
+			return;
+		}
 
-	const handleGenerateQuery = (generatedQuery: string) => {
-		setQuery(generatedQuery);
-		setValue(generatedQuery);
+		appendQueryToken(tableName);
 	};
 
 	const handleToggleColumnSelection = (
@@ -105,35 +150,42 @@ export const EngineQueryDataPage = observer(() => {
 		clearQuery();
 	};
 
-	// Horizontal resize handlers
-	const handleHorizontalResizeStart = useCallback((e: React.MouseEvent) => {
-		e.preventDefault();
-		setIsResizingHorizontal(true);
-	}, []);
+	const handleUserQueryInput = useCallback(
+		(nextQuery: string) => {
+			if (ignoreProgrammaticQueryValueRef.current === nextQuery) {
+				ignoreProgrammaticQueryValueRef.current = null;
+				return;
+			}
 
-	const handleHorizontalResize = useCallback(
-		(e: MouseEvent) => {
-			if (!isResizingHorizontal || !containerRef.current) return;
+			ignoreProgrammaticQueryValueRef.current = null;
+			setIsUserModifiedQuery(true);
 
-			const container = containerRef.current;
-			const containerRect = container.getBoundingClientRect();
-			const containerWidth = containerRect.width;
-
-			// Calculate new left panel width percentage
-			const newWidth =
-				((e.clientX - containerRect.left) / containerWidth) * 100;
-
-			// Constrain between 20% and 60%
-			const constrainedWidth = Math.max(20, Math.min(60, newWidth));
-
-			setLeftPanelWidth(constrainedWidth);
+			if (
+				activeTable &&
+				selectedColumns[activeTable] &&
+				selectedColumns[activeTable].length > 0
+			) {
+				clearColumnSelection();
+			}
 		},
-		[isResizingHorizontal],
+		[activeTable, selectedColumns, clearColumnSelection],
 	);
 
-	const handleHorizontalResizeEnd = useCallback(() => {
-		setIsResizingHorizontal(false);
-	}, []);
+	const handleColumnNameInsert = useCallback(
+		(_tableName: string, columnName: string) => {
+			appendQueryToken(columnName);
+		},
+		[appendQueryToken],
+	);
+
+	const handleGenerateQuery = useCallback(
+		(generatedQuery: string) => {
+			setGeneratedQuery(generatedQuery);
+		},
+		[setGeneratedQuery],
+	);
+
+	const canAutoGenerateQuery = !query.trim() || !isUserModifiedQuery;
 
 	// Vertical resize handlers
 	const handleVerticalResizeStart = useCallback((e: React.MouseEvent) => {
@@ -167,31 +219,36 @@ export const EngineQueryDataPage = observer(() => {
 		setIsResizingVertical(false);
 	}, []);
 
-	// Mouse event listeners
 	useEffect(() => {
-		if (isResizingHorizontal) {
-			document.addEventListener("mousemove", handleHorizontalResize);
-			document.addEventListener("mouseup", handleHorizontalResizeEnd);
-			document.body.style.cursor = "col-resize";
-			document.body.style.userSelect = "none";
+		if (
+			isMobile ||
+			isQueryResultsExpanded ||
+			isResizingVertical ||
+			previewLoading ||
+			!previewData ||
+			!hasTabularData(previewData)
+		) {
+			return;
+		}
 
-			return () => {
-				document.removeEventListener(
-					"mousemove",
-					handleHorizontalResize,
-				);
-				document.removeEventListener(
-					"mouseup",
-					handleHorizontalResizeEnd,
-				);
-				document.body.style.cursor = "";
-				document.body.style.userSelect = "";
-			};
+		const containerHeight =
+			containerRef.current?.getBoundingClientRect().height ??
+			window.innerHeight;
+		const targetHeight = Math.max(
+			320,
+			Math.min(520, containerHeight * 0.45),
+		);
+
+		if (bottomPanelHeight < targetHeight) {
+			setBottomPanelHeight(targetHeight);
 		}
 	}, [
-		isResizingHorizontal,
-		handleHorizontalResize,
-		handleHorizontalResizeEnd,
+		isMobile,
+		isQueryResultsExpanded,
+		isResizingVertical,
+		previewLoading,
+		previewData,
+		bottomPanelHeight,
 	]);
 
 	useEffect(() => {
@@ -222,25 +279,31 @@ export const EngineQueryDataPage = observer(() => {
 			{/* Main Content Area */}
 			<div
 				className={cn(
-					"flex min-h-0 w-full flex-1 transition-opacity duration-500 ease-out",
+					"min-h-0 w-full flex-1 transition-opacity duration-500 ease-out",
+					isMobile ? "flex flex-col overflow-y-auto" : "flex",
 					isQueryResultsExpanded
 						? "pointer-events-none opacity-0"
 						: "opacity-100",
 				)}
-				style={{
-					height: isQueryResultsExpanded
-						? 0
-						: `calc(100% - ${bottomPanelHeight}px)`,
-				}}
+				style={
+					isMobile
+						? undefined
+						: {
+								height: isQueryResultsExpanded
+									? 0
+									: `calc(100% - ${bottomPanelHeight}px)`,
+							}
+				}
 				data-testid="engine-queryDataPage-content"
 			>
 				{/* Left Panel - Database Structure Browser */}
 				<div
 					className="flex flex-col transition-all duration-200"
-					style={{
-						width: `${leftPanelWidth}%`,
-						minWidth: "280px",
-					}}
+					style={
+						isMobile
+							? { width: "100%", height: "280px", flexShrink: 0 }
+							: { width: "32%", minWidth: "280px" }
+					}
 				>
 					<Card className="group flex h-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl border border-border/50 bg-card/95 p-0 shadow-lg backdrop-blur-sm transition-all duration-300 hover:border-primary/20 hover:shadow-xl">
 						<DatabaseStructureBrowser
@@ -248,7 +311,6 @@ export const EngineQueryDataPage = observer(() => {
 							setSearchTerm={setSearchTerm}
 							searchedStructure={searchedStructure}
 							expandedTables={expandedTables}
-							toggleState={toggleState}
 							toggleTable={toggleTable}
 							toggleAllTables={toggleAllTables}
 							isLoading={isLoading}
@@ -262,27 +324,24 @@ export const EngineQueryDataPage = observer(() => {
 								handleToggleColumnSelection
 							}
 							onClearColumnSelection={handleClearColumnSelection}
+							onColumnNameInsert={handleColumnNameInsert}
 							onGenerateQuery={handleGenerateQuery}
 							generateSelectedColumnsQuery={
 								generateSelectedColumnsQuery
 							}
+							canAutoGenerateQuery={canAutoGenerateQuery}
 						/>
 					</Card>
 				</div>
 
-				{/* Horizontal Resize Handle - Invisible */}
-				<button
-					type="button"
-					onMouseDown={handleHorizontalResizeStart}
-					className="w-2 flex-shrink-0 cursor-col-resize transition-colors hover:bg-primary/5"
-					data-testid="horizontal-resize-handle"
-					aria-label="Resize panels horizontally"
-				/>
-
 				{/* Right Panel - SQL Query Editor */}
 				<div
-					className="flex flex-1 flex-col transition-all duration-200"
-					style={{ minWidth: "400px" }}
+					className="flex flex-col transition-all duration-200"
+					style={
+						isMobile
+							? { width: "100%", height: "300px", flexShrink: 0 }
+							: { flex: 1, minWidth: "400px" }
+					}
 				>
 					<Card className="group flex h-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl p-0">
 						<SQLQueryEditor
@@ -292,6 +351,7 @@ export const EngineQueryDataPage = observer(() => {
 							handleEditorMount={handleEditorMount}
 							executeQuery={executeQuery}
 							previewLoading={previewLoading}
+							onUserQueryInput={handleUserQueryInput}
 						/>
 					</Card>
 				</div>
@@ -308,12 +368,14 @@ export const EngineQueryDataPage = observer(() => {
 				style={{
 					height: isQueryResultsExpanded
 						? "100%"
-						: `${bottomPanelHeight}px`,
+						: isMobile
+							? "400px"
+							: `${bottomPanelHeight}px`,
 				}}
 				data-testid="query-results-wrapper"
 			>
-				{/* Vertical Resize Handle - Invisible */}
-				{!isQueryResultsExpanded && (
+				{/* Vertical Resize Handle - Desktop only */}
+				{!isQueryResultsExpanded && !isMobile && (
 					<button
 						type="button"
 						onMouseDown={handleVerticalResizeStart}
@@ -331,12 +393,18 @@ export const EngineQueryDataPage = observer(() => {
 							: "h-[calc(100%-0.5rem)]",
 					)}
 				>
-					<div className="mb-4 h-full">
+					<div
+						className={cn(
+							"h-full",
+							!isQueryResultsExpanded && "pb-4",
+						)}
+					>
 						<QueryResultsPanel
 							previewData={previewData}
 							previewLoading={previewLoading}
 							clearResults={clearResults}
 							onExpandChange={setIsQueryResultsExpanded}
+							pixelQuery={pixelQuery}
 						/>
 					</div>
 				</div>

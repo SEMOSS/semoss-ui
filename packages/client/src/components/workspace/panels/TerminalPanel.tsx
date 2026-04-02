@@ -13,7 +13,7 @@ import {
 	ToggleButtonGroup,
 	useNotification,
 } from "@semoss/ui";
-import PythonLogo from "@/assets/img/Python-logo.svg";
+import PythonLogo from "@/assets/img/PYTHON.svg";
 import RLogo from "@/assets/img/R-logo.svg";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";

@@ -82,7 +82,7 @@ export const CreateAppPage = () => {
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex flex-col items-start gap-2">
+			<div className="flex w-full flex-col items-start gap-2">
 				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
@@ -130,7 +130,7 @@ export const CreateAppPage = () => {
 					/>
 				) : null}
 
-				<div className="flex flex-col gap-4">
+				<div className="flex w-full flex-col gap-4">
 					<div className="flex flex-row items-center justify-between gap-2">
 						<H2>Create App</H2>
 						<Button
@@ -196,7 +196,7 @@ export const CreateAppPage = () => {
 								).map((template) => (
 									<Card
 										key={template.name}
-										className="relative mx-auto w-full max-w-sm pt-0"
+										className="relative w-full pt-0"
 									>
 										<div className="relative w-full overflow-hidden rounded-t-xl bg-accent">
 											<div className="absolute inset-0 z-10 bg-black/50" />

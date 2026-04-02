@@ -107,7 +107,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			ids: [],
 			display: {},
 		});
-		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
+		const myDbs = usePixel<{ engine_id: string; engine_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
 		);
 
@@ -141,8 +141,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			const dbIds: string[] = [];
 			const dbDisplay = {};
 			myDbs.data.forEach((db) => {
-				dbIds.push(db.app_id);
-				dbDisplay[db.app_id] = db.app_name;
+				dbIds.push(db.engine_id);
+				dbDisplay[db.engine_id] = db.engine_name;
 			});
 			setCfgLibraryDatabases({
 				loading: false,

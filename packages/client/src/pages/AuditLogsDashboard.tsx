@@ -153,6 +153,10 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			const response = await monolithStore.runQuery(
 				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}", "dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue} ${SelectedDuration.dateRangeType === "CUSTOM" ? `,"startDate": "${startDate?.toISOString()}", "endDate": "${endDate?.toISOString()}"` : ""}}]);`,
 			);
+			const { operationType } = response.pixelReturn[0];
+			if (operationType.indexOf("ERROR") > -1)
+				throw new Error(`API Error: ${response.pixelReturn[0].output}`);
+
 			const responseData = response.pixelReturn[0].output;
 			setLogs(
 				(
@@ -202,8 +206,10 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			setLogs([]);
 			fetchLogs(rowsPerPage, page * rowsPerPage);
 		}
-		//override the parent css which has id = home__content
-		const contentElement = document.getElementById("home__container");
+		// override the parent css container used by Page
+		const contentElement = document.querySelector(
+			'[data-home-container="true"]',
+		) as HTMLElement | null;
 		if (contentElement) {
 			contentElement.style.padding = "32px";
 			contentElement.style.maxWidth = "none";

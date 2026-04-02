@@ -41,17 +41,16 @@ export const BlocksWorkspaceActions = observer(() => {
 			const res = await runPixel(pixel);
 
 			const list = res.pixelReturn[0].output as Array<{
-				database_subtype: string;
-				database_type: string;
-				database_name: string;
-				database_id: string;
-				app_name: string;
+				engine_subtype: string;
+				engine_type: string;
+				engine_name: string;
+				engine_id: string;
 			}>;
 
 			modelList = list.map((model) => {
 				return {
-					label: model.database_name,
-					value: model.database_id,
+					label: model.engine_name,
+					value: model.engine_id,
 				};
 			});
 		}
@@ -120,8 +119,8 @@ export const BlocksWorkspaceActions = observer(() => {
 		// remove the visual from the json
 		Object.keys(json?.blocks).forEach((key) => {
 			if (key.startsWith("e-chart")) {
-				if (json?.blocks[key]?.data?.option?.["visual"]) {
-					json.blocks[key].data.option["visual"] = false;
+				if (json?.blocks[key]?.data?.option?.visual) {
+					json.blocks[key].data.option.visual = false;
 				}
 			}
 		});

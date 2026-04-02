@@ -11,6 +11,7 @@ interface ImportMetaEnv {
 	readonly VITE_ENABLE_AGENT: string;
 	readonly VITE_ENABLE_WORKSPACE: string;
 	readonly VITE_ENABLE_SUGGESTIONS: string;
+	readonly VITE_ENABLE_PLAN: string;
 }
 
 // biome-ignore lint/correctness/noUnusedVariables: this is actually used
