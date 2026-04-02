@@ -140,7 +140,7 @@ SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"
 };
 
 const debounce = (func, wait) => {
-	let timeout: ReturnType<typeof setTimeout> | null;
+	let timeout: ReturnType<typeof setTimeout>;
 
 	return function executedFunction(...args) {
 		const later = () => {
@@ -165,6 +165,7 @@ export const debounced = (callback, delay) => {
 		ref.current = callback;
 	}, [callback]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const debouncedCallback = useMemo(() => {
 		const func = () => {
 			ref.current?.();
