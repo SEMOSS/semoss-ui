@@ -223,6 +223,7 @@ export const AdminThemePage: React.FC = () => {
 						enableModelSelect: true,
 						enablePlan: true,
 						enableSuggestions: false,
+						enableRewrite: true,
 					},
 				},
 			};

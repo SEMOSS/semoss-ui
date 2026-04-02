@@ -13,6 +13,7 @@ const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT;
 const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT;
 const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
 const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
+const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
 
 interface RootStoreInterface {
 	/**
@@ -90,6 +91,7 @@ export class RootStore {
 				enableAgent: ENABLE_AGENT === "true",
 				enableSuggestions: ENABLE_SUGGESTIONS === "true",
 				enablePlan: ENABLE_PLAN === "true",
+				enableRewrite: ENABLE_REWRITE === "true",
 			},
 		},
 	};

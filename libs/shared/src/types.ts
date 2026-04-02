@@ -187,6 +187,7 @@ export interface ThemeMap {
 			enableAgent?: boolean;
 			enableSuggestions?: boolean;
 			enablePlan?: boolean;
+			enableRewrite?: boolean;
 		};
 	};
 }

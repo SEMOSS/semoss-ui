@@ -25,6 +25,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
@@ -47,6 +48,7 @@ interface ResponseMessageProps {
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
 		const { t } = useTranslation("chat");
+		const { root } = useRoot();
 
 		const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
 		const [isDownloading, setIsDownloading] = useState(false);
@@ -306,28 +308,29 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							</div>
 						)}
 
-					{parentHasText && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									disabled={
-										!inputMessage?.parent?.parent ||
-										message.room.mode === "executing"
-									}
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										rewriteMessage();
-									}}
-								>
-									<RefreshCwIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.rewriteMessage")}
-							</TooltipContent>
-						</Tooltip>
-					)}
+					{root.theme.featureFlags?.enableRewrite &&
+						parentHasText && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										disabled={
+											!inputMessage?.parent?.parent ||
+											message.room.mode === "executing"
+										}
+										variant="ghost"
+										size="icon"
+										onClick={() => {
+											rewriteMessage();
+										}}
+									>
+										<RefreshCwIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.rewriteMessage")}
+								</TooltipContent>
+							</Tooltip>
+						)}
 
 					<Tooltip>
 						<TooltipTrigger asChild>
