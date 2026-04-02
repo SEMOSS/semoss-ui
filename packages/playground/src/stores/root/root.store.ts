@@ -81,6 +81,7 @@ export class RootStore {
 			defaultTools: [],
 			gracefulErrors: [],
 			showPlatformLinks: true,
+			featureFlags: {},
 		},
 	};
 
@@ -249,6 +250,10 @@ export class RootStore {
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),
 			],
+			featureFlags: {
+				...this._store.theme.featureFlags,
+				...(theme?.featureFlags || {}),
+			},
 		};
 
 		// apply the theme to document root
