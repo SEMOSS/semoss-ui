@@ -84,6 +84,11 @@ export const NewRoomPage = observer(() => {
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 
+	const previewPrompts = useMemo(
+		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
+		[tempRoomStore.options.predefinedPrompts],
+	);
+
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
 			? `GetWorkspace("${selectedWorkspaceId}");`
@@ -382,6 +387,9 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							predefinedPrompts={
+								tempRoomStore.options.predefinedPrompts
+							}
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
 							model={chat.models.selected}
@@ -564,15 +572,9 @@ export const NewRoomPage = observer(() => {
 							}
 						/>
 						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
-							<div className="mx-auto flex w-full flex-wrap justify-center gap-2">
-								{[...tempRoomStore.options.predefinedPrompts]
-									.sort(
-										(a, b) =>
-											a.title.length - b.title.length,
-									)
-									.slice(0, 5)
-									.map((prompt) => {
-										console.log(prompt);
+							<div className="mx-auto flex w-full flex-col items-center gap-3">
+								<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
+									{previewPrompts.map((prompt) => {
 										return (
 											<Button
 												key={prompt.id}
@@ -590,6 +592,7 @@ export const NewRoomPage = observer(() => {
 											</Button>
 										);
 									})}
+								</div>
 							</div>
 						) : null}
 					</div>

@@ -366,9 +366,9 @@ export const GlobalNav = observer(() => {
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 						)}
-						{root.theme.sidebar.headerItems.map((item) => (
+						{root.theme.sidebar.headerItems.map((item, index) => (
 							<GlobalNavItem
-								key={item.path}
+								key={`header-${item.name}-${index}`}
 								name={item.name}
 								icon={item.icon}
 								path={item.path}

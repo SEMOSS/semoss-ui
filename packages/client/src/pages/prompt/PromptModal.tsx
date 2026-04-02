@@ -16,6 +16,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 
@@ -55,9 +56,15 @@ export const PromptModal = (props: PromptModalProps) => {
 		};
 		const stringified =
 			"AddPrompt ( map = [" + JSON.stringify(promptMap) + " ])";
-		monolithStore.runQuery(stringified).then(() => {
-			onClose(true);
-		});
+		monolithStore
+			.runQuery(stringified)
+			.then(() => {
+				toast.success("Prompt added successfully");
+				onClose(true);
+			})
+			.catch(() => {
+				toast.error("Failed to add prompt");
+			});
 	};
 
 	const updatePrompt = () => {
@@ -71,9 +78,15 @@ export const PromptModal = (props: PromptModalProps) => {
 		};
 		const stringified =
 			"UpdatePrompt ( map = [" + JSON.stringify(promptMap) + " ])";
-		monolithStore.runQuery(stringified).then(() => {
-			onClose(true);
-		});
+		monolithStore
+			.runQuery(stringified)
+			.then(() => {
+				toast.success("Prompt updated successfully");
+				onClose(true);
+			})
+			.catch(() => {
+				toast.error("Failed to update prompt");
+			});
 	};
 
 	const disableCreate = () => {

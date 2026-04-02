@@ -421,6 +421,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			</div>
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
 				<RoomInput
+					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
 					hidePauseButton={!room.numberOfTools}

@@ -8,6 +8,7 @@ import {
 	H3,
 	InputGroup,
 	InputGroupAddon,
+	InputGroupButton,
 	InputGroupInput,
 	P,
 	Popover,
@@ -17,8 +18,8 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { NavbarHeader } from "@/components/shared/NavbarHeader";
 import { NavbarLeft } from "@/components/shared/NavbarLeft";
+import { NavbarHeader } from "@/components/shared/navbar-header";
 import { useRootStore } from "@/hooks";
 import { PromptLibraryCards } from "../../components/prompt/library/PromptLibraryCards";
 import type { Prompt } from "../../components/prompt/prompt.types";
@@ -27,9 +28,6 @@ import { PromptModal } from "./PromptModal";
 type ViewMode = "grid" | "list";
 type PromptTabMode = "My Prompts" | "Global Prompts";
 
-const tabTriggerClass =
-	"!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100";
-
 export const PromptPage = observer(() => {
 	const { configStore, monolithStore } = useRootStore();
 	const navigate = useNavigate();
@@ -37,10 +35,10 @@ export const PromptPage = observer(() => {
 	const [promptMode, setPromptMode] = useState("");
 	const [pageReload, setPageReload] = useState(false);
 
-	const [filter, setFilter] = useState("all");
+	const [filters, setFilters] = useState<string[]>([]);
 	const [allPrompts, setAllPrompts] = useState([]);
 	const [searchValue, setSearchValue] = useState("");
-	const [view, setView] = useState<ViewMode>("grid");
+	const [view, setView] = useState<ViewMode>("list");
 	const [mode, setMode] = useState<PromptTabMode>("My Prompts");
 	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 	const [promptTags, setPromptTags] = useState<string[]>([]);
@@ -89,11 +87,11 @@ export const PromptPage = observer(() => {
 			.then((response) => {
 				const { output } = response.pixelReturn[0];
 				if (output.length > 0) {
-					const tagMap: Record<string, string> = { all: "" };
+					const tagSet = new Set<string>();
 					output.forEach((tag: { metavalue: string }) => {
-						tagMap[tag.metavalue] = "";
+						tagSet.add(tag.metavalue);
 					});
-					setPromptTags(Object.keys(tagMap));
+					setPromptTags([...tagSet]);
 				}
 			});
 	};
@@ -115,7 +113,10 @@ export const PromptPage = observer(() => {
 				if (mode === "Global Prompts" && !prompt.global) {
 					return false;
 				}
-				if (filter !== "all" && !prompt.tags?.includes(filter)) {
+				if (
+					filters.length > 0 &&
+					!filters.some((f) => prompt.tags?.includes(f))
+				) {
 					return false;
 				}
 				if (searchValue) {
@@ -137,9 +138,9 @@ export const PromptPage = observer(() => {
 				if (firstTitle > secondTitle) return 1;
 				return 0;
 			});
-	}, [allPrompts, filter, searchValue, mode, configStore.store.user.id]);
+	}, [allPrompts, filters, searchValue, mode, configStore.store.user.id]);
 
-	const hasActiveFilter = filter !== "all";
+	const hasActiveFilter = filters.length > 0;
 
 	/**
 	 * @desc Used on click of prompt card
@@ -181,29 +182,44 @@ export const PromptPage = observer(() => {
 				</div>
 
 				{/* Search and Filters */}
-				<div className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm">
-					<div className="flex flex-col gap-3 md:flex-row md:items-center">
-						<InputGroup className="flex-1">
+				<div className="flex flex-col gap-3">
+					<div className="flex w-full min-w-0 flex-wrap items-end gap-2 md:flex-nowrap">
+						<InputGroup className="h-10 min-w-[110px] flex-[1_1_auto]">
 							<InputGroupAddon>
 								<Search className="size-4" />
 							</InputGroupAddon>
 							<InputGroupInput
+								className="h-10"
 								placeholder="Search prompts..."
 								value={searchValue}
 								onChange={(e) => setSearchValue(e.target.value)}
 								aria-label="Search prompts"
 							/>
+							{searchValue ? (
+								<InputGroupAddon align="inline-end">
+									<InputGroupButton
+										size="icon-xs"
+										variant="ghost"
+										onClick={() => setSearchValue("")}
+										aria-label="Clear search"
+									>
+										<X className="size-4" />
+									</InputGroupButton>
+								</InputGroupAddon>
+							) : null}
 						</InputGroup>
-						<div className="flex items-center gap-2">
+						<div className="flex w-auto shrink-0 items-center gap-1">
 							<Popover
 								open={isFiltersOpen}
 								onOpenChange={setIsFiltersOpen}
 							>
 								<PopoverTrigger asChild>
-									<Button variant="outline">
+									<Button variant="outline" className="h-9">
 										<Filter className="size-4" />
 										Filters
-										{hasActiveFilter ? " (1)" : ""}
+										{hasActiveFilter
+											? ` (${filters.length})`
+											: ""}
 									</Button>
 								</PopoverTrigger>
 								<PopoverContent
@@ -211,40 +227,39 @@ export const PromptPage = observer(() => {
 									className="w-56 p-0"
 								>
 									<div className="flex flex-col">
-										{promptTags.map((tag) => (
-											<button
-												key={tag}
-												type="button"
-												className={`px-4 py-2 text-left text-sm capitalize hover:bg-muted/50 ${
-													filter === tag
-														? "bg-muted font-medium"
-														: ""
-												}`}
-												onClick={() => {
-													setFilter(tag);
-													setIsFiltersOpen(false);
-												}}
-											>
-												{tag}
-											</button>
-										))}
+										{promptTags
+											.filter((tag) => tag !== "all")
+											.map((tag) => (
+												<button
+													key={tag}
+													type="button"
+													className={`px-4 py-2 text-left text-sm capitalize hover:bg-muted/50 ${
+														filters.includes(tag)
+															? "bg-muted font-medium"
+															: ""
+													}`}
+													onClick={() => {
+														setFilters((prev) =>
+															prev.includes(tag)
+																? prev.filter(
+																		(f) =>
+																			f !==
+																			tag,
+																	)
+																: [
+																		...prev,
+																		tag,
+																	],
+														);
+													}}
+												>
+													{tag}
+												</button>
+											))}
 									</div>
 								</PopoverContent>
 							</Popover>
-							<div className="flex items-center gap-1">
-								<Button
-									variant={
-										view === "grid"
-											? "secondary"
-											: "outline"
-									}
-									size="icon-sm"
-									aria-label="Grid view"
-									title="Grid view"
-									onClick={() => setView("grid")}
-								>
-									<LayoutGrid className="size-4" />
-								</Button>
+							<div className="flex shrink-0 items-center gap-1">
 								<Button
 									variant={
 										view === "list"
@@ -252,11 +267,26 @@ export const PromptPage = observer(() => {
 											: "outline"
 									}
 									size="icon-sm"
+									className="h-9 w-9"
 									aria-label="List view"
 									title="List view"
 									onClick={() => setView("list")}
 								>
 									<List className="size-4" />
+								</Button>
+								<Button
+									variant={
+										view === "grid"
+											? "secondary"
+											: "outline"
+									}
+									size="icon-sm"
+									className="h-9 w-9"
+									aria-label="Grid view"
+									title="Grid view"
+									onClick={() => setView("grid")}
+								>
+									<LayoutGrid className="size-4" />
 								</Button>
 							</div>
 						</div>
@@ -264,34 +294,34 @@ export const PromptPage = observer(() => {
 				</div>
 
 				{/* Active Filters */}
-				<div className="-my-3 flex flex-wrap items-center gap-2">
-					{hasActiveFilter ? (
-						<>
-							<Badge variant="outline" className="gap-1">
-								{filter}
+				{hasActiveFilter && (
+					<div className="-my-3 flex flex-wrap items-center gap-2">
+						{filters.map((f) => (
+							<Badge key={f} variant="outline" className="gap-1">
+								{f}
 								<button
 									type="button"
-									onClick={() => setFilter("all")}
+									onClick={() =>
+										setFilters((prev) =>
+											prev.filter((t) => t !== f),
+										)
+									}
 									className="ml-1 hover:text-destructive"
-									aria-label={`Remove ${filter} filter`}
+									aria-label={`Remove ${f} filter`}
 								>
 									<X className="size-3" />
 								</button>
 							</Badge>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={() => setFilter("all")}
-							>
-								Clear all
-							</Button>
-						</>
-					) : (
-						<P className="text-[11px] text-muted-foreground">
-							No filters applied
-						</P>
-					)}
-				</div>
+						))}
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setFilters([])}
+						>
+							Clear all
+						</Button>
+					</div>
+				)}
 
 				{/* Tabs and Content */}
 				<div className="flex flex-col gap-6 pb-8">
@@ -306,14 +336,14 @@ export const PromptPage = observer(() => {
 								<TabsTrigger
 									value="My Prompts"
 									data-testid="promptPage-myPrompts-btn"
-									className={tabTriggerClass}
+									className="after:-bottom-px relative flex-none! whitespace-nowrap rounded-none border-0! bg-transparent! px-1 pb-3 text-sm shadow-none! after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 hover:bg-transparent! data-[state=active]:bg-transparent! data-[state=active]:text-primary! data-[state=active]:shadow-none! data-[state=active]:after:opacity-100"
 								>
 									My Prompts
 								</TabsTrigger>
 								<TabsTrigger
 									value="Global Prompts"
 									data-testid="promptPage-globalPrompts-btn"
-									className={tabTriggerClass}
+									className="after:-bottom-px relative flex-none! whitespace-nowrap rounded-none border-0! bg-transparent! px-1 pb-3 text-sm shadow-none! after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 hover:bg-transparent! data-[state=active]:bg-transparent! data-[state=active]:text-primary! data-[state=active]:shadow-none! data-[state=active]:after:opacity-100"
 								>
 									Global Prompts
 								</TabsTrigger>
@@ -323,7 +353,6 @@ export const PromptPage = observer(() => {
 
 					{filteredPrompts.length > 0 ? (
 						<PromptLibraryCards
-							filter={filter}
 							prompts={filteredPrompts}
 							view={view}
 							currentUserId={configStore.store.user.id}

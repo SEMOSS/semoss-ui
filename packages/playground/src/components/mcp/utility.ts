@@ -1,4 +1,4 @@
-import type { App, Engine, MCP, Prompt, Workspace } from "@/types";
+import type { App, Engine, MCP, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -66,11 +66,4 @@ export const mcpToPlatformUrl = (
 		return `${PLATFORM_URL}/#/app/${id}`;
 	}
 	return `${PLATFORM_URL}/#/engine/${type.toLowerCase()}/${id}`;
-};
-
-/**
- * Convert the Prompt into a platform url
- */
-export const promptToPlatformUrl = (prompt: Pick<Prompt, "id">): string => {
-	return `${PLATFORM_URL}/#/prompt/${prompt.id}`;
 };

@@ -13,6 +13,7 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	BookOpenIcon,
 	FileAudio2Icon,
 	FileIcon,
 	FileType2Icon,
@@ -43,6 +44,10 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
+import {
+	PromptLibraryDialog,
+	type PromptLibraryItem,
+} from "@/components/prompts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { Engine } from "@/types";
 
@@ -54,6 +59,9 @@ try {
 }
 
 interface RoomInputProps {
+	/** Predefined prompts shown in prompt library */
+	predefinedPrompts?: PromptLibraryItem[];
+
 	/** Classes to override */
 	className?: string;
 
@@ -95,6 +103,7 @@ interface RoomInputProps {
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
 	({
+		predefinedPrompts = [],
 		className,
 		isLoading,
 		model,
@@ -123,6 +132,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
+		const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
@@ -267,6 +277,21 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					paragraphNode.append(textNode);
 					root.append(paragraphNode);
 				});
+			}
+		};
+
+		const runPredefinedPrompt = async (prompt: string) => {
+			if (isLoading || hasOutstandingTools) {
+				return;
+			}
+
+			try {
+				const success = await onPrompt(prompt, []);
+				if (!success) {
+					throw new Error("Error processing chat");
+				}
+			} catch (e) {
+				toast.error(getGracefulErrorMessage(e));
 			}
 		};
 
@@ -534,7 +559,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								align: "start",
 							}}
 						/>
-
+						{predefinedPrompts.length > 0 ? (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="bg-background"
+										variant="ghost"
+										size="icon-sm"
+										disabled={isLoading}
+										aria-label="Open prompt library"
+										onClick={() =>
+											setIsPromptLibraryOpen(true)
+										}
+									>
+										<BookOpenIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>Prompt Library</TooltipContent>
+							</Tooltip>
+						) : null}
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
@@ -656,6 +699,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						})}
 					</div>
 				) : null}
+				<PromptLibraryDialog
+					open={isPromptLibraryOpen}
+					onOpenChange={setIsPromptLibraryOpen}
+					prompts={predefinedPrompts}
+					isLoading={isLoading}
+					onSelectPrompt={(prompt) =>
+						runPredefinedPrompt(prompt.context)
+					}
+				/>
 			</>
 		);
 	},

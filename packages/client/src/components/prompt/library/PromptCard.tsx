@@ -1,4 +1,4 @@
-import { ExternalLink, Info, MoreVertical } from "lucide-react";
+import { Copy, ExternalLink, Info, MoreVertical } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import {
 	Badge,
@@ -15,6 +15,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	P,
+	toast,
 } from "@semoss/ui/next";
 import { PromptModal } from "../../../pages/prompt/PromptModal";
 import { PromptDeleteModal } from "../PromptDeleteModal";
@@ -37,9 +38,43 @@ const hashString = (str: string): number => {
  */
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;
-	const hue2 = (base + 35) % 360;
-	const hue3 = (base + 70) % 360;
-	return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
+	return `hsl(${base}, 22%, 72%)`;
+};
+
+const generateInitialsColor = (name: string): string => {
+	const base = hashString(name) % 360;
+	return `hsl(${base}, 28%, 28%)`;
+};
+
+/**
+ * Format a UTC timestamp as "Updated X days/months/years ago"
+ */
+const formatUpdatedAgo = (dateString?: string | null): string | null => {
+	if (!dateString) return null;
+	const normalized = /[zZ]$|[+-]\d{2}:\d{2}$/.test(dateString)
+		? dateString
+		: `${dateString}Z`;
+	const parsed = new Date(normalized);
+	if (Number.isNaN(parsed.getTime())) return null;
+	const now = Date.now();
+	const diffMs = Math.max(0, now - parsed.getTime());
+	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+	if (diffDays <= 0) {
+		return "Updated today";
+	}
+
+	if (diffDays < 30) {
+		return `Updated ${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+	}
+
+	if (diffDays < 365) {
+		const months = Math.floor(diffDays / 30);
+		return `Updated ${months} month${months === 1 ? "" : "s"} ago`;
+	}
+
+	const years = Math.floor(diffDays / 365);
+	return `Updated ${years} year${years === 1 ? "" : "s"} ago`;
 };
 
 /**
@@ -79,6 +114,11 @@ export const PromptCard = (props: PromptCardProps) => {
 		[prompt.id, prompt.title],
 	);
 
+	const initialsColor = useMemo(
+		() => generateInitialsColor(prompt.title || prompt.id || "Prompt"),
+		[prompt.id, prompt.title],
+	);
+
 	const initials = useMemo(
 		() => buildInitials(prompt.title || "Prompt"),
 		[prompt.title],
@@ -87,6 +127,12 @@ export const PromptCard = (props: PromptCardProps) => {
 	const displayTags = useMemo(
 		() => (prompt.tags ? prompt.tags.slice().sort() : []),
 		[prompt.tags],
+	);
+
+	const updatedLine = useMemo(
+		() =>
+			formatUpdatedAgo(prompt.date_created) || "Updated date unavailable",
+		[prompt.date_created],
 	);
 
 	const handleCardClick = useCallback(() => {
@@ -101,7 +147,12 @@ export const PromptCard = (props: PromptCardProps) => {
 	const handleCopyId = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
-			navigator.clipboard.writeText(prompt.id);
+			try {
+				navigator.clipboard.writeText(prompt.id);
+				toast.success("Prompt ID copied to clipboard");
+			} catch {
+				toast.error("Failed to copy Prompt ID");
+			}
 		},
 		[prompt.id],
 	);
@@ -139,105 +190,141 @@ export const PromptCard = (props: PromptCardProps) => {
 	if (variant === "row") {
 		return (
 			<>
-				<div className="flex w-full items-center gap-3 px-4 py-2 transition-colors hover:bg-muted/40">
-					<button
-						type="button"
-						className="flex min-w-0 flex-1 items-center gap-3 text-left"
-						onClick={handleCardClick}
-					>
-						<div
-							className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-							style={{ background: gradient }}
+				<div className="w-full rounded-lg border bg-card px-4 py-3 shadow-sm transition-shadow hover:shadow-md">
+					<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+						<button
+							type="button"
+							className="flex min-w-0 flex-1 items-start gap-3 text-left"
+							onClick={handleCardClick}
 						>
-							<div className="font-semibold text-[11px] text-white">
-								{initials}
-							</div>
-						</div>
-
-						<div className="min-w-0 flex-1">
-							<h3 className="truncate font-semibold text-sm">
-								{prompt.title}
-							</h3>
-							{prompt.created_by && (
-								<div className="mt-0.5 text-[11px] text-muted-foreground">
-									by {prompt.created_by}
+							<div
+								className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
+								style={{ background: gradient }}
+							>
+								<div
+									className="font-semibold text-xs"
+									style={{ color: initialsColor }}
+								>
+									{initials}
 								</div>
-							)}
-							<P className="line-clamp-2 text-muted-foreground text-xs">
-								{prompt.intent || "No description available"}
-							</P>
-							<div className="mt-1 min-h-4">
-								{displayTags.length > 0 ? (
-									<div className="flex flex-wrap items-center gap-1">
-										{displayTags.slice(0, 4).map((tag) => (
-											<Badge
-												key={`${prompt.id}-${tag}`}
-												variant="secondary"
-												className="text-[10px] uppercase"
-											>
-												{tag}
-											</Badge>
-										))}
-										{displayTags.length > 4 ? (
-											<span className="text-[10px] text-muted-foreground">
-												+{displayTags.length - 4}
-											</span>
-										) : null}
-									</div>
+							</div>
+							<div className="min-w-0 flex-1">
+								<h3 className="truncate font-medium text-[15px] leading-tight">
+									{prompt.title}
+								</h3>
+								<div className="mt-1 flex min-w-0 items-center gap-1 text-muted-foreground text-xs">
+									<span className="truncate">
+										{prompt.id}
+									</span>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										className="h-6 w-6"
+										onClick={handleCopyId}
+										aria-label="Copy prompt ID"
+										title="Copy prompt ID"
+									>
+										<Copy className="size-3.5" />
+									</Button>
+								</div>
+								{prompt.intent ? (
+									<P className="mt-2 line-clamp-3 text-muted-foreground text-sm">
+										{prompt.intent}
+									</P>
 								) : null}
 							</div>
-						</div>
-					</button>
+						</button>
 
-					<div className="flex items-center gap-2">
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							onClick={handleOpenNewTab}
-							aria-label="Open prompt in new tab"
-							title={`Open ${prompt.title || "prompt"} in new tab`}
-						>
-							<ExternalLink className="size-4" />
-						</Button>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							aria-label="View prompt info"
-							title={`View info for ${prompt.title || "prompt"}`}
-							onClick={handleInfoOpen}
-						>
-							<Info className="size-4" />
-						</Button>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={(e) => e.stopPropagation()}
-									aria-label="More options"
+						<div className="flex shrink-0 flex-col gap-2 md:flex-row md:items-center md:gap-3">
+							{displayTags.length > 0 ? (
+								<div className="flex flex-wrap items-center gap-1">
+									{displayTags.slice(0, 2).map((tag) => (
+										<Badge
+											key={`${prompt.id}-${tag}`}
+											variant="secondary"
+											className="text-[10px] uppercase"
+										>
+											{tag}
+										</Badge>
+									))}
+									{displayTags.length > 2 ? (
+										<span className="text-[10px] text-muted-foreground">
+											+{displayTags.length - 2}
+										</span>
+									) : null}
+								</div>
+							) : null}
+							<div className="flex flex-col gap-2 md:items-end">
+								<div
+									className="text-xs"
+									style={{
+										color: "var(--color-text-tertiary)",
+									}}
 								>
-									<MoreVertical className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={handleCopyId}>
-									Copy Prompt ID
-								</DropdownMenuItem>
-								{isOwner && (
-									<DropdownMenuItem onClick={handleEdit}>
-										Edit Prompt
-									</DropdownMenuItem>
-								)}
-								<DropdownMenuItem onClick={handleDuplicate}>
-									Duplicate Prompt
-								</DropdownMenuItem>
-								{isOwner && (
-									<DropdownMenuItem onClick={handleDelete}>
-										Delete Prompt
-									</DropdownMenuItem>
-								)}
-							</DropdownMenuContent>
-						</DropdownMenu>
+									{updatedLine}
+								</div>
+								<div className="flex items-center gap-1">
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										onClick={handleOpenNewTab}
+										aria-label="Open prompt in new tab"
+										title={`Open ${prompt.title || "prompt"} in new tab`}
+									>
+										<ExternalLink className="size-4" />
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label="View prompt info"
+										title={`View info for ${prompt.title || "prompt"}`}
+										onClick={handleInfoOpen}
+									>
+										<Info className="size-4" />
+									</Button>
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+												aria-label="More options"
+											>
+												<MoreVertical className="size-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent align="end">
+											<DropdownMenuItem
+												onClick={handleCopyId}
+											>
+												Copy Prompt ID
+											</DropdownMenuItem>
+											{isOwner && (
+												<DropdownMenuItem
+													onClick={handleEdit}
+												>
+													Edit Prompt
+												</DropdownMenuItem>
+											)}
+											<DropdownMenuItem
+												onClick={handleDuplicate}
+											>
+												Duplicate Prompt
+											</DropdownMenuItem>
+											{isOwner && (
+												<DropdownMenuItem
+													onClick={handleDelete}
+												>
+													Delete Prompt
+												</DropdownMenuItem>
+											)}
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 
@@ -349,20 +436,23 @@ export const PromptCard = (props: PromptCardProps) => {
 
 	// Catalog variant (grid)
 	return (
-		<div className="w-full min-w-[272px]">
+		<div className="w-full min-w-[200px]">
 			<Card
 				className="h-full cursor-pointer gap-2 overflow-hidden rounded-xl border bg-card p-0 shadow-sm transition-shadow hover:shadow-md"
 				onClick={handleCardClick}
 			>
 				{/* Header with gradient */}
 				<div
-					className="relative h-[60px] w-full"
+					className="relative h-[72px] w-full"
 					style={{ background: gradient }}
 				>
-					<div className="flex h-full items-center justify-center font-semibold text-3xl text-white">
+					<div
+						className="flex h-full items-center justify-center font-semibold text-base"
+						style={{ color: initialsColor }}
+					>
 						{initials}
 					</div>
-					<div className="absolute top-3 right-3 flex items-center gap-2">
+					<div className="-translate-y-1/2 absolute top-1/2 right-3 flex items-center gap-2">
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
 								<Button
@@ -398,21 +488,31 @@ export const PromptCard = (props: PromptCardProps) => {
 				</div>
 
 				{/* Content */}
-				<CardContent className="flex flex-1 flex-col gap-1.5 px-3 pt-1 pb-0.5">
-					<h3 className="mt-1 line-clamp-2 font-semibold text-sm leading-snug">
-						{prompt.title}
-					</h3>
-					{prompt.created_by && (
-						<div className="text-[11px] text-muted-foreground">
-							by {prompt.created_by}
+				<div
+					className="flex flex-1 flex-col"
+					style={{
+						backgroundColor: "var(--color-background-primary)",
+					}}
+				>
+					<CardContent className="flex flex-1 flex-col gap-1.5 px-3 pt-2.5 pb-3">
+						<h3 className="line-clamp-2 font-medium text-[13px] leading-snug">
+							{prompt.title}
+						</h3>
+						<div
+							className="text-[11px]"
+							style={{
+								color: "var(--color-text-tertiary)",
+							}}
+						>
+							{updatedLine}
 						</div>
-					)}
-					<P className="line-clamp-2 text-[11px] text-muted-foreground">
-						{prompt.intent || "No description available"}
-					</P>
-					<div className="mt-auto min-h-4">
+						{prompt.intent ? (
+							<P className="line-clamp-3 text-muted-foreground text-xs">
+								{prompt.intent}
+							</P>
+						) : null}
 						{displayTags.length > 0 ? (
-							<div className="flex flex-wrap items-center gap-1">
+							<div className="mt-auto flex min-w-0 flex-wrap items-center gap-1 overflow-hidden">
 								{displayTags.slice(0, 4).map((tag) => (
 									<Badge
 										key={`${prompt.id}-${tag}`}
@@ -429,36 +529,36 @@ export const PromptCard = (props: PromptCardProps) => {
 								) : null}
 							</div>
 						) : null}
-					</div>
-				</CardContent>
+					</CardContent>
 
-				{/* Footer */}
-				<div className="border-t" />
-				<CardFooter className="px-3 pt-0.5 pb-3">
-					<div className="flex w-full items-center gap-2">
-						<Button
-							variant="outline"
-							size="sm"
-							className="w-1/2 px-6"
-							onClick={handleOpenNewTab}
-							title={`Open ${prompt.title || "prompt"} in new tab`}
-						>
-							Open
-							<ExternalLink className="size-4" />
-						</Button>
-						<Button
-							variant="outline"
-							size="sm"
-							className="w-1/2"
-							aria-label="View prompt info"
-							title={`View info for ${prompt.title || "prompt"}`}
-							onClick={handleInfoOpen}
-						>
-							Info
-							<Info className="size-4" />
-						</Button>
-					</div>
-				</CardFooter>
+					{/* Footer */}
+					<div className="border-t" />
+					<CardFooter className="px-3 pt-0.5 pb-3">
+						<div className="flex w-full items-center gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-auto w-1/2 px-0 py-1.5 text-xs"
+								onClick={handleOpenNewTab}
+								title={`Open ${prompt.title || "prompt"} in new tab`}
+							>
+								Open
+								<ExternalLink className="size-4" />
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-auto w-1/2 px-0 py-1.5 text-xs"
+								aria-label="View prompt info"
+								title={`View info for ${prompt.title || "prompt"}`}
+								onClick={handleInfoOpen}
+							>
+								Info
+								<Info className="size-4" />
+							</Button>
+						</div>
+					</CardFooter>
+				</div>
 			</Card>
 
 			{/* Info Modal */}

@@ -10,6 +10,8 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+	Alert,
+	AlertDescription,
 	Badge,
 	Breadcrumb,
 	BreadcrumbItem,
@@ -21,10 +23,19 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	Markdown,
 	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
+	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { PromptDeleteModal } from "../../components/prompt/PromptDeleteModal";
@@ -42,9 +53,12 @@ const hashString = (str: string): number => {
 
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;
-	const hue2 = (base + 35) % 360;
-	const hue3 = (base + 70) % 360;
-	return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
+	return `hsl(${base}, 22%, 72%)`;
+};
+
+const generateInitialsColor = (name: string): string => {
+	const base = hashString(name) % 360;
+	return `hsl(${base}, 28%, 28%)`;
 };
 
 const buildInitials = (label: string): string => {
@@ -73,6 +87,36 @@ const formatTimeAgo = (dateString: string) => {
 	return `${diffYears} years ago`;
 };
 
+interface LlmModelOption {
+	id: string;
+	label: string;
+	appType?: string;
+}
+
+const normalizeModelOption = (value: unknown): LlmModelOption | null => {
+	if (!value || typeof value !== "object") {
+		return null;
+	}
+
+	const candidate = value as Record<string, unknown>;
+	const id = typeof candidate.app_id === "string" ? candidate.app_id : "";
+	const label =
+		typeof candidate.app_name === "string" ? candidate.app_name : id;
+
+	if (!id) {
+		return null;
+	}
+
+	return {
+		id,
+		label,
+		appType:
+			typeof candidate.app_type === "string"
+				? candidate.app_type
+				: undefined,
+	};
+};
+
 export const PromptDetailPage = observer(() => {
 	const { promptId } = useParams<{ promptId: string }>();
 	const { configStore, monolithStore } = useRootStore();
@@ -85,6 +129,15 @@ export const PromptDetailPage = observer(() => {
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
 	const [isSettingActive, setIsSettingActive] = useState(false);
+	const [isTesterOpen, setIsTesterOpen] = useState(false);
+	const [modelOptions, setModelOptions] = useState<LlmModelOption[]>([]);
+	const [selectedModelId, setSelectedModelId] = useState("");
+	const [testerInput, setTesterInput] = useState("");
+	const [testerOutput, setTesterOutput] = useState("");
+	const [testerError, setTesterError] = useState("");
+	const [modelLoadError, setModelLoadError] = useState("");
+	const [isTesterRunning, setIsTesterRunning] = useState(false);
+	const [isTesterSaving, setIsTesterSaving] = useState(false);
 
 	const currentVersion = versions[selectedVersionIndex] ?? null;
 	const latestVersion = versions[0] ?? null;
@@ -110,6 +163,57 @@ export const PromptDetailPage = observer(() => {
 	useEffect(() => {
 		loadPrompt();
 	}, [promptId]);
+
+	useEffect(() => {
+		setTesterInput(currentVersion?.context || "");
+		setTesterOutput("");
+		setTesterError("");
+	}, [currentVersion?.context]);
+
+	useEffect(() => {
+		let isMounted = true;
+		const pixel =
+			'MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes=["MODEL"]);';
+
+		monolithStore
+			.runQuery(pixel)
+			.then((response) => {
+				if (!isMounted) return;
+
+				const { output, operationType } = response.pixelReturn[0];
+				if (operationType.indexOf("ERROR") > -1) {
+					setModelLoadError("Failed to load LLM models.");
+					setModelOptions([]);
+					return;
+				}
+
+				const models = (Array.isArray(output) ? output : [])
+					.map((item) => normalizeModelOption(item))
+					.filter((item): item is LlmModelOption => item !== null)
+					.filter(
+						(model, index, all) =>
+							all.findIndex((entry) => entry.id === model.id) ===
+							index,
+					);
+
+				setModelOptions(models);
+				setModelLoadError(
+					models.length === 0
+						? "No text-generation models are available."
+						: "",
+				);
+				setSelectedModelId((current) => current || models[0]?.id || "");
+			})
+			.catch(() => {
+				if (!isMounted) return;
+				setModelLoadError("Failed to load LLM models.");
+				setModelOptions([]);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [monolithStore]);
 
 	const selectVersion = (index: number) => {
 		setSelectedVersionIndex(index);
@@ -137,6 +241,108 @@ export const PromptDetailPage = observer(() => {
 			});
 	};
 
+	const handleRunTester = async () => {
+		if (!selectedModelId) {
+			setTesterError("Select an LLM model before running the test.");
+			return;
+		}
+
+		const promptInput = testerInput.trim();
+
+		if (!promptInput) {
+			setTesterError("This prompt has no content to test.");
+			return;
+		}
+
+		setIsTesterRunning(true);
+		setTesterError("");
+		setTesterOutput("");
+
+		try {
+			const pixel = `LLM(engine="${selectedModelId}", command=["<encode>${promptInput}</encode>"])`;
+			const response = await monolithStore.runQuery(pixel);
+			const { output, operationType } = response.pixelReturn[0];
+
+			if (operationType.indexOf("ERROR") > -1) {
+				const errorMessage =
+					typeof output === "object" &&
+					output !== null &&
+					"response" in output &&
+					typeof output.response === "string"
+						? output.response
+						: "Failed to run prompt test.";
+				throw new Error(errorMessage);
+			}
+
+			const result =
+				typeof output === "object" &&
+				output !== null &&
+				"response" in output &&
+				typeof output.response === "string"
+					? output.response
+					: typeof output === "string"
+						? output
+						: JSON.stringify(output, null, 2);
+
+			setTesterOutput(result || "No response received.");
+		} catch (error) {
+			setTesterError(
+				error instanceof Error
+					? error.message
+					: "Failed to run prompt test.",
+			);
+		} finally {
+			setIsTesterRunning(false);
+		}
+	};
+
+	const handleSaveTesterContext = async () => {
+		if (!isOwner || !promptId || !currentVersion) return;
+
+		setIsTesterSaving(true);
+		setTesterError("");
+
+		const promptMap = {
+			context: testerInput,
+			title: currentVersion.title || "",
+			intent: currentVersion.intent || "",
+			tags: currentVersion.tags || [],
+			global: currentVersion.global ?? true,
+			id: promptId,
+		};
+
+		const stringified =
+			"UpdatePrompt ( map = [" + JSON.stringify(promptMap) + " ])";
+
+		try {
+			const response = await monolithStore.runQuery(stringified);
+			const { operationType, output } = response.pixelReturn[0];
+
+			if (operationType.indexOf("ERROR") > -1) {
+				const errorMessage =
+					typeof output === "object" &&
+					output !== null &&
+					"response" in output &&
+					typeof output.response === "string"
+						? output.response
+						: "Failed to save prompt context.";
+				throw new Error(errorMessage);
+			}
+
+			toast.success("Prompt context saved as a new version");
+			loadPrompt();
+		} catch (error) {
+			const message =
+				error instanceof Error
+					? error.message
+					: "Failed to save prompt context.";
+			setTesterError(message);
+			toast.error(message);
+		} finally {
+			setIsTesterSaving(false);
+		}
+	};
+
 	if (!currentVersion) {
 		return (
 			<div className="flex flex-col gap-6">
@@ -145,8 +351,16 @@ export const PromptDetailPage = observer(() => {
 		);
 	}
 
+	const promptTitle = latestVersion.title || "Prompt";
+	const avatarBackground = generateGradient(promptTitle);
+	const initialsColor = generateInitialsColor(promptTitle);
+	const selectedModel =
+		modelOptions.find((model) => model.id === selectedModelId) || null;
+	const hasUnsavedTesterChanges =
+		testerInput !== (currentVersion.context || "");
+
 	return (
-		<div className="flex h-full w-full flex-col gap-3">
+		<div className="flex h-full w-full flex-col gap-3 pb-12">
 			{/* Breadcrumb */}
 			<Breadcrumb>
 				<BreadcrumbList>
@@ -172,13 +386,14 @@ export const PromptDetailPage = observer(() => {
 				<div
 					className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg"
 					style={{
-						background: generateGradient(
-							latestVersion.title || "Prompt",
-						),
+						backgroundColor: avatarBackground,
 					}}
 				>
-					<span className="font-semibold text-2xl text-white">
-						{buildInitials(latestVersion.title || "Prompt")}
+					<span
+						className="font-semibold text-2xl"
+						style={{ color: initialsColor }}
+					>
+						{buildInitials(promptTitle)}
 					</span>
 				</div>
 
@@ -425,6 +640,200 @@ export const PromptDetailPage = observer(() => {
 						</P>
 					</div>
 
+					{/* LLM Tester */}
+					<Collapsible
+						open={isTesterOpen}
+						onOpenChange={setIsTesterOpen}
+						className="rounded-lg border bg-card shadow-sm"
+					>
+						<CollapsibleTrigger className="flex w-full items-center justify-between px-6 py-4 text-left">
+							<div className="flex items-center gap-2">
+								<span className="font-semibold text-sm">
+									Test Prompt
+								</span>
+							</div>
+							<ChevronRight
+								className={`size-4 text-muted-foreground transition-transform duration-200 ${
+									isTesterOpen ? "rotate-90" : ""
+								}`}
+							/>
+						</CollapsibleTrigger>
+						<CollapsibleContent>
+							<div className="border-t px-6 pt-4 pb-6">
+								<P className="mb-5 text-muted-foreground text-sm">
+									Run this prompt against a model and inspect
+									the output inline.
+								</P>
+
+								<div className="grid gap-4 md:grid-cols-[minmax(220px,32%)_minmax(0,1fr)]">
+									<div className="flex flex-col gap-2">
+										<span className="font-medium text-sm">
+											Model
+										</span>
+										<Select
+											value={selectedModelId}
+											onValueChange={setSelectedModelId}
+										>
+											<SelectTrigger className="w-full min-w-0">
+												<SelectValue
+													placeholder="Select an LLM model"
+													className="block max-w-full truncate"
+												/>
+											</SelectTrigger>
+											<SelectContent className="max-w-[320px]">
+												{modelOptions.map((model) => {
+													if (!model.id) {
+														return null;
+													}
+
+													return (
+														<SelectItem
+															key={model.id}
+															value={model.id}
+														>
+															<span
+																className="block max-w-full truncate"
+																title={
+																	model.label
+																}
+															>
+																{model.label}
+															</span>
+														</SelectItem>
+													);
+												})}
+											</SelectContent>
+										</Select>
+										{selectedModel ? (
+											<P className="text-muted-foreground text-xs">
+												Using {selectedModel.label}
+											</P>
+										) : null}
+										{modelLoadError ? (
+											<Alert variant="destructive">
+												<AlertDescription>
+													{modelLoadError}
+												</AlertDescription>
+											</Alert>
+										) : null}
+									</div>
+
+									<div className="flex flex-col gap-4">
+										<div className="flex flex-col gap-2">
+											<span className="font-medium text-sm">
+												Test input
+											</span>
+											<Textarea
+												value={testerInput}
+												onChange={(e) =>
+													setTesterInput(
+														e.target.value,
+													)
+												}
+												rows={6}
+												placeholder="Prompt content to send to the selected model"
+											/>
+											<P className="text-muted-foreground text-xs">
+												This starts with the selected
+												version's context. You can edit
+												it before running the test.
+											</P>
+										</div>
+
+										{testerError ? (
+											<Alert variant="destructive">
+												<AlertDescription>
+													{testerError}
+												</AlertDescription>
+											</Alert>
+										) : null}
+
+										<div className="flex flex-col gap-2">
+											<span className="font-medium text-sm">
+												Output
+											</span>
+											<div className="max-h-96 min-h-40 overflow-y-auto rounded-md border bg-muted/20 p-4 text-sm">
+												{isTesterRunning ? (
+													<div className="flex h-full min-h-32 items-center justify-center gap-2 text-muted-foreground">
+														<Spinner className="size-4" />
+														<span>
+															Running prompt
+															test...
+														</span>
+													</div>
+												) : testerOutput ? (
+													<Markdown>
+														{testerOutput}
+													</Markdown>
+												) : (
+													<span className="text-muted-foreground">
+														Run the tester to see
+														model output.
+													</span>
+												)}
+											</div>
+										</div>
+
+										<div className="flex items-center justify-end gap-2">
+											{isOwner &&
+											hasUnsavedTesterChanges ? (
+												<div className="flex items-start gap-1.5">
+													<Button
+														variant="secondary"
+														onClick={
+															handleSaveTesterContext
+														}
+														disabled={
+															isTesterSaving
+														}
+													>
+														{isTesterSaving ? (
+															<>
+																<Spinner className="mr-2 size-4" />
+																Saving
+															</>
+														) : (
+															"Save Context"
+														)}
+													</Button>
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<Info className="size-4 text-muted-foreground" />
+														</TooltipTrigger>
+														<TooltipContent>
+															Creates a new
+															version with current
+															version info and the
+															updated context.
+														</TooltipContent>
+													</Tooltip>
+												</div>
+											) : null}
+											<Button
+												variant="outline"
+												onClick={handleRunTester}
+												disabled={
+													isTesterRunning ||
+													isTesterSaving ||
+													!selectedModelId
+												}
+											>
+												{isTesterRunning ? (
+													<>
+														<Spinner className="mr-2 size-4" />
+														Running
+													</>
+												) : (
+													"Run Test"
+												)}
+											</Button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</CollapsibleContent>
+					</Collapsible>
+
 					{/* Metadata */}
 					<div className="rounded-lg border bg-card p-4 shadow-sm">
 						<span className="mb-3 block font-semibold text-muted-foreground text-xs uppercase tracking-wider">
@@ -475,7 +884,7 @@ export const PromptDetailPage = observer(() => {
 
 					{/* Set as Active */}
 					{isOwner && selectedVersionIndex > 0 && (
-						<div className="flex items-center justify-end gap-2">
+						<div className="flex items-start justify-end gap-2">
 							<Button
 								variant="default"
 								onClick={handleSetAsActive}

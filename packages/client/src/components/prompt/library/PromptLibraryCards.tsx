@@ -10,11 +10,6 @@ interface PromptLibraryCardsProps {
 	prompts: Prompt[];
 
 	/**
-	 *
-	 */
-	filter: string;
-
-	/**
 	 * View mode - grid or list
 	 */
 	view?: ViewMode;
@@ -46,51 +41,27 @@ interface PromptLibraryCardsProps {
 }
 
 export const PromptLibraryCards = (props: PromptLibraryCardsProps) => {
-	const {
-		prompts,
-		filter,
-		view = "grid",
-		currentUserId,
-		onClick,
-		onDelete,
-	} = props;
+	const { prompts, view = "grid", currentUserId, onClick, onDelete } = props;
+
+	const containerClass =
+		view === "list"
+			? "flex flex-col gap-2"
+			: "grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4";
 
 	return (
-		<div className="flex flex-col gap-4">
-			<h4 className="font-semibold text-lg capitalize">
-				{`${filter} (${prompts.length})`}
-			</h4>
-			{view === "grid" ? (
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-					{prompts.map((prompt, i) => (
-						<PromptCard
-							key={prompt.id || i}
-							prompt={prompt}
-							variant="catalog"
-							isOwner={currentUserId === prompt.created_by}
-							onDelete={onDelete}
-							onClick={(p) => {
-								onClick(p);
-							}}
-						/>
-					))}
-				</div>
-			) : (
-				<div className="flex flex-col divide-y rounded-lg border">
-					{prompts.map((prompt, i) => (
-						<PromptCard
-							key={prompt.id || i}
-							prompt={prompt}
-							variant="row"
-							isOwner={currentUserId === prompt.created_by}
-							onDelete={onDelete}
-							onClick={(p) => {
-								onClick(p);
-							}}
-						/>
-					))}
-				</div>
-			)}
+		<div className={containerClass}>
+			{prompts.map((prompt, i) => (
+				<PromptCard
+					key={prompt.id || i}
+					prompt={prompt}
+					variant={view === "list" ? "row" : "catalog"}
+					isOwner={currentUserId === prompt.created_by}
+					onDelete={onDelete}
+					onClick={(p) => {
+						onClick(p);
+					}}
+				/>
+			))}
 		</div>
 	);
 };
