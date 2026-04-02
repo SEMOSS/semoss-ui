@@ -68,8 +68,6 @@ export const NewRoomPage = observer(() => {
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
 
-	console.log(JSON.stringify(root.theme.featureFlags));
-
 	/**
 	 * State
 	 */
