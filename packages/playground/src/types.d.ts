@@ -1,9 +1,25 @@
 export interface Engine {
-	app_id: string;
-	app_name: string;
+	engine_id: string;
+	engine_name: string;
 	engine_display_name?: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_subtype?: string;
+	engine_favorite?: number;
+	engine_global?: boolean;
+	engine_discoverable?: boolean;
+	engine_user_permission?: number;
+	engine_group_permission?: number;
+	engine_date_created?: string;
+	engine_cost?: string;
+	low_engine_name?: string;
 	description?: string;
+
+	/** @deprecated legacy keys from MyEngines */
+	app_id?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_name?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 }
 
 export interface App {
@@ -103,6 +119,7 @@ export interface AbstractPixelMessage {
 
 export interface InputPixelMessage extends AbstractPixelMessage {
 	io: "INPUT";
+	type: "INPUT_TEXT" | "INPUT_TOOL_EXEC";
 	parts: (
 		| PixelMessageTextPart
 		| PixelMessageMediaPart
@@ -188,7 +205,7 @@ export interface PixelMessageToolResultPart {
 		toolName: string;
 		output: string;
 		toolParameterValues: Record<string, unknown>;
-		toolStatus: "success" | "error" | "cancelled";
+		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
 }
 

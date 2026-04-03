@@ -201,7 +201,7 @@ export function useDatabaseStructure(engineId: string) {
 		setActiveTable(null);
 	};
 
-	const generateSelectedColumnsQuery = (): string => {
+	const generateSelectedColumnsQuery = useCallback((): string => {
 		if (
 			!activeTable ||
 			!selectedColumns[activeTable] ||
@@ -218,7 +218,7 @@ export function useDatabaseStructure(engineId: string) {
 
 		const columnList = columns.join(", ");
 		return `SELECT ${columnList} FROM ${activeTable}`;
-	};
+	}, [activeTable, selectedColumns]);
 
 	return {
 		structure,

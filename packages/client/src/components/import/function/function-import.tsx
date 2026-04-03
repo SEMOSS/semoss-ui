@@ -1,6 +1,6 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { FileUploadOutlined } from "@mui/icons-material";
 import { SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
@@ -68,6 +68,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 			(key) => key !== "description",
 		);
 	}, []);
+	const hasMultipleTabs = tabLabels.length > 1;
 
 	const DatabasesForTab = useMemo(() => {
 		const selectedIndex = Number.parseInt(selectedTab);
@@ -92,7 +93,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				return;
 			}
 			const pixelExpressions = uploadedFiles.map(
-				(file) =>
+				() =>
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["FUNCTION"])`,
 			);
 			for (const pixelString of pixelExpressions) {
@@ -104,9 +105,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 					return;
 				}
 				toast.success("Successfully Created Function Database");
-				navigate(
-					`/engine/function/${output.database_id}`,
-				);
+				navigate(`/engine/function/${output.database_id}`);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");
@@ -166,23 +165,22 @@ export const FunctionImport = ({ name }: { name: string }) => {
 
 	const renderDatabaseGrid = (Databases: functionCatalog[]) => (
 		<div
-			className="mt-1 grid grid-cols-6 gap-2"
+			className="mt-1 flex flex-col gap-2 sm:flex-row sm:flex-wrap"
 			data-testid="function-grid"
 		>
 			{Databases.filter((v) =>
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
-				<div key={v.id}>
-					<FunctionTitleCard
-						selectedFunction={{
-							...v,
-							display: v.name,
-						}}
-						onModelSelect={() => {
-							setSelectedDatabase(v);
-						}}
-					/>
-				</div>
+				<FunctionTitleCard
+					key={v.id}
+					selectedFunction={{
+						...v,
+						display: v.name,
+					}}
+					onModelSelect={() => {
+						setSelectedDatabase(v);
+					}}
+				/>
 			))}
 		</div>
 	);
@@ -206,7 +204,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		const file = event.dataTransfer.files?.[0];
-		if (file && file.name.endsWith(".zip")) {
+		if (file?.name.endsWith(".zip")) {
 			setFiledata(file);
 		}
 	};
@@ -219,7 +217,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				onOpenChange={setIsFileUploadModalOpen}
 			>
 				<DialogContent
-					className="w-[600px]"
+					className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
 					data-testid="function-zip-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
@@ -264,13 +262,13 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								</div>
 							)}
 						</div>
-						<div className="flex flex-row justify-end gap-2">
+						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 							<Button
 								size="sm"
 								variant="ghost"
 								onClick={() => setIsFileUploadModalOpen(false)}
 								data-testid="function-upload-close-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Close
 							</Button>
@@ -280,7 +278,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								disabled={!filedata || loading}
 								onClick={() => onSubmit(filedata)}
 								data-testid="function-upload-submit-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Upload
 							</Button>
@@ -316,7 +314,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 					</div>
 
 					<div className="flex flex-col">
-						<div className="mt-3 mb-4 flex w-full items-start gap-2">
+						<div className="mt-3 mb-4 flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-start">
 							<InputGroup className="flex-1 border-b-2 border-none">
 								<InputGroupAddon>
 									<SearchIcon className="size-4 text-muted-foreground" />
@@ -335,43 +333,54 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								variant="outline"
 								onClick={() => handleFileUpload(true)}
 								data-testid="function-upload-file-button"
+								className="w-full sm:w-auto"
 							>
 								<UploadIcon className="size-5" />
 							</Button>
 						</div>
 
 						<div className="w-full">
-							<Tabs
-								value={selectedTab}
-								onValueChange={setSelectedTab}
-								className="w-full"
-								data-testid="tabs"
-							>
-								<TabsList data-testid="tabs-list">
+							{hasMultipleTabs ? (
+								<Tabs
+									value={selectedTab}
+									onValueChange={setSelectedTab}
+									className="w-full"
+									data-testid="tabs"
+								>
+									<TabsList
+										data-testid="tabs-list"
+										className="w-full justify-start overflow-x-auto sm:w-auto"
+									>
+										{tabLabels.map((label, index) => (
+											<TabsTrigger
+												key={label}
+												value={index.toString()}
+												data-testid={`tab-${label.toLowerCase()}`}
+												className="shrink-0"
+											>
+												{label}
+											</TabsTrigger>
+										))}
+									</TabsList>
 									{tabLabels.map((label, index) => (
-										<TabsTrigger
+										<TabsContent
 											key={label}
 											value={index.toString()}
-											data-testid={`tab-${label.toLowerCase()}`}
+											className="mt-3.5"
 										>
-											{label}
-										</TabsTrigger>
+											<div className="">
+												{renderDatabaseGrid(
+													DatabasesForTab,
+												)}
+											</div>
+										</TabsContent>
 									))}
-								</TabsList>
-								{tabLabels.map((label, index) => (
-									<TabsContent
-										key={label}
-										value={index.toString()}
-										className="mt-[14px]"
-									>
-										<div className="">
-											{renderDatabaseGrid(
-												DatabasesForTab,
-											)}
-										</div>
-									</TabsContent>
-								))}
-							</Tabs>
+								</Tabs>
+							) : (
+								<div className="mt-3.5">
+									{renderDatabaseGrid(DatabasesForTab)}
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

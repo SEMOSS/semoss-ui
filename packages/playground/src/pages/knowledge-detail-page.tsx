@@ -56,8 +56,9 @@ import { NewKnowledgeOverlay } from "@/components/knowledge/new-knowledge-mcp-ov
 import { useGlobalBreadcrumbs } from "@/hooks";
 
 type KnowledgeEngine = {
-	app_id: string;
-	app_name: string;
+	engine_id: string;
+	engine_name: string;
+	engine_display_name?: string;
 	description?: string;
 	tag?: string[] | string;
 };
@@ -126,7 +127,7 @@ const formatFileSize = (fileSize: string | number): string => {
 
 const formatDateTime = (dateStr: string): string => {
 	const d = new Date(dateStr.replace(" ", "T"));
-	if (isNaN(d.getTime())) return dateStr;
+	if (Number.isNaN(d.getTime())) return dateStr;
 	return d.toLocaleString(undefined, {
 		month: "short",
 		day: "numeric",
@@ -197,7 +198,9 @@ export const KnowledgeDetailPage = observer(() => {
 			{
 				name:
 					getKnowledge.status === "SUCCESS"
-						? knowledge?.app_name || t("knowledge:detail.knowledge")
+						? knowledge?.engine_display_name ||
+							knowledge?.engine_name ||
+							t("knowledge:detail.knowledge")
 						: t("knowledge:breadcrumbs.loading"),
 				path: `/knowledge/${knowledgeId}`,
 			},
@@ -441,7 +444,8 @@ export const KnowledgeDetailPage = observer(() => {
 
 					<div className="flex-1 space-y-1">
 						<h1 className="text-2xl font-semibold leading-none">
-							{knowledge?.app_name ||
+							{knowledge?.engine_display_name ||
+								knowledge?.engine_name ||
 								t("knowledge:detail.knowledge")}
 						</h1>
 						<p className="text-sm text-muted-foreground">
