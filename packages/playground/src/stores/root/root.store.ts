@@ -249,6 +249,7 @@ export class RootStore {
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),
 			],
+			tour: theme?.tour || this._store.theme.tour,
 		};
 
 		// apply the theme to document root

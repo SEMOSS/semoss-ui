@@ -1,8 +1,14 @@
-import { useEffect, useState } from "react";
+import {
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	MapIcon,
+	XIcon,
+} from "lucide-react";
+import { observer } from "mobx-react-lite";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeftIcon, ChevronRightIcon, MapIcon, XIcon } from "lucide-react";
 import { Button } from "@semoss/ui/next";
-import { useTour } from "@/hooks";
+import { useRoot, useTour } from "@/hooks";
 
 interface TourStep {
 	target?: string;
@@ -118,14 +124,33 @@ function getCardStyle(
 	}
 }
 
-export const LandingTour: React.FC = () => {
+export const LandingTour: React.FC = observer(() => {
 	const { isOpen, stopTour } = useTour();
+	const { root } = useRoot();
 	const [step, setStep] = useState(0);
 	const [rect, setRect] = useState<DOMRect | null>(null);
 
-	const currentStep = TOUR_STEPS[step];
+	const allSteps = useMemo<TourStep[]>(() => {
+		const excluded = new Set(root.theme.tour?.excludedSteps ?? []);
+		const custom = root.theme.tour?.customSteps ?? [];
+		const base = TOUR_STEPS.filter((s) => {
+			const id = s.target ?? "welcome";
+			return !excluded.has(id);
+		});
+		return [
+			...base,
+			...custom.map((s) => ({
+				target: `nav-${s.navItemPath}`,
+				title: s.title,
+				content: s.content,
+				placement: s.placement,
+			})),
+		];
+	}, [root.theme.tour?.excludedSteps, root.theme.tour?.customSteps]);
+
+	const currentStep = allSteps[step];
 	const isFirst = step === 0;
-	const isLast = step === TOUR_STEPS.length - 1;
+	const isLast = step === allSteps.length - 1;
 
 	// Reset to step 0 when tour opens
 	useEffect(() => {
@@ -153,7 +178,7 @@ export const LandingTour: React.FC = () => {
 		};
 	}, [step, isOpen, currentStep.target]);
 
-	if (!isOpen) return null;
+	if (root.theme.tour?.show === false || !isOpen) return null;
 
 	const cardStyle = getCardStyle(rect, currentStep.placement);
 
@@ -238,7 +263,7 @@ export const LandingTour: React.FC = () => {
 					{/* Footer */}
 					<div className="flex items-center justify-between pt-1">
 						<span className="text-muted-foreground text-xs">
-							{step + 1} / {TOUR_STEPS.length}
+							{step + 1} / {allSteps.length}
 						</span>
 						<div className="flex items-center gap-1.5">
 							<Button
@@ -279,4 +304,4 @@ export const LandingTour: React.FC = () => {
 		</>,
 		document.body,
 	);
-};
+});

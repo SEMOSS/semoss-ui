@@ -38,7 +38,11 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					asChild
 					isActive={!!matchPath(`/embed/${path}`, pathname)}
 				>
-					<Link to={`/embed/${path}`} aria-label={name}>
+					<Link
+						to={`/embed/${path}`}
+						aria-label={name}
+						data-tour={`nav-${path}`}
+					>
 						{icon ? (
 							<img
 								className="size-4 select-none"
@@ -62,7 +66,11 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
 				>
-					<Link to={internalPath} aria-label={name}>
+					<Link
+						to={internalPath}
+						aria-label={name}
+						data-tour={`nav-${path}`}
+					>
 						{icon ? (
 							<img
 								className="size-4 select-none"
@@ -85,6 +93,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					target="_blank"
 					rel="noopener noreferrer"
 					className="cursor-pointer"
+					data-tour={`nav-${path}`}
 				>
 					{icon ? (
 						<img

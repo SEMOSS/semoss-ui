@@ -57,6 +57,18 @@ export const MainLayout = observer(() => {
 		if (icon) setFavicon(icon);
 	}, [theme?.images?.tabIcon]);
 
+	// Auto-show tour for first-time users (resets when cookies are cleared)
+	useEffect(() => {
+		if (root.theme.tour?.show === false) return;
+		const hasSeen = document.cookie
+			.split("; ")
+			.find((c) => c.startsWith("hasSeenTour="));
+		if (!hasSeen) {
+			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
+			setIsTourOpen(true);
+		}
+	}, [root.theme.tour?.show]);
+
 	return (
 		<ChatContext.Provider
 			value={{
