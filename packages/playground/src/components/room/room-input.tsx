@@ -53,18 +53,10 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
-import { useGracefulErrors } from "@/hooks";
+import { useGracefulErrors, useRoot } from "@/hooks";
 import type { Engine } from "@/types";
 
-const IMAGE_EXTENSIONS = [
-	"png",
-	"jpg",
-	"jpeg",
-	"gif",
-	"webp",
-	"svg",
-	"img",
-];
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
 
 const isImageFile = (file: File): boolean => {
 	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -75,13 +67,30 @@ const ICON_CLASS = "size-8 shrink-0 text-muted-foreground";
 
 const getIconForExt = (ext: string) => {
 	if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheetIcon;
-	if (["py", "js", "ts", "tsx", "jsx", "java", "cpp", "c", "go", "rs"].includes(ext)) return FileCodeIcon;
-	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext)) return FileTerminalIcon;
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		].includes(ext)
+	)
+		return FileCodeIcon;
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
+		return FileTerminalIcon;
 	if (ext === "json") return FileJsonIcon;
 	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return FileArchiveIcon;
 	if (["ppt", "pptx"].includes(ext)) return FileChartPieIcon;
-	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext)) return FileAudioIcon;
-	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) return FileVideoIcon;
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
+		return FileAudioIcon;
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+		return FileVideoIcon;
 	if (["html", "xml", "md", "mdx", "rtf"].includes(ext)) return FileTypeIcon;
 	if (ext === "pdf") return FileBadgeIcon;
 	if (["doc", "docx", "msg", "txt"].includes(ext)) return FileTextIcon;
@@ -95,7 +104,7 @@ const getFileIcon = (file: File): React.ReactNode => {
 	return (
 		<div className="flex flex-col items-center gap-1">
 			<Icon className={ICON_CLASS} strokeWidth={1.25} />
-			<span className="max-w-16 truncate text-[10px] font-medium uppercase text-muted-foreground">
+			<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
 				{ext}
 			</span>
 		</div>
@@ -113,7 +122,7 @@ interface RoomInputProps {
 	model: Engine | null;
 
 	/** Update options on change */
-	setModel: (model: Engine | null) => void;
+	setModel: (model: Engine) => void;
 
 	/** Menu component */
 	MenuComponent: React.ComponentType<{
@@ -160,6 +169,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const { getGracefulErrorMessage } = useGracefulErrors();
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
+		const { root } = useRoot();
 
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
@@ -291,7 +301,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				});
 
 				// clear out the input components
-				success = await onPrompt(userInput, userFiles);
+				success = Boolean(await onPrompt(userInput, userFiles));
 				if (!success) {
 					throw new Error(`Error processing chat`);
 				}
@@ -300,7 +310,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setFiles([]);
 			} catch (e) {
 				// throw the error
-				toast.error(getGracefulErrorMessage(e));
+				toast.error(getGracefulErrorMessage(e as Error));
 
 				// keep the files
 				setFiles(userFiles);
@@ -376,7 +386,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						hidden
 						onChange={(e) => {
 							// set the new files
-							const updated = Array.from(e.target.files);
+							const updated = Array.from(e.target.files ?? []);
 							setFiles((prev) => [...prev, ...updated]);
 						}}
 					/>
@@ -512,8 +522,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										<DropdownMenuTrigger
 											style={{
 												position: "fixed",
-												top: menuPosition.top,
-												left: menuPosition.left,
+												top: menuPosition?.top,
+												left: menuPosition?.left,
 												width: 0,
 												height: 0,
 											}}
@@ -575,24 +585,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						{footer}
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
-						<EngineSelect
-							className="h-8 w-48 gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none [&>svg]:hidden"
-							disabled={isLoading}
-							name={
-								model?.engine_display_name ||
-								model?.app_name ||
-								""
-							}
-							value={model?.app_id || ""}
-							engineTypes={["MODEL"]}
-							metaFilters={[{ tag: "text-generation" }]}
-							onChange={(v) => {
-								setModel(v);
-							}}
-							popoverContentProps={{
-								align: "start",
-							}}
-						/>
+						{root.theme.featureFlags?.enableModelSelect && (
+							<EngineSelect
+								className="h-8 w-48 gap-0.5 border-none bg-transparent px-2 py-1 text-xs shadow-none [&>svg]:hidden"
+								disabled={isLoading}
+								name={
+									model?.engine_display_name ||
+									model?.app_name ||
+									""
+								}
+								value={model?.app_id || ""}
+								engineTypes={["MODEL"]}
+								metaFilters={[{ tag: "text-generation" }]}
+								onChange={(v) => {
+									setModel(v);
+								}}
+								popoverContentProps={{
+									align: "start",
+								}}
+							/>
+						)}
 
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -730,13 +742,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												variant="ghost"
 												size={"icon-sm"}
 												onClick={() => {
-													const updated = [
-														...files,
-													];
-													updated.splice(
-														fIdx,
-														1,
-													);
+													const updated = [...files];
+													updated.splice(fIdx, 1);
 													setFiles(updated);
 												}}
 											>
