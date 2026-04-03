@@ -89,7 +89,6 @@ export const EngineSelect = ({
 	tokensMax,
 	contextTooltipContent,
 }: EngineSelectProps) => {
-	tokensUsed = 150000; // Mock value for testing context indicator
 	// ========================================================================
 	// State & Hooks
 	// ========================================================================
