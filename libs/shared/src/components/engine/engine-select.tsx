@@ -41,7 +41,7 @@ interface EngineSelectProps {
 	value: string;
 
 	/** Callback invoked when selection changes */
-	onChange: (value: Engine | null) => void;
+	onChange: (value: Engine) => void;
 
 	/** Filter engines by type (e.g., MODEL, DATABASE, STORAGE) */
 	engineTypes?: Engine["engine_type"][];

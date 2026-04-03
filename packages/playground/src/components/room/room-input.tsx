@@ -53,7 +53,7 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
-import { useGracefulErrors } from "@/hooks";
+import { useGracefulErrors, useRoot } from "@/hooks";
 import type { Engine } from "@/types";
 
 // ============================================================================
@@ -156,7 +156,7 @@ interface RoomInputProps {
 	model: Engine | null;
 
 	/** Update options on change */
-	setModel: (model: Engine | null) => void;
+	setModel: (model: Engine) => void;
 
 	/** Menu component */
 	MenuComponent: React.ComponentType<{
@@ -232,6 +232,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Editor state
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
+		const { root } = useRoot();
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -410,7 +411,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				});
 
 				// Submit to parent handler
-				const result = await onPrompt(userInput, userFiles);
+				const result = Boolean(await onPrompt(userInput, userFiles));
 				if (result === null || result === false) {
 					throw new Error(`Error processing chat`);
 				}
@@ -419,7 +420,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setFiles([]);
 			} catch (e) {
 				// Show error to user
-				toast.error(getGracefulErrorMessage(e as Error));
+				toast.error(getGracefulErrorMessage(e as Error as Error));
 
 				// Restore files for retry
 				setFiles(userFiles);
@@ -523,7 +524,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						onChange={(e) => {
 							// set the new files
 							if (e.target.files) {
-								const updated = Array.from(e.target.files);
+								const updated = Array.from(
+									e.target.files ?? [],
+								);
 								setFiles((prev) => [...prev, ...updated]);
 							}
 						}}
@@ -719,27 +722,29 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 					{/* Bottom-right controls: model selector, mic, send */}
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
-						<EngineSelect
-							className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-							disabled={isLoading}
-							name={
-								model?.engine_display_name ||
-								model?.app_name ||
-								""
-							}
-							value={model?.app_id || ""}
-							engineTypes={["MODEL"]}
-							metaFilters={[{ tag: "text-generation" }]}
-							onChange={(v) => {
-								setModel(v);
-							}}
-							popoverContentProps={{
-								align: "start",
-							}}
-							tokensUsed={tokensUsed}
-							tokensMax={tokensMax}
-							contextTooltipContent={contextTooltipContent}
-						/>
+						{root.theme.featureFlags?.enableModelSelect && (
+							<EngineSelect
+								className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+								disabled={isLoading}
+								name={
+									model?.engine_display_name ||
+									model?.app_name ||
+									""
+								}
+								value={model?.app_id || ""}
+								engineTypes={["MODEL"]}
+								metaFilters={[{ tag: "text-generation" }]}
+								onChange={(v) => {
+									setModel(v);
+								}}
+								popoverContentProps={{
+									align: "start",
+								}}
+								tokensUsed={tokensUsed}
+								tokensMax={tokensMax}
+								contextTooltipContent={contextTooltipContent}
+							/>
+						)}
 
 						<Tooltip>
 							<TooltipTrigger asChild>
