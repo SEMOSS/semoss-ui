@@ -101,5 +101,10 @@
 		"descriptionExceeded": "この会話は上限を超えました。モデルは現在、応答を生成する際に以前のメッセージを忘れています。最良の結果を得るには、新しいチャットを開始してください。",
 		"memoryUsedTitle": "使用メモリ:",
 		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and tools",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or tools available"
 	}
 }

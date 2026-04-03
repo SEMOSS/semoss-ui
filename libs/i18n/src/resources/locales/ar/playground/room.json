@@ -101,5 +101,10 @@
 		"descriptionExceeded": "تجاوزت هذه المحادثة حدها. يقوم النموذج الآن بنسيان الرسائل السابقة عند توليد الردود. ابدأ دردشة جديدة للحصول على أفضل النتائج.",
 		"memoryUsedTitle": "الذاكرة المستخدمة:",
 		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and tools",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or tools available"
 	}
 }

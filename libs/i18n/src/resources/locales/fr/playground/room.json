@@ -101,5 +101,10 @@
 		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents lors de la génération des réponses. Démarrez un nouveau chat pour de meilleurs résultats.",
 		"memoryUsedTitle": "Mémoire utilisée :",
 		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and tools",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or tools available"
 	}
 }

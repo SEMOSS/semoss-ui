@@ -101,5 +101,10 @@
 		"descriptionExceeded": "यह बातचीत अपनी सीमा से अधिक हो गई है। मॉडल अब प्रतिक्रियाएं उत्पन्न करते समय पुराने संदेशों को भूल रहा है। सर्वोत्तम परिणामों के लिए नई चैट शुरू करें।",
 		"memoryUsedTitle": "उपयोग की गई मेमोरी:",
 		"memoryUsedValue": "{{used}} / {{total}} टोकन ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and tools",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or tools available"
 	}
 }

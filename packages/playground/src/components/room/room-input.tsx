@@ -53,7 +53,9 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
+import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useGracefulErrors, useRoot } from "@/hooks";
+import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
 
 // ============================================================================
@@ -158,13 +160,16 @@ interface RoomInputProps {
 	/** Update options on change */
 	setModel: (model: Engine) => void;
 
-	/** Menu component */
+	/** Menu component for + button dropdown */
 	MenuComponent: React.ComponentType<{
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
 		addToken: (token: string) => void;
 	}>;
+
+	/** Room options containing MCP configurations for slash menu */
+	options: RoomStore["options"];
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
@@ -213,6 +218,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		model,
 		setModel,
 		MenuComponent,
+		options,
 		onPrompt = () => null,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
@@ -637,7 +643,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={contentEditableRef}
 						/>
-						{/* Slash command menu - disabled during loading */}
+						{/* Slash command menu - searchable knowledge & toolbox only */}
 						{!isLoading && (
 							<MentionPlugin
 								trigger="/"
@@ -663,13 +669,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										/>
 										<DropdownMenuContent
 											align="start"
-											className="w-72"
+											className="max-h-96 w-72 overflow-y-auto"
 										>
-											<MenuComponent
-												isOpen={isOpen}
-												onOpenChange={onOpenChange}
-												fileRef={fileRef}
-												addToken={addToken}
+											<RoomInputMenuSlash
+												options={options}
+												onSelect={(tool) => {
+													addToken(`<${tool.name}>`);
+													onOpenChange(false);
+												}}
 											/>
 										</DropdownMenuContent>
 									</DropdownMenu>

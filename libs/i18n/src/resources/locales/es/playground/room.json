@@ -101,5 +101,10 @@
 		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores al generar respuestas. Inicia un nuevo chat para obtener mejores resultados.",
 		"memoryUsedTitle": "Memoria usada:",
 		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and tools",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or tools available"
 	}
 }

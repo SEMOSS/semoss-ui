@@ -347,6 +347,7 @@ export const NewRoomPage = observer(() => {
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
+							options={tempRoomStore.options}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
