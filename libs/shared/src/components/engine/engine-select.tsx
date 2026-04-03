@@ -33,7 +33,7 @@ interface EngineSelectProps {
 	value: string;
 
 	/** Update options on change */
-	onChange: (value: Engine | null) => void;
+	onChange: (value: Engine) => void;
 
 	/** Types of engines to pre-filter on */
 	engineTypes?: Engine["engine_type"][];
