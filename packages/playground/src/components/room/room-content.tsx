@@ -22,7 +22,6 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
-	RoomContextChart,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuKnowledge,
@@ -490,12 +489,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					toggleToolsPaused={
 						room.latestResponseMessage.toggleIsPaused
 					}
-					footer={
-						<RoomContextChart
-							tokensUsed={room.tokensUsed}
-							tokensMax={chat.models.contextWindow}
-						/>
-					}
+					tokensUsed={room.tokensUsed}
+					tokensMax={chat.models.contextWindow}
 				/>
 			</div>
 		</div>

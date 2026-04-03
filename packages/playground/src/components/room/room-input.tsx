@@ -126,6 +126,21 @@ const getFileIcon = (file: File): React.ReactNode => {
 	);
 };
 
+/**
+ * Format token counts for display
+ * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
+ */
+const formatTokens = (tokens: number | undefined) => {
+	if (tokens === undefined) return "0";
+	if (tokens >= 1000000) {
+		return `${(tokens / 1000000).toFixed(1)}M`;
+	}
+	if (tokens >= 1000) {
+		return `${(tokens / 1000).toFixed(1)}k`;
+	}
+	return tokens.toString();
+};
+
 // ============================================================================
 // TypeScript Interfaces
 // ============================================================================
@@ -168,6 +183,12 @@ interface RoomInputProps {
 
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
+
+	/** Current token usage for context window indicator */
+	tokensUsed?: number;
+
+	/** Maximum token capacity for context window */
+	tokensMax?: number;
 }
 
 // ============================================================================
@@ -198,6 +219,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		toggleToolsPaused,
 		footer = null,
 		hidePauseButton = false,
+		tokensUsed,
+		tokensMax,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -224,6 +247,45 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+		// ========================================================================
+		// Context Window Tooltip
+		// ========================================================================
+
+		const contextTooltipContent = useMemo(() => {
+			const contextUsedPercent =
+				tokensMax && tokensUsed !== undefined
+					? (tokensUsed / tokensMax) * 100
+					: undefined;
+
+			if (contextUsedPercent === undefined) return null;
+
+			// Pick the appropriate description based on usage tier
+			const descriptionKey =
+				contextUsedPercent >= 100
+					? "contextWindow.descriptionExceeded"
+					: contextUsedPercent < 50
+						? "contextWindow.descriptionLow"
+						: contextUsedPercent < 75
+							? "contextWindow.descriptionMedium"
+							: "contextWindow.descriptionHigh";
+
+			return (
+				<div className="w-full space-y-1">
+					<p className="w-full">{t(descriptionKey)}</p>
+					<p className="flex w-full items-baseline justify-between gap-3">
+						<span>{t("contextWindow.memoryUsedTitle")}</span>
+						<span className="whitespace-nowrap text-right tabular-nums">
+							{t("contextWindow.memoryUsedValue", {
+								used: formatTokens(tokensUsed),
+								total: formatTokens(tokensMax),
+								percent: contextUsedPercent.toFixed(1),
+							})}
+						</span>
+					</p>
+				</div>
+			);
+		}, [tokensUsed, tokensMax, t]);
 
 		// ========================================================================
 		// Speech Recognition Setup
@@ -674,6 +736,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							popoverContentProps={{
 								align: "start",
 							}}
+							tokensUsed={tokensUsed}
+							tokensMax={tokensMax}
+							contextTooltipContent={contextTooltipContent}
 						/>
 
 						<Tooltip>

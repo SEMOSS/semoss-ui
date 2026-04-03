@@ -1,4 +1,5 @@
 import { CheckIcon, ChevronDown } from "lucide-react";
+import type React from "react";
 import { useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -14,6 +15,9 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -47,6 +51,15 @@ interface EngineSelectProps {
 
 	/** Props forwarded to the PopoverContent component */
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
+
+	/** Current token usage for context window indicator */
+	tokensUsed?: number;
+
+	/** Maximum token capacity for context window */
+	tokensMax?: number;
+
+	/** Optional tooltip content to show when hovering context percentage */
+	contextTooltipContent?: React.ReactNode;
 }
 
 // ============================================================================
@@ -72,7 +85,11 @@ export const EngineSelect = ({
 	engineTypes,
 	metaFilters,
 	popoverContentProps = {},
+	tokensUsed,
+	tokensMax,
+	contextTooltipContent,
 }: EngineSelectProps) => {
+	tokensUsed = 150000; // Mock value for testing context indicator
 	// ========================================================================
 	// State & Hooks
 	// ========================================================================
@@ -155,6 +172,32 @@ export const EngineSelect = ({
 	});
 
 	// ========================================================================
+	// Context Window Calculation
+	// ========================================================================
+
+	const contextUsedPercent =
+		tokensMax && tokensUsed !== undefined
+			? (tokensUsed / tokensMax) * 100
+			: undefined;
+
+	const showContextIndicator =
+		contextUsedPercent !== undefined && contextUsedPercent >= 12.5;
+
+	// Calculate pie chart geometry
+	const roundedPercent =
+		contextUsedPercent !== undefined
+			? Math.round(contextUsedPercent / 12.5) * 12.5
+			: 0;
+	const radius = 8;
+	const cx = 9;
+	const cy = 9;
+	const angle = (roundedPercent / 100) * 360;
+	const radians = (angle * Math.PI) / 180;
+	const x = cx + radius * Math.cos(radians - Math.PI / 2);
+	const y = cy + radius * Math.sin(radians - Math.PI / 2);
+	const largeArc = angle > 180 ? 1 : 0;
+
+	// ========================================================================
 	// Render
 	// ========================================================================
 
@@ -162,17 +205,83 @@ export const EngineSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
-					variant="outline"
+					variant="ghost"
 					role="combobox"
 					aria-expanded={open}
 					disabled={disabled}
 					className={cn(
-						"ml-auto max-w-64 justify-between overflow-hidden hover:bg-accent",
+						"ml-auto max-w-64 overflow-hidden hover:bg-accent",
 						className,
 					)}
 				>
-					<span className="truncate">{name || "Select"}</span>
-					<ChevronDown className="inline-block! ml-2 size-4 shrink-0 opacity-70" />
+					<div className="flex items-center gap-2">
+						{showContextIndicator && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<div className="flex shrink-0 cursor-help items-center">
+										{/** biome-ignore lint/a11y/noSvgWithoutTitle: hover status is applied to provide description for interactive svg */}
+										<svg
+											width={18}
+											height={18}
+											viewBox="0 0 18 18"
+										>
+											{/* Outer ring - always visible */}
+											<circle
+												cx={cx}
+												cy={cy}
+												r={radius}
+												fill="none"
+												className={
+													roundedPercent >= 75
+														? "stroke-destructive"
+														: "stroke-muted-foreground"
+												}
+												strokeWidth={1.5}
+												opacity={0.3}
+											/>
+											{/* Inner fill showing percentage */}
+											{roundedPercent >= 100 ? (
+												<circle
+													cx={cx}
+													cy={cy}
+													r={radius - 1}
+													className={
+														roundedPercent >= 75
+															? "fill-destructive"
+															: "fill-muted-foreground"
+													}
+													opacity={0.6}
+												/>
+											) : (
+												<path
+													d={`M ${cx} ${cy} L ${cx} ${cy - (radius - 1)} A ${radius - 1} ${radius - 1} 0 ${largeArc} 1 ${x * 0.875 + cx * 0.125} ${y * 0.875 + cy * 0.125} Z`}
+													className={
+														roundedPercent >= 75
+															? "fill-destructive"
+															: "fill-muted-foreground"
+													}
+													opacity={0.6}
+												/>
+											)}
+										</svg>
+									</div>
+								</TooltipTrigger>
+								{contextTooltipContent && (
+									<TooltipContent
+										side="top"
+										align="center"
+										className="w-80 max-w-xs text-wrap"
+									>
+										{contextTooltipContent}
+									</TooltipContent>
+								)}
+							</Tooltip>
+						)}
+						<span className="min-w-0 truncate">
+							{name || "Select"}
+						</span>
+						<ChevronDown className="inline-block! ml-auto size-4 shrink-0 opacity-70" />
+					</div>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="p-0" {...popoverContentProps}>
