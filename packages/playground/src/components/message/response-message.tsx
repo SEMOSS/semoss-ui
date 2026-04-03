@@ -15,6 +15,7 @@ import { Fragment, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -213,20 +214,30 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									return (
 										<Fragment key={key}>
 											{pIdx === firstToolPartIdx &&
-												groupedTools.length >= 1 && (
+												groupedTools.length > 1 && (
 													<ResponseMessageToolGroup
 														key={`${key}-group`}
 														message={message}
 														tools={groupedTools}
 													/>
 												)}
-											{tool && !isGrouped && (
-												<div className="flex flex-col gap-2">
-													<ResponseMessageTool
-														message={message}
-														tool={tool}
-													/>
-													{/* {tool.display ===
+											{tool &&
+												(!isGrouped ||
+													groupedTools.length <=
+														1) && (
+													<div
+														className={cn(
+															"flex flex-col gap-2",
+															tool?.status ===
+																"SUCCESS" &&
+																"-my-3",
+														)}
+													>
+														<ResponseMessageTool
+															message={message}
+															tool={tool}
+														/>
+														{/* {tool.display ===
 														"inline" &&
 														tool.isOpen && (
 															<RoomInlineTool
@@ -237,8 +248,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 																tool={tool}
 															/>
 														)} */}
-												</div>
-											)}
+													</div>
+												)}
 										</Fragment>
 									);
 								}

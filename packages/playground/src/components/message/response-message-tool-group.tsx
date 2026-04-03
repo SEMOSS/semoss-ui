@@ -1,8 +1,7 @@
-import { ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useTranslation } from "@semoss/i18n";
-import { Badge, cn } from "@semoss/ui/next";
+import { cn } from "@semoss/ui/next";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
@@ -16,40 +15,56 @@ interface ResponseMessageToolGroupProps {
 
 export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 	observer(({ message, tools }) => {
-		const { t } = useTranslation("chat");
 		const [isOpen, setIsOpen] = useState(false);
+		const firstTool = tools[0];
+		const remaining = tools.length - 1;
 
 		return (
-			<div
-				className={cn(
-					"flex flex-col overflow-hidden rounded-lg border border-border bg-sidebar",
-				)}
-			>
-				{/* Header toggle */}
-				<button
-					type="button"
-					className="flex w-full cursor-pointer items-center gap-2 p-2 text-left transition-colors hover:bg-accent"
-					onClick={() => setIsOpen((prev) => !prev)}
-				>
-					<ChevronDownIcon
-						className={cn(
-							"size-5 shrink-0 text-muted-foreground transition-transform duration-200",
-							isOpen && "rotate-180",
-						)}
-					/>
-					<span className="font-medium text-foreground text-sm">
-						{t("tool.groupLabel")}
-					</span>
-					<Badge
-						variant="outline"
-						className="bg-background font-semibold text-xs"
+			<div className="flex flex-col">
+				{/* Header row */}
+				<div className="flex items-center gap-1 pr-0">
+					<button
+						type="button"
+						className="flex items-center gap-1.5 p-1 pr-0 text-left"
+						onClick={() => setIsOpen((prev) => !prev)}
 					>
-						{tools.length}
-					</Badge>
-					<span className="font-medium text-foreground text-sm">
-						{t("tool.groupSuffix")}
-					</span>
-				</button>
+						{isOpen ? (
+							<span className="text-muted-foreground text-xs leading-normal">
+								Executed {tools.length} Tools
+							</span>
+						) : (
+							<>
+								<CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
+								<span className="text-muted-foreground text-xs leading-normal">
+									{firstTool?.json.title}
+									{remaining > 0 && (
+										<span className="opacity-70">
+											{" "}
+											+ {remaining} more
+										</span>
+									)}
+								</span>
+							</>
+						)}
+					</button>
+
+					{/* Growing line */}
+					<div className="mx-1 h-px flex-1 self-center bg-border/40" />
+
+					{/* Chevron toggle */}
+					<button
+						type="button"
+						className="shrink-0 p-1 text-muted-foreground opacity-60 hover:opacity-100"
+						onClick={() => setIsOpen((prev) => !prev)}
+					>
+						<ChevronRightIcon
+							className={cn(
+								"size-3.5 transition-transform duration-200",
+								isOpen && "rotate-90",
+							)}
+						/>
+					</button>
+				</div>
 
 				{/* Expanded tool list — animates open/close via grid-rows */}
 				<div
@@ -59,17 +74,13 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					)}
 				>
 					<div className="overflow-hidden">
-						<div className="flex flex-col gap-2 px-2 pb-2">
+						<div className="flex flex-col">
 							{tools.map((tool) => (
-								<div
+								<ResponseMessageTool
 									key={tool.id}
-									className="flex flex-col gap-2"
-								>
-									<ResponseMessageTool
-										message={message}
-										tool={tool}
-									/>
-								</div>
+									message={message}
+									tool={tool}
+								/>
 							))}
 						</div>
 					</div>

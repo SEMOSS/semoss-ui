@@ -138,21 +138,32 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		return (
 			<div
 				className={cn(
-					"flex flex-col rounded-lg border border-border",
+					"flex flex-col",
+					variant !== "complete" &&
+						"rounded-lg border border-border bg-background",
 					isDisabled && "opacity-50",
-					variant === "complete" ? "bg-sidebar" : "bg-background",
 					!isDisabled && isActive && "border-primary",
 					!isDisabled && variant === "ready" && "hover:bg-accent",
 				)}
 			>
 				{/* Top section: button + actions */}
-				<div className="flex items-center gap-3 pr-2">
+				<div
+					className={cn(
+						"flex items-center",
+						variant === "complete" ? "gap-1 pr-0" : "gap-3 pr-2",
+					)}
+				>
 					{/* Clickable section: icon + text */}
 					<button
 						type="button"
 						disabled={isButtonDisabled}
 						className={cn(
-							"flex min-w-0 flex-1 items-center gap-3 p-2 pr-0 text-left",
+							cn(
+								"flex items-center text-left",
+								variant === "complete"
+									? "gap-1.5 p-1 pr-0"
+									: "min-w-0 flex-1 gap-3 p-2 pr-0",
+							),
 							isButtonDisabled && "cursor-default",
 						)}
 						onClick={() => {
@@ -169,30 +180,42 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							}
 						}}
 					>
+						{variant === "complete" ? (
+							<CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
+						) : (
+							<div
+								className={cn(
+									"flex size-9 shrink-0 items-center justify-center rounded-sm",
+									isPrimaryIcon
+										? "bg-primary/10 text-primary"
+										: "bg-muted text-muted-foreground",
+									isDimmed && "opacity-50",
+								)}
+							>
+								{icon}
+							</div>
+						)}
 						<div
 							className={cn(
-								"flex size-9 shrink-0 items-center justify-center rounded-sm",
-								isPrimaryIcon
-									? "bg-primary/10 text-primary"
-									: "bg-muted text-muted-foreground",
-								isDimmed && "opacity-50",
-							)}
-						>
-							{icon}
-						</div>
-						<div
-							className={cn(
-								"flex min-w-0 flex-1 flex-col",
+								cn(
+									"flex flex-col",
+									variant !== "complete" && "min-w-0 flex-1",
+								),
 								isDimmed && "opacity-50",
 							)}
 						>
 							<span
-								className="truncate font-medium text-foreground text-sm"
+								className={cn(
+									"truncate",
+									variant === "complete"
+										? "text-muted-foreground text-xs leading-normal"
+										: "font-medium text-foreground text-sm",
+								)}
 								title={tool.json.title}
 							>
 								{tool.json.title}
 							</span>
-							{subtext && (
+							{subtext && variant !== "complete" && (
 								<span
 									className="truncate text-muted-foreground text-sm"
 									title={subtext}
@@ -202,6 +225,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							)}
 						</div>
 					</button>
+					{variant === "complete" && (
+						<div className="mx-1 h-px flex-1 self-center bg-border/40" />
+					)}
 
 					{/* Right-side actions */}
 					{(variant === "loading" || variant === "queued") && (
@@ -249,7 +275,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 									type="button"
 									size="icon"
 									variant="ghost"
-									className="shrink-0"
+									className={cn(
+										"shrink-0",
+										variant === "complete" &&
+											"text-muted-foreground opacity-60",
+									)}
 									onClick={(e) => e.stopPropagation()}
 								>
 									<MoreHorizontalIcon className="size-4" />
