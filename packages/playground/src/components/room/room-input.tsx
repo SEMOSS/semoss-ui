@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -56,38 +56,62 @@ import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll
 import { useGracefulErrors } from "@/hooks";
 import type { Engine } from "@/types";
 
-const IMAGE_EXTENSIONS = [
-	"png",
-	"jpg",
-	"jpeg",
-	"gif",
-	"webp",
-	"svg",
-	"img",
-];
+// ============================================================================
+// Constants & Helper Functions
+// ============================================================================
 
+/** Supported image file extensions for preview */
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
+
+/** Check if a file is an image based on its extension */
 const isImageFile = (file: File): boolean => {
 	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 	return IMAGE_EXTENSIONS.includes(ext);
 };
 
+/** Shared icon styling for file type icons */
 const ICON_CLASS = "size-8 shrink-0 text-muted-foreground";
 
+/**
+ * Map file extensions to appropriate Lucide icon components
+ * Returns a generic FileIcon for unknown extensions
+ */
 const getIconForExt = (ext: string) => {
 	if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheetIcon;
-	if (["py", "js", "ts", "tsx", "jsx", "java", "cpp", "c", "go", "rs"].includes(ext)) return FileCodeIcon;
-	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext)) return FileTerminalIcon;
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		].includes(ext)
+	)
+		return FileCodeIcon;
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
+		return FileTerminalIcon;
 	if (ext === "json") return FileJsonIcon;
 	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return FileArchiveIcon;
 	if (["ppt", "pptx"].includes(ext)) return FileChartPieIcon;
-	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext)) return FileAudioIcon;
-	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) return FileVideoIcon;
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
+		return FileAudioIcon;
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+		return FileVideoIcon;
 	if (["html", "xml", "md", "mdx", "rtf"].includes(ext)) return FileTypeIcon;
 	if (ext === "pdf") return FileBadgeIcon;
 	if (["doc", "docx", "msg", "txt"].includes(ext)) return FileTextIcon;
 	return FileIcon;
 };
 
+/**
+ * Render a file type icon with extension label
+ * For images, this will be replaced with an actual preview
+ */
 const getFileIcon = (file: File): React.ReactNode => {
 	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 	const Icon = getIconForExt(ext);
@@ -95,12 +119,16 @@ const getFileIcon = (file: File): React.ReactNode => {
 	return (
 		<div className="flex flex-col items-center gap-1">
 			<Icon className={ICON_CLASS} strokeWidth={1.25} />
-			<span className="max-w-16 truncate text-[10px] font-medium uppercase text-muted-foreground">
+			<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
 				{ext}
 			</span>
 		</div>
 	);
 };
+
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -142,6 +170,21 @@ interface RoomInputProps {
 	footer?: React.ReactNode;
 }
 
+// ============================================================================
+// Main Component
+// ============================================================================
+
+/**
+ * RoomInput - A rich text input component for chat/AI interactions
+ *
+ * Features:
+ * - Lexical editor with mention support (/ commands)
+ * - File upload via drag/drop, paste, or file picker
+ * - Speech-to-text input
+ * - Image file previews
+ * - Model selection
+ * - Tool pause/resume controls
+ */
 export const RoomInput: React.FC<RoomInputProps> = observer(
 	({
 		className,
@@ -156,26 +199,38 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		footer = null,
 		hidePauseButton = false,
 	}) => {
+		// ========================================================================
+		// Hooks & State
+		// ========================================================================
+
 		const { t } = useTranslation("room");
 		const { getGracefulErrorMessage } = useGracefulErrors();
+
+		// Editor state
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
 
+		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
 
+		// File handling
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
 
+		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
-
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+		// ========================================================================
+		// Speech Recognition Setup
+		// ========================================================================
+
 		useEffect(() => {
-			// Check if Speech Recognition is supported
+			// Check browser support for Web Speech API
 			const SpeechRecognition =
 				window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -183,8 +238,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setCanListen(true);
 
 				const recognition = new SpeechRecognition();
-				recognition.continuous = true;
-				recognition.interimResults = true;
+				recognition.continuous = true; // Keep listening until stopped
+				recognition.interimResults = true; // Get real-time results
 				recognition.lang = "en-US";
 
 				recognition.onstart = () => {
@@ -194,7 +249,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				recognition.onresult = (event) => {
 					let transcript = "";
 
-					// get the final ones
+					// Collect only finalized transcription results
 					for (
 						let i = event.resultIndex;
 						i < event.results.length;
@@ -205,17 +260,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}
 					}
 
-					// trim to manually handle spaces
 					transcript = transcript.trim();
 					if (transcript) {
+						// Update Lexical editor with appended transcribed text
 						editorRef.current?.update(() => {
 							const root = $getRoot();
 							const currentText = root.getTextContent();
 
-							// clear existing content
 							root.clear();
 
-							// create new paragraph with combined text
+							// Append new transcript to existing text
 							const paragraphNode = $createParagraphNode();
 							const textNode = $createTextNode(
 								currentText
@@ -230,14 +284,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 				recognition.onerror = (event) => {
 					console.error(event);
-
-					// turn off and focus on element
 					setIsListening(false);
 					editorRef.current?.focus();
 				};
 
 				recognition.onend = () => {
-					// turn off and focus on element
 					setIsListening(false);
 					editorRef.current?.focus();
 				};
@@ -247,65 +298,71 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setCanListen(false);
 			}
 
+			// Cleanup: stop recognition when component unmounts
 			return () => {
 				recognitionRef.current?.stop();
 			};
 		}, []);
 
-		// update editable
+		// Disable editor during loading to prevent user input
 		useEffect(() => {
 			editorRef.current?.setEditable(!isLoading);
 		}, [isLoading]);
 
+		// ========================================================================
+		// Core Functions
+		// ========================================================================
+
 		/**
-		 * Prompt the model
+		 * Submit the current prompt to the AI model
 		 *
-		 * @param - input
+		 * Behavior:
+		 * - Extracts text from editor and captures files
+		 * - Clears editor optimistically before sending
+		 * - On success: clears files
+		 * - On failure: restores editor content and files for retry
 		 */
 		const promptModel = async () => {
-			let success = false;
-
-			// store old options
-
+			// Extract current text from Lexical editor
 			let userInput = "";
 			editorRef.current?.getEditorState().read(() => {
 				const root = $getRoot();
 				userInput = root.getTextContent();
 			});
 
+			// Capture files before clearing (for potential restore on error)
 			const userFiles = [...files];
 
-			// skip if there is no input, if loading, or if there are outstanding tools
+			// Guard: prevent submission if empty, loading, or waiting for tool response
 			if (!userInput || isLoading || hasOutstandingTools) {
 				return;
 			}
 
 			try {
-				// clear the view
+				// Optimistically clear editor before sending
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
-
 					const paragraphNode = $createParagraphNode();
 					root.append(paragraphNode);
 				});
 
-				// clear out the input components
-				success = await onPrompt(userInput, userFiles);
-				if (!success) {
+				// Submit to parent handler
+				const result = await onPrompt(userInput, userFiles);
+				if (result === null || result === false) {
 					throw new Error(`Error processing chat`);
 				}
 
-				// clear the files
+				// Success: clear attached files
 				setFiles([]);
 			} catch (e) {
-				// throw the error
-				toast.error(getGracefulErrorMessage(e));
+				// Show error to user
+				toast.error(getGracefulErrorMessage(e as Error));
 
-				// keep the files
+				// Restore files for retry
 				setFiles(userFiles);
 
-				// keep the view
+				// Restore original text in editor for editing/retry
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
@@ -318,11 +375,19 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
-		// Generate object URLs for image file previews
+		// ========================================================================
+		// File Preview Management
+		// ========================================================================
+
+		/**
+		 * Generate blob URLs for image file previews
+		 * Memoized to avoid recreating URLs on every render
+		 */
 		const imagePreviewUrls = useMemo(() => {
 			const urls = new Map<string, string>();
 			for (const f of files) {
 				if (isImageFile(f)) {
+					// Use unique key to identify same file across renders
 					const key = `${f.name}-${f.size}-${f.lastModified}`;
 					urls.set(key, URL.createObjectURL(f));
 				}
@@ -330,7 +395,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			return urls;
 		}, [files]);
 
-		// Cleanup object URLs on change
+		/**
+		 * Cleanup blob URLs to prevent memory leaks
+		 * Important: blob URLs persist until explicitly revoked
+		 */
 		useEffect(() => {
 			return () => {
 				for (const url of imagePreviewUrls.values()) {
@@ -339,23 +407,35 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			};
 		}, [imagePreviewUrls]);
 
+		// ========================================================================
+		// File List Scroll Controls
+		// ========================================================================
+
 		const filesScrollRef = useRef<HTMLDivElement>(null);
 		const [showScrollLeft, setShowScrollLeft] = useState(false);
 		const [showScrollRight, setShowScrollRight] = useState(false);
 
-		const updateScrollButtons = () => {
+		/**
+		 * Determine which scroll buttons to show based on scroll position
+		 * Left button: shown when scrolled right
+		 * Right button: shown when more content exists to the right
+		 */
+		const updateScrollButtons = useCallback(() => {
 			const el = filesScrollRef.current;
 			if (!el) return;
+
 			setShowScrollLeft(el.scrollLeft > 0);
 			setShowScrollRight(
 				el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
 			);
-		};
+		}, []);
 
+		// Initialize scroll button visibility
 		useEffect(() => {
 			updateScrollButtons();
-		}, [files]);
+		}, [updateScrollButtons]);
 
+		/** Scroll the file list horizontally by a fixed amount */
 		const scrollFiles = (direction: "left" | "right") => {
 			const el = filesScrollRef.current;
 			if (!el) return;
@@ -365,6 +445,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				behavior: "smooth",
 			});
 		};
+
+		// ========================================================================
+		// Render
+		// ========================================================================
 
 		return (
 			<>
@@ -376,8 +460,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						hidden
 						onChange={(e) => {
 							// set the new files
-							const updated = Array.from(e.target.files);
-							setFiles((prev) => [...prev, ...updated]);
+							if (e.target.files) {
+								const updated = Array.from(e.target.files);
+								setFiles((prev) => [...prev, ...updated]);
+							}
 						}}
 					/>
 					<LexicalComposer
@@ -417,8 +503,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										}
 										onDrop={(e) => {
 											e.preventDefault();
-
-											// set the new files
 											const updated = Array.from(
 												e.dataTransfer.files,
 											);
@@ -426,24 +510,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												...prev,
 												...updated,
 											]);
-
-											// turn off dragging
 											setIsDragging(false);
 										}}
 										onDragOver={(e) => {
 											e.preventDefault();
-
-											// turn on dragging
 											setIsDragging(true);
 										}}
 										onDragLeave={(e) => {
 											e.preventDefault();
-
-											// turn off dragging
 											setIsDragging(false);
 										}}
 										onPaste={(e) => {
-											// set the new files
+											// Support pasting files (e.g., screenshots)
 											const updated = Array.from(
 												e.clipboardData.files,
 											);
@@ -468,16 +546,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<OnChangePlugin
 							onChange={(editorState) => {
 								editorState.read(() => {
-									// get the root
 									const root = $getRoot();
 
-									// set empty state
+									// Track empty state to disable send button
 									setIsEmpty(
 										root.getTextContent().trim().length ===
 											0,
 									);
 
-									// Scroll to bottom after content changes
+									// Auto-scroll to bottom when content changes (e.g., paste)
 									setTimeout(() => {
 										if (contentEditableRef.current) {
 											contentEditableRef.current.scrollTop =
@@ -495,6 +572,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<AutoScrollOnPastePlugin
 							scrollContainerRef={contentEditableRef}
 						/>
+						{/* Slash command menu - disabled during loading */}
 						{!isLoading && (
 							<MentionPlugin
 								trigger="/"
@@ -508,12 +586,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										open={isOpen}
 										onOpenChange={onOpenChange}
 									>
-										{/* Invisible trigger positioned at the cursor */}
+										{/* Invisible trigger positioned at cursor for menu placement */}
 										<DropdownMenuTrigger
 											style={{
 												position: "fixed",
-												top: menuPosition.top,
-												left: menuPosition.left,
+												top: menuPosition?.top ?? 0,
+												left: menuPosition?.left ?? 0,
 												width: 0,
 												height: 0,
 											}}
@@ -534,6 +612,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							/>
 						)}
 					</LexicalComposer>
+					{/* Bottom-left controls: settings menu + custom footer */}
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
 						{!isLoading && (
 							<DropdownMenu
@@ -575,6 +654,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 						{footer}
 					</div>
+
+					{/* Bottom-right controls: model selector, mic, send */}
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
 						<EngineSelect
 							className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
@@ -623,6 +704,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									: t("input.record")}
 							</TooltipContent>
 						</Tooltip>
+						{/* Primary action button - dual purpose:
+						     - When idle: Send prompt
+						     - When loading: Pause tool execution */}
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span>
@@ -681,8 +765,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</Tooltip>
 					</div>
 				</div>
+
+				{/* File attachment preview strip */}
 				{files.length > 0 ? (
 					<div className="relative flex items-center pt-4">
+						{/* Left scroll button */}
 						{showScrollLeft && (
 							<Button
 								variant="outline"
@@ -694,6 +781,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<ChevronLeftIcon className="size-4" />
 							</Button>
 						)}
+
+						{/* Horizontal scrollable file list */}
 						<div
 							ref={filesScrollRef}
 							className="flex flex-row items-center gap-2 overflow-x-auto scroll-smooth px-1"
@@ -727,18 +816,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												{f.name}
 											</TooltipContent>
 										</Tooltip>
+										{/* Remove button - shown on hover */}{" "}
 										<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
 											<Button
 												variant="ghost"
 												size={"icon-sm"}
 												onClick={() => {
-													const updated = [
-														...files,
-													];
-													updated.splice(
-														fIdx,
-														1,
-													);
+													const updated = [...files];
+													updated.splice(fIdx, 1);
 													setFiles(updated);
 												}}
 											>
