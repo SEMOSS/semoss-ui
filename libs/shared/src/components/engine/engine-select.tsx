@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -162,17 +162,17 @@ export const EngineSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
-					variant="outline"
+					variant="ghost"
 					role="combobox"
 					aria-expanded={open}
 					disabled={disabled}
 					className={cn(
-						`w-full justify-between overflow-hidden`,
+						"ml-auto max-w-64 justify-between overflow-hidden hover:bg-accent",
 						className,
 					)}
 				>
 					<span className="truncate">{name || "Select"}</span>
-					<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+					<ChevronDown className="inline-block! ml-2 size-4 shrink-0 opacity-70" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="p-0" {...popoverContentProps}>

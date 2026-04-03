@@ -658,7 +658,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					{/* Bottom-right controls: model selector, mic, send */}
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
 						<EngineSelect
-							className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+							className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 							disabled={isLoading}
 							name={
 								model?.engine_display_name ||
