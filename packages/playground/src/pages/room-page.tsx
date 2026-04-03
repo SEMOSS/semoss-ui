@@ -63,6 +63,11 @@ export const RoomPage = observer(() => {
 			// Reset room state when roomId changes to prevent stale content flash
 			setRoom(null);
 			try {
+				if (!roomId) {
+					navigate("/");
+					return;
+				}
+
 				const room = await chat.loadRoom(roomId);
 
 				// update the model based on the room
@@ -98,7 +103,7 @@ export const RoomPage = observer(() => {
 				setRoom(room);
 			} catch (e) {
 				// if it doesn't load successfully, go back to home
-				toast.error(e.message);
+				toast.error((e as Error).message);
 				navigate("/");
 			}
 		};

@@ -7,7 +7,6 @@ import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -20,7 +19,7 @@ interface ChatStoreInterface {
 	 */
 	models: {
 		/** The current model */
-		selected: Engine | null;
+		selected: Engine;
 
 		/** The current context window */
 		contextWindow?: number;
@@ -66,11 +65,13 @@ interface ChatStoreInterface {
 export class ChatStore {
 	private _theme: ThemeMap["playground"];
 	private _actions: Insight["actions"];
-	private _error: Insight["error"];
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
 		models: {
-			selected: null,
+			selected: {
+				engine_id: DEFAUlT_MODEL_ID,
+				engine_name: DEFAUlT_MODEL_NAME,
+			} as Engine,
 			contextWindow: undefined,
 		},
 		rooms: {},
@@ -259,11 +260,6 @@ export class ChatStore {
 			`RemoveUserRoom(roomId=["${roomId}"]);`,
 		);
 
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
-		}
-
 		// only drop if the room was opened and has a real insightId
 		if (insightId && insightId !== "new") {
 			try {
@@ -347,11 +343,6 @@ export class ChatStore {
 			`GetContextWindow(${JSON.stringify(engineId)});`,
 		);
 
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
-		}
-
 		if (this.models.selected?.engine_id === engineId) {
 			runInAction(() => {
 				this._store.models.contextWindow = pixelReturn[0].output;
@@ -372,11 +363,6 @@ export class ChatStore {
 
 			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
-
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
 
 			return pixelReturn[0].output;
 		} catch (e) {
@@ -400,8 +386,8 @@ export class ChatStore {
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
-			if (this._error || !pixelReturn[0].output) {
-				throw new Error(this._error.message);
+			if (!pixelReturn[0].output) {
+				throw new Error();
 			}
 
 			return workspaceId;
@@ -415,10 +401,6 @@ export class ChatStore {
 			await this._actions.run(
 				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
 			);
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
 
 			return;
 		} catch (e) {
@@ -434,14 +416,14 @@ export class ChatStore {
 	 */
 	private getDefaultModel = async (): Promise<void> => {
 		const defaultModelId =
-			this._theme.defaultRoomSettings.model?.engine_id ||
+			this._theme.defaultRoomSettings?.model?.engine_id ||
 			DEFAUlT_MODEL_ID;
 		const defaultModelName =
-			this._theme.defaultRoomSettings.model?.engine_display_name ||
-			this._theme.defaultRoomSettings.model?.engine_name ||
+			this._theme.defaultRoomSettings?.model?.engine_display_name ||
+			this._theme.defaultRoomSettings?.model?.engine_name ||
 			DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
-		if (!ENABLE_MODEL_SELECT) {
+		if (!this._theme.featureFlags?.enableModelSelect) {
 			this.setSelectedModel({
 				engine_id: defaultModelId,
 				engine_name: defaultModelName,
@@ -454,11 +436,6 @@ export class ChatStore {
 		const { pixelReturn } = await this._actions.run<[Engine[]]>(
 			` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
 		);
-
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
-		}
 
 		runInAction(() => {
 			// get the output
