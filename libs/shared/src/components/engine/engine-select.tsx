@@ -162,7 +162,7 @@ export const EngineSelect = ({
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
 			<PopoverTrigger asChild>
 				<Button
-					variant="ghost"
+					variant="outline"
 					role="combobox"
 					aria-expanded={open}
 					disabled={disabled}

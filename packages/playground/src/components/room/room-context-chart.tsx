@@ -10,7 +10,8 @@ export interface RoomContextChartProps {
  * Helper function to format token counts for display
  * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0m)
  */
-const formatTokens = (tokens: number) => {
+const formatTokens = (tokens: number | undefined) => {
+	if (tokens === undefined) return "0";
 	if (tokens >= 1000000) {
 		return `${(tokens / 1000000).toFixed(1)}M`;
 	}
@@ -33,7 +34,7 @@ export const RoomContextChart = ({
 
 	// Calculate the percentage of context used
 	const contextUsedPercent =
-		tokensMax > 0 && tokensUsed !== undefined
+		tokensMax && tokensUsed !== undefined
 			? (tokensUsed / tokensMax) * 100
 			: undefined;
 
