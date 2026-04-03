@@ -1,5 +1,5 @@
 {
-	"welcome": "Welcome",
+	"welcome": "Welcome, {{name}}",
 	"settings": {
 		"title": "Room Settings",
 		"description": "Update room settings and modify the behavior of the chat",
