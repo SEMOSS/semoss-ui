@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "Paramètres de la salle",
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
-		"open": "Ouvrir les paramètres",
-		"close": "Fermer",
-		"edit": "Modifier les paramètres"
+		"open": "Ouvrir les paramètres de la salle",
+		"close": "Fermer les paramètres de la salle",
+		"edit": "Modifier les paramètres de la salle"
 	},
 	"form": {
 		"modelLabel": "Modèle",
@@ -84,7 +84,7 @@
 		"notFound": "Non trouvé"
 	},
 	"menuUpload": {
-		"attachDocument": "Joindre un document"
+		"attachDocument": "Ajouter des documents"
 	},
 	"menuFileExplorer": {
 		"name": "Explorateur de fichiers",

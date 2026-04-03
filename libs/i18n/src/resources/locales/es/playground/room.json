@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "Configuración de la sala",
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
-		"open": "Abrir Configuración",
-		"close": "Cerrar",
-		"edit": "Editar configuración"
+		"open": "Abrir Configuración de la Sala",
+		"close": "Cerrar Configuración de la Sala",
+		"edit": "Editar Configuración de la Sala"
 	},
 	"form": {
 		"modelLabel": "Modelo",
@@ -84,7 +84,7 @@
 		"notFound": "No encontrado"
 	},
 	"menuUpload": {
-		"attachDocument": "Adjuntar Documento"
+		"attachDocument": "Agregar Documentos"
 	},
 	"menuFileExplorer": {
 		"name": "Explorador de Archivos",

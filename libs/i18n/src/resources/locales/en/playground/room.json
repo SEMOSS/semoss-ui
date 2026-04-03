@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "Room Settings",
 		"description": "Update room settings and modify the behavior of the chat",
-		"open": "Open Settings",
-		"close": "Close",
-		"edit": "Edit Settings"
+		"open": "Open Room Settings",
+		"close": "Close Room Settings",
+		"edit": "Edit Room Settings"
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -38,7 +38,7 @@
 		"ariaPlaceholder": "Enter text",
 		"thinking": "Thinking...",
 		"menuPrompt": "/ to open menu",
-		"openSettings": "Open settings",
+		"openSettings": "Add files, agents, and more",
 		"recordLabel": "Record the Model",
 		"stopRecording": "Stop Recording",
 		"record": "Record",
@@ -84,7 +84,7 @@
 		"notFound": "Not Found"
 	},
 	"menuUpload": {
-		"attachDocument": "Attach Document"
+		"attachDocument": "Add Documents"
 	},
 	"menuFileExplorer": {
 		"name": "File Explorer",

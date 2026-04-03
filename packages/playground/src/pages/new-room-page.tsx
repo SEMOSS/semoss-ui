@@ -349,6 +349,11 @@ export const NewRoomPage = observer(() => {
 							MenuComponent={observer(
 								({ addToken, onOpenChange, fileRef }) => (
 									<>
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
 										{ENABLE_PLAN && (
 											<>
 												<DropdownMenuItem
@@ -418,11 +423,6 @@ export const NewRoomPage = observer(() => {
 											}}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuUpload
-											fileRef={fileRef}
-											onSelect={() => onOpenChange(false)}
-										/>
-										<DropdownMenuSeparator />
 										<RoomInputMenuKnowledge
 											options={tempRoomStore.options}
 											onSelect={(tool) => {
@@ -437,6 +437,7 @@ export const NewRoomPage = observer(() => {
 												addToken(`<${tool.name}>`);
 											}}
 										/>
+										<DropdownMenuSeparator />
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();

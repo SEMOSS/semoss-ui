@@ -436,10 +436,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									fileRef={fileRef}
 									onSelect={() => onOpenChange(false)}
 								/>
-								<RoomInputMenuFileExplorer
-									room={room}
-									onSelect={() => onOpenChange(false)}
-								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuKnowledge
 									options={room.options}
@@ -454,6 +450,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 										handleToolSelect(tool);
 										addToken(`<${tool.name}>`);
 									}}
+								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuFileExplorer
+									room={room}
+									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuItem
 									onSelect={(e) => {

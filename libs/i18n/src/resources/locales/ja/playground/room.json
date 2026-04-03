@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "ルーム設定",
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
-		"open": "設定を開く",
-		"close": "閉じる",
-		"edit": "設定を編集"
+		"open": "ルーム設定を開く",
+		"close": "ルーム設定を閉じる",
+		"edit": "ルーム設定を編集"
 	},
 	"form": {
 		"modelLabel": "モデル",
@@ -84,7 +84,7 @@
 		"notFound": "見つかりません"
 	},
 	"menuUpload": {
-		"attachDocument": "ドキュメントを添付"
+		"attachDocument": "ドキュメントを追加"
 	},
 	"menuFileExplorer": {
 		"name": "ファイルエクスプローラー",

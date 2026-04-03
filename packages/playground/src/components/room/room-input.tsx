@@ -28,8 +28,8 @@ import {
 	FileTypeIcon,
 	FileVideoIcon,
 	MicIcon,
+	PlusIcon,
 	SendIcon,
-	SlidersHorizontalIcon,
 	SparklesIcon,
 	Square,
 	XIcon,
@@ -631,7 +631,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													"input.openSettings",
 												)}
 											>
-												<SlidersHorizontalIcon />
+												<PlusIcon />
 											</Button>
 										</DropdownMenuTrigger>
 									</TooltipTrigger>
