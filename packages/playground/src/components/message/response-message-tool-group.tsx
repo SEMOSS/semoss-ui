@@ -30,7 +30,7 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					>
 						{isOpen ? (
 							<span className="text-muted-foreground text-xs leading-normal">
-								Executed {tools.length} Tools
+								Tools ({tools.length})
 							</span>
 						) : (
 							<>
