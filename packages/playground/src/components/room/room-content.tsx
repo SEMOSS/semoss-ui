@@ -426,6 +426,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
+					onMcpSelect={handleToolSelect}
 					MenuComponent={observer(
 						({ addToken, onOpenChange, fileRef }) => (
 							<>

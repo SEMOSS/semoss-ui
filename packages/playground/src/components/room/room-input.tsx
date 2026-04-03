@@ -56,7 +56,7 @@ import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Engine } from "@/types";
+import type { Engine, MCPConfig } from "@/types";
 
 // ============================================================================
 // Constants & Helper Functions
@@ -171,6 +171,9 @@ interface RoomInputProps {
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
 
+	/** Callback when an MCP is selected/deselected from slash menu */
+	onMcpSelect?: (mcp: MCPConfig) => void;
+
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
 
@@ -220,6 +223,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		options,
 		onPrompt = () => null,
+		onMcpSelect,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
@@ -674,6 +678,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											<RoomInputMenuSlash
 												options={options}
 												onSelect={(tool) => {
+													onMcpSelect?.(tool);
 													addToken(`<${tool.name}>`);
 													onOpenChange(false);
 												}}
