@@ -13,19 +13,11 @@ Env.update({
 // create a new i18n instance for the playground
 const i18n = new I18nBuilder("playground").i18n;
 
-const isDarkModeEnabled = import.meta.env.VITE_ENABLE_DARK_MODE === "true";
-
-if (!isDarkModeEnabled) {
-	localStorage.removeItem("vite-ui-theme");
-}
-
 export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
 			<InsightProvider>
-				<ThemeProvider
-					defaultTheme={isDarkModeEnabled ? "system" : "light"}
-				>
+				<ThemeProvider>
 					<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 						<Router />
 					</div>

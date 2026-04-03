@@ -26,10 +26,8 @@ import {
 	useSidebar,
 	useTheme,
 } from "@semoss/ui/next";
-import { useChat } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import { toInitials } from "@/utility";
-
-const isDarkModeEnabled = import.meta.env.VITE_ENABLE_DARK_MODE === "true";
 
 export const NavUser = () => {
 	const { t, i18n } = useTranslation("common");
@@ -37,6 +35,7 @@ export const NavUser = () => {
 	const { actions } = useInsight();
 	const { chat } = useChat();
 	const { theme, setTheme } = useTheme();
+	const { root } = useRoot();
 
 	const navigate = useNavigate();
 
@@ -68,7 +67,7 @@ export const NavUser = () => {
 				align="end"
 				sideOffset={4}
 			>
-				{isDarkModeEnabled && (
+				{root.theme.featureFlags?.enableDarkMode && (
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger>
 							{theme === "dark" ? (
