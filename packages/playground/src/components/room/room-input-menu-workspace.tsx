@@ -130,13 +130,16 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 										onSelect={() => {
 											onSelect({
 												workspace_id: w.project_id,
-												name: w.project_name,
+												name:
+													w.project_display_name ||
+													w.project_name,
 											});
 										}}
 									>
 										<ComputerIcon className="size-4" />
 										<div className="w-full flex-1 truncate">
-											{w.project_name}
+											{w.project_display_name ||
+												w.project_name}
 										</div>
 										{root.theme.showPlatformLinks !==
 											false && (

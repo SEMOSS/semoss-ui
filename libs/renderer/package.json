@@ -55,7 +55,7 @@
         "react-beautiful-dnd": "^13.1.1",
         "react-hook-form": "^7.34.2",
         "react-vega": "^7.6.0",
-        "rollup": "4.44.2",
+        "rollup": "4.59.0",
         "rollup-plugin-delete": "3.0.1",
         "tslib": "2.5.3",
         "typescript": "~5.5.2",

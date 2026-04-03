@@ -9,6 +9,11 @@ configure({
 
 const NAME = import.meta.env.VITE_NAME ? import.meta.env.VITE_NAME : "";
 const THEME = import.meta.env.VITE_THEME ? import.meta.env.VITE_THEME : "{}";
+const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT;
+const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT;
+const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
+const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
+const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
 
 interface RootStoreInterface {
 	/**
@@ -66,6 +71,8 @@ export class RootStore {
 			landing: "",
 			sidebar: {
 				//workspaceAlias: "Workspace",
+				expandedByDefault: false,
+				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],
 			},
@@ -78,7 +85,15 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			gracefulErrors: [],
 			showPlatformLinks: true,
+			featureFlags: {
+				enableModelSelect: ENABLE_MODEL_SELECT === "true",
+				enableAgent: ENABLE_AGENT === "true",
+				enableSuggestions: ENABLE_SUGGESTIONS === "true",
+				enablePlan: ENABLE_PLAN === "true",
+				enableRewrite: ENABLE_REWRITE === "true",
+			},
 		},
 	};
 
@@ -204,6 +219,14 @@ export class RootStore {
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
+				expandedByDefault:
+					theme?.sidebar?.expandedByDefault !== undefined
+						? theme.sidebar.expandedByDefault
+						: this._store.theme.sidebar.expandedByDefault,
+				chatHistoryDate:
+					theme?.sidebar?.chatHistoryDate !== undefined
+						? theme.sidebar.chatHistoryDate
+						: this._store.theme.sidebar.chatHistoryDate,
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {
@@ -239,6 +262,14 @@ export class RootStore {
 				theme?.showPlatformLinks !== undefined
 					? theme.showPlatformLinks
 					: this._store.theme.showPlatformLinks,
+			gracefulErrors: [
+				...this._store.theme.gracefulErrors,
+				...(theme?.gracefulErrors || []),
+			],
+			featureFlags: {
+				...this._store.theme.featureFlags,
+				...(theme?.featureFlags || {}),
+			},
 		};
 
 		// apply the theme to document root

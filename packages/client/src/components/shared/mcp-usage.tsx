@@ -2,8 +2,13 @@ import { Copy } from "lucide-react";
 import { Env } from "@semoss/sdk/react";
 import { Button, H4, Markdown, P, toast } from "@semoss/ui/next";
 
-export const getMcpUsage = (id) => {
+export const getMcpUsage = (id, name = "backend-mcp") => {
 	const mcpUrl = `${window.location.origin}${Env.MODULE}/api/ext/mcp/${id}/comms`;
+	const mcpKey =
+		name
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, "-")
+			.replace(/^-+|-+$/g, "") || "backend-mcp";
 
 	return [
 		{
@@ -16,7 +21,9 @@ export const getMcpUsage = (id) => {
 				"You can now use MCP tools directly inside VS Code",
 			],
 			code:
-				'```json\n{\n  "name": "backend-mcp",\n  "command": "npx",\n  "args": [\n    "mcp-remote",\n     "' +
+				'```json\n{\n  "name": "' +
+				mcpKey +
+				'",\n  "command": "npx",\n  "args": [\n    "mcp-remote",\n     "' +
 				mcpUrl +
 				'",\n    "--header",\n    "Authorization:Bearer <ACCESS_KEY>:<SECRET_KEY>"\n  ]\n}\n```',
 		},
@@ -30,7 +37,9 @@ export const getMcpUsage = (id) => {
 				"Restart Claude to load the MCP tools",
 			],
 			code:
-				'```json\n{\n  "mcpServers": {\n    "backend-mcp": {\n      "command": "npx",\n      "args": [\n        "mcp-remote",\n        "' +
+				'```json\n{\n  "mcpServers": {\n    "' +
+				mcpKey +
+				'": {\n      "command": "npx",\n      "args": [\n        "mcp-remote",\n        "' +
 				mcpUrl +
 				'",\n        "--header",\n        "Authorization:Bearer <ACCESS_KEY>:<SECRET_KEY>"\n      ]\n    }\n  }\n}\n```',
 		},
@@ -123,8 +132,8 @@ export const getMcpUsage = (id) => {
 	];
 };
 
-export const McpUsage = ({ id }) => {
-	const usageData = getMcpUsage(id);
+export const McpUsage = ({ id, name }: { id: string; name?: string }) => {
+	const usageData = getMcpUsage(id, name);
 
 	const copyCode = (text: string) => {
 		const cleanCode = text.replace(/```[a-z]*\n|```/g, "");
@@ -132,13 +141,13 @@ export const McpUsage = ({ id }) => {
 		toast.success("Successfully copied to clipboard");
 	};
 	return (
-		<div className="space-y-6">
+		<div className="space-y-4 md:space-y-6">
 			{usageData.map((item) => (
 				<div
 					key={item.Label}
-					className="rounded-2xl border border-base p-6 shadow-xs"
+					className="rounded-2xl border border-base p-4 shadow-xs md:p-6"
 				>
-					<div className="grid gap-8 md:grid-cols-2">
+					<div className="grid gap-4 md:grid-cols-2 md:gap-8">
 						{/* LEFT SIDE */}
 						<div>
 							<H4 data-testid={`mcp-usage-title-${item.Label}`}>
@@ -166,26 +175,31 @@ export const McpUsage = ({ id }) => {
 						</div>
 
 						{/* RIGHT SIDE */}
-						<div className="relative">
-							<Button
-								aria-label="copy"
-								color="default"
-								variant="ghost"
-								size="icon"
-								type="button"
-								className="!absolute !text-xs top-2 right-2 cursor-pointer"
-								data-testid={`mcp-usage-copy-button-${item.Label}`}
-								onClick={() => copyCode(item.code)}
-							>
-								<Copy fontSize="small" />
-							</Button>
-
+						<div className="min-w-0 overflow-hidden rounded-xl border border-base shadow-xs">
+							<div className="flex items-center justify-end border-border border-b bg-gray-100 px-2 py-1">
+								<Button
+									aria-label="copy"
+									color="default"
+									variant="ghost"
+									size="icon-sm"
+									type="button"
+									data-testid={`mcp-usage-copy-button-${item.Label}`}
+									onClick={() => copyCode(item.code)}
+								>
+									<Copy className="size-3.5" />
+								</Button>
+							</div>
 							<Markdown
 								components={{
 									pre: ({ children }) => (
-										<div className="max-h-64 overflow-x-auto overflow-y-auto rounded-xl border border-base bg-gray-50 p-4 text-sm shadow-xs">
+										<div className="max-h-64 overflow-x-auto overflow-y-auto bg-gray-50 p-4 text-sm">
 											{children}
 										</div>
+									),
+									code: ({ children }) => (
+										<code className="block whitespace-pre font-mono text-xs leading-relaxed">
+											{children}
+										</code>
 									),
 								}}
 							>
