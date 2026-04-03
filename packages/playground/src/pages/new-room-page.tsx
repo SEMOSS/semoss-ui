@@ -43,6 +43,7 @@ import type { MCPConfig, Workspace } from "@/types";
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
+const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN === "true";
 
 /**
  * The page to create a new room
@@ -93,8 +94,8 @@ export const NewRoomPage = observer(() => {
 
 	// Fetch knowledge vector engine if knowledgeId is provided
 	const getKnowledge = usePixel<{
-		app_id: string;
-		app_name: string;
+		engine_id: string;
+		engine_name: string;
 	} | null>(
 		knowledgeId
 			? `MyEngines( engine=["${knowledgeId}"], engineTypes=['VECTOR'],  metaFilters=[{}], userT = [true], limit=[15], offset=[0]);`
@@ -275,7 +276,7 @@ export const NewRoomPage = observer(() => {
 		const knowledgeMcp = {
 			id: knowledgeId,
 			type: "VECTOR" as const,
-			name: getKnowledge.data[0].app_name || knowledgeId,
+			name: getKnowledge.data[0].engine_name || knowledgeId,
 		};
 
 		tempRoomStore.setOptions({
@@ -348,54 +349,67 @@ export const NewRoomPage = observer(() => {
 							MenuComponent={observer(
 								({ addToken, onOpenChange, fileRef }) => (
 									<>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("chat");
-												onOpenChange(false);
-											}}
-										>
-											<MessageCircleIcon />
-											<span className="flex-1">
-												{t("room:modes.ask")}
-											</span>
-											{mode === "chat" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("plan");
-												onOpenChange(false);
-											}}
-										>
-											<ListTodoIcon />
-											<span className="flex-1">
-												{t("room:modes.plan")}
-											</span>
+										{ENABLE_PLAN && (
+											<>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("chat");
+														onOpenChange(false);
+													}}
+												>
+													<MessageCircleIcon />
+													<span className="flex-1">
+														{t("room:modes.ask")}
+													</span>
+													{mode === "chat" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("plan");
+														onOpenChange(false);
+													}}
+												>
+													<ListTodoIcon />
+													<span className="flex-1">
+														{t("room:modes.plan")}
+													</span>
 
-											{mode === "plan" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
+													{mode === "plan" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+											</>
+										)}
 										<RoomInputMenuWorkspace
 											workspace={
 												mode === "workspace" &&
-												getWorkspace.status === "SUCCESS"
+												getWorkspace.status ===
+													"SUCCESS"
 													? getWorkspace.data
 													: null
 											}
 											onSelect={(workspace) => {
 												if (workspace) {
-													if (mode === "workspace" && selectedWorkspaceId === workspace.workspace_id) {
+													if (
+														mode === "workspace" &&
+														selectedWorkspaceId ===
+															workspace.workspace_id
+													) {
 														setMode("chat");
-														setSelectedWorkspaceId("");
+														setSelectedWorkspaceId(
+															"",
+														);
 													} else {
 														setMode("workspace");
-														setSelectedWorkspaceId(workspace.workspace_id);
+														setSelectedWorkspaceId(
+															workspace.workspace_id,
+														);
 													}
 												} else {
 													setMode("chat");

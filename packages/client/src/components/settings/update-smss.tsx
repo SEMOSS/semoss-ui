@@ -1,5 +1,5 @@
 import { LockIcon, RefreshCwIcon, UnlockIcon } from "lucide-react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { MonacoEditor } from "@semoss/shared";
 import {
@@ -62,6 +62,17 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 		setValue(getSMSS.data);
 	}, [getSMSS.status, getSMSS.data]);
 
+	const editorHeight = useMemo(() => {
+		const lineCount = Math.max(1, value.split(/\r?\n/).length);
+		const LINE_HEIGHT = 22;
+		const BASE_PADDING = 24;
+		const MIN_HEIGHT = 240;
+		const MAX_HEIGHT = 720;
+
+		const computedHeight = lineCount * LINE_HEIGHT + BASE_PADDING;
+		return `${Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, computedHeight))}px`;
+	}, [value]);
+
 	/**
 	 * @name updateSMSSProperties
 	 * @desc hit endpoint to update smss file
@@ -94,7 +105,7 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	};
 
 	return (
-		<div className="h-[60vh] w-full overflow-hidden rounded-md border border-input bg-transparent dark:bg-input/30">
+		<div className="w-full overflow-hidden rounded-md border border-input bg-transparent dark:bg-input/30">
 			<div className="flex w-full flex-row items-center gap-1 border-input border-b bg-primary-foreground p-4">
 				<Tooltip>
 					<TooltipTrigger asChild>
@@ -152,18 +163,27 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 
 			<Suspense
 				fallback={
-					<div className="flex h-full w-full items-center justify-center">
+					<div
+						className="flex w-full items-center justify-center"
+						style={{ height: editorHeight }}
+					>
 						<Spinner />
 					</div>
 				}
 			>
 				{getSMSS.status === "LOADING" && (
-					<div className="flex h-full w-full items-center justify-center">
+					<div
+						className="flex w-full items-center justify-center"
+						style={{ height: editorHeight }}
+					>
 						<Spinner />
 					</div>
 				)}
 				{getSMSS.status === "ERROR" && (
-					<div className="flex h-full w-full items-center justify-center">
+					<div
+						className="flex w-full items-center justify-center"
+						style={{ height: editorHeight }}
+					>
 						<Muted className="text-destructive">
 							{getSMSS.error?.message || "Failed to load SMSS"}
 						</Muted>
@@ -172,11 +192,12 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 				{getSMSS.status === "SUCCESS" && (
 					<MonacoEditor
 						width={"100%"}
-						height={"100%"}
+						height={editorHeight}
 						options={{
 							minimap: {
 								enabled: false,
 							},
+							scrollBeyondLastLine: false,
 							readOnly: readOnly,
 							contextmenu: false,
 						}}

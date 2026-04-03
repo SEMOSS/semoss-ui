@@ -24,6 +24,22 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "./theme-provider";
 
+const minLightAccessibleComments = {
+	...minLight,
+	name: "min-light-accessible-comments",
+	tokenColors: [
+		...(minLight.tokenColors ?? []),
+		{
+			scope: ["comment", "punctuation.definition.comment"],
+			settings: {
+				// Darker comment color for better readability on light backgrounds.
+				foreground: "#5f6368",
+				fontStyle: "italic",
+			},
+		},
+	],
+};
+
 // Create a singleton highlighter instance
 let highlighterInstance: Awaited<
 	ReturnType<typeof createHighlighterCore>
@@ -35,7 +51,7 @@ const getHighlighter = async () => {
 	}
 
 	highlighterInstance = await createHighlighterCore({
-		themes: [gitHubDark, minLight],
+		themes: [gitHubDark, minLightAccessibleComments],
 		langs: [
 			shikiLangTypescript,
 			shikiLangJavascript,
@@ -138,7 +154,10 @@ function Code({ code, language, className, ...props }: CodeProps): JSX.Element {
 			}
 
 			const html = highlighter.codeToHtml(code, {
-				theme: activeTheme === "light" ? "min-light" : "github-dark",
+				theme:
+					activeTheme === "light"
+						? "min-light-accessible-comments"
+						: "github-dark",
 				lang: language,
 				structure: "inline",
 			});
