@@ -744,8 +744,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
-									className="bg-background"
-									variant={"ghost"}
+									className="-ml-1 bg-background"
+									variant="ghost"
 									aria-label={t("input.recordLabel")}
 									size="icon-sm"
 									disabled={!canListen || isLoading}
