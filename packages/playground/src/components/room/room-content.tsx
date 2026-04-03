@@ -24,8 +24,7 @@ import {
 	ResponseMessage,
 	RoomInput,
 	RoomInputMenuFileExplorer,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
@@ -434,14 +433,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuSeparator />
-								<RoomInputMenuKnowledge
+								<RoomInputMenuMCP
+									type="KNOWLEDGE"
 									options={room.options}
 									onSelect={(tool) => {
 										handleToolSelect(tool);
 										addToken(`<${tool.name}>`);
 									}}
 								/>
-								<RoomInputMenuToolbox
+								<RoomInputMenuMCP
+									type="TOOLBOX"
 									options={room.options}
 									onSelect={(tool) => {
 										handleToolSelect(tool);

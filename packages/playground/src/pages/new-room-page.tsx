@@ -29,8 +29,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 	RoomInputMenuWorkspace,
 } from "@/components";
@@ -431,14 +430,16 @@ export const NewRoomPage = observer(() => {
 											}}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuKnowledge
+										<RoomInputMenuMCP
+											type="KNOWLEDGE"
 											options={tempRoomStore.options}
 											onSelect={(tool) => {
 												handleToolSelect(tool);
 												addToken(`<${tool.name}>`);
 											}}
 										/>
-										<RoomInputMenuToolbox
+										<RoomInputMenuMCP
+											type="TOOLBOX"
 											options={tempRoomStore.options}
 											onSelect={(tool) => {
 												handleToolSelect(tool);
