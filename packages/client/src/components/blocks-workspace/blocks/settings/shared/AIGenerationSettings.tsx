@@ -59,10 +59,8 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 export const AIGenerationSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
-		label = "AI",
 		placeholder = null,
 		path,
-		valueAsObject = false,
 		appendPrompt = "",
 	}: AIGenerationSettingsProps<D>) => {
 		const { setData } = useBlockSettings<D>(id);

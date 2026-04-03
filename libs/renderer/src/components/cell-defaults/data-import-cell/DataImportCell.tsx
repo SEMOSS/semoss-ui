@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	CalendarViewMonth,
 	CropFree,
@@ -66,29 +67,29 @@ const JOIN_ICONS = {
 	outer: <JoinFull />,
 };
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledIconButton = styled(IconButton)({
 	marginRight: "7.5px",
 	marginLeft: "7.5px",
-}));
+});
 
-const StyledPaddedFlexDiv = styled("div")(({ theme }) => ({
+const StyledPaddedFlexDiv = styled("div")({
 	alignItems: "center",
 	display: "flex",
-}));
+});
 
-const StyledFlexDiv = styled("div")(({ theme }) => ({
+const StyledFlexDiv = styled("div")({
 	alignItems: "center",
 	paddingBottom: "0",
 	marginBottom: "0",
 	display: "flex",
-}));
+});
 
-const StyledCalendarViewMonth = styled(CalendarViewMonth)(({ theme }) => ({
+const StyledCalendarViewMonth = styled(CalendarViewMonth)({
 	strokeWidth: 0.025,
 	marginLeft: "-3px",
 	marginRight: "7px",
 	color: "#95909C",
-}));
+});
 
 const BlueStyledJoinDiv = styled("div")(({ theme }) => ({
 	backgroundColor: theme.palette.primary.selected,
@@ -101,7 +102,7 @@ const BlueStyledJoinDiv = styled("div")(({ theme }) => ({
 	fontWeight: "500",
 }));
 
-const GreenStyledJoinDiv = styled("div")(({ theme }) => ({
+const GreenStyledJoinDiv = styled("div")({
 	border: "none",
 	padding: "0px 12px",
 	backgroundColor: "#DEF4F3",
@@ -110,7 +111,7 @@ const GreenStyledJoinDiv = styled("div")(({ theme }) => ({
 	color: "black",
 	cursor: "default",
 	fontWeight: "500",
-}));
+});
 
 const StyledJoinTypography = styled(Typography)(({ theme }) => ({
 	color: theme.palette.secondary.dark,
@@ -119,13 +120,13 @@ const StyledJoinTypography = styled(Typography)(({ theme }) => ({
 	cursor: "default",
 }));
 
-const StyledModalTitleWrapper = styled(Modal.Title)(({ theme }) => ({
+const StyledModalTitleWrapper = styled(Modal.Title)({
 	alignContent: "center",
 	display: "flex",
 	padding: "0px",
-}));
+});
 
-const StyledTableTitleBubble = styled("div")(({ theme }) => ({
+const StyledTableTitleBubble = styled("div")({
 	marginTop: "0px",
 	marginRight: "15px",
 	width: "fit-content",
@@ -137,12 +138,12 @@ const StyledTableTitleBubble = styled("div")(({ theme }) => ({
 	fontWeight: "400",
 	fontSize: "12.5px",
 	cursor: "default",
-}));
+});
 
-const StyledContent = styled("div")(({ theme }) => ({
+const StyledContent = styled("div")({
 	position: "relative",
 	width: "100%",
-}));
+});
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	"& .MuiInputBase-root": {
@@ -154,9 +155,9 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 	},
 }));
 
-const StyledBlockStack = styled(Stack)(({ theme }) => ({
+const StyledBlockStack = styled(Stack)({
 	display: "block",
-}));
+});
 
 interface JoinObject {
 	id: string;

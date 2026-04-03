@@ -1,5 +1,5 @@
 // Removed unused import (was: import { link } from "fs");
-
+// biome-ignore-all lint/suspicious/noTemplateCurlyInString: TODO
 export type FieldType =
 	| "text"
 	| "hidden"

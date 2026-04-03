@@ -81,7 +81,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
-			sync: action,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -92,14 +91,16 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			toggleIsPaused: action,
 		});
 
-		// sync the message (must be after makeObservable so sync action is registered)
+		// sync the message
 		this.sync(message);
 	}
 
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: ResponsePixelMessage) => {
+	sync(message: ResponsePixelMessage) {
+		super.sync(message);
+
 		// set the id
 		this.id = message.messageId;
 
@@ -129,7 +130,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				feedbackText: message.feedback.feedbackText,
 			};
 		}
-	};
+	}
 
 	/**
 	 * Execute a user message and stream the AI response
@@ -429,6 +430,7 @@ paramValues=[${JSON.stringify({
 		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "REWRITE_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
@@ -648,17 +650,21 @@ paramValues=[${JSON.stringify({
 			responseMessage = this.toolResponseMessage;
 		}
 
+		type PartialResponse = {
+			responseMessage: string;
+		};
+		type TotalResponse = {
+			responseMessage: ResponsePixelMessage;
+			inputMessage: InputPixelMessage;
+		};
+
 		try {
 			// turn on thinking
 			responseMessage.isThinking = true;
 
 			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
-				[
-					{
-						responseMessage: ResponsePixelMessage | string;
-					},
-				]
+				[PartialResponse | TotalResponse]
 			>(
 				`AddPlaygroundToolExecution(
 engine=["${room.model.app_id}"],
@@ -709,8 +715,17 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				// Keep executing tools
 				this.continueToolExecution();
 			} else {
+				const inputMessage = (output as TotalResponse).inputMessage;
+
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
+
+				// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
+				// input token count onto this response message as a proxy. tokensUsed() in
+				// room.store relies on finding a (cumulative, incremental) pair when walking back.
+				runInAction(() => {
+					this.tokens = inputMessage.tokens;
+				});
 
 				// edge case handling: it's possible that the user paused tools while this tool was running
 				// mark the new response as paused if that is the case
