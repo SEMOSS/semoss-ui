@@ -21,34 +21,34 @@ const TOUR_STEPS: TourStep[] = [
 	{
 		title: "Welcome!",
 		content:
-			"Let's take a quick tour of the key features. Click Next to get started.",
+			"Let's take a quick tour to get you started.",
 	},
 	{
 		target: "tour-input",
 		title: "Start a conversation",
 		content:
-			"Type your question here and press Enter. Your AI assistant will respond with helpful, accurate information.",
+			"Type your question here and press Enter.",
 		placement: "top",
 	},
 	{
 		target: "tour-input-menu",
 		title: "Attach & configure",
 		content:
-			"Click here to attach files, connect knowledge bases, or enable additional AI tools for your conversation.",
+			"Add files,agents,knowledge libraries, and tools to enhance your conversation.",
 		placement: "top",
 	},
 	{
 		target: "tour-new-chat",
 		title: "New chat",
 		content:
-			"Start a fresh conversation at any time by clicking here. Your previous chats are always saved in the sidebar.",
+			"Start a fresh conversation at any time.",
 		placement: "right",
 	},
 	{
 		target: "tour-agents",
 		title: "Agents",
 		content:
-			"Build and manage AI agents — customizable assistants powered by your own prompts, tools, and knowledge bases.",
+			"Access your workspaces or create new AI agents.",
 		placement: "right",
 	},
 ];
