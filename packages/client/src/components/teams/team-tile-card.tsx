@@ -12,15 +12,15 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { deleteTeam } from "@/api/teams";
-import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
+import AMAZON_S3 from "@/assets/loginProviders/AMAZON_S3.png";
 import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
-import Dropbox from "@/assets/loginProviders/dropbox.png";
+import Dropbox from "@/assets/loginProviders/DROPBOX.png";
 import Github from "@/assets/loginProviders/github.png";
 import Gitlab from "@/assets/loginProviders/gitlab.png";
 import newGoogle from "@/assets/loginProviders/google.png";
 import Keycloak from "@/assets/loginProviders/keycloak.png";
 import Linkedin from "@/assets/loginProviders/linkedin.png";
-import Microsoft from "@/assets/loginProviders/microsoft.png";
+import Microsoft from "@/assets/loginProviders/MICROSOFT.png";
 import Okta from "@/assets/loginProviders/okta.png";
 import ProductHunt from "@/assets/loginProviders/product_hunt.png";
 import Salesforce from "@/assets/loginProviders/salesforce.png";

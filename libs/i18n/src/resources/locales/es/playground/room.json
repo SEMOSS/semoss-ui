@@ -93,5 +93,13 @@
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",
+		"descriptionMedium": "Esta conversación se está alargando. Si continúa, el modelo comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat pronto.",
+		"descriptionHigh": "Esta conversación está casi llena. El modelo pronto comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat.",
+		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores al generar respuestas. Inicia un nuevo chat para obtener mejores resultados.",
+		"memoryUsedTitle": "Memoria usada:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
 	}
 }

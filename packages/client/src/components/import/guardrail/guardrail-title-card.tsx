@@ -90,10 +90,10 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 	};
 
 	const cardContent = (
-		// biome-ignore lint/a11y/useSemanticElements: <explanation>
+		// biome-ignore lint/a11y/useSemanticElements: TODO
 		<div
 			className={cn(
-				"relative flex min-h-[200px] max-w-[215px] cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4",
+				"relative flex min-h-[200px] w-full cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4 sm:w-[215px]",
 				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
 				guardrail.disable &&
 					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
@@ -116,7 +116,7 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 						/>
 					) : (
 						<div
-							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
+							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-250 [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
 							style={{ background: avatarGradient }}
 						>
 							{initials}
@@ -176,7 +176,7 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 	return isTruncated ? (
 		<Tooltip>
 			<TooltipTrigger asChild>
-				<span className="block">{cardContent}</span>
+				<span className="block w-full sm:w-[215px]">{cardContent}</span>
 			</TooltipTrigger>
 			<TooltipContent side="bottom">{label}</TooltipContent>
 		</Tooltip>

@@ -189,12 +189,6 @@ export function useQueryResults() {
 							{errorMessage}
 						</StyledErrorTypography>
 					</StyledAlert>
-
-					<StyledExecutionTimeContainer>
-						<Typography variant="caption">
-							Execution time: {previewData.timeToRun || 0}ms
-						</Typography>
-					</StyledExecutionTimeContainer>
 				</StyledResultsContainer>
 			);
 		}

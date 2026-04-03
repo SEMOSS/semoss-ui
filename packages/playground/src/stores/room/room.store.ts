@@ -348,14 +348,34 @@ export class RoomStore {
 	}
 
 	/**
-	 * Number of tokens used
+	 * Total tokens used in the current conversation.
+	 *
+	 * How token counts work across message types:
+	 * - INPUT messages have a cumulative count covering all prior exchanges.
+	 * - RESPONSE messages have only the incremental count for that turn.
+	 * - INPUT_TOOL_EXEC messages are also cumulative, but their count stays 0
+	 *   until all tool results for the preceding response have come in.
+	 *
+	 * We never create INPUT_TOOL_EXEC messages, so mid-conversation the chain can look like:
+	 *   INPUT → RESPONSE → RESPONSE(cumulative proxy) → RESPONSE(incremental) → ...
+	 * saveToolExecution() in response-message.store stamps the server's cumulative input
+	 * token count onto the parent RESPONSE so the math still works here. See that file.
+	 *
+	 * To get the total: walk back from tail and add up the two most-recent messages
+	 * with non-zero tokens — one incremental, one cumulative (INPUT or proxy RESPONSE).
 	 */
 	get tokensUsed() {
 		let currMessage = this.tail as AbstractMessageStore;
 		let tokensUsed = 0;
 		while (currMessage) {
-			tokensUsed += currMessage.tokens;
-			if (currMessage.type === "INPUT") break;
+			if (currMessage.tokens) {
+				if (tokensUsed) {
+					tokensUsed += currMessage.tokens;
+					break;
+				} else {
+					tokensUsed += currMessage.tokens;
+				}
+			}
 			currMessage = currMessage.parent;
 		}
 
@@ -469,14 +489,14 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [],
 					tokens: 0,
 					ornaments: {
 						modelName:
 							this._store.model?.engine_display_name ||
-							this._store.model?.app_name ||
+							this._store.model?.engine_name ||
 							"",
 					},
 				} as ResponsePixelMessage);
@@ -486,7 +506,7 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [
 						{
@@ -499,7 +519,7 @@ export class RoomStore {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
 						modelName:
 							this._store.model?.engine_display_name ||
-							this._store.model?.app_name ||
+							this._store.model?.engine_name ||
 							"",
 					},
 				} as ResponsePixelMessage);
@@ -517,7 +537,7 @@ export class RoomStore {
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.model?.app_id;
+			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
@@ -690,7 +710,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
-				modelId: this._store.model.app_id,
+				modelId: this._store.model.engine_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -960,17 +980,18 @@ export class RoomStore {
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: this.model?.app_id,
-			modelType: this.model?.app_type,
+			modelId: this.model?.engine_id,
+			modelType: this.model?.engine_type,
 			dateCreated: new Date().toISOString(),
 			parts: parts,
 			tokens: 0,
 			ornaments: {
 				modelName:
-					this.model.engine_display_name || this.model.app_name,
+					this.model.engine_display_name || this.model.engine_name,
 			},
 		});
 
@@ -1012,7 +1033,12 @@ export class RoomStore {
 			}
 
 			const tool = this._store.tools[toolId];
-			if (!tool || tool.response) {
+			if (
+				!tool ||
+				tool.status === "SUCCESS" ||
+				tool.status === "CANCELLED" ||
+				tool.status === "ERROR"
+			) {
 				return;
 			}
 
