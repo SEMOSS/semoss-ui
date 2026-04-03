@@ -19,34 +19,50 @@ import {
 } from "@semoss/ui/next";
 import type { Engine } from "@/types";
 
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
+
 interface EngineSelectProps {
-	/** css classes */
+	/** CSS classes for styling customization */
 	className?: string;
 
-	/** disabled */
+	/** Whether the select is disabled */
 	disabled?: boolean;
 
-	/** Name of the selected engine */
+	/** Display name of the selected engine */
 	name: string;
 
-	/** Id of the selected engine */
+	/** ID of the selected engine */
 	value: string;
 
-	/** Update options on change */
+	/** Callback invoked when selection changes */
 	onChange: (value: Engine | null) => void;
 
-	/** Types of engines to pre-filter on */
+	/** Filter engines by type (e.g., MODEL, DATABASE, STORAGE) */
 	engineTypes?: Engine["engine_type"][];
 
-	/** Metafilters to pre-filter on */
+	/** Additional metadata filters for engine query */
 	metaFilters?: unknown[];
 
-	/**
-	 * Proprities for the popover content
-	 */
+	/** Props forwarded to the PopoverContent component */
 	popoverContentProps?: React.ComponentProps<typeof PopoverContent>;
 }
 
+// ============================================================================
+// Main Component
+// ============================================================================
+
+/**
+ * EngineSelect - A searchable dropdown for selecting SEMOSS engines
+ *
+ * Features:
+ * - Lazy loading with pagination (15 items per page)
+ * - Real-time search with debouncing
+ * - Infinite scroll for large datasets
+ * - Filter by engine type and metadata
+ * - Displays engine name and description
+ */
 export const EngineSelect = ({
 	className,
 	disabled,
@@ -57,32 +73,63 @@ export const EngineSelect = ({
 	metaFilters,
 	popoverContentProps = {},
 }: EngineSelectProps) => {
+	// ========================================================================
+	// State & Hooks
+	// ========================================================================
+
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
 
+	// Debounce search to avoid excessive queries while typing
 	const debouncedSearch = useDebouncedValue(search);
 
+	// ========================================================================
+	// Lazy Loading Engine Data
+	// ========================================================================
+
 	/**
-	 * Get all of the engines with lazy loading
+	 * Fetch engines with pagination and filtering
+	 *
+	 * Query construction:
+	 * - filterWord: Text search across engine names/descriptions
+	 * - engineTypes: Filter by engine type (MODEL, DATABASE, etc.)
+	 * - metaFilters: Additional metadata-based filtering
+	 * - limit/offset: Pagination parameters
+	 *
+	 * Only runs when popover is open to avoid unnecessary queries
 	 */
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) =>
 			open
-				? `MyEngines(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} ${engineTypes ? `engineTypes=${JSON.stringify(engineTypes)},` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} limit=[${limit}], offset=[${offset}]);`
+				? `MyEngines(${
+						debouncedSearch
+							? `filterWord=["<encode>${debouncedSearch}</encode>"], `
+							: ""
+					} ${
+						engineTypes
+							? `engineTypes=${JSON.stringify(engineTypes)},`
+							: ""
+					} ${
+						metaFilters
+							? `metaFilters=[${JSON.stringify(metaFilters)}],`
+							: ""
+					} limit=[${limit}], offset=[${offset}]);`
 				: "",
+		// Determine if there are more pages to load
 		(response) => {
-			// if its less than the limit, we know its the end
+			// If response is smaller than page size, we've reached the end
 			if (response.length < 15) {
 				return -1;
 			}
 
 			return Infinity;
 		},
+		// Transform response (pass through as-is)
 		(response) => {
 			return response;
 		},
 		{
-			limit: 15,
+			limit: 15, // Page size for lazy loading
 		},
 		[
 			open,
@@ -92,8 +139,13 @@ export const EngineSelect = ({
 		],
 	);
 
+	// ========================================================================
+	// Infinite Scroll Setup
+	// ========================================================================
+
 	/**
-	 * Setup infinite scroll for the command list
+	 * Enable infinite scroll for seamless pagination
+	 * Automatically loads next page when user scrolls near bottom
 	 */
 	const { setScroll } = useInfiniteScroll({
 		disabled: getEngines.isLoading || !getEngines.hasMore || !open,
@@ -101,6 +153,10 @@ export const EngineSelect = ({
 			getEngines.next();
 		},
 	});
+
+	// ========================================================================
+	// Render
+	// ========================================================================
 
 	return (
 		<Popover open={open && !disabled} onOpenChange={setOpen}>
@@ -126,8 +182,10 @@ export const EngineSelect = ({
 						value={search}
 						onValueChange={setSearch}
 					/>
+					{/* Attach infinite scroll to list container */}
 					<CommandList ref={(ele) => setScroll(ele)}>
 						<CommandEmpty>
+							{/* Show spinner during initial load, otherwise "Not Found" */}
 							{getEngines.isLoading &&
 							getEngines.data.length === 0 ? (
 								<div className="flex items-center justify-center py-4">
@@ -139,6 +197,7 @@ export const EngineSelect = ({
 						</CommandEmpty>
 						<CommandGroup>
 							{getEngines.data.map((engine) => {
+								// Prefer display name over internal name
 								const displayName =
 									engine.engine_display_name ||
 									engine.engine_name;
@@ -153,13 +212,19 @@ export const EngineSelect = ({
 											setOpen(false);
 										}}
 									>
+										{/* Checkmark - visible only for selected item */}
 										<CheckIcon
-											className={`mr-2 size-4 ${value === engineId ? "opacity-100" : "opacity-0"}`}
+											className={`mr-2 size-4 ${
+												value === engineId
+													? "opacity-100"
+													: "opacity-0"
+											}`}
 										/>
 										<div className="flex flex-1 flex-col truncate">
 											<span className="truncate">
 												{displayName}
 											</span>
+											{/* Optional description shown below engine name */}
 											{engine.description && (
 												<span
 													title={engine.description}
@@ -172,6 +237,7 @@ export const EngineSelect = ({
 									</CommandItem>
 								);
 							})}
+							{/* Loading spinner shown at bottom while fetching next page */}
 							{getEngines.isLoading &&
 								getEngines.data.length > 0 && (
 									<div className="flex items-center justify-center py-2">
