@@ -17,7 +17,8 @@ export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
 			<InsightProvider>
-				<ThemeProvider>
+				{/* TODO: read default theme from theme map somehow */}
+				<ThemeProvider defaultTheme="light">
 					<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 						<Router />
 					</div>
