@@ -4,6 +4,8 @@
 import { CheckCircle, Clock, Filter, Hash, XCircle } from "lucide-react";
 import { useEffect } from "react";
 import {
+	ScrollArea,
+	ScrollBar,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -96,7 +98,7 @@ export const FiltersRow = ({
 	}, [engineType, engineNames, engineId, onEngineChange]);
 
 	return (
-		<div className="w-full overflow-x-auto">
+		<ScrollArea className="w-full">
 			<div className="flex flex-shrink-0 items-stretch gap-2">
 				{/* ── Stat Cards ── */}
 				<div className="flex flex-1 gap-2">
@@ -204,7 +206,8 @@ export const FiltersRow = ({
 					/>
 				</div>
 			</div>
-		</div>
+			<ScrollBar orientation="horizontal" />
+		</ScrollArea>
 	);
 };
 

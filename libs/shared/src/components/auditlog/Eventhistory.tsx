@@ -6,11 +6,10 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Loader2,
-	Search,
-	X,
 	XCircle,
 } from "lucide-react";
 import { Button } from "@semoss/ui/next";
+import { type SearchToken, TokenizedSearchBar } from "./TokenizedSearchBar";
 import {
 	type AuditLog,
 	latencyBg,
@@ -29,13 +28,16 @@ export interface EventHistoryProps {
 	selected: AuditLog | null;
 	hoveredIdx: number | null;
 
-	searchQuery: string;
+	searchTokens: SearchToken[];
+	searchFreeText: string;
 
 	page: number;
 
 	onSelectLog: (log: AuditLog) => void;
 	onHoverLog: (idx: number | null) => void;
-	onSearchChange: (query: string) => void;
+	onTokensChange: (tokens: SearchToken[]) => void;
+	onFreeTextChange: (text: string) => void;
+	onSearch: (tokens: SearchToken[], freeText: string) => void;
 	onPageChange: (updater: number | ((prev: number) => number)) => void;
 }
 
@@ -50,11 +52,14 @@ export const EventHistory = ({
 	totalPages,
 	selected,
 	hoveredIdx,
-	searchQuery,
+	searchTokens,
+	searchFreeText,
 	page,
 	onSelectLog,
 	onHoverLog,
-	onSearchChange,
+	onTokensChange,
+	onFreeTextChange,
+	onSearch,
 	onPageChange,
 }: EventHistoryProps) => {
 	return (
@@ -67,29 +72,13 @@ export const EventHistory = ({
 					</span>
 				</div>
 
-				<div className="px-3 pb-2">
-					<div className="flex items-center gap-1.5 rounded bg-secondary px-2 py-1">
-						<Search
-							size={10}
-							className="flex-shrink-0 text-muted-foreground"
-						/>
-						<input
-							type="text"
-							value={searchQuery}
-							onChange={(e) => onSearchChange(e.target.value)}
-							placeholder="Search method, engine, args…"
-							className="w-full border-none bg-transparent font-mono text-[10px] text-foreground outline-none placeholder:text-muted-foreground"
-						/>
-						{searchQuery && (
-							<Button
-								onClick={() => onSearchChange("")}
-								className="flex-shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted-foreground hover:text-foreground"
-							>
-								<X size={10} />
-							</Button>
-						)}
-					</div>
-				</div>
+				<TokenizedSearchBar
+					tokens={searchTokens}
+					freeText={searchFreeText}
+					onTokensChange={onTokensChange}
+					onFreeTextChange={onFreeTextChange}
+					onSearch={onSearch}
+				/>
 			</div>
 
 			{/* ── Log list ── */}

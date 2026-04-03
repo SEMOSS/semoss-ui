@@ -8,10 +8,11 @@ import { runPixel } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	type AuditLog,
+	buildSearchPayload,
 	ChartPanel,
 	EventHistory,
 	FiltersRow,
-	parseArg,
+	type SearchToken,
 } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
@@ -67,7 +68,8 @@ export const AuditLogPage = () => {
 	const [dark, setDark] = useState(true);
 	const [chartTab, setChartTab] = useState<"bar" | "timeline">("timeline");
 	const [chartPage, setChartPage] = useState(0);
-	const [searchQuery, setSearchQuery] = useState("");
+	const [searchTokens, setSearchTokens] = useState<SearchToken[]>([]);
+	const [searchFreeText, setSearchFreeText] = useState("");
 	const [selected, setSelected] = useState<AuditLog | null>(null);
 	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
@@ -93,6 +95,20 @@ export const AuditLogPage = () => {
 		SelectedDuration:
 			DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
 	});
+
+	// Keep search state in a ref so fetchLogs always reads the latest values
+	const searchRef = useRef<{
+		tokens: SearchToken[];
+		freeText: string;
+	}>({
+		tokens: [],
+		freeText: "",
+	});
+
+	// Sync ref whenever state changes
+	useEffect(() => {
+		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
+	}, [searchTokens, searchFreeText]);
 
 	useEffect(() => {
 		document.documentElement.classList.add("dark");
@@ -160,6 +176,22 @@ export const AuditLogPage = () => {
 						? `,"startDate":"${startDate.toISOString()}","endDate":"${endDate.toISOString()}"`
 						: "";
 
+				// Build search payload from tokens + free text
+				const searchPayload = buildSearchPayload(
+					searchRef.current.tokens,
+					searchRef.current.freeText,
+				);
+
+				let searchPart = "";
+				if (searchPayload) {
+					if (searchPayload.search) {
+						searchPart += `,"search":${JSON.stringify(searchPayload.search)}`;
+					}
+					if (searchPayload.others) {
+						searchPart += `,"others":"${searchPayload.others}"`;
+					}
+				}
+
 				const pixel =
 					`AuditLogReport(paramValues=[{` +
 					`"userId":"${userId}",` +
@@ -170,7 +202,7 @@ export const AuditLogPage = () => {
 					`"offset":"${offset}",` +
 					`"dateRangeType":"${SelectedDuration.dateRangeType || "DAY"}",` +
 					`"dateRangeValue":${SelectedDuration.dateRangeValue}` +
-					`${customPart}}]);`;
+					`${customPart}${searchPart}}]);`;
 
 				const response = await runPixel(pixel, insightId);
 				const data = response.pixelReturn[0].output;
@@ -310,19 +342,8 @@ export const AuditLogPage = () => {
 
 	const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
 
-	const searchFiltered = useMemo(() => {
-		if (!searchQuery.trim()) return logs;
-		const q = searchQuery.toLowerCase();
-		return logs.filter(
-			(l) =>
-				l.methodName.toLowerCase().includes(q) ||
-				l.engineName.toLowerCase().includes(q) ||
-				l.engineType.toLowerCase().includes(q) ||
-				parseArg(l.request).toLowerCase().includes(q) ||
-				l.spanId.toLowerCase().includes(q) ||
-				l.sessionId.toLowerCase().includes(q),
-		);
-	}, [logs, searchQuery]);
+	// Server-side search: no client-side filtering, just use logs as-is
+	const searchFiltered = logs;
 
 	const sessions = useMemo(() => {
 		const map = new Map<string, AuditLog[]>();
@@ -411,11 +432,20 @@ export const AuditLogPage = () => {
 							totalPages={totalPages}
 							selected={selected}
 							hoveredIdx={hoveredIdx}
-							searchQuery={searchQuery}
+							searchTokens={searchTokens}
+							searchFreeText={searchFreeText}
 							page={page}
 							onSelectLog={setSelected}
 							onHoverLog={setHoveredIdx}
-							onSearchChange={setSearchQuery}
+							onTokensChange={setSearchTokens}
+							onFreeTextChange={setSearchFreeText}
+							onSearch={(tokens, freeText) => {
+								setSearchTokens(tokens);
+								setSearchFreeText(freeText);
+								searchRef.current = { tokens, freeText };
+								setPage(0);
+								fetchLogs(ROWS_PER_PAGE, 0);
+							}}
 							onPageChange={setPage}
 						/>
 					</div>
