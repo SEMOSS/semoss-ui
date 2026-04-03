@@ -193,24 +193,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	/**
-	 * Auto-scroll when dependency changes (new messages added)
-	 */
+	// Initial scroll to bottom when scroll element is first available
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		setIsScrollLocked(false);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle]);
+
+	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
+	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
 			return;
 		}
 
-		const timeout = setTimeout(() => {
-			const animationFrame = requestAnimationFrame(() => {
-				scrollToTarget(contentHeight);
-			});
-
-			return () => cancelAnimationFrame(animationFrame);
-		}, 100); // ~100ms delay to allow for rendering
-
-		return () => clearTimeout(timeout);
-	}, [scrollEle, scrollToTarget, isScrollLocked, contentHeight]);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
 
 	/**
 	 * Set up scroll event listener
@@ -312,7 +317,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
+						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;

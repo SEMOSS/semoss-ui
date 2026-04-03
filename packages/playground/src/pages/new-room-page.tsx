@@ -94,8 +94,8 @@ export const NewRoomPage = observer(() => {
 
 	// Fetch knowledge vector engine if knowledgeId is provided
 	const getKnowledge = usePixel<{
-		app_id: string;
-		app_name: string;
+		engine_id: string;
+		engine_name: string;
 	} | null>(
 		knowledgeId
 			? `MyEngines( engine=["${knowledgeId}"], engineTypes=['VECTOR'],  metaFilters=[{}], userT = [true], limit=[15], offset=[0]);`
@@ -276,7 +276,7 @@ export const NewRoomPage = observer(() => {
 		const knowledgeMcp = {
 			id: knowledgeId,
 			type: "VECTOR" as const,
-			name: getKnowledge.data[0].app_name || knowledgeId,
+			name: getKnowledge.data[0].engine_name || knowledgeId,
 		};
 
 		tempRoomStore.setOptions({

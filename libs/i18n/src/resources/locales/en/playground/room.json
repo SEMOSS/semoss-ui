@@ -93,5 +93,13 @@
 	},
 	"errors": {
 		"createRoom": "An error occurred while creating the room. Error: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",
+		"descriptionMedium": "This conversation is getting long. If it continues, the model will start forgetting earlier messages. Consider starting a new chat soon.",
+		"descriptionHigh": "This conversation is nearly full. The model will soon start forgetting earlier messages. Consider starting a new chat.",
+		"descriptionExceeded": "This conversation has exceeded its limit. The model is now forgetting earlier messages when generating responses. Start a new chat for best results.",
+		"memoryUsedTitle": "Memory used:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
 	}
 }

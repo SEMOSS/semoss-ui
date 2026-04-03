@@ -37,8 +37,16 @@
 		"completed": "Completed",
 		"ready": "Ready",
 		"autoExecute": "Auto-executing",
+		"paused": "Paused",
+		"queued": "In queue to auto-execute",
 		"cancel": "Cancel",
-		"paused": "Paused"
+		"expand": "Expand",
+		"openInSidebar": "Open in sidebar",
+		"closeInSidebar": "Close sidebar",
+		"collapse": "Collapse",
+		"openInline": "Open in-line",
+		"groupLabel": "Executed",
+		"groupSuffix": "tool(s)"
 	},
 	"notifications": {
 		"feedbackSuccess": "Thank you for the feedback!",

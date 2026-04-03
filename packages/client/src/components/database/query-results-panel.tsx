@@ -1,8 +1,22 @@
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Download, Loader2 } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Button, Card, cn, P } from "@semoss/ui/next";
-import type { QueryResult } from "@/hooks/useDatabaseQueryExecution";
+import { download, runPixel } from "@semoss/sdk/react";
+import {
+	Button,
+	Card,
+	cn,
+	P,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
+import {
+	getErrorMessage,
+	isErrorResponse,
+	type QueryResult,
+} from "@/hooks/useDatabaseQueryExecution";
 import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
 
 interface QueryResultsPanelProps {
@@ -10,12 +24,14 @@ interface QueryResultsPanelProps {
 	previewLoading: boolean;
 	clearResults: () => void;
 	onExpandChange?: (expanded: boolean) => void;
+	pixelQuery?: string;
 }
 
 export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 	previewData,
 	previewLoading,
 	onExpandChange,
+	pixelQuery,
 }) => {
 	const previewLimit = 50;
 	const renderResults = useQueryResults();
@@ -27,6 +43,29 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 
 		if (onExpandChange) {
 			onExpandChange(newExpandedState);
+		}
+	};
+
+	const handleExportToCsvClick = async () => {
+		const pixelToCsv = `${pixelQuery?.replace(/;$/, "")} | ToCsv();`;
+
+		try {
+			const response = await runPixel(pixelToCsv);
+			const firstResult = response?.pixelReturn?.[0];
+
+			if (isErrorResponse(firstResult)) {
+				toast.error(getErrorMessage(firstResult));
+			} else if (firstResult?.operationType?.includes("FILE_DOWNLOAD")) {
+				await download(
+					response.insightId,
+					firstResult.output as string,
+				);
+				toast.success("Results exported to CSV");
+			} else {
+				toast.error("Unexpected response from export");
+			}
+		} catch (error) {
+			toast.error(`Failed to export results: ${error}`);
 		}
 	};
 
@@ -69,26 +108,51 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 				>
 					Query Results
 				</h3>
-				{previewData && (
-					<Button
-						variant="outline"
-						size="icon"
-						onClick={handleExpandToggle}
-						title={isExpanded ? "Collapse Panel" : "Expand Panel"}
-						className={cn(
-							"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
-							"hover:shadow-md",
-						)}
-						data-testid="query-results-expand-btn"
-					>
-						<ChevronDown
+				<div className="flex items-center gap-2">
+					{previewData && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={handleExportToCsvClick}
+									className={cn(
+										"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
+										"hover:shadow-md",
+									)}
+									data-testid="query-results-export-btn"
+								>
+									<Download className="size-4 text-muted-foreground" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								Export Results to CSV
+							</TooltipContent>
+						</Tooltip>
+					)}
+					{previewData && (
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handleExpandToggle}
+							title={
+								isExpanded ? "Collapse Panel" : "Expand Panel"
+							}
 							className={cn(
-								"size-4 text-muted-foreground transition-transform duration-200 ease-in-out",
-								isExpanded && "rotate-180",
+								"size-7 rounded-lg border-border bg-card shadow-sm transition-all duration-200 hover:border-border hover:bg-muted",
+								"hover:shadow-md",
 							)}
-						/>
-					</Button>
-				)}
+							data-testid="query-results-expand-btn"
+						>
+							<ChevronDown
+								className={cn(
+									"size-4 text-muted-foreground transition-transform duration-200 ease-in-out",
+									isExpanded && "rotate-180",
+								)}
+							/>
+						</Button>
+					)}
+				</div>
 			</div>
 
 			{/* Results Content */}
@@ -108,8 +172,8 @@ export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
 				)}
 			</div>
 
-			{/* Footer - Only shown when expanded */}
-			{isExpanded && (
+			{/* Footer */}
+			{previewData && !previewLoading && (
 				<div
 					className="flex flex-shrink-0 items-center justify-between border-border/50 border-t bg-muted/30 px-4 py-2.5 text-muted-foreground text-xs"
 					data-testid="query-results-footer"

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	CropFree,
 	DriveFileRenameOutlineRounded,
@@ -50,10 +51,10 @@ const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
-const StyledContent = styled("div")(({ theme }) => ({
+const StyledContent = styled("div")({
 	position: "relative",
 	width: "100%",
-}));
+});
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	"& .MuiInputBase-root": {
@@ -63,8 +64,6 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 		height: "30px",
 	},
 }));
-
-const StyledContainer = styled("div")(({ theme }) => ({}));
 
 export interface QueryImportCellDef extends CellDef<"query-import"> {
 	widget: "query-import";
@@ -107,7 +106,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			ids: [],
 			display: {},
 		});
-		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
+		const myDbs = usePixel<{ engine_id: string; engine_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
 		);
 
@@ -141,8 +140,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			const dbIds: string[] = [];
 			const dbDisplay = {};
 			myDbs.data.forEach((db) => {
-				dbIds.push(db.app_id);
-				dbDisplay[db.app_id] = db.app_name;
+				dbIds.push(db.engine_id);
+				dbDisplay[db.engine_id] = db.engine_name;
 			});
 			setCfgLibraryDatabases({
 				loading: false,
@@ -369,7 +368,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							) : null}
 						</Stack>
 					)}
-					<StyledContainer>
+					<div>
 						<Suspense fallback={<>...</>}>
 							<MonacoEditor
 								value={cell.parameters.selectQuery}
@@ -394,7 +393,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								onMount={handleEditorMount}
 							/>
 						</Suspense>
-					</StyledContainer>
+					</div>
 					{isExpanded && (
 						<Stack
 							direction="row"
