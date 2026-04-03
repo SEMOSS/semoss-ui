@@ -811,20 +811,6 @@ export const IMPORTABLE_MODELS = {
 							category: "Settings",
 						},
 						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: true,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message:
-										"Context Window must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
 							key: "KEEP_INPUT_OUTPUT",
 							label: "Record Questions and Responses",
 							type: "select",

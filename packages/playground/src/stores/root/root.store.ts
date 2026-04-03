@@ -66,6 +66,7 @@ export class RootStore {
 			landing: "",
 			sidebar: {
 				//workspaceAlias: "Workspace",
+				expandedByDefault: false,
 				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],
@@ -206,6 +207,10 @@ export class RootStore {
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
+				expandedByDefault:
+					theme?.sidebar?.expandedByDefault !== undefined
+						? theme.sidebar.expandedByDefault
+						: this._store.theme.sidebar.expandedByDefault,
 				chatHistoryDate:
 					theme?.sidebar?.chatHistoryDate !== undefined
 						? theme.sidebar.chatHistoryDate

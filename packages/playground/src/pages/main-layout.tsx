@@ -30,7 +30,7 @@ export const MainLayout = observer(() => {
 	const { pathname } = useLocation();
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
-		false,
+		theme.sidebar.expandedByDefault,
 		`sidebar--isOpen`,
 	);
 
