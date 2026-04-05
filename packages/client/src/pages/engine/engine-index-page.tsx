@@ -1,10 +1,11 @@
-import { ArrowDown, ArrowUp, SearchIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, LayoutGrid, List, SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	ButtonGroup,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -384,19 +385,38 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						</p>
 					</div>
 
-					<div className="flex w-full min-w-0 flex-wrap items-end gap-2 md:flex-nowrap">
-						<InputGroup className="min-w-[110px] flex-[1_1_auto] border-b-2 border-none">
+					<div className="flex w-full min-w-0 flex-wrap items-end gap-3 md:flex-nowrap">
+						<InputGroup className="w-56 flex-none shrink-0 border-b-2 sm:w-64 lg:w-80">
 							<InputGroupAddon>
 								<SearchIcon className="size-4 text-muted-foreground" />
 							</InputGroupAddon>
 							<InputGroupInput
+								className=""
 								placeholder="Search"
 								value={search}
 								onChange={(e) => setSearch(e.target.value)}
 								data-testid="search-bar"
 							/>
+							{/* {(search ? (
+								<InputGroupAddon align="inline-end" onClick={(e)=>setSearch("")} className="cursor-pointer">
+									<X className="size-4 text-muted-foreground" />
+								</InputGroupAddon>
+							):null)} */}
 						</InputGroup>
-						<div className="flex w-auto shrink-0 items-center gap-1">
+						<div className="place-items-center-safe flex flex-1 gap-1 bg-transparent">
+							<Filterbox
+								type={route.type}
+								onChange={(
+									filters: Record<string, unknown>,
+								) => {
+									setMetaFilters(filters);
+								}}
+								filteredCatalogIds={[]}
+								hideHeaderToggleFrom="md"
+								// showHeader={true}
+							/>
+						</div>
+						<div className="flex flex-none shrink-0 items-center justify-end gap-1">
 							<div className="w-[136px] sm:w-[148px]">
 								<Select
 									value={sort}
@@ -455,16 +475,17 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				</div>
 
 				<div className="flex flex-col gap-6 pt-2 pb-2 md:h-full md:flex-row">
-					<div className="md:sticky md:top-4 md:self-start">
-						<Filterbox
+					{/*<div className="md:sticky md:top-4 md:self-start">
+						 <Filterbox
 							type={route.type}
 							onChange={(filters: Record<string, unknown>) => {
 								setMetaFilters(filters);
 							}}
 							filteredCatalogIds={[]}
 							hideHeaderToggleFrom="md"
-						/>
-					</div>
+							// showHeader={true}
+						/> 
+					</div>*/}
 					<div className="flex h-full w-full flex-1 flex-col gap-6">
 						<div className="flex flex-row items-center justify-between">
 							<Tabs
@@ -494,6 +515,16 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									</TabsTrigger>
 								</TabsList>
 							</Tabs>
+							<div className="flex shrink-0">
+								<ButtonGroup>
+									<Button variant="outline">
+										<LayoutGrid />
+									</Button>
+									<Button variant="outline">
+										<List />
+									</Button>
+								</ButtonGroup>
+							</div>
 						</div>
 
 						{Object.entries(metaFilters).length === 0 &&

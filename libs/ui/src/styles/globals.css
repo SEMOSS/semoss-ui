@@ -239,3 +239,8 @@
     gap: 1rem;
   }
 }
+
+/*  ---Hide tick symbols for selected options in filters  ---*/
+.filter-box-item-container [data-slot="combobox-item-indicator"] {
+    display: none;
+}
