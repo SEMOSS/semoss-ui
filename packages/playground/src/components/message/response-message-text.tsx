@@ -249,6 +249,16 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			}
 		}, [isLast, typewriter.skipToEnd]);
 
+		// Report typewriter animation state to the store so compaction can wait
+		// for the animation to finish before starting. Only fires when isTyping
+		// transitions (not every animation frame).
+		useEffect(() => {
+			message.setIsTypewriting(typewriter.isTyping);
+			return () => {
+				message.setIsTypewriting(false);
+			};
+		}, [message, typewriter.isTyping]);
+
 		return (
 			<>
 				<Markdown

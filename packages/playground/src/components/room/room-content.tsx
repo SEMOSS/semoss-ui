@@ -1,6 +1,5 @@
 import {
-	ChevronDownIcon,
-	ChevronUpIcon,
+	Minimize2Icon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
@@ -16,6 +15,7 @@ import {
 	DropdownMenuSeparator,
 	ScrollArea,
 	Separator,
+	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -58,9 +58,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
-	const [expandedAnchorIds, setExpandedAnchorIds] = useState<Set<string>>(
-		new Set(),
-	);
 
 	/**
 	 * Functions
@@ -381,67 +378,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												message={m}
 											/>
 										)}
-										{m.type === "OUTPUT" &&
-										// Anchor responses (compaction summary messages) are
-										// platform_generated with a platform_generated parent.
-										// Render them collapsed by default.
-										m.platform_generated &&
-										m.parent?.platform_generated ? (
-											<div className="rounded-md border border-border bg-muted/30">
-												<button
-													type="button"
-													className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-muted-foreground text-xs"
-													onClick={() => {
-														setExpandedAnchorIds(
-															(prev) => {
-																const next =
-																	new Set(
-																		prev,
-																	);
-																if (
-																	next.has(
-																		m.id,
-																	)
-																) {
-																	next.delete(
-																		m.id,
-																	);
-																} else {
-																	next.add(
-																		m.id,
-																	);
-																}
-																return next;
-															},
-														);
-													}}
-												>
-													<span>Context summary</span>
-													{expandedAnchorIds.has(
-														m.id,
-													) ? (
-														<ChevronUpIcon className="size-3 shrink-0" />
-													) : (
-														<ChevronDownIcon className="size-3 shrink-0" />
-													)}
-												</button>
-												{expandedAnchorIds.has(
-													m.id,
-												) && (
-													<div className="border-border border-t px-3 py-2">
-														<ResponseMessage
-															room={room}
-															message={m}
-														/>
-													</div>
-												)}
-											</div>
-										) : m.type === "OUTPUT" ? (
+										{m.type === "OUTPUT" && (
 											<ResponseMessage
 												room={room}
 												message={m}
 											/>
-										) : null}
+										)}
 										{m.type === "PLAN" && (
 											<PlanMessage
 												message={m}
@@ -467,24 +409,45 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{/* DEV: token usage counter — remove before shipping */}
-						<div className="mx-auto w-full max-w-4xl px-1 text-right text-muted-foreground text-xs opacity-40">
-							{room.tokensUsed} tokens used
+						<div className="mx-auto flex w-full max-w-4xl items-center justify-end gap-2 px-1 text-muted-foreground text-xs opacity-40">
+							<span>
+								{room.tokensUsed} tokens used
+								{room.compactionThreshold > 0 && (
+									<>
+										{" · "}
+										{Math.max(
+											0,
+											Math.round(
+												room.compactionThreshold -
+													room.tokensUsed,
+											),
+										)}{" "}
+										until compaction
+										{" · "}
+										{room.inputMessagesSinceCompaction}/5
+										msgs
+									</>
+								)}
+							</span>
 							{room.compactionThreshold > 0 && (
-								<>
-									{" · "}
-									{Math.max(
-										0,
-										Math.round(
-											room.compactionThreshold -
-												room.tokensUsed,
-										),
-									)}{" "}
-									until compaction
-								</>
+								<button
+									type="button"
+									disabled={showLoadingState}
+									title="Compact now"
+									className="rounded border border-current p-0.5 hover:opacity-70 disabled:cursor-not-allowed"
+									onClick={() =>
+										room.compactContext(
+											room.compactionThreshold,
+										)
+									}
+								>
+									<Minimize2Icon className="h-3 w-3" />
+								</button>
 							)}
 						</div>
 						{room.isCompacting ? (
 							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-border bg-muted/50 p-3 text-muted-foreground text-sm shadow-sm">
+								<Spinner size="sm" />
 								<span>Compacting context...</span>
 							</div>
 						) : null}

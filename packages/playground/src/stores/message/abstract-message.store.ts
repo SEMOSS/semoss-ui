@@ -76,6 +76,7 @@ export abstract class AbstractMessageStore {
 	 */
 	ornaments: {
 		modelName?: string;
+		compactionSummaryIds?: string;
 	};
 
 	/**
@@ -88,6 +89,13 @@ export abstract class AbstractMessageStore {
 	 * Used to hide compaction anchor messages from branch navigation.
 	 */
 	platform_generated: boolean = false;
+
+	/**
+	 * Whether this message is a compaction anchor node (anchorInput or anchorResponse).
+	 * Used by preCompactionHistory to exclude anchor nodes from the above-divider list.
+	 * Not used as a render filter — visible is the authoritative render gate.
+	 */
+	isCompactionAnchor: boolean = false;
 
 	/**
 	 *
@@ -103,11 +111,13 @@ export abstract class AbstractMessageStore {
 		this.id = message.messageId;
 		this.visible = message.visible;
 		this.platform_generated = message.platform_generated ?? false;
+		this.isCompactionAnchor = message.isCompactionAnchor ?? false;
 		this.tokens = message.tokens;
 		this.modelId = message.modelId;
 		this.modelType = message.modelType;
 		this.ornaments = {
 			modelName: message.ornaments?.modelName,
+			compactionSummaryIds: message.ornaments?.compactionSummaryIds,
 		};
 
 		makeObservable(this, {
@@ -121,6 +131,7 @@ export abstract class AbstractMessageStore {
 			modelId: observable,
 			modelType: observable,
 			ornaments: observable,
+			isCompactionAnchor: observable,
 			siblings: computed,
 			previousSibling: computed,
 			nextSibling: computed,

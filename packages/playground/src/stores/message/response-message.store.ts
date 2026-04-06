@@ -70,6 +70,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isPaused: boolean = false;
 
+	/**
+	 * Whether the typewriter animation is currently playing in the UI.
+	 * Set by ResponseMessageText via setIsTypewriting() so compaction can
+	 * wait for the animation to finish before starting.
+	 */
+	isTypewriting: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
@@ -81,10 +88,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
+			isTypewriting: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
 			rewriteMessage: action,
+			setIsTypewriting: action,
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
@@ -131,6 +140,19 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			};
 		}
 	}
+
+	/**
+	 * Called by the ResponseMessageText component to report typewriter animation state.
+	 * When the animation finishes (true → false), re-check compaction in case
+	 * maybeCompactContext was skipped earlier because the typewriter was still running.
+	 */
+	setIsTypewriting = (value: boolean) => {
+		const wasTyping = this.isTypewriting;
+		this.isTypewriting = value;
+		if (wasTyping && !value) {
+			this.room.maybeCompactContext();
+		}
+	};
 
 	/**
 	 * Execute a user message and stream the AI response
