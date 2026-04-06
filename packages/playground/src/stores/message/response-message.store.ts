@@ -11,6 +11,7 @@ import {
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
+	TOOL_PAUSE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
@@ -64,6 +65,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		name: "",
 	};
 
+	/**
+	 * Whether the user has indicated to pause running tools
+	 */
+	isPaused: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
@@ -74,7 +80,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
-			sync: action,
+			isPaused: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -82,16 +88,19 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			toggleIsPaused: action,
 		});
 
-		// sync the message (must be after makeObservable so sync action is registered)
+		// sync the message
 		this.sync(message);
 	}
 
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: ResponsePixelMessage) => {
+	sync(message: ResponsePixelMessage) {
+		super.sync(message);
+
 		// set the id
 		this.id = message.messageId;
 
@@ -121,11 +130,17 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				feedbackText: message.feedback.feedbackText,
 			};
 		}
-	};
+	}
 
 	/**
-	 * Run a new user message and receive a response with streaming
-	 * @param inputMessage - input message to send
+	 * Execute a user message and stream the AI response
+	 *
+	 * Creates a placeholder response message, sends the input to the AI model,
+	 * and streams back the response in real-time. After completion, automatically
+	 * initiates tool execution if the response contains tool calls.
+	 *
+	 * @param inputMessage - The user input message to send to the AI model
+	 * @returns Promise resolving to the pixel response containing input and output messages
 	 */
 	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
@@ -138,7 +153,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			platform_generated: true,
 			modelId: room.model.app_id,
 			dateCreated: new Date().toISOString(),
-			parts: [],
+			parts: [
+				{
+					type: "THINKING",
+					thinking: "",
+				},
+			],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -250,8 +270,12 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Run a new user message and receive a response with streaming
-	 * @param inputMessage - input message to send
+	 * Append a message part during streaming
+	 *
+	 * Merges consecutive parts of the same type (TEXT or THINKING) or adds
+	 * a new part if the type differs from the last part.
+	 *
+	 * @param part - The message part to append (TEXT or THINKING)
 	 */
 	savePart = async (part: ResponsePixelMessage["parts"][number]) => {
 		const lastPart = this.parts[this.parts.length - 1];
@@ -261,6 +285,10 @@ paramValues=[${JSON.stringify({
 				lastPart.text += part.text;
 				lastPart.uiText += part.uiText;
 			} else {
+				// delete any existing empty thinking part, as we have new text coming in
+				if (lastPart?.type === "THINKING" && !lastPart.thinking) {
+					this.parts.pop();
+				}
 				this.parts.push(part);
 			}
 		} else if (part.type === "THINKING") {
@@ -269,6 +297,35 @@ paramValues=[${JSON.stringify({
 			} else {
 				this.parts.push(part);
 			}
+		}
+	};
+
+	/**
+	 * Toggle the stopped tools flag
+	 */
+	toggleIsPaused = () => {
+		if (!this.isPaused) {
+			this.isPaused = true;
+			// If we are currently running tools, then we want to stop them. So we should mark any loading or initial tools as paused
+			for (const part of this.parts) {
+				if (part.type === "TOOL_CALL") {
+					const tool = this.room.getTool(part.toolCall.id);
+					if (
+						tool.status === "LOADING" ||
+						tool.status === "INITIAL"
+					) {
+						this.saveToolExecution(
+							tool,
+							"",
+							"paused",
+							tool.parameters,
+							false,
+						);
+					}
+				}
+			}
+		} else {
+			this.isPaused = false;
 		}
 	};
 
@@ -373,6 +430,7 @@ paramValues=[${JSON.stringify({
 		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "REWRITE_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
@@ -459,6 +517,18 @@ paramValues=[${JSON.stringify({
 			return;
 		}
 
+		if (this.isPaused) {
+			// If the user has indicated to pause running tools, mark this tool as cancelled and save the response without running the tool
+			await this.saveToolExecution(
+				tool,
+				"",
+				"paused",
+				tool.parameters,
+				false,
+			);
+			return;
+		}
+
 		// mark as loading
 		runInAction(() => {
 			tool.status = "LOADING";
@@ -508,7 +578,7 @@ paramValues=[${JSON.stringify({
 	saveToolExecution = async (
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 		errorDuringSaving: boolean = false,
 	): Promise<void> => {
@@ -519,13 +589,18 @@ paramValues=[${JSON.stringify({
 			toolResponse = `${errorDuringSaving ? TOOL_OUTPUT_UNREADABLE_PROMPT : TOOL_ERROR_PROMPT}${toolResponse ? `\n\nError Details: ${toolResponse}` : ""}`;
 		} else if (toolStatus === "cancelled") {
 			toolResponse = `${TOOL_CANCELLATION_PROMPT}${toolResponse ? `\n\nCancellation Details: ${toolResponse}` : ""}`;
+		} else if (toolStatus === "paused") {
+			toolResponse = `${TOOL_PAUSE_PROMPT}${toolResponse ? `\n\nDetails: ${toolResponse}` : ""}`;
 		}
 
 		// skip if the tool is already completed
-		if (tool.status === "SUCCESS" || tool.status === "CANCELLED") {
-			// If this tool already has a response, this must be an outdated call, skip
-			return;
-		} else if (tool.status === "ERROR") {
+		if (
+			tool.status === "SUCCESS" ||
+			tool.status === "CANCELLED" ||
+			tool.status === "PAUSED" ||
+			tool.status === "ERROR"
+		) {
+			// this must be an outdated call, skip
 			return;
 		}
 
@@ -539,6 +614,8 @@ paramValues=[${JSON.stringify({
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";
+			} else if (toolStatus === "paused") {
+				tool.status = "PAUSED";
 			}
 		});
 
@@ -552,7 +629,13 @@ paramValues=[${JSON.stringify({
 				platform_generated: true,
 				modelId: this.room.model.app_id,
 				dateCreated: new Date().toISOString(),
-				parts: [],
+				// Add blank thinking part for loading
+				parts: [
+					{
+						type: "THINKING",
+						thinking: "",
+					},
+				],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -567,17 +650,21 @@ paramValues=[${JSON.stringify({
 			responseMessage = this.toolResponseMessage;
 		}
 
+		type PartialResponse = {
+			responseMessage: string;
+		};
+		type TotalResponse = {
+			responseMessage: ResponsePixelMessage;
+			inputMessage: InputPixelMessage;
+		};
+
 		try {
 			// turn on thinking
 			responseMessage.isThinking = true;
 
 			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
-				[
-					{
-						responseMessage: ResponsePixelMessage | string;
-					},
-				]
+				[PartialResponse | TotalResponse]
 			>(
 				`AddPlaygroundToolExecution(
 engine=["${room.model.app_id}"],
@@ -628,8 +715,25 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				// Keep executing tools
 				this.continueToolExecution();
 			} else {
+				const inputMessage = (output as TotalResponse).inputMessage;
+
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
+
+				// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
+				// input token count onto this response message as a proxy. tokensUsed() in
+				// room.store relies on finding a (cumulative, incremental) pair when walking back.
+				runInAction(() => {
+					this.tokens = inputMessage.tokens;
+				});
+
+				// edge case handling: it's possible that the user paused tools while this tool was running
+				// mark the new response as paused if that is the case
+				if (this.isPaused) {
+					runInAction(() => {
+						responseMessage.isPaused = true;
+					});
+				}
 
 				// start running tools if there are any
 				responseMessage.continueToolExecution();
@@ -668,10 +772,22 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 
 			throw e;
 		} finally {
-			runInAction(() => {
-				// turn off thinking
-				responseMessage.isThinking = false;
-			});
+			// turn off thinking unless there are other tools still running
+			let hasOtherRunningTools = false;
+			for (const part of this.parts) {
+				if (part.type === "TOOL_CALL") {
+					const tool = this.room.getTool(part.toolCall.id);
+					if (tool && tool.status === "LOADING") {
+						hasOtherRunningTools = true;
+						break;
+					}
+				}
+			}
+			if (!hasOtherRunningTools) {
+				runInAction(() => {
+					responseMessage.isThinking = false;
+				});
+			}
 		}
 	};
 }

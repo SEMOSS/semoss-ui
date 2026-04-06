@@ -3,6 +3,7 @@ import {
 	AlertCircleIcon,
 	ChevronDownIcon,
 	ChevronUpIcon,
+	DownloadIcon,
 	RefreshCwIcon,
 	SaveIcon,
 } from "lucide-react";
@@ -430,6 +431,21 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 						</TooltipTrigger>
 						<TooltipContent>Save (Ctrl+S)</TooltipContent>
 					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								disabled={
+									isLoading || getFile.status !== "SUCCESS"
+								}
+								onClick={() => downloadFile()}
+							>
+								<DownloadIcon className="size-3" />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Download (Ctrl+D)</TooltipContent>
+					</Tooltip>
 				</div>
 			</div>
 			<Suspense
@@ -459,6 +475,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 						language={language}
 						options={{
 							readOnly: getFile.status !== "SUCCESS",
+							accessibilitySupport: "off",
 						}}
 						onChange={(value) => {
 							onChange(value, value !== getFile.data);
@@ -471,7 +488,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				<div className="max-h-[140px] w-full shrink-0 overflow-y-auto border-border border-t bg-destructive/5">
 					{jsonErrors.map((err) => (
 						<button
-							key={i}
+							key={`${err.startLineNumber}-${err.startColumn}-${err.message}`}
 							type="button"
 							className="flex w-full items-start gap-2 px-3 py-1 text-left text-xs hover:bg-destructive/10"
 							onClick={() => {
