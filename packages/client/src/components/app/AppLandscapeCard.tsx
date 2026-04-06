@@ -16,7 +16,6 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { setProjectFavorite } from "@/api";
-import { removeUnderscores } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
 const StyledCard = styled(Card)({
@@ -245,7 +244,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 						/>
 					)}
 					<StyledProjectName variant="body1">
-						{removeUnderscores(app.project_name)}
+						{app.project_display_name || app.project_name}
 					</StyledProjectName>
 				</StyledImageContainer>
 				<StyledChipDiv>

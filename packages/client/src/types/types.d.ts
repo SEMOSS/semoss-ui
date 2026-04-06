@@ -103,3 +103,11 @@ export interface EventData {
 	sessionId: string;
 	spanId: string;
 }
+
+export type ApiResponse<T> = {
+	data: T;
+	status: number;
+	statusText: string;
+	headers: Record<string, string>;
+	config: unknown;
+};

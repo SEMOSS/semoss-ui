@@ -79,6 +79,11 @@ export abstract class AbstractMessageStore {
 	};
 
 	/**
+	 * Date the message was created
+	 */
+	dateCreated: Date;
+
+	/**
 	 *
 	 * @param room
 	 * @param message
@@ -117,6 +122,7 @@ export abstract class AbstractMessageStore {
 			addChild: action,
 			removeChild: action,
 			activateMessage: action,
+			sync: action,
 		});
 	}
 
@@ -166,7 +172,15 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	abstract sync: (message: PixelMessage) => void;
+	sync(message: PixelMessage) {
+		this.dateCreated = (() => {
+			const raw = message.dateCreated;
+			const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(raw)
+				? raw
+				: `${raw.replace(" ", "T")}Z`;
+			return new Date(normalized);
+		})();
+	}
 
 	/**
 	 * Connect the parent and store the position

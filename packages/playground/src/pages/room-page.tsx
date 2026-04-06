@@ -63,6 +63,11 @@ export const RoomPage = observer(() => {
 	useEffect(() => {
 		const loadRoom = async () => {
 			try {
+				if (!roomId) {
+					navigate("/");
+					return;
+				}
+
 				const room = await chat.loadRoom(roomId);
 
 				// update the model based on the room
@@ -98,7 +103,7 @@ export const RoomPage = observer(() => {
 				setRoom(room);
 			} catch (e) {
 				// if it doesn't load successfully, go back to home
-				toast.error(e.message);
+				toast.error((e as Error).message);
 				navigate("/");
 			}
 		};
@@ -110,6 +115,7 @@ export const RoomPage = observer(() => {
 		chat.loadRoom,
 		chat.setSelectedModel,
 		setBreadcrumbs,
+		t,
 	]);
 
 	const { setNavbarActions } = useGlobalBreadcrumbs({});
@@ -161,7 +167,8 @@ export const RoomPage = observer(() => {
 							<ResizableHandle />
 							<ResizablePanel
 								className={"relative p-2"}
-								defaultSize={70}
+								defaultSize={50}
+								minSize={20}
 							>
 								<RoomSidebar room={room} />
 							</ResizablePanel>
