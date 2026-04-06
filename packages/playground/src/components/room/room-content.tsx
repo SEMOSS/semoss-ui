@@ -34,8 +34,6 @@ import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
 
-const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS === "true";
-
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
 
@@ -179,7 +177,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.id,
 					tool.response,
 					tool.tool_status,
-					tool.executedParameters,
+					tool.executedParameters ?? {},
 				);
 			} catch {
 				// noop
@@ -317,7 +315,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
+						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -358,7 +356,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									</React.Fragment>
 								);
 							})}
-							{ENABLE_SUGGESTIONS && (
+							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
 						</div>

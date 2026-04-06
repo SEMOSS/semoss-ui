@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	ArrowBack,
 	Check,
@@ -9,7 +10,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -446,16 +447,16 @@ export const ColorPalatteSettings = observer(
 					: optionComputedValue;
 			if (
 				Object.hasOwn(option, "customSettings") &&
-				Object.hasOwn(option["customSettings"], "customColorPalette")
+				Object.hasOwn(option.customSettings, "customColorPalette")
 			) {
 				const paletteColors = colorPalette.filter(
 					(item) => item.isCustom === false,
 				);
 				const colorPaletteData = [
 					...paletteColors,
-					...option["customSettings"]["customColorPalette"],
+					...option.customSettings.customColorPalette,
 				];
-				setColorPalette((prevColourPalatte) => {
+				setColorPalette(() => {
 					return [...colorPaletteData];
 				});
 			}
@@ -465,7 +466,7 @@ export const ColorPalatteSettings = observer(
 		 * Resets the local state for the color palette and sets the position of the popover.
 		 * @param event The event object for the click event.
 		 */
-		function handleClick(event: MouseEvent<HTMLButtonElement>) {
+		function handleClick() {
 			// Reset the local state for the color palette
 			setToggleAddEdit("add");
 			setColors([]);
@@ -488,8 +489,7 @@ export const ColorPalatteSettings = observer(
 			// Remove the palette from the local color palette state
 			colorPalette.splice(paletteEditIndex, 1);
 			// Access the custom color palette settings
-			const customColorPalette =
-				option["customSettings"]["customColorPalette"];
+			const customColorPalette = option.customSettings.customColorPalette;
 			// Find and remove the palette from the custom settings
 			const index = customColorPalette.findIndex(
 				(item) => item.index === paletteEditIndex + 1,
@@ -526,7 +526,7 @@ export const ColorPalatteSettings = observer(
 		 * Updates the state with the new color palette data.
 		 * @param label The label of the selected color palette.
 		 */
-		function handleColorChange(label, color) {
+		function handleColorChange(label) {
 			setPaletteName(label);
 			// Find the color palette with the matching label
 			const colors =
@@ -629,7 +629,7 @@ export const ColorPalatteSettings = observer(
 				option = {
 					...option,
 					customSettings: {
-						...option["customSettings"],
+						...option.customSettings,
 					},
 				};
 			} else {
@@ -639,12 +639,12 @@ export const ColorPalatteSettings = observer(
 				};
 			}
 			// Add the new palette to the `customColorPalette` property of the `customSettings` object
-			if (Object.hasOwn(option["customSettings"], "customColorPalette")) {
+			if (Object.hasOwn(option.customSettings, "customColorPalette")) {
 				option = {
 					...option,
 					customSettings: {
 						customColorPalette: [
-							...option["customSettings"]["customColorPalette"],
+							...option.customSettings.customColorPalette,
 							{
 								label: paletteName,
 								colors: colors,
@@ -705,17 +705,17 @@ export const ColorPalatteSettings = observer(
 					option = {
 						...option,
 						customSettings: {
-							...option["customSettings"],
+							...option.customSettings,
 						},
 					};
 					if (
 						Object.hasOwn(
-							option["customSettings"],
+							option.customSettings,
 							"customColorPalette",
 						)
 					) {
 						const customColorPalette =
-							option["customSettings"]["customColorPalette"];
+							option.customSettings.customColorPalette;
 						const index = customColorPalette.find(
 							(item) => item.index === paletteEditIndex + 1,
 						);
@@ -816,7 +816,7 @@ export const ColorPalatteSettings = observer(
 									fontWeight: "bold",
 									color: "rgba(0, 0, 0, .5)",
 								}}
-								onClick={(e) => {
+								onClick={() => {
 									setToggleAddEdit("");
 									setShowCustomPopover(null);
 									handleClose();
