@@ -14,6 +14,11 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 	const { logo } = props;
 	const { page } = usePage();
 	const { configStore } = useRootStore();
+	// `logo` has three intentional states:
+	// - `undefined`: show default branding (theme logo + name)
+	// - `ReactNode`: show custom branding content
+	// - `null`: hide branding completely
+	const showDefaultBranding = logo === undefined;
 
 	return !page.sidebar.pinned ? (
 		<div className="relative z-0 flex min-w-0 max-w-full items-center gap-1 bg-transparent sm:gap-2">
@@ -28,7 +33,7 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 				<Menu className="size-4" />
 			</Button>
 
-			{!logo ? (
+			{showDefaultBranding ? (
 				<div className="flex min-w-0 max-w-full items-center gap-1 rounded-md px-1 py-1 text-foreground sm:gap-2 sm:px-2">
 					{configStore.theme.logo ? (
 						<img
