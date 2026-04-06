@@ -1,6 +1,6 @@
 import { DataGrid } from "@mui/x-data-grid";
 import { CalendarIcon, Search, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -54,11 +54,8 @@ export const LLMFeedbackPage = () => {
 	const [userId, setUserId] = useState<string>("");
 	const [startDate, setStartDate] = useState(null);
 	const [endDate, setEndDate] = useState(null);
-	const [search, setSearch] = useState<string>("");
-	const [debouncedSearch, setDebouncedSearch] = useState<string>("");
+	const [debouncedUserId, setDebouncedUserId] = useState<string>("");
 	const [isSearching, setIsSearching] = useState(false);
-
-	const searchbarRef = useRef<HTMLInputElement | null>(null);
 
 	const columnDefinitions = [
 		"AGENT_ID",
@@ -136,8 +133,10 @@ export const LLMFeedbackPage = () => {
 					minWidth: 100,
 					renderCell: (params) => {
 						return (
-							<div className="flex h-full items-center whitespace-normal break-words leading-normal">
-								{params.value}
+							<div className="flex h-full items-center whitespace-normal break-words italic leading-normal">
+								{params.value
+									? params.value
+									: "No Feedback Provided"}
 							</div>
 						);
 					},
@@ -161,12 +160,13 @@ export const LLMFeedbackPage = () => {
 	useEffect(() => {
 		setIsSearching(true);
 		const timer = setTimeout(() => {
-			setDebouncedSearch(search);
+			setDebouncedUserId(userId);
+			setPaginationModel((prev) => ({ ...prev, page: 0 }));
 			setIsSearching(false);
 		}, 400);
 
 		return () => clearTimeout(timer);
-	}, [search]);
+	}, [userId]);
 
 	const offset = paginationModel.page * paginationModel.pageSize;
 	const limit = paginationModel.pageSize;
@@ -174,26 +174,18 @@ export const LLMFeedbackPage = () => {
 	const getFeedback = usePixel<LLMFeedback[]>(
 		`AdminGetLlmFeedback(
             limit=[${limit}], 
-            offset=[${offset}]${engineId ? `, engineId=["${engineId}"]` : ""}${projectId ? `, projectId=["${projectId}"]` : ""}${userId ? `, userId=["${userId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : ""}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : ""}${debouncedSearch ? `, search=["${debouncedSearch}"]` : ""}
+            offset=[${offset}]${engineId ? `, engineId=["${engineId}"]` : ""}${projectId ? `, projectId=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : ""}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : ""}
         );`,
 		{ data: [] },
 	);
 
 	const getCount = usePixel<[string]>(
-		`AdminGetLlmFeedbackCount(${engineId ? `engineId=["${engineId}"]` : ""}${projectId ? `, projectId=["${projectId}"]` : ""}${userId ? `, userId=["${userId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : ""}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : ""}${debouncedSearch ? `, search=["${debouncedSearch}"]` : ""});`,
+		`AdminGetLlmFeedbackCount(${engineId ? `engineId=["${engineId}"]` : ""}${projectId ? `, projectId=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : ""}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : ""});`,
 		{ data: ["0"] },
 	);
 
-	const resetKey = `${engineId}-${projectId}-${userId}-${startDate}-${endDate}-${debouncedSearch}`;
-
 	useEffect(() => {
-		setPaginationModel({ page: 0, pageSize: paginationModel.pageSize });
-		setFeedback([]);
-	}, [resetKey, paginationModel.pageSize]);
-
-	useEffect(() => {
-		if (getFeedback.status === "SUCCESS" && getFeedback.data.length > 0) {
-
+		if (getFeedback.status === "SUCCESS") {
 			const dataGridRows = getFeedback.data.map((item, index) => {
 				const { USER_NAME, ...rest } = item;
 				return {
@@ -203,8 +195,10 @@ export const LLMFeedbackPage = () => {
 			});
 
 			setFeedback(dataGridRows);
-			renderDataGridColumns(dataGridRows);
-			searchbarRef.current?.focus();
+
+			if (dataGridRows.length > 0) {
+				renderDataGridColumns(dataGridRows);
+			}
 		} else if (getFeedback.status === "ERROR") {
 			toast.error(String(getFeedback.error));
 		}
@@ -239,14 +233,6 @@ export const LLMFeedbackPage = () => {
 		[feedback],
 	);
 
-	const uniqueUserIds = useMemo(
-		() =>
-			Array.from(new Set(feedback.map((item) => item.USER_ID)))
-				.filter(Boolean)
-				.sort(),
-		[feedback],
-	);
-
 	const isLoading =
 		getFeedback.status === "LOADING" ||
 		getCount.status === "LOADING" ||
@@ -267,132 +253,122 @@ export const LLMFeedbackPage = () => {
 					</div>
 				</div>
 			)}
-			<div className="flex w-full items-end gap-2">
-				<InputGroup className="h-10 min-w-[140px] flex-1">
-					<InputGroupAddon>
-						<Search className="size-4" />
-					</InputGroupAddon>
-					<InputGroupInput
-						ref={searchbarRef}
-						className="h-10"
-						value={search}
-						onChange={(e) => {
-							setSearch(e.target.value);
-						}}
-						placeholder="Search"
-					/>
-					{search ? (
-						<InputGroupAddon align="inline-end">
-							<InputGroupButton
-								size="icon-xs"
-								variant="ghost"
-								onClick={() => setSearch("")}
-								aria-label="Clear search"
-							>
-								<X className="size-4" />
-							</InputGroupButton>
-						</InputGroupAddon>
-					) : null}
-				</InputGroup>
-				<Select value={engineId} onValueChange={setEngineId}>
-					<SelectTrigger className="w-[140px]">
-						<SelectValue placeholder="Agent ID" />
-					</SelectTrigger>
-					<SelectContent>
-						{uniqueEngineIds.map((id) => {
-							return (
-								<SelectItem key={id} value={id}>
-									{id}
+			<div className="justify-between">
+				<div className="flex w-full items-end gap-2">
+					<Select value={engineId} onValueChange={setEngineId}>
+						<SelectTrigger className="w-[140px]">
+							<SelectValue placeholder="Agent ID" />
+						</SelectTrigger>
+						<SelectContent>
+							{uniqueEngineIds.map((id) => {
+								return (
+									<SelectItem key={id} value={id}>
+										{id}
+									</SelectItem>
+								);
+							})}
+						</SelectContent>
+					</Select>
+					<Select value={projectId} onValueChange={setProjectId}>
+						<SelectTrigger className="w-[140px]">
+							<SelectValue placeholder="Project ID" />
+						</SelectTrigger>
+						<SelectContent>
+							{uniqueProjectIds.map((projectId) => (
+								<SelectItem key={projectId} value={projectId}>
+									{projectId}
 								</SelectItem>
-							);
-						})}
-					</SelectContent>
-				</Select>
-				<Select value={projectId} onValueChange={setProjectId}>
-					<SelectTrigger className="w-[140px]">
-						<SelectValue placeholder="Project ID" />
-					</SelectTrigger>
-					<SelectContent>
-						{uniqueProjectIds.map((projectId) => (
-							<SelectItem key={projectId} value={projectId}>
-								{projectId}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<Select value={userId} onValueChange={setUserId}>
-					<SelectTrigger className="w-[140px]">
-						<SelectValue placeholder="User ID" />
-					</SelectTrigger>
-					<SelectContent>
-						{uniqueUserIds.map((userId) => (
-							<SelectItem key={userId} value={userId}>
-								{userId}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<Popover>
-					<PopoverTrigger asChild>
+							))}
+						</SelectContent>
+					</Select>
+					<InputGroup className="w-[150px]">
+						<InputGroupAddon>
+							<Search className="size-4" />
+						</InputGroupAddon>
+						<InputGroupInput
+							value={userId}
+							onChange={(e) => {
+								setUserId(e.target.value);
+							}}
+							placeholder="User ID"
+						/>
+						{userId ? (
+							<InputGroupAddon align="inline-end">
+								<InputGroupButton
+									size="icon-xs"
+									variant="ghost"
+									onClick={() => setUserId("")}
+									aria-label="Clear search"
+								>
+									<X className="size-4" />
+								</InputGroupButton>
+							</InputGroupAddon>
+						) : null}
+					</InputGroup>
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								className="w-[150px] justify-between bg-transparent font-normal"
+							>
+								<span className="text-muted-foreground">
+									{startDate
+										? `${new Date(startDate).toLocaleDateString()}`
+										: "Start Date"}
+								</span>
+								<CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-auto p-0" align="start">
+							<Calendar
+								mode="single"
+								selected={startDate}
+								onSelect={(date) => setStartDate(date)}
+								numberOfMonths={2}
+							/>
+						</PopoverContent>
+					</Popover>
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								className="w-[150px] justify-between bg-transparent font-normal"
+							>
+								<span className="text-muted-foreground">
+									{endDate
+										? `${new Date(endDate).toLocaleDateString()}`
+										: "End Date"}
+								</span>
+								<CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-auto p-0" align="start">
+							<Calendar
+								mode="single"
+								selected={endDate}
+								onSelect={(date) => setEndDate(date)}
+								numberOfMonths={2}
+							/>
+						</PopoverContent>
+					</Popover>
+					<div className="ml-auto">
 						<Button
 							variant="outline"
-							role="combobox"
-							className="w-[150px] justify-between bg-transparent font-normal"
+							className="bg-transparent text-muted-foreground"
+							onClick={() => {
+								setEngineId("");
+								setProjectId("");
+								setUserId("");
+								setStartDate(null);
+								setEndDate(null);
+							}}
 						>
-							<span className="text-muted-foreground">
-								{startDate
-									? `${new Date(startDate).toLocaleDateString()}`
-									: "Start Date"}
-							</span>
-							<CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+							Clear
 						</Button>
-					</PopoverTrigger>
-					<PopoverContent className="w-auto p-0" align="start">
-						<Calendar
-							mode="single"
-							selected={startDate}
-							onSelect={(date) => setStartDate(date)}
-							numberOfMonths={2}
-						/>
-					</PopoverContent>
-				</Popover>
-				<Popover>
-					<PopoverTrigger asChild>
-						<Button
-							variant="outline"
-							role="combobox"
-							className="w-[150px] justify-between bg-transparent font-normal"
-						>
-							<span className="text-muted-foreground">
-								{endDate
-									? `${new Date(endDate).toLocaleDateString()}`
-									: "End Date"}
-							</span>
-							<CalendarIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-						</Button>
-					</PopoverTrigger>
-					<PopoverContent className="w-auto p-0" align="start">
-						<Calendar
-							mode="single"
-							selected={endDate}
-							onSelect={(date) => setEndDate(date)}
-							numberOfMonths={2}
-						/>
-					</PopoverContent>
-				</Popover>
-				<Button
-					variant="outline"
-					className="bg-transparent text-muted-foreground"
-					onClick={() => {
-						setEngineId("");
-						setProjectId("");
-						setUserId("");
-						setStartDate(null);
-						setEndDate(null);
-					}}
-				>
-					Clear
-				</Button>
+					</div>
+				</div>
 			</div>
 			<DataGrid
 				rows={feedback}
