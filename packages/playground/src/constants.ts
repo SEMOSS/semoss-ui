@@ -1,6 +1,6 @@
 export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
 
-export const TOKEN_LENGTH = undefined;
+export const TOKEN_LENGTH: number = undefined as unknown as number; // token length is determined at runtime based on the model, so we initialize it as undefined and set it later
 export const TEMPERATURE = 0.3;
 
 export const MCP_EXECUTION_AUTO = "auto";
@@ -11,16 +11,17 @@ export const MCP_DISPLAY_SIDEBAR = "sidebar";
 export const MCP_DISPLAY_HIDDEN = "hidden";
 
 export const LOADING_MESSAGES = [
-	"Thinking...",
-	"Processing...",
-	"Still thinking...",
-	"Hold tight...",
-	"Hang tight...",
-	"Almost there...",
-	"One sec...",
-	"On it...",
-	"Working...",
-	"Nearly ready...",
+	"Thinking through it...",
+	"Working on that...",
+	"Processing your request...",
+	"Checking the details...",
+	"Gathering context...",
+	"Making progress...",
+	"Preparing the result...",
+	"Finalizing...",
+	"Almost done...",
+	"One moment...",
+	"Still working...",
 ] as const;
 
 export const TOOL_CANCELLATION_PROMPT = `The user chose not to execute this tool. This could be for various reasons (wrong parameters, unnecessary step, privacy concerns, timing, manual preference, etc.). You should:

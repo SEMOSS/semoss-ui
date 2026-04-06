@@ -1,10 +1,5 @@
-/** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
+/** biome-ignore-all lint/correctness/useUniqueElementIds: IDs are generated from dynamic schema/table metadata */
 import {
-	ChevronLeft,
-	ChevronRight,
-	ChevronsLeft,
-	ChevronsRight,
-	Edit,
 	Maximize2,
 	RefreshCw,
 	Snowflake,
@@ -21,7 +16,6 @@ import {
 	useState,
 } from "react";
 import {
-	Badge,
 	Button,
 	Checkbox,
 	DropdownMenu,
@@ -36,13 +30,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Separator,
-	Table,
-	TableBody,
-	TableCell,
-	TableFooter,
-	TableHead,
-	TableHeader,
-	TableRow,
 } from "@semoss/ui/next";
 import { Metamodel } from "@/components/metamodel";
 import CreateConnection from "@/components/metamodel/create-connection";
@@ -53,7 +40,6 @@ import type {
 	FlowNode,
 	MetaModelTypeProps,
 	MetamodelNode,
-	Property,
 } from "./MetamodelTypes";
 import {
 	attachConnectionsToNodes,
@@ -89,8 +75,6 @@ export const MetaModelType = observer(
 			useState<React.ComponentProps<typeof Metamodel>["selectedNode"]>(
 				null,
 			);
-		const [columnPage, setColumnPage] = useState<number>(0);
-		const [columnVisibleRows, setColumnVisibleRows] = useState<number>(5);
 		const [counter, setCounter] = useState(0);
 		const [openCreateConnectionModal, setopenCreateConnectionModal] =
 			useState(false);
@@ -122,14 +106,6 @@ export const MetaModelType = observer(
 		const columnOptions = useMemo(() => {
 			return getAllColumnNamesFromNodes(nodes);
 		}, [nodes]);
-
-		const columnRows = useMemo(() => {
-			if (!selectedNode?.data?.properties?.length) return [];
-			return selectedNode.data.properties.slice(
-				columnPage * columnVisibleRows,
-				(columnPage + 1) * columnVisibleRows,
-			);
-		}, [selectedNode, columnPage, columnVisibleRows]);
 
 		const edgesForMetamodel = useMemo(() => {
 			const allEdges = flow?.edges ?? [];
@@ -174,12 +150,6 @@ export const MetaModelType = observer(
 				position: { x: number; y: number };
 			}[];
 		}, [flow, nodes]);
-
-		const description = selectedNode?.id || "";
-		const logicalNames =
-			selectedNode?.data?.properties?.map(
-				(p: { name: string }): string => p.name,
-			) || [];
 
 		// Callbacks
 
@@ -543,22 +513,22 @@ export const MetaModelType = observer(
 					edges: edges as Edge[],
 				};
 
-				const existingState = flowStates[selectedDataIndex];
+				setFlowStates((prev) => {
+					const existingState = prev[selectedDataIndex];
 
-				if (
-					existingState &&
-					(existingState.nodes?.length > 0 ||
-						existingState.edges?.length > 0)
-				) {
-					updateFlow(existingState);
-				} else {
-					updateFlow(initial);
+					if (
+						existingState &&
+						(existingState.nodes?.length > 0 ||
+							existingState.edges?.length > 0)
+					) {
+						return prev;
+					}
 
-					setFlowStates((prev) => ({
+					return {
 						...prev,
 						[selectedDataIndex]: initial,
-					}));
-				}
+					};
+				});
 			}
 		}, [nodes, edges, selectedDataIndex]);
 
@@ -821,22 +791,6 @@ export const MetaModelType = observer(
 													<Snowflake className="size-4" />
 													Create Relationship
 												</Button>
-												<Button
-													variant="outline"
-													onClick={handleSave}
-													data-testid="engineMetadata-save-btn"
-												>
-													Save
-												</Button>
-												{!showFullScreenModal && (
-													<Button
-														variant="outline"
-														onClick={onCancel}
-														data-testid="engineMetadata-cancel-btn"
-													>
-														Cancel
-													</Button>
-												)}
 											</div>
 										}
 									/>
@@ -865,253 +819,12 @@ export const MetaModelType = observer(
 											dataSourceId={selectedDataIndex}
 											resetKey={counter}
 											columnOptions={columnOptions}
+											showSearch={true}
+											searchInputTestId="metaModelType-search-input"
 										/>
 									</section>
 								</div>
 							</Section>
-
-							{selectedNode && (
-								<>
-									<Section>
-										<Section.Header>
-											Description
-										</Section.Header>
-										<P className="text-sm">{description}</P>
-									</Section>
-
-									<Section>
-										<Section.Header>
-											Logical Names
-										</Section.Header>
-										<div className="flex flex-row flex-wrap gap-2">
-											{logicalNames.map((logicalName) => (
-												<Badge
-													key={logicalName}
-													variant="default"
-													className="text-xs"
-													data-testid={`logicalName-${logicalName}`}
-												>
-													{logicalName}
-												</Badge>
-											))}
-										</div>
-									</Section>
-
-									<Section>
-										<Section.Header>Columns</Section.Header>
-										<div className="h-[396px] overflow-auto">
-											<Table>
-												<TableHeader className="sticky top-0">
-													<TableRow>
-														<TableHead className="w-[50px]">
-															{" "}
-														</TableHead>
-														<TableHead>
-															Name
-														</TableHead>
-														<TableHead>
-															Type
-														</TableHead>
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{columnRows.map(
-														(
-															property: Property,
-															idx: number,
-														) => (
-															<TableRow
-																key={
-																	property.id
-																}
-															>
-																<TableCell>
-																	<Button
-																		variant="ghost"
-																		size="icon"
-																		disabled
-																	>
-																		<Edit className="size-4" />
-																	</Button>
-																</TableCell>
-																<TableCell>
-																	{
-																		property.name
-																	}
-																</TableCell>
-																<TableCell>
-																	{
-																		property.type
-																	}
-																</TableCell>
-															</TableRow>
-														),
-													)}
-												</TableBody>
-												<TableFooter>
-													<TableRow>
-														<TableCell
-															colSpan={3}
-															className="py-2"
-														>
-															<div className="flex items-center justify-between">
-																<div className="flex items-center gap-2">
-																	<P className="text-muted-foreground text-sm">
-																		Rows per
-																		page:
-																	</P>
-																	<Select
-																		value={String(
-																			columnVisibleRows,
-																		)}
-																		onValueChange={(
-																			value,
-																		) => {
-																			setColumnVisibleRows(
-																				Number(
-																					value,
-																				),
-																			);
-																			setColumnPage(
-																				0,
-																			);
-																		}}
-																	>
-																		<SelectTrigger className="h-8 w-[70px]">
-																			<SelectValue />
-																		</SelectTrigger>
-																		<SelectContent>
-																			<SelectItem value="5">
-																				5
-																			</SelectItem>
-																			<SelectItem value="10">
-																				10
-																			</SelectItem>
-																			<SelectItem value="25">
-																				25
-																			</SelectItem>
-																		</SelectContent>
-																	</Select>
-																</div>
-
-																<div className="flex items-center gap-2">
-																	<P className="text-muted-foreground text-sm">
-																		{columnPage *
-																			columnVisibleRows +
-																			1}
-																		-
-																		{Math.min(
-																			(columnPage +
-																				1) *
-																				columnVisibleRows,
-																			selectedNode
-																				.data
-																				.properties
-																				.length,
-																		)}{" "}
-																		of{" "}
-																		{
-																			selectedNode
-																				.data
-																				.properties
-																				.length
-																		}
-																	</P>
-																	<div className="flex gap-1">
-																		<Button
-																			variant="outline"
-																			size="icon"
-																			className="h-8 w-8"
-																			onClick={() =>
-																				setColumnPage(
-																					0,
-																				)
-																			}
-																			disabled={
-																				columnPage ===
-																				0
-																			}
-																		>
-																			<ChevronsLeft className="size-4" />
-																		</Button>
-																		<Button
-																			variant="outline"
-																			size="icon"
-																			className="h-8 w-8"
-																			onClick={() =>
-																				setColumnPage(
-																					columnPage -
-																						1,
-																				)
-																			}
-																			disabled={
-																				columnPage ===
-																				0
-																			}
-																		>
-																			<ChevronLeft className="size-4" />
-																		</Button>
-																		<Button
-																			variant="outline"
-																			size="icon"
-																			className="h-8 w-8"
-																			onClick={() =>
-																				setColumnPage(
-																					columnPage +
-																						1,
-																				)
-																			}
-																			disabled={
-																				(columnPage +
-																					1) *
-																					columnVisibleRows >=
-																				selectedNode
-																					.data
-																					.properties
-																					.length
-																			}
-																		>
-																			<ChevronRight className="size-4" />
-																		</Button>
-																		<Button
-																			variant="outline"
-																			size="icon"
-																			className="h-8 w-8"
-																			onClick={() =>
-																				setColumnPage(
-																					Math.ceil(
-																						selectedNode
-																							.data
-																							.properties
-																							.length /
-																							columnVisibleRows,
-																					) -
-																						1,
-																				)
-																			}
-																			disabled={
-																				(columnPage +
-																					1) *
-																					columnVisibleRows >=
-																				selectedNode
-																					.data
-																					.properties
-																					.length
-																			}
-																		>
-																			<ChevronsRight className="size-4" />
-																		</Button>
-																	</div>
-																</div>
-															</div>
-														</TableCell>
-													</TableRow>
-												</TableFooter>
-											</Table>
-										</div>
-									</Section>
-								</>
-							)}
 						</div>
 						<CreateConnection
 							open={openCreateConnectionModal}
@@ -1132,6 +845,24 @@ export const MetaModelType = observer(
 					onClose={() => setShowFullScreenModal(false)}
 					contentId={portalContentId}
 				/>
+				{!showFullScreenModal && (
+					<div className="mt-4 flex justify-end gap-3 border-border border-t pt-4">
+						<Button
+							variant="outline"
+							onClick={onCancel}
+							data-testid="engineMetadata-cancel-btn"
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="default"
+							onClick={handleSave}
+							data-testid="engineMetadata-save-btn"
+						>
+							Import
+						</Button>
+					</div>
+				)}
 			</div>
 		);
 	},
