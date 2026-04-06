@@ -119,6 +119,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const model = workspace.model;
+		console.log("rendering workspace manager with model", model);
 		// build the model from the layout
 		useEffect(() => {
 			const handler = (e: CustomEvent) => {
