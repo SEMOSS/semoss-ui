@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	ArrowBack,
 	Check,
@@ -9,8 +10,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
-import { SketchPicker } from "react-color";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -21,7 +21,6 @@ import {
 } from "@semoss/renderer";
 import {
 	Button,
-	Icon,
 	IconButton,
 	InputAdornment,
 	OutlinedInput,
@@ -42,47 +41,40 @@ interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
 	path: Paths<Block<D>["data"], 4>;
 	onColorPalatteSelected: (option, color) => void;
 }
-const StyledButton = styled(Button)(({}) => ({
+const StyledButton = styled(Button)(() => ({
 	justifyContent: "center",
 	display: "flex",
 }));
-const StyledTextField = styled(TextField)(({}) => ({
+const StyledTextField = styled(TextField)(() => ({
 	display: "flex",
 }));
-const StyledOutlinedInput = styled(OutlinedInput)(({}) => ({
+const StyledOutlinedInput = styled(OutlinedInput)(() => ({
 	display: "flex",
 }));
-const StyledEditIcon = styled(Edit)(({}) => ({
+const StyledEditIcon = styled(Edit)(() => ({
 	width: "33px",
 	height: "33px",
 	borderRadius: "20%",
 	display: "block",
 }));
-const StyledIconButtonEdit = styled(IconButton)(({}) => ({
+const StyledIconButtonEdit = styled(IconButton)(() => ({
 	padding: "0px",
 }));
-const StyledRowColorEditButton = styled(IconButton)(({}) => ({
+const StyledRowColorEditButton = styled(IconButton)(() => ({
 	marginLeft: "auto",
 	marginRight: "0px",
 }));
-const StyledFormatColorFill = styled(FormatColorFill)(({}) => ({
+const StyledFormatColorFill = styled(FormatColorFill)(() => ({
 	width: "33px",
 	height: "33px",
 	borderRadius: "20%",
 	display: "block",
 }));
-const StyledDeleteIcon = styled(Delete)(({}) => ({
+const StyledDeleteIcon = styled(Delete)(() => ({
 	width: "33px",
 	height: "33px",
 	borderRadius: "20%",
 	display: "block",
-}));
-const StyledPicker = styled(SketchPicker)(({}) => ({
-	width: "97% !important",
-	margin: "10px",
-	boxShadow:
-		"rgba(0, 0, 0, 0) 0px 0px 0px 1px, rgba(0, 0, 0, 0) 0px 8px 16px !important",
-	padding: "0px !important",
 }));
 const StyledEmptyContainer = styled("div")(() => ({}));
 const StyledPaletteContainer = styled("div")(() => ({
@@ -231,6 +223,7 @@ const ColorPalette = ({
 			<StyledPaleteRow>
 				{colors.map((color, index) => (
 					<StyledPalete
+						// biome-ignore lint/suspicious/noArrayIndexKey: TODO
 						key={index}
 						style={{
 							backgroundColor: color,
@@ -393,12 +386,13 @@ export const ColorPalatteSettings = observer(
 			},
 		];
 		const [colors, setColors] = useState([]);
-		const [showCustomPopover, setShowCustomPopover] =
+		const [_showCustomPopover, setShowCustomPopover] =
 			useState<HTMLButtonElement | null>(null);
 		const [color, setColor] = useState("#000000");
 		const [editColor, setEditColor] = useState("");
+		// biome-ignore lint/suspicious/noExplicitAny: TODO
 		const { data, setData } = useBlockSettings<any>(id);
-		const [value, setValue] = useState(data.option);
+		const [_value, setValue] = useState(data.option);
 		const [optionValue, setOptionValue] = useState(data.option);
 		const [colorPalatteFlag, setColorPalatteFlag] = useState(false);
 		const [editColorPalatte, setEditColorPalatte] = useState(-1);
@@ -453,16 +447,16 @@ export const ColorPalatteSettings = observer(
 					: optionComputedValue;
 			if (
 				Object.hasOwn(option, "customSettings") &&
-				Object.hasOwn(option["customSettings"], "customColorPalette")
+				Object.hasOwn(option.customSettings, "customColorPalette")
 			) {
 				const paletteColors = colorPalette.filter(
 					(item) => item.isCustom === false,
 				);
 				const colorPaletteData = [
 					...paletteColors,
-					...option["customSettings"]["customColorPalette"],
+					...option.customSettings.customColorPalette,
 				];
-				setColorPalette((prevColourPalatte) => {
+				setColorPalette(() => {
 					return [...colorPaletteData];
 				});
 			}
@@ -472,7 +466,7 @@ export const ColorPalatteSettings = observer(
 		 * Resets the local state for the color palette and sets the position of the popover.
 		 * @param event The event object for the click event.
 		 */
-		function handleClick(event: MouseEvent<HTMLButtonElement>) {
+		function handleClick() {
 			// Reset the local state for the color palette
 			setToggleAddEdit("add");
 			setColors([]);
@@ -495,8 +489,7 @@ export const ColorPalatteSettings = observer(
 			// Remove the palette from the local color palette state
 			colorPalette.splice(paletteEditIndex, 1);
 			// Access the custom color palette settings
-			const customColorPalette =
-				option["customSettings"]["customColorPalette"];
+			const customColorPalette = option.customSettings.customColorPalette;
 			// Find and remove the palette from the custom settings
 			const index = customColorPalette.findIndex(
 				(item) => item.index === paletteEditIndex + 1,
@@ -513,6 +506,7 @@ export const ColorPalatteSettings = observer(
 			// Update the data and state
 			setData(
 				optionPathVal,
+				// biome-ignore lint/suspicious/noExplicitAny: TODO
 				option as PathValue<any, typeof optionPathVal>,
 			);
 			setColorPalette(colorPalette);
@@ -532,7 +526,7 @@ export const ColorPalatteSettings = observer(
 		 * Updates the state with the new color palette data.
 		 * @param label The label of the selected color palette.
 		 */
-		function handleColorChange(label, color) {
+		function handleColorChange(label) {
 			setPaletteName(label);
 			// Find the color palette with the matching label
 			const colors =
@@ -541,8 +535,8 @@ export const ColorPalatteSettings = observer(
 					: colorPalette.find((item) => item.label === label);
 			// Update the state with the new color palette data
 			if (
-				Data.variation == "echart-scatter-plots" ||
-				Data.variation == "echart-stack-chart"
+				Data.variation === "echart-scatter-plots" ||
+				Data.variation === "echart-stack-chart"
 			) {
 				runStateUpdate(
 					optionComputedValue,
@@ -635,7 +629,7 @@ export const ColorPalatteSettings = observer(
 				option = {
 					...option,
 					customSettings: {
-						...option["customSettings"],
+						...option.customSettings,
 					},
 				};
 			} else {
@@ -645,12 +639,12 @@ export const ColorPalatteSettings = observer(
 				};
 			}
 			// Add the new palette to the `customColorPalette` property of the `customSettings` object
-			if (Object.hasOwn(option["customSettings"], "customColorPalette")) {
+			if (Object.hasOwn(option.customSettings, "customColorPalette")) {
 				option = {
 					...option,
 					customSettings: {
 						customColorPalette: [
-							...option["customSettings"]["customColorPalette"],
+							...option.customSettings.customColorPalette,
 							{
 								label: paletteName,
 								colors: colors,
@@ -680,6 +674,7 @@ export const ColorPalatteSettings = observer(
 			// Update the block's `option` property with the new value
 			setData(
 				optionPathVal,
+				// biome-ignore lint/suspicious/noExplicitAny: TODO
 				option as PathValue<any, typeof optionPathVal>,
 			);
 			// Reset the state of the color palette editor
@@ -710,17 +705,17 @@ export const ColorPalatteSettings = observer(
 					option = {
 						...option,
 						customSettings: {
-							...option["customSettings"],
+							...option.customSettings,
 						},
 					};
 					if (
 						Object.hasOwn(
-							option["customSettings"],
+							option.customSettings,
 							"customColorPalette",
 						)
 					) {
 						const customColorPalette =
-							option["customSettings"]["customColorPalette"];
+							option.customSettings.customColorPalette;
 						const index = customColorPalette.find(
 							(item) => item.index === paletteEditIndex + 1,
 						);
@@ -755,6 +750,7 @@ export const ColorPalatteSettings = observer(
 				// Update the block's `option` property with the new value
 				setData(
 					optionPathVal,
+					// biome-ignore lint/suspicious/noExplicitAny: TODO
 					option as PathValue<any, typeof optionPathVal>,
 				);
 			}
@@ -780,6 +776,7 @@ export const ColorPalatteSettings = observer(
 			// Set a new timeout to update state with a delay
 			timeoutRef.current = setTimeout(() => {
 				try {
+					// biome-ignore lint/suspicious/noExplicitAny: TODO
 					setData(path, option as PathValue<any, typeof path>);
 				} catch (e) {
 					console.log(e);
@@ -797,6 +794,7 @@ export const ColorPalatteSettings = observer(
 			// Set a new timeout to update state with a delay
 			timeoutRef.current = setTimeout(() => {
 				try {
+					// biome-ignore lint/suspicious/noExplicitAny: TODO
 					setData(path, options as PathValue<any, typeof path>);
 				} catch (e) {
 					console.log(e);
@@ -818,7 +816,7 @@ export const ColorPalatteSettings = observer(
 									fontWeight: "bold",
 									color: "rgba(0, 0, 0, .5)",
 								}}
-								onClick={(e) => {
+								onClick={() => {
 									setToggleAddEdit("");
 									setShowCustomPopover(null);
 									handleClose();
@@ -854,6 +852,7 @@ export const ColorPalatteSettings = observer(
 					<Typography variant="body2" color="secondary">
 						Colors
 					</Typography>
+					{/* biome-ignore lint/correctness/useUniqueElementIds: TODO */}
 					<StyledOutlinedInput
 						id="outlined-adornment-Colors"
 						placeholder="Enter Hex code or Pick Color"
@@ -877,12 +876,18 @@ export const ColorPalatteSettings = observer(
 				{/* show color palette when color palate button is pressed */}
 				{colorPalatteFlag && (
 					<StyledPaletteContainer>
-						<StyledPicker
+						<TextField
+							fullWidth
+							type="color"
+							value={color}
 							onChange={(newColor) => {
-								setColor(newColor.hex);
+								setColor(newColor.target.value);
 							}}
-							color={color}
-						></StyledPicker>
+							size="small"
+							variant="outlined"
+							autoComplete="off"
+							data-testid={`color-palette-settings-${editColorPalatte}`}
+						/>
 						<hr></hr>
 						<StyledButtonContainer>
 							<StyledButtonClose
@@ -909,6 +914,7 @@ export const ColorPalatteSettings = observer(
 						colorPalette[editColorPalatte]?.colors ||
 						[]
 					).map((color, index) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: TODO
 						<StyledEmptyContainer key={index}>
 							<StyledSelectedColorContainer>
 								<StyledSelectedColorRow
@@ -948,12 +954,20 @@ export const ColorPalatteSettings = observer(
 							{index === editIndex && (
 								// Edit color palette when edit button is clicked
 								<StyledPaletteContainer>
-									<StyledPicker
+									<TextField
+										fullWidth
+										type="color"
+										value={editColor}
 										onChange={(newColor) => {
-											setEditColor(newColor.hex);
+											setColor(newColor.target.value);
 										}}
-										color={editColor}
-									></StyledPicker>
+										size="small"
+										variant="outlined"
+										autoComplete="off"
+										// data-testid={formatToDataTestId(
+										// 	`colorSettings-${label}-txt`,
+										// )}
+									/>
 									<hr></hr>
 									<StyledButtonContainer
 										style={{
@@ -1019,9 +1033,9 @@ export const ColorPalatteSettings = observer(
 		);
 		return (
 			<StyledEmptyContainer>
-				{toggleAddEdit != "" && (
+				{toggleAddEdit !== "" && (
 					<StyledContainerToggle>
-						<>{popOverContent}</>
+						{popOverContent}
 					</StyledContainerToggle>
 				)}
 				{toggleAddEdit === "" && (
@@ -1040,6 +1054,7 @@ export const ColorPalatteSettings = observer(
 				<StyledCustomPaletteEdit>
 					{colorPalette.map((palette, index) => (
 						<ColorPalette
+							key={palette.label}
 							onClick={handleColorChange}
 							onPaletteEditClick={() =>
 								handlePaletteEditButtonClick(

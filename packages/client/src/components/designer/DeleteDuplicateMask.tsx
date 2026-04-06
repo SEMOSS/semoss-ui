@@ -27,7 +27,9 @@ import {
 } from "@semoss/ui";
 import { useDesigner, useRootStore } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
+import { getDependencyCells } from "@/utility/dependencyScanner";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
+import { DependencyPromptModal } from "../blocks-workspace";
 import { AddClientBlockModal } from "./AddClientBlockModal";
 import { QuickMenu } from "./QuickMenu";
 
@@ -84,6 +86,10 @@ export const DeleteDuplicateMask = observer(
 		} | null>(null);
 
 		const [openModal, setOpenModal] = useState<boolean>(false);
+
+		const [showDependentModal, setShowDependentModal] =
+			useState<boolean>(false);
+		const [dependentCells, setDependentCells] = useState<string[]>([]);
 
 		// get the store
 		const { registry, state } = useBlocks();
@@ -233,10 +239,7 @@ export const DeleteDuplicateMask = observer(
 			}
 		};
 
-		/**
-		 * Delete the block
-		 */
-		const onDelete = () => {
+		const dispatchDeleteBlock = () => {
 			const parentBlock = state.getBlock(block.parent.id);
 
 			// dispatch the event
@@ -262,6 +265,29 @@ export const DeleteDuplicateMask = observer(
 
 			// clear the selected value
 			designer.setSelected("");
+		};
+
+		/**
+		 * Delete the block
+		 */
+		const onDelete = async () => {
+			const dependentCellsList = await getDependencyCells(
+				state,
+				"",
+				"",
+				designer.selected,
+			);
+			if (dependentCellsList.length > 0) {
+				const formattedDependentCells = dependentCellsList.map(
+					(cell) => {
+						return cell.split(".")[0];
+					},
+				);
+				setShowDependentModal(true);
+				setDependentCells(formattedDependentCells);
+			} else {
+				dispatchDeleteBlock();
+			}
 		};
 
 		const onDuplicate = async () => {
@@ -481,6 +507,19 @@ export const DeleteDuplicateMask = observer(
 					isOpen={openModal}
 					onClose={() => setOpenModal(false)}
 					selected={designer.selected}
+				/>
+				<DependencyPromptModal
+					open={showDependentModal}
+					onClose={() => {
+						setShowDependentModal(false);
+					}}
+					onDelete={() => dispatchDeleteBlock()}
+					dependents={dependentCells}
+					showReplaceOptions={false}
+					cosmetics={{
+						title: "Delete Block?",
+						desc: "This block is linked to multiple cells in your app. Deleting it may cause errors or broken connections.",
+					}}
 				/>
 			</StyledContainer>
 		);

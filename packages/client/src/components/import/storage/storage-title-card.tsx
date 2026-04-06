@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { useEffect, useRef, useState } from "react";
 import {
 	Tooltip,
@@ -32,7 +33,7 @@ export const StorageTitleCard: React.FC<StorageTileCardProps> = ({
 	const cardContent = (
 		<div
 			data-testid={`storage-card-${storage.id}`}
-			className={`flex h-full w-full flex-col items-start gap-3 rounded-lg border border-border bg-card p-4 transition-all ${
+			className={`flex min-h-[200px] w-full flex-col items-start gap-3 rounded-lg border border-border bg-card p-4 transition-all sm:w-[215px] ${
 				storage.disable
 					? "cursor-auto opacity-60"
 					: "cursor-pointer hover:border-primary hover:shadow-sm"
@@ -40,7 +41,7 @@ export const StorageTitleCard: React.FC<StorageTileCardProps> = ({
 			onClick={!storage.disable ? () => onSelect?.(storage) : undefined}
 		>
 			<div className="flex w-full items-start justify-between">
-				<div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5">
+				<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-linear-to-br from-primary/10 to-primary/5">
 					<img
 						src={storage.icon}
 						alt={storage.name}

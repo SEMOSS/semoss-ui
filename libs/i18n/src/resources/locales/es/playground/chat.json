@@ -37,7 +37,16 @@
 		"completed": "Completado",
 		"ready": "Listo",
 		"autoExecute": "Esta herramienta está configurada para ejecutarse automáticamente",
-		"cancel": "Cancelar"
+		"paused": "En pausa",
+		"queued": "En cola para ejecutarse automáticamente",
+		"cancel": "Cancelar",
+		"expand": "Expandir",
+		"openInSidebar": "Abrir en barra lateral",
+		"closeInSidebar": "Cerrar barra lateral",
+		"collapse": "Colapsar",
+		"openInline": "Abrir en línea",
+		"groupLabel": "Ejecutado",
+		"groupSuffix": "herramienta(s)"
 	},
 	"notifications": {
 		"feedbackSuccess": "¡Gracias por tus comentarios!",
@@ -45,5 +54,13 @@
 		"copySuccess": "Copiado al portapapeles con éxito",
 		"noCopyContent": "No hay contenido para copiar",
 		"planStepRemoved": "Paso {{stepNumber}} eliminado del plan con éxito"
+	},
+	"gracefulErrors": {
+		"errorDefault": "No se pudo procesar la solicitud. Verifique su conexión, copie su mensaje y actualice la página.",
+		"tokenLimit": "Su chat fue demasiado largo para manejar. Por favor, inicie un nuevo chat con un mensaje más corto o cargue menos contenido de documento.",
+		"overloaded": "Este modelo no está disponible en este momento. Por favor, pruebe con un modelo diferente.",
+		"resourceExhausted": "Este modelo está experimentando una alta carga en este momento. Por favor, pruebe con un modelo diferente.",
+		"inactivity": "Su sesión ha expirado por inactividad. Por favor, actualice la página para continuar usando el chat.",
+		"modelNoLongerAvailable": "Este modelo ya no está disponible. Si es necesario, copie/pegue la conversación actual en un nuevo chat para continuar."
 	}
 }
