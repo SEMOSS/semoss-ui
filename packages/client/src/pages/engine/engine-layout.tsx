@@ -50,16 +50,18 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 
 	// get the metadata
 	const getEngineMetadata = usePixel<{
-		database_name?: string;
-		database_discoverable?: boolean;
-		database_created_by?: string;
-		database_date_created?: string;
+		engine_name?: string;
+		engine_display_name?: string;
+		engine_discoverable?: boolean;
+		engine_created_by?: string;
+		engine_date_created?: string;
 		last_updated?: string;
 		description?: string;
-		database_type?: string;
-		database_subtype?: string;
-		DATEADDED?: string;
-		PERMISSIONGRANTEDBY?: string;
+		engine_type?: string;
+		engine_subtype?: string;
+		engine_id?: string;
+		engine_global?: boolean;
+		engine_cost?: string;
 		markdown?: string;
 		tags?: string[];
 	}>(
@@ -240,19 +242,22 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					id: engineId,
 					role: getUserEnginePermission.data.permission,
 					name:
-						(getEngineMetadata.data?.database_name as string) || "",
+						(getEngineMetadata.data
+							?.engine_display_name as string) ||
+						(getEngineMetadata.data?.engine_name as string) ||
+						"",
 					metadata: values,
-					database_subtype: getEngineMetadata.data?.database_subtype,
-					database_created_by:
-						getEngineMetadata.data?.database_created_by,
-					PERMISSIONGRANTEDBY:
-						getEngineMetadata.data?.PERMISSIONGRANTEDBY,
-					DATEADDED: getEngineMetadata.data?.DATEADDED,
+					engine_subtype: getEngineMetadata.data?.engine_subtype,
+					engine_created_by:
+						getEngineMetadata.data?.engine_created_by,
+					engine_date_created:
+						getEngineMetadata.data?.engine_date_created,
+					last_updated: getEngineMetadata.data?.last_updated,
 					refresh: getEngineMetadata.refresh,
 				},
 			}}
 		>
-			{!isEdit ? 
+			{!isEdit ? (
 				<div className="flex flex-col gap-4">
 					<EngineHeader />
 					<div className="flex flex-col rounded-lg bg-(--muted)">
@@ -290,9 +295,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 						</div>
 					</div>
 				</div>
-			:
+			) : (
 				<Outlet />
-			}
+			)}
 		</EngineContext.Provider>
 	);
 };

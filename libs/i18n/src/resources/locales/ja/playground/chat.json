@@ -37,7 +37,16 @@
 		"completed": "完了",
 		"ready": "準備完了",
 		"autoExecute": "このツールは自動実行に設定されています",
-		"cancel": "キャンセル"
+		"paused": "一時停止済み",
+		"queued": "自動実行のキューに入っています",
+		"cancel": "キャンセル",
+		"expand": "展開",
+		"openInSidebar": "サイドバーで開く",
+		"closeInSidebar": "サイドバーを閉じる",
+		"collapse": "折りたたむ",
+		"openInline": "インラインで開く",
+		"groupLabel": "実行済み",
+		"groupSuffix": "ツール"
 	},
 	"notifications": {
 		"feedbackSuccess": "フィードバックをありがとうございます!",
@@ -45,5 +54,13 @@
 		"copySuccess": "クリップボードに正常にコピーしました",
 		"noCopyContent": "コピーするコンテンツがありません",
 		"planStepRemoved": "プランからステップ{{stepNumber}}を正常に削除しました"
+	},
+	"gracefulErrors": {
+		"errorDefault": "リクエストを処理できません。接続を確認し、メッセージをコピーしてから更新してください。",
+		"tokenLimit": "チャットが長すぎて処理できませんでした。短いプロンプトを使用するか、ドキュメントコンテンツを少なくアップロードして、新しいチャットを開始してください。",
+		"overloaded": "このモデルは現在利用できません。別のモデルをお試しください。",
+		"resourceExhausted": "このモデルは現在高負荷を経験しています。別のモデルをお試しください。",
+		"inactivity": "非アクティブのためセッションが期限切れになりました。チャットを続けるにはページを更新してください。",
+		"modelNoLongerAvailable": "このモデルは利用できなくなりました。必要に応じて、現在の会話を新しいチャットにコピー&ペーストして続けてください。"
 	}
 }

@@ -320,29 +320,62 @@ export class RoomStore {
 	}
 
 	/**
-	 * Indicator to check if the room is ready for the next message
+	 * Number of tools in this room
 	 */
-	get hasUnfinishedTools(): boolean {
-		if (this.tail instanceof ResponseMessageStore) {
-			for (const toolId in this._store.tools) {
-				const tool = this._store.tools[toolId];
-				if (tool.status === "INITIAL" || tool.status === "LOADING") {
-					return true;
-				}
-			}
-		}
-		return false;
+	get numberOfTools() {
+		return Object.keys(this._store.tools).length;
 	}
 
 	/**
-	 * Number of tokens used
+	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_TOOL_PLACEHOLDER messages
+	 */
+	get latestResponseMessage(): ResponseMessageStore {
+		let responseMessage: AbstractMessageStore = this.tail;
+		while (responseMessage) {
+			// if it is a REAL response message, return it
+			if (
+				responseMessage instanceof ResponseMessageStore &&
+				responseMessage.id !== "STREAMING_TOOL_PLACEHOLDER_ID"
+			) {
+				return responseMessage;
+			} else {
+				// if it is not a response message, move to the parent message
+				responseMessage = responseMessage.parent;
+			}
+		}
+		// if there are no response messages, return null
+		return null;
+	}
+
+	/**
+	 * Total tokens used in the current conversation.
+	 *
+	 * How token counts work across message types:
+	 * - INPUT messages have a cumulative count covering all prior exchanges.
+	 * - RESPONSE messages have only the incremental count for that turn.
+	 * - INPUT_TOOL_EXEC messages are also cumulative, but their count stays 0
+	 *   until all tool results for the preceding response have come in.
+	 *
+	 * We never create INPUT_TOOL_EXEC messages, so mid-conversation the chain can look like:
+	 *   INPUT → RESPONSE → RESPONSE(cumulative proxy) → RESPONSE(incremental) → ...
+	 * saveToolExecution() in response-message.store stamps the server's cumulative input
+	 * token count onto the parent RESPONSE so the math still works here. See that file.
+	 *
+	 * To get the total: walk back from tail and add up the two most-recent messages
+	 * with non-zero tokens — one incremental, one cumulative (INPUT or proxy RESPONSE).
 	 */
 	get tokensUsed() {
 		let currMessage = this.tail as AbstractMessageStore;
 		let tokensUsed = 0;
 		while (currMessage) {
-			tokensUsed += currMessage.tokens;
-			if (currMessage.type === "INPUT") break;
+			if (currMessage.tokens) {
+				if (tokensUsed) {
+					tokensUsed += currMessage.tokens;
+					break;
+				} else {
+					tokensUsed += currMessage.tokens;
+				}
+			}
 			currMessage = currMessage.parent;
 		}
 
@@ -456,12 +489,15 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [],
 					tokens: 0,
 					ornaments: {
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.engine_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			} else if (this.mode === "planning") {
@@ -470,7 +506,7 @@ export class RoomStore {
 					messageId: "ROOT_PLACEHOLDER_ID",
 					visible: false,
 					platform_generated: true,
-					modelId: this._store.model?.app_id || "",
+					modelId: this._store.model?.engine_id || "",
 					dateCreated: new Date().toISOString(),
 					parts: [
 						{
@@ -481,7 +517,10 @@ export class RoomStore {
 					tokens: 0,
 					ornaments: {
 						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName: this._store.model?.app_name || "",
+						modelName:
+							this._store.model?.engine_display_name ||
+							this._store.model?.engine_name ||
+							"",
 					},
 				} as ResponsePixelMessage);
 			}
@@ -498,7 +537,7 @@ export class RoomStore {
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.model?.app_id;
+			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
@@ -613,6 +652,56 @@ export class RoomStore {
 	};
 
 	/**
+	 * Fetch the latest room options from the backend and sync local state,
+	 * preserving any workspace MCPs that are currently loaded in memory.
+	 */
+	syncRoomOptions = async (): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<
+				[{ OPTIONS?: RoomStoreInterface["options"] }]
+			>(
+				`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
+				false,
+			);
+
+			const fetched = response.pixelReturn[0].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
+
+			if (!fetched?.OPTIONS) {
+				return;
+			}
+
+			// Preserve workspace MCPs that are already in local state
+			const workspaceMCPs = this._store.options.mcp.filter(
+				(mcp) => mcp?.fromWorkspace,
+			);
+
+			const freshRoomMCPs = (fetched.OPTIONS.mcp ?? []).filter(
+				(mcp) => !mcp?.fromWorkspace,
+			);
+
+			// Deduplicate: workspace MCPs take precedence
+			const workspaceIds = new Set(workspaceMCPs.map((m) => m.id));
+			const merged = [
+				...workspaceMCPs,
+				...freshRoomMCPs.filter((m) => !workspaceIds.has(m.id)),
+			];
+
+			runInAction(() => {
+				this.setOptions({
+					...fetched.OPTIONS,
+					mcp: merged,
+				});
+			});
+		} catch (e) {
+			// non-critical — swallow errors so the chat isn't disrupted
+			console.warn("Failed to sync room options:", e);
+		}
+	};
+
+	/**
 	 * UpdateRoomOptions
 	 * @param options - full set of new options
 	 */
@@ -621,7 +710,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
-				modelId: this._store.model.app_id,
+				modelId: this._store.model.engine_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -682,15 +771,6 @@ export class RoomStore {
 
 		//get the tool based on the id
 		return this._store.tools[toolId] || null;
-	};
-
-	/**
-	 * Download a file
-	 * @param fileKey - key
-	 */
-	download = async (fileKey: string) => {
-		// get the response
-		await download(this._insightID, fileKey);
 	};
 
 	/**
@@ -900,16 +980,18 @@ export class RoomStore {
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: this.model?.app_id,
-			modelType: this.model?.app_type,
+			modelId: this.model?.engine_id,
+			modelType: this.model?.engine_type,
 			dateCreated: new Date().toISOString(),
 			parts: parts,
 			tokens: 0,
 			ornaments: {
-				modelName: this.model.app_name,
+				modelName:
+					this.model.engine_display_name || this.model.engine_name,
 			},
 		});
 
@@ -941,7 +1023,7 @@ export class RoomStore {
 		messageId: string,
 		toolId: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
@@ -951,7 +1033,12 @@ export class RoomStore {
 			}
 
 			const tool = this._store.tools[toolId];
-			if (!tool || tool.response) {
+			if (
+				!tool ||
+				tool.status === "SUCCESS" ||
+				tool.status === "CANCELLED" ||
+				tool.status === "ERROR"
+			) {
 				return;
 			}
 
@@ -1043,9 +1130,13 @@ export class RoomStore {
 				ReturnType<typeof getPixelJobStreaming>
 			>["message"][number],
 		) => void,
+		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	) => {
 		try {
-			this.setIsLoading(true);
+			if (showLoading) {
+				this.setIsLoading(true);
+			}
 
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
@@ -1101,10 +1192,18 @@ export class RoomStore {
 		} catch (e) {
 			console.error(e);
 
-			// show the error
-			this._store.error = e;
+			if (setErrorOnFail) {
+				// show the error
+				runInAction(() => {
+					this._store.error = e;
+				});
+			}
+
+			throw e;
 		} finally {
-			this.setIsLoading(false);
+			if (showLoading) {
+				this.setIsLoading(false);
+			}
 		}
 	};
 }

@@ -18,7 +18,6 @@ interface DatabaseStructureBrowserProps {
 	setSearchTerm: (term: string) => void;
 	searchedStructure: TableInterface[];
 	expandedTables: Record<string, boolean>;
-	toggleState: boolean;
 	toggleTable: (tableName: string) => void;
 	toggleAllTables: () => void;
 	isLoading: boolean;
@@ -30,8 +29,10 @@ interface DatabaseStructureBrowserProps {
 	activeTable?: string | null;
 	onToggleColumnSelection?: (tableName: string, columnName: string) => void;
 	onClearColumnSelection?: () => void;
+	onColumnNameInsert?: (tableName: string, columnName: string) => void;
 	onGenerateQuery?: (query: string) => void;
 	generateSelectedColumnsQuery?: () => string;
+	canAutoGenerateQuery?: boolean;
 }
 
 export const DatabaseStructureBrowser: React.FC<
@@ -41,7 +42,6 @@ export const DatabaseStructureBrowser: React.FC<
 	setSearchTerm,
 	searchedStructure,
 	expandedTables,
-	toggleState,
 	toggleTable,
 	toggleAllTables,
 	isLoading,
@@ -53,8 +53,10 @@ export const DatabaseStructureBrowser: React.FC<
 	activeTable,
 	onToggleColumnSelection,
 	onClearColumnSelection,
+	onColumnNameInsert,
 	onGenerateQuery,
 	generateSelectedColumnsQuery,
+	canAutoGenerateQuery = false,
 }) => {
 	// "Expand All/Collapse All" button in sync with expand/collapse icons
 	const allExpanded =
@@ -84,6 +86,11 @@ export const DatabaseStructureBrowser: React.FC<
 		event.preventDefault();
 		event.stopPropagation();
 
+		if (!canAutoGenerateQuery) {
+			onColumnNameInsert?.(tableName, columnName);
+			return;
+		}
+
 		if (onToggleColumnSelection) {
 			onToggleColumnSelection(tableName, columnName);
 		}
@@ -101,7 +108,16 @@ export const DatabaseStructureBrowser: React.FC<
 		return tableColumns.includes(columnName);
 	};
 
+	const hasSelectedColumns =
+		canAutoGenerateQuery &&
+		activeTable &&
+		getSelectedColumnsForTable(activeTable).length > 0;
+
 	useEffect(() => {
+		if (!canAutoGenerateQuery) {
+			return;
+		}
+
 		if (
 			activeTable &&
 			selectedColumns[activeTable] &&
@@ -115,14 +131,12 @@ export const DatabaseStructureBrowser: React.FC<
 			}
 		}
 	}, [
+		canAutoGenerateQuery,
 		selectedColumns,
 		activeTable,
 		generateSelectedColumnsQuery,
 		onGenerateQuery,
 	]);
-
-	const hasSelectedColumns =
-		activeTable && getSelectedColumnsForTable(activeTable).length > 0;
 
 	return (
 		<div
@@ -248,8 +262,9 @@ export const DatabaseStructureBrowser: React.FC<
 						{searchedStructure.map((table: TableInterface) => {
 							const isExpanded = expandedTables[table.table];
 							const tableHasSelectedColumns =
+								canAutoGenerateQuery &&
 								getSelectedColumnsForTable(table.table).length >
-								0;
+									0;
 
 							return (
 								<div
@@ -280,7 +295,11 @@ export const DatabaseStructureBrowser: React.FC<
 												)
 											}
 											className="flex flex-1 items-center gap-3 text-left"
-											title="Click to select all columns"
+											title={
+												canAutoGenerateQuery
+													? "Generate query from this table"
+													: "Insert table name into query"
+											}
 										>
 											<div className="flex size-8 items-center justify-center rounded-md bg-primary/10 transition-colors group-hover:bg-primary/20">
 												<Database className="size-4 text-primary" />
@@ -332,6 +351,7 @@ export const DatabaseStructureBrowser: React.FC<
 											{table.columns.map(
 												(column: ColumnInterface) => {
 													const isSelected =
+														canAutoGenerateQuery &&
 														isColumnSelected(
 															table.table,
 															column.column,
@@ -353,7 +373,11 @@ export const DatabaseStructureBrowser: React.FC<
 																isSelected &&
 																	"bg-primary/10 hover:bg-primary/15",
 															)}
-															title={`Click to ${isSelected ? "deselect" : "select"} ${column.column} (${column.type})`}
+															title={
+																canAutoGenerateQuery
+																	? `Click to ${isSelected ? "deselect" : "select"} ${column.column} (${column.type})`
+																	: `Insert ${column.column} into query`
+															}
 															aria-pressed={
 																isSelected
 															}

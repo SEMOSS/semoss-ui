@@ -53,6 +53,30 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 		);
 	}
 
+	// Hash routes (e.g. "#/knowledge") navigate within the app via React Router
+	if (url?.startsWith("#/")) {
+		const internalPath = url.slice(1); // "#/knowledge" → "/knowledge"
+		return (
+			<SidebarMenuItem>
+				<SidebarMenuButton
+					asChild
+					isActive={!!matchPath(internalPath, pathname)}
+				>
+					<Link to={internalPath} aria-label={name}>
+						{icon ? (
+							<img
+								className="size-4 select-none"
+								src={icon}
+								alt={name}
+							/>
+						) : null}
+						{name}
+					</Link>
+				</SidebarMenuButton>
+			</SidebarMenuItem>
+		);
+	}
+
 	return (
 		<SidebarMenuItem>
 			<SidebarMenuButton asChild>
