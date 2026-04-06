@@ -23,7 +23,6 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import DevBanner from "@/assets/img/DevBanner.png";
 import { AppDeleteModal } from "@/components/app";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import { formatToDataTestId } from "@/utility";
@@ -45,6 +44,7 @@ interface AppTileCardProps {
 	layout?: "fixed" | "responsive";
 	variant?: "classic" | "catalog" | "row" | "fillerCard";
 	onCloneComplete?: (appId?: string) => void;
+	cardImgSrc?: string;
 }
 
 /**
@@ -269,6 +269,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		layout = "fixed",
 		variant = "classic",
 		onCloneComplete,
+		cardImgSrc,
 	} = props;
 
 	const navigate = useNavigate();
@@ -1257,7 +1258,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						<div className="relative w-1/2">
 							<div className="absolute inset-0 h-full w-full overflow-hidden">
 								<img
-									src={DevBanner}
+									src={cardImgSrc}
 									alt={`${displayName} illustration`}
 									// generate a random number for scale which should not exceed 250 to add some variation to the illustrations
 									className={`absolute inset-0 h-full w-full origin-right scale-[1.5] transform object-cover object-right`}

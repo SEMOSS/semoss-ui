@@ -1,4 +1,6 @@
 import { H4, Muted } from "@semoss/ui/next";
+import BI from "@/assets/img/BI.png";
+import Terminal from "@/assets/img/Terminal.png";
 import { type AppMetadata, AppTileCard } from "../app";
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
@@ -72,6 +74,7 @@ export const FanFavoritesSection = () => {
 					isLoading={false}
 					showSkeleton={false}
 					variant="fillerCard"
+					cardImgSrc={BI}
 				/>
 				<AppTileCard
 					app={TERMINAL_APP}
@@ -82,6 +85,7 @@ export const FanFavoritesSection = () => {
 					isLoading={false}
 					showSkeleton={false}
 					variant="fillerCard"
+					cardImgSrc={Terminal}
 				/>
 			</div>
 		</div>
