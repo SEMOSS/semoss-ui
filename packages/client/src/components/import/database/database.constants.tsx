@@ -1239,7 +1239,7 @@ export const DATABASE_CONNECTION = {
 			],
 		},
 		{
-			name: "DATABRICKS",
+			name: "Databricks",
 			disable: false,
 			icon: DATABRICKS,
 			fields: [
