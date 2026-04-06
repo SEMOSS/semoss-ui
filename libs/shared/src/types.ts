@@ -124,6 +124,18 @@ export interface ThemeMap {
 		allowEmbeddingOptions?: boolean;
 
 		/**
+		 * Whether to show the Knowledge library picker in the chat input menu.
+		 * Defaults to true when not set.
+		 */
+		showKnowledgeMenu?: boolean;
+
+		/**
+		 * Whether to show the Toolbox picker in the chat input menu.
+		 * Defaults to true when not set.
+		 */
+		showToolboxMenu?: boolean;
+
+		/**
 		 * Default tools to show in the room
 		 */
 		defaultTools: {
@@ -184,6 +196,17 @@ export interface ThemeMap {
 				/** Body text shown in the tour card */
 				content: string;
 				/** Card placement relative to the highlighted element */
+				placement?: "top" | "bottom" | "left" | "right";
+			}[];
+			/**
+			 * Same shape as customSteps but inserted AFTER the Chat History
+			 * step instead of after Search. Use this for footer-area items
+			 * (e.g. Support, Bug Report).
+			 */
+			trailingCustomSteps?: {
+				navItemPath: string;
+				title: string;
+				content: string;
 				placement?: "top" | "bottom" | "left" | "right";
 			}[];
 		};

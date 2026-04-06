@@ -423,20 +423,24 @@ export const NewRoomPage = observer(() => {
 											onSelect={() => onOpenChange(false)}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuKnowledge
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
-										<RoomInputMenuToolbox
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
+										{root.theme.showKnowledgeMenu !== false && (
+											<RoomInputMenuKnowledge
+												options={tempRoomStore.options}
+												onSelect={(tool) => {
+													handleToolSelect(tool);
+													addToken(`<${tool.name}>`);
+												}}
+											/>
+										)}
+										{root.theme.showToolboxMenu !== false && (
+											<RoomInputMenuToolbox
+												options={tempRoomStore.options}
+												onSelect={(tool) => {
+													handleToolSelect(tool);
+													addToken(`<${tool.name}>`);
+												}}
+											/>
+										)}
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();

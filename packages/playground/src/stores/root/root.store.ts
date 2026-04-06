@@ -245,6 +245,14 @@ export class RootStore {
 				theme?.showPlatformLinks !== undefined
 					? theme.showPlatformLinks
 					: this._store.theme.showPlatformLinks,
+			showKnowledgeMenu:
+				theme?.showKnowledgeMenu !== undefined
+					? theme.showKnowledgeMenu
+					: this._store.theme.showKnowledgeMenu,
+			showToolboxMenu:
+				theme?.showToolboxMenu !== undefined
+					? theme.showToolboxMenu
+					: this._store.theme.showToolboxMenu,
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),

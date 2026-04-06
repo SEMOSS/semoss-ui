@@ -498,6 +498,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						{footer}
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
+						<div data-tour="tour-model">
 						<EngineSelect
 							className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 							disabled={isLoading}
@@ -516,10 +517,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								align: "start",
 							}}
 						/>
+						</div>
 
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
+									data-tour="tour-record"
 									className="bg-background"
 									variant={"ghost"}
 									aria-label={t("input.recordLabel")}
@@ -547,7 +550,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</Tooltip>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span>
+								<span data-tour="tour-send">
 									<Button
 										variant="default"
 										size="icon-sm"

@@ -29,7 +29,7 @@ import {
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors } from "@/hooks";
+import { useChat, useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
@@ -51,6 +51,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
+	const { root } = useRoot();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 
@@ -436,20 +437,24 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuSeparator />
-								<RoomInputMenuKnowledge
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<RoomInputMenuToolbox
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
+								{root.theme.showKnowledgeMenu !== false && (
+									<RoomInputMenuKnowledge
+										options={room.options}
+										onSelect={(tool) => {
+											handleToolSelect(tool);
+											addToken(`<${tool.name}>`);
+										}}
+									/>
+								)}
+								{root.theme.showToolboxMenu !== false && (
+									<RoomInputMenuToolbox
+										options={room.options}
+										onSelect={(tool) => {
+											handleToolSelect(tool);
+											addToken(`<${tool.name}>`);
+										}}
+									/>
+								)}
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();

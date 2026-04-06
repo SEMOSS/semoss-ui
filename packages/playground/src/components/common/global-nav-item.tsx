@@ -33,7 +33,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 
 	if (embed) {
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(`/embed/${path}`, pathname)}
@@ -41,7 +41,6 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					<Link
 						to={`/embed/${path}`}
 						aria-label={name}
-						data-tour={`nav-${path}`}
 					>
 						{icon ? (
 							<img
@@ -61,7 +60,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	if (url?.startsWith("#/")) {
 		const internalPath = url.slice(1); // "#/knowledge" → "/knowledge"
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
@@ -69,7 +68,6 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					<Link
 						to={internalPath}
 						aria-label={name}
-						data-tour={`nav-${path}`}
 					>
 						{icon ? (
 							<img
@@ -86,14 +84,13 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	}
 
 	return (
-		<SidebarMenuItem>
+		<SidebarMenuItem data-tour={`nav-${path}`}>
 			<SidebarMenuButton asChild>
 				<a
 					href={url}
 					target="_blank"
 					rel="noopener noreferrer"
 					className="cursor-pointer"
-					data-tour={`nav-${path}`}
 				>
 					{icon ? (
 						<img

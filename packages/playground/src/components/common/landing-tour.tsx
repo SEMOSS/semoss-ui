@@ -38,6 +38,21 @@ const TOUR_STEPS: TourStep[] = [
 		placement: "top",
 	},
 	{
+		target: "tour-model",
+		title: "Model",
+		content:
+			"Select which AI model powers your conversation.",
+		placement: "top",
+	},
+	{
+		target: "tour-record",
+		title: "Record",
+		content:
+			"Click to speak, your voice will be converted to text.",
+		placement: "top",
+	},
+
+	{
 		target: "tour-new-chat",
 		title: "New chat",
 		content:
@@ -45,10 +60,25 @@ const TOUR_STEPS: TourStep[] = [
 		placement: "right",
 	},
 	{
-		target: "tour-agents",
-		title: "Agents",
+		target: "tour-search",
+		title: "Search",
 		content:
-			"Access your workspaces or create new AI agents.",
+			"Search through your past conversations.",
+		placement: "right",
+	},
+	{
+		target: "tour-chat-history",
+		title: "Chat History",
+		content:
+			"Continue, favorite, rename, or delete your past conversations here.",
+		placement: "right",
+	},
+
+	{
+		target: "tour-take-tour",
+		title: "Take a tour",
+		content:
+			"Relaunch this tour at any time.",
 		placement: "right",
 	},
 ];
@@ -133,20 +163,39 @@ export const LandingTour: React.FC = observer(() => {
 	const allSteps = useMemo<TourStep[]>(() => {
 		const excluded = new Set(root.theme.tour?.excludedSteps ?? []);
 		const custom = root.theme.tour?.customSteps ?? [];
+		const trailing = root.theme.tour?.trailingCustomSteps ?? [];
 		const base = TOUR_STEPS.filter((s) => {
 			const id = s.target ?? "welcome";
 			return !excluded.has(id);
 		});
-		return [
-			...base,
-			...custom.map((s) => ({
-				target: `nav-${s.navItemPath}`,
-				title: s.title,
-				content: s.content,
-				placement: s.placement,
-			})),
+		const mapStep = (s: (typeof custom)[number]) => ({
+			target: `nav-${s.navItemPath}`,
+			title: s.title,
+			content: s.content,
+			placement: s.placement,
+		});
+		// Insert customSteps after "tour-search" (step 8)
+		const searchIdx = base.findIndex((s) => s.target === "tour-search");
+		const insertAt = searchIdx >= 0 ? searchIdx + 1 : base.length;
+		// Insert trailingCustomSteps after "tour-chat-history"
+		const historyIdx = base.findIndex((s) => s.target === "tour-chat-history");
+		const trailingAt = historyIdx >= 0 ? historyIdx + 1 : base.length;
+		const withCustom = [
+			...base.slice(0, insertAt),
+			...custom.map(mapStep),
+			...base.slice(insertAt),
 		];
-	}, [root.theme.tour?.excludedSteps, root.theme.tour?.customSteps]);
+		const adjustedTrailingAt = trailingAt + custom.length;
+		return [
+			...withCustom.slice(0, adjustedTrailingAt),
+			...trailing.map(mapStep),
+			...withCustom.slice(adjustedTrailingAt),
+		];
+	}, [
+		root.theme.tour?.excludedSteps,
+		root.theme.tour?.customSteps,
+		root.theme.tour?.trailingCustomSteps,
+	]);
 
 	const currentStep = allSteps[step];
 	const isFirst = step === 0;

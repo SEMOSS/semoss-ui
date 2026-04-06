@@ -330,7 +330,7 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 
 				<SidebarMenu className="gap-2 p-2">
-					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden">
+					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden" data-tour="tour-search">
 						<InputGroupInput
 							placeholder={t("search")}
 							value={search}
@@ -353,19 +353,6 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
-					{ENABLE_AGENT && (
-						<SidebarMenuItem data-tour="tour-agents">
-							<SidebarMenuButton
-								asChild
-								isActive={!!matchPath("/agent", pathname)}
-							>
-								<Link to={"/agent"} aria-label={"agent"}>
-									<ComputerIcon />
-									{t("agents")}
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
-					)}
 					{root.theme.sidebar.headerItems.map((item, index) => (
 						<GlobalNavItem
 							key={`header-${index}`}
@@ -379,6 +366,7 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
+				data-tour="tour-chat-history"
 				className="transition-all duration-200 ease-in-out"
 				ref={(ele) => {
 					// Store reference for scroll position management
@@ -622,7 +610,7 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
-				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden" data-tour="nav-support">
 					{root.theme.sidebar.footerItems.map((item, index) => (
 						<GlobalNavItem
 							key={`footer-${index}`}
@@ -636,7 +624,7 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 				<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
 					<SidebarMenuItem>
-						<SidebarMenuButton onClick={handleStartTour}>
+						<SidebarMenuButton onClick={handleStartTour} data-tour="tour-take-tour">
 							<MapIcon className="size-4" />
 							Take a tour
 						</SidebarMenuButton>
