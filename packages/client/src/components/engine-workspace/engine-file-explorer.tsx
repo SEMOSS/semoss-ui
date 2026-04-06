@@ -171,7 +171,10 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					const isDriverFile =
 						item.type !== "directory" &&
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
-
+					// if we just generated an MCP, refresh to show the new file in the explorer
+					if (searchParams.get("mcp") === "Generate") {
+						refresh();
+					}
 					const actions = [];
 					if (!isStorageViewer) {
 						if (isDriverFile) {
