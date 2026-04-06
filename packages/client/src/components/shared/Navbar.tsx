@@ -72,12 +72,12 @@ export const Navbar: React.FC = observer(() => {
 				/>
 
 				{/* Center spacer */}
-				<div className="flex-1" />
+				{/* <div className="flex-1" /> */}
 
 				{/* Right slot */}
 				<div
 					id="navbar--right"
-					className="flex min-w-6 flex-1 flex-row items-center justify-end gap-0.5"
+					className="flex flex-row items-center justify-end gap-0.5"
 				>
 					{/* Search — Popover with Tooltip */}
 					{page.navbar?.search && <PlatformSearch />}
