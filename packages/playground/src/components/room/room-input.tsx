@@ -691,44 +691,37 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					</LexicalComposer>
 					{/* Bottom-left controls: settings menu + custom footer */}
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-						{!isLoading && (
-							<DropdownMenu
-								open={menuOpen}
-								onOpenChange={setMenuOpen}
-							>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<DropdownMenuTrigger asChild>
-											<Button
-												className="bg-background"
-												variant="ghost"
-												size="icon-sm"
-												disabled={isLoading}
-												aria-label={t(
-													"input.openSettings",
-												)}
-											>
-												<PlusIcon />
-											</Button>
-										</DropdownMenuTrigger>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("input.openSettings")}
-									</TooltipContent>
-								</Tooltip>
-								<DropdownMenuContent
-									align="start"
-									className="w-72"
-								>
-									<MenuComponent
-										isOpen={menuOpen}
-										onOpenChange={setMenuOpen}
-										fileRef={fileRef}
-										addToken={() => null}
-									/>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
+						<DropdownMenu
+							open={menuOpen}
+							onOpenChange={setMenuOpen}
+						>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<DropdownMenuTrigger asChild>
+										<Button
+											className="bg-background"
+											variant="ghost"
+											size="icon-sm"
+											disabled={isLoading}
+											aria-label={t("input.openSettings")}
+										>
+											<PlusIcon />
+										</Button>
+									</DropdownMenuTrigger>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("input.openSettings")}
+								</TooltipContent>
+							</Tooltip>
+							<DropdownMenuContent align="start" className="w-72">
+								<MenuComponent
+									isOpen={menuOpen}
+									onOpenChange={setMenuOpen}
+									fileRef={fileRef}
+									addToken={() => null}
+								/>
+							</DropdownMenuContent>
+						</DropdownMenu>
 						{footer}
 					</div>
 
