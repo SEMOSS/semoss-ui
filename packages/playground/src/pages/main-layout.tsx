@@ -1,6 +1,18 @@
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
+import React, {
+	type ReactNode,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import {
+	Link,
+	matchPath,
+	Outlet,
+	useLocation,
+	useNavigate,
+} from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -48,12 +60,159 @@ export const MainLayout = observer(() => {
 		return store;
 	}, [root.theme, actions, system.config.loginDetails]);
 
+	const navigate = useNavigate();
+
+	// Refs for embed iframe sync
+	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
+	const iframeReadyRef = useRef<Record<string, boolean>>({});
+	const pendingNavRef = useRef<Record<string, string>>({});
+	// embedPath -> last internal iframe path known to be in sync
+	const lastSyncedIframePath = useRef<Record<string, string>>({});
+	// Always-current pathname for use inside message handler closures
+	const pathnameRef = useRef(pathname);
+
+	// Derive mappings from the theme config URLs:
+	//   embedPath -> iframeBase (the hash-derived root path inside the iframe)
+	//   iframeBase -> embedPath (reverse lookup for inbound SMSS_NAVIGATE)
+	const { embedPathToIframeBase, iframeBaseToEmbedPath } = useMemo(() => {
+		const fwd: Record<string, string> = {};
+		const rev: Record<string, string> = {};
+		for (const [embedPath, item] of Object.entries(
+			chatStore.embeddedPageMap,
+		)) {
+			try {
+				const hash = new URL(item.url).hash; // e.g. "#/agent"
+				const iframeBase = hash.startsWith("#") ? hash.slice(1) : hash; // e.g. "/agent"
+				fwd[embedPath] = iframeBase;
+				rev[iframeBase] = embedPath;
+			} catch {
+				// fallback: use the embed path as the iframe base
+				fwd[embedPath] = "/" + embedPath;
+				rev["/" + embedPath] = embedPath;
+			}
+		}
+		return { embedPathToIframeBase: fwd, iframeBaseToEmbedPath: rev };
+	}, [chatStore.embeddedPageMap]);
+
+	useEffect(() => {
+		pathnameRef.current = pathname;
+	}, [pathname]);
+
 	useThemeTitle(theme);
 
 	useEffect(() => {
 		const icon = theme?.images?.tabIcon;
 		if (icon) setFavicon(icon);
 	}, [theme?.images?.tabIcon]);
+
+	// When parent pathname changes to an embed route, tell the iframe where to go
+	useEffect(() => {
+		const match = matchPath({ path: "/embed/*", end: false }, pathname);
+		if (!match) return;
+
+		const splatPath = match.params["*"] ?? "";
+		const embedBase = splatPath.split("/")[0];
+		const subPath = splatPath.slice(embedBase.length);
+		const iframeBase = embedPathToIframeBase[embedBase];
+		if (!iframeBase) return;
+
+		const iframePath = iframeBase + subPath;
+
+		if (iframePath === lastSyncedIframePath.current[embedBase]) return;
+		lastSyncedIframePath.current[embedBase] = iframePath;
+
+		const iframe = iframeRefs.current[embedBase];
+		if (!iframe?.contentWindow) return;
+
+		if (!iframeReadyRef.current[embedBase]) {
+			pendingNavRef.current[embedBase] = iframePath;
+			return;
+		}
+
+		iframe.contentWindow.postMessage(
+			{ type: "SMSS_NAVIGATE_TO", payload: { path: iframePath } },
+			"*",
+		);
+	}, [pathname, embedPathToIframeBase]);
+
+	// Listen for SMSS_READY (queue flush) and SMSS_NAVIGATE (URL sync from iframe)
+	useEffect(() => {
+		const handle = (e: MessageEvent) => {
+			if (e.data?.type === "SMSS_READY") {
+				const entry = Object.entries(iframeRefs.current).find(
+					([, iframe]) => iframe?.contentWindow === e.source,
+				);
+				if (!entry) return;
+				const [embedBase] = entry;
+				iframeReadyRef.current[embedBase] = true;
+				const pending = pendingNavRef.current[embedBase];
+				if (pending) {
+					// Send the queued navigation but keep pendingNavRef set —
+					// we clear it only when the iframe confirms arrival via SMSS_NAVIGATE.
+					(e.source as Window).postMessage(
+						{
+							type: "SMSS_NAVIGATE_TO",
+							payload: { path: pending },
+						},
+						"*",
+					);
+					// Safety: clear after 3s if the iframe never confirms
+					setTimeout(() => {
+						if (pendingNavRef.current[embedBase] === pending) {
+							delete pendingNavRef.current[embedBase];
+						}
+					}, 3000);
+				}
+			} else if (e.data?.type === "SMSS_NAVIGATE") {
+				// iframe sent its internal path — map it to the parent embed route
+				const iframePath = e.data.payload?.path as string | undefined;
+				if (!iframePath) return;
+
+				let embedPath: string | undefined;
+				let subPath = "";
+				for (const [iframeBase, ep] of Object.entries(
+					iframeBaseToEmbedPath,
+				)) {
+					if (
+						iframePath === iframeBase ||
+						iframePath.startsWith(iframeBase + "/")
+					) {
+						embedPath = ep;
+						subPath = iframePath.slice(iframeBase.length);
+						break;
+					}
+				}
+				if (!embedPath) return;
+
+				// Ignore messages from background iframes — only the active
+				// embed should drive parent URL changes
+				if (
+					!matchPath(
+						{ path: `/embed/${embedPath}`, end: false },
+						pathnameRef.current,
+					)
+				)
+					return;
+
+				// If a pending navigation is in flight, ignore until the iframe
+				// confirms it has reached the target path
+				if (pendingNavRef.current[embedPath] !== undefined) {
+					if (iframePath === pendingNavRef.current[embedPath]) {
+						delete pendingNavRef.current[embedPath];
+						lastSyncedIframePath.current[embedPath] = iframePath;
+					}
+					return;
+				}
+
+				if (iframePath === lastSyncedIframePath.current[embedPath])
+					return;
+				lastSyncedIframePath.current[embedPath] = iframePath;
+				navigate("/embed/" + embedPath + subPath, { replace: true });
+			}
+		};
+		window.addEventListener("message", handle);
+		return () => window.removeEventListener("message", handle);
+	}, [navigate, iframeBaseToEmbedPath]);
 
 	return (
 		<ChatContext.Provider
@@ -146,12 +305,20 @@ export const MainLayout = observer(() => {
 								{Object.values(chatStore.embeddedPageMap).map(
 									(item) => {
 										const isActive = matchPath(
-											`/embed/${item.path}`,
+											{
+												path: `/embed/${item.path}`,
+												end: false,
+											},
 											pathname,
 										);
 										return (
 											<iframe
 												key={item.path}
+												ref={(el) => {
+													iframeRefs.current[
+														item.path
+													] = el;
+												}}
 												src={item.url}
 												title={item.path}
 												className="absolute inset-0 h-full w-full border-none"

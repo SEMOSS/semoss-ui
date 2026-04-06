@@ -6,11 +6,12 @@ import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 
 export const EmbedPage: React.FC = observer(() => {
 	const { t } = useTranslation("workspace");
-	const { path } = useParams();
+	const { "*": splatPath } = useParams();
+	const basePath = splatPath?.split("/")[0] ?? "";
 	const { chat } = useChat();
 	const navigate = useNavigate();
 
-	const pageInfo = chat.embeddedPageMap[path] ?? null;
+	const pageInfo = chat.embeddedPageMap[basePath] ?? null;
 
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
@@ -19,8 +20,8 @@ export const EmbedPage: React.FC = observer(() => {
 				path: "/",
 			},
 			{
-				name: pageInfo?.name ?? path,
-				path: `/embed/${path}`,
+				name: pageInfo?.name ?? basePath,
+				path: `/embed/${basePath}`,
 			},
 		],
 	});
