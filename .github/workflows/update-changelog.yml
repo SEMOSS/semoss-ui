@@ -1,0 +1,53 @@
+name: Update Changelog on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - master
+      - develop
+      - feat/bug
+
+jobs:
+  update-changelog:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Extract PR info and update changelog
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node .github/scripts/update-changelog.js
+
+      - name: Commit changelog update
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet webapps/documentation/docusaurus/docs/CHANGELOG.md; then
+            echo "No changes to changelog"
+          else
+            git add webapps/documentation/docusaurus/docs/CHANGELOG.md
+            git commit -m "chore: update changelog for PR #${{ github.event.pull_request.number }}"
+            git push
+          fi

@@ -1,0 +1,60 @@
+name: Generate Context Documentation
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - feat/bug
+  schedule:
+    # Run daily at 8 AM UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Time range (e.g., "1 week ago")'
+        required: false
+        default: '1 day ago'
+      branch:
+        description: 'Branch to analyze'
+        required: false
+        default: 'main'
+
+jobs:
+  generate-context:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Generate context documentation
+        env:
+          SINCE: ${{ github.event.inputs.since || '1 day ago' }}
+          BRANCH: ${{ github.event.inputs.branch || github.ref_name }}
+        run: |
+          node scripts/analyze-commits.js --since "${{ env.SINCE }}" --branch "${{ env.BRANCH }}"
+
+      - name: Commit context documentation
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          if git diff --quiet webapps/documentation/docusaurus/docs/context-logs/; then
+            echo "No new context documentation"
+          else
+            git add webapps/documentation/docusaurus/docs/context-logs/
+            git commit -m "docs: add context documentation for main branch commits" || true
+            git push || true
+          fi
