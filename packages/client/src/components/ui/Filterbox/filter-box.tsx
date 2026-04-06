@@ -1,4 +1,11 @@
-import { Database, Earth, FileSpreadsheet, Tag, X } from "lucide-react";
+import {
+	ChevronsUpDown,
+	Database,
+	Earth,
+	FileSpreadsheet,
+	Tag,
+	X,
+} from "lucide-react";
 import {
 	useCallback,
 	useEffect,
@@ -11,14 +18,11 @@ import { useSearchParams } from "react-router-dom";
 import {
 	Badge,
 	Button,
-	Combobox,
-	ComboboxContent,
-	ComboboxEmpty,
-	ComboboxGroup,
-	ComboboxInput,
-	ComboboxItem,
-	ComboboxList,
-	InputGroupAddon,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
 } from "@semoss/ui/next";
 import { usePixel, useRootStore } from "@/hooks";
 
@@ -88,7 +92,8 @@ export const Filterbox = (props: FilterboxProps) => {
 		filterBoxRefresh = false,
 		onfilterBoxRefreshCompleted = () => {},
 		applyOnMount = true,
-		_showHeader = true,
+		// biome-ignore lint/correctness/noUnusedVariables:keeping variable for future use
+		showHeader = true,
 		hideHeaderToggleFrom,
 	} = props;
 	const { configStore } = useRootStore();
@@ -466,9 +471,6 @@ export const Filterbox = (props: FilterboxProps) => {
 		setSearchParams(nextParams);
 	}, [filterVisibility, onChange, setSearchParams]);
 
-	const selectedTagItems = useMemo(() => {
-		return filterVisibility?.tag?.value || [];
-	}, [filterVisibility?.tag?.value]);
 	// biome-ignore lint/correctness/useExhaustiveDependencies: useMemo dependencies
 	const onFieldsValueChanged = useCallback(
 		(item: { value: string; count: number }, filterLabel: string) => {
@@ -531,295 +533,393 @@ export const Filterbox = (props: FilterboxProps) => {
 		});
 	}, [filterVisibility]);
 
+	// console.log(
+	// 	filterOptions["data classification"],
+	// 	filterVisibility?.["data classification"]?.value,
+	// 	"filterVisibility?.[data classification]?.value",
+	// 	filterOptions?.["data restrictions"]?.value,
+	// 	"filterOptions?.[data restrictions]",
+	// );
+
 	return (
-		<div className="filterbox-scroll flex gap-2 overflow-x-hidden overflow-y-hidden rounded-lg bg-none">
-			<Combobox
-				items={filterOptions?.tag}
-				value={selectedTagItems}
-				multiple
-			>
-				<div className={"flex flex-row bg-secondary-background"}>
-					<ComboboxInput
-						style={{
-							position: "absolute",
-							opacity: 0,
-							pointerEvents: "none",
-						}}
+		<div className="filterbox-scroll flex flex-wrap gap-2 rounded-lg bg-none lg:overflow-auto">
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button
+						variant="outline"
+						className="flex w-[130px] cursor-pointer items-center justify-between gap-2 bg-secondary-background px-3 py-2"
+						tabIndex={0}
+						aria-label="Open Tags Menu"
 					>
-						<InputGroupAddon>
-							<div className="flex items-center gap-2">
-								<Tag className="size-4 text-(--base-foreground,#0A0A0A)" />
-								<span className="overflow-hidden text-ellipsis font-[Inter] font-medium text-(--base-foreground,#0A0A0A) text-sm not-italic leading-5">
-									Tags
-								</span>
-								{selectedTagItems?.length > 0 ? (
-									<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-(--base-foreground,#0A0A0A) text-xs">
-										{selectedTagItems.length}
-									</Badge>
-								) : null}
-							</div>
-						</InputGroupAddon>
-					</ComboboxInput>
-				</div>
-				<ComboboxContent
-					className={"filter-box-item-container w-[200px]"}
+						<div className="flex items-center gap-2">
+							<Tag className="size-4 text-[--base-foreground,#0A0A0A]" />
+							<span className="overflow-hidden text-ellipsis font-[Inter] font-medium text-[--base-foreground,#0A0A0A] text-sm not-italic leading-5">
+								Tags
+							</span>
+							{filterVisibility?.tag?.value?.length > 0 && (
+								<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-[--base-foreground,#0A0A0A] text-xs">
+									{filterVisibility?.tag?.value.length}
+								</Badge>
+							)}
+						</div>
+						<div className="flex items-center justify-items-start">
+							<ChevronsUpDown className="size-4 text-[--base-foreground,#0A0A0A]" />
+						</div>
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					className="filter-box-item-container w-[230px] p-0"
 					align="end"
 					alignOffset={-10}
 					sideOffset={10}
 				>
-					{/* <ComboboxEmpty>No items found.</ComboboxEmpty> */}
-					<div className="flex items-center justify-between border-gray-200 border-b bg-white py-2 pr-6 pl-3 font-semibold text-(--base-foreground,#0A0A0A) text-xs tracking-wider">
-						<span className="flex">Tags</span>
-						<span className="flex">
+					{filterOptions?.tag && filterOptions?.tag?.length > 0 && (
+						<div className="flex items-center justify-between border-gray-200 border-b bg-white py-2 pr-6 pl-3 font-semibold text-[--base-foreground,#0A0A0A] text-sm tracking-wider">
+							<span>Tags</span>
 							<Button
 								variant="ghost"
 								size="icon-sm"
 								onClick={() => clearFields("tag")}
 								className="text-primary"
+								tabIndex={-1}
 							>
 								Clear All
 							</Button>
-						</span>
-					</div>
-					<ComboboxGroup>
-						<ComboboxList>
-							{(item) => (
-								<ComboboxItem
-									key={`${item.value}-${item.count}`}
-									value={item.value}
-									className={
-										filterVisibility?.tag?.value?.indexOf(
+						</div>
+					)}
+					<div className="max-h-60 overflow-y-auto">
+						{filterOptions?.tag &&
+						filterOptions?.tag?.length > 0 ? (
+							<DropdownMenuGroup>
+								{filterOptions?.tag?.map((item) => {
+									const checked =
+										filterVisibility?.tag?.value?.includes(
 											item.value,
-										) > -1
-											? "bg-[#F5F5F5]"
-											: ""
-									}
-									onClick={() => {
-										onFieldsValueChanged(item, "tag");
-									}}
-								>
-									<div className="flex w-full flex-row justify-between">
-										<div className="flex">{item.value}</div>
-										<div className="flex">{item.count}</div>
-									</div>
-								</ComboboxItem>
-							)}
-						</ComboboxList>
-					</ComboboxGroup>
-				</ComboboxContent>
-			</Combobox>
-
-			<Combobox
-				items={filterOptions?.domain}
-				value={filterVisibility?.domain?.value}
-				multiple
-			>
-				<div className={"flex w-auto flex-row bg-secondary-background"}>
-					<ComboboxInput
-						style={{
-							position: "absolute",
-							opacity: 0,
-							pointerEvents: "none",
-						}}
-					>
-						<InputGroupAddon>
-							<div className="flex items-center gap-2">
-								<Earth className="size-4" />
-								<span className="text-(--base-foreground,#0A0A0A) text-xs">
-									Domain
-								</span>
-								{filterVisibility?.domain?.value?.length > 0 ? (
-									<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-(--base-foreground,#0A0A0A) text-xs">
-										{filterVisibility?.domain?.value.length}
-									</Badge>
-								) : null}
+										);
+									return (
+										<DropdownMenuItem
+											key={`${item.value}-${item.count}`}
+											onSelect={(e) => {
+												e.preventDefault();
+												onFieldsValueChanged(
+													item,
+													"tag",
+												);
+											}}
+											className={
+												checked
+													? "group bg-[#F5F5F5] font-medium text-[--base-foreground,#0A0A0A]"
+													: "group"
+											}
+										>
+											<div className="flex w-full flex-row items-center justify-between">
+												<div className="flex items-center gap-2">
+													<span>{item.value}</span>
+												</div>
+												<div className="flex">
+													{item.count}
+												</div>
+											</div>
+										</DropdownMenuItem>
+									);
+								})}
+							</DropdownMenuGroup>
+						) : (
+							<div className="p-2 text-muted-foreground text-xs">
+								No items found.
 							</div>
-						</InputGroupAddon>
-					</ComboboxInput>
-				</div>
-				<ComboboxContent
-					className={"w-[200px]"}
-					align="end"
-					alignOffset={-10}
-					sideOffset={10}
-				>
-					<div className="flex items-center justify-between border-gray-200 border-b bg-white py-2 pr-6 pl-3 font-semibold text-(--base-foreground,#0A0A0A) text-xs tracking-wider">
-						<span className="flex">Domain</span>
-						<span className="flex">
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={() => clearFields("domain")}
-								className="text-primary"
-							>
-								Clear All
-							</Button>
-						</span>
+						)}
 					</div>
-					<ComboboxEmpty>No items found.</ComboboxEmpty>
-					<ComboboxList>
-						{(item) => (
-							<ComboboxItem
-								key={`${item.value}-${item.count}`}
-								value={item.value}
-								className={
-									filterVisibility?.domain?.value?.indexOf(
-										item.value,
-									) > -1
-										? "bg-(--color-background-primary)"
-										: ""
-								}
-								onClick={() => {
-									onFieldsValueChanged(item, "domain");
-								}}
-							>
-								<div className="flex w-full flex-row justify-between">
-									<div className="flex">{item.value}</div>
-									<div className="flex">{item.count}</div>
-								</div>
-							</ComboboxItem>
-						)}
-					</ComboboxList>
-				</ComboboxContent>
-			</Combobox>
-
-			<Combobox
-				items={filterOptions["data classification"]}
-				value={filterVisibility["data classification"].value}
-				multiple
-			>
-				<div className={"flex w-auto flex-row bg-secondary-background"}>
-					<ComboboxInput
-						style={{
-							position: "absolute",
-							opacity: 0,
-							pointerEvents: "none",
-						}}
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button
+						variant="outline"
+						className="flex w-[150px] cursor-pointer items-center justify-between gap-2 bg-secondary-background px-3 py-2"
+						tabIndex={0}
+						aria-label="Open Domain Menu"
 					>
-						<InputGroupAddon>
-							<div className="flex items-center gap-2">
-								<FileSpreadsheet className="size-4" />
-								<span className="text-(--base-foreground,#0A0A0A) text-xs">
-									Data Classification
-								</span>
-								{filterVisibility["data classification"]?.value
-									?.length > 0 ? (
-									<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-(--base-foreground,#0A0A0A) text-xs">
-										{
-											filterVisibility[
-												"data classification"
-											].value.length
-										}
-									</Badge>
-								) : null}
-							</div>
-						</InputGroupAddon>
-					</ComboboxInput>
-				</div>
-				<ComboboxContent
-					className={"w-[200px]"}
+						<div className="flex items-center gap-2">
+							<Earth className="size-4 text-[--base-foreground,#0A0A0A]" />
+							<span className="overflow-hidden text-ellipsis font-[Inter] font-medium text-[--base-foreground,#0A0A0A] text-sm not-italic leading-5">
+								Domain
+							</span>
+							{filterVisibility?.domain?.value?.length > 0 && (
+								<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-[--base-foreground,#0A0A0A] text-xs">
+									{filterVisibility?.domain?.value.length}
+								</Badge>
+							)}
+						</div>
+						<div className="flex items-center justify-items-start">
+							<ChevronsUpDown className="size-4 text-[--base-foreground,#0A0A0A]" />
+						</div>
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					className="filter-box-item-container w-[230px] p-0"
 					align="end"
 					alignOffset={-10}
 					sideOffset={10}
 				>
-					<ComboboxEmpty>No items found.</ComboboxEmpty>
-					<ComboboxList>
-						{(item) => (
-							<ComboboxItem
-								key={`${item.value}-${item.count}`}
-								value={item.value}
-								className={
-									filterVisibility?.[
-										"data classification"
-									]?.value?.indexOf(item.value) > -1
-										? "bg-(--color-background-primary)"
-										: ""
-								}
-								onClick={() => {
-									onFieldsValueChanged(
-										item,
-										"data classification",
-									);
-								}}
-							>
-								<div className="flex w-full flex-row justify-between">
-									<div className="flex">{item.value}</div>
-									<div className="flex">{item.count}</div>
-								</div>
-							</ComboboxItem>
-						)}
-					</ComboboxList>
-				</ComboboxContent>
-			</Combobox>
-
-			<Combobox
-				items={filterOptions["data restrictions"]}
-				value={filterVisibility["data restrictions"]?.value}
-				multiple
-			>
-				<div className={"flex w-auto flex-row bg-secondary-background"}>
-					<ComboboxInput
-						style={{
-							position: "absolute",
-							opacity: 0,
-							pointerEvents: "none",
-						}}
-					>
-						<InputGroupAddon>
-							<div className="flex items-center gap-2">
-								<Database className="size-4" />
-								<span className="text-(--base-foreground,#0A0A0A) text-xs">
-									Data Restriction
-								</span>
-								{filterVisibility["data restrictions"]?.value
-									?.length > 0 ? (
-									<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-(--base-foreground,#0A0A0A) text-xs">
-										{
-											filterVisibility[
-												"data restrictions"
-											]?.value.length
-										}
-									</Badge>
-								) : null}
+					{filterOptions?.domain &&
+						filterOptions?.domain?.length > 0 && (
+							<div className="flex items-center justify-between border-gray-200 border-b bg-white py-2 pr-6 pl-3 font-semibold text-[--base-foreground,#0A0A0A] text-sm tracking-wider">
+								<span>Domain</span>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={() => clearFields("domain")}
+									className="text-primary"
+									tabIndex={-1}
+								>
+									Clear All
+								</Button>
 							</div>
-						</InputGroupAddon>
-					</ComboboxInput>
-				</div>
-				<ComboboxContent
-					className={"w-[200px]"}
+						)}
+					<div className="max-h-60 overflow-y-auto">
+						{filterOptions?.domain &&
+						filterOptions?.domain?.length > 0 ? (
+							<DropdownMenuGroup>
+								{filterOptions?.domain?.map((item) => {
+									const checked =
+										filterVisibility?.domain?.value?.includes(
+											item.value,
+										);
+									return (
+										<DropdownMenuItem
+											key={`${item.value}-${item.count}`}
+											onSelect={(e) => {
+												e.preventDefault();
+												onFieldsValueChanged(
+													item,
+													"domain",
+												);
+											}}
+											className={
+												checked
+													? "group bg-[#F5F5F5] font-medium text-[--base-foreground,#0A0A0A]"
+													: "group"
+											}
+										>
+											<div className="flex w-full flex-row items-center justify-between">
+												<div className="flex items-center gap-2">
+													<span>{item.value}</span>
+												</div>
+												<div className="flex">
+													{item.count}
+												</div>
+											</div>
+										</DropdownMenuItem>
+									);
+								})}
+							</DropdownMenuGroup>
+						) : (
+							<div className="p-2 text-muted-foreground text-xs">
+								No items found.
+							</div>
+						)}
+					</div>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button
+						variant="outline"
+						className="flex w-[220px] cursor-pointer items-center justify-between gap-2 bg-secondary-background px-3 py-2"
+						tabIndex={0}
+						aria-label="Open Data Classification Menu"
+					>
+						<div className="flex items-center gap-2">
+							<FileSpreadsheet className="size-4 text-[--base-foreground,#0A0A0A]" />
+							<span className="overflow-hidden text-ellipsis font-[Inter] font-medium text-[--base-foreground,#0A0A0A] text-sm not-italic leading-5">
+								Data Classification
+							</span>
+							{filterVisibility["data classifications"]?.value
+								?.length > 0 && (
+								<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-[--base-foreground,#0A0A0A] text-xs">
+									{
+										filterVisibility["data classifications"]
+											?.value.length
+									}
+								</Badge>
+							)}
+						</div>
+						<div className="flex items-center justify-items-start">
+							<ChevronsUpDown className="size-4 text-[--base-foreground,#0A0A0A]" />
+						</div>
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					className="filter-box-item-container w-[230px] p-0"
 					align="end"
 					alignOffset={-10}
 					sideOffset={10}
 				>
-					<ComboboxEmpty>No items found.</ComboboxEmpty>
-					<ComboboxList>
-						{(item) => (
-							<ComboboxItem
-								key={`${item.value}-${item.count}`}
-								value={item.value}
-								className={
-									filterVisibility?.[
-										"data restrictions"
-									]?.value?.indexOf(item.value) > -1
-										? "bg-(--color-background-primary)"
-										: ""
-								}
-								onClick={() => {
-									onFieldsValueChanged(
-										item,
-										"data restrictions",
-									);
-								}}
-							>
-								<div className="flex w-full flex-row justify-between">
-									<div className="flex">{item.value}</div>
-									<div className="flex">{item.count}</div>
-								</div>
-							</ComboboxItem>
+					{filterOptions["data classifications"] &&
+						filterOptions["data classifications"].length > 0 && (
+							<div className="flex items-center justify-between border-gray-200 border-b bg-white py-2 pr-6 pl-3 font-semibold text-[--base-foreground,#0A0A0A] text-sm tracking-wider">
+								<span>Data Classifications</span>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={() =>
+										clearFields("data classifications")
+									}
+									className="text-primary"
+									tabIndex={-1}
+								>
+									Clear All
+								</Button>
+							</div>
 						)}
-					</ComboboxList>
-				</ComboboxContent>
-			</Combobox>
+					<div className="max-h-60 overflow-y-auto">
+						{filterOptions["data classifications"] &&
+						filterOptions["data classifications"].length > 0 ? (
+							<DropdownMenuGroup>
+								{filterOptions["data classifications"].map(
+									(item) => {
+										const checked = filterVisibility[
+											"data classifications"
+										]?.value?.includes(item.value);
+										return (
+											<DropdownMenuItem
+												key={`${item.value}-${item.count}`}
+												onSelect={(e) => {
+													e.preventDefault();
+													onFieldsValueChanged(
+														item,
+														"data classifications",
+													);
+												}}
+												className={
+													checked
+														? "group bg-[#F5F5F5] font-medium text-[--base-foreground,#0A0A0A]"
+														: "group"
+												}
+											>
+												<div className="flex w-full flex-row items-center justify-between">
+													<div className="flex items-center gap-2">
+														<span>
+															{item.value}
+														</span>
+													</div>
+													<div className="flex">
+														{item.count}
+													</div>
+												</div>
+											</DropdownMenuItem>
+										);
+									},
+								)}
+							</DropdownMenuGroup>
+						) : (
+							<div className="p-2 text-muted-foreground text-xs">
+								No items found.
+							</div>
+						)}
+					</div>
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<Button
+						variant="outline"
+						className="flex w-[210px] cursor-pointer items-center justify-between gap-2 bg-secondary-background px-3 py-2"
+						tabIndex={0}
+						aria-label="Open Data Restrictions Menu"
+					>
+						<div className="flex items-center gap-2">
+							<Database className="size-4 text-[--base-foreground,#0A0A0A]" />
+							<span className="overflow-hidden text-ellipsis font-[Inter] font-medium text-[--base-foreground,#0A0A0A] text-sm not-italic leading-5">
+								Data Restriction
+							</span>
+							{filterVisibility["data restrictions"]?.value
+								?.length > 0 && (
+								<Badge className="ml-1 rounded-full bg-[#F5F5F5] text-[--base-foreground,#0A0A0A] text-xs">
+									{
+										filterVisibility["data restrictions"]
+											?.value.length
+									}
+								</Badge>
+							)}
+						</div>
+						<div className="flex items-center justify-items-start">
+							<ChevronsUpDown className="size-4 text-[--base-foreground,#0A0A0A]" />
+						</div>
+					</Button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					className="filter-box-item-container w-[230px] p-0"
+					align="end"
+					alignOffset={-10}
+					sideOffset={10}
+				>
+					{filterOptions["data restrictions"] &&
+						filterOptions["data restrictions"].length > 0 && (
+							<div className="flex items-center justify-between border-gray-200 border-b bg-white py-2 pr-6 pl-3 font-semibold text-[--base-foreground,#0A0A0A] text-sm tracking-wider">
+								<span>Data Restrictions</span>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={() =>
+										clearFields("data restrictions")
+									}
+									className="text-primary"
+									tabIndex={-1}
+								>
+									Clear All
+								</Button>
+							</div>
+						)}
+					<div className="max-h-60 overflow-y-auto">
+						{filterOptions["data restrictions"] &&
+						filterOptions["data restrictions"].length > 0 ? (
+							<DropdownMenuGroup>
+								{filterOptions["data restrictions"].map(
+									(item) => {
+										const checked = filterVisibility[
+											"data restrictions"
+										]?.value?.includes(item.value);
+										return (
+											<DropdownMenuItem
+												key={`${item.value}-${item.count}`}
+												onSelect={(e) => {
+													e.preventDefault();
+													onFieldsValueChanged(
+														item,
+														"data restrictions",
+													);
+												}}
+												className={
+													checked
+														? "group bg-[#F5F5F5] font-medium text-[--base-foreground,#0A0A0A]"
+														: "group"
+												}
+											>
+												<div className="flex w-full flex-row items-center justify-between">
+													<div className="flex items-center gap-2">
+														<span>
+															{item.value}
+														</span>
+													</div>
+													<div className="flex">
+														{item.count}
+													</div>
+												</div>
+											</DropdownMenuItem>
+										);
+									},
+								)}
+							</DropdownMenuGroup>
+						) : (
+							<div className="p-2 text-muted-foreground text-xs">
+								No items found.
+							</div>
+						)}
+					</div>
+				</DropdownMenuContent>
+			</DropdownMenu>
 
 			<Button
 				variant="secondary"

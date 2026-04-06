@@ -758,7 +758,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				{/* Search */}
 				<div className="flex flex-col gap-3">
 					<div className="flex w-full min-w-0 flex-wrap items-end gap-2 md:flex-nowrap">
-						<InputGroup className="h-10 min-w-[110px] flex-[1_1_auto]">
+						<InputGroup className="h-10 w-56 min-w-[110px] sm:w-64 lg:w-80">
 							<InputGroupAddon>
 								<Search className="size-4" />
 							</InputGroupAddon>
@@ -784,6 +784,22 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								</InputGroupAddon>
 							) : null}
 						</InputGroup>
+						{showFilters && (
+							<div className="place-items-center-safe flex flex-1 gap-1 bg-transparent">
+								<Filterbox
+									type="PROJECT"
+									applyOnMount={false}
+									showHeader={true}
+									hideHeaderToggleFrom="md"
+									onChange={handleFilterboxChange}
+									filteredCatalogIds={renderedAppIds}
+									filterBoxRefresh={filterBoxRefresh}
+									onfilterBoxRefreshCompleted={() => {
+										setFilterBoxRefresh(false);
+									}}
+								/>
+							</div>
+						)}
 						<div className="flex w-auto shrink-0 items-center gap-1">
 							<div className="w-[136px] sm:w-[148px]">
 								<Select
@@ -883,23 +899,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				</div>
 
 				<div className="flex flex-col gap-6 pb-8 md:flex-row md:items-start">
-					{showFilters && (
-						<div className="md:sticky md:top-4 md:w-[352px] md:shrink-0 md:self-start">
-							<Filterbox
-								type="PROJECT"
-								applyOnMount={false}
-								showHeader={true}
-								hideHeaderToggleFrom="md"
-								onChange={handleFilterboxChange}
-								filteredCatalogIds={renderedAppIds}
-								filterBoxRefresh={filterBoxRefresh}
-								onfilterBoxRefreshCompleted={() => {
-									setFilterBoxRefresh(false);
-								}}
-							/>
-						</div>
-					)}
-
 					<div className="flex min-w-0 flex-1 flex-col gap-6">
 						{/* Tabs and Content */}
 						<div className="flex flex-col gap-6">
