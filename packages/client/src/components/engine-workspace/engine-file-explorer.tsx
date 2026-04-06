@@ -1,6 +1,6 @@
 import { HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { download, runPixel, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
@@ -22,6 +22,7 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 	({ layout, node, engine }) => {
 		const insight = useInsight();
 		const [searchParams, setSearchParams] = useSearchParams();
+		const [refreshKey, setRefreshKey] = useState(0);
 		const config: {
 			explorerMode?: "ENGINE" | "STORAGE";
 		} = node.getConfig();
@@ -33,44 +34,48 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 		 * @param options
 		 * @returns
 		 */
-		const addNode = (
-			nodeId: string,
-			options: {
-				[key: string]: unknown;
-			},
-		) => {
-			const model = node.getModel();
 
-			// select the node if there
-			const selectedNode = model.getNodeById(nodeId);
-			if (selectedNode) {
+		const addNode = useCallback(
+			(
+				nodeId: string,
+				options: {
+					[key: string]: unknown;
+				},
+			) => {
+				const model = node.getModel();
+
+				// select the node if there
+				const selectedNode = model.getNodeById(nodeId);
+				if (selectedNode) {
+					model.doAction(
+						FlexLayout.Actions.selectTab(selectedNode.getId()),
+					);
+					return;
+				}
+
+				// create the node if it is not there
+				// where to add the node
+				const addId =
+					model.getActiveTabset()?.getId() ||
+					model.getRoot().getChildren()[0]?.getId() ||
+					"";
+
+				// create and select the panel
 				model.doAction(
-					FlexLayout.Actions.selectTab(selectedNode.getId()),
+					FlexLayout.Actions.addNode(
+						{
+							...options,
+							id: nodeId,
+						},
+						addId,
+						FlexLayout.DockLocation.CENTER,
+						-1,
+						true,
+					),
 				);
-				return;
-			}
-
-			// create the node if it is not there
-			// where to add the node
-			const addId =
-				model.getActiveTabset()?.getId() ||
-				model.getRoot().getChildren()[0]?.getId() ||
-				"";
-
-			// create and select the panel
-			model.doAction(
-				FlexLayout.Actions.addNode(
-					{
-						...options,
-						id: nodeId,
-					},
-					addId,
-					FlexLayout.DockLocation.CENTER,
-					-1,
-					true,
-				),
-			);
-		};
+			},
+			[node],
+		);
 
 		useEffect(() => {
 			const mcpParam = searchParams.get("mcp");
@@ -87,13 +92,15 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					enableClose: true,
 				});
 				toast.success("MCP generated");
+				setRefreshKey((prev) => prev + 1);
 				searchParams.delete("mcp");
 				setSearchParams(searchParams);
 			}
-		}, [searchParams]);
+		}, [searchParams, layout]);
 
 		return (
 			<FileExplorer
+				key={refreshKey}
 				mode={
 					isStorageViewer
 						? {
@@ -171,10 +178,6 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					const isDriverFile =
 						item.type !== "directory" &&
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
-					// if we just generated an MCP, refresh to show the new file in the explorer
-					if (searchParams.get("mcp") === "Generate") {
-						refresh();
-					}
 					const actions = [];
 					if (!isStorageViewer) {
 						if (isDriverFile) {
