@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	ChevronDown,
 	ChevronUp,
@@ -112,7 +113,8 @@ const ExcelDataSelection = ({
 			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${customRangeValues}"]);`;
 			const response = await monolithStore.runQuery(pixelExpression);
 
-			const result: ParsedResult = response.pixelReturn[0].output as ParsedResult;
+			const result: ParsedResult = response.pixelReturn[0]
+				.output as ParsedResult;
 
 			if (!result?.cleanHeaders || !result?.dataTypes) {
 				return;
@@ -180,10 +182,10 @@ const ExcelDataSelection = ({
 						? {
 								cleanHeaders:
 									tableStates[`${fileIndex}-${sheetName}`]
-										.cleanHeaders!,
+										.cleanHeaders,
 								dataTypes:
 									tableStates[`${fileIndex}-${sheetName}`]
-										.dataTypes!,
+										.dataTypes,
 							}
 						: file[sheetName][range];
 				if (!parsedData) return;
@@ -404,22 +406,22 @@ const ExcelDataSelection = ({
 
 					if (state.columnMetadata[header]?.format) {
 						additionalDataTypes[sheetName][editedRange][alias] =
-							state.columnMetadata[header]?.format!;
+							state.columnMetadata[header]?.format;
 					}
 
 					if (state.columnMetadata[header]?.description) {
 						descriptionMap[sheetName][editedRange][alias] =
-							state.columnMetadata[header]?.description!;
+							state.columnMetadata[header]?.description;
 					}
 
 					if (
 						Array.isArray(
 							state.columnMetadata[header]?.logicalName,
 						) &&
-						state.columnMetadata[header]!.logicalName!.length > 0
+						state.columnMetadata[header]?.logicalName?.length > 0
 					) {
 						logicalNamesMap[sheetName][editedRange][alias] =
-							state.columnMetadata[header]!.logicalName!;
+							state.columnMetadata[header]?.logicalName;
 					}
 				});
 			});
@@ -432,7 +434,7 @@ const ExcelDataSelection = ({
 				descriptionMap: [descriptionMap],
 				logicalNamesMap: [logicalNamesMap],
 				tables: [tables],
-				existing: fileIndex > 0 ? true : false,
+				existing: fileIndex > 0,
 			};
 		});
 

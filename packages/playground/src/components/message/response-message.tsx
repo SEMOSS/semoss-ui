@@ -25,6 +25,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import {
 	InputMessageStore,
 	type ResponseMessageStore,
@@ -47,6 +48,7 @@ interface ResponseMessageProps {
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
 		const { t } = useTranslation("chat");
+		const { root } = useRoot();
 
 		const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
 		const [isDownloading, setIsDownloading] = useState(false);
@@ -68,8 +70,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				if (!isDeleting) {
 					toast.success(t("notifications.feedbackSuccess"));
 				}
-			} catch (e) {
-				toast.error(e.message);
+			} catch (e: unknown) {
+				const error = e as { message: string };
+				toast.error(error.message);
 			}
 		};
 
@@ -81,8 +84,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				await message.rewriteMessage();
 
 				toast.success(t("notifications.rewriteSuccess"));
-			} catch (e) {
-				toast.error(e.message);
+			} catch (e: unknown) {
+				const error = e as { message: string };
+				toast.error(error.message);
 			}
 		};
 
@@ -98,8 +102,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					`Response downloaded successfully as ${format.toUpperCase()}`,
 				);
 				setIsDownloadDialogOpen(false);
-			} catch (e) {
-				toast.error(e.message || "Failed to download response");
+			} catch (e: unknown) {
+				const error = e as { message: string };
+				toast.error(error.message || "Failed to download response");
 			} finally {
 				setIsDownloading(false);
 			}
@@ -246,80 +251,86 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				</div>
 
 				<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
-					{inputMessage?.siblings.length > 1 && (
-						<div className="flex flex-row items-center gap-0.5">
+					{inputMessage?.siblings.length &&
+						inputMessage?.siblings.length > 1 && (
+							<div className="flex flex-row items-center gap-0.5">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={
+												!inputMessage.previousSibling
+											}
+											onClick={() => {
+												if (
+													!inputMessage.previousSibling
+												) {
+													return;
+												}
+
+												inputMessage.previousSibling.activateMessage();
+											}}
+										>
+											<ArrowLeftIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{t("response.previousMessage")}
+									</TooltipContent>
+								</Tooltip>
+								<span className="text-muted-foreground text-xs">
+									{inputMessage.position + 1}/
+									{inputMessage.siblings.length}
+								</span>
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={!inputMessage.nextSibling}
+											onClick={() => {
+												if (!inputMessage.nextSibling) {
+													return;
+												}
+
+												inputMessage.nextSibling.activateMessage();
+											}}
+										>
+											<ArrowRightIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{t("response.nextMessage")}
+									</TooltipContent>
+								</Tooltip>
+							</div>
+						)}
+
+					{root.theme.featureFlags?.enableRewrite &&
+						parentHasText && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
+										disabled={
+											!inputMessage?.parent?.parent ||
+											message.room.mode === "executing"
+										}
 										variant="ghost"
 										size="icon"
-										disabled={!inputMessage.previousSibling}
 										onClick={() => {
-											if (!inputMessage.previousSibling) {
-												return;
-											}
-
-											inputMessage.previousSibling.activateMessage();
+											rewriteMessage();
 										}}
 									>
-										<ArrowLeftIcon />
+										<RefreshCwIcon />
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent side="bottom">
-									{t("response.previousMessage")}
+									{t("response.rewriteMessage")}
 								</TooltipContent>
 							</Tooltip>
-							<span className="text-muted-foreground text-xs">
-								{inputMessage.position + 1}/
-								{inputMessage.siblings.length}
-							</span>
-
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon"
-										disabled={!inputMessage.nextSibling}
-										onClick={() => {
-											if (!inputMessage.nextSibling) {
-												return;
-											}
-
-											inputMessage.nextSibling.activateMessage();
-										}}
-									>
-										<ArrowRightIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									{t("response.nextMessage")}
-								</TooltipContent>
-							</Tooltip>
-						</div>
-					)}
-
-					{parentHasText && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									disabled={
-										!inputMessage.parent?.parent ||
-										message.room.mode === "executing"
-									}
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										rewriteMessage();
-									}}
-								>
-									<RefreshCwIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.rewriteMessage")}
-							</TooltipContent>
-						</Tooltip>
-					)}
+						)}
 
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -414,8 +425,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 														"notifications.copySuccess",
 													),
 												);
-											} catch (e) {
-												toast.error(e.message);
+											} catch (e: unknown) {
+												const error = e as {
+													message: string;
+												};
+												toast.error(error.message);
 											}
 										}}
 									>

@@ -214,16 +214,13 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 		}
 	};
 
-	const allValid = useMemo(() => {
-		return (
-			validations.length &&
-			validations.upper &&
-			validations.lower &&
-			validations.number &&
-			validations.special &&
-			validations.match
-		);
-	}, [validations]);
+	const allValid =
+		validations.length &&
+		validations.upper &&
+		validations.lower &&
+		validations.number &&
+		validations.special &&
+		validations.match;
 
 	const rulesPassed = useMemo(() => {
 		const rules = {
