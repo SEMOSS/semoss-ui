@@ -1,6 +1,6 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { FileUploadOutlined } from "@mui/icons-material";
 import { SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
@@ -93,7 +93,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				return;
 			}
 			const pixelExpressions = uploadedFiles.map(
-				(file) =>
+				() =>
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["FUNCTION"])`,
 			);
 			for (const pixelString of pixelExpressions) {
@@ -204,7 +204,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
 		event.preventDefault();
 		const file = event.dataTransfer.files?.[0];
-		if (file && file.name.endsWith(".zip")) {
+		if (file?.name.endsWith(".zip")) {
 			setFiledata(file);
 		}
 	};
@@ -366,7 +366,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 										<TabsContent
 											key={label}
 											value={index.toString()}
-											className="mt-[14px]"
+											className="mt-3.5"
 										>
 											<div className="">
 												{renderDatabaseGrid(
@@ -377,7 +377,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 									))}
 								</Tabs>
 							) : (
-								<div className="mt-[14px]">
+								<div className="mt-3.5">
 									{renderDatabaseGrid(DatabasesForTab)}
 								</div>
 							)}
