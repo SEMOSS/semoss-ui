@@ -66,7 +66,6 @@ export class PlanMessageStore extends AbstractMessageStore {
 		makeObservable(this, {
 			plan: observable,
 			step: computed,
-			sync: action,
 			addStep: action,
 			updateStep: action,
 			removeStep: action,
@@ -76,7 +75,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 			failStepExecution: action,
 		});
 
-		// sync the message (must be after makeObservable so sync action is registered)
+		// sync the message
 		this.sync(message);
 	}
 
@@ -90,7 +89,9 @@ export class PlanMessageStore extends AbstractMessageStore {
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: PixelMessage) => {
+	sync(message: PixelMessage) {
+		super.sync(message);
+
 		// type guard + specifics
 		try {
 			const part = message.parts[0];
@@ -120,7 +121,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
-	};
+	}
 
 	/***
 	 * Add a new step to the plan
@@ -552,7 +553,7 @@ stepNumber=["${step.step_number}"]
 		message: ResponseMessageStore,
 		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled" = "success",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	) => {
 		const step = this.step;
@@ -584,6 +585,8 @@ stepNumber=["${step.step_number}"]
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";
+			} else if (toolStatus === "paused") {
+				tool.status = "PAUSED";
 			}
 		});
 

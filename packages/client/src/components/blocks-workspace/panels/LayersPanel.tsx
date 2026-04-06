@@ -26,6 +26,7 @@ import {
 	Search,
 } from "@mui/icons-material/";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import { CircleCheck, Pencil } from "lucide-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useRef, useState } from "react";
@@ -56,9 +57,9 @@ import {
 	DropdownMenuTrigger,
 	Input,
 	Tooltip,
-    TooltipContent,
-  	TooltipProvider,
-  	TooltipTrigger,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
@@ -68,7 +69,6 @@ import { getBlockElement } from "@/stores";
 import DuplicateIcon from "../../../assets/img/Duplicate.svg";
 import RenameIcon from "../../../assets/img/Rename.svg";
 import { BlockSettingsRegistry } from "../blocks";
-import { CircleCheck, Pencil } from "lucide-react";
 
 const customCollisionDetection = (args) => {
 	const collisions = closestCenter(args);
@@ -449,7 +449,9 @@ export const LayersPanel = observer(
 					if (!blk) return;
 					out.push(id);
 					for (const s in blk.slots) {
-						blk.slots[s]?.children?.forEach((cid: string) => visit(cid));
+						blk.slots[s]?.children?.forEach((cid: string) =>
+							visit(cid),
+						);
 					}
 				};
 				visit(rootId);
@@ -472,7 +474,9 @@ export const LayersPanel = observer(
 				}
 				// After expansion renders, scroll the matched item into view
 				setTimeout(() => {
-					const el = accordionRefs.current[matchId] as HTMLElement | null;
+					const el = accordionRefs.current[
+						matchId
+					] as HTMLElement | null;
 					if (el) {
 						scrollIntoView(el, { block: "center" });
 					}
@@ -918,189 +922,212 @@ export const LayersPanel = observer(
 				setRename(exists);
 			};
 			return (
-        <>
-          <StyledTreeItemLabel>
-            <StyledTreeItemIcon>
-              <WidgetIcon />
-            </StyledTreeItemIcon>
-            <StyledLabelContainer
-              search={
-                search
-                  ? [block.widget, block.id, block.data.id]
-                      .join("")
-                      .toLowerCase()
-                      .indexOf(search.toLowerCase()) > -1
-                  : false
-              }
-            >
-              <StyledLabelTitle variant="body2">
-                {block.widget.charAt(0).toUpperCase() + block.widget.slice(1)}
-              </StyledLabelTitle>
-              <div ref={editableAreaRef}>
-                {editingBlockId === block.id ? ( // Check if the current block is being edited
-                  <div className="flex flex-row items-center gap-1">
-                    <div className="flex flex-row items-center gap-1">
-                      <Input
-                        ref={inputRef}
-                        className="w-full max-w-xs h-5 px-1 shadow-none rounded border border-primary focus-visible:border-primary font-sans font-normal text-sm tracking-normal text-muted-foreground focus-visible:outline-none focus-visible:ring-0"
-                        value={editBlockId}
-                        onChange={(e) => {
-                          const newVal = e.target.value;
-                          setEditBlockId(newVal);
-                          handleValidation(newVal);
-                          const cursorPosition = e.target.selectionStart;
-                          if (inputRef.current && cursorPosition !== null) {
-                            requestAnimationFrame(() => {
-                              if (inputRef.current) {
-                                inputRef.current.setSelectionRange(
-                                  cursorPosition,
-                                  cursorPosition,
-                                );
-                              }
-                            });
-                          }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => {
-                          e.stopPropagation();
-                        }}
-                        autoFocus
-                      />
-                    </div>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span>
-                            <Button
-                              disabled={rename}
-                              size="icon"
-                              onMouseDown={(e) => e.stopPropagation()}
-                              className="h-6 w-6 p-0 bg-transparent"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRename(block.id);
-                                setRename(true);
-                                setEditingBlockId(null);
-                              }}
-                              variant="secondary"
-                            >
-                              <CircleCheck
-                                className={`w-4 h-4 ${
-                                  rename ? "text-muted-foreground" : "text-primary"
-                                }`}
-                              />
-                            </Button>
-                          </span>
-                        </TooltipTrigger>
+				<>
+					<StyledTreeItemLabel>
+						<StyledTreeItemIcon>
+							<WidgetIcon />
+						</StyledTreeItemIcon>
+						<StyledLabelContainer
+							search={
+								search
+									? [block.widget, block.id, block.data.id]
+											.join("")
+											.toLowerCase()
+											.indexOf(search.toLowerCase()) > -1
+									: false
+							}
+						>
+							<StyledLabelTitle variant="body2">
+								{block.widget.charAt(0).toUpperCase() +
+									block.widget.slice(1)}
+							</StyledLabelTitle>
+							<div ref={editableAreaRef}>
+								{editingBlockId === block.id ? ( // Check if the current block is being edited
+									<div className="flex flex-row items-center gap-1">
+										<div className="flex flex-row items-center gap-1">
+											<Input
+												ref={inputRef}
+												className="h-5 w-full max-w-xs rounded border border-primary px-1 font-normal font-sans text-muted-foreground text-sm tracking-normal shadow-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-0"
+												value={editBlockId}
+												onChange={(e) => {
+													const newVal =
+														e.target.value;
+													setEditBlockId(newVal);
+													handleValidation(newVal);
+													const cursorPosition =
+														e.target.selectionStart;
+													if (
+														inputRef.current &&
+														cursorPosition !== null
+													) {
+														requestAnimationFrame(
+															() => {
+																if (
+																	inputRef.current
+																) {
+																	inputRef.current.setSelectionRange(
+																		cursorPosition,
+																		cursorPosition,
+																	);
+																}
+															},
+														);
+													}
+												}}
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+												onMouseDown={(e) => {
+													e.stopPropagation();
+												}}
+												autoFocus
+											/>
+										</div>
+										<TooltipProvider>
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span>
+														<Button
+															disabled={rename}
+															size="icon"
+															onMouseDown={(e) =>
+																e.stopPropagation()
+															}
+															className="h-6 w-6 bg-transparent p-0"
+															onClick={(e) => {
+																e.stopPropagation();
+																handleRename(
+																	block.id,
+																);
+																setRename(true);
+																setEditingBlockId(
+																	null,
+																);
+															}}
+															variant="secondary"
+														>
+															<CircleCheck
+																className={`h-4 w-4 ${
+																	rename
+																		? "text-muted-foreground"
+																		: "text-primary"
+																}`}
+															/>
+														</Button>
+													</span>
+												</TooltipTrigger>
 
-                        {rename && (
-                          <TooltipContent side="top" >
-                            Block name already exists
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                ) : (
-                  <StyledLabelSubtitleText variant="caption">
-                    {variableName || block.data.id || block.id}
-                  </StyledLabelSubtitleText>
-                )}
-              </div>
-            </StyledLabelContainer>
-            {variableName ? (
-              <StyledTreeItemIconButton
-                aria-label="copy"
-                title={`Copy variable`}
-                color="default"
-                size="small"
-                onClick={async (e: React.SyntheticEvent) => {
-                  e.stopPropagation();
-                  await copy(`{{${variableName}}}`);
-                }}
-                data-onhover
-              >
-                <ContentCopy fontSize="small" />
-              </StyledTreeItemIconButton>
-            ) : canVariabilize ? (
-              <StyledTreeItemIconButton
-                aria-label="add"
-                title={`Add variable`}
-                size="small"
-                color="primary"
-                onClick={(e: React.SyntheticEvent) => {
-                  e.stopPropagation();
-                  setVariableModal(block.id);
-                }}
-                data-onhover
-              >
-                <LibraryAdd fontSize="small" />
-              </StyledTreeItemIconButton>
-            ) : null}
+												{rename && (
+													<TooltipContent side="top">
+														Block name already
+														exists
+													</TooltipContent>
+												)}
+											</Tooltip>
+										</TooltipProvider>
+									</div>
+								) : (
+									<StyledLabelSubtitleText variant="caption">
+										{variableName ||
+											block.data.id ||
+											block.id}
+									</StyledLabelSubtitleText>
+								)}
+							</div>
+						</StyledLabelContainer>
+						{variableName ? (
+							<StyledTreeItemIconButton
+								aria-label="copy"
+								title={`Copy variable`}
+								color="default"
+								size="small"
+								onClick={async (e: React.SyntheticEvent) => {
+									e.stopPropagation();
+									await copy(`{{${variableName}}}`);
+								}}
+								data-onhover
+							>
+								<ContentCopy fontSize="small" />
+							</StyledTreeItemIconButton>
+						) : canVariabilize ? (
+							<StyledTreeItemIconButton
+								aria-label="add"
+								title={`Add variable`}
+								size="small"
+								color="primary"
+								onClick={(e: React.SyntheticEvent) => {
+									e.stopPropagation();
+									setVariableModal(block.id);
+								}}
+								data-onhover
+							>
+								<LibraryAdd fontSize="small" />
+							</StyledTreeItemIconButton>
+						) : null}
 
-            {/* 3-dot menu button */}
-            <IconButton
-              size="small"
-              aria-label="more"
-              onClick={(e) => handleMenuOpen(e, block.id)}
-            >
-              <MoreVert fontSize="small" />
-            </IconButton>
-          </StyledTreeItemLabel>
-          <DropdownMenu
-            open={Boolean(menuAnchorEl)}
-            onOpenChange={handleMenuClose}
-          >
-            <DropdownMenuTrigger asChild>
-              <div />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              side="bottom"
-              className="rounded-md border bg-popover p-1 shadow-md"
-            >
-              {!INPUT_BLOCK_TYPES.includes(block.widget) && (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRenameBlock(block.id);
-                    handleMenuClose();
-                  }}
-                  className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
-                >
-				<Pencil className="relative left-1 mr-3 size-4" />
-                  Rename
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem
-                onClick={(e: React.MouseEvent<HTMLElement>) => {
-                  e.stopPropagation();
-                  handleDuplicate(e, block.id);
-                  handleMenuClose();
-                }}
-                className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
-              >
-                <img
-                  src={DuplicateIcon}
-                  alt="Duplicate Icon"
-                  className="mr-2"
-                />
-                Duplicate
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  handleDelete(block.id);
-                  handleMenuClose();
-                }}
-                className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
-              >
-                <DeleteOutlineOutlinedIcon className="mr-1.5 size-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      );
+						{/* 3-dot menu button */}
+						<IconButton
+							size="small"
+							aria-label="more"
+							onClick={(e) => handleMenuOpen(e, block.id)}
+						>
+							<MoreVert fontSize="small" />
+						</IconButton>
+					</StyledTreeItemLabel>
+					<DropdownMenu
+						open={Boolean(menuAnchorEl)}
+						onOpenChange={handleMenuClose}
+					>
+						<DropdownMenuTrigger asChild>
+							<div />
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							side="bottom"
+							className="rounded-md border bg-popover p-1 shadow-md"
+						>
+							{!INPUT_BLOCK_TYPES.includes(block.widget) && (
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										handleRenameBlock(block.id);
+										handleMenuClose();
+									}}
+									className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+								>
+									<Pencil className="relative left-1 mr-3 size-4" />
+									Rename
+								</DropdownMenuItem>
+							)}
+							<DropdownMenuItem
+								onClick={(e: React.MouseEvent<HTMLElement>) => {
+									e.stopPropagation();
+									handleDuplicate(e, block.id);
+									handleMenuClose();
+								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+							>
+								<img
+									src={DuplicateIcon}
+									alt="Duplicate Icon"
+									className="mr-2"
+								/>
+								Duplicate
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									handleDelete(block.id);
+									handleMenuClose();
+								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+							>
+								<DeleteOutlineOutlinedIcon className="mr-1.5 size-4" />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</>
+			);
 		};
 		const renderBlock = (id: string) => {
 			const block = state.blocks[id];
@@ -1534,8 +1561,29 @@ export const LayersPanel = observer(
 						height: "100%",
 					}}
 				>
-					<Grid item xs={12} width={"100%"} sx={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0 }}>
-						<Grid item xs={12} sx={{ display: "flex", flexDirection: "column", flex: "0 0 140px", minHeight: "80px", maxHeight: "230px", overflow: "hidden" }}>
+					<Grid
+						item
+						xs={12}
+						width={"100%"}
+						sx={{
+							display: "flex",
+							flexDirection: "column",
+							height: "100%",
+							minHeight: 0,
+						}}
+					>
+						<Grid
+							item
+							xs={12}
+							sx={{
+								display: "flex",
+								flexDirection: "column",
+								flex: "0 0 140px",
+								minHeight: "80px",
+								maxHeight: "230px",
+								overflow: "hidden",
+							}}
+						>
 							<StyledMenu>
 								<StyledMenuHeader>
 									<Stack
@@ -1578,7 +1626,17 @@ export const LayersPanel = observer(
 							</StyledMenu>
 						</Grid>
 						<Divider sx={{ margin: 0 }} />
-						<Grid item xs={12} sx={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
+						<Grid
+							item
+							xs={12}
+							sx={{
+								flex: 1,
+								display: "flex",
+								flexDirection: "column",
+								minHeight: 0,
+								overflow: "hidden",
+							}}
+						>
 							<DndContext
 								sensors={sensors}
 								collisionDetection={customCollisionDetection}

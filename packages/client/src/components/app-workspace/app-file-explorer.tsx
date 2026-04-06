@@ -86,9 +86,28 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
 			);
 
-			let json = {};
+			let json: { _meta: Record<string, string>; tools: unknown[] } = {
+				_meta: {},
+				tools: [],
+			};
 			try {
-				json = JSON.parse(pixelReturn[0].output);
+				const output = pixelReturn[0].output;
+				if (output && typeof output === "object") {
+					const o = output as Record<string, unknown>;
+					json = {
+						_meta: (o._meta as Record<string, string>) ?? {},
+						tools: (o.tools as unknown[]) ?? [],
+					};
+				} else if (typeof output === "string" && output.trim()) {
+					const parsed = JSON.parse(output) as Record<
+						string,
+						unknown
+					>;
+					json = {
+						_meta: (parsed._meta as Record<string, string>) ?? {},
+						tools: (parsed.tools as unknown[]) ?? [],
+					};
+				}
 			} catch (e) {
 				console.error(`Failed to parse MCP JSON: ${e}`);
 			}
@@ -218,38 +237,40 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							actions={[
 								isDriverFile
 									? {
-										name: "Create",
-										icon: <HammerIcon />,
-										tooltip: "Create Toolbox",
-										action: async () => {
-											try {
-												await insight.actions.run(
-													`MakePythonMCP(project=["${app}"]);`,
-												);
+											name: "Create",
+											icon: <HammerIcon />,
+											tooltip: "Create Toolbox",
+											action: async () => {
+												try {
+													await insight.actions.run(
+														`MakePythonMCP(project=["${app}"]);`,
+													);
 
 													// refresh the explorer
-												refresh();
-												
+													refresh();
+
 													// add it
-													addMCPEditorTab("/mcp/py_mcp.json");
-											} catch (e) {
-												toast.error(e.message);
-												console.error(e);
-											}
-										},
-									}
+													await addMCPEditorTab(
+														"/mcp/py_mcp.json",
+													);
+												} catch (e) {
+													toast.error(e.message);
+													console.error(e);
+												}
+											},
+										}
 									: null,
 								MCP.JSON_PATHS.some((f) =>
 									item.path.startsWith(f),
 								) && item.type !== "directory"
 									? {
-										name: "Edit",
-										icon: <PencilIcon />,
-										tooltip: "Edit Toolbox",
-										action: async (item) => {
-											addMCPEditorTab(item.path);
-										},
-									}
+											name: "Edit",
+											icon: <PencilIcon />,
+											tooltip: "Edit Toolbox",
+											action: async (item) => {
+												addMCPEditorTab(item.path);
+											},
+										}
 									: null,
 							]}
 							secondaryActions={[

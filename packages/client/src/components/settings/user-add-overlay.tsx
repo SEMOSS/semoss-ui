@@ -1,4 +1,3 @@
-import type { AxiosResponse } from "axios";
 import { Download, Shield, Upload } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
@@ -22,6 +21,7 @@ import {
 } from "@semoss/ui/next";
 import { createUser, editMemberInfo } from "@/api";
 import { useRootStore, useSettings } from "@/hooks";
+import type { ApiResponse } from "@/types";
 
 interface User {
 	id: string;
@@ -205,7 +205,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 
 			try {
 				let response:
-					| AxiosResponse<boolean>
+					| ApiResponse<boolean>
 					| {
 							response: Response;
 							data: boolean;

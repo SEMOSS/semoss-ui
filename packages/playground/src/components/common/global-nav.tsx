@@ -52,8 +52,6 @@ import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
-
 /**
  * Renders a sidebar allowing users to navigate between pages
  *
@@ -67,7 +65,9 @@ export const GlobalNav = observer(() => {
 		t("buckets.favorites"),
 		t("buckets.today"),
 		t("buckets.yesterday"),
+		t("buckets.fewDaysAgo"),
 		t("buckets.lastWeek"),
+		t("buckets.thisMonth"),
 		t("buckets.lastMonth"),
 		t("buckets.older"),
 	] as const;
@@ -91,6 +91,8 @@ export const GlobalNav = observer(() => {
 	 */
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 	const [editingName, setEditingName] = useState("");
+
+	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
 	const systemDate = dayjs(system.config.systemDate);
 
@@ -203,7 +205,7 @@ export const GlobalNav = observer(() => {
 	 */
 	const bucketedRooms = getRooms.data.reduce(
 		(acc, val) => {
-			const d = dayjs(val.DATE_CREATED);
+			const d = dayjs(`${val.DATE_CREATED}Z`);
 
 			// Pinned rooms only go in Favorites bucket
 			if (val.PINNED) {
@@ -216,9 +218,13 @@ export const GlobalNav = observer(() => {
 				acc[t("buckets.today")].push(val);
 			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
 				acc[t("buckets.yesterday")].push(val);
-			} else if (systemDate.isSame(d, "week")) {
+			} else if (d.isAfter(systemDate.subtract(3, "day"))) {
+				acc[t("buckets.fewDaysAgo")].push(val);
+			} else if (d.isAfter(systemDate.subtract(7, "day"))) {
 				acc[t("buckets.lastWeek")].push(val);
 			} else if (systemDate.isSame(d, "month")) {
+				acc[t("buckets.thisMonth")].push(val);
+			} else if (systemDate.subtract(1, "month").isSame(d, "month")) {
 				acc[t("buckets.lastMonth")].push(val);
 			} else {
 				acc[t("buckets.older")].push(val);
@@ -230,7 +236,9 @@ export const GlobalNav = observer(() => {
 			[t("buckets.favorites")]: [],
 			[t("buckets.today")]: [],
 			[t("buckets.yesterday")]: [],
+			[t("buckets.fewDaysAgo")]: [],
 			[t("buckets.lastWeek")]: [],
+			[t("buckets.thisMonth")]: [],
 			[t("buckets.lastMonth")]: [],
 			[t("buckets.older")]: [],
 		} as Record<string, typeof getRooms.data>,
@@ -338,7 +346,7 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
-					{ENABLE_AGENT && (
+					{root.theme.featureFlags?.enableAgent && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								asChild
@@ -351,9 +359,9 @@ export const GlobalNav = observer(() => {
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
-					{root.theme.sidebar.headerItems.map((item) => (
+					{root.theme.sidebar.headerItems.map((item, index) => (
 						<GlobalNavItem
-							key={item.path}
+							key={`header-${item.name}-${index}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
@@ -408,9 +416,27 @@ export const GlobalNav = observer(() => {
 										const name =
 											room.ROOM_NAME ||
 											t("messages.untitled");
+										const date = root.theme.sidebar
+											.chatHistoryDate
+											? new Date(
+													`${room.DATE_CREATED}Z`,
+												).toLocaleString(undefined, {
+													month: "numeric",
+													day: "numeric",
+													year: "numeric",
+													hour: "numeric",
+													minute: "2-digit",
+													hour12: true,
+												})
+											: null;
 										const isFavorite = room.PINNED || false;
 										const isEditing =
 											editingRoomId === roomId;
+
+										// if the room is in the deleted set, don't render it
+										if (deletedSet.has(roomId)) {
+											return null;
+										}
 
 										return (
 											<SidebarMenuItem
@@ -458,13 +484,20 @@ export const GlobalNav = observer(() => {
 															}
 														>
 															<Link
-																className="inline-block flex-1 truncate"
+																className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
 																to={`/room/${roomId}`}
 																aria-label={
 																	"Select room"
 																}
 															>
-																{name}
+																<span className="truncate font-medium text-sm leading-tight">
+																	{name}
+																</span>
+																{date && (
+																	<span className="text-muted-foreground text-xs leading-none">
+																		{date}
+																	</span>
+																)}
 															</Link>
 														</SidebarMenuButton>
 														<DropdownMenu
@@ -541,6 +574,19 @@ export const GlobalNav = observer(() => {
 																		e.stopPropagation();
 
 																		try {
+																			// optimistically add to deleted set to remove from UI immediately
+																			setDeletedSet(
+																				(
+																					prev,
+																				) =>
+																					new Set(
+																						[
+																							...prev,
+																							roomId,
+																						],
+																					),
+																			);
+
 																			await chat.closeRoom(
 																				roomId,
 																			);
@@ -562,8 +608,29 @@ export const GlobalNav = observer(() => {
 																			// Refetch rooms after deletion
 																			getRooms.reset();
 																		} catch (e) {
-																			toast.error(
-																				e.message,
+																			if (
+																				e instanceof
+																				Error
+																			) {
+																				toast.error(
+																					e.message,
+																				);
+																			}
+																		} finally {
+																			// remove from deleted set after attempting deletion to allow re-render if deletion failed
+																			setDeletedSet(
+																				(
+																					prev,
+																				) => {
+																					const newSet =
+																						new Set(
+																							prev,
+																						);
+																					newSet.delete(
+																						roomId,
+																					);
+																					return newSet;
+																				},
 																			);
 																		}
 																	}}
@@ -587,20 +654,22 @@ export const GlobalNav = observer(() => {
 					);
 				})}
 			</SidebarContent>
-			<SidebarFooter>
-				<Separator className="group-data-[collapsible=icon]:hidden" />
-				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
-					{root.theme.sidebar.footerItems.map((item) => (
-						<GlobalNavItem
-							key={item.path}
-							name={item.name}
-							icon={item.icon}
-							path={item.path}
-							url={item.url}
-							embed={item.embed}
-						/>
-					))}
-				</SidebarMenu>
+			<SidebarFooter className="gap-0">
+				<Separator className="mb-2 group-data-[collapsible=icon]:hidden" />
+				{root.theme.sidebar.footerItems.length > 0 && (
+					<SidebarMenu className="gap-2 p-2 pb-0 group-data-[collapsible=icon]:hidden">
+						{root.theme.sidebar.footerItems.map((item, index) => (
+							<GlobalNavItem
+								key={`footer-${item.name}-${index}`}
+								name={item.name}
+								icon={item.icon}
+								path={item.path}
+								url={item.url}
+								embed={item.embed}
+							/>
+						))}
+					</SidebarMenu>
+				)}
 				<SidebarMenu className="gap-2 p-2">
 					<SidebarMenuItem>
 						<NavUser />
