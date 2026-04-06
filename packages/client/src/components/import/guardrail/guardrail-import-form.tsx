@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -147,7 +148,10 @@ export const GuardrailForm = ({
 		if (isDynamicInputChangedByUser) return;
 
 		const mappedValuesObject = dynamicFieldsToWatch.reduce(
-			(acc, fieldName) => ({ ...acc, [fieldName]: getValues(fieldName) }),
+			(acc, fieldName) => {
+				acc[fieldName] = getValues(fieldName);
+				return acc;
+			},
 			{},
 		);
 
@@ -419,10 +423,10 @@ export const GuardrailForm = ({
 			setTimeout(() => {
 				// get values from all dynamic fields
 				const mappedValuesObject = dynamicFieldsToWatch.reduce(
-					(acc, fieldName) => ({
-						...acc,
-						[fieldName]: getValues(fieldName),
-					}),
+					(acc, fieldName) => {
+						acc[fieldName] = getValues(fieldName);
+						return acc;
+					},
 					{},
 				);
 
@@ -524,7 +528,7 @@ export const GuardrailForm = ({
 			rules={{
 				required: val?.required,
 			}}
-			render={({ field, fieldState: { invalid, error } }) => {
+			render={({ field, fieldState: { error } }) => {
 				switch (val.component) {
 					case "text":
 						return (
@@ -898,7 +902,7 @@ export const GuardrailForm = ({
 																		field.value,
 																	);
 																}}
-																className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
+																className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
 																data-testid={`remove-file-btn-${index}`}
 															>
 																<X className="size-4" />
@@ -1122,7 +1126,7 @@ export const GuardrailForm = ({
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-[2] flex-col gap-2">
+								<div className="flex flex-2 flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
