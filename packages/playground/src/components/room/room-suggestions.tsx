@@ -16,7 +16,7 @@ export const RoomSuggestions: React.FC<RoomSuggestionsProps> = observer(
 	({ room }) => {
 		const getSuggestions = usePixel<{ suggestions: string[] }>(
 			!room.isLoading && !room.error
-				? `GenerateFollowUpQuestions(engine=["${room.model.app_id}"], roomId=["${room.roomId}"])`
+				? `GenerateFollowUpQuestions(engine=["${room.model.engine_id}"], roomId=["${room.roomId}"])`
 				: "",
 			{
 				data: {
@@ -31,8 +31,11 @@ export const RoomSuggestions: React.FC<RoomSuggestionsProps> = observer(
 			return null;
 		}
 
-		// hide if no suggestions
-		if (getSuggestions.data.suggestions.length === 0) {
+		// hide if suggestions is missing or not an array
+		if (
+			!Array.isArray(getSuggestions.data?.suggestions) ||
+			getSuggestions.data.suggestions.length === 0
+		) {
 			return null;
 		}
 

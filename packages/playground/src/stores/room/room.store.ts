@@ -18,6 +18,7 @@ import {
 } from "@/stores";
 import type {
 	Engine,
+	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
 	PixelMessageMediaPart,
@@ -49,6 +50,28 @@ interface RoomStoreInterface {
 	 *  Track if the room has errored
 	 */
 	error?: Error | null;
+
+	/**
+	 * Track if context is being compacted
+	 */
+	isCompacting: boolean;
+
+	/**
+	 * Context window size of the current model (in tokens)
+	 */
+	contextWindow: number;
+
+	/**
+	 * Whether context has been compacted at least once in this session
+	 */
+	wasCompacted: boolean;
+
+	/**
+	 * tokensUsed value recorded immediately after the last compaction.
+	 * Used to compute the delta so re-compaction is not triggered by the
+	 * summary message's own (high) token count.
+	 */
+	tokensAtCompaction: number;
 
 	/**
 	 *  Track the mode of the room.
@@ -146,6 +169,10 @@ export class RoomStore {
 		roomId: "",
 		insightId: "new",
 		isLoading: false,
+		isCompacting: false,
+		contextWindow: 0,
+		wasCompacted: false,
+		tokensAtCompaction: 0,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -230,6 +257,66 @@ export class RoomStore {
 	 */
 	get error() {
 		return this._store.error;
+	}
+
+	/**
+	 * Track if context is being compacted
+	 */
+	get isCompacting() {
+		return this._store.isCompacting;
+	}
+
+	/**
+	 * Context window size of the current model
+	 */
+	get contextWindow() {
+		return this._store.contextWindow;
+	}
+
+	/**
+	 * Whether context has been compacted at least once in this session
+	 */
+	get wasCompacted() {
+		return this._store.wasCompacted;
+	}
+
+	/**
+	 * Messages from the inactive (pre-compaction) branch, for display above the divider.
+	 * Returns empty array if compaction hasn't occurred.
+	 */
+	get preCompactionHistory(): (
+		| InputMessageStore
+		| ResponseMessageStore
+		| PlanMessageStore
+	)[] {
+		if (!this._store.wasCompacted || !this._store.root) return [];
+
+		const root = this._store.root;
+		const history: (
+			| InputMessageStore
+			| ResponseMessageStore
+			| PlanMessageStore
+		)[] = [];
+
+		// Collect messages from all inactive root children (everything except
+		// the active branch and any platform-generated compaction anchor branches).
+		for (let i = 0; i < root.children.length; i++) {
+			if (i === root.activeChildPosition) continue;
+			if (root.children[i].platform_generated) continue;
+			let current: AbstractMessageStore = root.children[i];
+			while (current) {
+				if (current instanceof InputMessageStore) {
+					history.push(current);
+				} else if (current instanceof ResponseMessageStore) {
+					history.push(current);
+				} else if (current instanceof PlanMessageStore) {
+					history.push(current);
+				}
+				current = current.activeChild;
+			}
+		}
+
+		return history;
 	}
 
 	/**
@@ -556,8 +643,22 @@ export class RoomStore {
 			}
 
 			// link the messages
+			let wasCompacted = false;
 			for (const mId in messages) {
 				const m = messages[mId];
+
+				// Messages whose parent is a compaction placeholder ID were
+				// created as hidden anchor roots — mark them so branch nav
+				// ignores them (backend doesn't persist our platform_generated flag).
+				if (
+					m.parentMessageId === "COMPACTION_PLACEHOLDER_ID" ||
+					m.parentMessageId === "COMPACTION_STEP1_PLACEHOLDER_ID"
+				) {
+					m.message.platform_generated = true;
+					if (m.parentMessageId === "COMPACTION_PLACEHOLDER_ID") {
+						wasCompacted = true;
+					}
+				}
 
 				const parent = messages[m.parentMessageId];
 				if (parent) {
@@ -636,6 +737,14 @@ export class RoomStore {
 
 				// store it
 				this._store.root = root;
+
+				// restore compaction state detected during message linking
+				if (wasCompacted) {
+					this._store.wasCompacted = true;
+					// Treat current token usage as the compaction baseline so the
+					// re-compaction threshold is measured as a delta from here.
+					this._store.tokensAtCompaction = this.tokensUsed;
+				}
 			});
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
@@ -900,6 +1009,13 @@ export class RoomStore {
 	};
 
 	/**
+	 * Set the context window size for this room
+	 */
+	setContextWindow = (contextWindow: number): void => {
+		this._store.contextWindow = contextWindow;
+	};
+
+	/**
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
@@ -983,7 +1099,7 @@ export class RoomStore {
 			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
-			platform_generated: true,
+			platform_generated: false,
 			modelId: this.model?.engine_id,
 			modelType: this.model?.engine_type,
 			dateCreated: new Date().toISOString(),
@@ -1008,6 +1124,217 @@ export class RoomStore {
 			this.plan?.failStepExecution();
 
 			throw e;
+		}
+
+		// compact context if we're near the limit
+		await this.maybeCompactContext();
+	};
+
+	/**
+	 * Check token usage and compact context if at or above threshold
+	 */
+	maybeCompactContext = async (): Promise<void> => {
+		const envThreshold = import.meta.env.VITE_COMPACTION_THRESHOLD;
+		const threshold = envThreshold
+			? Number(envThreshold)
+			: this._store.contextWindow * 0.95;
+
+		if (!threshold) {
+			return;
+		}
+
+		// Compare against tokens added *since the last compaction*, not the total.
+		// This prevents the summary message's own token count from immediately
+		// re-triggering compaction on the very next message.
+		const tokensSinceCompaction =
+			this.tokensUsed - this._store.tokensAtCompaction;
+		if (tokensSinceCompaction < threshold) {
+			return;
+		}
+
+		await this.compactContext();
+	};
+
+	/**
+	 * Run a hidden summarization and use a compact anchor message as the new
+	 * parent for subsequent messages, effectively compacting the context.
+	 *
+	 * Two-step strategy to avoid leaking the full transcript into the chain:
+	 *
+	 * Step 1 — Summarize (off-tree): send the full transcript to the model and
+	 * get back a short summary text. This call is stored in the DB under a
+	 * throwaway parentMessageId so it never appears in any active chain.
+	 *
+	 * Step 2 — Anchor (on-tree): send only the short summary text as the command,
+	 * again with a throwaway parentMessageId. THIS response is attached to the
+	 * room tree as the new root. Future messages chain:
+	 *   userInput → anchorResponse → anchorInput (~summary text only) → (broken)
+	 *
+	 * Result: the model only sees the compact summary (~300 tokens), not the
+	 * full transcript (~1500+ tokens), on every subsequent message.
+	 */
+	compactContext = async (): Promise<void> => {
+		if (!this.model || !this._store.root) {
+			return;
+		}
+
+		const context = this._store.options.instructions || "";
+
+		// Build a readable transcript from the current visible history,
+		// captured before we modify the tree.
+		const conversationLines: string[] = [];
+		for (const message of this.history) {
+			if (!message.visible || message.type === "PLAN") continue;
+			const role = message.type === "INPUT" ? "User" : "Assistant";
+			const text = message.parts
+				.filter((p) => p.type === "TEXT")
+				.map((p) => (p as PixelMessageTextPart).text)
+				.join("")
+				.trim();
+			if (text) {
+				conversationLines.push(`${role}: ${text}`);
+			}
+		}
+
+		const transcript = conversationLines.join("\n\n");
+		const summarizeCommand = `The following is the complete history of a conversation. Please provide a concise summary that captures key topics, decisions, and recent context. This summary will be used as the starting context going forward.\n\nCONVERSATION HISTORY:\n${transcript}\n\nSummarize the above conversation concisely.`;
+
+		// Create the on-tree anchor nodes. These will be synced from step 2.
+		const anchorInput = new InputMessageStore(this, {
+			io: "INPUT",
+			type: "INPUT_TEXT",
+			messageId: "COMPACT_INPUT_PLACEHOLDER_ID",
+			visible: false,
+			platform_generated: true,
+			modelId: this.model.engine_id,
+			modelType: this.model.engine_type,
+			dateCreated: new Date().toISOString(),
+			parts: [
+				{
+					type: "TEXT",
+					text: "",
+					uiText: "",
+				},
+			],
+			tokens: 0,
+			ornaments: {
+				modelName:
+					this.model.engine_display_name || this.model.engine_name,
+			},
+		});
+
+		const anchorResponse = new ResponseMessageStore(this, {
+			io: "OUTPUT",
+			messageId: "COMPACT_RESPONSE_PLACEHOLDER_ID",
+			visible: true,
+			platform_generated: true,
+			modelId: this.model.engine_id,
+			dateCreated: new Date().toISOString(),
+			parts: [{ type: "THINKING", thinking: "" }],
+			tokens: 0,
+			ornaments: {
+				modelName:
+					this.model.engine_display_name || this.model.engine_name,
+			},
+		} as ResponsePixelMessage);
+
+		runInAction(() => {
+			this._store.isCompacting = true;
+		});
+
+		try {
+			// Step 1: get the summary text. Uses a throwaway parentMessageId so
+			// this message is stored in the DB but never referenced by any chain.
+			// The tree is NOT modified yet — original messages stay visible during
+			// the two pixel calls so the screen doesn't go blank.
+			const summarizeResponse = await this.runRoomPixelStreaming<
+				[
+					{
+						inputMessage: InputPixelMessage;
+						responseMessage: ResponsePixelMessage;
+					},
+				]
+			>(
+				`AskPlayground(
+engine=["${this.model.engine_id}"],
+roomId=["${this.roomId}"],
+command=["<encode>${summarizeCommand}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+image=[],
+parentMessageId=["COMPACTION_STEP1_PLACEHOLDER_ID"],
+paramValues=[${JSON.stringify({
+					max_new_tokens: this._store.options.tokenLength,
+					temperature: this._store.options.temperature,
+				})}]
+);`,
+				() => {}, // discard streaming chunks
+				false, // don't show loading state
+				false, // don't set room.error on fail
+			);
+
+			// Extract the summary text from step 1's response parts.
+			const summaryText =
+				summarizeResponse.results[0].output.responseMessage.parts
+					.filter((p) => p.type === "TEXT")
+					.map((p) => (p as PixelMessageTextPart).text)
+					.join("")
+					.trim();
+
+			if (!summaryText) {
+				throw new Error("Compaction step 1 returned empty summary");
+			}
+
+			// Step 2: send only the short summary as the anchor command.
+			// Future messages chain back to this input (~summary tokens only).
+			const anchorCommand = `Previous conversation summary:\n\n${summaryText}\n\nBriefly let the user know that the conversation has been summarized to free up context, and that they can continue normally. Keep it to 1-2 sentences.`;
+
+			const anchorPixelResponse = await this.runRoomPixelStreaming<
+				[
+					{
+						inputMessage: InputPixelMessage;
+						responseMessage: ResponsePixelMessage;
+					},
+				]
+			>(
+				`AskPlayground(
+engine=["${this.model.engine_id}"],
+roomId=["${this.roomId}"],
+command=["<encode>${anchorCommand}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+image=[],
+parentMessageId=["COMPACTION_PLACEHOLDER_ID"],
+paramValues=[${JSON.stringify({
+					max_new_tokens: 64,
+					temperature: this._store.options.temperature,
+				})}]
+);`,
+				() => {}, // discard streaming chunks
+				false, // don't show loading state
+				false, // don't set room.error on fail
+			);
+
+			const { output } = anchorPixelResponse.results[0];
+
+			// Both pixel calls succeeded — now graft the anchor branch onto the
+			// tree in one atomic update. This is the first moment the old messages
+			// leave the active chain, so there's no blank-screen window.
+			runInAction(() => {
+				anchorInput.sync(output.inputMessage);
+				anchorResponse.sync(output.responseMessage);
+				this._store.root.addChild(anchorInput);
+				anchorInput.addChild(anchorResponse);
+				this._store.wasCompacted = true;
+				// Record current token count so the threshold is measured as a
+				// delta from this point, not from zero.
+				this._store.tokensAtCompaction = this.tokensUsed;
+			});
+		} catch (e) {
+			// Compaction failed — tree was never modified, nothing to restore.
+			console.error("Context compaction failed:", e);
+		} finally {
+			runInAction(() => {
+				this._store.isCompacting = false;
+			});
 		}
 	};
 

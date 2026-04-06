@@ -298,6 +298,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 	const showLoadingState =
 		room.isLoading ||
+		room.isCompacting ||
 		room.latestResponseMessage.isThinking ||
 		isAutoExecutingTools;
 
@@ -316,6 +317,43 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						}}
 					>
 						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
+							{room.wasCompacted && (
+								<>
+									<div>
+										{room.preCompactionHistory.map((m) => {
+											if (!m.visible) return null;
+											return (
+												<React.Fragment key={m.key}>
+													{m.type === "INPUT" && (
+														<InputMessage
+															room={room}
+															message={m}
+														/>
+													)}
+													{m.type === "OUTPUT" && (
+														<ResponseMessage
+															room={room}
+															message={m}
+														/>
+													)}
+													{m.type === "PLAN" && (
+														<PlanMessage
+															message={m}
+															isLast={false}
+														/>
+													)}
+												</React.Fragment>
+											);
+										})}
+									</div>
+									<div className="relative flex flex-col items-center justify-center py-2">
+										<div className="z-10 bg-background px-3 text-muted-foreground text-xs leading-normal">
+											Context summarized
+										</div>
+										<Separator className="absolute top-1/2" />
+									</div>
+								</>
+							)}
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -353,6 +391,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												}
 											/>
 										)}
+										{/* DEV: token count badge — remove before shipping */}
+										{m.tokens > 0 && (
+											<div className="text-right text-muted-foreground text-xs opacity-50">
+												{m.type === "INPUT"
+													? `${m.tokens} cumulative input tokens`
+													: `${m.tokens} output tokens`}
+											</div>
+										)}
 									</React.Fragment>
 								);
 							})}
@@ -360,6 +406,15 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<RoomSuggestions room={room} />
 							)}
 						</div>
+						{/* DEV: token usage counter — remove before shipping */}
+						<div className="mx-auto w-full max-w-4xl px-1 text-right text-muted-foreground text-xs opacity-40">
+							{room.tokensUsed} tokens used
+						</div>
+						{room.isCompacting ? (
+							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-border bg-muted/50 p-3 text-muted-foreground text-sm shadow-sm">
+								<span>Compacting context...</span>
+							</div>
+						) : null}
 						{room.error ? (
 							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">

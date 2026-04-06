@@ -178,6 +178,11 @@ export class ChatStore {
 		// create the room store
 		const room = new RoomStore(this._theme, roomId, insightId);
 
+		// set the context window
+		if (this.models.contextWindow) {
+			room.setContextWindow(this.models.contextWindow);
+		}
+
 		// set the model
 		room.setModel(this.models.selected);
 
@@ -260,6 +265,11 @@ export class ChatStore {
 		// create the room store
 		const room = new RoomStore(this._theme, roomId);
 
+		// set the context window
+		if (this.models.contextWindow) {
+			room.setContextWindow(this.models.contextWindow);
+		}
+
 		// initialize the room
 		await room.initialize();
 
@@ -312,6 +322,10 @@ export class ChatStore {
 		if (this.models.selected?.engine_id === engineId) {
 			runInAction(() => {
 				this._store.models.contextWindow = pixelReturn[0].output;
+				const contextWindow = pixelReturn[0].output ?? 0;
+				for (const room of Object.values(this._store.rooms)) {
+					room.setContextWindow(contextWindow);
+				}
 			});
 		}
 	};
