@@ -9,23 +9,6 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export interface MentionPluginRenderProps {
-	/**
-	 * Whether the menu is open
-	 */
-	isOpen: boolean;
-
-	/**
-	 * Whether the menu is open
-	 */
-	onOpenChange: (isOpen: boolean) => void;
-
-	/**
-	 * Triggered to add a token to the menu
-	 */
-	addToken: (token: string) => void;
-}
-
 interface MentionPluginProps {
 	/**
 	 * Trigger

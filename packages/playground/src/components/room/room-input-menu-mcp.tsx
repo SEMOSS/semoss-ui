@@ -16,12 +16,16 @@ interface RoomInputMenuMCPProps {
 
 	/** Callback when an MCP is selected/deselected */
 	onSelect: (mcp: MCPConfig) => void;
+
+	/** Callback when the overlay closes */
+	onOverlayClose?: () => void;
 }
 
 const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 	type,
 	options,
 	onSelect,
+	onOverlayClose,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const { t } = useTranslation("room");
@@ -58,6 +62,7 @@ const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 				values={items}
 				onClose={(updatedMcp) => {
 					setIsOpen(false);
+					onOverlayClose?.();
 					if (updatedMcp) {
 						// Calculate changes and call onSelect for each
 						const oldIds = new Set(items.map((item) => item.id));

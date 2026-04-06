@@ -73,7 +73,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
-	 * Handle tool selection
+	 * Handle tool selection (toggle for plus menu)
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
@@ -89,6 +89,31 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		if (Object.hasOwn(tools, tool.id)) {
 			delete tools[tool.id];
 		} else {
+			tools[tool.id] = tool;
+		}
+
+		room.setOptions({
+			...room.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
+	 * @param tool - selected tool
+	 */
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
+		const tools = room.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, typeof tool>,
+		);
+
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -426,62 +451,53 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
-					onMcpSelect={handleToolSelect}
-					MenuComponent={observer(
-						({ addToken, onOpenChange, fileRef }) => (
-							<>
-								<RoomInputMenuUpload
-									fileRef={fileRef}
-									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuMCP
-									type="KNOWLEDGE"
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<RoomInputMenuMCP
-									type="TOOLBOX"
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuFileExplorer
-									room={room}
-									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuItem
-									onSelect={(e) => {
-										e.preventDefault();
+					onMcpSelect={handleToolAdd}
+					MenuComponent={observer(({ onOpenChange, fileRef }) => (
+						<>
+							<RoomInputMenuUpload
+								fileRef={fileRef}
+								onSelect={() => onOpenChange(false)}
+							/>
+							<DropdownMenuSeparator />
+							<RoomInputMenuMCP
+								type="KNOWLEDGE"
+								options={room.options}
+								onSelect={handleToolSelect}
+								onOverlayClose={() => onOpenChange(false)}
+							/>
+							<RoomInputMenuMCP
+								type="TOOLBOX"
+								options={room.options}
+								onSelect={handleToolSelect}
+								onOverlayClose={() => onOpenChange(false)}
+							/>
+							<DropdownMenuSeparator />
+							<RoomInputMenuFileExplorer
+								room={room}
+								onSelect={() => onOpenChange(false)}
+							/>
+							<DropdownMenuItem
+								onSelect={(e) => {
+									e.preventDefault();
 
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
-										onOpenChange(false);
-									}}
-								>
-									<Settings2Icon />
-									<span className="flex-1">
-										{t("settings.edit")}
-									</span>
-								</DropdownMenuItem>
-							</>
-						),
-					)}
+									// add to the sidebar
+									room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+										type: "tab",
+										name: "Configuration",
+										component: "room-configuration",
+										config: {},
+										enableClose: true,
+									});
+									onOpenChange(false);
+								}}
+							>
+								<Settings2Icon />
+								<span className="flex-1">
+									{t("settings.edit")}
+								</span>
+							</DropdownMenuItem>
+						</>
+					))}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools

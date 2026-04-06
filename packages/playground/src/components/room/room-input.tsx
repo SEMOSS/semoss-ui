@@ -165,7 +165,6 @@ interface RoomInputProps {
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
-		addToken: (token: string) => void;
 	}>;
 
 	/** Room options containing MCP configurations for slash menu */
@@ -695,7 +694,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
 						<DropdownMenu
 							open={menuOpen}
-							onOpenChange={setMenuOpen}
+							onOpenChange={(open) => {
+								setMenuOpen(open);
+								// Focus editor when menu closes
+								if (!open) {
+									editorRef.current?.focus();
+								}
+							}}
 						>
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -720,7 +725,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									isOpen={menuOpen}
 									onOpenChange={setMenuOpen}
 									fileRef={fileRef}
-									addToken={() => null}
 								/>
 							</DropdownMenuContent>
 						</DropdownMenu>
