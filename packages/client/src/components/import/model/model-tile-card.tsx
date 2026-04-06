@@ -7,84 +7,92 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import AZURE_OPEN_AI from "@/assets/img/AZURE_OPEN_AI.svg";
-import BEDROCK from "@/assets/img/BEDROCK.svg";
-import BRAIN from "@/assets/img/BRAIN.png";
-import CLAUDE_AI from "@/assets/img/CLAUDE_AI.svg";
-import FALCON_AI from "@/assets/img/FALCON_AI.png";
-import FLAN from "@/assets/img/FLAN.jpg";
-import GEMINI_COLOR from "@/assets/img/GEMINI_COLOR.svg";
-import HUGGINGFACE_COLOR from "@/assets/img/HUGGINGFACE_COLOR.svg";
-import META_COLOR from "@/assets/img/META_COLOR.svg";
-import MOSAIC from "@/assets/img/MOSAIC.png";
-import NEMO from "@/assets/img/NEMO.png";
-import OPEN_AI from "@/assets/img/OPEN_AI.svg";
-import ORCA from "@/assets/img/ORCA.png";
-import PERPLEXITY from "@/assets/img/PERPLEXITY.svg";
-import REPLIT_CODE from "@/assets/img/REPLIT_CODE.png";
-import STABILITY_AI from "@/assets/img/STABILITY_AI.png";
+import { ENGINE_IMAGES } from "@/pages/import/import.constants";
 import { formatToDataTestId } from "@/utility";
 
-const MODEL_ICON_BY_FILE_NAME: Record<string, string> = {
-	// Stable provider/brand keys (keep alphabetical)
-	"AZURE_OPEN_AI.svg": AZURE_OPEN_AI,
-	"BEDROCK.svg": BEDROCK,
-	"CLAUDE_AI.svg": CLAUDE_AI,
-	"GEMINI_COLOR.svg": GEMINI_COLOR,
-	"HUGGINGFACE_COLOR.svg": HUGGINGFACE_COLOR,
-	"META_COLOR.svg": META_COLOR,
-	"NEMO.png": NEMO,
-	"OPEN_AI.svg": OPEN_AI,
-	"PERPLEXITY.svg": PERPLEXITY,
+const normalizeEngineKey = (value?: string) =>
+	(value || "").trim().replace(/\W+/g, "_").toUpperCase();
 
-	// Self-hosted / long-tail keys (keep alphabetical)
-	"FALCON_AI.png": FALCON_AI,
-	"FLAN.jpg": FLAN,
-	"MOSAIC.png": MOSAIC,
-	"ORCA.png": ORCA,
-	"REPLIT_CODE.png": REPLIT_CODE,
-	"STABILITY_AI.png": STABILITY_AI,
-
-	// Fallback/default
-	"BRAIN.png": BRAIN,
+// Defensive provider->subtype translation used only as a last-resort tile fallback.
+// Normal tile icon resolution should come from model.icon/modelBrand first.
+const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
+	OpenAI: "OPEN_AI",
+	"Google Gemini": "VERTEX",
+	"Azure OpenAI": "AZURE_OPEN_AI",
+	Anthropic: "CLAUDE",
+	"AWS Bedrock": "BEDROCK",
+	"NVIDIA NIM": "NEMO",
+	"Self Hosted": "HUGGINGFACE",
+	Perplexity: "PERPLEXITY",
+	Embedded: "BRAIN",
 };
 
-const resolveModelIcon = (icon?: string) => {
-	if (!icon) return "";
-	if (icon.startsWith("/src/assets/img/")) {
-		const fileName = icon.split("/").pop() || "";
-		return MODEL_ICON_BY_FILE_NAME[fileName] || "";
-	}
-	return icon;
+const MODEL_SUBTYPE_BY_ICON_FILE_NAME: Record<string, string> = {
+	"AZURE_OPEN_AI.svg": "AZURE_OPEN_AI",
+	"BEDROCK.svg": "BEDROCK",
+	"BRAIN.png": "BRAIN",
+	"CLAUDE_AI.svg": "CLAUDE",
+	"FALCON_AI.png": "FALCON",
+	"FLAN.jpg": "FLAN_T5_LARGE",
+	"GEMINI_COLOR.svg": "GEMINI",
+	"HUGGINGFACE_COLOR.svg": "HUGGINGFACE",
+	"META_COLOR.svg": "META",
+	"MOSAIC.png": "MOSAIC_ML",
+	"NEMO.png": "NEMO",
+	"OPEN_AI.svg": "OPEN_AI",
+	"ORCA.png": "ORCA",
+	"PERPLEXITY.svg": "PERPLEXITY",
+	"REPLIT_CODE.png": "REPLIT_CODE_MODEL",
+	"STABILITY_AI.png": "STABLITY_AI",
 };
 
-function hashString(str: string): number {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
+const getModelIconBySubtype = (subtype?: string) => {
+	if (!subtype) return "";
+	const normalizedSubtype = normalizeEngineKey(subtype);
+
+	const match = (ENGINE_IMAGES.MODEL || []).find((option) => {
+		return normalizeEngineKey(option.name) === normalizedSubtype;
+	});
+
+	return match?.icon || "";
+};
+
+const FALLBACK_MODEL_ICON = getModelIconBySubtype("BRAIN");
+
+const toKnownModelSubtype = (value?: string) => {
+	const normalized = normalizeEngineKey(value);
+	if (!normalized) return "";
+	if (normalized === "GUANACO") return "HUGGINGFACE";
+	return normalized;
+};
+
+const resolveModelIcon = (model: Model, provider?: string) => {
+	const icon = model.icon;
+	if (!icon) return FALLBACK_MODEL_ICON;
+
+	if (!icon.startsWith("/src/assets/img/")) {
+		return icon;
 	}
-	return Math.abs(h);
-}
 
-function pickGradient(name: string): string {
-	// Subtle pastel gradient derived from hash: lower saturation + higher lightness.
-	const base = hashString(name) % 360;
-	const hue2 = (base + 35) % 360;
-	const hue3 = (base + 70) % 360;
-	return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
-}
+	const fileName = icon.split("/").pop() || "";
+	const subtypeFromFile = MODEL_SUBTYPE_BY_ICON_FILE_NAME[fileName] || "";
+	const subtypeFromBrand = toKnownModelSubtype(model.modelBrand);
+	const subtypeFromProvider = provider
+		? MODEL_PROVIDER_SUBTYPE_BY_NAME[provider] || ""
+		: "";
 
-function buildInitials(label: string): string {
-	const tokens = label.split(/[\s-]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0]);
-	return chars.slice(0, 3).join("");
-}
+	return (
+		getModelIconBySubtype(
+			subtypeFromFile || subtypeFromBrand || subtypeFromProvider,
+		) || FALLBACK_MODEL_ICON
+	);
+};
 
 interface Model {
 	name: string;
 	display: string;
 	icon: string;
+	modelBrand?: string;
 	disable?: boolean;
 	description?: string;
 	embedding: boolean;
@@ -95,11 +103,13 @@ interface Model {
 
 interface ModelTileCardProps {
 	model: Model;
+	provider?: string;
 	onModelSelect?: (model: Model) => void;
 }
 
 export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 	model,
+	provider,
 	onModelSelect,
 }) => {
 	const textRef = useRef<HTMLParagraphElement>(null);
@@ -124,14 +134,8 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		};
 	}, []);
 
-	// Special case: "Others" tile should always show a single 'O'
-	const isOthers = model.name === "Others";
-	const initials = isOthers ? "O" : buildInitials(label);
-	const resolvedIcon = resolveModelIcon(model.icon);
+	const resolvedIcon = resolveModelIcon(model, provider);
 	const hasIcon = Boolean(resolvedIcon);
-	// Dynamic gradient based on model name for visual distinction
-	const avatarGradient = pickGradient(model.name);
-
 	const handleCardClick = () => {
 		if (!model.disable && onModelSelect) {
 			onModelSelect(model);
@@ -174,11 +178,8 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 								/>
 							</div>
 						) : (
-							<div
-								className="flex h-10 w-10 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
-								style={{ background: avatarGradient }}
-							>
-								{initials}
+							<div className="flex h-10 w-10 select-none items-center justify-center rounded-lg bg-muted font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset] [-webkit-font-smoothing:antialiased]">
+								AI
 							</div>
 						)}
 					</div>
