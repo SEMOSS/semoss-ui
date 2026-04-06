@@ -25,6 +25,8 @@ interface RoomInputMenuSlashProps {
 	options: RoomStore["options"];
 	/** Callback when an MCP is selected */
 	onSelect: (tool: MCPConfig) => void;
+	/** Callback to close menu and remove slash */
+	onRequestClose?: () => void;
 }
 
 /**
@@ -37,6 +39,7 @@ interface RoomInputMenuSlashProps {
 const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 	options,
 	onSelect,
+	onRequestClose,
 }) => {
 	const { t } = useTranslation("room");
 	const { root } = useRoot();
@@ -96,6 +99,13 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 				value={search}
 				onValueChange={setSearch}
 				autoFocus
+				onKeyDown={(e) => {
+					// Close menu and delete slash on backspace when search is empty
+					if (e.key === "Backspace" && search === "") {
+						e.preventDefault();
+						onRequestClose?.();
+					}
+				}}
 			/>
 			<CommandList
 				className="max-h-[300px]"

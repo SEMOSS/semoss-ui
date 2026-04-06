@@ -656,6 +656,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									onOpenChange,
 									menuPosition,
 									addToken,
+									onRequestClose,
 								}) => (
 									<DropdownMenu
 										open={isOpen}
@@ -677,6 +678,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										>
 											<RoomInputMenuSlash
 												options={options}
+												onRequestClose={onRequestClose}
 												onSelect={(tool) => {
 													onMcpSelect?.(tool);
 													addToken(`<${tool.name}>`);
