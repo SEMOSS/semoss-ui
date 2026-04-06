@@ -26,15 +26,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
-import AZURE_OPEN_AI from "@/assets/img/AZURE_OPEN_AI.svg";
-import BEDROCK from "@/assets/img/BEDROCK.svg";
-import BRAIN from "@/assets/img/BRAIN.png";
-import CLAUDE_AI from "@/assets/img/CLAUDE_AI.svg";
-import GEMINI_COLOR from "@/assets/img/GEMINI_COLOR.svg";
-import HUGGINGFACE_COLOR from "@/assets/img/HUGGINGFACE_COLOR.svg";
-import NEMO from "@/assets/img/NEMO.png";
-import OPEN_AI from "@/assets/img/OPEN_AI.svg";
-import PERPLEXITY from "@/assets/img/PERPLEXITY.svg";
 import type {
 	AppendedModelField,
 	CategoryTexts,
@@ -49,30 +40,50 @@ import {
 } from "@/components/import/model/model-import.constants";
 import { ModelTileCard } from "@/components/import/model/model-tile-card";
 import { useRootStore } from "@/hooks";
+import { ENGINE_IMAGES } from "@/pages/import/import.constants";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
+
+const normalizeEngineKey = (value?: string) =>
+	(value || "").trim().replace(/\W+/g, "_").toUpperCase();
+
+// Provider labels shown in UI tabs/section headers are display names (e.g. "Google Gemini"),
+// while ENGINE_IMAGES.MODEL keys are engine subtypes (e.g. "VERTEX"), so we translate here.
+// This mapping is used by ProviderIcon in this file (top provider labels only).
+const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
+	OpenAI: "OPEN_AI",
+	"Google Gemini": "VERTEX",
+	"Azure OpenAI": "AZURE_OPEN_AI",
+	Anthropic: "CLAUDE",
+	"AWS Bedrock": "BEDROCK",
+	"NVIDIA NIM": "NEMO",
+	"Self Hosted": "HUGGINGFACE",
+	Perplexity: "PERPLEXITY",
+	Embedded: "BRAIN",
+};
+
+const getModelIconBySubtype = (subtype?: string) => {
+	if (!subtype) return "";
+	const normalizedSubtype = normalizeEngineKey(subtype);
+
+	const match = (ENGINE_IMAGES.MODEL || []).find((option) => {
+		return normalizeEngineKey(option.name) === normalizedSubtype;
+	});
+
+	return match?.icon || "";
+};
 
 /**
  * Helper component to display provider icon with fallback to initials
  */
 const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
-	const providerIcons: Record<string, string> = {
-		OpenAI: OPEN_AI,
-		"Google Gemini": GEMINI_COLOR,
-		"Azure OpenAI": AZURE_OPEN_AI,
-		Anthropic: CLAUDE_AI,
-		"AWS Bedrock": BEDROCK,
-		"NVIDIA NIM": NEMO,
-		"Self Hosted": HUGGINGFACE_COLOR,
-		Perplexity: PERPLEXITY,
-		Embedded: BRAIN,
-	};
-
-	const providerIcon = providerIcons[provider];
+	const providerIcon = getModelIconBySubtype(
+		MODEL_PROVIDER_SUBTYPE_BY_NAME[provider],
+	);
 
 	const getInitials = (name: string) => {
 		return name
-			.split(/[^A-Za-z0-9]+/)
+			.split(/[\W_]+/)
 			.map((t) => t[0])
 			.join("")
 			.slice(0, 2)
@@ -439,6 +450,9 @@ export const ModelImportPage: React.FC = () => {
 															<ModelTileCard
 																key={`${section.provider}-${model.name}`}
 																model={model}
+																provider={
+																	section.provider
+																}
 																onModelSelect={(
 																	selected,
 																) => {

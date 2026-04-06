@@ -92,6 +92,7 @@ export interface ThemeMap {
 		 * Content to show in the sidebar
 		 */
 		sidebar: {
+			expandedByDefault: boolean;
 			chatHistoryDate: boolean;
 			headerItems: {
 				name: string;
@@ -130,7 +131,7 @@ export interface ThemeMap {
 		/**
 		 * The number of tools that should be auto-executed at once
 		 */
-		toolAutoExecutionLimit?: number;
+		toolAutoExecutionLimit?: number | null;
 
 		/**
 		 * The uploaded files that should be added to the file tool in the room
@@ -193,6 +194,17 @@ export interface ThemeMap {
 					text: string;
 			  }
 		)[];
+
+		/**
+		 * Feature flags to enable/disable features in the UI. The keys are the names of the features, and the values are booleans indicating whether the feature is enabled or disabled.
+		 */
+		featureFlags?: {
+			enableModelSelect?: boolean;
+			enableAgent?: boolean;
+			enableSuggestions?: boolean;
+			enablePlan?: boolean;
+			enableRewrite?: boolean;
+		};
 	};
 }
 
