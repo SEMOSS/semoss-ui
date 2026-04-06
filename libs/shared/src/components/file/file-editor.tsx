@@ -1,7 +1,18 @@
 import type { FileMode } from "./file.types";
 import { FileCodeEditor } from "./file-code-editor";
+import { FileDownloadView } from "./file-download-view";
 import { FileImageViewer } from "./file-image-viewer";
 import { FilePdfViewer } from "./file-pdf-viewer";
+
+// Extensions that cannot be rendered in the editor — show a download-first view instead
+const NON_RENDERED_EXTENSIONS = new Set([
+	"doc",
+	"docx",
+	"ppt",
+	"pptx",
+	"xls",
+	"xlsx",
+]);
 
 interface FileEditorProps {
 	/** Mode of file editor */
@@ -12,9 +23,6 @@ interface FileEditorProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
-
-	/** Callback when the file is saved */
-	onSave?: () => void;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
@@ -34,13 +42,27 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 		"bmp",
 	].includes(ext);
 	const isPdf = ext === "pdf";
+	const isNotRendered = NON_RENDERED_EXTENSIONS.has(ext);
 
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background py-1">
-			{isImage && <FileImageViewer mode={mode} path={path} />}
-			{isPdf && <FilePdfViewer mode={mode} path={path} />}
-			{!isImage && !isPdf && (
-				<FileCodeEditor mode={mode} path={path} onChange={onChange} />
+			{isImage && <FileImageViewer key={path} mode={mode} path={path} />}
+			{isPdf && <FilePdfViewer key={path} mode={mode} path={path} />}
+			{isNotRendered && (
+				<FileDownloadView
+					key={path}
+					mode={mode}
+					path={path}
+					onChange={onChange}
+				/>
+			)}
+			{!isImage && !isPdf && !isNotRendered && (
+				<FileCodeEditor
+					key={path}
+					mode={mode}
+					path={path}
+					onChange={onChange}
+				/>
 			)}
 		</div>
 	);

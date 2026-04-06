@@ -1,6 +1,6 @@
 import { CopyIcon, Quote, SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -21,10 +21,10 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
-import type { ResponseMessageStore } from "@/stores";
+import type { ResponseMessageStore, RoomStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 
-const TEXT_MARKDOWN_COMPONENTS = {
+const createMarkdownComponents = (room?: RoomStore) => ({
 	h1: ({ children, ...props }) => (
 		<H1 className="mt-5 font-semibold text-2xl text-inherit" {...props}>
 			{children}
@@ -66,17 +66,70 @@ const TEXT_MARKDOWN_COMPONENTS = {
 			{children}
 		</P>
 	),
-	a: ({ children, href, ...props }) => (
-		<a
-			href={href}
-			className="font-medium text-base text-primary underline underline-offset-1"
-			target="_blank"
-			rel="noopener noreferrer"
-			{...props}
-		>
-			{children}
-		</a>
-	),
+	a: ({ children, href, ...props }) => {
+		if (href?.startsWith("room://") && room) {
+			const path = `/${href.slice("room://".length)}`;
+
+			// Folder link — ends with "/"
+			if (path.endsWith("/")) {
+				return (
+					<button
+						type="button"
+						className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
+						onClick={() => {
+							room.addSidebarNode(`FILE_EXPLORER--${path}`, {
+								type: "tab",
+								name: "Files",
+								component: "room-file-explorer",
+								config: { initialPath: path },
+								enableClose: true,
+							});
+						}}
+					>
+						{children}
+					</button>
+				);
+			}
+
+			// File link
+			const filename = path.split("/").filter(Boolean).pop() ?? path;
+			return (
+				<button
+					type="button"
+					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
+					onClick={() => {
+						room.addSidebarNode("FILE_EXPLORER", {
+							type: "tab",
+							name: "Files",
+							component: "room-file-explorer",
+							config: {},
+							enableClose: true,
+						});
+						room.addSidebarNode(`FILE--${path}`, {
+							type: "tab",
+							name: filename,
+							component: "room-file-editor",
+							config: { name: filename, path },
+							enableClose: true,
+						});
+					}}
+				>
+					{children}
+				</button>
+			);
+		}
+		return (
+			<a
+				href={href}
+				className="font-medium text-base text-primary underline underline-offset-1"
+				target="_blank"
+				rel="noopener noreferrer"
+				{...props}
+			>
+				{children}
+			</a>
+		);
+	},
 	ul: ({ children, ...props }) => (
 		<ul
 			className="my-1 ml-4 list-disc text-base text-inherit [&>li]:mt-1"
@@ -106,20 +159,30 @@ const TEXT_MARKDOWN_COMPONENTS = {
 	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
 	code: ({ children, className, ...props }) => {
 		const { t } = useTranslation("chat");
+		// react-markdown sets className to "language-<lang>" on fenced code blocks.
+		// Inline code (single backtick) has no className, so match will be null.
 		const match = /language-(\w+)/.exec(className || "");
 		const code = children as string;
 
-		let lang: string = "";
-		if (match?.[1]) {
-			lang = match[1];
+		// Inline code — no language class means this is a `backtick` snippet inside
+		// a paragraph. Return a plain <code> so we don't nest a <div> inside a <p>.
+		if (!match?.[1]) {
+			return (
+				<code className={className} {...props}>
+					{children}
+				</code>
+			);
 		}
+
+		// Fenced code block — render the full UI with copy button and syntax highlighting.
+		const lang = match[1];
 
 		return (
 			<div className="group/response-markdown relative">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
-							className="absolute top-0 right-0 bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
+							className="-ml-[120px] sticky top-0 right-0 z-10 float-right bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
 							variant="ghost"
 							size="icon"
 							disabled={!code}
@@ -152,7 +215,7 @@ const TEXT_MARKDOWN_COMPONENTS = {
 			<Table {...props} />
 		</ScrollArea>
 	),
-};
+});
 
 interface ResponseMessageTextProps {
 	/** Message to render */
@@ -169,6 +232,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
 		const { t } = useTranslation("chat");
 		const typewriter = useMarkdownTypewriter(part.text);
+		const components = useMemo(
+			() => createMarkdownComponents(message.room),
+			[message.room],
+		);
 
 		useEffect(() => {
 			if (message.isThinking && isLast) {
@@ -185,8 +252,13 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		return (
 			<>
 				<Markdown
-					components={TEXT_MARKDOWN_COMPONENTS}
+					components={components}
 					className="[&>*:first-child]:mt-0"
+					urlTransform={(url) => {
+						if (url.startsWith("room://")) return url;
+						if (/^(https?:|mailto:|#)/.test(url)) return url;
+						return "";
+					}}
 				>
 					{typewriter.isTyping ? typewriter.rendered : part.text}
 				</Markdown>

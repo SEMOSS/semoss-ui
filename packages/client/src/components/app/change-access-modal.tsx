@@ -24,7 +24,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import OPEN_AI from "@/assets/img/OPEN_AI.png";
+import OPEN_AI from "@/assets/img/OPEN_AI.svg";
 import type { modelledDependency } from "@/components/app";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useRootStore } from "@/hooks";

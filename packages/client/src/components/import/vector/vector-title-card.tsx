@@ -90,10 +90,10 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 	};
 
 	const cardContent = (
-		// biome-ignore lint/a11y/useSemanticElements: <explanation>
+		// biome-ignore lint/a11y/useSemanticElements: TODO
 		<div
 			className={cn(
-				"flex min-h-[200px] max-w-[215px] cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4",
+				"flex min-h-[200px] w-full cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4 sm:w-[215px]",
 				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
 				vector.disable &&
 					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
@@ -116,7 +116,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 						/>
 					) : (
 						<div
-							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
+							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-250 [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
 							style={{ background: avatarGradient }}
 						>
 							{initials}
@@ -134,7 +134,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 						{vector.display || vector.name}
 					</p>
 				</div>
-				<p className="mt-1 line-clamp-3 min-h-[calc(3*1.3em)] max-h-[calc(3*1.3em)] text-[11px] text-muted-foreground leading-[1.3]">
+				<p className="mt-1 line-clamp-3 max-h-[calc(3*1.3em)] min-h-[calc(3*1.3em)] text-[11px] text-muted-foreground leading-[1.3]">
 					{vector.description}
 				</p>
 			</div>
@@ -173,7 +173,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 	return isTruncated ? (
 		<Tooltip>
 			<TooltipTrigger asChild>
-				<span className="block">{cardContent}</span>
+				<span className="block w-full sm:w-[215px]">{cardContent}</span>
 			</TooltipTrigger>
 			<TooltipContent side="bottom">{label}</TooltipContent>
 		</Tooltip>

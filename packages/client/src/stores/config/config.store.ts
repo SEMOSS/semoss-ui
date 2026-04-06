@@ -145,6 +145,7 @@ interface ConfigStoreInterface {
 		adminOnlyGuardrailDelete: boolean;
 		adminOnlyGuardrailSetDiscoverable: boolean;
 		adminOnlyGuardrailSetPublic: boolean;
+		notificationEnabled: boolean;
 
 		[key: string]: unknown;
 	};
@@ -220,6 +221,7 @@ export class ConfigStore {
 			adminOnlyGuardrailDelete: false,
 			adminOnlyGuardrailSetDiscoverable: false,
 			adminOnlyGuardrailSetPublic: false,
+			notificationEnabled: false,
 		},
 	};
 	private _generalReactors: Array<string> = [];
@@ -255,7 +257,6 @@ export class ConfigStore {
 	get config() {
 		return this._store.config;
 	}
-
 
 	/**
 	 * Get the config
@@ -371,11 +372,11 @@ export class ConfigStore {
 			return;
 		}
 
+		// Set CSRF flag to true
+		Env.update({ CSRF: this.store.config.csrf });
+
 		// get the user information
 		await this.getUser();
-
-		// Set CSRF flag to true before setGeneralReactors()
-		Env.update({ CSRF: this.store.config.csrf });
 
 		//set the reactors
 		await this.setGeneralReactors();
@@ -511,7 +512,7 @@ export class ConfigStore {
 					};
 				}
 
-			    this._store.user.id = user.id || "";
+				this._store.user.id = user.id || "";
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;
