@@ -9607,6 +9607,10 @@ export const ENGINE_IMAGES = {
 			icon: BEDROCK,
 		},
 		{
+			name: "BRAIN",
+			icon: BRAIN,
+		},
+		{
 			name: "CLAUDE",
 			icon: CLAUDE,
 		},
