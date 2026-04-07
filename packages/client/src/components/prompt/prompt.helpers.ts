@@ -77,7 +77,7 @@ function getSelectInputBlock(
 	inputType: string,
 	index: number,
 	label: string,
-	options: string[] = [],
+	options: string[] = []
 ): Block {
 	return {
 		id: getIdForInput(inputType, index),
@@ -133,7 +133,7 @@ export function getBlockForInput(
 				inputType,
 				token.index,
 				capitalizeLabel(token.key),
-				inputTypeMeta?.options || [], // Pass actual options if available, otherwise empty array
+				inputTypeMeta?.options || [] // Pass actual options if available, otherwise empty array
 			);
 		default:
 			alert("Block not implemented for this input type yet.");
@@ -647,11 +647,7 @@ export async function setBlocksAndOpenUIBuilder(
 		(builder.inputTypes.value as object) ?? {},
 	)) {
 		const token = builder.inputs.value[tokenIndex] as Token;
-		const inputBlock = getBlockForInput(
-			token,
-			inputType.type,
-			inputType.meta,
-		);
+		const inputBlock = getBlockForInput(token, inputType.type, inputType.meta);
 		if (inputBlock) {
 			childInputIds = [...childInputIds, inputBlock.id];
 			state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
@@ -669,10 +665,7 @@ export async function setBlocksAndOpenUIBuilder(
 
 			// If this is a select input type, prepare to create a variable
 			if (inputType.type === INPUT_TYPE_SELECT) {
-				if (
-					inputType.meta?.options &&
-					inputType.meta.options.length > 0
-				) {
+				if (inputType.meta?.options && inputType.meta.options.length > 0) {
 					selectInputVariables.push({
 						id: inputId,
 						blockId: inputBlock.id, // Store block ID to update later
@@ -714,14 +707,14 @@ export async function setBlocksAndOpenUIBuilder(
 
 			// Set the block's options to reference the variable instead of the direct array
 			// This will automatically select the variable in the Options dropdown
-			state.blocks[selectInput.blockId].data.options =
-				`{{${variableId}.output}}`;
+			state.blocks[
+				selectInput.blockId
+			].data.options = `{{${variableId}.output}}`;
 		}
 	}
 
-	const pixel = `CreateAppFromBlocks ( project = [ "${
-		builder.title.value
-	}" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
+	const pixel = `CreateAppFromBlocks ( project = [ "${builder.title.value
+		}" ] , json =["<encode>${JSON.stringify(state)}</encode>"]  ) ;`;
 
 	// create the app
 	const { errors, pixelReturn } =

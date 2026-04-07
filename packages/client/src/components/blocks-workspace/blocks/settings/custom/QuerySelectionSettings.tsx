@@ -1,26 +1,26 @@
-import { ExpandMore } from "@mui/icons-material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-	type Block,
 	type BlockDef,
-	type CellState,
 	getValueByPath,
 	type Paths,
 	type PathValue,
-	type QueryState,
 	useBlocks,
 	type Variable,
+	type QueryState,
+	type CellState,
+	type Block,
 } from "@semoss/renderer";
-import {
-	Accordion,
-	Autocomplete,
+import { 
+	Autocomplete, 
+	TextField, 
 	List,
-	styled,
-	TextField,
 	Typography,
+	Accordion,
+	styled,
 } from "@semoss/ui";
+import { ExpandMore } from "@mui/icons-material";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -149,82 +149,62 @@ export const QuerySelectionSettings = observer(
 			const pathMap: Record<string, Option> = {};
 
 			// Add variables (excluding cells as they're handled separately from queries)
-			Object.entries(state.variables).forEach(
-				([alias, variable]: [string, Variable]) => {
-					if (
-						variable.type === "query" ||
-						variable.type === "array" ||
-						variable.type === "block"
-					) {
-						// Map array type to variable for display purposes
-						const blockType =
-							variable.type === "array"
-								? "variable"
-								: variable.type;
-						// Use the original variable type for group mapping, not the blockType
-						const groupType =
-							variable.type === "array"
-								? "variable"
-								: variable.type;
-						pathMap[`{{${alias}.${queryPath}}}`] = {
-							id: `{{${alias}.${queryPath}}}`,
-							path: `{{${alias}.${queryPath}}}`,
-							display: `${alias}.${queryPath}`,
-							type: variable.type,
-							groupAlias: groupAliasMapper(groupType),
-							blockType: blockType as
-								| "query"
-								| "block"
-								| "cell"
-								| "variable",
-						};
-					}
-				},
-			);
+			Object.entries(state.variables).forEach(([alias, variable]: [string, Variable]) => {
+				if (
+					variable.type === "query" ||
+					variable.type === "array" ||
+					variable.type === "block"
+				) {
+					// Map array type to variable for display purposes
+					const blockType = variable.type === "array" ? "variable" : variable.type;
+					// Use the original variable type for group mapping, not the blockType
+					const groupType = variable.type === "array" ? "variable" : variable.type;
+					pathMap[`{{${alias}.${queryPath}}}`] = {
+						id: `{{${alias}.${queryPath}}}`,
+						path: `{{${alias}.${queryPath}}}`,
+						display: `${alias}.${queryPath}`,
+						type: variable.type,
+						groupAlias: groupAliasMapper(groupType),
+						blockType: blockType as "query" | "block" | "cell" | "variable",
+					};
+				}
+			});
 
 			// Add queries (notebooks)
-			Object.entries(state.queries).forEach(
-				([alias, query]: [string, QueryState]) => {
-					const queryOption = `{{${alias}.${queryPath}}}`;
-					if (!pathMap[queryOption]) {
-						pathMap[queryOption] = {
-							id: queryOption,
-							path: queryOption,
-							display: `${alias}.${queryPath}`,
-							type: "query",
-							groupAlias: groupAliasMapper("query"),
-							blockType: "query",
-						};
-					}
+			Object.entries(state.queries).forEach(([alias, query]: [string, QueryState]) => {
+				const queryOption = `{{${alias}.${queryPath}}}`;
+				if (!pathMap[queryOption]) {
+					pathMap[queryOption] = {
+						id: queryOption,
+						path: queryOption,
+						display: `${alias}.${queryPath}`,
+						type: "query",
+						groupAlias: groupAliasMapper("query"),
+						blockType: "query",
+					};
+				}
 
-					// Add cells within queries
-					if (query.cellList.length > 0) {
-						Object.entries(query.cells).forEach(
-							([cellAlias, cell]: [string, CellState]) => {
-								const cellOption = `{{${alias}.${cellAlias}.${queryPath}}}`;
-								pathMap[cellOption] = {
-									id: cellOption,
-									path: cellOption,
-									display: `${alias}.${cellAlias}.${queryPath}`,
-									type: "cell",
-									groupAlias: groupAliasMapper("cell"),
-									blockType: "cell",
-								};
-							},
-						);
-					}
-				},
-			);
+				// Add cells within queries
+				if (query.cellList.length > 0) {
+					Object.entries(query.cells).forEach(([cellAlias, cell]: [string, CellState]) => {
+						const cellOption = `{{${alias}.${cellAlias}.${queryPath}}}`;
+						pathMap[cellOption] = {
+							id: cellOption,
+							path: cellOption,
+							display: `${alias}.${cellAlias}.${queryPath}`,
+							type: "cell",
+							groupAlias: groupAliasMapper("cell"),
+							blockType: "cell",
+						};
+					});
+				}
+			});
 
 			// Add placeholder entries for empty categories to ensure they're visible
 			const allCategories = ["Block", "Notebook", "Cell", "Variable"];
-			const existingGroups = new Set(
-				Object.values(pathMap).map(
-					(option: Option) => option.groupAlias,
-				),
-			);
-
-			allCategories.forEach((category) => {
+			const existingGroups = new Set(Object.values(pathMap).map((option: Option) => option.groupAlias));
+			
+			allCategories.forEach(category => {
 				if (!existingGroups.has(category)) {
 					// Add a placeholder entry that won't be selectable
 					pathMap[`__placeholder_${category}`] = {
@@ -247,12 +227,12 @@ export const QuerySelectionSettings = observer(
 			return Object.keys(optionMap).sort((a, b) => {
 				const optionA = optionMap[a];
 				const optionB = optionMap[b];
-
+				
 				// First sort by group
 				if (optionA.groupAlias !== optionB.groupAlias) {
 					return optionA.groupAlias.localeCompare(optionB.groupAlias);
 				}
-
+				
 				// Then sort by display name
 				return optionA.display.localeCompare(optionB.display);
 			});
@@ -274,15 +254,12 @@ export const QuerySelectionSettings = observer(
 			timeoutRef.current = setTimeout(() => {
 				try {
 					setData(path, value as PathValue<D["data"], typeof path>);
-
+					
 					// If the value is empty/null, clear the options array to show placeholder
 					if (!value || value.trim() === "") {
-						setData(
-							"options" as Paths<Block<D>["data"], 4>,
-							[] as PathValue<D["data"], typeof path>,
-						);
+						setData("options" as Paths<Block<D>["data"], 4>, [] as PathValue<D["data"], typeof path>);
 					}
-
+					
 					__onChange();
 				} catch (e) {
 					console.log(e);
@@ -313,7 +290,8 @@ export const QuerySelectionSettings = observer(
 									onChange={() => {
 										if (params.group === expandedGroup)
 											setExpandedGroup(null);
-										else setExpandedGroup(params.group);
+										else
+											setExpandedGroup(params.group);
 									}}
 									expanded={expandedGroup === params.group}
 								>
