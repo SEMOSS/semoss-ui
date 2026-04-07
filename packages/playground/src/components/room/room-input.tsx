@@ -763,6 +763,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													recognitionRef.current?.start();
 												}
 											}}
+											// -ml-1 to make spacing between engine select and mic look more like spacing between mic and send
+											// this is because engine select and mic are ghost
+											className="-ml-1"
 										>
 											<MicIcon
 												className={`${isListening ? "animate-pulse text-destructive" : ""}`}
