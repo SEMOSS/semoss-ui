@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "テキストを入力",
 		"thinking": "考え中...",
-		"menuPrompt": "/ でメニューを開く",
-		"openSettings": "設定を開く",
+		"menuPrompt": "今日はどのようにお手伝いできますか？",
+		"openSettings": "ファイル、エージェントなどを追加",
 		"recordLabel": "モデルを録音",
 		"stopRecording": "録音を停止",
 		"record": "録音",
@@ -68,15 +68,10 @@
 		"copyFailed": "クリップボードへのコピーに失敗しました"
 	},
 	"menuToolbox": {
-		"addToolbox": "ツールボックスを追加",
-		"searchPlaceholder": "ツールボックスを検索",
-		"notFound": "見つかりません",
-		"allTools": "すべてのツール"
+		"addToolbox": "ツールボックスを追加"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "ナレッジを追加",
-		"searchPlaceholder": "ナレッジを検索",
-		"notFound": "見つかりません"
+		"addKnowledge": "ナレッジを追加"
 	},
 	"menuWorkspace": {
 		"selectAgent": "エージェントを選択",
@@ -103,8 +98,8 @@
 		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)"
 	},
 	"menuMcp": {
-		"searchPlaceholder": "Search knowledge and tools",
-		"noResults": "No matching items found",
-		"noItemsAvailable": "No knowledge or tools available"
+		"searchPlaceholder": "ナレッジとツールボックスを検索",
+		"noResults": "一致する項目が見つかりません",
+		"noItemsAvailable": "使用可能なナレッジまたはツールボックスはありません"
 	}
 }

@@ -11,26 +11,19 @@
 		"selectPlaceholder": "एक ज्ञान स्रोत चुनें"
 	},
 	"selector": {
-		"title": "MCP चुनें",
 		"search": "खोजें",
-		"searchPlaceholder": "खोजें...",
-		"noResults": "कोई परिणाम नहीं मिला",
 		"createKnowledgeSource": "ज्ञान स्रोत बनाएं",
 		"viewDetails": "विवरण देखें",
 		"noToolboxesFound": "कोई टूलबॉक्स नहीं मिला",
 		"noKnowledgeFound": "कोई ज्ञान नहीं मिला"
 	},
 	"overlay": {
-		"title": "MCP कॉन्फ़िगरेशन",
-		"description": "अपनी MCP सेटिंग्स कॉन्फ़िगर करें",
-		"editToolbox": "टूलबॉक्स संपादित करें",
-		"editKnowledge": "ज्ञान संपादित करें",
-		"toolboxDescription": "अपने एजेंट में क्षमताएं जोड़ें और इसे बढ़ाएं कि यह क्या कर सकता है",
-		"knowledgeDescription": "उन ज्ञान स्रोतों को संपादित करें जिन तक आपका एजेंट पहुंच सकता है"
+		"editToolbox": "टूलबॉक्स कॉन्फ़िगर करें",
+		"editKnowledge": "ज्ञान कॉन्फ़िगर करें",
+		"toolboxDescription": "इस चैट को अधिक क्षमताएं देने के लिए टूल जोड़ें",
+		"knowledgeDescription": "मॉडल को अधिक संदर्भ देने के लिए ज्ञान स्रोत जोड़ें"
 	},
 	"tools": {
-		"selectMcp": "MCP चुनें",
-		"selectTool": "टूल चुनें",
 		"enterValues": "अल्पविराम से अलग किए गए मान दर्ज करें",
 		"selectField": "{{field}} चुनें",
 		"enterField": "{{field}} दर्ज करें"

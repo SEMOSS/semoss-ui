@@ -11,26 +11,19 @@
 		"selectPlaceholder": "ナレッジソースを選択"
 	},
 	"selector": {
-		"title": "MCPを選択",
 		"search": "検索",
-		"searchPlaceholder": "検索...",
-		"noResults": "結果が見つかりません",
 		"createKnowledgeSource": "ナレッジソースを作成",
 		"viewDetails": "詳細を表示",
 		"noToolboxesFound": "ツールボックスが見つかりません",
 		"noKnowledgeFound": "ナレッジが見つかりません"
 	},
 	"overlay": {
-		"title": "MCP設定",
-		"description": "MCP設定を構成します",
-		"editToolbox": "ツールボックスを編集",
-		"editKnowledge": "ナレッジを編集",
-		"toolboxDescription": "エージェントに機能を追加し、できることを拡張します",
-		"knowledgeDescription": "エージェントがアクセスできるナレッジソースを編集します"
+		"editToolbox": "ツールボックスを構成",
+		"editKnowledge": "ナレッジを構成",
+		"toolboxDescription": "このチャットにより多くの機能を与えるためにツールを追加します",
+		"knowledgeDescription": "モデルにより多くのコンテキストを与えるためにナレッジソースを追加します"
 	},
 	"tools": {
-		"selectMcp": "MCPを選択",
-		"selectTool": "ツールを選択",
 		"enterValues": "カンマ区切りの値を入力",
 		"selectField": "{{field}}を選択",
 		"enterField": "{{field}}を入力"

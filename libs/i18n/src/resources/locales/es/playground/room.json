@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "Ingresa texto",
 		"thinking": "Pensando...",
-		"menuPrompt": "/ para abrir menú",
-		"openSettings": "Abrir configuración",
+		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
+		"openSettings": "Agregar archivos, agentes y más",
 		"recordLabel": "Grabar al modelo",
 		"stopRecording": "Detener grabación",
 		"record": "Grabar",
@@ -68,15 +68,10 @@
 		"copyFailed": "Error al copiar al portapapeles"
 	},
 	"menuToolbox": {
-		"addToolbox": "Agregar caja de herramientas",
-		"searchPlaceholder": "Buscar cajas de herramientas",
-		"notFound": "No encontrado",
-		"allTools": "Todas las herramientas"
+		"addToolbox": "Agregar cajas de herramientas"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Agregar conocimiento",
-		"searchPlaceholder": "Buscar conocimiento",
-		"notFound": "No encontrado"
+		"addKnowledge": "Agregar conocimiento"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Seleccionar agente",
@@ -103,8 +98,8 @@
 		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
 	},
 	"menuMcp": {
-		"searchPlaceholder": "Search knowledge and tools",
-		"noResults": "No matching items found",
-		"noItemsAvailable": "No knowledge or tools available"
+		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
+		"noResults": "No se encontraron elementos coincidentes",
+		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
 	}
 }

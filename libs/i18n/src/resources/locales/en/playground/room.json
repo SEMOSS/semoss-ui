@@ -37,7 +37,7 @@
 	"input": {
 		"ariaPlaceholder": "Enter text",
 		"thinking": "Thinking...",
-		"menuPrompt": "/ to open menu",
+		"menuPrompt": "How can I help you today?",
 		"openSettings": "Add files, agents, and more",
 		"recordLabel": "Record the Model",
 		"stopRecording": "Stop Recording",
@@ -68,15 +68,10 @@
 		"copyFailed": "Failed to copy to clipboard"
 	},
 	"menuToolbox": {
-		"addToolbox": "Add Toolbox",
-		"searchPlaceholder": "Search toolboxes",
-		"notFound": "Not Found",
-		"allTools": "All Tools"
+		"addToolbox": "Add Toolboxes"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Add Knowledge",
-		"searchPlaceholder": "Search knowledge",
-		"notFound": "Not Found"
+		"addKnowledge": "Add Knowledge"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Select Agent",
@@ -103,8 +98,8 @@
 		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
 	},
 	"menuMcp": {
-		"searchPlaceholder": "Search knowledge and tools",
+		"searchPlaceholder": "Search knowledge and toolboxes",
 		"noResults": "No matching items found",
-		"noItemsAvailable": "No knowledge or tools available"
+		"noItemsAvailable": "No knowledge or toolboxes available"
 	}
 }

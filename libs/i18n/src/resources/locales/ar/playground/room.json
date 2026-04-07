@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "أدخل النص",
 		"thinking": "جارٍ التفكير...",
-		"menuPrompt": "/ لفتح القائمة",
-		"openSettings": "فتح الإعدادات",
+		"menuPrompt": "كيف يمكنني مساعدتك اليوم؟",
+		"openSettings": "إضافة ملفات ووكلاء والمزيد",
 		"recordLabel": "تسجيل النموذج",
 		"stopRecording": "إيقاف التسجيل",
 		"record": "تسجيل",
@@ -68,15 +68,10 @@
 		"copyFailed": "فشل النسخ إلى الحافظة"
 	},
 	"menuToolbox": {
-		"addToolbox": "إضافة صندوق أدوات",
-		"searchPlaceholder": "البحث في صناديق الأدوات",
-		"notFound": "غير موجود",
-		"allTools": "جميع الأدوات"
+		"addToolbox": "إضافة صناديق أدوات"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "إضافة معرفة",
-		"searchPlaceholder": "البحث في المعرفة",
-		"notFound": "غير موجود"
+		"addKnowledge": "إضافة معرفة"
 	},
 	"menuWorkspace": {
 		"selectAgent": "اختر وكيل",
@@ -103,8 +98,8 @@
 		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)"
 	},
 	"menuMcp": {
-		"searchPlaceholder": "Search knowledge and tools",
-		"noResults": "No matching items found",
-		"noItemsAvailable": "No knowledge or tools available"
+		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
+		"noResults": "لم يتم العثور على عناصر مطابقة",
+		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
 	}
 }

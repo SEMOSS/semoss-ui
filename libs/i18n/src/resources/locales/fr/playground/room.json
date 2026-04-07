@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "Entrez du texte",
 		"thinking": "Réflexion...",
-		"menuPrompt": "/ pour ouvrir le menu",
-		"openSettings": "Ouvrir les paramètres",
+		"menuPrompt": "Comment puis-je vous aider aujourd'hui ?",
+		"openSettings": "Ajouter des fichiers, des agents et plus encore",
 		"recordLabel": "Enregistrer le modèle",
 		"stopRecording": "Arrêter l'enregistrement",
 		"record": "Enregistrer",
@@ -68,15 +68,10 @@
 		"copyFailed": "Échec de la copie dans le presse-papiers"
 	},
 	"menuToolbox": {
-		"addToolbox": "Ajouter une boîte à outils",
-		"searchPlaceholder": "Rechercher des boîtes à outils",
-		"notFound": "Non trouvé",
-		"allTools": "Tous les outils"
+		"addToolbox": "Ajouter des boîtes à outils"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Ajouter des connaissances",
-		"searchPlaceholder": "Rechercher des connaissances",
-		"notFound": "Non trouvé"
+		"addKnowledge": "Ajouter des connaissances"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Sélectionner un agent",
@@ -103,8 +98,8 @@
 		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
 	},
 	"menuMcp": {
-		"searchPlaceholder": "Search knowledge and tools",
-		"noResults": "No matching items found",
-		"noItemsAvailable": "No knowledge or tools available"
+		"searchPlaceholder": "Rechercher des connaissances et des boîtes à outils",
+		"noResults": "Aucun élément correspondant trouvé",
+		"noItemsAvailable": "Aucune connaissance ou boîte à outils disponible"
 	}
 }

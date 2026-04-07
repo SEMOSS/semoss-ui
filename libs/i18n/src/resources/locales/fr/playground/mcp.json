@@ -11,26 +11,19 @@
 		"selectPlaceholder": "Sélectionnez une source de connaissances"
 	},
 	"selector": {
-		"title": "Sélectionner un MCP",
 		"search": "Rechercher",
-		"searchPlaceholder": "Rechercher...",
-		"noResults": "Aucun résultat trouvé",
 		"createKnowledgeSource": "Créer une source de connaissances",
 		"viewDetails": "Voir les détails",
 		"noToolboxesFound": "Aucune boîte à outils trouvée",
 		"noKnowledgeFound": "Aucune connaissance trouvée"
 	},
 	"overlay": {
-		"title": "Configuration MCP",
-		"description": "Configurez vos paramètres MCP",
-		"editToolbox": "Modifier la boîte à outils",
-		"editKnowledge": "Modifier les connaissances",
-		"toolboxDescription": "Ajoutez des capacités à votre agent et étendez ce qu'il peut faire",
-		"knowledgeDescription": "Modifiez les sources de connaissances auxquelles votre agent peut accéder"
+		"editToolbox": "Configurer les boîtes à outils",
+		"editKnowledge": "Configurer les connaissances",
+		"toolboxDescription": "Ajoutez des outils pour donner plus de capacités à ce chat",
+		"knowledgeDescription": "Ajoutez des sources de connaissances pour donner plus de contexte au modèle"
 	},
 	"tools": {
-		"selectMcp": "Sélectionner un MCP",
-		"selectTool": "Sélectionner un outil",
 		"enterValues": "Entrez des valeurs séparées par des virgules",
 		"selectField": "Sélectionner {{field}}",
 		"enterField": "Entrer {{field}}"

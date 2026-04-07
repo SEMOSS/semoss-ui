@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "टेक्स्ट दर्ज करें",
 		"thinking": "सोच रहा है...",
-		"menuPrompt": "मेनू खोलने के लिए /",
-		"openSettings": "सेटिंग्स खोलें",
+		"menuPrompt": "मैं आज आपकी कैसे मदद कर सकता हूं?",
+		"openSettings": "फ़ाइलें, एजेंट और अधिक जोड़ें",
 		"recordLabel": "मॉडल रिकॉर्ड करें",
 		"stopRecording": "रिकॉर्डिंग बंद करें",
 		"record": "रिकॉर्ड करें",
@@ -68,15 +68,10 @@
 		"copyFailed": "क्लिपबोर्ड पर कॉपी करने में विफल"
 	},
 	"menuToolbox": {
-		"addToolbox": "टूलबॉक्स जोड़ें",
-		"searchPlaceholder": "टूलबॉक्स खोजें",
-		"notFound": "नहीं मिला",
-		"allTools": "सभी टूल"
+		"addToolbox": "टूलबॉक्स जोड़ें"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "ज्ञान जोड़ें",
-		"searchPlaceholder": "ज्ञान खोजें",
-		"notFound": "नहीं मिला"
+		"addKnowledge": "ज्ञान जोड़ें"
 	},
 	"menuWorkspace": {
 		"selectAgent": "एजेंट चुनें",
@@ -103,8 +98,8 @@
 		"memoryUsedValue": "{{used}} / {{total}} टोकन ({{percent}}%)"
 	},
 	"menuMcp": {
-		"searchPlaceholder": "Search knowledge and tools",
-		"noResults": "No matching items found",
-		"noItemsAvailable": "No knowledge or tools available"
+		"searchPlaceholder": "ज्ञान और टूलबॉक्स खोजें",
+		"noResults": "कोई मेल खाने वाली आइटम नहीं मिली",
+		"noItemsAvailable": "कोई ज्ञान या टूलबॉक्स उपलब्ध नहीं है"
 	}
 }
