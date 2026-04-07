@@ -4,6 +4,7 @@ import {
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
@@ -11,8 +12,17 @@ import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
 	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
+	Popover,
+	PopoverAnchor,
+	PopoverContent,
 	ScrollArea,
 	Separator,
 	Spinner,
@@ -58,6 +68,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+	const [showCompactConfirm, setShowCompactConfirm] = useState(false);
+	const [compactSuggestionDismissed, setCompactSuggestionDismissed] =
+		useState(false);
 
 	/**
 	 * Functions
@@ -350,7 +363,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									</div>
 									<div className="relative flex flex-col items-center justify-center py-2">
 										<div className="z-10 bg-background px-3 text-muted-foreground text-xs leading-normal">
-											Context summarized
+											{t("compaction.dividerLabel")}
 										</div>
 										<Separator className="absolute top-1/2" />
 									</div>
@@ -393,14 +406,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												}
 											/>
 										)}
-										{/* DEV: token count badge — remove before shipping */}
-										{m.tokens > 0 && (
-											<div className="text-right text-muted-foreground text-xs opacity-50">
-												{m.type === "INPUT"
-													? `${m.tokens} cumulative input tokens`
-													: `${m.tokens} output tokens`}
-											</div>
-										)}
 									</React.Fragment>
 								);
 							})}
@@ -410,45 +415,183 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						</div>
 						{/* DEV: token usage counter — remove before shipping */}
 						<div className="mx-auto flex w-full max-w-4xl items-center justify-end gap-2 px-1 text-muted-foreground text-xs opacity-40">
-							<span>
-								{room.tokensUsed} tokens used
-								{room.compactionThreshold > 0 && (
-									<>
-										{" · "}
-										{Math.max(
-											0,
-											Math.round(
-												room.compactionThreshold -
-													room.tokensUsed,
-											),
-										)}{" "}
-										until compaction
-										{" · "}
-										{room.inputMessagesSinceCompaction}/5
-										msgs
-									</>
+							<span>{room.tokensUsed.toLocaleString()}</span>
+							{room.theme.featureFlags?.enableCompaction &&
+								room.compactionThreshold > 0 && (
+									<Tooltip>
+										<Popover
+											open={
+												room.tokensUsed >
+													room.compactionThreshold *
+														0.5 &&
+												room.inputMessagesSinceCompaction >=
+													10 &&
+												!compactSuggestionDismissed &&
+												!room.isCompacting
+													? true
+													: undefined
+											}
+										>
+											<PopoverAnchor>
+												<TooltipTrigger asChild>
+													<button
+														type="button"
+														disabled={
+															showLoadingState
+														}
+														className="rounded border border-current p-0.5 hover:opacity-70 disabled:cursor-not-allowed"
+														onClick={() =>
+															setShowCompactConfirm(
+																true,
+															)
+														}
+													>
+														<Minimize2Icon className="h-3 w-3" />
+													</button>
+												</TooltipTrigger>
+											</PopoverAnchor>
+											<PopoverContent
+												side="top"
+												align="end"
+												className="w-72 p-3"
+											>
+												<div className="flex items-start justify-between gap-2">
+													<p className="font-medium text-sm">
+														{t(
+															"compaction.suggestionTitle",
+														)}
+													</p>
+													<button
+														type="button"
+														className="rounded p-0.5 hover:opacity-70"
+														aria-label={t(
+															"compaction.dismissAriaLabel",
+														)}
+														onClick={() =>
+															setCompactSuggestionDismissed(
+																true,
+															)
+														}
+													>
+														<XIcon className="h-3.5 w-3.5" />
+													</button>
+												</div>
+												<p className="mt-1 text-muted-foreground text-xs leading-relaxed">
+													{t(
+														"compaction.suggestionDescription",
+													)}
+												</p>
+												<Button
+													size="sm"
+													className="mt-3 w-full"
+													onClick={() => {
+														setCompactSuggestionDismissed(
+															true,
+														);
+														setShowCompactConfirm(
+															true,
+														);
+													}}
+												>
+													<Minimize2Icon className="mr-1.5 h-3.5 w-3.5" />
+													{t(
+														"compaction.suggestionButton",
+													)}
+												</Button>
+											</PopoverContent>
+										</Popover>
+										<TooltipContent className="max-w-72">
+											<p className="font-medium">
+												{t("compaction.tooltipTitle")}
+											</p>
+											<p className="mt-1.5 text-xs leading-relaxed">
+												{t(
+													"compaction.tooltipDescription",
+												)}
+											</p>
+											<div className="mt-2 border-current border-t pt-2 text-xs opacity-70">
+												<div className="flex justify-between gap-4">
+													<span>
+														{t(
+															"compaction.tooltipTokensUsed",
+														)}
+													</span>
+													<span>
+														{room.tokensUsed.toLocaleString()}
+													</span>
+												</div>
+												<div className="flex justify-between gap-4">
+													<span>
+														{t(
+															"compaction.tooltipUntilCompaction",
+														)}
+													</span>
+													<span>
+														{Math.max(
+															0,
+															Math.round(
+																room.compactionThreshold -
+																	room.tokensUsed,
+															),
+														).toLocaleString()}
+													</span>
+												</div>
+												<div className="flex justify-between gap-4">
+													<span>
+														{t(
+															"compaction.tooltipMessagesSince",
+														)}
+													</span>
+													<span>
+														{
+															room.inputMessagesSinceCompaction
+														}
+													</span>
+												</div>
+											</div>
+										</TooltipContent>
+									</Tooltip>
 								)}
-							</span>
-							{room.compactionThreshold > 0 && (
-								<button
-									type="button"
-									disabled={showLoadingState}
-									title="Compact now"
-									className="rounded border border-current p-0.5 hover:opacity-70 disabled:cursor-not-allowed"
-									onClick={() =>
-										room.compactContext(
-											room.compactionThreshold,
-										)
-									}
-								>
-									<Minimize2Icon className="h-3 w-3" />
-								</button>
-							)}
 						</div>
+						<Dialog
+							open={showCompactConfirm}
+							onOpenChange={setShowCompactConfirm}
+						>
+							<DialogContent>
+								<DialogHeader>
+									<DialogTitle>
+										{t("compaction.confirmTitle")}
+									</DialogTitle>
+									<DialogDescription>
+										{t("compaction.confirmDescription")}
+									</DialogDescription>
+								</DialogHeader>
+								<DialogFooter>
+									<Button
+										variant="outline"
+										onClick={() =>
+											setShowCompactConfirm(false)
+										}
+									>
+										{t("compaction.confirmCancel")}
+									</Button>
+									<Button
+										onClick={() => {
+											setShowCompactConfirm(false);
+											room.compactContext(
+												room.compactionThreshold,
+											);
+										}}
+									>
+										{t("compaction.confirmCompact")}
+									</Button>
+								</DialogFooter>
+							</DialogContent>
+						</Dialog>
 						{room.isCompacting ? (
 							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-border bg-muted/50 p-3 text-muted-foreground text-sm shadow-sm">
 								<Spinner size="sm" />
-								<span>Compacting context...</span>
+								<span>{t("compaction.compactingLabel")}</span>
 							</div>
 						) : null}
 						{room.error ? (

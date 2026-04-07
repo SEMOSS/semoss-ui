@@ -76,7 +76,6 @@ export abstract class AbstractMessageStore {
 	 */
 	ornaments: {
 		modelName?: string;
-		compactionSummaryIds?: string;
 	};
 
 	/**
@@ -117,7 +116,6 @@ export abstract class AbstractMessageStore {
 		this.modelType = message.modelType;
 		this.ornaments = {
 			modelName: message.ornaments?.modelName,
-			compactionSummaryIds: message.ornaments?.compactionSummaryIds,
 		};
 
 		makeObservable(this, {

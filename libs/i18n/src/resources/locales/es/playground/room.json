@@ -94,6 +94,23 @@
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
 	},
+	"compaction": {
+		"dividerLabel": "Context summarized",
+		"compactingLabel": "Compacting context...",
+		"tooltipTitle": "Compact context",
+		"tooltipDescription": "Summarizes the conversation history to free up space in the context window. The full history remains visible above the compaction divider.",
+		"tooltipTokensUsed": "Tokens used",
+		"tooltipUntilCompaction": "Until auto-compaction",
+		"tooltipMessagesSince": "Messages since last compaction",
+		"suggestionTitle": "Consider compacting",
+		"suggestionDescription": "This conversation is using a significant portion of the context window. Compacting will summarize the history to keep things running smoothly.",
+		"suggestionButton": "Compact now",
+		"confirmTitle": "Compact context?",
+		"confirmDescription": "This will summarize your conversation history to free up space in the context window. The AI will continue from a condensed summary rather than the full transcript. Your complete history will still be visible above the compaction divider.",
+		"confirmCancel": "Cancel",
+		"confirmCompact": "Compact",
+		"dismissAriaLabel": "Dismiss"
+	},
 	"contextWindow": {
 		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",
 		"descriptionMedium": "Esta conversación se está alargando. Si continúa, el modelo comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat pronto.",

@@ -94,6 +94,23 @@
 	"errors": {
 		"createRoom": "रूम बनाते समय एक त्रुटि हुई। त्रुटि: {{message}}"
 	},
+	"compaction": {
+		"dividerLabel": "Context summarized",
+		"compactingLabel": "Compacting context...",
+		"tooltipTitle": "Compact context",
+		"tooltipDescription": "Summarizes the conversation history to free up space in the context window. The full history remains visible above the compaction divider.",
+		"tooltipTokensUsed": "Tokens used",
+		"tooltipUntilCompaction": "Until auto-compaction",
+		"tooltipMessagesSince": "Messages since last compaction",
+		"suggestionTitle": "Consider compacting",
+		"suggestionDescription": "This conversation is using a significant portion of the context window. Compacting will summarize the history to keep things running smoothly.",
+		"suggestionButton": "Compact now",
+		"confirmTitle": "Compact context?",
+		"confirmDescription": "This will summarize your conversation history to free up space in the context window. The AI will continue from a condensed summary rather than the full transcript. Your complete history will still be visible above the compaction divider.",
+		"confirmCancel": "Cancel",
+		"confirmCompact": "Compact",
+		"dismissAriaLabel": "Dismiss"
+	},
 	"contextWindow": {
 		"descriptionLow": "सभी बातचीत की एक सीमा होती है। बहुत लंबी बातचीत अंततः मॉडल को पुराने संदेश भुला देने का कारण बनेगी।",
 		"descriptionMedium": "यह बातचीत लंबी हो रही है। यदि यह जारी रहती है, तो मॉडल पुराने संदेशों को भूलना शुरू कर देगा। जल्द ही नई चैट शुरू करने पर विचार करें।",

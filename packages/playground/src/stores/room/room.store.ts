@@ -685,25 +685,15 @@ export class RoomStore {
 				}
 			}
 
-			// Second pass: mark anchor responses and summary messages as isCompactionAnchor.
+			// Second pass: mark anchor responses as isCompactionAnchor.
 			// Anchor responses are immediate children of anchor inputs.
-			// Summary messages (the raw summarization prompt + response) are identified
-			// by the IDs stored in the anchor input's compactionSummaryIds ornament.
 			{
 				const anchorIds = new Set<string>();
-				const summaryIds = new Set<string>();
 
 				for (const mId in messages) {
 					const m = messages[mId];
 					if (m.message.isCompactionAnchor) {
 						anchorIds.add(mId);
-						// Extract summary message IDs from ornaments if present.
-						const ids = m.message.ornaments?.compactionSummaryIds;
-						if (ids) {
-							for (const id of ids.split(",")) {
-								if (id) summaryIds.add(id);
-							}
-						}
 					}
 				}
 
@@ -715,11 +705,59 @@ export class RoomStore {
 						m.message.platform_generated = true;
 						m.message.isCompactionAnchor = true;
 					}
-					// Summary messages: IDs stored in anchor input ornaments.
-					if (summaryIds.has(mId)) {
-						m.message.isCompactionAnchor = true;
-						m.message.visible = false;
-					}
+				}
+			}
+
+			// Third pass: hide the step-1 summarization prompt + summary response.
+			// These are the two messages sent to the model to produce the summary text.
+			// They live in the inactive (pre-compaction) branch and should never be shown.
+			// Detection uses three signals in combination:
+			//   1. The INPUT is a leaf in the inactive branch (no non-anchor children)
+			//   2. The INPUT has exactly one child and that child is a leaf OUTPUT
+			//   3. The INPUT text starts with the known summarization prompt prefix
+			//
+			// NOTE: Signal 3 is fragile — if the summarization prompt changes between
+			// deployments, the prefix match will fail and these messages will surface
+			// in preCompactionHistory. The structural signals (1 + 2) will still hold,
+			// but are not used alone to avoid false positives on legitimate short exchanges.
+			{
+				const SUMMARIZE_PROMPT_PREFIX =
+					"The user has reached a threshold where the conversation history must be condensed.";
+
+				for (const mId in messages) {
+					const m = messages[mId];
+					if (m.message.isCompactionAnchor) continue;
+					if (m.message.type !== "INPUT") continue;
+
+					// Signal 1: leaf in the inactive branch — all children are anchors
+					const nonAnchorChildren = m.message.children.filter(
+						(c) => !c.isCompactionAnchor,
+					);
+					if (nonAnchorChildren.length !== 1) continue;
+
+					// Signal 2: the single non-anchor child is a leaf OUTPUT
+					const child = nonAnchorChildren[0];
+					if (child.type !== "OUTPUT") continue;
+					const grandchildren = child.children.filter(
+						(c) => !c.isCompactionAnchor,
+					);
+					if (grandchildren.length !== 0) continue;
+
+					// Signal 3: INPUT text starts with the summarization prompt prefix
+					const inputText = (
+						m.message.parts as { type: string; text?: string }[]
+					)
+						.filter((p) => p.type === "TEXT")
+						.map((p) => p.text ?? "")
+						.join("");
+					if (!inputText.startsWith(SUMMARIZE_PROMPT_PREFIX))
+						continue;
+
+					// All three signals match — hide both messages
+					m.message.isCompactionAnchor = true;
+					m.message.visible = false;
+					child.isCompactionAnchor = true;
+					child.visible = false;
 				}
 			}
 
@@ -797,6 +835,13 @@ export class RoomStore {
 				if (wasCompacted) {
 					this._store.wasCompacted = true;
 				}
+
+				// Derive inputMessagesSinceCompaction from the loaded tree so the
+				// 5-message gate and suggestion popover are correct after a reload.
+				// Count visible, non-platform-generated INPUT messages in the active history.
+				this._store.inputMessagesSinceCompaction = this.history.filter(
+					(m) => m.type === "INPUT" && !m.platform_generated,
+				).length;
 			});
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
@@ -1191,6 +1236,11 @@ export class RoomStore {
 	 * Check token usage and compact context if at or above threshold
 	 */
 	maybeCompactContext = async (): Promise<void> => {
+		// Compaction is disabled unless the feature flag is on.
+		if (!this.theme.featureFlags?.enableCompaction) {
+			return;
+		}
+
 		// Don't start a second compaction if one is already in flight.
 		if (this._store.isCompacting) {
 			return;
@@ -1381,19 +1431,7 @@ paramValues=[${JSON.stringify({
 				false, // don't set room.error on fail
 			);
 
-			// Extract the summary message IDs from the summarization call's response.
-			// Stored in the anchor input's ornaments (persisted to DB) so that on
-			// page reload we can find and exclude these messages from preCompactionHistory.
 			const summaryOutput = summarizeResponse.results[0].output;
-			const summaryInputId = summaryOutput.inputMessage.messageId;
-			const summaryResponseId = summaryOutput.responseMessage.messageId;
-
-			runInAction(() => {
-				anchorInput.ornaments = {
-					...anchorInput.ornaments,
-					compactionSummaryIds: `${summaryInputId},${summaryResponseId}`,
-				};
-			});
 
 			const summaryText = summaryOutput.responseMessage.parts
 				.filter((p) => p.type === "TEXT")
