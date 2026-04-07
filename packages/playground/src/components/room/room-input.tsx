@@ -863,12 +863,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									root.getTextContent().trim().length === 0,
 								);
 
-								// Auto-scroll ScrollArea viewport to bottom when content changes
+								// Check if content is scrollable
 								setTimeout(() => {
 									const viewport = scrollViewportRef.current;
 									if (viewport) {
-										viewport.scrollTop =
-											viewport.scrollHeight;
 										// Check if content is scrollable
 										setIsScrollable(
 											viewport.scrollHeight >
