@@ -25,6 +25,7 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const { configStore } = useRootStore();
 	const [loggingOut, setLoggingOut] = useState(false);
 	const [open, setOpen] = useState(false);
+	console.log("LogoutPopover rendered, loggingOut:", loggingOut);
 
 	const handleOpenChange = (next: boolean) => {
 		setOpen(next);
