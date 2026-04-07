@@ -29,6 +29,7 @@ export interface App {
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	user_permission: number;
 }
 
 export interface Workspace {
@@ -69,6 +70,8 @@ export interface MCP {
 
 	/** Tags of the mcp */
 	tags: string[];
+
+	permission: "READ_ONLY" | "EDIT" | "OWNER";
 }
 
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {

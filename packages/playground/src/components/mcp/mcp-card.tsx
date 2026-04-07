@@ -21,7 +21,7 @@ import { mcpToPlatformUrl } from "./utility";
 
 export interface MCPCardProps {
 	m: MCP;
-	type: "TOOLBOX" | "KNOWLEDGE";
+	type?: "TOOLBOX" | "KNOWLEDGE";
 	effectivePermission?:
 		| "READ_ONLY"
 		| "EDIT"
@@ -31,6 +31,8 @@ export interface MCPCardProps {
 		| "FULLY_PRIVATE";
 	missingSubDependencies?: boolean;
 	handleRequestAccess?: () => void;
+	onClick?: () => void;
+	selected?: boolean;
 }
 
 export const MCPCard = ({
@@ -39,6 +41,8 @@ export const MCPCard = ({
 	effectivePermission,
 	missingSubDependencies,
 	handleRequestAccess,
+	onClick,
+	selected,
 }: MCPCardProps) => {
 	const { root } = useRoot();
 	const { t } = useTranslation("mcp");
@@ -67,9 +71,14 @@ export const MCPCard = ({
 
 	return (
 		<Card
-			className={`col-span-1 p-0 ${
+			className={`col-span-1 p-0 transition-all ${
 				accessMissing ? "border-destructive/50 border-dashed" : ""
+			} ${selected ? "border-primary ring-2 ring-primary" : ""} ${
+				onClick
+					? "cursor-pointer hover:border-primary/50 hover:shadow-md"
+					: ""
 			}`}
+			onClick={onClick}
 		>
 			<CardContent className="space-y-2 p-4">
 				{/* Title & Open Button */}
@@ -161,9 +170,11 @@ export const MCPCard = ({
 					{effectivePermission && (
 						<div className="flex flex-1 flex-col gap-2">
 							{/* Type */}
-							<Badge variant="outline" className="w-fit">
-								{toSentenceCase(m.type)}
-							</Badge>
+							{type === "TOOLBOX" && (
+								<Badge variant="outline" className="w-fit">
+									{toSentenceCase(m.type)}
+								</Badge>
+							)}
 
 							{effectivePermission === "DISCOVERABLE" ? (
 								<Button
@@ -201,7 +212,7 @@ export const MCPCard = ({
 				<div className="text-muted-foreground text-xs">
 					{m.description || t("permission.noDescription")}
 				</div>
-				{m.tags?.length && (
+				{m.tags?.length > 0 ? (
 					<div className="flex flex-wrap gap-1">
 						{m.tags?.map((tag) => (
 							<Badge
@@ -213,7 +224,7 @@ export const MCPCard = ({
 							</Badge>
 						))}
 					</div>
-				)}
+				) : null}
 			</CardContent>
 		</Card>
 	);

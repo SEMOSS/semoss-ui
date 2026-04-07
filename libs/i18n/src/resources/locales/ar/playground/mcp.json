@@ -41,5 +41,15 @@
 		"embed": "تضمين",
 		"save": "حفظ",
 		"close": "إغلاق"
+	},
+	"permission": {
+		"accessRequested": "تم طلب الوصول",
+		"requestAccess": "طلب الوصول",
+		"noAccess": "لا يوجد وصول",
+		"requestAccessButton": "طلب الوصول",
+		"noDescription": "لا يوجد وصف متاح.",
+		"tooltipNoAccess": "ليس لديك وصول إلى {{type}} هذا. يرجى طلب الوصول من المالك.",
+		"tooltipMissingDependencies": "ليس لديك وصول إلى جميع تبعيات {{type}} هذا، لذا قد تكون الوظيفة محدودة. افتحه في المنصة لمزيد من المعلومات.",
+		"tooltipOpen": "فتح {{type}} هذا في المنصة"
 	}
 }
