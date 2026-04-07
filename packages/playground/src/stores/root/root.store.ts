@@ -7,8 +7,8 @@ configure({
 	enforceActions: "always",
 });
 
-const NAME = import.meta.env.VITE_NAME ? import.meta.env.VITE_NAME : "";
-const THEME = import.meta.env.VITE_THEME ? import.meta.env.VITE_THEME : "{}";
+const NAME = import.meta.env.VITE_NAME || "";
+const THEME = import.meta.env.VITE_THEME || "{}";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT;
 const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT;
 const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
@@ -227,6 +227,14 @@ export class RootStore {
 					theme?.sidebar?.chatHistoryDate !== undefined
 						? theme.sidebar.chatHistoryDate
 						: this._store.theme.sidebar.chatHistoryDate,
+				headerItems: [
+					...this._store.theme.sidebar.headerItems,
+					...(theme?.sidebar?.headerItems || []),
+				],
+				footerItems: [
+					...this._store.theme.sidebar.footerItems,
+					...(theme?.sidebar?.footerItems || []),
+				],
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {
