@@ -1,5 +1,5 @@
 // Removed unused import (was: import { link } from "fs");
-
+// biome-ignore-all lint/suspicious/noTemplateCurlyInString: TODO
 export type FieldType =
 	| "text"
 	| "hidden"
@@ -801,20 +801,6 @@ export const IMPORTABLE_MODELS = {
 							type: "number",
 							required: true,
 							default: 128000,
-							rules: {
-								pattern: {
-									value: /^[1-9]\d*$/,
-									message:
-										"Context Window must be a positive integer",
-								},
-							},
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: true,
 							rules: {
 								pattern: {
 									value: /^[1-9]\d*$/,

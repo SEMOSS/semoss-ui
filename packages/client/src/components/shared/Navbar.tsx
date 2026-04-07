@@ -14,6 +14,8 @@ import { usePage, useRootStore } from "@/hooks";
 import { NotificationDrawer } from "../notifications/notification-drawer";
 import { PlatformSearch } from "./platform-search";
 
+const SIDEBAR_WIDTH = "18rem";
+
 const StyledNavbar = styled("div")(({ theme }) => ({
 	position: "absolute",
 	top: "0",
@@ -38,9 +40,13 @@ const StyledNavbar = styled("div")(({ theme }) => ({
 	},
 }));
 
-const StyledLeft = styled(Stack)(({ theme }) => ({
+const StyledLeft = styled(Stack, {
+	shouldForwardProp: (prop) => prop !== "$sidebarOverlayOpen",
+})<{ $sidebarOverlayOpen: boolean }>(({ theme, $sidebarOverlayOpen }) => ({
 	minWidth: theme.spacing(6),
 	overflow: "hidden",
+	marginLeft: $sidebarOverlayOpen ? SIDEBAR_WIDTH : 0,
+	transition: "margin-left 180ms ease",
 }));
 
 const StyledRight = styled(Stack)(({ theme }) => ({
@@ -84,26 +90,40 @@ export const Navbar: React.FC = observer(() => {
 	const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 	const [hasUnread, setHasUnread] = useState<number>(0);
 	const { configStore } = useRootStore();
+	const sidebarOverlayOpen = page.sidebar.open && !page.sidebar.pinned;
+	const notificationsEnabled = configStore?.config?.notificationEnabled;
 
 	useEffect(() => {
+		if (!notificationsEnabled) {
+			setHasUnread(0);
+			return;
+		}
+
+		let isActive = true;
+
 		async function poll() {
 			try {
 				const pixel = `PollNotifications()`;
 				const res = await runPixel(pixel);
 				const num = res.pixelReturn[0].output;
-				setHasUnread(num as number);
+				if (isActive) {
+					setHasUnread(num as number);
+				}
 			} catch (e) {
 				console.error("Pixel call failed:", e);
 			}
 		}
 
 		poll(); // initial call
-		const pollInterval = setInterval(poll, 60000); // every 1 min
+		const pollInterval = setInterval(() => {
+			poll();
+		}, 60000); // every 1 min
 
 		return () => {
+			isActive = false;
 			clearInterval(pollInterval);
 		};
-	}, []);
+	}, [notificationsEnabled]);
 
 	const handleBellClick = () => {
 		setDrawerOpen(true);
@@ -117,6 +137,7 @@ export const Navbar: React.FC = observer(() => {
 	return (
 		<StyledNavbar ref={(n) => page.setNavbarElement(n)}>
 			<StyledLeft
+				$sidebarOverlayOpen={sidebarOverlayOpen}
 				id={"navbar--left"}
 				direction="row"
 				alignItems={"center"}
@@ -157,7 +178,7 @@ export const Navbar: React.FC = observer(() => {
 				spacing={1}
 				flex={"1 1 0"}
 			>
-				{configStore?.config?.notificationEnabled && (
+				{notificationsEnabled && (
 					<>
 						<IconButton onClick={handleBellClick} color="secondary">
 							<NotificationIcon />
