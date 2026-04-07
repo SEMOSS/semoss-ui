@@ -452,52 +452,59 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}}
 					options={room.options}
 					onMcpSelect={handleToolAdd}
-					MenuComponent={observer(({ onOpenChange, fileRef }) => (
-						<>
-							<RoomInputMenuUpload
-								fileRef={fileRef}
-								onSelect={() => onOpenChange(false)}
-							/>
-							<DropdownMenuSeparator />
-							<RoomInputMenuMCP
-								type="KNOWLEDGE"
-								options={room.options}
-								onSelect={handleToolSelect}
-								onOverlayClose={() => onOpenChange(false)}
-							/>
-							<RoomInputMenuMCP
-								type="TOOLBOX"
-								options={room.options}
-								onSelect={handleToolSelect}
-								onOverlayClose={() => onOpenChange(false)}
-							/>
-							<DropdownMenuSeparator />
-							<RoomInputMenuFileExplorer
-								room={room}
-								onSelect={() => onOpenChange(false)}
-							/>
-							<DropdownMenuItem
-								onSelect={(e) => {
-									e.preventDefault();
+					MenuComponent={observer(
+						({ onOpenChange, fileRef, editorRef }) => (
+							<>
+								<RoomInputMenuUpload
+									fileRef={fileRef}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuMCP
+									type="KNOWLEDGE"
+									options={room.options}
+									onSelect={handleToolSelect}
+									editorRef={editorRef}
+									onOverlayClose={() => onOpenChange(false)}
+								/>
+								<RoomInputMenuMCP
+									type="TOOLBOX"
+									options={room.options}
+									onSelect={handleToolSelect}
+									editorRef={editorRef}
+									onOverlayClose={() => onOpenChange(false)}
+								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuFileExplorer
+									room={room}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
 
-									// add to the sidebar
-									room.addSidebarNode(ROOM_CONFIGURATION_ID, {
-										type: "tab",
-										name: "Configuration",
-										component: "room-configuration",
-										config: {},
-										enableClose: true,
-									});
-									onOpenChange(false);
-								}}
-							>
-								<Settings2Icon />
-								<span className="flex-1">
-									{t("settings.edit")}
-								</span>
-							</DropdownMenuItem>
-						</>
-					))}
+										// add to the sidebar
+										room.addSidebarNode(
+											ROOM_CONFIGURATION_ID,
+											{
+												type: "tab",
+												name: "Configuration",
+												component: "room-configuration",
+												config: {},
+												enableClose: true,
+											},
+										);
+										onOpenChange(false);
+									}}
+								>
+									<Settings2Icon />
+									<span className="flex-1">
+										{t("settings.edit")}
+									</span>
+								</DropdownMenuItem>
+							</>
+						),
+					)}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools

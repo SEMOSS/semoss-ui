@@ -1,3 +1,4 @@
+import type { LexicalEditor } from "lexical";
 import { BookOpenIcon, HammerIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -19,6 +20,9 @@ interface RoomInputMenuMCPProps {
 
 	/** Callback when the overlay closes */
 	onOverlayClose?: () => void;
+
+	/** Optional ref to editor to focus when closing */
+	editorRef?: React.RefObject<LexicalEditor>;
 }
 
 const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
@@ -26,6 +30,7 @@ const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 	options,
 	onSelect,
 	onOverlayClose,
+	editorRef,
 }) => {
 	const [isOpen, setIsOpen] = useState(false);
 	const { t } = useTranslation("room");
@@ -60,6 +65,7 @@ const RoomInputMenuMCPInner: React.FC<RoomInputMenuMCPProps> = ({
 				open={isOpen}
 				type={type}
 				values={items}
+				editorRef={editorRef}
 				onClose={(updatedMcp) => {
 					setIsOpen(false);
 					onOverlayClose?.();

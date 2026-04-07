@@ -165,6 +165,7 @@ interface RoomInputProps {
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
+		editorRef?: React.RefObject<LexicalEditor>;
 	}>;
 
 	/** Room options containing MCP configurations for slash menu */
@@ -696,10 +697,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							open={menuOpen}
 							onOpenChange={(open) => {
 								setMenuOpen(open);
-								// Focus editor when menu closes
-								if (!open) {
-									editorRef.current?.focus();
-								}
 							}}
 						>
 							<Tooltip>
@@ -720,11 +717,19 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									{t("input.openSettings")}
 								</TooltipContent>
 							</Tooltip>
-							<DropdownMenuContent align="start" className="w-72">
+							<DropdownMenuContent
+								align="start"
+								className="w-72"
+								onCloseAutoFocus={(e) => {
+									// Prevent dropdown from restoring focus to trigger button
+									e.preventDefault();
+								}}
+							>
 								<MenuComponent
 									isOpen={menuOpen}
 									onOpenChange={setMenuOpen}
 									fileRef={fileRef}
+									editorRef={editorRef}
 								/>
 							</DropdownMenuContent>
 						</DropdownMenu>

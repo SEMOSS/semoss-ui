@@ -380,7 +380,7 @@ export const NewRoomPage = observer(() => {
 								return true;
 							}}
 							MenuComponent={observer(
-								({ onOpenChange, fileRef }) => (
+								({ onOpenChange, fileRef, editorRef }) => (
 									<>
 										<RoomInputMenuUpload
 											fileRef={fileRef}
@@ -461,6 +461,7 @@ export const NewRoomPage = observer(() => {
 											type="KNOWLEDGE"
 											options={tempRoomStore.options}
 											onSelect={handleToolSelect}
+											editorRef={editorRef}
 											onOverlayClose={() =>
 												onOpenChange(false)
 											}
@@ -469,6 +470,7 @@ export const NewRoomPage = observer(() => {
 											type="TOOLBOX"
 											options={tempRoomStore.options}
 											onSelect={handleToolSelect}
+											editorRef={editorRef}
 											onOverlayClose={() =>
 												onOpenChange(false)
 											}
