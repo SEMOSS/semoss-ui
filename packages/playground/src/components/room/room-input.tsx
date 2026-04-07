@@ -13,8 +13,6 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
-	ChevronLeftIcon,
-	ChevronRightIcon,
 	FileArchiveIcon,
 	FileAudioIcon,
 	FileBadgeIcon,
@@ -36,7 +34,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -494,502 +492,422 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		}, [imagePreviewUrls]);
 
 		// ========================================================================
-		// File List Scroll Controls
-		// ========================================================================
-
-		const filesScrollRef = useRef<HTMLDivElement>(null);
-		const [showScrollLeft, setShowScrollLeft] = useState(false);
-		const [showScrollRight, setShowScrollRight] = useState(false);
-
-		/**
-		 * Determine which scroll buttons to show based on scroll position
-		 * Left button: shown when scrolled right
-		 * Right button: shown when more content exists to the right
-		 */
-		const updateScrollButtons = useCallback(() => {
-			const el = filesScrollRef.current;
-			if (!el) return;
-
-			setShowScrollLeft(el.scrollLeft > 0);
-			setShowScrollRight(
-				el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
-			);
-		}, []);
-
-		// Initialize scroll button visibility
-		useEffect(() => {
-			updateScrollButtons();
-		}, [updateScrollButtons]);
-
-		/** Scroll the file list horizontally by a fixed amount */
-		const scrollFiles = (direction: "left" | "right") => {
-			const el = filesScrollRef.current;
-			if (!el) return;
-			const amount = 200;
-			el.scrollBy({
-				left: direction === "left" ? -amount : amount,
-				behavior: "smooth",
-			});
-		};
-
-		// ========================================================================
 		// Render
 		// ========================================================================
 
 		return (
-			<>
-				<div className="relative w-full" ref={ref}>
-					<input
-						ref={fileRef}
-						type="file"
-						multiple={true}
-						hidden
-						onChange={(e) => {
-							// set the new files
-							if (e.target.files) {
-								const updated = Array.from(
-									e.target.files ?? [],
-								);
-								setFiles((prev) => [...prev, ...updated]);
-							}
-						}}
-					/>
-					<LexicalComposer
-						initialConfig={{
-							namespace: "RoomInput",
-							theme: {},
-							nodes: [],
-							onError: (error) => {
-								console.error(error);
-							},
-						}}
+			<div className="relative w-full" ref={ref}>
+				<input
+					ref={fileRef}
+					type="file"
+					multiple={true}
+					hidden
+					onChange={(e) => {
+						// set the new files
+						if (e.target.files) {
+							const updated = Array.from(e.target.files ?? []);
+							setFiles((prev) => [...prev, ...updated]);
+						}
+					}}
+				/>
+				<LexicalComposer
+					initialConfig={{
+						namespace: "RoomInput",
+						theme: {},
+						nodes: [],
+						onError: (error) => {
+							console.error(error);
+						},
+					}}
+				>
+					<div
+						className={cn(
+							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
+							isDragging
+								? "border-primary border-dashed"
+								: "hover:border-primary",
+							className,
+						)}
 					>
-						<div
-							className={cn(
-								"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
-								isDragging
-									? "border-primary border-dashed"
-									: "hover:border-primary",
-								className,
-							)}
-						>
-							<PlainTextPlugin
-								contentEditable={
-									<ScrollArea
-										type="always"
-										className={cn(
-											"min-h-0 flex-1",
-											isScrollable && "mr-2",
+						{/* File attachments preview strip */}
+						{files.length > 0 && (
+							<ScrollArea type="always" className="bg-red-100">
+								<div className="flex gap-2 p-2">
+									{files.map((file, idx) => {
+										const key = `${file.name}-${file.size}-${file.lastModified}`;
+										const previewUrl =
+											imagePreviewUrls.get(key);
+
+										return (
+											<Tooltip key={key}>
+												<TooltipTrigger asChild>
+													<div className="group relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+														{previewUrl ? (
+															<img
+																src={previewUrl}
+																alt={file.name}
+																className="size-full object-cover"
+															/>
+														) : (
+															getFileIcon(file)
+														)}
+														<Button
+															variant="destructive"
+															size="icon"
+															className="absolute top-1 right-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
+															onClick={() => {
+																setFiles(
+																	(prev) =>
+																		prev.filter(
+																			(
+																				_,
+																				i,
+																			) =>
+																				i !==
+																				idx,
+																		),
+																);
+															}}
+														>
+															<XIcon className="size-3" />
+														</Button>
+													</div>
+												</TooltipTrigger>
+												<TooltipContent>
+													<p className="max-w-48 truncate text-xs">
+														{file.name}
+													</p>
+													<p className="text-muted-foreground text-xs">
+														{(
+															file.size / 1024
+														).toFixed(1)}{" "}
+														KB
+													</p>
+												</TooltipContent>
+											</Tooltip>
+										);
+									})}
+								</div>
+							</ScrollArea>
+						)}
+
+						<PlainTextPlugin
+							contentEditable={
+								<ScrollArea
+									type="always"
+									className={cn(
+										"min-h-0 flex-1 bg-blue-100",
+										isScrollable && "mr-2",
+									)}
+								>
+									<ContentEditable
+										ref={contentEditableRef}
+										className="p-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+										aria-placeholder={t(
+											"input.ariaPlaceholder",
 										)}
-									>
-										<ContentEditable
-											ref={contentEditableRef}
-											className="p-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
-											aria-placeholder={t(
-												"input.ariaPlaceholder",
-											)}
-											aria-disabled={isLoading}
-											disabled={isLoading}
-											placeholder={
-												<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
-													<SparklesIcon className="size-4" />
-													{isLoading
-														? t("input.thinking")
-														: t("input.menuPrompt")}
-												</div>
-											}
-											onDrop={(e) => {
+										aria-disabled={isLoading}
+										disabled={isLoading}
+										placeholder={
+											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
+												<SparklesIcon className="size-4" />
+												{isLoading
+													? t("input.thinking")
+													: t("input.menuPrompt")}
+											</div>
+										}
+										onDrop={(e) => {
+											e.preventDefault();
+											const updated = Array.from(
+												e.dataTransfer.files,
+											);
+											setFiles((prev) => [
+												...prev,
+												...updated,
+											]);
+											setIsDragging(false);
+										}}
+										onDragOver={(e) => {
+											e.preventDefault();
+											setIsDragging(true);
+										}}
+										onDragLeave={(e) => {
+											e.preventDefault();
+											setIsDragging(false);
+										}}
+										onPaste={(e) => {
+											// Support pasting files (e.g., screenshots)
+											const updated = Array.from(
+												e.clipboardData.files,
+											);
+
+											if (updated.length > 0) {
 												e.preventDefault();
-												const updated = Array.from(
-													e.dataTransfer.files,
-												);
 												setFiles((prev) => [
 													...prev,
 													...updated,
 												]);
-												setIsDragging(false);
-											}}
-											onDragOver={(e) => {
-												e.preventDefault();
-												setIsDragging(true);
-											}}
-											onDragLeave={(e) => {
-												e.preventDefault();
-												setIsDragging(false);
-											}}
-											onPaste={(e) => {
-												// Support pasting files (e.g., screenshots)
-												const updated = Array.from(
-													e.clipboardData.files,
-												);
+											}
+										}}
+									/>
+								</ScrollArea>
+							}
+							ErrorBoundary={LexicalErrorBoundary}
+						/>
 
-												if (updated.length > 0) {
-													e.preventDefault();
-													setFiles((prev) => [
-														...prev,
-														...updated,
-													]);
-												}
-											}}
-										/>
-									</ScrollArea>
-								}
-								ErrorBoundary={LexicalErrorBoundary}
-							/>
-
-							{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
-							<div className="flex items-center justify-between gap-2 bg-background p-2">
-								{/* Left side: settings + footer */}
-								<div className="flex items-center gap-2">
-									<DropdownMenu
-										open={menuOpen}
-										onOpenChange={(open) => {
-											setMenuOpen(open);
+						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
+						<div className="flex items-center justify-between gap-2 bg-background p-2">
+							{/* Left side: settings + footer */}
+							<div className="flex items-center gap-2">
+								<DropdownMenu
+									open={menuOpen}
+									onOpenChange={(open) => {
+										setMenuOpen(open);
+									}}
+								>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<DropdownMenuTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													disabled={isLoading}
+													aria-label={t(
+														"input.openSettings",
+													)}
+												>
+													<PlusIcon />
+												</Button>
+											</DropdownMenuTrigger>
+										</TooltipTrigger>
+										<TooltipContent>
+											{t("input.openSettings")}
+										</TooltipContent>
+									</Tooltip>
+									<DropdownMenuContent
+										align="start"
+										className="w-72"
+										onCloseAutoFocus={(e) => {
+											// Prevent dropdown from restoring focus to trigger button
+											e.preventDefault();
 										}}
 									>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon-sm"
-														disabled={isLoading}
-														aria-label={t(
-															"input.openSettings",
-														)}
-													>
-														<PlusIcon />
-													</Button>
-												</DropdownMenuTrigger>
-											</TooltipTrigger>
-											<TooltipContent>
-												{t("input.openSettings")}
-											</TooltipContent>
-										</Tooltip>
-										<DropdownMenuContent
-											align="start"
-											className="w-72"
-											onCloseAutoFocus={(e) => {
-												// Prevent dropdown from restoring focus to trigger button
-												e.preventDefault();
+										<MenuComponent
+											isOpen={menuOpen}
+											onOpenChange={setMenuOpen}
+											fileRef={fileRef}
+											editorRef={editorRef}
+										/>
+									</DropdownMenuContent>
+								</DropdownMenu>
+								{footer}
+							</div>
+
+							{/* Right side: model selector, mic, send */}
+							<div className="flex items-center gap-2">
+								{root.theme.featureFlags?.enableModelSelect && (
+									<EngineSelect
+										className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+										disabled={isLoading}
+										name={
+											model?.engine_display_name ||
+											model?.app_name ||
+											""
+										}
+										value={model?.app_id || ""}
+										engineTypes={["MODEL"]}
+										metaFilters={[
+											{ tag: "text-generation" },
+										]}
+										onChange={(v) => {
+											setModel(v);
+										}}
+										popoverContentProps={{
+											align: "start",
+										}}
+										tokensUsed={tokensUsed}
+										tokensMax={tokensMax}
+										contextTooltipContent={
+											contextTooltipContent
+										}
+									/>
+								)}
+
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											aria-label={t("input.recordLabel")}
+											size="icon-sm"
+											disabled={!canListen || isLoading}
+											onClick={() => {
+												if (isListening) {
+													recognitionRef.current?.stop();
+													editorRef.current?.focus();
+												} else {
+													recognitionRef.current?.start();
+												}
 											}}
 										>
-											<MenuComponent
-												isOpen={menuOpen}
-												onOpenChange={setMenuOpen}
-												fileRef={fileRef}
-												editorRef={editorRef}
+											<MicIcon
+												className={`${isListening ? "animate-pulse text-destructive" : ""}`}
 											/>
-										</DropdownMenuContent>
-									</DropdownMenu>
-									{footer}
-								</div>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{isListening
+											? t("input.stopRecording")
+											: t("input.record")}
+									</TooltipContent>
+								</Tooltip>
 
-								{/* Right side: model selector, mic, send */}
-								<div className="flex items-center gap-2">
-									{root.theme.featureFlags
-										?.enableModelSelect && (
-										<EngineSelect
-											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-											disabled={isLoading}
-											name={
-												model?.engine_display_name ||
-												model?.app_name ||
-												""
-											}
-											value={model?.app_id || ""}
-											engineTypes={["MODEL"]}
-											metaFilters={[
-												{ tag: "text-generation" },
-											]}
-											onChange={(v) => {
-												setModel(v);
-											}}
-											popoverContentProps={{
-												align: "start",
-											}}
-											tokensUsed={tokensUsed}
-											tokensMax={tokensMax}
-											contextTooltipContent={
-												contextTooltipContent
-											}
-										/>
-									)}
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="ghost"
-												aria-label={t(
-													"input.recordLabel",
-												)}
-												size="icon-sm"
-												disabled={
-													!canListen || isLoading
-												}
-												onClick={() => {
-													if (isListening) {
-														recognitionRef.current?.stop();
-														editorRef.current?.focus();
-													} else {
-														recognitionRef.current?.start();
-													}
-												}}
-											>
-												<MicIcon
-													className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-												/>
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>
-											{isListening
-												? t("input.stopRecording")
-												: t("input.record")}
-										</TooltipContent>
-									</Tooltip>
-
-									{/* Primary action button - dual purpose:
+								{/* Primary action button - dual purpose:
 									     - When idle: Send prompt
 									     - When loading: Pause tool execution */}
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span>
-												<Button
-													variant="default"
-													size="icon-sm"
-													aria-label={
-														isLoading
-															? t(
-																	"input.pauseToolsTooltip",
-																)
-															: t(
-																	"input.askLabel",
-																)
-													}
-													disabled={
-														isLoading
-															? hasToolsPaused ||
-																hidePauseButton
-															: isEmpty ||
-																hasOutstandingTools
-													}
-													onClick={() => {
-														if (isLoading) {
-															toggleToolsPaused?.();
-														} else {
-															promptModel();
-														}
-													}}
-												>
-													{isLoading ? (
-														hasToolsPaused ||
-														hidePauseButton ? (
-															<Spinner />
-														) : (
-															<Square
-																className="size-3"
-																fill="currentColor"
-															/>
-														)
-													) : (
-														<SendIcon />
-													)}
-												</Button>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											{(() => {
-												if (isLoading) {
-													return hasToolsPaused ||
-														hidePauseButton
-														? t(
-																"input.thinkingTooltip",
-															)
-														: t(
-																"input.pauseToolsTooltip",
-															);
-												} else if (isEmpty) {
-													return t(
-														"input.enterQuestion",
-													);
-												} else if (
-													hasOutstandingTools
-												) {
-													return t(
-														"input.completeTool",
-													);
-												}
-												return t("input.ask");
-											})()}
-										</TooltipContent>
-									</Tooltip>
-								</div>
-							</div>
-						</div>
-						<OnChangePlugin
-							onChange={(editorState) => {
-								editorState.read(() => {
-									const root = $getRoot();
-
-									// Track empty state to disable send button
-									setIsEmpty(
-										root.getTextContent().trim().length ===
-											0,
-									);
-
-									// Auto-scroll ScrollArea viewport to bottom when content changes
-									setTimeout(() => {
-										const viewport =
-											scrollViewportRef.current;
-										if (viewport) {
-											viewport.scrollTop =
-												viewport.scrollHeight;
-											// Check if content is scrollable
-											setIsScrollable(
-												viewport.scrollHeight >
-													viewport.clientHeight,
-											);
-										}
-									}, 0);
-								});
-							}}
-						/>
-						<HistoryPlugin />
-						<AutoFocusPlugin />
-						<FocusPlugin />
-						<EditorRefPlugin editorRef={editorRef} />
-						<EnterPlugin onEnter={() => promptModel()} />
-						<AutoScrollOnPastePlugin
-							scrollContainerRef={scrollViewportRef}
-						/>
-						{/* Slash command menu - searchable knowledge & toolbox only */}
-						{!isLoading && (
-							<MentionPlugin
-								trigger="/"
-								MenuComponent={({
-									isOpen,
-									onOpenChange,
-									menuPosition,
-									addToken,
-									onRequestClose,
-								}) => (
-									<DropdownMenu
-										open={isOpen}
-										onOpenChange={onOpenChange}
-									>
-										{/* Invisible trigger positioned at cursor for menu placement */}
-										<DropdownMenuTrigger
-											style={{
-												position: "fixed",
-												top: menuPosition?.top ?? 0,
-												left: menuPosition?.left ?? 0,
-												width: 0,
-												height: 0,
-											}}
-										/>
-										<DropdownMenuContent
-											align="start"
-											className="max-h-96 w-72 overflow-y-auto"
-										>
-											<RoomInputMenuSlash
-												options={options}
-												onRequestClose={onRequestClose}
-												onSelect={(tool) => {
-													onMcpSelect?.(tool);
-													addToken(`<${tool.name}>`);
-													onOpenChange(false);
-												}}
-											/>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								)}
-							/>
-						)}
-					</LexicalComposer>
-				</div>
-
-				{/* File attachment preview strip */}
-				{files.length > 0 ? (
-					<div className="relative flex items-center pt-4">
-						{/* Left scroll button */}
-						{showScrollLeft && (
-							<Button
-								variant="outline"
-								size="icon-sm"
-								className="absolute left-0 z-20 rounded-full bg-background shadow-md"
-								onClick={() => scrollFiles("left")}
-								aria-label="Scroll left"
-							>
-								<ChevronLeftIcon className="size-4" />
-							</Button>
-						)}
-
-						{/* Horizontal scrollable file list */}
-						<div
-							ref={filesScrollRef}
-							className="flex flex-row items-center gap-2 overflow-x-auto scroll-smooth px-1"
-							style={{ scrollbarWidth: "none" }}
-							onScroll={updateScrollButtons}
-						>
-							{files.map((f, fIdx) => {
-								const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
-								const previewUrl =
-									imagePreviewUrls.get(fileKey);
-								return (
-									<div
-										key={fileKey}
-										className="group relative shrink-0"
-									>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<div className="flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-													{previewUrl ? (
-														<img
-															src={previewUrl}
-															alt={f.name}
-															className="size-full object-cover"
-														/>
-													) : (
-														getFileIcon(f)
-													)}
-												</div>
-											</TooltipTrigger>
-											<TooltipContent>
-												{f.name}
-											</TooltipContent>
-										</Tooltip>
-										{/* Remove button - shown on hover */}{" "}
-										<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
 											<Button
-												variant="ghost"
-												size={"icon-sm"}
+												variant="default"
+												size="icon-sm"
+												aria-label={
+													isLoading
+														? t(
+																"input.pauseToolsTooltip",
+															)
+														: t("input.askLabel")
+												}
+												disabled={
+													isLoading
+														? hasToolsPaused ||
+															hidePauseButton
+														: isEmpty ||
+															hasOutstandingTools
+												}
 												onClick={() => {
-													const updated = [...files];
-													updated.splice(fIdx, 1);
-													setFiles(updated);
+													if (isLoading) {
+														toggleToolsPaused?.();
+													} else {
+														promptModel();
+													}
 												}}
 											>
-												<XIcon />
+												{isLoading ? (
+													hasToolsPaused ||
+													hidePauseButton ? (
+														<Spinner />
+													) : (
+														<Square
+															className="size-3"
+															fill="currentColor"
+														/>
+													)
+												) : (
+													<SendIcon />
+												)}
 											</Button>
-										</div>
-									</div>
-								);
-							})}
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{(() => {
+											if (isLoading) {
+												return hasToolsPaused ||
+													hidePauseButton
+													? t("input.thinkingTooltip")
+													: t(
+															"input.pauseToolsTooltip",
+														);
+											} else if (isEmpty) {
+												return t("input.enterQuestion");
+											} else if (hasOutstandingTools) {
+												return t("input.completeTool");
+											}
+											return t("input.ask");
+										})()}
+									</TooltipContent>
+								</Tooltip>
+							</div>
 						</div>
-						{showScrollRight && (
-							<Button
-								variant="outline"
-								size="icon-sm"
-								className="absolute right-0 z-20 rounded-full bg-background shadow-md"
-								onClick={() => scrollFiles("right")}
-								aria-label="Scroll right"
-							>
-								<ChevronRightIcon className="size-4" />
-							</Button>
-						)}
 					</div>
-				) : null}
-			</>
+					<OnChangePlugin
+						onChange={(editorState) => {
+							editorState.read(() => {
+								const root = $getRoot();
+
+								// Track empty state to disable send button
+								setIsEmpty(
+									root.getTextContent().trim().length === 0,
+								);
+
+								// Auto-scroll ScrollArea viewport to bottom when content changes
+								setTimeout(() => {
+									const viewport = scrollViewportRef.current;
+									if (viewport) {
+										viewport.scrollTop =
+											viewport.scrollHeight;
+										// Check if content is scrollable
+										setIsScrollable(
+											viewport.scrollHeight >
+												viewport.clientHeight,
+										);
+									}
+								}, 0);
+							});
+						}}
+					/>
+					<HistoryPlugin />
+					<AutoFocusPlugin />
+					<FocusPlugin />
+					<EditorRefPlugin editorRef={editorRef} />
+					<EnterPlugin onEnter={() => promptModel()} />
+					<AutoScrollOnPastePlugin
+						scrollContainerRef={scrollViewportRef}
+					/>
+					{/* Slash command menu - searchable knowledge & toolbox only */}
+					{!isLoading && (
+						<MentionPlugin
+							trigger="/"
+							MenuComponent={({
+								isOpen,
+								onOpenChange,
+								menuPosition,
+								addToken,
+								onRequestClose,
+							}) => (
+								<DropdownMenu
+									open={isOpen}
+									onOpenChange={onOpenChange}
+								>
+									{/* Invisible trigger positioned at cursor for menu placement */}
+									<DropdownMenuTrigger
+										style={{
+											position: "fixed",
+											top: menuPosition?.top ?? 0,
+											left: menuPosition?.left ?? 0,
+											width: 0,
+											height: 0,
+										}}
+									/>
+									<DropdownMenuContent
+										align="start"
+										className="max-h-96 w-72 overflow-y-auto"
+									>
+										<RoomInputMenuSlash
+											options={options}
+											onRequestClose={onRequestClose}
+											onSelect={(tool) => {
+												onMcpSelect?.(tool);
+												addToken(`<${tool.name}>`);
+												onOpenChange(false);
+											}}
+										/>
+									</DropdownMenuContent>
+								</DropdownMenu>
+							)}
+						/>
+					)}
+				</LexicalComposer>
+			</div>
 		);
 	},
 );
