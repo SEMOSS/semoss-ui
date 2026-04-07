@@ -45,6 +45,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuTrigger,
+	ScrollArea,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -242,6 +243,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Editor state
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
+		const [isScrollable, setIsScrollable] = useState(false);
 		const { root } = useRoot();
 
 		// Refs for DOM elements and Lexical editor
@@ -249,6 +251,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
+		const scrollViewportRef = useRef<HTMLElement | null>(null);
 
 		// File handling
 		const [isDragging, setIsDragging] = useState(false);
@@ -381,6 +384,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		useEffect(() => {
 			editorRef.current?.setEditable(!isLoading);
 		}, [isLoading]);
+
+		// Find and cache the ScrollArea viewport element
+		useEffect(() => {
+			if (contentEditableRef.current) {
+				const viewport = contentEditableRef.current.closest(
+					"[data-radix-scroll-area-viewport]",
+				);
+				scrollViewportRef.current = viewport as HTMLElement | null;
+			}
+		}, []);
 
 		// ========================================================================
 		// Core Functions
@@ -551,73 +564,268 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							},
 						}}
 					>
-						<PlainTextPlugin
-							contentEditable={
-								<div className="relative">
-									<ContentEditable
-										ref={contentEditableRef}
+						<div
+							className={cn(
+								"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
+								isDragging
+									? "border-primary border-dashed"
+									: "hover:border-primary",
+								className,
+							)}
+						>
+							<PlainTextPlugin
+								contentEditable={
+									<ScrollArea
+										type="always"
 										className={cn(
-											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-18 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
-											isDragging
-												? "border-primary border-dashed"
-												: "hover:border-primary",
-											className,
+											"min-h-0 flex-1",
+											isScrollable && "mr-2",
 										)}
-										aria-placeholder={t(
-											"input.ariaPlaceholder",
-										)}
-										aria-disabled={isLoading}
-										disabled={isLoading}
-										placeholder={
-											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
-												<SparklesIcon className="size-4" />
-												{isLoading
-													? t("input.thinking")
-													: t("input.menuPrompt")}
-											</div>
-										}
-										onDrop={(e) => {
-											e.preventDefault();
-											const updated = Array.from(
-												e.dataTransfer.files,
-											);
-											setFiles((prev) => [
-												...prev,
-												...updated,
-											]);
-											setIsDragging(false);
-										}}
-										onDragOver={(e) => {
-											e.preventDefault();
-											setIsDragging(true);
-										}}
-										onDragLeave={(e) => {
-											e.preventDefault();
-											setIsDragging(false);
-										}}
-										onPaste={(e) => {
-											// Support pasting files (e.g., screenshots)
-											const updated = Array.from(
-												e.clipboardData.files,
-											);
-
-											if (updated.length > 0) {
+									>
+										<ContentEditable
+											ref={contentEditableRef}
+											className="p-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+											aria-placeholder={t(
+												"input.ariaPlaceholder",
+											)}
+											aria-disabled={isLoading}
+											disabled={isLoading}
+											placeholder={
+												<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
+													<SparklesIcon className="size-4" />
+													{isLoading
+														? t("input.thinking")
+														: t("input.menuPrompt")}
+												</div>
+											}
+											onDrop={(e) => {
 												e.preventDefault();
+												const updated = Array.from(
+													e.dataTransfer.files,
+												);
 												setFiles((prev) => [
 													...prev,
 													...updated,
 												]);
-											}
+												setIsDragging(false);
+											}}
+											onDragOver={(e) => {
+												e.preventDefault();
+												setIsDragging(true);
+											}}
+											onDragLeave={(e) => {
+												e.preventDefault();
+												setIsDragging(false);
+											}}
+											onPaste={(e) => {
+												// Support pasting files (e.g., screenshots)
+												const updated = Array.from(
+													e.clipboardData.files,
+												);
+
+												if (updated.length > 0) {
+													e.preventDefault();
+													setFiles((prev) => [
+														...prev,
+														...updated,
+													]);
+												}
+											}}
+										/>
+									</ScrollArea>
+								}
+								ErrorBoundary={LexicalErrorBoundary}
+							/>
+
+							{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
+							<div className="flex items-center justify-between gap-2 bg-background p-2">
+								{/* Left side: settings + footer */}
+								<div className="flex items-center gap-2">
+									<DropdownMenu
+										open={menuOpen}
+										onOpenChange={(open) => {
+											setMenuOpen(open);
 										}}
-									/>
-									<div
-										aria-hidden="true"
-										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md bg-background"
-									/>
+									>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														disabled={isLoading}
+														aria-label={t(
+															"input.openSettings",
+														)}
+													>
+														<PlusIcon />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("input.openSettings")}
+											</TooltipContent>
+										</Tooltip>
+										<DropdownMenuContent
+											align="start"
+											className="w-72"
+											onCloseAutoFocus={(e) => {
+												// Prevent dropdown from restoring focus to trigger button
+												e.preventDefault();
+											}}
+										>
+											<MenuComponent
+												isOpen={menuOpen}
+												onOpenChange={setMenuOpen}
+												fileRef={fileRef}
+												editorRef={editorRef}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+									{footer}
 								</div>
-							}
-							ErrorBoundary={LexicalErrorBoundary}
-						/>
+
+								{/* Right side: model selector, mic, send */}
+								<div className="flex items-center gap-2">
+									{root.theme.featureFlags
+										?.enableModelSelect && (
+										<EngineSelect
+											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+											disabled={isLoading}
+											name={
+												model?.engine_display_name ||
+												model?.app_name ||
+												""
+											}
+											value={model?.app_id || ""}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											onChange={(v) => {
+												setModel(v);
+											}}
+											popoverContentProps={{
+												align: "start",
+											}}
+											tokensUsed={tokensUsed}
+											tokensMax={tokensMax}
+											contextTooltipContent={
+												contextTooltipContent
+											}
+										/>
+									)}
+
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												aria-label={t(
+													"input.recordLabel",
+												)}
+												size="icon-sm"
+												disabled={
+													!canListen || isLoading
+												}
+												onClick={() => {
+													if (isListening) {
+														recognitionRef.current?.stop();
+														editorRef.current?.focus();
+													} else {
+														recognitionRef.current?.start();
+													}
+												}}
+											>
+												<MicIcon
+													className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+												/>
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{isListening
+												? t("input.stopRecording")
+												: t("input.record")}
+										</TooltipContent>
+									</Tooltip>
+
+									{/* Primary action button - dual purpose:
+									     - When idle: Send prompt
+									     - When loading: Pause tool execution */}
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span>
+												<Button
+													variant="default"
+													size="icon-sm"
+													aria-label={
+														isLoading
+															? t(
+																	"input.pauseToolsTooltip",
+																)
+															: t(
+																	"input.askLabel",
+																)
+													}
+													disabled={
+														isLoading
+															? hasToolsPaused ||
+																hidePauseButton
+															: isEmpty ||
+																hasOutstandingTools
+													}
+													onClick={() => {
+														if (isLoading) {
+															toggleToolsPaused?.();
+														} else {
+															promptModel();
+														}
+													}}
+												>
+													{isLoading ? (
+														hasToolsPaused ||
+														hidePauseButton ? (
+															<Spinner />
+														) : (
+															<Square
+																className="size-3"
+																fill="currentColor"
+															/>
+														)
+													) : (
+														<SendIcon />
+													)}
+												</Button>
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											{(() => {
+												if (isLoading) {
+													return hasToolsPaused ||
+														hidePauseButton
+														? t(
+																"input.thinkingTooltip",
+															)
+														: t(
+																"input.pauseToolsTooltip",
+															);
+												} else if (isEmpty) {
+													return t(
+														"input.enterQuestion",
+													);
+												} else if (
+													hasOutstandingTools
+												) {
+													return t(
+														"input.completeTool",
+													);
+												}
+												return t("input.ask");
+											})()}
+										</TooltipContent>
+									</Tooltip>
+								</div>
+							</div>
+						</div>
 						<OnChangePlugin
 							onChange={(editorState) => {
 								editorState.read(() => {
@@ -629,11 +837,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											0,
 									);
 
-									// Auto-scroll to bottom when content changes (e.g., paste)
+									// Auto-scroll ScrollArea viewport to bottom when content changes
 									setTimeout(() => {
-										if (contentEditableRef.current) {
-											contentEditableRef.current.scrollTop =
-												contentEditableRef.current.scrollHeight;
+										const viewport =
+											scrollViewportRef.current;
+										if (viewport) {
+											viewport.scrollTop =
+												viewport.scrollHeight;
+											// Check if content is scrollable
+											setIsScrollable(
+												viewport.scrollHeight >
+													viewport.clientHeight,
+											);
 										}
 									}, 0);
 								});
@@ -645,7 +860,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<EditorRefPlugin editorRef={editorRef} />
 						<EnterPlugin onEnter={() => promptModel()} />
 						<AutoScrollOnPastePlugin
-							scrollContainerRef={contentEditableRef}
+							scrollContainerRef={scrollViewportRef}
 						/>
 						{/* Slash command menu - searchable knowledge & toolbox only */}
 						{!isLoading && (
@@ -691,165 +906,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							/>
 						)}
 					</LexicalComposer>
-					{/* Bottom-left controls: settings menu + custom footer */}
-					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-						<DropdownMenu
-							open={menuOpen}
-							onOpenChange={(open) => {
-								setMenuOpen(open);
-							}}
-						>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<DropdownMenuTrigger asChild>
-										<Button
-											className="bg-background"
-											variant="ghost"
-											size="icon-sm"
-											disabled={isLoading}
-											aria-label={t("input.openSettings")}
-										>
-											<PlusIcon />
-										</Button>
-									</DropdownMenuTrigger>
-								</TooltipTrigger>
-								<TooltipContent>
-									{t("input.openSettings")}
-								</TooltipContent>
-							</Tooltip>
-							<DropdownMenuContent
-								align="start"
-								className="w-72"
-								onCloseAutoFocus={(e) => {
-									// Prevent dropdown from restoring focus to trigger button
-									e.preventDefault();
-								}}
-							>
-								<MenuComponent
-									isOpen={menuOpen}
-									onOpenChange={setMenuOpen}
-									fileRef={fileRef}
-									editorRef={editorRef}
-								/>
-							</DropdownMenuContent>
-						</DropdownMenu>
-						{footer}
-					</div>
-
-					{/* Bottom-right controls: model selector, mic, send */}
-					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
-						{root.theme.featureFlags?.enableModelSelect && (
-							<EngineSelect
-								className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-								disabled={isLoading}
-								name={
-									model?.engine_display_name ||
-									model?.app_name ||
-									""
-								}
-								value={model?.app_id || ""}
-								engineTypes={["MODEL"]}
-								metaFilters={[{ tag: "text-generation" }]}
-								onChange={(v) => {
-									setModel(v);
-								}}
-								popoverContentProps={{
-									align: "start",
-								}}
-								tokensUsed={tokensUsed}
-								tokensMax={tokensMax}
-								contextTooltipContent={contextTooltipContent}
-							/>
-						)}
-
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									className="-ml-1 bg-background"
-									variant="ghost"
-									aria-label={t("input.recordLabel")}
-									size="icon-sm"
-									disabled={!canListen || isLoading}
-									onClick={() => {
-										if (isListening) {
-											recognitionRef.current?.stop();
-											editorRef.current?.focus();
-										} else {
-											recognitionRef.current?.start();
-										}
-									}}
-								>
-									<MicIcon
-										className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{isListening
-									? t("input.stopRecording")
-									: t("input.record")}
-							</TooltipContent>
-						</Tooltip>
-						{/* Primary action button - dual purpose:
-						     - When idle: Send prompt
-						     - When loading: Pause tool execution */}
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span>
-									<Button
-										variant="default"
-										size="icon-sm"
-										aria-label={
-											isLoading
-												? t("input.pauseToolsTooltip")
-												: t("input.askLabel")
-										}
-										disabled={
-											isLoading
-												? hasToolsPaused ||
-													hidePauseButton
-												: isEmpty || hasOutstandingTools
-										}
-										onClick={() => {
-											if (isLoading) {
-												toggleToolsPaused?.();
-											} else {
-												promptModel();
-											}
-										}}
-									>
-										{isLoading ? (
-											hasToolsPaused ||
-											hidePauseButton ? (
-												<Spinner />
-											) : (
-												<Square
-													className="size-3"
-													fill="currentColor"
-												/>
-											)
-										) : (
-											<SendIcon />
-										)}
-									</Button>
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								{(() => {
-									if (isLoading) {
-										return hasToolsPaused || hidePauseButton
-											? t("input.thinkingTooltip")
-											: t("input.pauseToolsTooltip");
-									} else if (isEmpty) {
-										return t("input.enterQuestion");
-									} else if (hasOutstandingTools) {
-										return t("input.completeTool");
-									}
-									return t("input.ask");
-								})()}
-							</TooltipContent>
-						</Tooltip>
-					</div>
 				</div>
 
 				{/* File attachment preview strip */}
