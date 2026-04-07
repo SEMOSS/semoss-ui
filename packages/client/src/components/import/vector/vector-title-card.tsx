@@ -7,30 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import BRAIN from "@/assets/img/BRAIN.png";
 import { formatToDataTestId } from "@/utility";
-
-function hashString(str: string): number {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-}
-
-function pickGradient(name: string): string {
-	// Subtle pastel gradient derived from hash: lower saturation + higher lightness.
-	const base = hashString(name) % 360;
-	const hue2 = (base + 35) % 360;
-	const hue3 = (base + 70) % 360;
-	return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
-}
-
-function buildInitials(label: string): string {
-	const tokens = label.split(/[\s-]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0]);
-	return chars.slice(0, 3).join("");
-}
 
 interface Vector {
 	name: string;
@@ -72,9 +50,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 		};
 	}, []);
 
-	const initials = buildInitials(label);
-	// Dynamic gradient based on vector name for visual distinction
-	const avatarGradient = pickGradient(vector.name);
+	const iconSrc = vector.icon || BRAIN;
 
 	const handleCardClick = () => {
 		if (!vector.disable && onModelSelect) {
@@ -90,10 +66,10 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 	};
 
 	const cardContent = (
-		// biome-ignore lint/a11y/useSemanticElements: <explanation>
+		// biome-ignore lint/a11y/useSemanticElements: TODO
 		<div
 			className={cn(
-				"flex min-h-[200px] max-w-[215px] cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4",
+				"flex min-h-[200px] w-full cursor-pointer flex-col justify-between rounded-lg border border-input bg-card p-4 sm:w-[215px]",
 				"hover:border-[1.5px] hover:border-primary hover:bg-primary/5",
 				vector.disable &&
 					"cursor-auto opacity-60 hover:border hover:border-input hover:bg-card",
@@ -108,20 +84,11 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 		>
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
-					{vector.icon ? (
-						<img
-							src={vector.icon}
-							alt={initials}
-							className="flex h-[30px] w-[30px] rounded-lg object-cover"
-						/>
-					) : (
-						<div
-							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-[250ms] [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
-							style={{ background: avatarGradient }}
-						>
-							{initials}
-						</div>
-					)}
+					<img
+						src={iconSrc}
+						alt={label}
+						className="flex h-[30px] w-[30px] rounded-lg object-cover"
+					/>
 					{vector.disable && (
 						<Badge variant="secondary">Coming Soon</Badge>
 					)}
@@ -134,7 +101,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 						{vector.display || vector.name}
 					</p>
 				</div>
-				<p className="mt-1 line-clamp-3 min-h-[calc(3*1.3em)] max-h-[calc(3*1.3em)] text-[11px] text-muted-foreground leading-[1.3]">
+				<p className="mt-1 line-clamp-3 max-h-[calc(3*1.3em)] min-h-[calc(3*1.3em)] text-[11px] text-muted-foreground leading-[1.3]">
 					{vector.description}
 				</p>
 			</div>
@@ -173,7 +140,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 	return isTruncated ? (
 		<Tooltip>
 			<TooltipTrigger asChild>
-				<span className="block">{cardContent}</span>
+				<span className="block w-full sm:w-[215px]">{cardContent}</span>
 			</TooltipTrigger>
 			<TooltipContent side="bottom">{label}</TooltipContent>
 		</Tooltip>

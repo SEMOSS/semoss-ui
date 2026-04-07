@@ -6,6 +6,50 @@ export const CSRF = {
 	token: "",
 };
 
+const getAbsoluteUrl = (url: string): string | null => {
+	if (typeof window === "undefined") {
+		return null;
+	}
+
+	try {
+		const parsed = new URL(url, window.location.origin);
+		return parsed.toString();
+	} catch {
+		return null;
+	}
+};
+
+const isHtmlResponse = (response: Response): boolean => {
+	const contentType = response.headers.get("content-type") || "";
+	return contentType.toLowerCase().includes("text/html");
+};
+
+const handleHeaderRedirect = (response: Response): boolean => {
+	if (typeof window === "undefined") {
+		return false;
+	}
+
+	// backend behavior (also used in legacy) can send redirect info on API error responses.
+	const redirectHeader =
+		response.headers.get("redirect") || response.headers.get("location");
+
+	if (redirectHeader) {
+		const redirectUrl = getAbsoluteUrl(redirectHeader);
+		if (redirectUrl) {
+			window.location.replace(redirectUrl);
+			return true;
+		}
+	}
+
+	// fetch follows redirects for API calls; this catches a final redirected HTML page.
+	if (response.redirected && response.url && isHtmlResponse(response)) {
+		window.location.replace(response.url);
+		return true;
+	}
+
+	return false;
+};
+
 /**
  * Store the interceptors to modify any fetch command
  */
@@ -63,13 +107,11 @@ const interceptors: {
 		return options;
 	},
 	response: async ({ response }) => {
-		// TODO: maybe we shouldn't just throw unauthorized error for 302 and actually honor the redirect?
-		if (response.status === 302) {
-			throw new UnauthorizedError("Unauthorized", 302);
-		} else if (response.status === 403) {
-			// BE throws 403 when the session is expired or invalid, so we can use this to trigger a logout in the frontend
-			// TODO: maybe we should set isAuthorized to false in the insight store
-			throw new UnauthorizedError("Unauthorized", 403);
+		if (handleHeaderRedirect(response)) {
+			throw new UnauthorizedError(
+				"Redirecting from header direct value",
+				302,
+			);
 		}
 	},
 };
