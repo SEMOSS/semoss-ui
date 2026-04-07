@@ -11,9 +11,9 @@ import {
 	Pending,
 	PlayArrowRounded,
 	PlayCircle,
-	SmartToy,
 	SwapHoriz,
 } from "@mui/icons-material";
+import { HammerIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -772,7 +772,7 @@ export const NotebookCell = observer(
 											{cell.widget === "mcp-tool" ? (
 												<SwapHoriz />
 											) : (
-												<SmartToy />
+												<HammerIcon size={16}/>
 											)}
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
