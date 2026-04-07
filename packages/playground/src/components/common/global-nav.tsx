@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import {
 	ComputerIcon,
+	HelpCircle,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -74,6 +75,7 @@ export const GlobalNav = observer(() => {
 
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
+	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
 	const { open } = useSidebar();
 	const { pathname } = useLocation();
@@ -654,20 +656,38 @@ export const GlobalNav = observer(() => {
 					);
 				})}
 			</SidebarContent>
-			<SidebarFooter className="gap-0">
-				<Separator className="mb-2 group-data-[collapsible=icon]:hidden" />
+			<SidebarFooter>
+				<Separator className="group-data-[collapsible=icon]:hidden" />
 				{root.theme.sidebar.footerItems.length > 0 && (
-					<SidebarMenu className="gap-2 p-2 pb-0 group-data-[collapsible=icon]:hidden">
-						{root.theme.sidebar.footerItems.map((item, index) => (
-							<GlobalNavItem
-								key={`footer-${item.name}-${index}`}
-								name={item.name}
-								icon={item.icon}
-								path={item.path}
-								url={item.url}
-								embed={item.embed}
-							/>
-						))}
+					<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+						<div
+							className="relative"
+							onMouseEnter={() => setHelpOpen(true)}
+							onMouseLeave={() => setHelpOpen(false)}
+						>
+							<SidebarMenuItem>
+								<SidebarMenuButton>
+									<HelpCircle />
+									Help
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							{helpOpen && (
+								<div className="absolute bottom-full left-0 z-50 w-full rounded-md border bg-popover p-1 shadow-md">
+									<SidebarMenu>
+										{root.theme.sidebar.footerItems.map((item) => (
+											<GlobalNavItem
+												key={item.path}
+												name={item.name}
+												icon={item.icon}
+												path={item.path}
+												url={item.url}
+												embed={item.embed}
+											/>
+										))}
+									</SidebarMenu>
+								</div>
+							)}
+						</div>
 					</SidebarMenu>
 				)}
 				<SidebarMenu className="gap-2 p-2">
