@@ -44,6 +44,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	ScrollArea,
+	ScrollBar,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -531,10 +532,29 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					>
 						{/* File attachments preview strip */}
 						{files.length > 0 && (
-							<ScrollArea type="always" className="bg-red-100">
-								<div className="flex gap-2 p-2">
-									{files.map((file, idx) => {
-										const key = `${file.name}-${file.size}-${file.lastModified}`;
+							<ScrollArea type="always">
+								<div className="flex w-max gap-2 p-2 pb-3">
+									{[
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+										...files,
+									].map((file, idx) => {
+										const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
 										const previewUrl =
 											imagePreviewUrls.get(key);
 
@@ -588,6 +608,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										);
 									})}
 								</div>
+								<ScrollBar
+									orientation="horizontal"
+									className="ml-2"
+								/>
 							</ScrollArea>
 						)}
 
@@ -596,8 +620,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<ScrollArea
 									type="always"
 									className={cn(
-										"min-h-0 flex-1 bg-blue-100",
-										isScrollable && "mr-2",
+										"min-h-0 flex-1",
+										isScrollable && "mr-1",
 									)}
 								>
 									<ContentEditable
