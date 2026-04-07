@@ -14,6 +14,8 @@ import { usePage, useRootStore } from "@/hooks";
 import { NotificationDrawer } from "../notifications/notification-drawer";
 import { PlatformSearch } from "./platform-search";
 
+const SIDEBAR_WIDTH = "18rem";
+
 const StyledNavbar = styled("div")(({ theme }) => ({
 	position: "absolute",
 	top: "0",
@@ -38,9 +40,13 @@ const StyledNavbar = styled("div")(({ theme }) => ({
 	},
 }));
 
-const StyledLeft = styled(Stack)(({ theme }) => ({
+const StyledLeft = styled(Stack, {
+	shouldForwardProp: (prop) => prop !== "$sidebarOverlayOpen",
+})<{ $sidebarOverlayOpen: boolean }>(({ theme, $sidebarOverlayOpen }) => ({
 	minWidth: theme.spacing(6),
 	overflow: "hidden",
+	marginLeft: $sidebarOverlayOpen ? SIDEBAR_WIDTH : 0,
+	transition: "margin-left 180ms ease",
 }));
 
 const StyledRight = styled(Stack)(({ theme }) => ({
@@ -84,6 +90,7 @@ export const Navbar: React.FC = observer(() => {
 	const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
 	const [hasUnread, setHasUnread] = useState<number>(0);
 	const { configStore } = useRootStore();
+	const sidebarOverlayOpen = page.sidebar.open && !page.sidebar.pinned;
 	const notificationsEnabled = configStore?.config?.notificationEnabled;
 
 	useEffect(() => {
@@ -130,6 +137,7 @@ export const Navbar: React.FC = observer(() => {
 	return (
 		<StyledNavbar ref={(n) => page.setNavbarElement(n)}>
 			<StyledLeft
+				$sidebarOverlayOpen={sidebarOverlayOpen}
 				id={"navbar--left"}
 				direction="row"
 				alignItems={"center"}

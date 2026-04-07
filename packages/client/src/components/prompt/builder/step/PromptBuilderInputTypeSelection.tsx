@@ -1,5 +1,5 @@
 import { InfoOutlined } from "@mui/icons-material";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Autocomplete,
 	Fade,
@@ -14,6 +14,7 @@ import {
 	INPUT_TYPE_DATABASE,
 	INPUT_TYPE_DISPLAY,
 	INPUT_TYPE_HELP_TEXT,
+	INPUT_TYPE_SELECT,
 	INPUT_TYPE_VECTOR,
 	INPUT_TYPES,
 } from "../../prompt.constants";
@@ -28,7 +29,7 @@ const HelpTextIcon = styled(InfoOutlined)(({ theme }) => ({
 export const PromptBuilderInputTypeSelection = (props: {
 	inputToken: Token;
 	inputType: string | null;
-	inputTypeMeta: string | null;
+	inputTypeMeta: any;
 	cfgLibraryVectorDbs: {
 		loading: boolean;
 		ids: Array<string>;
@@ -42,12 +43,28 @@ export const PromptBuilderInputTypeSelection = (props: {
 	setInputType: (
 		inputTokenIndex: number,
 		inputType: string,
-		inputTypeMeta: string | null,
+		inputTypeMeta: any,
 	) => void;
 }) => {
+	const [selectOptions, setSelectOptions] = useState<string[]>([]);
+	const [newOption, setNewOption] = useState<string>("");
+
+	// Initialize select options from existing meta data
+	useEffect(() => {
+		if (
+			props.inputType === INPUT_TYPE_SELECT &&
+			props.inputTypeMeta?.options
+		) {
+			setSelectOptions(props.inputTypeMeta.options);
+		} else if (props.inputType === INPUT_TYPE_SELECT) {
+			setSelectOptions([]);
+		}
+	}, [props.inputType, props.inputTypeMeta]);
+
 	const showMetaAutocomplete =
 		props.inputType === INPUT_TYPE_VECTOR ||
-		props.inputType === INPUT_TYPE_DATABASE;
+		props.inputType === INPUT_TYPE_DATABASE ||
+		props.inputType === INPUT_TYPE_SELECT;
 
 	const getMetaSelectorLoading = (): boolean => {
 		switch (props.inputType) {
@@ -66,6 +83,8 @@ export const PromptBuilderInputTypeSelection = (props: {
 				return props.cfgLibraryVectorDbs.ids;
 			case INPUT_TYPE_DATABASE:
 				return props.cfgLibraryDatabases.ids;
+			case INPUT_TYPE_SELECT:
+				return selectOptions;
 			default:
 				return [];
 		}
@@ -77,6 +96,8 @@ export const PromptBuilderInputTypeSelection = (props: {
 				return props.cfgLibraryVectorDbs.display[value] ?? "";
 			case INPUT_TYPE_DATABASE:
 				return props.cfgLibraryDatabases.display[value] ?? "";
+			case INPUT_TYPE_SELECT:
+				return value; // For select options, display the value as-is
 			default:
 				return "";
 		}
@@ -88,9 +109,35 @@ export const PromptBuilderInputTypeSelection = (props: {
 				return "Knowledge Repository";
 			case INPUT_TYPE_DATABASE:
 				return "Database";
+			case INPUT_TYPE_SELECT:
+				return "Dropdown Options";
 			default:
 				return "";
 		}
+	};
+
+	const parseAndAddOptions = (input: string) => {
+		if (input.trim()) {
+			// Handle comma-separated values
+			const newOptions = input
+				.split(",")
+				.map((option) => option.trim())
+				.filter((option) => option && !selectOptions.includes(option));
+
+			if (newOptions.length > 0) {
+				const updatedOptions = [...selectOptions, ...newOptions];
+				setSelectOptions(updatedOptions);
+				setNewOption("");
+				updateSelectInputTypeMeta(updatedOptions);
+				return true;
+			}
+		}
+		return false;
+	};
+	const updateSelectInputTypeMeta = (options: string[]) => {
+		props.setInputType(props.inputToken.index, props.inputType, {
+			options,
+		});
 	};
 
 	return (
@@ -110,16 +157,24 @@ export const PromptBuilderInputTypeSelection = (props: {
 						fullWidth
 						disableClearable
 						multiple={false}
-						id={"input-token-autocomplete"}
+						id="input-token-autocomplete"
 						options={INPUT_TYPES}
 						value={props.inputType}
 						getOptionLabel={(option) => INPUT_TYPE_DISPLAY[option]}
 						onChange={(_, newInputType: string) => {
-							props.setInputType(
-								props.inputToken.index,
-								newInputType,
-								null,
-							);
+							if (newInputType === INPUT_TYPE_SELECT) {
+								props.setInputType(
+									props.inputToken.index,
+									newInputType,
+									{ options: [] },
+								);
+							} else {
+								props.setInputType(
+									props.inputToken.index,
+									newInputType,
+									null,
+								);
+							}
 						}}
 						renderInput={(params) => (
 							<TextField
@@ -136,29 +191,112 @@ export const PromptBuilderInputTypeSelection = (props: {
 									fullWidth
 									disableClearable
 									size="small"
-									id={"meta-autocomplete"}
+									id="meta-autocomplete"
 									multiple={false}
 									loading={getMetaSelectorLoading()}
 									options={getMetaSelectorOptions()}
-									value={props.inputTypeMeta ?? ""}
+									value={
+										props.inputType === INPUT_TYPE_SELECT
+											? ""
+											: (props.inputTypeMeta ?? "")
+									}
 									getOptionLabel={getMetaSelectorDisplay}
+									freeSolo={
+										props.inputType === INPUT_TYPE_SELECT
+									}
 									onChange={(_, newMetaValue: string) => {
-										props.setInputType(
-											props.inputToken.index,
-											props.inputType,
-											newMetaValue,
-										);
+										if (
+											props.inputType ===
+											INPUT_TYPE_SELECT
+										) {
+											// For select type, don't auto-process - let user control when to add options
+											setNewOption(newMetaValue || "");
+										} else {
+											props.setInputType(
+												props.inputToken.index,
+												props.inputType,
+												newMetaValue,
+											);
+										}
+									}}
+									onInputChange={(
+										_,
+										newInputValue: string,
+										reason,
+									) => {
+										if (
+											props.inputType ===
+											INPUT_TYPE_SELECT
+										) {
+											if (reason === "input") {
+												setNewOption(newInputValue);
+											}
+										}
 									}}
 									renderInput={(params) => (
 										<TextField
 											{...params}
 											label={getMetaSelectorLabel()}
 											variant="outlined"
+											placeholder={
+												props.inputType ===
+												INPUT_TYPE_SELECT
+													? "Enter options (comma separated)"
+													: undefined
+											}
+											value={
+												props.inputType ===
+												INPUT_TYPE_SELECT
+													? newOption
+													: params.inputProps?.value
+											}
+											onChange={
+												props.inputType ===
+												INPUT_TYPE_SELECT
+													? (e) => {
+															const value =
+																e.target.value;
+															setNewOption(value);
+														}
+													: params.inputProps
+															?.onChange
+											}
+											onKeyDown={
+												props.inputType ===
+												INPUT_TYPE_SELECT
+													? (e) => {
+															if (
+																e.key ===
+																"Enter"
+															) {
+																e.preventDefault();
+																parseAndAddOptions(
+																	newOption,
+																);
+															}
+														}
+													: undefined
+											}
+											onBlur={
+												props.inputType ===
+												INPUT_TYPE_SELECT
+													? (e) => {
+															if (
+																newOption.trim()
+															) {
+																parseAndAddOptions(
+																	newOption,
+																);
+															}
+														}
+													: undefined
+											}
 										/>
 									)}
 								/>
 								<Tooltip
 									title={
+										<React.Fragment>
 											<Typography variant="body2">
 												{
 													INPUT_TYPE_HELP_TEXT[
@@ -166,6 +304,28 @@ export const PromptBuilderInputTypeSelection = (props: {
 													]
 												}
 											</Typography>
+											{props.inputType ===
+												INPUT_TYPE_SELECT &&
+												selectOptions.length > 0 && (
+													<>
+														<Typography
+															variant="body2"
+															sx={{
+																mt: 1,
+																fontWeight:
+																	"bold",
+															}}
+														>
+															Current options:
+														</Typography>
+														<Typography variant="body2">
+															{selectOptions.join(
+																", ",
+															)}
+														</Typography>
+													</>
+												)}
+										</React.Fragment>
 									}
 									arrow
 								>
