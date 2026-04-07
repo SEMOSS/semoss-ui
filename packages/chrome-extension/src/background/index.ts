@@ -264,7 +264,22 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					sendResponse({ success: false, error: error.message }),
 				);
 			return true;
-
+			case "UPDATE_FIELD_VALUE":
+			// Update field value on the webpage (real-time mirroring from panel)
+			chrome.tabs
+				.sendMessage(message.tabId, {
+					type: "UPDATE_FIELD_VALUE",
+					selector: message.selector,
+					value: message.value,
+				})
+				.then((response) => sendResponse(response))
+				.catch((error) =>
+					sendResponse({
+						success: false,
+						error: error.message || "Failed to update field",
+					}),
+				);
+			return true;
 		default:
 			console.warn("Unknown message type:", message.type);
 	}
@@ -396,15 +411,13 @@ async function highlightElement(
 					if (!element.dataset.originalBorder) {
 						element.dataset.originalBorder = element.style.border || '';
 						element.dataset.originalBoxShadow = element.style.boxShadow || '';
-						element.dataset.originalOutline = element.style.outline || '';
 						element.dataset.originalBackgroundColor = element.style.backgroundColor || '';
 					}
 					
-					// Apply highlight styles
-					element.style.border = '3px solid #007bff';
-					element.style.boxShadow = '0 0 10px 2px rgba(0, 123, 255, 0.6)';
-					element.style.outline = '2px solid #0056b3';
-					element.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
+					// Apply highlight styles - subtle and professional
+					element.style.border = '2px solid #667eea';
+					element.style.boxShadow = '0 0 12px 0 rgba(102, 126, 234, 0.25), 0 4px 8px -2px rgba(102, 126, 234, 0.15)';
+					element.style.backgroundColor = 'rgba(102, 126, 234, 0.03)';
 					element.style.transition = 'all 0.2s ease-in-out';
 					
 					// Scroll into view
@@ -466,13 +479,11 @@ async function removeHighlight(
 					if (element.dataset.originalBorder !== undefined) {
 						element.style.border = element.dataset.originalBorder;
 						element.style.boxShadow = element.dataset.originalBoxShadow;
-						element.style.outline = element.dataset.originalOutline;
 						element.style.backgroundColor = element.dataset.originalBackgroundColor;
 						
 						// Clean up data attributes
 						delete element.dataset.originalBorder;
 						delete element.dataset.originalBoxShadow;
-						delete element.dataset.originalOutline;
 						delete element.dataset.originalBackgroundColor;
 					}
 					

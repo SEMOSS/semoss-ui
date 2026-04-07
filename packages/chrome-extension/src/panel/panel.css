@@ -306,11 +306,11 @@ body {
 
 .user-input-dialog {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  min-width: 400px;
-  max-width: 500px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 32px;
+  min-width: 420px;
+  max-width: 520px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
   animation: slideUp 0.3s ease-out;
 }
 
@@ -326,16 +326,17 @@ body {
 }
 
 .user-input-dialog h3 {
-  margin: 0 0 12px 0;
-  font-size: 18px;
-  color: #333;
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 .user-input-dialog p {
-  margin: 0 0 16px 0;
+  margin: 0 0 24px 0;
   color: #666;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 /* TextField component from @semoss/ui - force full width */
@@ -346,13 +347,18 @@ body {
 
 .user-input-dialog .MuiInputBase-root {
   width: 100%;
+  font-size: 15px;
+}
+
+.user-input-dialog .MuiInputBase-root:focus-within {
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .user-input-buttons {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 /* Override Material-UI Button width constraints */
@@ -361,25 +367,26 @@ body {
 }
 
 .user-input-dialog .submit-btn {
-  padding: 10px 20px;
+  padding: 12px 24px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .user-input-dialog .submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.35);
 }
 
 .user-input-dialog .submit-btn:disabled {
-  background: #cccccc;
+  background: #d0d0d0;
   cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Format Selector Styles */

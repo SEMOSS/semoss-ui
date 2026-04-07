@@ -33,6 +33,11 @@ const PanelApp: React.FC = () => {
 		number | null
 	>(null);
 
+	// Real-time input mirroring state
+	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
+	const [currentTabId, setCurrentTabId] = useState<number | null>(null);
+	const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
 	// Auto-scroll to bottom when action history updates
 	React.useEffect(() => {
 		if (historyEndRef.current) {
@@ -686,6 +691,10 @@ const PanelApp: React.FC = () => {
 						setIsPasswordInput(isPassword);
 						setWaitingForUserInput(true);
 						
+						// Store selector and tabId for real-time mirroring
+						setCurrentSelector(selector || null);
+						setCurrentTabId(targetTabId || null);
+						
 						// Highlight the field on the webpage while the dialog is open
 						if (selector && targetTabId) {
 							console.log(`[PANEL] ✨ Highlighting field on webpage: ${selector}`);
@@ -957,9 +966,40 @@ const PanelApp: React.FC = () => {
 							<TextField
 								type={isPasswordInput ? "password" : "text"}
 								value={userInputValue}
-								onChange={(e) =>
-									setUserInputValue(e.target.value)
-								}
+								onChange={(e) => {
+									const newValue = e.target.value;
+									setUserInputValue(newValue);
+									
+									// Real-time mirroring to webpage (password fields show as dots automatically)
+									if (currentSelector && currentTabId) {
+										// Clear existing debounce timer
+										if (debounceTimerRef.current) {
+											clearTimeout(debounceTimerRef.current);
+										}
+										
+										// Debounce the update to avoid excessive messages
+										debounceTimerRef.current = setTimeout(() => {
+											console.log("[PANEL] 🔄 Mirroring input to webpage:", { 
+												valueLength: newValue.length,
+												isPassword: isPasswordInput 
+											});
+											chrome.runtime.sendMessage({
+												type: "UPDATE_FIELD_VALUE",
+												tabId: currentTabId,
+												selector: currentSelector,
+												value: newValue,
+											}).then(response => {
+												if (response?.success) {
+													console.log("[PANEL] ✅ Field value mirrored successfully");
+												} else {
+													console.log("[PANEL] ⚠️ Could not mirror field value:", response?.error);
+												}
+											}).catch(err => {
+												console.log("[PANEL] ⚠️ Mirroring unavailable:", err.message);
+											});
+										}, 75); // 75ms debounce for responsive feel
+									}
+								}}
 								placeholder="Enter value..."
 								onKeyDown={(e) => {
 									if (

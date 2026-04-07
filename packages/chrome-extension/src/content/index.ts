@@ -486,6 +486,57 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			}
 			break;
 
+		case "UPDATE_FIELD_VALUE":
+			// Handle real-time field value update from panel
+			(async () => {
+				try {
+					console.log(
+						"[CONTENT SCRIPT] 🔄 Updating field value:",
+						{ selector: message.selector, valueLength: message.value?.length || 0 }
+					);
+					
+					// Try to find the field with retry logic
+					let field: HTMLInputElement | HTMLTextAreaElement | null = null;
+					let retries = 3;
+					
+					while (retries > 0 && !field) {
+						field = document.querySelector(message.selector) as HTMLInputElement | HTMLTextAreaElement;
+						
+						if (!field && retries > 1) {
+							await new Promise(resolve => setTimeout(resolve, 300));
+						}
+						retries--;
+					}
+					
+					if (!field) {
+						console.log("[CONTENT SCRIPT] ⚠️ Field not found for update:", message.selector);
+						sendResponse({ success: false, error: "Field not found" });
+						return;
+					}
+					
+					// Update the field value
+					field.value = message.value || "";
+					
+					// Dispatch input event to trigger React onChange and form validation
+					const inputEvent = new Event("input", { bubbles: true });
+					field.dispatchEvent(inputEvent);
+					
+					// Also dispatch change event for additional compatibility
+					const changeEvent = new Event("change", { bubbles: true });
+					field.dispatchEvent(changeEvent);
+					
+					console.log("[CONTENT SCRIPT] ✅ Field value updated successfully");
+					sendResponse({ success: true });
+				} catch (error) {
+					console.error("[CONTENT SCRIPT] ❌ Error updating field value:", error);
+					sendResponse({
+						success: false,
+						error: error instanceof Error ? error.message : String(error),
+					});
+				}
+			})();
+			return true; // Keep channel open for async response
+
 		default:
 			console.warn("Unknown message type:", message.type);
 	}
