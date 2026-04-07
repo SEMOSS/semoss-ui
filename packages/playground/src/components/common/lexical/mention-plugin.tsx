@@ -74,26 +74,28 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				const textAfterCursor = textContent.slice(anchor.offset);
 
 				// Add the node
-				const textNode = $createTextNode(token);
+				const tokenNode = $createTextNode(token);
 
 				// Update the text node
 				if (textBeforeTrigger) {
 					anchorNode.setTextContent(textBeforeTrigger);
-					anchorNode.insertAfter(textNode);
+					anchorNode.insertAfter(tokenNode);
 				} else {
-					anchorNode.replace(textNode);
+					anchorNode.replace(tokenNode);
 				}
+
+				// Add a space after the token
+				const spaceNode = new TextNode(" ");
+				tokenNode.insertAfter(spaceNode);
 
 				// Add text after cursor if any
 				if (textAfterCursor) {
-					const textNode = new TextNode(textAfterCursor);
-					textNode.insertAfter(textNode);
+					const textAfterCursorNode = new TextNode(textAfterCursor);
+					spaceNode.insertAfter(textAfterCursorNode);
 				}
 
-				// Add a space after the badge and move selection there
-				const spaceNode = new TextNode(" ");
-				textNode.insertAfter(spaceNode);
-				spaceNode.select();
+				// Move cursor after the space
+				spaceNode.select(1, 1);
 			});
 
 			setIsOpen(false);
