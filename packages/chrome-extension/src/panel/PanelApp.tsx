@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
 import { Button, TextField, Typography } from "@semoss/ui";
 import {
-	type GoogleRecorderScript,
 	type PlaywrightScript,
 	ScriptExecutor,
 } from "../services/scriptExecutor";
@@ -18,20 +17,11 @@ const PanelApp: React.FC = () => {
 	const [userInputCallback, setUserInputCallback] = useState<
 		((value: string) => void) | null
 	>(null);
-	const [mode, setMode] = useState<"llm" | "script">("script");
+	const [mode, setMode] = useState<"script">("script");
 	const [scriptJson, setScriptJson] = useState("");
-	const [jsonFormat, setJsonFormat] = useState<"playwright" | "google">(
-		"playwright",
-	);
+	const [jsonFormat, setJsonFormat] = useState<"playwright">("playwright");
 
-	const dropdownRef = useRef<HTMLDivElement>(null);
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
-
-	// Playground chat monitoring
-	const [autoExecutePlayground, setAutoExecutePlayground] = useState(false);
-	const [activeAutomationTabId, setActiveAutomationTabId] = useState<
-		number | null
-	>(null);
 
 	// Real-time input mirroring state
 	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
@@ -50,7 +40,6 @@ const PanelApp: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
-		console.log("[PANEL] 📢 Panel opened - sending SMSS_EXTENSION_PANEL_OPENED message");
 		
 		chrome.runtime.sendMessage({
 			type: "SMSS_EXTENSION_PANEL_OPENED",
@@ -60,7 +49,6 @@ const PanelApp: React.FC = () => {
 		});
 
 		return () => {
-			console.log("[PANEL] 📢 Panel closing - sending SMSS_EXTENSION_PANEL_CLOSED message");
 			
 			chrome.runtime.sendMessage({
 				type: "SMSS_EXTENSION_PANEL_CLOSED",
@@ -78,50 +66,26 @@ const PanelApp: React.FC = () => {
 			sender: chrome.runtime.MessageSender,
 			_sendResponse: (response?: any) => void,
 		) => {
-			console.log(
-				"[PANEL] Received message:",
-				message.type,
-				message,
-				"sender:",
-				sender,
-			);
-
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
 			if (
 				sender.tab &&
-				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
-					message.type === "SMSS_EXEC_GOOGLE_RECORDER_SCRIPT")
+				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT")
 			) {
-				console.log(
-					"[PANEL] Ignoring direct message from content script - waiting for background broadcast",
-				);
 				return;
 			}
 
 			// CRITICAL: Block script execution if already running
 			if (
-				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
-					message.type === "SMSS_EXEC_GOOGLE_RECORDER_SCRIPT") &&
+				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") &&
 				isRunning
 			) {
-				console.log(
-					"[PANEL] ⚠️ Script execution already in progress - ignoring duplicate request",
-				);
 				return;
 			}
 
 			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
 				// Handle Playwright script execution request from Playground
 				const script = message.script;
-				console.log(
-					"[PANEL] 📥 Received Playwright script execution request:",
-					{
-						scriptName: script?.name,
-						hasScriptContent: !!script?.scriptContent,
-						contentType: typeof script?.scriptContent,
-					},
-				);
 
 				setActionHistory([
 					`🎬 Received script from Playground: ${script.name}`,
@@ -155,21 +119,6 @@ const PanelApp: React.FC = () => {
 							);
 						}
 					}
-
-					console.log(
-						"[PANEL] ✅ Script content included, using directly:",
-						{
-							hasSteps: !!content.steps,
-							stepsType: typeof content.steps,
-							isStepsArray: Array.isArray(content.steps),
-							stepKeys:
-								content.steps &&
-								typeof content.steps === "object" &&
-								!Array.isArray(content.steps)
-									? Object.keys(content.steps)
-									: "not an object",
-						},
-					);
 
 					// Use the provided script content directly
 					const scriptContent = JSON.stringify(content, null, 2);
@@ -224,144 +173,14 @@ const PanelApp: React.FC = () => {
 						);
 					}, 1000);
 				}
-			} else if (message.type === "SMSS_EXEC_GOOGLE_RECORDER_SCRIPT") {
-				// Handle Google Recorder script execution request from Playground
-				const script = message.script;
-				console.log(
-					"[PANEL] 📥 Received Google Recorder script execution request:",
-					{
-						scriptName: script?.name,
-						hasScriptContent: !!script?.scriptContent,
-						autoExecute: script?.autoExecute,
-						contentType: typeof script?.scriptContent,
-					},
-				);
-
-				setActionHistory([
-					`🎬 Received Google Recorder script from Playground: ${script.name}`,
-				]);
-				setMode("script");
-
-				// Google Recorder scripts always have content provided
-				if (script.scriptContent) {
-					let content = script.scriptContent;
-
-					// If scriptContent is a string, parse it first
-					if (typeof content === "string") {
-						try {
-							content = JSON.parse(content);
-						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse scriptContent string:",
-								e,
-							);
-						}
-					}
-
-					// If steps is a string, parse it too (handle nested stringification)
-					if (content && typeof content.steps === "string") {
-						try {
-							content.steps = JSON.parse(content.steps);
-						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse steps string:",
-								e,
-							);
-						}
-					}
-
-					console.log(
-						"[PANEL] ✅ Google Recorder script content validated:",
-						{
-							hasSteps: !!content.steps,
-							stepCount: content.steps?.length || 0,
-							title: content.title,
-						},
-					);
-
-					// Use the provided script content directly
-					const scriptContent = JSON.stringify(content, null, 2);
-					setScriptJson(scriptContent);
-					setJsonFormat("google");
-					console.log("[PANEL] 📝 Script JSON set, format: google");
-
-					setActionHistory((prev) => [
-						...prev,
-						`✅ Google Recorder script loaded: ${script.name}`,
-					]);
-
-					// Auto-execute the script
-					setActionHistory((prev) => [
-						...prev,
-						`▶️ Waiting for page to load before executing Google Recorder script...`,
-					]);
-
-					console.log(
-						"[PANEL] 🚀 Scheduling script execution with page load detection...",
-					);
-					// Wait longer and check if page is loaded before executing
-					setTimeout(async () => {
-						// Wait for current tab to be in complete state
-						const [currentTab] = await chrome.tabs.query({
-							active: true,
-							currentWindow: true,
-						});
-						if (currentTab?.id) {
-							console.log(
-								"[PANEL] ⏳ Waiting for tab to fully load...",
-							);
-							// Wait for tab to be fully loaded
-							let retries = 20; // 10 seconds total
-							while (retries > 0) {
-								const tabs = await chrome.tabs.query({});
-								const tab = tabs.find(
-									(t) => t.id === currentTab.id,
-								);
-								if (tab?.status === "complete") {
-									console.log(
-										"[PANEL] ✅ Tab loaded, status: complete",
-									);
-									break;
-								}
-								await new Promise((resolve) =>
-									setTimeout(resolve, 500),
-								);
-								retries--;
-							}
-							// Additional buffer time after page load
-							await new Promise((resolve) =>
-								setTimeout(resolve, 1500),
-							);
-						}
-						setActionHistory((prev) => [
-							...prev,
-							`▶️ Page loaded, executing script...`,
-						]);
-						console.log("[PANEL] ⏱️ Executing script now...");
-						await executeScriptWithContent(scriptContent, "google");
-					}, 1000);
-				} else {
-					console.error(
-						"[PANEL] ❌ Google Recorder script content missing!",
-					);
-					setActionHistory((prev) => [
-						...prev,
-						`❌ Google Recorder script content missing`,
-					]);
-				}
 			}
 			
 			// Handle field input detected from webpage
 			if (message.type === "FIELD_INPUT_DETECTED") {
-				console.log(
-					"[PANEL] 📝 Field input detected on webpage - auto-continuing",
-					{ value: message.value || "(password hidden)" }
-				);
 				
 				// If we're waiting for user input, auto-submit with the detected value
 				if (waitingForUserInput && userInputCallback) {
 					const valueToUse = message.isPassword ? "••••••••" : (message.value || "");
-					console.log("[PANEL] ✅ Auto-submitting user input from webpage");
 					userInputCallback(valueToUse);
 				}
 			}
@@ -379,16 +198,15 @@ const PanelApp: React.FC = () => {
 
 	const executeScriptWithContent = async (
 		content: string,
-		format?: "playwright" | "google",
+		format?: "playwright"
 	) => {
 		await executeScript(content, format);
 	};
 
 	const executeScript = async (
 		content: string,
-		format?: "playwright" | "google",
+		format?: "playwright"
 	) => {
-		console.log("scriptJSON in run Script", content);
 
 		if (!content.trim()) {
 			setActionHistory(["❌ Please upload a script JSON file first"]);
@@ -401,14 +219,11 @@ const PanelApp: React.FC = () => {
 		try {
 			// Use provided format or fall back to state
 			const scriptFormat = format || jsonFormat;
-			console.log("[PANEL] Executing with format:", scriptFormat);
 
 			// Parse script based on format
-			let script: PlaywrightScript | GoogleRecorderScript;
+			let script: PlaywrightScript;
 			if (scriptFormat === "playwright") {
 				script = ScriptExecutor.parseScript(content);
-			} else {
-				script = ScriptExecutor.parseGoogleRecorderScript(content);
 			}
 
 			// Get current tab
@@ -443,14 +258,9 @@ const PanelApp: React.FC = () => {
 				isTriggerNewTab?: { isTrue: boolean; tabId: string };
 			}>;
 			if (scriptFormat === "playwright") {
-				console.log("script being sent to convertToActions", script);
 
 				actions = await ScriptExecutor.convertToActions(
 					script as PlaywrightScript,
-				);
-			} else {
-				actions = await ScriptExecutor.convertGoogleRecorderToActions(
-					script as GoogleRecorderScript,
 				);
 			}
 			addToHistory(`✓ Found ${actions.length} actions to execute`);
@@ -460,20 +270,10 @@ const PanelApp: React.FC = () => {
 				(a) => a.type === "navigate" && a.url,
 			);
 			// For Playwright scripts: create a new tab if there's a navigate action
-			// For Google Recorder scripts: NEVER create a new tab (execute in current tab)
 			const needsNewTab =
 				scriptFormat === "playwright" && !!firstNavigateAction;
 			const initialUrl = firstNavigateAction?.url || "about:blank";
 
-			console.log("[PANEL] Tab creation decision:", {
-				jsonFormat,
-				needsNewTab,
-				initialUrl,
-				firstNavigateAction: firstNavigateAction
-					? `${firstNavigateAction.type}: ${firstNavigateAction.url}`
-					: "none",
-				totalActions: actions.length,
-			});
 
 			// Create ONE new tab for script execution
 			let targetTab: chrome.tabs.Tab;
@@ -524,24 +324,10 @@ const PanelApp: React.FC = () => {
 			// Track which navigate URL we already executed during tab creation
 			const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
 
-			console.log("[PANEL] Starting action execution:", {
-				totalActions: actions.length,
-				preExecutedNavigateUrl,
-				willSkipNavigate: !!preExecutedNavigateUrl,
-			});
 
 			// Execute each action
 			for (let i = 0; i < actions.length; i++) {
 				const action = actions[i];
-
-				console.log(`[PANEL] Action ${i + 1}/${actions.length}:`, {
-					type: action.type,
-					url: action.url,
-					selector: action.selector?.substring(0, 50),
-					willSkip:
-						action.type === "navigate" &&
-						action.url === preExecutedNavigateUrl,
-				});
 
 				// Skip navigate action if we already executed it during tab creation
 				if (
@@ -551,7 +337,6 @@ const PanelApp: React.FC = () => {
 					addToHistory(
 						`✓ Skipping navigate (already executed): ${action.url}`,
 					);
-					console.log(`[PANEL] ⏭️ SKIPPED navigate action`);
 					continue;
 				}
 
@@ -697,17 +482,10 @@ const PanelApp: React.FC = () => {
 						
 						// Highlight the field on the webpage while the dialog is open
 						if (selector && targetTabId) {
-							console.log(`[PANEL] ✨ Highlighting field on webpage: ${selector}`);
 							chrome.runtime.sendMessage({
 								type: "HIGHLIGHT_FIELD",
 								tabId: targetTabId,
 								selector: selector,
-							}).then(response => {
-								if (response?.success) {
-									console.log("[PANEL] ✅ Field highlighted successfully");
-								} else {
-									console.log("[PANEL] ⚠️ Could not highlight field:", response?.error);
-								}
 							}).catch(err => {
 								console.log("[PANEL] ⚠️ Highlight unavailable:", err.message);
 							});
@@ -715,22 +493,11 @@ const PanelApp: React.FC = () => {
 						
 						// Start monitoring the field on the webpage
 						if (selector && targetTabId) {
-							console.log(`[PANEL] 🔍 Starting field monitoring for selector: ${selector}`);
 							chrome.runtime.sendMessage({
 								type: "START_FIELD_MONITORING",
 								tabId: targetTabId,
 								selector: selector,
 								isPassword: isPassword,
-							}).then(response => {
-								if (response?.success && response?.fieldFound !== false) {
-									console.log("[PANEL] ✅ Field monitoring active - user can type on webpage");
-								} else if (response?.fieldFound === false) {
-									// Field not found - this is OK, just means monitoring unavailable
-									console.log("[PANEL] ℹ️ Field not found for monitoring - user must use extension input");
-								} else {
-									// Other error (e.g., tab in bfcache) - not critical
-									console.log("[PANEL] ℹ️ Field monitoring unavailable - user must use extension input");
-								}
 							}).catch(err => {
 								// This is not critical - user can still input via extension dialog
 								console.log("[PANEL] ℹ️ Field monitoring unavailable:", err.message);
@@ -740,7 +507,6 @@ const PanelApp: React.FC = () => {
 						setUserInputCallback(() => (value: string) => {
 							// Remove highlight when input is received
 							if (selector && targetTabId) {
-								console.log(`[PANEL] 🧹 Removing field highlight`);
 								chrome.runtime.sendMessage({
 									type: "REMOVE_HIGHLIGHT",
 									tabId: targetTabId,
@@ -753,7 +519,6 @@ const PanelApp: React.FC = () => {
 							
 							// Stop monitoring when input is received
 							if (selector && targetTabId) {
-								console.log(`[PANEL] 🛑 Stopping field monitoring`);
 								chrome.runtime.sendMessage({
 									type: "STOP_FIELD_MONITORING",
 									tabId: targetTabId,
@@ -846,9 +611,6 @@ const PanelApp: React.FC = () => {
 					success: true,
 					message: "Script executed successfully",
 				});
-				console.log(
-					"[PANEL] ✅ Sent execution complete message to background",
-				);
 			} catch (err) {
 				console.error(
 					"[PANEL] ❌ Failed to send completion message:",
@@ -859,7 +621,6 @@ const PanelApp: React.FC = () => {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			addToHistory(`❌ Error: ${errorMessage}`);
-			console.error("LLM automation error:", error);
 			// Notify playground of failed execution
 			try {
 				await chrome.runtime.sendMessage({
@@ -870,14 +631,10 @@ const PanelApp: React.FC = () => {
 			} catch (err) {
 				console.error("[PANEL] ❌ Failed to send error message:", err);
 			}
-			// Reset tracked tab on error
-			setActiveAutomationTabId(null);
 		} finally {
 			setIsRunning(false);
 		}
 	};
-
-	const commandId = React.useId();
 
 	const [_historyCounter, setHistoryCounter] = React.useState(0);
 
@@ -934,7 +691,7 @@ const PanelApp: React.FC = () => {
 	return (
 		<div className="panel-container">
 			<div className="panel-header">
-				<Typography variant="h1">Workshop Automation</Typography>
+				<Typography variant="h1">Browser Automation</Typography>
 			</div>
 
 			<div className="panel-content">
@@ -979,21 +736,11 @@ const PanelApp: React.FC = () => {
 										
 										// Debounce the update to avoid excessive messages
 										debounceTimerRef.current = setTimeout(() => {
-											console.log("[PANEL] 🔄 Mirroring input to webpage:", { 
-												valueLength: newValue.length,
-												isPassword: isPasswordInput 
-											});
 											chrome.runtime.sendMessage({
 												type: "UPDATE_FIELD_VALUE",
 												tabId: currentTabId,
 												selector: currentSelector,
 												value: newValue,
-											}).then(response => {
-												if (response?.success) {
-													console.log("[PANEL] ✅ Field value mirrored successfully");
-												} else {
-													console.log("[PANEL] ⚠️ Could not mirror field value:", response?.error);
-												}
 											}).catch(err => {
 												console.log("[PANEL] ⚠️ Mirroring unavailable:", err.message);
 											});

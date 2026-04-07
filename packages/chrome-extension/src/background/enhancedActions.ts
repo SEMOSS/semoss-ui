@@ -244,14 +244,11 @@ export async function enhancedClick(
 	tabId: number,
 	elementId: number,
 ): Promise<void> {
-	console.log(`Enhanced click on element ${elementId}`);
 
 	const objectId = await getObjectId(tabId, elementId);
 	await scrollIntoView(tabId, objectId);
 	const { x, y } = await getCenterCoordinates(tabId, objectId);
 	await clickAtPosition(tabId, x, y);
-
-	console.log(`✓ Clicked element ${elementId} at (${x}, ${y})`);
 }
 
 /**

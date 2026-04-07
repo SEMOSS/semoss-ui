@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
-	"name": "Workshop Automation Assistant",
-	"description": "Browser automation using Workshop AI platform",
+	"name": "SEMOSS Chrome Extension",
+	"description": "Browser automation using SEMOSS platform",
 	"version": "1.0.0",
 	"permissions": [
 		"tabs",
@@ -22,7 +22,7 @@
 		"type": "module"
 	},
 	"action": {
-		"default_title": "Workshop Automation Assistant",
+		"default_title": "SEMOSS Chrome Extension",
 		"default_icon": {
 			"16": "assets/icon-16.svg",
 			"48": "assets/icon-48.svg",

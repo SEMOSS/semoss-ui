@@ -1,7 +1,6 @@
 // Load saved settings
 document.addEventListener("DOMContentLoaded", async () => {
 	try {
-		console.log("Loading settings...");
 
 		if (!chrome || !chrome.storage) {
 			console.error("Chrome API not available!");
@@ -16,8 +15,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 			"workshop_access_key",
 			"workshop_secret_key",
 		]);
-
-		console.log("Loaded settings:", result);
 
 		if (result.workshop_endpoint) {
 			document.getElementById("endpoint").value =
@@ -49,8 +46,6 @@ document
 	.addEventListener("submit", async (e) => {
 		e.preventDefault();
 
-		console.log("Form submitted!");
-
 		try {
 			if (!chrome || !chrome.storage) {
 				throw new Error("Chrome API not available");
@@ -64,11 +59,8 @@ document
 				workshop_secret_key: document.getElementById("secretKey").value,
 			};
 
-			console.log("Saving settings:", settings);
 
 			await chrome.storage.local.set(settings);
-
-			console.log("Settings saved successfully!");
 			showStatus("Settings saved successfully!", "success");
 		} catch (error) {
 			console.error("Error saving settings:", error);
@@ -78,7 +70,6 @@ document
 
 // Test connection (placeholder)
 document.getElementById("test-btn").addEventListener("click", async () => {
-	console.log("Test button clicked");
 	showStatus("Testing connection...", "info");
 
 	try {
@@ -128,7 +119,6 @@ document.getElementById("test-btn").addEventListener("click", async () => {
 		});
 
 		const responseText = await response.text();
-		console.log("Test response:", responseText);
 
 		if (!response.ok) {
 			throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -166,13 +156,11 @@ document.getElementById("test-btn").addEventListener("click", async () => {
 
 		throw new Error("Unexpected response format");
 	} catch (error) {
-		console.error("Connection test failed:", error);
 		showStatus("✗ Connection failed: " + error.message, "error");
 	}
 });
 
 function showStatus(message, type) {
-	console.log("Showing status:", message, type);
 	const statusEl = document.getElementById("status");
 	statusEl.textContent = message;
 	statusEl.className = `status ${type}`;

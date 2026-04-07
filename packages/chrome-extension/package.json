@@ -1,7 +1,7 @@
 {
   "name": "workshop-automation-extension",
   "version": "1.0.0",
-  "description": "Chrome extension for browser automation using Workshop LLM",
+  "description": "Chrome extension for browser automation using SEMOSS platform",
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",

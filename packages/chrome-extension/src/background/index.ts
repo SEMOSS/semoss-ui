@@ -1,16 +1,14 @@
 // Background service worker for the extension
 import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
-console.log("Workshop Automation - Background script loaded");
-
 // Track which tabs have debuggers attached
 const attachedDebuggers = new Set<number>();
 
 // Handle extension icon click to open side panel
 chrome.action.onClicked.addListener((tab) => {
 	if (tab.id) {
-		chrome.sidePanel.open({ tabId: tab.id }).catch((error) => {
-			console.error("Error opening side panel:", error);
+		chrome.sidePanel.open({ tabId: tab.id }).catch(() => {
+			// Side panel opening failed
 		});
 	}
 });
@@ -19,28 +17,11 @@ chrome.action.onClicked.addListener((tab) => {
 chrome.debugger.onDetach.addListener((source, reason) => {
 	if (source.tabId) {
 		attachedDebuggers.delete(source.tabId);
-		console.log(
-			`Debugger detached from tab ${source.tabId}, reason: ${reason}`,
-		);
 	}
 });
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	console.log(
-		"[BACKGROUND] 📨 Received message:",
-		message.type,
-		"from:",
-		sender.tab ? `tab ${sender.tab.id}` : "extension",
-		"data:",
-		message.script
-			? {
-					scriptName: message.script.name,
-					hasContent: !!message.script.scriptContent,
-				}
-			: "N/A",
-	);
-
 	// Forward playground messages from content scripts to all extension pages (panel, popup, etc.)
 	// Only forward if message came from a tab (content script), not from extension itself
 	if (
@@ -50,22 +31,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			message.type === "PLAYGROUND_CHAT_RESPONSE" ||
 			message.type === "PLAYGROUND_CHAT_SUBMIT")
 	) {
-		console.log(
-			`[BACKGROUND] 🔄 Forwarding ${message.type} from tab ${sender.tab.id} to all extension contexts`,
-		);
 		// Broadcast to all extension contexts (this won't trigger this listener again since sender.tab will be undefined)
 		chrome.runtime
 			.sendMessage(message)
 			.then(() => {
-				console.log(
-					`[BACKGROUND] ✅ Successfully broadcasted ${message.type}`,
-				);
+				// Successfully broadcasted
 			})
-			.catch((err) => {
-				console.error(
-					`[BACKGROUND] ❌ Failed to broadcast ${message.type}:`,
-					err,
-				);
+			.catch(() => {
+				// Failed to broadcast
 			});
 		sendResponse({ success: true });
 		return true;
@@ -77,11 +50,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		!sender.tab &&
 		message.type === "SCRIPT_EXECUTION_COMPLETE"
 	) {
-		console.log(
-			`[BACKGROUND] 🔄 Forwarding SCRIPT_EXECUTION_COMPLETE to all tabs`,
-			{ success: message.success, message: message.message }
-		);
-		
 		// Send to all tabs
 		chrome.tabs.query({}, (tabs) => {
 			tabs.forEach((tab) => {
@@ -89,16 +57,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					chrome.tabs
 						.sendMessage(tab.id, message)
 						.then(() => {
-							console.log(
-								`[BACKGROUND] ✅ Sent completion to tab ${tab.id}`,
-							);
+							// Sent completion to tab
 						})
-						.catch((err) => {
+						.catch(() => {
 							// Ignore errors (tab might not have content script)
-							console.log(
-								`[BACKGROUND] ⚠️ Could not send to tab ${tab.id}:`,
-								err.message,
-							);
 						});
 				}
 			});
@@ -114,18 +76,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		(message.type === "SMSS_EXTENSION_PANEL_OPENED" ||
 			message.type === "SMSS_EXTENSION_PANEL_CLOSED")
 	) {
-		console.log(`[BACKGROUND] 🔄 Forwarding ${message.type} to all tabs`);
-
 		chrome.tabs.query({}, (tabs) => {
 			tabs.forEach((tab) => {
 				if (tab.id) {
 					chrome.tabs
 						.sendMessage(tab.id, message)
 						.then(() => {
-							console.log(`[BACKGROUND] ✅ Sent to tab ${tab.id}`);
+							// Sent to tab
 						})
 						.catch(() => {
-							console.log(`[BACKGROUND] ⚠️ Could not send to tab ${tab.id}`);
+							// Could not send to tab
 						});
 				}
 			});
@@ -140,16 +100,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		!sender.tab &&
 		(message.type === "START_FIELD_MONITORING" || message.type === "STOP_FIELD_MONITORING")
 	) {
-		console.log(
-			`[BACKGROUND] 🔄 Forwarding ${message.type} to tab ${message.tabId}`,
-			{ selector: message.selector }
-		);
-		
 		if (message.tabId) {
 			chrome.tabs
 				.sendMessage(message.tabId, message)
 				.then((response) => {
-					console.log(`[BACKGROUND] ✅ Field monitoring message forwarded:`, response);
 					sendResponse(response);
 				})
 				.catch((err) => {
@@ -161,10 +115,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					
 					if (isBfcacheError) {
 						// This is expected when tab is in bfcache - not a critical error
-						console.log(`[BACKGROUND] ⚠️ Tab ${message.tabId} in bfcache, field monitoring unavailable`);
 						sendResponse({ success: false, error: "Tab in back/forward cache" });
 					} else {
-						console.error(`[BACKGROUND] ❌ Failed to forward field monitoring:`, err);
 						sendResponse({ success: false, error: err.message });
 					}
 				});
@@ -180,19 +132,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		sender.tab &&
 		message.type === "FIELD_INPUT_DETECTED"
 	) {
-		console.log(
-			`[BACKGROUND] 🔄 Forwarding FIELD_INPUT_DETECTED from tab ${sender.tab.id} to panel`,
-			{ selector: message.selector, isPassword: message.isPassword }
-		);
-		
 		// Broadcast to all extension contexts (panel, popup, etc.)
 		chrome.runtime
 			.sendMessage(message)
 			.then(() => {
-				console.log(`[BACKGROUND] ✅ Field input notification sent to panel`);
+				// Field input notification sent to panel
 			})
-			.catch((err) => {
-				console.error(`[BACKGROUND] ❌ Failed to notify panel:`, err);
+			.catch(() => {
+				// Failed to notify panel
 			});
 		
 		sendResponse({ success: true });
@@ -281,7 +228,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				);
 			return true;
 		default:
-			console.warn("Unknown message type:", message.type);
+			// Unknown message type
 	}
 });
 
@@ -297,7 +244,6 @@ async function attachDebugger(tabId: number): Promise<void> {
 			if (chrome.runtime.lastError) {
 				reject(new Error(chrome.runtime.lastError.message));
 			} else {
-				console.log(`Debugger attached to tab ${tabId}`);
 				attachedDebuggers.add(tabId);
 				resolve();
 			}
@@ -312,7 +258,6 @@ async function detachDebugger(tabId: number): Promise<void> {
 			if (chrome.runtime.lastError) {
 				reject(new Error(chrome.runtime.lastError.message));
 			} else {
-				console.log(`Debugger detached from tab ${tabId}`);
 				attachedDebuggers.delete(tabId);
 				resolve();
 			}
@@ -326,14 +271,12 @@ async function executeAction(
 	action: string,
 	payload: Record<string, unknown>,
 ): Promise<unknown> {
-	console.log(`Executing action: ${action}`, payload);
-
 	// Enable DOM and Runtime for enhanced actions
 	try {
 		await sendDebuggerCommand(tabId, "DOM.enable");
 		await sendDebuggerCommand(tabId, "Runtime.enable");
-	} catch (err) {
-		console.warn("DOM/Runtime already enabled:", err);
+	} catch {
+		// DOM/Runtime already enabled
 	}
 
 	switch (action) {
@@ -437,15 +380,9 @@ async function highlightElement(
 			}
 
 			lastError = result?.result?.value?.error || "Unknown error";
-			console.log(
-				`Highlight attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-			);
 		} catch (error) {
 			lastError =
 				error instanceof Error ? error.message : "Unknown error";
-			console.log(
-				`Highlight attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-			);
 		}
 
 		// Wait before retry (longer delay for first few attempts)
@@ -455,10 +392,7 @@ async function highlightElement(
 		}
 	}
 
-	// All retries failed - log but don't throw
-	console.warn(
-		`Failed to highlight element with selector "${selector}" after ${maxRetries} attempts. Last error: ${lastError}`,
-	);
+	// All retries failed - don't throw
 }
 
 // Remove highlight from an element
@@ -492,8 +426,7 @@ async function removeHighlight(
 			`,
 			returnByValue: true,
 		});
-	} catch (error) {
-		console.warn("Failed to remove highlight:", error);
+	} catch {
 		// Don't throw - cleanup is not critical
 	}
 }
@@ -504,8 +437,6 @@ async function executeScriptAction(
 	action: string,
 	payload: Record<string, unknown>,
 ): Promise<unknown> {
-	console.log(`Executing script action: ${action}`, payload);
-
 	// Attach debugger if needed (will skip if already attached)
 	await attachDebugger(tabId);
 
@@ -513,8 +444,8 @@ async function executeScriptAction(
 	try {
 		await sendDebuggerCommand(tabId, "DOM.enable");
 		await sendDebuggerCommand(tabId, "Runtime.enable");
-	} catch (err) {
-		console.warn("DOM/Runtime already enabled:", err);
+	} catch {
+		// DOM/Runtime already enabled
 	}
 
 	switch (action) {
@@ -611,15 +542,9 @@ async function clickBySelector(tabId: number, selector: string): Promise<void> {
 				}
 
 				lastError = result?.result?.value?.error || "Unknown error";
-				console.log(
-					`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-				);
 			} catch (error) {
 				lastError =
 					error instanceof Error ? error.message : "Unknown error";
-				console.log(
-					`Click attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-				);
 			}
 
 			// Wait before retry (but not after last attempt)
@@ -719,15 +644,9 @@ async function typeBySelector(
 				}
 
 				lastError = result?.result?.value?.error || "Unknown error";
-				console.log(
-					`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-				);
 			} catch (error) {
 				lastError =
 					error instanceof Error ? error.message : "Unknown error";
-				console.log(
-					`Type attempt ${attempt}/${maxRetries} failed: ${lastError}`,
-				);
 			}
 
 			// Wait before retry (but not after last attempt)
