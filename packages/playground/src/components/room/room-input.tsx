@@ -56,15 +56,7 @@ import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { Engine } from "@/types";
 
-const IMAGE_EXTENSIONS = [
-	"png",
-	"jpg",
-	"jpeg",
-	"gif",
-	"webp",
-	"svg",
-	"img",
-];
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
 
 const isImageFile = (file: File): boolean => {
 	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
@@ -75,13 +67,30 @@ const ICON_CLASS = "size-8 shrink-0 text-muted-foreground";
 
 const getIconForExt = (ext: string) => {
 	if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheetIcon;
-	if (["py", "js", "ts", "tsx", "jsx", "java", "cpp", "c", "go", "rs"].includes(ext)) return FileCodeIcon;
-	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext)) return FileTerminalIcon;
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		].includes(ext)
+	)
+		return FileCodeIcon;
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
+		return FileTerminalIcon;
 	if (ext === "json") return FileJsonIcon;
 	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return FileArchiveIcon;
 	if (["ppt", "pptx"].includes(ext)) return FileChartPieIcon;
-	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext)) return FileAudioIcon;
-	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext)) return FileVideoIcon;
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
+		return FileAudioIcon;
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+		return FileVideoIcon;
 	if (["html", "xml", "md", "mdx", "rtf"].includes(ext)) return FileTypeIcon;
 	if (ext === "pdf") return FileBadgeIcon;
 	if (["doc", "docx", "msg", "txt"].includes(ext)) return FileTextIcon;
@@ -95,7 +104,7 @@ const getFileIcon = (file: File): React.ReactNode => {
 	return (
 		<div className="flex flex-col items-center gap-1">
 			<Icon className={ICON_CLASS} strokeWidth={1.25} />
-			<span className="max-w-16 truncate text-[10px] font-medium uppercase text-muted-foreground">
+			<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
 				{ext}
 			</span>
 		</div>
@@ -735,13 +744,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												variant="ghost"
 												size={"icon-sm"}
 												onClick={() => {
-													const updated = [
-														...files,
-													];
-													updated.splice(
-														fIdx,
-														1,
-													);
+													const updated = [...files];
+													updated.splice(fIdx, 1);
 													setFiles(updated);
 												}}
 											>
