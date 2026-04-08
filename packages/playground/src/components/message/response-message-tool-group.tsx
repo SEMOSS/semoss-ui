@@ -10,7 +10,7 @@ interface ResponseMessageToolGroupProps {
 	/** Message to render */
 	message: ResponseMessageStore;
 
-	/** Completed tools to group */
+	/** Tools to group */
 	tools: ToolStore[];
 }
 
@@ -18,6 +18,11 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 	observer(({ message, tools }) => {
 		const { t } = useTranslation("chat");
 		const [isOpen, setIsOpen] = useState(false);
+
+		// Just render a single tool without grouping
+		if (tools.length === 1) {
+			return <ResponseMessageTool message={message} tool={tools[0]} />;
+		}
 
 		return (
 			<div

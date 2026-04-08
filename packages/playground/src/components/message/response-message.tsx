@@ -119,7 +119,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// part index (regardless of completion) so the group always renders at
 		// the top of the tool list even when an auto-execute tool completes first.
 		const getShouldGroupTool = (tool: ToolStore) => {
-			return tool?.status === "SUCCESS";
+			// auto-execute tools should always be grouped
+			if (tool.json._meta.SMSS_MCP_EXECUTION === "auto") return true;
+			// ask tools only enter group when there are no unfinished tools
+			return !message.hasUnfinishedTools;
 		};
 		const groupedTools: ToolStore[] = [];
 		let firstToolPartIdx = -1;
@@ -206,13 +209,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped =
-								getShouldGroupTool(tool) &&
-								groupedTools.length > 1;
+							const isGrouped = getShouldGroupTool(tool);
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
-										groupedTools.length > 1 && (
+										groupedTools.length >= 1 && (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
 												message={message}
