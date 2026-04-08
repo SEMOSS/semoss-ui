@@ -207,7 +207,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped = getShouldGroupTool(tool);
+							const isGrouped =
+								getShouldGroupTool(tool) &&
+								groupedTools.length > 1;
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
@@ -218,33 +220,20 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 												tools={groupedTools}
 											/>
 										)}
-									{tool &&
-										(!isGrouped ||
-											groupedTools.length <= 1) && (
-											<div
-												className={cn(
-													"flex flex-col gap-2",
-													tool?.status ===
-														"SUCCESS" && "-my-3",
-												)}
-											>
-												<ResponseMessageTool
-													message={message}
-													tool={tool}
-												/>
-												{/* {tool.display ===
-														"inline" &&
-														tool.isOpen && (
-															<RoomInlineTool
-																room={room}
-																message={
-																	message
-																}
-																tool={tool}
-															/>
-														)} */}
-											</div>
-										)}
+									{tool && isGrouped && (
+										<div
+											className={cn(
+												"flex flex-col gap-2",
+												tool?.status === "SUCCESS" &&
+													"-my-3",
+											)}
+										>
+											<ResponseMessageTool
+												message={message}
+												tool={tool}
+											/>
+										</div>
+									)}
 								</Fragment>
 							);
 						}
