@@ -52,8 +52,8 @@ export const LLMFeedbackPage = () => {
 	const [engineId, setEngineId] = useState<string>("");
 	const [projectId, setProjectId] = useState<string>("");
 	const [userId, setUserId] = useState<string>("");
-	const [startDate, setStartDate] = useState(null);
-	const [endDate, setEndDate] = useState(null);
+	const [startDate, setStartDate] = useState<Date | undefined>();
+	const [endDate, setEndDate] = useState<Date | undefined>();
 	const [debouncedUserId, setDebouncedUserId] = useState<string>("");
 	const [isSearching, setIsSearching] = useState(false);
 
@@ -170,17 +170,30 @@ export const LLMFeedbackPage = () => {
 
 	const offset = paginationModel.page * paginationModel.pageSize;
 	const limit = paginationModel.pageSize;
+	
+	const shouldFetchData = (startDate && endDate) || (!startDate && !endDate);
 
+  	const currentDate = useMemo(() => new Date(), []);
+		const thirtyDaysFilter = useMemo(() => {
+			const date = new Date();
+			date.setDate(date.getDate() - 30);
+			return date;
+		}, []);
+
+	// default to last 30 days if no start date is selected
 	const getFeedback = usePixel<LLMFeedback[]>(
-		`AdminGetLlmFeedback(
+		shouldFetchData
+		? `AdminGetLlmFeedback(
             limit=[${limit}], 
-            offset=[${offset}]${engineId ? `, engineId=["${engineId}"]` : ""}${projectId ? `, projectId=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : ""}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : ""}
-        );`,
+            offset=[${offset}]${engineId ? `, engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : `, startDate=["${thirtyDaysFilter.toISOString().split("T")[0]}"]`}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : `, endDate=["${currentDate.toISOString().split("T")[0]}"]`});`
+		: "",
 		{ data: [] },
 	);
 
 	const getCount = usePixel<[string]>(
-		`AdminGetLlmFeedbackCount(${engineId ? `engineId=["${engineId}"]` : ""}${projectId ? `, projectId=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : ""}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : ""});`,
+		shouldFetchData 
+		? `AdminGetLlmFeedbackCount(${engineId ? `engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : `, startDate=["${thirtyDaysFilter.toISOString().split("T")[0]}"]`}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : `, endDate=["${currentDate.toISOString().split("T")[0]}"]`});`
+		: "",
 		{ data: ["0"] },
 	);
 
@@ -361,8 +374,8 @@ export const LLMFeedbackPage = () => {
 								setEngineId("");
 								setProjectId("");
 								setUserId("");
-								setStartDate(null);
-								setEndDate(null);
+								setStartDate(undefined);
+								setEndDate(undefined);
 							}}
 						>
 							Clear

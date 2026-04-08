@@ -245,6 +245,6 @@ export const SETTINGS_ROUTES: {
 		description: "Provide feedback on LLM's performance",
 		icon: mdiChatProcessingOutline,
 		history: ["settings/"],
-		admin: false,
+		admin: true,
 	},
 ];
