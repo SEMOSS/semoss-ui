@@ -29,6 +29,51 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 		const isStorageViewer = config.explorerMode === "STORAGE";
 
 		/**
+		 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
+		 * @param deletedPath the path of the deleted file or directory
+		 * @param isDirectory whether the deleted path is a directory
+		 */
+		const removeDeletedTabs = useCallback(
+			(deletedPath: string, isDirectory: boolean) => {
+				const model = node.getModel();
+				const deletedPathWithSlash =
+					isDirectory && !deletedPath.endsWith("/")
+						? `${deletedPath}/`
+						: deletedPath;
+				const tabsToRemove: string[] = [];
+
+				model.visitNodes((currentNode) => {
+					console.log("VISITING NODE >>>", currentNode.getId(), " >> ", !(currentNode instanceof FlexLayout.TabNode));
+					if (!(currentNode instanceof FlexLayout.TabNode)) {
+						return;
+					}
+
+					const config = currentNode.getConfig() as
+						| { path?: string }
+						| undefined;
+					const path = config?.path;
+					if (!path) {
+						return;
+					}
+					console.log("TESTING >>>", deletedPath, path, isDirectory);
+					if (
+						isDirectory
+							? path === deletedPath ||
+								path.startsWith(deletedPathWithSlash)
+							: path === deletedPath
+					) {
+						tabsToRemove.push(currentNode.getId());
+					}
+				});
+
+				tabsToRemove.forEach((tabId) => {
+					model.doAction(FlexLayout.Actions.deleteTab(tabId));
+				});
+			},
+			[node],
+		);
+
+		/**
 		 * Add a node to the layout
 		 * @param nodeId
 		 * @param options
@@ -300,7 +345,10 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								await insight.actions.run(
 									`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
 								);
-
+								removeDeletedTabs(
+									item.path,
+									item.type === "directory",
+								);
 								refresh();
 							},
 						});
