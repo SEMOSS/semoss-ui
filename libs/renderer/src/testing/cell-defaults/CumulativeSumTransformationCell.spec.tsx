@@ -79,8 +79,7 @@ const createStoreWithCells = (overrides?: {
 								},
 								targetCell: {
 									id: targetCellId,
-									frameVariableName:
-										targetFrameVariableName,
+									frameVariableName: targetFrameVariableName,
 								},
 							},
 						},
@@ -222,11 +221,7 @@ describe("CumulativeSumTransformationCell", () => {
 			"running_total",
 		);
 		expect(screen.getByLabelText("Aggregate Value")).toBeInTheDocument();
-		expect(
-			screen.getByLabelText("Sort by Column(s)"),
-		).toBeInTheDocument();
-		expect(
-			screen.getByLabelText("Group by Column(s)"),
-		).toBeInTheDocument();
+		expect(screen.getByLabelText("Sort by Column(s)")).toBeInTheDocument();
+		expect(screen.getByLabelText("Group by Column(s)")).toBeInTheDocument();
 	});
 });
