@@ -772,7 +772,7 @@ export const NotebookCell = observer(
 											{cell.widget === "mcp-tool" ? (
 												<SwapHoriz />
 											) : (
-												<HammerIcon size={16}/>
+												<HammerIcon size={16} />
 											)}
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
