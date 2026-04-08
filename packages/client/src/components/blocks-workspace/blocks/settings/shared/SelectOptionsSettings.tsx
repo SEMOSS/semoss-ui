@@ -185,27 +185,27 @@ export const SelectOptionsSettings = observer(
 				}
 			}
 			return (
-					<QuerySelectionSettings
-						id={id}
-						label="Options"
-						path="options"
-						queryPath="output"
-						__onChange={() => {
-							setData(
-								"value" as Paths<Block<D>["data"], 4>,
-								parsedData.multiple
-									? ([] as PathValue<D["data"], typeof path>)
-									: ("" as PathValue<D["data"], typeof path>),
-							);
+				<QuerySelectionSettings
+					id={id}
+					label="Options"
+					path="options"
+					queryPath="output"
+					__onChange={() => {
+						setData(
+							"value" as Paths<Block<D>["data"], 4>,
+							parsedData.multiple
+								? ([] as PathValue<D["data"], typeof path>)
+								: ("" as PathValue<D["data"], typeof path>),
+						);
 
-							optionData.map((d) => {
-								setData(
-									d.path,
-									"" as PathValue<D["data"], typeof path>,
-								);
-							});
-						}}
-					/>
+						optionData.map((d) => {
+							setData(
+								d.path,
+								"" as PathValue<D["data"], typeof path>,
+							);
+						});
+					}}
+				/>
 			);
 		}
 
