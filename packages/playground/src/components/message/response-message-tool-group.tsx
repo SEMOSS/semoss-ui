@@ -19,11 +19,6 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		const { t } = useTranslation("chat");
 		const [isOpen, setIsOpen] = useState(false);
 
-		// Just render a single tool without grouping
-		if (tools.length === 1) {
-			return <ResponseMessageTool message={message} tool={tools[0]} />;
-		}
-
 		return (
 			<div
 				className={cn(

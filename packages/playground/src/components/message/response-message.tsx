@@ -209,11 +209,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped = getShouldGroupTool(tool);
+							const isGrouped =
+								groupedTools.length > 1 &&
+								getShouldGroupTool(tool);
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
-										groupedTools.length >= 1 && (
+										groupedTools.length > 1 && (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
 												message={message}
@@ -224,6 +226,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ResponseMessageTool
 											message={message}
 											tool={tool}
+											isLarge={message.hasUnfinishedTools}
 										/>
 									)}
 								</Fragment>
