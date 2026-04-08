@@ -622,7 +622,7 @@ export class RoomStore {
 			// set the model based on the history
 			if (activeModelId) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
+					` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : ["text-generation", "image-generation"] }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
 				);
 
 				runInAction(() => {
