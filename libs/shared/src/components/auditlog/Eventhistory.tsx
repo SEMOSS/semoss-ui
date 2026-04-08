@@ -98,10 +98,7 @@ export const EventHistory = ({
 									<span className="font-mono font-semibold text-[9px] text-primary uppercase tracking-widest">
 										Session {si + 1}
 									</span>
-									<span
-										className="inline-block max-w-[120px] truncate font-mono text-[9px] text-muted-foreground"
-										title={sessionId}
-									>
+									<span className="inline-block font-mono text-[9px] text-muted-foreground">
 										{sessionId}
 									</span>
 									<span className="ml-auto text-[9px] text-muted-foreground">
@@ -168,7 +165,6 @@ export const EventHistory = ({
 												<span className="font-mono text-[8px] text-muted-foreground">
 													{log.logTimestamp} -{" "}
 													{log.engineName}
-													{log.userId}
 												</span>
 											</div>
 
