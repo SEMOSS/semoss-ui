@@ -29,13 +29,17 @@ export const EmbedPage: React.FC = observer(() => {
 	useEffect(() => {
 		const handleMessage = (event: MessageEvent) => {
 			if (event.data?.type === "SMSS_NEW_CHAT") {
-				const { workspaceId, knowledgeId } = event.data.payload ?? {};
+				const { workspaceId, knowledgeId, prompt } =
+					event.data.payload ?? {};
+				const promptParam = prompt
+					? `&prompt=${encodeURIComponent(prompt)}`
+					: "";
 				if (workspaceId) {
 					navigate(`/new?workspaceId=${workspaceId}`);
 				} else if (knowledgeId) {
 					navigate(`/new?knowledgeId=${knowledgeId}`);
 				} else {
-					navigate(`/new`);
+					navigate(`/new${promptParam}`);
 				}
 			} else if (event.data?.type === "SMSS_OPEN_ROOM") {
 				const { roomId } = event.data.payload ?? {};

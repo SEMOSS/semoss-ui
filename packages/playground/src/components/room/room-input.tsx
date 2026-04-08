@@ -149,6 +149,9 @@ interface RoomInputProps {
 
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
+
+	/** Initial value from prompt library */
+	initialValue?: string;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -164,6 +167,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		toggleToolsPaused,
 		footer = null,
 		hidePauseButton = false,
+		initialValue,
 	}) => {
 		const { t } = useTranslation("room");
 		const { getGracefulErrorMessage } = useGracefulErrors();
@@ -266,6 +270,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		useEffect(() => {
 			editorRef.current?.setEditable(!isLoading);
 		}, [isLoading]);
+
+		useEffect(() => {
+			if (!initialValue) return;
+			editorRef.current.update(() => {
+				const root = $getRoot();
+				root.clear();
+				const paragraph = $createParagraphNode();
+				paragraph.append($createTextNode(initialValue));
+				root.append(paragraph);
+			});
+		}, [initialValue]);
 
 		/**
 		 * Prompt the model
