@@ -98,6 +98,11 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 		onOpenChange(o);
 	};
 
+	const handlePromptSelect = (prompt: PromptLibraryItem) => {
+		onSelectPrompt(prompt);
+		handleClose(false);
+	};
+
 	return (
 		<Dialog open={open} onOpenChange={handleClose}>
 			<DialogContent className="flex h-[85vh] w-[95vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
@@ -171,7 +176,7 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 												type="button"
 												disabled={isLoading}
 												onClick={() =>
-													onSelectPrompt(prompt)
+													handlePromptSelect(prompt)
 												}
 												className="flex flex-col gap-1 rounded-lg border bg-card p-3 text-left shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
 											>
