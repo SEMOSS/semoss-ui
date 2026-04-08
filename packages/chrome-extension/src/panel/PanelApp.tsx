@@ -83,100 +83,112 @@ const PanelApp: React.FC = () => {
 				return;
 			}
 
-			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-				// Handle Playwright script execution request from Playground
-				const script = message.script;
+		// Handle ping request from Playground to validate extension is alive
+		if (message.type === "SMSS_EXTENSION_PING") {
+			console.log("[PANEL] 🏓 Received PING - sending PONG");
+			chrome.runtime.sendMessage({
+				type: "SMSS_EXTENSION_PONG",
+				timestamp: Date.now(),
+			}).catch((error) => {
+				console.error("[PANEL] ❌ Failed to send PONG:", error);
+			});
+			return;
+		}
 
-				setActionHistory([
-					`🎬 Received script from Playground: ${script.name}`,
-				]);
-				setMode("script");
+		if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
+			// Handle Playwright script execution request from Playground
+			const script = message.script;
 
-				// Check if script content was provided
-				if (script.scriptContent) {
-					let content = script.scriptContent;
+			setActionHistory([
+				`🎬 Received script from Playground: ${script.name}`,
+			]);
+			setMode("script");
 
-					// If scriptContent is a string, parse it first
-					if (typeof content === "string") {
-						try {
-							content = JSON.parse(content);
-						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse scriptContent string:",
-								e,
-							);
-						}
-					}
+			// Check if script content was provided
+			if (script.scriptContent) {
+				let content = script.scriptContent;
 
-					// If steps is a string, parse it too (handle nested stringification)
-					if (content && typeof content.steps === "string") {
-						try {
-							content.steps = JSON.parse(content.steps);
-						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse steps string:",
-								e,
-							);
-						}
-					}
-
-					// Use the provided script content directly
-					const scriptContent = JSON.stringify(content, null, 2);
-					setScriptJson(scriptContent);
-					setJsonFormat("playwright");
-					setActionHistory((prev) => [
-						...prev,
-						`✅ Script loaded: ${script.name}`,
-					]);
-
-					// Auto-execute the script
-					setActionHistory((prev) => [
-						...prev,
-						`▶️ Waiting for page to load before executing script...`,
-					]);
-
-					// Wait longer and check if page is loaded before executing
-					setTimeout(async () => {
-						// Wait for current tab to be in complete state
-						const [currentTab] = await chrome.tabs.query({
-							active: true,
-							currentWindow: true,
-						});
-						if (currentTab?.id) {
-							// Wait for tab to be fully loaded
-							let retries = 20; // 10 seconds total
-							while (retries > 0) {
-								const tabs = await chrome.tabs.query({});
-								const tab = tabs.find(
-									(t) => t.id === currentTab.id,
-								);
-								if (tab?.status === "complete") {
-									break;
-								}
-								await new Promise((resolve) =>
-									setTimeout(resolve, 500),
-								);
-								retries--;
-							}
-							// Additional buffer time after page load
-							await new Promise((resolve) =>
-								setTimeout(resolve, 1500),
-							);
-						}
-						setActionHistory((prev) => [
-							...prev,
-							`▶️ Page loaded, executing script...`,
-						]);
-						await executeScriptWithContent(
-							scriptContent,
-							"playwright",
+				// If scriptContent is a string, parse it first
+				if (typeof content === "string") {
+					try {
+						content = JSON.parse(content);
+					} catch (e) {
+						console.error(
+							"[PANEL] ❌ Failed to parse scriptContent string:",
+							e,
 						);
-					}, 1000);
+					}
 				}
+
+				// If steps is a string, parse it too (handle nested stringification)
+				if (content && typeof content.steps === "string") {
+					try {
+						content.steps = JSON.parse(content.steps);
+					} catch (e) {
+						console.error(
+							"[PANEL] ❌ Failed to parse steps string:",
+							e,
+						);
+					}
+				}
+
+				// Use the provided script content directly
+				const scriptContent = JSON.stringify(content, null, 2);
+				setScriptJson(scriptContent);
+				setJsonFormat("playwright");
+				setActionHistory((prev) => [
+					...prev,
+					`✅ Script loaded: ${script.name}`,
+				]);
+
+				// Auto-execute the script
+				setActionHistory((prev) => [
+					...prev,
+					`▶️ Waiting for page to load before executing script...`,
+				]);
+
+				// Wait longer and check if page is loaded before executing
+				setTimeout(async () => {
+					// Wait for current tab to be in complete state
+					const [currentTab] = await chrome.tabs.query({
+						active: true,
+						currentWindow: true,
+					});
+					if (currentTab?.id) {
+						// Wait for tab to be fully loaded
+						let retries = 20; // 10 seconds total
+						while (retries > 0) {
+							const tabs = await chrome.tabs.query({});
+							const tab = tabs.find(
+								(t) => t.id === currentTab.id,
+							);
+							if (tab?.status === "complete") {
+								break;
+							}
+							await new Promise((resolve) =>
+								setTimeout(resolve, 500),
+							);
+							retries--;
+						}
+						// Additional buffer time after page load
+						await new Promise((resolve) =>
+							setTimeout(resolve, 1500),
+						);
+					}
+					setActionHistory((prev) => [
+						...prev,
+						`▶️ Page loaded, executing script...`,
+					]);
+					await executeScriptWithContent(
+						scriptContent,
+						"playwright",
+					);
+				}, 1000);
 			}
-			
-			// Handle field input detected from webpage
-			if (message.type === "FIELD_INPUT_DETECTED") {
+		}
+		
+		// Handle field input detected from webpage
+		if (message.type === "FIELD_INPUT_DETECTED") {
 				
 				// If we're waiting for user input, auto-submit with the detected value
 				if (waitingForUserInput && userInputCallback) {

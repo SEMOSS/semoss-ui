@@ -164,36 +164,72 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		};
 
 		/**
-		 * Check if extension panel is open
-		 */
-		const checkExtensionAvailable = async (): Promise<boolean> => {
-			if (!selectedRecordedFile) {
-				console.log(
-					"[PLAYGROUND] Not a Playwright script - skipping extension check",
-				);
-				return true;
-			}
-
-			const isOpen = extensionIsOpen.current;
-
+	 * Check if extension panel is open by actively pinging it
+	 */
+	const checkExtensionAvailable = async (): Promise<boolean> => {
+		if (!selectedRecordedFile) {
 			console.log(
-				"[PLAYGROUND] 🔍 Checking if extension is open:",
-				isOpen,
+				"[PLAYGROUND] Not a Playwright script - skipping extension check",
 			);
-
-			if (!isOpen) {
-				console.warn(
-					"[PLAYGROUND] ❌ Extension is NOT open - showing popup",
-				);
-				return false;
-			}
-
-			console.log("[PLAYGROUND] ✅ Extension is open - can execute");
 			return true;
-		};
+		}
 
-		// Tool Execution
-		const handleSubmit = async () => {
+		console.log(
+			"[PLAYGROUND] 🏓 Actively checking extension availability with PING...",
+		);
+
+		// Active ping/pong validation with timeout
+		return new Promise<boolean>((resolve) => {
+			let timeoutId: ReturnType<typeof setTimeout> | null = null;
+			let resolved = false;
+
+			// Set up one-time listener for pong response
+			const handlePong = (event: MessageEvent) => {
+				if (event.origin !== window.location.origin) {
+					return;
+				}
+
+				if (event.data?.type === "SMSS_EXTENSION_PONG") {
+					if (!resolved) {
+						resolved = true;
+						console.log(
+							"[PLAYGROUND] ✅ Received PONG - extension is available!",
+						);
+						if (timeoutId) clearTimeout(timeoutId);
+						window.removeEventListener("message", handlePong);
+						resolve(true);
+					}
+				}
+			};
+
+			// Add listener
+			window.addEventListener("message", handlePong);
+
+			// Set timeout for 2 seconds
+			timeoutId = setTimeout(() => {
+				if (!resolved) {
+					resolved = true;
+					console.warn(
+						"[PLAYGROUND] ❌ PONG timeout - extension is NOT available",
+					);
+					window.removeEventListener("message", handlePong);
+					resolve(false);
+				}
+			}, 2000);
+
+			// Send ping
+			window.postMessage(
+				{
+					type: "SMSS_EXTENSION_PING",
+					timestamp: Date.now(),
+				},
+				"*",
+			);
+		});
+	};
+
+	// Tool Execution
+	const handleSubmit = async () => {
 			// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
 			if (selectedRecordedFile) {
 				console.log(

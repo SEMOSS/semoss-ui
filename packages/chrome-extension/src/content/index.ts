@@ -77,6 +77,21 @@ function setupPlaygroundListeners() {
 			return;
 		}
 
+		// Handle ping request from playground to extension
+		if (event.data && event.data.type === "SMSS_EXTENSION_PING") {
+			console.log("[CONTENT] 🏓 Received PING from Playground - forwarding to extension");
+			chrome.runtime
+				.sendMessage(event.data)
+				.then(() => {
+					// Successfully sent ping to extension
+				})
+				.catch(() => {
+					// Extension not available - no pong will be sent
+					console.warn("[CONTENT] ❌ Failed to send PING - extension may not be available");
+				});
+			return;
+		}
+
 		if (event.data && event.data.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
 
 			if (!isExtensionContextValid()) {
@@ -230,6 +245,19 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 				{
 					type: "SMSS_EXTENSION_CLOSED",
 					timestamp: Date.now(),
+				},
+				window.location.origin,
+			);
+
+			sendResponse({ success: true });
+			break;
+
+		case "SMSS_EXTENSION_PONG":
+			// Forward pong response from panel to playground window
+			window.postMessage(
+				{
+					type: "SMSS_EXTENSION_PONG",
+					timestamp: message.timestamp || Date.now(),
 				},
 				window.location.origin,
 			);
