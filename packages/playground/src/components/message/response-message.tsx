@@ -15,7 +15,6 @@ import { Fragment, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
-	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -220,19 +219,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 												tools={groupedTools}
 											/>
 										)}
-									{tool && isGrouped && (
-										<div
-											className={cn(
-												"flex flex-col gap-2",
-												tool?.status === "SUCCESS" &&
-													"-my-3",
-											)}
-										>
-											<ResponseMessageTool
-												message={message}
-												tool={tool}
-											/>
-										</div>
+									{tool && !isGrouped && (
+										<ResponseMessageTool
+											message={message}
+											tool={tool}
+										/>
 									)}
 								</Fragment>
 							);
