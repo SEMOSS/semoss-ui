@@ -1221,7 +1221,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 								{displayTags.length > 0 && (
 									<Badge
 										variant="secondary"
-										style={getTagPillStyles(displayTags[0])}
+										className="background-color-[var(--muted-foreground)] text-[12px]"
 									>
 										{displayTags[0]}
 									</Badge>
