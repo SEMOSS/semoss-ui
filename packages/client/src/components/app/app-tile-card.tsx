@@ -1260,8 +1260,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 								<img
 									src={cardImgSrc}
 									alt={`${displayName} illustration`}
-									// generate a random number for scale which should not exceed 250 to add some variation to the illustrations
-									className={`absolute inset-0 h-full w-full origin-right scale-[1.5] transform object-cover object-right`}
+									className={`absolute inset-0 h-full w-full transform object-cover object-right`}
 								/>
 							</div>
 						</div>
