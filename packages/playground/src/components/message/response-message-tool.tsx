@@ -38,7 +38,7 @@ interface ResponseMessageToolProps {
 }
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
-	({ message, tool }) => {
+	({ message, tool, isLarge }) => {
 		const { t } = useTranslation("chat");
 		const { room } = message;
 
@@ -61,18 +61,18 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			tool.isOpen &&
 			(tool.display === "sidebar" ? room.sidebar.isOpen : true);
 
+		const effectiveIsLarge = isLarge || tool.isOpen;
+
 		// Determine tool state and derive all display properties from it
 		const toolState = (() => {
 			switch (tool.status) {
 				case "ERROR":
 					return {
-						icon: <HammerIcon className="size-5" />,
-						iconClassName:
-							"bg-muted text-muted-foreground opacity-50",
+						icon: <XCircleIcon className="size-5" />,
+						iconClassName: "text-muted-foreground opacity-50",
 						subtext: tool.json.description,
 						badge: {
 							text: t("tool.failed"),
-							icon: <XCircleIcon className="size-4" />,
 							variant: "destructive" as const,
 						},
 						canInteract: false,
@@ -84,12 +84,10 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				case "CANCELLED":
 					return {
 						icon: <XCircleIcon className="size-5" />,
-						iconClassName:
-							"bg-muted text-muted-foreground opacity-50",
+						iconClassName: "text-muted-foreground opacity-50",
 						subtext: tool.json.description,
 						badge: {
 							text: t("tool.cancelled"),
-							icon: <XCircleIcon className="size-4" />,
 							variant: "muted" as const,
 						},
 						canInteract: false,
@@ -101,12 +99,10 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				case "PAUSED":
 					return {
 						icon: <CirclePause className="size-5" />,
-						iconClassName:
-							"bg-muted text-muted-foreground opacity-50",
+						iconClassName: "text-muted-foreground opacity-50",
 						subtext: tool.json.description,
 						badge: {
 							text: t("tool.paused"),
-							icon: <CirclePause className="size-4" />,
 							variant: "muted" as const,
 						},
 						canInteract: false,
@@ -175,6 +171,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 		if (tool.display === "hidden") {
 			return null;
 		}
+		const iconSize = effectiveIsLarge ? "size-9" : "size-6";
 
 		return (
 			<div
@@ -189,13 +186,14 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				)}
 			>
 				{/* Top section: button + actions */}
-				<div className="flex items-center gap-3 pr-2">
+				<div className="flex items-center">
 					{/* Clickable section: icon + text */}
 					<button
 						type="button"
 						disabled={isButtonDisabled}
 						className={cn(
-							"flex min-w-0 flex-1 items-center gap-3 p-2 pr-0 text-left",
+							"flex min-w-0 flex-1 items-center gap-3 p-2 text-left",
+							!toolState.actionType && "pr-0",
 							isButtonDisabled && "cursor-default",
 						)}
 						onClick={() => {
@@ -214,7 +212,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					>
 						<div
 							className={cn(
-								"flex size-9 shrink-0 items-center justify-center rounded-sm",
+								"flex shrink-0 items-center justify-center rounded-sm",
+								iconSize,
 								toolState.iconClassName,
 							)}
 						>
@@ -227,7 +226,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							>
 								{tool.json.title}
 							</span>
-							{toolState.subtext && (
+							{effectiveIsLarge && toolState.subtext && (
 								<span
 									className="truncate text-muted-foreground text-sm"
 									title={toolState.subtext}
@@ -244,7 +243,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							type="button"
 							size="sm"
 							variant="secondary"
-							className="shrink-0"
+							className="mr-2 shrink-0"
 							onClick={(e) => {
 								e.stopPropagation();
 								message.saveToolExecution(
@@ -260,31 +259,40 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						</Button>
 					)}
 					{toolState.badge && (
-						<div
+						<span
 							className={cn(
-								"flex shrink-0 items-center gap-2 rounded-md px-3 py-1.5 font-medium text-sm",
+								"shrink-0 pr-3 font-medium text-sm",
 								toolState.badge.variant === "destructive" &&
-									"bg-destructive/10 text-destructive",
+									"text-destructive",
 								toolState.badge.variant === "muted" &&
-									"bg-muted text-muted-foreground",
+									"text-muted-foreground",
 							)}
 						>
-							{toolState.badge.icon}
 							{toolState.badge.text}
-						</div>
+						</span>
 					)}
 					{toolState.actionType === "menu" && (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button
-									type="button"
-									size="icon"
-									variant="ghost"
-									className="shrink-0"
-									onClick={(e) => e.stopPropagation()}
-								>
-									<MoreHorizontalIcon className="size-4" />
-								</Button>
+								{effectiveIsLarge ? (
+									<Button
+										type="button"
+										size="icon"
+										variant="ghost"
+										className="mr-2 shrink-0"
+										onClick={(e) => e.stopPropagation()}
+									>
+										<MoreHorizontalIcon className="size-4" />
+									</Button>
+								) : (
+									<button
+										type="button"
+										className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 hover:bg-accent"
+										onClick={(e) => e.stopPropagation()}
+									>
+										<MoreHorizontalIcon className="size-4 text-muted-foreground" />
+									</button>
+								)}
 							</DropdownMenuTrigger>
 							<DropdownMenuContent align="end">
 								<DropdownMenuItem
