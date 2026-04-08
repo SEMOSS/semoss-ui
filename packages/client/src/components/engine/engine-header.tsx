@@ -1,4 +1,4 @@
-import { ChevronRight, Copy, Download, Pencil } from "lucide-react";
+import { ChevronRight, Copy, Download, Hammer, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -48,6 +48,9 @@ export const EngineHeader: React.FC = () => {
 	const [exportLoading, setExportLoading] = useState(false);
 
 	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
+
+	// mcp generation loading state
+	const [generatingMCP, setGeneratingMCP] = useState(false);
 
 	const normalizeEngineKey = (value?: string) =>
 		(value || "")
@@ -130,6 +133,54 @@ export const EngineHeader: React.FC = () => {
 		});
 		setExportLoading(false);
 	};
+
+	/**
+	 * Generates an MCP for the given engine.
+	 * @throws {string} If the generation fails, it throws an error message.
+	 */
+	const generateMCP = async () => {
+		const pixel = `MakeEngineMCP(engine="${active.id}");`;
+
+		const { pixelReturn } = await monolithStore.runQuery(pixel);
+
+		if (pixelReturn[0].operationType.includes("ERROR")) {
+			throw pixelReturn[0].output as string;
+		}
+
+		// add MCP tag to the engine if not already present
+		const existingTags = Array.isArray(active.metadata.tag)
+			? (active.metadata.tag as string[])
+			: [];
+
+		if (!existingTags.includes("MCP")) {
+			active.metadata.tag = [...existingTags, "MCP"];
+		} else {
+			active.metadata.tag = existingTags;
+		}
+	};
+
+	/**
+	 * Handles clicking the "Generate MCP" button. It triggers the generation
+	 * process and navigates to the files view when complete. Errors are shown as
+	 * toasts and a loading state keeps the button disabled while processing.
+	 * @param {string} type - The type of engine.
+	 * @param {string} active.id - The ID of the active engine.
+	 * @param {string} navigationPath - The path to navigate to.
+	 */
+	const handleMCPClick = async () => {
+		const navigationPath = `/engine/${type.toLowerCase()}/${active.id}/files?mcp=Generate`;
+		setGeneratingMCP(true);
+		try {
+			await generateMCP();
+			navigate(navigationPath);
+		} catch (error) {
+			toast.error(error as string);
+		} finally {
+			setGeneratingMCP(false);
+		}
+	};
+
+	const canShowGenerateMCP = type !== "GUARDRAIL";
 
 	return (
 		<div className="flex w-full flex-col items-start gap-2 p-0">
@@ -221,6 +272,25 @@ export const EngineHeader: React.FC = () => {
 				</div>
 
 				<div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap md:justify-end">
+					{canShowGenerateMCP && (
+						<Button
+							variant="outline"
+							size="lg"
+							onClick={handleMCPClick}
+							data-testid="make-mcp-btn"
+						>
+							<div className="flex flex-row items-center">
+								{generatingMCP ? (
+									<Spinner className="mr-2 size-4" />
+								) : (
+									<Hammer className="mr-2 size-4" />
+								)}
+								{generatingMCP
+									? "Processing..."
+									: "Generate MCP"}
+							</div>
+						</Button>
+					)}
 					<EngineAccessButton />
 					{active.role === "OWNER" && (
 						<Button
@@ -309,8 +379,8 @@ export const EngineHeader: React.FC = () => {
 					</p>
 
 					<div className="flex flex-row flex-wrap gap-2">
-						{active.metadata.tag &&
-							(active.metadata.tag as string[]).map((tag) => {
+						{active.metadata?.tag &&
+							(active.metadata?.tag as string[]).map((tag) => {
 								if (tag === "") return null;
 								return (
 									<Badge
