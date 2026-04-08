@@ -11,6 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const PDFDocument = require('pdfkit');
 
 // Configuration
 const CONFIG = {
@@ -43,7 +44,8 @@ function getCommits() {
   const until = CONFIG.until;
   const branch = CONFIG.mainBranch;
 
-  const cmd = `log ${branch} --since="${since}" --until="${until}" --pretty=format:"%H|%an|%ae|%ad|%s|%b" --date=iso`;
+  const delimiter = ':::COMMIT_SEPARATOR:::';
+  const cmd = `log ${branch} --since="${since}" --until="${until}" --pretty=format:"%H|%an|%ae|%ad|%s|%b${delimiter}" --date=iso`;
   const output = execGit(cmd);
 
   if (!output) {
@@ -52,20 +54,25 @@ function getCommits() {
   }
 
   const commits = [];
-  const commitStrings = output.split('\n\n');
+  const commitStrings = output.split(delimiter).filter(s => s.trim());
 
   for (const commitStr of commitStrings) {
-    const parts = commitStr.split('|');
-    if (parts.length >= 5) {
-      commits.push({
-        hash: parts[0].substring(0, 7),
-        fullHash: parts[0],
-        author: parts[1],
-        email: parts[2],
-        date: parts[3],
-        message: parts[4],
-        body: parts[5] || '',
-      });
+    const lines = commitStr.trim().split('\n');
+    if (lines.length > 0) {
+      const headerLine = lines[0];
+      const parts = headerLine.split('|');
+      if (parts.length >= 5) {
+        const body = lines.slice(1).join('\n').trim();
+        commits.push({
+          hash: parts[0].substring(0, 7),
+          fullHash: parts[0],
+          author: parts[1],
+          email: parts[2],
+          date: parts[3],
+          message: parts[4],
+          body: body || '',
+        });
+      }
     }
   }
 
@@ -518,7 +525,7 @@ function generateHTML(commits) {
 <body>
     <div class="container">
         <header>
-            <h1>📊 Context Documentation Report</h1>
+            <h1>Context Documentation Report</h1>
             <p>Branch: <strong>${CONFIG.mainBranch}</strong></p>
         </header>
         
@@ -554,7 +561,7 @@ function generateHTML(commits) {
 
     html += `
         <div class="commit">
-            <h2>✨ ${commit.message}</h2>
+            <h2>${commit.message}</h2>
             
             <div class="commit-header">
                 <div class="commit-detail"><strong>Commit:</strong> ${commit.hash}</div>
@@ -564,14 +571,14 @@ function generateHTML(commits) {
             </div>
             
             <div class="section">
-                <div class="section-title">🎯 Affected Areas</div>
+                <div class="section-title">Affected Areas</div>
                 <div class="area-tags">
                     ${context.affectedAreas.map(area => `<span class="tag ${area.toLowerCase()}">${area}</span>`).join('')}
                 </div>
             </div>
             
             <div class="section">
-                <div class="section-title">📈 Change Statistics</div>
+                <div class="section-title">Change Statistics</div>
                 <div class="stats">
                     <div class="stat-box">
                         <div class="stat-label">Added</div>
@@ -593,14 +600,14 @@ function generateHTML(commits) {
             </div>
             
             <div class="section">
-                <div class="section-title">📁 Files Changed</div>
+                <div class="section-title">Files Changed</div>
                 <div class="file-list">
 `;
 
     // Organize files by category
     if (context.categories.frontend.length > 0) {
         html += `<div class="file-category">
-            <div class="file-category-title">🖥️ Frontend (${context.categories.frontend.length})</div>`;
+            <div class="file-category-title">Frontend (${context.categories.frontend.length})</div>`;
         context.categories.frontend.forEach(f => {
             html += `<div class="file-item"><span>${f.file}</span><span class="badge ${f.status === 'A' ? 'added' : f.status === 'D' ? 'deleted' : 'modified'}">${f.status}</span></div>`;
         });
@@ -609,7 +616,7 @@ function generateHTML(commits) {
 
     if (context.categories.backend.length > 0) {
         html += `<div class="file-category">
-            <div class="file-category-title">⚙️ Backend (${context.categories.backend.length})</div>`;
+            <div class="file-category-title">Backend (${context.categories.backend.length})</div>`;
         context.categories.backend.forEach(f => {
             html += `<div class="file-item"><span>${f.file}</span><span class="badge ${f.status === 'A' ? 'added' : f.status === 'D' ? 'deleted' : 'modified'}">${f.status}</span></div>`;
         });
@@ -618,7 +625,7 @@ function generateHTML(commits) {
 
     if (context.categories.ui.length > 0) {
         html += `<div class="file-category">
-            <div class="file-category-title">🎨 UI Components (${context.categories.ui.length})</div>`;
+            <div class="file-category-title">UI Components (${context.categories.ui.length})</div>`;
         context.categories.ui.forEach(f => {
             html += `<div class="file-item"><span>${f.file}</span><span class="badge ${f.status === 'A' ? 'added' : f.status === 'D' ? 'deleted' : 'modified'}">${f.status}</span></div>`;
         });
@@ -627,7 +634,7 @@ function generateHTML(commits) {
 
     if (context.categories.tests.length > 0) {
         html += `<div class="file-category">
-            <div class="file-category-title">✅ Tests (${context.categories.tests.length})</div>`;
+            <div class="file-category-title">Tests (${context.categories.tests.length})</div>`;
         context.categories.tests.slice(0, 5).forEach(f => {
             html += `<div class="file-item"><span>${f.file}</span><span class="badge ${f.status === 'A' ? 'added' : f.status === 'D' ? 'deleted' : 'modified'}">${f.status}</span></div>`;
         });
@@ -684,10 +691,117 @@ function saveMarkdown(content, filename) {
 }
 
 /**
+ * Generate PDF using pdfkit
+ */
+function generatePDF(commits, filename) {
+  try {
+    if (!fs.existsSync(CONFIG.contextDir)) {
+      fs.mkdirSync(CONFIG.contextDir, { recursive: true });
+    }
+
+    const pdfPath = path.join(CONFIG.contextDir, filename.replace('.md', '.pdf'));
+    const doc = new PDFDocument({ bufferPages: true, size: 'A4', margin: 50 });
+    const stream = fs.createWriteStream(pdfPath);
+
+    doc.pipe(stream);
+
+    // Title
+    doc.fontSize(24).font('Helvetica-Bold').text('Context Documentation Report', { align: 'center' });
+    doc.fontSize(12).font('Helvetica').text(`Branch: ${CONFIG.mainBranch}`, { align: 'center' });
+    doc.moveDown(1);
+
+    // Metadata
+    doc.fontSize(10).font('Helvetica-Bold').text('Report Details:', { underline: true });
+    doc.fontSize(9).font('Helvetica');
+    doc.text(`Generated: ${new Date().toISOString()}`);
+    doc.text(`Branch: ${CONFIG.mainBranch}`);
+    doc.text(`Period: ${CONFIG.since}`);
+    doc.text(`Total Commits: ${commits.length}`);
+    doc.moveDown(1);
+
+    // Commits
+    const lines = [];
+    for (const commit of commits) {
+      const files = getFilesChanged(commit.fullHash);
+      
+      // Commit header
+      doc.fontSize(12).font('Helvetica-Bold').text(`${commit.message}`, { lineBreak: true });
+      
+      doc.fontSize(9).font('Helvetica');
+      doc.text(`Commit: ${commit.hash}`);
+      doc.text(`Author: ${commit.author}`);
+      doc.text(`Date: ${commit.date}`);
+      doc.text(`Files Changed: ${files.length}`);
+      doc.moveDown(0.5);
+
+      // Categorize files
+      const context = buildCommitContext(commit, files);
+      
+      // Affected areas
+      if (context.affectedAreas.length > 0) {
+        doc.fontSize(10).font('Helvetica-Bold').text('Affected Areas:');
+        doc.fontSize(9).font('Helvetica').text(context.affectedAreas.join(', '));
+        doc.moveDown(0.5);
+      }
+
+      // File stats
+      const added = files.filter(f => f.status === 'A').length;
+      const modified = files.filter(f => f.status === 'M').length;
+      const deleted = files.filter(f => f.status === 'D').length;
+      
+      doc.fontSize(10).font('Helvetica-Bold').text('Change Statistics:');
+      doc.fontSize(9).font('Helvetica');
+      doc.text(`  Added: ${added}, Modified: ${modified}, Deleted: ${deleted}`);
+      doc.moveDown(0.5);
+
+      // Files by category
+      if (context.categories.frontend.length > 0) {
+        doc.fontSize(9).font('Helvetica-Bold').text('Frontend Files:');
+        context.categories.frontend.slice(0, 5).forEach(f => {
+          doc.fontSize(8).font('Helvetica').text(`  • ${f.file} [${f.status}]`);
+        });
+        doc.moveDown(0.3);
+      }
+
+      if (context.categories.backend.length > 0) {
+        doc.fontSize(9).font('Helvetica-Bold').text('Backend Files:');
+        context.categories.backend.slice(0, 5).forEach(f => {
+          doc.fontSize(8).font('Helvetica').text(`  • ${f.file} [${f.status}]`);
+        });
+        doc.moveDown(0.3);
+      }
+
+      if (context.categories.ui.length > 0) {
+        doc.fontSize(9).font('Helvetica-Bold').text('UI Components:');
+        context.categories.ui.slice(0, 5).forEach(f => {
+          doc.fontSize(8).font('Helvetica').text(`  • ${f.file} [${f.status}]`);
+        });
+        doc.moveDown(0.3);
+      }
+
+      doc.moveDown(1);
+    }
+
+    // Footer
+    doc.fontSize(8).font('Helvetica').text(`Generated on ${new Date()} | Branch: ${CONFIG.mainBranch}`, { align: 'center' });
+
+    doc.end();
+
+    return new Promise((resolve) => {
+      stream.on('finish', () => resolve(pdfPath));
+      stream.on('error', () => resolve(null));
+    });
+  } catch (error) {
+    console.error('PDF generation error:', error.message);
+    return Promise.resolve(null);
+  }
+}
+
+/**
  * Main execution
  */
-function main() {
-  console.log('🔍 Analyzing commits to main branch...\n');
+async function main() {
+  console.log(`🔍 Analyzing commits to ${CONFIG.mainBranch} branch...\n`);
 
   const commits = getCommits();
 
@@ -704,18 +818,30 @@ function main() {
   const markdown = generateMarkdown(commits);
   const html = generateHTML(commits);
 
-  // Save all formats
+  // Save markdown and HTML
   const mdPath = saveMarkdown(markdown, `${filename}.md`);
   const htmlPath = saveHTML(html, `${filename}.html`);
   
   console.log(`✓ Markdown saved to: ${mdPath}`);
   console.log(`✓ HTML saved to: ${htmlPath}`);
   
+  // Generate PDF
+  console.log('Generating PDF...');
+  const pdfPath = await generatePDF(commits, `${filename}.md`);
+  
+  if (pdfPath) {
+    const pdfSize = (fs.statSync(pdfPath).size / 1024).toFixed(2);
+    console.log(`✓ PDF saved to: ${pdfPath} (${pdfSize} KB)`);
+  }
+  
   // Display summary
   console.log('\n=== Files Generated ===');
   console.log(`📄 Markdown: ${filename}.md`);
   console.log(`🌐 HTML: ${filename}.html`);
-  console.log('\nOpen the HTML file in a browser for the best viewing experience!');
+  console.log(`📕 PDF: ${filename}.pdf`);
 }
 
-main();
+main().catch(err => {
+  console.error('Error:', err.message);
+  process.exit(1);
+});

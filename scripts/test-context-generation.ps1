@@ -34,8 +34,10 @@ try {
 
 Write-Host ""
 Write-Host "Files created:" -ForegroundColor Green
-Write-Host "  - Markdown: $outputFilename.md" -ForegroundColor Green
-Write-Host "  - HTML: $outputFilename.html" -ForegroundColor Green
+Write-Host "  ✓ Markdown: $outputFilename.md" -ForegroundColor Green
+Write-Host "  ✓ HTML: $outputFilename.html" -ForegroundColor Green
+Write-Host "  ✓ PDF: $outputFilename.pdf" -ForegroundColor Green
+Write-Host "  ✓ PDF: $outputFilename.pdf" -ForegroundColor Green
 Write-Host ""
 Write-Host "Location: webapps/documentation/docusaurus/docs/context-logs/" -ForegroundColor Cyan
 Write-Host ""
