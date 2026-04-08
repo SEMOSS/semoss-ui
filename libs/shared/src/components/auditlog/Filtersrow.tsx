@@ -1,6 +1,3 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-
 import { CheckCircle, Clock, Filter, Hash, XCircle } from "lucide-react";
 import { useEffect } from "react";
 import {
@@ -40,9 +37,13 @@ export interface FiltersRowProps {
 	dateFrom: string;
 	dateTo: string;
 
+	userOptions: EngineOption[];
+	selectedUser: string;
+
 	onEngineTypeChange: (type: string) => void;
 	onEngineChange: (id: string) => void;
 	onDateChange: (from: string, to: string, preset?: string) => void;
+	onUserChange: (userId: string) => void;
 }
 
 export const FiltersRow = ({
@@ -55,9 +56,12 @@ export const FiltersRow = ({
 	engineNames,
 	dateFrom,
 	dateTo,
+	userOptions,
+	selectedUser,
 	onEngineTypeChange,
 	onEngineChange,
 	onDateChange,
+	onUserChange,
 }: FiltersRowProps) => {
 	const statCards = [
 		{
@@ -102,7 +106,7 @@ export const FiltersRow = ({
 			<div className="flex flex-shrink-0 items-stretch gap-2">
 				{/* ── Stat Cards ── */}
 				<div className="flex flex-1 gap-2">
-					{statCards.map((s) => (
+					{statCards?.map((s) => (
 						<div
 							key={s.label}
 							className="min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-1.5"
@@ -140,11 +144,14 @@ export const FiltersRow = ({
 						value={engineType || "APP"}
 						onValueChange={onEngineTypeChange}
 					>
-						<SelectTrigger className="h-7 w-[110px] border-0 bg-transparent px-1 text-xs shadow-none">
+						<SelectTrigger
+							title={engineType || "APP"}
+							className="h-7 w-[110px] truncate border-0 bg-transparent px-1 text-xs shadow-none"
+						>
 							<SelectValue placeholder="Select" />
 						</SelectTrigger>
 						<SelectContent>
-							{ENGINE_TYPES.map((t) => (
+							{ENGINE_TYPES?.map((t) => (
 								<SelectItem key={t} value={t}>
 									{t}
 								</SelectItem>
@@ -164,11 +171,20 @@ export const FiltersRow = ({
 						onValueChange={onEngineChange}
 						disabled={!engineType}
 					>
-						<SelectTrigger className="h-7 w-[160px] border-0 bg-transparent px-1 text-xs shadow-none">
+						<SelectTrigger
+							title={
+								engineNames?.find(
+									(n) =>
+										n.value ===
+										(engineId || engineNames?.[0]?.value),
+								)?.label ?? "Select"
+							}
+							className="h-7 w-[160px] truncate border-0 bg-transparent px-1 text-xs shadow-none"
+						>
 							<SelectValue placeholder="Select" />
 						</SelectTrigger>
 						<SelectContent>
-							{engineNames.map((n) => (
+							{engineNames?.map((n) => (
 								<SelectItem key={n.value} value={n.value}>
 									{n.label}
 								</SelectItem>
@@ -181,24 +197,25 @@ export const FiltersRow = ({
 					</span>
 
 					<Select
-						value={engineId || engineNames?.[0]?.value}
-						onValueChange={onEngineChange}
-						disabled={!engineType}
+						value={selectedUser || "__all__"}
+						onValueChange={(val) =>
+							onUserChange(val === "__all__" ? "" : val)
+						}
 					>
 						<SelectTrigger className="h-7 w-[160px] border-0 bg-transparent px-1 text-xs shadow-none">
-							<SelectValue placeholder="Select" />
+							<SelectValue placeholder="All Users" />
 						</SelectTrigger>
 						<SelectContent>
-							{engineNames.map((n) => (
-								<SelectItem key={n.value} value={n.value}>
-									{n.label}
+							<SelectItem value="__all__">All Users</SelectItem>
+							{userOptions.map((u) => (
+								<SelectItem key={u.value} value={u.value}>
+									{u.label}
 								</SelectItem>
 							))}
 						</SelectContent>
 					</Select>
 					<div className="h-4 w-px bg-border" />
 
-					{/* ── Date Range ── */}
 					<DateRangeFilter
 						dateFrom={dateFrom}
 						dateTo={dateTo}

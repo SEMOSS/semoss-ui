@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
 	Button,
 	DropdownMenu,
@@ -9,6 +9,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	Popover,
+	PopoverAnchor,
+	PopoverContent,
 } from "@semoss/ui/next";
 
 type Preset = "today" | "7days" | "30days" | "custom";
@@ -54,20 +57,6 @@ const DateRangeFilter = ({
 	const [customFrom, setCustomFrom] = useState(dateFrom);
 	const [customTo, setCustomTo] = useState(dateTo);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
-	const calendarRef = useRef<HTMLDivElement>(null);
-
-	useEffect(() => {
-		const handler = (e: MouseEvent) => {
-			if (
-				calendarRef.current &&
-				!calendarRef.current.contains(e.target as Node)
-			) {
-				setShowCalendar(false);
-			}
-		};
-		if (showCalendar) document.addEventListener("mousedown", handler);
-		return () => document.removeEventListener("mousedown", handler);
-	}, [showCalendar]);
 
 	const today = new Date();
 	const fmt = (d: Date) => d.toISOString().split("T")[0];
@@ -76,7 +65,7 @@ const DateRangeFilter = ({
 		setPreset(p);
 		if (p === "custom") {
 			setDropdownOpen(false);
-			setShowCalendar(true);
+			setTimeout(() => setShowCalendar(true), 0);
 			return;
 		}
 		const t = fmt(today);
@@ -160,55 +149,67 @@ const DateRangeFilter = ({
 
 	return (
 		<div className="relative min-w-0 flex-1 p-2">
-			{/* shadcn DropdownMenu trigger */}
-			<DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-				<DropdownMenuTrigger asChild>
-					<Button className="flex w-full items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-left transition-colors hover:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-						<span className="flex-1 text-foreground text-xs leading-tight">
-							{presetLabel}
-						</span>
-						<ChevronDown
-							size={14}
-							className={`text-muted-foreground transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
-						/>
-					</Button>
-				</DropdownMenuTrigger>
-
-				<DropdownMenuContent
-					align="start"
-					className="w-48 rounded-lg border border-border bg-card shadow-xl"
+			<Popover open={showCalendar}>
+				<DropdownMenu
+					open={dropdownOpen}
+					onOpenChange={(open) => {
+						setDropdownOpen(open);
+						setShowCalendar(false);
+					}}
 				>
-					{PRESETS.map(([id, label], idx) => (
-						<>
-							{/* Separator before Custom */}
-							{id === "custom" && (
-								<DropdownMenuSeparator key="sep" />
-							)}
-							<DropdownMenuItem
-								key={id}
-								onSelect={() => applyPreset(id)}
-								className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-xs transition-colors focus:bg-secondary ${
-									preset === id
-										? "font-medium text-primary"
-										: "text-foreground"
-								}`}
-							>
-								{/* Checkmark for active preset */}
-								<span className="w-3 text-primary">
-									{preset === id ? "✓" : ""}
+					<PopoverAnchor asChild>
+						<DropdownMenuTrigger asChild>
+							<Button className="flex w-full items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-left transition-colors hover:bg-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+								<span className="flex-1 text-foreground text-xs leading-tight">
+									{presetLabel}
 								</span>
-								{label}
-							</DropdownMenuItem>
-						</>
-					))}
-				</DropdownMenuContent>
-			</DropdownMenu>
+								<ChevronDown
+									size={14}
+									className={`text-muted-foreground transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`}
+								/>
+							</Button>
+						</DropdownMenuTrigger>
+					</PopoverAnchor>
 
-			{/* Custom Calendar Popover — shown below the trigger */}
-			{showCalendar && (
-				<div
-					ref={calendarRef}
-					className="absolute top-full right-0 z-50 mt-1 w-fit rounded-lg border border-border bg-card p-3 shadow-xl"
+					<DropdownMenuContent
+						align="start"
+						className="w-48 rounded-lg border border-border bg-card shadow-xl"
+					>
+						{PRESETS.map(([id, label]) => (
+							<>
+								{/* Separator before Custom */}
+								{id === "custom" && (
+									<DropdownMenuSeparator key="sep" />
+								)}
+								<DropdownMenuItem
+									key={id}
+									onSelect={() => applyPreset(id)}
+									className={`flex cursor-pointer items-center gap-2 px-3 py-2 text-xs transition-colors focus:bg-secondary ${
+										preset === id
+											? "font-medium text-primary"
+											: "text-foreground"
+									}`}
+								>
+									{/* Checkmark for active preset */}
+									<span className="w-3 text-primary">
+										{preset === id ? "✓" : ""}
+									</span>
+									{label}
+								</DropdownMenuItem>
+							</>
+						))}
+					</DropdownMenuContent>
+				</DropdownMenu>
+
+				<PopoverContent
+					align="end"
+					sideOffset={4}
+					className="w-fit rounded-lg border border-border bg-card p-3 shadow-xl"
+					onOpenAutoFocus={(e) => e.preventDefault()}
+					onCloseAutoFocus={(e) => e.preventDefault()}
+					onInteractOutside={(e) => e.preventDefault()}
+					onFocusOutside={(e) => e.preventDefault()}
+					onEscapeKeyDown={() => setShowCalendar(false)}
 				>
 					{/* Date inputs */}
 					<div className="mb-3 flex gap-2">
@@ -314,8 +315,8 @@ const DateRangeFilter = ({
 							Apply
 						</Button>
 					</div>
-				</div>
-			)}
+				</PopoverContent>
+			</Popover>
 		</div>
 	);
 };

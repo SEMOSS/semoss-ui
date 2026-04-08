@@ -17,10 +17,8 @@ import {
 	PopoverTrigger,
 } from "@semoss/ui/next";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
 /** Allowed search token categories */
-export type SearchCategory = "methodName" | "args" | "engineType";
+export type SearchCategory = "methodName" | "args" | "engineType" | "latency";
 
 /** A single search token — one per category, holding multiple values */
 export interface SearchToken {
@@ -35,6 +33,7 @@ export interface SearchPayload {
 		methodName?: string[];
 		args?: string[];
 		engineType?: string[];
+		latency?: string[];
 	};
 	others?: string;
 }
@@ -49,7 +48,12 @@ interface CategoryMeta {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES: SearchCategory[] = ["methodName", "args", "engineType"];
+const CATEGORIES: SearchCategory[] = [
+	"methodName",
+	"args",
+	"engineType",
+	"latency",
+];
 
 const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 	methodName: {
@@ -69,6 +73,12 @@ const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 		color: "text-emerald-700 dark:text-emerald-300",
 		bgColor: "bg-emerald-100 dark:bg-emerald-900/40",
 		borderColor: "border-emerald-300 dark:border-emerald-700",
+	},
+	latency: {
+		label: "Latency",
+		color: "text-pink-700 dark:text-pink-300",
+		bgColor: "bg-pink-100 dark:bg-pink-900/40",
+		borderColor: "border-pink-300 dark:border-pink-700",
 	},
 };
 

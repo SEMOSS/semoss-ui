@@ -65,7 +65,7 @@ export const AuditLogPage = () => {
 	const rootStore = useUserRootStore(insightId);
 	const userId = rootStore?.user?.id ?? "";
 
-	const [dark, setDark] = useState(true);
+	const [dark, setDark] = useState(false);
 	const [chartTab, setChartTab] = useState<"bar" | "timeline">("timeline");
 	const [chartPage, setChartPage] = useState(0);
 	const [searchTokens, setSearchTokens] = useState<SearchToken[]>([]);
@@ -87,10 +87,15 @@ export const AuditLogPage = () => {
 	const [dateFrom, setDateFrom] = useState(todayStr);
 	const [dateTo, setDateTo] = useState(todayStr);
 	const [durationValue, setDurationValue] = useState<DurationValue>("today");
+	const [selectedUser, setSelectedUser] = useState("");
+	const [userOptions, setUserOptions] = useState<
+		{ value: string; label: string }[]
+	>([]);
 
 	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
+		selectedUser: "",
 		customDateRange: { from: new Date(), to: new Date() },
 		SelectedDuration:
 			DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
@@ -144,6 +149,7 @@ export const AuditLogPage = () => {
 				const {
 					engineType: eType,
 					engineId: eId,
+					selectedUser: sUser,
 					customDateRange,
 					SelectedDuration,
 				} = filteredData.current;
@@ -194,7 +200,7 @@ export const AuditLogPage = () => {
 
 				const pixel =
 					`AuditLogReport(paramValues=[{` +
-					`"userId":"${userId}",` +
+					`"userId":"${sUser}",` +
 					`"projectId":"${eType === "APP" ? eId : ""}",` +
 					`"engineId":"${eType === "APP" ? "" : eId}",` +
 					`"dateTime":"${dateTime}",` +
@@ -229,6 +235,12 @@ export const AuditLogPage = () => {
 				setLogs(logsArray);
 				setTotalCount(count);
 				setSelected(logsArray[0] ?? null);
+
+				// Extract unique userIds for the User dropdown
+				const uniqueUsers = Array.from(
+					new Set(logsArray.map((l) => l.userId).filter(Boolean)),
+				).map((id) => ({ value: id, label: id }));
+				setUserOptions(uniqueUsers);
 			} catch (err) {
 				console.error("Error fetching audit logs:", err);
 				setLogs([]);
@@ -290,9 +302,12 @@ export const AuditLogPage = () => {
 	const handleEngineTypeChange = (type: string) => {
 		setEngType(type);
 		setEngId("");
+		setSelectedUser("");
+		setUserOptions([]);
 		setChartPage(0);
 		filteredData.current.engineType = type;
 		filteredData.current.engineId = "";
+		filteredData.current.selectedUser = "";
 		if (type) fetchEngineDetails(type);
 		setPage(0);
 		fetchLogs(ROWS_PER_PAGE, 0);
@@ -319,6 +334,14 @@ export const AuditLogPage = () => {
 			to: to ? new Date(to) : new Date(),
 		};
 		filteredData.current.SelectedDuration = duration;
+		setPage(0);
+		fetchLogs(ROWS_PER_PAGE, 0);
+	};
+
+	const handleUserChange = (uid: string) => {
+		setSelectedUser(uid);
+		setChartPage(0);
+		filteredData.current.selectedUser = uid;
 		setPage(0);
 		fetchLogs(ROWS_PER_PAGE, 0);
 	};
@@ -414,9 +437,12 @@ export const AuditLogPage = () => {
 					hasFilters={hasFilters}
 					dateFrom={dateFrom}
 					dateTo={dateTo}
+					userOptions={userOptions}
+					selectedUser={selectedUser}
 					onEngineTypeChange={handleEngineTypeChange}
 					onEngineChange={handleEngineChange}
 					onDateChange={handleDateChange}
+					onUserChange={handleUserChange}
 				/>
 
 				{/* Row 2: Chart (65%) + Event History (35%) */}
