@@ -7,12 +7,12 @@
  * @module createApp
  */
 
-const axios = require("axios");
-const fs = require("fs");
-const http = require("http");
-const https = require("https");
+const { post } = require("@semoss/sdk/react");
+const fs = require("node:fs");
+const http = require("node:http");
+const https = require("node:https");
 const StreamZip = require("node-stream-zip");
-const path = require("path");
+const path = require("node:path");
 const vscode = require("vscode");
 const { deployProject, setDeployConfig } = require("./deploy.js");
 const { processGithubAssets } = require("./githubAssets.js");
@@ -163,7 +163,7 @@ async function collectAppDetails(args) {
 		isPrivateRepo = false,
 		accessToken = "";
 
-	if (args && args.appName) {
+	if (args?.appName) {
 		appName = args.appName;
 		description = args.description || "";
 		githubLink = args.githubLink || "";
@@ -240,10 +240,10 @@ async function selectDownloadFolder() {
  */
 function createAuthHeaders(secrets) {
 	const encoded = Buffer.from(
-		secrets.accessKey + ":" + secrets.privateKey,
+		`${secrets.accessKey}:${secrets.privateKey}`,
 	).toString("base64");
 	const headers = {
-		Authorization: "Basic " + encoded,
+		Authorization: `Basic ${encoded}`,
 		"Content-Type": "application/x-www-form-urlencoded",
 	};
 
@@ -306,7 +306,13 @@ async function createAppOnServer(secrets, headers, appDetails) {
 	params.append("insightId", "new");
 
 	try {
-		const response = await axios.post(
+		console.log(
+			"Creating app on server with params:",
+			params.toString(),
+			secrets.semossUrl,
+			headers,
+		);
+		const response = await post(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 			params,
 			{ headers },
@@ -340,7 +346,7 @@ async function createAppOnServer(secrets, headers, appDetails) {
 				response.data.insightID || "new",
 			);
 
-			await axios.post(
+			await post(
 				`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 				metadataParams,
 				{ headers },
@@ -349,19 +355,7 @@ async function createAppOnServer(secrets, headers, appDetails) {
 
 		return projectId;
 	} catch (err) {
-		if (err.isAxiosError) {
-			logError("Axios error during CreateProject", err);
-			const url = err.config && err.config.url ? err.config.url : "N/A";
-			const status =
-				err.response && err.response.status
-					? err.response.status
-					: "N/A";
-			vscode.window.showErrorMessage(
-				`Network/API error: ${err.message}\nURL: ${url}\nStatus: ${status}`,
-			);
-		} else {
-			logError("App creation failed", err);
-		}
+		logError("App creation failed", err);
 		throw err;
 	}
 }
@@ -385,7 +379,7 @@ async function addPlaceholderAsset(secrets, headers, projectId, appName) {
 	saveAssetParams.append("insightId", "new");
 
 	try {
-		await axios.post(
+		await post(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 			saveAssetParams,
 			{ headers },
@@ -429,7 +423,7 @@ async function exportAndDownloadProject(
 	);
 	exportParams.append("insightId", "new");
 
-	const exportResponse = await axios.post(
+	const exportResponse = await post(
 		`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 		exportParams,
 		{ headers },
@@ -483,14 +477,16 @@ async function downloadFile(url, filePath, encoded) {
 			path: parsedUrl.pathname + parsedUrl.search,
 			method: "GET",
 			headers: {
-				Authorization: "Basic " + encoded,
+				Authorization: `Basic ${encoded}`,
 			},
 		};
 
 		const req = protocol.request(options, (response) => {
 			if (response.statusCode !== 200) {
 				let errorMsg = `Download failed with status code: ${response.statusCode}`;
-				response.on("data", (chunk) => (errorMsg += chunk.toString()));
+				response.on("data", (chunk) => {
+					errorMsg += chunk.toString();
+				});
 				response.on("end", () => {
 					vscode.window.showErrorMessage(errorMsg);
 					reject(new Error(errorMsg));
