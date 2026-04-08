@@ -16,6 +16,7 @@ import {
 	FieldSet,
 	Input,
 	Slider,
+	Switch,
 	Textarea,
 	Tooltip,
 	TooltipContent,
@@ -444,6 +445,22 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										})
 									}
 								/>
+							</Field>
+							<Field>
+								<div className="flex items-center justify-between">
+									<FieldLabel>Ask User Tool</FieldLabel>
+									<Switch
+										checked={options.askUserEnabled ?? true}
+										onCheckedChange={(checked) =>
+											onOptionsChange({
+												askUserEnabled: checked,
+											})
+										}
+									/>
+								</div>
+								<FieldDescription>
+									Allow the model to ask follow-up questions
+								</FieldDescription>
 							</Field>
 						</FieldGroup>
 					</FieldSet>

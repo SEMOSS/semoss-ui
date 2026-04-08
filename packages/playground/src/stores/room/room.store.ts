@@ -116,6 +116,11 @@ interface RoomStoreInterface {
 			workspace_id: string;
 			name?: string;
 		};
+
+		/*
+		 * Whether the askUser built-in tool is enabled
+		 */
+		askUserEnabled: boolean;
 	};
 
 	/**
@@ -159,6 +164,7 @@ export class RoomStore {
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
+			askUserEnabled: true,
 		},
 		sidebar: {
 			isOpen: false,

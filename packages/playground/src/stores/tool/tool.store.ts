@@ -97,6 +97,13 @@ export class ToolStore {
 	} = { message: null, part: null };
 
 	/**
+	 * Get the message that contains this tool call
+	 */
+	get toolCallMessage(): ResponseMessageStore | null {
+		return this.toolCall.message;
+	}
+
+	/**
 	 * Tool result data
 	 */
 	private toolResult: {

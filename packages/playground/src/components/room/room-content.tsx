@@ -1,4 +1,5 @@
 import {
+	MessageSquareMoreIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
@@ -29,8 +30,9 @@ import {
 	RoomInputMenuToolbox,
 	RoomInputMenuUpload,
 } from "@/components";
+import { AskUserTool } from "@/components/mcp/ask-user-tool";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import type { RoomStore, ToolStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
 
@@ -56,11 +58,68 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+	const [askUserDismissed, setAskUserDismissed] = useState(false);
+	const [lastSeenAskUserIds, setLastSeenAskUserIds] = useState<string>("");
+
+	// Collect ALL pending askUser tools from the latest response
+	const pendingAskUserTools = ((): ToolStore[] => {
+		const latestResponse = room.latestResponseMessage;
+		if (!latestResponse) return [];
+
+		const tools: ToolStore[] = [];
+		for (const part of latestResponse.parts) {
+			if (
+				part.type === "TOOL_CALL" &&
+				part.toolCall.original_name === "askUser"
+			) {
+				const tool = room.getTool(part.toolCall.id);
+				if (tool && tool.status === "INITIAL") {
+					tools.push(tool);
+				}
+			}
+		}
+		return tools;
+	})();
+
+	// Auto-open overlay when new askUser tools appear
+	const currentAskUserIds = pendingAskUserTools.map((t) => t.id).join(",");
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset dismissed on new tool IDs
+	useEffect(() => {
+		if (currentAskUserIds && currentAskUserIds !== lastSeenAskUserIds) {
+			setLastSeenAskUserIds(currentAskUserIds);
+			setAskUserDismissed(false);
+		}
+	}, [currentAskUserIds]);
+
+	const showAskUserOverlay =
+		pendingAskUserTools.length > 0 && !askUserDismissed;
 
 	/**
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
+		// If there are dismissed pending askUser tools, route the text input
+		// as the tool response so the answer shows in chat and the LLM continues
+		if (askUserDismissed && pendingAskUserTools.length > 0) {
+			const tool = pendingAskUserTools[0];
+			const messageId = tool.toolCallMessage?.id;
+			if (messageId) {
+				const params = (tool.parameters || {}) as Record<
+					string,
+					unknown
+				>;
+				await room.processTool(messageId, tool.id, prompt, "success", {
+					...params,
+					user_response: prompt,
+				});
+				// If no more pending tools after this one, un-dismiss
+				if (pendingAskUserTools.length <= 1) {
+					setAskUserDismissed(false);
+				}
+				return true;
+			}
+		}
+
 		// update the options
 		await room.updateRoomOptions(room.options);
 
@@ -418,82 +477,109 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				)}
 			</div>
 			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
-				<RoomInput
-					className="max-h-56 min-h-24"
-					isLoading={showLoadingState}
-					hidePauseButton={!room.numberOfTools}
-					model={room.model}
-					setModel={(model) => {
-						room.setModel(model);
-						chat.setSelectedModel(model);
-					}}
-					MenuComponent={observer(
-						({ addToken, onOpenChange, fileRef }) => (
-							<>
-								<RoomInputMenuUpload
-									fileRef={fileRef}
-									onSelect={() => onOpenChange(false)}
-								/>
-								<RoomInputMenuFileExplorer
-									room={room}
-									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuKnowledge
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<RoomInputMenuToolbox
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<DropdownMenuItem
-									onSelect={(e) => {
-										e.preventDefault();
+				{showAskUserOverlay ? (
+					<AskUserTool
+						room={room}
+						tool={pendingAskUserTools[0]}
+						onClose={() => setAskUserDismissed(true)}
+					/>
+				) : (
+					<>
+						{askUserDismissed && pendingAskUserTools.length > 0 && (
+							<button
+								type="button"
+								className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-primary-foreground px-3 py-1.5 text-muted-foreground text-sm shadow-sm transition-colors hover:bg-accent/50"
+								onClick={() => setAskUserDismissed(false)}
+							>
+								<MessageSquareMoreIcon className="size-4" />
+								{pendingAskUserTools.length} follow-up question
+								{pendingAskUserTools.length > 1 ? "s" : ""} —
+								click to reopen
+							</button>
+						)}
+						<RoomInput
+							className="max-h-56 min-h-24"
+							isLoading={showLoadingState}
+							hidePauseButton={!room.numberOfTools}
+							model={room.model}
+							setModel={(model) => {
+								room.setModel(model);
+								chat.setSelectedModel(model);
+							}}
+							MenuComponent={observer(
+								({ addToken, onOpenChange, fileRef }) => (
+									<>
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<RoomInputMenuFileExplorer
+											room={room}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
+										<RoomInputMenuKnowledge
+											options={room.options}
+											onSelect={(tool) => {
+												handleToolSelect(tool);
+												addToken(`<${tool.name}>`);
+											}}
+										/>
+										<RoomInputMenuToolbox
+											options={room.options}
+											onSelect={(tool) => {
+												handleToolSelect(tool);
+												addToken(`<${tool.name}>`);
+											}}
+										/>
+										<DropdownMenuItem
+											onSelect={(e) => {
+												e.preventDefault();
 
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
-										onOpenChange(false);
-									}}
-								>
-									<Settings2Icon />
-									<span className="flex-1">
-										{t("settings.edit")}
-									</span>
-								</DropdownMenuItem>
-							</>
-						),
-					)}
-					onPrompt={handlePrompt}
-					hasOutstandingTools={
-						room.latestResponseMessage.hasUnfinishedTools
-					}
-					hasToolsPaused={room.latestResponseMessage.isPaused}
-					toggleToolsPaused={
-						room.latestResponseMessage.toggleIsPaused
-					}
-					footer={
-						<RoomContextChart
-							tokensUsed={room.tokensUsed}
-							tokensMax={chat.models.contextWindow}
+												// add to the sidebar
+												room.addSidebarNode(
+													ROOM_CONFIGURATION_ID,
+													{
+														type: "tab",
+														name: "Configuration",
+														component:
+															"room-configuration",
+														config: {},
+														enableClose: true,
+													},
+												);
+												onOpenChange(false);
+											}}
+										>
+											<Settings2Icon />
+											<span className="flex-1">
+												{t("settings.edit")}
+											</span>
+										</DropdownMenuItem>
+									</>
+								),
+							)}
+							onPrompt={handlePrompt}
+							hasOutstandingTools={
+								askUserDismissed &&
+								pendingAskUserTools.length > 0
+									? false
+									: room.latestResponseMessage
+											.hasUnfinishedTools
+							}
+							hasToolsPaused={room.latestResponseMessage.isPaused}
+							toggleToolsPaused={
+								room.latestResponseMessage.toggleIsPaused
+							}
+							footer={
+								<RoomContextChart
+									tokensUsed={room.tokensUsed}
+									tokensMax={chat.models.contextWindow}
+								/>
+							}
 						/>
-					}
-				/>
+					</>
+				)}
 			</div>
 		</div>
 	);

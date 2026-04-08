@@ -71,6 +71,30 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			return null;
 		}
 
+		// askUser tools: show Q&A inline when answered, hide when still pending
+		if (tool.json.original_name === "askUser") {
+			if (tool.status !== "SUCCESS") {
+				return null;
+			}
+
+			const question =
+				(tool.json.arguments as Record<string, unknown>)?.question ??
+				"Follow-up question";
+			const answer =
+				(tool.parameters as Record<string, unknown>)?.user_response ??
+				tool.response ??
+				"";
+
+			return (
+				<div className="flex flex-col gap-1 rounded-lg border border-border bg-primary-foreground px-4 py-3">
+					<p className="text-muted-foreground text-sm">
+						{String(question)}
+					</p>
+					<p className="font-medium text-sm">{String(answer)}</p>
+				</div>
+			);
+		}
+
 		// Determine display variant
 		type Variant =
 			| "complete"
