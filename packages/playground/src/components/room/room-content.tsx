@@ -1,4 +1,5 @@
 import {
+	BrainIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
@@ -35,6 +36,7 @@ import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
+const ROOM_MEMORY_ID = "MEMORY";
 const SCROLL_THRESHOLD = 150;
 
 interface RoomContentProps {
@@ -282,7 +284,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		for (const part of room.latestResponseMessage.parts) {
 			if (
 				part.type === "TOOL_CALL" &&
-				part.toolCall._meta.SMSS_MCP_EXECUTION === "auto"
+				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
 			) {
 				const tool = room.getTool(part.toolCall.id);
 				if (
@@ -476,6 +478,28 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 										{t("settings.edit")}
 									</span>
 								</DropdownMenuItem>
+								{room.options.memoryEnabled && (
+									<DropdownMenuItem
+										onSelect={(e) => {
+											e.preventDefault();
+
+											room.addSidebarNode(
+												ROOM_MEMORY_ID,
+												{
+													type: "tab",
+													name: "Memory",
+													component: "room-memory",
+													config: {},
+													enableClose: true,
+												},
+											);
+											onOpenChange(false);
+										}}
+									>
+										<BrainIcon />
+										<span className="flex-1">Memories</span>
+									</DropdownMenuItem>
+								)}
 							</>
 						),
 					)}

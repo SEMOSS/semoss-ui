@@ -1,4 +1,4 @@
-import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { BrainIcon, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
 import { useState } from "react";
@@ -16,6 +16,7 @@ import {
 	FieldSet,
 	Input,
 	Slider,
+	Switch,
 	Textarea,
 	Tooltip,
 	TooltipContent,
@@ -444,6 +445,35 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										})
 									}
 								/>
+							</Field>
+						</FieldGroup>
+					</FieldSet>
+					<FieldSeparator />
+					<FieldSet>
+						<FieldLegend className="flex w-full flex-1 items-center gap-2">
+							<BrainIcon className="size-4" />
+							Memory
+						</FieldLegend>
+						<FieldDescription>
+							When enabled, the AI can remember facts,
+							preferences, and context across conversations in
+							this room.
+						</FieldDescription>
+						<FieldGroup>
+							<Field>
+								<div className="flex items-center justify-between">
+									<FieldLabel className="mb-0">
+										Enable Memory
+									</FieldLabel>
+									<Switch
+										checked={options.memoryEnabled ?? false}
+										onCheckedChange={(checked) =>
+											onOptionsChange({
+												memoryEnabled: checked,
+											})
+										}
+									/>
+								</div>
 							</Field>
 						</FieldGroup>
 					</FieldSet>

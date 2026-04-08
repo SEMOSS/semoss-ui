@@ -128,7 +128,7 @@ export class ToolStore {
 		) {
 			// set the display
 			this.display =
-				part.toolCall._meta.SMSS_MCP_UI?.displayLocation || "sidebar";
+				part.toolCall._meta?.SMSS_MCP_UI?.displayLocation || "sidebar";
 
 			//set the parameters based on the json
 			this.parameters = part.toolCall.arguments || {};
@@ -207,7 +207,7 @@ export class ToolStore {
 				name: this.json.title,
 				component: "room-tool",
 				config: {
-					app: this.json._meta.SMSS_PROJECT_ID,
+					app: this.json._meta?.SMSS_PROJECT_ID ?? "",
 					message: this.toolCall.message?.id,
 					tool: this.json,
 					toolResponse:

@@ -1,4 +1,5 @@
 import {
+	BrainIcon,
 	FileIcon,
 	FolderTreeIcon,
 	HammerIcon,
@@ -19,6 +20,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { MemoryPanel } from "@/components";
 import type { RoomStore } from "@/stores";
 import { RoomConfiguration } from "./room-configuration";
 import { RoomFileEditor } from "./room-file-editor";
@@ -156,6 +158,10 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									renderValues.leading = (
 										<Settings2Icon className="size-4" />
 									);
+								} else if (component === "room-memory") {
+									renderValues.leading = (
+										<BrainIcon className="size-4" />
+									);
 								} else if (component === "room-file-explorer") {
 									renderValues.leading = (
 										<FolderTreeIcon className="size-4" />
@@ -181,6 +187,8 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 									);
 								} else if (component === "room-configuration") {
 									return <RoomConfiguration room={room} />;
+								} else if (component === "room-memory") {
+									return <MemoryPanel room={room} />;
 								} else if (component === "room-file-editor") {
 									return (
 										<RoomFileEditor

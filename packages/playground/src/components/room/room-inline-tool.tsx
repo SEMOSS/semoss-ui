@@ -121,7 +121,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 					<div className="w-full flex-1 overflow-hidden">
 						<ToolsView
 							room={room}
-							app={tool.json._meta.SMSS_PROJECT_ID}
+							app={tool.json._meta?.SMSS_PROJECT_ID}
 							message={message.id}
 							tool={tool.json}
 							toolResponse={

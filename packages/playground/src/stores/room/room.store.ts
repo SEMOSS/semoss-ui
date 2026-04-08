@@ -116,6 +116,11 @@ interface RoomStoreInterface {
 			workspace_id: string;
 			name?: string;
 		};
+
+		/*
+		 * Whether persistent AI memory is enabled for this room
+		 */
+		memoryEnabled?: boolean;
 	};
 
 	/**
@@ -159,6 +164,7 @@ export class RoomStore {
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
+			memoryEnabled: false,
 		},
 		sidebar: {
 			isOpen: false,

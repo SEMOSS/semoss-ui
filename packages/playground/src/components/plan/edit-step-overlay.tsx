@@ -113,7 +113,8 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 		step.description.trim() === "" ||
 		!step.details.stepType ||
 		(step.details.stepType === "tool_call" &&
-			(!step.details._meta.SMSS_PROJECT_ID || !step.details.tool_name)) ||
+			(!step.details._meta?.SMSS_PROJECT_ID ||
+				!step.details.tool_name)) ||
 		(step.details.stepType === "llm_reasoning" &&
 			step.details.prompt.trim() === "") ||
 		step.details.stepType === "human_intervention";

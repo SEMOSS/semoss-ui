@@ -103,7 +103,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 
 				setIsLoading(true);
 
-				if (!tool._meta.SMSS_MCP_UI) {
+				if (!tool._meta?.SMSS_MCP_UI) {
 					// Legacy, check for portals
 
 					if (getAppInfo.data.project_type === "BLOCKS") {
@@ -135,7 +135,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					);
 				} else {
 					// Modern
-					const resourceURI = tool._meta.SMSS_MCP_UI?.resourceURI;
+					const resourceURI = tool._meta?.SMSS_MCP_UI?.resourceURI;
 					if (!resourceURI) {
 						// No UI defined, show form
 						setUrl(null);

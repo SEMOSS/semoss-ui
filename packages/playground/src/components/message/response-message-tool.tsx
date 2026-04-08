@@ -41,8 +41,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
 			tool.status === "LOADING",
-			tool.json._meta.SMSS_MCP_UI?.loadingMessage
-				? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
+			tool.json._meta?.SMSS_MCP_UI?.loadingMessage
+				? [tool.json._meta?.SMSS_MCP_UI.loadingMessage]
 				: [],
 		);
 
@@ -55,8 +55,8 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			isDisabled =
 				room.plan?.step?.details.stepType !== "tool_call" ||
 				room.plan?.step?.details.tool_name !== tool.json.name ||
-				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
-					tool.json._meta.SMSS_PROJECT_ID;
+				room.plan?.step?.details._meta?.SMSS_PROJECT_ID !==
+					tool.json._meta?.SMSS_PROJECT_ID;
 		}
 
 		let isActive = false;
@@ -91,7 +91,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			variant = "complete";
 		} else if (tool.status === "LOADING") {
 			variant = "loading";
-		} else if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+		} else if (tool.json._meta?.SMSS_MCP_EXECUTION === "ask") {
 			variant = "ready";
 		} else {
 			variant = "queued";
