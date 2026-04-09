@@ -43,7 +43,12 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 				const tabsToRemove: string[] = [];
 
 				model.visitNodes((currentNode) => {
-					console.log("VISITING NODE >>>", currentNode.getId(), " >> ", !(currentNode instanceof FlexLayout.TabNode));
+					console.log(
+						"VISITING NODE >>>",
+						currentNode.getId(),
+						" >> ",
+						!(currentNode instanceof FlexLayout.TabNode),
+					);
 					if (!(currentNode instanceof FlexLayout.TabNode)) {
 						return;
 					}

@@ -48,19 +48,33 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					if (!(currentNode instanceof FlexLayout.TabNode)) {
 						return;
 					}
-					
+
 					const config = currentNode.getConfig() as
-					| { path?: string; data?: { path?: string } }
-					| undefined;
+						| { path?: string; data?: { path?: string } }
+						| undefined;
 					const path = config?.path || config?.data?.path;
-					console.log("VISITING NODE >>>", currentNode.getId(), " >> ", currentNode.getConfig, " >> ", path);
+					console.log(
+						"VISITING NODE >>>",
+						currentNode.getId(),
+						" >> ",
+						currentNode.getConfig,
+						" >> ",
+						path,
+					);
 					if (!path) {
 						return;
 					}
-					console.log("TESTING >>>", deletedPath, path, isDirectory, config);
+					console.log(
+						"TESTING >>>",
+						deletedPath,
+						path,
+						isDirectory,
+						config,
+					);
 					if (
 						isDirectory
-							? path === deletedPath || path.startsWith(deletedPathWithSlash)
+							? path === deletedPath ||
+								path.startsWith(deletedPathWithSlash)
 							: path === deletedPath
 					) {
 						tabsToRemove.push(currentNode.getId());
