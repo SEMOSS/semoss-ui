@@ -15,7 +15,6 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
-import type { MCPTool } from "@/types";
 import { ToolField } from "./tool-field";
 
 export interface ToolsDefaultViewProps {
@@ -30,9 +29,6 @@ export interface ToolsDefaultViewProps {
 
 	/** Connected tool */
 	tool: ToolStore["json"];
-
-	/** MCP schema for the tool */
-	mcp?: MCPTool;
 
 	/** Response to the tool, if already completed */
 	toolResponse?: string;
@@ -56,7 +52,7 @@ interface FieldSchema {
 }
 
 export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, mcp, toolResponse, toolParameters }) => {
+	({ room, app, message, tool, toolResponse, toolParameters }) => {
 		/*
 		 * Library hooks
 		 */
@@ -85,8 +81,8 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		/*
 		 * Constants
 		 */
-		const title = tool?.title || mcp?.title || tool?.name || "";
-		const description = tool?.description || mcp?.description || "";
+		const title = tool?.title || "";
+		const description = tool?.description || "";
 
 		/*
 		 * State
@@ -96,26 +92,22 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		});
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
-		const [response, setResponse] = useState<string | undefined>(
-			toolResponse,
-		);
+		const [required, setRequired] = useState<string[]>([]);
+		
+		const [properties, setProperties] = useState<
+			Record<string, FieldSchema>
+		>({});
+		const [response, setResponse] = useState<string>(toolResponse);
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
 			useState<boolean>(false);
 		const extensionIsOpen = useRef<boolean>(false);
 
-		const required = mcp?.inputSchema?.required || [];
-		const properties =
-			(mcp?.inputSchema?.properties as Record<string, FieldSchema>) || {};
-
-		const selectedRecordedFile =
+		const scriptForBrowserAutomation =
 			typeof data.recordedFile === "string" ? data.recordedFile : "";
 
 		useEffect(() => {
-			console.log(
-				"[PLAYGROUND] 🎧 Setting up listener for extension open signal",
-			);
 
 			const handleMessage = (event: MessageEvent) => {
 				if (event.origin !== window.location.origin) {
@@ -123,16 +115,10 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 				}
 
 				if (event.data?.type === "SMSS_EXTENSION_OPENED") {
-					console.log(
-						"[PLAYGROUND] ✅ EXTENSION IS OPEN - Received signal from extension!",
-					);
 					extensionIsOpen.current = true;
 				}
 
 				if (event.data?.type === "SMSS_EXTENSION_CLOSED") {
-					console.log(
-						"[PLAYGROUND] ❌ EXTENSION IS CLOSED - Received signal from extension!",
-					);
 					extensionIsOpen.current = false;
 				}
 			};
@@ -167,16 +153,9 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 	 * Check if extension panel is open by actively pinging it
 	 */
 	const checkExtensionAvailable = async (): Promise<boolean> => {
-		if (!selectedRecordedFile) {
-			console.log(
-				"[PLAYGROUND] Not a Playwright script - skipping extension check",
-			);
+		if (!scriptForBrowserAutomation) {
 			return true;
 		}
-
-		console.log(
-			"[PLAYGROUND] 🏓 Actively checking extension availability with PING...",
-		);
 
 		// Active ping/pong validation with timeout
 		return new Promise<boolean>((resolve) => {
@@ -192,9 +171,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 				if (event.data?.type === "SMSS_EXTENSION_PONG") {
 					if (!resolved) {
 						resolved = true;
-						console.log(
-							"[PLAYGROUND] ✅ Received PONG - extension is available!",
-						);
 						if (timeoutId) clearTimeout(timeoutId);
 						window.removeEventListener("message", handlePong);
 						resolve(true);
@@ -209,9 +185,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			timeoutId = setTimeout(() => {
 				if (!resolved) {
 					resolved = true;
-					console.warn(
-						"[PLAYGROUND] ❌ PONG timeout - extension is NOT available",
-					);
 					window.removeEventListener("message", handlePong);
 					resolve(false);
 				}
@@ -231,22 +204,13 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 	// Tool Execution
 	const handleSubmit = async () => {
 			// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
-			if (selectedRecordedFile) {
-				console.log(
-					"[PLAYGROUND] 🎯 This is a Playwright script - checking extension availability...",
-				);
+			if (scriptForBrowserAutomation) {
 				const extensionAvailable = await checkExtensionAvailable();
 
 				if (!extensionAvailable) {
-					console.warn(
-						"[PLAYGROUND] ⚠️ Browser extension not available - showing dialog",
-					);
 					setShowExtensionDialog(true);
 					return; // Stop execution until user opens extension
 				}
-				console.log(
-					"[PLAYGROUND] ✅ Extension check passed - proceeding with execution",
-				);
 			}
 
 			setIsSubmitting(true);
@@ -254,7 +218,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			let output = "";
 			try {
 				// Check if this is a Playwright script execution
-				if (selectedRecordedFile) {
+				if (scriptForBrowserAutomation) {
 					// Get session ID first
 					const sessionIdResponse = await room.runRoomPixel<[string]>(
 						"Session();",
@@ -265,14 +229,13 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 
 					// Fetch the complete Playwright script
 					const scriptResponse = await room.runRoomPixel<[unknown]>(
-						`GetAllSteps(project=["${app}"], sessionId=["${sessionId}"], fileName=["${selectedRecordedFile}"]);`,
+						`GetAllSteps(project=["${app}"], sessionId=["${sessionId}"], fileName=["${scriptForBrowserAutomation}"]);`,
 						false,
 						false,
 					);
 					const scriptJson = scriptResponse.pixelReturn[0].output;
 
 					// Log the fetched script to console
-					console.log("Fetched Playwright Script:", scriptJson);
 
 					// Send script to browser extension
 					window.postMessage(
@@ -280,7 +243,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 							type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
 							script: {
 								projectId: app,
-								name: selectedRecordedFile,
+								name: scriptForBrowserAutomation,
 								autoExecute: false,
 								scriptContent: scriptJson,
 							},
@@ -288,7 +251,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						"*",
 					);
 
-					output = `Successfully fetched Playwright script: ${selectedRecordedFile}`;
+					output = `Successfully fetched Playwright script: ${scriptForBrowserAutomation}`;
 					success = true;
 				} else {
 					// Normal MCP tool execution for non-Playwright tools
@@ -345,7 +308,19 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		/*
 		 * Effects
 		 */
-		// No effects needed for now
+
+		// Load tool schema
+		useEffect(() => {
+			if (getMCP.status === "SUCCESS" && tool?.original_name) {
+				const foundTool = getMCP.data.tools.find(
+					(t) => t.name === tool.original_name,
+				);
+				if (foundTool) {
+					setProperties(foundTool.inputSchema.properties);
+					setRequired(foundTool.inputSchema.required);
+				}
+			}
+		}, [getMCP, tool.original_name]);
 
 		return (
 			// px-3 because applying padding on this div was clipping the shadow of the textareas
@@ -416,7 +391,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									{renderFields(requiredFields, true)}
 
 									{/* Playwright Script Details */}
-									{selectedRecordedFile && (
+									{scriptForBrowserAutomation && (
 										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
 											<h3 className="font-semibold text-base">
 												Playwright Script Details
@@ -435,7 +410,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 														Recorded File:
 													</span>
 													<span className="ml-2 text-muted-foreground">
-														{selectedRecordedFile}
+														{scriptForBrowserAutomation}
 													</span>
 												</div>
 											</div>
