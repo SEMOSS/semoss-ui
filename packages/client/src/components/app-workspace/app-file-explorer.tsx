@@ -1,6 +1,6 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { download, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import {
@@ -29,6 +29,64 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
+
+		/**
+		 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
+		 * @param deletedPath the path of the deleted file or directory
+		 * @param isDirectory whether the deleted path is a directory
+		 */
+		const removeDeletedTabs = useCallback(
+			(deletedPath: string, isDirectory: boolean) => {
+				const model = node.getModel();
+				const deletedPathWithSlash =
+					isDirectory && !deletedPath.endsWith("/")
+						? `${deletedPath}/`
+						: deletedPath;
+				const tabsToRemove: string[] = [];
+
+				model.visitNodes((currentNode) => {
+					if (!(currentNode instanceof FlexLayout.TabNode)) {
+						return;
+					}
+
+					const config = currentNode.getConfig() as
+						| { path?: string; data?: { path?: string } }
+						| undefined;
+					const path = config?.path || config?.data?.path;
+					console.log(
+						"VISITING NODE >>>",
+						currentNode.getId(),
+						" >> ",
+						currentNode.getConfig,
+						" >> ",
+						path,
+					);
+					if (!path) {
+						return;
+					}
+					console.log(
+						"TESTING >>>",
+						deletedPath,
+						path,
+						isDirectory,
+						config,
+					);
+					if (
+						isDirectory
+							? path === deletedPath ||
+								path.startsWith(deletedPathWithSlash)
+							: path === deletedPath
+					) {
+						tabsToRemove.push(currentNode.getId());
+					}
+				});
+
+				tabsToRemove.forEach((tabId) => {
+					model.doAction(FlexLayout.Actions.deleteTab(tabId));
+				});
+			},
+			[node],
+		);
 
 		/**
 		 * Add a node to the layout
@@ -86,9 +144,28 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				`GetAppAssets(filePath=["${itemPath}"], project=["${app}"]);`,
 			);
 
-			let json = {};
+			let json: { _meta: Record<string, string>; tools: unknown[] } = {
+				_meta: {},
+				tools: [],
+			};
 			try {
-				json = JSON.parse(pixelReturn[0].output);
+				const output = pixelReturn[0].output;
+				if (output && typeof output === "object") {
+					const o = output as Record<string, unknown>;
+					json = {
+						_meta: (o._meta as Record<string, string>) ?? {},
+						tools: (o.tools as unknown[]) ?? [],
+					};
+				} else if (typeof output === "string" && output.trim()) {
+					const parsed = JSON.parse(output) as Record<
+						string,
+						unknown
+					>;
+					json = {
+						_meta: (parsed._meta as Record<string, string>) ?? {},
+						tools: (parsed.tools as unknown[]) ?? [],
+					};
+				}
 			} catch (e) {
 				console.error(`Failed to parse MCP JSON: ${e}`);
 			}
@@ -98,6 +175,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				name: name,
 				component: "mcpJsonEditor",
 				config: {
+					path: itemPath,
 					data: {
 						initialData: json,
 						onSave: async (data, path) => {
@@ -231,7 +309,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 													refresh();
 
 													// add it
-													addMCPEditorTab(
+													await addMCPEditorTab(
 														"/mcp/py_mcp.json",
 													);
 												} catch (e) {
@@ -314,6 +392,11 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 									action: async (item) => {
 										await insight.actions.run(
 											`DeleteAppAssets(project=["${app}"], filePath=["${item.path}"]);`,
+										);
+
+										removeDeletedTabs(
+											item.path,
+											item.type === "directory",
 										);
 
 										refresh();

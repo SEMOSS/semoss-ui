@@ -37,7 +37,7 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 	};
 
 	return (
-		<Stack display="flex" alignItems="center" mt={1}>
+		<Stack direction="row" display="flex" alignItems="center">
 			<StyledIcon
 				onClick={() => handleFeedback("true")}
 				disabled={!!feedback}

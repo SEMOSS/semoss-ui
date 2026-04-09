@@ -47,7 +47,9 @@
 		"enterQuestion": "Veuillez entrer une question",
 		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
 		"ask": "Demander",
-		"errorProcessing": "Erreur de traitement du chat"
+		"errorProcessing": "Erreur de traitement du chat",
+		"pauseTools": "Suspendre les outils",
+		"pauseToolsTooltip": "Suspendre toute l'exécution des outils jusqu'après le prochain message"
 	},
 	"content": {
 		"scrollToTop": "Défiler vers le haut",
@@ -91,5 +93,13 @@
 	},
 	"errors": {
 		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",
+		"descriptionMedium": "Cette conversation devient longue. Si elle continue, le modèle commencera à oublier les messages précédents. Envisagez de démarrer un nouveau chat bientôt.",
+		"descriptionHigh": "Cette conversation est presque pleine. Le modèle commencera bientôt à oublier les messages précédents. Envisagez de démarrer un nouveau chat.",
+		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents lors de la génération des réponses. Démarrez un nouveau chat pour de meilleurs résultats.",
+		"memoryUsedTitle": "Mémoire utilisée :",
+		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
 	}
 }

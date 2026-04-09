@@ -63,7 +63,7 @@ export const EngineQASidebar = ({
 	`;
 
 	return (
-		<Card className="mb-2 flex h-full w-[280px] flex-col gap-4 rounded-none p-4 max-md:absolute max-md:z-50 max-md:max-w-[280px]">
+		<Card className="mb-2 flex w-full flex-col gap-4 p-4 md:w-[280px] md:shrink-0">
 			{/* Header */}
 			<div className="w-full rounded-md bg-muted px-4 py-2">
 				<div className="flex items-center gap-2 whitespace-nowrap">
@@ -110,6 +110,9 @@ export const EngineQASidebar = ({
 				<p className="font-medium text-sm">
 					Limit the queried results:
 				</p>
+				<span className="ml-auto rounded bg-accent px-2 py-0.5 font-semibold text-xs">
+					{limit}
+				</span>
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger>
@@ -122,29 +125,21 @@ export const EngineQASidebar = ({
 				</TooltipProvider>
 			</div>
 
-			<div className="relative w-full">
-				<Slider
-					value={[limit]}
-					min={1}
-					max={10}
-					step={1}
-					onValueChange={(value) => setLimit(value[0])}
-					className="cursor-pointer"
-				/>
-
-				<div
-					className="pointer-events-none absolute top-full mt-2 rounded bg-accent px-2 py-0.5 text-xs shadow"
-					style={{
-						left: `calc(${((limit - 1) / 9) * 100}% - 10px)`,
-					}}
-				>
-					{limit}
-				</div>
-			</div>
+			<Slider
+				value={[limit]}
+				min={1}
+				max={10}
+				step={1}
+				onValueChange={(value) => setLimit(value[0])}
+				className="cursor-pointer"
+			/>
 
 			{/* Temperature */}
 			<div className="mt-4 flex items-center gap-2">
 				<p className="font-medium text-sm">Set Temperature:</p>
+				<span className="ml-auto rounded bg-accent px-2 py-0.5 font-semibold text-xs">
+					{temperature}
+				</span>
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger>
@@ -157,25 +152,14 @@ export const EngineQASidebar = ({
 				</TooltipProvider>
 			</div>
 
-			<div className="relative w-full">
-				<Slider
-					value={[temperature]}
-					min={0.1}
-					max={1}
-					step={0.1}
-					onValueChange={(value) => setTemperature(value[0])}
-					className="cursor-pointer"
-				/>
-
-				<div
-					className="pointer-events-none absolute top-full mt-2 rounded bg-accent px-2 py-0.5 text-xs shadow"
-					style={{
-						left: `calc(${((temperature - 0.1) / 0.9) * 100}% - 10px)`,
-					}}
-				>
-					{temperature}
-				</div>
-			</div>
+			<Slider
+				value={[temperature]}
+				min={0.1}
+				max={1}
+				step={0.1}
+				onValueChange={(value) => setTemperature(value[0])}
+				className="cursor-pointer"
+			/>
 		</Card>
 	);
 };

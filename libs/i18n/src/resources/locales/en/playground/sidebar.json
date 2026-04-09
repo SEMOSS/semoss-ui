@@ -6,7 +6,9 @@
 		"favorites": "Favorites",
 		"today": "Today",
 		"yesterday": "Yesterday",
+		"fewDaysAgo": "Few Days Ago",
 		"lastWeek": "Last Week",
+		"thisMonth": "This Month",
 		"lastMonth": "Last Month",
 		"older": "Older"
 	},

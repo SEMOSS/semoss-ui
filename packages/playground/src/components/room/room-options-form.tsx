@@ -1,5 +1,6 @@
 import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import type { MouseEvent } from "react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
@@ -21,10 +22,9 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components";
+import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
-
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface RoomOptionsFormProps {
 	/** Model of the room */
@@ -48,14 +48,16 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		onOptionsChange = () => null,
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
+		const { root } = useRoot();
 
 		/**
 		 * State
 		 */
 		const [mCPOverlay, setMCPOverlay] = useState<{
-			type?: "KNOWLEDGE" | "TOOLBOX";
+			type: "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
 		}>({
+			type: "KNOWLEDGE",
 			isOpen: false,
 		});
 
@@ -94,13 +96,17 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							{t("room:settings.description")}
 						</FieldDescription>
 						<FieldGroup>
-							{ENABLE_MODEL_SELECT && (
+							{root.theme.featureFlags?.enableModelSelect && (
 								<Field>
 									<FieldLabel>
 										{t("room:form.modelLabel")}
 									</FieldLabel>
 									<EngineSelect
-										name={model?.app_name || ""}
+										name={
+											model?.engine_display_name ||
+											model?.app_name ||
+											""
+										}
 										value={model?.app_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[
@@ -134,7 +140,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<Field>
 								<FieldLabel
-									onClick={(event) => {
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
 										event.preventDefault();
 										event.stopPropagation();
 
@@ -250,7 +258,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<Field>
 								<FieldLabel
-									onClick={(event) => {
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
 										event.preventDefault();
 										event.stopPropagation();
 
@@ -386,7 +396,10 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									}
 
 									// close it
-									setMCPOverlay({ isOpen: false });
+									setMCPOverlay({
+										isOpen: false,
+										type: "KNOWLEDGE",
+									});
 								}}
 							/>
 						</FieldGroup>

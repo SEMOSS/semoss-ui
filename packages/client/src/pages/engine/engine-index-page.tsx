@@ -1,4 +1,4 @@
-import { SearchIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,6 +9,11 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Spinner,
 	Tabs,
 	TabsList,
@@ -20,6 +25,7 @@ import {
 import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
+import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { Filterbox } from "@/components/ui";
 import { useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
@@ -27,30 +33,25 @@ import type { ENGINE_ROUTES } from "./engine.constants";
 
 // TODO: Use type from @semoss/shared
 interface Engine {
-	app_id: string;
-	app_name: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_id: string;
+	engine_display_name?: string;
+	engine_name: string;
+	engine_type: string;
 	description?: string;
-
-	app_cost: string;
-	app_favorite: number;
-	database_cost: string;
-	database_id: string;
-	database_name: string;
-	database_type: string;
-	low_database_name: string;
-	database_global: true;
-	database_favorite?: number;
-	permission?: number;
-	user_permission?: number;
-	database_date_created: string;
-	app_subtype: string;
+	low_engine_name: string;
+	engine_global: true;
+	engine_favorite?: number;
+	engine_user_permission?: number;
+	engine_permission?: number | string;
+	permission?: number | string;
+	engine_group_permission?: number;
+	engine_date_created: string;
+	engine_subtype: string;
 	domain: string;
-	database_discoverable: boolean;
+	engine_discoverable: boolean;
 	tag: string[];
-	database_created_by: string;
-	database_subtype: string;
-	database_created_by_type: string;
+	engine_created_by: string;
+	engine_created_by_type: string;
 	upvotes: string;
 	views: string;
 	trending: string;
@@ -70,7 +71,7 @@ interface EngineIndexPageProps {
  */
 export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 	({ route }): JSX.Element => {
-		const { configStore } = useRootStore();
+		const { configStore, monolithStore } = useRootStore();
 		const navigate = useNavigate();
 
 		// get a list of the keys
@@ -94,6 +95,13 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const [search, setSearch] = useState("");
 		const debouncedSearch = useDebouncedValue(search);
+		const [sort, setSort] = useState("ENGINENAME");
+		const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
+		const [isDeletingEngine, setIsDeletingEngine] = useState(false);
+		const [engineToDelete, setEngineToDelete] = useState<{
+			id: string;
+			name: string;
+		} | null>(null);
 
 		// which view we are on
 		const [mode, setMode] = useState<MODE>("Mine");
@@ -112,9 +120,11 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			!isDiscoverable
 				? `MyEngines(metaKeys = ${JSON.stringify(
 						metaKeysDescription,
-					)}, metaFilters = [ ${JSON.stringify(
-						metaFilters,
-					)} ], filterWord=["${search}"], onlyFavorites=[true], ${
+					)}, metaFilters = [ ${JSON.stringify(metaFilters)} ], ${
+						debouncedSearch
+							? `filterWord=["${debouncedSearch}"], `
+							: ""
+					} sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], ${
 						route ? `engineTypes=['${route.type}']` : ""
 					});`
 				: "",
@@ -128,7 +138,9 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const getEngines = useIteratorPixel<Engine[], Engine>(
 			(limit, offset) =>
-				`${enginePrefix}(${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} ${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} userT = [true], limit=[${limit}], offset=[${offset}]);`,
+				`${enginePrefix}(metaKeys = ${JSON.stringify(
+					metaKeysDescription,
+				)}, ${debouncedSearch ? `filterWord=["${debouncedSearch}"], ` : ""} ${route ? `engineTypes=['${route.type}'], ` : ""} ${metaFilters ? `metaFilters=[${JSON.stringify(metaFilters)}],` : ""} sort=[{"${sort}" : "${sortOrder}"}], userT = [true], limit=[${limit}], offset=[${offset}]);`,
 			(response) => {
 				// if its less than the limit, we know its the end
 				if (response.length < 15) {
@@ -145,7 +157,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			},
 			[
 				route.type,
-				JSON.stringify(route.type),
+				mode,
+				debouncedSearch,
+				sort,
+				sortOrder,
 				JSON.stringify(metaFilters),
 			],
 		);
@@ -171,8 +186,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			try {
 				await setEngineGlobal(
 					false,
-					engine.database_id,
-					!engine.database_global,
+					engine.engine_id,
+					!engine.engine_global,
 				);
 
 				// reset it
@@ -188,10 +203,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const favoriteDb = async (engine: Engine) => {
 			// check if is favorited
-			const updatedFavorite = !isFavorited(engine.database_id);
+			const updatedFavorite = !isFavorited(engine.engine_id);
 
 			try {
-				await setEngineFavorite(engine.database_id, updatedFavorite);
+				await setEngineFavorite(engine.engine_id, updatedFavorite);
 
 				// reset and refresh it
 				resetScroll();
@@ -209,8 +224,50 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const isFavorited = (engineId: string) => {
 			return getFavoritedEngines.data.some(
-				(el) => el.database_id === engineId,
+				(el) => el.engine_id === engineId,
 			);
+		};
+
+		const isOwnerPermission = (permission?: number | string | null) => {
+			return permission === 1 || permission === "OWNER";
+		};
+
+		const escapePixelString = (value: string) => {
+			return value.replaceAll("'", "\\'");
+		};
+
+		const deleteEngine = async () => {
+			if (!engineToDelete) {
+				return;
+			}
+
+			try {
+				setIsDeletingEngine(true);
+
+				const response = await monolithStore.runQuery(
+					`DeleteEngine(engine=['${escapePixelString(engineToDelete.id)}']);`,
+				);
+
+				const operationType =
+					response.pixelReturn?.[0]?.operationType || "";
+				const output = response.pixelReturn?.[0]?.output;
+
+				if (operationType.indexOf("ERROR") === -1) {
+					toast.success(
+						`Successfully deleted ${engineToDelete.name}`,
+					);
+					resetScroll();
+					getFavoritedEngines.refresh();
+					getEngines.reset();
+				} else {
+					toast.error(String(output || "Failed to delete engine"));
+				}
+			} catch (error) {
+				toast.error(String(error));
+			} finally {
+				setIsDeletingEngine(false);
+				setEngineToDelete(null);
+			}
 		};
 
 		/**
@@ -222,9 +279,9 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				let pixel = "";
 
 				if (!engine.hasUpvoted) {
-					pixel += `VoteEngine(engine="${engine.database_id}", vote=1)`;
+					pixel += `VoteEngine(engine="${engine.engine_id}", vote=1)`;
 				} else {
-					pixel += `UnvoteEngine(engine="${engine.database_id}")`;
+					pixel += `UnvoteEngine(engine="${engine.engine_id}")`;
 				}
 
 				await runPixel(pixel);
@@ -242,7 +299,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		useEffect(() => {
 			const scrollEle = document.querySelector(
-				"#home__content",
+				'[data-home-content="true"]',
 			) as HTMLDivElement;
 
 			setScroll(scrollEle);
@@ -261,6 +318,21 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			resetScroll();
 		}, [route.type, resetScroll]);
 
+		const handleSortChange = (value: string) => {
+			setSort(value);
+			resetScroll();
+			getEngines.reset();
+		};
+
+		const handleSortOrderChange = (value: "ASC" | "DESC") => {
+			if (sortOrder === value) {
+				return;
+			}
+			setSortOrder(value);
+			resetScroll();
+			getEngines.reset();
+		};
+
 		// if there is an error show this
 		if (getEngines.isError) {
 			return <P>ERROR</P>;
@@ -270,14 +342,14 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		const nonBookmarked = getEngines.data.filter(
 			(db) =>
 				!getFavoritedEngines.data.some(
-					(fav) => fav.database_id === db.database_id,
+					(fav) => fav.engine_id === db.engine_id,
 				),
 		);
 
 		return (
 			<div className="flex flex-col gap-4">
 				<div className="flex flex-col gap-2">
-					<div className="flex flex-row items-center justify-between gap-8">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
 						<p className="font-semibold text-3xl leading-normal">
 							{route ? route.name : ""} Catalog
 						</p>
@@ -312,27 +384,87 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						</p>
 					</div>
 
-					<InputGroup className="flex-1 border-b-2 border-none">
-						<InputGroupAddon>
-							<SearchIcon className="size-4 text-muted-foreground" />
-						</InputGroupAddon>
-						<InputGroupInput
-							placeholder="Search"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							data-testid="search-bar"
-						/>
-					</InputGroup>
+					<div className="flex w-full min-w-0 flex-wrap items-end gap-2 md:flex-nowrap">
+						<InputGroup className="min-w-[110px] flex-[1_1_auto] border-b-2 border-none">
+							<InputGroupAddon>
+								<SearchIcon className="size-4 text-muted-foreground" />
+							</InputGroupAddon>
+							<InputGroupInput
+								placeholder="Search"
+								value={search}
+								onChange={(e) => setSearch(e.target.value)}
+								data-testid="search-bar"
+							/>
+						</InputGroup>
+						<div className="flex w-auto shrink-0 items-center gap-1">
+							<div className="w-[136px] sm:w-[148px]">
+								<Select
+									value={sort}
+									onValueChange={handleSortChange}
+								>
+									<SelectTrigger
+										className="h-9 w-full"
+										aria-label="Sort By"
+									>
+										<SelectValue placeholder="Name" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="ENGINENAME">
+											Name
+										</SelectItem>
+										<SelectItem value="DATECREATED">
+											Date Created
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex shrink-0 items-center gap-1">
+								<Button
+									variant={
+										sortOrder === "ASC"
+											? "default"
+											: "outline"
+									}
+									size="icon-sm"
+									className="h-9 w-9"
+									title="Ascending Order"
+									aria-label="Ascending Order"
+									onClick={() => handleSortOrderChange("ASC")}
+								>
+									<ArrowUp className="size-4" />
+								</Button>
+								<Button
+									variant={
+										sortOrder === "DESC"
+											? "default"
+											: "outline"
+									}
+									size="icon-sm"
+									className="h-9 w-9"
+									title="Descending Order"
+									aria-label="Descending Order"
+									onClick={() =>
+										handleSortOrderChange("DESC")
+									}
+								>
+									<ArrowDown className="size-4" />
+								</Button>
+							</div>
+						</div>
+					</div>
 				</div>
 
-				<div className="flex h-full gap-6 pt-2 pb-2">
-					<Filterbox
-						type={route.type}
-						onChange={(filters: Record<string, unknown>) => {
-							setMetaFilters(filters);
-						}}
-						filteredCatalogIds={[]}
-					/>
+				<div className="flex flex-col gap-6 pt-2 pb-2 md:h-full md:flex-row">
+					<div className="md:sticky md:top-4 md:self-start">
+						<Filterbox
+							type={route.type}
+							onChange={(filters: Record<string, unknown>) => {
+								setMetaFilters(filters);
+							}}
+							filteredCatalogIds={[]}
+							hideHeaderToggleFrom="md"
+						/>
+					</div>
 					<div className="flex h-full w-full flex-1 flex-col gap-6">
 						<div className="flex flex-row items-center justify-between">
 							<Tabs
@@ -375,33 +507,53 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							<div className="grid grid-cols-1 gap-6">
 								{getFavoritedEngines.data.map((db) => {
 									return (
-										<div key={db.database_id}>
+										<div key={db.engine_id}>
 											<EngineLandscapeCard
-												name={db.database_name}
-												type={db.database_type}
-												id={db.database_id}
+												name={
+													db.engine_display_name ||
+													db.engine_name
+												}
+												desktopInlineMeta={true}
+												type={db.engine_type}
+												id={db.engine_id}
 												tag={db.tag}
-												owner={db.database_created_by}
-												date={db.database_date_created}
+												owner={db.engine_created_by}
+												date={db.engine_date_created}
 												description={db.description}
 												votes={db.upvotes}
 												views={db.views}
-												sub_type={db.database_subtype}
+												sub_type={db.engine_subtype}
 												trending={db.trending}
-												isGlobal={db.database_global}
+												isGlobal={db.engine_global}
 												isUpvoted={db.hasUpvoted}
 												isFavorite={
 													isDiscoverable
 														? false
 														: isFavorited(
-																db.database_id,
+																db.engine_id,
 															)
 												}
 												isDiscoverable={isDiscoverable}
+												onDelete={
+													isOwnerPermission(
+														db.engine_user_permission ||
+															db.permission ||
+															db.engine_permission,
+													)
+														? () => {
+																setEngineToDelete(
+																	{
+																		id: db.engine_id,
+																		name:
+																			db.engine_display_name ||
+																			db.engine_name,
+																	},
+																);
+															}
+														: undefined
+												}
 												onClick={() => {
-													navigate(
-														`${db.database_id}`,
-													);
+													navigate(`${db.engine_id}`);
 												}}
 												favorite={() => {
 													favoriteDb(db);
@@ -410,7 +562,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 													upvoteDb(db);
 												}}
 												global={
-													db.user_permission === 1
+													db.engine_user_permission ===
+													1
 														? () => {
 																setGlobal(db);
 															}
@@ -438,48 +591,64 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										(db) =>
 											!getFavoritedEngines.data.some(
 												(fav) =>
-													fav.database_id ===
-													db.database_id,
+													fav.engine_id ===
+													db.engine_id,
 											),
 									)
 									.map((db) => {
 										return (
-											<div key={db.database_id}>
+											<div key={db.engine_id}>
 												<EngineLandscapeCard
-													name={db.database_name}
-													type={db.database_type}
-													id={db.database_id}
+													name={
+														db.engine_display_name ||
+														db.engine_name
+													}
+													desktopInlineMeta={true}
+													type={db.engine_type}
+													id={db.engine_id}
 													tag={db.tag}
 													date={
-														db.database_date_created
+														db.engine_date_created
 													}
-													owner={
-														db.database_created_by
-													}
+													owner={db.engine_created_by}
 													description={db.description}
 													votes={db.upvotes}
 													views={db.views}
-													sub_type={
-														db.database_subtype
-													}
+													sub_type={db.engine_subtype}
 													trending={db.trending}
-													isGlobal={
-														db.database_global
-													}
+													isGlobal={db.engine_global}
 													isUpvoted={db.hasUpvoted}
 													isFavorite={
 														isDiscoverable
 															? false
 															: isFavorited(
-																	db.database_id,
+																	db.engine_id,
 																)
 													}
 													isDiscoverable={
 														isDiscoverable
 													}
+													onDelete={
+														isOwnerPermission(
+															db.engine_user_permission ||
+																db.permission ||
+																db.engine_permission,
+														)
+															? () => {
+																	setEngineToDelete(
+																		{
+																			id: db.engine_id,
+																			name:
+																				db.engine_display_name ||
+																				db.engine_name,
+																		},
+																	);
+																}
+															: undefined
+													}
 													onClick={() => {
 														navigate(
-															`${db.database_id}`,
+															`${db.engine_id}`,
 														);
 													}}
 													favorite={() => {
@@ -489,7 +658,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 														upvoteDb(db);
 													}}
 													global={
-														db.user_permission === 1
+														db.engine_user_permission ===
+														1
 															? () => {
 																	setGlobal(
 																		db,
@@ -513,6 +683,19 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 					</div>
 				</div>
 				<Help />
+				<DeleteEntityDialog
+					open={Boolean(engineToDelete)}
+					onOpenChange={(open) => {
+						if (!open) {
+							setEngineToDelete(null);
+						}
+					}}
+					entityType="Engine"
+					entityName={engineToDelete?.name}
+					entityId={engineToDelete?.id}
+					onConfirm={deleteEngine}
+					isLoading={isDeletingEngine}
+				/>
 			</div>
 		);
 	},
