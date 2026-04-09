@@ -2,7 +2,7 @@ import { ChevronDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { Badge, cn } from "@semoss/ui/next";
+import { cn } from "@semoss/ui/next";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
@@ -19,6 +19,13 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		const { t } = useTranslation("chat");
 		const [isOpen, setIsOpen] = useState(false);
 
+		const closedLabel = t("tool.groupClosed", {
+			toolName: tools[0].json.title,
+			count: tools.length - 1,
+		});
+
+		const openLabel = t("tool.groupOpen", { count: tools.length });
+
 		return (
 			<div
 				className={cn(
@@ -28,26 +35,19 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 				{/* Header toggle */}
 				<button
 					type="button"
-					className="flex w-full cursor-pointer items-center gap-2 p-2 text-left transition-colors hover:bg-accent"
+					className="flex w-full cursor-pointer items-center gap-3 p-2 text-left transition-colors hover:bg-accent"
 					onClick={() => setIsOpen((prev) => !prev)}
 				>
-					<ChevronDownIcon
-						className={cn(
-							"size-5 shrink-0 text-muted-foreground transition-transform duration-200",
-							isOpen && "rotate-180",
-						)}
-					/>
-					<span className="font-medium text-foreground text-sm">
-						{t("tool.groupLabel")}
-					</span>
-					<Badge
-						variant="outline"
-						className="bg-background font-semibold text-xs"
-					>
-						{tools.length}
-					</Badge>
-					<span className="font-medium text-foreground text-sm">
-						{t("tool.groupSuffix")}
+					<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
+						<ChevronDownIcon
+							className={cn(
+								"size-5 shrink-0 text-muted-foreground transition-transform duration-200",
+								isOpen && "rotate-180",
+							)}
+						/>
+					</div>
+					<span className="truncate text-muted-foreground text-sm">
+						{isOpen ? openLabel : closedLabel}
 					</span>
 				</button>
 

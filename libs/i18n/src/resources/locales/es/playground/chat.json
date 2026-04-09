@@ -45,8 +45,10 @@
 		"closeInSidebar": "Cerrar barra lateral",
 		"collapse": "Colapsar",
 		"openInline": "Abrir en línea",
-		"groupLabel": "Ejecutado",
-		"groupSuffix": "herramienta(s)"
+		"groupClosed_one": "Usó {{toolName}} + {{count}} más",
+		"groupClosed_other": "Usó {{toolName}} + {{count}} más",
+		"groupOpen_one": "Usó {{count}} herramienta",
+		"groupOpen_other": "Usó {{count}} herramientas"
 	},
 	"notifications": {
 		"feedbackSuccess": "¡Gracias por tus comentarios!",

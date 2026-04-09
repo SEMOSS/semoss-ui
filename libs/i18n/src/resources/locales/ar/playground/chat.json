@@ -45,8 +45,10 @@
 		"closeInSidebar": "إغلاق الشريط الجانبي",
 		"collapse": "طي",
 		"openInline": "فتح في السطر",
-		"groupLabel": "مُنفَّذ",
-		"groupSuffix": "أداة"
+		"groupClosed_one": "استخدم {{toolName}} + {{count}} آخر",
+		"groupClosed_other": "استخدم {{toolName}} + {{count}} أخرى",
+		"groupOpen_one": "استخدم {{count}} أداة",
+		"groupOpen_other": "استخدم {{count}} أدوات"
 	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",

@@ -45,8 +45,10 @@
 		"closeInSidebar": "サイドバーを閉じる",
 		"collapse": "折りたたむ",
 		"openInline": "インラインで開く",
-		"groupLabel": "実行済み",
-		"groupSuffix": "ツール"
+		"groupClosed_one": "{{toolName}} 他 {{count}} 件を使用",
+		"groupClosed_other": "{{toolName}} 他 {{count}} 件を使用",
+		"groupOpen_one": "{{count}} 件のツールを使用",
+		"groupOpen_other": "{{count}} 件のツールを使用"
 	},
 	"notifications": {
 		"feedbackSuccess": "フィードバックをありがとうございます!",

@@ -45,8 +45,10 @@
 		"closeInSidebar": "साइडबार बंद करें",
 		"collapse": "संकुचित करें",
 		"openInline": "इनलाइन खोलें",
-		"groupLabel": "निष्पादित",
-		"groupSuffix": "टूल"
+		"groupClosed_one": "{{toolName}} + {{count}} और उपयोग किया",
+		"groupClosed_other": "{{toolName}} + {{count}} और उपयोग किए",
+		"groupOpen_one": "{{count}} टूल उपयोग किया",
+		"groupOpen_other": "{{count}} टूल उपयोग किए"
 	},
 	"notifications": {
 		"feedbackSuccess": "प्रतिक्रिया के लिए धन्यवाद!",

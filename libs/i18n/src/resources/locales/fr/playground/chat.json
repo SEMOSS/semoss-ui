@@ -45,8 +45,10 @@
 		"closeInSidebar": "Fermer le panneau latéral",
 		"collapse": "Réduire",
 		"openInline": "Ouvrir en ligne",
-		"groupLabel": "Exécuté",
-		"groupSuffix": "outil(s)"
+		"groupClosed_one": "Utilisé {{toolName}} + {{count}} autre",
+		"groupClosed_other": "Utilisé {{toolName}} + {{count}} autres",
+		"groupOpen_one": "Utilisé {{count}} outil",
+		"groupOpen_other": "Utilisé {{count}} outils"
 	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",
