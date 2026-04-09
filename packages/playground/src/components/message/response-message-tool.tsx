@@ -42,7 +42,7 @@ const getToolState = (
 
 			return {
 				...config[tool.status],
-				iconClassName: "text-muted-foreground opacity-50",
+				iconClassName: "bg-muted text-muted-foreground",
 				subtext: tool.json.description,
 				canInteract: false,
 				actionType: null,
@@ -143,11 +143,108 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		const isButtonDisabled = isDisabled || !toolState.canInteract;
 
-		const iconSize = isLarge ? "size-9" : "size-6";
-
 		// Don't render if hidden
 		if (tool.display === "hidden") {
 			return null;
+		}
+
+		const handleCancel = (e: React.MouseEvent) => {
+			e.stopPropagation();
+			message.saveToolExecution(tool, "", "cancelled", {});
+			tool.closeTool();
+		};
+
+		const handleClick = () => {
+			if (tool.isOpen) {
+				if (tool.display === "inline") {
+					// Clicks when inline should close
+					tool.closeTool();
+				} else {
+					// if it's open in the sidebar, we want to move it to the front
+					tool.openTool("sidebar");
+				}
+			} else {
+				tool.openTool();
+			}
+		};
+
+		if (!isLarge) {
+			return (
+				<div
+					className={cn(
+						"flex flex-col rounded-lg border border-border bg-sidebar",
+						isDisabled && "opacity-50",
+						!isDisabled && isActive && "border-primary",
+					)}
+				>
+					<div className="flex items-center">
+						<button
+							type="button"
+							disabled={isButtonDisabled}
+							className={cn(
+								"flex min-w-0 flex-1 items-center gap-3 p-2 text-left",
+								!toolState.actionType && "pr-0",
+								isButtonDisabled && "cursor-default",
+							)}
+							onClick={handleClick}
+						>
+							<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
+								{toolState.icon}
+							</div>
+							<div className="-ml-1.5 flex min-w-0 flex-1 flex-col">
+								<span
+									className="truncate text-muted-foreground text-sm"
+									title={tool.json.title}
+								>
+									{tool.json.title}
+								</span>
+							</div>
+						</button>
+
+						{toolState.actionType === "cancel" && (
+							<button
+								type="button"
+								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
+								onClick={handleCancel}
+							>
+								{t("tool.cancel")}
+							</button>
+						)}
+						{toolState.badge && (
+							<span
+								className={cn(
+									"shrink-0 pr-3 font-medium text-sm",
+									toolState.badge.variant === "destructive" &&
+										"text-destructive",
+									toolState.badge.variant === "muted" &&
+										"text-muted-foreground",
+								)}
+							>
+								{toolState.badge.text}
+							</span>
+						)}
+						{toolState.actionType === "menu" && (
+							<ResponseMessageToolMenu
+								message={message}
+								tool={tool}
+								isFullButton
+								showCancelInMenu={toolState.showCancelInMenu}
+							/>
+						)}
+					</div>
+
+					{/* MCP UI Area */}
+					{tool.isOpen && tool.display === "inline" && (
+						<div className="p-2 pt-0">
+							<RoomInlineTool
+								room={room}
+								message={message}
+								tool={tool}
+							/>
+						</div>
+					)}
+				</div>
+			);
 		}
 
 		return (
@@ -164,7 +261,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			>
 				{/* Top section: button + actions */}
 				<div className="flex items-center">
-					{/* Clickable section: icon + text */}
 					<button
 						type="button"
 						disabled={isButtonDisabled}
@@ -173,42 +269,24 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							!toolState.actionType && "pr-0",
 							isButtonDisabled && "cursor-default",
 						)}
-						onClick={() => {
-							if (tool.isOpen) {
-								if (tool.display === "inline") {
-									// Clicks when inline should close
-									tool.closeTool();
-								} else {
-									// if it's open in the sidebar, we want to move it to the front
-									tool.openTool("sidebar");
-								}
-							} else {
-								tool.openTool();
-							}
-						}}
+						onClick={handleClick}
 					>
 						<div
 							className={cn(
-								"flex shrink-0 items-center justify-center rounded-sm",
-								iconSize,
+								"flex size-9 shrink-0 items-center justify-center rounded-sm",
 								toolState.iconClassName,
 							)}
 						>
 							{toolState.icon}
 						</div>
-						<div
-							className={cn(
-								"flex min-w-0 flex-1 flex-col",
-								!isLarge && "-ml-1.5",
-							)}
-						>
+						<div className="flex min-w-0 flex-1 flex-col">
 							<span
 								className="truncate font-medium text-foreground text-sm"
 								title={tool.json.title}
 							>
 								{tool.json.title}
 							</span>
-							{isLarge && toolState.subtext && (
+							{toolState.subtext && (
 								<span
 									className="truncate text-muted-foreground text-sm"
 									title={toolState.subtext}
@@ -220,44 +298,17 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					</button>
 
 					{/* Right-side actions */}
-					{toolState.actionType === "cancel" &&
-						(isLarge ? (
-							<Button
-								type="button"
-								size="sm"
-								variant="secondary"
-								className="mr-2 shrink-0"
-								onClick={(e) => {
-									e.stopPropagation();
-									message.saveToolExecution(
-										tool,
-										"",
-										"cancelled",
-										{},
-									);
-									tool.closeTool();
-								}}
-							>
-								{t("tool.cancel")}
-							</Button>
-						) : (
-							<button
-								type="button"
-								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
-								onClick={(e) => {
-									e.stopPropagation();
-									message.saveToolExecution(
-										tool,
-										"",
-										"cancelled",
-										{},
-									);
-									tool.closeTool();
-								}}
-							>
-								{t("tool.cancel")}
-							</button>
-						))}
+					{toolState.actionType === "cancel" && (
+						<Button
+							type="button"
+							size="sm"
+							variant="secondary"
+							className="mr-2 shrink-0"
+							onClick={handleCancel}
+						>
+							{t("tool.cancel")}
+						</Button>
+					)}
 					{toolState.badge && (
 						<span
 							className={cn(
@@ -275,7 +326,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						<ResponseMessageToolMenu
 							message={message}
 							tool={tool}
-							isFullButton={!isLarge}
 							showCancelInMenu={toolState.showCancelInMenu}
 						/>
 					)}

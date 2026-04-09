@@ -21,7 +21,7 @@ import type { ResponseMessageStore, ToolStore } from "@/stores";
 export interface ResponseMessageToolMenuProps {
 	message: ResponseMessageStore;
 	tool: ToolStore;
-	isFullButton: boolean;
+	isFullButton?: boolean;
 	showCancelInMenu: boolean;
 }
 
