@@ -41,22 +41,27 @@ const PanelApp: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
-		
-		chrome.runtime.sendMessage({
-			type: "SMSS_EXTENSION_PANEL_OPENED",
-			timestamp: Date.now(),
-		}).catch((error) => {
-			console.error("[PANEL] ❌ Failed to send open message:", error);
-		});
+		chrome.runtime
+			.sendMessage({
+				type: "SMSS_EXTENSION_PANEL_OPENED",
+				timestamp: Date.now(),
+			})
+			.catch((error) => {
+				console.error("[PANEL] ❌ Failed to send open message:", error);
+			});
 
 		return () => {
-			
-			chrome.runtime.sendMessage({
-				type: "SMSS_EXTENSION_PANEL_CLOSED",
-				timestamp: Date.now(),
-			}).catch((error) => {
-				console.error("[PANEL] ❌ Failed to send close message:", error);
-			});
+			chrome.runtime
+				.sendMessage({
+					type: "SMSS_EXTENSION_PANEL_CLOSED",
+					timestamp: Date.now(),
+				})
+				.catch((error) => {
+					console.error(
+						"[PANEL] ❌ Failed to send close message:",
+						error,
+					);
+				});
 		};
 	}, []);
 
@@ -69,131 +74,128 @@ const PanelApp: React.FC = () => {
 		) => {
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
-			if (
-				sender.tab &&
-				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT")
-			) {
+			if (sender.tab && message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
 				return;
 			}
 
 			// CRITICAL: Block script execution if already running
-			if (
-				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") &&
-				isRunning
-			) {
+			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" && isRunning) {
 				return;
 			}
 
-		// Handle ping request from Playground to validate extension is alive
-		if (message.type === "SMSS_EXTENSION_PING") {
-			console.log("[PANEL] 🏓 Received PING - sending PONG");
-			chrome.runtime.sendMessage({
-				type: "SMSS_EXTENSION_PONG",
-				timestamp: Date.now(),
-			}).catch((error) => {
-				console.error("[PANEL] ❌ Failed to send PONG:", error);
-			});
-			return;
-		}
-
-		if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-			// Handle Playwright script execution request from Playground
-			const script = message.script;
-
-			setActionHistory([
-				`🎬 Received script from Playground: ${script.name}`,
-			]);
-			setMode("script");
-
-			// Check if script content was provided
-			if (script.scriptContent) {
-				let content = script.scriptContent;
-
-				// If scriptContent is a string, parse it first
-				if (typeof content === "string") {
-					try {
-						content = JSON.parse(content);
-					} catch (e) {
-						console.error(
-							"[PANEL] ❌ Failed to parse scriptContent string:",
-							e,
-						);
-					}
-				}
-
-				// If steps is a string, parse it too (handle nested stringification)
-				if (content && typeof content.steps === "string") {
-					try {
-						content.steps = JSON.parse(content.steps);
-					} catch (e) {
-						console.error(
-							"[PANEL] ❌ Failed to parse steps string:",
-							e,
-						);
-					}
-				}
-
-				// Use the provided script content directly
-				const scriptContent = JSON.stringify(content, null, 2);
-				setScriptJson(scriptContent);
-				setJsonFormat("playwright");
-				setActionHistory((prev) => [
-					...prev,
-					`✅ Script loaded: ${script.name}`,
-				]);
-
-				// Auto-execute the script
-				setActionHistory((prev) => [
-					...prev,
-					`▶️ Waiting for page to load before executing script...`,
-				]);
-
-				// Wait longer and check if page is loaded before executing
-				setTimeout(async () => {
-					// Wait for current tab to be in complete state
-					const [currentTab] = await chrome.tabs.query({
-						active: true,
-						currentWindow: true,
+			// Handle ping request from Playground to validate extension is alive
+			if (message.type === "SMSS_EXTENSION_PING") {
+				console.log("[PANEL] 🏓 Received PING - sending PONG");
+				chrome.runtime
+					.sendMessage({
+						type: "SMSS_EXTENSION_PONG",
+						timestamp: Date.now(),
+					})
+					.catch((error) => {
+						console.error("[PANEL] ❌ Failed to send PONG:", error);
 					});
-					if (currentTab?.id) {
-						// Wait for tab to be fully loaded
-						let retries = 20; // 10 seconds total
-						while (retries > 0) {
-							const tabs = await chrome.tabs.query({});
-							const tab = tabs.find(
-								(t) => t.id === currentTab.id,
+				return;
+			}
+
+			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
+				// Handle Playwright script execution request from Playground
+				const script = message.script;
+
+				setActionHistory([
+					`🎬 Received script from Playground: ${script.name}`,
+				]);
+				setMode("script");
+
+				// Check if script content was provided
+				if (script.scriptContent) {
+					let content = script.scriptContent;
+
+					// If scriptContent is a string, parse it first
+					if (typeof content === "string") {
+						try {
+							content = JSON.parse(content);
+						} catch (e) {
+							console.error(
+								"[PANEL] ❌ Failed to parse scriptContent string:",
+								e,
 							);
-							if (tab?.status === "complete") {
-								break;
-							}
-							await new Promise((resolve) =>
-								setTimeout(resolve, 500),
-							);
-							retries--;
 						}
-						// Additional buffer time after page load
-						await new Promise((resolve) =>
-							setTimeout(resolve, 1500),
-						);
 					}
+
+					// If steps is a string, parse it too (handle nested stringification)
+					if (content && typeof content.steps === "string") {
+						try {
+							content.steps = JSON.parse(content.steps);
+						} catch (e) {
+							console.error(
+								"[PANEL] ❌ Failed to parse steps string:",
+								e,
+							);
+						}
+					}
+
+					// Use the provided script content directly
+					const scriptContent = JSON.stringify(content, null, 2);
+					setScriptJson(scriptContent);
+					setJsonFormat("playwright");
 					setActionHistory((prev) => [
 						...prev,
-						`▶️ Page loaded, executing script...`,
+						`✅ Script loaded: ${script.name}`,
 					]);
-					await executeScriptWithContent(
-						scriptContent,
-						"playwright",
-					);
-				}, 1000);
+
+					// Auto-execute the script
+					setActionHistory((prev) => [
+						...prev,
+						`▶️ Waiting for page to load before executing script...`,
+					]);
+
+					// Wait longer and check if page is loaded before executing
+					setTimeout(async () => {
+						// Wait for current tab to be in complete state
+						const [currentTab] = await chrome.tabs.query({
+							active: true,
+							currentWindow: true,
+						});
+						if (currentTab?.id) {
+							// Wait for tab to be fully loaded
+							let retries = 20; // 10 seconds total
+							while (retries > 0) {
+								const tabs = await chrome.tabs.query({});
+								const tab = tabs.find(
+									(t) => t.id === currentTab.id,
+								);
+								if (tab?.status === "complete") {
+									break;
+								}
+								await new Promise((resolve) =>
+									setTimeout(resolve, 500),
+								);
+								retries--;
+							}
+							// Additional buffer time after page load
+							await new Promise((resolve) =>
+								setTimeout(resolve, 1500),
+							);
+						}
+						setActionHistory((prev) => [
+							...prev,
+							`▶️ Page loaded, executing script...`,
+						]);
+						await executeScriptWithContent(
+							scriptContent,
+							"playwright",
+						);
+					}, 1000);
+				}
 			}
-		}
-		
-		// Handle field input detected from webpage
-		if (message.type === "FIELD_INPUT_DETECTED") {
-				
+
+			// Handle field input detected from webpage
+			if (message.type === "FIELD_INPUT_DETECTED") {
 				// If we're waiting for user input, auto-submit with the detected value
 				if (waitingForUserInput && userInputCallback) {
-					const valueToUse = message.isPassword ? "••••••••" : (message.value || "");
+					const valueToUse = message.isPassword
+						? "••••••••"
+						: message.value || "";
 					userInputCallback(valueToUse);
 				}
 			}
@@ -211,16 +213,12 @@ const PanelApp: React.FC = () => {
 
 	const executeScriptWithContent = async (
 		content: string,
-		format?: "playwright"
+		format?: "playwright",
 	) => {
 		await executeScript(content, format);
 	};
 
-	const executeScript = async (
-		content: string,
-		format?: "playwright"
-	) => {
-
+	const executeScript = async (content: string, format?: "playwright") => {
 		if (!content.trim()) {
 			setActionHistory(["❌ Please upload a script JSON file first"]);
 			return;
@@ -271,7 +269,6 @@ const PanelApp: React.FC = () => {
 				isTriggerNewTab?: { isTrue: boolean; tabId: string };
 			}>;
 			if (scriptFormat === "playwright") {
-
 				actions = await ScriptExecutor.convertToActions(
 					script as PlaywrightScript,
 				);
@@ -286,7 +283,6 @@ const PanelApp: React.FC = () => {
 			const needsNewTab =
 				scriptFormat === "playwright" && !!firstNavigateAction;
 			const initialUrl = firstNavigateAction?.url || "about:blank";
-
 
 			// Create ONE new tab for script execution
 			let targetTab: chrome.tabs.Tab;
@@ -329,38 +325,37 @@ const PanelApp: React.FC = () => {
 				addToHistory(`✓ Using current tab for script execution`);
 			}
 
-		// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
-		const tabMap = new Map<string, number>();
-		tabMap.set("tab-1", targetTab.id!); // First tab is the target tab
-		let currentTabId = targetTab.id!;
+			// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
+			const tabMap = new Map<string, number>();
+			tabMap.set("tab-1", targetTab.id!); // First tab is the target tab
+			let currentTabId = targetTab.id!;
 
-		// Track which navigate URL we already executed during tab creation
-		const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
+			// Track which navigate URL we already executed during tab creation
+			const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
 
+			// Execute each action
+			let actionCounter = 0; // Track actual displayed action numbers
+			for (let i = 0; i < actions.length; i++) {
+				const action = actions[i];
 
-		// Execute each action
-		let actionCounter = 0; // Track actual displayed action numbers
-		for (let i = 0; i < actions.length; i++) {
-			const action = actions[i];
-
-			// Skip navigate action if we already executed it during tab creation
-			if (
-				action.type === "navigate" &&
-				action.url === preExecutedNavigateUrl
-			) {
-				addToHistory(
-					`✓ Skipping navigate (already executed): ${action.url}`,
-				);
-				continue;
-			}
-
-			// Handle tab switching (case-insensitive)
-			if (action.type.toLowerCase() === "switchtab") {
-				if (!action.tabId) {
-					throw new Error("switchTab action requires tabId");
+				// Skip navigate action if we already executed it during tab creation
+				if (
+					action.type === "navigate" &&
+					action.url === preExecutedNavigateUrl
+				) {
+					addToHistory(
+						`✓ Skipping navigate (already executed): ${action.url}`,
+					);
+					continue;
 				}
 
-				const targetTabId = tabMap.get(action.tabId);
+				// Handle tab switching (case-insensitive)
+				if (action.type.toLowerCase() === "switchtab") {
+					if (!action.tabId) {
+						throw new Error("switchTab action requires tabId");
+					}
+
+					const targetTabId = tabMap.get(action.tabId);
 
 					if (!targetTabId) {
 						addToHistory(
@@ -490,60 +485,80 @@ const PanelApp: React.FC = () => {
 						);
 						setIsPasswordInput(isPassword);
 						setWaitingForUserInput(true);
-						
+
 						// Store selector and tabId for real-time mirroring
 						setCurrentSelector(selector || null);
 						setCurrentTabId(targetTabId || null);
-						
+
 						// Highlight the field on the webpage while the dialog is open
 						if (selector && targetTabId) {
-							chrome.runtime.sendMessage({
-								type: "HIGHLIGHT_FIELD",
-								tabId: targetTabId,
-								selector: selector,
-							}).catch(err => {
-								console.log("[PANEL] ⚠️ Highlight unavailable:", err.message);
-							});
+							chrome.runtime
+								.sendMessage({
+									type: "HIGHLIGHT_FIELD",
+									tabId: targetTabId,
+									selector: selector,
+								})
+								.catch((err) => {
+									console.log(
+										"[PANEL] ⚠️ Highlight unavailable:",
+										err.message,
+									);
+								});
 						}
-						
+
 						// Start monitoring the field on the webpage
 						if (selector && targetTabId) {
-							chrome.runtime.sendMessage({
-								type: "START_FIELD_MONITORING",
-								tabId: targetTabId,
-								selector: selector,
-								isPassword: isPassword,
-							}).catch(err => {
-								// This is not critical - user can still input via extension dialog
-								console.log("[PANEL] ℹ️ Field monitoring unavailable:", err.message);
-							});
+							chrome.runtime
+								.sendMessage({
+									type: "START_FIELD_MONITORING",
+									tabId: targetTabId,
+									selector: selector,
+									isPassword: isPassword,
+								})
+								.catch((err) => {
+									// This is not critical - user can still input via extension dialog
+									console.log(
+										"[PANEL] ℹ️ Field monitoring unavailable:",
+										err.message,
+									);
+								});
 						}
-						
+
 						setUserInputCallback(() => (value: string) => {
 							// Remove highlight when input is received
 							if (selector && targetTabId) {
-								chrome.runtime.sendMessage({
-									type: "REMOVE_HIGHLIGHT",
-									tabId: targetTabId,
-									selector: selector,
-								}).catch(err => {
-									// Not critical
-									console.log("[PANEL] ℹ️ Could not remove highlight:", err.message);
-								});
+								chrome.runtime
+									.sendMessage({
+										type: "REMOVE_HIGHLIGHT",
+										tabId: targetTabId,
+										selector: selector,
+									})
+									.catch((err) => {
+										// Not critical
+										console.log(
+											"[PANEL] ℹ️ Could not remove highlight:",
+											err.message,
+										);
+									});
 							}
-							
+
 							// Stop monitoring when input is received
 							if (selector && targetTabId) {
-								chrome.runtime.sendMessage({
-									type: "STOP_FIELD_MONITORING",
-									tabId: targetTabId,
-									selector: selector,
-								}).catch(err => {
-									// Not critical - monitoring will cleanup on its own
-									console.log("[PANEL] ℹ️ Could not stop field monitoring:", err.message);
-								});
+								chrome.runtime
+									.sendMessage({
+										type: "STOP_FIELD_MONITORING",
+										tabId: targetTabId,
+										selector: selector,
+									})
+									.catch((err) => {
+										// Not critical - monitoring will cleanup on its own
+										console.log(
+											"[PANEL] ℹ️ Could not stop field monitoring:",
+											err.message,
+										);
+									});
 							}
-							
+
 							setWaitingForUserInput(false);
 							setUserInputPrompt("");
 							setUserInputValue("");
@@ -619,9 +634,9 @@ const PanelApp: React.FC = () => {
 
 			addToHistory("✅ Script execution completed!");
 
-		// Notify playground of successful execution
-		try {
-			await chrome.runtime.sendMessage({
+			// Notify playground of successful execution
+			try {
+				await chrome.runtime.sendMessage({
 					type: "SCRIPT_EXECUTION_COMPLETE",
 					success: true,
 					message: "Script executed successfully",
@@ -713,167 +728,186 @@ const PanelApp: React.FC = () => {
 
 				{/* Action History */}
 				{actionHistory.length > 0 && (
-						<Box sx={{ width: "100%" }}>
-							<Card
+					<Box sx={{ width: "100%" }}>
+						<Card
+							sx={{
+								width: "100%",
+								p: 2.5,
+								border: "1px solid",
+								borderColor: "divider",
+								minHeight: "calc(100vh - 180px)",
+								maxHeight: "calc(100vh - 180px)",
+								overflowY: "auto",
+								backgroundColor: "background.paper",
+								boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+							}}
+						>
+							<Typography
+								variant="h4"
 								sx={{
-									width: "100%",
-									p: 2.5,
-									border: "1px solid",
-									borderColor: "divider",
-									minHeight: "calc(100vh - 180px)",
-									maxHeight: "calc(100vh - 180px)",
-									overflowY: "auto",
-									backgroundColor: "background.paper",
-									boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+									mb: 2,
+									fontWeight: 600,
+									fontSize: "0.9375rem",
+									color: "text.secondary",
+									textTransform: "uppercase",
+									letterSpacing: "0.5px",
 								}}
 							>
-								<Typography 
-									variant="h4" 
-									sx={{ 
-										mb: 2, 
-										fontWeight: 600,
-										fontSize: "0.9375rem",
-										color: "text.secondary",
-										textTransform: "uppercase",
-										letterSpacing: "0.5px"
-									}}
-								>
-									Execution Log
-								</Typography>
-								<Stack spacing={0.75}>
-									{actionHistory.map((action, index) => {
-										const isError = action.startsWith("❌");
-										const isSuccess = action.startsWith("✅");
-										const isCheckmark = action.startsWith("✓");
-										const isNumbered = action.match(/^\d+\./);
-										const isUserInput = action.includes("User provided input");
-										
-										return (
-											<Box
-												key={`action-${index}-${action.substring(0, 20)}`}
-												sx={{
-													py: 1,
-													px: 1.5,
-													borderRadius: 1.5,
-													border: "1px solid",
-													borderColor: isError 
-														? "error.light" 
-														: isSuccess 
-															? "success.light"
+								Execution Log
+							</Typography>
+							<Stack spacing={0.75}>
+								{actionHistory.map((action, index) => {
+									const isError = action.startsWith("❌");
+									const isSuccess = action.startsWith("✅");
+									const isCheckmark = action.startsWith("✓");
+									const isNumbered = action.match(/^\d+\./);
+									const isUserInput = action.includes(
+										"User provided input",
+									);
+
+									return (
+										<Box
+											key={`action-${index}-${action.substring(0, 20)}`}
+											sx={{
+												py: 1,
+												px: 1.5,
+												borderRadius: 1.5,
+												border: "1px solid",
+												borderColor: isError
+													? "error.light"
+													: isSuccess
+														? "success.light"
+														: isCheckmark
+															? "rgba(76, 175, 80, 0.3)"
+															: "divider",
+												backgroundColor: isError
+													? "rgba(211, 47, 47, 0.04)"
+													: isSuccess
+														? "rgba(46, 125, 50, 0.04)"
+														: isCheckmark
+															? "rgba(76, 175, 80, 0.04)"
+															: isUserInput
+																? "rgba(25, 118, 210, 0.04)"
+																: "background.default",
+												transition: "all 0.2s ease",
+												"&:hover": {
+													backgroundColor: isError
+														? "rgba(211, 47, 47, 0.08)"
+														: isSuccess
+															? "rgba(46, 125, 50, 0.08)"
 															: isCheckmark
-																? "rgba(76, 175, 80, 0.3)"
-																: "divider",
-													backgroundColor: isError 
-														? "rgba(211, 47, 47, 0.04)" 
-														: isSuccess 
-															? "rgba(46, 125, 50, 0.04)"
-															: isCheckmark
-																? "rgba(76, 175, 80, 0.04)"
+																? "rgba(76, 175, 80, 0.08)"
 																: isUserInput
-																	? "rgba(25, 118, 210, 0.04)"
-																	: "background.default",
-													transition: "all 0.2s ease",
-													"&:hover": {
-														backgroundColor: isError 
-															? "rgba(211, 47, 47, 0.08)" 
-															: isSuccess 
-																? "rgba(46, 125, 50, 0.08)"
-																: isCheckmark
-																	? "rgba(76, 175, 80, 0.08)"
-																	: isUserInput
-																		? "rgba(25, 118, 210, 0.08)"
-																		: "action.hover",
-														borderColor: isError 
-															? "error.main" 
-															: isSuccess 
+																	? "rgba(25, 118, 210, 0.08)"
+																	: "action.hover",
+													borderColor: isError
+														? "error.main"
+														: isSuccess
+															? "success.main"
+															: isCheckmark
+																? "rgba(76, 175, 80, 0.5)"
+																: isUserInput
+																	? "primary.light"
+																	: "divider",
+													transform:
+														"translateX(2px)",
+												},
+											}}
+										>
+											<Typography
+												variant="body2"
+												sx={{
+													fontSize: "0.8125rem",
+													lineHeight: 1.6,
+													color: isError
+														? "error.dark"
+														: isSuccess
+															? "success.dark"
+															: isCheckmark
 																? "success.main"
-																: isCheckmark
-																	? "rgba(76, 175, 80, 0.5)"
-																	: isUserInput
-																		? "primary.light"
-																		: "divider",
-														transform: "translateX(2px)"
-													}
+																: "text.primary",
+													fontWeight:
+														isNumbered ||
+														isError ||
+														isSuccess
+															? 500
+															: 400,
+													fontFamily: isNumbered
+														? "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui"
+														: "inherit",
+													letterSpacing: "0.01em",
 												}}
 											>
-												<Typography 
-													variant="body2" 
-													sx={{ 
-														fontSize: "0.8125rem",
-														lineHeight: 1.6,
-														color: isError 
-															? "error.dark" 
-															: isSuccess 
-																? "success.dark"
-																: isCheckmark
-																	? "success.main"
-																	: "text.primary",
-														fontWeight: (isNumbered || isError || isSuccess) ? 500 : 400,
-														fontFamily: isNumbered 
-															? "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui" 
-															: "inherit",
-														letterSpacing: "0.01em"
-													}}
-												>
-													{action}
-												</Typography>
-											</Box>
-										);
-									})}
-									<div ref={historyEndRef} />
-								</Stack>
-							</Card>
-						</Box>
-					)}
+												{action}
+											</Typography>
+										</Box>
+									);
+								})}
+								<div ref={historyEndRef} />
+							</Stack>
+						</Card>
+					</Box>
+				)}
 
-					{/* User Input Dialog */}
-					{waitingForUserInput && (
-						<div className="user-input-overlay">
-							<div className="user-input-dialog">
-								<Typography variant="h3">Input Required</Typography>
-								<Typography variant="body1">
-									{userInputPrompt}
-								</Typography>
-								<TextField
-									type={isPasswordInput ? "password" : "text"}
-									value={userInputValue}
-									onChange={(e) => {
-										const newValue = e.target.value;
-										setUserInputValue(newValue);
-										
-										// Real-time mirroring to webpage (password fields show as dots automatically)
-										if (currentSelector && currentTabId) {
-											// Clear existing debounce timer
-											if (debounceTimerRef.current) {
-												clearTimeout(debounceTimerRef.current);
-											}
-											
-											// Debounce the update to avoid excessive messages
-											debounceTimerRef.current = setTimeout(() => {
-												chrome.runtime.sendMessage({
-													type: "UPDATE_FIELD_VALUE",
-													tabId: currentTabId,
-													selector: currentSelector,
-													value: newValue,
-												}).catch(err => {
-													console.log("[PANEL] ⚠️ Mirroring unavailable:", err.message);
-												});
-											}, 75); // 75ms debounce for responsive feel
+				{/* User Input Dialog */}
+				{waitingForUserInput && (
+					<div className="user-input-overlay">
+						<div className="user-input-dialog">
+							<Typography variant="h3">Input Required</Typography>
+							<Typography variant="body1">
+								{userInputPrompt}
+							</Typography>
+							<TextField
+								type={isPasswordInput ? "password" : "text"}
+								value={userInputValue}
+								onChange={(e) => {
+									const newValue = e.target.value;
+									setUserInputValue(newValue);
+
+									// Real-time mirroring to webpage (password fields show as dots automatically)
+									if (currentSelector && currentTabId) {
+										// Clear existing debounce timer
+										if (debounceTimerRef.current) {
+											clearTimeout(
+												debounceTimerRef.current,
+											);
 										}
-									}}
-									placeholder="Enter value..."
-									onKeyDown={(e) => {
-										if (
-											e.key === "Enter" &&
-											userInputValue.trim()
-										) {
-											e.preventDefault();
-											if (userInputCallback) {
-												userInputCallback(userInputValue);
-											}
+
+										// Debounce the update to avoid excessive messages
+										debounceTimerRef.current = setTimeout(
+											() => {
+												chrome.runtime
+													.sendMessage({
+														type: "UPDATE_FIELD_VALUE",
+														tabId: currentTabId,
+														selector:
+															currentSelector,
+														value: newValue,
+													})
+													.catch((err) => {
+														console.log(
+															"[PANEL] ⚠️ Mirroring unavailable:",
+															err.message,
+														);
+													});
+											},
+											75,
+										); // 75ms debounce for responsive feel
+									}
+								}}
+								placeholder="Enter value..."
+								onKeyDown={(e) => {
+									if (
+										e.key === "Enter" &&
+										userInputValue.trim()
+									) {
+										e.preventDefault();
+										if (userInputCallback) {
+											userInputCallback(userInputValue);
 										}
-									}}
-								/>
+									}
+								}}
+							/>
 							<div className="user-input-buttons">
 								<Button
 									variant="contained"
