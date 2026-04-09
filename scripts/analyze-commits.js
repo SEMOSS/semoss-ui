@@ -308,6 +308,7 @@ function generateHTML(commits) {
             color: white;
             padding: 40px;
             text-align: center;
+            position: relative;
         }
         
         header h1 {
@@ -508,6 +509,133 @@ function generateHTML(commits) {
             border-top: 1px solid #e9ecef;
         }
         
+        .dropdown-menu {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .dropdown-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            padding: 11px 22px;
+            font-size: 0.95em;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .dropdown-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.25) 100%);
+            border-color: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+        }
+        
+        .dropdown-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            min-width: 210px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15), 
+                        0 0 1px rgba(0, 0, 0, 0.1);
+            padding: 8px 0;
+            z-index: 1;
+            border-radius: 10px;
+            margin-top: 8px;
+            animation: slideDown 0.3s ease-out;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .dropdown-content.show {
+            display: block;
+        }
+        
+        .dropdown-content button {
+            color: #2d3748;
+            padding: 14px 20px;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            transition: all 0.25s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.3px;
+        }
+        
+        .dropdown-content button::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            transform: scaleY(0);
+            transition: transform 0.25s ease;
+            border-radius: 0 3px 3px 0;
+        }
+        
+        .dropdown-content button:hover {
+            background-color: rgba(102, 126, 234, 0.08);
+            transform: translateX(4px);
+        }
+        
+        .dropdown-content button:hover::before {
+            transform: scaleY(1);
+        }
+        
+        .dropdown-content button:active {
+            background-color: rgba(102, 126, 234, 0.12);
+        }
+        
+        .dropdown-content button:first-child {
+            border-radius: 8px 8px 0 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+        }
+        
+        .dropdown-content button:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .dropdown-content button svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+        
         @media print {
             body {
                 background: white;
@@ -519,12 +647,37 @@ function generateHTML(commits) {
             .commit {
                 page-break-inside: avoid;
             }
+            .dropdown-menu {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
+            <div class="dropdown-menu">
+                <button class="dropdown-btn" onclick="toggleDropdown()">
+                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14 14V20H6v-6M6 9l4-7 4 7M2 18h16" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Download
+                </button>
+                <div class="dropdown-content" id="dropdownContent">
+                    <button onclick="downloadAsMarkdown()">
+                        <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M14.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.829.793-.793zM12.207 5.391A2 2 0 1015.828 9l-.6-.6a.75.75 0 01.53-1.28h3a.75.75 0 010 1.5h-2.25l1.316 1.316a2 2 0 11-2.828 2.828l-1.414-1.414a.75.75 0 01.53-1.28h3a.75.75 0 010 1.5H13.5l1.086 1.086zM3.75 3.75A.75.75 0 013 4.5v15a.75.75 0 001.5 0V4.5a.75.75 0 00-.75-.75z"/>
+                        </svg>
+                        Download as Markdown
+                    </button>
+                    <button onclick="downloadAsPDF()">
+                        <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H7zm0 2h10v10H7V5zm2 3a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H10a1 1 0 01-1-1V8zm1 1v2h2V9h-2zm3-5a1 1 0 00-1 1v2h2V5a1 1 0 00-1-1zm-4 8a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2a1 1 0 011-1h3zm0 1H5v2h3v-2z"/>
+                        </svg>
+                        Download as PDF
+                    </button>
+                </div>
+            </div>
             <h1>Context Documentation Report</h1>
             <p>Branch: <strong>${CONFIG.mainBranch}</strong></p>
         </header>
@@ -657,6 +810,128 @@ function generateHTML(commits) {
             <p>Generated on ${timestamp} | Branch: ${CONFIG.mainBranch}</p>
         </footer>
     </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/turndown@7.1.1/dist/turndown.umd.js"><\/script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"><\/script>
+    
+    <script>
+        function toggleDropdown() {
+            const dropdown = document.getElementById('dropdownContent');
+            dropdown.classList.toggle('show');
+        }
+        
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropdown-btn')) {
+                const dropdown = document.getElementById('dropdownContent');
+                if (dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        }
+        
+        function downloadAsMarkdown() {
+            try {
+                // Get the header info
+                const headerText = document.querySelector('header h1').textContent;
+                const branch = document.querySelector('header p').textContent;
+                const metaItems = document.querySelectorAll('.meta-value');
+                const generated = metaItems[0] ? metaItems[0].textContent : 'N/A';
+                const period = metaItems[2] ? metaItems[2].textContent : 'N/A';
+                const totalCommits = metaItems[3] ? metaItems[3].textContent : '0';
+                
+                // Build markdown header
+                let markdown = '# ' + headerText + '\\n\\n';
+                markdown += branch + '\\n\\n';
+                markdown += '**Generated:** ' + generated + '\\n';
+                markdown += '**Period:** ' + period + '\\n';
+                markdown += '**Total Commits:** ' + totalCommits + '\\n\\n';
+                markdown += '---\\n\\n';
+                
+                // Extract commit sections
+                const commits = document.querySelectorAll('.commit');
+                
+                commits.forEach((commit, index) => {
+                    const message = commit.querySelector('h2')?.textContent || 'N/A';
+                    const details = commit.querySelectorAll('.commit-detail');
+                    const stats = commit.querySelectorAll('.stat-value');
+                    
+                    markdown += '## ' + message + '\\n\\n';
+                    
+                    // Add commit details
+                    details.forEach(detail => {
+                        const text = detail.textContent.trim();
+                        if (text) {
+                            const parts = text.split(':');
+                            markdown += '**' + parts[0] + ':** ' + (parts[1] ? parts[1].trim() : '') + '\\n';
+                        }
+                    });
+                    
+                    markdown += '\\n';
+                    
+                    // Add statistics
+                    if (stats.length > 0) {
+                        markdown += '**Statistics:**\\n';
+                        markdown += '- Added: ' + (stats[0]?.textContent || '0') + '\\n';
+                        markdown += '- Modified: ' + (stats[1]?.textContent || '0') + '\\n';
+                        markdown += '- Deleted: ' + (stats[2]?.textContent || '0') + '\\n';
+                        markdown += '- Total: ' + (stats[3]?.textContent || '0') + '\\n\\n';
+                    }
+                    
+                    // Add tags
+                    const tags = commit.querySelectorAll('.tag');
+                    if (tags.length > 0) {
+                        const tagsList = Array.from(tags).map(t => t.textContent).join(', ');
+                        markdown += '**Affected Areas:** ' + tagsList + '\\n\\n';
+                    }
+                    
+                    // Add files
+                    const fileCategories = commit.querySelectorAll('.file-category');
+                    if (fileCategories.length > 0) {
+                        markdown += '**Files Changed:**\\n';
+                        fileCategories.forEach(cat => {
+                            const catTitle = cat.querySelector('.file-category-title')?.textContent || '';
+                            markdown += '\\n**' + catTitle + '**\\n';
+                            const files = cat.querySelectorAll('.file-item');
+                            files.forEach(file => {
+                                const fileText = file.textContent.trim();
+                                markdown += '- ' + fileText + '\\n';
+                            });
+                        });
+                    }
+                    
+                    markdown += '\\n---\\n\\n';
+                });
+                
+                // Trigger download
+                const element = document.createElement('a');
+                element.setAttribute('href', 'data:text/markdown;charset=utf-8,' + encodeURIComponent(markdown));
+                element.setAttribute('download', 'context-report.md');
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+            } catch (error) {
+                console.error('Markdown download error:', error);
+                alert('Error downloading markdown: ' + error.message);
+            }
+        }
+        
+        function downloadAsPDF() {
+            // Clone container without dropdown
+            const containerClone = document.querySelector('.container').cloneNode(true);
+            const dropdownMenu = containerClone.querySelector('.dropdown-menu');
+            if (dropdownMenu) dropdownMenu.remove();
+            
+            const opt = {
+                margin: 10,
+                filename: 'context-report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+            };
+            html2pdf().set(opt).from(containerClone).save();
+        }
+    <\/script>
 </body>
 </html>
 `;
