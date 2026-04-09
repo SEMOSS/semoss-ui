@@ -47,8 +47,8 @@
 		"openInline": "Abrir en línea",
 		"groupClosed_one": "Usó {{toolName}} + {{count}} más",
 		"groupClosed_other": "Usó {{toolName}} + {{count}} más",
-		"groupOpen_one": "Usó {{count}} herramienta",
-		"groupOpen_other": "Usó {{count}} herramientas"
+		"groupLoading_one": "Ejecutando {{toolName}} + {{count}} más",
+		"groupLoading_other": "Ejecutando {{toolName}} + {{count}} más"
 	},
 	"notifications": {
 		"feedbackSuccess": "¡Gracias por tus comentarios!",

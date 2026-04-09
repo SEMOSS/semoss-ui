@@ -47,8 +47,8 @@
 		"openInline": "فتح في السطر",
 		"groupClosed_one": "استخدم {{toolName}} + {{count}} آخر",
 		"groupClosed_other": "استخدم {{toolName}} + {{count}} أخرى",
-		"groupOpen_one": "استخدم {{count}} أداة",
-		"groupOpen_other": "استخدم {{count}} أدوات"
+		"groupLoading_one": "جارٍ تشغيل {{toolName}} + {{count}} آخر",
+		"groupLoading_other": "جارٍ تشغيل {{toolName}} + {{count}} أخرى"
 	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",

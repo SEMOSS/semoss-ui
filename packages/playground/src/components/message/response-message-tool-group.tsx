@@ -8,6 +8,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { cn, Spinner } from "@semoss/ui/next";
+import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
@@ -52,13 +53,28 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 
 		const groupStatus = getGroupStatus(tools);
 		const { icon } = groupStatusConfig[groupStatus];
+		const isLoading = groupStatus === "LOADING";
 
-		const closedLabel = t("tool.groupClosed", {
-			toolName: tools[0].json.title,
-			count: tools.length - 1,
-		});
+		const { loadingMessage } = useLoadingMessage(
+			isLoading,
+			tools
+				.filter((tool) => tool.status === "LOADING")
+				.flatMap((tool) =>
+					tool.json._meta.SMSS_MCP_UI?.loadingMessage
+						? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
+						: [],
+				),
+		);
 
-		const openLabel = t("tool.groupOpen", { count: tools.length });
+		const label = isLoading
+			? t("tool.groupLoading", {
+					toolName: tools[0].json.title,
+					count: tools.length - 1,
+				})
+			: t("tool.groupClosed", {
+					toolName: tools[0].json.title,
+					count: tools.length - 1,
+				});
 
 		return (
 			<div
@@ -76,8 +92,13 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 						{icon}
 					</div>
 					<span className="-ml-1.5 truncate text-muted-foreground text-sm">
-						{isOpen ? openLabel : closedLabel}
+						{label}
 					</span>
+					{isLoading && !isOpen && loadingMessage && (
+						<span className="shrink-0 text-muted-foreground text-sm italic">
+							{loadingMessage}
+						</span>
+					)}
 					<ChevronDownIcon
 						className={cn(
 							"ml-auto size-5 shrink-0 text-muted-foreground transition-transform duration-200",

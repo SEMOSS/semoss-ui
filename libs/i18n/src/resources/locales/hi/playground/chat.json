@@ -47,8 +47,8 @@
 		"openInline": "इनलाइन खोलें",
 		"groupClosed_one": "{{toolName}} + {{count}} और उपयोग किया",
 		"groupClosed_other": "{{toolName}} + {{count}} और उपयोग किए",
-		"groupOpen_one": "{{count}} टूल उपयोग किया",
-		"groupOpen_other": "{{count}} टूल उपयोग किए"
+		"groupLoading_one": "{{toolName}} + {{count}} और चल रहा है",
+		"groupLoading_other": "{{toolName}} + {{count}} और चल रहे हैं"
 	},
 	"notifications": {
 		"feedbackSuccess": "प्रतिक्रिया के लिए धन्यवाद!",
