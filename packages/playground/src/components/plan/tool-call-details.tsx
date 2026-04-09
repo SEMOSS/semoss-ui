@@ -50,11 +50,20 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	 */
 	const getMCP = usePixel<{
 		tools: MCPTool[];
-	}>(toolbox ? `GetMCPTools("${toolbox.id}")` : null, {
-		data: {
-			tools: [],
+	}>(
+		toolbox
+			? `GetMCPTools(${
+					toolbox.type === "PROJECT"
+						? `project=["${toolbox.id}"]`
+						: `engine=["${toolbox.id}"]`
+				});`
+			: null,
+		{
+			data: {
+				tools: [],
+			},
 		},
-	});
+	);
 
 	const toolboxOptions = getApps.data.map(engineProjectToMCP);
 

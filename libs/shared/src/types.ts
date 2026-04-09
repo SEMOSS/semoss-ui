@@ -1,9 +1,25 @@
 export interface Engine {
-	app_id: string;
-	app_name: string;
+	engine_id: string;
+	engine_name: string;
 	engine_display_name?: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_subtype?: string;
+	engine_favorite?: number;
+	engine_global?: boolean;
+	engine_discoverable?: boolean;
+	engine_user_permission?: number;
+	engine_group_permission?: number;
+	engine_date_created?: string;
+	engine_cost?: string;
+	low_engine_name?: string;
 	description?: string;
+
+	/** @deprecated legacy keys from MyEngines */
+	app_id?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_name?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 }
 
 export interface App {
@@ -71,6 +87,7 @@ export interface ThemeMap {
 		 * Content to show in the sidebar
 		 */
 		sidebar: {
+			expandedByDefault: boolean;
 			chatHistoryDate: boolean;
 			headerItems: {
 				name: string;
@@ -109,7 +126,7 @@ export interface ThemeMap {
 		/**
 		 * The number of tools that should be auto-executed at once
 		 */
-		toolAutoExecutionLimit?: number;
+		toolAutoExecutionLimit?: number | null;
 
 		/**
 		 * The uploaded files that should be added to the file tool in the room
@@ -172,6 +189,17 @@ export interface ThemeMap {
 					text: string;
 			  }
 		)[];
+
+		/**
+		 * Feature flags to enable/disable features in the UI. The keys are the names of the features, and the values are booleans indicating whether the feature is enabled or disabled.
+		 */
+		featureFlags?: {
+			enableModelSelect?: boolean;
+			enableAgent?: boolean;
+			enableSuggestions?: boolean;
+			enablePlan?: boolean;
+			enableRewrite?: boolean;
+		};
 	};
 }
 

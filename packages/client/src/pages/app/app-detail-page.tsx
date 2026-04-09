@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
 import { Modal, useNotification } from "@semoss/ui";
@@ -148,6 +148,8 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
+	const [searchParams, setSearchParams] = useSearchParams();
+	const tab = searchParams.get("tab");
 
 	const emitMessage = useCallback(
 		(isError: boolean, message: string) => {
@@ -385,6 +387,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		}
 	}, [appId, monolithStore]);
 
+	useEffect(() => {
+		if (tab === "accesscontrol") {
+			setSelectedTab("Access Control");
+			setSearchParams({});
+		}
+	}, [tab]);
+
 	const handleCloseChangeAccessModal = (refresh?: boolean) => {
 		if (refresh) {
 			// fetch updated permission.
@@ -557,13 +566,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				</NavbarLeft>
 			)}
 			<div
-				className={`h-full w-full${
+				className={`h-full w-full ${
 					showNav ? "flex flex-col justify-center gap-4" : "m-2 p-5"
 				}`}
 			>
 				<div
 					className={`flex h-full w-full flex-col gap-3 ${
-						showNav ? "m-auto max-w-316" : ""
+						showNav ? "mx-auto w-full" : ""
 					}`}
 				>
 					{showNav && (
@@ -573,23 +582,23 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									<BreadcrumbLink asChild>
 										<Link
 											to={"/app"}
-											className="text-inherit"
+											className="inline-flex items-center text-inherit leading-none"
 										>
 											App Catalog
 										</Link>
 									</BreadcrumbLink>
 								</BreadcrumbItem>
-								<BreadcrumbSeparator>
+								<BreadcrumbSeparator className="inline-flex items-center [&>svg]:translate-y-[0.5px]">
 									<ChevronRight />
 								</BreadcrumbSeparator>
 								<BreadcrumbItem>
-									<BreadcrumbPage>
+									<BreadcrumbPage className="inline-flex items-center leading-none">
 										<span
 											title={
 												appInfo?.project_display_name ||
 												appInfo?.project_name
 											}
-											className="inline-block max-w-[40ch] truncate text-ellipsis"
+											className="inline-block max-w-[40ch] truncate text-ellipsis leading-none"
 										>
 											{appInfo?.project_display_name ||
 												appInfo?.project_name}
@@ -1023,7 +1032,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											)}
 									</div>
 
-									<McpUsage id={appId} />
+									<McpUsage
+										id={appId}
+										name={
+											appInfo?.project_display_name ||
+											appInfo?.project_name
+										}
+									/>
 								</div>
 							</SettingsContext.Provider>
 						)}

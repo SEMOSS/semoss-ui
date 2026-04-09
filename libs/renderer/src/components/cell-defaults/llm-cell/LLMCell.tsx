@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { Add } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
@@ -40,9 +41,9 @@ export interface LLMCellDef extends CellDef<"llm"> {
 //     length: number;
 // };
 
-const StyledStack = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)({
 	width: "100%",
-}));
+});
 
 const StyledActionButtons = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -119,17 +120,16 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 		const res = await runPixel(pixel);
 
 		const list = res.pixelReturn[0].output as Array<{
-			database_subtype: string;
-			database_type: string;
-			database_name: string;
-			database_id: string;
-			app_name: string;
+			engine_subtype: string;
+			engine_type: string;
+			engine_name: string;
+			engine_id: string;
 		}>;
 
 		const modelled = list.map((model) => {
 			return {
-				name: model.database_name,
-				id: model.database_id,
+				name: model.engine_name,
+				id: model.engine_id,
 			};
 		});
 		setAllModels(modelled);
@@ -201,9 +201,9 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 				</Typography>
 
 				<div>
-					{Object.keys(variants || {}).map((name, idx) => (
+					{Object.keys(variants || {}).map((name) => (
 						<LLMCellVariant
-							key={`variant-${name}-${idx}`}
+							key={`variant-${name}`}
 							allModels={allModels}
 							variantName={name}
 							cell={cell}
