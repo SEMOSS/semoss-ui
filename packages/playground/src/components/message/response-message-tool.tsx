@@ -7,6 +7,110 @@ import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
 
+const getToolState = (
+	tool: ToolStore,
+	t: ReturnType<typeof useTranslation<"chat">>["t"],
+	toolExecutionMessage: string,
+) => {
+	switch (tool.status) {
+		case "ERROR":
+			return {
+				icon: <XCircleIcon className="size-5" />,
+				iconClassName: "text-muted-foreground opacity-50",
+				subtext: tool.json.description,
+				badge: {
+					text: t("tool.failed"),
+					variant: "destructive" as const,
+				},
+				canInteract: false,
+				actionType: null,
+				background: "bg-background" as const,
+				showHoverAccent: false,
+				showCancelInMenu: false,
+			};
+		case "CANCELLED":
+			return {
+				icon: <XCircleIcon className="size-5" />,
+				iconClassName: "text-muted-foreground opacity-50",
+				subtext: tool.json.description,
+				badge: {
+					text: t("tool.cancelled"),
+					variant: "muted" as const,
+				},
+				canInteract: false,
+				actionType: null,
+				background: "bg-background" as const,
+				showHoverAccent: false,
+				showCancelInMenu: false,
+			};
+		case "PAUSED":
+			return {
+				icon: <CirclePause className="size-5" />,
+				iconClassName: "text-muted-foreground opacity-50",
+				subtext: tool.json.description,
+				badge: {
+					text: t("tool.paused"),
+					variant: "muted" as const,
+				},
+				canInteract: false,
+				actionType: null,
+				background: "bg-background" as const,
+				showHoverAccent: false,
+				showCancelInMenu: false,
+			};
+		case "SUCCESS":
+			return {
+				icon: <CheckIcon className="size-5" />,
+				iconClassName: "bg-primary/10 text-primary",
+				subtext: tool.json.description,
+				badge: null,
+				canInteract: true,
+				actionType: "menu" as const,
+				background: "bg-sidebar" as const,
+				showHoverAccent: false,
+				showCancelInMenu: false,
+			};
+		case "LOADING":
+			return {
+				icon: <Spinner />,
+				iconClassName: "bg-muted text-muted-foreground",
+				subtext: toolExecutionMessage,
+				badge: null,
+				canInteract: false,
+				actionType: "cancel" as const,
+				background: "bg-background" as const,
+				showHoverAccent: false,
+				showCancelInMenu: false,
+			};
+		default:
+			if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+				return {
+					icon: <HammerIcon className="size-5" />,
+					iconClassName: "bg-primary/10 text-primary",
+					subtext: tool.json.description,
+					badge: null,
+					canInteract: true,
+					actionType: "menu" as const,
+					background: "bg-background" as const,
+					showHoverAccent: true,
+					showCancelInMenu: true,
+				};
+			}
+			// queued
+			return {
+				icon: <HammerIcon className="size-5" />,
+				iconClassName: "bg-muted text-muted-foreground",
+				subtext: t("tool.queued"),
+				badge: null,
+				canInteract: false,
+				actionType: "cancel" as const,
+				background: "bg-background" as const,
+				showHoverAccent: false,
+				showCancelInMenu: false,
+			};
+	}
+};
+
 interface ResponseMessageToolProps {
 	/** Message to render */
 	message: ResponseMessageStore;
@@ -44,115 +148,16 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		const effectiveIsLarge = isLarge || tool.isOpen;
 
-		// Determine tool state and derive all display properties from it
-		const toolState = (() => {
-			switch (tool.status) {
-				case "ERROR":
-					return {
-						icon: <XCircleIcon className="size-5" />,
-						iconClassName: "text-muted-foreground opacity-50",
-						subtext: tool.json.description,
-						badge: {
-							text: t("tool.failed"),
-							variant: "destructive" as const,
-						},
-						canInteract: false,
-						actionType: null,
-						background: "bg-background" as const,
-						showHoverAccent: false,
-						showCancelInMenu: false,
-					};
-				case "CANCELLED":
-					return {
-						icon: <XCircleIcon className="size-5" />,
-						iconClassName: "text-muted-foreground opacity-50",
-						subtext: tool.json.description,
-						badge: {
-							text: t("tool.cancelled"),
-							variant: "muted" as const,
-						},
-						canInteract: false,
-						actionType: null,
-						background: "bg-background" as const,
-						showHoverAccent: false,
-						showCancelInMenu: false,
-					};
-				case "PAUSED":
-					return {
-						icon: <CirclePause className="size-5" />,
-						iconClassName: "text-muted-foreground opacity-50",
-						subtext: tool.json.description,
-						badge: {
-							text: t("tool.paused"),
-							variant: "muted" as const,
-						},
-						canInteract: false,
-						actionType: null,
-						background: "bg-background" as const,
-						showHoverAccent: false,
-						showCancelInMenu: false,
-					};
-				case "SUCCESS":
-					return {
-						icon: <CheckIcon className="size-5" />,
-						iconClassName: "bg-primary/10 text-primary",
-						subtext: tool.json.description,
-						badge: null,
-						canInteract: true,
-						actionType: "menu" as const,
-						background: "bg-sidebar" as const,
-						showHoverAccent: false,
-						showCancelInMenu: false,
-					};
-				case "LOADING":
-					return {
-						icon: <Spinner />,
-						iconClassName: "bg-muted text-muted-foreground",
-						subtext: toolExecutionMessage,
-						badge: null,
-						canInteract: false,
-						actionType: "cancel" as const,
-						background: "bg-background" as const,
-						showHoverAccent: false,
-						showCancelInMenu: false,
-					};
-				default:
-					if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
-						return {
-							icon: <HammerIcon className="size-5" />,
-							iconClassName: "bg-primary/10 text-primary",
-							subtext: tool.json.description,
-							badge: null,
-							canInteract: true,
-							actionType: "menu" as const,
-							background: "bg-background" as const,
-							showHoverAccent: true,
-							showCancelInMenu: true,
-						};
-					} else {
-						// queued
-						return {
-							icon: <HammerIcon className="size-5" />,
-							iconClassName: "bg-muted text-muted-foreground",
-							subtext: t("tool.queued"),
-							badge: null,
-							canInteract: false,
-							actionType: "cancel" as const,
-							background: "bg-background" as const,
-							showHoverAccent: false,
-							showCancelInMenu: false,
-						};
-					}
-			}
-		})();
+		const toolState = getToolState(tool, t, toolExecutionMessage);
 
 		const isButtonDisabled = isDisabled || !toolState.canInteract;
+
+		const iconSize = effectiveIsLarge ? "size-9" : "size-6";
 
 		// Don't render if hidden
 		if (tool.display === "hidden") {
 			return null;
 		}
-		const iconSize = effectiveIsLarge ? "size-9" : "size-6";
 
 		return (
 			<div
