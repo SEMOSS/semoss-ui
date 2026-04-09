@@ -179,7 +179,7 @@ export const EngineHeader: React.FC = () => {
 			setGeneratingMCP(false);
 		}
 	};
-	
+
 	const canShowGenerateMCP = type !== "GUARDRAIL";
 
 	return (

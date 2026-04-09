@@ -674,16 +674,18 @@ export const GlobalNav = observer(() => {
 							{helpOpen && (
 								<div className="absolute bottom-full left-0 z-50 w-full rounded-md border bg-popover p-1 shadow-md">
 									<SidebarMenu>
-										{root.theme.sidebar.footerItems.map((item) => (
-											<GlobalNavItem
-												key={item.path}
-												name={item.name}
-												icon={item.icon}
-												path={item.path}
-												url={item.url}
-												embed={item.embed}
-											/>
-										))}
+										{root.theme.sidebar.footerItems.map(
+											(item) => (
+												<GlobalNavItem
+													key={item.path}
+													name={item.name}
+													icon={item.icon}
+													path={item.path}
+													url={item.url}
+													embed={item.embed}
+												/>
+											),
+										)}
 									</SidebarMenu>
 								</div>
 							)}
