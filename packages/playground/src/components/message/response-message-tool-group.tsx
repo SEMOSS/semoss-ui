@@ -1,10 +1,41 @@
-import { ChevronDownIcon } from "lucide-react";
+import {
+	CheckIcon,
+	ChevronDownIcon,
+	CirclePause,
+	XCircleIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { cn } from "@semoss/ui/next";
+import { cn, Spinner } from "@semoss/ui/next";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
+
+const getGroupStatus = (tools: ToolStore[]) => {
+	if (tools.some((t) => t.status === "LOADING")) return "LOADING";
+	if (tools.some((t) => t.status === "ERROR")) return "ERROR";
+	if (tools.some((t) => t.status === "PAUSED")) return "PAUSED";
+	if (tools.every((t) => t.status === "CANCELLED")) return "CANCELLED";
+	return "SUCCESS";
+};
+
+const groupStatusConfig = {
+	LOADING: {
+		icon: <Spinner />,
+	},
+	ERROR: {
+		icon: <XCircleIcon className="size-5" />,
+	},
+	CANCELLED: {
+		icon: <XCircleIcon className="size-5" />,
+	},
+	PAUSED: {
+		icon: <CirclePause className="size-5" />,
+	},
+	SUCCESS: {
+		icon: <CheckIcon className="size-5" />,
+	},
+} as const;
 
 interface ResponseMessageToolGroupProps {
 	/** Message to render */
@@ -18,6 +49,9 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 	observer(({ message, tools }) => {
 		const { t } = useTranslation("chat");
 		const [isOpen, setIsOpen] = useState(false);
+
+		const groupStatus = getGroupStatus(tools);
+		const { icon } = groupStatusConfig[groupStatus];
 
 		const closedLabel = t("tool.groupClosed", {
 			toolName: tools[0].json.title,
@@ -39,16 +73,17 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					onClick={() => setIsOpen((prev) => !prev)}
 				>
 					<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
-						<ChevronDownIcon
-							className={cn(
-								"size-5 shrink-0 text-muted-foreground transition-transform duration-200",
-								isOpen && "rotate-180",
-							)}
-						/>
+						{icon}
 					</div>
-					<span className="truncate text-muted-foreground text-sm">
+					<span className="-ml-1.5 truncate text-muted-foreground text-sm">
 						{isOpen ? openLabel : closedLabel}
 					</span>
+					<ChevronDownIcon
+						className={cn(
+							"ml-auto size-5 shrink-0 text-muted-foreground transition-transform duration-200",
+							isOpen && "rotate-180",
+						)}
+					/>
 				</button>
 
 				{/* Expanded tool list — animates open/close via grid-rows */}
