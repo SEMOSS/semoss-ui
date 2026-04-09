@@ -14,50 +14,43 @@ const getToolState = (
 ) => {
 	switch (tool.status) {
 		case "ERROR":
-			return {
-				icon: <XCircleIcon className="size-5" />,
-				iconClassName: "text-muted-foreground opacity-50",
-				subtext: tool.json.description,
-				badge: {
-					text: t("tool.failed"),
-					variant: "destructive" as const,
-				},
-				canInteract: false,
-				actionType: null,
-				background: "bg-background" as const,
-				showHoverAccent: false,
-				showCancelInMenu: false,
-			};
 		case "CANCELLED":
+		case "PAUSED": {
+			const config = {
+				ERROR: {
+					icon: <XCircleIcon className="size-5" />,
+					badge: {
+						text: t("tool.failed"),
+						variant: "destructive" as const,
+					},
+				},
+				CANCELLED: {
+					icon: <XCircleIcon className="size-5" />,
+					badge: {
+						text: t("tool.cancelled"),
+						variant: "muted" as const,
+					},
+				},
+				PAUSED: {
+					icon: <CirclePause className="size-5" />,
+					badge: {
+						text: t("tool.paused"),
+						variant: "muted" as const,
+					},
+				},
+			} as const;
+
 			return {
-				icon: <XCircleIcon className="size-5" />,
+				...config[tool.status],
 				iconClassName: "text-muted-foreground opacity-50",
 				subtext: tool.json.description,
-				badge: {
-					text: t("tool.cancelled"),
-					variant: "muted" as const,
-				},
 				canInteract: false,
 				actionType: null,
 				background: "bg-background" as const,
 				showHoverAccent: false,
 				showCancelInMenu: false,
 			};
-		case "PAUSED":
-			return {
-				icon: <CirclePause className="size-5" />,
-				iconClassName: "text-muted-foreground opacity-50",
-				subtext: tool.json.description,
-				badge: {
-					text: t("tool.paused"),
-					variant: "muted" as const,
-				},
-				canInteract: false,
-				actionType: null,
-				background: "bg-background" as const,
-				showHoverAccent: false,
-				showCancelInMenu: false,
-			};
+		}
 		case "SUCCESS":
 			return {
 				icon: <CheckIcon className="size-5" />,
@@ -224,26 +217,44 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					</button>
 
 					{/* Right-side actions */}
-					{toolState.actionType === "cancel" && (
-						<Button
-							type="button"
-							size="sm"
-							variant="secondary"
-							className="mr-2 shrink-0"
-							onClick={(e) => {
-								e.stopPropagation();
-								message.saveToolExecution(
-									tool,
-									"",
-									"cancelled",
-									{},
-								);
-								tool.closeTool();
-							}}
-						>
-							{t("tool.cancel")}
-						</Button>
-					)}
+					{toolState.actionType === "cancel" &&
+						(effectiveIsLarge ? (
+							<Button
+								type="button"
+								size="sm"
+								variant="secondary"
+								className="mr-2 shrink-0"
+								onClick={(e) => {
+									e.stopPropagation();
+									message.saveToolExecution(
+										tool,
+										"",
+										"cancelled",
+										{},
+									);
+									tool.closeTool();
+								}}
+							>
+								{t("tool.cancel")}
+							</Button>
+						) : (
+							<button
+								type="button"
+								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
+								onClick={(e) => {
+									e.stopPropagation();
+									message.saveToolExecution(
+										tool,
+										"",
+										"cancelled",
+										{},
+									);
+									tool.closeTool();
+								}}
+							>
+								{t("tool.cancel")}
+							</button>
+						))}
 					{toolState.badge && (
 						<span
 							className={cn(
