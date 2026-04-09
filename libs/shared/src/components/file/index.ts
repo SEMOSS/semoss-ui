@@ -1,4 +1,5 @@
 export * from "./file-code-editor";
+export * from "./file-download-view";
 export * from "./file-editor";
 export * from "./file-explorer";
 export * from "./file-explorer-item";

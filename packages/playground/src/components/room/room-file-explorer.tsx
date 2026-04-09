@@ -14,18 +14,24 @@ interface RoomFileExplorerProps {
 
 	/** Room */
 	room: RoomStore;
+
+	/** FlexLayout node — used to read config (e.g. initialPath) */
+	node: FlexLayout.TabNode;
 }
 
 export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
-	({ layout, room }) => {
+	({ layout, room, node }) => {
 		const insight = useInsight();
 		const { t } = useTranslation("room");
+
+		const config: { initialPath?: string } = node.getConfig() ?? {};
 
 		return (
 			<FileExplorer
 				mode={{
 					type: "INSIGHT",
 				}}
+				initialPath={config.initialPath}
 				onItemSelect={(item) => {
 					// don't open directories
 					if (item.type === "directory") {

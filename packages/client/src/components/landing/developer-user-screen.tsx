@@ -48,7 +48,7 @@ export const DeveloperUserScreen = observer(() => {
 	}
 
 	return (
-		<div className="mx-auto flex w-full max-w-[1480px] flex-col gap-6 pb-8">
+		<div className="flex w-full flex-col gap-6 pb-8">
 			<BannerSection
 				imageUrl={DevBanner}
 				tagline={"Experiment with AI in the Playground"}

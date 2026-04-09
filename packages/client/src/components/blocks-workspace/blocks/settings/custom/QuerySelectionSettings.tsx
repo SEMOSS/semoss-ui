@@ -1,17 +1,75 @@
+import { ExpandMore } from "@mui/icons-material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
+	type CellState,
 	getValueByPath,
 	type Paths,
 	type PathValue,
+	type QueryState,
 	useBlocks,
+	type Variable,
 } from "@semoss/renderer";
-import { Autocomplete, TextField } from "@semoss/ui";
+import {
+	Accordion,
+	Autocomplete,
+	List,
+	styled,
+	TextField,
+	Typography,
+} from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
+
+const StyledMenuSection = styled(Accordion)(({ theme }) => ({
+	boxShadow: "none",
+	borderRadius: "0 !important",
+	border: "0px",
+	borderBottom: `1px solid ${theme.palette.divider}`,
+	"&:before": {
+		display: "none",
+	},
+	"&.Mui-expanded": {
+		margin: "0",
+		"&:last-child": {
+			borderBottom: "0px",
+		},
+	},
+}));
+
+const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
+	minHeight: "auto !important",
+	height: theme.spacing(6),
+}));
+
+interface Option {
+	id: string;
+	path: string;
+	display: string;
+	type: string;
+	groupAlias: string;
+	blockType: "query" | "block" | "cell" | "variable" | "placeholder";
+	isPlaceholder?: boolean;
+}
+
+// Group name mapper function
+const groupAliasMapper = (type: string) => {
+	switch (type) {
+		case "query":
+			return "Notebook";
+		case "cell":
+			return "Cell";
+		case "block":
+			return "Block";
+		case "variable":
+			return "Variable";
+		default:
+			return "Others";
+	}
+};
 
 interface QuerySelectionSettingsProps<D extends BlockDef = BlockDef> {
 	/**
@@ -57,6 +115,9 @@ export const QuerySelectionSettings = observer(
 		// track the value
 		const [value, setValue] = useState("");
 
+		// track the expanded accordion group
+		const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
@@ -83,26 +144,119 @@ export const QuerySelectionSettings = observer(
 			setValue(computedValue);
 		}, [computedValue]);
 
-		// available queries for autocomplete
-		const queries = useMemo(() => {
-			return Object.keys(state.variables).reduce((acc, queryKey) => {
-				if (
-					state.variables[queryKey].type === "query" ||
-					state.variables[queryKey].type === "cell"
-				) {
-					return {
-						...acc,
-						[`{{${queryKey}.${queryPath}}}`]: queryKey,
-					};
-				} else {
-					return {
-						...acc,
+		// available options for autocomplete (categorized)
+		const optionMap = useMemo<Record<string, Option>>(() => {
+			const pathMap: Record<string, Option> = {};
+
+			// Add variables (excluding cells as they're handled separately from queries)
+			Object.entries(state.variables).forEach(
+				([alias, variable]: [string, Variable]) => {
+					if (
+						variable.type === "query" ||
+						variable.type === "array" ||
+						variable.type === "block"
+					) {
+						// Map array type to variable for display purposes
+						const blockType =
+							variable.type === "array"
+								? "variable"
+								: variable.type;
+						// Use the original variable type for group mapping, not the blockType
+						const groupType =
+							variable.type === "array"
+								? "variable"
+								: variable.type;
+						pathMap[`{{${alias}.${queryPath}}}`] = {
+							id: `{{${alias}.${queryPath}}}`,
+							path: `{{${alias}.${queryPath}}}`,
+							display: `${alias}.${queryPath}`,
+							type: variable.type,
+							groupAlias: groupAliasMapper(groupType),
+							blockType: blockType as
+								| "query"
+								| "block"
+								| "cell"
+								| "variable",
+						};
+					}
+				},
+			);
+
+			// Add queries (notebooks)
+			Object.entries(state.queries).forEach(
+				([alias, query]: [string, QueryState]) => {
+					const queryOption = `{{${alias}.${queryPath}}}`;
+					if (!pathMap[queryOption]) {
+						pathMap[queryOption] = {
+							id: queryOption,
+							path: queryOption,
+							display: `${alias}.${queryPath}`,
+							type: "query",
+							groupAlias: groupAliasMapper("query"),
+							blockType: "query",
+						};
+					}
+
+					// Add cells within queries
+					if (query.cellList.length > 0) {
+						Object.entries(query.cells).forEach(
+							([cellAlias, cell]: [string, CellState]) => {
+								const cellOption = `{{${alias}.${cellAlias}.${queryPath}}}`;
+								pathMap[cellOption] = {
+									id: cellOption,
+									path: cellOption,
+									display: `${alias}.${cellAlias}.${queryPath}`,
+									type: "cell",
+									groupAlias: groupAliasMapper("cell"),
+									blockType: "cell",
+								};
+							},
+						);
+					}
+				},
+			);
+
+			// Add placeholder entries for empty categories to ensure they're visible
+			const allCategories = ["Block", "Notebook", "Cell", "Variable"];
+			const existingGroups = new Set(
+				Object.values(pathMap).map(
+					(option: Option) => option.groupAlias,
+				),
+			);
+
+			allCategories.forEach((category) => {
+				if (!existingGroups.has(category)) {
+					// Add a placeholder entry that won't be selectable
+					pathMap[`__placeholder_${category}`] = {
+						id: `__placeholder_${category}`,
+						path: `__placeholder_${category}`,
+						display: "No options available",
+						type: "placeholder",
+						groupAlias: category,
+						blockType: "placeholder",
+						isPlaceholder: true,
 					};
 				}
-			}, {});
+			});
 
-			// return queryVariables
-		}, [Object.keys(state.variables).length]);
+			return pathMap;
+		}, [state.variables, state.blocks, state.queries, queryPath]);
+
+		// Get sorted options for display
+		const sortedOptions = useMemo(() => {
+			return Object.keys(optionMap).sort((a, b) => {
+				const optionA = optionMap[a];
+				const optionB = optionMap[b];
+
+				// First sort by group
+				if (optionA.groupAlias !== optionB.groupAlias) {
+					return optionA.groupAlias.localeCompare(optionB.groupAlias);
+				}
+
+				// Then sort by display name
+				return optionA.display.localeCompare(optionB.display);
+			});
+		}, [optionMap]);
 
 		/**
 		 * Sync the data on change
@@ -120,6 +274,15 @@ export const QuerySelectionSettings = observer(
 			timeoutRef.current = setTimeout(() => {
 				try {
 					setData(path, value as PathValue<D["data"], typeof path>);
+
+					// If the value is empty/null, clear the options array to show placeholder
+					if (!value || value.trim() === "") {
+						setData(
+							"options" as Paths<Block<D>["data"], 4>,
+							[] as PathValue<D["data"], typeof path>,
+						);
+					}
+
 					__onChange();
 				} catch (e) {
 					console.log(e);
@@ -135,9 +298,41 @@ export const QuerySelectionSettings = observer(
 					size="small"
 					multiple={false}
 					value={value}
-					options={Object.keys(queries)}
-					getOptionLabel={(id: string) => {
-						return queries[id] ?? "";
+					options={sortedOptions}
+					getOptionLabel={(option: string) => {
+						return optionMap[option]?.display ?? option;
+					}}
+					getOptionDisabled={(option: string) => {
+						return optionMap[option]?.isPlaceholder ?? false;
+					}}
+					groupBy={(option) => optionMap[option]?.groupAlias}
+					renderGroup={(params) => {
+						return (
+							<li key={params.key}>
+								<StyledMenuSection
+									onChange={() => {
+										if (params.group === expandedGroup)
+											setExpandedGroup(null);
+										else setExpandedGroup(params.group);
+									}}
+									expanded={expandedGroup === params.group}
+								>
+									<StyledMenuSectionTitle
+										expandIcon={<ExpandMore />}
+										aria-controls="panel1a-content"
+									>
+										<Typography variant="body2">
+											{params.group}
+										</Typography>
+									</StyledMenuSectionTitle>
+									<Accordion.Content>
+										<List disablePadding>
+											{params.children}
+										</List>
+									</Accordion.Content>
+								</StyledMenuSection>
+							</li>
+						);
 					}}
 					onChange={(_, value) => {
 						onChange(value);
@@ -145,7 +340,7 @@ export const QuerySelectionSettings = observer(
 					renderInput={(params) => (
 						<TextField
 							{...params}
-							placeholder="Query"
+							placeholder="Enter text or select option"
 							size="small"
 							variant="outlined"
 						/>
