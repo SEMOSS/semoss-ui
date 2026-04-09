@@ -6,6 +6,8 @@ import {
 	Badge,
 	Button,
 	Calendar,
+	Dialog,
+	DialogContent,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupButton,
@@ -29,17 +31,22 @@ interface LLMFeedback {
 	ENGINE_ID: string;
 	DATE_CREATED: string;
 	MESSAGE_ID: string;
-	MESSAGE_TYPE: string;
+	MESSAGE_DATA: string;
 	MESSAGE_TEXT: string;
 	FEEDBACK_TEXT: string;
 	FEEDBACK_DATE: string;
 	RATING: boolean;
-	POSITIVE_FEEDBACK: string;
-	NEGATIVE_FEEDBACK: string;
 	TOTAL_FEEDBACK: string;
 }
 
 export const LLMFeedbackPage = () => {
+	const currentDate = useMemo(() => new Date(), []);
+	const thirtyDaysFilter = useMemo(() => {
+		const date = new Date();
+		date.setDate(date.getDate() - 30);
+		return date;
+	}, []);
+
 	const [feedback, setFeedback] = useState<LLMFeedback[]>([]);
 	const [columns, setColumns] = useState<
 		{ field: string; headerName: string; flex: number; minWidth: number }[]
@@ -52,10 +59,14 @@ export const LLMFeedbackPage = () => {
 	const [engineId, setEngineId] = useState<string>("");
 	const [projectId, setProjectId] = useState<string>("");
 	const [userId, setUserId] = useState<string>("");
-	const [startDate, setStartDate] = useState<Date | undefined>();
-	const [endDate, setEndDate] = useState<Date | undefined>();
+	const [startDate, setStartDate] = useState<Date | undefined>(
+		thirtyDaysFilter,
+	);
+	const [endDate, setEndDate] = useState<Date | undefined>(currentDate);
 	const [debouncedUserId, setDebouncedUserId] = useState<string>("");
 	const [isSearching, setIsSearching] = useState(false);
+	const [openMessageModal, setOpenMessageModal] = useState(false);
+	const [selectedMessageData, setSelectedMessageData] = useState<string>("");
 
 	const columnDefinitions = [
 		"AGENT_ID",
@@ -64,7 +75,7 @@ export const LLMFeedbackPage = () => {
 		"DATE_CREATED",
 		"RATING",
 		"MESSAGE_ID",
-		"MESSAGE_TYPE",
+		"MESSAGE_DATA",
 		"FEEDBACK_TEXT",
 		"FEEDBACK_DATE",
 	];
@@ -100,7 +111,7 @@ export const LLMFeedbackPage = () => {
 				};
 			}
 
-			if (name === "MESSAGE_TYPE") {
+			if (name === "MESSAGE_DATA") {
 				return {
 					field: name,
 					headerName: name
@@ -111,12 +122,16 @@ export const LLMFeedbackPage = () => {
 					minWidth: 100,
 					renderCell: (params) => {
 						return (
-							<Badge
-								variant="outline"
-								className="size-sm font-normal"
+							<button
+								type="button"
+								className="flex h-full w-full items-center leading-normal text-left"
+								onClick={() => {
+									setSelectedMessageData(params.value);
+									setOpenMessageModal(true);
+								}}
 							>
-								{params.value.toString().replace(/_/g, " ")}
-							</Badge>
+								{`"${params.value}"`}
+							</button>
 						);
 					},
 				};
@@ -170,30 +185,23 @@ export const LLMFeedbackPage = () => {
 
 	const offset = paginationModel.page * paginationModel.pageSize;
 	const limit = paginationModel.pageSize;
-	
-	const shouldFetchData = (startDate && endDate) || (!startDate && !endDate);
 
-  	const currentDate = useMemo(() => new Date(), []);
-		const thirtyDaysFilter = useMemo(() => {
-			const date = new Date();
-			date.setDate(date.getDate() - 30);
-			return date;
-		}, []);
+	const shouldFetchData = (startDate && endDate) || (!startDate && !endDate);
 
 	// default to last 30 days if no start date is selected
 	const getFeedback = usePixel<LLMFeedback[]>(
 		shouldFetchData
-		? `AdminGetLlmFeedback(
+			? `AdminGetLlmFeedback(
             limit=[${limit}], 
-            offset=[${offset}]${engineId ? `, engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : `, startDate=["${thirtyDaysFilter.toISOString().split("T")[0]}"]`}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : `, endDate=["${currentDate.toISOString().split("T")[0]}"]`});`
-		: "",
+            offset=[${offset}]${engineId ? `, engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}, startDate=["${startDate.toISOString().split("T")[0]}"], endDate=["${endDate.toISOString().split("T")[0]}"]);`
+			: "",
 		{ data: [] },
 	);
 
 	const getCount = usePixel<[string]>(
-		shouldFetchData 
-		? `AdminGetLlmFeedbackCount(${engineId ? `engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}${startDate ? `, startDate=["${startDate.toISOString().split("T")[0]}"]` : `, startDate=["${thirtyDaysFilter.toISOString().split("T")[0]}"]`}${endDate ? `, endDate=["${endDate.toISOString().split("T")[0]}"]` : `, endDate=["${currentDate.toISOString().split("T")[0]}"]`});`
-		: "",
+		shouldFetchData
+			? `AdminGetLlmFeedbackCount(${engineId ? `engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}, startDate=["${startDate.toISOString().split("T")[0]}"], endDate=["${endDate.toISOString().split("T")[0]}"]);`
+			: "",
 		{ data: ["0"] },
 	);
 
@@ -374,8 +382,8 @@ export const LLMFeedbackPage = () => {
 								setEngineId("");
 								setProjectId("");
 								setUserId("");
-								setStartDate(undefined);
-								setEndDate(undefined);
+								setStartDate(thirtyDaysFilter);
+								setEndDate(currentDate);
 							}}
 						>
 							Clear
@@ -383,6 +391,23 @@ export const LLMFeedbackPage = () => {
 					</div>
 				</div>
 			</div>
+			{openMessageModal && (
+				<Dialog
+					open={openMessageModal}
+					onOpenChange={setOpenMessageModal}
+				>
+					<DialogContent>
+						<div className="flex flex-col gap-4">
+							<h3 className="font-semibold text-lg">
+								Message Data
+							</h3>
+							<p className="whitespace-pre-wrap text-sm">
+								{`"${selectedMessageData}"`}
+							</p>
+						</div>
+					</DialogContent>
+				</Dialog>
+			)}
 			<DataGrid
 				rows={feedback}
 				rowCount={count}
