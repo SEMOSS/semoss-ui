@@ -191,13 +191,19 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
 								{toolState.icon}
 							</div>
-							<div className="-ml-1.5 flex min-w-0 flex-1 flex-col">
+							<div className="-ml-1.5 flex min-w-0 flex-1 items-center gap-2">
 								<span
 									className="truncate text-muted-foreground text-sm"
 									title={tool.json.title}
 								>
 									{tool.json.title}
 								</span>
+								{tool.status === "LOADING" &&
+									toolExecutionMessage && (
+										<span className="shrink-0 text-muted-foreground text-sm italic">
+											{toolExecutionMessage}
+										</span>
+									)}
 							</div>
 						</button>
 
