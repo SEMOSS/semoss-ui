@@ -1,6 +1,6 @@
 {
 	"manifest_version": 3,
-	"name": "SEMOSS Chrome Extension",
+	"name": "Browser Automation",
 	"description": "Browser automation using SEMOSS platform",
 	"version": "1.0.0",
 	"permissions": [
@@ -22,7 +22,7 @@
 		"type": "module"
 	},
 	"action": {
-		"default_title": "SEMOSS Chrome Extension",
+		"default_title": "Browser Automation",
 		"default_icon": {
 			"16": "assets/icon-16.svg",
 			"48": "assets/icon-48.svg",

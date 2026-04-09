@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
-import { Button, TextField, Typography } from "@semoss/ui";
+import { Box, Button, Card, Stack, TextField, Typography } from "@semoss/ui";
 import {
 	type PlaywrightScript,
 	ScriptExecutor,
 } from "../services/scriptExecutor";
+import { WelcomeState } from "./components/WelcomeState";
 
 const PanelApp: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(true);
@@ -328,37 +329,38 @@ const PanelApp: React.FC = () => {
 				addToHistory(`✓ Using current tab for script execution`);
 			}
 
-			// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
-			const tabMap = new Map<string, number>();
-			tabMap.set("tab-1", targetTab.id!); // First tab is the target tab
-			let currentTabId = targetTab.id!;
+		// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
+		const tabMap = new Map<string, number>();
+		tabMap.set("tab-1", targetTab.id!); // First tab is the target tab
+		let currentTabId = targetTab.id!;
 
-			// Track which navigate URL we already executed during tab creation
-			const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
+		// Track which navigate URL we already executed during tab creation
+		const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
 
 
-			// Execute each action
-			for (let i = 0; i < actions.length; i++) {
-				const action = actions[i];
+		// Execute each action
+		let actionCounter = 0; // Track actual displayed action numbers
+		for (let i = 0; i < actions.length; i++) {
+			const action = actions[i];
 
-				// Skip navigate action if we already executed it during tab creation
-				if (
-					action.type === "navigate" &&
-					action.url === preExecutedNavigateUrl
-				) {
-					addToHistory(
-						`✓ Skipping navigate (already executed): ${action.url}`,
-					);
-					continue;
+			// Skip navigate action if we already executed it during tab creation
+			if (
+				action.type === "navigate" &&
+				action.url === preExecutedNavigateUrl
+			) {
+				addToHistory(
+					`✓ Skipping navigate (already executed): ${action.url}`,
+				);
+				continue;
+			}
+
+			// Handle tab switching (case-insensitive)
+			if (action.type.toLowerCase() === "switchtab") {
+				if (!action.tabId) {
+					throw new Error("switchTab action requires tabId");
 				}
 
-				// Handle tab switching (case-insensitive)
-				if (action.type.toLowerCase() === "switchtab") {
-					if (!action.tabId) {
-						throw new Error("switchTab action requires tabId");
-					}
-
-					const targetTabId = tabMap.get(action.tabId);
+				const targetTabId = tabMap.get(action.tabId);
 
 					if (!targetTabId) {
 						addToHistory(
@@ -470,8 +472,9 @@ const PanelApp: React.FC = () => {
 					continue;
 				}
 
+				actionCounter++; // Increment only for displayed actions
 				addToHistory(
-					`${i + 1}. ${action.type.toUpperCase()}${action.label ? `: ${action.label}` : ""}`,
+					`${actionCounter}. ${action.type.toUpperCase()}${action.label ? `: ${action.label}` : ""}`,
 				);
 
 				// Handle ask user for TYPE actions
@@ -558,7 +561,7 @@ const PanelApp: React.FC = () => {
 					onAskUser,
 				);
 
-				// If this action triggers a new tab, track it (but skip if we already created initial tab)
+				// If this action triggers anew tab, track it (but skip if we already created initial tab)
 				if (action.isTriggerNewTab?.isTrue && !createdNewTab) {
 					addToHistory(
 						`⏳ Waiting for new tab: ${action.isTriggerNewTab.tabId}...`,
@@ -616,9 +619,9 @@ const PanelApp: React.FC = () => {
 
 			addToHistory("✅ Script execution completed!");
 
-			// Notify playground of successful execution
-			try {
-				await chrome.runtime.sendMessage({
+		// Notify playground of successful execution
+		try {
+			await chrome.runtime.sendMessage({
 					type: "SCRIPT_EXECUTION_COMPLETE",
 					success: true,
 					message: "Script executed successfully",
@@ -659,13 +662,11 @@ const PanelApp: React.FC = () => {
 			skipNumbering ||
 			message.startsWith("\n---") ||
 			message.startsWith("Connecting") ||
+			message.startsWith("✓") || // All checkmark messages (includes Switched, New tab, User provided, etc.)
 			message.startsWith("✓ Workshop") ||
 			message.startsWith("✓ Found") || // Script action count
 			message.match(/^\d+\./) || // Already has number like "1. NAVIGATE"
 			message.startsWith("⏳ Waiting") || // Waiting messages
-			message.startsWith("✓ Switched") || // Tab switch messages
-			message.startsWith("✓ New tab") || // New tab messages
-			message.startsWith("✓ User provided") || // User input confirmation
 			message.startsWith("✅") || // Success messages
 			message.startsWith("❌") // Error messages
 		) {
@@ -707,71 +708,172 @@ const PanelApp: React.FC = () => {
 			</div>
 
 			<div className="panel-content">
-				{actionHistory.length > 0 && (
-					<div className="history-section">
-						<Typography variant="h3">Action History</Typography>
-						<div className="history-list">
-							{actionHistory.map((action, index) => (
-								<div
-									key={`action-${index}-${action.substring(0, 20)}`}
-									className="history-item"
-								>
-									{action}
-								</div>
-							))}
-							<div ref={historyEndRef} />
-						</div>
-					</div>
-				)}
+				{/* Welcome State - shown when no script is running */}
+				{!isRunning && actionHistory.length === 0 && <WelcomeState />}
 
-				{/* User Input Dialog */}
-				{waitingForUserInput && (
-					<div className="user-input-overlay">
-						<div className="user-input-dialog">
-							<Typography variant="h3">Input Required</Typography>
-							<Typography variant="body1">
-								{userInputPrompt}
-							</Typography>
-							<TextField
-								type={isPasswordInput ? "password" : "text"}
-								value={userInputValue}
-								onChange={(e) => {
-									const newValue = e.target.value;
-									setUserInputValue(newValue);
-									
-									// Real-time mirroring to webpage (password fields show as dots automatically)
-									if (currentSelector && currentTabId) {
-										// Clear existing debounce timer
-										if (debounceTimerRef.current) {
-											clearTimeout(debounceTimerRef.current);
-										}
+				{/* Action History */}
+				{actionHistory.length > 0 && (
+						<Box sx={{ width: "100%" }}>
+							<Card
+								sx={{
+									width: "100%",
+									p: 2.5,
+									border: "1px solid",
+									borderColor: "divider",
+									minHeight: "calc(100vh - 180px)",
+									maxHeight: "calc(100vh - 180px)",
+									overflowY: "auto",
+									backgroundColor: "background.paper",
+									boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+								}}
+							>
+								<Typography 
+									variant="h4" 
+									sx={{ 
+										mb: 2, 
+										fontWeight: 600,
+										fontSize: "0.9375rem",
+										color: "text.secondary",
+										textTransform: "uppercase",
+										letterSpacing: "0.5px"
+									}}
+								>
+									Execution Log
+								</Typography>
+								<Stack spacing={0.75}>
+									{actionHistory.map((action, index) => {
+										const isError = action.startsWith("❌");
+										const isSuccess = action.startsWith("✅");
+										const isCheckmark = action.startsWith("✓");
+										const isNumbered = action.match(/^\d+\./);
+										const isUserInput = action.includes("User provided input");
 										
-										// Debounce the update to avoid excessive messages
-										debounceTimerRef.current = setTimeout(() => {
-											chrome.runtime.sendMessage({
-												type: "UPDATE_FIELD_VALUE",
-												tabId: currentTabId,
-												selector: currentSelector,
-												value: newValue,
-											}).catch(err => {
-												console.log("[PANEL] ⚠️ Mirroring unavailable:", err.message);
-											});
-										}, 75); // 75ms debounce for responsive feel
-									}
-								}}
-								placeholder="Enter value..."
-								onKeyDown={(e) => {
-									if (
-										e.key === "Enter" &&
-										userInputValue.trim()
-									) {
-										e.preventDefault();
-										if (userInputCallback) {
-											userInputCallback(userInputValue);
+										return (
+											<Box
+												key={`action-${index}-${action.substring(0, 20)}`}
+												sx={{
+													py: 1,
+													px: 1.5,
+													borderRadius: 1.5,
+													border: "1px solid",
+													borderColor: isError 
+														? "error.light" 
+														: isSuccess 
+															? "success.light"
+															: isCheckmark
+																? "rgba(76, 175, 80, 0.3)"
+																: "divider",
+													backgroundColor: isError 
+														? "rgba(211, 47, 47, 0.04)" 
+														: isSuccess 
+															? "rgba(46, 125, 50, 0.04)"
+															: isCheckmark
+																? "rgba(76, 175, 80, 0.04)"
+																: isUserInput
+																	? "rgba(25, 118, 210, 0.04)"
+																	: "background.default",
+													transition: "all 0.2s ease",
+													"&:hover": {
+														backgroundColor: isError 
+															? "rgba(211, 47, 47, 0.08)" 
+															: isSuccess 
+																? "rgba(46, 125, 50, 0.08)"
+																: isCheckmark
+																	? "rgba(76, 175, 80, 0.08)"
+																	: isUserInput
+																		? "rgba(25, 118, 210, 0.08)"
+																		: "action.hover",
+														borderColor: isError 
+															? "error.main" 
+															: isSuccess 
+																? "success.main"
+																: isCheckmark
+																	? "rgba(76, 175, 80, 0.5)"
+																	: isUserInput
+																		? "primary.light"
+																		: "divider",
+														transform: "translateX(2px)"
+													}
+												}}
+											>
+												<Typography 
+													variant="body2" 
+													sx={{ 
+														fontSize: "0.8125rem",
+														lineHeight: 1.6,
+														color: isError 
+															? "error.dark" 
+															: isSuccess 
+																? "success.dark"
+																: isCheckmark
+																	? "success.main"
+																	: "text.primary",
+														fontWeight: (isNumbered || isError || isSuccess) ? 500 : 400,
+														fontFamily: isNumbered 
+															? "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui" 
+															: "inherit",
+														letterSpacing: "0.01em"
+													}}
+												>
+													{action}
+												</Typography>
+											</Box>
+										);
+									})}
+									<div ref={historyEndRef} />
+								</Stack>
+							</Card>
+						</Box>
+					)}
+
+					{/* User Input Dialog */}
+					{waitingForUserInput && (
+						<div className="user-input-overlay">
+							<div className="user-input-dialog">
+								<Typography variant="h3">Input Required</Typography>
+								<Typography variant="body1">
+									{userInputPrompt}
+								</Typography>
+								<TextField
+									type={isPasswordInput ? "password" : "text"}
+									value={userInputValue}
+									onChange={(e) => {
+										const newValue = e.target.value;
+										setUserInputValue(newValue);
+										
+										// Real-time mirroring to webpage (password fields show as dots automatically)
+										if (currentSelector && currentTabId) {
+											// Clear existing debounce timer
+											if (debounceTimerRef.current) {
+												clearTimeout(debounceTimerRef.current);
+											}
+											
+											// Debounce the update to avoid excessive messages
+											debounceTimerRef.current = setTimeout(() => {
+												chrome.runtime.sendMessage({
+													type: "UPDATE_FIELD_VALUE",
+													tabId: currentTabId,
+													selector: currentSelector,
+													value: newValue,
+												}).catch(err => {
+													console.log("[PANEL] ⚠️ Mirroring unavailable:", err.message);
+												});
+											}, 75); // 75ms debounce for responsive feel
 										}
-									}
-								}}
-							/>
+									}}
+									placeholder="Enter value..."
+									onKeyDown={(e) => {
+										if (
+											e.key === "Enter" &&
+											userInputValue.trim()
+										) {
+											e.preventDefault();
+											if (userInputCallback) {
+												userInputCallback(userInputValue);
+											}
+										}
+									}}
+								/>
 							<div className="user-input-buttons">
 								<Button
 									variant="contained"

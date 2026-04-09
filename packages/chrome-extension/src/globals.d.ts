@@ -16,6 +16,11 @@ declare module "*.svg" {
 	export default value;
 }
 
+declare module "*.css" {
+	const content: { [className: string]: string };
+	export default content;
+}
+
 // Chrome Side Panel API type definitions (Chrome 114+)
 declare namespace chrome.sidePanel {
 	interface OpenOptions {
