@@ -21,14 +21,14 @@ import type { ResponseMessageStore, ToolStore } from "@/stores";
 export interface ResponseMessageToolMenuProps {
 	message: ResponseMessageStore;
 	tool: ToolStore;
-	effectiveIsLarge: boolean;
+	isFullButton: boolean;
 	showCancelInMenu: boolean;
 }
 
 export const ResponseMessageToolMenu = ({
 	message,
 	tool,
-	effectiveIsLarge,
+	isFullButton,
 	showCancelInMenu,
 }: ResponseMessageToolMenuProps) => {
 	const { t } = useTranslation("chat");
@@ -36,7 +36,7 @@ export const ResponseMessageToolMenu = ({
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				{effectiveIsLarge ? (
+				{!isFullButton ? (
 					<Button
 						type="button"
 						size="icon"

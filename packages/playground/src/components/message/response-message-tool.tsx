@@ -111,7 +111,7 @@ interface ResponseMessageToolProps {
 	/** Tool to render */
 	tool: ToolStore;
 
-	/** Whether the tool is large when closed */
+	/** Whether the tool is large */
 	isLarge?: boolean;
 }
 
@@ -139,13 +139,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			tool.isOpen &&
 			(tool.display === "sidebar" ? room.sidebar.isOpen : true);
 
-		const effectiveIsLarge = isLarge || tool.isOpen;
-
 		const toolState = getToolState(tool, t, toolExecutionMessage);
 
 		const isButtonDisabled = isDisabled || !toolState.canInteract;
 
-		const iconSize = effectiveIsLarge ? "size-9" : "size-6";
+		const iconSize = isLarge ? "size-9" : "size-6";
 
 		// Don't render if hidden
 		if (tool.display === "hidden") {
@@ -198,14 +196,19 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						>
 							{toolState.icon}
 						</div>
-						<div className="flex min-w-0 flex-1 flex-col">
+						<div
+							className={cn(
+								"flex min-w-0 flex-1 flex-col",
+								!isLarge && "-ml-1.5",
+							)}
+						>
 							<span
 								className="truncate font-medium text-foreground text-sm"
 								title={tool.json.title}
 							>
 								{tool.json.title}
 							</span>
-							{effectiveIsLarge && toolState.subtext && (
+							{isLarge && toolState.subtext && (
 								<span
 									className="truncate text-muted-foreground text-sm"
 									title={toolState.subtext}
@@ -218,7 +221,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 					{/* Right-side actions */}
 					{toolState.actionType === "cancel" &&
-						(effectiveIsLarge ? (
+						(isLarge ? (
 							<Button
 								type="button"
 								size="sm"
@@ -272,7 +275,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						<ResponseMessageToolMenu
 							message={message}
 							tool={tool}
-							effectiveIsLarge={effectiveIsLarge}
+							isFullButton={!isLarge}
 							showCancelInMenu={toolState.showCancelInMenu}
 						/>
 					)}
