@@ -213,7 +213,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						{toolState.badge && (
 							<span
 								className={cn(
-									"shrink-0 pr-3 font-medium text-sm",
+									"shrink-0 pr-3 text-sm",
 									toolState.badge.variant === "destructive" &&
 										"text-destructive",
 									toolState.badge.variant === "muted" &&
