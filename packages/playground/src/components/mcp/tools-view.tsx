@@ -1,11 +1,10 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore, ToolStore } from "@/stores";
-import type { MCPTool } from "@/types";
-import { ToolsDefaultView } from "./tools-default-view/index";
+import { ToolsDefaultView } from "./tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -38,7 +37,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 		 */
 		const iframeRef = useRef<HTMLIFrameElement>(null);
 		const [isLoading, setIsLoading] = useState<boolean>(true);
-		const [url, setUrl] = useState<string | null>(null);
+		const [url, setUrl] = useState("");
 
 		/**
 		 * Library Hooks
@@ -52,56 +51,6 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 				project_type: "",
 			},
 		});
-
-		// Get tool JSON
-		const getMCP = usePixel<{
-			_meta: {
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-				SMSS_ENGINE_NAME: string;
-				SMSS_ENGINE_TYPE: string;
-				SMSS_ENGINE_ID: string;
-			};
-			tools: MCPTool[];
-		}>(`GetMCPTools(project=["${app}"]);`, {
-			data: {
-				tools: [
-					{
-						name: "",
-						description: "",
-						title: "",
-						inputSchema: {
-							properties: {},
-							type: "object",
-							required: [],
-							title: "",
-						},
-						original_name: "",
-						_meta: {
-							generated_on: "",
-						},
-					},
-				],
-				_meta: {
-					SMSS_ENGINE_ID: "",
-					SMSS_ENGINE_NAME: "",
-					SMSS_ENGINE_TYPE: "",
-					SMSS_PROJECT_ID: "",
-					SMSS_PROJECT_NAME: "",
-				},
-			},
-		});
-
-		const selectedTool = useMemo(() => {
-			const toolNames = [tool.original_name, tool.name].filter(Boolean);
-
-			return getMCP.data.tools.find((mcpTool) => {
-				return (
-					toolNames.includes(mcpTool.original_name) ||
-					toolNames.includes(mcpTool.name)
-				);
-			});
-		}, [getMCP.data.tools, tool.name, tool.original_name]);
 
 		/**
 		 * Functions
@@ -140,90 +89,71 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 				// Finish loading
 				if (
 					getAppInfo.status === "INITIAL" ||
-					getAppInfo.status === "LOADING" ||
-					getMCP.status === "INITIAL" ||
-					getMCP.status === "LOADING"
+					getAppInfo.status === "LOADING"
 				) {
 					return;
 				}
 
 				// Ignore if no tool
-				if (
-					!app ||
-					!tool ||
-					getAppInfo.status === "ERROR" ||
-					getMCP.status === "ERROR"
-				) {
-					setUrl(null);
-					setIsLoading(false);
-					return;
-				}
-
-				// Wait for selected tool to be available
-				if (!selectedTool) {
-					setUrl(null);
+				if (!app || !tool || getAppInfo.status === "ERROR") {
+					setUrl("");
 					setIsLoading(false);
 					return;
 				}
 
 				setIsLoading(true);
 
-				const mcpUi =
-					selectedTool._meta?.SMSS_MCP_UI || tool._meta.SMSS_MCP_UI;
+				if (!tool._meta.SMSS_MCP_UI) {
+					// Legacy, check for portals
 
-				if (mcpUi?.resourceURI) {
 					if (getAppInfo.data.project_type === "BLOCKS") {
-						setUrl(`${PLATFORM_URL}/#/s/${app}${mcpUi.resourceURI}`);
-					} else {
-						setUrl(
-							`${Env.MODULE}/public_home/${app}/portals${mcpUi.resourceURI}`,
-						);
+						// Low code app
+						setUrl(`${PLATFORM_URL}/#/s/${app}/`);
 					}
 
-					setIsLoading(false);
-					return;
-				}
+					// Check if portals exists
+					let foundApp = false;
+					try {
+						const response = await fetch(
+							`${Env.MODULE}/public_home/${app}/portals/`,
+							{ method: "GET" },
+						);
+						const text = await response.text();
+						//FixMe: Always returns a 200 so currently checking against default text returned
+						foundApp =
+							response.status === 200 &&
+							text &&
+							text !==
+								"Publish is not enabled on this project or there was an error publishing this project";
+					} catch (_e) {}
 
-				// Legacy, check for portals
-				if (getAppInfo.data.project_type === "BLOCKS") {
-					setUrl(`${PLATFORM_URL}/#/s/${app}/`);
-					setIsLoading(false);
-					return;
-				}
-
-				let foundApp = false;
-				try {
-					const response = await fetch(
-						`${Env.MODULE}/public_home/${app}/portals/`,
-						{ method: "GET" },
+					// Portals view else use default view off tool JSON
+					setUrl(
+						foundApp
+							? `${Env.MODULE}/public_home/${app}/portals/`
+							: null,
 					);
-					const text = await response.text();
-					foundApp =
-						response.status === 200 &&
-						Boolean(text) &&
-						text !==
-							"Publish is not enabled on this project or there was an error publishing this project";
-				} catch (_error) {
-					foundApp = false;
+				} else {
+					// Modern
+					const resourceURI = tool._meta.SMSS_MCP_UI?.resourceURI;
+					if (!resourceURI) {
+						// No UI defined, show form
+						setUrl(null);
+					} else if (getAppInfo.data.project_type === "BLOCKS") {
+						// Low code app
+						setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
+					} else {
+						setUrl(
+							`${Env.MODULE}/public_home/${app}/portals${resourceURI}`,
+						);
+					}
 				}
 
-				setUrl(
-					foundApp
-						? `${Env.MODULE}/public_home/${app}/portals/`
-						: null,
-				);
 				setIsLoading(false);
 			};
 
-			void chooseUrl();
-		}, [
-			app,
-			getAppInfo.data.project_type,
-			getAppInfo.status,
-			getMCP.status,
-			selectedTool,
-			tool,
-		]);
+			chooseUrl();
+		}, [app, tool, getAppInfo.status, getAppInfo.data]);
 
 		return (
 			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
@@ -243,7 +173,6 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						app={app}
 						message={message}
 						tool={tool}
-						mcp={selectedTool}
 						toolResponse={toolResponse}
 						toolParameters={toolParameters}
 					/>
