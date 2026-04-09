@@ -379,6 +379,7 @@ export const NewRoomPage = observer(() => {
 
 								return true;
 							}}
+							hidePauseButton
 							MenuComponent={observer(
 								({ onOpenChange, fileRef, editorRef }) => (
 									<>
