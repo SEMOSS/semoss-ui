@@ -61,7 +61,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [askUserDismissed, setAskUserDismissed] = useState(false);
 	const [lastSeenAskUserIds, setLastSeenAskUserIds] = useState<string>("");
 
-	// Collect ALL pending askUser tools from the latest response
+	// Collect pending askUser tools from the latest response.
 	const pendingAskUserTools = ((): ToolStore[] => {
 		const latestResponse = room.latestResponseMessage;
 		if (!latestResponse) return [];
@@ -93,31 +93,93 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 	const showAskUserOverlay =
 		pendingAskUserTools.length > 0 && !askUserDismissed;
+	const activeAskUserTool = pendingAskUserTools[0] ?? null;
+
+	const dismissedAskUserQuestions = activeAskUserTool
+		? (() => {
+				const params = (activeAskUserTool.parameters || {}) as {
+					question?: unknown;
+					questions?: unknown;
+				};
+
+				if (Array.isArray(params.questions)) {
+					return params.questions
+						.map((question) => {
+							if (typeof question === "string") {
+								return question.trim();
+							}
+
+							if (
+								typeof question === "object" &&
+								question !== null
+							) {
+								const candidate = question as {
+									question?: unknown;
+								};
+								return typeof candidate.question === "string"
+									? candidate.question.trim()
+									: "";
+							}
+
+							return "";
+						})
+						.filter(Boolean);
+				}
+
+				if (
+					typeof params.question === "string" &&
+					params.question.trim()
+				) {
+					return [params.question.trim()];
+				}
+
+				return ["The assistant has a follow-up question."];
+			})()
+		: [];
+	const dismissedQuestionCounts = new Map<string, number>();
+	const dismissedAskUserQuestionEntries = dismissedAskUserQuestions.map(
+		(question) => {
+			const count = (dismissedQuestionCounts.get(question) || 0) + 1;
+			dismissedQuestionCounts.set(question, count);
+
+			return {
+				key: `${question}-${count}`,
+				question,
+			};
+		},
+	);
 
 	/**
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
 		// If there are dismissed pending askUser tools, route the text input
-		// as the tool response so the answer shows in chat and the LLM continues
+		// through normal chat after cancelling the pending tool calls.
 		if (askUserDismissed && pendingAskUserTools.length > 0) {
-			const tool = pendingAskUserTools[0];
-			const messageId = tool.toolCallMessage?.id;
-			if (messageId) {
-				const params = (tool.parameters || {}) as Record<
-					string,
-					unknown
-				>;
-				await room.processTool(messageId, tool.id, prompt, "success", {
-					...params,
-					user_response: prompt,
-				});
-				// If no more pending tools after this one, un-dismiss
-				if (pendingAskUserTools.length <= 1) {
-					setAskUserDismissed(false);
-				}
-				return true;
-			}
+			await Promise.all(
+				pendingAskUserTools.map(async (tool) => {
+					const messageId = tool.toolCallMessage?.id;
+					if (!messageId) {
+						return;
+					}
+
+					const params = (tool.parameters || {}) as Record<
+						string,
+						unknown
+					>;
+					await room.processTool(
+						messageId,
+						tool.id,
+						"",
+						"cancelled",
+						{
+							...params,
+						},
+					);
+				}),
+			);
+
+			setAskUserDismissed(false);
 		}
 
 		// update the options
@@ -480,22 +542,54 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showAskUserOverlay ? (
 					<AskUserTool
 						room={room}
-						tool={pendingAskUserTools[0]}
+						tools={activeAskUserTool ? [activeAskUserTool] : []}
 						onClose={() => setAskUserDismissed(true)}
 					/>
 				) : (
 					<>
 						{askUserDismissed && pendingAskUserTools.length > 0 && (
-							<button
-								type="button"
-								className="mb-2 flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-primary-foreground px-3 py-1.5 text-muted-foreground text-sm shadow-sm transition-colors hover:bg-accent/50"
-								onClick={() => setAskUserDismissed(false)}
-							>
-								<MessageSquareMoreIcon className="size-4" />
-								{pendingAskUserTools.length} follow-up question
-								{pendingAskUserTools.length > 1 ? "s" : ""} —
-								click to reopen
-							</button>
+							<div className="mb-3 rounded-lg border border-border bg-primary-foreground px-4 py-3 shadow-sm">
+								<div className="mb-2 flex items-center justify-between gap-3">
+									<div className="flex items-center gap-2 text-muted-foreground text-sm">
+										<MessageSquareMoreIcon className="size-4" />
+										<span>
+											{dismissedAskUserQuestions.length}{" "}
+											follow-up question
+											{dismissedAskUserQuestions.length >
+											1
+												? "s"
+												: ""}
+										</span>
+									</div>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											setAskUserDismissed(false)
+										}
+									>
+										Reopen overlay
+									</Button>
+								</div>
+								<div className="space-y-1 pb-2">
+									{dismissedAskUserQuestionEntries.map(
+										(entry, idx) => (
+											<p
+												key={entry.key}
+												className="text-sm"
+											>
+												{idx + 1}. {entry.question}
+											</p>
+										),
+									)}
+								</div>
+								<p className="text-muted-foreground text-xs">
+									Reply in the normal chat box below to cancel
+									these follow-up prompts and send one regular
+									message instead.
+								</p>
+							</div>
 						)}
 						<RoomInput
 							className="max-h-56 min-h-24"

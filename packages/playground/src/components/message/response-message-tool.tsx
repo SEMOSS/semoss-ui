@@ -77,20 +77,81 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				return null;
 			}
 
-			const question =
-				(tool.json.arguments as Record<string, unknown>)?.question ??
-				"Follow-up question";
+			const args = (tool.json.arguments as Record<string, unknown>) ?? {};
+			const questions = Array.isArray(args.questions)
+				? args.questions
+						.map((q) => {
+							if (typeof q === "string") {
+								return q.trim();
+							}
+
+							if (typeof q === "object" && q !== null) {
+								const candidate = q as { question?: unknown };
+								return typeof candidate.question === "string"
+									? candidate.question.trim()
+									: "";
+							}
+
+							return "";
+						})
+						.filter(Boolean)
+				: [];
+			const fallbackQuestion =
+				typeof args.question === "string"
+					? args.question
+					: "Follow-up question";
+			const questionText =
+				questions.length > 0 ? questions.join("\n") : fallbackQuestion;
 			const answer =
 				(tool.parameters as Record<string, unknown>)?.user_response ??
 				tool.response ??
 				"";
 
+			let answerText = String(answer);
+			let hasStructuredQaPairs = false;
+			try {
+				const parsed = JSON.parse(answerText) as unknown;
+				if (Array.isArray(parsed)) {
+					const formatted = parsed
+						.map((item, idx) => {
+							if (
+								typeof item === "object" &&
+								item !== null &&
+								"question" in item &&
+								"answer" in item
+							) {
+								const qa = item as {
+									question?: unknown;
+									answer?: unknown;
+								};
+								const q = String(qa.question ?? "").trim();
+								const a = String(qa.answer ?? "").trim();
+								return `${idx + 1}. ${q}: ${a}`;
+							}
+							return "";
+						})
+						.filter(Boolean)
+						.join("\n");
+
+					if (formatted) {
+						hasStructuredQaPairs = true;
+						answerText = formatted;
+					}
+				}
+			} catch {
+				// Keep the raw answer for backward compatibility.
+			}
+
 			return (
 				<div className="flex flex-col gap-1 rounded-lg border border-border bg-primary-foreground px-4 py-3">
-					<p className="text-muted-foreground text-sm">
-						{String(question)}
+					{!hasStructuredQaPairs && (
+						<p className="whitespace-pre-wrap text-muted-foreground text-sm">
+							{questionText}
+						</p>
+					)}
+					<p className="whitespace-pre-wrap font-medium text-sm">
+						{answerText}
 					</p>
-					<p className="font-medium text-sm">{String(answer)}</p>
 				</div>
 			);
 		}
