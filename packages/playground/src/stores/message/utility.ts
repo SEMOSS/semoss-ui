@@ -1,8 +1,31 @@
 import type { RoomStore } from "@/stores";
-import type { PixelMessage } from "@/types";
+import type { Engine, PixelMessage } from "@/types";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
 import { ResponseMessageStore } from "./response-message.store";
+
+/**
+ * Detects whether an engine model is an image-generation model by inspecting
+ * its tag and tags CHECK THIS
+ */
+export const isImageGenerationModel = (
+	model:
+		| (Engine & { tag?: string | string[]; tags?: string | string[] })
+		| null,
+): boolean => {
+	if (!model) return false;
+
+	const tags = [model.tag, model.tags]
+		.flatMap((raw) => {
+			if (Array.isArray(raw)) return raw;
+			if (typeof raw === "string") return raw.split(",");
+			return [];
+		})
+		.map((t) => t.toLowerCase().trim())
+		.filter(Boolean);
+
+	return tags.includes("image-generation");
+};
 
 /**
  * Create a messageStore from a pixelMessage

@@ -18,6 +18,7 @@ import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
+import { isImageGenerationModel } from "./utility";
 
 /**
  * Response Message Store
@@ -144,6 +145,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
+		const isImageModel = isImageGenerationModel(
+			room.model as Parameters<typeof isImageGenerationModel>[0],
+		);
 
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
@@ -153,12 +157,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			platform_generated: true,
 			modelId: room.model.app_id,
 			dateCreated: new Date().toISOString(),
-			parts: [
-				{
-					type: "THINKING",
-					thinking: "",
-				},
-			],
+			parts: isImageModel // no thinking part if image gen model
+				? []
+				: [
+						{
+							type: "THINKING",
+							thinking: "",
+						},
+					],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -180,7 +186,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			inputMessage.addChild(responseMessage);
 
 			// turn on thinking
-			responseMessage.isThinking = true;
+			responseMessage.isThinking = !isImageModel;
 
 			// get the text
 			const text = inputMessage.parts.reduce((acc, part) => {
@@ -191,6 +197,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				return acc;
 			}, "");
 
+			// get the image
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
 					acc.push(part.mediaInfo.fileLocation);
@@ -198,6 +205,20 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 				return acc;
 			}, []);
+			const paramValues: Record<string, unknown> = isImageModel
+				? {
+						taskType: "TEXT_IMAGE",
+						negativeText: "blurry, low quality",
+						numberOfImages: 1,
+						height: 1024,
+						width: 1024,
+						cfgScale: 8.0,
+						seed: 42,
+					}
+				: {
+						max_new_tokens: room.options.tokenLength,
+						temperature: room.options.temperature,
+					};
 
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
@@ -215,10 +236,7 @@ command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify({
-					max_new_tokens: room.options.tokenLength,
-					temperature: room.options.temperature,
-				})}]
+paramValues=[${JSON.stringify(paramValues)}]
 );`,
 				(chunk) => {
 					runInAction(() => {
@@ -231,7 +249,7 @@ paramValues=[${JSON.stringify({
 								});
 							}
 						} else if (chunk.stream_type === "thinking") {
-							if (chunk.data.thinking) {
+							if (!isImageModel && chunk.data.thinking) {
 								responseMessage.savePart({
 									type: "THINKING",
 									thinking: chunk.data.thinking,
@@ -341,6 +359,7 @@ paramValues=[${JSON.stringify({
 		const room = this.room;
 
 		try {
+			// idk why failing for image response
 			// wait for the pixel to run
 			await room.runRoomPixel<[boolean]>(
 				`SubmitLlmFeedback(messageId=${JSON.stringify(this.id)}, feedbackText=${JSON.stringify(feedbackText)}, rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(room.roomId)});`,
