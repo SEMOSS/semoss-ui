@@ -200,7 +200,7 @@ export const AuditLogPage = () => {
 
 				const pixel =
 					`AuditLogReport(paramValues=[{` +
-					`"userId":"${sUser}",` +
+					`"filterUserId":"${sUser}",` +
 					`"projectId":"${eType === "APP" ? eId : ""}",` +
 					`"engineId":"${eType === "APP" ? "" : eId}",` +
 					`"dateTime":"${dateTime}",` +
