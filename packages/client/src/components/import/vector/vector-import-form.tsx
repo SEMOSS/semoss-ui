@@ -145,7 +145,6 @@ export const VectorForm = ({
 					if (operationType.includes("ERROR")) {
 						toast.error(String(output));
 						setLoading(false);
-						return;
 					}
 				} catch {
 					toast.error("Upload failed or returned invalid response.");
