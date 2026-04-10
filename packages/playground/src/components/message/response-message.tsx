@@ -213,8 +213,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
 							const isGrouped =
-								groupedTools.length > 1 &&
-								getShouldGroupTool(tool);
+								getShouldGroupTool(tool) &&
+								groupedTools.length > 1;
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
@@ -229,7 +229,20 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 										<ResponseMessageTool
 											message={message}
 											tool={tool}
-											isLarge={message.hasUnfinishedTools}
+											// getShouldGroupTool dictates that tools are only solo if
+											// it is a) ask and unfinished or b) solo auto with some unfinished asks
+											// But, when we do && groupedTools.length > 1, we introduce possibility c)
+											// a solo auto and unfinished tool is here - and it should be small
+											// so solo tools should be large if message.hasUnfinishedTools and not possibility c.
+											isLarge={
+												message.hasUnfinishedTools &&
+												!(
+													tool.json._meta
+														.SMSS_MCP_EXECUTION ===
+														"auto" &&
+													groupedTools.length === 1
+												)
+											}
 										/>
 									)}
 								</Fragment>
