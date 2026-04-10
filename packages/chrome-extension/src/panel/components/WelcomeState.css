@@ -1,0 +1,22 @@
+.welcome-container {
+    width: 100%;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: calc(100vh - 80px);
+    overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+    .welcome-container {
+        padding: 12px 10px;
+    }
+}
+
+@media (min-height: 700px) {
+    .welcome-container {
+        align-items: center;
+    }
+}
