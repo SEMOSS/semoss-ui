@@ -48,7 +48,17 @@
 		"groupClosed_one": "Used {{toolName}} + {{count}} more",
 		"groupClosed_other": "Used {{toolName}} + {{count}} more",
 		"groupLoading_one": "Running {{toolName}} + {{count}} more",
-		"groupLoading_other": "Running {{toolName}} + {{count}} more"
+		"groupLoading_other": "Running {{toolName}} + {{count}} more",
+		"groupSummaryCompleted_one": "{{count}} completed",
+		"groupSummaryCompleted_other": "{{count}} completed",
+		"groupSummaryRunning_one": "{{count}} running",
+		"groupSummaryRunning_other": "{{count}} running",
+		"groupSummaryError_one": "{{count}} failed",
+		"groupSummaryError_other": "{{count}} failed",
+		"groupSummaryCancelled_one": "{{count}} cancelled",
+		"groupSummaryCancelled_other": "{{count}} cancelled",
+		"groupSummaryPaused_one": "{{count}} paused",
+		"groupSummaryPaused_other": "{{count}} paused"
 	},
 	"notifications": {
 		"feedbackSuccess": "Thank you for the feedback!",

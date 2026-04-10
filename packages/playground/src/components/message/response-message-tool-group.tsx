@@ -12,14 +12,6 @@ import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
-const getGroupStatus = (tools: ToolStore[]) => {
-	if (tools.some((t) => t.status === "LOADING")) return "LOADING";
-	if (tools.some((t) => t.status === "ERROR")) return "ERROR";
-	if (tools.some((t) => t.status === "PAUSED")) return "PAUSED";
-	if (tools.every((t) => t.status === "CANCELLED")) return "CANCELLED";
-	return "SUCCESS";
-};
-
 const groupStatusConfig = {
 	LOADING: {
 		icon: <Spinner />,
@@ -38,6 +30,36 @@ const groupStatusConfig = {
 	},
 } as const;
 
+const analyzeTools = (tools: ToolStore[]) => {
+	const counts = {
+		SUCCESS: 0,
+		LOADING: 0,
+		ERROR: 0,
+		CANCELLED: 0,
+		PAUSED: 0,
+		INITIAL: 0,
+	};
+	const loadingOptions: string[] = [];
+
+	for (const tool of tools) {
+		counts[tool.status] = (counts[tool.status] ?? 0) + 1;
+		if (
+			tool.status === "LOADING" &&
+			tool.json._meta.SMSS_MCP_UI?.loadingMessage
+		) {
+			loadingOptions.push(tool.json._meta.SMSS_MCP_UI.loadingMessage);
+		}
+	}
+
+	let status: keyof typeof groupStatusConfig = "SUCCESS";
+	if (counts.LOADING > 0) status = "LOADING";
+	else if (counts.ERROR > 0) status = "ERROR";
+	else if (counts.PAUSED > 0) status = "PAUSED";
+	else if (counts.CANCELLED === tools.length) status = "CANCELLED";
+
+	return { status, counts, loadingOptions };
+};
+
 interface ResponseMessageToolGroupProps {
 	/** Message to render */
 	message: ResponseMessageStore;
@@ -51,30 +73,28 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		const { t } = useTranslation("chat");
 		const [isOpen, setIsOpen] = useState(false);
 
-		const groupStatus = getGroupStatus(tools);
-		const { icon } = groupStatusConfig[groupStatus];
-		const isLoading = groupStatus === "LOADING";
+		const { status, counts, loadingOptions } = analyzeTools(tools);
+		const { icon } = groupStatusConfig[status];
+		const isLoading = status === "LOADING";
 
-		const { loadingMessage } = useLoadingMessage(
-			isLoading,
-			tools
-				.filter((tool) => tool.status === "LOADING")
-				.flatMap((tool) =>
-					tool.json._meta.SMSS_MCP_UI?.loadingMessage
-						? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
-						: [],
-				),
-		);
+		const { loadingMessage } = useLoadingMessage(isLoading, loadingOptions);
 
-		const label = isLoading
-			? t("tool.groupLoading", {
-					toolName: tools[0].json.title,
-					count: tools.length - 1,
-				})
-			: t("tool.groupClosed", {
-					toolName: tools[0].json.title,
-					count: tools.length - 1,
-				});
+		const label = t(isLoading ? "tool.groupLoading" : "tool.groupClosed", {
+			toolName: tools[0].json.title,
+			count: tools.length - 1,
+		});
+
+		const summaryParts = [
+			counts.SUCCESS > 0 &&
+				counts.SUCCESS < tools.length &&
+				t("tool.groupSummaryCompleted", { count: counts.SUCCESS }),
+			counts.ERROR > 0 &&
+				t("tool.groupSummaryError", { count: counts.ERROR }),
+			counts.CANCELLED > 0 &&
+				t("tool.groupSummaryCancelled", { count: counts.CANCELLED }),
+			counts.PAUSED > 0 &&
+				t("tool.groupSummaryPaused", { count: counts.PAUSED }),
+		].filter((s): s is string => Boolean(s));
 
 		return (
 			<div
@@ -117,16 +137,17 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					<div className="overflow-hidden">
 						<div className="flex flex-col gap-2 px-2 pb-2">
 							{tools.map((tool) => (
-								<div
+								<ResponseMessageTool
 									key={tool.id}
-									className="flex flex-col gap-2"
-								>
-									<ResponseMessageTool
-										message={message}
-										tool={tool}
-									/>
-								</div>
+									message={message}
+									tool={tool}
+								/>
 							))}
+							{summaryParts.length > 0 && (
+								<span className="pl-2 text-muted-foreground text-sm">
+									{summaryParts.join(" · ")}
+								</span>
+							)}
 						</div>
 					</div>
 				</div>

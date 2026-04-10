@@ -204,6 +204,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 											{toolExecutionMessage}
 										</span>
 									)}
+								{tool.status === "INITIAL" &&
+									toolState.subtext && (
+										<span className="shrink-0 text-muted-foreground text-sm italic">
+											{toolState.subtext}
+										</span>
+									)}
 							</div>
 						</button>
 
