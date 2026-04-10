@@ -79,11 +79,6 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 
 		const { loadingMessage } = useLoadingMessage(isLoading, loadingOptions);
 
-		const label = t(isLoading ? "tool.groupLoading" : "tool.groupClosed", {
-			toolName: tools[0].json.title,
-			count: tools.length - 1,
-		});
-
 		const summaryParts = [
 			counts.SUCCESS > 0 &&
 				counts.SUCCESS < tools.length &&
@@ -112,7 +107,10 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 						{icon}
 					</div>
 					<span className="-ml-1.5 truncate text-muted-foreground text-sm">
-						{label}
+						{t("tool.groupLabel", {
+							toolName: tools[0].json.title,
+							count: tools.length - 1,
+						})}
 					</span>
 					{isLoading && !isOpen && loadingMessage && (
 						<span className="shrink-0 text-muted-foreground text-sm italic">
