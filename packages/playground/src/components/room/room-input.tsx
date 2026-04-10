@@ -597,14 +597,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								}
 								value={model?.app_id || ""}
 								engineTypes={["MODEL"]}
-								metaFilters={[
-									{
-										tag: [
-											"text-generation",
-											"image-generation",
-										],
-									},
-								]}
+								metaFilters={[{ tag: "text-generation" }]}
 								onChange={(v) => {
 									setModel(v);
 								}}

@@ -110,12 +110,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										value={model?.app_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[
-											{
-												tag: [
-													"text-generation",
-													"image-generation",
-												],
-											},
+											{ tag: "text-generation" },
 										]}
 										onChange={(v) => {
 											onModelChange(v);

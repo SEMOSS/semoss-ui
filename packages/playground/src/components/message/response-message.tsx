@@ -32,7 +32,6 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
-import { ResponseMessageImage } from "./response-message-image";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -116,27 +115,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
 		];
 
-		const copyImage = async () => {
-			const mediaPart = message.parts.find((p) => p.type === "MEDIA");
-			if (!mediaPart || mediaPart.type !== "MEDIA") return;
-			try {
-				const byteString = atob(mediaPart.mediaInfo.base64Data);
-				const bytes = new Uint8Array(byteString.length);
-				for (let i = 0; i < byteString.length; i++) {
-					bytes[i] = byteString.charCodeAt(i);
-				}
-				const mimeType = mediaPart.mediaInfo.mimeType || "image/png";
-				const blob = new Blob([bytes], { type: mimeType });
-				await navigator.clipboard.write([
-					new ClipboardItem({ [blob.type]: blob }),
-				]);
-				toast.success(t("notifications.copySuccess"));
-			} catch (e: unknown) {
-				const error = e as { message: string };
-				toast.error(error.message);
-			}
-		};
-
 		// Pre-compute completed tools for grouping; track the first TOOL_CALL
 		// part index (regardless of completion) so the group always renders at
 		// the top of the tool list even when an auto-execute tool completes first.
@@ -156,9 +134,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		});
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
-		const hasOnlyMedia =
-			message.parts.length > 0 &&
-			message.parts.every((part) => part.type === "MEDIA");
 		const parentHasText = inputMessage?.parts.some(
 			(part) => part.type === "TEXT",
 		);
@@ -180,15 +155,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								/>
 							);
 						} else if (p.type === "MEDIA") {
-							if (hasOnlyMedia) {
-								return (
-									<ResponseMessageImage
-										key={key}
-										message={message}
-										part={p}
-									/>
-								);
-							}
 							return (
 								<div key={`${message.id}-part-${pIdx}`}>
 									<button
@@ -331,31 +297,29 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							</div>
 						)}
 
-					{((root.theme.featureFlags?.enableRewrite &&
-						parentHasText) ||
-						hasOnlyMedia) && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									disabled={
-										hasOnlyMedia ||
-										!inputMessage?.parent?.parent ||
-										message.room.mode === "executing"
-									}
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										rewriteMessage();
-									}}
-								>
-									<RefreshCwIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.rewriteMessage")}
-							</TooltipContent>
-						</Tooltip>
-					)}
+					{root.theme.featureFlags?.enableRewrite &&
+						parentHasText && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										disabled={
+											!inputMessage?.parent?.parent ||
+											message.room.mode === "executing"
+										}
+										variant="ghost"
+										size="icon"
+										onClick={() => {
+											rewriteMessage();
+										}}
+									>
+										<RefreshCwIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.rewriteMessage")}
+								</TooltipContent>
+							</Tooltip>
+						)}
 
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -402,23 +366,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							{t("response.poorResponse")}
 						</TooltipContent>
 					</Tooltip>
-
-					{hasOnlyMedia && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									onClick={copyImage}
-								>
-									<CopyIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.copyResponse")}
-							</TooltipContent>
-						</Tooltip>
-					)}
 
 					{hasText && (
 						<>
