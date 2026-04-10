@@ -48,7 +48,11 @@
 		"groupClosed_one": "استخدم {{toolName}} + {{count}} آخر",
 		"groupClosed_other": "استخدم {{toolName}} + {{count}} أخرى",
 		"groupLoading_one": "جارٍ تشغيل {{toolName}} + {{count}} آخر",
-		"groupLoading_other": "جارٍ تشغيل {{toolName}} + {{count}} أخرى"
+		"groupLoading_other": "جارٍ تشغيل {{toolName}} + {{count}} أخرى",
+		"groupSummaryCompleted_other": "اكتمل {{count}}",
+		"groupSummaryError_other": "{{count}} فشل",
+		"groupSummaryCancelled_other": "ألغي {{count}}",
+		"groupSummaryPaused_other": "توقف {{count}}"
 	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",

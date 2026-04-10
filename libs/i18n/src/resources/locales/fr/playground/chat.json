@@ -48,7 +48,14 @@
 		"groupClosed_one": "Utilisé {{toolName}} + {{count}} autre",
 		"groupClosed_other": "Utilisé {{toolName}} + {{count}} autres",
 		"groupLoading_one": "Exécution de {{toolName}} + {{count}} autre",
-		"groupLoading_other": "Exécution de {{toolName}} + {{count}} autres"
+		"groupLoading_other": "Exécution de {{toolName}} + {{count}} autres",
+		"groupSummaryCompleted_one": "{{count}} terminé",
+		"groupSummaryCompleted_other": "{{count}} terminés",
+		"groupSummaryError_one": "{{count}} échec",
+		"groupSummaryError_other": "{{count}} échecs",
+		"groupSummaryCancelled_one": "{{count}} annulé",
+		"groupSummaryCancelled_other": "{{count}} annulés",
+		"groupSummaryPaused_other": "{{count}} en pause"
 	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",

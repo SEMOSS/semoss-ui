@@ -45,10 +45,16 @@
 		"closeInSidebar": "Cerrar barra lateral",
 		"collapse": "Colapsar",
 		"openInline": "Abrir en línea",
-		"groupClosed_one": "Usó {{toolName}} + {{count}} más",
 		"groupClosed_other": "Usó {{toolName}} + {{count}} más",
-		"groupLoading_one": "Ejecutando {{toolName}} + {{count}} más",
-		"groupLoading_other": "Ejecutando {{toolName}} + {{count}} más"
+		"groupLoading_other": "Ejecutando {{toolName}} + {{count}} más",
+		"groupSummaryCompleted_one": "{{count}} completado",
+		"groupSummaryCompleted_other": "{{count}} completados",
+		"groupSummaryError_one": "{{count}} fallido",
+		"groupSummaryError_other": "{{count}} fallidos",
+		"groupSummaryCancelled_one": "{{count}} cancelado",
+		"groupSummaryCancelled_other": "{{count}} cancelados",
+		"groupSummaryPaused_one": "{{count}} pausado",
+		"groupSummaryPaused_other": "{{count}} pausados"
 	},
 	"notifications": {
 		"feedbackSuccess": "¡Gracias por tus comentarios!",
