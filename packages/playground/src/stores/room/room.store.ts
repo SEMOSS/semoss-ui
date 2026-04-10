@@ -7,7 +7,15 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import {
+	CFG_SCALE,
+	IMAGE_HEIGHT,
+	IMAGE_WIDTH,
+	NUM_OF_IMAGES,
+	SEED,
+	TEMPERATURE,
+	TOKEN_LENGTH,
+} from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
@@ -110,6 +118,31 @@ interface RoomStoreInterface {
 		temperature: number;
 
 		/*
+		 * Number of images to generate
+		 */
+		numOfImages: number;
+
+		/*
+		 * Height of generated images
+		 */
+		imageHeight: number;
+
+		/*
+		 * Width of generated images
+		 */
+		imageWidth: number;
+
+		/*
+		 * CFG scale for image generation
+		 */
+		cfgScale: number;
+
+		/*
+		 * Seed for image generation
+		 */
+		seed: number;
+
+		/*
 		 * Workspace associated with the room
 		 */
 		workspace?: {
@@ -159,6 +192,11 @@ export class RoomStore {
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
+			numOfImages: NUM_OF_IMAGES,
+			imageHeight: IMAGE_HEIGHT,
+			imageWidth: IMAGE_WIDTH,
+			cfgScale: CFG_SCALE,
+			seed: SEED,
 		},
 		sidebar: {
 			isOpen: false,

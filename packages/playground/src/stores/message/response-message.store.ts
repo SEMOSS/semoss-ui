@@ -157,7 +157,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			platform_generated: true,
 			modelId: room.model.app_id,
 			dateCreated: new Date().toISOString(),
-			parts: isImageModel // no thinking part if image gen model
+			parts: isImageModel // no thinking part if image gen model KEEP?
 				? []
 				: [
 						{
@@ -209,11 +209,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				? {
 						taskType: "TEXT_IMAGE",
 						negativeText: "blurry, low quality",
-						numberOfImages: 1,
-						height: 1024,
-						width: 1024,
-						cfgScale: 8.0,
-						seed: 42,
+						numberOfImages: room.options.numOfImages,
+						height: room.options.imageHeight,
+						width: room.options.imageWidth,
+						cfgScale: room.options.cfgScale,
+						seed: room.options.seed,
 					}
 				: {
 						max_new_tokens: room.options.tokenLength,

@@ -111,6 +111,11 @@ export interface ThemeMap {
 			model?: Engine;
 			temperature?: number;
 			tokenLength?: number;
+			numOfImages?: number;
+			imageHeight?: number;
+			imageWidth?: number;
+			cfgScale?: number;
+			seed?: number;
 		};
 
 		/**

@@ -331,31 +331,30 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							</div>
 						)}
 
-					{((root.theme.featureFlags?.enableRewrite &&
-						parentHasText) ||
-						hasOnlyMedia) && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									disabled={
-										hasOnlyMedia ||
-										!inputMessage?.parent?.parent ||
-										message.room.mode === "executing"
-									}
-									variant="ghost"
-									size="icon"
-									onClick={() => {
-										rewriteMessage();
-									}}
-								>
-									<RefreshCwIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent side="bottom">
-								{t("response.rewriteMessage")}
-							</TooltipContent>
-						</Tooltip>
-					)}
+					{root.theme.featureFlags?.enableRewrite &&
+						parentHasText &&
+						!hasOnlyMedia && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										disabled={
+											!inputMessage?.parent?.parent ||
+											message.room.mode === "executing"
+										}
+										variant="ghost"
+										size="icon"
+										onClick={() => {
+											rewriteMessage();
+										}}
+									>
+										<RefreshCwIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.rewriteMessage")}
+								</TooltipContent>
+							</Tooltip>
+						)}
 
 					<Tooltip>
 						<TooltipTrigger asChild>

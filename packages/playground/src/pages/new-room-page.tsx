@@ -35,7 +35,15 @@ import {
 	RoomInputMenuWorkspace,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import {
+	CFG_SCALE,
+	IMAGE_HEIGHT,
+	IMAGE_WIDTH,
+	NUM_OF_IMAGES,
+	SEED,
+	TEMPERATURE,
+	TOKEN_LENGTH,
+} from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Workspace } from "@/types";
@@ -114,6 +122,14 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
+			numOfImages:
+				root.theme.defaultRoomSettings?.numOfImages || NUM_OF_IMAGES,
+			imageHeight:
+				root.theme.defaultRoomSettings?.imageHeight || IMAGE_HEIGHT,
+			imageWidth:
+				root.theme.defaultRoomSettings?.imageWidth || IMAGE_WIDTH,
+			cfgScale: root.theme.defaultRoomSettings?.cfgScale || CFG_SCALE,
+			seed: root.theme.defaultRoomSettings?.seed || SEED,
 			workspace: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
