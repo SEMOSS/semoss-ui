@@ -157,14 +157,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			platform_generated: true,
 			modelId: room.model.app_id,
 			dateCreated: new Date().toISOString(),
-			parts: isImageModel // no thinking part if image gen model KEEP?
-				? []
-				: [
-						{
-							type: "THINKING",
-							thinking: "",
-						},
-					],
+			parts: [
+				{
+					type: "THINKING",
+					thinking: "",
+				},
+			],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -186,7 +184,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			inputMessage.addChild(responseMessage);
 
 			// turn on thinking
-			responseMessage.isThinking = !isImageModel;
+			responseMessage.isThinking = true;
 
 			// get the text
 			const text = inputMessage.parts.reduce((acc, part) => {

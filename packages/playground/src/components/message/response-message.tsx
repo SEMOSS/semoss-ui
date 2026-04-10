@@ -164,6 +164,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const parentHasText = inputMessage?.parts.some(
 			(part) => part.type === "TEXT",
 		);
+		const parentHasMedia = inputMessage?.parts.some(
+			(part) => part.type === "MEDIA",
+		);
 
 		return (
 			<div className="group">
@@ -334,13 +337,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						)}
 
 					{root.theme.featureFlags?.enableRewrite &&
-						parentHasText &&
-						!hasOnlyMedia && (
+						(parentHasText || parentHasMedia) && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
 										disabled={
-											!inputMessage?.parent?.parent ||
 											message.room.mode === "executing"
 										}
 										variant="ghost"
