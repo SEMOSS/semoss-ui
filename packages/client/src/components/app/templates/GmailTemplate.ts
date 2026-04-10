@@ -326,7 +326,7 @@ export const GmailTemplate: Template = {
 					"2": {
 						name: "2",
 						children: ["iteration--2"],
-					}
+					},
 				},
 				communityBlockMapping: {},
 			},
