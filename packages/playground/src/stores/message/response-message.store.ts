@@ -151,7 +151,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			messageId: "STREAMING_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: room.model.app_id,
+			modelId: room.model.engine_id,
 			dateCreated: new Date().toISOString(),
 			parts: [
 				{
@@ -162,7 +162,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			tokens: 0,
 			ornaments: {
 				modelName:
-					room.model.engine_display_name || room.model.app_name,
+					room.model.engine_display_name ||
+					room.model.engine_name ||
+					"",
 			},
 		} as ResponsePixelMessage);
 
@@ -197,7 +199,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				}
 
 				return acc;
-			}, []);
+			}, [] as string[]);
 
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
@@ -209,7 +211,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				]
 			>(
 				`AskPlayground(
-engine=["${room.model.app_id}"],
+engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -434,14 +436,16 @@ paramValues=[${JSON.stringify({
 			messageId: "REWRITE_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: room.model.app_id,
-			modelType: room.model.app_type,
+			modelId: room.model.engine_id,
+			modelType: room.model.engine_type,
 			dateCreated: new Date().toISOString(),
 			parts: parentMessage.parts,
 			tokens: parentMessage.tokens,
 			ornaments: {
 				modelName:
-					room.model.engine_display_name || room.model.app_name,
+					room.model.engine_display_name ||
+					room.model.engine_name ||
+					"",
 			},
 		});
 
@@ -494,9 +498,9 @@ paramValues=[${JSON.stringify({
 			}
 		}
 
-		const toolLimit = this.room.theme.toolAutoExecutionLimit;
-		// Check how many tools can be run. If toolLimit is null or undefined, then limit to 5
-		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
+		// Check how many tools can be run. If toolLimit is false-y, then limit to 5
+		const toolLimit = this.room.theme.toolAutoExecutionLimit || 5;
+		const numToolsToRun = toolLimit - numRunningTools;
 		if (numToolsToRun > 0) {
 			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
 				this.runToolExecution(tool);
@@ -553,7 +557,7 @@ paramValues=[${JSON.stringify({
 						: JSON.stringify(rawOutput);
 			} catch (e) {
 				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
-				output = e.message;
+				output = (e as Error).message;
 				toolError = true;
 			}
 
