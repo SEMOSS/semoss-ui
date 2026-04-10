@@ -133,7 +133,7 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					)}
 				>
 					<div className="overflow-hidden">
-						<div className="flex flex-col gap-2 px-2 pb-2">
+						<div className="flex flex-col gap-2 border-border border-t bg-background px-2 py-2">
 							{tools.map((tool) => (
 								<ResponseMessageTool
 									key={tool.id}
