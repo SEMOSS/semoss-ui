@@ -485,9 +485,13 @@ export class ScriptExecutor {
 			isPassword?: boolean;
 			waitAfterMs?: number;
 		},
-		onAskUser?: (label: string, isPassword: boolean, selector?: string, tabId?: number) => Promise<string>,
+		onAskUser?: (
+			label: string,
+			isPassword: boolean,
+			selector?: string,
+			tabId?: number,
+		) => Promise<string>,
 	): Promise<void> {
-
 		if (action.type === "navigate") {
 			if (!action.url) {
 				throw new Error("Navigate action requires URL");
@@ -530,7 +534,6 @@ export class ScriptExecutor {
 			}
 
 			if (action.selector) {
-				
 				// typeBySelector handles retry logic internally
 				const response = await chrome.runtime.sendMessage({
 					type: "EXECUTE_SCRIPT_ACTION",
@@ -610,14 +613,12 @@ export class ScriptExecutor {
 			action.waitAfterMs &&
 			action.waitAfterMs >= 2000
 		) {
-			
 			// Wait for page to finish loading
 			let loadTimeout = 20; // 20 * 500ms = 10 seconds max
 			while (loadTimeout > 0) {
 				const tabs = await chrome.tabs.query({});
 				const tab = tabs.find((t) => t.id === tabId);
 				if (tab && tab.status === "complete") {
-					
 					// Page loaded - wait for dynamic content
 					await new Promise((resolve) => setTimeout(resolve, 2000));
 					break;
@@ -631,6 +632,5 @@ export class ScriptExecutor {
 				);
 			}
 		}
-
 	}
 }

@@ -61,7 +61,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
-
 		// update the options
 		await room.updateRoomOptions(room.options);
 
