@@ -84,15 +84,21 @@ export const SelectOptionsSettings = observer(
 					}
 				} else {
 					if (
+						parsedData.options.length > 0 &&
 						typeof parsedData.options[0] === "object" &&
 						!Array.isArray(parsedData.options[0]) &&
 						parsedData.options[0] !== null
 					) {
 						arr = Object.keys(parsedData.options[0]);
 					} else {
-						arr = [];
+						arr = parsedData.options || [];
 					}
 				}
+
+				// Add variables as options (like QueryIdSelector pattern)
+				const variableKeys = Object.keys(state.variables);
+				arr = [...arr, ...variableKeys];
+
 				return arr.map((option) => {
 					if (typeof option !== "string") {
 						return JSON.stringify(option);
@@ -179,27 +185,27 @@ export const SelectOptionsSettings = observer(
 				}
 			}
 			return (
-					<QuerySelectionSettings
-						id={id}
-						label="Options"
-						path="options"
-						queryPath="output"
-						__onChange={() => {
-							setData(
-								"value" as Paths<Block<D>["data"], 4>,
-								parsedData.multiple
-									? ([] as PathValue<D["data"], typeof path>)
-									: ("" as PathValue<D["data"], typeof path>),
-							);
+				<QuerySelectionSettings
+					id={id}
+					label="Options"
+					path="options"
+					queryPath="output"
+					__onChange={() => {
+						setData(
+							"value" as Paths<Block<D>["data"], 4>,
+							parsedData.multiple
+								? ([] as PathValue<D["data"], typeof path>)
+								: ("" as PathValue<D["data"], typeof path>),
+						);
 
-							optionData.map((d) => {
-								setData(
-									d.path,
-									"" as PathValue<D["data"], typeof path>,
-								);
-							});
-						}}
-					/>
+						optionData.map((d) => {
+							setData(
+								d.path,
+								"" as PathValue<D["data"], typeof path>,
+							);
+						});
+					}}
+				/>
 			);
 		}
 

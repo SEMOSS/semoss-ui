@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	Bookmark,
 	BookmarkBorderOutlined,
@@ -9,14 +10,11 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Renderer } from "@semoss/renderer";
-import { Env } from "@semoss/sdk/react";
 import {
-	Avatar,
 	Button,
 	IconButton,
 	LoadingScreen,
 	Modal,
-	Stack,
 	styled,
 	Tooltip,
 	useNotification,
@@ -100,26 +98,16 @@ export const ViewAppPage = observer(() => {
 			<NavbarLeft>
 				<NavbarHeader
 					logo={
-						<Stack
-							direction="row"
-							alignItems={"center"}
-							spacing={1}
+						<div
+							title={
+								workspace?.metadata?.project_display_name ||
+								workspace?.metadata?.project_name
+							}
+							className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 						>
-							<Avatar
-								variant="rounded"
-								src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-							/>
-							<div
-								title={
-									workspace?.metadata?.project_display_name ||
-									workspace?.metadata?.project_name
-								}
-								className="w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-							>
-								{workspace?.metadata?.project_display_name ||
-									workspace?.metadata?.project_name}
-							</div>
-						</Stack>
+							{workspace?.metadata?.project_display_name ||
+								workspace?.metadata?.project_name}
+						</div>
 					}
 				/>
 			</NavbarLeft>

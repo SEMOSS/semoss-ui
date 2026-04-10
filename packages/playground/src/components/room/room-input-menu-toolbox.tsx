@@ -50,7 +50,7 @@ export const RoomInputMenuToolbox: React.FC<RoomInputMenuToolboxProps> =
 		const getToolbox = useIteratorPixel<(App | Engine)[], MCPConfig>(
 			(limit, offset) =>
 				isOpen
-					? `MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`
+					? `MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL"], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`
 					: "",
 			(response) => {
 				// if its less than the limit, we know its the end

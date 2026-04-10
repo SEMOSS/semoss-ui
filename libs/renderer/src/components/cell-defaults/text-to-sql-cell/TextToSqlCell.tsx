@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
 	CropFree,
 	DriveFileRenameOutlineRounded,
@@ -52,7 +53,7 @@ const StyledDatabaseSelect = styled(Select)(({ theme }) => ({
 }));
 
 const StyledModelSelect = styled(Select)<{ required?: boolean }>(
-	({ theme, required }) => ({
+	({ theme }) => ({
 		"&.MuiFormControl-root": {
 			margin: 0,
 			minWidth: "200px",

@@ -4510,7 +4510,7 @@ export const CONNECTION_OPTIONS = {
 				],
 			},
 			{
-				name: "DATABRICKS",
+				name: "Databricks",
 				disable: false,
 				icon: DATABRICKS,
 				fields: [
@@ -9605,6 +9605,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "BEDROCK",
 			icon: BEDROCK,
+		},
+		{
+			name: "BRAIN",
+			icon: BRAIN,
 		},
 		{
 			name: "CLAUDE",
