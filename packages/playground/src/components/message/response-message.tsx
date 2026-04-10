@@ -52,7 +52,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const { root } = useRoot();
 
 		const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
-		const [isDownloading, setIsDownloading] = useState(false);
+		const [downloadingFormat, setDownloadingFormat] = useState<
+			string | null
+		>(null);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -96,7 +98,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 * @param format - format to download (word, pdf)
 		 */
 		const downloadResponse = async (format: string) => {
-			setIsDownloading(true);
+			setDownloadingFormat(format);
 			try {
 				await message.downloadResponse(format as "word" | "pdf");
 				toast.success(
@@ -107,7 +109,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				const error = e as { message: string };
 				toast.error(error.message || "Failed to download response");
 			} finally {
-				setIsDownloading(false);
+				setDownloadingFormat(null);
 			}
 		};
 
@@ -486,12 +488,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									key={format.value}
 									variant="outline"
 									className="h-auto flex-col gap-1 p-4"
-									disabled={isDownloading}
+									disabled={downloadingFormat !== null}
 									onClick={() =>
 										downloadResponse(format.value)
 									}
 								>
-									{isDownloading ? (
+									{downloadingFormat === format.value ? (
 										<Loader2Icon className="size-4 animate-spin" />
 									) : (
 										<>
