@@ -1,0 +1,27 @@
+{
+  "name": "workshop-automation-extension",
+  "version": "1.0.0",
+  "description": "Chrome extension for browser automation using SEMOSS platform",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "start": "vite"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@semoss/sdk": "workspace:*",
+    "@semoss/ui": "workspace:*",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0-beta.25",
+    "@types/chrome": "^0.0.202",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "typescript": "~5.5.2",
+    "vite": "^7.0.0"
+  }
+}
