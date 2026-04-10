@@ -45,12 +45,12 @@
 		"closeInSidebar": "サイドバーを閉じる",
 		"collapse": "折りたたむ",
 		"openInline": "インラインで開く",
-		"groupClosed_other": "{{toolName}} 他 {{count}} 件を使用",
-		"groupLoading_other": "{{toolName}} 他 {{count}} 件を実行中",
-		"groupSummaryCompleted_other": "{{count}} 件完了",
-		"groupSummaryError_other": "{{count}} 件失敗",
-		"groupSummaryCancelled_other": "{{count}} 件キャンセル",
-		"groupSummaryPaused_other": "{{count}} 件一時停止"
+		"groupClosed": "{{toolName}} 他 {{count}} 件",
+		"groupLoading": "{{toolName}} 他 {{count}} 件を実行中",
+		"groupSummaryCompleted": "{{count}} 件完了",
+		"groupSummaryError": "{{count}} 件失敗",
+		"groupSummaryCancelled": "{{count}} 件キャンセル",
+		"groupSummaryPaused": "{{count}} 件一時停止"
 	},
 	"notifications": {
 		"feedbackSuccess": "フィードバックをありがとうございます!",
