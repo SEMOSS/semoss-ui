@@ -1,7 +1,6 @@
 // Load saved settings
 document.addEventListener("DOMContentLoaded", async () => {
 	try {
-
 		if (!chrome || !chrome.storage) {
 			console.error("Chrome API not available!");
 			showStatus("Error: Chrome API not available", "error");
@@ -58,7 +57,6 @@ document
 				workshop_access_key: document.getElementById("accessKey").value,
 				workshop_secret_key: document.getElementById("secretKey").value,
 			};
-
 
 			await chrome.storage.local.set(settings);
 			showStatus("Settings saved successfully!", "success");
