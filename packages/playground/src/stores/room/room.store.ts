@@ -7,7 +7,11 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import {
+	STREAMING_PLACEHOLDER_ID,
+	TEMPERATURE,
+	TOKEN_LENGTH,
+} from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
@@ -327,7 +331,7 @@ export class RoomStore {
 	}
 
 	/**
-	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_TOOL_PLACEHOLDER messages
+	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_PLACEHOLDER_ID messages
 	 */
 	get latestResponseMessage(): ResponseMessageStore {
 		let responseMessage: AbstractMessageStore = this.tail;
@@ -335,7 +339,7 @@ export class RoomStore {
 			// if it is a REAL response message, return it
 			if (
 				responseMessage instanceof ResponseMessageStore &&
-				responseMessage.id !== "STREAMING_TOOL_PLACEHOLDER_ID"
+				responseMessage.id !== STREAMING_PLACEHOLDER_ID
 			) {
 				return responseMessage;
 			} else {

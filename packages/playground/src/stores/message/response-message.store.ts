@@ -8,6 +8,7 @@ import {
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
+	STREAMING_PLACEHOLDER_ID,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
@@ -148,7 +149,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
 			io: "OUTPUT",
-			messageId: "STREAMING_PLACEHOLDER_ID",
+			messageId: STREAMING_PLACEHOLDER_ID,
 			visible: true,
 			platform_generated: true,
 			modelId: room.model.engine_id,
@@ -628,18 +629,22 @@ paramValues=[${JSON.stringify({
 		if (!responseMessage) {
 			this.toolResponseMessage = new ResponseMessageStore(room, {
 				io: "OUTPUT",
-				messageId: "STREAMING_TOOL_PLACEHOLDER_ID",
+				messageId: STREAMING_PLACEHOLDER_ID,
 				visible: true,
 				platform_generated: true,
 				modelId: this.room.model.app_id,
 				dateCreated: new Date().toISOString(),
-				// Add blank thinking part for loading
-				parts: [
-					{
-						type: "THINKING",
-						thinking: "",
-					},
-				],
+				// Add blank thinking part for loading if this is the last tool
+				// We've already updated this tool's status optimistically, so can check
+				// hasUnfinishedTools to see if it was the last tool
+				parts: this.hasUnfinishedTools
+					? []
+					: [
+							{
+								type: "THINKING",
+								thinking: "",
+							},
+						],
 				tokens: 0,
 				ornaments: {
 					modelName:
