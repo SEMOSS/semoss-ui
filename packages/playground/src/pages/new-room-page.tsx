@@ -572,6 +572,12 @@ export const NewRoomPage = observer(() => {
 												});
 											}
 										}}
+										devThreshold={
+											tempRoomStore.devThreshold
+										}
+										onDevThresholdChange={(value) =>
+											tempRoomStore.setDevThreshold(value)
+										}
 									/>
 								</ScrollArea>
 							</div>

@@ -27,6 +27,8 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 						room.setOptions(options);
 					}
 				}}
+				devThreshold={room.devThreshold}
+				onDevThresholdChange={(value) => room.setDevThreshold(value)}
 			/>
 		);
 	},

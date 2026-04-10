@@ -38,6 +38,12 @@ interface RoomOptionsFormProps {
 
 	/** Update options on change */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
+
+	/** Dev-only: current compaction threshold override (null = use default) */
+	devThreshold?: number | null;
+
+	/** Dev-only: set a custom compaction threshold */
+	onDevThresholdChange?: (value: number | null) => void;
 }
 
 export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
@@ -46,6 +52,8 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		onModelChange = () => null,
 		options,
 		onOptionsChange = () => null,
+		devThreshold = null,
+		onDevThresholdChange,
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
@@ -407,6 +415,37 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 					<FieldSeparator />
 					<FieldSet>
 						<FieldGroup>
+							{root.theme.featureFlags?.enableCompaction &&
+								onDevThresholdChange && (
+									<Field>
+										<FieldLabel>
+											Compaction Threshold (tokens)
+										</FieldLabel>
+										<Input
+											type="number"
+											placeholder="Default (95% of context window)"
+											value={
+												devThreshold !== null
+													? devThreshold
+													: ""
+											}
+											onChange={(e) =>
+												onDevThresholdChange(
+													e.target.value === ""
+														? null
+														: Number(
+																e.target.value,
+															),
+												)
+											}
+											onWheel={(e) =>
+												e.currentTarget.blur()
+											}
+											min={0}
+											className="w-full"
+										/>
+									</Field>
+								)}
 							<Field>
 								<FieldLabel>
 									{t("room:form.maxTokenLabel")}

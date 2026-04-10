@@ -73,6 +73,17 @@ interface RoomStoreInterface {
 	inputMessagesSinceCompaction: number;
 
 	/**
+	 * Dev-only: runtime override for the compaction threshold (token count).
+	 * When set, takes precedence over VITE_COMPACTION_THRESHOLD and contextWindow * 0.95.
+	 */
+	devThreshold: number | null;
+
+	/**
+	 * tokensUsed value recorded immediately after the last compaction.
+	 */
+	tokensAtCompaction: number;
+
+	/**
 	 *  Track the mode of the room.
 	 */
 	mode: "planning" | "executing" | "chat";
@@ -172,6 +183,8 @@ export class RoomStore {
 		contextWindow: 0,
 		wasCompacted: false,
 		inputMessagesSinceCompaction: 0,
+		devThreshold: null,
+		tokensAtCompaction: 0,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -277,10 +290,19 @@ export class RoomStore {
 	 * Returns 0 if not configured (no env var and no context window set).
 	 */
 	get compactionThreshold(): number {
+		if (this._store.devThreshold !== null) return this._store.devThreshold;
 		const envThreshold = import.meta.env.VITE_COMPACTION_THRESHOLD;
 		if (envThreshold) return Number(envThreshold);
 		return this._store.contextWindow * 0.95;
 	}
+
+	get devThreshold(): number | null {
+		return this._store.devThreshold;
+	}
+
+	setDevThreshold = (value: number | null) => {
+		this._store.devThreshold = value;
+	};
 
 	/**
 	 * Whether context has been compacted at least once in this session
@@ -1246,13 +1268,9 @@ export class RoomStore {
 			return;
 		}
 
-		// Resolve threshold: absolute env var (dev) → ratio env var (production) → hardcoded 0.95.
-		const absoluteThreshold = import.meta.env.VITE_COMPACTION_THRESHOLD;
-		const ratioThreshold = import.meta.env.VITE_COMPACTION_THRESHOLD_RATIO;
-		const threshold = absoluteThreshold
-			? Number(absoluteThreshold)
-			: this._store.contextWindow *
-				(ratioThreshold ? Number(ratioThreshold) : 0.95);
+		// Use the unified compactionThreshold getter so devThreshold (set from the
+		// settings form) takes precedence, falling back to env vars and context window.
+		const threshold = this.compactionThreshold;
 
 		if (!threshold) {
 			return;
@@ -1360,7 +1378,6 @@ export class RoomStore {
 			messageId: "COMPACT_INPUT_PLACEHOLDER_ID",
 			visible: false,
 			platform_generated: true,
-			isCompactionAnchor: true,
 			modelId: this.model.engine_id,
 			modelType: this.model.engine_type,
 			dateCreated: new Date().toISOString(),
@@ -1383,7 +1400,6 @@ export class RoomStore {
 			messageId: "COMPACT_RESPONSE_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			isCompactionAnchor: true,
 			modelId: this.model.engine_id,
 			dateCreated: new Date().toISOString(),
 			parts: [{ type: "THINKING", thinking: "" }],
@@ -1490,6 +1506,7 @@ paramValues=[${JSON.stringify({
 				anchorInput.addChild(anchorResponse);
 				this._store.wasCompacted = true;
 				this._store.inputMessagesSinceCompaction = 0;
+				this._store.tokensAtCompaction = this.tokensUsed;
 			});
 		} catch (e) {
 			// Compaction failed — tree was never modified, nothing to restore.
