@@ -1,4 +1,5 @@
 import {
+	ArchiveIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
@@ -17,6 +18,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import {
 	InputMessage,
@@ -72,6 +74,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		await room.syncRoomOptions();
 
 		return true;
+	};
+
+	/**
+	 * Compact tool messages in the room
+	 */
+	const handleCompactMessages = async () => {
+		try {
+			const lastMessageId = room.tail?.id;
+			await room.runRoomPixel(
+				`CompactRoomMessages(roomId=["${room.roomId}"], compactionTypes=["SUMMARY"]${lastMessageId ? `, parentMessageId=["${lastMessageId}"]` : ""});`,
+				false,
+			);
+			toast.success(t("settings.compactSuccess"));
+		} catch {
+			toast.error(t("settings.compactError"));
+		}
 	};
 
 	/**
@@ -474,6 +492,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									<Settings2Icon />
 									<span className="flex-1">
 										{t("settings.edit")}
+									</span>
+								</DropdownMenuItem>
+								<DropdownMenuItem
+									onSelect={async (e) => {
+										e.preventDefault();
+										await handleCompactMessages();
+										onOpenChange(false);
+									}}
+								>
+									<ArchiveIcon />
+									<span className="flex-1">
+										{t("settings.compact")}
 									</span>
 								</DropdownMenuItem>
 							</>

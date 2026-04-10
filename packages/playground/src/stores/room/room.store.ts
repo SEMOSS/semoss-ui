@@ -529,6 +529,7 @@ export class RoomStore {
 				string,
 				{
 					parentMessageId: string;
+					siblingMessageId: string;
 					message:
 						| InputMessageStore
 						| ResponseMessageStore
@@ -551,6 +552,7 @@ export class RoomStore {
 				// store it
 				messages[message.id] = {
 					parentMessageId: pixelMessage.parentMessageId || "",
+					siblingMessageId: pixelMessage.siblingMessageId || "",
 					message: message,
 				};
 			}
@@ -563,7 +565,13 @@ export class RoomStore {
 				if (parent) {
 					parent.message.addChild(m.message);
 				} else {
-					root.addChild(m.message);
+					// If the parent is not found, try to link to the sibling's parent
+					const sibling = messages[m.siblingMessageId];
+					if (sibling?.message.parent) {
+						sibling.message.parent.addChild(m.message);
+					} else {
+						root.addChild(m.message);
+					}
 				}
 			}
 

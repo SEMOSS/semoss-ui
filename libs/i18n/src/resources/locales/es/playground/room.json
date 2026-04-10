@@ -5,7 +5,10 @@
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
 		"open": "Abrir Configuración",
 		"close": "Cerrar",
-		"edit": "Editar configuración"
+		"edit": "Editar configuración",
+		"compact": "Compactar mensajes de herramientas",
+		"compactSuccess": "Mensajes de herramientas compactados correctamente",
+		"compactError": "Error al compactar los mensajes de herramientas"
 	},
 	"form": {
 		"modelLabel": "Modelo",

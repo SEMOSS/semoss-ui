@@ -5,7 +5,10 @@
 		"description": "Update room settings and modify the behavior of the chat",
 		"open": "Open Settings",
 		"close": "Close",
-		"edit": "Edit Settings"
+		"edit": "Edit Settings",
+		"compact": "Compact Tool Messages",
+		"compactSuccess": "Tool messages compacted successfully",
+		"compactError": "Failed to compact tool messages"
 	},
 	"form": {
 		"modelLabel": "Model",
