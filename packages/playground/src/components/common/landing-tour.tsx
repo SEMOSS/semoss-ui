@@ -20,65 +20,57 @@ interface TourStep {
 const TOUR_STEPS: TourStep[] = [
 	{
 		title: "Welcome!",
-		content:
-			"Let's take a quick tour to get you started.",
+		content: "Let's take a quick tour to get you started.",
 	},
 	{
 		target: "tour-input",
 		title: "Start a conversation",
-		content:
-			"Type your question here and press Enter.",
+		content: "Type your question here and press Enter.",
 		placement: "top",
 	},
 	{
 		target: "tour-input-menu",
 		title: "Attach & configure",
 		content:
-			"Add files,agents,knowledge libraries, and tools to enhance your conversation.",
+			"Add files, agents, knowledge libraries, and tools to enhance your conversation.",
 		placement: "top",
 	},
 	{
 		target: "tour-model",
 		title: "Model",
-		content:
-			"Select which AI model powers your conversation.",
+		content: "Select which AI model powers your conversation.",
 		placement: "top",
 	},
 	{
 		target: "tour-record",
 		title: "Record",
-		content:
-			"Click to speak, your voice will be converted to text.",
+		content: "Click to speak, your voice will be converted to text.",
 		placement: "top",
 	},
-
 	{
 		target: "tour-new-chat",
 		title: "New chat",
-		content:
-			"Start a fresh conversation at any time.",
+		content: "Start a fresh conversation anytime.",
+		placement: "right",
+	},
+	// customSteps from theme are inserted here (after tour-new-chat)
+	{
+		target: "tour-chat-history",
+		title: "Chat History",
+		content: "Continue, favorite, edit, or delete past conversations.",
 		placement: "right",
 	},
 	{
 		target: "tour-search",
 		title: "Search",
-		content:
-			"Search through your past conversations.",
+		content: "Quickly find previous chats from your chat history.",
 		placement: "right",
 	},
-	{
-		target: "tour-chat-history",
-		title: "Chat History",
-		content:
-			"Continue, favorite, rename, or delete your past conversations here.",
-		placement: "right",
-	},
-
+	// trailingCustomSteps from theme are inserted here (after tour-search)
 	{
 		target: "tour-take-tour",
 		title: "Take a tour",
-		content:
-			"Relaunch this tour at any time.",
+		content: "Replay this walkthrough anytime.",
 		placement: "right",
 	},
 ];
@@ -143,7 +135,6 @@ function getCardStyle(
 				left: Math.max(rect.left - W - PAD, 8),
 				width: W,
 			};
-		case "right":
 		default:
 			return {
 				position: "fixed",
@@ -164,9 +155,14 @@ export const LandingTour: React.FC = observer(() => {
 		const excluded = new Set(root.theme.tour?.excludedSteps ?? []);
 		const custom = root.theme.tour?.customSteps ?? [];
 		const trailing = root.theme.tour?.trailingCustomSteps ?? [];
+		const overrides = root.theme.tour?.stepOverrides ?? {};
 		const base = TOUR_STEPS.filter((s) => {
 			const id = s.target ?? "welcome";
 			return !excluded.has(id);
+		}).map((s) => {
+			const id = s.target ?? "welcome";
+			const ov = overrides[id];
+			return ov ? { ...s, ...ov } : s;
 		});
 		const mapStep = (s: (typeof custom)[number]) => ({
 			target: `nav-${s.navItemPath}`,
@@ -174,12 +170,12 @@ export const LandingTour: React.FC = observer(() => {
 			content: s.content,
 			placement: s.placement,
 		});
-		// Insert customSteps after "tour-search" (step 8)
+		// Insert customSteps after "tour-new-chat" (sidebar nav items: Agents, Knowledge, Toolbox…)
+		const newChatIdx = base.findIndex((s) => s.target === "tour-new-chat");
+		const insertAt = newChatIdx >= 0 ? newChatIdx + 1 : base.length;
+		// Insert trailingCustomSteps after "tour-search" (e.g. Support footer items)
 		const searchIdx = base.findIndex((s) => s.target === "tour-search");
-		const insertAt = searchIdx >= 0 ? searchIdx + 1 : base.length;
-		// Insert trailingCustomSteps after "tour-chat-history"
-		const historyIdx = base.findIndex((s) => s.target === "tour-chat-history");
-		const trailingAt = historyIdx >= 0 ? historyIdx + 1 : base.length;
+		const trailingAt = searchIdx >= 0 ? searchIdx + 1 : base.length;
 		const withCustom = [
 			...base.slice(0, insertAt),
 			...custom.map(mapStep),
@@ -195,6 +191,7 @@ export const LandingTour: React.FC = observer(() => {
 		root.theme.tour?.excludedSteps,
 		root.theme.tour?.customSteps,
 		root.theme.tour?.trailingCustomSteps,
+		root.theme.tour?.stepOverrides,
 	]);
 
 	const currentStep = allSteps[step];
@@ -225,7 +222,7 @@ export const LandingTour: React.FC = observer(() => {
 			window.removeEventListener("resize", update);
 			window.removeEventListener("scroll", update, true);
 		};
-	}, [step, isOpen, currentStep.target]);
+	}, [isOpen, currentStep.target]);
 
 	if (root.theme.tour?.show === false || !isOpen) return null;
 

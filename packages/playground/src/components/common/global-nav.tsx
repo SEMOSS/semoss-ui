@@ -1,6 +1,5 @@
 import dayjs from "dayjs";
 import {
-	ComputerIcon,
 	MapIcon,
 	MoreVertical,
 	PencilIcon,
@@ -53,7 +52,7 @@ import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
+const _ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
 /**
  * Renders a sidebar allowing users to navigate between pages
@@ -212,7 +211,7 @@ export const GlobalNav = observer(() => {
 	 */
 	const bucketedRooms = getRooms.data.reduce(
 		(acc, val) => {
-			const d = dayjs(val.DATE_CREATED + "Z");
+			const d = dayjs(`${val.DATE_CREATED}Z`);
 
 			// Pinned rooms only go in Favorites bucket
 			if (val.PINNED) {
@@ -330,7 +329,10 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 
 				<SidebarMenu className="gap-2 p-2">
-					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden" data-tour="tour-search">
+					<InputGroup
+						className="bg-background group-data-[collapsible=icon]:hidden"
+						data-tour="tour-search"
+					>
 						<InputGroupInput
 							placeholder={t("search")}
 							value={search}
@@ -353,9 +355,9 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
-					{root.theme.sidebar.headerItems.map((item, index) => (
+					{root.theme.sidebar.headerItems.map((item) => (
 						<GlobalNavItem
-							key={`header-${index}`}
+							key={`header-${item.path}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
@@ -406,14 +408,16 @@ export const GlobalNav = observer(() => {
 							</SidebarGroupLabel>
 							<SidebarGroupContent>
 								<SidebarMenu>
-									{rooms.map((room, index) => {
+									{rooms.map((room) => {
 										const roomId = room.ROOM_ID;
 										const name =
 											room.ROOM_NAME ||
 											t("messages.untitled");
 										const date = root.theme.sidebar
 											.chatHistoryDate
-											? new Date(room.DATE_CREATED + 'Z').toLocaleString(undefined, {
+											? new Date(
+													`${room.DATE_CREATED}Z`,
+												).toLocaleString(undefined, {
 													month: "numeric",
 													day: "numeric",
 													year: "numeric",
@@ -428,7 +432,7 @@ export const GlobalNav = observer(() => {
 
 										return (
 											<SidebarMenuItem
-												key={`${roomId}-${index}`}
+												key={roomId}
 												className="group/room relative flex"
 											>
 												{isEditing ? (
@@ -610,10 +614,13 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
-				<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden" data-tour="nav-support">
-					{root.theme.sidebar.footerItems.map((item, index) => (
+				<SidebarMenu
+					className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden"
+					data-tour="nav-support"
+				>
+					{root.theme.sidebar.footerItems.map((item) => (
 						<GlobalNavItem
-							key={`footer-${index}`}
+							key={`footer-${item.path}`}
 							name={item.name}
 							icon={item.icon}
 							path={item.path}
@@ -624,7 +631,10 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 				<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
 					<SidebarMenuItem>
-						<SidebarMenuButton onClick={handleStartTour} data-tour="tour-take-tour">
+						<SidebarMenuButton
+							onClick={handleStartTour}
+							data-tour="tour-take-tour"
+						>
 							<MapIcon className="size-4" />
 							Take a tour
 						</SidebarMenuButton>

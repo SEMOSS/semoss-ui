@@ -10,9 +10,15 @@ export const RootLayout = ({ children }) => {
 
 	// set up the store
 	const rootStore = useMemo(() => {
-		if (system.config.theme) {
-			const store = new RootStore();
+		const store = new RootStore();
 
+		// If theme.local.json is present, it takes full priority — skip server theme
+		if (import.meta.env.VITE_HAS_LOCAL_THEME) {
+			store.initialize({});
+			return store;
+		}
+
+		if (system.config.theme) {
 			// parse the theme
 			let theme: Partial<ThemeMap["playground"]> = {};
 			try {
@@ -21,10 +27,17 @@ export const RootLayout = ({ children }) => {
 				)?.playground;
 			} catch (_e) {}
 
-			store.initialize(theme);
+			// Don't let the admin theme overwrite the local sidebar/tour config
+			// (theme.local.json is applied first in the RootStore constructor)
+			if (theme) {
+				delete theme.sidebar;
+				delete theme.tour;
+			}
 
+			store.initialize(theme);
 			return store;
 		}
+
 		return null;
 	}, [system.config.theme]);
 

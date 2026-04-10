@@ -39,6 +39,9 @@ export default defineConfig(({ mode }) => {
 				? undefined
 				: JSON.stringify(env.SECRET_KEY),
 			"import.meta.env.VITE_THEME": JSON.stringify(THEME),
+			"import.meta.env.VITE_HAS_LOCAL_THEME": JSON.stringify(
+				existsSync(themeFile) && THEME.trim() !== "",
+			),
 		},
 		build: {
 			minify: isProduction,

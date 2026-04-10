@@ -199,8 +199,8 @@ export interface ThemeMap {
 				placement?: "top" | "bottom" | "left" | "right";
 			}[];
 			/**
-			 * Same shape as customSteps but inserted AFTER the Chat History
-			 * step instead of after Search. Use this for footer-area items
+			 * Same shape as customSteps but inserted AFTER the Search
+			 * step instead of after New Chat. Use this for footer-area items
 			 * (e.g. Support, Bug Report).
 			 */
 			trailingCustomSteps?: {
@@ -209,6 +209,21 @@ export interface ThemeMap {
 				content: string;
 				placement?: "top" | "bottom" | "left" | "right";
 			}[];
+			/**
+			 * Override the title and/or content of any built-in step.
+			 * Keys are the step's `target` string (or "welcome" for the
+			 * opening card). Only the fields you provide are replaced.
+			 *
+			 * Example:
+			 *   "stepOverrides": {
+			 *     "welcome":        { "title": "Hi there!", "content": "..." },
+			 *     "tour-new-chat":  { "content": "Start a fresh conversation." }
+			 *   }
+			 */
+			stepOverrides?: Record<
+				string,
+				{ title?: string; content?: string }
+			>;
 		};
 
 		/**

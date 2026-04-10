@@ -92,7 +92,11 @@ export class RootStore {
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(THEME) as Partial<ThemeMap["playground"]>;
+			const parsed = JSON.parse(THEME);
+			// Support both wrapped ({ playground: {...} }) and flat formats
+			const theme = (parsed?.playground || parsed) as Partial<
+				ThemeMap["playground"]
+			>;
 
 			// update the theme
 			this.updateTheme(theme);
