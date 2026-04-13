@@ -75,6 +75,7 @@ export function useQueryExecution(
 	const [query, setQuery] = useState("");
 	const [previewData, setPreviewData] = useState<QueryResult | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
+	const [pixelQuery, setPixelQuery] = useState<string | null>(null);
 	// const [limit, setLimit] = useState(500);
 
 	const clearQuery = () => {
@@ -101,6 +102,7 @@ export function useQueryExecution(
 
 		try {
 			const pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit = [true]);`;
+			setPixelQuery(pixel);
 
 			const response = await runPixel(pixel);
 			console.log("Full response:", response);
@@ -164,6 +166,7 @@ export function useQueryExecution(
 		clearQuery,
 		clearResults,
 		executeQuery,
+		pixelQuery,
 		// limit,
 		// setLimit
 	};

@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -80,16 +81,22 @@ export const StorageForm = ({
 		const pixel = `CreateStorageEngine(storage=["${formData.NAME}"],storageDetails=[${JSON.stringify(formData)}])`;
 
 		monolithStore.runQuery(pixel).then(async (response) => {
-			const pixelOutput = response.pixelReturn[0].output,
+			const pixelOutput = response.pixelReturn[0].output as {
+					engine_id?: string;
+					// engine_id is the current key; database_id is the legacy fallback
+					database_id?: string;
+				},
 				operationType = response.pixelReturn[0].operationType;
 
 			if (operationType.indexOf("ERROR") > -1) {
-				toast.error(pixelOutput as string);
+				toast.error(pixelOutput as unknown as string);
 				setLoading(false);
 				return;
 			}
 			toast.success(`Successfully added new storage to catalog`);
-			navigate(`/engine/storage/${pixelOutput.database_id}`);
+			navigate(
+				`/engine/storage/${pixelOutput.engine_id || pixelOutput.database_id}`,
+			);
 			setLoading(false);
 		});
 	};
@@ -731,7 +738,7 @@ export const StorageForm = ({
 									"No description available."}
 							</Muted>
 						</div>
-						<div className="flex flex-[2] flex-col gap-2 py-2">
+						<div className="flex flex-2 flex-col gap-2 py-2">
 							{grouped[category].map((f) =>
 								renderControllerField(f),
 							)}
@@ -773,7 +780,7 @@ export const StorageForm = ({
 											Configure advanced storage settings
 										</Muted>
 									</div>
-									<div className="flex flex-[2] flex-col gap-2">
+									<div className="flex flex-2 flex-col gap-2">
 										{advancedFields.map((f) =>
 											renderControllerField(f),
 										)}

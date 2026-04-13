@@ -2,8 +2,9 @@ import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
 	mdiArchive,
-	mdiClipboardTextOutline,
 	// mdiClock,
+	mdiChatProcessingOutline,
+	mdiClipboardTextOutline,
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
@@ -31,11 +32,12 @@ export const SETTINGS_ROUTES: {
 	history?: string[];
 
 	admin?: boolean;
+	hidden?: boolean;
 }[] = [
 	{
 		title: "Settings",
 		path: "",
-		description: "View and edit settings for the application",
+		description: "View and make changes to settings to engines and apps",
 		adminDescription:
 			"View and make changes to settings to engines and apps. As an admin, view and manage platform settings.",
 		icon: mdiCog,
@@ -146,21 +148,23 @@ export const SETTINGS_ROUTES: {
 		icon: mdiDatabase,
 		history: ["vector", "vector/<id>"],
 	},
-	// {
-	//     title: 'Insight Settings',
-	//     path: 'insight',
-	//     description: 'View and edit settings for app insights',
-	//     icon: mdiTextBoxMultipleOutline,
-	//     history: ['insight'],
-	// },
-	// {
-	//     title: 'Insight Settings',
-	//     path: 'insight/:id/:appId',
-	//     description:
-	//         'View member permissions, pending requests, and all other viewable settings pertaining to the app',
-	//     icon: mdiClipboardTextOutline,
-	//     history: ['insight', 'insight/<id>/<appId>'],
-	// },
+	{
+		title: "Insight Settings",
+		path: "insight",
+		description: "View and edit settings for app insights",
+		icon: mdiClipboardTextOutline,
+		history: ["insight"],
+		hidden: true,
+	},
+	{
+		title: "Insight Settings",
+		path: "insight/:id/:projectId",
+		description:
+			"View member permissions, pending requests, and all other viewable settings pertaining to the app",
+		icon: mdiClipboardTextOutline,
+		history: ["insight", "insight/<id>/<projectId>"],
+		hidden: true,
+	},
 	{
 		title: "Jobs",
 		path: "jobs",
@@ -232,6 +236,14 @@ export const SETTINGS_ROUTES: {
 		path: "view-rdf-map",
 		description: "See configuration details in the RDF Map of the instance",
 		icon: mdiClipboardTextOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "LLM Feedback",
+		path: "llm-feedback",
+		description: "Provide feedback on LLM's performance",
+		icon: mdiChatProcessingOutline,
 		history: ["settings/"],
 		admin: true,
 	},

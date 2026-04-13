@@ -33,10 +33,10 @@ interface EngineSelectProps {
 	value: string;
 
 	/** Update options on change */
-	onChange: (value: Engine | null) => void;
+	onChange: (value: Engine) => void;
 
 	/** Types of engines to pre-filter on */
-	engineTypes?: Engine["app_type"][];
+	engineTypes?: Engine["engine_type"][];
 
 	/** Metafilters to pre-filter on */
 	metaFilters?: unknown[];
@@ -141,19 +141,20 @@ export const EngineSelect = ({
 							{getEngines.data.map((engine) => {
 								const displayName =
 									engine.engine_display_name ||
-									engine.app_name;
+									engine.engine_name;
+								const engineId = engine.engine_id;
 
 								return (
 									<CommandItem
-										key={engine.app_id}
-										value={engine.app_id}
+										key={engineId}
+										value={engineId}
 										onSelect={() => {
 											onChange(engine);
 											setOpen(false);
 										}}
 									>
 										<CheckIcon
-											className={`mr-2 size-4 ${value === engine.app_id ? "opacity-100" : "opacity-0"}`}
+											className={`mr-2 size-4 ${value === engineId ? "opacity-100" : "opacity-0"}`}
 										/>
 										<div className="flex flex-1 flex-col truncate">
 											<span className="truncate">
