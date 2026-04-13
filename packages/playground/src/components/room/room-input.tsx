@@ -175,6 +175,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
+		const prevTextRef = useRef<string>("");
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
@@ -478,22 +479,23 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<OnChangePlugin
 							onChange={(editorState) => {
 								editorState.read(() => {
-									// get the root
 									const root = $getRoot();
+									const nextText = root.getTextContent();
 
 									// set empty state
-									setIsEmpty(
-										root.getTextContent().trim().length ===
-											0,
-									);
+									setIsEmpty(nextText.trim().length === 0);
 
-									// Scroll to bottom after content changes
-									setTimeout(() => {
-										if (contentEditableRef.current) {
-											contentEditableRef.current.scrollTop =
-												contentEditableRef.current.scrollHeight;
-										}
-									}, 0);
+									// Only scroll to bottom when text content changes,
+									// not on selection-only changes (e.g. drag-to-select)
+									if (prevTextRef.current !== nextText) {
+										prevTextRef.current = nextText;
+										setTimeout(() => {
+											if (contentEditableRef.current) {
+												contentEditableRef.current.scrollTop =
+													contentEditableRef.current.scrollHeight;
+											}
+										}, 0);
+									}
 								});
 							}}
 						/>
