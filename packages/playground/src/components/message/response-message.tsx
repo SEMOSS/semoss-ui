@@ -51,7 +51,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const { root } = useRoot();
 
 		const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
-		const [isDownloading, setIsDownloading] = useState(false);
+		const [downloadingFormat, setDownloadingFormat] = useState<
+			string | null
+		>(null);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -95,7 +97,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 * @param format - format to download (word, pdf)
 		 */
 		const downloadResponse = async (format: string) => {
-			setIsDownloading(true);
+			setDownloadingFormat(format);
 			try {
 				await message.downloadResponse(format as "word" | "pdf");
 				toast.success(
@@ -106,7 +108,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				const error = e as { message: string };
 				toast.error(error.message || "Failed to download response");
 			} finally {
-				setIsDownloading(false);
+				setDownloadingFormat(null);
 			}
 		};
 
@@ -206,11 +208,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped = getShouldGroupTool(tool);
+							const isGrouped =
+								getShouldGroupTool(tool) &&
+								groupedTools.length > 1;
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
-										groupedTools.length >= 1 && (
+										groupedTools.length > 1 && (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
 												message={message}
@@ -218,23 +222,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											/>
 										)}
 									{tool && !isGrouped && (
-										<div className="flex flex-col gap-2">
-											<ResponseMessageTool
-												message={message}
-												tool={tool}
-											/>
-											{/* {tool.display ===
-														"inline" &&
-														tool.isOpen && (
-															<RoomInlineTool
-																room={room}
-																message={
-																	message
-																}
-																tool={tool}
-															/>
-														)} */}
-										</div>
+										<ResponseMessageTool
+											message={message}
+											tool={tool}
+										/>
 									)}
 								</Fragment>
 							);
@@ -478,12 +469,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									key={format.value}
 									variant="outline"
 									className="h-auto flex-col gap-1 p-4"
-									disabled={isDownloading}
+									disabled={downloadingFormat !== null}
 									onClick={() =>
 										downloadResponse(format.value)
 									}
 								>
-									{isDownloading ? (
+									{downloadingFormat === format.value ? (
 										<Loader2Icon className="size-4 animate-spin" />
 									) : (
 										<>

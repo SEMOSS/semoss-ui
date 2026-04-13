@@ -1454,6 +1454,7 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Completion Tokens",
 							type: "number",
 							required: true,
+							default: 16400,
 							rules: {
 								pattern: {
 									value: /^[1-9]\d*$/,
@@ -1464,10 +1465,26 @@ export const IMPORTABLE_MODELS = {
 							category: "Settings",
 						},
 						{
+							key: "MAX_INPUT_TOKENS",
+							label: "Max Input Tokens",
+							type: "number",
+							required: true,
+							default: 128000,
+							rules: {
+								pattern: {
+									value: /^[1-9]\d*$/,
+									message:
+										"Max Input Tokens must be a positive integer",
+								},
+							},
+							category: "Settings",
+						},
+						{
 							key: "CONTEXT_WINDOW",
 							label: "Context Window",
 							type: "number",
 							required: true,
+							default: 128000,
 							rules: {
 								pattern: {
 									value: /^[1-9]\d*$/,
