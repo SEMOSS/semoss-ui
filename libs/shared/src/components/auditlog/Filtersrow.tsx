@@ -43,6 +43,7 @@ export interface FiltersRowProps {
 
 	dateFrom: string;
 	dateTo: string;
+	dateRangePreset?: string;
 
 	userOptions: EngineOption[];
 	selectedUser: string;
@@ -64,6 +65,7 @@ export const FiltersRow = ({
 	engineNames,
 	dateFrom,
 	dateTo,
+	dateRangePreset,
 	userOptions,
 	selectedUser,
 	onEngineTypeChange,
@@ -203,6 +205,14 @@ export const FiltersRow = ({
 							dateFrom={dateFrom}
 							dateTo={dateTo}
 							onChange={onDateChange}
+							activePreset={
+								dateRangePreset as
+									| "today"
+									| "7days"
+									| "30days"
+									| "custom"
+									| undefined
+							}
 						/>
 
 						{/* ── Refresh ── */}

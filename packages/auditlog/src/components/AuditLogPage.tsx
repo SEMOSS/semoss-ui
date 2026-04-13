@@ -463,6 +463,7 @@ export const AuditLogPage = () => {
 					dateTo={dateTo}
 					userOptions={userOptions}
 					selectedUser={selectedUser}
+					dateRangePreset={durationValue}
 					onEngineTypeChange={handleEngineTypeChange}
 					onEngineChange={handleEngineChange}
 					onDateChange={handleDateChange}

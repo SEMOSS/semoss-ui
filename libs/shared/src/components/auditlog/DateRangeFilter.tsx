@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Button,
 	DropdownMenu,
@@ -20,6 +20,7 @@ interface DateRangeFilterProps {
 	dateFrom: string;
 	dateTo: string;
 	onChange: (from: string, to: string, preset?: string) => void;
+	activePreset?: Preset;
 }
 
 const MONTHS = [
@@ -49,8 +50,9 @@ const DateRangeFilter = ({
 	dateFrom,
 	dateTo,
 	onChange,
+	activePreset,
 }: DateRangeFilterProps) => {
-	const [preset, setPreset] = useState<Preset>("today");
+	const [preset, setPreset] = useState<Preset>(activePreset ?? "today");
 	const [showCalendar, setShowCalendar] = useState(false);
 	const [calMonth, setCalMonth] = useState(new Date().getMonth());
 	const [calYear, setCalYear] = useState(new Date().getFullYear());
@@ -58,16 +60,27 @@ const DateRangeFilter = ({
 	const [customTo, setCustomTo] = useState(dateTo);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 
+	// Sync internal preset when parent changes it (e.g. on refresh)
+	useEffect(() => {
+		if (activePreset !== undefined) {
+			setPreset(activePreset);
+		}
+	}, [activePreset]);
+
 	const today = new Date();
 	const fmt = (d: Date) => d.toISOString().split("T")[0];
 
 	const applyPreset = (p: Preset) => {
 		setPreset(p);
 		if (p === "custom") {
+			setCustomFrom("");
+			setCustomTo("");
 			setDropdownOpen(false);
 			setTimeout(() => setShowCalendar(true), 0);
 			return;
 		}
+		setCustomFrom("");
+		setCustomTo("");
 		const t = fmt(today);
 		if (p === "today") {
 			onChange(t, t, p);
@@ -301,7 +314,11 @@ const DateRangeFilter = ({
 					{/* Calendar actions */}
 					<div className="mt-3 flex items-center justify-between border-border border-t pt-2">
 						<Button
-							onClick={() => setShowCalendar(false)}
+							onClick={() => {
+								setCustomFrom("");
+								setCustomTo("");
+								setShowCalendar(false);
+							}}
 							variant="ghost"
 							className="rounded border border-border px-3 py-1.5 text-muted-foreground text-xs transition-colors hover:text-foreground"
 						>
