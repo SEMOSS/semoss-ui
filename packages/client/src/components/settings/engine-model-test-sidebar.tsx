@@ -1,6 +1,5 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { AlertTriangle, HelpCircle, Pencil } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -22,14 +21,14 @@ interface Model {
 
 interface ModelInfo {
 	engine_display_name?: string;
-	database_name?: string;
+	engine_name?: string;
 	tag?: string;
 	description?: string;
 }
 
 interface EngineModelTestSidebarProps {
 	selectedModel: Model;
-	setSelectedModel: (model: Model) => void;
+	setSelectedModel: Dispatch<SetStateAction<Model>>;
 	temperature: number;
 	setTemperature: (temp: number) => void;
 	maxTokens: number;
@@ -45,7 +44,6 @@ export const EngineModelTestSidebar = ({
 	setMaxTokens,
 }: EngineModelTestSidebarProps) => {
 	const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
-	const [showTempTooltip, setShowTempTooltip] = useState(false);
 
 	const temperatureTooltipText = `
 This changes the randomness of the LLM's output.
@@ -74,18 +72,18 @@ Default: 2000
 
 					const resolvedModelName =
 						modelInfo.engine_display_name ||
-						modelInfo.database_name ||
+						modelInfo.engine_name ||
 						"";
 
 					if (
 						resolvedModelName &&
 						resolvedModelName !== selectedModel.model_name
 					) {
-						setSelectedModel({
-							...selectedModel,
+						setSelectedModel((prev) => ({
+							...prev,
 							model_name: resolvedModelName,
-							tag: modelInfo.tag || selectedModel.tag,
-						});
+							tag: modelInfo.tag || prev.tag,
+						}));
 					}
 
 					if (
@@ -104,22 +102,17 @@ Default: 2000
 		};
 
 		fetchModelInfo();
-	}, [
-		selectedModel.model_id,
-		selectedModel.model_name,
-		selectedModel.tag,
-		setSelectedModel,
-	]);
+	}, [selectedModel.model_id, selectedModel.model_name, setSelectedModel]);
 
 	const handleMaxTokensChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const value = parseInt(e.target.value, 10);
-		if (!isNaN(value) && value > 0) {
+		if (!Number.isNaN(value) && value > 0) {
 			setMaxTokens(value);
 		}
 	};
 
 	return (
-		<Card className="flex w-[300px] flex-col gap-6 p-4">
+		<Card className="flex w-full flex-col gap-6 p-4 md:w-[300px]">
 			{/* Header */}
 			<div className="rounded-md bg-muted px-4 py-2">
 				<div className="ml-5 flex items-center gap-2 whitespace-nowrap">
@@ -171,40 +164,18 @@ Default: 2000
 						</TooltipProvider>
 					</div>
 
-					<div
-						className="relative"
-						onMouseEnter={() => setShowTempTooltip(true)}
-						onMouseLeave={() => setShowTempTooltip(false)}
-						onPointerDown={() => setShowTempTooltip(true)}
-						onPointerUp={() => setShowTempTooltip(false)}
-					>
-						<Slider
-							value={[temperature]}
-							className="cursor-pointer"
-							min={0}
-							max={1}
-							step={0.1}
-							onValueChange={(v) => setTemperature(v[0])}
-						/>
-
-						{showTempTooltip && (
-							<div
-								className="-top-7 pointer-events-none absolute rounded bg-accent px-2 py-0.5 text-xs shadow"
-								style={{
-									left: `calc(${temperature * 100}% - 12px)`,
-								}}
-							>
-								{Number.isInteger(temperature)
-									? temperature
-									: temperature.toFixed(1)}
-							</div>
-						)}
-
-						<div className="mt-3 flex justify-between text-muted-foreground text-xs">
-							<span>0</span>
-							<span>0.5</span>
-							<span>1</span>
-						</div>
+					<Slider
+						value={[temperature]}
+						className="cursor-pointer"
+						min={0}
+						max={1}
+						step={0.1}
+						onValueChange={(v) => setTemperature(v[0])}
+					/>
+					<div className="mt-1 flex justify-between text-muted-foreground text-xs">
+						<span>0</span>
+						<span>0.5</span>
+						<span>1</span>
 					</div>
 
 					<p className="text-muted-foreground text-xs">

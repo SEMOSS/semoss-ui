@@ -10,7 +10,6 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { usePixel } from "@/hooks";
-import { PromptLibraryDialogButton } from "../../library/PromptLibraryDialogButton";
 import { StyledStepPaper } from "../../prompt.styled";
 import type { Builder } from "../../prompt.types";
 import { PromptBuilderContextTestDialogButton } from "./PromptBuilderContextTestDialogButton";
@@ -37,16 +36,16 @@ export const PromptBuilderContextStep = (props: {
 	const [cfgLibraryModels, setCfgLibraryModels] = useState(
 		InitialCfgLibraryEngineState,
 	);
-	const filter = createFilterOptions<string>();
+	const _filter = createFilterOptions<string>();
 
-	const isPromptLibraryDisabled =
+	const _isPromptLibraryDisabled =
 		!props.builder.model.value || !props.builder.title.value;
 
 	const isPromptContextTestDisabled =
 		!props.builder.model.value || !props.builder.context.value;
 
 	const myModels = usePixel<
-		{ app_id: string; app_name: string; tag: string }[]
+		{ engine_id: string; engine_name: string; tag: string }[]
 	>(`MyEngines(engineTypes=['MODEL']);`);
 	useMemo(() => {
 		if (myModels.status !== "SUCCESS") {
@@ -58,8 +57,8 @@ export const PromptBuilderContextStep = (props: {
 		myModels.data.forEach((model) => {
 			// embeddings models are not set up for response generation
 			if (model.tag !== "embeddings") {
-				modelIds.push(model.app_id);
-				modelDisplay[model.app_id] = model.app_name;
+				modelIds.push(model.engine_id);
+				modelDisplay[model.engine_id] = model.engine_name;
 			}
 		});
 		setCfgLibraryModels({

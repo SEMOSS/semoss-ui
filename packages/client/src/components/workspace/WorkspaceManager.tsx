@@ -12,7 +12,6 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { ClosePage } from "@/assets/img/ClosePage";
-import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
 import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
 import { SIDEBAR_MENU } from "@/pages/import/import.constants";
@@ -56,8 +55,6 @@ const StyledSpacer = styled("div")(({ theme }) => ({
 const StyledAppTypography = styled(Typography)(() => ({
 	color: "rgb(0, 0, 0)",
 }));
-
-const StyledSemossImage = styled("img")(() => ({}));
 
 const StyledLetTabImage = styled("img")(() => ({
 	width: 50,
@@ -372,24 +369,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		return (
 			<>
 				<NavbarLeft>
-					<NavbarHeader
-						logo={
-							<StyledSemossImage
-								src={SEMOSS_BLACK_LOGO}
-								alt="SEMOSS"
-							></StyledSemossImage>
-						}
-					/>
+					<NavbarHeader logo={null} />
 					<StyledNavLeft>
 						<StyledBreadcrumbs separator=" /">
-							<StyledHeaderLogo to={"/app"}>
-								<Stack direction={"row"} alignItems={"center"}>
-									<StyledAppTypography variant={"subtitle1"}>
-										App Library
-									</StyledAppTypography>
-								</Stack>
-							</StyledHeaderLogo>
-
 							<StyledHeaderLogo
 								to={`/app/${workspace.metadata.project_id}/view`}
 							>
@@ -401,15 +383,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 								</div>
 							</StyledHeaderLogo>
 
-							<StyledHeaderLogo to="">
-								<div
-									title={workspace?.metadata?.project_name}
-									className="max-w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
-								>
-									{workspace?.metadata?.project_name}
-								</div>
-								<span className="w-[10ch]"> - Editor</span>
-							</StyledHeaderLogo>
+							<StyledAppTypography variant={"subtitle1"}>
+								Editing
+							</StyledAppTypography>
 						</StyledBreadcrumbs>
 					</StyledNavLeft>
 				</NavbarLeft>

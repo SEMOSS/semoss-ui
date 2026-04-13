@@ -72,6 +72,18 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 							<FlexLayout.Layout
 								ref={layoutRef}
 								model={model}
+								onTabSetPlaceHolder={() => (
+									<div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+										<FileIcon className="size-8 opacity-30" />
+										<p className="font-medium text-sm">
+											File Viewer
+										</p>
+										<p className="text-xs opacity-70">
+											Select a file from the explorer to
+											view
+										</p>
+									</div>
+								)}
 								onRenderTab={(node, renderValues) => {
 									const component = node.getComponent();
 									if (component === "engine-file-explorer") {

@@ -68,7 +68,30 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 	),
 	a: ({ children, href, ...props }) => {
 		if (href?.startsWith("room://") && room) {
-			const path = "/" + href.slice("room://".length);
+			const path = `/${href.slice("room://".length)}`;
+
+			// Folder link — ends with "/"
+			if (path.endsWith("/")) {
+				return (
+					<button
+						type="button"
+						className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
+						onClick={() => {
+							room.addSidebarNode(`FILE_EXPLORER--${path}`, {
+								type: "tab",
+								name: "Files",
+								component: "room-file-explorer",
+								config: { initialPath: path },
+								enableClose: true,
+							});
+						}}
+					>
+						{children}
+					</button>
+				);
+			}
+
+			// File link
 			const filename = path.split("/").filter(Boolean).pop() ?? path;
 			return (
 				<button
@@ -136,20 +159,30 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
 	code: ({ children, className, ...props }) => {
 		const { t } = useTranslation("chat");
+		// react-markdown sets className to "language-<lang>" on fenced code blocks.
+		// Inline code (single backtick) has no className, so match will be null.
 		const match = /language-(\w+)/.exec(className || "");
 		const code = children as string;
 
-		let lang: string = "";
-		if (match?.[1]) {
-			lang = match[1];
+		// Inline code — no language class means this is a `backtick` snippet inside
+		// a paragraph. Return a plain <code> so we don't nest a <div> inside a <p>.
+		if (!match?.[1]) {
+			return (
+				<code className={className} {...props}>
+					{children}
+				</code>
+			);
 		}
+
+		// Fenced code block — render the full UI with copy button and syntax highlighting.
+		const lang = match[1];
 
 		return (
 			<div className="group/response-markdown relative">
 				<Tooltip>
 					<TooltipTrigger asChild>
 						<Button
-							className="sticky top-0 right-0 float-right -ml-[120px] bg-background z-10 opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
+							className="-ml-[120px] sticky top-0 right-0 z-10 float-right bg-background opacity-0 transition-opacity group-hover/response-markdown:opacity-100"
 							variant="ghost"
 							size="icon"
 							disabled={!code}

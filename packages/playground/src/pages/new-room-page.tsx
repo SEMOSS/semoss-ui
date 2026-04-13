@@ -85,20 +85,23 @@ export const NewRoomPage = observer(() => {
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
 			? `GetWorkspace("${selectedWorkspaceId}");`
-			: null,
+			: "",
 		{
 			data: null,
 		},
 	);
 
 	// Fetch knowledge vector engine if knowledgeId is provided
-	const getKnowledge = usePixel<{
-		app_id: string;
-		app_name: string;
-	} | null>(
+	const getKnowledge = usePixel<
+		| {
+				engine_id: string;
+				engine_name: string;
+		  }[]
+		| null
+	>(
 		knowledgeId
 			? `MyEngines( engine=["${knowledgeId}"], engineTypes=['VECTOR'],  metaFilters=[{}], userT = [true], limit=[15], offset=[0]);`
-			: null,
+			: "",
 		{ data: null },
 	);
 
@@ -111,7 +114,7 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
-			workspace: null,
+			workspace: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -183,10 +186,11 @@ export const NewRoomPage = observer(() => {
 
 			// go to the new room
 			navigate(`/room/${room.roomId}`);
-		} catch (error) {
+		} catch (error: unknown) {
+			const sdkError = error as { message: string; code?: number };
 			if (
-				error.code !== undefined &&
-				(error.code === 403 || error.code === 302)
+				sdkError.code !== undefined &&
+				(sdkError.code === 403 || sdkError.code === 302)
 			) {
 				// User is unauthorized, likely due to expired session. Prompt them to log in again.
 				toast.error(t("chat:gracefulErrors.inactivity"));
@@ -194,7 +198,7 @@ export const NewRoomPage = observer(() => {
 			}
 
 			toast.error(
-				t("room:errors.createRoom", { message: error.message }),
+				t("room:errors.createRoom", { message: sdkError.message }),
 			);
 		} finally {
 			setIsLoading(false);
@@ -256,7 +260,11 @@ export const NewRoomPage = observer(() => {
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
-		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
+		if (
+			!knowledgeId ||
+			getKnowledge.status !== "SUCCESS" ||
+			!getKnowledge.data?.[0]
+		) {
 			return;
 		}
 
@@ -275,7 +283,7 @@ export const NewRoomPage = observer(() => {
 		const knowledgeMcp = {
 			id: knowledgeId,
 			type: "VECTOR" as const,
-			name: getKnowledge.data[0].app_name || knowledgeId,
+			name: getKnowledge.data[0].engine_name || knowledgeId,
 		};
 
 		tempRoomStore.setOptions({
@@ -290,8 +298,8 @@ export const NewRoomPage = observer(() => {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
-				temperature: root.theme.defaultRoomSettings.temperature,
-				tokenLength: root.theme.defaultRoomSettings.tokenLength,
+				temperature: root.theme.defaultRoomSettings?.temperature,
+				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}
@@ -348,54 +356,68 @@ export const NewRoomPage = observer(() => {
 							MenuComponent={observer(
 								({ addToken, onOpenChange, fileRef }) => (
 									<>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("chat");
-												onOpenChange(false);
-											}}
-										>
-											<MessageCircleIcon />
-											<span className="flex-1">
-												{t("room:modes.ask")}
-											</span>
-											{mode === "chat" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("plan");
-												onOpenChange(false);
-											}}
-										>
-											<ListTodoIcon />
-											<span className="flex-1">
-												{t("room:modes.plan")}
-											</span>
+										{root.theme.featureFlags
+											?.enablePlan && (
+											<>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("chat");
+														onOpenChange(false);
+													}}
+												>
+													<MessageCircleIcon />
+													<span className="flex-1">
+														{t("room:modes.ask")}
+													</span>
+													{mode === "chat" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("plan");
+														onOpenChange(false);
+													}}
+												>
+													<ListTodoIcon />
+													<span className="flex-1">
+														{t("room:modes.plan")}
+													</span>
 
-											{mode === "plan" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
+													{mode === "plan" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+											</>
+										)}
 										<RoomInputMenuWorkspace
 											workspace={
 												mode === "workspace" &&
-												getWorkspace.status === "SUCCESS"
+												getWorkspace.status ===
+													"SUCCESS"
 													? getWorkspace.data
 													: null
 											}
 											onSelect={(workspace) => {
 												if (workspace) {
-													if (mode === "workspace" && selectedWorkspaceId === workspace.workspace_id) {
+													if (
+														mode === "workspace" &&
+														selectedWorkspaceId ===
+															workspace.workspace_id
+													) {
 														setMode("chat");
-														setSelectedWorkspaceId("");
+														setSelectedWorkspaceId(
+															"",
+														);
 													} else {
 														setMode("workspace");
-														setSelectedWorkspaceId(workspace.workspace_id);
+														setSelectedWorkspaceId(
+															workspace.workspace_id,
+														);
 													}
 												} else {
 													setMode("chat");
@@ -455,13 +477,13 @@ export const NewRoomPage = observer(() => {
 													>
 														<a
 															target="_blank"
-															href={`${PLATFORM_URL}/#/app/${getWorkspace.data.workspace_id}`}
+															href={`${PLATFORM_URL}/#/app/${getWorkspace.data?.workspace_id}`}
 														>
 															<ComputerIcon data-icon="inline-start" />
 															<div className="w-18 truncate">
 																{getWorkspace
 																	.data
-																	.name ||
+																	?.name ||
 																	t(
 																		"room:menuWorkspace.selectAgent",
 																	)}
@@ -483,7 +505,7 @@ export const NewRoomPage = observer(() => {
 														<ComputerIcon data-icon="inline-start" />
 														<div className="w-18 truncate">
 															{getWorkspace.data
-																.name ||
+																?.name ||
 																t(
 																	"room:menuWorkspace.selectAgent",
 																)}
@@ -492,7 +514,7 @@ export const NewRoomPage = observer(() => {
 												</span>
 											</TooltipTrigger>
 											<TooltipContent>
-												{getWorkspace.data.name ||
+												{getWorkspace.data?.name ||
 													t(
 														"room:menuWorkspace.selectAgent",
 													)}

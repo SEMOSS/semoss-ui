@@ -1,16 +1,16 @@
-import { Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Label,
 	Textarea,
 } from "@semoss/ui/next";
@@ -93,10 +93,41 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
 		const [required, setRequired] = useState<string[]>([]);
+
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
 		>({});
 		const [response, setResponse] = useState<string>(toolResponse);
+		const [showExtensionDialog, setShowExtensionDialog] =
+			useState<boolean>(false);
+		const [extensionCheckRetrying, setExtensionCheckRetrying] =
+			useState<boolean>(false);
+		const extensionIsOpen = useRef<boolean>(false);
+
+		const scriptForBrowserAutomation =
+			typeof data.recordedFile === "string" ? data.recordedFile : "";
+
+		useEffect(() => {
+			const handleMessage = (event: MessageEvent) => {
+				if (event.origin !== window.location.origin) {
+					return;
+				}
+
+				if (event.data?.type === "SMSS_EXTENSION_OPENED") {
+					extensionIsOpen.current = true;
+				}
+
+				if (event.data?.type === "SMSS_EXTENSION_CLOSED") {
+					extensionIsOpen.current = false;
+				}
+			};
+
+			window.addEventListener("message", handleMessage);
+
+			return () => {
+				window.removeEventListener("message", handleMessage);
+			};
+		}, []);
 
 		/*
 		 * Constants
@@ -117,25 +148,126 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			setData((prev) => ({ ...prev, [field]: value }));
 		};
 
+		/**
+		 * Check if extension panel is open by actively pinging it
+		 */
+		const checkExtensionAvailable = async (): Promise<boolean> => {
+			if (!scriptForBrowserAutomation) {
+				return true;
+			}
+
+			// Active ping/pong validation with timeout
+			return new Promise<boolean>((resolve) => {
+				let timeoutId: ReturnType<typeof setTimeout> | null = null;
+				let resolved = false;
+
+				// Set up one-time listener for pong response
+				const handlePong = (event: MessageEvent) => {
+					if (event.origin !== window.location.origin) {
+						return;
+					}
+
+					if (event.data?.type === "SMSS_EXTENSION_PONG") {
+						if (!resolved) {
+							resolved = true;
+							if (timeoutId) clearTimeout(timeoutId);
+							window.removeEventListener("message", handlePong);
+							resolve(true);
+						}
+					}
+				};
+
+				// Add listener
+				window.addEventListener("message", handlePong);
+
+				// Set timeout for 2 seconds
+				timeoutId = setTimeout(() => {
+					if (!resolved) {
+						resolved = true;
+						window.removeEventListener("message", handlePong);
+						resolve(false);
+					}
+				}, 2000);
+
+				// Send ping
+				window.postMessage(
+					{
+						type: "SMSS_EXTENSION_PING",
+						timestamp: Date.now(),
+					},
+					"*",
+				);
+			});
+		};
+
 		// Tool Execution
 		const handleSubmit = async () => {
+			// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
+			if (scriptForBrowserAutomation) {
+				const extensionAvailable = await checkExtensionAvailable();
+
+				if (!extensionAvailable) {
+					setShowExtensionDialog(true);
+					return; // Stop execution until user opens extension
+				}
+			}
+
 			setIsSubmitting(true);
 			let success = false;
 			let output = "";
 			try {
-				const response = await room.runRoomPixel<[unknown]>(
-					`RunMCPTool(project = [ "${app}" ], function=[ "${
-						tool.name
-					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-					false,
-					false,
-				);
-				const rawOutput = response.pixelReturn[0].output;
-				output =
-					typeof rawOutput === "string"
-						? rawOutput
-						: JSON.stringify(rawOutput);
-				success = true;
+				// Check if this is a Playwright script execution
+				if (scriptForBrowserAutomation) {
+					// Get session ID first
+					const sessionIdResponse = await room.runRoomPixel<[string]>(
+						"Session();",
+						false,
+						false,
+					);
+					const sessionId = sessionIdResponse.pixelReturn[0].output;
+
+					// Fetch the complete Playwright script
+					const scriptResponse = await room.runRoomPixel<[unknown]>(
+						`GetAllSteps(project=["${app}"], sessionId=["${sessionId}"], fileName=["${scriptForBrowserAutomation}"]);`,
+						false,
+						false,
+					);
+					const scriptJson = scriptResponse.pixelReturn[0].output;
+
+					// Log the fetched script to console
+
+					// Send script to browser extension
+					window.postMessage(
+						{
+							type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+							script: {
+								projectId: app,
+								name: scriptForBrowserAutomation,
+								autoExecute: false,
+								scriptContent: scriptJson,
+							},
+						},
+						"*",
+					);
+
+					output = `Successfully fetched Playwright script: ${scriptForBrowserAutomation}`;
+					success = true;
+				} else {
+					// Normal MCP tool execution for non-Playwright tools
+					const response = await room.runRoomPixel<[unknown]>(
+						`RunMCPTool(project = [ "${app}" ], function=[ "${
+							tool.name
+						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+						false,
+						false,
+					);
+					const rawOutput = response.pixelReturn[0].output;
+					output =
+						typeof rawOutput === "string"
+							? rawOutput
+							: JSON.stringify(rawOutput);
+					success = true;
+				}
 			} catch (error) {
 				output = error.toString();
 				success = false;
@@ -190,51 +322,104 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		}, [getMCP, tool.original_name]);
 
 		return (
-			<div className="flex h-full w-full flex-col items-center justify-center overflow-auto p-4">
-				<Card className="h-full w-full">
-					<CardHeader>
-						<CardTitle className="font-semibold text-2xl">
-							{title}
-						</CardTitle>
-						{!!description && (
-							<CardDescription className="mt-2">
-								{description}
-							</CardDescription>
-						)}
-					</CardHeader>
-					<CardContent className="max-h-[60vh] overflow-y-auto">
-						<div className="space-y-4">
-							{hasBeenExecuted && (
-								<div className="flex h-full flex-col space-y-2">
-									<Label
-										htmlFor="tool-response"
-										className="shrink-0 font-semibold"
+			// px-3 because applying padding on this div was clipping the shadow of the textareas
+			// so we apply px-1 to the inner divs instead
+			<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4">
+				<div className="space-y-2 px-1">
+					<h2 className="font-semibold text-2xl">{title}</h2>
+					{!!description && (
+						<p className="text-muted-foreground">{description}</p>
+					)}
+				</div>
+
+				<div className="flex-1 space-y-4 overflow-y-auto px-1">
+					{hasBeenExecuted && (
+						<div className="flex flex-col space-y-2">
+							<Label
+								htmlFor="tool-response"
+								className="shrink-0 font-semibold"
+							>
+								Result
+							</Label>
+							<Textarea
+								readOnly
+								className="w-full flex-1 resize-none"
+								value={response}
+							/>
+						</div>
+					)}
+					{getMCP.status === "ERROR" ? (
+						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
+							<div className="text-destructive">
+								<p className="font-semibold text-lg">
+									Failed to load tool schema
+								</p>
+								<p className="text-muted-foreground text-sm">
+									Unable to retrieve tool configuration.
+									Please try again later.
+								</p>
+							</div>
+						</div>
+					) : getMCP.status === "SUCCESS" ? (
+						hasBeenExecuted ? (
+							Object.keys(properties).length > 0 && (
+								<>
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										onClick={() =>
+											setShowOptional(!showOptional)
+										}
+										className="w-full"
 									>
-										Result
-									</Label>
-									<Textarea
-										readOnly
-										className="w-full resize-none"
-										value={response}
-									/>
-								</div>
-							)}
-							{getMCP.status === "ERROR" ? (
-								<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
-									<div className="text-destructive">
-										<p className="font-semibold text-lg">
-											Failed to load tool schema
-										</p>
-										<p className="text-muted-foreground text-sm">
-											Unable to retrieve tool
-											configuration. Please try again
-											later.
-										</p>
-									</div>
-								</div>
-							) : getMCP.status === "SUCCESS" ? (
-								hasBeenExecuted ? (
-									Object.keys(properties).length > 0 && (
+										{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
+									</Button>
+
+									{showOptional &&
+										renderFields(
+											Object.entries(properties),
+											false,
+										)}
+								</>
+							)
+						) : (
+							<form onSubmit={handleSubmit}>
+								<div className="space-y-4">
+									{/* Required fields */}
+									{renderFields(requiredFields, true)}
+
+									{/* Playwright Script Details */}
+									{scriptForBrowserAutomation && (
+										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
+											<h3 className="font-semibold text-base">
+												Playwright Script Details
+											</h3>
+											<div className="space-y-2 text-sm">
+												<div>
+													<span className="font-medium">
+														Project ID:
+													</span>
+													<span className="ml-2 text-muted-foreground">
+														{app}
+													</span>
+												</div>
+												<div>
+													<span className="font-medium">
+														Recorded File:
+													</span>
+													<span className="ml-2 text-muted-foreground">
+														{
+															scriptForBrowserAutomation
+														}
+													</span>
+												</div>
+											</div>
+										</div>
+									)}
+
+									{/* Optional fields toggle */}
+									{optionalFields.length > 0 && (
 										<>
 											<Button
 												type="button"
@@ -247,81 +432,127 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 												}
 												className="w-full"
 											>
-												{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
+												{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
 											</Button>
+
 											{showOptional &&
 												renderFields(
-													Object.entries(properties),
+													optionalFields,
 													false,
 												)}
 										</>
-									)
-								) : (
-									<form onSubmit={handleSubmit}>
-										<div className="space-y-4">
-											{/* Required fields */}
-											{renderFields(requiredFields, true)}
-
-											{/* Optional fields toggle */}
-											{optionalFields.length > 0 && (
-												<>
-													<Button
-														type="button"
-														variant="outline"
-														size="sm"
-														onClick={() =>
-															setShowOptional(
-																!showOptional,
-															)
-														}
-														className="w-full"
-													>
-														{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
-													</Button>
-
-													{showOptional &&
-														renderFields(
-															optionalFields,
-															false,
-														)}
-												</>
-											)}
-										</div>
-									</form>
-								)
-							) : (
-								<div className="flex flex-col items-center justify-center gap-2 py-12">
-									<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-									<p className="text-muted-foreground text-sm">
-										Loading tool schema...
-									</p>
+									)}
 								</div>
-							)}
+							</form>
+						)
+					) : (
+						<div className="flex flex-col items-center justify-center gap-2 py-12">
+							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+							<p className="text-muted-foreground text-sm">
+								Loading tool schema...
+							</p>
 						</div>
-					</CardContent>
-					{!hasBeenExecuted && getMCP.status === "SUCCESS" && (
-						<CardFooter>
+					)}
+				</div>
+
+				{!hasBeenExecuted && getMCP.status === "SUCCESS" && (
+					<div className="shrink-0 px-1">
+						<Button
+							type="button"
+							className="w-full"
+							size="lg"
+							onClick={() => {
+								handleSubmit();
+							}}
+							disabled={isSubmitting}
+						>
+							{isSubmitting ? (
+								<>
+									<Loader2 className="animate-spin" />
+									Executing...
+								</>
+							) : (
+								"Execute Tool"
+							)}
+						</Button>
+					</div>
+				)}
+
+				{/* Extension Not Available Dialog */}
+				<Dialog
+					open={showExtensionDialog}
+					onOpenChange={setShowExtensionDialog}
+				>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle className="flex items-center gap-2">
+								<AlertCircle className="h-5 w-5 text-warning" />
+								Browser Extension Required
+							</DialogTitle>
+							<DialogDescription>
+								The browser extension is not responding. To
+								execute Playwright scripts, please ensure the
+								SEMOSS Chrome Extension is installed and the
+								side panel is open.
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-3 py-4">
+							<p className="font-medium text-sm">
+								Steps to open the extension:
+							</p>
+							{/* biome-ignore lint/nursery/useSortedClasses: order is correct */}
+							<ol className="ml-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
+								<li>
+									Look for the SEMOSS extension icon in your
+									browser toolbar (puzzle piece icon)
+								</li>
+								<li>
+									Click the extension icon to open the side
+									panel
+								</li>
+								<li>Wait for the panel to load completely</li>
+								<li>Click "Retry" below to continue</li>
+							</ol>
+						</div>
+						<DialogFooter className="gap-2">
 							<Button
-								type="button"
-								className="w-full"
-								size="lg"
-								onClick={() => {
-									handleSubmit();
-								}}
-								disabled={isSubmitting}
+								variant="outline"
+								onClick={() => setShowExtensionDialog(false)}
 							>
-								{isSubmitting ? (
+								Cancel
+							</Button>
+							<Button
+								onClick={async () => {
+									setExtensionCheckRetrying(true);
+									const available =
+										await checkExtensionAvailable();
+									setExtensionCheckRetrying(false);
+
+									if (available) {
+										setShowExtensionDialog(false);
+										// Retry the execution
+										handleSubmit();
+									} else {
+										// Still not available - user needs to open it
+										console.warn(
+											"[PLAYGROUND] ⚠️ Extension still not available after retry",
+										);
+									}
+								}}
+								disabled={extensionCheckRetrying}
+							>
+								{extensionCheckRetrying ? (
 									<>
-										<Loader2 className="animate-spin" />
-										Executing...
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Checking...
 									</>
 								) : (
-									"Execute Tool"
+									"Retry"
 								)}
 							</Button>
-						</CardFooter>
-					)}
-				</Card>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</div>
 		);
 	},
