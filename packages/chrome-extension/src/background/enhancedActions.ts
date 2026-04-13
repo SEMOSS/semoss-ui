@@ -244,7 +244,6 @@ export async function enhancedClick(
 	tabId: number,
 	elementId: number,
 ): Promise<void> {
-
 	const objectId = await getObjectId(tabId, elementId);
 	await scrollIntoView(tabId, objectId);
 	const { x, y } = await getCenterCoordinates(tabId, objectId);
