@@ -214,18 +214,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		/**
 		 * reset the selected layout
 		 */
-		const resetWorkspace = () => {
-			try {
-				// copy the optoins
-				const layout = JSON.parse(JSON.stringify(options.layout));
-
-				// update the layout
-				workspace.updateLayout(layout);
-			} catch (e) {
-				console.error(e);
-				throw new e();
-			}
-		};
 
 		const updateModel = (action) => {
 			if (!model) return;
@@ -440,10 +428,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 										onModelChange={() => {
 											workspace.saveToCache();
 										}}
-										onAction={(action) => {
-											const handled = updateModel(action);
-											return !handled ? action : false;
-										}}
 										onRenderTab={(
 											tabNode,
 											renderValues,
@@ -548,9 +532,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											<IconButton
 												size={"small"}
 												color="default"
-												onClick={() => {
-													resetWorkspace();
-												}}
+												// onClick={() => {
+												// 	resetWorkspace();
+												// }}
 											>
 												<RestartAlt fontSize="inherit" />
 											</IconButton>

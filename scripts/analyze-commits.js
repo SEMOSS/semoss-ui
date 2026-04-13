@@ -181,6 +181,124 @@ function buildCommitContext(commit, files) {
 }
 
 /**
+ * Generate intelligent summary points explaining WHY changes were made
+ */
+function generateSummaryPoints(commit, context, files) {
+  const points = [];
+  const message = commit.message.toLowerCase();
+  const body = (commit.body || '').toLowerCase();
+  const commitType = message.split('(')[0].trim();
+  const scope = message.includes('(') ? message.split('(')[1].split(')')[0] : '';
+  
+  const added = files.filter(f => f.status === 'A');
+  const modified = files.filter(f => f.status === 'M');
+  const deleted = files.filter(f => f.status === 'D');
+
+  // Check for specific patterns in commit message
+  const hasConsole = message.includes('console') || message.includes('log') || message.includes('debug');
+  const hasStyle = message.includes('style') || message.includes('css') || message.includes('theme');
+  const hasTest = message.includes('test') || message.includes('spec');
+  const hasUI = message.includes('ui') || message.includes('component') || message.includes('button');
+  const hasAPI = message.includes('api') || message.includes('endpoint') || message.includes('fetch');
+  const hasAuth = message.includes('auth') || message.includes('login') || message.includes('logout');
+  const hasOptimize = message.includes('optim') || message.includes('perf') || message.includes('speed');
+  const hasRefactor = commitType === 'refactor' || message.includes('refactor');
+
+  // For VERY small changes (1-2 files modified)
+  if (modified.length <= 2 && added.length === 0 && deleted.length === 0) {
+    if (hasConsole) {
+      points.push('Added console logging for debugging and monitoring');
+    } else if (hasStyle) {
+      points.push('Updated styles and visual appearance');
+    } else if (hasUI) {
+      points.push('Enhanced UI component functionality');
+    } else if (hasAuth) {
+      points.push('Improved authentication and logout flow');
+    } else if (hasOptimize) {
+      points.push('Optimized performance and load times');
+    } else if (hasRefactor) {
+      points.push('Refactored code for better maintainability');
+    } else {
+      points.push('Fixed and updated ' + modified.length + ' file(s)');
+    }
+  }
+  // For medium changes
+  else if (modified.length > 2 && modified.length <= 5) {
+    if (hasUI) {
+      points.push('Updated multiple UI components for consistency');
+    } else if (hasAPI) {
+      points.push('Enhanced API integration and data handling');
+    } else if (hasOptimize) {
+      points.push('Performance improvements across multiple areas');
+    } else if (hasRefactor) {
+      points.push('Major refactoring affecting ' + modified.length + ' interconnected files');
+    } else {
+      points.push('Updated ' + modified.length + ' files for improvements');
+    }
+  }
+  // For large changes
+  else if (modified.length > 5 || added.length > 3) {
+    points.push('Significant changes affecting ' + (modified.length + added.length) + ' files');
+  }
+
+  // Analyze commit type more precisely
+  if (commitType === 'feat') {
+    if (added.length > 0) {
+      if (hasUI) {
+        points.push('Added new interactive component/feature');
+      } else if (hasAPI) {
+        points.push('Created new API endpoint/service');
+      } else if (hasTest) {
+        points.push('Added comprehensive test coverage');
+      } else {
+        points.push('Implemented ' + added.length + ' new feature file(s)');
+      }
+    }
+  } 
+  else if (commitType === 'fix') {
+    if (hasAuth) {
+      points.push('Fixed authentication and security issues');
+    } else if (hasUI) {
+      points.push('Fixed UI rendering issues and bugs');
+    } else {
+      points.push('Bug fix to improve reliability');
+    }
+  }
+  else if (commitType === 'docs') {
+    if (context.categories.docs.length > 0) {
+      points.push('Improved documentation for clarity and understanding');
+    }
+  }
+  else if (commitType === 'test') {
+    points.push('Enhanced test coverage and quality assurance');
+  }
+  else if (commitType === 'chore') {
+    if (scope.includes('depend')) {
+      points.push('Updated dependencies to latest stable versions');
+    } else {
+      points.push('Maintenance and project updates');
+    }
+  }
+
+  // Add scope insights if available
+  if (scope && scope.length > 0) {
+    const scopeName = scope.toLowerCase().replace(/[-_]/g, ' ');
+    if (!message.includes(scopeName)) {
+      points.push('Focus area: ' + scopeName);
+    }
+  }
+
+  // Add deletion info if relevant
+  if (deleted.length > 0) {
+    points.push('Removed ' + deleted.length + ' obsolete file(s)');
+  }
+
+  // Remove duplicates and limit to 3 most relevant points
+  const uniquePoints = [...new Set(points)];
+  return uniquePoints.slice(0, 3);
+}
+
+/**
  * Summarize context into human-readable format
  */
 function summarizeContext(context) {
@@ -197,7 +315,20 @@ function summarizeContext(context) {
 
   summary += `\n**Affected Areas:** ${context.affectedAreas.join(', ')}\n\n`;
 
-  summary += '**File Breakdown:**\n';
+  // Calculate file statistics
+  const added = [];
+  const modified = [];
+  const deleted = [];
+  
+  Object.values(context.categories).forEach(categoryFiles => {
+    categoryFiles.forEach(f => {
+      if (f.status === 'A') added.push(f.file);
+      else if (f.status === 'M') modified.push(f.file);
+      else if (f.status === 'D') deleted.push(f.file);
+    });
+  });
+
+  summary += '\n**File Breakdown by Category:**\n';
 
   if (context.categories.frontend.length > 0) {
     summary += `- **Frontend** (${context.categories.frontend.length}):\n`;
@@ -259,8 +390,18 @@ function generateMarkdown(commits) {
     const files = getFilesChanged(commit.fullHash);
     const context = buildCommitContext(commit, files);
     const summary = summarizeContext(context);
+    const summaryPoints = generateSummaryPoints(commit, context, files);
 
     md += `## ${commit.message}\n\n`;
+    
+    if (summaryPoints.length > 0) {
+      md += `**Summary:**\n`;
+      summaryPoints.forEach(point => {
+        md += `✓ ${point}\n`;
+      });
+      md += '\n';
+    }
+    
     md += summary;
     md += '\n---\n\n';
   }
@@ -476,6 +617,27 @@ function generateHTML(commits) {
         .badge.deleted {
             background: #f8d7da;
             color: #721c24;
+        }
+        
+        .summary-points {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f5e9 100%);
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .point {
+            color: #2e7d32;
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .point:last-child {
+            margin-bottom: 0;
         }
         
         .area-tags {
@@ -707,6 +869,7 @@ function generateHTML(commits) {
   for (const commit of commits) {
     const files = getFilesChanged(commit.fullHash);
     const context = buildCommitContext(commit, files);
+    const summaryPoints = generateSummaryPoints(commit, context, files);
     
     const added = files.filter(f => f.status === 'A').length;
     const modified = files.filter(f => f.status === 'M').length;
@@ -722,6 +885,13 @@ function generateHTML(commits) {
                 <div class="commit-detail"><strong>Date:</strong> ${commit.date}</div>
                 <div class="commit-detail"><strong>Files:</strong> ${files.length}</div>
             </div>
+            
+            ${summaryPoints.length > 0 ? `<div class="section">
+                <div class="section-title">Summary</div>
+                <div class="summary-points">
+                    ${summaryPoints.map(point => `<div class="point">✓ ${point}</div>`).join('')}
+                </div>
+            </div>` : ''}
             
             <div class="section">
                 <div class="section-title">Affected Areas</div>
@@ -998,6 +1168,8 @@ function generatePDF(commits, filename) {
     const lines = [];
     for (const commit of commits) {
       const files = getFilesChanged(commit.fullHash);
+      const context = buildCommitContext(commit, files);
+      const summaryPoints = generateSummaryPoints(commit, context, files);
       
       // Commit header
       doc.fontSize(12).font('Helvetica-Bold').text(`${commit.message}`, { lineBreak: true });
@@ -1008,10 +1180,17 @@ function generatePDF(commits, filename) {
       doc.text(`Date: ${commit.date}`);
       doc.text(`Files Changed: ${files.length}`);
       doc.moveDown(0.5);
-
-      // Categorize files
-      const context = buildCommitContext(commit, files);
       
+      // Summary points
+      if (summaryPoints.length > 0) {
+        doc.fontSize(10).font('Helvetica-Bold').text('Summary:');
+        doc.fontSize(9).font('Helvetica');
+        summaryPoints.forEach(point => {
+          doc.text('✓ ' + point);
+        });
+        doc.moveDown(0.5);
+      }
+
       // Affected areas
       if (context.affectedAreas.length > 0) {
         doc.fontSize(10).font('Helvetica-Bold').text('Affected Areas:');
