@@ -30,9 +30,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	embed,
 }) => {
 	const { pathname } = useLocation();
-	type ReturnToolTip = (name: string) => string;
-
-	const returnToolTip: ReturnToolTip = (name) => {
+	const returnToolTip = (name: string): string => {
 		if (name === "Agents/Workspaces") {
 			return "Agents/Workspaces - Access your workspaces or create new AI agents.";
 		} else if (name === "Knowledge Library") {
@@ -42,7 +40,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 		} else if (name === "Prompt Library") {
 			return "Prompt Library - Browse, create and use saved prompts.";
 		} else {
-			return "";
+			return name;
 		}
 	};
 
@@ -52,7 +50,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(`/embed/${path}`, pathname)}
-					tooltip={returnToolTip(name)}
+					tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
@@ -77,6 +75,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
+					tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
 					<Link to={internalPath} aria-label={name}>
 						{icon ? (
@@ -95,7 +94,10 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 
 	return (
 		<SidebarMenuItem>
-			<SidebarMenuButton asChild>
+			<SidebarMenuButton
+				asChild
+				tooltip={{ children: returnToolTip(name), hidden: false }}
+			>
 				<a
 					href={url}
 					target="_blank"
