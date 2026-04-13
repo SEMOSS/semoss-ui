@@ -99,6 +99,96 @@ function getFilesChanged(commitHash) {
 }
 
 /**
+ * Extract actual code diff for a commit
+ */
+function getCommitDiff(commitHash) {
+  try {
+    const cmd = `show ${commitHash} --no-patch --format="%H"`;
+    const cmd2 = `show ${commitHash}`;
+    const output = execGit(cmd2);
+    return output;
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Extract specific code changes from diff
+ */
+function analyzeCodeChanges(commitHash, files) {
+  const diff = getCommitDiff(commitHash);
+  const changes = {
+    functionsAdded: [],
+    functionsModified: [],
+    functionsRemoved: [],
+    importsChanged: false,
+    typesChanged: false,
+    stateManagementChanged: false,
+    codeSnippets: [],
+  };
+
+  // Extract added functions
+  const addedFunctionPattern = /^\+\s*(async\s+)?function\s+(\w+)|^\+\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/gm;
+  let match;
+  while ((match = addedFunctionPattern.exec(diff)) !== null) {
+    const funcName = match[2] || match[3];
+    if (!changes.functionsAdded.includes(funcName)) {
+      changes.functionsAdded.push(funcName);
+    }
+  }
+
+  // Extract removed functions
+  const removedFunctionPattern = /^-\s*(async\s+)?function\s+(\w+)|^-\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/gm;
+  while ((match = removedFunctionPattern.exec(diff)) !== null) {
+    const funcName = match[2] || match[3];
+    if (!changes.functionsRemoved.includes(funcName)) {
+      changes.functionsRemoved.push(funcName);
+    }
+  }
+
+  // Check for imports/exports changes
+  if (/^[+-]\s*import\s|^[+-]\s*export\s/m.test(diff)) {
+    changes.importsChanged = true;
+  }
+
+  // Check for type changes
+  if (/^[+-].*:\s*\w+<|^[+-].*interface\s|^[+-].*type\s/m.test(diff)) {
+    changes.typesChanged = true;
+  }
+
+  // Check for state/config changes
+  if (/^[+-].*useState|^[+-].*useReducer|^[+-].*const\s+\w+\s*=\s*{|^[+-].*config|^[+-].*store/m.test(diff)) {
+    changes.stateManagementChanged = true;
+  }
+
+  // Extract code snippets (first few lines of changes)
+  const diffLines = diff.split('\n');
+  let inCodeSection = false;
+  let snippetLines = [];
+
+  for (let i = 0; i < diffLines.length; i++) {
+    const line = diffLines[i];
+    
+    if (line.startsWith('@@')) {
+      if (snippetLines.length > 0) {
+        changes.codeSnippets.push(snippetLines.join('\n'));
+      }
+      snippetLines = [];
+      inCodeSection = true;
+    } else if (inCodeSection && (line.startsWith('+') || line.startsWith('-'))) {
+      snippetLines.push(line);
+      if (snippetLines.length > 8) {
+        changes.codeSnippets.push(snippetLines.slice(0, 8).join('\n'));
+        snippetLines = [];
+        inCodeSection = false;
+      }
+    }
+  }
+
+  return changes;
+}
+
+/**
  * Get file diff stats
  */
 function getDiffStats(commitHash) {
@@ -154,6 +244,7 @@ function categorizeChanges(files) {
  */
 function buildCommitContext(commit, files) {
   const categories = categorizeChanges(files);
+  const codeAnalysis = analyzeCodeChanges(commit.fullHash, files);
 
   const context = {
     hash: commit.hash,
@@ -165,6 +256,7 @@ function buildCommitContext(commit, files) {
     filesChanged: files.length,
     categories: categories,
     affectedAreas: [],
+    codeAnalysis: codeAnalysis,
   };
 
   // Determine affected areas
@@ -189,12 +281,13 @@ function generateSummaryPoints(commit, context, files) {
   const body = (commit.body || '').toLowerCase();
   const commitType = message.split('(')[0].trim();
   const scope = message.includes('(') ? message.split('(')[1].split(')')[0] : '';
+  const codeAnalysis = context.codeAnalysis || { functionsAdded: [], functionsModified: [], functionsRemoved: [] };
   
   const added = files.filter(f => f.status === 'A');
   const modified = files.filter(f => f.status === 'M');
   const deleted = files.filter(f => f.status === 'D');
 
-  // Check for specific patterns in commit message
+  // Check for specific patterns in commit message and code
   const hasConsole = message.includes('console') || message.includes('log') || message.includes('debug');
   const hasStyle = message.includes('style') || message.includes('css') || message.includes('theme');
   const hasTest = message.includes('test') || message.includes('spec');
@@ -204,19 +297,27 @@ function generateSummaryPoints(commit, context, files) {
   const hasOptimize = message.includes('optim') || message.includes('perf') || message.includes('speed');
   const hasRefactor = commitType === 'refactor' || message.includes('refactor');
 
+  // Use actual code changes for summary
+  const functionsAdded = codeAnalysis.functionsAdded || [];
+  const functionsRemoved = codeAnalysis.functionsRemoved || [];
+  const importsChanged = codeAnalysis.importsChanged || false;
+  const stateChanged = codeAnalysis.stateManagementChanged || false;
+
   // For VERY small changes (1-2 files modified)
   if (modified.length <= 2 && added.length === 0 && deleted.length === 0) {
-    if (hasConsole) {
+    if (hasConsole || functionsAdded.some(f => f.includes('log') || f.includes('debug'))) {
       points.push('Added console logging for debugging and monitoring');
     } else if (hasStyle) {
       points.push('Updated styles and visual appearance');
+    } else if (stateChanged) {
+      points.push('Modified state management and hook logic');
     } else if (hasUI) {
       points.push('Enhanced UI component functionality');
     } else if (hasAuth) {
       points.push('Improved authentication and logout flow');
     } else if (hasOptimize) {
       points.push('Optimized performance and load times');
-    } else if (hasRefactor) {
+    } else if (hasRefactor || functionsAdded.length > 0) {
       points.push('Refactored code for better maintainability');
     } else {
       points.push('Fixed and updated ' + modified.length + ' file(s)');
@@ -224,26 +325,35 @@ function generateSummaryPoints(commit, context, files) {
   }
   // For medium changes
   else if (modified.length > 2 && modified.length <= 5) {
-    if (hasUI) {
+    if (importsChanged && functionsAdded.length > 0) {
+      points.push('Updated dependencies and integrated new functionality');
+    } else if (hasUI) {
       points.push('Updated multiple UI components for consistency');
     } else if (hasAPI) {
       points.push('Enhanced API integration and data handling');
     } else if (hasOptimize) {
       points.push('Performance improvements across multiple areas');
-    } else if (hasRefactor) {
-      points.push('Major refactoring affecting ' + modified.length + ' interconnected files');
+    } else if (hasRefactor || (modified.length > 2 && functionsAdded.length > 0)) {
+      points.push('Refactored ' + modified.length + ' interconnected files');
     } else {
       points.push('Updated ' + modified.length + ' files for improvements');
     }
   }
   // For large changes
   else if (modified.length > 5 || added.length > 3) {
-    points.push('Significant changes affecting ' + (modified.length + added.length) + ' files');
+    if (functionsAdded.length > 3) {
+      points.push('Added ' + functionsAdded.length + ' new functions/hooks');
+    } else {
+      points.push('Significant changes affecting ' + (modified.length + added.length) + ' files');
+    }
   }
 
-  // Analyze commit type more precisely
+  // Analyze commit type more precisely with code changes
   if (commitType === 'feat') {
-    if (added.length > 0) {
+    if (functionsAdded.length > 0) {
+      const funcList = functionsAdded.slice(0, 2).join(', ');
+      points.push('Added new ' + funcList + ' function(s)/component(s)');
+    } else if (added.length > 0) {
       if (hasUI) {
         points.push('Added new interactive component/feature');
       } else if (hasAPI) {
@@ -260,6 +370,8 @@ function generateSummaryPoints(commit, context, files) {
       points.push('Fixed authentication and security issues');
     } else if (hasUI) {
       points.push('Fixed UI rendering issues and bugs');
+    } else if (functionsRemoved.length > 0) {
+      points.push('Removed ' + functionsRemoved.join(', ') + ' to fix issues');
     } else {
       points.push('Bug fix to improve reliability');
     }
@@ -275,6 +387,8 @@ function generateSummaryPoints(commit, context, files) {
   else if (commitType === 'chore') {
     if (scope.includes('depend')) {
       points.push('Updated dependencies to latest stable versions');
+    } else if (importsChanged) {
+      points.push('Updated imports and module organization');
     } else {
       points.push('Maintenance and project updates');
     }
@@ -289,8 +403,12 @@ function generateSummaryPoints(commit, context, files) {
   }
 
   // Add deletion info if relevant
-  if (deleted.length > 0) {
-    points.push('Removed ' + deleted.length + ' obsolete file(s)');
+  if (deleted.length > 0 || functionsRemoved.length > 0) {
+    if (functionsRemoved.length > 0) {
+      points.push('Removed ' + functionsRemoved.length + ' obsolete function(s)/file(s)');
+    } else {
+      points.push('Removed ' + deleted.length + ' obsolete file(s)');
+    }
   }
 
   // Remove duplicates and limit to 3 most relevant points
@@ -314,6 +432,38 @@ function summarizeContext(context) {
   }
 
   summary += `\n**Affected Areas:** ${context.affectedAreas.join(', ')}\n\n`;
+
+  // Add code changes analysis
+  const analysis = context.codeAnalysis || {};
+  if (analysis.functionsAdded?.length > 0 || analysis.functionsRemoved?.length > 0 || analysis.importsChanged || analysis.stateManagementChanged) {
+    summary += `**Code Changes:**\n`;
+    
+    if (analysis.functionsAdded?.length > 0) {
+      summary += `- **Added Functions/Hooks:** ${analysis.functionsAdded.slice(0, 5).join(', ')}`;
+      if (analysis.functionsAdded.length > 5) {
+        summary += ` ... and ${analysis.functionsAdded.length - 5} more`;
+      }
+      summary += '\n';
+    }
+    
+    if (analysis.functionsRemoved?.length > 0) {
+      summary += `- **Removed Functions:** ${analysis.functionsRemoved.slice(0, 3).join(', ')}`;
+      if (analysis.functionsRemoved.length > 3) {
+        summary += ` ... and ${analysis.functionsRemoved.length - 3} more`;
+      }
+      summary += '\n';
+    }
+    
+    if (analysis.stateManagementChanged) {
+      summary += `- **State Management Updated:** Modified hooks, state, or config files\n`;
+    }
+    
+    if (analysis.importsChanged) {
+      summary += `- **Imports Updated:** Import/export statements changed\n`;
+    }
+    
+    summary += '\n';
+  }
 
   // Calculate file statistics
   const added = [];
@@ -798,6 +948,72 @@ function generateHTML(commits) {
             flex-shrink: 0;
         }
         
+        .code-changes {
+            background: #f5f5f5;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .code-change-item {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+        }
+        
+        .code-change-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .code-change-label.added::before {
+            content: "+ ";
+            color: #28a745;
+            font-weight: 700;
+        }
+        
+        .code-change-label.removed::before {
+            content: "- ";
+            color: #dc3545;
+            font-weight: 700;
+        }
+        
+        .code-change-label.modified::before {
+            content: "~ ";
+            color: #ffc107;
+            font-weight: 700;
+        }
+        
+        .code-snippet {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 12px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+            overflow-x: auto;
+            margin-top: 8px;
+            border: 1px solid #444;
+        }
+        
+        .code-snippet .added-line {
+            background: rgba(40, 167, 69, 0.2);
+            color: #a6e22e;
+        }
+        
+        .code-snippet .removed-line {
+            background: rgba(220, 53, 69, 0.2);
+            color: #f92672;
+        }
+        
         @media print {
             body {
                 background: white;
@@ -919,6 +1135,48 @@ function generateHTML(commits) {
                         <div class="stat-label">Total</div>
                         <div class="stat-value">${added + modified + deleted}</div>
                     </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Code Changes</div>
+                <div class="code-changes">
+${(() => {
+    const analysis = context.codeAnalysis || {};
+    let html = '';
+    
+    if (analysis.functionsAdded && analysis.functionsAdded.length > 0) {
+        html += '<div class="code-change-item"><div class="code-change-label added">Added Functions/Hooks</div>';
+        html += analysis.functionsAdded.slice(0, 5).map(f => `<div style="margin-top: 6px; color: #28a745;">${f}</div>`).join('');
+        if (analysis.functionsAdded.length > 5) html += `<div style="color: #666; font-size: 0.9em;">... and ${analysis.functionsAdded.length - 5} more</div>`;
+        html += '</div>';
+    }
+    
+    if (analysis.functionsRemoved && analysis.functionsRemoved.length > 0) {
+        html += '<div class="code-change-item"><div class="code-change-label removed">Removed Functions</div>';
+        html += analysis.functionsRemoved.slice(0, 3).map(f => `<div style="margin-top: 6px; color: #dc3545;">${f}</div>`).join('');
+        if (analysis.functionsRemoved.length > 3) html += `<div style="color: #666; font-size: 0.9em;">... and ${analysis.functionsRemoved.length - 3} more</div>`;
+        html += '</div>';
+    }
+    
+    if (analysis.stateManagementChanged) {
+        html += '<div class="code-change-item"><div class="code-change-label modified">State Management Updated</div><div style="margin-top: 6px; color: #666;">Modified hooks, state, or config files</div></div>';
+    }
+    
+    if (analysis.importsChanged) {
+        html += '<div class="code-change-item"><div class="code-change-label modified">Imports Updated</div><div style="margin-top: 6px; color: #666;">Import/export statements changed</div></div>';
+    }
+    
+    if (analysis.typesChanged) {
+        html += '<div class="code-change-item"><div class="code-change-label modified">Type Definitions Updated</div><div style="margin-top: 6px; color: #666;">TypeScript interfaces or types modified</div></div>';
+    }
+    
+    if (!html) {
+        html = '<div style="color: #999; font-size: 0.9em;">No significant code structure changes detected</div>';
+    }
+    
+    return html;
+})()}
                 </div>
             </div>
             
@@ -1207,6 +1465,42 @@ function generatePDF(commits, filename) {
       doc.fontSize(9).font('Helvetica');
       doc.text(`  Added: ${added}, Modified: ${modified}, Deleted: ${deleted}`);
       doc.moveDown(0.5);
+
+      // Code changes analysis
+      const analysis = context.codeAnalysis || {};
+      if (analysis.functionsAdded?.length > 0 || analysis.functionsRemoved?.length > 0 || analysis.importsChanged || analysis.stateManagementChanged) {
+        doc.fontSize(10).font('Helvetica-Bold').text('Code Changes:');
+        
+        if (analysis.functionsAdded?.length > 0) {
+          doc.fontSize(9).font('Helvetica-Bold').text('Added Functions/Hooks:');
+          analysis.functionsAdded.slice(0, 4).forEach(f => {
+            doc.fontSize(8).font('Helvetica').text(`  + ${f}`);
+          });
+          if (analysis.functionsAdded.length > 4) {
+            doc.fontSize(8).font('Helvetica').text(`  ... and ${analysis.functionsAdded.length - 4} more`);
+          }
+        }
+        
+        if (analysis.functionsRemoved?.length > 0) {
+          doc.fontSize(9).font('Helvetica-Bold').text('Removed Functions:');
+          analysis.functionsRemoved.slice(0, 3).forEach(f => {
+            doc.fontSize(8).font('Helvetica').text(`  - ${f}`);
+          });
+          if (analysis.functionsRemoved.length > 3) {
+            doc.fontSize(8).font('Helvetica').text(`  ... and ${analysis.functionsRemoved.length - 3} more`);
+          }
+        }
+        
+        if (analysis.stateManagementChanged) {
+          doc.fontSize(8).font('Helvetica').text('  Modified state management or hooks');
+        }
+        
+        if (analysis.importsChanged) {
+          doc.fontSize(8).font('Helvetica').text('  Updated imports/exports');
+        }
+        
+        doc.moveDown(0.5);
+      }
 
       // Files by category
       if (context.categories.frontend.length > 0) {
