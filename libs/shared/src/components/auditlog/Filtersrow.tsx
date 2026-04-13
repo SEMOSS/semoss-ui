@@ -1,6 +1,13 @@
-import { CheckCircle, Clock, Filter, Hash, XCircle } from "lucide-react";
+import {
+	Activity,
+	CheckCircle,
+	Clock,
+	RefreshCw,
+	ShieldAlert,
+} from "lucide-react";
 import { useEffect } from "react";
 import {
+	Button,
 	ScrollArea,
 	ScrollBar,
 	Select,
@@ -44,6 +51,7 @@ export interface FiltersRowProps {
 	onEngineChange: (id: string) => void;
 	onDateChange: (from: string, to: string, preset?: string) => void;
 	onUserChange: (userId: string) => void;
+	onRefresh?: () => void;
 }
 
 export const FiltersRow = ({
@@ -62,31 +70,40 @@ export const FiltersRow = ({
 	onEngineChange,
 	onDateChange,
 	onUserChange,
+	onRefresh,
 }: FiltersRowProps) => {
 	const statCards = [
 		{
-			label: "Total",
+			label: "Total Requests",
 			value: String(totalCount),
-			icon: Hash,
-			accent: undefined as string | undefined,
+			icon: Activity,
+			iconColor: "text-primary",
+			iconBg: "bg-primary/10",
+			accent: "text-foreground",
 		},
 		{
-			label: "Success",
+			label: "Success Rate",
 			value: `${successPct}%`,
 			icon: CheckCircle,
-			accent: "text-success",
+			iconColor: "text-emerald-600",
+			iconBg: "bg-emerald-500/10",
+			accent: "text-foreground",
 		},
 		{
-			label: "Failed",
+			label: "Error Rate",
 			value: String(failCount),
-			icon: XCircle,
-			accent: failCount > 0 ? "text-destructive" : undefined,
+			icon: ShieldAlert,
+			iconColor: "text-destructive",
+			iconBg: "bg-destructive/10",
+			accent: failCount > 0 ? "text-destructive" : "text-foreground",
 		},
 		{
-			label: "Avg Latency",
+			label: "Avg Response Time",
 			value: `${avgLat}ms`,
 			icon: Clock,
-			accent: "text-primary",
+			iconColor: "text-primary",
+			iconBg: "bg-primary/10",
+			accent: "text-foreground",
 		},
 	];
 	useEffect(() => {
@@ -102,129 +119,137 @@ export const FiltersRow = ({
 	}, [engineType, engineNames, engineId, onEngineChange]);
 
 	return (
-		<ScrollArea className="w-full">
-			<div className="flex flex-shrink-0 items-stretch gap-2">
-				{/* ── Stat Cards ── */}
-				<div className="flex flex-1 gap-2">
+		<div className="mb-2 flex w-full flex-col gap-3">
+			{/* ── Header + Filters ── */}
+			<div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+				<h2 className="flex-shrink-0 font-semibold text-foreground text-lg">
+					Timeline &amp; Logs Dashboard
+				</h2>
+
+				<ScrollArea className="w-full lg:w-auto">
+					<div className="flex items-center gap-2">
+						{/* ── Engine Type ── */}
+						<Select
+							value={engineType || "APP"}
+							onValueChange={onEngineTypeChange}
+						>
+							<SelectTrigger
+								title={engineType || "APP"}
+								className="h-8 w-[120px] rounded-md border border-border bg-card text-xs"
+							>
+								<SelectValue placeholder="Catalogue" />
+							</SelectTrigger>
+							<SelectContent>
+								{ENGINE_TYPES?.map((t) => (
+									<SelectItem key={t} value={t}>
+										{t}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+
+						{/* ── Engine Name ── */}
+						<Select
+							value={engineId || engineNames?.[0]?.value}
+							onValueChange={onEngineChange}
+							disabled={!engineType}
+						>
+							<SelectTrigger
+								title={
+									engineNames?.find(
+										(n) =>
+											n.value ===
+											(engineId ||
+												engineNames?.[0]?.value),
+									)?.label ?? "Select"
+								}
+								className="h-8 w-[160px] truncate rounded-md border border-border bg-card text-xs"
+							>
+								<SelectValue placeholder="Name" />
+							</SelectTrigger>
+							<SelectContent>
+								{engineNames?.map((n) => (
+									<SelectItem key={n.value} value={n.value}>
+										{n.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+
+						{/* ── User ── */}
+						<Select
+							value={selectedUser || "__all__"}
+							onValueChange={(val) =>
+								onUserChange(val === "__all__" ? "" : val)
+							}
+						>
+							<SelectTrigger className="h-8 w-[140px] rounded-md border border-border bg-card text-xs">
+								<SelectValue placeholder="All Users" />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="__all__">
+									All Users
+								</SelectItem>
+								{userOptions.map((u) => (
+									<SelectItem key={u.value} value={u.value}>
+										{u.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+
+						{/* ── Date Range ── */}
+						<DateRangeFilter
+							dateFrom={dateFrom}
+							dateTo={dateTo}
+							onChange={onDateChange}
+						/>
+
+						{/* ── Refresh ── */}
+						{onRefresh && (
+							<Button
+								variant="outline"
+								onClick={onRefresh}
+								className="h-8 w-8 flex-shrink-0 cursor-pointer rounded-md border border-border bg-card p-0"
+								title="Reset filters"
+							>
+								<RefreshCw size={14} />
+							</Button>
+						)}
+					</div>
+					<ScrollBar orientation="horizontal" />
+				</ScrollArea>
+			</div>
+
+			{/* ── Stat Cards ── */}
+			<ScrollArea className="w-full">
+				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 					{statCards?.map((s) => (
 						<div
 							key={s.label}
-							className="min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-1.5"
+							className="flex min-w-[140px] items-center justify-between rounded-2xl border border-border px-5 py-4"
 						>
-							<div className="flex items-center gap-1.5">
-								<s.icon
-									size={10}
-									className="flex-shrink-0 text-muted-foreground"
-								/>
-								<span className="truncate text-[9px] text-muted-foreground uppercase tracking-widest">
+							<div className="min-w-0">
+								<p
+									className={`font-bold text-2xl leading-tight ${s.accent}`}
+								>
+									{s.value}
+								</p>
+								<span className="text-muted-foreground text-sm">
 									{s.label}
 								</span>
 							</div>
-							<p
-								className={`font-semibold text-lg leading-tight ${
-									s.accent ?? "text-foreground"
-								}`}
+							<div
+								className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${s.iconBg}`}
 							>
-								{s.value}
-							</p>
+								<s.icon size={20} className={s.iconColor} />
+							</div>
 						</div>
 					))}
 				</div>
-
-				{/* ── Filters ── */}
-				<div className="flex flex-shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-3">
-					<Filter size={11} className="text-muted-foreground" />
-
-					{/* ── Engine Type ── */}
-					<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
-						Catalogue
-					</span>
-
-					<Select
-						value={engineType || "APP"}
-						onValueChange={onEngineTypeChange}
-					>
-						<SelectTrigger
-							title={engineType || "APP"}
-							className="h-7 w-[110px] truncate border-0 bg-transparent px-1 text-xs shadow-none"
-						>
-							<SelectValue placeholder="Select" />
-						</SelectTrigger>
-						<SelectContent>
-							{ENGINE_TYPES?.map((t) => (
-								<SelectItem key={t} value={t}>
-									{t}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-
-					<div className="h-4 w-px bg-border" />
-
-					{/* ── Engine Name ── */}
-					<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
-						Name
-					</span>
-
-					<Select
-						value={engineId || engineNames?.[0]?.value}
-						onValueChange={onEngineChange}
-						disabled={!engineType}
-					>
-						<SelectTrigger
-							title={
-								engineNames?.find(
-									(n) =>
-										n.value ===
-										(engineId || engineNames?.[0]?.value),
-								)?.label ?? "Select"
-							}
-							className="h-7 w-[160px] truncate border-0 bg-transparent px-1 text-xs shadow-none"
-						>
-							<SelectValue placeholder="Select" />
-						</SelectTrigger>
-						<SelectContent>
-							{engineNames?.map((n) => (
-								<SelectItem key={n.value} value={n.value}>
-									{n.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<div className="h-4 w-px bg-border" />
-					<span className="text-[9px] text-muted-foreground uppercase tracking-widest">
-						User
-					</span>
-
-					<Select
-						value={selectedUser || "__all__"}
-						onValueChange={(val) =>
-							onUserChange(val === "__all__" ? "" : val)
-						}
-					>
-						<SelectTrigger className="h-7 w-[160px] border-0 bg-transparent px-1 text-xs shadow-none">
-							<SelectValue placeholder="All Users" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="__all__">All Users</SelectItem>
-							{userOptions.map((u) => (
-								<SelectItem key={u.value} value={u.value}>
-									{u.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-					<div className="h-4 w-px bg-border" />
-
-					<DateRangeFilter
-						dateFrom={dateFrom}
-						dateTo={dateTo}
-						onChange={onDateChange}
-					/>
-				</div>
-			</div>
-			<ScrollBar orientation="horizontal" />
-		</ScrollArea>
+				<ScrollBar orientation="horizontal" />
+			</ScrollArea>
+		</div>
 	);
 };
 

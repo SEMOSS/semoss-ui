@@ -346,6 +346,30 @@ export const AuditLogPage = () => {
 		fetchLogs(ROWS_PER_PAGE, 0);
 	};
 
+	const handleRefresh = () => {
+		setEngType("");
+		setEngId("");
+		setSelectedUser("");
+		setUserOptions([]);
+		setDateFrom(todayStr);
+		setDateTo(todayStr);
+		setDurationValue("today");
+		setChartPage(0);
+		setSearchTokens([]);
+		setSearchFreeText("");
+		filteredData.current = {
+			engineType: "",
+			engineId: "",
+			selectedUser: "",
+			customDateRange: { from: new Date(), to: new Date() },
+			SelectedDuration:
+				DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
+		};
+		searchRef.current = { tokens: [], freeText: "" };
+		setPage(0);
+		fetchLogs(ROWS_PER_PAGE, 0);
+	};
+
 	const engineNames = useMemo(
 		() => (engineType ? (engineDetails[engineType] ?? []) : []),
 		[engineType, engineDetails],
@@ -380,7 +404,7 @@ export const AuditLogPage = () => {
 
 	console.log(logs, "logs");
 	return (
-		<div className="min-h-screen lg:h-screen flex flex-col bg-background overflow-auto lg:overflow-hidden">
+		<div className="min-h-screen lg:h-screen flex flex-col bg-background overflow-auto">
 			{/* ── Top Bar ── */}
 			<div className="flex-shrink-0 border-b border-border bg-card">
 				<div className="max-w-[1600px] mx-auto px-4 flex items-center justify-between h-10">
@@ -425,7 +449,7 @@ export const AuditLogPage = () => {
 			</div>
 
 			{/* ── Main Content ── */}
-			<div className="flex-1 min-h-0 max-w-[1600px] mx-auto w-full px-4 py-2 flex flex-col gap-2">
+			<div className="flex-1 min-h-0 max-w-[1600px] mx-auto w-full px-4 py-2 flex flex-col gap-2 ">
 				<FiltersRow
 					totalCount={totalCount}
 					successPct={successPct}
@@ -443,6 +467,7 @@ export const AuditLogPage = () => {
 					onEngineChange={handleEngineChange}
 					onDateChange={handleDateChange}
 					onUserChange={handleUserChange}
+					onRefresh={handleRefresh}
 				/>
 
 				{/* Row 2: Chart (65%) + Event History (35%) */}

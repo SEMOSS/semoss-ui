@@ -63,7 +63,7 @@ export const EventHistory = ({
 	onPageChange,
 }: EventHistoryProps) => {
 	return (
-		<div className="flex h-[700px] flex-col rounded-lg border border-border bg-card">
+		<div className="flex h-[600px] flex-col rounded-lg border border-border bg-card">
 			{/* ── Header: title + search box ── */}
 			<div className="flex-shrink-0 border-border border-b">
 				<div className="flex items-center justify-between px-3 py-2">

@@ -59,7 +59,7 @@ export const ChartPanel = ({
 	];
 
 	return (
-		<div className="flex h-[700px] flex-col gap-2">
+		<div className="flex h-[600px] flex-col gap-2">
 			{/* ── Chart Panel ── */}
 			<div className="flex max-h-[300px] flex-1 flex-col rounded-lg border border-border bg-card">
 				{/* Tab bar */}
