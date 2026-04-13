@@ -1,4 +1,4 @@
-import { SearchIcon } from "lucide-react";
+import { Search, SearchIcon } from "lucide-react";
 import React, { Suspense, useEffect, useState } from "react";
 import {
 	Badge,
@@ -92,15 +92,25 @@ export const PlatformSearch = ({ className }: PromptSearchProps) => {
 	return (
 		<>
 			<Button
-				variant="outline"
+				variant="ghost"
+				size={className ? "default" : "icon"}
+				aria-label="Search"
 				className={cn(
-					"h-10 w-full justify-start overflow-hidden rounded-lg border-2 border-border bg-background/95 text-muted-foreground shadow-sm hover:text-foreground",
+					className
+						? "h-10 w-full justify-start overflow-hidden rounded-lg border-2 border-border bg-background/95 text-muted-foreground shadow-sm hover:text-foreground"
+						: "h-9 w-9 text-muted-foreground hover:bg-accent hover:text-foreground",
 					className,
 				)}
 				onClick={() => setOpen(true)}
 			>
-				<SearchIcon className="size-4 shrink-0 opacity-50" />
-				Search
+				{className ? (
+					<>
+						<SearchIcon className="size-4 shrink-0 opacity-50" />
+						Search
+					</>
+				) : (
+					<Search className="h-[18px] w-[18px]" />
+				)}
 			</Button>
 			<Dialog open={open} onOpenChange={setOpen}>
 				<DialogContent
