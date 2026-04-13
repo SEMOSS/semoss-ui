@@ -30,6 +30,21 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	embed,
 }) => {
 	const { pathname } = useLocation();
+	type ReturnToolTip = (name: string) => string;
+
+	const returnToolTip: ReturnToolTip = (name) => {
+		if (name === "Agents/Workspaces") {
+			return "Agents/Workspaces - Access your workspaces or create new AI agents.";
+		} else if (name === "Knowledge Library") {
+			return "Knowledge Library - Browse, create, share and manage your document libraries.";
+		} else if (name === "Toolbox") {
+			return "Toolbox - Learn about Elsa's extended capabilities with powerful add-on tools.";
+		} else if (name === "Prompt Library") {
+			return "Prompt Library - Browse, create and use saved prompts.";
+		} else {
+			return "";
+		}
+	};
 
 	if (embed) {
 		return (
@@ -37,6 +52,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(`/embed/${path}`, pathname)}
+					tooltip={returnToolTip(name)}
 				>
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
