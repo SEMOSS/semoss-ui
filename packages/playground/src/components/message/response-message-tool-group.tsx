@@ -2,6 +2,7 @@ import {
 	CheckIcon,
 	ChevronDownIcon,
 	CirclePause,
+	HammerIcon,
 	XCircleIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -104,13 +105,15 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					onClick={() => setIsOpen((prev) => !prev)}
 				>
 					<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
-						{icon}
+						{isOpen ? <HammerIcon className="size-5" /> : icon}
 					</div>
 					<span className="-ml-1.5 truncate text-muted-foreground text-sm">
-						{t("tool.groupLabel", {
-							toolName: tools[0].json.title,
-							count: tools.length - 1,
-						})}
+						{isOpen
+							? t("tool.groupLabelOpen", { count: tools.length })
+							: t("tool.groupLabelClosed", {
+									toolName: tools[0].json.title,
+									count: tools.length - 1,
+								})}
 					</span>
 					{isLoading && !isOpen && loadingMessage && (
 						<span className="shrink-0 text-muted-foreground text-sm italic">
@@ -133,14 +136,16 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					)}
 				>
 					<div className="overflow-hidden">
-						<div className="flex flex-col gap-2 border-border border-t bg-background px-2 py-2">
-							{tools.map((tool) => (
-								<ResponseMessageTool
-									key={tool.id}
-									message={message}
-									tool={tool}
-								/>
-							))}
+						<div className="flex flex-col gap-1 border-border border-t bg-background p-2">
+							<div className="flex flex-col gap-2 p-2">
+								{tools.map((tool) => (
+									<ResponseMessageTool
+										key={tool.id}
+										message={message}
+										tool={tool}
+									/>
+								))}
+							</div>
 							{summaryParts.length > 0 && (
 								<span className="pl-2 text-muted-foreground text-sm">
 									{summaryParts.join(" · ")}
