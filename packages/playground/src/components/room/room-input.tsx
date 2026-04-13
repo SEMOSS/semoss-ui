@@ -497,7 +497,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// ========================================================================
 
 		return (
-			<div className="relative w-full" ref={ref}>
+			<div ref={ref}>
 				<input
 					ref={fileRef}
 					type="file"

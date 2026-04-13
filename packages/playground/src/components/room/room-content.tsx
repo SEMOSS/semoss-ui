@@ -440,7 +440,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
+			<div className="mx-auto flex w-full max-w-4xl shrink-0 flex-col p-4">
 				<RoomInput
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
