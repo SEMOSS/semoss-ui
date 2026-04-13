@@ -8,7 +8,10 @@ const elementIdToUniqueId: Map<number, string> = new Map();
 
 // Field monitoring state
 let monitoredField: HTMLInputElement | HTMLTextAreaElement | null = null;
-let fieldMonitoringListeners: { blur: () => void; keydown: (e: KeyboardEvent) => void } | null = null;
+let fieldMonitoringListeners: {
+	blur: () => void;
+	keydown: (e: KeyboardEvent) => void;
+} | null = null;
 
 // Listen for playground chat events
 let isPlaygroundPage = false;
@@ -40,12 +43,10 @@ function isExtensionContextValid(): boolean {
 
 // Setup listeners for playground chat events
 function setupPlaygroundListeners() {
-	
 	// Listen for response messages (AI output)
 	window.addEventListener("playground-chat-response", ((
 		event: CustomEvent,
 	) => {
-
 		// Forward to extension background/panel
 		chrome.runtime
 			.sendMessage({
@@ -59,13 +60,11 @@ function setupPlaygroundListeners() {
 
 	// Listen for message submissions (for mode switching and command automation)
 	window.addEventListener("playground-chat-submit", ((event: CustomEvent) => {
-
 		// Forward to extension background/panel
-		chrome.runtime
-			.sendMessage({
-				type: "PLAYGROUND_CHAT_SUBMIT",
-				data: event.detail,
-			})
+		chrome.runtime.sendMessage({
+			type: "PLAYGROUND_CHAT_SUBMIT",
+			data: event.detail,
+		});
 	}) as EventListener);
 
 	// Listen for Playwright script execution requests from Playground
@@ -79,7 +78,9 @@ function setupPlaygroundListeners() {
 
 		// Handle ping request from playground to extension
 		if (event.data && event.data.type === "SMSS_EXTENSION_PING") {
-			console.log("[CONTENT] 🏓 Received PING from Playground - forwarding to extension");
+			console.log(
+				"[CONTENT] 🏓 Received PING from Playground - forwarding to extension",
+			);
 			chrome.runtime
 				.sendMessage(event.data)
 				.then(() => {
@@ -87,13 +88,14 @@ function setupPlaygroundListeners() {
 				})
 				.catch(() => {
 					// Extension not available - no pong will be sent
-					console.warn("[CONTENT] ❌ Failed to send PING - extension may not be available");
+					console.warn(
+						"[CONTENT] ❌ Failed to send PING - extension may not be available",
+					);
 				});
 			return;
 		}
 
 		if (event.data && event.data.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-
 			if (!isExtensionContextValid()) {
 				console.warn("[CONTENT SCRIPT] Extension context invalidated!");
 				alert(
@@ -103,14 +105,13 @@ function setupPlaygroundListeners() {
 			}
 
 			// Forward to extension panel
-			chrome.runtime
-				.sendMessage({
-					type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
-					script: event.data.script,
-				})
+			chrome.runtime.sendMessage({
+				type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+				script: event.data.script,
+			});
 		}
 	};
-	
+
 	window.addEventListener("message", messageHandler);
 }
 
@@ -128,7 +129,6 @@ new MutationObserver(() => {
 
 // Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-
 	switch (message.type) {
 		case "GET_ANNOTATED_DOM":
 			try {
@@ -212,7 +212,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			break;
 
 		case "SCRIPT_EXECUTION_COMPLETE":
-			
 			// Post message to window so playground can receive it
 			window.postMessage(
 				{
@@ -222,12 +221,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 				},
 				window.location.origin,
 			);
-			
+
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_OPENED":
-
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_OPENED",
@@ -240,7 +238,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			break;
 
 		case "SMSS_EXTENSION_PANEL_CLOSED":
-
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_CLOSED",
@@ -269,79 +266,100 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			// Handle field monitoring asynchronously
 			(async () => {
 				try {
-					
 					// Try to find the field with retry logic (wait for dynamic content)
-					let field: HTMLInputElement | HTMLTextAreaElement | null = null;
+					let field: HTMLInputElement | HTMLTextAreaElement | null =
+						null;
 					let retries = 3;
-					
+
 					while (retries > 0 && !field) {
-						field = document.querySelector(message.selector) as HTMLInputElement | HTMLTextAreaElement;
-						
+						field = document.querySelector(message.selector) as
+							| HTMLInputElement
+							| HTMLTextAreaElement;
+
 						if (!field && retries > 1) {
 							// Wait a bit before retrying
-							await new Promise(resolve => setTimeout(resolve, 500));
+							await new Promise((resolve) =>
+								setTimeout(resolve, 500),
+							);
 						}
 						retries--;
 					}
-					
+
 					if (!field) {
 						// Return success but indicate field wasn't found (non-critical)
-						sendResponse({ success: true, fieldFound: false, error: "Field not found" });
+						sendResponse({
+							success: true,
+							fieldFound: false,
+							error: "Field not found",
+						});
 						return;
 					}
-					
+
 					// Stop any existing monitoring
 					stopFieldMonitoring();
-					
+
 					monitoredField = field;
-					
+
 					// Create event handlers
 					const checkFieldAndNotify = () => {
 						if (!monitoredField) return;
-						
+
 						const value = monitoredField.value.trim();
-						
+
 						// Check if field has content
 						if (value.length > 0) {
-							
 							// Send message to background (which will forward to panel)
-							chrome.runtime.sendMessage({
-								type: "FIELD_INPUT_DETECTED",
-								selector: message.selector,
-								value: message.isPassword ? "" : value, // Don't send password values
-								isPassword: message.isPassword,
-							}).catch(err => {
-								console.warn("[CONTENT SCRIPT] Failed to send field input notification:", err);
-							});
-							
+							chrome.runtime
+								.sendMessage({
+									type: "FIELD_INPUT_DETECTED",
+									selector: message.selector,
+									value: message.isPassword ? "" : value, // Don't send password values
+									isPassword: message.isPassword,
+								})
+								.catch((err) => {
+									console.warn(
+										"[CONTENT SCRIPT] Failed to send field input notification:",
+										err,
+									);
+								});
+
 							// Clean up monitoring
 							stopFieldMonitoring();
 						}
 					};
-					
+
 					// Blur event - when user tabs out or clicks elsewhere
 					const blurHandler = () => {
 						checkFieldAndNotify();
 					};
-					
+
 					// Keydown event - when user presses Enter
 					const keydownHandler = (e: KeyboardEvent) => {
 						if (e.key === "Enter") {
 							checkFieldAndNotify();
 						}
 					};
-					
-					fieldMonitoringListeners = { blur: blurHandler, keydown: keydownHandler };
-					
+
+					fieldMonitoringListeners = {
+						blur: blurHandler,
+						keydown: keydownHandler,
+					};
+
 					// Attach listeners
 					field.addEventListener("blur", blurHandler);
 					field.addEventListener("keydown", keydownHandler);
 					sendResponse({ success: true, fieldFound: true });
 				} catch (error) {
-					console.error("[CONTENT SCRIPT] ❌ Error starting field monitoring:", error);
+					console.error(
+						"[CONTENT SCRIPT] ❌ Error starting field monitoring:",
+						error,
+					);
 					sendResponse({
 						success: false,
-						error: error instanceof Error ? error.message : String(error),
+						error:
+							error instanceof Error
+								? error.message
+								: String(error),
 					});
 				}
 			})();
@@ -354,7 +372,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			} catch (error) {
 				sendResponse({
 					success: false,
-					error: error instanceof Error ? error.message : String(error),
+					error:
+						error instanceof Error ? error.message : String(error),
 				});
 			}
 			break;
@@ -363,41 +382,54 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			// Handle real-time field value update from panel
 			(async () => {
 				try {
-					
 					// Try to find the field with retry logic
-					let field: HTMLInputElement | HTMLTextAreaElement | null = null;
+					let field: HTMLInputElement | HTMLTextAreaElement | null =
+						null;
 					let retries = 3;
-					
+
 					while (retries > 0 && !field) {
-						field = document.querySelector(message.selector) as HTMLInputElement | HTMLTextAreaElement;
-						
+						field = document.querySelector(message.selector) as
+							| HTMLInputElement
+							| HTMLTextAreaElement;
+
 						if (!field && retries > 1) {
-							await new Promise(resolve => setTimeout(resolve, 300));
+							await new Promise((resolve) =>
+								setTimeout(resolve, 300),
+							);
 						}
 						retries--;
 					}
-					
+
 					if (!field) {
-						sendResponse({ success: false, error: "Field not found" });
+						sendResponse({
+							success: false,
+							error: "Field not found",
+						});
 						return;
 					}
-					
+
 					// Update the field value
 					field.value = message.value || "";
-					
+
 					// Dispatch input event to trigger React onChange and form validation
 					const inputEvent = new Event("input", { bubbles: true });
 					field.dispatchEvent(inputEvent);
-					
+
 					// Also dispatch change event for additional compatibility
 					const changeEvent = new Event("change", { bubbles: true });
 					field.dispatchEvent(changeEvent);
 					sendResponse({ success: true });
 				} catch (error) {
-					console.error("[CONTENT SCRIPT] ❌ Error updating field value:", error);
+					console.error(
+						"[CONTENT SCRIPT] ❌ Error updating field value:",
+						error,
+					);
 					sendResponse({
 						success: false,
-						error: error instanceof Error ? error.message : String(error),
+						error:
+							error instanceof Error
+								? error.message
+								: String(error),
 					});
 				}
 			})();
@@ -415,8 +447,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
  */
 function stopFieldMonitoring() {
 	if (monitoredField && fieldMonitoringListeners) {
-		monitoredField.removeEventListener("blur", fieldMonitoringListeners.blur);
-		monitoredField.removeEventListener("keydown", fieldMonitoringListeners.keydown);
+		monitoredField.removeEventListener(
+			"blur",
+			fieldMonitoringListeners.blur,
+		);
+		monitoredField.removeEventListener(
+			"keydown",
+			fieldMonitoringListeners.keydown,
+		);
 	}
 	monitoredField = null;
 	fieldMonitoringListeners = null;
