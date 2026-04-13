@@ -3,6 +3,7 @@ import {
 	Bolt,
 	Bot,
 	Briefcase,
+	ChartBar,
 	CircleUserRound,
 	Database,
 	DatabaseZap,
@@ -62,6 +63,7 @@ const IconMapper: Record<string, ReactNode> = {
 	"My Profile": <CircleUserRound className={SIDEBAR_ICON_CLASS} />,
 	Jobs: <Briefcase className={SIDEBAR_ICON_CLASS} />,
 	"View RDF Map": <FileText className={SIDEBAR_ICON_CLASS} />,
+	"LLM Feedback": <ChartBar className={SIDEBAR_ICON_CLASS} />,
 };
 
 export const SettingsIndexPage = () => {
