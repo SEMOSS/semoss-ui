@@ -7,7 +7,23 @@ export const NUM_OF_IMAGES = 1;
 export const IMAGE_HEIGHT = 1024;
 export const IMAGE_WIDTH = 1024;
 export const CFG_SCALE = 8.0;
-export const SEED = 42; // random?
+export const SEED = 42;
+
+export const IMAGE_SIZE_PRESETS: Record<
+	// Updates the image_height and image_width (height, width parameters in param map)
+	string,
+	{ height: number; width: number }
+> = {
+	"small-square": { height: 320, width: 320 },
+	"small-portrait": { height: 384, width: 320 },
+	"small-landscape": { height: 320, width: 448 },
+	"medium-square": { height: 448, width: 448 },
+	"medium-portrait": { height: 512, width: 384 },
+	"medium-landscape": { height: 384, width: 512 },
+	"large-square": { height: 1024, width: 1024 },
+	"large-portrait": { height: 1024, width: 960 },
+	"large-landscape": { height: 448, width: 768 },
+};
 
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";

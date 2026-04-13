@@ -15,6 +15,11 @@ import {
 	FieldSeparator,
 	FieldSet,
 	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Slider,
 	Textarea,
 	Tooltip,
@@ -22,6 +27,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components";
+import { IMAGE_SIZE_PRESETS } from "@/constants";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
@@ -60,6 +66,44 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 			type: "KNOWLEDGE",
 			isOpen: false,
 		});
+
+		const deriveImagePreset = () => {
+			const match = Object.entries(IMAGE_SIZE_PRESETS).find(
+				([, v]) =>
+					v.height === options.imageHeight &&
+					v.width === options.imageWidth,
+			);
+			const [size = "large", type = "square"] = match
+				? (match[0].split("-") as [
+						"small" | "medium" | "large",
+						"square" | "portrait" | "landscape",
+					])
+				: [];
+			return { size, type } as {
+				size: "small" | "medium" | "large";
+				type: "square" | "portrait" | "landscape";
+			};
+		};
+
+		const [imageSize, setImageSize] = useState<
+			"small" | "medium" | "large"
+		>(() => deriveImagePreset().size);
+		const [imageType, setImageType] = useState<
+			"square" | "portrait" | "landscape"
+		>(() => deriveImagePreset().type);
+
+		const handleImagePresetChange = (
+			size: typeof imageSize,
+			type: typeof imageType,
+		) => {
+			const preset = IMAGE_SIZE_PRESETS[`${size}-${type}`];
+			if (preset) {
+				onOptionsChange({
+					imageHeight: preset.height,
+					imageWidth: preset.width,
+				});
+			}
+		};
 
 		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
 		const knowledge =
@@ -415,9 +459,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							Text Generation Settings
 						</FieldLegend>
 						<FieldDescription>
-							{
-								t("room:settings.textGenDescription") // update to model desc
-							}
+							{t("room:settings.textGenDescription")}
 						</FieldDescription>
 						<FieldGroup>
 							<Field>
@@ -464,54 +506,74 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 					<FieldSet>
 						<FieldLegend>Image Generation Settings</FieldLegend>
 						<FieldDescription>
-							{
-								t("room:settings.imageGenDescription") // update to model desc
-							}
+							{t("room:settings.imageGenDescription")}
 						</FieldDescription>
 						<FieldGroup>
 							<Field>
 								<FieldLabel>
-									{t("room:form.imageHeightLabel")}
+									{t("room:form.imageSizeLabel")}
 								</FieldLabel>
-								<Input
-									type="number"
-									placeholder={t(
-										"common:placeholders.updateImageHeight",
-									)}
-									value={options.imageHeight}
-									onChange={(e) =>
-										onOptionsChange({
-											imageHeight:
-												Number(e.target.value) || 0,
-										})
-									}
-									min={0}
-									className="w-full"
-								/>
+								<Select
+									value={imageSize}
+									onValueChange={(v: typeof imageSize) => {
+										setImageSize(v);
+										handleImagePresetChange(v, imageType);
+									}}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="small">
+											{t("room:form.imageSizeSmallLabel")}
+										</SelectItem>
+										<SelectItem value="medium">
+											{t(
+												"room:form.imageSizeMediumLabel",
+											)}
+										</SelectItem>
+										<SelectItem value="large">
+											{t("room:form.imageSizeLargeLabel")}
+										</SelectItem>
+									</SelectContent>
+								</Select>
 							</Field>
 							<Field>
 								<FieldLabel>
-									{t("room:form.imageWidthLabel")}
+									{t("room:form.imageOrientationLabel")}
 								</FieldLabel>
-								<Input
-									type="number"
-									placeholder={t(
-										"common:placeholders.updateImageWidth",
-									)}
-									value={options.imageWidth}
-									onChange={(e) =>
-										onOptionsChange({
-											imageWidth:
-												Number(e.target.value) || 0,
-										})
-									}
-									min={320}
-									className="w-full"
-								/>
+								<Select
+									value={imageType}
+									onValueChange={(v: typeof imageType) => {
+										setImageType(v);
+										handleImagePresetChange(imageSize, v);
+									}}
+								>
+									<SelectTrigger>
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="square">
+											{t(
+												"room:form.imageTypeSquareLabel",
+											)}
+										</SelectItem>
+										<SelectItem value="portrait">
+											{t(
+												"room:form.imageTypePortraitLabel",
+											)}
+										</SelectItem>
+										<SelectItem value="landscape">
+											{t(
+												"room:form.imageTypeLandscapeLabel",
+											)}
+										</SelectItem>
+									</SelectContent>
+								</Select>{" "}
 							</Field>
-
 							<Field>
 								<FieldLabel>
+									{" "}
 									{t("room:form.cfgScaleLabel")} (
 									{options.cfgScale?.toFixed(2)})
 								</FieldLabel>
