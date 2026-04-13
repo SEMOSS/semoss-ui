@@ -298,23 +298,21 @@ async function validateGithubRepository(
  * @throws {Error} - If app creation fails
  */
 async function createAppOnServer(secrets, headers, appDetails) {
-	const params = new URLSearchParams();
-	params.append(
-		"expression",
-		`CreateProject(project=["${appDetails.appName}"], portal=[true], projectType=["CODE"])`,
-	);
-	params.append("insightId", "new");
+	const data = {
+		expression: `CreateProject(project=["${appDetails.appName}"], portal=[true], projectType=["CODE"])`,
+		insightId: "new",
+	};
 
 	try {
 		console.log(
-			"Creating app on server with params:",
-			params.toString(),
+			"Creating app on server with data:",
+			data,
 			secrets.semossUrl,
 			headers,
 		);
 		const response = await post(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-			params,
+			data,
 			{ headers },
 		);
 
@@ -336,19 +334,14 @@ async function createAppOnServer(secrets, headers, appDetails) {
 
 		// Set description using SetProjectMetadata if description is provided
 		if (appDetails.description) {
-			const metadataParams = new URLSearchParams();
-			metadataParams.append(
-				"expression",
-				`SetProjectMetadata(project=["${projectId}"], meta=[{"tag":[],"description":"${appDetails.description}"}])`,
-			);
-			metadataParams.append(
-				"insightId",
-				response.data.insightID || "new",
-			);
+			const metadataData = {
+				expression: `SetProjectMetadata(project=["${projectId}"], meta=[{"tag":[],"description":"${appDetails.description}"}])`,
+				insightId: response.data.insightID || "new",
+			};
 
 			await post(
 				`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-				metadataParams,
+				metadataData,
 				{ headers },
 			);
 		}
@@ -371,19 +364,15 @@ async function createAppOnServer(secrets, headers, appDetails) {
  * @throws {Error} - If adding the placeholder asset fails
  */
 async function addPlaceholderAsset(secrets, headers, projectId, appName) {
-	const saveAssetParams = new URLSearchParams();
-	saveAssetParams.append(
-		"expression",
-		`SaveAsset(fileName=["${APP_CONFIG.DEFAULT_ASSET_PATH}"], content=["${APP_CONFIG.PLACEHOLDER_HTML(appName)}"], space=["${projectId}"]);`,
-	);
-	saveAssetParams.append("insightId", "new");
+	const data = {
+		expression: `SaveAsset(fileName=["${APP_CONFIG.DEFAULT_ASSET_PATH}"], content=["${APP_CONFIG.PLACEHOLDER_HTML(appName)}"], space=["${projectId}"]);`,
+		insightId: "new",
+	};
 
 	try {
-		await post(
-			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-			saveAssetParams,
-			{ headers },
-		);
+		await post(`${secrets.semossUrl}/Monolith/api/engine/runPixel`, data, {
+			headers,
+		});
 		vscode.window.showInformationMessage(
 			"Placeholder asset (index.html) added to the project.",
 		);
@@ -416,16 +405,14 @@ async function exportAndDownloadProject(
 	appName,
 ) {
 	// Export project
-	const exportParams = new URLSearchParams();
-	exportParams.append(
-		"expression",
-		`ExportProjectApp(project=["${projectId}"]);`,
-	);
-	exportParams.append("insightId", "new");
+	const data = {
+		expression: `ExportProjectApp(project=["${projectId}"]);`,
+		insightId: "new",
+	};
 
 	const exportResponse = await post(
 		`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-		exportParams,
+		data,
 		{ headers },
 	);
 
@@ -441,6 +428,7 @@ async function exportAndDownloadProject(
 	const fileKey = exportResponse.data.pixelReturn[0].output;
 	const insightId = exportResponse.data.insightID;
 	const filePath = path.join(downloadsDir, `${appName}.zip`);
+	console.log("Export response fileKey:", fileKey, "insightId:", insightId);
 	const downloadUrl = `${secrets.semossUrl}/Monolith/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(fileKey)}`;
 
 	await downloadFile(downloadUrl, filePath, encoded);
