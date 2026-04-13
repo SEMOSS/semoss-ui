@@ -304,12 +304,6 @@ async function createAppOnServer(secrets, headers, appDetails) {
 	};
 
 	try {
-		console.log(
-			"Creating app on server with data:",
-			data,
-			secrets.semossUrl,
-			headers,
-		);
 		const response = await post(
 			`${secrets.semossUrl}/Monolith/api/engine/runPixel`,
 			data,
@@ -428,7 +422,6 @@ async function exportAndDownloadProject(
 	const fileKey = exportResponse.data.pixelReturn[0].output;
 	const insightId = exportResponse.data.insightID;
 	const filePath = path.join(downloadsDir, `${appName}.zip`);
-	console.log("Export response fileKey:", fileKey, "insightId:", insightId);
 	const downloadUrl = `${secrets.semossUrl}/Monolith/api/engine/downloadFile?insightId=${insightId}&fileKey=${encodeURIComponent(fileKey)}`;
 
 	await downloadFile(downloadUrl, filePath, encoded);
