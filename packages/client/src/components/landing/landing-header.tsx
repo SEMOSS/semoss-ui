@@ -49,14 +49,17 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 	return (
 		<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3">
 			{CARDS.map((card) => (
-				<Card key={card.title} className="relative h-full w-full gap-2">
-					<CardHeader>
+				<Card
+					key={card.title}
+					className="relative h-full w-full gap-2 overflow-hidden py-4"
+				>
+					<CardHeader className="px-4">
 						<CardTitle>{card.title}</CardTitle>
 						<CardDescription className="line-clamp-3 h-15">
 							{card.description}
 						</CardDescription>
 					</CardHeader>
-					<CardFooter className="flex flex-row items-center justify-start gap-1">
+					<CardFooter className="flex flex-row items-center justify-start gap-1 px-4">
 						<Button
 							variant="ghost"
 							size="default"
@@ -73,11 +76,11 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({
 							</span>
 						</Button>
 					</CardFooter>
-					<div className="relative mt-1 w-full px-6 pb-5">
+					<div className="relative w-full px-4">
 						<img
 							src={card.image}
 							alt={card.title}
-							className="mx-auto h-auto max-h-[180px] w-full max-w-[460px] object-contain"
+							className="block h-auto w-full object-contain"
 						/>
 					</div>
 				</Card>

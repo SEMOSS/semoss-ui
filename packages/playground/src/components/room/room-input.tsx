@@ -13,10 +13,20 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
-	FileAudio2Icon,
+	ChevronLeftIcon,
+	ChevronRightIcon,
+	FileArchiveIcon,
+	FileAudioIcon,
+	FileBadgeIcon,
+	FileChartPieIcon,
+	FileCodeIcon,
 	FileIcon,
-	FileType2Icon,
-	FileVideoCameraIcon,
+	FileJsonIcon,
+	FileSpreadsheetIcon,
+	FileTerminalIcon,
+	FileTextIcon,
+	FileTypeIcon,
+	FileVideoIcon,
 	MicIcon,
 	SendIcon,
 	SlidersHorizontalIcon,
@@ -26,7 +36,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -43,8 +53,63 @@ import {
 } from "@semoss/ui/next";
 import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
-import { useGracefulErrors } from "@/hooks";
+import { useGracefulErrors, useRoot } from "@/hooks";
 import type { Engine } from "@/types";
+
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
+
+const isImageFile = (file: File): boolean => {
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	return IMAGE_EXTENSIONS.includes(ext);
+};
+
+const ICON_CLASS = "size-8 shrink-0 text-muted-foreground";
+
+const getIconForExt = (ext: string) => {
+	if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheetIcon;
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		].includes(ext)
+	)
+		return FileCodeIcon;
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
+		return FileTerminalIcon;
+	if (ext === "json") return FileJsonIcon;
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return FileArchiveIcon;
+	if (["ppt", "pptx"].includes(ext)) return FileChartPieIcon;
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
+		return FileAudioIcon;
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+		return FileVideoIcon;
+	if (["html", "xml", "md", "mdx", "rtf"].includes(ext)) return FileTypeIcon;
+	if (ext === "pdf") return FileBadgeIcon;
+	if (["doc", "docx", "msg", "txt"].includes(ext)) return FileTextIcon;
+	return FileIcon;
+};
+
+const getFileIcon = (file: File): React.ReactNode => {
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	const Icon = getIconForExt(ext);
+
+	return (
+		<div className="flex flex-col items-center gap-1">
+			<Icon className={ICON_CLASS} strokeWidth={1.25} />
+			<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
+				{ext}
+			</span>
+		</div>
+	);
+};
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -57,7 +122,7 @@ interface RoomInputProps {
 	model: Engine | null;
 
 	/** Update options on change */
-	setModel: (model: Engine | null) => void;
+	setModel: (model: Engine) => void;
 
 	/** Menu component */
 	MenuComponent: React.ComponentType<{
@@ -104,11 +169,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const { getGracefulErrorMessage } = useGracefulErrors();
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
+		const { root } = useRoot();
 
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
+		const prevTextRef = useRef<string>("");
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
@@ -235,7 +302,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				});
 
 				// clear out the input components
-				success = await onPrompt(userInput, userFiles);
+				success = Boolean(await onPrompt(userInput, userFiles));
 				if (!success) {
 					throw new Error(`Error processing chat`);
 				}
@@ -244,7 +311,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setFiles([]);
 			} catch (e) {
 				// throw the error
-				toast.error(getGracefulErrorMessage(e));
+				toast.error(getGracefulErrorMessage(e as Error));
 
 				// keep the files
 				setFiles(userFiles);
@@ -262,38 +329,52 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
-		/**
-		 * Get an image for the file
-		 */
-		const getFileImage = (file: File): React.ReactNode => {
-			if (file.type.startsWith("image/")) {
-				const imageUrl = URL.createObjectURL(file);
-				return (
-					<img
-						className="width-100"
-						src={imageUrl}
-						alt={file.name}
-						onLoad={() => URL.revokeObjectURL(imageUrl)}
-					/>
-				);
-			} else if (
-				file.type.includes("text") ||
-				file.type.includes("document")
-			) {
-				return (
-					<FileType2Icon className="size-6 text-muted-foreground" />
-				);
-			} else if (file.type.includes("audio")) {
-				return (
-					<FileAudio2Icon className="size-6 text-muted-foreground" />
-				);
-			} else if (file.type.includes("video")) {
-				return (
-					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
-				);
+		// Generate object URLs for image file previews
+		const imagePreviewUrls = useMemo(() => {
+			const urls = new Map<string, string>();
+			for (const f of files) {
+				if (isImageFile(f)) {
+					const key = `${f.name}-${f.size}-${f.lastModified}`;
+					urls.set(key, URL.createObjectURL(f));
+				}
 			}
+			return urls;
+		}, [files]);
 
-			return <FileIcon className="size-6 text-muted-foreground" />;
+		// Cleanup object URLs on change
+		useEffect(() => {
+			return () => {
+				for (const url of imagePreviewUrls.values()) {
+					URL.revokeObjectURL(url);
+				}
+			};
+		}, [imagePreviewUrls]);
+
+		const filesScrollRef = useRef<HTMLDivElement>(null);
+		const [showScrollLeft, setShowScrollLeft] = useState(false);
+		const [showScrollRight, setShowScrollRight] = useState(false);
+
+		const updateScrollButtons = () => {
+			const el = filesScrollRef.current;
+			if (!el) return;
+			setShowScrollLeft(el.scrollLeft > 0);
+			setShowScrollRight(
+				el.scrollLeft + el.clientWidth < el.scrollWidth - 1,
+			);
+		};
+
+		useEffect(() => {
+			updateScrollButtons();
+		}, [files]);
+
+		const scrollFiles = (direction: "left" | "right") => {
+			const el = filesScrollRef.current;
+			if (!el) return;
+			const amount = 200;
+			el.scrollBy({
+				left: direction === "left" ? -amount : amount,
+				behavior: "smooth",
+			});
 		};
 
 		return (
@@ -306,7 +387,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						hidden
 						onChange={(e) => {
 							// set the new files
-							const updated = Array.from(e.target.files);
+							const updated = Array.from(e.target.files ?? []);
 							setFiles((prev) => [...prev, ...updated]);
 						}}
 					/>
@@ -398,22 +479,23 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						<OnChangePlugin
 							onChange={(editorState) => {
 								editorState.read(() => {
-									// get the root
 									const root = $getRoot();
+									const nextText = root.getTextContent();
 
 									// set empty state
-									setIsEmpty(
-										root.getTextContent().trim().length ===
-											0,
-									);
+									setIsEmpty(nextText.trim().length === 0);
 
-									// Scroll to bottom after content changes
-									setTimeout(() => {
-										if (contentEditableRef.current) {
-											contentEditableRef.current.scrollTop =
-												contentEditableRef.current.scrollHeight;
-										}
-									}, 0);
+									// Only scroll to bottom when text content changes,
+									// not on selection-only changes (e.g. drag-to-select)
+									if (prevTextRef.current !== nextText) {
+										prevTextRef.current = nextText;
+										setTimeout(() => {
+											if (contentEditableRef.current) {
+												contentEditableRef.current.scrollTop =
+													contentEditableRef.current.scrollHeight;
+											}
+										}, 0);
+									}
 								});
 							}}
 						/>
@@ -442,8 +524,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										<DropdownMenuTrigger
 											style={{
 												position: "fixed",
-												top: menuPosition.top,
-												left: menuPosition.left,
+												top: menuPosition?.top,
+												left: menuPosition?.left,
 												width: 0,
 												height: 0,
 											}}
@@ -506,24 +588,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						{footer}
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-2">
-						<EngineSelect
-							className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-							disabled={isLoading}
-							name={
-								model?.engine_display_name ||
-								model?.app_name ||
-								""
-							}
-							value={model?.app_id || ""}
-							engineTypes={["MODEL"]}
-							metaFilters={[{ tag: "text-generation" }]}
-							onChange={(v) => {
-								setModel(v);
-							}}
-							popoverContentProps={{
-								align: "start",
-							}}
-						/>
+						{root.theme.featureFlags?.enableModelSelect && (
+							<EngineSelect
+								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+								disabled={isLoading}
+								name={
+									model?.engine_display_name ||
+									model?.app_name ||
+									""
+								}
+								value={model?.app_id || ""}
+								engineTypes={["MODEL"]}
+								metaFilters={[{ tag: "text-generation" }]}
+								onChange={(v) => {
+									setModel(v);
+								}}
+								popoverContentProps={{
+									align: "start",
+								}}
+							/>
+						)}
 
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -612,38 +696,79 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					</div>
 				</div>
 				{files.length > 0 ? (
-					<div className="flex flex-row items-center gap-2 pt-4">
-						{files.map((f, fIdx) => {
-							const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
-							return (
-								<Tooltip key={fileKey}>
-									<TooltipTrigger asChild>
-										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
-											{getFileImage(f)}
-											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
-												<Button
-													variant="ghost"
-													size={"icon-sm"}
-													onClick={() => {
-														const updated = [
-															...files,
-														];
-
-														// remove it
-														updated.splice(fIdx, 1);
-
-														setFiles(updated);
-													}}
-												>
-													<XIcon />
-												</Button>
-											</div>
+					<div className="relative flex items-center pt-4">
+						{showScrollLeft && (
+							<Button
+								variant="outline"
+								size="icon-sm"
+								className="absolute left-0 z-20 rounded-full bg-background shadow-md"
+								onClick={() => scrollFiles("left")}
+								aria-label="Scroll left"
+							>
+								<ChevronLeftIcon className="size-4" />
+							</Button>
+						)}
+						<div
+							ref={filesScrollRef}
+							className="flex flex-row items-center gap-2 overflow-x-auto scroll-smooth px-1"
+							style={{ scrollbarWidth: "none" }}
+							onScroll={updateScrollButtons}
+						>
+							{files.map((f, fIdx) => {
+								const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
+								const previewUrl =
+									imagePreviewUrls.get(fileKey);
+								return (
+									<div
+										key={fileKey}
+										className="group relative shrink-0"
+									>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<div className="flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+													{previewUrl ? (
+														<img
+															src={previewUrl}
+															alt={f.name}
+															className="size-full object-cover"
+														/>
+													) : (
+														getFileIcon(f)
+													)}
+												</div>
+											</TooltipTrigger>
+											<TooltipContent>
+												{f.name}
+											</TooltipContent>
+										</Tooltip>
+										<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
+											<Button
+												variant="ghost"
+												size={"icon-sm"}
+												onClick={() => {
+													const updated = [...files];
+													updated.splice(fIdx, 1);
+													setFiles(updated);
+												}}
+											>
+												<XIcon />
+											</Button>
 										</div>
-									</TooltipTrigger>
-									<TooltipContent>{f.name}</TooltipContent>
-								</Tooltip>
-							);
-						})}
+									</div>
+								);
+							})}
+						</div>
+						{showScrollRight && (
+							<Button
+								variant="outline"
+								size="icon-sm"
+								className="absolute right-0 z-20 rounded-full bg-background shadow-md"
+								onClick={() => scrollFiles("right")}
+								aria-label="Scroll right"
+							>
+								<ChevronRightIcon className="size-4" />
+							</Button>
+						)}
 					</div>
 				) : null}
 			</>
