@@ -5,7 +5,9 @@
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
 		"open": "Ouvrir les paramètres",
 		"close": "Fermer",
-		"edit": "Modifier les paramètres"
+		"edit": "Modifier les paramètres",
+		"textGenDescription": "Ajustez les limites de jetons et la température pour contrôler la façon dont le modèle génère des réponses",
+		"imageGenDescription": "Configurez la taille de l'image et la graine aléatoire pour contrôler la sortie de génération d'images"
 	},
 	"form": {
 		"modelLabel": "Modèle",
@@ -13,7 +15,12 @@
 		"knowledgeLabel": "Connaissances",
 		"toolboxLabel": "Boîte à outils",
 		"maxTokenLabel": "Jeton maximum",
-		"temperatureLabel": "Température"
+		"temperatureLabel": "Température",
+		"imageHeightLabel": "Hauteur de l'image",
+		"imageWidthLabel": "Largeur de l'image",
+		"imageSeedLabel": "Graine aléatoire",
+		"cfgScaleLabel": "Échelle CFG",
+		"taskTypeLabel": "Type de tâche"
 	},
 	"modes": {
 		"ask": "Demander",

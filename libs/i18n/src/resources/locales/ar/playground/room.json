@@ -5,7 +5,9 @@
 		"description": "تحديث إعدادات الغرفة وتعديل سلوك الدردشة",
 		"open": "فتح الإعدادات",
 		"close": "إغلاق",
-		"edit": "تعديل الإعدادات"
+		"edit": "تعديل الإعدادات",
+		"textGenDescription": "اضبط حدود الرموز ودرجة الحرارة للتحكم في كيفية توليد النموذج للاستجابات",
+		"imageGenDescription": "قم بتكوين حجم الصورة والبذرة العشوائية للتحكم في مخرجات توليد الصور"
 	},
 	"form": {
 		"modelLabel": "النموذج",
@@ -13,7 +15,12 @@
 		"knowledgeLabel": "المعرفة",
 		"toolboxLabel": "صندوق الأدوات",
 		"maxTokenLabel": "الحد الأقصى للرموز",
-		"temperatureLabel": "درجة الحرارة"
+		"temperatureLabel": "درجة الحرارة",
+		"imageHeightLabel": "ارتفاع الصورة",
+		"imageWidthLabel": "عرض الصورة",
+		"imageSeedLabel": "البذرة العشوائية",
+		"cfgScaleLabel": "مقياس CFG",
+		"taskTypeLabel": "نوع المهمة"
 	},
 	"modes": {
 		"ask": "اسأل",

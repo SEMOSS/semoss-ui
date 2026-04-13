@@ -5,7 +5,9 @@
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
 		"open": "設定を開く",
 		"close": "閉じる",
-		"edit": "設定を編集"
+		"edit": "設定を編集",
+		"textGenDescription": "トークン制限と温度を調整して、モデルが応答を生成する方法を制御します",
+		"imageGenDescription": "画像サイズとランダムシードを設定して、画像生成の出力を制御します"
 	},
 	"form": {
 		"modelLabel": "モデル",
@@ -13,7 +15,12 @@
 		"knowledgeLabel": "ナレッジ",
 		"toolboxLabel": "ツールボックス",
 		"maxTokenLabel": "最大トークン",
-		"temperatureLabel": "温度"
+		"temperatureLabel": "温度",
+		"imageHeightLabel": "画像の高さ",
+		"imageWidthLabel": "画像の幅",
+		"imageSeedLabel": "ランダムシード",
+		"cfgScaleLabel": "CFGスケール",
+		"taskTypeLabel": "タスクタイプ"
 	},
 	"modes": {
 		"ask": "質問",

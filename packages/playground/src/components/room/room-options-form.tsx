@@ -1,4 +1,4 @@
-import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { DicesIcon, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
 import { useState } from "react";
@@ -411,6 +411,14 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 					</FieldSet>
 					<FieldSeparator />
 					<FieldSet>
+						<FieldLegend className="pb-2">
+							Text Generation Settings
+						</FieldLegend>
+						<FieldDescription>
+							{
+								t("room:settings.textGenDescription") // update to model desc
+							}
+						</FieldDescription>
 						<FieldGroup>
 							<Field>
 								<FieldLabel>
@@ -449,6 +457,113 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										})
 									}
 								/>
+							</Field>
+						</FieldGroup>
+					</FieldSet>
+					<FieldSeparator />
+					<FieldSet>
+						<FieldLegend>Image Generation Settings</FieldLegend>
+						<FieldDescription>
+							{
+								t("room:settings.imageGenDescription") // update to model desc
+							}
+						</FieldDescription>
+						<FieldGroup>
+							<Field>
+								<FieldLabel>
+									{t("room:form.imageHeightLabel")}
+								</FieldLabel>
+								<Input
+									type="number"
+									placeholder={t(
+										"common:placeholders.updateImageHeight",
+									)}
+									value={options.imageHeight}
+									onChange={(e) =>
+										onOptionsChange({
+											imageHeight:
+												Number(e.target.value) || 0,
+										})
+									}
+									min={0}
+									className="w-full"
+								/>
+							</Field>
+							<Field>
+								<FieldLabel>
+									{t("room:form.imageWidthLabel")}
+								</FieldLabel>
+								<Input
+									type="number"
+									placeholder={t(
+										"common:placeholders.updateImageWidth",
+									)}
+									value={options.imageWidth}
+									onChange={(e) =>
+										onOptionsChange({
+											imageWidth:
+												Number(e.target.value) || 0,
+										})
+									}
+									min={320}
+									className="w-full"
+								/>
+							</Field>
+
+							<Field>
+								<FieldLabel>
+									{t("room:form.cfgScaleLabel")} (
+									{options.cfgScale?.toFixed(2)})
+								</FieldLabel>
+								<Slider
+									min={1.1}
+									max={9.9}
+									step={0.01}
+									value={[options.cfgScale]}
+									onValueChange={(value) =>
+										onOptionsChange({
+											cfgScale: value[0],
+										})
+									}
+								/>
+							</Field>
+							<Field>
+								<FieldLabel>
+									{t("room:form.imageSeedLabel")}
+								</FieldLabel>
+								<div className="flex gap-2">
+									<Input
+										type="number"
+										placeholder={t(
+											"common:placeholders.updateImageSeed",
+										)}
+										value={options.seed}
+										onChange={(e) =>
+											onOptionsChange({
+												seed:
+													Number(e.target.value) || 0,
+											})
+										}
+										min={1}
+										className="w-full"
+									/>
+									<Button
+										variant="outline"
+										size="icon"
+										type="button"
+										onClick={() =>
+											onOptionsChange({
+												seed:
+													Math.floor(
+														Math.random() *
+															2147483646,
+													) + 1,
+											})
+										}
+									>
+										<DicesIcon />
+									</Button>
+								</div>
 							</Field>
 						</FieldGroup>
 					</FieldSet>

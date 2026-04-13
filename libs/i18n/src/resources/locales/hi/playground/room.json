@@ -5,7 +5,9 @@
 		"description": "रूम सेटिंग्स अपडेट करें और चैट का व्यवहार संशोधित करें",
 		"open": "सेटिंग्स खोलें",
 		"close": "बंद करें",
-		"edit": "सेटिंग्स संपादित करें"
+		"edit": "सेटिंग्स संपादित करें",
+		"textGenDescription": "टोकन सीमाएँ और तापमान समायोजित करें ताकि नियंत्रित किया जा सके कि मॉडल प्रतिक्रियाएँ कैसे उत्पन्न करता है",
+		"imageGenDescription": "छवि आकार और रैंडम सीड कॉन्फ़िगर करें ताकि छवि निर्माण के आउटपुट को नियंत्रित किया जा सके"
 	},
 	"form": {
 		"modelLabel": "मॉडल",
@@ -13,7 +15,12 @@
 		"knowledgeLabel": "ज्ञान",
 		"toolboxLabel": "टूलबॉक्स",
 		"maxTokenLabel": "अधिकतम टोकन",
-		"temperatureLabel": "टेम्परेचर"
+		"temperatureLabel": "टेम्परेचर",
+		"imageHeightLabel": "छवि ऊंचाई",
+		"imageWidthLabel": "छवि चौड़ाई",
+		"imageSeedLabel": "रैंडम सीड",
+		"cfgScaleLabel": "CFG स्केल",
+		"taskTypeLabel": "कार्य प्रकार"
 	},
 	"modes": {
 		"ask": "पूछें",
