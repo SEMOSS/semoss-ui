@@ -5,7 +5,6 @@ import {
 	ChevronUp,
 	Download,
 	Plus,
-	RefreshCw,
 	Search,
 	Trash2,
 	Upload,
@@ -106,13 +105,9 @@ export const FileTable = (props: FileTableProps) => {
 		useState<boolean>(false);
 	const [isEmbeddingResultsCollapsed, setIsEmbeddingResultsCollapsed] =
 		useState<boolean>(false);
-	const [retryingFiles, setRetryingFiles] = useState<Set<string>>(new Set());
 	const [expandedErrors, setExpandedErrors] = useState<Set<string>>(
 		new Set(),
 	);
-	const [fileLocationMap, setFileLocationMap] = useState<
-		Record<string, string>
-	>({});
 
 	const [order, setOrder] = useState<"asc" | "desc">("asc");
 	const [orderBy, setOrderBy] = useState<string>("name");
@@ -344,13 +339,10 @@ export const FileTable = (props: FileTableProps) => {
 		}
 	};
 
-	const setRetrying = (fileNames: string[], active: boolean) => {
-		setRetryingFiles((prev) => {
+	const toggleErrorExpand = (fileName: string) => {
+		setExpandedErrors((prev) => {
 			const next = new Set(prev);
-			fileNames.forEach((name) => {
-				if (active) next.add(name);
-				else next.delete(name);
-			});
+			next.has(fileName) ? next.delete(fileName) : next.add(fileName);
 			return next;
 		});
 	};
@@ -369,24 +361,6 @@ export const FileTable = (props: FileTableProps) => {
 				data.PROJECT_UPLOAD,
 				configStore.store.insightID,
 			);
-
-			const locMap: Record<string, string> = {};
-			data.PROJECT_UPLOAD.forEach((originalFile, idx) => {
-				if (upload[idx]) {
-					locMap[originalFile.name] = upload[idx].fileLocation;
-				}
-			});
-
-			upload.forEach((uploadedFile) => {
-				const baseName =
-					uploadedFile.fileLocation.split(/[/\\]/).pop() ??
-					uploadedFile.fileLocation;
-				if (!locMap[baseName]) {
-					locMap[baseName] = uploadedFile.fileLocation;
-				}
-			});
-
-			setFileLocationMap((prev) => ({ ...prev, ...locMap }));
 
 			const pixelReturn = await runEmbeddingQuery(
 				upload.map((file) => file.fileLocation),
@@ -514,128 +488,6 @@ export const FileTable = (props: FileTableProps) => {
 		setValue("FILES", sortedFiles);
 	};
 
-	const retryFailedFile = async (fileName: string) => {
-		const fileLocation = fileLocationMap[fileName];
-		if (!fileLocation) {
-			toast.error(
-				`Cannot retry: original file location not found for "${fileName}"`,
-			);
-			return;
-		}
-
-		setRetrying([fileName], true);
-
-		try {
-			const pixelReturn = await runEmbeddingQuery([fileLocation]);
-			const results = getEmbeddingResults(pixelReturn);
-			const result = results?.[0];
-
-			if (result) {
-				setEmbeddingResults((prev) =>
-					prev.map((r) => (r.fileName === fileName ? result : r)),
-				);
-
-				if (result.status === "SUCCESS") {
-					toast.success(`Retry succeeded for "${fileName}"`);
-					refreshFilesSafely();
-				} else {
-					toast.error(
-						result.error?.errorMessage ||
-							`Retry failed for "${fileName}"`,
-					);
-				}
-			} else {
-				const { output, operationType } = pixelReturn;
-				if (operationType?.indexOf("ERROR") === -1) {
-					toast.success(`Retry completed for "${fileName}"`);
-					refreshFilesSafely();
-				} else {
-					toast.error(
-						String(output || `Retry failed for "${fileName}"`),
-					);
-				}
-			}
-		} catch (e) {
-			toast.error(String(e));
-		} finally {
-			setRetrying([fileName], false);
-		}
-	};
-
-	const retryAllFailedFiles = async () => {
-		const failedFiles = embeddingResults.filter(
-			(r) => r.status === "FAILED" && fileLocationMap[r.fileName],
-		);
-		if (failedFiles.length === 0) {
-			toast.error("No file locations available for retry");
-			return;
-		}
-
-		const fileNames = failedFiles.map((r) => r.fileName);
-		setRetrying(fileNames, true);
-
-		try {
-			const pixelReturn = await runEmbeddingQuery(
-				failedFiles.map((r) => fileLocationMap[r.fileName]),
-			);
-			const results = getEmbeddingResults(pixelReturn);
-
-			if (results) {
-				setEmbeddingResults((prev) =>
-					prev.map(
-						(existing) =>
-							results.find(
-								(r) => r.fileName === existing.fileName,
-							) ?? existing,
-					),
-				);
-
-				const successCount = results.filter(
-					(r) => r.status === "SUCCESS",
-				).length;
-				const failCount = results.length - successCount;
-
-				if (failCount === 0) {
-					toast.success(
-						`Retry succeeded for all ${successCount} file(s)`,
-					);
-					refreshFilesSafely();
-				} else if (successCount > 0) {
-					toast.warning(
-						`${successCount} retry succeeded, ${failCount} still failed`,
-					);
-					refreshFilesSafely();
-				} else {
-					toast.error(`Retry failed for all ${failCount} file(s)`);
-				}
-			} else {
-				const { output, operationType } = pixelReturn;
-				if (operationType?.indexOf("ERROR") === -1) {
-					toast.success("Retry completed successfully");
-					refreshFilesSafely();
-				} else {
-					toast.error(String(output || "Retry failed"));
-				}
-			}
-		} catch (e) {
-			toast.error(String(e));
-		} finally {
-			setRetrying(fileNames, false);
-		}
-	};
-
-	const toggleErrorExpand = (fileName: string) => {
-		setExpandedErrors((prev) => {
-			const next = new Set(prev);
-			next.has(fileName) ? next.delete(fileName) : next.add(fileName);
-			return next;
-		});
-	};
-
-	/**
-	 * Render loading skeleton rows for the table.
-	 * Shows placeholder content while files are being fetched.
-	 */
 	const renderLoadingRows = () => {
 		return Array.from({ length: NUM_RESULTS_PER_PAGE }, () => (
 			<TableRow key={`skeleton-${crypto.randomUUID()}`}>
@@ -698,7 +550,6 @@ export const FileTable = (props: FileTableProps) => {
 		(r) => r.status === "SUCCESS",
 	);
 	const failedResults = embeddingResults.filter((r) => r.status === "FAILED");
-	const isAnyRetrying = retryingFiles.size > 0;
 
 	return (
 		<div className="flex w-full shrink-0 flex-col items-start justify-between gap-6">
@@ -750,25 +601,6 @@ export const FileTable = (props: FileTableProps) => {
 						</div>
 
 						<div className="flex items-center gap-2">
-							{failedResults.length > 1 &&
-								!isEmbeddingResultsCollapsed && (
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={retryAllFailedFiles}
-										disabled={isAnyRetrying}
-										className="h-8 gap-1.5 text-xs"
-										data-testid="retry-all-failed-btn"
-									>
-										{isAnyRetrying ? (
-											<Spinner className="size-3.5" />
-										) : (
-											<RefreshCw className="size-3.5" />
-										)}
-										Retry All Failed
-									</Button>
-								)}
-
 							<Button
 								variant="ghost"
 								size="icon"
@@ -786,13 +618,9 @@ export const FileTable = (props: FileTableProps) => {
 						<div className="max-h-60 divide-y divide-border overflow-y-auto">
 							{embeddingResults.map((result) => {
 								const isFailed = result.status === "FAILED";
-								const isRetrying = retryingFiles.has(
-									result.fileName,
-								);
 								const isExpanded = expandedErrors.has(
 									result.fileName,
 								);
-
 								return (
 									<div
 										key={result.fileName}
@@ -815,50 +643,7 @@ export const FileTable = (props: FileTableProps) => {
 											</div>
 
 											<div className="flex shrink-0 items-center gap-2">
-												{isFailed ? (
-													<>
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={() =>
-																toggleErrorExpand(
-																	result.fileName,
-																)
-															}
-															className="h-7 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
-															data-testid={`embedding-result-details-${result.fileName}`}
-														>
-															{isExpanded ? (
-																<ChevronUp className="size-3" />
-															) : (
-																<ChevronDown className="size-3" />
-															)}
-															Details
-														</Button>
-
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={() =>
-																retryFailedFile(
-																	result.fileName,
-																)
-															}
-															disabled={
-																isAnyRetrying
-															}
-															className="h-7 gap-1 px-2 text-xs"
-															data-testid={`embedding-result-retry-${result.fileName}`}
-														>
-															{isRetrying ? (
-																<Spinner className="size-3" />
-															) : (
-																<RefreshCw className="size-3" />
-															)}
-															Retry
-														</Button>
-													</>
-												) : (
+												{!isFailed ? (
 													<span className="text-muted-foreground text-xs">
 														{result.insertedRecords}{" "}
 														{result.insertedRecords ===
@@ -867,6 +652,25 @@ export const FileTable = (props: FileTableProps) => {
 															: "records"}{" "}
 														inserted
 													</span>
+												) : (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() =>
+															toggleErrorExpand(
+																result.fileName,
+															)
+														}
+														className="h-7 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+														data-testid={`embedding-result-details-${result.fileName}`}
+													>
+														Details
+														{isExpanded ? (
+															<ChevronUp className="size-3" />
+														) : (
+															<ChevronDown className="size-3" />
+														)}
+													</Button>
 												)}
 											</div>
 										</div>
