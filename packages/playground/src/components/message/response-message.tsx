@@ -240,7 +240,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													tool.json._meta
 														.SMSS_MCP_EXECUTION ===
 														"auto" &&
-													groupedTools.length === 1
+													room.numberOfTools === 1
 												)
 											}
 										/>

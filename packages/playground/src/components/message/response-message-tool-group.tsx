@@ -122,7 +122,7 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					)}
 					<ChevronDownIcon
 						className={cn(
-							"ml-auto size-5 shrink-0 text-muted-foreground transition-transform duration-200",
+							"mr-1 ml-auto size-5 shrink-0 text-muted-foreground transition-transform duration-200",
 							isOpen && "rotate-180",
 						)}
 					/>

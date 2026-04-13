@@ -21,7 +21,7 @@ const getToolState = (
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
 						text: t("tool.failed"),
-						variant: "destructive" as const,
+						variant: "muted" as const,
 					},
 				},
 				CANCELLED: {
@@ -226,8 +226,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							<span
 								className={cn(
 									"shrink-0 pr-3 text-sm",
-									toolState.badge.variant === "destructive" &&
-										"text-destructive",
 									toolState.badge.variant === "muted" &&
 										"text-muted-foreground",
 								)}
@@ -325,8 +323,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						<span
 							className={cn(
 								"shrink-0 pr-3 font-medium text-sm",
-								toolState.badge.variant === "destructive" &&
-									"text-destructive",
 								toolState.badge.variant === "muted" &&
 									"text-muted-foreground",
 							)}
