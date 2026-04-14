@@ -12,7 +12,7 @@ import {
 } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
 
-export const GlobalDialog: React.FC = observer(() => {
+export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(({ onAcknowledge }) => {
 	const { t } = useTranslation("common");
 	const { root } = useRoot();
 	const [visible, setVisible] = useCacheState(
@@ -41,8 +41,8 @@ export const GlobalDialog: React.FC = observer(() => {
 					<Button
 						variant="default"
 						onClick={() => {
-							// close it
 							setVisible(false);
+							onAcknowledge?.();
 						}}
 					>
 						{t("navigation.acknowledge")}

@@ -30,6 +30,7 @@ export const MainLayout = observer(() => {
 	const theme = root.theme;
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
 	const [isTourOpen, setIsTourOpen] = useState(false);
+	const [pendingTour, setPendingTour] = useState(false);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		false,
@@ -57,7 +58,8 @@ export const MainLayout = observer(() => {
 		if (icon) setFavicon(icon);
 	}, [theme?.images?.tabIcon]);
 
-	// Auto-show tour for first-time users (resets when cookies are cleared)
+	// Auto-show tour for first-time users (resets when cookies are cleared).
+	// If the welcome dialog is visible, defer until it is acknowledged.
 	useEffect(() => {
 		if (root.theme.tour?.show === false) return;
 		const hasSeen = document.cookie
@@ -65,9 +67,13 @@ export const MainLayout = observer(() => {
 			.find((c) => c.startsWith("hasSeenTour="));
 		if (!hasSeen) {
 			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
-			setIsTourOpen(true);
+			if (root.theme.dialog) {
+				setPendingTour(true);
+			} else {
+				setIsTourOpen(true);
+			}
 		}
-	}, [root.theme.tour?.show]);
+	}, [root.theme.tour?.show, root.theme.dialog]);
 
 	return (
 		<ChatContext.Provider
@@ -89,6 +95,12 @@ export const MainLayout = observer(() => {
 					<MainLayoutContent
 						isSidebarOpen={isSidebarOpen}
 						setIsSidebarOpen={setIsSidebarOpen}
+						onDialogAcknowledge={() => {
+							if (pendingTour) {
+								setPendingTour(false);
+								setIsTourOpen(true);
+							}
+						}}
 					/>
 				</TourContext.Provider>
 			</NavbarContext.Provider>
@@ -100,9 +112,11 @@ const MainLayoutContent = observer(
 	({
 		isSidebarOpen,
 		setIsSidebarOpen,
+		onDialogAcknowledge,
 	}: {
 		isSidebarOpen: boolean;
 		setIsSidebarOpen: (open: boolean) => void;
+		onDialogAcknowledge: () => void;
 	}) => {
 		const { root } = useRoot();
 		const { actions } = useNavbar();
@@ -120,7 +134,7 @@ const MainLayoutContent = observer(
 			>
 				<GlobalNav />
 				<SidebarInset className="m-0! shadow-none">
-					<GlobalDialog />
+					<GlobalDialog onAcknowledge={onDialogAcknowledge} />
 					<div
 						data-testid="main-layout"
 						className="flex h-screen w-full flex-col overflow-hidden"
