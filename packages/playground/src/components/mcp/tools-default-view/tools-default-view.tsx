@@ -97,7 +97,9 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
 		>({});
-		const [response, setResponse] = useState<string>(toolResponse);
+		const [response, setResponse] = useState<string | undefined>(
+			toolResponse,
+		);
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
@@ -269,12 +271,16 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					success = true;
 				}
 			} catch (error) {
-				output = error.toString();
+				output = (error as Error).toString();
 				success = false;
 			}
 			const m = room.getMessage(message);
-			if (!m || m instanceof ResponseMessageStore !== true) {
-			} else {
+			// Only process the tool response if the tool is still open
+			if (
+				m &&
+				m instanceof ResponseMessageStore &&
+				room.getTool(tool.id).isOpen
+			) {
 				room.processTool(
 					m.id,
 					tool.id,
