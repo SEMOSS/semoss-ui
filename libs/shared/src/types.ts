@@ -153,7 +153,7 @@ export interface ThemeMap {
 		 * When false, hides the dark/light/system theme menu in the user navigation.
 		 * Defaults to true (menu shown).
 		 */
-		showThemeModeToggle?: boolean;
+		showDarkModeToggle?: boolean;
 
 		/**
 		 * Graceful error messages to show in the UI

@@ -45,7 +45,7 @@ export function NavUser() {
 		(lang) => lang.code === i18n.language,
 	);
 	const { theme, setTheme } = useTheme();
-	const isDarkModeEnabled = root.theme.showThemeModeToggle !== false;
+	const isDarkModeEnabled = root.theme.showDarkModeToggle !== false;
 
 	return (
 		<DropdownMenu>

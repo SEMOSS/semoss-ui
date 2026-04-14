@@ -81,7 +81,7 @@ export class RootStore {
 			defaultTools: [],
 			gracefulErrors: [],
 			showPlatformLinks: true,
-			showThemeModeToggle: true,
+			showDarkModeToggle: true,
 		},
 	};
 
@@ -246,10 +246,10 @@ export class RootStore {
 				theme?.showPlatformLinks !== undefined
 					? theme.showPlatformLinks
 					: this._store.theme.showPlatformLinks,
-			showThemeModeToggle:
-				theme?.showThemeModeToggle !== undefined
-					? theme.showThemeModeToggle
-					: this._store.theme.showThemeModeToggle,
+			showDarkModeToggle:
+				theme?.showDarkModeToggle !== undefined
+					? theme.showDarkModeToggle
+					: this._store.theme.showDarkModeToggle,
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),
