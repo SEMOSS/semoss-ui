@@ -783,10 +783,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 						{/* Left: Category title + description */}
 						<div className="flex flex-1 flex-col gap-1">
-							<H4 data-testId={`model-importForm-category-title`}>
+							<H4
+								className="font-semibold text-base tracking-tight"
+								data-testId={`model-importForm-category-title`}
+							>
 								{category}
 							</H4>
 							<Muted
+								className="text-muted-foreground text-sm leading-6"
 								data-testId={`model-importForm-category-description`}
 							>
 								{importableModelsCategory[selectedProvider]?.[
