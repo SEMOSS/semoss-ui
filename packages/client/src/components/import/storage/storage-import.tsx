@@ -134,7 +134,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<div className="mb-4">
+		<div className="mb-6">
 			<Breadcrumb data-testid="breadcrumbs">
 				<BreadcrumbList>
 					<BreadcrumbItem>
