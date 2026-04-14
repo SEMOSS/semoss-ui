@@ -1,3 +1,4 @@
+import type { LexicalEditor } from "lexical";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -26,10 +27,13 @@ interface MCPOverlayProps {
 
 	/** Callback triggered when the tool model is closed */
 	onClose: (mcp?: MCPConfig[]) => void;
+
+	/** Optional ref to editor to focus when closing */
+	editorRef?: React.RefObject<LexicalEditor>;
 }
 
 export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
-	const { open, type, values, onClose } = props;
+	const { open, type, values, onClose, editorRef } = props;
 	const { t } = useTranslation("mcp");
 
 	const [updated, setUpdated] = useState<MCPConfig[]>(values);
@@ -48,6 +52,14 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
 						? t("overlay.editToolbox")
 						: t("overlay.editKnowledge")
 				}
+				onCloseAutoFocus={(e) => {
+					// Prevent focus from returning to the trigger element
+					e.preventDefault();
+					// Focus editor after dialog closes
+					if (editorRef?.current) {
+						setTimeout(() => editorRef.current?.focus(), 0);
+					}
+				}}
 			>
 				<DialogHeader>
 					<DialogTitle>
