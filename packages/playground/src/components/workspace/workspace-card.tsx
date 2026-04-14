@@ -50,7 +50,7 @@ export const WorkspaceCard = observer(
 		return (
 			<>
 				<Card
-					className="cursor-pointer gap-0 bg-background p-0"
+					className="cursor-pointer gap-0 bg-card p-0"
 					onClick={() => {
 						navigate(`/agent/${workspace.workspace_id}`);
 					}}
