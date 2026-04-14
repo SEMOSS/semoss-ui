@@ -1,10 +1,20 @@
-import { CopyIcon, Quote, SkipForwardIcon } from "lucide-react";
+import {
+	ChevronDownIcon,
+	ChevronUpIcon,
+	CopyIcon,
+	Quote,
+	SkipForwardIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Code,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
 	H1,
 	H2,
 	H3,
@@ -24,7 +34,270 @@ import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 
-const createMarkdownComponents = (room?: RoomStore) => ({
+const HTML_TAG_REGEX = /<\/?[a-z][\w:-]*(\s[^>]*)?>|<!doctype html>/i;
+const HTML_PREVIEW_STREAM_THROTTLE_MS = 180;
+
+const getErrorMessage = (error: unknown): string => {
+	if (error instanceof Error && error.message) {
+		return error.message;
+	}
+
+	return "Unable to copy content";
+};
+
+const copyToClipboard = async (
+	value: string,
+	onSuccess: () => void,
+	onError: (message: string) => void,
+) => {
+	try {
+		await navigator.clipboard.writeText(value);
+		onSuccess();
+	} catch (error) {
+		onError(getErrorMessage(error));
+	}
+};
+
+const extractStandaloneHtml = (content: string): string | null => {
+	const trimmed = content.trim();
+
+	if (!trimmed || trimmed.includes("```")) {
+		return null;
+	}
+
+	if (!trimmed.startsWith("<") || !trimmed.endsWith(">")) {
+		return null;
+	}
+
+	if (!HTML_TAG_REGEX.test(trimmed)) {
+		return null;
+	}
+
+	return trimmed;
+};
+
+const useBufferedPreviewHtml = (html: string, isLoading?: boolean): string => {
+	const [bufferedHtml, setBufferedHtml] = useState(html);
+	const latestHtmlRef = useRef(html);
+	const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+	latestHtmlRef.current = html;
+
+	useEffect(() => {
+		if (!isLoading) {
+			if (flushTimerRef.current) {
+				clearTimeout(flushTimerRef.current);
+				flushTimerRef.current = null;
+			}
+
+			setBufferedHtml(html);
+			return;
+		}
+
+		if (!flushTimerRef.current) {
+			flushTimerRef.current = setTimeout(() => {
+				flushTimerRef.current = null;
+				setBufferedHtml(latestHtmlRef.current);
+			}, HTML_PREVIEW_STREAM_THROTTLE_MS);
+		}
+	}, [html, isLoading]);
+
+	useEffect(() => {
+		return () => {
+			if (flushTimerRef.current) {
+				clearTimeout(flushTimerRef.current);
+			}
+		};
+	}, []);
+
+	return bufferedHtml;
+};
+
+interface HtmlPreviewBlockProps {
+	html: string;
+	room?: RoomStore;
+	isLoading?: boolean;
+	copyTooltip: string;
+	copySuccessMessage: string;
+	copyLabel: string;
+}
+
+const createHtmlResponseFilePath = (): string => {
+	return `save-html-response-${Date.now()}.html`;
+};
+
+const HtmlPreviewBlock: React.FC<HtmlPreviewBlockProps> = ({
+	html,
+	room,
+	isLoading,
+	copyTooltip,
+	copySuccessMessage,
+	copyLabel,
+}) => {
+	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
+	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
+	const [isCollapsed, setIsCollapsed] = useState(false);
+	const previewHtml = useBufferedPreviewHtml(html, isLoading);
+
+	const saveInRoom = async () => {
+		if (!room || !html) {
+			return;
+		}
+
+		const filePath = createHtmlResponseFilePath();
+		try {
+			setIsSavingToRoom(true);
+
+			await room.runRoomPixel(
+				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${html}</encode>"]);`,
+				false,
+				false,
+			);
+
+			toast.success(`Saved in room as ${filePath}`);
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+		} finally {
+			setIsSavingToRoom(false);
+		}
+	};
+
+	return (
+		<>
+			<div className="relative overflow-hidden rounded-md border border-border bg-background">
+				<div className="border-border border-b px-3 py-2 text-muted-foreground text-xs">
+					<div className="flex items-center justify-between gap-2">
+						<div className="flex items-center gap-1">
+							<button
+								type="button"
+								aria-label={
+									isCollapsed
+										? "Expand preview"
+										: "Collapse preview"
+								}
+								className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+								disabled={!html}
+								onClick={() =>
+									setIsCollapsed((previous) => !previous)
+								}
+							>
+								{isCollapsed ? (
+									<ChevronDownIcon className="size-3.5" />
+								) : (
+									<ChevronUpIcon className="size-3.5" />
+								)}
+							</button>
+							<span>
+								HTML Preview
+								{isCollapsed ? " - Collapsed" : ""}
+							</span>
+						</div>
+						<div className="flex items-center gap-1">
+							<Button
+								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={
+									!room ||
+									!html ||
+									isSavingToRoom ||
+									isLoading
+								}
+								onClick={() => {
+									void saveInRoom();
+								}}
+							>
+								{isSavingToRoom ? "Saving..." : "Save In Room"}
+							</Button>
+							<Button
+								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={isLoading}
+								onClick={() => setIsFullViewOpen(true)}
+							>
+								Full View
+							</Button>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+										variant="ghost"
+										size="sm"
+										disabled={!html || isLoading}
+										onClick={() => {
+											void copyToClipboard(
+												html,
+												() =>
+													toast.success(
+														copySuccessMessage,
+													),
+												(message) =>
+													toast.error(message),
+											);
+										}}
+									>
+										<CopyIcon className="size-3.5" />
+										{copyLabel}
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{copyTooltip}
+								</TooltipContent>
+							</Tooltip>
+						</div>
+					</div>
+				</div>
+				{!isCollapsed && (
+					<div className="relative">
+						<iframe
+							title="HTML Preview"
+							className="h-[70dvh] min-h-[34rem] w-full border-0 bg-white"
+							sandbox="allow-scripts"
+							referrerPolicy="no-referrer"
+							srcDoc={previewHtml}
+						/>
+						{isLoading && (
+							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+								<div className="rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
+									Loading Preview...
+								</div>
+							</div>
+						)}
+					</div>
+				)}
+			</div>
+			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
+				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
+					<DialogHeader>
+						<DialogTitle>HTML Preview</DialogTitle>
+					</DialogHeader>
+					<div className="relative h-full min-h-0">
+						<iframe
+							title="HTML Preview Full View"
+							className="h-full min-h-0 w-full rounded-md border border-border bg-white"
+							sandbox="allow-scripts"
+							referrerPolicy="no-referrer"
+							srcDoc={previewHtml}
+						/>
+						{isLoading && (
+							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+								<div className="rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
+									Loading Preview...
+								</div>
+							</div>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
+		</>
+	);
+};
+
+const createMarkdownComponents = (
+	room?: RoomStore,
+	isHtmlPreviewLoading?: boolean,
+) => ({
 	h1: ({ children, ...props }) => (
 		<H1 className="mt-5 font-semibold text-2xl text-inherit" {...props}>
 			{children}
@@ -175,7 +448,22 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 		}
 
 		// Fenced code block — render the full UI with copy button and syntax highlighting.
-		const lang = match[1];
+		const lang = match[1].toLowerCase() as React.ComponentProps<
+			typeof Code
+		>["language"];
+
+		if (lang === "html") {
+			return (
+				<HtmlPreviewBlock
+					html={code}
+					room={room}
+					isLoading={isHtmlPreviewLoading}
+					copyTooltip="Copy"
+					copySuccessMessage={t("notifications.copySuccess")}
+					copyLabel="Copy"
+				/>
+			);
+		}
 
 		return (
 			<div className="group/response-markdown relative">
@@ -187,15 +475,14 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 							size="icon"
 							disabled={!code}
 							onClick={() => {
-								try {
-									navigator.clipboard.writeText(code);
-
-									toast.success(
-										t("notifications.copySuccess"),
-									);
-								} catch (e) {
-									toast.error(e.message);
-								}
+								void copyToClipboard(
+									code,
+									() =>
+										toast.success(
+											t("notifications.copySuccess"),
+										),
+									(message) => toast.error(message),
+								);
 							}}
 						>
 							<CopyIcon />
@@ -205,7 +492,7 @@ const createMarkdownComponents = (room?: RoomStore) => ({
 						{t("response.copyCode")}
 					</TooltipContent>
 				</Tooltip>
-				<Code code={code} lang={lang || undefined} {...props} />
+				<Code code={code} language={lang ? lang : "txt"} {...props} />
 			</div>
 		);
 	},
@@ -232,9 +519,18 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
 		const { t } = useTranslation("chat");
 		const typewriter = useMarkdownTypewriter(part.text);
+		const renderedText = typewriter.isTyping
+			? typewriter.rendered
+			: part.text;
+		const isPreviewLoading =
+			isLast && (message.isThinking || typewriter.isTyping);
+		const standaloneHtml = useMemo(
+			() => extractStandaloneHtml(renderedText),
+			[renderedText],
+		);
 		const components = useMemo(
-			() => createMarkdownComponents(message.room),
-			[message.room],
+			() => createMarkdownComponents(message.room, isPreviewLoading),
+			[message.room, isPreviewLoading],
 		);
 
 		useEffect(() => {
@@ -251,17 +547,28 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 
 		return (
 			<>
-				<Markdown
-					components={components}
-					className="[&>*:first-child]:mt-0"
-					urlTransform={(url) => {
-						if (url.startsWith("room://")) return url;
-						if (/^(https?:|mailto:|#)/.test(url)) return url;
-						return "";
-					}}
-				>
-					{typewriter.isTyping ? typewriter.rendered : part.text}
-				</Markdown>
+				{standaloneHtml ? (
+					<HtmlPreviewBlock
+						html={standaloneHtml}
+						room={message.room}
+						isLoading={isPreviewLoading}
+						copyTooltip="Copy"
+						copySuccessMessage={t("notifications.copySuccess")}
+						copyLabel="Copy"
+					/>
+				) : (
+					<Markdown
+						components={components}
+						className="[&>*:first-child]:mt-0"
+						urlTransform={(url) => {
+							if (url.startsWith("room://")) return url;
+							if (/^(https?:|mailto:|#)/.test(url)) return url;
+							return "";
+						}}
+					>
+						{renderedText}
+					</Markdown>
+				)}
 				{typewriter.isTyping && !message.isThinking && isLast && (
 					<Tooltip>
 						<TooltipTrigger asChild>

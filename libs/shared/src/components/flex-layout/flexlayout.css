@@ -21,7 +21,7 @@
 }
 
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer_top {
-    padding-right: 85px;
+    padding-right: var(--room-sidebar-controls-width, 85px);
 }
 
 .flexlayout__theme_smss .flexlayout__tab_button {
@@ -46,11 +46,49 @@
 
  /** Popover **/
 .flexlayout__theme_smss .flexlayout__popup_menu_container {
-    @apply border border-input rounded-md shadow-xs;
+    @apply border border-input rounded-md bg-popover text-popover-foreground shadow-lg;
+    min-width: min(22rem, calc(100vw - 2rem));
+    max-width: min(34rem, calc(100vw - 2rem));
+    max-height: min(24rem, calc(100vh - 6rem));
+    padding: 0.25rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_container::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_container::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu {
+    @apply flex flex-col gap-0.5;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item {
-    @apply h-8 px-2 py-3;
+    @apply flex min-h-8 items-center rounded-sm px-2 py-1.5;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_stamp {
+    @apply w-full min-w-0 gap-2;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_content {
+    @apply min-w-0 flex-1 truncate text-xs leading-normal font-medium;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_leading {
+    @apply shrink-0;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item--selected {
+    @apply bg-secondary text-foreground;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item:hover {
