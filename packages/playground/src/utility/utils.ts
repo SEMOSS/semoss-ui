@@ -19,14 +19,17 @@ export const capitalizeWords = (str: string | undefined) => {
  * @param str - The string to convert
  * @returns The sentence case string, or undefined if input is undefined
  */
-export const toSentenceCase = (str: string | undefined) => {
-	if (!str) return undefined;
+export const toSentenceCase = <T extends string | undefined>(
+	str: T,
+): T extends undefined ? undefined : string => {
+	if (!str) return undefined as T extends undefined ? undefined : string;
 	const normalized = str.replace(/[_\s]+/g, " ").toLowerCase();
-	return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+	return (normalized.charAt(0).toUpperCase() +
+		normalized.slice(1)) as T extends undefined ? undefined : string;
 };
 
 /**
- * Extracts the first and last initials from a name string
+ * Extracts the first and last initials from a name string`
  *
  * Splits the name by whitespace and takes the first letter of the first word
  * and the first letter of the last word. Apostrophes and hyphens are treated
