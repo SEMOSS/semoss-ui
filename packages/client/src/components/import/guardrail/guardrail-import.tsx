@@ -145,7 +145,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb className="mb-4">
+		<Breadcrumb className="mb-6">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
