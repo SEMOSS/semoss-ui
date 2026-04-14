@@ -9,23 +9,6 @@ import {
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-export interface MentionPluginRenderProps {
-	/**
-	 * Whether the menu is open
-	 */
-	isOpen: boolean;
-
-	/**
-	 * Whether the menu is open
-	 */
-	onOpenChange: (isOpen: boolean) => void;
-
-	/**
-	 * Triggered to add a token to the menu
-	 */
-	addToken: (token: string) => void;
-}
-
 interface MentionPluginProps {
 	/**
 	 * Trigger
@@ -40,6 +23,7 @@ interface MentionPluginProps {
 		onOpenChange: (isOpen: boolean) => void;
 		menuPosition: { top: number; left: number } | null;
 		addToken: (token: string) => void;
+		onRequestClose: () => void;
 	}>;
 }
 
@@ -55,6 +39,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	} | null>(null);
 
 	const triggerOffsetRef = useRef<number | null>(null);
+	const explicitlyClosedRef = useRef(false);
 
 	/**
 	 * Call back to add a token
@@ -89,33 +74,83 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				const textAfterCursor = textContent.slice(anchor.offset);
 
 				// Add the node
-				const textNode = $createTextNode(token);
+				const tokenNode = $createTextNode(token);
 
 				// Update the text node
 				if (textBeforeTrigger) {
 					anchorNode.setTextContent(textBeforeTrigger);
-					anchorNode.insertAfter(textNode);
+					anchorNode.insertAfter(tokenNode);
 				} else {
-					anchorNode.replace(textNode);
+					anchorNode.replace(tokenNode);
 				}
+
+				// Add a space after the token
+				const spaceNode = new TextNode(" ");
+				tokenNode.insertAfter(spaceNode);
 
 				// Add text after cursor if any
 				if (textAfterCursor) {
-					const textNode = new TextNode(textAfterCursor);
-					textNode.insertAfter(textNode);
+					const textAfterCursorNode = new TextNode(textAfterCursor);
+					spaceNode.insertAfter(textAfterCursorNode);
 				}
 
-				// Add a space after the badge and move selection there
-				const spaceNode = new TextNode(" ");
-				textNode.insertAfter(spaceNode);
-				spaceNode.select();
+				// Move cursor after the space
+				spaceNode.select(1, 1);
 			});
 
 			setIsOpen(false);
+			explicitlyClosedRef.current = false;
 			triggerOffsetRef.current = null;
 		},
 		[editor],
 	);
+
+	/**
+	 * Callback to close menu and remove trigger text
+	 */
+	const handleRequestClose = useCallback(() => {
+		const triggerIdx = triggerOffsetRef.current;
+		if (triggerIdx === null) {
+			return;
+		}
+
+		editor.update(() => {
+			const selection = $getSelection();
+			if (!$isRangeSelection(selection)) {
+				return;
+			}
+
+			const anchor = selection.anchor;
+			const anchorNode = anchor.getNode();
+
+			if (!$isTextNode(anchorNode)) {
+				return;
+			}
+
+			const textContent = anchorNode.getTextContent();
+
+			// Remove from trigger to cursor
+			const textBeforeTrigger = textContent.slice(0, triggerIdx);
+			const textAfterCursor = textContent.slice(anchor.offset);
+			const newText = textBeforeTrigger + textAfterCursor;
+
+			anchorNode.setTextContent(newText);
+
+			// Select at the trigger position (now the join point)
+			// Use the length of textBeforeTrigger to ensure we're within bounds
+			anchorNode.select(
+				textBeforeTrigger.length,
+				textBeforeTrigger.length,
+			);
+		});
+
+		// Focus editor immediately before closing menu
+		editor.focus();
+
+		setIsOpen(false);
+		explicitlyClosedRef.current = false;
+		triggerOffsetRef.current = null;
+	}, [editor]);
 
 	// Handle text changes to detect trigger
 	useEffect(() => {
@@ -124,6 +159,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				const selection = $getSelection();
 				if (!$isRangeSelection(selection)) {
 					setIsOpen(false);
+					explicitlyClosedRef.current = false;
 					return;
 				}
 
@@ -132,6 +168,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 
 				if (!$isTextNode(anchorNode)) {
 					setIsOpen(false);
+					explicitlyClosedRef.current = false;
 					return;
 				}
 
@@ -155,21 +192,35 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				}
 
 				if (triggerIndex !== -1) {
-					triggerOffsetRef.current = triggerIndex;
-					setIsOpen(true);
+					// Check if this is a new trigger position or if menu was explicitly closed
+					const isNewTrigger =
+						triggerOffsetRef.current !== triggerIndex;
 
-					// Calculate menu position
-					const domSelection = window.getSelection();
-					if (domSelection && domSelection.rangeCount > 0) {
-						const range = domSelection.getRangeAt(0);
-						const rect = range.getBoundingClientRect();
-						setMenuPosition({
-							top: rect.bottom + window.scrollY + 4,
-							left: rect.left + window.scrollX,
-						});
+					if (isNewTrigger) {
+						// New trigger position - reset explicit closure flag
+						explicitlyClosedRef.current = false;
+					}
+
+					// Only open if not explicitly closed
+					if (!explicitlyClosedRef.current) {
+						triggerOffsetRef.current = triggerIndex;
+						setIsOpen(true);
+
+						// Calculate menu position
+						const domSelection = window.getSelection();
+						if (domSelection && domSelection.rangeCount > 0) {
+							const range = domSelection.getRangeAt(0);
+							const rect = range.getBoundingClientRect();
+							setMenuPosition({
+								top: rect.bottom + window.scrollY + 4,
+								left: rect.left + window.scrollX,
+							});
+						}
 					}
 				} else {
+					// No trigger found - reset everything
 					setIsOpen(false);
+					explicitlyClosedRef.current = false;
 					triggerOffsetRef.current = null;
 				}
 			});
@@ -186,6 +237,18 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 		});
 	}, [editor, isOpen]);
 
+	// Track explicit closure
+	const handleOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open && isOpen) {
+				// User explicitly closed the menu
+				explicitlyClosedRef.current = true;
+			}
+			setIsOpen(open);
+		},
+		[isOpen],
+	);
+
 	// don't show if not open and there is no position
 	if (!isOpen || !menuPosition) {
 		return null;
@@ -194,9 +257,10 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	return (
 		<MenuComponent
 			isOpen={isOpen}
-			onOpenChange={setIsOpen}
+			onOpenChange={handleOpenChange}
 			menuPosition={menuPosition}
 			addToken={addToken}
+			onRequestClose={handleRequestClose}
 		/>
 	);
 };
