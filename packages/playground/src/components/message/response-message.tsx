@@ -127,17 +127,32 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			// ask tools only enter group when there are no unfinished tools
 			return !message.hasUnfinishedTools;
 		};
-		const groupedTools: ToolStore[] = [];
-		let firstToolPartIdx = -1;
-		message.parts.forEach((p, idx) => {
-			if (p.type !== "TOOL_CALL") return;
-			if (firstToolPartIdx === -1) firstToolPartIdx = idx;
-			const tool = room.getTool(p.toolCall.id);
-			if (!tool) return;
-			if (getShouldGroupTool(tool)) {
-				groupedTools.push(tool);
-			}
-		});
+		const { groupedTools, hasAskTools, firstToolPartIdx, numTools } =
+			(() => {
+				const groupedTools: ToolStore[] = [];
+				let hasAskTools = false;
+				let firstToolPartIdx = -1;
+				let numTools = 0;
+				message.parts.forEach((p, idx) => {
+					if (p.type !== "TOOL_CALL") return;
+					if (firstToolPartIdx === -1) firstToolPartIdx = idx;
+					const tool = room.getTool(p.toolCall.id);
+					if (!tool) return;
+					numTools++;
+					if (getShouldGroupTool(tool)) {
+						groupedTools.push(tool);
+					}
+					if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+						hasAskTools = true;
+					}
+				});
+				return {
+					groupedTools,
+					hasAskTools,
+					firstToolPartIdx,
+					numTools,
+				};
+			})();
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 		const parentHasText = inputMessage?.parts.some(
@@ -212,37 +227,35 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped =
-								getShouldGroupTool(tool) &&
-								groupedTools.length > 1;
+							const isGrouped = getShouldGroupTool(tool);
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
-										groupedTools.length > 1 && (
+										(groupedTools.length > 1 ? (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
 												message={message}
 												tools={groupedTools}
 											/>
-										)}
+										) : (
+											<ResponseMessageTool
+												message={message}
+												tool={groupedTools[0]}
+												// getShouldGroupTool dictates that tools are grouped if auto, or all finished
+												// if the group size is 1, then this could be an auto tool and the message has an unfinished ask tool
+												// we should be large in this case for consistency
+												isLarge={
+													message.hasUnfinishedTools &&
+													hasAskTools
+												}
+											/>
+										))}
 									{tool && !isGrouped && (
 										<ResponseMessageTool
 											message={message}
 											tool={tool}
-											// getShouldGroupTool dictates that tools are only solo if
-											// it is a) ask and unfinished or b) solo auto with some unfinished asks
-											// But, when we do && groupedTools.length > 1, we introduce possibility c)
-											// a solo auto and unfinished tool is here - and it should be small
-											// so solo tools should be large if message.hasUnfinishedTools and not possibility c.
-											isLarge={
-												message.hasUnfinishedTools &&
-												!(
-													tool.json._meta
-														.SMSS_MCP_EXECUTION ===
-														"auto" &&
-													room.numberOfTools === 1
-												)
-											}
+											// See logic above, but ungrouped tools are always unfinished ask tools - large
+											isLarge
 										/>
 									)}
 								</Fragment>
@@ -254,7 +267,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					{message.hasUnfinishedTools && (
 						<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 							<CircleAlert className="size-4" />
-							{t("response.completeTools")}
+							{hasAskTools
+								? t("response.completeToolsAsk", {
+										count: numTools,
+									})
+								: t("response.completeToolsAuto", {
+										count: numTools,
+									})}
 						</p>
 					)}
 				</div>

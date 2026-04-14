@@ -18,7 +18,10 @@
 		"copyResponse": "Copiar respuesta",
 		"copyCode": "Copiar código",
 		"fastForwardToEnd": "Avanzar al final",
-		"completeTools": "Por favor, completa las herramientas para continuar."
+		"completeToolsAsk_one": "Por favor, completa la herramienta para continuar.",
+		"completeToolsAsk_other": "Por favor, completa las herramientas para continuar.",
+		"completeToolsAuto_one": "Por favor, espera a que la herramienta se complete.",
+		"completeToolsAuto_other": "Por favor, espera a que las herramientas se completen."
 	},
 	"input": {
 		"copyMessage": "Copiar mensaje"

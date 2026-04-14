@@ -18,7 +18,10 @@
 		"copyResponse": "जवाब कॉपी करें",
 		"copyCode": "कोड कॉपी करें",
 		"fastForwardToEnd": "अंत तक तेजी से आगे बढ़ें",
-		"completeTools": "कृपया आगे बढ़ने के लिए टूल पूरा करें।"
+		"completeToolsAsk_one": "कृपया आगे बढ़ने के लिए टूल पूरा करें।",
+		"completeToolsAsk_other": "कृपया आगे बढ़ने के लिए सभी टूल पूरे करें।",
+		"completeToolsAuto_one": "कृपया टूल के पूरा होने तक प्रतीक्षा करें।",
+		"completeToolsAuto_other": "कृपया सभी टूल के पूरा होने तक प्रतीक्षा करें।"
 	},
 	"input": {
 		"copyMessage": "संदेश कॉपी करें"
