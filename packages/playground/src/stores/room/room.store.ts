@@ -167,7 +167,10 @@ export class RoomStore {
 		sidebar: {
 			isOpen: false,
 			model: FlexLayout.Model.fromJson({
-				global: {},
+				global: {
+					borderEnableTabScrollbar: true,
+					tabSetEnableTabScrollbar: true,
+				},
 				borders: [],
 				layout: {
 					type: "row",
