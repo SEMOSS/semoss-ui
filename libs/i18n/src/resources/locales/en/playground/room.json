@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "Room Settings",
 		"description": "Update room settings and modify the behavior of the chat",
-		"open": "Open Settings",
-		"close": "Close",
-		"edit": "Edit Settings",
+		"open": "Open Room Settings",
+		"close": "Close Room Settings",
+		"edit": "Edit Room Settings",
 		"textGenDescription": "Adjust token limits and temperature to control how the model generates responses",
 		"imageGenDescription": "Configure image size and random seed to control the output of image generation"
 	},
@@ -50,8 +50,8 @@
 	"input": {
 		"ariaPlaceholder": "Enter text",
 		"thinking": "Thinking...",
-		"menuPrompt": "/ to open menu",
-		"openSettings": "Open settings",
+		"menuPrompt": "How can I help you today?",
+		"openSettings": "Add files, agents, and more",
 		"recordLabel": "Record the Model",
 		"stopRecording": "Stop Recording",
 		"record": "Record",
@@ -81,15 +81,10 @@
 		"copyFailed": "Failed to copy to clipboard"
 	},
 	"menuToolbox": {
-		"addToolbox": "Add Toolbox",
-		"searchPlaceholder": "Search toolboxes",
-		"notFound": "Not Found",
-		"allTools": "All Tools"
+		"addToolbox": "Add Toolboxes"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Add Knowledge",
-		"searchPlaceholder": "Search knowledge",
-		"notFound": "Not Found"
+		"addKnowledge": "Add Knowledge"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Select Agent",
@@ -97,7 +92,7 @@
 		"notFound": "Not Found"
 	},
 	"menuUpload": {
-		"attachDocument": "Attach Document"
+		"attachDocument": "Add Documents"
 	},
 	"menuFileExplorer": {
 		"name": "File Explorer",
@@ -114,5 +109,10 @@
 		"descriptionExceeded": "This conversation has exceeded its limit. The model is now forgetting earlier messages when generating responses. Start a new chat for best results.",
 		"memoryUsedTitle": "Memory used:",
 		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and toolboxes",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or toolboxes available"
 	}
 }

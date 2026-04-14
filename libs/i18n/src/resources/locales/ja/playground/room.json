@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "ルーム設定",
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
-		"open": "設定を開く",
-		"close": "閉じる",
-		"edit": "設定を編集",
+		"open": "ルーム設定を開く",
+		"close": "ルーム設定を閉じる",
+		"edit": "ルーム設定を編集",
 		"textGenDescription": "トークン制限と温度を調整して、モデルが応答を生成する方法を制御します",
 		"imageGenDescription": "画像サイズとランダムシードを設定して、画像生成の出力を制御します"
 	},
@@ -44,8 +44,8 @@
 	"input": {
 		"ariaPlaceholder": "テキストを入力",
 		"thinking": "考え中...",
-		"menuPrompt": "/ でメニューを開く",
-		"openSettings": "設定を開く",
+		"menuPrompt": "今日はどのようにお手伝いできますか？",
+		"openSettings": "ファイル、エージェントなどを追加",
 		"recordLabel": "モデルを録音",
 		"stopRecording": "録音を停止",
 		"record": "録音",
@@ -75,15 +75,10 @@
 		"copyFailed": "クリップボードへのコピーに失敗しました"
 	},
 	"menuToolbox": {
-		"addToolbox": "ツールボックスを追加",
-		"searchPlaceholder": "ツールボックスを検索",
-		"notFound": "見つかりません",
-		"allTools": "すべてのツール"
+		"addToolbox": "ツールボックスを追加"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "ナレッジを追加",
-		"searchPlaceholder": "ナレッジを検索",
-		"notFound": "見つかりません"
+		"addKnowledge": "ナレッジを追加"
 	},
 	"menuWorkspace": {
 		"selectAgent": "エージェントを選択",
@@ -91,7 +86,7 @@
 		"notFound": "見つかりません"
 	},
 	"menuUpload": {
-		"attachDocument": "ドキュメントを添付"
+		"attachDocument": "ドキュメントを追加"
 	},
 	"menuFileExplorer": {
 		"name": "ファイルエクスプローラー",
@@ -108,5 +103,10 @@
 		"descriptionExceeded": "この会話は上限を超えました。モデルは現在、応答を生成する際に以前のメッセージを忘れています。最良の結果を得るには、新しいチャットを開始してください。",
 		"memoryUsedTitle": "使用メモリ:",
 		"memoryUsedValue": "{{used}} / {{total}} トークン ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "ナレッジとツールボックスを検索",
+		"noResults": "一致する項目が見つかりません",
+		"noItemsAvailable": "使用可能なナレッジまたはツールボックスはありません"
 	}
 }

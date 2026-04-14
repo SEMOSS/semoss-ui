@@ -25,6 +25,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { STREAMING_PLACEHOLDER_ID } from "@/constants";
 import { useRoot } from "@/hooks";
 import {
 	InputMessageStore,
@@ -143,19 +144,37 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		// part index (regardless of completion) so the group always renders at
 		// the top of the tool list even when an auto-execute tool completes first.
 		const getShouldGroupTool = (tool: ToolStore) => {
-			return tool?.status === "SUCCESS";
+			// auto-execute tools should always be grouped
+			if (tool.json._meta.SMSS_MCP_EXECUTION === "auto") return true;
+			// ask tools only enter group when there are no unfinished tools
+			return !message.hasUnfinishedTools;
 		};
-		const groupedTools: ToolStore[] = [];
-		let firstToolPartIdx = -1;
-		message.parts.forEach((p, idx) => {
-			if (p.type !== "TOOL_CALL") return;
-			if (firstToolPartIdx === -1) firstToolPartIdx = idx;
-			const tool = room.getTool(p.toolCall.id);
-			if (!tool) return;
-			if (getShouldGroupTool(tool)) {
-				groupedTools.push(tool);
-			}
-		});
+		const { groupedTools, hasAskTools, firstToolPartIdx, numTools } =
+			(() => {
+				const groupedTools: ToolStore[] = [];
+				let hasAskTools = false;
+				let firstToolPartIdx = -1;
+				let numTools = 0;
+				message.parts.forEach((p, idx) => {
+					if (p.type !== "TOOL_CALL") return;
+					if (firstToolPartIdx === -1) firstToolPartIdx = idx;
+					const tool = room.getTool(p.toolCall.id);
+					if (!tool) return;
+					numTools++;
+					if (getShouldGroupTool(tool)) {
+						groupedTools.push(tool);
+					}
+					if (tool.json._meta.SMSS_MCP_EXECUTION === "ask") {
+						hasAskTools = true;
+					}
+				});
+				return {
+					groupedTools,
+					hasAskTools,
+					firstToolPartIdx,
+					numTools,
+				};
+			})();
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
 		const hasOnlyMedia =
@@ -245,23 +264,36 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							);
 						} else if (p.type === "TOOL_CALL") {
 							const tool = room.getTool(p.toolCall.id);
-							const isGrouped =
-								getShouldGroupTool(tool) &&
-								groupedTools.length > 1;
+							const isGrouped = getShouldGroupTool(tool);
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
-										groupedTools.length > 1 && (
+										groupedTools.length > 0 &&
+										(groupedTools.length > 1 ? (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
 												message={message}
 												tools={groupedTools}
 											/>
-										)}
+										) : (
+											<ResponseMessageTool
+												message={message}
+												tool={groupedTools[0]}
+												// getShouldGroupTool dictates that tools are grouped if auto, or all finished
+												// if the group size is 1, then this could be an auto tool and the message has an unfinished ask tool
+												// we should be large in this case for consistency
+												isLarge={
+													message.hasUnfinishedTools &&
+													hasAskTools
+												}
+											/>
+										))}
 									{tool && !isGrouped && (
 										<ResponseMessageTool
 											message={message}
 											tool={tool}
+											// See logic above, but ungrouped tools are always unfinished ask tools - large
+											isLarge
 										/>
 									)}
 								</Fragment>
@@ -273,209 +305,157 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 					{message.hasUnfinishedTools && (
 						<p className="mt-2 flex items-center gap-2 text-muted-foreground text-sm">
 							<CircleAlert className="size-4" />
-							{t("response.completeTools")}
+							{hasAskTools
+								? t("response.completeToolsAsk", {
+										count: numTools,
+									})
+								: t("response.completeToolsAuto", {
+										count: numTools,
+									})}
 						</p>
 					)}
 				</div>
 
-				<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
-					{inputMessage?.siblings.length &&
-						inputMessage?.siblings.length > 1 && (
-							<div className="flex flex-row items-center gap-0.5">
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon"
-											disabled={
-												!inputMessage.previousSibling
-											}
-											onClick={() => {
-												if (
+				{message.id !== STREAMING_PLACEHOLDER_ID && (
+					<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+						{inputMessage?.siblings.length &&
+							inputMessage?.siblings.length > 1 && (
+								<div className="flex flex-row items-center gap-0.5">
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon"
+												disabled={
 													!inputMessage.previousSibling
-												) {
-													return;
 												}
+												onClick={() => {
+													if (
+														!inputMessage.previousSibling
+													) {
+														return;
+													}
 
-												inputMessage.previousSibling.activateMessage();
-											}}
-										>
-											<ArrowLeftIcon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent side="bottom">
-										{t("response.previousMessage")}
-									</TooltipContent>
-								</Tooltip>
-								<span className="text-muted-foreground text-xs">
-									{inputMessage.position + 1}/
-									{inputMessage.siblings.length}
-								</span>
+													inputMessage.previousSibling.activateMessage();
+												}}
+											>
+												<ArrowLeftIcon />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent side="bottom">
+											{t("response.previousMessage")}
+										</TooltipContent>
+									</Tooltip>
+									<span className="text-muted-foreground text-xs">
+										{inputMessage.position + 1}/
+										{inputMessage.siblings.length}
+									</span>
 
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon"
+												disabled={
+													!inputMessage.nextSibling
+												}
+												onClick={() => {
+													if (
+														!inputMessage.nextSibling
+													) {
+														return;
+													}
+
+													inputMessage.nextSibling.activateMessage();
+												}}
+											>
+												<ArrowRightIcon />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent side="bottom">
+											{t("response.nextMessage")}
+										</TooltipContent>
+									</Tooltip>
+								</div>
+							)}
+
+						{root.theme.featureFlags?.enableRewrite &&
+							(parentHasText || parentHasMedia) && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
+											disabled={
+												message.room.mode ===
+												"executing"
+											}
 											variant="ghost"
 											size="icon"
-											disabled={!inputMessage.nextSibling}
 											onClick={() => {
-												if (!inputMessage.nextSibling) {
-													return;
-												}
-
-												inputMessage.nextSibling.activateMessage();
+												rewriteMessage();
 											}}
 										>
-											<ArrowRightIcon />
+											<RefreshCwIcon />
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent side="bottom">
-										{t("response.nextMessage")}
+										{t("response.rewriteMessage")}
 									</TooltipContent>
 								</Tooltip>
-							</div>
-						)}
+							)}
 
-					{root.theme.featureFlags?.enableRewrite &&
-						(parentHasText || parentHasMedia) && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										disabled={
-											message.room.mode === "executing"
-										}
-										variant="ghost"
-										size="icon"
-										onClick={() => {
-											rewriteMessage();
-										}}
-									>
-										<RefreshCwIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									{t("response.rewriteMessage")}
-								</TooltipContent>
-							</Tooltip>
-						)}
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => {
-									recordFeedback(true);
-								}}
-							>
-								<ThumbsUpIcon
-									fill={
-										message.feedback?.rating === true
-											? "currentColor"
-											: "none"
-									}
-								/>
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.goodResponse")}
-						</TooltipContent>
-					</Tooltip>
-
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon"
-								onClick={() => {
-									recordFeedback(false);
-								}}
-							>
-								<ThumbsDownIcon
-									fill={
-										message.feedback?.rating === false
-											? "currentColor"
-											: "none"
-									}
-								/>
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.poorResponse")}
-						</TooltipContent>
-					</Tooltip>
-
-					{hasOnlyMedia && (
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon"
-									onClick={copyImage}
+									onClick={() => {
+										recordFeedback(true);
+									}}
 								>
-									<CopyIcon />
+									<ThumbsUpIcon
+										fill={
+											message.feedback?.rating === true
+												? "currentColor"
+												: "none"
+										}
+									/>
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent side="bottom">
-								{t("response.copyResponse")}
+								{t("response.goodResponse")}
 							</TooltipContent>
 						</Tooltip>
-					)}
 
-					{hasText && (
-						<>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => {
+										recordFeedback(false);
+									}}
+								>
+									<ThumbsDownIcon
+										fill={
+											message.feedback?.rating === false
+												? "currentColor"
+												: "none"
+										}
+									/>
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent side="bottom">
+								{t("response.poorResponse")}
+							</TooltipContent>
+						</Tooltip>
+
+						{hasOnlyMedia && (
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
 										size="icon"
-										disabled={message.parts.length === 0}
-										onClick={() => {
-											const text = message.parts
-												.map((part) => {
-													if (part.type === "TEXT") {
-														return part.text;
-													} else if (
-														part.type === "MEDIA"
-													) {
-														return `<${part.mediaInfo.fileName}?`;
-													} else if (
-														part.type ===
-														"TOOL_CALL"
-													) {
-														return `<${part.toolCall.name}?`;
-													}
-
-													return "";
-												})
-												.join("\n");
-
-											if (!text) {
-												toast.warning(
-													t(
-														"notifications.noCopyContent",
-													),
-												);
-												return;
-											}
-
-											try {
-												navigator.clipboard.writeText(
-													text,
-												);
-
-												toast.success(
-													t(
-														"notifications.copySuccess",
-													),
-												);
-											} catch (e: unknown) {
-												const error = e as {
-													message: string;
-												};
-												toast.error(error.message);
-											}
-										}}
+										onClick={copyImage}
 									>
 										<CopyIcon />
 									</Button>
@@ -484,26 +464,98 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									{t("response.copyResponse")}
 								</TooltipContent>
 							</Tooltip>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon"
-										disabled={message.parts.length === 0}
-										onClick={() =>
-											setIsDownloadDialogOpen(true)
-										}
-									>
-										<DownloadIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									{t("Download Response")}
-								</TooltipContent>
-							</Tooltip>
-						</>
-					)}
-				</div>
+						)}
+
+						{hasText && (
+							<>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={
+												message.parts.length === 0
+											}
+											onClick={() => {
+												const text = message.parts
+													.map((part) => {
+														if (
+															part.type === "TEXT"
+														) {
+															return part.text;
+														} else if (
+															part.type ===
+															"MEDIA"
+														) {
+															return `<${part.mediaInfo.fileName}?`;
+														} else if (
+															part.type ===
+															"TOOL_CALL"
+														) {
+															return `<${part.toolCall.name}?`;
+														}
+
+														return "";
+													})
+													.join("\n");
+
+												if (!text) {
+													toast.warning(
+														t(
+															"notifications.noCopyContent",
+														),
+													);
+													return;
+												}
+
+												try {
+													navigator.clipboard.writeText(
+														text,
+													);
+
+													toast.success(
+														t(
+															"notifications.copySuccess",
+														),
+													);
+												} catch (e: unknown) {
+													const error = e as {
+														message: string;
+													};
+													toast.error(error.message);
+												}
+											}}
+										>
+											<CopyIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{t("response.copyResponse")}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={
+												message.parts.length === 0
+											}
+											onClick={() =>
+												setIsDownloadDialogOpen(true)
+											}
+										>
+											<DownloadIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{t("Download Response")}
+									</TooltipContent>
+								</Tooltip>
+							</>
+						)}
+					</div>
+				)}
 
 				<Dialog
 					open={isDownloadDialogOpen}

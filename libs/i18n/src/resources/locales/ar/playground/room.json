@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "إعدادات الغرفة",
 		"description": "تحديث إعدادات الغرفة وتعديل سلوك الدردشة",
-		"open": "فتح الإعدادات",
-		"close": "إغلاق",
-		"edit": "تعديل الإعدادات",
+		"open": "فتح إعدادات الغرفة",
+		"close": "إغلاق إعدادات الغرفة",
+		"edit": "تعديل إعدادات الغرفة",
 		"textGenDescription": "اضبط حدود الرموز ودرجة الحرارة للتحكم في كيفية توليد النموذج للاستجابات",
 		"imageGenDescription": "قم بتكوين حجم الصورة والبذرة العشوائية للتحكم في مخرجات توليد الصور"
 	},
@@ -44,8 +44,8 @@
 	"input": {
 		"ariaPlaceholder": "أدخل النص",
 		"thinking": "جارٍ التفكير...",
-		"menuPrompt": "/ لفتح القائمة",
-		"openSettings": "فتح الإعدادات",
+		"menuPrompt": "كيف يمكنني مساعدتك اليوم؟",
+		"openSettings": "إضافة ملفات ووكلاء والمزيد",
 		"recordLabel": "تسجيل النموذج",
 		"stopRecording": "إيقاف التسجيل",
 		"record": "تسجيل",
@@ -75,15 +75,10 @@
 		"copyFailed": "فشل النسخ إلى الحافظة"
 	},
 	"menuToolbox": {
-		"addToolbox": "إضافة صندوق أدوات",
-		"searchPlaceholder": "البحث في صناديق الأدوات",
-		"notFound": "غير موجود",
-		"allTools": "جميع الأدوات"
+		"addToolbox": "إضافة صناديق أدوات"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "إضافة معرفة",
-		"searchPlaceholder": "البحث في المعرفة",
-		"notFound": "غير موجود"
+		"addKnowledge": "إضافة معرفة"
 	},
 	"menuWorkspace": {
 		"selectAgent": "اختر وكيل",
@@ -91,7 +86,7 @@
 		"notFound": "غير موجود"
 	},
 	"menuUpload": {
-		"attachDocument": "إرفاق مستند"
+		"attachDocument": "إضافة مستندات"
 	},
 	"menuFileExplorer": {
 		"name": "مستكشف الملفات",
@@ -108,5 +103,10 @@
 		"descriptionExceeded": "تجاوزت هذه المحادثة حدها. يقوم النموذج الآن بنسيان الرسائل السابقة عند توليد الردود. ابدأ دردشة جديدة للحصول على أفضل النتائج.",
 		"memoryUsedTitle": "الذاكرة المستخدمة:",
 		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
+		"noResults": "لم يتم العثور على عناصر مطابقة",
+		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
 	}
 }

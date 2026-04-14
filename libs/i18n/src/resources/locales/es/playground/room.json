@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "Configuración de la sala",
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
-		"open": "Abrir Configuración",
-		"close": "Cerrar",
-		"edit": "Editar configuración",
+		"open": "Abrir Configuración de la Sala",
+		"close": "Cerrar Configuración de la Sala",
+		"edit": "Editar Configuración de la Sala",
 		"textGenDescription": "Ajusta los límites de tokens y la temperatura para controlar cómo el modelo genera respuestas",
 		"imageGenDescription": "Configura el tamaño de imagen y la semilla aleatoria para controlar la salida de generación de imágenes"
 	},
@@ -44,8 +44,8 @@
 	"input": {
 		"ariaPlaceholder": "Ingresa texto",
 		"thinking": "Pensando...",
-		"menuPrompt": "/ para abrir menú",
-		"openSettings": "Abrir configuración",
+		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
+		"openSettings": "Agregar archivos, agentes y más",
 		"recordLabel": "Grabar al modelo",
 		"stopRecording": "Detener grabación",
 		"record": "Grabar",
@@ -75,15 +75,10 @@
 		"copyFailed": "Error al copiar al portapapeles"
 	},
 	"menuToolbox": {
-		"addToolbox": "Agregar caja de herramientas",
-		"searchPlaceholder": "Buscar cajas de herramientas",
-		"notFound": "No encontrado",
-		"allTools": "Todas las herramientas"
+		"addToolbox": "Agregar cajas de herramientas"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Agregar conocimiento",
-		"searchPlaceholder": "Buscar conocimiento",
-		"notFound": "No encontrado"
+		"addKnowledge": "Agregar conocimiento"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Seleccionar agente",
@@ -91,7 +86,7 @@
 		"notFound": "No encontrado"
 	},
 	"menuUpload": {
-		"attachDocument": "Adjuntar Documento"
+		"attachDocument": "Agregar Documentos"
 	},
 	"menuFileExplorer": {
 		"name": "Explorador de Archivos",
@@ -108,5 +103,10 @@
 		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores al generar respuestas. Inicia un nuevo chat para obtener mejores resultados.",
 		"memoryUsedTitle": "Memoria usada:",
 		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
+		"noResults": "No se encontraron elementos coincidentes",
+		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
 	}
 }

@@ -32,6 +32,8 @@ export const MCP_DISPLAY_INLINE = "inline";
 export const MCP_DISPLAY_SIDEBAR = "sidebar";
 export const MCP_DISPLAY_HIDDEN = "hidden";
 
+export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
+
 export const LOADING_MESSAGES = [
 	"Thinking through it...",
 	"Working on that...",

@@ -18,7 +18,10 @@
 		"copyResponse": "Copiar respuesta",
 		"copyCode": "Copiar código",
 		"fastForwardToEnd": "Avanzar al final",
-		"completeTools": "Por favor, completa las herramientas para continuar."
+		"completeToolsAsk_one": "Por favor, completa la herramienta para continuar.",
+		"completeToolsAsk_other": "Por favor, completa las herramientas para continuar.",
+		"completeToolsAuto_one": "Por favor, espera a que la herramienta se complete.",
+		"completeToolsAuto_other": "Por favor, espera a que las herramientas se completen."
 	},
 	"input": {
 		"copyMessage": "Copiar mensaje"
@@ -45,8 +48,16 @@
 		"closeInSidebar": "Cerrar barra lateral",
 		"collapse": "Colapsar",
 		"openInline": "Abrir en línea",
-		"groupLabel": "Ejecutado",
-		"groupSuffix": "herramienta(s)"
+		"groupLabelClosed": "{{toolName}} + {{count}} más",
+		"groupLabelOpen": "Herramientas ejecutadas ({{count}})",
+		"groupSummaryCompleted_one": "{{count}} completado",
+		"groupSummaryCompleted_other": "{{count}} completados",
+		"groupSummaryError_one": "{{count}} fallido",
+		"groupSummaryError_other": "{{count}} fallidos",
+		"groupSummaryCancelled_one": "{{count}} cancelado",
+		"groupSummaryCancelled_other": "{{count}} cancelados",
+		"groupSummaryPaused_one": "{{count}} pausado",
+		"groupSummaryPaused_other": "{{count}} pausados"
 	},
 	"notifications": {
 		"feedbackSuccess": "¡Gracias por tus comentarios!",
