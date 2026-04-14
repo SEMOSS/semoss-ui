@@ -62,6 +62,8 @@ import type { Engine, MCPConfig } from "@/types";
 // Constants & Helper Functions
 // ============================================================================
 
+const isImageGenEnabled = import.meta.env.VITE_ENABLE_IMAGE_GEN === "true";
+
 /** Supported image file extensions for preview */
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
 
@@ -735,7 +737,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											{
 												tag: [
 													"text-generation",
-													"image-generation",
+													...(isImageGenEnabled
+														? ["image-generation"]
+														: []),
 												],
 											},
 										]}
