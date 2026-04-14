@@ -231,6 +231,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							return (
 								<Fragment key={key}>
 									{pIdx === firstToolPartIdx &&
+										groupedTools.length > 0 &&
 										(groupedTools.length > 1 ? (
 											<ResponseMessageToolGroup
 												key={`${key}-group`}
