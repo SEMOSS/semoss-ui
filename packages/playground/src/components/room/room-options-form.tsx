@@ -7,7 +7,6 @@ import { EngineSelect } from "@semoss/shared";
 import {
 	Badge,
 	Button,
-	cn,
 	Field,
 	FieldDescription,
 	FieldGroup,
@@ -23,6 +22,7 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components";
+import { RoomOptionsImageSelect } from "@/components/room/room-options-image-select";
 import { IMAGE_SIZE_PRESETS } from "@/constants";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -509,31 +509,23 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 								<FieldLabel>
 									{t("room:form.imageOrientationLabel")}
 								</FieldLabel>
-								<div className="grid grid-cols-3 gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setImageType("square");
-											handleImagePresetChange(
-												imageSize,
-												"square",
-											);
-										}}
-										className={cn(
-											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
-											imageType === "square"
-												? "border-primary bg-primary/10 text-primary"
-												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-										)}
-									>
-										<div className="size-10">
-											<svg
-												viewBox="0 0 40 40"
-												className="size-full"
-											>
-												<title>
-													Square orientation
-												</title>
+								<RoomOptionsImageSelect
+									value={imageType}
+									onChange={(v) => {
+										setImageType(v as typeof imageType);
+										handleImagePresetChange(
+											imageSize,
+											v as typeof imageType,
+										);
+									}}
+									options={[
+										{
+											value: "square",
+											label: t(
+												"room:form.imageTypeSquareLabel",
+											),
+											svgTitle: "Square Orientation",
+											svgContent: (
 												<rect
 													x="6"
 													y="6"
@@ -545,34 +537,15 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 													strokeWidth="1.5"
 													strokeDasharray="3 2"
 												/>
-											</svg>
-										</div>
-										{t("room:form.imageTypeSquareLabel")}
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setImageType("portrait");
-											handleImagePresetChange(
-												imageSize,
-												"portrait",
-											);
-										}}
-										className={cn(
-											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
-											imageType === "portrait"
-												? "border-primary bg-primary/10 text-primary"
-												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-										)}
-									>
-										<div className="size-10">
-											<svg
-												viewBox="0 0 40 40"
-												className="size-full"
-											>
-												<title>
-													Portrait orientation
-												</title>
+											),
+										},
+										{
+											value: "portrait",
+											label: t(
+												"room:form.imageTypePortraitLabel",
+											),
+											svgTitle: "Portrait Orientation",
+											svgContent: (
 												<rect
 													x="12"
 													y="4"
@@ -584,34 +557,15 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 													strokeWidth="1.5"
 													strokeDasharray="3 2"
 												/>
-											</svg>
-										</div>
-										{t("room:form.imageTypePortraitLabel")}
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setImageType("landscape");
-											handleImagePresetChange(
-												imageSize,
-												"landscape",
-											);
-										}}
-										className={cn(
-											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
-											imageType === "landscape"
-												? "border-primary bg-primary/10 text-primary"
-												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-										)}
-									>
-										<div className="size-10">
-											<svg
-												viewBox="0 0 40 40"
-												className="size-full"
-											>
-												<title>
-													Landscape orientation
-												</title>
+											),
+										},
+										{
+											value: "landscape",
+											label: t(
+												"room:form.imageTypeLandscapeLabel",
+											),
+											svgTitle: "Landscape Orientation",
+											svgContent: (
 												<rect
 													x="4"
 													y="12"
@@ -623,39 +577,32 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 													strokeWidth="1.5"
 													strokeDasharray="3 2"
 												/>
-											</svg>
-										</div>
-										{t("room:form.imageTypeLandscapeLabel")}
-									</button>
-								</div>
+											),
+										},
+									]}
+								/>
 							</Field>
 							<Field>
 								<FieldLabel>
 									{t("room:form.imageSizeLabel")}
 								</FieldLabel>
-								<div className="grid grid-cols-3 gap-2">
-									<button
-										type="button"
-										onClick={() => {
-											setImageSize("small");
-											handleImagePresetChange(
-												"small",
-												imageType,
-											);
-										}}
-										className={cn(
-											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
-											imageSize === "small"
-												? "border-primary bg-primary/10 text-primary"
-												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-										)}
-									>
-										<div className="flex size-10 items-center justify-center">
-											<svg
-												viewBox="0 0 40 40"
-												className="size-full"
-											>
-												<title>Small size</title>
+								<RoomOptionsImageSelect
+									value={imageSize}
+									onChange={(v) => {
+										setImageSize(v as typeof imageSize);
+										handleImagePresetChange(
+											v as typeof imageSize,
+											imageType,
+										);
+									}}
+									options={[
+										{
+											value: "small",
+											label: t(
+												"room:form.imageSizeSmallLabel",
+											),
+											svgTitle: "Small size",
+											svgContent: (
 												<rect
 													x="14"
 													y="14"
@@ -667,32 +614,15 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 													strokeWidth="1.5"
 													strokeDasharray="3 2"
 												/>
-											</svg>
-										</div>
-										{t("room:form.imageSizeSmallLabel")}
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setImageSize("medium");
-											handleImagePresetChange(
-												"medium",
-												imageType,
-											);
-										}}
-										className={cn(
-											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
-											imageSize === "medium"
-												? "border-primary bg-primary/10 text-primary"
-												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-										)}
-									>
-										<div className="flex size-10 items-center justify-center">
-											<svg
-												viewBox="0 0 40 40"
-												className="size-full"
-											>
-												<title>Medium size</title>
+											),
+										},
+										{
+											value: "medium",
+											label: t(
+												"room:form.imageSizeMediumLabel",
+											),
+											svgTitle: "Medium size",
+											svgContent: (
 												<rect
 													x="9"
 													y="9"
@@ -704,32 +634,15 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 													strokeWidth="1.5"
 													strokeDasharray="3 2"
 												/>
-											</svg>
-										</div>
-										{t("room:form.imageSizeMediumLabel")}
-									</button>
-									<button
-										type="button"
-										onClick={() => {
-											setImageSize("large");
-											handleImagePresetChange(
-												"large",
-												imageType,
-											);
-										}}
-										className={cn(
-											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
-											imageSize === "large"
-												? "border-primary bg-primary/10 text-primary"
-												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
-										)}
-									>
-										<div className="flex size-10 items-center justify-center">
-											<svg
-												viewBox="0 0 40 40"
-												className="size-full"
-											>
-												<title>Large size</title>
+											),
+										},
+										{
+											value: "large",
+											label: t(
+												"room:form.imageSizeLargeLabel",
+											),
+											svgTitle: "Large size",
+											svgContent: (
 												<rect
 													x="4"
 													y="4"
@@ -741,11 +654,10 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 													strokeWidth="1.5"
 													strokeDasharray="3 2"
 												/>
-											</svg>
-										</div>
-										{t("room:form.imageSizeLargeLabel")}
-									</button>
-								</div>
+											),
+										},
+									]}
+								/>
 							</Field>
 							<Field>
 								<FieldLabel>
