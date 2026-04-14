@@ -629,17 +629,19 @@ export const GlobalNav = observer(() => {
 						/>
 					))}
 				</SidebarMenu>
-				<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							onClick={handleStartTour}
-							data-tour="tour-take-tour"
-						>
-							<MapIcon className="size-4" />
-							Take a tour
-						</SidebarMenuButton>
-					</SidebarMenuItem>
-				</SidebarMenu>
+				{root.theme.tour?.show !== false && (
+					<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								onClick={handleStartTour}
+								data-tour="tour-take-tour"
+							>
+								<MapIcon className="size-4" />
+								Take a tour
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					</SidebarMenu>
+				)}
 				<SidebarMenu className="gap-2 p-2">
 					<SidebarMenuItem>
 						<NavUser />
