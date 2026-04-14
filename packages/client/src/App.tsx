@@ -52,7 +52,7 @@ export const App = () => {
 
 	return (
 		<RootStoreContext.Provider value={_store}>
-			<ThemeProvider defaultTheme="light">
+			<ThemeProvider defaultTheme="light" storageKey="client-ui-theme">
 				<AppWrapper />
 				<Toaster />
 			</ThemeProvider>
