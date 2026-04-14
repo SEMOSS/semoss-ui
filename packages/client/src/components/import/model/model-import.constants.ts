@@ -890,7 +890,7 @@ export const IMPORTABLE_MODELS = {
 							category: "General",
 						},
 						{
-							key: "AI_MODEL",
+							key: "MODEL",
 							label: "Model",
 							type: "select",
 							options: [
@@ -982,7 +982,7 @@ export const IMPORTABLE_MODELS = {
 							key: "MODEL",
 							label: "Model Name",
 							type: "text",
-							disabled: true,
+							disabled: false,
 							required: true,
 							value: "",
 							category: "General",
@@ -2822,7 +2822,7 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			formConfig: {
 				fieldOverrides: [
 					{
-						key: "AI_MODEL",
+						key: "MODEL",
 						replace: {
 							key: "MODEL",
 							label: "Model (Deployment Name)",
