@@ -366,7 +366,6 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
-							hidePauseButton
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
 							model={chat.models.selected}
