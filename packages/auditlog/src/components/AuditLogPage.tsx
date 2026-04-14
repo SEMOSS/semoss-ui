@@ -6,7 +6,7 @@ import {
 	AuditLogFilter,
 	AuditLogsDataTable,
 	AuditLogsTimeline,
-} from "@semoss/shared";
+} from "@semoss/shared/auditlog";
 import { useNotification } from "@semoss/ui";
 import { Button, Skeleton } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";

@@ -7,6 +7,7 @@ import {
 } from "@mui/icons-material";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
+import { AuditLogsDetailDrawer } from "@semoss/shared/auditlog";
 import {
 	Badge,
 	Box,
@@ -27,7 +28,6 @@ import {
 } from "@semoss/ui";
 import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 import type { EventData } from "@/types";
-import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
 
 // Styled Components
 const Container = styled(Paper)(({ theme }) => ({

@@ -1,2 +1,2 @@
-export * from "./monaco.constants";
-export * from "./monaco-editor";
+export { MONACO_CONFIG, MONACO_EXT_LANGUAGE_MAPPING } from "./monaco.constants";
+export { MonacoDiffEditor, MonacoEditor } from "./monaco-editor";

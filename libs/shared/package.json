@@ -4,7 +4,10 @@
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     ".": "./src/index.ts",
-    "./api": "./src/api/index.ts"
+    "./api": "./src/api/index.ts",
+    "./monaco": "./src/components/monaco/index.ts",
+    "./auditlog": "./src/components/auditlog/index.ts",
+    "./form": {"import":"./src/form.ts", "require":"./src/form.ts"}
   },
   "license": "MIT",
   "dependencies": {

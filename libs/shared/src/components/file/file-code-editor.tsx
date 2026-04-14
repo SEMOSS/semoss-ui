@@ -1,4 +1,3 @@
-import type { OnMount } from "@monaco-editor/react";
 import {
 	AlertCircleIcon,
 	ChevronDownIcon,
@@ -7,9 +6,9 @@ import {
 	RefreshCwIcon,
 	SaveIcon,
 } from "lucide-react";
-import type * as monaco from "monaco-editor";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Muted,
@@ -19,12 +18,21 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	MONACO_CONFIG,
-	MONACO_EXT_LANGUAGE_MAPPING,
-	MonacoEditor,
-} from "../monaco";
 import type { FileMode } from "./file.types";
+
+function useAsyncImport<T>(importer: () => Promise<T>): T | undefined {
+	const [mod, setMod] = useState<T>();
+	useEffect(() => {
+		let mounted = true;
+		importer().then((m) => {
+			if (mounted) setMod(m);
+		});
+		return () => {
+			mounted = false;
+		};
+	}, [importer]);
+	return mod;
+}
 
 interface FileCodeEditorProps {
 	/** Mode of file editor */
@@ -41,6 +49,8 @@ interface FileCodeEditorProps {
 	onChange?: (content: string, isModified: boolean) => void;
 }
 
+// const MonacoEditor = lazy(() => import("@semoss/shared/monaco").then(mod => ({ default: mod.MonacoEditor })));
+
 export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	mode,
 	path,
@@ -53,10 +63,19 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			? mode.insightId || insight.insightId
 			: insight.insightId;
 
-	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+	// If you need MONACO_CONFIG and MONACO_EXT_LANGUAGE_MAPPING, import them dynamically as well:
+	const useMonacoConfig = useAsyncImport(() =>
+		import("../monaco").then((mod) => mod.MONACO_CONFIG),
+	);
+	const useMonacoExtMapping = useAsyncImport(() =>
+		import("../monaco").then((mod) => mod.MONACO_EXT_LANGUAGE_MAPPING),
+	);
+	type OnMount = import("@monaco-editor/react").OnMount;
+
+	const editorRef = useRef(null); // useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const wordWrapRef = useRef<boolean>(false);
 	const decorationsRef = useRef<string[]>([]);
-	const [jsonErrors, setJsonErrors] = useState<monaco.editor.IMarker[]>([]);
+	const [jsonErrors, setJsonErrors] = useState([]);
 	const [errorsExpanded, setErrorsExpanded] = useState(true);
 
 	let getFilePixel = "";
@@ -72,7 +91,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 	// get the language
 	const ext = path.split(".").pop()?.toLowerCase() || "";
-	const language = MONACO_EXT_LANGUAGE_MAPPING[ext] || "plaintext";
+	const language = useMonacoExtMapping?.[ext] || "plaintext";
 
 	/**
 	 * Handler called when the editor is mounted
@@ -82,7 +101,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		editorRef.current = editor;
 
 		// update the theme
-		const config = MONACO_CONFIG[language];
+		const config = useMonacoConfig?.[language];
 
 		if (config) {
 			// set the language tokens
@@ -287,7 +306,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		try {
 			setIsLoading(true);
 
-			const content = editorRef.current.getValue();
+			const content = editorRef.current?.getValue();
 
 			let pixel = "";
 			if (mode.type === "APP") {

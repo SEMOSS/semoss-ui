@@ -21,7 +21,17 @@ export default defineConfig(({ mode }) => {
 			react({ include: /\.(js|jsx|ts|tsx)$/ }),
 		],
 		resolve: {
-			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+			alias: [
+				{ find: "@", replacement: resolve(__dirname, "./src") },
+				{
+					find: "monaco-editor",
+					replacement: resolve(
+						__dirname,
+						"../../libs/shared/node_modules/monaco-editor",
+					),
+				},
+			],
+			dedupe: ["react", "react-dom", "monaco-editor"],
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
@@ -29,6 +39,16 @@ export default defineConfig(({ mode }) => {
 		build: {
 			minify: isProduction,
 			commonjsOptions: { transformMixedEsModules: true },
+			rollupOptions: {
+				output: {
+					manualChunks(id) {
+						if (id.includes("monaco-editor")) return "monaco";
+					},
+				},
+			},
+		},
+		optimizeDeps: {
+			exclude: ["monaco-editor"],
 		},
 		server: {
 			port: 5173,

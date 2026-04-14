@@ -5,7 +5,7 @@ import {
 	AuditLogFilter,
 	AuditLogsDataTable,
 	AuditLogsTimeline,
-} from "@semoss/shared";
+} from "@semoss/shared/auditlog";
 import {
 	Button,
 	Skeleton,

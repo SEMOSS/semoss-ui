@@ -2,7 +2,7 @@ import { Code, KeyboardArrowDown } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { MonacoDiffEditor, MonacoEditor } from "@semoss/shared";
+import { MonacoDiffEditor, MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Markdown,
@@ -176,7 +176,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 				`LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {"max_completion_tokens": 2000, "temperature": 0.3} ] );`,
 			);
 
-			const LLMResponse = res.pixelReturn[0].output["response"];
+			const LLMResponse = res.pixelReturn[0].output.response;
 			let trimmedStarterCode = LLMResponse;
 			trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
 
@@ -486,7 +486,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 											},
 											kind: monaco.languages
 												.CompletionItemKind.Function,
-											insertText: reactor + "();",
+											insertText: `${reactor}();`,
 											range: {
 												startLineNumber:
 													position.lineNumber,
@@ -528,7 +528,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 								const replaceRangeEndBuffer =
 									followingTwoCharacters === "}}"
 										? 2
-										: followingTwoCharacters == "} " ||
+										: //biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
+											followingTwoCharacters == "} " ||
+												//biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
 												followingTwoCharacters == "}"
 											? 1
 											: 0;
@@ -578,7 +580,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 											},
 											kind: monaco.languages
 												.CompletionItemKind.Function,
-											insertText: fn + "()",
+											insertText: `${fn}()`,
 											range: {
 												startLineNumber:
 													position.lineNumber,
@@ -617,7 +619,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 								const replaceRangeEndBuffer =
 									followingTwoCharacters === "}}"
 										? 2
-										: followingTwoCharacters == "} " ||
+										: //biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
+											followingTwoCharacters == "} " ||
+												//biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
 												followingTwoCharacters == "}"
 											? 1
 											: 0;
@@ -650,7 +654,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 		const lines = editor.getModel().getLineCount();
 		const lineContentHeight = lines * EditorLineHeight;
 		const singleLineNoOverflow =
-			lines === 1 && lineContentHeight == editor.getContentHeight();
+			lines === 1 && lineContentHeight === editor.getContentHeight();
 		setEditorHeight(
 			Math.max(
 				(singleLineNoOverflow ? 1 : 2) * EditorLineHeight,

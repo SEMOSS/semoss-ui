@@ -14,7 +14,7 @@ import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Checkbox,
