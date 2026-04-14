@@ -7,6 +7,7 @@ import { EngineSelect } from "@semoss/shared";
 import {
 	Badge,
 	Button,
+	cn,
 	Field,
 	FieldDescription,
 	FieldGroup,
@@ -15,11 +16,6 @@ import {
 	FieldSeparator,
 	FieldSet,
 	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Slider,
 	Textarea,
 	Tooltip,
@@ -511,65 +507,245 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 						<FieldGroup>
 							<Field>
 								<FieldLabel>
-									{t("room:form.imageSizeLabel")}
+									{t("room:form.imageOrientationLabel")}
 								</FieldLabel>
-								<Select
-									value={imageSize}
-									onValueChange={(v: typeof imageSize) => {
-										setImageSize(v);
-										handleImagePresetChange(v, imageType);
-									}}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="small">
-											{t("room:form.imageSizeSmallLabel")}
-										</SelectItem>
-										<SelectItem value="medium">
-											{t(
-												"room:form.imageSizeMediumLabel",
-											)}
-										</SelectItem>
-										<SelectItem value="large">
-											{t("room:form.imageSizeLargeLabel")}
-										</SelectItem>
-									</SelectContent>
-								</Select>
+								<div className="grid grid-cols-3 gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											setImageType("square");
+											handleImagePresetChange(
+												imageSize,
+												"square",
+											);
+										}}
+										className={cn(
+											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
+											imageType === "square"
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+										)}
+									>
+										<div className="size-10">
+											<svg
+												viewBox="0 0 40 40"
+												className="size-full"
+											>
+												<title>
+													Square orientation
+												</title>
+												<rect
+													x="6"
+													y="6"
+													width="28"
+													height="28"
+													rx="2"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="1.5"
+													strokeDasharray="3 2"
+												/>
+											</svg>
+										</div>
+										{t("room:form.imageTypeSquareLabel")}
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setImageType("portrait");
+											handleImagePresetChange(
+												imageSize,
+												"portrait",
+											);
+										}}
+										className={cn(
+											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
+											imageType === "portrait"
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+										)}
+									>
+										<div className="size-10">
+											<svg
+												viewBox="0 0 40 40"
+												className="size-full"
+											>
+												<title>
+													Portrait orientation
+												</title>
+												<rect
+													x="12"
+													y="4"
+													width="16"
+													height="32"
+													rx="2"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="1.5"
+													strokeDasharray="3 2"
+												/>
+											</svg>
+										</div>
+										{t("room:form.imageTypePortraitLabel")}
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setImageType("landscape");
+											handleImagePresetChange(
+												imageSize,
+												"landscape",
+											);
+										}}
+										className={cn(
+											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
+											imageType === "landscape"
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+										)}
+									>
+										<div className="size-10">
+											<svg
+												viewBox="0 0 40 40"
+												className="size-full"
+											>
+												<title>
+													Landscape orientation
+												</title>
+												<rect
+													x="4"
+													y="12"
+													width="32"
+													height="16"
+													rx="2"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="1.5"
+													strokeDasharray="3 2"
+												/>
+											</svg>
+										</div>
+										{t("room:form.imageTypeLandscapeLabel")}
+									</button>
+								</div>
 							</Field>
 							<Field>
 								<FieldLabel>
-									{t("room:form.imageOrientationLabel")}
+									{t("room:form.imageSizeLabel")}
 								</FieldLabel>
-								<Select
-									value={imageType}
-									onValueChange={(v: typeof imageType) => {
-										setImageType(v);
-										handleImagePresetChange(imageSize, v);
-									}}
-								>
-									<SelectTrigger>
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="square">
-											{t(
-												"room:form.imageTypeSquareLabel",
-											)}
-										</SelectItem>
-										<SelectItem value="portrait">
-											{t(
-												"room:form.imageTypePortraitLabel",
-											)}
-										</SelectItem>
-										<SelectItem value="landscape">
-											{t(
-												"room:form.imageTypeLandscapeLabel",
-											)}
-										</SelectItem>
-									</SelectContent>
-								</Select>{" "}
+								<div className="grid grid-cols-3 gap-2">
+									<button
+										type="button"
+										onClick={() => {
+											setImageSize("small");
+											handleImagePresetChange(
+												"small",
+												imageType,
+											);
+										}}
+										className={cn(
+											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
+											imageSize === "small"
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+										)}
+									>
+										<div className="flex size-10 items-center justify-center">
+											<svg
+												viewBox="0 0 40 40"
+												className="size-full"
+											>
+												<title>Small size</title>
+												<rect
+													x="14"
+													y="14"
+													width="12"
+													height="12"
+													rx="1.5"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="1.5"
+													strokeDasharray="3 2"
+												/>
+											</svg>
+										</div>
+										{t("room:form.imageSizeSmallLabel")}
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setImageSize("medium");
+											handleImagePresetChange(
+												"medium",
+												imageType,
+											);
+										}}
+										className={cn(
+											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
+											imageSize === "medium"
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+										)}
+									>
+										<div className="flex size-10 items-center justify-center">
+											<svg
+												viewBox="0 0 40 40"
+												className="size-full"
+											>
+												<title>Medium size</title>
+												<rect
+													x="9"
+													y="9"
+													width="22"
+													height="22"
+													rx="1.5"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="1.5"
+													strokeDasharray="3 2"
+												/>
+											</svg>
+										</div>
+										{t("room:form.imageSizeMediumLabel")}
+									</button>
+									<button
+										type="button"
+										onClick={() => {
+											setImageSize("large");
+											handleImagePresetChange(
+												"large",
+												imageType,
+											);
+										}}
+										className={cn(
+											"flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs transition-colors",
+											imageSize === "large"
+												? "border-primary bg-primary/10 text-primary"
+												: "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground",
+										)}
+									>
+										<div className="flex size-10 items-center justify-center">
+											<svg
+												viewBox="0 0 40 40"
+												className="size-full"
+											>
+												<title>Large size</title>
+												<rect
+													x="4"
+													y="4"
+													width="32"
+													height="32"
+													rx="1.5"
+													fill="none"
+													stroke="currentColor"
+													strokeWidth="1.5"
+													strokeDasharray="3 2"
+												/>
+											</svg>
+										</div>
+										{t("room:form.imageSizeLargeLabel")}
+									</button>
+								</div>
 							</Field>
 							<Field>
 								<FieldLabel>
