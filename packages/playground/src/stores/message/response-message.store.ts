@@ -82,6 +82,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	) {
 		super(room, message);
 
+		// if prune, compaction happened
+		this.conversationCompactedAbove ||= message.pruneToolsAbove;
+
 		makeObservable(this, {
 			isThinking: observable,
 			parts: observable,
@@ -461,6 +464,7 @@ paramValues=[${JSON.stringify({
 					room.model.engine_name ||
 					"",
 			},
+			pruneToolsAbove: false,
 		});
 
 		// Update room options with current modelId before running message

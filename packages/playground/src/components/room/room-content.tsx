@@ -405,7 +405,26 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 										{m.type === "OUTPUT" &&
 											m.conversationCompactedAbove && (
-												<div>TODO: compaction</div>
+												<div className="relative flex flex-col items-center justify-center">
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<div className="z-10 flex cursor-default items-center gap-1.5 bg-background px-2 text-muted-foreground text-xs leading-normal">
+																<ArchiveIcon className="h-3 w-3" />
+																<span>
+																	{t(
+																		"settings.compactedAbove",
+																	)}
+																</span>
+															</div>
+														</TooltipTrigger>
+														<TooltipContent>
+															{t(
+																"settings.compactedAboveTooltip",
+															)}
+														</TooltipContent>
+													</Tooltip>
+													<Separator className="absolute top-1/2" />
+												</div>
 											)}
 									</React.Fragment>
 								);

@@ -119,6 +119,7 @@ export interface AbstractPixelMessage {
 	ornaments: {
 		modelName?: string;
 	};
+	pruneToolsAbove: boolean;
 }
 
 export interface InputPixelMessage extends AbstractPixelMessage {

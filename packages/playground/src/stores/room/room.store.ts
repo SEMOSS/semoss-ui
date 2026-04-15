@@ -508,6 +508,7 @@ export class RoomStore {
 									"",
 							},
 							modelType: "",
+							pruneToolsAbove: false,
 						} as ResponsePixelMessage)
 					: new ResponseMessageStore(this, {
 							io: "OUTPUT",
@@ -530,6 +531,7 @@ export class RoomStore {
 									this._store.model?.engine_name ||
 									"",
 							},
+							pruneToolsAbove: false,
 						} as ResponsePixelMessage);
 
 			const messages: Record<
@@ -1014,6 +1016,7 @@ export class RoomStore {
 				modelName:
 					this.model.engine_display_name || this.model.engine_name,
 			},
+			pruneToolsAbove: false,
 		});
 
 		// get the parent message
