@@ -75,15 +75,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
-	 * Compact tool messages in the room
+	 * Compact messages in the room
 	 */
 	const handleCompactMessages = async () => {
 		try {
-			const lastMessageId = room.tail?.id;
-			await room.runRoomPixel(
-				`CompactRoomMessages(roomId=["${room.roomId}"], compactionTypes=["SUMMARY"]${lastMessageId ? `, parentMessageId=["${lastMessageId}"]` : ""});`,
-				false,
-			);
+			await room.compactMessages();
 			toast.success(t("settings.compactSuccess"));
 		} catch {
 			toast.error(t("settings.compactError"));
@@ -493,6 +489,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									onOverlayClose={() => onOpenChange(false)}
 								/>
 								<DropdownMenuSeparator />
+								<DropdownMenuItem
+									onSelect={async (e) => {
+										e.preventDefault();
+										await handleCompactMessages();
+										onOpenChange(false);
+									}}
+								>
+									<ArchiveIcon />
+									<span className="flex-1">
+										{t("settings.compact")}
+									</span>
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
 									room={room}
 									onSelect={() => onOpenChange(false)}
@@ -518,18 +527,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									<Settings2Icon />
 									<span className="flex-1">
 										{t("settings.edit")}
-									</span>
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onSelect={async (e) => {
-										e.preventDefault();
-										await handleCompactMessages();
-										onOpenChange(false);
-									}}
-								>
-									<ArchiveIcon />
-									<span className="flex-1">
-										{t("settings.compact")}
 									</span>
 								</DropdownMenuItem>
 							</>

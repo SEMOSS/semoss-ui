@@ -6,9 +6,9 @@
 		"open": "Open Settings",
 		"close": "Close",
 		"edit": "Edit Settings",
-		"compact": "Compact Tool Messages",
-		"compactSuccess": "Tool messages compacted successfully",
-		"compactError": "Failed to compact tool messages"
+		"compact": "Compact Conversation",
+		"compactSuccess": "Conversation compacted successfully",
+		"compactError": "Failed to compact conversation"
 	},
 	"form": {
 		"modelLabel": "Model",

@@ -22,6 +22,7 @@ import {
 } from "@/stores";
 import type {
 	Engine,
+	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
 	PixelMessageMediaPart,
@@ -1221,5 +1222,58 @@ export class RoomStore {
 				this.setIsLoading(false);
 			}
 		}
+	};
+
+	/**
+	 * Compact the messages in the room
+	 */
+	compactMessages = async () => {
+		// Find the last response message in the chain
+		let cur: AbstractMessageStore | null = this.tail;
+		while (cur !== null) {
+			if (cur instanceof ResponseMessageStore) break;
+			cur = cur.parent;
+		}
+
+		if (!cur) throw new Error();
+
+		const response = await this.runRoomPixel<
+			{
+				success: boolean;
+				types: (
+					| {
+							type: "SUMMARY";
+							inputMessage: InputPixelMessage;
+							responseMessage: ResponsePixelMessage;
+					  }
+					| {
+							type: "TOOL_PRUNE";
+					  }
+				)[];
+			}[]
+		>(
+			`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+			false,
+		);
+
+		const { output } = response.pixelReturn[0];
+
+		if (!response || response.errors.length || !output?.success)
+			throw new Error();
+
+		output.types.forEach((compactionMethod) => {
+			if (compactionMethod.type === "SUMMARY") {
+				const { inputMessage, responseMessage } = compactionMethod;
+				const inputStore = new InputMessageStore(this, inputMessage);
+				const responseStore = new ResponseMessageStore(
+					this,
+					responseMessage,
+				);
+				inputStore.addChild(responseStore);
+				cur.addChild(inputStore);
+			} else if (compactionMethod.type === "TOOL_PRUNE") {
+				// Handle tool prune compaction
+			}
+		});
 	};
 }
