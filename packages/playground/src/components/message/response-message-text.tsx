@@ -2,7 +2,6 @@ import {
 	ChevronDownIcon,
 	ChevronUpIcon,
 	CopyIcon,
-	Quote,
 	SkipForwardIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -21,6 +20,7 @@ import {
 	H4,
 	Markdown,
 	P,
+	Quote,
 	ScrollArea,
 	ScrollBar,
 	Separator,
