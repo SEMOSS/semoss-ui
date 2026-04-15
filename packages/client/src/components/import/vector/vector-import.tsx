@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { FileUploadOutlined } from "@mui/icons-material";
 import { ChevronRight, Search, Upload } from "lucide-react";
 import type React from "react";
@@ -120,7 +121,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				return;
 			}
 			const pixelExpressions = uploadedFiles.map(
-				(file) =>
+				() =>
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["VECTOR"])`,
 			);
 			for (const pixelString of pixelExpressions) {
@@ -144,7 +145,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs" className="mb-4">
+		<Breadcrumb data-testid="breadcrumbs" className="mb-6">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink

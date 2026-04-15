@@ -77,6 +77,7 @@ function getSelectInputBlock(
 	inputType: string,
 	index: number,
 	label: string,
+	options: string[] = [],
 ): Block {
 	return {
 		id: getIdForInput(inputType, index),
@@ -91,7 +92,7 @@ function getSelectInputBlock(
 			},
 			label: label,
 			value: "",
-			options: [],
+			options: options,
 		},
 		listeners: {
 			onChange: {
@@ -110,6 +111,7 @@ function getSelectInputBlock(
 export function getBlockForInput(
 	token: Token,
 	inputType: string,
+	inputTypeMeta: any,
 ): Block | null {
 	switch (inputType) {
 		case INPUT_TYPE_TEXT:
@@ -131,6 +133,7 @@ export function getBlockForInput(
 				inputType,
 				token.index,
 				capitalizeLabel(token.key),
+				inputTypeMeta?.options || [], // Pass actual options if available, otherwise empty array
 			);
 		default:
 			alert("Block not implemented for this input type yet.");
@@ -639,22 +642,45 @@ export async function setBlocksAndOpenUIBuilder(
 
 	// inputs
 	let childInputIds = [];
+	const selectInputVariables = []; // Track select input variables to create
 	for (const [tokenIndex, inputType] of Object.entries(
 		(builder.inputTypes.value as object) ?? {},
 	)) {
 		const token = builder.inputs.value[tokenIndex] as Token;
-		const inputBlock = getBlockForInput(token, inputType.type);
+		const inputBlock = getBlockForInput(
+			token,
+			inputType.type,
+			inputType.meta,
+		);
 		if (inputBlock) {
 			childInputIds = [...childInputIds, inputBlock.id];
 			state.blocks = { ...state.blocks, [inputBlock.id]: inputBlock };
 
-			// for each input add a variable
+			// for each input add a variable (except for select inputs)
 			const inputId = getIdForInput(inputType.type, token.index);
 
-			state.variables[inputId] = {
-				type: "block",
-				to: inputId,
-			};
+			// Don't create block variables for select inputs
+			if (inputType.type !== INPUT_TYPE_SELECT) {
+				state.variables[inputId] = {
+					type: "block",
+					to: inputId,
+				};
+			}
+
+			// If this is a select input type, prepare to create a variable
+			if (inputType.type === INPUT_TYPE_SELECT) {
+				if (
+					inputType.meta?.options &&
+					inputType.meta.options.length > 0
+				) {
+					selectInputVariables.push({
+						id: inputId,
+						blockId: inputBlock.id, // Store block ID to update later
+						options: inputType.meta.options,
+						token: token,
+					});
+				}
+			}
 		}
 	}
 
@@ -668,6 +694,30 @@ export async function setBlocksAndOpenUIBuilder(
 		builder.inputs.value as Token[],
 		builder.inputTypes.value as object,
 	);
+
+	// Add select input variables directly to the state before creating the app
+	if (selectInputVariables.length > 0) {
+		for (const selectInput of selectInputVariables) {
+			const variableId = `${selectInput.id}_options`;
+
+			// Ensure options are in the correct format (direct array)
+			const optionsArray = Array.isArray(selectInput.options)
+				? selectInput.options
+				: JSON.parse(selectInput.options);
+
+			// Create a variable that directly contains the options array
+			// For array type variables, the value should be stored in the value property
+			state.variables[variableId] = {
+				type: "array",
+				value: optionsArray, // Store the actual array here
+			};
+
+			// Set the block's options to reference the variable instead of the direct array
+			// This will automatically select the variable in the Options dropdown
+			state.blocks[selectInput.blockId].data.options =
+				`{{${variableId}.output}}`;
+		}
+	}
 
 	const pixel = `CreateAppFromBlocks ( project = [ "${
 		builder.title.value

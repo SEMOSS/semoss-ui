@@ -1,0 +1,44 @@
+{
+	"manifest_version": 3,
+	"name": "Browser Automation",
+	"description": "Browser automation using SEMOSS platform",
+	"version": "1.0.0",
+	"permissions": [
+		"tabs",
+		"activeTab",
+		"storage",
+		"debugger",
+		"scripting",
+		"sidePanel"
+	],
+	"host_permissions": ["http://*/*", "https://*/*"],
+	"icons": {
+		"16": "assets/icon-16.svg",
+		"48": "assets/icon-48.svg",
+		"128": "assets/icon-128.svg"
+	},
+	"background": {
+		"service_worker": "src/background/index.ts",
+		"type": "module"
+	},
+	"action": {
+		"default_title": "Browser Automation",
+		"default_icon": {
+			"16": "assets/icon-16.svg",
+			"48": "assets/icon-48.svg",
+			"128": "assets/icon-128.svg"
+		}
+	},
+	"side_panel": {
+		"default_path": "src/panel/index.html"
+	},
+	"options_page": "src/options/index.html",
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"js": ["src/content/index.ts"],
+			"run_at": "document_idle"
+		}
+	],
+	"devtools_page": "src/devtools/index.html"
+}

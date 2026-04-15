@@ -9,7 +9,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useRef, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { FlexLayout } from "@semoss/shared";
 import {
@@ -33,7 +33,10 @@ interface RoomSidebarProps {
 export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	const { t } = useTranslation("sidebar");
 	const layoutRef = useRef<FlexLayout.Layout | null>(null);
+	const sidebarRef = useRef<HTMLDivElement | null>(null);
+	const controlsRef = useRef<HTMLDivElement | null>(null);
 	const [isMaximized, setIsMaximized] = useState(false);
+	const [controlsWidth, setControlsWidth] = useState(85);
 
 	// this will render the component whenever the sidebar model changes
 	room.sidebar.counter;
@@ -52,8 +55,93 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 		}
 	}
 
+	/**
+	 * Support smooth tab-strip scrolling on devices that emit horizontal wheel deltas (Mac trackpads).
+	 */
+	useEffect(() => {
+		const container = sidebarRef.current;
+		if (!container) {
+			return;
+		}
+
+		const onWheel = (event: WheelEvent) => {
+			const target = event.target;
+			if (!(target instanceof Element)) {
+				return;
+			}
+
+			const tabBar = target.closest(
+				".flexlayout__tabset_tabbar_inner",
+			) as HTMLElement | null;
+			if (!tabBar || !container.contains(tabBar)) {
+				return;
+			}
+
+			if (tabBar.scrollWidth <= tabBar.clientWidth) {
+				return;
+			}
+
+			const delta =
+				Math.abs(event.deltaX) > Math.abs(event.deltaY)
+					? event.deltaX
+					: event.deltaY;
+			if (delta === 0) {
+				return;
+			}
+
+			tabBar.scrollLeft += delta;
+			event.preventDefault();
+			event.stopPropagation();
+		};
+
+		container.addEventListener("wheel", onWheel, {
+			capture: true,
+			passive: false,
+		});
+
+		return () => {
+			container.removeEventListener("wheel", onWheel, true);
+		};
+	}, []);
+
+	/**
+	 * Keep tab-strip spacing in sync with the top-right controls width so tabs never hide behind overlay buttons.
+	 */
+	useEffect(() => {
+		const controls = controlsRef.current;
+		if (!controls) {
+			return;
+		}
+
+		const updateControlsWidth = () => {
+			const measuredWidth = Math.ceil(
+				controls.getBoundingClientRect().width,
+			);
+			const nextWidth = Math.max(85, measuredWidth + 8);
+			setControlsWidth((prev) => (prev === nextWidth ? prev : nextWidth));
+		};
+
+		updateControlsWidth();
+
+		if (typeof ResizeObserver === "undefined") {
+			return;
+		}
+
+		const resizeObserver = new ResizeObserver(() => {
+			updateControlsWidth();
+		});
+		resizeObserver.observe(controls);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	}, []);
+
 	return (
-		<div className="relative h-full w-full overflow-hidden">
+		<div
+			ref={sidebarRef}
+			className="relative h-full w-full overflow-hidden"
+		>
 			<div
 				className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
 					isMaximized
@@ -64,7 +152,10 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 			<div
 				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
-				<div className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2">
+				<div
+					ref={controlsRef}
+					className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2"
+				>
 					{activeTool && (
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -142,7 +233,14 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 					</Tooltip>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
-					<div className="flexlayout__theme_smss relative h-full w-full overflow-hidden">
+					<div
+						className="flexlayout__theme_smss relative h-full w-full overflow-hidden"
+						style={
+							{
+								"--room-sidebar-controls-width": `${controlsWidth}px`,
+							} as CSSProperties
+						}
+					>
 						<FlexLayout.Layout
 							ref={layoutRef}
 							model={room.sidebar.model}
@@ -176,6 +274,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 										<RoomFileExplorer
 											layout={layoutRef.current}
 											room={room}
+											node={node}
 										/>
 									);
 								} else if (component === "room-configuration") {

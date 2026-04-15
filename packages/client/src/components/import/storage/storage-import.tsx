@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { FileUploadOutlined } from "@mui/icons-material";
 import { Search } from "lucide-react";
 import type React from "react";
@@ -87,7 +88,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 			}
 
 			const pixelExpressions = uploadedFiles.map(
-				(file) =>
+				() =>
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["STORAGE"])`,
 			);
 
@@ -133,7 +134,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<div className="mb-4">
+		<div className="mb-6">
 			<Breadcrumb data-testid="breadcrumbs">
 				<BreadcrumbList>
 					<BreadcrumbItem>

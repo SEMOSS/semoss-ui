@@ -1,4 +1,4 @@
-import { action, makeObservable, observable } from "mobx";
+import { makeObservable, observable } from "mobx";
 import type { InputPixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 
@@ -21,17 +21,19 @@ export class InputMessageStore extends AbstractMessageStore {
 
 		makeObservable(this, {
 			parts: observable,
-			sync: action,
 		});
 
-		// sync the message (must be after makeObservable so sync action is registered)
+		// sync the message
 		this.sync(message);
 	}
 
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: InputPixelMessage) => {
+	sync(message: InputPixelMessage) {
+		// super
+		super.sync(message);
+
 		// set the id
 		this.id = message.messageId;
 
@@ -47,5 +49,5 @@ export class InputMessageStore extends AbstractMessageStore {
 
 		// set tokens
 		this.tokens = message.tokens;
-	};
+	}
 }

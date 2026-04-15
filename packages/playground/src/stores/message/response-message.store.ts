@@ -8,6 +8,7 @@ import {
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
+	STREAMING_PLACEHOLDER_ID,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
 	TOOL_OUTPUT_UNREADABLE_PROMPT,
@@ -81,7 +82,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
-			sync: action,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -92,14 +92,16 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			toggleIsPaused: action,
 		});
 
-		// sync the message (must be after makeObservable so sync action is registered)
+		// sync the message
 		this.sync(message);
 	}
 
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: ResponsePixelMessage) => {
+	sync(message: ResponsePixelMessage) {
+		super.sync(message);
+
 		// set the id
 		this.id = message.messageId;
 
@@ -129,7 +131,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				feedbackText: message.feedback.feedbackText,
 			};
 		}
-	};
+	}
 
 	/**
 	 * Execute a user message and stream the AI response
@@ -147,10 +149,10 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
 			io: "OUTPUT",
-			messageId: "STREAMING_PLACEHOLDER_ID",
+			messageId: STREAMING_PLACEHOLDER_ID,
 			visible: true,
 			platform_generated: true,
-			modelId: room.model.app_id,
+			modelId: room.model.engine_id,
 			dateCreated: new Date().toISOString(),
 			parts: [
 				{
@@ -161,7 +163,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			tokens: 0,
 			ornaments: {
 				modelName:
-					room.model.engine_display_name || room.model.app_name,
+					room.model.engine_display_name ||
+					room.model.engine_name ||
+					"",
 			},
 		} as ResponsePixelMessage);
 
@@ -196,7 +200,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				}
 
 				return acc;
-			}, []);
+			}, [] as string[]);
 
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
@@ -208,7 +212,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				]
 			>(
 				`AskPlayground(
-engine=["${room.model.app_id}"],
+engine=["${room.model.engine_id}"],
 roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
@@ -429,17 +433,20 @@ paramValues=[${JSON.stringify({
 		// create a new input message
 		const rewrittenMessage = new InputMessageStore(room, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "REWRITE_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
-			modelId: room.model.app_id,
-			modelType: room.model.app_type,
+			modelId: room.model.engine_id,
+			modelType: room.model.engine_type,
 			dateCreated: new Date().toISOString(),
 			parts: parentMessage.parts,
 			tokens: parentMessage.tokens,
 			ornaments: {
 				modelName:
-					room.model.engine_display_name || room.model.app_name,
+					room.model.engine_display_name ||
+					room.model.engine_name ||
+					"",
 			},
 		});
 
@@ -492,9 +499,9 @@ paramValues=[${JSON.stringify({
 			}
 		}
 
-		const toolLimit = this.room.theme.toolAutoExecutionLimit;
-		// Check how many tools can be run. If toolLimit is null or undefined, then limit to 5
-		const numToolsToRun = (toolLimit > 0 ? toolLimit : 5) - numRunningTools;
+		// Check how many tools can be run. If toolLimit is false-y, then limit to 5
+		const toolLimit = this.room.theme.toolAutoExecutionLimit || 5;
+		const numToolsToRun = toolLimit - numRunningTools;
 		if (numToolsToRun > 0) {
 			toolsToRun.slice(0, numToolsToRun).forEach((tool) => {
 				this.runToolExecution(tool);
@@ -551,7 +558,7 @@ paramValues=[${JSON.stringify({
 						: JSON.stringify(rawOutput);
 			} catch (e) {
 				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
-				output = e.message;
+				output = (e as Error).message;
 				toolError = true;
 			}
 
@@ -622,18 +629,22 @@ paramValues=[${JSON.stringify({
 		if (!responseMessage) {
 			this.toolResponseMessage = new ResponseMessageStore(room, {
 				io: "OUTPUT",
-				messageId: "STREAMING_TOOL_PLACEHOLDER_ID",
+				messageId: STREAMING_PLACEHOLDER_ID,
 				visible: true,
 				platform_generated: true,
 				modelId: this.room.model.app_id,
 				dateCreated: new Date().toISOString(),
-				// Add blank thinking part for loading
-				parts: [
-					{
-						type: "THINKING",
-						thinking: "",
-					},
-				],
+				// Add blank thinking part for loading if this is the last tool
+				// We've already updated this tool's status optimistically, so can check
+				// hasUnfinishedTools to see if it was the last tool
+				parts: this.hasUnfinishedTools
+					? []
+					: [
+							{
+								type: "THINKING",
+								thinking: "",
+							},
+						],
 				tokens: 0,
 				ornaments: {
 					modelName:
@@ -648,17 +659,21 @@ paramValues=[${JSON.stringify({
 			responseMessage = this.toolResponseMessage;
 		}
 
+		type PartialResponse = {
+			responseMessage: string;
+		};
+		type TotalResponse = {
+			responseMessage: ResponsePixelMessage;
+			inputMessage: InputPixelMessage;
+		};
+
 		try {
 			// turn on thinking
 			responseMessage.isThinking = true;
 
 			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
-				[
-					{
-						responseMessage: ResponsePixelMessage | string;
-					},
-				]
+				[PartialResponse | TotalResponse]
 			>(
 				`AddPlaygroundToolExecution(
 engine=["${room.model.app_id}"],
@@ -709,8 +724,17 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 				// Keep executing tools
 				this.continueToolExecution();
 			} else {
+				const inputMessage = (output as TotalResponse).inputMessage;
+
 				// create the response and link to the message
 				responseMessage.sync(output.responseMessage);
+
+				// We don't create INPUT_TOOL_EXEC messages, so stamp the server's cumulative
+				// input token count onto this response message as a proxy. tokensUsed() in
+				// room.store relies on finding a (cumulative, incremental) pair when walking back.
+				runInAction(() => {
+					this.tokens = inputMessage.tokens;
+				});
 
 				// edge case handling: it's possible that the user paused tools while this tool was running
 				// mark the new response as paused if that is the case

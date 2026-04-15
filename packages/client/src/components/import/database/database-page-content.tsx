@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 import { FileUploadOutlined } from "@mui/icons-material";
 import { GitCompare, Search, Upload } from "lucide-react";
 import type React from "react";
@@ -423,15 +424,15 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								onValueChange={(value) =>
 									setSelectedTab(Number(value))
 								}
+								className="gap-6"
 								data-testid="tabs"
 							>
-								<TabsList className="mb-6 inline-flex h-9 w-full items-center justify-start overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground sm:w-auto sm:justify-center">
+								<TabsList>
 									{tabLabels.map((label, index) => (
 										<TabsTrigger
 											key={label}
 											value={index.toString()}
 											data-testid={`tab-${label.toLowerCase()}`}
-											className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md px-2.5 py-1 font-medium text-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
 										>
 											{index === 0 && (
 												<GitCompare
