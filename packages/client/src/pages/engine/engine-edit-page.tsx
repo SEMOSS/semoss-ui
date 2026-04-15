@@ -496,7 +496,7 @@ export const EngineEditPage: React.FC = observer(() => {
 		}
 		monolithStore
 			.runQuery(
-				`SetEngineMetadata(engine=["${id}"], meta=[${JSON.stringify(meta)}], jsonCleanup=[true])`,
+				`SetEngineMetadata(engine=["${id}"], meta=[${JSON.stringify(meta)}])`,
 			)
 			.then(
 				({

@@ -1115,12 +1115,15 @@ export const GuardrailForm = ({
 						>
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="guardrail-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testId="guardrail-importForm-category-title"
+									>
 										{category}
 									</H4>
 									<Muted
+										className="text-muted-foreground text-sm leading-6"
 										data-testId="model-importForm-category-description"
-										className="text-base"
 									>
 										{categoryDescriptions[category] ??
 											"No description available."}
