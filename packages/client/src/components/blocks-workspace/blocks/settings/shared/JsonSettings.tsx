@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
 	BLOCK_TYPE_INPUT,
 	type Block,
@@ -12,7 +12,7 @@ import {
 	type QueryState,
 	useBlocks,
 } from "@semoss/renderer";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, Stack, styled, Typography } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
@@ -90,6 +90,7 @@ export const JsonSettings = observer(
 		}, [data, path]).get();
 
 		// update the value whenever the computed one changes
+		//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
@@ -114,14 +115,14 @@ export const JsonSettings = observer(
 								path,
 								specJson as PathValue<D["data"], typeof path>,
 							);
-						} catch (e) {
+						} catch (_e) {
 							setData(
 								path,
 								value as PathValue<D["data"], typeof path>,
 							);
 						}
 
-						callback && callback();
+						callback?.();
 					} catch (e) {
 						console.log(e);
 					}
@@ -137,7 +138,7 @@ export const JsonSettings = observer(
 			setValue(value);
 		};
 
-		const handleMount = (editor, monaco) => {
+		const handleMount = (_editor, monaco) => {
 			const exposedQueryParameterDescription = (
 				exposedParameter: string,
 				queryId: string,
@@ -259,7 +260,9 @@ export const JsonSettings = observer(
 					const replaceRangeEndBuffer =
 						followingTwoCharacters === "}}"
 							? 2
-							: followingTwoCharacters == "} " ||
+							: //biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
+								followingTwoCharacters == "} " ||
+									//biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
 									followingTwoCharacters == "}"
 								? 1
 								: 0;
@@ -282,7 +285,9 @@ export const JsonSettings = observer(
 		const handleEditorValidation = (markers) => {
 			// model markers
 			const errorSet = [];
-			markers.forEach((marker) => errorSet.push(marker.message));
+			markers.forEach((marker) => {
+				errorSet.push(marker.message);
+			});
 			setErrors(errorSet);
 			setValidJson(!markers?.length);
 		};
@@ -321,7 +326,7 @@ export const JsonSettings = observer(
 						<StyledErrorContainer>
 							{errors.map((error, id) => (
 								<Typography
-									key={id}
+									key={`${error}`}
 									variant="caption"
 									color="error"
 								>

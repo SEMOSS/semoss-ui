@@ -1,7 +1,7 @@
 import { Check, Copy, RotateCcw } from "lucide-react";
 import type React from "react";
 import { Suspense, useState } from "react";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, cn, P } from "@semoss/ui/next";
 import { QueryActions } from "./query-actions";
 

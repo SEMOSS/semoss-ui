@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Card,
 	CardContent,

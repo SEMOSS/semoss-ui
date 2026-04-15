@@ -16,7 +16,7 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Alert,
 	Box,
@@ -308,6 +308,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	/**
 	 * Select Box on different constants to tie to
 	 */
+	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
 	const values = useMemo(() => {
 		if (variableType === "block") {
 			return inputBlocks.map((block) => {
@@ -400,7 +401,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			return <Select.Item value="">No options</Select.Item>;
 		}
 	}, [variableType]);
-
+	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
 	const input = useMemo(() => {
 		if (variableType === "string") {
 			return (
@@ -422,6 +423,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					size="small"
 					placeholder="Add Value"
 					onChange={(e) => {
+						//biome-ignore lint/correctness/useParseIntRadix: keeping parseint for getting integer value
 						setVariableInputValue(parseInt(e.target.value));
 					}}
 					value={variableInputValue}
@@ -516,7 +518,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			);
 		}
 	}, [variableType, variableInputValue, variablePointer, engine]);
-
+	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
 	const preview = useMemo(() => {
 		try {
 			if (
@@ -660,8 +662,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					);
 				}
 			} else if (
-				variableType &&
-				(engine || variablePointer || variableInputValue)
+				(variableType && engine) ||
+				(variableType && variablePointer) ||
+				(variableType && variableInputValue)
 			) {
 				return <StyledPlaceholder />;
 			}
@@ -671,7 +674,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			);
 		}
 	}, [variableType, variablePointer, engine, variableInputValue]);
-
+	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
 	const addVariableDisabled = useMemo(() => {
 		const hasRequiredFields = Boolean(
 			variableType.length > 0 && variableName.length > 0,
@@ -714,7 +717,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		variableInputValue,
 		alreadyAliased,
 	]);
-
+	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
 	useEffect(() => {
 		if (variable?.id) {
 			setVariableName(variable.id);

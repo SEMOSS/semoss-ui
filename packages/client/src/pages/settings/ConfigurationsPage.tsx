@@ -10,7 +10,7 @@ import {
 	useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Accordion,
 	Box,

@@ -15,7 +15,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel, usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import { useNotification } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 

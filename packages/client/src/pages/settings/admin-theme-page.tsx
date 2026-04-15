@@ -2,7 +2,7 @@ import { PlusIcon, TrashIcon } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import type { ThemeMap } from "@semoss/shared";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Dialog,
