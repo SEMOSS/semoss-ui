@@ -113,7 +113,7 @@ function getCommitDiff(commitHash) {
 }
 
 /**
- * Extract specific code changes from diff
+ * Extract specific code changes from diff - STRICT MODE (Only real functions)
  */
 function analyzeCodeChanges(commitHash, files) {
   const diff = getCommitDiff(commitHash);
@@ -127,39 +127,42 @@ function analyzeCodeChanges(commitHash, files) {
     codeSnippets: [],
   };
 
-  // Extract ADDED functions only (new lines with +)
-  const addedFunctionPattern = /^\+\s*(async\s+)?function\s+(\w+)|^\+\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/gm;
+  // STRICT: Only match actual function declarations
+  // Patterns: function name() {} or const name = () => {} or const name = async () => {}
+  const strictFunctionPattern = /^\+\s*(?:async\s+)?function\s+(\w+)\s*\(|^\+\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*(?:=>|{)/gm;
   let match;
-  while ((match = addedFunctionPattern.exec(diff)) !== null) {
-    const funcName = match[2] || match[3];
+  
+  // Extract ADDED functions - only real function declarations
+  while ((match = strictFunctionPattern.exec(diff)) !== null) {
+    const funcName = match[1] || match[2];
     if (!changes.functionsAdded.includes(funcName)) {
       changes.functionsAdded.push(funcName);
     }
   }
 
-  // Extract REMOVED functions only (old lines with -)
-  const removedFunctionPattern = /^-\s*(async\s+)?function\s+(\w+)|^-\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/gm;
-  while ((match = removedFunctionPattern.exec(diff)) !== null) {
-    const funcName = match[2] || match[3];
+  // Extract REMOVED functions - only real function declarations
+  const strictRemovePattern = /^-\s*(?:async\s+)?function\s+(\w+)\s*\(|^-\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\([^)]*\)\s*(?:=>|{)/gm;
+  while ((match = strictRemovePattern.exec(diff)) !== null) {
+    const funcName = match[1] || match[2];
     if (!changes.functionsRemoved.includes(funcName)) {
       changes.functionsRemoved.push(funcName);
     }
   }
 
-  // Check for ADDED/REMOVED import statements only
-  if (/^[+-]\s*import\s|^[+-]\s*export\s/m.test(diff)) {
+  // STRICT: Check for ADDED/REMOVED import statements only
+  if (/^[+-]\s*import\s+.*from|^[+-]\s*export\s+(default\s+|{|function|const|class|interface|type)/m.test(diff)) {
     changes.importsChanged = true;
   }
 
-  // Check for ADDED/REMOVED type definitions only (new lines with + or - )
-  const typePattern = /^[+-]\s*(interface\s+\w+|type\s+\w+\s*=|:\s*\w+<|\{\s*\w+:\s*\w+)/gm;
-  if (typePattern.test(diff)) {
+  // STRICT: Check for ADDED/REMOVED type definitions only
+  const strictTypePattern = /^[+-]\s*(interface\s+\w+\s*{|type\s+\w+\s*=\s*{|type\s+\w+\s*=\s*\w+<)/gm;
+  if (strictTypePattern.test(diff)) {
     changes.typesChanged = true;
   }
 
-  // Check for ADDED/REMOVED state management calls only (new lines with useState, useReducer, etc.)
-  const statePattern = /^[+-].*\buseState\(|^[+-].*\buseReducer\(|^[+-].*\bsetState\(|^[+-].*\bdispatch\(/gm;
-  if (statePattern.test(diff)) {
+  // STRICT: Check for ADDED/REMOVED state management calls only
+  const strictStatePattern = /^[+-]\s*(?:const|let|var)\s+\[?\w+[,\s]*\w*\]?\s*=\s*useState\(|^[+-]\s*(?:const|let|var)\s+\w+\s*=\s*useReducer\(/gm;
+  if (strictStatePattern.test(diff)) {
     changes.stateManagementChanged = true;
   }
 
