@@ -482,7 +482,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			.runQuery(
 				`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 					meta,
-				)}], jsonCleanup=[true])`,
+				)}])`,
 			)
 			.then(async (response) => {
 				const { output, additionalOutput, operationType } =
