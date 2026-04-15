@@ -536,7 +536,7 @@ export class RoomStore {
 				string,
 				{
 					parentMessageId: string;
-					siblingMessageId: string;
+					summaryLeafMessageId: string;
 					message:
 						| InputMessageStore
 						| ResponseMessageStore
@@ -559,7 +559,8 @@ export class RoomStore {
 				// store it
 				messages[message.id] = {
 					parentMessageId: pixelMessage.parentMessageId || "",
-					siblingMessageId: pixelMessage.siblingMessageId || "",
+					summaryLeafMessageId:
+						pixelMessage.summaryLeafMessageId || "",
 					message: message,
 				};
 			}
@@ -572,8 +573,8 @@ export class RoomStore {
 				if (parent) {
 					parent.message.addChild(m.message);
 				} else {
-					// This could be a message that was compacted, check for siblingMessageId (poor naming)
-					const pseudoParent = messages[m.siblingMessageId];
+					// This could be a message that was compacted, check for summaryLeafMessageId
+					const pseudoParent = messages[m.summaryLeafMessageId];
 					if (pseudoParent) {
 						pseudoParent.message.addChild(m.message);
 					} else {

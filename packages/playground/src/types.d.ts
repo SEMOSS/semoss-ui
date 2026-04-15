@@ -102,7 +102,7 @@ export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
 	parentMessageId?: string;
-	siblingMessageId?: string;
+	summaryLeafMessageId?: string;
 	visible: boolean;
 	platform_generated: boolean;
 	modelId: string;
