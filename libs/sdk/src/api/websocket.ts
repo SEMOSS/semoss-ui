@@ -122,18 +122,38 @@ export class InsightWebSocket {
 
 	/** Send a pixel expression over the WebSocket */
 	send(pixel: string): void {
+		this.sendRaw({
+			action: "pixel",
+			insightId: this.insightId,
+			pixel,
+		});
+	}
+
+	/**
+	 * Start a streamer on the backend for the given type.
+	 * New data will arrive as messages via onMessage.
+	 *
+	 * @param type   - registered streamer type (e.g. "claude_code")
+	 * @param params - additional params passed to the streamer factory
+	 */
+	watch(type: string, params: Record<string, unknown> = {}): void {
+		this.sendRaw({ action: "watch", type, ...params });
+	}
+
+	/** Stop a streamer by type and params (must match what was passed to watch). */
+	unwatch(type: string, params: Record<string, unknown> = {}): void {
+		this.sendRaw({ action: "unwatch", type, ...params });
+	}
+
+	/** Send a raw JSON message over the WebSocket */
+	sendRaw(data: Record<string, unknown>): void {
 		if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
 			throw new Error(
 				"WebSocket is not connected. Call connect() first.",
 			);
 		}
 
-		this.ws.send(
-			JSON.stringify({
-				insightId: this.insightId,
-				pixel,
-			}),
-		);
+		this.ws.send(JSON.stringify(data));
 	}
 
 	/** Close the WebSocket connection */

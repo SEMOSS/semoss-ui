@@ -17,6 +17,10 @@ interface UseWebSocketOptions
 interface UseWebSocketReturn {
 	/** Send a pixel expression over the WebSocket */
 	send: (pixel: string) => void;
+	/** Start a streamer on the backend (e.g. watch("claude_code", { roomId: "abc" })) */
+	watch: (type: string, params?: Record<string, unknown>) => void;
+	/** Stop a streamer on the backend */
+	unwatch: (type: string, params?: Record<string, unknown>) => void;
 	/** The last message received from the server */
 	lastMessage: unknown | null;
 	/** Current connection status */
@@ -84,6 +88,20 @@ export function useWebSocket(
 		wsRef.current?.send(pixel);
 	}, []);
 
+	const watch = useCallback(
+		(type: string, params?: Record<string, unknown>) => {
+			wsRef.current?.watch(type, params);
+		},
+		[],
+	);
+
+	const unwatch = useCallback(
+		(type: string, params?: Record<string, unknown>) => {
+			wsRef.current?.unwatch(type, params);
+		},
+		[],
+	);
+
 	const connect = useCallback(() => {
 		wsRef.current?.connect();
 	}, []);
@@ -94,6 +112,8 @@ export function useWebSocket(
 
 	return {
 		send,
+		watch,
+		unwatch,
 		lastMessage,
 		status,
 		isConnected: status === "connected",
