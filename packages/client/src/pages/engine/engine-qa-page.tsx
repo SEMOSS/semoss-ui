@@ -71,7 +71,7 @@ export const EngineQAPage = () => {
 		}
 		try {
 			let pixel = `
-            VectorDatabaseQuery(engine="${active.id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
+            VectorDatabaseQuery(engine="${active.id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit});
             `;
 
 			const response = await monolithStore.runQuery(pixel);

@@ -22,19 +22,15 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
-	RoomContextChart,
 	RoomInput,
 	RoomInputMenuFileExplorer,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
-
-const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS === "true";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
@@ -77,7 +73,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
-	 * Handle tool selection
+	 * Handle tool selection (toggle for plus menu)
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
@@ -93,6 +89,31 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		if (Object.hasOwn(tools, tool.id)) {
 			delete tools[tool.id];
 		} else {
+			tools[tool.id] = tool;
+		}
+
+		room.setOptions({
+			...room.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
+	 * @param tool - selected tool
+	 */
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
+		const tools = room.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, typeof tool>,
+		);
+
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -179,7 +200,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.id,
 					tool.response,
 					tool.tool_status,
-					tool.executedParameters,
+					tool.executedParameters ?? {},
 				);
 			} catch {
 				// noop
@@ -358,7 +379,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									</React.Fragment>
 								);
 							})}
-							{ENABLE_SUGGESTIONS && (
+							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
 						</div>
@@ -419,7 +440,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
+			<div className="mx-auto flex w-full max-w-4xl shrink-0 flex-col p-4">
 				<RoomInput
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
@@ -429,31 +450,34 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);
 					}}
+					options={room.options}
+					onMcpSelect={handleToolAdd}
 					MenuComponent={observer(
-						({ addToken, onOpenChange, fileRef }) => (
+						({ onOpenChange, fileRef, editorRef }) => (
 							<>
 								<RoomInputMenuUpload
 									fileRef={fileRef}
 									onSelect={() => onOpenChange(false)}
 								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuMCP
+									type="KNOWLEDGE"
+									options={room.options}
+									onSelect={handleToolSelect}
+									editorRef={editorRef}
+									onOverlayClose={() => onOpenChange(false)}
+								/>
+								<RoomInputMenuMCP
+									type="TOOLBOX"
+									options={room.options}
+									onSelect={handleToolSelect}
+									editorRef={editorRef}
+									onOverlayClose={() => onOpenChange(false)}
+								/>
+								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
 									room={room}
 									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuKnowledge
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<RoomInputMenuToolbox
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
 								/>
 								<DropdownMenuItem
 									onSelect={(e) => {
@@ -489,12 +513,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					toggleToolsPaused={
 						room.latestResponseMessage.toggleIsPaused
 					}
-					footer={
-						<RoomContextChart
-							tokensUsed={room.tokensUsed}
-							tokensMax={chat.models.contextWindow}
-						/>
-					}
+					tokensUsed={room.tokensUsed}
+					tokensMax={chat.models.contextWindow}
 				/>
 			</div>
 		</div>
