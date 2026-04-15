@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "रूम सेटिंग्स",
 		"description": "रूम सेटिंग्स अपडेट करें और चैट का व्यवहार संशोधित करें",
-		"open": "सेटिंग्स खोलें",
-		"close": "बंद करें",
-		"edit": "सेटिंग्स संपादित करें"
+		"open": "रूम सेटिंग्स खोलें",
+		"close": "रूम सेटिंग्स बंद करें",
+		"edit": "रूम सेटिंग्स संपादित करें"
 	},
 	"form": {
 		"modelLabel": "मॉडल",
@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "टेक्स्ट दर्ज करें",
 		"thinking": "सोच रहा है...",
-		"menuPrompt": "मेनू खोलने के लिए /",
-		"openSettings": "सेटिंग्स खोलें",
+		"menuPrompt": "मैं आज आपकी कैसे मदद कर सकता हूं?",
+		"openSettings": "फ़ाइलें, एजेंट और अधिक जोड़ें",
 		"recordLabel": "मॉडल रिकॉर्ड करें",
 		"stopRecording": "रिकॉर्डिंग बंद करें",
 		"record": "रिकॉर्ड करें",
@@ -68,15 +68,10 @@
 		"copyFailed": "क्लिपबोर्ड पर कॉपी करने में विफल"
 	},
 	"menuToolbox": {
-		"addToolbox": "टूलबॉक्स जोड़ें",
-		"searchPlaceholder": "टूलबॉक्स खोजें",
-		"notFound": "नहीं मिला",
-		"allTools": "सभी टूल"
+		"addToolbox": "टूलबॉक्स जोड़ें"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "ज्ञान जोड़ें",
-		"searchPlaceholder": "ज्ञान खोजें",
-		"notFound": "नहीं मिला"
+		"addKnowledge": "ज्ञान जोड़ें"
 	},
 	"menuWorkspace": {
 		"selectAgent": "एजेंट चुनें",
@@ -84,7 +79,7 @@
 		"notFound": "नहीं मिला"
 	},
 	"menuUpload": {
-		"attachDocument": "दस्तावेज़ संलग्न करें"
+		"attachDocument": "दस्तावेज़ जोड़ें"
 	},
 	"menuFileExplorer": {
 		"name": "फ़ाइल एक्सप्लोरर",
@@ -101,5 +96,10 @@
 		"descriptionExceeded": "यह बातचीत अपनी सीमा से अधिक हो गई है। मॉडल अब प्रतिक्रियाएं उत्पन्न करते समय पुराने संदेशों को भूल रहा है। सर्वोत्तम परिणामों के लिए नई चैट शुरू करें।",
 		"memoryUsedTitle": "उपयोग की गई मेमोरी:",
 		"memoryUsedValue": "{{used}} / {{total}} टोकन ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "ज्ञान और टूलबॉक्स खोजें",
+		"noResults": "कोई मेल खाने वाली आइटम नहीं मिली",
+		"noItemsAvailable": "कोई ज्ञान या टूलबॉक्स उपलब्ध नहीं है"
 	}
 }

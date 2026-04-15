@@ -29,8 +29,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 	RoomInputMenuWorkspace,
 } from "@/components";
@@ -122,11 +121,11 @@ export const NewRoomPage = observer(() => {
 	 * Functions
 	 */
 	/**
-	 * Handle tool selection
+	 * Handle tool selection (toggle for plus menu)
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options using the temporary RoomStore
+		// Toggle tool in options
 		const tools = tempRoomStore.options.mcp.reduce(
 			(acc, curr) => {
 				acc[curr.id] = curr;
@@ -138,6 +137,31 @@ export const NewRoomPage = observer(() => {
 		if (Object.hasOwn(tools, tool.id)) {
 			delete tools[tool.id];
 		} else {
+			tools[tool.id] = tool;
+		}
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
+	 * @param tool - selected tool
+	 */
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
+		const tools = tempRoomStore.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, MCPConfig>,
+		);
+
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -348,14 +372,22 @@ export const NewRoomPage = observer(() => {
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
+							options={tempRoomStore.options}
+							onMcpSelect={handleToolAdd}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
 								return true;
 							}}
+							hidePauseButton
 							MenuComponent={observer(
-								({ addToken, onOpenChange, fileRef }) => (
+								({ onOpenChange, fileRef, editorRef }) => (
 									<>
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
 										{root.theme.featureFlags
 											?.enablePlan && (
 											<>
@@ -426,25 +458,25 @@ export const NewRoomPage = observer(() => {
 											}}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuUpload
-											fileRef={fileRef}
-											onSelect={() => onOpenChange(false)}
+										<RoomInputMenuMCP
+											type="KNOWLEDGE"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
+										/>
+										<RoomInputMenuMCP
+											type="TOOLBOX"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuKnowledge
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
-										<RoomInputMenuToolbox
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();

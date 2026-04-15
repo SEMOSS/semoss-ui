@@ -57,7 +57,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 						? `project=["${toolbox.id}"]`
 						: `engine=["${toolbox.id}"]`
 				});`
-			: null,
+			: "",
 		{
 			data: {
 				tools: [],
