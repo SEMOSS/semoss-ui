@@ -49,8 +49,13 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 			<SidebarMenuItem>
 				<SidebarMenuButton
 					asChild
-					isActive={!!matchPath(`/embed/${path}`, pathname)}
-					tooltip={{ children: returnToolTip(name), hidden: false }}
+					isActive={
+						!!matchPath(
+							{ path: `/embed/${path}`, end: false },
+							pathname,
+						)
+					}
+          tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
