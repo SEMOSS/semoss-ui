@@ -572,10 +572,10 @@ export class RoomStore {
 				if (parent) {
 					parent.message.addChild(m.message);
 				} else {
-					// If the parent is not found, try to link to the sibling's parent
-					const sibling = messages[m.siblingMessageId];
-					if (sibling?.message.parent) {
-						sibling.message.parent.addChild(m.message);
+					// This could be a message that was compacted, check for siblingMessageId (poor naming)
+					const pseudoParent = messages[m.siblingMessageId];
+					if (pseudoParent) {
+						pseudoParent.message.addChild(m.message);
 					} else {
 						root.addChild(m.message);
 					}
@@ -1252,7 +1252,7 @@ export class RoomStore {
 				)[];
 			}[]
 		>(
-			`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+			`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}, autoDetect=${JSON.stringify(true)});`,
 			false,
 		);
 
