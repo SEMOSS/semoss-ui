@@ -108,6 +108,10 @@ export const FileTable = (props: FileTableProps) => {
 	const [expandedErrors, setExpandedErrors] = useState<Set<string>>(
 		new Set(),
 	);
+	const [uploadedFileSizes, setUploadedFileSizes] = useState<
+		Record<string, number>
+	>({});
+	const [uploadProgress, setUploadProgress] = useState<number>(0);
 
 	const [order, setOrder] = useState<"asc" | "desc">("asc");
 	const [orderBy, setOrderBy] = useState<string>("name");
@@ -147,6 +151,20 @@ export const FileTable = (props: FileTableProps) => {
 					: `"${file.fileName}", `,
 			)
 			.join("");
+	};
+
+	/**
+	 * Format raw byte count into a human-readable size string.
+	 * Supports B, KB, MB, GB, TB.
+	 */
+	const formatFileSize = (bytes: number): string => {
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1024 * 1024 * 1024)
+			return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+		if (bytes < 1024 * 1024 * 1024 * 1024)
+			return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+		return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
 	};
 
 	const { control, watch, setValue, handleSubmit } = useForm<{
@@ -201,6 +219,28 @@ export const FileTable = (props: FileTableProps) => {
 		fileSearchRef.current?.focus();
 	}, [getFileDetails.status, getFileDetails.data, searchFilter, setValue]);
 
+	/**
+	 * Simulates incremental progress on the upload progress bar while isLoading
+	 * is active. Advances in random steps up to 90%, then resets when done.
+	 */
+	useEffect(() => {
+		if (!isLoading) {
+			setUploadProgress(0);
+			return;
+		}
+		setUploadProgress(10);
+		const interval = setInterval(() => {
+			setUploadProgress((prev) => {
+				if (prev >= 90) {
+					clearInterval(interval);
+					return 90;
+				}
+				return Math.min(90, prev + Math.random() * 12);
+			});
+		}, 500);
+		return () => clearInterval(interval);
+	}, [isLoading]);
+
 	const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -214,6 +254,7 @@ export const FileTable = (props: FileTableProps) => {
 	const handleDrop = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (isLoading) return;
 		const droppedFiles = Array.from(e.dataTransfer.files);
 		const validFiles = droppedFiles.filter((file) => {
 			const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
@@ -235,6 +276,7 @@ export const FileTable = (props: FileTableProps) => {
 	};
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (isLoading) return;
 		if (e.target.files) {
 			setValue("PROJECT_UPLOAD", Array.from(e.target.files));
 		}
@@ -354,6 +396,13 @@ export const FileTable = (props: FileTableProps) => {
 	 */
 	const embedFile = handleSubmit(async (data: FileUploadForm) => {
 		setIsLoading(true);
+
+		// Capture file sizes from the File objects before they are cleared
+		const sizeMap: Record<string, number> = {};
+		data.PROJECT_UPLOAD.forEach((file) => {
+			sizeMap[file.name] = file.size;
+		});
+		setUploadedFileSizes((prev) => ({ ...prev, ...sizeMap }));
 
 		try {
 			// Upload files to the server first
@@ -643,6 +692,17 @@ export const FileTable = (props: FileTableProps) => {
 											</div>
 
 											<div className="flex shrink-0 items-center gap-2">
+												{uploadedFileSizes[
+													result.fileName
+												] !== undefined && (
+													<span className="text-muted-foreground text-xs">
+														{formatFileSize(
+															uploadedFileSizes[
+																result.fileName
+															],
+														)}
+													</span>
+												)}
 												{!isFailed ? (
 													<span className="text-muted-foreground text-xs">
 														{result.insertedRecords}{" "}
@@ -877,11 +937,10 @@ export const FileTable = (props: FileTableProps) => {
 															{file.lastModified}
 														</TableCell>
 														<TableCell>
-															{Math.round(
+															{formatFileSize(
 																file.fileSize *
-																	10,
-															) / 10}{" "}
-															KB
+																	1024,
+															)}
 														</TableCell>
 														<TableCell>
 															<Button
@@ -1006,7 +1065,12 @@ export const FileTable = (props: FileTableProps) => {
 				</div>
 			</div>
 
-			<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog
+				open={open}
+				onOpenChange={(value) => {
+					if (!isLoading) setOpen(value);
+				}}
+			>
 				<DialogContent
 					className="w-full max-w-[600px] border-border bg-background"
 					data-testid="file-upload-modal"
@@ -1021,6 +1085,7 @@ export const FileTable = (props: FileTableProps) => {
 								return (
 									<button
 										type="button"
+										disabled={isLoading}
 										className="flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary px-6 py-8 text-center transition-colors hover:border-primary hover:bg-accent"
 										onClick={() =>
 											fileInputRef.current?.click()
@@ -1105,7 +1170,7 @@ export const FileTable = (props: FileTableProps) => {
 						</div>
 						{isLoading && (
 							<div className="mt-2" data-testid="upload-progress">
-								<Progress />
+								<Progress value={uploadProgress} />
 							</div>
 						)}
 					</div>
