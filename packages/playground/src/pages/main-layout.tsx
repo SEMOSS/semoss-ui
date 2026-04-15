@@ -1,5 +1,11 @@
 import { observer } from "mobx-react-lite";
-import React, { type ReactNode, useEffect, useMemo, useState } from "react";
+import React, {
+	type ReactNode,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
@@ -51,12 +57,83 @@ export const MainLayout = observer(() => {
 		return store;
 	}, [root.theme, actions, system.config.loginDetails]);
 
+	// Refs for embed iframe sync
+	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
+	const iframeReadyRef = useRef<Record<string, boolean>>({});
+	const pendingNavRef = useRef<Record<string, string>>({});
+
+	// embedPath -> iframeBase (the hash-derived root path inside the iframe)
+	const embedPathToIframeBase = useMemo(() => {
+		const map: Record<string, string> = {};
+		for (const [embedPath, item] of Object.entries(
+			chatStore.embeddedPageMap,
+		)) {
+			try {
+				const hash = new URL(item.url).hash; // e.g. "#/agent"
+				map[embedPath] = hash.startsWith("#") ? hash.slice(1) : hash; // e.g. "/agent"
+			} catch {
+				map[embedPath] = "/" + embedPath;
+			}
+		}
+		return map;
+	}, [chatStore.embeddedPageMap]);
+
 	useThemeTitle(theme);
 
 	useEffect(() => {
 		const icon = theme?.images?.tabIcon;
 		if (icon) setFavicon(icon);
 	}, [theme?.images?.tabIcon]);
+
+	// When parent pathname changes to an embed route, tell the iframe where to go
+	useEffect(() => {
+		const match = matchPath({ path: "/embed/*", end: false }, pathname);
+		if (!match) return;
+
+		const splatPath = match.params["*"] ?? "";
+		const embedBase = splatPath.split("/")[0];
+		const subPath = splatPath.slice(embedBase.length);
+		const iframeBase = embedPathToIframeBase[embedBase];
+		if (!iframeBase) return;
+
+		const iframePath = iframeBase + subPath;
+
+		const iframe = iframeRefs.current[embedBase];
+		if (!iframe?.contentWindow) return;
+
+		if (!iframeReadyRef.current[embedBase]) {
+			pendingNavRef.current[embedBase] = iframePath;
+			return;
+		}
+
+		iframe.contentWindow.postMessage(
+			{ type: "SMSS_NAVIGATE_TO", payload: { path: iframePath } },
+			"*",
+		);
+	}, [pathname, embedPathToIframeBase]);
+
+	// Listen for SMSS_READY and flush any queued navigation
+	useEffect(() => {
+		const handle = (e: MessageEvent) => {
+			if (e.data?.type !== "SMSS_READY") return;
+			const entry = Object.entries(iframeRefs.current).find(
+				([, iframe]) => iframe?.contentWindow === e.source,
+			);
+			if (!entry) return;
+			const [embedBase] = entry;
+			iframeReadyRef.current[embedBase] = true;
+			const pending = pendingNavRef.current[embedBase];
+			if (pending) {
+				delete pendingNavRef.current[embedBase];
+				(e.source as Window).postMessage(
+					{ type: "SMSS_NAVIGATE_TO", payload: { path: pending } },
+					"*",
+				);
+			}
+		};
+		window.addEventListener("message", handle);
+		return () => window.removeEventListener("message", handle);
+	}, []);
 
 	// Auto-show tour for first-time users (resets when cookies are cleared).
 	// If the welcome dialog is visible, defer until it is acknowledged.
@@ -95,6 +172,9 @@ export const MainLayout = observer(() => {
 					<MainLayoutContent
 						isSidebarOpen={isSidebarOpen}
 						setIsSidebarOpen={setIsSidebarOpen}
+						chatStore={chatStore}
+						iframeRefs={iframeRefs}
+						pathname={pathname}
 						onDialogAcknowledge={() => {
 							if (pendingTour) {
 								setPendingTour(false);
@@ -112,10 +192,16 @@ const MainLayoutContent = observer(
 	({
 		isSidebarOpen,
 		setIsSidebarOpen,
+		chatStore,
+		iframeRefs,
+		pathname,
 		onDialogAcknowledge,
 	}: {
 		isSidebarOpen: boolean;
 		setIsSidebarOpen: (open: boolean) => void;
+		chatStore: InstanceType<typeof ChatStore>;
+		iframeRefs: React.MutableRefObject<Record<string, HTMLIFrameElement | null>>;
+		pathname: string;
 		onDialogAcknowledge: () => void;
 	}) => {
 		const { root } = useRoot();
@@ -195,8 +281,40 @@ const MainLayoutContent = observer(
 							</div>
 						</div>
 						<Separator />
-						<div className="w-full flex-1 overflow-hidden">
+						<div className="relative w-full flex-1 overflow-hidden">
 							<Outlet />
+							{Object.values(chatStore.embeddedPageMap).map(
+								(item) => {
+									const isActive = matchPath(
+										{
+											path: `/embed/${item.path}`,
+											end: false,
+										},
+										pathname,
+									);
+									return (
+										<iframe
+											key={item.path}
+											ref={(el) => {
+												iframeRefs.current[
+													item.path
+												] = el;
+											}}
+											src={item.url}
+											title={item.path}
+											className="absolute inset-0 h-full w-full border-none"
+											// @ts-expect-error fetchpriority is not yet in React's typings
+											fetchpriority="high"
+											style={{
+												opacity: isActive ? 1 : 0,
+												pointerEvents: isActive
+													? "auto"
+													: "none",
+											}}
+										/>
+									);
+								},
+							)}
 						</div>
 						<GlobalFooter />
 					</div>
