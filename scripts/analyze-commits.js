@@ -297,6 +297,15 @@ function generateSummaryPoints(commit, context, files) {
   const stateChanged = codeAnalysis.stateManagementChanged || false;
   const typesChanged = codeAnalysis.typesChanged || false;
 
+  // Analyze diff for specific small changes (console, style, logic changes)
+  const diff = getCommitDiff(commit.fullHash) || '';
+  const consoleLines = diff.split('\n').filter(line => /console\.(log|error|warn|debug|info)/.test(line));
+  const hasConsoleRemoved = consoleLines.some(line => line.startsWith('-'));
+  const hasConsoleAdded = consoleLines.some(line => line.startsWith('+'));
+  const hasCommentedCode = /^-\s*\/\/|^\+\s*\/\//.test(diff) || /^-\s*\/\*|^\+\s*\*\//.test(diff);
+  const hasStyleChanges = /^[+-].*\b(background|color|padding|margin|width|height|border|font|display|flex|style)\b/.test(diff);
+  const hasLogicChanges = /^[+-].*\b(if\s*\(|else|return\s|throw\s|try\s*{|catch)/.test(diff);
+
   // ONLY add summary if code analysis actually found something
   if (functionsAdded.length > 0) {
     if (functionsAdded.length === 1) {
@@ -314,6 +323,19 @@ function generateSummaryPoints(commit, context, files) {
       const funcList = functionsRemoved.slice(0, 2).join(', ');
       points.push(`Removed ${funcList}${functionsRemoved.length > 2 ? ` and ${functionsRemoved.length - 2} more` : ''} function(s)`);
     }
+  }
+
+  // Detect specific small changes - prioritize these before generic changes
+  if (hasConsoleRemoved && functionsAdded.length === 0 && functionsRemoved.length === 0) {
+    points.push('Removed console logging statement(s)');
+  } else if (hasConsoleAdded && functionsAdded.length === 0 && functionsRemoved.length === 0) {
+    points.push('Added console logging for debugging');
+  } else if (hasCommentedCode && modified.length <= 2 && functionsAdded.length === 0 && functionsRemoved.length === 0) {
+    points.push('Commented out or uncommented code');
+  } else if (hasStyleChanges && modified.length <= 2 && functionsAdded.length === 0 && functionsRemoved.length === 0) {
+    points.push('Updated styles and visual properties');
+  } else if (hasLogicChanges && modified.length <= 2 && functionsAdded.length === 0 && hasConsoleRemoved === false) {
+    points.push('Updated logic and control flow');
   }
 
   if (stateChanged && functionsAdded.length === 0 && functionsRemoved.length === 0) {
