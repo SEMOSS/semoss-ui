@@ -1,9 +1,9 @@
-const axios = require("axios");
+const { get } = require("@semoss/sdk/react");
 const fs = require("node:fs");
 const https = require("node:https");
 const ncp = require("ncp");
 const StreamZip = require("node-stream-zip");
-const path = require("path");
+const path = require("node:path");
 const vscode = require("vscode");
 
 /**
@@ -61,7 +61,7 @@ async function processGithubAssets(
 					headers.Authorization = `token ${accessToken}`;
 				}
 
-				const res = await axios.get(apiUrl, { headers });
+				const res = await get(apiUrl, { headers });
 				usedBranch = res.data.default_branch;
 			} catch (apiError) {
 				if (apiError.response?.status === 404) {
@@ -242,9 +242,7 @@ async function processGithubAssets(
 // Helper to download private repositories using axios
 const downloadPrivateRepo = async (url, dest, accessToken) => {
 	try {
-		const response = await axios({
-			method: "GET",
-			url: url,
+		const response = await get(url, {
 			headers: {
 				Authorization: `token ${accessToken}`,
 				"User-Agent": "node.js",
@@ -283,7 +281,7 @@ const downloadZipWithRedirect = (url, dest, accessToken = null) => {
 
 		// Add authorization header for private repositories
 		if (accessToken) {
-			headers["Authorization"] = `token ${accessToken}`;
+			headers.Authorization = `token ${accessToken}`;
 			headers["User-Agent"] = "node.js";
 		}
 

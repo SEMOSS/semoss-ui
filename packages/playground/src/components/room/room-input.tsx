@@ -194,6 +194,8 @@ interface RoomInputProps {
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 
+	/** Initial value from prompt library */
+	initialValue?: string;
 	/** Current token usage for context window indicator */
 	tokensUsed?: number;
 
@@ -231,6 +233,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		toggleToolsPaused,
 		footer = null,
 		hidePauseButton = false,
+		initialValue,
 		tokensUsed,
 		tokensMax,
 	}) => {
@@ -386,6 +389,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			editorRef.current?.setEditable(!isLoading);
 		}, [isLoading]);
 
+		useEffect(() => {
+			if (!initialValue) return;
+			editorRef.current?.update(() => {
+				const root = $getRoot();
+				root.clear();
+				const paragraph = $createParagraphNode();
+				paragraph.append($createTextNode(initialValue));
+				root.append(paragraph);
+			});
+		}, [initialValue]);
 		// Find and cache the ScrollArea viewport element
 		useEffect(() => {
 			if (contentEditableRef.current) {
