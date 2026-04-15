@@ -3,9 +3,9 @@
 	"settings": {
 		"title": "Paramètres de la salle",
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
-		"open": "Ouvrir les paramètres",
-		"close": "Fermer",
-		"edit": "Modifier les paramètres"
+		"open": "Ouvrir les paramètres de la salle",
+		"close": "Fermer les paramètres de la salle",
+		"edit": "Modifier les paramètres de la salle"
 	},
 	"form": {
 		"modelLabel": "Modèle",
@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "Entrez du texte",
 		"thinking": "Réflexion...",
-		"menuPrompt": "/ pour ouvrir le menu",
-		"openSettings": "Ouvrir les paramètres",
+		"menuPrompt": "Comment puis-je vous aider aujourd'hui ?",
+		"openSettings": "Ajouter des fichiers, des agents et plus encore",
 		"recordLabel": "Enregistrer le modèle",
 		"stopRecording": "Arrêter l'enregistrement",
 		"record": "Enregistrer",
@@ -68,15 +68,10 @@
 		"copyFailed": "Échec de la copie dans le presse-papiers"
 	},
 	"menuToolbox": {
-		"addToolbox": "Ajouter une boîte à outils",
-		"searchPlaceholder": "Rechercher des boîtes à outils",
-		"notFound": "Non trouvé",
-		"allTools": "Tous les outils"
+		"addToolbox": "Ajouter des boîtes à outils"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Ajouter des connaissances",
-		"searchPlaceholder": "Rechercher des connaissances",
-		"notFound": "Non trouvé"
+		"addKnowledge": "Ajouter des connaissances"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Sélectionner un agent",
@@ -84,7 +79,7 @@
 		"notFound": "Non trouvé"
 	},
 	"menuUpload": {
-		"attachDocument": "Joindre un document"
+		"attachDocument": "Ajouter des documents"
 	},
 	"menuFileExplorer": {
 		"name": "Explorateur de fichiers",
@@ -101,5 +96,10 @@
 		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents lors de la génération des réponses. Démarrez un nouveau chat pour de meilleurs résultats.",
 		"memoryUsedTitle": "Mémoire utilisée :",
 		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Rechercher des connaissances et des boîtes à outils",
+		"noResults": "Aucun élément correspondant trouvé",
+		"noItemsAvailable": "Aucune connaissance ou boîte à outils disponible"
 	}
 }
