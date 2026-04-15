@@ -8,7 +8,9 @@
 		"edit": "Edit Settings",
 		"compact": "Compact Conversation",
 		"compactSuccess": "Conversation compacted successfully",
-		"compactError": "Failed to compact conversation"
+		"compactError": "Failed to compact conversation",
+		"compactedAbove": "Conversation compacted",
+		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size"
 	},
 	"form": {
 		"modelLabel": "Model",

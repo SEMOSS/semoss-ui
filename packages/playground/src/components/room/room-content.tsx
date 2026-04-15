@@ -402,6 +402,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												}
 											/>
 										)}
+
+										{m.type === "OUTPUT" &&
+											m.conversationCompactedAbove && (
+												<div>TODO: compaction</div>
+											)}
 									</React.Fragment>
 								);
 							})}

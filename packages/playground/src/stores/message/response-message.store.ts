@@ -71,6 +71,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isPaused: boolean = false;
 
+	/**
+	 * Whether this conversation is compacted above this message
+	 */
+	conversationCompactedAbove: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
@@ -89,6 +94,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			setConversationCompactedAbove: action,
 			toggleIsPaused: action,
 		});
 
@@ -301,6 +307,13 @@ paramValues=[${JSON.stringify({
 				this.parts.push(part);
 			}
 		}
+	};
+
+	/*
+	 * Set whether this conversation is compacted above this message
+	 */
+	setConversationCompactedAbove = (compacted: boolean) => {
+		this.conversationCompactedAbove = compacted;
 	};
 
 	/**

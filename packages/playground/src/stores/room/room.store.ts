@@ -577,6 +577,9 @@ export class RoomStore {
 					const pseudoParent = messages[m.summaryLeafMessageId];
 					if (pseudoParent) {
 						pseudoParent.message.addChild(m.message);
+						(
+							pseudoParent.message as ResponseMessageStore
+						).setConversationCompactedAbove?.(true);
 					} else {
 						root.addChild(m.message);
 					}
@@ -1262,6 +1265,8 @@ export class RoomStore {
 		if (!response || response.errors.length || !output?.success)
 			throw new Error();
 
+		cur.setConversationCompactedAbove(true);
+
 		output.types.forEach((compactionMethod) => {
 			if (compactionMethod.type === "SUMMARY") {
 				const { inputMessage, responseMessage } = compactionMethod;
@@ -1273,7 +1278,7 @@ export class RoomStore {
 				inputStore.addChild(responseStore);
 				cur.addChild(inputStore);
 			} else if (compactionMethod.type === "TOOL_PRUNE") {
-				// Handle tool prune compaction
+				// setting conversationCompactedAbove to true is enough for the UI
 			}
 		});
 	};
