@@ -90,6 +90,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
+			conversationCompactedAbove: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
