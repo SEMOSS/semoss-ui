@@ -25,7 +25,7 @@ export const ENGINE_TYPES = [
 	"VECTOR",
 	"FUNCTION",
 	"STORAGE",
-	"PROJECT",
+	"GUARDRAIL",
 ];
 
 export type EngineOption = { value: string; label: string };

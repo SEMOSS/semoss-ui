@@ -29,7 +29,7 @@ const ENGINE_TYPES = [
 	"VECTOR",
 	"FUNCTION",
 	"STORAGE",
-	"PROJECT",
+	"GUARDRAIL",
 ];
 
 const INITIAL_ENGINE_DETAILS: EngineDetails = Object.fromEntries(
