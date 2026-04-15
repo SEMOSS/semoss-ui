@@ -5,7 +5,7 @@ import {
 	KeyboardArrowDown,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
 import {
