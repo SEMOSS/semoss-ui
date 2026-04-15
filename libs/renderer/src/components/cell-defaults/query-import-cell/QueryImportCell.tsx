@@ -8,7 +8,6 @@ import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Checkbox,
@@ -90,6 +89,10 @@ export interface QueryImportCellDef extends CellDef<"query-import"> {
 		currentOffset?: number;
 	};
 }
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 // TODO:: Refactor height to account for Layout
 export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(

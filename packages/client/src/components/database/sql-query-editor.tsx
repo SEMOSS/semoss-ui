@@ -1,7 +1,7 @@
 import { Check, Copy, RotateCcw } from "lucide-react";
 import type React from "react";
-import { Suspense, useState } from "react";
-import { MonacoEditor } from "@semoss/shared/monaco";
+import { lazy, Suspense, useState } from "react";
+// import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, cn, P } from "@semoss/ui/next";
 import { QueryActions } from "./query-actions";
 
@@ -14,6 +14,10 @@ interface SQLQueryEditorProps {
 	previewLoading: boolean;
 	onUserQueryInput?: (query: string) => void;
 }
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
 	query,

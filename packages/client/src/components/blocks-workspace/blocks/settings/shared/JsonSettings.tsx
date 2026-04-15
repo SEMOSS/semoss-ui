@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
 	BLOCK_TYPE_INPUT,
 	type Block,
@@ -12,7 +12,7 @@ import {
 	type QueryState,
 	useBlocks,
 } from "@semoss/renderer";
-import { MonacoEditor } from "@semoss/shared/monaco";
+// import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, Stack, styled, Typography } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
@@ -51,6 +51,10 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	callback?: () => void;
 }
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 export const JsonSettings = observer(
 	<D extends BlockDef = BlockDef>({

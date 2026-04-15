@@ -1,7 +1,7 @@
 import { LockIcon, RefreshCwIcon, UnlockIcon } from "lucide-react";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared/monaco";
+// import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Label,
@@ -31,6 +31,10 @@ interface UpdateSMSSFormProps {
 	id: string;
 }
 
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
+
 export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	const { adminMode } = useSettings();
 
@@ -53,6 +57,13 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					: `GetProjectSMSS(project=['${id}'])`
 				: "",
 	);
+
+	useEffect(() => {
+		import("@semoss/shared/monaco").then((mod) => {
+			// See exactly what is exported!
+			console.log("Export from @semoss/shared/monaco:", mod);
+		});
+	}, []);
 
 	useEffect(() => {
 		if (getSMSS.status !== "SUCCESS") {
@@ -190,24 +201,32 @@ export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 					</div>
 				)}
 				{getSMSS.status === "SUCCESS" && (
-					<MonacoEditor
-						width={"100%"}
-						height={editorHeight}
-						options={{
-							minimap: {
-								enabled: false,
-							},
-							scrollBeyondLastLine: false,
-							readOnly: readOnly,
-							contextmenu: false,
-						}}
-						value={value}
-						language={"plaintext"}
-						onChange={(newValue) => {
-							setValue(newValue);
-						}}
-						data-test-id="SMSS-editor"
-					/>
+					<Suspense
+						fallback={
+							<div className="p-4 text-muted-foreground">
+								Loading editor...
+							</div>
+						}
+					>
+						<MonacoEditor
+							width={"100%"}
+							height={editorHeight}
+							options={{
+								minimap: {
+									enabled: false,
+								},
+								scrollBeyondLastLine: false,
+								readOnly: readOnly,
+								contextmenu: false,
+							}}
+							value={value}
+							language={"plaintext"}
+							onChange={(newValue) => {
+								setValue(newValue);
+							}}
+							data-test-id="SMSS-editor"
+						/>
+					</Suspense>
 				)}
 			</Suspense>
 		</div>

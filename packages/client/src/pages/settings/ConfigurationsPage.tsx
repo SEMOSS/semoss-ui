@@ -2,6 +2,7 @@
 import { ChevronDown } from "lucide-react";
 import type React from "react";
 import {
+	lazy,
 	Suspense,
 	type SyntheticEvent,
 	useEffect,
@@ -10,7 +11,7 @@ import {
 	useState,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { MonacoEditor } from "@semoss/shared/monaco";
+// import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Accordion,
 	Box,
@@ -151,6 +152,10 @@ const reducer = (state, action) => {
 	}
 	return state;
 };
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 export const ConfigurationsPage = () => {
 	const { adminMode } = useSettings();

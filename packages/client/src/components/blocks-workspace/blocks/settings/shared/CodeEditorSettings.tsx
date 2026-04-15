@@ -2,7 +2,7 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
 	BLOCK_TYPE_INPUT,
 	type Block,
@@ -15,7 +15,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel, usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared/monaco";
+// import { MonacoEditor } from "@semoss/shared/monaco";
 import { useNotification } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
@@ -30,6 +30,10 @@ interface CodeEditorSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	path: Paths<Block<D>["data"], 4>;
 }
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 export const CodeEditorSettings = observer(
 	<D extends BlockDef = BlockDef>({

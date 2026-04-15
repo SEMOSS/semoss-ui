@@ -1,5 +1,5 @@
 // import { loader } from "@monaco-editor/react";
-import { lazy } from "react";
+// import { lazy } from "react";
 
 async function getMonacoAndLoader() {
 	const [monaco, monacoReact] = await Promise.all([
@@ -63,12 +63,10 @@ getMonacoAndLoader().then(({ monaco, loader }) => {
 	loader.config({ monaco });
 });
 
-export const MonacoEditor = lazy(() =>
-	import("@monaco-editor/react").then((mod) => ({ default: mod.Editor })),
-);
+export const MonacoEditor = import("@monaco-editor/react").then((mod) => ({
+	default: mod.Editor,
+}));
 
-export const MonacoDiffEditor = lazy(() =>
-	import("@monaco-editor/react").then((module) => ({
-		default: module.DiffEditor,
-	})),
+export const MonacoDiffEditor = import("@monaco-editor/react").then(
+	(module) => ({ default: module.DiffEditor }),
 );

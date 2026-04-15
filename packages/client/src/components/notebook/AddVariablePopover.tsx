@@ -2,7 +2,7 @@ import { Close, MoreSharp, WarningRounded } from "@mui/icons-material";
 import { JsonViewer } from "@textea/json-viewer";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
 	ActionMessages,
 	BLOCK_TYPE_INPUT,
@@ -16,7 +16,7 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
-import { MonacoEditor } from "@semoss/shared/monaco";
+// import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Alert,
 	Box,
@@ -233,6 +233,11 @@ interface AddVariablePopoverProps {
 		}[];
 	};
 }
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
+
 export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	const { open, anchorEl, onClose, variable, engines } = props;
 	const { state } = useBlocks();

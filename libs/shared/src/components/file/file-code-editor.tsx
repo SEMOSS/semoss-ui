@@ -6,9 +6,9 @@ import {
 	RefreshCwIcon,
 	SaveIcon,
 } from "lucide-react";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared/monaco";
+// import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Muted,
@@ -33,6 +33,10 @@ function useAsyncImport<T>(importer: () => Promise<T>): T | undefined {
 	}, [importer]);
 	return mod;
 }
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 interface FileCodeEditorProps {
 	/** Mode of file editor */

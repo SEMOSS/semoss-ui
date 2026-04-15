@@ -14,7 +14,6 @@ import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import { usePixel } from "@semoss/sdk/react";
-import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Checkbox,
@@ -197,6 +196,10 @@ export interface DataImportCellDef extends CellDef<"data-import"> {
 		// summaries: FilterObject[];
 	};
 }
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 	(props) => {
