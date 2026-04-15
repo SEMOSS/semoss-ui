@@ -619,7 +619,7 @@ const HtmlPreviewBlock: React.FC<HtmlPreviewBlockProps> = ({
 												// maxHeight caps tall responses at 112.5dvh; the browser then
 												// scrolls the iframe's own document for the overflow.
 												height: `${contentHeight}px`,
-												maxHeight: "112.5dvh",
+												maxHeight: "62.5dvh",
 												minHeight: "80px",
 											}
 										: undefined
