@@ -1,9 +1,7 @@
-import { Chip } from "@mui/material";
-import { darken } from "@mui/material/styles";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { type CSSProperties, useEffect } from "react";
-import { Avatar } from "@semoss/ui";
+
 import { iconMap } from "../../../constants";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
@@ -44,119 +42,101 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
-	const getContrastColor = (hexColor: string) => {
-		hexColor = hexColor.replace("#", "");
+	const getContrastColor = (colorStr: string) => {
+		let r: number, g: number, b: number;
 
-		// Parse hex values to RGB
-		const r = parseInt(hexColor.substring(0, 2), 16);
-		const g = parseInt(hexColor.substring(2, 4), 16);
-		const b = parseInt(hexColor.substring(4, 6), 16);
+		const rgbMatch = colorStr.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+		if (rgbMatch) {
+			r = parseInt(rgbMatch[1], 10);
+			g = parseInt(rgbMatch[2], 10);
+			b = parseInt(rgbMatch[3], 10);
+		} else {
+			const hex = colorStr.replace("#", "");
+			r = parseInt(hex.substring(0, 2), 16);
+			g = parseInt(hex.substring(2, 4), 16);
+			b = parseInt(hex.substring(4, 6), 16);
+		}
 
 		const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-
 		return brightness >= 128 ? "#000000" : "#FFFFFF";
 	};
+
+	const color = data.style.color || "rgb(200, 200, 200)";
+	const sizeClass = data.size === "small" ? "text-xs px-2 py-1" : "text-sm px-3 py-1.5";
+	const isOutlined = data.variant === "outlined";
+	const isFilled = !isOutlined;
+
+	const chipStyle: React.CSSProperties = {
+		color: isFilled ? getContrastColor(color) : color,
+		backgroundColor: isFilled ? color : "transparent",
+		border: isOutlined ? `1px solid ${color}` : "none",
+	};
+
+	const chipClasses = `inline-flex items-center gap-2 rounded-full font-medium transition-colors ${sizeClass} ${
+		data.disabled ? "opacity-50 cursor-not-allowed" : "cursor-default"
+	}`;
 
 	const displayChip = (key): React.ReactNode => {
 		const avatar = data?.avatar;
 		const link = data?.link || null;
-		const color = data.style.color || "Default";
-		const avatarColor = data.style.color || "rgb(156, 153, 153)";
 		const Icon = iconMap[data.icon] || iconMap["Face"];
 
-		const chipProps = {
-			label: data.label ?? data.type ?? "Chip",
-			size: data.size,
-			variant: data.variant,
-			clickable: data.clickable,
-			sx: {
-				backgroundColor: data.variant !== "outlined" && color,
-				color:
-					data.variant !== "outlined"
-						? data.style.color
-							? getContrastColor(data.style.color)
-							: "black"
-						: color,
-				border:
-					data.variant === "outlined" &&
-					data.style.color &&
-					`solid ${color}`,
-			},
-		};
+		const chipContent = (
+			<div style={chipStyle} className={chipClasses}>
+				{key === "Avatar" && avatar && (
+					<span
+						style={{
+							backgroundColor: isOutlined
+								? color
+								: "transparent",
+							color: isFilled
+								? getContrastColor(color)
+								: color,
+							width: data.size === "small" ? "16px" : "20px",
+							height: data.size === "small" ? "16px" : "20px",
+							borderRadius: "50%",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							fontSize: "0.75rem",
+							overflow: "hidden",
+						}}
+					>
+						{avatar}
+					</span>
+				)}
+				{key === "Icon" && Icon && (
+					<Icon
+						style={{
+							color: "#6b7280",
+							fontSize: data.size === "small" ? 14 : 18,
+						}}
+					/>
+				)}
+				<span>{data.label ?? data.type ?? "Chip"}</span>
+			</div>
+		);
 
-		switch (key) {
-			case "Chip":
-				return <Chip {...chipProps} />;
-			case "Avatar":
-				return (
-					<Chip
-						{...chipProps}
-						avatar={
-							<Avatar
-								sx={{
-									"&&": {
-										backgroundColor:
-											data.style.color &&
-											data.variant === "outlined"
-												? darken(avatarColor, 0.4)
-												: "Default",
-										color:
-											data.variant !== "outlined" &&
-											getContrastColor(color),
-									},
-								}}
-							>
-								{avatar}
-							</Avatar>
-						}
-					/>
-				);
-			case "Icon":
-				return (
-					<Chip
-						{...chipProps}
-						icon={
-							<Icon
-								sx={{
-									"&&": {
-										backgroundColor:
-											data.style.color &&
-											data.variant === "outlined"
-												? darken(avatarColor, 0.4)
-												: "Default",
-										color:
-											data.variant !== "outlined" &&
-											getContrastColor(color),
-									},
-								}}
-							/>
-						}
-					/>
-				);
-			case "Link":
-				return (
-					<a href={link} target="_blank" rel="noreferrer">
-						<Chip {...chipProps} />
-					</a>
-				);
-			default:
-				return <Chip {...chipProps} />;
+		if (key === "Link" && link) {
+			return (
+				<a
+					href={link}
+					target="_blank"
+					rel="noreferrer"
+					className="inline-block"
+				>
+					{chipContent}
+				</a>
+			);
 		}
+
+		return chipContent;
 	};
 
 	return (
 		<div
 			{...attrs}
-			style={{
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				height: "fit-content",
-				width: "fit-content",
-			}}
-			// onClick={() => {
-			//     listeners.onClick();
-			// }}
+			className="flex items-center justify-center h-fit w-fit"
 		>
 			{displayChip(data.type)}
 		</div>
