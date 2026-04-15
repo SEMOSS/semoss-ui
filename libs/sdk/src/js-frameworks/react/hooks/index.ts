@@ -11,3 +11,4 @@ export {
 } from "./useDebouncedValue";
 export { useInsight } from "./useInsight";
 export { usePixel } from "./usePixel";
+export { useWebSocket } from "./useWebSocket";
