@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React, { type CSSProperties, useEffect } from "react";
-import { Skeleton } from "@semoss/ui";
+import { Skeleton } from "@semoss/ui/next";
 import { useBlock, useBlocks, useTypeWriter } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
@@ -71,7 +71,7 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 				}}
 				{...attrs}
 			>
-				<Skeleton width={"auto"} height={"auto"} />
+				<Skeleton className="w-full h-32 rounded-md" />
 			</div>
 		);
 	}

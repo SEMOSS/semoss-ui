@@ -1,6 +1,5 @@
 // QueriesLogBlock.tsx
 
-import { Stack, Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
 import { useBlock, useBlocks } from "../../../hooks";
@@ -51,17 +50,16 @@ export const LogsBlock: BlockComponent = observer(({ id }) => {
 	}
 
 	return (
-		<Stack
+		<div
 			style={{ display: "flex", ...data.style }}
 			{...attrs}
-			direction="column"
-			spacing={0}
+			className="flex flex-col"
 		>
 			{blockContents.map((message, index) => (
-				<Typography key={index} variant="caption">
+				<span key={index} className="text-xs text-muted-foreground">
 					{message}
-				</Typography>
+				</span>
 			))}
-		</Stack>
+		</div>
 	);
 });

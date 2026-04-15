@@ -1,17 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledLabel = styled("span")(({ theme }) => ({
-	marginBottom: theme.spacing(0.5),
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	justifyContent: "center",
-	gap: theme.spacing(0.5),
-}));
 
 export interface AudioBlockDef extends BlockDef<"audio-player"> {
 	widget: "audio-player";
@@ -31,10 +21,6 @@ export interface AudioBlockDef extends BlockDef<"audio-player"> {
 	};
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: theme.spacing(0.5),
-}));
-
 export const AudioBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, listeners } = useBlock<AudioBlockDef>(id);
 
@@ -45,8 +31,10 @@ export const AudioBlock: BlockComponent = observer(({ id }) => {
 	}, []);
 
 	return (
-		<StyledContainer {...attrs}>
-			<StyledLabel>{data.label}</StyledLabel>
+		<div {...attrs} className="p-1">
+			<span className="mb-1 flex flex-col items-start justify-center gap-1">
+				{data.label}
+			</span>
 			<audio
 				controls={data.controls}
 				autoPlay={data.autoplay}
@@ -55,6 +43,6 @@ export const AudioBlock: BlockComponent = observer(({ id }) => {
 			>
 				<track kind="captions" />
 			</audio>
-		</StyledContainer>
+		</div>
 	);
 });

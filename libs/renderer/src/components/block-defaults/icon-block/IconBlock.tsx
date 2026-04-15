@@ -1,6 +1,6 @@
-import { Badge } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import type { CSSProperties } from "react";
+import { Badge } from "@semoss/ui/next";
 import { iconMap } from "../../../constants";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
@@ -32,20 +32,28 @@ export const IconBlock: BlockComponent = observer(({ id }) => {
 
 	const displayIcon = (key: string) => {
 		const Icon = iconMap[key] || iconMap["Icon"];
-		const color = data.style.color || "primary";
-		const width = data.style.width ?? null;
-		const maxWidth = data.style.maxWidth ?? null;
-		const height = data.style.height ?? null;
-		const maxHeight = data.style.maxHeight ?? null;
+		const color = data.style.color || "currentColor";
+		const width = data.style.width ?? undefined;
+		const maxWidth = data.style.maxWidth ?? undefined;
+		const height = data.style.height ?? undefined;
+		const maxHeight = data.style.maxHeight ?? undefined;
 		const iconElement = (
-			<Icon sx={{ width, maxWidth, height, maxHeight, color }} />
+			<Icon
+				style={{ width, maxWidth, height, maxHeight, color }}
+			/>
 		);
 
 		if (data.showBadge && data.badgeContent > 0) {
 			return (
-				<Badge badgeContent={data.badgeContent} color={data.color}>
+				<div className="relative inline-flex">
 					{iconElement}
-				</Badge>
+					<Badge
+						variant={data.color === "error" ? "destructive" : "default"}
+						className="absolute -top-2 -right-2 min-w-[18px] h-[18px] rounded-full text-[10px] flex items-center justify-center"
+					>
+						{data.badgeContent}
+					</Badge>
+				</div>
 			);
 		}
 
@@ -55,14 +63,7 @@ export const IconBlock: BlockComponent = observer(({ id }) => {
 	return (
 		<div
 			{...attrs}
-			style={{
-				display: "flex",
-				justifyContent: "center",
-				alignItems: "center",
-				height: "fit-content",
-				width: "fit-content",
-				paddingInline: "10px",
-			}}
+			className="flex items-center justify-center h-fit w-fit px-2.5"
 		>
 			{displayIcon(data.icon)}
 		</div>

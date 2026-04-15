@@ -1,15 +1,8 @@
-import { Divider, styled } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Separator } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: "4px",
-	display: "flex",
-	flexDirection: "column",
-	gap: "8px",
-}));
 
 export interface DividerBlockDef extends BlockDef<"divider"> {
 	widget: "divider";
@@ -46,35 +39,62 @@ export const DividerBlock: BlockComponent = observer(({ id }) => {
 		// Determine if we should show text
 		const hasText = data.showText && data.text?.trim().length > 0;
 
+		// Calculate margin for inset/middle variants
+		const insetClass =
+			data.variant === "inset"
+				? "ml-16"
+				: data.variant === "middle"
+					? "mx-16"
+					: "";
+
+		const opacity = data.light ? "opacity-50" : "";
+		const minHeight =
+			data.orientation === "vertical" ? { minHeight: "50px" } : {};
+
 		return (
-			<StyledContainer
+			<div
 				{...attrs}
-				style={data.style}
-				sx={{
-					minHeight:
-						data.orientation === "vertical" ? "50px" : "auto",
+				style={{
+					padding: "4px",
+					display: "flex",
+					flexDirection: "column",
+					gap: "8px",
+					...minHeight,
+					...data.style,
 				}}
 			>
 				{hasText ? (
-					<Divider
-						variant={data.variant}
-						orientation={data.orientation}
-						textAlign={data.textAlign}
-						flexItem={data.flexItem}
-						light={data.light}
+					<div
+						className={`flex items-center gap-2 ${data.orientation === "vertical" ? "flex-col" : ""}`}
 					>
-						{data.text}
-					</Divider>
+						{data.textAlign !== "left" && (
+							<Separator
+								orientation={data.orientation}
+								className={`flex-1 ${opacity}`}
+							/>
+						)}
+						<span
+							className="text-sm text-muted-foreground whitespace-nowrap flex-shrink-0"
+							style={{
+								textAlign: data.textAlign as React.CSSProperties["textAlign"],
+							}}
+						>
+							{data.text}
+						</span>
+						{data.textAlign !== "right" && (
+							<Separator
+								orientation={data.orientation}
+								className={`flex-1 ${opacity}`}
+							/>
+						)}
+					</div>
 				) : (
-					<Divider
-						variant={data.variant}
+					<Separator
 						orientation={data.orientation}
-						textAlign={data.textAlign}
-						flexItem={data.flexItem}
-						light={data.light}
+						className={`${insetClass} ${opacity}`}
 					/>
 				)}
-			</StyledContainer>
+			</div>
 		);
 	} catch (error) {
 		console.error("Error in DividerBlock:", error);

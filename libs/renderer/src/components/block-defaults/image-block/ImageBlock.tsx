@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
-import { Stack, styled, Tooltip, Typography } from "@semoss/ui";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@semoss/ui/next";
 import ImageSkeleton from "../../../assets/img/Image-placeholder.svg";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
@@ -49,35 +49,19 @@ function getMimeType(fileName: string) {
 	}
 }
 
-const StyledImage = styled("img")(() => ({
-	width: 50,
-	height: 50,
-	objectFit: "contain",
-}));
-
-const AddImageText = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-	cursor: "pointer",
-}));
-
-const StyledPlaceholder = styled(Stack)(({ theme }) => ({
-	height: "100%",
-	width: "100%",
-	alignItems: "center",
-	justifyContent: "center",
-	gap: theme.spacing(1),
-	flexDirection: "column",
-}));
-
 const LoadingIndicator = () => (
-	<Typography variant="body2">Loading...</Typography>
+	<span className="text-sm">Loading...</span>
 );
 
 const Placeholder = ({ title }: { title?: string }) => (
-	<StyledPlaceholder>
-		<StyledImage src={ImageSkeleton as string} alt={title || "Image"} />
-		<AddImageText variant="body2">Add image</AddImageText>
-	</StyledPlaceholder>
+	<div className="flex flex-col items-center justify-center gap-1 h-full w-full">
+		<img
+			src={ImageSkeleton as string}
+			alt={title || "Image"}
+			className="w-[50px] h-[50px] object-contain"
+		/>
+		<span className="text-sm text-secondary-foreground cursor-pointer">Add image</span>
+	</div>
 );
 
 const ErrorDisplay = ({
@@ -90,11 +74,15 @@ const ErrorDisplay = ({
 	title?: string;
 }) =>
 	unavailable === "default" ? (
-		<StyledImage src={ImageSkeleton as string} alt={title || "Image"} />
+		<img
+			src={ImageSkeleton as string}
+			alt={title || "Image"}
+			className="w-[50px] h-[50px] object-contain"
+		/>
 	) : (
-		<Typography variant="body2">
+		<span className="text-sm">
 			{placeholderText || "Image not available"}
-		</Typography>
+		</span>
 	);
 
 export const ImageBlock: BlockComponent = observer(({ id }) => {
@@ -186,21 +174,26 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
 	const { isLoading, hasError } = status;
 
 	return (
-		<Tooltip title={title}>
-			<div style={style} {...attrs}>
-				{isLoading && <LoadingIndicator />}
-				{!style.backgroundImage && !src && (
-					<Placeholder title={title} />
-				)}
-				{src && hasError && (
-					<ErrorDisplay
-						unavailable={unavailable}
-						placeholderText={placeholderText}
-						title={title}
-					/>
-				)}
-			</div>
-		</Tooltip>
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<div style={style} {...attrs}>
+						{isLoading && <LoadingIndicator />}
+						{!style.backgroundImage && !src && (
+							<Placeholder title={title} />
+						)}
+						{src && hasError && (
+							<ErrorDisplay
+								unavailable={unavailable}
+								placeholderText={placeholderText}
+								title={title}
+							/>
+						)}
+					</div>
+				</TooltipTrigger>
+				{title && <TooltipContent>{title}</TooltipContent>}
+			</Tooltip>
+		</TooltipProvider>
 	);
 });
 

@@ -1,8 +1,8 @@
-import { Visibility } from "@mui/icons-material";
+import { Eye } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { type CSSProperties, useCallback, useEffect, useState } from "react";
-import { Button, Tooltip } from "@semoss/ui";
+import { Button, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@semoss/ui/next";
 import { useBlock, useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -196,9 +196,14 @@ export const FormBlock: BlockComponent = observer(({ id }) => {
 			{...attrs}
 		>
 			{hasRequiredError && (
-				<Tooltip title="Please fill all the required fields">
-					<Visibility color="error" fontSize="small" />
-				</Tooltip>
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Eye className="size-4 text-destructive" />
+						</TooltipTrigger>
+						<TooltipContent>Please fill all the required fields</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 			)}
 
 			{block?.data?.type === "manual" ? (

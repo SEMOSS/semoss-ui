@@ -1,46 +1,70 @@
-import {
-	Box,
-	CircularProgress,
-	LinearProgress,
-	styled,
-	Typography,
-} from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { Progress } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
-const StyledCircularBox = styled(Box)(() => ({
-	position: "relative",
-	display: "inline-flex",
-}));
+// Custom circular progress component
+const CircularProgressIndicator = ({ 
+	value = 0, 
+	size = "40", 
+	includeLabel = false 
+}: { value: number; size: string; includeLabel: boolean }) => {
+	const sizeNum = parseInt(size, 10) || 120;
+	const strokeWidth = Math.max(4, sizeNum * 0.08);
+	const radius = (sizeNum - strokeWidth) / 2;
+	const circumference = 2 * Math.PI * radius;
+	const progress = Math.max(0, Math.min(100, value));
+	const offset = circumference - (progress / 100) * circumference;
+	const center = sizeNum / 2;
 
-const StyledLinearBox = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledCircularProgressBox = styled(Box)(() => ({
-	top: 0,
-	left: 0,
-	bottom: 0,
-	right: 0,
-	position: "absolute",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-}));
-
-const StyledLinearProgressBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "includeLabel",
-})<{ includeLabel: boolean }>(({ theme, includeLabel }) => ({
-	width: "100%",
-	marginRight: theme.spacing(includeLabel ? 1 : 0),
-}));
-
-const StyledLabelBox = styled(Box)(({ theme }) => ({
-	minWidth: theme.spacing(4.5),
-}));
+	return (
+		<div style={{
+			position: "relative",
+			display: "inline-flex",
+			alignItems: "center",
+			justifyContent: "center",
+			width: sizeNum,
+			height: sizeNum,
+		}}>
+			<svg
+				width={sizeNum}
+				height={sizeNum}
+				viewBox={`0 0 ${sizeNum} ${sizeNum}`}
+				style={{ position: "absolute", transform: "rotate(-90deg)" }}
+			>
+				<circle
+					cx={center}
+					cy={center}
+					r={radius}
+					fill="none"
+					stroke="#e0e0e0"
+					strokeWidth={strokeWidth}
+				/>
+				<circle
+					cx={center}
+					cy={center}
+					r={radius}
+					fill="none"
+					stroke="#2563eb"
+					strokeWidth={strokeWidth}
+					strokeDasharray={circumference}
+					strokeDashoffset={offset}
+					strokeLinecap="round"
+				/>
+			</svg>
+			{includeLabel && (
+				<span style={{
+					fontSize: Math.max(12, sizeNum * 0.18),
+					fontWeight: 500,
+					color: "#6b7280",
+				}}>
+					{`${Math.round(progress)}%`}
+				</span>
+			)}
+		</div>
+	);
+};
 
 export interface ProgressBlockDef extends BlockDef<"progress"> {
 	widget: "progress";
@@ -69,45 +93,30 @@ export const ProgressBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
+	const progress = Math.max(0, Math.min(100, data.value ?? 0));
+
 	if (data.type === "circular") {
 		return (
-			<StyledCircularBox {...attrs}>
-				<CircularProgress
-					variant="determinate"
-					value={data.value ?? 0}
-					size={data.size ?? null}
+			<div {...attrs} style={{ display: "inline-flex" }}>
+				<CircularProgressIndicator 
+					value={progress} 
+					size={data.size ?? "120"}
+					includeLabel={data.includeLabel}
 				/>
-				{data.includeLabel && (
-					<StyledCircularProgressBox>
-						<Typography
-							variant="caption"
-							component="div"
-							color="text.secondary"
-						>
-							{`${Math.round(data.value)}%`}
-						</Typography>
-					</StyledCircularProgressBox>
-				)}
-			</StyledCircularBox>
-		);
-	} else {
-		return (
-			<StyledLinearBox sx={{ width: data.size }} {...attrs}>
-				<StyledLinearProgressBox includeLabel={data.includeLabel}>
-					<LinearProgress
-						variant="determinate"
-						value={data.value ?? 0}
-					/>
-				</StyledLinearProgressBox>
-				{data.includeLabel && (
-					<StyledLabelBox sx={{ minWidth: 35 }}>
-						<Typography
-							variant="body2"
-							color="text.secondary"
-						>{`${Math.round(data.value)}%`}</Typography>
-					</StyledLabelBox>
-				)}
-			</StyledLinearBox>
+			</div>
 		);
 	}
+
+	return (
+		<div {...attrs} style={{ width: data.size }} className="flex items-center gap-2">
+			<div className="flex-1">
+				<Progress value={progress} />
+			</div>
+			{data.includeLabel && (
+				<div style={{ minWidth: "35px" }} className="text-sm text-muted-foreground">
+					{`${Math.round(progress)}%`}
+				</div>
+			)}
+		</div>
+	);
 });

@@ -1,14 +1,9 @@
-import { styled, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { debounced } from "@semoss/sdk/react";
+import { ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledContainer = styled("div")(() => ({
-	padding: "4px",
-	width: "fit-content",
-}));
 
 export interface ToggleButtonBlockDef extends BlockDef<"toggle-button"> {
 	widget: "toggle-button";
@@ -34,6 +29,15 @@ export interface ToggleButtonBlockDef extends BlockDef<"toggle-button"> {
 	};
 }
 
+const mapSize = (size: "small" | "medium" | "large") => {
+	const sizeMap = {
+		small: "sm",
+		medium: "default",
+		large: "lg",
+	};
+	return sizeMap[size] || "default";
+};
+
 export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } =
 		useBlock<ToggleButtonBlockDef>(id);
@@ -48,44 +52,69 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
 		listeners.onChange();
 	}, 200);
 
+	const handleChange = (newValue: string | string[]) => {
+		if (data.mandatory) {
+			if (Array.isArray(newValue)) {
+				if (newValue.length) {
+					setData("value", newValue);
+					debouncedCallback();
+				}
+			} else {
+				if (newValue !== null) {
+					setData("value", newValue);
+					debouncedCallback();
+				}
+			}
+		} else {
+			setData("value", newValue);
+			debouncedCallback();
+		}
+	};
+
+	const items = Array.from(data.options, (option, index) => (
+		<ToggleGroupItem
+			key={`${id}-${index}`}
+			value={option.value}
+		>
+			{option.display}
+		</ToggleGroupItem>
+	));
+
 	return (
-		<StyledContainer {...attrs}>
-			<ToggleButtonGroup
-				disabled={data.disabled}
-				size={data.size}
-				color={data.color}
-				onChange={(_, newValue: string | string[] | null) => {
-					if (data.mandatory) {
-						if (Array.isArray(newValue)) {
-							if (newValue.length) {
-								setData("value", newValue);
-								debouncedCallback();
-							}
-						} else {
-							if (newValue !== null) {
-								setData("value", newValue);
-								debouncedCallback();
-							}
-						}
-					} else {
-						setData("value", newValue);
-						debouncedCallback();
+		<div {...attrs} className="w-fit p-1">
+			{data.multiple ? (
+				<ToggleGroup
+					type="multiple"
+					variant="outline"
+					value={
+						Array.isArray(data.value)
+							? data.value
+							: data.value
+								? [data.value]
+								: []
 					}
-				}}
-				value={data.value}
-				exclusive={!data.multiple}
-			>
-				{Array.from(data.options, (option, index) => {
-					return (
-						<ToggleButton
-							key={`${id}-${index}`}
-							value={option.value}
-						>
-							{option.display}
-						</ToggleButton>
-					);
-				})}
-			</ToggleButtonGroup>
-		</StyledContainer>
+					onValueChange={(newValue: string[]) => handleChange(newValue)}
+					disabled={data.disabled}
+					size={mapSize(data.size)}
+				>
+					{items}
+				</ToggleGroup>
+			) : (
+				<ToggleGroup
+					type="single"
+					variant="outline"
+					value={
+						typeof data.value === "string"
+							? data.value
+							: ""
+					}
+					onValueChange={(newValue: string) => handleChange(newValue)}
+					disabled={data.disabled}
+					size={mapSize(data.size)}
+				>
+					{items}
+				</ToggleGroup>
+			)}
+		</div>
 	);
 });

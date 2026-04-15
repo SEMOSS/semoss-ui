@@ -1,19 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, useEffect } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { debounced } from "@semoss/sdk/react";
-import { Box, Slider, styled } from "@semoss/ui";
+import { Slider } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledSliderBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "sliderColor",
-})<{ sliderColor: string }>(({ theme, sliderColor }) => ({
-	display: "flex",
-	alignItems: "center",
-	"&.MuiSlider-root": {
-		color: sliderColor,
-	},
-}));
 
 export interface SliderBlockDef extends BlockDef<"slider"> {
 	widget: "slider";
@@ -41,6 +31,8 @@ export interface SliderBlockDef extends BlockDef<"slider"> {
 
 export const SliderBlock: BlockComponent = observer(({ id }) => {
 	const { data, attrs, setData, listeners } = useBlock<SliderBlockDef>(id);
+	const [showLabel, setShowLabel] = useState(false);
+	const [dragging, setDragging] = useState(false);
 
 	useEffect(() => {
 		if (listeners.preProcess) {
@@ -52,36 +44,66 @@ export const SliderBlock: BlockComponent = observer(({ id }) => {
 		listeners.onChange();
 	}, 200);
 
-	const formatMarks = (marks: Array<{ display: string; value: number }>) => {
-		return marks.map(({ display, value }) => ({
-			label: display,
-			value: Number(value) || value,
-		}));
-	};
-
-	const hasMarks = data.type === "discrete" && data.marks.length > 0;
-	const marksValue = hasMarks ? formatMarks(data.marks) : true;
+	const min = Number(data.min);
+	const max = Number(data.max);
+	const val = Number(data.value) ?? 0;
+	const percent = max > min ? ((val - min) / (max - min)) * 100 : 0;
 
 	return (
-		<StyledSliderBox
-			sx={{ width: data.size }}
+		<div
 			{...attrs}
-			sliderColor={data.style.color}
+			style={{
+				display: "flex",
+				alignItems: "center",
+				width: data.size,
+				...data.style,
+			}}
 		>
-			<Slider
-				sx={{ ...data.style }}
-				value={Number(data.value) ?? 0}
-				marks={data.type === "continuous" ? false : marksValue}
-				step={Number(data.steps) > 0 ? Number(data.steps) : 1}
-				min={Number(data.min)}
-				max={Number(data.max)}
-				onChange={(e) => {
-					// update the value
-					setData("value", e.target.value);
-					debouncedCallback();
-				}}
-				valueLabelDisplay="auto"
-			/>
-		</StyledSliderBox>
+			<div
+				style={{ position: "relative", width: "100%", paddingTop: "28px" }}
+				onMouseEnter={() => setShowLabel(true)}
+				onMouseLeave={() => { if (!dragging) setShowLabel(false); }}
+			>
+				{showLabel && (
+					<div
+						style={{
+							position: "absolute",
+							top: 0,
+							left: `${percent}%`,
+							transform: "translateX(-50%)",
+							backgroundColor: "#1976d2",
+							color: "#fff",
+							fontSize: "11px",
+							borderRadius: "4px",
+							padding: "2px 6px",
+							pointerEvents: "none",
+							zIndex: 10,
+							whiteSpace: "nowrap",
+						}}
+					>
+						{val}
+					</div>
+				)}
+				<style>{`
+					#slider-wrapper-${id} [data-slot="slider-thumb"] {
+						cursor: pointer !important;
+					}
+				`}</style>
+				<div id={`slider-wrapper-${id}`}>
+					<Slider
+						value={[val]}
+						min={min}
+						max={max}
+						step={Number(data.steps) > 0 ? Number(data.steps) : 1}
+						onValueChange={(values) => {
+							setData("value", values[0]);
+							debouncedCallback();
+						}}
+						onPointerDown={() => { setDragging(true); setShowLabel(true); }}
+						onPointerUp={() => { setDragging(false); }}
+					/>
+				</div>
+			</div>
+		</div>
 	);
 });

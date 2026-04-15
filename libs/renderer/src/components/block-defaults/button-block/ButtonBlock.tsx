@@ -1,30 +1,8 @@
-import { Button, CircularProgress, styled } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Button, Spinner } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledButton = styled(Button, {
-	shouldForwardProp: (prop) => prop !== "loading",
-})<{ loading?: boolean }>(({ loading }) => ({
-	"& .MuiButton-endIcon svg": {
-		visibility: loading === true ? "hidden" : "visible",
-	},
-	"& .MuiButton-startIcon svg": {
-		visibility: loading === true ? "hidden" : "visible",
-	},
-}));
-
-const StyledLabel = styled("span", {
-	shouldForwardProp: (prop) => prop !== "loading",
-})<{ loading?: boolean }>(({ loading }) => ({
-	visibility: loading ? "hidden" : "visible",
-}));
-
-const StyledCircularProgress = styled(CircularProgress)({
-	zIndex: 10,
-	position: "absolute",
-});
 
 export interface ButtonBlockDef extends BlockDef<"button"> {
 	widget: "button";
@@ -50,9 +28,19 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
 	};
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: theme.spacing(0.5),
-}));
+const mapVariant = (
+	variant: "contained" | "outlined" | "text",
+): "default" | "outline" | "ghost" => {
+	const variantMap: Record<
+		"contained" | "outlined" | "text",
+		"default" | "outline" | "ghost"
+	> = {
+		contained: "default",
+		outlined: "outline",
+		text: "ghost",
+	};
+	return variantMap[variant] || "default";
+};
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
@@ -62,27 +50,31 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 			listeners.preProcess();
 		}
 	}, []);
+
 	return (
-		<StyledContainer {...attrs}>
-			<StyledButton
-				size="medium"
-				color={data.color}
-				variant={data.variant}
-				loading={data?.loading}
+		<div {...attrs} style={{ padding: "0.25rem", ...data.style }}>
+			<Button
+				variant={mapVariant(data.variant)}
 				disabled={data?.disabled || data?.loading}
 				type={data?.type}
-				sx={{
-					...data.style,
-				}}
+				className="relative"
 				onClick={() => {
 					listeners.onClick();
 				}}
 			>
-				<StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
-				{data.loading ? (
-					<StyledCircularProgress color="inherit" size="2em" />
-				) : null}
-			</StyledButton>
-		</StyledContainer>
+				<span
+					style={{
+						visibility: data?.loading ? "hidden" : "visible",
+					}}
+				>
+					{data.label}
+				</span>
+				{data.loading && (
+					<span className="absolute inset-0 flex items-center justify-center">
+						<Spinner className="size-4" />
+					</span>
+				)}
+			</Button>
+		</div>
 	);
 });

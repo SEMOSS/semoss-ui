@@ -1,38 +1,10 @@
-import { Box } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useState } from "react";
 import { debounced } from "@semoss/sdk/react";
-import { Tabs } from "@semoss/ui";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
-
-// Custom TabPanel component
-interface TabPanelProps {
-	children?: React.ReactNode;
-	value: number;
-	index: number;
-}
-
-function TabPanel(props: TabPanelProps) {
-	const { children, value, index, ...other } = props;
-
-	return (
-		<div
-			role="tabpanel"
-			hidden={value !== index}
-			id={`simple-tabpanel-${index}`}
-			aria-labelledby={`simple-tab-${index}`}
-			{...other}
-		>
-			{value === index && (
-				<Box>
-					<div>{children}</div>
-				</Box>
-			)}
-		</div>
-	);
-}
 
 export interface TabBlockDef extends BlockDef<"tab"> {
 	widget: "tab";
@@ -63,11 +35,8 @@ export interface TabBlockDef extends BlockDef<"tab"> {
 
 export const TabBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, slots, listeners } = useBlock<TabBlockDef>(id);
-	const [activeTab, setActiveTab] = useState(data.activeTab || 1);
+	const [activeTab, setActiveTab] = useState(String(data.activeTab || 0));
 
-	/**
-	 * Process data needed for
-	 */
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -79,56 +48,49 @@ export const TabBlock: BlockComponent = observer(({ id }) => {
 	}, 10);
 
 	useEffect(() => {
-		setActiveTab(data.activeTab);
+		setActiveTab(String(data.activeTab || 0));
 	}, [data.activeTab]);
 
-	/**
-	 *
-	 * @param event
-	 * @param newValue
-	 */
-	const handleTabChange = (
-		_event: React.SyntheticEvent,
-		newValue: number,
-	) => {
+	const handleTabChange = (newValue: string) => {
 		setActiveTab(newValue);
 		debouncedCallback();
 	};
 
-	// Generate tab items from the tabLabels
-	const tabItems = data.tabLabels.map((label, index) => (
-		<Tabs.Item
-			key={`simple-tabpanel-${index + 1}`}
-			label={label}
-			value={index + 1}
-			aria-controls={`simple-tabpanel-${index + 1}`}
-		/>
-	));
-
-	// Get the current active tab's slot
-	const activeTabSlotKey = `${activeTab}` as keyof typeof slots;
-	const activeTabSlot = slots[activeTabSlotKey];
+	const tabLayoutClass = data.tabOrientation === "vertical" ? "flex-row" : "flex-col";
+	const tabsListClass = data.tabOrientation === "vertical" ? "flex-col" : "flex-row";
 
 	return (
-		<Box {...attrs} sx={{ ...data.style }}>
+		<div {...attrs} style={data.style} className="w-full">
 			<Tabs
 				value={activeTab}
-				onChange={handleTabChange}
-				orientation={data.tabOrientation}
-				textColor={data.textColor}
-				indicatorColor={data.indicatorColor}
-				variant={data.variant}
-				TabIndicatorProps={{
-					style: {
-						display: data.showTabIndicator ? "block" : "none",
-					},
-				}}
+				onValueChange={handleTabChange}
+				className={`flex ${tabLayoutClass}`}
 			>
-				{tabItems}
+				<TabsList className={`flex ${tabsListClass} w-fit h-auto p-1 gap-1`}>
+					{data.tabLabels.map((label, index) => (
+						<TabsTrigger
+							key={`tab-${index}`}
+							value={String(index)}
+							className="px-3 py-2 text-sm"
+						>
+							{label}
+						</TabsTrigger>
+					))}
+				</TabsList>
+				{data.tabLabels.map((_, index) => {
+					const slotKey = `${index}` as keyof typeof slots;
+					const slot = slots[slotKey];
+					return (
+						<TabsContent
+							key={`panel-${index}`}
+							value={String(index)}
+							className="flex-1"
+						>
+							{slot && <Slot slot={slot} />}
+						</TabsContent>
+					);
+				})}
 			</Tabs>
-			<TabPanel value={activeTab} index={activeTab}>
-				{activeTabSlot && <Slot slot={activeTabSlot} />}
-			</TabPanel>
-		</Box>
+		</div>
 	);
 });

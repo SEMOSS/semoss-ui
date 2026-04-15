@@ -1,14 +1,9 @@
-import MicIcon from "@mui/icons-material/Mic";
-import MicOffIcon from "@mui/icons-material/MicOff";
-import { Button, styled } from "@mui/material";
+import { Mic, MicOff } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { Button } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledButton = styled(Button)({
-	borderRadius: "50%",
-});
 
 export interface AudioInputBlockDef extends BlockDef<"audio-input"> {
 	widget: "audio-input";
@@ -35,9 +30,19 @@ export interface AudioInputBlockDef extends BlockDef<"audio-input"> {
 	};
 }
 
-const StyledContainer = styled("div")(() => ({
-	padding: "4px",
-}));
+const mapVariant = (
+	variant: "contained" | "outlined" | "text",
+): "default" | "outline" | "ghost" => {
+	const variantMap: Record<
+		"contained" | "outlined" | "text",
+		"default" | "outline" | "ghost"
+	> = {
+		contained: "default",
+		outlined: "outline",
+		text: "ghost",
+	};
+	return variantMap[variant] || "default";
+};
 
 export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData } = useBlock<AudioInputBlockDef>(id);
@@ -194,21 +199,22 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 	}, [mediaRecorder]);
 
 	return (
-		<StyledContainer {...attrs}>
-			<StyledButton
-				size="medium"
-				color={data.color}
-				variant={data.variant}
+		<div {...attrs} className="p-1">
+			<Button
+				size="default"
+				variant={mapVariant(data.variant)}
 				disabled={data?.disabled || data?.loading}
-				sx={{
-					...data.style,
-				}}
+				style={data.style}
+				className={recording
+					? "rounded-full bg-red-600 hover:bg-red-700 text-white"
+					: "rounded-full"
+				}
 				onClick={() => {
 					handleRecording();
 				}}
 			>
-				{recording ? <MicOffIcon /> : <MicIcon />}
-			</StyledButton>
-		</StyledContainer>
+				{recording ? <MicOff className="size-5" /> : <Mic className="size-5" />}
+			</Button>
+		</div>
 	);
 });

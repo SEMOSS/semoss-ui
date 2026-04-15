@@ -1,27 +1,8 @@
-import {
-	FormControlLabel,
-	FormGroup,
-	FormHelperText,
-	Switch,
-	styled,
-	Typography,
-} from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Switch } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: theme.spacing(0.5),
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(0.5),
-}));
-
-const StyledLabel = styled(Typography)(({ theme }) => ({
-	fontSize: theme.typography.subtitle2.fontSize,
-	fontWeight: theme.typography.subtitle2.fontWeight,
-}));
 
 export interface SwitchBlockDef extends BlockDef<"switch"> {
 	widget: "switch";
@@ -64,52 +45,49 @@ export const SwitchBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
-	const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setData("value", event.target.checked);
-
+	const handleChange = (checked: boolean) => {
+		setData("value", checked);
 		listeners.onChange();
 	};
 
 	const showLabel = data.label && data.label.trim() !== "";
 	const showHelperText = data.helperText && data.helperText.trim() !== "";
 
+	const isLabelStart = data.labelPlacement === "start";
+
 	return (
-		<StyledContainer {...attrs} style={data.style}>
-			<FormGroup>
-				{showLabel && !data.labelPlacement && (
-					<StyledLabel>{data.label}</StyledLabel>
-				)}
+		<div
+			{...attrs}
+			style={{
+				padding: "0.25rem",
+				display: "flex",
+				flexDirection: "column",
+				gap: "0.25rem",
+				...data.style,
+			}}
+		>
+			{showLabel && !data.labelPlacement && (
+				<div className="text-sm font-medium">{data.label}</div>
+			)}
 
-				{showLabel && data.labelPlacement ? (
-					<FormControlLabel
-						control={
-							<Switch
-								checked={data.value}
-								onChange={handleChange}
-								disabled={data.disabled}
-								color={data.color}
-								size={data.size}
-								required={data.required}
-							/>
-						}
-						label={data.label}
-						labelPlacement={data.labelPlacement}
-					/>
-				) : (
-					<Switch
-						checked={data.value}
-						onChange={handleChange}
-						disabled={data.disabled}
-						color={data.color}
-						size={data.size}
-						required={data.required}
-					/>
+			<div
+				className={`flex items-center ${isLabelStart ? "flex-row-reverse" : ""}`}
+				style={{ gap: showLabel && data.labelPlacement ? "0.5rem" : "0" }}
+			>
+				<Switch
+					checked={data.value}
+					onCheckedChange={handleChange}
+					disabled={data.disabled}
+					size={data.size === "small" ? "sm" : "default"}
+				/>
+				{showLabel && data.labelPlacement && (
+					<label className="text-sm cursor-pointer">{data.label}</label>
 				)}
+			</div>
 
-				{showHelperText && (
-					<FormHelperText>{data.helperText}</FormHelperText>
+			{showHelperText && (
+				<div className="text-xs text-muted-foreground">{data.helperText}</div>
 				)}
-			</FormGroup>
-		</StyledContainer>
+		</div>
 	);
 });

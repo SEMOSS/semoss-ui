@@ -1,16 +1,10 @@
-import { LinearProgress, styled, TextField } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
 import { debounced } from "@semoss/sdk/react";
+import { Input, Label, Progress } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
-const StyledTextField = styled(TextField)({
-	"& .MuiFormLabel-root.MuiInputLabel-root": {
-		top: "auto",
-		left: "auto",
-	},
-});
 export interface UploadBlockDef extends BlockDef<"upload"> {
 	widget: "upload";
 	data: {
@@ -105,36 +99,44 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
 		}
 	};
 
-	return (
-		<StyledTextField
-			size="small"
-			defaultValue={""}
-			label={data.label}
-			rows={1}
-			multiline={false}
-			required={data.required}
-			disabled={data?.disabled || data.loading}
-			helperText={
-				data.loading ? <LinearProgress color="primary" /> : data?.hint
-			}
-			style={{
-				...data.style,
-			}}
-			InputLabelProps={{
-				shrink: true,
-			}}
-			type={"file"}
-			inputProps={{
-				accept: data.extensions,
-				multiple: data.multiple,
-			}}
-			onChange={(e) => {
-				const files = (e.target as HTMLInputElement).files;
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
 
-				// upload the files
-				upload(Array.from(files));
-			}}
-			{...attrs}
-		/>
+		// upload the files
+		if (files) {
+			upload(Array.from(files));
+		}
+	};
+
+	return (
+		<div {... attrs} className="space-y-2">
+			{data.label && (
+				<Label
+					htmlFor={`upload-${id}`}
+					className={data.required ? "after:content-['*'] after:ml-0.5 after:text-red-500" : ""}
+				>
+					{data.label}
+				</Label>
+			)}
+			<Input
+				id={`upload-${id}`}
+				type="file"
+				multiple={data.multiple}
+				disabled={data?.disabled || data.loading}
+				onChange={handleFileChange}
+				accept={data.extensions?.join(",")}
+				style={data.style}
+				className="cursor-pointer"
+			/>
+			{data.loading && (
+				<div className="space-y-1">
+					<Progress value={33} />
+					<p className="text-xs text-muted-foreground">Uploading...</p>
+				</div>
+			)}
+			{data?.hint && !data.loading && (
+				<p className="text-xs text-muted-foreground">{data.hint}</p>
+			)}
+		</div>
 	);
 });

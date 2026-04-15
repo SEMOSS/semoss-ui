@@ -1,20 +1,8 @@
-import { Alert, styled } from "@mui/material";
 import mermaid from "mermaid";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
-
-// Container for Mermaid Diagram
-const MermaidContainer = styled("div")(() => ({
-	width: "fit-content",
-	height: "fit-content",
-}));
-
-// Styled Alert for Error Display
-const ErrorAlert = styled(Alert)(({ theme }) => ({
-	borderRadius: theme.shape.borderRadiusSm,
-}));
 
 // Interface for Mermaid Block Definition
 export interface MermaidBlockDef extends BlockDef<"mermaid"> {
@@ -91,8 +79,8 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 	// Render Block
 	return (
 		<div {...attrs}>
-			<MermaidContainer
-				className="mermaid-container"
+			<div
+				className="w-fit h-fit"
 				id={`mermaid-container-${id}`}
 			>
 				{/* Mermaid Diagram */}
@@ -105,16 +93,14 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 				>
 					{data.text}
 				</pre>
-			</MermaidContainer>
+			</div>
 			{/* Error UI */}
 			{errorMessage && (
-				<div className="mermaid-error-ui">
-					<ErrorAlert
-						severity="error"
-						sx={{ backgroundColor: "#fdeded" }}
-					>
-						{errorMessage}
-					</ErrorAlert>
+				<div
+					className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+					role="alert"
+				>
+					{errorMessage}
 				</div>
 			)}
 

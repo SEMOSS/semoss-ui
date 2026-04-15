@@ -1,32 +1,8 @@
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import StarIcon from "@mui/icons-material/Star";
-import { styled } from "@mui/material";
-import Box from "@mui/material/Box";
-import Rating from "@mui/material/Rating";
+import { Heart, Star } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledRating = styled(Rating)(({ theme }) => ({
-	"& .MuiRating-iconFilled": {
-		color: theme.palette.error[300],
-	},
-	"& .MuiRating-iconHover": {
-		color: theme.palette.error[500],
-	},
-}));
-
-const StyledBox = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	flexDirection: "column",
-});
-
-const StyledStarIcon = styled(StarIcon)({
-	opacity: 0.55,
-});
 
 export interface RatingsBlockDef extends BlockDef<"ratings"> {
 	widget: "ratings";
@@ -50,6 +26,7 @@ export interface RatingsBlockDef extends BlockDef<"ratings"> {
 
 export const RatingsBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<RatingsBlockDef>(id);
+	const [hoverValue, setHoverValue] = useState<number | null>(null);
 
 	const { size, value, max, type } = data;
 
@@ -59,38 +36,45 @@ export const RatingsBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
-	// Handle ratings button change
 	const handleChange = (newValue: number) => {
 		setData("value", newValue, true);
 		listeners.onChange();
 	};
 
+	const iconSize = size === "small" ? 16 : 24;
+	const IconComponent = type === "heart" ? Heart : Star;
+
 	return (
-		<StyledBox {...attrs}>
-			{type === "heart" ? (
-				<StyledRating
-					size={size}
-					value={value}
-					max={max}
-					onChange={(event, newValue) => {
-						handleChange(newValue);
-					}}
-					defaultValue={2}
-					icon={<FavoriteIcon fontSize="inherit" />}
-					emptyIcon={<FavoriteBorderIcon fontSize="inherit" />}
-				/>
-			) : (
-				<Rating
-					size={size}
-					value={value}
-					max={max}
-					onChange={(event, newValue) => {
-						handleChange(newValue);
-					}}
-					defaultValue={2}
-					emptyIcon={<StyledStarIcon fontSize="inherit" />}
-				/>
-			)}
-		</StyledBox>
+		<div 
+			{...attrs} 
+			className="flex flex-col items-center"
+		>
+			<div className="flex gap-1">
+				{Array.from({ length: max }, (_, i) => {
+					const rating = i + 1;
+					const isActive = rating <= (hoverValue ?? value);
+
+					return (
+						<button
+							key={i}
+							type="button"
+							onClick={() => handleChange(rating)}
+							onMouseEnter={() => setHoverValue(rating)}
+							onMouseLeave={() => setHoverValue(null)}
+							className="p-0 bg-transparent border-none cursor-pointer focus:outline-none hover:opacity-80 transition-opacity"
+							aria-label={`${rating} ${type === "heart" ? "hearts" : "stars"}`}
+						>
+							<IconComponent
+								size={iconSize}
+								fill={isActive ? (type === "heart" ? "#f87171" : "#facc15") : "none"}
+								stroke={isActive ? (type === "heart" ? "#f87171" : "#facc15") : "currentColor"}
+								className={!isActive ? "text-muted-foreground" : ""}
+								style={{ width: iconSize, height: iconSize }}
+							/>
+						</button>
+					);
+				})}
+			</div>
+		</div>
 	);
 });
