@@ -63,6 +63,7 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const initialPrompt = searchParams.get("prompt") ?? "";
 
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
@@ -370,6 +371,7 @@ export const NewRoomPage = observer(() => {
 						<RoomInput
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
+							initialValue={initialPrompt}
 							model={chat.models.selected}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
