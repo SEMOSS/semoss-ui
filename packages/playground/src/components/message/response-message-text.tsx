@@ -3,7 +3,6 @@ import {
 	ChevronUpIcon,
 	CopyIcon,
 	Loader2,
-	Quote,
 	SkipForwardIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -70,47 +69,92 @@ const copyToClipboard = async (
 const IFRAME_SHELL = `<!DOCTYPE html>
 <html><head></head><body>
 <script>
-// Tracks CDN URLs already pre-fetched to avoid duplicate requests.
-var _cdnPrefetched = {};
+// _cdn: load state per CDN src ('loading'|'loaded'|'error').
+// CDN <script> elements are kept alive in <head> across DOM patches so the
+// library stays available after each body replacement.
+// _inline: latest concatenated inline script text from the streamed HTML.
+// _frozen: true once a chart renders — stops further DOM patches so the
+// rendered canvas isn't destroyed by trailing </body>/</html> tokens.
+// _userScrolled: true when the user has scrolled away from the bottom.
+// Auto-scroll is suppressed while true; resets to false when they return.
+var _cdn={};
+var _inline='';
+var _frozen=false;
+var _userScrolled=false;
+window.addEventListener('scroll',function(){
+  var dist=document.body.scrollHeight-window.scrollY-window.innerHeight;
+  _userScrolled=dist>80;
+},{passive:true});
 
-window.addEventListener('message', function(e) {
-  if (!e.data || e.data.type !== 'html-update') return;
+function _run(){
+  if(_frozen||!_inline)return;
+  // Block until all CDN scripts have settled (errors are treated as done).
+  var srcs=Object.keys(_cdn);
+  if(srcs.some(function(s){return _cdn[s]==='loading';}))return;
+  // Syntax-check via Function constructor: incomplete streamed scripts throw
+  // SyntaxError here, so we silently wait for the next token.
+  try{new Function(_inline);}catch(e){if(e instanceof SyntaxError)return;}
+  // Freeze *before* appending so the next postMessage can't wipe the canvas.
+  _frozen=true;
+  var el=document.createElement('script');
+  el.textContent=_inline;
+  document.body.appendChild(el);
+}
 
-  var parser = new DOMParser();
-  var parsed = parser.parseFromString(e.data.html, 'text/html');
+window.addEventListener('message',function(e){
+  if(!e.data||e.data.type!=='html-update')return;
+  if(_frozen)return;
 
-  // Strip all scripts before patching so inert innerHTML copies don't pile up.
-  var scripts = [];
-  parsed.querySelectorAll('script').forEach(function(s) {
-    scripts.push(s);
+  var parser=new DOMParser();
+  var parsed=parser.parseFromString(e.data.html,'text/html');
+
+  // Collect CDN srcs and inline texts; strip all scripts from parsed DOM so
+  // they don't pile up as inert innerHTML copies.
+  var cdns=[];
+  var inl='';
+  parsed.querySelectorAll('script').forEach(function(s){
+    var src=s.getAttribute('src');
+    if(src){cdns.push(src);}
+    else if(s.textContent.trim()){inl+=(inl?'\\n':'')+s.textContent;}
     s.parentNode.removeChild(s);
   });
+  if(inl)_inline=inl;
 
-  // Live DOM patch — gives a streaming preview without navigating the frame.
-  if (parsed.head) document.head.innerHTML = parsed.head.innerHTML;
-  if (parsed.body) document.body.innerHTML = parsed.body.innerHTML;
+  // Sync non-script head elements only. CDN <script> tags are never removed
+  // so they stay loaded and available across every DOM patch.
+  if(parsed.head){
+    Array.from(document.head.querySelectorAll(':not(script)')).forEach(function(el){
+      el.parentNode&&el.parentNode.removeChild(el);
+    });
+    Array.from(parsed.head.children).forEach(function(el){
+      if(el.tagName!=='SCRIPT')document.head.appendChild(el.cloneNode(true));
+    });
+  }
+  if(parsed.body)document.body.innerHTML=parsed.body.innerHTML;
 
-  // Re-inject overflow constraints after head replacement (they get wiped above).
-  // This prevents wide content from expanding the iframe horizontally.
-  var constraintStyle = document.createElement('style');
-  constraintStyle.textContent = 'html,body{max-width:100%!important;overflow-x:hidden!important;box-sizing:border-box;}';
-  document.head.appendChild(constraintStyle);
+  // Re-inject overflow constraints after body replacement (wiped above).
+  var cs=document.createElement('style');
+  cs.textContent='html,body{max-width:100%!important;overflow-x:hidden!important;box-sizing:border-box;}';
+  document.head.appendChild(cs);
 
-  // Auto-scroll to the bottom so newly streamed content is always visible.
-  window.scrollTo(0, document.body.scrollHeight);
+  // Auto-scroll only when user hasn't manually scrolled away.
+  if(!_userScrolled){window.scrollTo(0,document.body.scrollHeight);}
 
-  // Pre-fetch CDN scripts so they are in the HTTP cache when the final
-  // srcDoc reload fires.  All major browsers keep a started network request
-  // alive even after its <script> element is removed from the DOM.
-  scripts.forEach(function(s) {
-    var src = s.getAttribute('src');
-    if (src && !_cdnPrefetched[src]) {
-      _cdnPrefetched[src] = true;
-      var n = document.createElement('script');
-      n.setAttribute('src', src);
+  // Load CDN scripts for real (execute in shell context, not just pre-fetch).
+  // onload/onerror both call _run so chart execution starts as soon as all
+  // dependencies have landed, without waiting for the full HTML.
+  cdns.forEach(function(src){
+    if(!_cdn.hasOwnProperty(src)){
+      _cdn[src]='loading';
+      var n=document.createElement('script');
+      n.src=src;
+      n.onload=function(){_cdn[src]='loaded';_run();};
+      n.onerror=function(){_cdn[src]='error';_run();};
       document.head.appendChild(n);
     }
   });
+
+  _run();
 });
 </script>
 </body></html>`;
@@ -121,6 +165,54 @@ const sendHtmlToIframe = (iframe: HTMLIFrameElement, html: string): void => {
 };
 
 const HTML_PREVIEW_STREAM_THROTTLE_MS = 80;
+
+// ── Shared block header ──────────────────────────────────────────────────────
+// Used by HtmlPreviewBlock, CodePreviewBlock, and MermaidBlock to keep the
+// collapse toggle + label + action area consistent across all block types.
+interface BlockHeaderProps {
+	label: string;
+	isCollapsed: boolean;
+	onToggleCollapse: () => void;
+	collapseDisabled?: boolean;
+	children?: React.ReactNode;
+}
+
+const BlockHeader: React.FC<BlockHeaderProps> = ({
+	label,
+	isCollapsed,
+	onToggleCollapse,
+	collapseDisabled,
+	children,
+}) => (
+	<div className="border-border border-b px-3 py-2 text-muted-foreground text-xs">
+		<div className="flex items-center justify-between gap-2">
+			<div className="flex items-center gap-1">
+				<button
+					type="button"
+					aria-label={
+						isCollapsed ? `Expand ${label}` : `Collapse ${label}`
+					}
+					className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
+					disabled={collapseDisabled}
+					onClick={onToggleCollapse}
+				>
+					{isCollapsed ? (
+						<ChevronDownIcon className="size-3.5" />
+					) : (
+						<ChevronUpIcon className="size-3.5" />
+					)}
+				</button>
+				<span>
+					{label}
+					{isCollapsed ? " - Collapsed" : ""}
+				</span>
+			</div>
+			{children && (
+				<div className="flex items-center gap-1">{children}</div>
+			)}
+		</div>
+	</div>
+);
 
 interface HtmlPreviewBlockProps {
 	html: string;
@@ -256,24 +348,69 @@ const createCodeFilePath = (lang: string): string => {
 	return `save-code-response-${Date.now()}.${ext}`;
 };
 
+// Injected into the <head> of the final srcDoc so the body shrinks to its
+// content — critical for canvas-based charts (Chart.js, etc.) whose pixel
+// dimensions don't otherwise contribute to document.body.scrollHeight.
+const IFRAME_FIT_STYLES =
+	"<style>" +
+	// overflow-y:auto on html (the browser's scroll container) lets tall documents
+	// scroll inside the iframe when it's capped at maxHeight:90dvh in the parent.
+	// overflow-x:hidden on both prevents horizontal expansion without killing y-scroll.
+	// No height:fit-content — that collapsed body before Chart.js rendered its canvas.
+	"html{margin:0;padding:0;width:100%;overflow-x:hidden;overflow-y:auto;box-sizing:border-box;}" +
+	"body{margin:0;padding:0;width:100%;overflow-x:hidden;box-sizing:border-box;}" +
+	"canvas,svg,img{max-width:100%!important;display:block;}" +
+	"</style>";
+
 // Injected at the end of the final srcDoc HTML so the iframe can report its
 // rendered content height via postMessage (sandbox prevents direct DOM access).
+// Uses ResizeObserver on canvas/svg elements so Chart.js's async responsive
+// resize is captured immediately rather than relying on fixed timeouts.
 const IFRAME_HEIGHT_REPORTER =
 	"<script>" +
 	"(function(){" +
-	"function r(){parent.postMessage({type:'iframe-height'," +
-	"height:Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)},'*');}" +
-	"if(document.readyState==='loading'){window.addEventListener('load',r);}else{r();}" +
-	"setTimeout(r,400);" + // catch async renders (Chart.js RAF, etc.)
-	"setTimeout(r,1200);" + // slow CDN fallback
+	// measure() scans scrollHeight + bounding rects of canvas/svg/img so
+	// Chart.js canvas dimensions are captured even when they don't push scrollHeight.
+	"function measure(){" +
+	// Use document.body only — documentElement.scrollHeight always equals the
+	// iframe viewport height (not content height), which inflates the measurement.
+	"var sH=document.body.scrollHeight;" +
+	"var bcrH=document.body.getBoundingClientRect().height;" +
+	"var els=document.querySelectorAll('canvas,svg,img');" +
+	"var eH=0;for(var i=0;i<els.length;i++){var b=els[i].getBoundingClientRect();if(b.bottom>eH)eH=b.bottom;}" +
+	"parent.postMessage({type:'iframe-height',height:Math.max(sH,bcrH,eH),nonce:'__NONCE__'},'*');}" +
+	// debounced wrapper — coalesces rapid ResizeObserver bursts
+	"var _t=null;" +
+	"function d(){if(_t)clearTimeout(_t);_t=setTimeout(measure,50);}" +
+	// Defer initial measure with setTimeout(0) so React can commit iframeRef before
+	// the first message arrives — avoids the e.source race condition.
+	"if(document.readyState==='loading'){window.addEventListener('load',measure);}else{setTimeout(measure,0);}" +
+	// Watch canvas & svg directly so Chart.js responsive resizes trigger a re-report.
+	// Also watch body so height changes from any source are caught.
+	"if(window.ResizeObserver){" +
+	"var ro=new ResizeObserver(d);" +
+	"document.querySelectorAll('canvas,svg').forEach(function(el){ro.observe(el);});" +
+	"ro.observe(document.body);}" +
+	"setTimeout(measure,400);" + // fallback: catch RAF-based renders
+	"setTimeout(measure,1200);" + // fallback: slow CDN scripts
 	"})();" +
-	"<\\/script>";
+	"</script>";
 
-function injectHeightReporter(html: string): string {
-	const idx = html.lastIndexOf("</body>");
-	return idx !== -1
-		? html.slice(0, idx) + IFRAME_HEIGHT_REPORTER + html.slice(idx)
-		: html + IFRAME_HEIGHT_REPORTER;
+function injectHeightReporter(html: string, nonce: string): string {
+	const reporter = IFRAME_HEIGHT_REPORTER.replace(/__NONCE__/g, nonce);
+
+	// Inject fit-styles into <head> (or prepend if no <head> tag).
+	const headIdx = html.lastIndexOf("</head>");
+	const withStyles =
+		headIdx !== -1
+			? html.slice(0, headIdx) + IFRAME_FIT_STYLES + html.slice(headIdx)
+			: IFRAME_FIT_STYLES + html;
+
+	// Inject height reporter before </body> (or append if no </body> tag).
+	const bodyIdx = withStyles.lastIndexOf("</body>");
+	return bodyIdx !== -1
+		? withStyles.slice(0, bodyIdx) + reporter + withStyles.slice(bodyIdx)
+		: withStyles + reporter;
 }
 
 const HtmlPreviewBlock: React.FC<HtmlPreviewBlockProps> = ({
@@ -287,7 +424,9 @@ const HtmlPreviewBlock: React.FC<HtmlPreviewBlockProps> = ({
 	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
 	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
 	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [isRaw, setIsRaw] = useState(false);
 	const iframeRef = useRef<HTMLIFrameElement>(null);
+	const iframeNonceRef = useRef(`h${Math.random().toString(36).slice(2, 8)}`);
 	const latestHtmlRef = useRef(html);
 	const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const hasSentFirstRef = useRef(false);
@@ -315,7 +454,7 @@ const HtmlPreviewBlock: React.FC<HtmlPreviewBlockProps> = ({
 		const handler = (e: MessageEvent) => {
 			if (e.data?.type !== "iframe-height") return;
 			if (isLoadingRef.current) return; // ignore shell phase
-			if (e.source !== iframeRef.current?.contentWindow) return; // ignore other iframes
+			if (e.data?.nonce !== iframeNonceRef.current) return; // ignore other iframes
 			setContentHeight(e.data.height as number);
 		};
 		window.addEventListener("message", handler);
@@ -398,131 +537,117 @@ const HtmlPreviewBlock: React.FC<HtmlPreviewBlockProps> = ({
 	return (
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
-				<div className="border-border border-b px-3 py-2 text-muted-foreground text-xs">
-					<div className="flex items-center justify-between gap-2">
-						<div className="flex items-center gap-1">
-							<button
-								type="button"
-								aria-label={
-									isCollapsed
-										? "Expand preview"
-										: "Collapse preview"
-								}
-								className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
-								disabled={!html}
+				<BlockHeader
+					label="HTML Preview"
+					isCollapsed={isCollapsed}
+					onToggleCollapse={() =>
+						setIsCollapsed((previous) => !previous)
+					}
+					collapseDisabled={!html}
+				>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!html}
+						onClick={() => setIsRaw((prev) => !prev)}
+					>
+						{isRaw ? "Preview" : "Raw"}
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={isLoading}
+						onClick={() => setIsFullViewOpen(true)}
+					>
+						Full View
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !html || isSavingToRoom || isLoading}
+						onClick={() => void saveInRoom()}
+					>
+						{isSavingToRoom ? "Saving..." : "Save In Room"}
+					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!html || isLoading}
 								onClick={() =>
-									setIsCollapsed((previous) => !previous)
+									void copyToClipboard(
+										html,
+										() => toast.success(copySuccessMessage),
+										(message) => toast.error(message),
+									)
 								}
 							>
-								{isCollapsed ? (
-									<ChevronDownIcon className="size-3.5" />
-								) : (
-									<ChevronUpIcon className="size-3.5" />
-								)}
-							</button>
-							<span>
-								HTML Preview
-								{isCollapsed ? " - Collapsed" : ""}
-							</span>
+								<CopyIcon className="size-3.5" />
+								{copyLabel}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">
+							{copyTooltip}
+						</TooltipContent>
+					</Tooltip>
+				</BlockHeader>
+				{!isCollapsed &&
+					(isRaw ? (
+						<div className="p-3">
+							<Code code={html} language="html" />
 						</div>
-						<div className="flex items-center gap-1">
-							<Button
-								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={
-									!room ||
-									!html ||
-									isSavingToRoom ||
+					) : (
+						<div className="relative">
+							<iframe
+								key={isLoading ? "shell" : "final"}
+								ref={iframeRef}
+								title="HTML Preview"
+								className={
+									!isLoading && contentHeight
+										? "w-full border-0 bg-white"
+										: "h-[62.5dvh] min-h-[8rem] w-full border-0 bg-white"
+								}
+								style={
+									!isLoading && contentHeight
+										? {
+												// Shrink to content height so there is no blank space below.
+												// maxHeight caps tall responses at 112.5dvh; the browser then
+												// scrolls the iframe's own document for the overflow.
+												height: `${contentHeight}px`,
+												maxHeight: "112.5dvh",
+												minHeight: "80px",
+											}
+										: undefined
+								}
+								sandbox="allow-scripts"
+								referrerPolicy="no-referrer"
+								srcDoc={
 									isLoading
-								}
-								onClick={() => {
-									void saveInRoom();
-								}}
-							>
-								{isSavingToRoom ? "Saving..." : "Save In Room"}
-							</Button>
-							<Button
-								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={isLoading}
-								onClick={() => setIsFullViewOpen(true)}
-							>
-								Full View
-							</Button>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
-										variant="ghost"
-										size="sm"
-										disabled={!html || isLoading}
-										onClick={() => {
-											void copyToClipboard(
+										? IFRAME_SHELL
+										: injectHeightReporter(
 												html,
-												() =>
-													toast.success(
-														copySuccessMessage,
-													),
-												(message) =>
-													toast.error(message),
-											);
-										}}
-									>
-										<CopyIcon className="size-3.5" />
-										{copyLabel}
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									{copyTooltip}
-								</TooltipContent>
-							</Tooltip>
-						</div>
-					</div>
-				</div>
-				{!isCollapsed && (
-					<div className="relative">
-						<iframe
-							key={isLoading ? "shell" : "final"}
-							ref={iframeRef}
-							title="HTML Preview"
-							className={
-								!isLoading && contentHeight
-									? "w-full border-0 bg-white"
-									: "h-[70dvh] min-h-[34rem] w-full border-0 bg-white"
-							}
-							style={
-								!isLoading && contentHeight
-									? {
-											// Shrink to content height so there is no blank space below.
-											// maxHeight caps tall responses at 90dvh; the browser then
-											// scrolls the iframe's own document for the overflow.
-											height: `${contentHeight}px`,
-											maxHeight: "90dvh",
-											minHeight: "80px",
-										}
-									: undefined
-							}
-							sandbox="allow-scripts"
-							referrerPolicy="no-referrer"
-							srcDoc={
-								isLoading
-									? IFRAME_SHELL
-									: injectHeightReporter(html)
-							}
-							onLoad={isLoading ? handleIframeLoad : undefined}
-						/>
-						{isLoading && (
-							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-								<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
-									<Loader2 className="size-3 animate-spin" />
-									Loading Preview...
+												iframeNonceRef.current,
+											)
+								}
+								onLoad={
+									isLoading ? handleIframeLoad : undefined
+								}
+							/>
+							{isLoading && (
+								<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+									<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
+										<Loader2 className="size-3 animate-spin" />
+										Loading Preview...
+									</div>
 								</div>
-							</div>
-						)}
-					</div>
-				)}
+							)}
+						</div>
+					))}
 			</div>
 			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
 				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
@@ -590,81 +715,55 @@ const CodePreviewBlock: React.FC<CodePreviewBlockProps> = ({
 	return (
 		<>
 			<div className="relative overflow-hidden rounded-md border border-border bg-background">
-				<div className="border-border border-b px-3 py-2 text-muted-foreground text-xs">
-					<div className="flex items-center justify-between gap-2">
-						<div className="flex items-center gap-1">
-							<button
-								type="button"
-								aria-label={
-									isCollapsed
-										? "Expand code"
-										: "Collapse code"
+				<BlockHeader
+					label={langLabel}
+					isCollapsed={isCollapsed}
+					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+					collapseDisabled={!code}
+				>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !code || isSavingToRoom}
+						onClick={() => void saveInRoom()}
+					>
+						{isSavingToRoom ? "Saving..." : "Save In Room"}
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!code}
+						onClick={() => setIsFullViewOpen(true)}
+					>
+						Full View
+					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!code}
+								onClick={() =>
+									void copyToClipboard(
+										code,
+										() =>
+											toast.success(
+												t("notifications.copySuccess"),
+											),
+										(msg) => toast.error(msg),
+									)
 								}
-								className="inline-flex size-5 items-center justify-center rounded-sm text-muted-foreground transition-colors hover:text-foreground"
-								disabled={!code}
-								onClick={() => setIsCollapsed((prev) => !prev)}
 							>
-								{isCollapsed ? (
-									<ChevronDownIcon className="size-3.5" />
-								) : (
-									<ChevronUpIcon className="size-3.5" />
-								)}
-							</button>
-							<span>
-								{langLabel}
-								{isCollapsed ? " - Collapsed" : ""}
-							</span>
-						</div>
-						<div className="flex items-center gap-1">
-							<Button
-								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!room || !code || isSavingToRoom}
-								onClick={() => void saveInRoom()}
-							>
-								{isSavingToRoom ? "Saving..." : "Save In Room"}
+								<CopyIcon className="size-3.5" />
+								Copy
 							</Button>
-							<Button
-								className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
-								variant="ghost"
-								size="sm"
-								disabled={!code}
-								onClick={() => setIsFullViewOpen(true)}
-							>
-								Full View
-							</Button>
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
-										variant="ghost"
-										size="sm"
-										disabled={!code}
-										onClick={() =>
-											void copyToClipboard(
-												code,
-												() =>
-													toast.success(
-														t(
-															"notifications.copySuccess",
-														),
-													),
-												(msg) => toast.error(msg),
-											)
-										}
-									>
-										<CopyIcon className="size-3.5" />
-										Copy
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent side="bottom">
-									Copy
-								</TooltipContent>
-							</Tooltip>
-						</div>
-					</div>
-				</div>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">Copy</TooltipContent>
+					</Tooltip>
+				</BlockHeader>
 				{!isCollapsed && (
 					<div className="p-3">
 						<Code code={code} language={language ?? "txt"} />
@@ -760,6 +859,180 @@ const KNOWN_SHIKI_LANGS = new Set([
 	"text",
 	"plaintext",
 ]);
+
+/**
+ * Mermaid bakes fixed pixel width/height attributes and a max-width inline
+ * style onto the root <svg> element.  Those fight CSS sizing, so strip them
+ * before storing — the viewBox is preserved, so aspect ratio stays correct.
+ */
+function normalizeMermaidSvg(svg: string): string {
+	return svg
+		.replace(/(<svg\b[^>]*?)\s+width="[^"]*"/i, "$1")
+		.replace(/(<svg\b[^>]*?)\s+height="[^"]*"/i, "$1")
+		.replace(/(<svg\b[^>]*?style="[^"]*?)max-width:[^;}"]*;?\s*/i, "$1");
+}
+
+interface MermaidBlockProps {
+	code: string;
+	isLoading?: boolean;
+	room?: RoomStore;
+}
+
+const MermaidBlock: React.FC<MermaidBlockProps> = ({
+	code,
+	isLoading,
+	room,
+}) => {
+	const [svg, setSvg] = useState<string | null>(null);
+	const [isCollapsed, setIsCollapsed] = useState(false);
+	const [isFullViewOpen, setIsFullViewOpen] = useState(false);
+	const [isSavingToRoom, setIsSavingToRoom] = useState(false);
+	const [isRaw, setIsRaw] = useState(false);
+	const idRef = useRef(`mermaid-${Math.random().toString(36).slice(2)}`);
+
+	useEffect(() => {
+		// Don't attempt to render while the definition is still streaming —
+		// incomplete syntax reliably throws inside mermaid.render().
+		if (isLoading || !code.trim()) return;
+
+		let cancelled = false;
+		setSvg(null);
+
+		import("mermaid")
+			.then(({ default: mermaid }) => {
+				const isDark =
+					document.documentElement.classList.contains("dark");
+				mermaid.initialize({
+					startOnLoad: false,
+					theme: isDark ? "dark" : "default",
+				});
+				return mermaid.render(idRef.current, code);
+			})
+			.then(({ svg: rendered }) => {
+				if (!cancelled) setSvg(normalizeMermaidSvg(rendered));
+			})
+			.catch(() => {
+				// svg stays null — showCode fallback renders the raw definition
+			});
+
+		return () => {
+			cancelled = true;
+		};
+	}, [code, isLoading]);
+
+	const saveInRoom = async () => {
+		if (!room || !code) return;
+		const filePath = `save-mermaid-response-${Date.now()}.mmd`;
+		try {
+			setIsSavingToRoom(true);
+			await room.runRoomPixel(
+				`SaveInsightAssets(filePath=[${JSON.stringify(filePath)}], content=["<encode>${code}</encode>"]);`,
+				false,
+				false,
+			);
+			toast.success(`Saved in room as ${filePath}`);
+		} catch (error) {
+			toast.error(getErrorMessage(error));
+		} finally {
+			setIsSavingToRoom(false);
+		}
+	};
+
+	// Show raw code while streaming, rendering, on error, or when user toggled Raw.
+	const showCode = isLoading || !svg || isRaw;
+
+	return (
+		<>
+			<div className="relative overflow-hidden rounded-md border border-border bg-background">
+				<BlockHeader
+					label="Mermaid"
+					isCollapsed={isCollapsed}
+					onToggleCollapse={() => setIsCollapsed((prev) => !prev)}
+					collapseDisabled={!code}
+				>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={isLoading || !svg}
+						onClick={() => setIsRaw((prev) => !prev)}
+					>
+						{isRaw ? "Diagram" : "Raw"}
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!svg}
+						onClick={() => setIsFullViewOpen(true)}
+					>
+						Full View
+					</Button>
+					<Button
+						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
+						variant="ghost"
+						size="sm"
+						disabled={!room || !code || isSavingToRoom}
+						onClick={() => void saveInRoom()}
+					>
+						{isSavingToRoom ? "Saving..." : "Save In Room"}
+					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!code}
+								onClick={() =>
+									void copyToClipboard(
+										code,
+										() => toast.success("Copied"),
+										(msg) => toast.error(msg),
+									)
+								}
+							>
+								<CopyIcon className="size-3.5" />
+								Copy
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">Copy</TooltipContent>
+					</Tooltip>
+				</BlockHeader>
+				{!isCollapsed &&
+					(showCode ? (
+						<div className="p-3">
+							<Code code={code} language="txt" />
+						</div>
+					) : (
+						<div
+							// [&>svg] overrides the hardcoded pixel width/height mermaid
+							// bakes into the SVG so it scales to the container width.
+							className="overflow-x-auto p-4 [&>svg]:h-auto [&>svg]:w-full"
+							// mermaid.render() returns a sanitised SVG string
+							// biome-ignore lint/security/noDangerouslySetInnerHtml: mermaid output is sanitized
+							dangerouslySetInnerHTML={{ __html: svg }}
+						/>
+					))}
+			</div>
+			<Dialog open={isFullViewOpen} onOpenChange={setIsFullViewOpen}>
+				<DialogContent className="h-[100dvh] max-h-[100dvh] w-[100dvw] max-w-[100dvw] grid-rows-[auto_1fr] overflow-hidden rounded-none border-0 p-3 sm:w-[100dvw] sm:max-w-[100dvw]">
+					<DialogHeader>
+						<DialogTitle>Mermaid</DialogTitle>
+					</DialogHeader>
+					<div className="relative h-full min-h-0 overflow-auto p-4 [&>div>svg]:h-auto [&>div>svg]:w-full">
+						{svg && (
+							<div
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: mermaid output is sanitized
+								dangerouslySetInnerHTML={{ __html: svg }}
+							/>
+						)}
+					</div>
+				</DialogContent>
+			</Dialog>
+		</>
+	);
+};
 
 const createMarkdownComponents = (
 	room?: RoomStore,
@@ -891,11 +1164,46 @@ const createMarkdownComponents = (
 			{children}
 		</li>
 	),
-	blockquote: ({ children, ...props }) => (
-		<Quote className="mt-1" {...props}>
-			{children}
-		</Quote>
-	),
+	blockquote: ({
+		children,
+		node,
+		...props
+	}: {
+		children?: React.ReactNode;
+		node?: {
+			children?: Array<{
+				type: string;
+				value?: string;
+				children?: Array<{ type: string; value?: string }>;
+			}>;
+		};
+		[key: string]: unknown;
+	}) => {
+		const text =
+			node?.children
+				?.flatMap((c) =>
+					c.type === "paragraph" ? (c.children ?? []) : [c],
+				)
+				.map((c) => (c.type === "text" ? (c.value ?? "") : ""))
+				.join("") ?? "";
+
+		if (/^source:/i.test(text.trim())) {
+			return (
+				<p className="mt-2 text-muted-foreground text-xs italic">
+					{children}
+				</p>
+			);
+		}
+
+		return (
+			<blockquote
+				className="mt-1 ml-6 border-border border-l-2 pl-3 text-base text-foreground italic"
+				{...props}
+			>
+				{children}
+			</blockquote>
+		);
+	},
 	hr: ({ ...props }) => <Separator className="mt-2 mb-1" {...props} />,
 	code: ({ children, className, ...props }) => {
 		const { t } = useTranslation("chat");
@@ -924,6 +1232,16 @@ const createMarkdownComponents = (
 		const lang = (
 			KNOWN_SHIKI_LANGS.has(rawLang) ? rawLang : "txt"
 		) as React.ComponentProps<typeof Code>["language"];
+
+		if (rawLang === "mermaid") {
+			return (
+				<MermaidBlock
+					code={code}
+					isLoading={isHtmlPreviewLoading}
+					room={room}
+				/>
+			);
+		}
 
 		if (lang === "html") {
 			return (
@@ -1167,7 +1485,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 					/* ── Code-fenced HTML (```html…```) ── */
 					<>
 						{/* Pre-fence prose: slice typewriter up to the fence boundary */}
-						{fencedHtmlData!.preFenceProse && (
+						{fencedHtmlData?.preFenceProse && (
 							<Markdown
 								components={components}
 								className="[&>*:first-child]:mt-0"
@@ -1175,9 +1493,9 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							>
 								{typewriter.isTyping &&
 								typewriter.rendered.length <
-									fencedHtmlData!.preFenceProse.length
+									(fencedHtmlData?.preFenceProse.length ?? 0)
 									? typewriter.rendered
-									: fencedHtmlData!.preFenceProse}
+									: fencedHtmlData?.preFenceProse}
 							</Markdown>
 						)}
 						{/* HTML block fed directly from part.text — not from the
@@ -1186,7 +1504,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 						    reload) as soon as a complete inline <script> or </html>
 						    is detected. */}
 						<HtmlPreviewBlock
-							html={fencedHtmlData!.fencedHtmlContent}
+							html={fencedHtmlData?.fencedHtmlContent ?? ""}
 							room={message.room}
 							isLoading={fencedIsPreviewLoading}
 							copyTooltip="Copy"
