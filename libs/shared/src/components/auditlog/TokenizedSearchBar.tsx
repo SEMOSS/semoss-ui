@@ -57,7 +57,7 @@ const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 		borderColor: "border-blue-300 dark:border-blue-700",
 	},
 	args: {
-		label: "Args",
+		label: "Request Message",
 		color: "text-amber-700 dark:text-amber-300",
 		bgColor: "bg-amber-100 dark:bg-amber-900/40",
 		borderColor: "border-amber-300 dark:border-amber-700",
