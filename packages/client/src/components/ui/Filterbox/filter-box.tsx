@@ -2,14 +2,11 @@ import { ChevronDown, ChevronUp, Search as SearchIcon } from "lucide-react";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 	Input,
-	Separator,
 } from "@semoss/ui/next";
 import { usePixel, useRootStore } from "@/hooks";
 import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
@@ -51,6 +48,7 @@ export interface FilterboxProps {
 	onfilterBoxRefreshCompleted?: () => void;
 	applyOnMount?: boolean;
 	showHeader?: boolean;
+	hideHeaderToggleFrom?: "md" | "lg";
 }
 
 const initialState = {
@@ -80,6 +78,7 @@ export const Filterbox = (props: FilterboxProps) => {
 		onfilterBoxRefreshCompleted = () => {},
 		applyOnMount = true,
 		showHeader = true,
+		hideHeaderToggleFrom,
 	} = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -88,6 +87,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	const { filterSearch } = state;
 	const [showCollapsible, setShowCollapsible] = useState({});
 	const [headerOpen, setHeaderOpen] = useState(true);
+	const [isDesktopFilterLayout, setIsDesktopFilterLayout] = useState(false);
 
 	const list =
 		type === "PROJECT"
@@ -168,6 +168,45 @@ export const Filterbox = (props: FilterboxProps) => {
 					}) ;`
 			: "",
 	);
+
+	useEffect(() => {
+		if (!hideHeaderToggleFrom || typeof window === "undefined") {
+			setIsDesktopFilterLayout(false);
+			return;
+		}
+
+		const query =
+			hideHeaderToggleFrom === "md"
+				? "(min-width: 768px)"
+				: "(min-width: 1024px)";
+		const mediaQuery = window.matchMedia(query);
+		const updateMatch = (event: MediaQueryListEvent | MediaQueryList) => {
+			setIsDesktopFilterLayout(event.matches);
+		};
+
+		updateMatch(mediaQuery);
+
+		if (mediaQuery.addEventListener) {
+			mediaQuery.addEventListener("change", updateMatch);
+		} else {
+			mediaQuery.addListener(updateMatch);
+		}
+
+		return () => {
+			if (mediaQuery.removeEventListener) {
+				mediaQuery.removeEventListener("change", updateMatch);
+			} else {
+				mediaQuery.removeListener(updateMatch);
+			}
+		};
+	}, [hideHeaderToggleFrom]);
+
+	useEffect(() => {
+		if (isDesktopFilterLayout) {
+			setHeaderOpen(true);
+		}
+	}, [isDesktopFilterLayout]);
+
 	//Refresh the pixel call, if any tagrefresh is needed
 	useEffect(() => {
 		if (!filterBoxRefresh) {
@@ -422,9 +461,9 @@ export const Filterbox = (props: FilterboxProps) => {
 		<>
 			{/* Is there any filters */}
 			{Object.entries(filterOptions).length ? (
-				<div className={showHeader ? "mx-2 mt-2" : "mx-2 mt-4"}>
+				<div className={showHeader ? "mx-2 mt-0" : "mx-2 mt-4"}>
 					<div className="relative">
-						<SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+						<SearchIcon className="-translate-y-1/2 absolute top-1/2 left-[10px] h-[13px] w-[13px] text-[var(--color-text-tertiary)]" />
 						<Input
 							placeholder="Search by..."
 							value={filterSearch}
@@ -435,7 +474,7 @@ export const Filterbox = (props: FilterboxProps) => {
 									value: e.target.value,
 								});
 							}}
-							className="w-full border-none pl-9"
+							className="w-full rounded-[8px] border-none bg-[var(--color-background-secondary)] py-[7px] pr-[10px] pl-8 text-[13px] placeholder:text-[13px] placeholder:text-[var(--color-text-tertiary)] focus-visible:ring-0 focus-visible:ring-offset-0"
 							data-testid="filterbox-search"
 						/>
 					</div>
@@ -448,7 +487,7 @@ export const Filterbox = (props: FilterboxProps) => {
 					const list = entries[1];
 					let shownListItems = 0; // for show more
 					return (
-						<div key={entries[0]} className="px-6 py-2">
+						<div key={entries[0]} className="px-4 py-1">
 							<Collapsible
 								open={showCollapsible[entries[0]]}
 								onOpenChange={(open) =>
@@ -462,9 +501,9 @@ export const Filterbox = (props: FilterboxProps) => {
 									<Button
 										type="button"
 										variant="default"
-										className="flex w-full items-center justify-between bg-transparent p-2 text-(--foreground) hover:bg-accent"
+										className="flex h-auto w-full items-center justify-between bg-transparent px-2 py-[6px] text-[var(--color-text-primary)] hover:bg-transparent has-[>svg]:px-2"
 									>
-										<h6 className="font-semibold text-base">
+										<h6 className="font-medium text-[13px] text-[var(--color-text-primary)]">
 											{toTitleCase(
 												removeUnderscores(entries[0]),
 											)}
@@ -505,9 +544,9 @@ export const Filterbox = (props: FilterboxProps) => {
 													type="button"
 													variant="ghost"
 													key={filterOption.value}
-													className={`mb-2 flex w-full items-center justify-between bg-transparent px-4 py-2 font-medium text-(--sidebar-foreground) text-sm hover:bg-(--accent) ${
+													className={`mb-[2px] flex h-auto w-full items-center justify-between rounded-[6px] bg-transparent px-3 py-[5px] text-[13px] hover:bg-[var(--color-background-secondary)] ${
 														isSelected
-															? "bg-(--accent) font-medium"
+															? "bg-[var(--color-background-secondary)]"
 															: ""
 													}`}
 													onClick={() => {
@@ -530,7 +569,7 @@ export const Filterbox = (props: FilterboxProps) => {
 													}
 												>
 													<span
-														className={`text-(--sidebar-foreground) text-sm ${isSelected ? "font-medium" : "font-normal"}`}
+														className={`text-[13px] text-[var(--color-text-secondary)] ${isSelected ? "font-medium" : "font-normal"}`}
 														data-testid={formatToDataTestId(
 															`filterbox-${filterOption.value}-filterBtn`,
 														)}
@@ -539,13 +578,9 @@ export const Filterbox = (props: FilterboxProps) => {
 													</span>
 
 													{filterOption.count && (
-														<Avatar className="size-4">
-															<AvatarFallback className="bg-secondary font-medium text-foreground text-xs">
-																{
-																	filterOption.count
-																}
-															</AvatarFallback>
-														</Avatar>
+														<span className="text-[11px] text-[var(--color-text-tertiary)]">
+															{filterOption.count}
+														</span>
 													)}
 												</Button>
 											);
@@ -556,7 +591,7 @@ export const Filterbox = (props: FilterboxProps) => {
 										<Button
 											type="button"
 											variant="ghost"
-											className="text-(--primary) hover:bg-transparent hover:text-(--primary)"
+											className="px-2 py-1 font-normal text-[#2563eb] text-[12px] no-underline hover:bg-transparent hover:text-[#2563eb]"
 											onClick={() => {
 												const visibleFilters = {
 													...filterVisibility,
@@ -578,18 +613,13 @@ export const Filterbox = (props: FilterboxProps) => {
 												);
 											}}
 										>
-											Show{" "}
-											{filterVisibility[entries[0]].open
-												? "Less"
-												: "More"}
+											+ Show more
 										</Button>
 									)}
 								</CollapsibleContent>
 							</Collapsible>
 							{i + 1 !== totalFilters && (
-								<div className="w-full">
-									<Separator />
-								</div>
+								<div className="my-2 h-[0.5px] w-full bg-[var(--color-border-tertiary)]" />
 							)}
 						</div>
 					);
@@ -598,32 +628,52 @@ export const Filterbox = (props: FilterboxProps) => {
 	);
 
 	return (
-		<div className="filterbox-scroll flex w-full flex-col overflow-y-auto overflow-x-hidden bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)] md:max-h-[calc(100vh-220px)] md:w-[352px]">
+		<div className="filterbox-scroll flex w-full flex-col overflow-y-auto overflow-x-hidden rounded-lg bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)] md:max-h-[calc(100vh-220px)] md:w-[352px]">
 			<div className="w-full">
 				{showHeader ? (
-					<Collapsible open={headerOpen} onOpenChange={setHeaderOpen}>
-						<div className="flex items-center justify-between p-4">
+					<Collapsible
+						open={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? true
+								: headerOpen
+						}
+						onOpenChange={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? undefined
+								: setHeaderOpen
+						}
+					>
+						<div
+							className={`flex items-center px-4 pt-3 pb-1 ${
+								hideHeaderToggleFrom && isDesktopFilterLayout
+									? "justify-start"
+									: "justify-between"
+							}`}
+						>
 							<h6 className="flex-1 font-semibold text-lg">
 								Filter By
 							</h6>
-							<CollapsibleTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => setHeaderOpen(!headerOpen)}
-									aria-label={
-										headerOpen
-											? "Collapse filters"
-											: "Expand filters"
-									}
-								>
-									{headerOpen ? (
-										<ChevronUp className="size-4" />
-									) : (
-										<ChevronDown className="size-4" />
-									)}
-								</Button>
-							</CollapsibleTrigger>
+							{!(
+								hideHeaderToggleFrom && isDesktopFilterLayout
+							) ? (
+								<CollapsibleTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										aria-label={
+											headerOpen
+												? "Collapse filters"
+												: "Expand filters"
+										}
+									>
+										{headerOpen ? (
+											<ChevronUp className="size-4" />
+										) : (
+											<ChevronDown className="size-4" />
+										)}
+									</Button>
+								</CollapsibleTrigger>
+							) : null}
 						</div>
 						<CollapsibleContent>{filterBody}</CollapsibleContent>
 					</Collapsible>

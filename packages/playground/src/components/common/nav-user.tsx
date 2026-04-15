@@ -8,7 +8,6 @@ import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage,
-	Button,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -23,7 +22,7 @@ import {
 import { useChat } from "@/hooks";
 import { toInitials } from "@/utility";
 
-export function NavUser() {
+export const NavUser = () => {
 	const { t, i18n } = useTranslation("common");
 	const { isMobile } = useSidebar();
 	const { actions } = useInsight();
@@ -40,14 +39,17 @@ export function NavUser() {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button variant="ghost" size="icon" className="rounded-full">
-					<Avatar className="h-8 w-8 flex-shrink-0 rounded-lg grayscale">
+				<div className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 hover:bg-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
+					<Avatar className="h-8 w-8 shrink-0 rounded-lg">
 						<AvatarImage src={""} alt={userName} />
-						<AvatarFallback className="rounded-lg text-sidebar-accent-foreground">
+						<AvatarFallback className="rounded-lg bg-primary/10">
 							{toInitials(userName)}
 						</AvatarFallback>
 					</Avatar>
-				</Button>
+					<span className="truncate text-sm group-data-[collapsible=icon]:hidden">
+						{userName}
+					</span>
+				</div>
 			</DropdownMenuTrigger>
 
 			<DropdownMenuContent
@@ -94,4 +96,4 @@ export function NavUser() {
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
-}
+};

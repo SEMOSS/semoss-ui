@@ -1,9 +1,25 @@
 export interface Engine {
-	app_id: string;
-	app_name: string;
+	engine_id: string;
+	engine_name: string;
 	engine_display_name?: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_subtype?: string;
+	engine_favorite?: number;
+	engine_global?: boolean;
+	engine_discoverable?: boolean;
+	engine_user_permission?: number;
+	engine_group_permission?: number;
+	engine_date_created?: string;
+	engine_cost?: string;
+	low_engine_name?: string;
 	description?: string;
+
+	/** @deprecated legacy keys from MyEngines */
+	app_id?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_name?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 }
 
 export interface App {
@@ -13,6 +29,7 @@ export interface App {
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	user_permission: number;
 }
 
 export interface Workspace {
@@ -49,10 +66,12 @@ export interface MCP {
 	name: string;
 
 	/** Description of the mcp */
-	description: string;
+	description?: string;
 
 	/** Tags of the mcp */
 	tags: string[];
+
+	permission: "READ_ONLY" | "EDIT" | "OWNER";
 }
 
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
@@ -103,6 +122,7 @@ export interface AbstractPixelMessage {
 
 export interface InputPixelMessage extends AbstractPixelMessage {
 	io: "INPUT";
+	type: "INPUT_TEXT" | "INPUT_TOOL_EXEC";
 	parts: (
 		| PixelMessageTextPart
 		| PixelMessageMediaPart
@@ -287,4 +307,26 @@ export interface User {
 	id: string;
 	type: string;
 	email: string;
+}
+
+export interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
+	access_permission?: number; // The permission level the user has requested, if any
+	tags?: string; // comma separated tags
+	can_view_dependencies?: boolean;
+	engine_date_created?: string;
+	dependencies?: string[]; // Array of dependency engine IDs
 }

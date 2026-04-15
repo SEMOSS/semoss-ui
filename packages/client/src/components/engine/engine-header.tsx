@@ -50,11 +50,16 @@ export const EngineHeader: React.FC = () => {
 	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
 
 	const normalizeEngineKey = (value?: string) =>
-		(value || "").trim().replaceAll(" ", "_").toUpperCase();
+		(value || "")
+			.trim()
+			.replace(/[^A-Za-z0-9]+/g, "_")
+			.toUpperCase();
 
 	const findDBImage = (appType: string, appSubType: string) => {
 		const typeKey = normalizeEngineKey(appType);
-		const subtypeKey = normalizeEngineKey(appSubType);
+		const subtypeKeyRaw = normalizeEngineKey(appSubType);
+		const subtypeKey =
+			subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
 		const images = ENGINE_IMAGES[typeKey] || [];
 		const obj = images.find((ele) => {
 			return normalizeEngineKey(ele.name) === subtypeKey;
@@ -65,6 +70,30 @@ export const EngineHeader: React.FC = () => {
 		}
 
 		return obj.icon;
+	};
+
+	const formatEngineTimestamp = (rawValue?: string) => {
+		if (!rawValue) {
+			return "N/A";
+		}
+
+		const normalizedValue = rawValue.includes("T")
+			? rawValue
+			: rawValue.replace(" ", "T");
+		const parsedDate = new Date(normalizedValue);
+
+		if (Number.isNaN(parsedDate.getTime())) {
+			return rawValue;
+		}
+
+		return parsedDate.toLocaleString("en-US", {
+			month: "long",
+			day: "2-digit",
+			year: "numeric",
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true,
+		});
 	};
 
 	/**
@@ -108,16 +137,21 @@ export const EngineHeader: React.FC = () => {
 				<BreadcrumbList>
 					<BreadcrumbItem>
 						<BreadcrumbLink asChild>
-							<Link to={".."} className="text-inherit">
+							<Link
+								to={".."}
+								className="inline-flex items-center text-inherit leading-none"
+							>
 								{name} Catalog
 							</Link>
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					<BreadcrumbSeparator>
+					<BreadcrumbSeparator className="inline-flex items-center [&>svg]:translate-y-[0.5px]">
 						<ChevronRight />
 					</BreadcrumbSeparator>
 					<BreadcrumbItem>
-						<BreadcrumbPage>{active.name}</BreadcrumbPage>
+						<BreadcrumbPage className="inline-flex items-center leading-none">
+							{active.name}
+						</BreadcrumbPage>
 					</BreadcrumbItem>
 				</BreadcrumbList>
 			</Breadcrumb>
@@ -128,9 +162,9 @@ export const EngineHeader: React.FC = () => {
 					<img
 						src={findDBImage(
 							type,
-							(active.database_subtype ||
+							(active.engine_subtype ||
 								(active.metadata
-									.database_subtype as string)) as string,
+									.engine_subtype as string)) as string,
 						)}
 						alt={name}
 						className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
@@ -198,7 +232,8 @@ export const EngineHeader: React.FC = () => {
 							)}
 							onClick={() => {
 								const engineType =
-									active.metadata.database_subtype;
+									active.engine_subtype ||
+									(active.metadata.engine_subtype as string);
 								if (engineType === "H2_DB") {
 									setOpenExportModal(true);
 								} else {
@@ -274,8 +309,8 @@ export const EngineHeader: React.FC = () => {
 					</p>
 
 					<div className="flex flex-row flex-wrap gap-2">
-						{active.metadata.tag &&
-							(active.metadata.tag as string[]).map((tag) => {
+						{active.metadata?.tag &&
+							(active.metadata?.tag as string[]).map((tag) => {
 								if (tag === "") return null;
 								return (
 									<Badge
@@ -291,40 +326,22 @@ export const EngineHeader: React.FC = () => {
 					</div>
 				</div>
 				<div className="flex flex-col items-start gap-1 text-left md:items-end md:text-right">
-					{active?.PERMISSIONGRANTEDBY ? (
-						<span
-							className="text-muted-foreground text-sm"
-							data-testid="PublishedBy"
-						>
-							Published by: {active.PERMISSIONGRANTEDBY}
-						</span>
-					) : (
-						<span
-							className="text-muted-foreground text-sm"
-							data-testid="CreatedBy"
-						>
-							Created by: {active.database_created_by}
-						</span>
-					)}
-					{active?.DATEADDED && (
+					<span
+						className="text-muted-foreground text-sm"
+						data-testid="CreatedBy"
+					>
+						Created by: {active.engine_created_by || "Unknown"}
+					</span>
+					{(active.last_updated || active.engine_date_created) && (
 						<span
 							className="text-muted-foreground text-sm"
 							data-testid="DateAdded"
 						>
 							Updated{" "}
-							{active?.DATEADDED
-								? new Date(active?.DATEADDED).toLocaleString(
-										"en-US",
-										{
-											month: "long",
-											day: "2-digit",
-											year: "numeric",
-											hour: "numeric",
-											minute: "2-digit",
-											hour12: true,
-										},
-									)
-								: "N/A"}
+							{formatEngineTimestamp(
+								active.last_updated ||
+									active.engine_date_created,
+							)}
 						</span>
 					)}
 				</div>

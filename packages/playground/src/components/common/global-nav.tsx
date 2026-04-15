@@ -1,6 +1,8 @@
 import dayjs from "dayjs";
 import {
 	MapIcon,
+	ComputerIcon,
+	HelpCircle,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -76,6 +78,7 @@ export const GlobalNav = observer(() => {
 
 	const { root } = useRoot();
 	const [search, setSearch] = useState("");
+	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
 	const { startTour } = useTour();
 	const { open } = useSidebar();
@@ -94,6 +97,8 @@ export const GlobalNav = observer(() => {
 	 */
 	const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 	const [editingName, setEditingName] = useState("");
+
+	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
 	const systemDate = dayjs(system.config.systemDate);
 
@@ -355,6 +360,19 @@ export const GlobalNav = observer(() => {
 						</SidebarMenuButton>
 					</SidebarMenuItem>
 
+					{root.theme.featureFlags?.enableAgent && (
+						<SidebarMenuItem>
+							<SidebarMenuButton
+								asChild
+								isActive={!!matchPath("/agent", pathname)}
+							>
+								<Link to={"/agent"} aria-label={"agent"}>
+									<ComputerIcon />
+									{t("agents")}
+								</Link>
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					)}
 					{root.theme.sidebar.headerItems.map((item) => (
 						<GlobalNavItem
 							key={`header-${item.path}`}
@@ -429,6 +447,11 @@ export const GlobalNav = observer(() => {
 										const isFavorite = room.PINNED || false;
 										const isEditing =
 											editingRoomId === roomId;
+
+										// if the room is in the deleted set, don't render it
+										if (deletedSet.has(roomId)) {
+											return null;
+										}
 
 										return (
 											<SidebarMenuItem
@@ -566,6 +589,19 @@ export const GlobalNav = observer(() => {
 																		e.stopPropagation();
 
 																		try {
+																			// optimistically add to deleted set to remove from UI immediately
+																			setDeletedSet(
+																				(
+																					prev,
+																				) =>
+																					new Set(
+																						[
+																							...prev,
+																							roomId,
+																						],
+																					),
+																			);
+
 																			await chat.closeRoom(
 																				roomId,
 																			);
@@ -587,8 +623,29 @@ export const GlobalNav = observer(() => {
 																			// Refetch rooms after deletion
 																			getRooms.reset();
 																		} catch (e) {
-																			toast.error(
-																				e.message,
+																			if (
+																				e instanceof
+																				Error
+																			) {
+																				toast.error(
+																					e.message,
+																				);
+																			}
+																		} finally {
+																			// remove from deleted set after attempting deletion to allow re-render if deletion failed
+																			setDeletedSet(
+																				(
+																					prev,
+																				) => {
+																					const newSet =
+																						new Set(
+																							prev,
+																						);
+																					newSet.delete(
+																						roomId,
+																					);
+																					return newSet;
+																				},
 																			);
 																		}
 																	}}
@@ -614,21 +671,40 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
-				<SidebarMenu
-					className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden"
-					data-tour="nav-support"
-				>
-					{root.theme.sidebar.footerItems.map((item) => (
-						<GlobalNavItem
-							key={`footer-${item.path}`}
-							name={item.name}
-							icon={item.icon}
-							path={item.path}
-							url={item.url}
-							embed={item.embed}
-						/>
-					))}
-				</SidebarMenu>
+				{root.theme.sidebar.footerItems.length > 0 && (
+					<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+						<div
+							className="relative"
+							onMouseEnter={() => setHelpOpen(true)}
+							onMouseLeave={() => setHelpOpen(false)}
+						>
+							<SidebarMenuItem>
+								<SidebarMenuButton>
+									<HelpCircle />
+									Help
+								</SidebarMenuButton>
+							</SidebarMenuItem>
+							{helpOpen && (
+								<div className="absolute bottom-full left-0 z-50 w-full rounded-md border bg-popover p-1 shadow-md">
+									<SidebarMenu>
+										{root.theme.sidebar.footerItems.map(
+											(item) => (
+												<GlobalNavItem
+													key={item.path}
+													name={item.name}
+													icon={item.icon}
+													path={item.path}
+													url={item.url}
+													embed={item.embed}
+												/>
+											),
+										)}
+									</SidebarMenu>
+								</div>
+							)}
+						</div>
+					</SidebarMenu>
+				)}
 				{root.theme.tour?.show !== false && (
 					<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
 						<SidebarMenuItem>

@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React, { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Breadcrumb,
@@ -19,7 +19,6 @@ import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
 import { useRoot } from "@/hooks";
-import { useNavbar } from "@/hooks/use-navbar";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores";
 import { setFavicon } from "@/utility/utils";
@@ -31,13 +30,14 @@ export const MainLayout = observer(() => {
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
+	const { pathname } = useLocation();
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
-		false,
+		theme.sidebar.expandedByDefault,
 		`sidebar--isOpen`,
 	);
 
-	// set up the store
+	// set up the chat store
 	const chatStore = useMemo(() => {
 		const store = new ChatStore(
 			root.theme,
