@@ -127,7 +127,7 @@ function analyzeCodeChanges(commitHash, files) {
     codeSnippets: [],
   };
 
-  // Extract added functions
+  // Extract ADDED functions only (new lines with +)
   const addedFunctionPattern = /^\+\s*(async\s+)?function\s+(\w+)|^\+\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/gm;
   let match;
   while ((match = addedFunctionPattern.exec(diff)) !== null) {
@@ -137,7 +137,7 @@ function analyzeCodeChanges(commitHash, files) {
     }
   }
 
-  // Extract removed functions
+  // Extract REMOVED functions only (old lines with -)
   const removedFunctionPattern = /^-\s*(async\s+)?function\s+(\w+)|^-\s*(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/gm;
   while ((match = removedFunctionPattern.exec(diff)) !== null) {
     const funcName = match[2] || match[3];
@@ -146,18 +146,20 @@ function analyzeCodeChanges(commitHash, files) {
     }
   }
 
-  // Check for imports/exports changes
+  // Check for ADDED/REMOVED import statements only
   if (/^[+-]\s*import\s|^[+-]\s*export\s/m.test(diff)) {
     changes.importsChanged = true;
   }
 
-  // Check for type changes
-  if (/^[+-].*:\s*\w+<|^[+-].*interface\s|^[+-].*type\s/m.test(diff)) {
+  // Check for ADDED/REMOVED type definitions only (new lines with + or - )
+  const typePattern = /^[+-]\s*(interface\s+\w+|type\s+\w+\s*=|:\s*\w+<|\{\s*\w+:\s*\w+)/gm;
+  if (typePattern.test(diff)) {
     changes.typesChanged = true;
   }
 
-  // Check for state/config changes
-  if (/^[+-].*useState|^[+-].*useReducer|^[+-].*const\s+\w+\s*=\s*{|^[+-].*config|^[+-].*store/m.test(diff)) {
+  // Check for ADDED/REMOVED state management calls only (new lines with useState, useReducer, etc.)
+  const statePattern = /^[+-].*\buseState\(|^[+-].*\buseReducer\(|^[+-].*\bsetState\(|^[+-].*\bdispatch\(/gm;
+  if (statePattern.test(diff)) {
     changes.stateManagementChanged = true;
   }
 
@@ -273,141 +275,66 @@ function buildCommitContext(commit, files) {
 }
 
 /**
- * Generate intelligent summary points explaining WHY changes were made
+ * Generate intelligent summary points explaining ONLY ACTUAL changes made
  */
 function generateSummaryPoints(commit, context, files) {
   const points = [];
   const message = commit.message.toLowerCase();
-  const body = (commit.body || '').toLowerCase();
   const commitType = message.split('(')[0].trim();
   const scope = message.includes('(') ? message.split('(')[1].split(')')[0] : '';
-  const codeAnalysis = context.codeAnalysis || { functionsAdded: [], functionsModified: [], functionsRemoved: [] };
+  const codeAnalysis = context.codeAnalysis || { functionsAdded: [], functionsRemoved: [], functionsModified: [], importsChanged: false, stateManagementChanged: false, typesChanged: false };
   
   const added = files.filter(f => f.status === 'A');
   const modified = files.filter(f => f.status === 'M');
   const deleted = files.filter(f => f.status === 'D');
 
-  // Check for specific patterns in commit message and code
-  const hasConsole = message.includes('console') || message.includes('log') || message.includes('debug');
-  const hasStyle = message.includes('style') || message.includes('css') || message.includes('theme');
-  const hasTest = message.includes('test') || message.includes('spec');
-  const hasUI = message.includes('ui') || message.includes('component') || message.includes('button');
-  const hasAPI = message.includes('api') || message.includes('endpoint') || message.includes('fetch');
-  const hasAuth = message.includes('auth') || message.includes('login') || message.includes('logout');
-  const hasOptimize = message.includes('optim') || message.includes('perf') || message.includes('speed');
-  const hasRefactor = commitType === 'refactor' || message.includes('refactor');
-
-  // Use actual code changes for summary
   const functionsAdded = codeAnalysis.functionsAdded || [];
   const functionsRemoved = codeAnalysis.functionsRemoved || [];
   const importsChanged = codeAnalysis.importsChanged || false;
   const stateChanged = codeAnalysis.stateManagementChanged || false;
+  const typesChanged = codeAnalysis.typesChanged || false;
 
-  // For VERY small changes (1-2 files modified)
-  if (modified.length <= 2 && added.length === 0 && deleted.length === 0) {
-    if (hasConsole || functionsAdded.some(f => f.includes('log') || f.includes('debug'))) {
-      points.push('Added console logging for debugging and monitoring');
-    } else if (hasStyle) {
-      points.push('Updated styles and visual appearance');
-    } else if (stateChanged) {
-      points.push('Modified state management and hook logic');
-    } else if (hasUI) {
-      points.push('Enhanced UI component functionality');
-    } else if (hasAuth) {
-      points.push('Improved authentication and logout flow');
-    } else if (hasOptimize) {
-      points.push('Optimized performance and load times');
-    } else if (hasRefactor || functionsAdded.length > 0) {
-      points.push('Refactored code for better maintainability');
+  // ONLY add summary if code analysis actually found something
+  if (functionsAdded.length > 0) {
+    if (functionsAdded.length === 1) {
+      points.push(`Added ${functionsAdded[0]} function`);
     } else {
-      points.push('Fixed and updated ' + modified.length + ' file(s)');
-    }
-  }
-  // For medium changes
-  else if (modified.length > 2 && modified.length <= 5) {
-    if (importsChanged && functionsAdded.length > 0) {
-      points.push('Updated dependencies and integrated new functionality');
-    } else if (hasUI) {
-      points.push('Updated multiple UI components for consistency');
-    } else if (hasAPI) {
-      points.push('Enhanced API integration and data handling');
-    } else if (hasOptimize) {
-      points.push('Performance improvements across multiple areas');
-    } else if (hasRefactor || (modified.length > 2 && functionsAdded.length > 0)) {
-      points.push('Refactored ' + modified.length + ' interconnected files');
-    } else {
-      points.push('Updated ' + modified.length + ' files for improvements');
-    }
-  }
-  // For large changes
-  else if (modified.length > 5 || added.length > 3) {
-    if (functionsAdded.length > 3) {
-      points.push('Added ' + functionsAdded.length + ' new functions/hooks');
-    } else {
-      points.push('Significant changes affecting ' + (modified.length + added.length) + ' files');
-    }
-  }
-
-  // Analyze commit type more precisely with code changes
-  if (commitType === 'feat') {
-    if (functionsAdded.length > 0) {
       const funcList = functionsAdded.slice(0, 2).join(', ');
-      points.push('Added new ' + funcList + ' function(s)/component(s)');
+      points.push(`Added ${funcList}${functionsAdded.length > 2 ? ` and ${functionsAdded.length - 2} more` : ''} function(s)`);
+    }
+  }
+
+  if (functionsRemoved.length > 0) {
+    if (functionsRemoved.length === 1) {
+      points.push(`Removed ${functionsRemoved[0]} function`);
+    } else {
+      const funcList = functionsRemoved.slice(0, 2).join(', ');
+      points.push(`Removed ${funcList}${functionsRemoved.length > 2 ? ` and ${functionsRemoved.length - 2} more` : ''} function(s)`);
+    }
+  }
+
+  if (stateChanged && functionsAdded.length === 0 && functionsRemoved.length === 0) {
+    points.push('Modified state management, hooks, or configuration');
+  }
+
+  if (importsChanged && functionsAdded.length === 0 && functionsRemoved.length === 0) {
+    points.push('Updated imports and module dependencies');
+  }
+
+  if (typesChanged && functionsAdded.length === 0 && functionsRemoved.length === 0) {
+    points.push('Updated TypeScript type definitions');
+  }
+
+  // Only for larger changes with no specific detected changes
+  if (points.length === 0) {
+    if (modified.length > 0 && added.length === 0 && deleted.length === 0) {
+      points.push(`Modified ${modified.length} file(s)`);
     } else if (added.length > 0) {
-      if (hasUI) {
-        points.push('Added new interactive component/feature');
-      } else if (hasAPI) {
-        points.push('Created new API endpoint/service');
-      } else if (hasTest) {
-        points.push('Added comprehensive test coverage');
-      } else {
-        points.push('Implemented ' + added.length + ' new feature file(s)');
-      }
-    }
-  } 
-  else if (commitType === 'fix') {
-    if (hasAuth) {
-      points.push('Fixed authentication and security issues');
-    } else if (hasUI) {
-      points.push('Fixed UI rendering issues and bugs');
-    } else if (functionsRemoved.length > 0) {
-      points.push('Removed ' + functionsRemoved.join(', ') + ' to fix issues');
-    } else {
-      points.push('Bug fix to improve reliability');
-    }
-  }
-  else if (commitType === 'docs') {
-    if (context.categories.docs.length > 0) {
-      points.push('Improved documentation for clarity and understanding');
-    }
-  }
-  else if (commitType === 'test') {
-    points.push('Enhanced test coverage and quality assurance');
-  }
-  else if (commitType === 'chore') {
-    if (scope.includes('depend')) {
-      points.push('Updated dependencies to latest stable versions');
-    } else if (importsChanged) {
-      points.push('Updated imports and module organization');
-    } else {
-      points.push('Maintenance and project updates');
-    }
-  }
-
-  // Add scope insights if available
-  if (scope && scope.length > 0) {
-    const scopeName = scope.toLowerCase().replace(/[-_]/g, ' ');
-    if (!message.includes(scopeName)) {
-      points.push('Focus area: ' + scopeName);
-    }
-  }
-
-  // Add deletion info if relevant
-  if (deleted.length > 0 || functionsRemoved.length > 0) {
-    if (functionsRemoved.length > 0) {
-      points.push('Removed ' + functionsRemoved.length + ' obsolete function(s)/file(s)');
-    } else {
-      points.push('Removed ' + deleted.length + ' obsolete file(s)');
+      points.push(`Added ${added.length} new file(s)`);
+    } else if (deleted.length > 0) {
+      points.push(`Removed ${deleted.length} file(s)`);
+    } else if (modified.length > 0 || added.length > 0 || deleted.length > 0) {
+      points.push('Updated project files');
     }
   }
 

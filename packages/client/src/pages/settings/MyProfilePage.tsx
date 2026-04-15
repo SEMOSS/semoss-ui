@@ -300,6 +300,50 @@ export const MyProfilePage = () => {
 	/**
 	 * Submit edit profile info
 	 */
+	const profileEditSubmit = async (data: EditUserInfoForm) => {
+		try {
+			// need to confirm reactor for runQuery or monolithStore method for editing profile
+			console.log(data);
+
+			const userObj: Record<string, unknown> = {
+				password: "",
+				id: nativeLogin,
+				email: email,
+				username: id,
+				name: data.NAME,
+				type: configStore.store.config.nativeRegistration
+					? "NATIVE"
+					: "CUSTOM",
+				admin: configStore.store.user?.admin || false,
+			};
+
+			userObj.id =
+				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
+			userObj.newUsername = data.USERNAME !== id ? data.USERNAME : null;
+			userObj.newEmail = data.EMAIL;
+
+			const response = await editMemberInfo(false, userObj);
+			setEditName(data.NAME);
+			setEditEmail(data.EMAIL);
+
+			if (response.data) {
+				notification.add({
+					color: "success",
+					message: "Successfully edited profile information",
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: "Error editing profile information",
+				});
+			}
+		} catch (_e) {
+			notification.add({
+				color: "error",
+				message: "Error editing profile information",
+			});
+		}
+	};
 
 	/**
 	 * Handle selecting a default model
@@ -492,9 +536,9 @@ export const MyProfilePage = () => {
 					<GridItem sm={8}>
 						{isNative ? (
 							<form
-								// onSubmit={userInfoHandleSubmit(
-								// 	profileEditSubmit,
-								// )}
+								onSubmit={userInfoHandleSubmit(
+									profileEditSubmit,
+								)}
 							>
 								<StyledStack direction="row" spacing={2}>
 									<Controller
