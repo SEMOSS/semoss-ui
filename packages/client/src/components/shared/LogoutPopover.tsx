@@ -43,7 +43,6 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 		} finally {
 			setLoggingOut(false);
 		}
-		console.log("logged out successfully");
 	};
 
 	return (
