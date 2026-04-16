@@ -70,11 +70,74 @@ export class RootStore {
 			footer: "",
 			landing: "",
 			sidebar: {
-				//workspaceAlias: "Workspace",
 				expandedByDefault: false,
-				chatHistoryDate: false,
-				headerItems: [],
-				footerItems: [],
+				chatHistoryDate: true,
+				headerItems: [
+					{
+						name: "Agent Beta",
+						icon: "",
+						path: "agent",
+						url: "http://localhost:3000/#/agent",
+						embed: true,
+					},
+					{
+						name: "Knowledge Beta",
+						icon: "",
+						path: "knowledge",
+						url: "http://localhost:3000/#/knowledge",
+						embed: true,
+					},
+				],
+				footerItems: [
+					{
+						name: "Bug Report",
+						icon: "",
+						path: "bug-report",
+						url: "https://fda.servicenowservices.com/sp?id=sc_cat_item&sys_id=e73e765293ca22d01cc7fb786cba1092",
+						embed: false,
+					},
+					{
+						name: "Feature Request",
+						icon: "",
+						path: "feature-request",
+						url: "https://apps.gov.powerapps.us/play/e/5b636239-4a84-eefd-bdb3-928b5d3e4408/a/6bc8f49c-d625-451d-bd34-5e0e55c38af0",
+						embed: false,
+					},
+					{
+						name: "Training Resources",
+						icon: "",
+						path: "training-resources",
+						url: "https://fda.sharepoint.com/sites/insideFDA-ODT-Elsa",
+						embed: false,
+					},
+				],
+			},
+			tour: {
+				customSteps: [
+					{
+						navItemPath: "agent",
+						title: "Agent Beta",
+						content:
+							"Access your workspaces or create new AI agents.",
+						placement: "right" as const,
+					},
+					{
+						navItemPath: "knowledge",
+						title: "Knowledge Beta",
+						content:
+							"Browse, create, share and manage your document libraries.",
+						placement: "right" as const,
+					},
+				],
+				trailingCustomSteps: [
+					{
+						navItemPath: "bug-report",
+						title: "Support",
+						content:
+							"Report bugs, request features, or access training materials.",
+						placement: "right" as const,
+					},
+				],
 			},
 			dialog: undefined,
 			toolAutoExecutionLimit: null,
