@@ -374,7 +374,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								return (
 									<React.Fragment key={m.key}>
 										{showModelName && (
-											<div className="relative flex flex-col items-center justify-center">
+											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
 													{m.ornaments.modelName}
 												</div>
@@ -405,10 +405,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 										{m.type === "OUTPUT" &&
 											m.conversationCompactedAbove && (
-												<div className="relative flex flex-col items-center justify-center">
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<div className="z-10 flex cursor-default items-center gap-1.5 bg-background px-2 text-muted-foreground text-xs leading-normal">
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div className="relative mb-4 flex h-6 w-full cursor-default items-center justify-center overflow-hidden rounded-sm">
+															<div
+																className="absolute inset-0 opacity-[0.18]"
+																style={{
+																	backgroundImage:
+																		"repeating-linear-gradient(-45deg, currentColor, currentColor 1px, transparent 1px, transparent 8px)",
+																}}
+															/>
+															<div className="relative z-10 flex items-center gap-1.5 rounded bg-secondary-background px-2 text-muted-foreground text-xs leading-normal">
 																<ArchiveIcon className="h-3 w-3" />
 																<span>
 																	{t(
@@ -416,15 +423,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 																	)}
 																</span>
 															</div>
-														</TooltipTrigger>
-														<TooltipContent>
-															{t(
-																"settings.compactedAboveTooltip",
-															)}
-														</TooltipContent>
-													</Tooltip>
-													<Separator className="absolute top-1/2" />
-												</div>
+														</div>
+													</TooltipTrigger>
+													<TooltipContent>
+														{t(
+															"settings.compactedAboveTooltip",
+														)}
+													</TooltipContent>
+												</Tooltip>
 											)}
 									</React.Fragment>
 								);
