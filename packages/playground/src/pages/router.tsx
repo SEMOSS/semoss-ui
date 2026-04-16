@@ -43,7 +43,7 @@ const router = createHashRouter(
 											element: <RoomPage />,
 										},
 										{
-											path: "embed/:path",
+											path: "embed/*",
 											element: <EmbedPage />,
 										},
 										{
