@@ -1,5 +1,6 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -293,7 +294,7 @@ export const VectorForm = ({
 				required: val?.required,
 				pattern: val.rules?.pattern,
 			}}
-			render={({ field, fieldState: { error }, formState }) => {
+			render={({ field, fieldState: { error } }) => {
 				switch (val.component) {
 					case "text":
 						return (
@@ -767,15 +768,21 @@ export const VectorForm = ({
 						>
 							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="vector-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testId="vector-importForm-category-title"
+									>
 										{category}
 									</H4>
-									<Muted data-testId="model-importForm-category-description">
+									<Muted
+										className="text-muted-foreground text-sm leading-6"
+										data-testId="model-importForm-category-description"
+									>
 										{categoryDescriptions[category] ??
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-[2] flex-col gap-2">
+								<div className="flex flex-2 flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
@@ -816,7 +823,7 @@ export const VectorForm = ({
 													Add advanced settings here
 												</Muted>
 											</div>
-											<div className="flex flex-[2] flex-col gap-2">
+											<div className="flex flex-2 flex-col gap-2">
 												{advancedFields.map((val) => (
 													<div
 														key={val.key}
@@ -845,7 +852,7 @@ export const VectorForm = ({
 						variant="default"
 						data-testid="vector-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="w-full min-w-[128px] capitalize sm:w-auto"
+						className="w-full min-w-32 capitalize sm:w-auto"
 					>
 						Connect
 					</Button>

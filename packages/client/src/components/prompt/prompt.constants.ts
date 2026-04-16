@@ -44,6 +44,8 @@ export const INPUT_TYPE_HELP_TEXT = {
 		"This input will be used as a search term for the selected knowledge repository. The search results can be modified to fit your needs and will be used to support your prompt.",
 	[INPUT_TYPE_DATABASE]:
 		"This input will be used to query the selected database. The query results generated can be modified to fit your needs and will be used to support your prompt.",
+	[INPUT_TYPE_SELECT]:
+		"Define the dropdown options that users can select from. You can add multiple options separated by commas, or add them one at a time. Press Enter to add the options.",
 };
 
 export const SUMMARY_STEPS = [

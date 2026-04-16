@@ -3,14 +3,20 @@ import {
 	ArrowUp,
 	LayoutGrid,
 	List,
-	Menu,
 	Plus,
 	Search,
 	X,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useReducer,
+	useState,
+} from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { debounced, useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -19,6 +25,7 @@ import {
 	InputGroupAddon,
 	InputGroupButton,
 	InputGroupInput,
+	Label,
 	P,
 	Select,
 	SelectContent,
@@ -26,6 +33,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Spinner,
+	Switch,
 	Tabs,
 	TabsList,
 	TabsTrigger,
@@ -36,8 +44,8 @@ import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { usePage, useRootStore } from "@/hooks";
-import { NavbarLeft } from "../../components/shared";
+import { useRootStore } from "@/hooks";
+import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 type TabMode = "Bookmarked" | "Mine" | "Discoverable" | "System";
 type ViewMode = "grid" | "list";
@@ -108,7 +116,7 @@ const SYSTEM_APPS: Record<string, AppMetadata> = {
 		project_reactors_compiled_user: "",
 		project_reactors_compiled_user_type: "",
 		project_favorite: "",
-		user_permission: null,
+		user_permission: undefined,
 		group_permission: "",
 		tag: [],
 		description: "Develop dashboards and visualizations to view data",
@@ -133,53 +141,12 @@ const SYSTEM_APPS: Record<string, AppMetadata> = {
 		project_reactors_compiled_user: "",
 		project_reactors_compiled_user_type: "",
 		project_favorite: "",
-		user_permission: null,
+		user_permission: undefined,
 		group_permission: "",
 		tag: [],
 		description: "Execute commands and see a response",
 	},
 };
-
-const AppCatalogNavbarHeader = observer((): JSX.Element | null => {
-	const { page } = usePage();
-	const { configStore } = useRootStore();
-
-	if (page.sidebar.pinned) {
-		return null;
-	}
-
-	return (
-		<div className="flex min-w-0 max-w-full items-center gap-1 sm:gap-2">
-			<Button
-				variant="outline"
-				size="icon-sm"
-				className="h-8 w-8 shrink-0 rounded-md border border-border"
-				onClick={() => page.openSidebar()}
-				onMouseOver={() => page.openSidebar()}
-				aria-label="Open sidebar"
-			>
-				<Menu className="size-4" />
-			</Button>
-			<Link
-				to="/"
-				aria-label="Go Home"
-				className="flex min-w-0 max-w-full items-center gap-1 rounded-md px-1 py-1 text-foreground no-underline hover:bg-muted/50 sm:gap-2 sm:px-2"
-			>
-				{configStore.theme.logo ? (
-					<img
-						alt="logo"
-						src={configStore.theme.logo}
-						className="h-4 w-auto sm:h-5"
-					/>
-				) : null}
-				<span className="hidden truncate font-semibold text-sm sm:block">
-					{configStore.theme.landingPageName ||
-						configStore.theme.name}
-				</span>
-			</Link>
-		</div>
-	);
-});
 
 /**
  * Hook to manage app favoriting
@@ -281,6 +248,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
+	const createdByMeId = useId();
 
 	const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 	const { favoritedApps, apps } = state;
@@ -311,6 +279,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		"PROJECTNAME" | "DATECREATED" | "DATELASTEDITED"
 	>("PROJECTNAME");
 	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
+	const [createdByMe, setCreatedByMe] = useState(false);
 	const [updatedNewApps, setUpdatedNewApps] = useState<AppMetadata[]>([]);
 	const [cloneRefreshState, setCloneRefreshState] =
 		useState<CloneRefreshState | null>(null);
@@ -388,9 +357,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	);
 
 	const handleFilterboxChange = useCallback(
-		(filters: Record<string, unknown>) => {
-			applyMetaFilters(filters);
-			syncSearchParams(filters);
+		(filters: unknown) => {
+			applyMetaFilters(filters as Record<string, unknown>);
+			syncSearchParams(filters as Record<string, unknown>);
 		},
 		[applyMetaFilters, syncSearchParams],
 	);
@@ -600,7 +569,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	// Debounced search
 	const debouncedSetSearch = debounced(
-		(value: string) => setSearch(value),
+		(...args: unknown[]) => setSearch(args[0] as string),
 		300,
 	);
 
@@ -759,15 +728,39 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	// Apps to display
 	const displayedApps = useMemo(() => {
-		if (isBookmarkedMode) return [];
+		// For Bookmarked mode, use favoritedApps
+		if (isBookmarkedMode) {
+			if (createdByMe) {
+				const currentUserId = configStore.store.user.id;
+				return favoritedApps.filter(
+					(app) => app.project_created_by === currentUserId,
+				);
+			}
+			return favoritedApps;
+		}
+
+		// Filter by created by me if toggle is on and we're in "My Apps" tab
+		if (createdByMe && mode === "Mine") {
+			const currentUserId = configStore.store.user.id;
+			return apps.filter(
+				(app) => app.project_created_by === currentUserId,
+			);
+		}
 
 		return apps;
-	}, [apps, isBookmarkedMode]);
+	}, [
+		apps,
+		favoritedApps,
+		isBookmarkedMode,
+		createdByMe,
+		mode,
+		configStore.store.user.id,
+	]);
 
 	return (
 		<>
 			<NavbarLeft>
-				<AppCatalogNavbarHeader />
+				<NavbarHeader />
 			</NavbarLeft>
 			<div className="flex flex-col gap-6">
 				{/* Header */}
@@ -922,6 +915,23 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							</div>
 						</div>
 					</div>
+					{(mode === "Mine" || mode === "Bookmarked") && (
+						<div className="mt-2 flex w-full justify-end">
+							<div className="flex shrink-0 items-center gap-2">
+								<Label
+									htmlFor={createdByMeId}
+									className="cursor-pointer text-sm"
+								>
+									Created by me
+								</Label>
+								<Switch
+									id={createdByMeId}
+									checked={createdByMe}
+									onCheckedChange={setCreatedByMe}
+								/>
+							</div>
+						</div>
+					)}
 				</div>
 
 				<div className="flex flex-col gap-6 pb-8 md:flex-row md:items-start">
@@ -987,9 +997,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 							{/* Bookmarked Apps */}
 							{isBookmarkedMode &&
-								(favoritedApps.length > 0 ? (
+								(displayedApps.length > 0 ? (
 									<div className={containerClass}>
-										{favoritedApps.map((app) => (
+										{displayedApps.map((app) => (
 											<AppTileCard
 												key={app.project_id}
 												app={app}
@@ -1019,7 +1029,11 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									</div>
 								) : (
 									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-										<P>No bookmarked apps found.</P>
+										<P>
+											{createdByMe
+												? "No bookmarked apps created by you found."
+												: "No bookmarked apps found."}
+										</P>
 									</div>
 								))}
 
@@ -1125,6 +1139,18 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									</div>
 								)}
 
+							{/* Empty State - Filter active, no matches */}
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								!getApps.isLoading &&
+								displayedApps.length === 0 &&
+								apps.length > 0 &&
+								createdByMe && (
+									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+										<P>No apps created by you found.</P>
+									</div>
+								)}
+
 							{/* Empty State */}
 							{!isSystemMode &&
 								!isBookmarkedMode &&
@@ -1133,7 +1159,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								apps.length === 0 && (
 									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
 										<P>
-											No apps found matching your search.
+											{createdByMe
+												? "No apps created by you found."
+												: "No apps found matching your search."}
 										</P>
 									</div>
 								)}

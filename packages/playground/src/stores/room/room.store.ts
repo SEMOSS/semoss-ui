@@ -7,7 +7,11 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import {
+	STREAMING_PLACEHOLDER_ID,
+	TEMPERATURE,
+	TOKEN_LENGTH,
+} from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
@@ -73,7 +77,7 @@ interface RoomStoreInterface {
 	/**
 	 * Root message
 	 */
-	root: ResponseMessageStore | PlanMessageStore | null;
+	root: ResponseMessageStore | PlanMessageStore;
 
 	/**
 	 * Active tools
@@ -83,7 +87,7 @@ interface RoomStoreInterface {
 	/*
 	 * Model that is being chatted against
 	 */
-	model: Engine | null;
+	model: Engine;
 
 	/*
 	 * Options that is passed to the model
@@ -151,8 +155,8 @@ export class RoomStore {
 			name: "",
 			dateCreated: "",
 		},
-		model: null,
-		root: null,
+		model: null as unknown as Engine,
+		root: null as unknown as ResponseMessageStore | PlanMessageStore,
 		tools: {},
 		options: {
 			instructions: "",
@@ -163,7 +167,10 @@ export class RoomStore {
 		sidebar: {
 			isOpen: false,
 			model: FlexLayout.Model.fromJson({
-				global: {},
+				global: {
+					borderEnableTabScrollbar: true,
+					tabSetEnableTabScrollbar: true,
+				},
 				borders: [],
 				layout: {
 					type: "row",
@@ -254,8 +261,8 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get a message by id the model
-	 * @param messageId - model to use in the room
+	 * Get a message by id
+	 * @param messageId - the message id
 	 */
 	getMessage = (messageId: string) => {
 		const queue: AbstractMessageStore[] = [this._store.root];
@@ -327,7 +334,7 @@ export class RoomStore {
 	}
 
 	/**
-	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_TOOL_PLACEHOLDER messages
+	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_PLACEHOLDER_ID messages
 	 */
 	get latestResponseMessage(): ResponseMessageStore {
 		let responseMessage: AbstractMessageStore = this.tail;
@@ -335,7 +342,7 @@ export class RoomStore {
 			// if it is a REAL response message, return it
 			if (
 				responseMessage instanceof ResponseMessageStore &&
-				responseMessage.id !== "STREAMING_TOOL_PLACEHOLDER_ID"
+				responseMessage.id !== STREAMING_PLACEHOLDER_ID
 			) {
 				return responseMessage;
 			} else {
@@ -344,22 +351,38 @@ export class RoomStore {
 			}
 		}
 		// if there are no response messages, return null
-		return null;
+		return null as unknown as ResponseMessageStore;
 	}
 
 	/**
-	 * Number of tokens used
+	 * Total tokens used in the current conversation.
+	 *
+	 * How token counts work across message types:
+	 * - INPUT messages have a cumulative count covering all prior exchanges.
+	 * - RESPONSE messages have only the incremental count for that turn.
+	 * - INPUT_TOOL_EXEC messages are also cumulative, but their count stays 0
+	 *   until all tool results for the preceding response have come in.
+	 *
+	 * We never create INPUT_TOOL_EXEC messages, so mid-conversation the chain can look like:
+	 *   INPUT → RESPONSE → RESPONSE(cumulative proxy) → RESPONSE(incremental) → ...
+	 * saveToolExecution() in response-message.store stamps the server's cumulative input
+	 * token count onto the parent RESPONSE so the math still works here. See that file.
+	 *
+	 * To get the total: walk back from tail and add up the two most-recent messages
+	 * with non-zero tokens — one incremental, one cumulative (INPUT or proxy RESPONSE).
 	 */
 	get tokensUsed() {
-		// INPUT_TEXT messages contain the count of all previously used tokens in the history
-		// RESPONSE messages contain the count of tokens used in that response, but not the previous tokens
-		// INPUT_TOOL_EXEC messages have tokens=0
-		// So, just sum up to a real INPUT message is the most reliable way to get the token count
 		let currMessage = this.tail as AbstractMessageStore;
 		let tokensUsed = 0;
 		while (currMessage) {
-			tokensUsed += currMessage.tokens;
-			if (currMessage.type === "INPUT" && currMessage.tokens) break;
+			if (currMessage.tokens) {
+				if (tokensUsed) {
+					tokensUsed += currMessage.tokens;
+					break;
+				} else {
+					tokensUsed += currMessage.tokens;
+				}
+			}
 			currMessage = currMessage.parent;
 		}
 
@@ -466,48 +489,47 @@ export class RoomStore {
 			});
 
 			// create the root
-			let root = null;
-			if (this.mode === "chat") {
-				root = new ResponseMessageStore(this, {
-					io: "OUTPUT",
-					messageId: "ROOT_PLACEHOLDER_ID",
-					visible: false,
-					platform_generated: true,
-					modelId: this._store.model?.engine_id || "",
-					dateCreated: new Date().toISOString(),
-					parts: [],
-					tokens: 0,
-					ornaments: {
-						modelName:
-							this._store.model?.engine_display_name ||
-							this._store.model?.engine_name ||
-							"",
-					},
-				} as ResponsePixelMessage);
-			} else if (this.mode === "planning") {
-				root = new ResponseMessageStore(this, {
-					io: "OUTPUT",
-					messageId: "ROOT_PLACEHOLDER_ID",
-					visible: false,
-					platform_generated: true,
-					modelId: this._store.model?.engine_id || "",
-					dateCreated: new Date().toISOString(),
-					parts: [
-						{
-							type: "TEXT",
-							text: "",
-						},
-					],
-					tokens: 0,
-					ornaments: {
-						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName:
-							this._store.model?.engine_display_name ||
-							this._store.model?.engine_name ||
-							"",
-					},
-				} as ResponsePixelMessage);
-			}
+			const root =
+				this.mode === "chat"
+					? new ResponseMessageStore(this, {
+							io: "OUTPUT",
+							messageId: "ROOT_PLACEHOLDER_ID",
+							visible: false,
+							platform_generated: true,
+							modelId: this._store.model?.engine_id || "",
+							dateCreated: new Date().toISOString(),
+							parts: [],
+							tokens: 0,
+							ornaments: {
+								modelName:
+									this._store.model?.engine_display_name ||
+									this._store.model?.engine_name ||
+									"",
+							},
+							modelType: "",
+						} as ResponsePixelMessage)
+					: new ResponseMessageStore(this, {
+							io: "OUTPUT",
+							messageId: "ROOT_PLACEHOLDER_ID",
+							visible: false,
+							platform_generated: true,
+							modelId: this._store.model?.engine_id || "",
+							dateCreated: new Date().toISOString(),
+							parts: [
+								{
+									type: "TEXT",
+									text: "",
+								},
+							],
+							tokens: 0,
+							ornaments: {
+								PLAYGROUND_MESSAGE_TYPE: "COT",
+								modelName:
+									this._store.model?.engine_display_name ||
+									this._store.model?.engine_name ||
+									"",
+							},
+						} as ResponsePixelMessage);
 
 			const messages: Record<
 				string,
@@ -631,7 +653,7 @@ export class RoomStore {
 			runInAction(() => {
 				this.setIsLoading(false);
 			});
-			throw new Error(e.message || "Error initializing room");
+			throw new Error((e as Error).message || "Error initializing room");
 		}
 	};
 
@@ -706,7 +728,9 @@ export class RoomStore {
 
 			this.setOptions(options);
 		} catch (e) {
-			throw new Error(e.message || "Error updating room options");
+			throw new Error(
+				(e as Error).message || "Error updating room options",
+			);
 		}
 	};
 
@@ -747,7 +771,7 @@ export class RoomStore {
 	 */
 	getToolByNodeId = (nodeId: string): ToolStore => {
 		if (!nodeId.startsWith("tool--")) {
-			return null;
+			return null as unknown as ToolStore;
 		}
 
 		// strip out the id from the nodeId
@@ -964,6 +988,7 @@ export class RoomStore {
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
+			type: "INPUT_TEXT",
 			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
 			platform_generated: true,
@@ -1090,7 +1115,7 @@ export class RoomStore {
 		} catch (e) {
 			if (setErrorOnFail) {
 				runInAction(() => {
-					this._store.error = e;
+					this._store.error = e as Error;
 				});
 			}
 			throw e;
@@ -1178,7 +1203,7 @@ export class RoomStore {
 			if (setErrorOnFail) {
 				// show the error
 				runInAction(() => {
-					this._store.error = e;
+					this._store.error = e as Error;
 				});
 			}
 

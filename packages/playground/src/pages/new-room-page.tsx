@@ -29,8 +29,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 	RoomInputMenuWorkspace,
 } from "@/components";
@@ -43,7 +42,6 @@ import type { MCPConfig, Workspace } from "@/types";
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
-const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN === "true";
 
 /**
  * The page to create a new room
@@ -65,6 +63,7 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const initialPrompt = searchParams.get("prompt") ?? "";
 
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
@@ -86,20 +85,23 @@ export const NewRoomPage = observer(() => {
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
 			? `GetWorkspace("${selectedWorkspaceId}");`
-			: null,
+			: "",
 		{
 			data: null,
 		},
 	);
 
 	// Fetch knowledge vector engine if knowledgeId is provided
-	const getKnowledge = usePixel<{
-		engine_id: string;
-		engine_name: string;
-	} | null>(
+	const getKnowledge = usePixel<
+		| {
+				engine_id: string;
+				engine_name: string;
+		  }[]
+		| null
+	>(
 		knowledgeId
 			? `MyEngines( engine=["${knowledgeId}"], engineTypes=['VECTOR'],  metaFilters=[{}], userT = [true], limit=[15], offset=[0]);`
-			: null,
+			: "",
 		{ data: null },
 	);
 
@@ -112,7 +114,7 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
-			workspace: null,
+			workspace: undefined,
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -120,11 +122,11 @@ export const NewRoomPage = observer(() => {
 	 * Functions
 	 */
 	/**
-	 * Handle tool selection
+	 * Handle tool selection (toggle for plus menu)
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options using the temporary RoomStore
+		// Toggle tool in options
 		const tools = tempRoomStore.options.mcp.reduce(
 			(acc, curr) => {
 				acc[curr.id] = curr;
@@ -136,6 +138,31 @@ export const NewRoomPage = observer(() => {
 		if (Object.hasOwn(tools, tool.id)) {
 			delete tools[tool.id];
 		} else {
+			tools[tool.id] = tool;
+		}
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
+	 * @param tool - selected tool
+	 */
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
+		const tools = tempRoomStore.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, MCPConfig>,
+		);
+
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -184,10 +211,11 @@ export const NewRoomPage = observer(() => {
 
 			// go to the new room
 			navigate(`/room/${room.roomId}`);
-		} catch (error) {
+		} catch (error: unknown) {
+			const sdkError = error as { message: string; code?: number };
 			if (
-				error.code !== undefined &&
-				(error.code === 403 || error.code === 302)
+				sdkError.code !== undefined &&
+				(sdkError.code === 403 || sdkError.code === 302)
 			) {
 				// User is unauthorized, likely due to expired session. Prompt them to log in again.
 				toast.error(t("chat:gracefulErrors.inactivity"));
@@ -195,7 +223,7 @@ export const NewRoomPage = observer(() => {
 			}
 
 			toast.error(
-				t("room:errors.createRoom", { message: error.message }),
+				t("room:errors.createRoom", { message: sdkError.message }),
 			);
 		} finally {
 			setIsLoading(false);
@@ -257,7 +285,11 @@ export const NewRoomPage = observer(() => {
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
-		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
+		if (
+			!knowledgeId ||
+			getKnowledge.status !== "SUCCESS" ||
+			!getKnowledge.data?.[0]
+		) {
 			return;
 		}
 
@@ -291,8 +323,8 @@ export const NewRoomPage = observer(() => {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
-				temperature: root.theme.defaultRoomSettings.temperature,
-				tokenLength: root.theme.defaultRoomSettings.tokenLength,
+				temperature: root.theme.defaultRoomSettings?.temperature,
+				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}
@@ -324,7 +356,9 @@ export const NewRoomPage = observer(() => {
 						) : (
 							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									{t("room:welcome")}
+									{t("room:welcome", {
+										name: chat.user.name,
+									})}
 								</div>
 								{root.theme.description ? (
 									<div className="text-center text-muted-foreground text-sm leading-normal">
@@ -337,20 +371,30 @@ export const NewRoomPage = observer(() => {
 						<RoomInput
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
+							initialValue={initialPrompt}
 							model={chat.models.selected}
 							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
+							options={tempRoomStore.options}
+							onMcpSelect={handleToolAdd}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
 								return true;
 							}}
+							hidePauseButton
 							MenuComponent={observer(
-								({ addToken, onOpenChange, fileRef }) => (
+								({ onOpenChange, fileRef, editorRef }) => (
 									<>
-										{ENABLE_PLAN && (
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
+										{root.theme.featureFlags
+											?.enablePlan && (
 											<>
 												<DropdownMenuItem
 													onSelect={() => {
@@ -419,25 +463,25 @@ export const NewRoomPage = observer(() => {
 											}}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuUpload
-											fileRef={fileRef}
-											onSelect={() => onOpenChange(false)}
+										<RoomInputMenuMCP
+											type="KNOWLEDGE"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
+										/>
+										<RoomInputMenuMCP
+											type="TOOLBOX"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuKnowledge
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
-										<RoomInputMenuToolbox
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();
@@ -470,13 +514,13 @@ export const NewRoomPage = observer(() => {
 													>
 														<a
 															target="_blank"
-															href={`${PLATFORM_URL}/#/app/${getWorkspace.data.workspace_id}`}
+															href={`${PLATFORM_URL}/#/app/${getWorkspace.data?.workspace_id}`}
 														>
 															<ComputerIcon data-icon="inline-start" />
 															<div className="w-18 truncate">
 																{getWorkspace
 																	.data
-																	.name ||
+																	?.name ||
 																	t(
 																		"room:menuWorkspace.selectAgent",
 																	)}
@@ -498,7 +542,7 @@ export const NewRoomPage = observer(() => {
 														<ComputerIcon data-icon="inline-start" />
 														<div className="w-18 truncate">
 															{getWorkspace.data
-																.name ||
+																?.name ||
 																t(
 																	"room:menuWorkspace.selectAgent",
 																)}
@@ -507,7 +551,7 @@ export const NewRoomPage = observer(() => {
 												</span>
 											</TooltipTrigger>
 											<TooltipContent>
-												{getWorkspace.data.name ||
+												{getWorkspace.data?.name ||
 													t(
 														"room:menuWorkspace.selectAgent",
 													)}

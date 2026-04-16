@@ -1,4 +1,4 @@
-import type { App, Engine, MCP, Workspace } from "@/types";
+import type { App, Engine, MCP } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -11,14 +11,20 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
  * @returns The normalized MCP object
  */
 export const engineProjectToMCP = (tool: Engine | App): MCP => {
-	if ("app_type" in tool) {
+	if ("engine_type" in tool) {
 		// It's an Engine
 		return {
-			type: tool.app_type,
-			id: tool.app_id,
-			name: tool.app_name,
+			type: tool.engine_type,
+			id: tool.engine_id,
+			name: tool.engine_name,
 			description: tool.description || "",
 			tags: [], // Tags are not provided in the current response
+			permission:
+				tool.engine_user_permission === 1
+					? "OWNER"
+					: tool.engine_user_permission === 2
+						? "EDIT"
+						: "READ_ONLY",
 		};
 	} else {
 		// It's an App
@@ -28,26 +34,15 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 			name: tool.project_display_name || tool.project_name,
 			description: tool.description || "",
 			tags: [], // Tags are not provided in the current response
+			permission:
+				tool.user_permission === 1
+					? "OWNER"
+					: tool.user_permission === 2
+						? "EDIT"
+						: "READ_ONLY",
 		};
 	}
 };
-
-/**
- * Occasionally it may be useful to return the return of GetWorkspace into an App format.
- * @param workspace The workspace to convert
- * @returns The app
- */
-export const workspaceToApp = (
-	workspace: Workspace,
-): App & {
-	project_type: "WORKSPACE";
-} => ({
-	project_id: workspace.workspace_id,
-	project_name: workspace.name,
-	description: workspace.description,
-	project_date_created: workspace.date_created,
-	project_type: "WORKSPACE",
-});
 
 /**
  * Convert the MCP into a platform url
