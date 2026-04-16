@@ -21,6 +21,7 @@
         "dayjs": "1.11.8",
         "lexical": "^0.39.0",
         "lucide-react": "^0.545.0",
+        "mermaid": "^11.13.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
         "re-resizable": "^6.11.2",

@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const fs = require("node:fs");
-const axios = require("axios");
+const { post } = require("@semoss/sdk/react");
 const FormData = require("form-data");
 
 let SEMOSS_URL = "";
@@ -54,61 +54,62 @@ async function deployProject(projectId, progressCallback) {
 			cancellable: false,
 		},
 		async (progress) => {
+			// progress.report({ increment: 10 });
+			// progressCallback?.("Creating new insight...");
+
+			// let response,
+			// 	params,
+			// 	insightId = "";
+
+			// // Create new insight
+			// try {
+			// 	params = new URLSearchParams();
+			// 	params.append("expression", "true");
+			// 	params.append("insightId", "new");
+
+			// 	response = await post(
+			// 		`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
+			// 		params,
+			// 		{ headers },
+			// 	);
+			// 	insightId = response.data.insightID;
+			// } catch (error) {
+			// 	vscode.window.showErrorMessage(
+			// 		`Failed to create new insight: ${getErrorMessage(error)}`,
+			// 	);
+			// 	progressCallback?.(
+			// 		`Failed to create new insight: ${getErrorMessage(error)}`,
+			// 	);
+			// 	return;
+			// }
+
+			// if (!insightId) {
+			// 	vscode.window.showErrorMessage(
+			// 		"Empty insight ID returned created",
+			// 	);
+			// 	progressCallback?.("Empty insight ID returned created");
+			// 	return;
+			// }
+
 			progress.report({ increment: 10 });
-			progressCallback?.("Creating new insight...");
-
-			let response,
-				params,
-				insightId = "";
-
-			// Create new insight
-			try {
-				params = new URLSearchParams();
-				params.append("expression", "true");
-				params.append("insightId", "new");
-
-				response = await axios.post(
-					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
-					{ headers },
-				);
-				insightId = response.data.insightID;
-			} catch (error) {
-				vscode.window.showErrorMessage(
-					`Failed to create new insight: ${getErrorMessage(error)}`,
-				);
-				progressCallback?.(
-					`Failed to create new insight: ${getErrorMessage(error)}`,
-				);
-				return;
-			}
-
-			if (!insightId) {
-				vscode.window.showErrorMessage(
-					"Empty insight ID returned created",
-				);
-				progressCallback?.("Empty insight ID returned created");
-				return;
-			}
-
-			progress.report({ increment: 15 });
 			progressCallback?.("Deleting existing assets (if any)...");
 
+			let insightId = "new"; // Use "current" to refer to the currently active insight
 			// Delete existing assets
 			try {
-				params = new URLSearchParams();
-				params.append(
-					"expression",
-					`DeleteAsset(filePath=["version/assets/"], space=["${projectId}"]);`,
-				);
-				params.append("insightId", insightId);
+				const data = {
+					expression: `DeleteAsset(filePath=["version/assets/"], space=["${projectId}"]);`,
+					insightId: insightId,
+				};
 
 				console.log(`Deleting assets for project: ${projectId}`);
-				response = await axios.post(
+				response = await post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
+					data,
 					{ headers },
 				);
+				console.log("Delete assets response:", response?.data);
+				insightId = response?.data?.insightID;
 			} catch (error) {
 				console.error("Delete assets error:", error);
 				vscode.window.showErrorMessage(
@@ -180,7 +181,7 @@ async function deployProject(projectId, progressCallback) {
 				console.log(
 					`Uploading file: ${outputFilePath} (${Math.round(stats.size / 1024)} KB) to project: ${projectId}`,
 				);
-				response = await axios.post(
+				response = await post(
 					`${SEMOSS_URL}/Monolith/api/uploadFile/baseUpload?insightId=${insightId}&projectId=${projectId}&path=version/assets/`,
 					formData,
 					{
@@ -228,16 +229,14 @@ async function deployProject(projectId, progressCallback) {
 			// Unzip the uploaded file
 			const fileLocation = response.data[0].fileLocation;
 			try {
-				params = new URLSearchParams();
-				params.append(
-					"expression",
-					`UnzipFile(filePath=["${fileLocation}"], space=["${projectId}"]);`,
-				);
-				params.append("insightId", insightId);
+				const data = {
+					expression: `UnzipFile(filePath=["${fileLocation}"], space=["${projectId}"]);`,
+					insightId: insightId,
+				};
 
-				response = await axios.post(
+				response = await post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
+					data,
 					{ headers },
 				);
 			} catch (error) {
@@ -266,16 +265,14 @@ async function deployProject(projectId, progressCallback) {
 
 			// Reload insight classes
 			try {
-				params = new URLSearchParams();
-				params.append(
-					"expression",
-					`ReloadInsightClasses('${projectId}');`,
-				);
-				params.append("insightId", insightId);
+				const data = {
+					expression: `ReloadInsightClasses('${projectId}');`,
+					insightId: insightId,
+				};
 
-				response = await axios.post(
+				response = await post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
+					data,
 					{ headers },
 				);
 			} catch (error) {
@@ -301,13 +298,14 @@ async function deployProject(projectId, progressCallback) {
 
 			// Set project portal
 			try {
-				params = new URLSearchParams();
-				params.append("projectId", projectId);
-				params.append("hasPortal", true);
+				const data = {
+					projectId: projectId,
+					hasPortal: true,
+				};
 
-				response = await axios.post(
+				response = await post(
 					`${SEMOSS_URL}/Monolith/api/auth/project/setProjectPortal`,
-					params,
+					data,
 					{ headers },
 				);
 			} catch (error) {
@@ -331,16 +329,14 @@ async function deployProject(projectId, progressCallback) {
 
 			// Publish project
 			try {
-				params = new URLSearchParams();
-				params.append(
-					"expression",
-					`PublishProject('${projectId}', release=true);`,
-				);
-				params.append("insightId", insightId);
+				const data = {
+					expression: `PublishProject('${projectId}', release=true);`,
+					insightId: insightId,
+				};
 
-				response = await axios.post(
+				response = await post(
 					`${SEMOSS_URL}/Monolith/api/engine/runPixel`,
-					params,
+					data,
 					{ headers },
 				);
 			} catch (error) {

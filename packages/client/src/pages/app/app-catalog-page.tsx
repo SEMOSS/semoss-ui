@@ -1,20 +1,39 @@
-import { Filter, LayoutGrid, List, Menu, Plus, Search, X } from "lucide-react";
+import {
+	ArrowDown,
+	ArrowUp,
+	LayoutGrid,
+	List,
+	Plus,
+	Search,
+	X,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useReducer,
+	useState,
+} from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { debounced, useIteratorPixel } from "@semoss/sdk/react";
 import {
-	Badge,
 	Button,
 	H3,
 	InputGroup,
 	InputGroupAddon,
+	InputGroupButton,
 	InputGroupInput,
+	Label,
 	P,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Spinner,
+	Switch,
 	Tabs,
 	TabsList,
 	TabsTrigger,
@@ -25,13 +44,18 @@ import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { usePage, useRootStore } from "@/hooks";
-import { removeUnderscores, toTitleCase } from "@/utility";
-import { NavbarLeft } from "../../components/shared";
+import { useRootStore } from "@/hooks";
+import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 type TabMode = "Bookmarked" | "Mine" | "Discoverable" | "System";
 type ViewMode = "grid" | "list";
-const VIEW_STORAGE_KEY = "appCatalogViewMode";
+type CloneRefreshState = {
+	mode: TabMode;
+	source: "apps" | "favoritedApps";
+	targetCount: number;
+	scrollTop: number;
+	hasResetStarted: boolean;
+};
 
 interface AppCatalogState {
 	favoritedApps: AppMetadata[];
@@ -92,7 +116,7 @@ const SYSTEM_APPS: Record<string, AppMetadata> = {
 		project_reactors_compiled_user: "",
 		project_reactors_compiled_user_type: "",
 		project_favorite: "",
-		user_permission: null,
+		user_permission: undefined,
 		group_permission: "",
 		tag: [],
 		description: "Develop dashboards and visualizations to view data",
@@ -117,52 +141,12 @@ const SYSTEM_APPS: Record<string, AppMetadata> = {
 		project_reactors_compiled_user: "",
 		project_reactors_compiled_user_type: "",
 		project_favorite: "",
-		user_permission: null,
+		user_permission: undefined,
 		group_permission: "",
 		tag: [],
 		description: "Execute commands and see a response",
 	},
 };
-
-const AppCatalogNavbarHeader = observer((): JSX.Element | null => {
-	const { page } = usePage();
-	const { configStore } = useRootStore();
-
-	if (page.sidebar.pinned) {
-		return null;
-	}
-
-	return (
-		<div className="flex items-center gap-2">
-			<Button
-				variant="outline"
-				size="icon-sm"
-				className="h-8 w-8 rounded-md border border-border"
-				onMouseOver={() => page.openSidebar()}
-				aria-label="Open sidebar"
-			>
-				<Menu className="size-4" />
-			</Button>
-			<Link
-				to="/"
-				aria-label="Go Home"
-				className="flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-foreground no-underline hover:bg-muted/50"
-			>
-				{configStore.theme.logo ? (
-					<img
-						alt="logo"
-						src={configStore.theme.logo}
-						className="h-5 w-auto"
-					/>
-				) : null}
-				<span className="truncate font-semibold text-sm">
-					{configStore.theme.landingPageName ||
-						configStore.theme.name}
-				</span>
-			</Link>
-		</div>
-	);
-});
 
 /**
  * Hook to manage app favoriting
@@ -264,6 +248,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const { configStore } = useRootStore();
 	const navigate = useNavigate();
 	const [searchParams, setSearchParams] = useSearchParams();
+	const createdByMeId = useId();
 
 	const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 	const { favoritedApps, apps } = state;
@@ -282,22 +267,22 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	);
 
 	const [mode, setMode] = useState<TabMode>("Mine");
-	const [view, setView] = useState<ViewMode>(() => {
-		if (typeof window === "undefined") {
-			return "grid";
-		}
-		const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-		return stored === "list" || stored === "grid" ? stored : "grid";
-	});
+	const [view, setView] = useState<ViewMode>("list");
 	const cardVariant = view === "list" ? "row" : "catalog";
 	const containerClass =
 		view === "list"
-			? "flex flex-col divide-y rounded-lg border bg-card"
-			: "grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+			? "flex flex-col gap-2"
+			: "grid grid-cols-1 gap-3 lg:grid-cols-2 2xl:grid-cols-3";
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
-	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+	const [sortKey, setSortKey] = useState<
+		"PROJECTNAME" | "DATECREATED" | "DATELASTEDITED"
+	>("PROJECTNAME");
+	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
+	const [createdByMe, setCreatedByMe] = useState(false);
 	const [updatedNewApps, setUpdatedNewApps] = useState<AppMetadata[]>([]);
+	const [cloneRefreshState, setCloneRefreshState] =
+		useState<CloneRefreshState | null>(null);
 
 	const [filterBoxRefresh, setFilterBoxRefresh] = useState(false);
 
@@ -354,13 +339,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		[],
 	);
 
-	useEffect(() => {
-		if (typeof window === "undefined") {
-			return;
-		}
-		window.localStorage.setItem(VIEW_STORAGE_KEY, view);
-	}, [view]);
-
 	const syncSearchParams = useCallback(
 		(filters: Record<string, unknown>) => {
 			const params = new URLSearchParams();
@@ -379,9 +357,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	);
 
 	const handleFilterboxChange = useCallback(
-		(filters: Record<string, unknown>) => {
-			applyMetaFilters(filters);
-			syncSearchParams(filters);
+		(filters: unknown) => {
+			applyMetaFilters(filters as Record<string, unknown>);
+			syncSearchParams(filters as Record<string, unknown>);
 		},
 		[applyMetaFilters, syncSearchParams],
 	);
@@ -412,12 +390,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				metaKeysWithDescription,
 			)}, metaFilters=[${JSON.stringify(
 				metaFilters,
-			)}], filterWord=["${search}"], onlyPortals=[true], limit=[${limit}], offset=[${offset}]);`;
+			)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], onlyPortals=[true], limit=[${limit}], offset=[${offset}]);`;
 		},
 		(response) => (response.length < APP_PAGE_LIMIT ? -1 : Infinity),
 		(response) => response,
 		{ limit: APP_PAGE_LIMIT },
-		[mode, search, metaFiltersKey],
+		[mode, search, metaFiltersKey, sortKey, sortOrder],
 	);
 
 	useEffect(() => {
@@ -440,7 +418,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				metaKeysWithDescription,
 			)}, metaFilters=[${JSON.stringify(
 				metaFilters,
-			)}], filterWord=["${search}"], onlyFavorites=[true], limit=[${limit}], offset=[${offset}]);`;
+			)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], onlyFavorites=[true], limit=[${limit}], offset=[${offset}]);`;
 		},
 		(response) => {
 			if (response.length < APP_PAGE_LIMIT) {
@@ -450,7 +428,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		},
 		(response) => response,
 		{ limit: APP_PAGE_LIMIT },
-		[isBookmarkedMode, search, metaFiltersKey],
+		[isBookmarkedMode, search, metaFiltersKey, sortKey, sortOrder],
 	);
 
 	useEffect(() => {
@@ -492,7 +470,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	useEffect(() => {
 		const scrollEle = document.querySelector(
-			"#home__content",
+			'[data-home-content="true"]',
 		) as HTMLDivElement;
 		setScroll(scrollEle);
 		return () => setScroll(null);
@@ -502,12 +480,96 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		void mode;
 		void search;
 		void metaFiltersKey;
+		void sortKey;
+		void sortOrder;
 		resetScroll();
-	}, [mode, search, metaFiltersKey, resetScroll]);
+	}, [mode, search, metaFiltersKey, sortKey, sortOrder, resetScroll]);
+
+	const handleCloneComplete = useCallback(() => {
+		if (isSystemMode) {
+			return;
+		}
+
+		const scrollEle = document.querySelector(
+			'[data-home-content="true"]',
+		) as HTMLDivElement | null;
+
+		const nextRefreshState: CloneRefreshState = {
+			mode,
+			source: isBookmarkedMode ? "favoritedApps" : "apps",
+			targetCount: isBookmarkedMode ? favoritedApps.length : apps.length,
+			scrollTop: scrollEle?.scrollTop ?? 0,
+			hasResetStarted: false,
+		};
+
+		setCloneRefreshState(nextRefreshState);
+		resetScroll();
+
+		if (isBookmarkedMode) {
+			getFavoritedApps.reset();
+			return;
+		}
+
+		getApps.reset();
+	}, [
+		apps.length,
+		favoritedApps.length,
+		getApps,
+		getFavoritedApps,
+		isBookmarkedMode,
+		isSystemMode,
+		mode,
+		resetScroll,
+	]);
+
+	useEffect(() => {
+		if (!cloneRefreshState) return;
+
+		if (cloneRefreshState.mode !== mode) {
+			setCloneRefreshState(null);
+			return;
+		}
+
+		const source =
+			cloneRefreshState.source === "favoritedApps"
+				? getFavoritedApps
+				: getApps;
+		const loadedCount = Array.isArray(source.data) ? source.data.length : 0;
+
+		if (!cloneRefreshState.hasResetStarted) {
+			if (source.isLoading || loadedCount === 0) {
+				setCloneRefreshState((prev) =>
+					prev ? { ...prev, hasResetStarted: true } : prev,
+				);
+			}
+			return;
+		}
+
+		if (source.isLoading) {
+			return;
+		}
+
+		if (loadedCount < cloneRefreshState.targetCount && source.hasMore) {
+			source.next();
+			return;
+		}
+
+		const scrollEle = document.querySelector(
+			'[data-home-content="true"]',
+		) as HTMLDivElement | null;
+
+		if (scrollEle) {
+			requestAnimationFrame(() => {
+				scrollEle.scrollTop = cloneRefreshState.scrollTop;
+			});
+		}
+
+		setCloneRefreshState(null);
+	}, [cloneRefreshState, mode, getApps, getFavoritedApps]);
 
 	// Debounced search
 	const debouncedSetSearch = debounced(
-		(value: string) => setSearch(value),
+		(...args: unknown[]) => setSearch(args[0] as string),
 		300,
 	);
 
@@ -517,6 +579,30 @@ export const AppCatalogPage = observer((): JSX.Element => {
 			debouncedSetSearch(value);
 		},
 		[debouncedSetSearch],
+	);
+
+	const handleSortChange = useCallback(
+		(value: "PROJECTNAME" | "DATECREATED" | "DATELASTEDITED") => {
+			setSortKey(value);
+			resetScroll();
+			getApps.reset();
+			getFavoritedApps.reset();
+		},
+		[getApps, getFavoritedApps, resetScroll],
+	);
+
+	const handleSortOrderChange = useCallback(
+		(value: "ASC" | "DESC") => {
+			if (sortOrder === value) {
+				return;
+			}
+
+			setSortOrder(value);
+			resetScroll();
+			getApps.reset();
+			getFavoritedApps.reset();
+		},
+		[getApps, getFavoritedApps, resetScroll, sortOrder],
 	);
 
 	// Favorite management
@@ -628,24 +714,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		return ids.length === 0 ? ["dummy-id"] : ids;
 	}, [inputValue, apps, favoritedApps]);
 
-	// Active filters display
-	const activeFilters = useMemo(
-		() =>
-			Object.entries(metaFilters).flatMap(([filterKey, filterValue]) => {
-				if (filterValue == null) return [];
-				const values = Array.isArray(filterValue)
-					? filterValue
-					: [filterValue];
-				return values.map((value) => ({
-					key: filterKey,
-					value: String(value),
-					label: `${toTitleCase(removeUnderscores(filterKey))}: ${value}`,
-				}));
-			}),
-		[metaFilters],
-	);
-
-	const activeFilterCount = activeFilters.length;
 	const showFilters =
 		!configStore.store.config.adminOnlyViewMenuBarFlag &&
 		configStore.isEngineOperationAvailable("PROJECT", "add");
@@ -658,17 +726,41 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		);
 	}, [search]);
 
-	// Apps to display (excluding favorited apps in non-bookmarked modes)
+	// Apps to display
 	const displayedApps = useMemo(() => {
-		if (isBookmarkedMode) return [];
+		// For Bookmarked mode, use favoritedApps
+		if (isBookmarkedMode) {
+			if (createdByMe) {
+				const currentUserId = configStore.store.user.id;
+				return favoritedApps.filter(
+					(app) => app.project_created_by === currentUserId,
+				);
+			}
+			return favoritedApps;
+		}
 
-		return apps.filter((app) => !isFavorited(app));
-	}, [apps, isBookmarkedMode, isFavorited]);
+		// Filter by created by me if toggle is on and we're in "My Apps" tab
+		if (createdByMe && mode === "Mine") {
+			const currentUserId = configStore.store.user.id;
+			return apps.filter(
+				(app) => app.project_created_by === currentUserId,
+			);
+		}
+
+		return apps;
+	}, [
+		apps,
+		favoritedApps,
+		isBookmarkedMode,
+		createdByMe,
+		mode,
+		configStore.store.user.id,
+	]);
 
 	return (
 		<>
 			<NavbarLeft>
-				<AppCatalogNavbarHeader />
+				<NavbarHeader />
 			</NavbarLeft>
 			<div className="flex flex-col gap-6">
 				{/* Header */}
@@ -698,14 +790,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
 					)}
 				</div>
 
-				{/* Search and Filters */}
-				<div className="flex flex-col gap-4 rounded-lg border bg-card p-4 shadow-sm">
-					<div className="flex flex-col gap-3 md:flex-row md:items-center">
-						<InputGroup className="flex-1">
+				{/* Search */}
+				<div className="flex flex-col gap-3">
+					<div className="flex w-full min-w-0 flex-wrap items-end gap-2 md:flex-nowrap">
+						<InputGroup className="h-10 min-w-[110px] flex-[1_1_auto]">
 							<InputGroupAddon>
 								<Search className="size-4" />
 							</InputGroupAddon>
 							<InputGroupInput
+								className="h-10"
 								placeholder="Search apps..."
 								value={inputValue}
 								onChange={(e) =>
@@ -713,54 +806,84 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								}
 								aria-label="Search apps"
 							/>
-						</InputGroup>
-						<div className="flex items-center gap-2">
-							{showFilters && (
-								<Popover
-									open={isFiltersOpen}
-									onOpenChange={setIsFiltersOpen}
-								>
-									<PopoverTrigger asChild>
-										<Button variant="outline">
-											<Filter className="size-4" />
-											Filters
-											{activeFilterCount > 0
-												? ` (${activeFilterCount})`
-												: ""}
-										</Button>
-									</PopoverTrigger>
-									<PopoverContent
-										align="end"
-										className="mt-2 max-h-[calc(100vh-180px)] w-auto max-w-[70vw] overflow-y-auto p-0"
+							{inputValue ? (
+								<InputGroupAddon align="inline-end">
+									<InputGroupButton
+										size="icon-xs"
+										variant="ghost"
+										onClick={() => handleInputChange("")}
+										aria-label="Clear search"
 									>
-										<Filterbox
-											type="PROJECT"
-											applyOnMount={false}
-											showHeader={false}
-											onChange={handleFilterboxChange}
-											filteredCatalogIds={renderedAppIds}
-											filterBoxRefresh={filterBoxRefresh}
-											onfilterBoxRefreshCompleted={() => {
-												setFilterBoxRefresh(false);
-											}}
-										/>
-									</PopoverContent>
-								</Popover>
-							)}
-							<div className="flex items-center gap-1">
+										<X className="size-4" />
+									</InputGroupButton>
+								</InputGroupAddon>
+							) : null}
+						</InputGroup>
+						<div className="flex w-auto shrink-0 items-center gap-1">
+							<div className="w-[136px] sm:w-[148px]">
+								<Select
+									value={sortKey}
+									onValueChange={(value) =>
+										handleSortChange(
+											value as
+												| "PROJECTNAME"
+												| "DATECREATED"
+												| "DATELASTEDITED",
+										)
+									}
+								>
+									<SelectTrigger
+										className="h-9 w-full"
+										aria-label="Sort By"
+									>
+										<SelectValue placeholder="Name" />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="PROJECTNAME">
+											Name
+										</SelectItem>
+										<SelectItem value="DATECREATED">
+											Date Created
+										</SelectItem>
+										<SelectItem value="DATELASTEDITED">
+											Date Last Edited
+										</SelectItem>
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex shrink-0 items-center gap-1">
 								<Button
 									variant={
-										view === "grid"
-											? "secondary"
+										sortOrder === "ASC"
+											? "default"
 											: "outline"
 									}
 									size="icon-sm"
-									aria-label="Grid view"
-									title="Grid view"
-									onClick={() => setView("grid")}
+									className="h-9 w-9"
+									title="Ascending Order"
+									aria-label="Ascending Order"
+									onClick={() => handleSortOrderChange("ASC")}
 								>
-									<LayoutGrid className="size-4" />
+									<ArrowUp className="size-4" />
 								</Button>
+								<Button
+									variant={
+										sortOrder === "DESC"
+											? "default"
+											: "outline"
+									}
+									size="icon-sm"
+									className="h-9 w-9"
+									title="Descending Order"
+									aria-label="Descending Order"
+									onClick={() =>
+										handleSortOrderChange("DESC")
+									}
+								>
+									<ArrowDown className="size-4" />
+								</Button>
+							</div>
+							<div className="flex shrink-0 items-center gap-1">
 								<Button
 									variant={
 										view === "list"
@@ -768,279 +891,282 @@ export const AppCatalogPage = observer((): JSX.Element => {
 											: "outline"
 									}
 									size="icon-sm"
+									className="h-9 w-9"
 									aria-label="List view"
 									title="List view"
 									onClick={() => setView("list")}
 								>
 									<List className="size-4" />
 								</Button>
+								<Button
+									variant={
+										view === "grid"
+											? "secondary"
+											: "outline"
+									}
+									size="icon-sm"
+									className="h-9 w-9"
+									aria-label="Grid view"
+									title="Grid view"
+									onClick={() => setView("grid")}
+								>
+									<LayoutGrid className="size-4" />
+								</Button>
 							</div>
 						</div>
 					</div>
+					{(mode === "Mine" || mode === "Bookmarked") && (
+						<div className="mt-2 flex w-full justify-end">
+							<div className="flex shrink-0 items-center gap-2">
+								<Label
+									htmlFor={createdByMeId}
+									className="cursor-pointer text-sm"
+								>
+									Created by me
+								</Label>
+								<Switch
+									id={createdByMeId}
+									checked={createdByMe}
+									onCheckedChange={setCreatedByMe}
+								/>
+							</div>
+						</div>
+					)}
 				</div>
 
-				{/* Active Filters */}
-				{showFilters && (
-					<div className="-my-3 flex flex-wrap items-center gap-2">
-						{isSystemMode ? (
-							<P className="text-[11px] text-muted-foreground">
-								{activeFilterCount > 0
-									? "Filters not applied"
-									: "Filters not applicable"}
-							</P>
-						) : activeFilterCount > 0 ? (
-							<>
-								{activeFilters.map((filter) => (
-									<Badge
-										key={`${filter.key}-${filter.value}`}
-										variant="outline"
-										className="gap-1"
-									>
-										{filter.label}
-										<button
-											type="button"
-											onClick={() => {
-												const nextFilters = {
-													...metaFilters,
-												};
-												const currentValue =
-													nextFilters[filter.key];
-
-												if (
-													Array.isArray(currentValue)
-												) {
-													const updated =
-														currentValue.filter(
-															(v) =>
-																String(v) !==
-																filter.value,
-														);
-													if (updated.length === 0) {
-														delete nextFilters[
-															filter.key
-														];
-													} else {
-														nextFilters[
-															filter.key
-														] = updated;
-													}
-												} else {
-													delete nextFilters[
-														filter.key
-													];
-												}
-
-												applyMetaFilters(nextFilters);
-												syncSearchParams(nextFilters);
-												setFilterBoxRefresh(true);
-											}}
-											className="ml-1 hover:text-destructive"
-											aria-label={`Remove ${filter.label} filter`}
-										>
-											<X className="size-3" />
-										</button>
-									</Badge>
-								))}
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => {
-										applyMetaFilters({});
-										syncSearchParams({});
-										setFilterBoxRefresh(true);
-									}}
-								>
-									Clear all
-								</Button>
-							</>
-						) : (
-							<P className="text-[11px] text-muted-foreground">
-								No filters applied
-							</P>
-						)}
-					</div>
-				)}
-
-				{/* Tabs and Content */}
-				<div className="flex flex-col gap-6 pb-8">
-					<div className="border-b pb-1">
-						<Tabs
-							value={mode}
-							onValueChange={(val) => setMode(val as TabMode)}
-						>
-							<TabsList className="w-full flex-nowrap justify-start gap-4 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-								<TabsTrigger
-									value="Mine"
-									data-testid="appCatalogPage-myApps-btn"
-									className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
-								>
-									My Apps
-								</TabsTrigger>
-								<TabsTrigger
-									value="Bookmarked"
-									data-testid="appCatalogPage-bookmarked-btn"
-									className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
-								>
-									Bookmarked Apps
-								</TabsTrigger>
-								<TabsTrigger
-									value="Discoverable"
-									data-testid="appCatalogPage-discoverable-btn"
-									className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
-								>
-									Discoverable Apps
-								</TabsTrigger>
-								<TabsTrigger
-									value="System"
-									data-testid="appCatalogPage-systemApps-btn"
-									className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
-								>
-									System Apps
-								</TabsTrigger>
-							</TabsList>
-						</Tabs>
-					</div>
-
-					{/* Bookmarked Apps */}
-					{isBookmarkedMode &&
-						(favoritedApps.length > 0 ? (
-							<div className={containerClass}>
-								{favoritedApps.map((app) => (
-									<AppTileCard
-										key={app.project_id}
-										app={app}
-										systemApp={false}
-										layout="responsive"
-										variant={cardVariant}
-										href={`#/app/${app.project_id}/view`}
-										onAction={() =>
-											navigate(
-												`/app/${app.project_id}/view`,
-											)
-										}
-										appType={app.project_type}
-										isFavorite={true}
-										favorite={() => toggleFavorite(app)}
-										onDelete={() => removeApp(app)}
-										isDiscoverable={false}
-										isLoading={false}
-										showSkeleton={false}
-									/>
-								))}
-							</div>
-						) : (
-							<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-								<P>No bookmarked apps found.</P>
-							</div>
-						))}
-
-					{/* System Apps */}
-					{isSystemMode && (
-						<div className={containerClass}>
-							{filteredSystemApps.length > 0 ? (
-								filteredSystemApps.map((app) => (
-									<AppTileCard
-										key={app.project_id}
-										app={app}
-										background="#BADEFF"
-										href={
-											app.project_name === "BI"
-												? "../../../"
-												: "../../../#!/embed-terminal"
-										}
-										systemApp={true}
-										layout="responsive"
-										variant={cardVariant}
-										appType={app.project_type}
-										isLoading={false}
-										showSkeleton={false}
-									/>
-								))
-							) : (
-								<div className="col-span-full rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-									<P>No system apps found.</P>
-								</div>
-							)}
+				<div className="flex flex-col gap-6 pb-8 md:flex-row md:items-start">
+					{showFilters && (
+						<div className="md:sticky md:top-4 md:w-[352px] md:shrink-0 md:self-start">
+							<Filterbox
+								type="PROJECT"
+								applyOnMount={false}
+								showHeader={true}
+								hideHeaderToggleFrom="md"
+								onChange={handleFilterboxChange}
+								filteredCatalogIds={renderedAppIds}
+								filterBoxRefresh={filterBoxRefresh}
+								onfilterBoxRefreshCompleted={() => {
+									setFilterBoxRefresh(false);
+								}}
+							/>
 						</div>
 					)}
 
-					{/* Loading Skeletons */}
-					{!isSystemMode &&
-						!isBookmarkedMode &&
-						getApps.isLoading &&
-						apps.length === 0 && (
-							<div className={containerClass}>
-								{skeletonKeys.map((key) => (
-									<AppTileCard
-										key={key}
-										app={SYSTEM_APPS.TERMINAL}
-										systemApp={false}
-										layout="responsive"
-										variant={cardVariant}
-										isDiscoverable={mode !== "Mine"}
-										isLoading={true}
-										showSkeleton={true}
-									/>
+					<div className="flex min-w-0 flex-1 flex-col gap-6">
+						{/* Tabs and Content */}
+						<div className="flex flex-col gap-6">
+							<div className="border-b pb-1">
+								<Tabs
+									value={mode}
+									onValueChange={(val) =>
+										setMode(val as TabMode)
+									}
+								>
+									<TabsList className="w-full flex-nowrap justify-start gap-4 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+										<TabsTrigger
+											value="Mine"
+											data-testid="appCatalogPage-myApps-btn"
+											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+										>
+											My Apps
+										</TabsTrigger>
+										<TabsTrigger
+											value="Bookmarked"
+											data-testid="appCatalogPage-bookmarked-btn"
+											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+										>
+											Bookmarked Apps
+										</TabsTrigger>
+										<TabsTrigger
+											value="Discoverable"
+											data-testid="appCatalogPage-discoverable-btn"
+											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+										>
+											Discoverable Apps
+										</TabsTrigger>
+										<TabsTrigger
+											value="System"
+											data-testid="appCatalogPage-systemApps-btn"
+											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+										>
+											System Apps
+										</TabsTrigger>
+									</TabsList>
+								</Tabs>
+							</div>
+
+							{/* Bookmarked Apps */}
+							{isBookmarkedMode &&
+								(displayedApps.length > 0 ? (
+									<div className={containerClass}>
+										{displayedApps.map((app) => (
+											<AppTileCard
+												key={app.project_id}
+												app={app}
+												systemApp={false}
+												layout="responsive"
+												variant={cardVariant}
+												href={`#/app/${app.project_id}/view`}
+												onAction={() =>
+													navigate(
+														`/app/${app.project_id}/view`,
+													)
+												}
+												appType={app.project_type}
+												isFavorite={true}
+												favorite={() =>
+													toggleFavorite(app)
+												}
+												onDelete={() => removeApp(app)}
+												onCloneComplete={
+													handleCloneComplete
+												}
+												isDiscoverable={false}
+												isLoading={false}
+												showSkeleton={false}
+											/>
+										))}
+									</div>
+								) : (
+									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+										<P>
+											{createdByMe
+												? "No bookmarked apps created by you found."
+												: "No bookmarked apps found."}
+										</P>
+									</div>
 								))}
-							</div>
-						)}
 
-					{/* Regular Apps */}
-					{!isSystemMode &&
-						!isBookmarkedMode &&
-						displayedApps.length > 0 && (
-							<div className={containerClass}>
-								{displayedApps.map((app) => (
-									<AppTileCard
-										key={app.project_id}
-										app={app}
-										systemApp={false}
-										layout="responsive"
-										variant={cardVariant}
-										isDiscoverable={mode !== "Mine"}
-										href={
-											mode === "Discoverable"
-												? `#/app/${app.project_id}`
-												: `#/app/${app.project_id}/view`
-										}
-										onAction={() => {
-											navigate(
-												mode === "Discoverable"
-													? `/app/${app.project_id}`
-													: `/app/${app.project_id}/view`,
-											);
-										}}
-										appType={app.project_type}
-										isFavorite={isFavorited(app)}
-										favorite={() => toggleFavorite(app)}
-										onDelete={() => removeApp(app)}
-										isLoading={false}
-										showSkeleton={false}
-									/>
-								))}
-							</div>
-						)}
+							{/* System Apps */}
+							{isSystemMode && (
+								<div className={containerClass}>
+									{filteredSystemApps.length > 0 ? (
+										filteredSystemApps.map((app) => (
+											<AppTileCard
+												key={app.project_id}
+												app={app}
+												background="#BADEFF"
+												href={
+													app.project_name === "BI"
+														? "../../../"
+														: "../../../#!/embed-terminal"
+												}
+												systemApp={true}
+												layout="responsive"
+												variant={cardVariant}
+												appType={app.project_type}
+												isLoading={false}
+												showSkeleton={false}
+											/>
+										))
+									) : (
+										<div className="col-span-full rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+											<P>No system apps found.</P>
+										</div>
+									)}
+								</div>
+							)}
 
-					{/* Loading More Indicator */}
-					{!isSystemMode &&
-						!isBookmarkedMode &&
-						getApps.isLoading &&
-						apps.length > 0 && (
-							<div className="flex items-center justify-center py-4">
-								<Spinner className="size-5" />
-							</div>
-						)}
+							{/* Loading Skeletons */}
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								getApps.isLoading &&
+								apps.length === 0 && (
+									<div className={containerClass}>
+										{skeletonKeys.map((key) => (
+											<AppTileCard
+												key={key}
+												app={SYSTEM_APPS.TERMINAL}
+												systemApp={false}
+												layout="responsive"
+												variant={cardVariant}
+												isDiscoverable={mode !== "Mine"}
+												isLoading={true}
+												showSkeleton={true}
+											/>
+										))}
+									</div>
+								)}
 
-					{/* Empty State */}
-					{!isSystemMode &&
-						!isBookmarkedMode &&
-						!getApps.isLoading &&
-						displayedApps.length === 0 &&
-						apps.length === 0 && (
-							<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
-								<P>No apps found matching your search.</P>
-							</div>
-						)}
+							{/* Regular Apps */}
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								displayedApps.length > 0 && (
+									<div className={containerClass}>
+										{displayedApps.map((app) => (
+											<AppTileCard
+												key={app.project_id}
+												app={app}
+												systemApp={false}
+												layout="responsive"
+												variant={cardVariant}
+												isDiscoverable={mode !== "Mine"}
+												href={
+													mode === "Discoverable"
+														? `#/app/${app.project_id}`
+														: `#/app/${app.project_id}/view`
+												}
+												onAction={() => {
+													navigate(
+														mode === "Discoverable"
+															? `/app/${app.project_id}`
+															: `/app/${app.project_id}/view`,
+													);
+												}}
+												appType={app.project_type}
+												isFavorite={isFavorited(app)}
+												favorite={() =>
+													toggleFavorite(app)
+												}
+												onDelete={() => removeApp(app)}
+												onCloneComplete={
+													handleCloneComplete
+												}
+												isLoading={false}
+												showSkeleton={false}
+											/>
+										))}
+									</div>
+								)}
+
+							{/* Loading More Indicator */}
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								getApps.isLoading &&
+								apps.length > 0 && (
+									<div className="flex items-center justify-center py-4">
+										<Spinner className="size-5" />
+									</div>
+								)}
+
+							{/* Empty State - Filter active, no matches */}
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								!getApps.isLoading &&
+								displayedApps.length === 0 &&
+								apps.length > 0 &&
+								createdByMe && (
+									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+										<P>No apps created by you found.</P>
+									</div>
+								)}
+
+							{/* Empty State */}
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								!getApps.isLoading &&
+								displayedApps.length === 0 &&
+								apps.length === 0 && (
+									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+										<P>
+											{createdByMe
+												? "No apps created by you found."
+												: "No apps found matching your search."}
+										</P>
+									</div>
+								)}
+						</div>
+					</div>
 				</div>
 				<Help />
 			</div>

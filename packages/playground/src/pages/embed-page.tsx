@@ -1,34 +1,17 @@
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { useEffect } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { Skeleton } from "@semoss/ui/next";
-import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
-import type { RootStore } from "@/stores";
+import { useChat, useGlobalBreadcrumbs } from "@/hooks";
 
 export const EmbedPage: React.FC = observer(() => {
 	const { t } = useTranslation("workspace");
-	const { path } = useParams();
-	const { root } = useRoot();
+	const { "*": splatPath } = useParams();
+	const basePath = splatPath?.split("/")[0] ?? "";
+	const { chat } = useChat();
+	const navigate = useNavigate();
 
-	const [isLoading, setIsLoading] = useState<boolean>(true);
-
-	let matched: RootStore["theme"]["sidebar"]["headerItems"][number] = null;
-	for (const item of root.theme.sidebar.headerItems) {
-		if (item.path === path) {
-			matched = item;
-			break;
-		}
-	}
-
-	if (!matched) {
-		for (const item of root.theme.sidebar.footerItems) {
-			if (item.path === path) {
-				matched = item;
-				break;
-			}
-		}
-	}
+	const pageInfo = chat.embeddedPageMap[basePath] ?? null;
 
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
@@ -37,29 +20,43 @@ export const EmbedPage: React.FC = observer(() => {
 				path: "/",
 			},
 			{
-				name: isLoading ? t("breadcrumbs.loading") : matched.name,
-				path: `/embed/${path}`,
+				name: pageInfo?.name ?? basePath,
+				path: `/embed/${basePath}`,
 			},
 		],
 	});
 
-	if (!matched) {
+	useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			if (event.data?.type === "SMSS_NEW_CHAT") {
+				const { workspaceId, knowledgeId, prompt } =
+					event.data.payload ?? {};
+				const promptParam = prompt
+					? `&prompt=${encodeURIComponent(prompt)}`
+					: "";
+				if (workspaceId) {
+					navigate(`/new?workspaceId=${workspaceId}`);
+				} else if (knowledgeId) {
+					navigate(`/new?knowledgeId=${knowledgeId}`);
+				} else {
+					navigate(`/new${promptParam}`);
+				}
+			} else if (event.data?.type === "SMSS_OPEN_ROOM") {
+				const { roomId } = event.data.payload ?? {};
+				if (roomId) {
+					navigate(`/room/${roomId}`);
+				}
+			}
+		};
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [navigate]);
+
+	if (!pageInfo) {
 		return <Navigate to="/" replace />;
 	}
 
-	return (
-		<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
-			{isLoading && <Skeleton className="h-full w-full" />}
-			{matched && (
-				<iframe
-					className="h-full w-full border-none"
-					title={matched.name}
-					src={matched.url}
-					onLoad={() => {
-						setIsLoading(false);
-					}}
-				/>
-			)}
-		</div>
-	);
+	// MainLayout has already pre-loaded this iframe and will show it on top —
+	// render nothing here to avoid running a duplicate instance of the app.
+	return null;
 });

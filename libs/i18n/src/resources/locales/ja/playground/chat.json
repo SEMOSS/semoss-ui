@@ -18,7 +18,10 @@
 		"copyResponse": "回答をコピー",
 		"copyCode": "コードをコピー",
 		"fastForwardToEnd": "最後まで早送り",
-		"completeTools": "続行するにはツールを完了してください。"
+		"completeToolsAsk_one": "続行するにはツールを完了してください。",
+		"completeToolsAsk_other": "続行するにはすべてのツールを完了してください。",
+		"completeToolsAuto_one": "ツールが完了するまでお待ちください。",
+		"completeToolsAuto_other": "すべてのツールが完了するまでお待ちください。"
 	},
 	"input": {
 		"copyMessage": "メッセージをコピー"
@@ -37,7 +40,20 @@
 		"completed": "完了",
 		"ready": "準備完了",
 		"autoExecute": "このツールは自動実行に設定されています",
-		"cancel": "キャンセル"
+		"paused": "一時停止済み",
+		"queued": "自動実行のキューに入っています",
+		"cancel": "キャンセル",
+		"expand": "展開",
+		"openInSidebar": "サイドバーで開く",
+		"closeInSidebar": "サイドバーを閉じる",
+		"collapse": "折りたたむ",
+		"openInline": "インラインで開く",
+		"groupLabelClosed": "{{toolName}} 他 {{count}} 件",
+		"groupLabelOpen": "実行済みツール ({{count}})",
+		"groupSummaryCompleted": "{{count}} 件完了",
+		"groupSummaryError": "{{count}} 件失敗",
+		"groupSummaryCancelled": "{{count}} 件キャンセル",
+		"groupSummaryPaused": "{{count}} 件一時停止"
 	},
 	"notifications": {
 		"feedbackSuccess": "フィードバックをありがとうございます!",
