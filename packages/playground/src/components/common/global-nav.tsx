@@ -340,6 +340,11 @@ export const GlobalNav = observer(() => {
 						<SidebarMenuButton
 							asChild
 							isActive={!!matchPath("/new", pathname)}
+							tooltip={{
+								children:
+									"New Chat - Start a fresh conversation anytime.",
+								hidden: false,
+							}}
 						>
 							<Link to={"/new"} aria-label={"New Chat"}>
 								<SquarePenIcon />
@@ -353,6 +358,10 @@ export const GlobalNav = observer(() => {
 							<SidebarMenuButton
 								asChild
 								isActive={!!matchPath("/agent", pathname)}
+								tooltip={{
+									children: "Agents",
+									hidden: false,
+								}}
 							>
 								<Link to={"/agent"} aria-label={"agent"}>
 									<ComputerIcon />
@@ -660,10 +669,21 @@ export const GlobalNav = observer(() => {
 				<Separator className="group-data-[collapsible=icon]:hidden" />
 				{root.theme.sidebar.footerItems.length > 0 && (
 					<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+						{/* biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons */}
 						<div
 							className="relative"
+							role="button"
+							tabIndex={0}
 							onMouseEnter={() => setHelpOpen(true)}
 							onMouseLeave={() => setHelpOpen(false)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									// Add your click handler here
+									// handleClick();
+								}
+							}}
+							onClick={() => setHelpOpen((prev) => !prev)}
 						>
 							<SidebarMenuItem>
 								<SidebarMenuButton>
