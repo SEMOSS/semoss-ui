@@ -58,6 +58,7 @@ export default defineConfig(({ mode }) => {
 					changeOrigin: true,
 					secure: false,
 					preserveHeaderKeyCase: true,
+					ws: true,
 				},
 			},
 		},

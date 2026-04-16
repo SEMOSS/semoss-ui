@@ -11,26 +11,19 @@
 		"selectPlaceholder": "Selecciona una fuente de conocimiento"
 	},
 	"selector": {
-		"title": "Seleccionar MCP",
 		"search": "Buscar",
-		"searchPlaceholder": "Buscar...",
-		"noResults": "No se encontraron resultados",
 		"createKnowledgeSource": "Crear fuente de conocimiento",
 		"viewDetails": "Ver detalles",
 		"noToolboxesFound": "No se encontraron cajas de herramientas",
 		"noKnowledgeFound": "No se encontró conocimiento"
 	},
 	"overlay": {
-		"title": "Configuración de MCP",
-		"description": "Configura los ajustes de tu MCP",
-		"editToolbox": "Editar caja de herramientas",
-		"editKnowledge": "Editar conocimiento",
-		"toolboxDescription": "Agrega capacidades a tu agente y amplía lo que puede hacer",
-		"knowledgeDescription": "Edita las fuentes de conocimiento a las que tu agente puede acceder"
+		"editToolbox": "Configurar cajas de herramientas",
+		"editKnowledge": "Configurar conocimiento",
+		"toolboxDescription": "Agrega herramientas para dar a este chat más capacidades",
+		"knowledgeDescription": "Agrega fuentes de conocimiento para dar al modelo más contexto"
 	},
 	"tools": {
-		"selectMcp": "Seleccionar MCP",
-		"selectTool": "Seleccionar herramienta",
 		"enterValues": "Ingresa valores separados por comas",
 		"selectField": "Seleccionar {{field}}",
 		"enterField": "Ingresar {{field}}"
@@ -48,5 +41,15 @@
 		"embed": "Insertar",
 		"save": "Guardar",
 		"close": "Cerrar"
+	},
+	"permission": {
+		"accessRequested": "Acceso solicitado",
+		"requestAccess": "Solicitar acceso",
+		"noAccess": "Sin acceso",
+		"requestAccessButton": "Solicitar Acceso",
+		"noDescription": "No hay descripción disponible.",
+		"tooltipNoAccess": "No tienes acceso a este {{type}}. Por favor, solicita acceso al propietario.",
+		"tooltipMissingDependencies": "No tienes acceso a todas las dependencias de este {{type}}, por lo que la funcionalidad puede ser limitada. Ábrelo en la plataforma para más información.",
+		"tooltipOpen": "Abrir este {{type}} en la plataforma"
 	}
 }

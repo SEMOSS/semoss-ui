@@ -18,7 +18,10 @@
 		"copyResponse": "نسخ الاستجابة",
 		"copyCode": "نسخ الكود",
 		"fastForwardToEnd": "التقدم السريع إلى النهاية",
-		"completeTools": "يرجى إكمال الأداة (الأدوات) للمتابعة."
+		"completeToolsAsk_one": "يرجى إكمال الأداة للمتابعة.",
+		"completeToolsAsk_other": "يرجى إكمال الأدوات للمتابعة.",
+		"completeToolsAuto_one": "يرجى الانتظار حتى تكتمل الأداة.",
+		"completeToolsAuto_other": "يرجى الانتظار حتى تكتمل الأدوات."
 	},
 	"input": {
 		"copyMessage": "نسخ الرسالة"
@@ -45,8 +48,13 @@
 		"closeInSidebar": "إغلاق الشريط الجانبي",
 		"collapse": "طي",
 		"openInline": "فتح في السطر",
-		"groupLabel": "مُنفَّذ",
-		"groupSuffix": "أداة"
+		"groupLabelClosed_one": "{{toolName}} + {{count}} آخر",
+		"groupLabelClosed_other": "{{toolName}} + {{count}} أخرى",
+		"groupLabelOpen": "الأدوات المنفذة ({{count}})",
+		"groupSummaryCompleted": "اكتمل {{count}}",
+		"groupSummaryError": "{{count}} فشل",
+		"groupSummaryCancelled": "ألغي {{count}}",
+		"groupSummaryPaused": "توقف {{count}}"
 	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",
