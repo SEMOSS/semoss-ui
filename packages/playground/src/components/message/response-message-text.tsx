@@ -21,6 +21,7 @@ import {
 	H4,
 	Markdown,
 	P,
+	Quote,
 	ScrollArea,
 	ScrollBar,
 	Separator,
