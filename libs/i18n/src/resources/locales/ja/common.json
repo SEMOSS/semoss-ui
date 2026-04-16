@@ -16,7 +16,9 @@
 		"model": "モデル",
 		"instructions": "指示",
 		"temperature": "温度",
-		"maxToken": "最大トークン"
+		"maxToken": "最大トークン",
+		"textGenHeader": "テキスト生成設定",
+		"imageGenHeader": "画像生成設定"
 	},
 	"placeholders": {
 		"enterName": "名前を入力",

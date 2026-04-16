@@ -16,11 +16,17 @@
 		"toolboxLabel": "टूलबॉक्स",
 		"maxTokenLabel": "अधिकतम टोकन",
 		"temperatureLabel": "टेम्परेचर",
-		"imageHeightLabel": "छवि ऊंचाई",
-		"imageWidthLabel": "छवि चौड़ाई",
-		"imageSeedLabel": "रैंडम सीड",
-		"cfgScaleLabel": "CFG स्केल",
-		"taskTypeLabel": "कार्य प्रकार"
+		"imageSizeLabel": "छवि आकार",
+		"imageOrientationLabel": "छवि अभिविन्यास",
+		"imageSeedLabel": "सीड",
+		"cfgScaleLabel": "विवरण स्तर",
+		"taskTypeLabel": "कार्य प्रकार",
+		"imageSizeSmallLabel": "छोटा",
+		"imageSizeMediumLabel": "मध्यम",
+		"imageSizeLargeLabel": "बड़ा",
+		"imageTypeSquareLabel": "वर्गाकार",
+		"imageTypePortraitLabel": "पोर्ट्रेट",
+		"imageTypeLandscapeLabel": "लैंडस्केप"
 	},
 	"modes": {
 		"ask": "पूछें",

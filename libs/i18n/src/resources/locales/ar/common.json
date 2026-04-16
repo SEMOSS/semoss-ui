@@ -16,7 +16,9 @@
 		"model": "النموذج",
 		"instructions": "التعليمات",
 		"temperature": "درجة الحرارة",
-		"maxToken": "الحد الأقصى للرموز"
+		"maxToken": "الحد الأقصى للرموز",
+		"textGenHeader": "إعدادات توليد النص",
+		"imageGenHeader": "إعدادات توليد الصور"
 	},
 	"placeholders": {
 		"enterName": "أدخل الاسم",

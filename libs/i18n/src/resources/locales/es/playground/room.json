@@ -16,11 +16,17 @@
 		"toolboxLabel": "Caja de herramientas",
 		"maxTokenLabel": "Token máximo",
 		"temperatureLabel": "Temperatura",
-		"imageHeightLabel": "Alto de imagen",
-		"imageWidthLabel": "Ancho de imagen",
-		"imageSeedLabel": "Semilla aleatoria",
-		"cfgScaleLabel": "Escala CFG",
-		"taskTypeLabel": "Tipo de tarea"
+		"imageSizeLabel": "Tamaño de imagen",
+		"imageOrientationLabel": "Orientación de imagen",
+		"imageSeedLabel": "Semilla",
+		"cfgScaleLabel": "Nivel de detalle",
+		"taskTypeLabel": "Tipo de tarea",
+		"imageSizeSmallLabel": "Pequeño",
+		"imageSizeMediumLabel": "Mediano",
+		"imageSizeLargeLabel": "Grande",
+		"imageTypeSquareLabel": "Cuadrado",
+		"imageTypePortraitLabel": "Vertical",
+		"imageTypeLandscapeLabel": "Horizontal"
 	},
 	"modes": {
 		"ask": "Preguntar",

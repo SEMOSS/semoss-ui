@@ -16,11 +16,17 @@
 		"toolboxLabel": "صندوق الأدوات",
 		"maxTokenLabel": "الحد الأقصى للرموز",
 		"temperatureLabel": "درجة الحرارة",
-		"imageHeightLabel": "ارتفاع الصورة",
-		"imageWidthLabel": "عرض الصورة",
-		"imageSeedLabel": "البذرة العشوائية",
-		"cfgScaleLabel": "مقياس CFG",
-		"taskTypeLabel": "نوع المهمة"
+		"imageSizeLabel": "حجم الصورة",
+		"imageOrientationLabel": "توجيه الصورة",
+		"imageSeedLabel": "البذرة",
+		"cfgScaleLabel": "مستوى التفاصيل",
+		"taskTypeLabel": "نوع المهمة",
+		"imageSizeSmallLabel": "صغير",
+		"imageSizeMediumLabel": "متوسط",
+		"imageSizeLargeLabel": "كبير",
+		"imageTypeSquareLabel": "مربع",
+		"imageTypePortraitLabel": "عمودي",
+		"imageTypeLandscapeLabel": "أفقي"
 	},
 	"modes": {
 		"ask": "اسأل",

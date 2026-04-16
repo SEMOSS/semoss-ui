@@ -16,11 +16,17 @@
 		"toolboxLabel": "ツールボックス",
 		"maxTokenLabel": "最大トークン",
 		"temperatureLabel": "温度",
-		"imageHeightLabel": "画像の高さ",
-		"imageWidthLabel": "画像の幅",
-		"imageSeedLabel": "ランダムシード",
-		"cfgScaleLabel": "CFGスケール",
-		"taskTypeLabel": "タスクタイプ"
+		"imageSizeLabel": "画像サイズ",
+		"imageOrientationLabel": "画像の向き",
+		"imageSeedLabel": "シード",
+		"cfgScaleLabel": "詳細レベル",
+		"taskTypeLabel": "タスクタイプ",
+		"imageSizeSmallLabel": "小",
+		"imageSizeMediumLabel": "中",
+		"imageSizeLargeLabel": "大",
+		"imageTypeSquareLabel": "正方形",
+		"imageTypePortraitLabel": "縦向き",
+		"imageTypeLandscapeLabel": "横向き"
 	},
 	"modes": {
 		"ask": "質問",

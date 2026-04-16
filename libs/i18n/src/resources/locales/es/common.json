@@ -16,7 +16,9 @@
 		"model": "Modelo",
 		"instructions": "Instrucciones",
 		"temperature": "Temperatura",
-		"maxToken": "Token máximo"
+		"maxToken": "Token máximo",
+		"textGenHeader": "Configuración de generación de texto",
+		"imageGenHeader": "Configuración de generación de imágenes"
 	},
 	"placeholders": {
 		"enterName": "Ingrese el nombre",

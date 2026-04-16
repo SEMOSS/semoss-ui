@@ -16,7 +16,9 @@
 		"model": "मॉडल",
 		"instructions": "निर्देश",
 		"temperature": "टेम्परेचर",
-		"maxToken": "अधिकतम टोकन"
+		"maxToken": "अधिकतम टोकन",
+		"textGenHeader": "टेक्स्ट जनरेशन सेटिंग्स",
+		"imageGenHeader": "इमेज जनरेशन सेटिंग्स"
 	},
 	"placeholders": {
 		"enterName": "नाम दर्ज करें",

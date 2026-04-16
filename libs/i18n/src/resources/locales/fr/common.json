@@ -16,7 +16,9 @@
 		"model": "Modèle",
 		"instructions": "Instructions",
 		"temperature": "Température",
-		"maxToken": "Jeton maximum"
+		"maxToken": "Jeton maximum",
+		"textGenHeader": "Paramètres de génération de texte",
+		"imageGenHeader": "Paramètres de génération d'images"
 	},
 	"placeholders": {
 		"enterName": "Entrer le nom",

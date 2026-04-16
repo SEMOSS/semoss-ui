@@ -16,11 +16,17 @@
 		"toolboxLabel": "Boîte à outils",
 		"maxTokenLabel": "Jeton maximum",
 		"temperatureLabel": "Température",
-		"imageHeightLabel": "Hauteur de l'image",
-		"imageWidthLabel": "Largeur de l'image",
-		"imageSeedLabel": "Graine aléatoire",
-		"cfgScaleLabel": "Échelle CFG",
-		"taskTypeLabel": "Type de tâche"
+		"imageSizeLabel": "Taille de l'image",
+		"imageOrientationLabel": "Orientation de l'image",
+		"imageSeedLabel": "Graine",
+		"cfgScaleLabel": "Niveau de détail",
+		"taskTypeLabel": "Type de tâche",
+		"imageSizeSmallLabel": "Petit",
+		"imageSizeMediumLabel": "Moyen",
+		"imageSizeLargeLabel": "Grand",
+		"imageTypeSquareLabel": "Carré",
+		"imageTypePortraitLabel": "Portrait",
+		"imageTypeLandscapeLabel": "Paysage"
 	},
 	"modes": {
 		"ask": "Demander",
