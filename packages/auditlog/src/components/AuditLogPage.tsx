@@ -5,13 +5,14 @@
 import { Loader2, Moon, Radio, Sun } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk";
-import { useInsight } from "@semoss/sdk/react";
+import { Env, get, useInsight } from "@semoss/sdk/react";
 import {
 	type AuditLog,
 	buildSearchPayload,
 	ChartPanel,
 	EventHistory,
 	FiltersRow,
+	getUserProjectPermission,
 	type SearchToken,
 } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
@@ -21,6 +22,16 @@ type EngineOption = { value: string; label: string };
 type EngineDetails = Record<string, EngineOption[]>;
 
 const ROWS_PER_PAGE = 10;
+
+const getUserEnginePermission = async (engineId: string): Promise<string> => {
+	const response = await get<{ permission: string }>(
+		`${Env.MODULE}/api/auth/engine/getUserEnginePermission?engineId=${engineId}`,
+	);
+	if (!response) {
+		throw Error("No Response to get engine permission");
+	}
+	return response.data.permission;
+};
 
 const ENGINE_TYPES = [
 	"APP",
@@ -91,6 +102,7 @@ export const AuditLogPage = () => {
 	const [userOptions, setUserOptions] = useState<
 		{ value: string; label: string }[]
 	>([]);
+	const [isOwner, setIsOwner] = useState(false);
 
 	const filteredData = useRef({
 		engineType: "",
@@ -235,12 +247,6 @@ export const AuditLogPage = () => {
 				setLogs(logsArray);
 				setTotalCount(count);
 				setSelected(logsArray[0] ?? null);
-
-				// Extract unique userIds for the User dropdown
-				const uniqueUsers = Array.from(
-					new Set(logsArray.map((l) => l.userId).filter(Boolean)),
-				).map((id) => ({ value: id, label: id }));
-				setUserOptions(uniqueUsers);
 			} catch (err) {
 				console.error("Error fetching audit logs:", err);
 				setLogs([]);
@@ -255,6 +261,49 @@ export const AuditLogPage = () => {
 	useEffect(() => {
 		fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 	}, [page, fetchLogs]);
+
+	const fetchUserList = useCallback(
+		async (id: string, eType: string) => {
+			if (!insightId || !id) {
+				setUserOptions([]);
+				setIsOwner(false);
+				return;
+			}
+			try {
+				const permission =
+					eType === "APP"
+						? await getUserProjectPermission(id)
+						: await getUserEnginePermission(id);
+
+				if (permission !== "OWNER") {
+					setIsOwner(false);
+					setUserOptions([]);
+					return;
+				}
+
+				setIsOwner(true);
+
+				const pixel = `GetAuditLogReportUserList(engine=["${id}"]);`;
+				const resp = await runPixel(pixel, insightId);
+				const data = resp.pixelReturn[0].output;
+				if (Array.isArray(data)) {
+					setUserOptions(
+						data.map((u: { id: string; type: string }) => ({
+							value: u.id,
+							label: u.id,
+						})),
+					);
+				} else {
+					setUserOptions([]);
+				}
+			} catch (err) {
+				console.error("Error fetching user list:", err);
+				setIsOwner(false);
+				setUserOptions([]);
+			}
+		},
+		[insightId],
+	);
 
 	const fetchEngineDetails = useCallback(
 		async (type: string) => {
@@ -316,9 +365,12 @@ export const AuditLogPage = () => {
 	const handleEngineChange = (id: string) => {
 		setEngId(id);
 		setChartPage(0);
+		setSelectedUser("");
 		filteredData.current.engineId = id;
+		filteredData.current.selectedUser = "";
 		setPage(0);
 		fetchLogs(ROWS_PER_PAGE, 0);
+		fetchUserList(id, filteredData.current.engineType);
 	};
 
 	const handleDateChange = (from: string, to: string, preset?: string) => {
@@ -351,6 +403,7 @@ export const AuditLogPage = () => {
 		setEngId("");
 		setSelectedUser("");
 		setUserOptions([]);
+		setIsOwner(false);
 		setDateFrom(todayStr);
 		setDateTo(todayStr);
 		setDurationValue("today");
@@ -463,6 +516,7 @@ export const AuditLogPage = () => {
 					dateTo={dateTo}
 					userOptions={userOptions}
 					selectedUser={selectedUser}
+					showUserFilter={isOwner}
 					dateRangePreset={durationValue}
 					onEngineTypeChange={handleEngineTypeChange}
 					onEngineChange={handleEngineChange}

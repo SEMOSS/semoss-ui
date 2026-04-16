@@ -47,6 +47,7 @@ export interface FiltersRowProps {
 
 	userOptions: EngineOption[];
 	selectedUser: string;
+	showUserFilter?: boolean;
 
 	onEngineTypeChange: (type: string) => void;
 	onEngineChange: (id: string) => void;
@@ -68,6 +69,7 @@ export const FiltersRow = ({
 	dateRangePreset,
 	userOptions,
 	selectedUser,
+	showUserFilter = false,
 	onEngineTypeChange,
 	onEngineChange,
 	onDateChange,
@@ -179,26 +181,31 @@ export const FiltersRow = ({
 						</Select>
 
 						{/* ── User ── */}
-						<Select
-							value={selectedUser || "__all__"}
-							onValueChange={(val) =>
-								onUserChange(val === "__all__" ? "" : val)
-							}
-						>
-							<SelectTrigger className="h-8 w-[140px] rounded-md border border-border bg-card text-xs">
-								<SelectValue placeholder="All Users" />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="__all__">
-									All Users
-								</SelectItem>
-								{userOptions.map((u) => (
-									<SelectItem key={u.value} value={u.value}>
-										{u.label}
+						{showUserFilter && (
+							<Select
+								value={selectedUser || "__all__"}
+								onValueChange={(val) =>
+									onUserChange(val === "__all__" ? "" : val)
+								}
+							>
+								<SelectTrigger className="h-8 w-[140px] rounded-md border border-border bg-card text-xs">
+									<SelectValue placeholder="All Users" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="__all__">
+										All Users
 									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+									{userOptions.map((u) => (
+										<SelectItem
+											key={u.value}
+											value={u.value}
+										>
+											{u.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
 
 						{/* ── Date Range ── */}
 						<DateRangeFilter
