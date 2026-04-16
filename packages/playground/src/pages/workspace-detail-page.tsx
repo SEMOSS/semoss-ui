@@ -39,15 +39,9 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
-import {
-	// PaginationButtons,
-	WorkspaceChatList,
-	WorkspaceMCPList,
-	// WorkspaceMembersList,
-} from "@/components";
+import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
-// import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
 
 /**
@@ -65,7 +59,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
-	// const pagination = usePagination();
 
 	/**
 	 * State
@@ -74,8 +67,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
 	const [deleteModal, setDeleteModal] = useState<boolean>(false);
-	// const [isSharingModalOpen, setIsSharingModalOpen] =
-	// 	useState<boolean>(false);
 
 	/**
 	 * Library Hooks
@@ -209,11 +200,6 @@ export const WorkspaceDetailPage = observer(() => {
 							</DropdownMenuGroup>
 						</DropdownMenuContent>
 					</DropdownMenu>
-					{/* <Button
-								variant="outline"
-							>
-								<PinIcon />
-							</Button> */}
 				</div>
 
 				<Tabs
@@ -265,19 +251,6 @@ export const WorkspaceDetailPage = observer(() => {
 										<SearchIcon />
 									</InputGroupAddon>
 								</InputGroup>
-								{/* Tab-specific actions go here */}
-								{/* For members tab, all actions are handled in the shared component itself */}
-								{/**
-							{tab === "members" ? (
-								<Button
-									variant="outline"
-									onClick={() => setIsSharingModalOpen(true)}
-								>
-									<PlusIcon />
-									{t("workspace:sharing.title")}
-								</Button>
-							) : null}
-							  */}
 							</div>
 						)}
 
@@ -327,28 +300,6 @@ export const WorkspaceDetailPage = observer(() => {
 								/>
 							)}
 						</TabsContent>
-						{/* <TabsContent
-							value="members"
-							className="w-full overflow-hidden"
-						>
-							{tab === "members" && (
-								<WorkspaceMembersList
-									workspaceId={workspaceId}
-									search={debouncedSearch}
-									paginationControl={pagination}
-									isSharingModalOpen={isSharingModalOpen}
-									onSharingModalClose={() =>
-										setIsSharingModalOpen(false)
-									}
-								/>
-							)}
-						</TabsContent>
-
-						{tab === "members" && (
-							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
-								<PaginationButtons {...pagination} />
-							</div>
-						)} */}
 					</div>
 				</Tabs>
 			</div>

@@ -162,9 +162,11 @@ export const MembersList = ({
 				});
 			}
 		});
-		if (response?.success) {
+		if (response?.data?.success) {
 			// Refresh user data
-			setRefreshData((prev) => prev + 1);
+			setRefreshData((prev) => {
+				return prev + 1;
+			});
 			if (type === "WORKSPACE") {
 				toast.success("User permission updated successfully.");
 			} else {
@@ -269,18 +271,6 @@ export const MembersList = ({
 													>
 														can edit
 													</DropdownMenuCheckboxItem>
-													{/* {user.permission === "OWNER" ? (
-														<DropdownMenuCheckboxItem
-															key={`owner-${user.email}`}
-															checked={
-																returnAccessType(
-																	user.permission,
-																) === "owner"
-															}
-														>
-															owner
-														</DropdownMenuCheckboxItem>
-													) : null} */}
 												</DropdownMenuRadioGroup>
 											</DropdownMenuContent>
 										</DropdownMenu>

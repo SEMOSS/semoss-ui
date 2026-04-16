@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import {
-	// MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 	UpdateSMSS,

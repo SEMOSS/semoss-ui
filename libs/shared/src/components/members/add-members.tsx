@@ -39,7 +39,9 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 	const [selectedUsers, setSelectedUsers] = useState([]);
 	const [selectedPermission, setSelectedPermission] =
 		useState<string>("can view");
-	const [searchedResults, setSearchedResults] = useState<unknown[]>([]);
+	const [searchedResults, setSearchedResults] = useState<
+		AddPopupSearchResult[]
+	>([]);
 	const [popupOpen, setPopupOpen] = useState<boolean>(false);
 	const notification = useNotification();
 	const usersUrl =
@@ -57,7 +59,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 					`?${typeId}=${id}&searchTerm=${searchKey}&limit=5`,
 			).catch((_error) => {});
 			if (response?.data) {
-				setSearchedResults(response.data);
+				setSearchedResults(response.data as AddPopupSearchResult[]);
 			}
 		}
 		fetchUsers();
