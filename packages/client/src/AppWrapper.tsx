@@ -7,12 +7,14 @@ import {
 	type ThemeOptions,
 	ThemeProvider,
 } from "@semoss/ui";
+import { useTheme } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
 import { useRootStore } from "./hooks";
 
 export const AppWrapper = observer(() => {
 	const { configStore } = useRootStore();
+	const { theme: selectedTheme } = useTheme();
 
 	useEffect(() => {
 		try {
@@ -34,8 +36,26 @@ export const AppWrapper = observer(() => {
 		return (configStore.theme.materialTheme as ThemeOptions) || undefined;
 	}, [configStore.theme]);
 
+	const themeMode = useMemo<"light" | "dark">(() => {
+		if (selectedTheme === "dark") {
+			return "dark";
+		}
+
+		if (selectedTheme === "light") {
+			return "light";
+		}
+
+		if (typeof window !== "undefined") {
+			return window.matchMedia("(prefers-color-scheme: dark)").matches
+				? "dark"
+				: "light";
+		}
+
+		return "light";
+	}, [selectedTheme]);
+
 	return (
-		<ThemeProvider reset={true} theme={t}>
+		<ThemeProvider reset={true} theme={t} type={themeMode}>
 			<Notification>
 				<LoadingScreen>
 					<CookieWrapper>

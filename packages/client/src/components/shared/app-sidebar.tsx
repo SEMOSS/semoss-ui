@@ -6,16 +6,19 @@ import {
 	Database,
 	Home,
 	LayoutGrid,
+	Moon,
 	PanelLeftOpen,
 	Settings,
 	ShieldCheck,
 	Sigma,
+	Sun,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation } from "react-router-dom";
 import {
+	cn,
 	Sidebar as ShadcnSidebar,
 	SidebarContent as ShadcnSidebarContent,
 	SidebarFooter as ShadcnSidebarFooter,
@@ -29,6 +32,7 @@ import {
 	SidebarMenuItem,
 	SidebarProvider,
 	SidebarSeparator,
+	useTheme,
 } from "@semoss/ui/next";
 import { usePage, useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
@@ -79,6 +83,7 @@ const NAV_BUTTON_CLASS =
 export const Sidebar: React.FC = observer(() => {
 	const { configStore } = useRootStore();
 	const { page } = usePage();
+	const { theme, setTheme } = useTheme();
 
 	const { pathname } = useLocation();
 
@@ -267,7 +272,64 @@ export const Sidebar: React.FC = observer(() => {
 
 				{/* Footer: User / Logout */}
 				<ShadcnSidebarFooter className="p-0">
-					<SidebarMenu className="gap-0" aria-label="user navigation">
+					<SidebarMenu
+						className="gap-0"
+						aria-label="theme and user navigation"
+					>
+						<SidebarMenuItem className="px-4 py-3">
+							<div className="flex items-center gap-1 rounded-md border border-border bg-muted/70 p-1">
+								<button
+									type="button"
+									aria-pressed={theme === "light"}
+									onClick={() => setTheme("light")}
+									className={cn(
+										"flex-1",
+										"rounded-md",
+										"text-sm",
+										"font-semibold",
+										"px-4",
+										"py-2.5",
+										"transition-colors",
+										"focus-visible:outline-none",
+										"focus-visible:ring-2",
+										"focus-visible:ring-ring/50",
+										theme === "light"
+											? "bg-background text-foreground shadow-sm"
+											: "text-muted-foreground hover:bg-muted hover:text-foreground",
+									)}
+								>
+									<span className="inline-flex items-center justify-center gap-2.5">
+										<Sun className="size-4" />
+										Light
+									</span>
+								</button>
+								<button
+									type="button"
+									aria-pressed={theme === "dark"}
+									onClick={() => setTheme("dark")}
+									className={cn(
+										"flex-1",
+										"rounded-md",
+										"text-sm",
+										"font-semibold",
+										"px-4",
+										"py-2.5",
+										"transition-colors",
+										"focus-visible:outline-none",
+										"focus-visible:ring-2",
+										"focus-visible:ring-ring/50",
+										theme === "dark"
+											? "bg-background text-foreground shadow-sm"
+											: "text-muted-foreground hover:bg-muted hover:text-foreground",
+									)}
+								>
+									<span className="inline-flex items-center justify-center gap-2.5">
+										<Moon className="size-4" />
+										Dark
+									</span>
+								</button>
+							</div>
+						</SidebarMenuItem>
 						<SidebarMenuItem>
 							<LogoutPopover
 								onOpenChange={setIsLogoutPopoverOpen}
