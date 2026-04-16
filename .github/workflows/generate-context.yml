@@ -1,28 +1,22 @@
 name: Generate Context Documentation
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
-      - main
-      - master
-      - feat/bug
-  schedule:
-    # Run daily at 8 AM UTC
-    - cron: '0 8 * * *'
+      - dev
   workflow_dispatch:
     inputs:
-      since:
-        description: 'Time range (e.g., "1 week ago")'
-        required: false
-        default: '1 day ago'
       branch:
         description: 'Branch to analyze'
         required: false
-        default: 'main'
+        default: 'dev'
 
 jobs:
   generate-context:
     runs-on: ubuntu-latest
+    # Only run when PR is actually merged, not just closed
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     
     permissions:
       contents: write
@@ -32,6 +26,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          ref: dev
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -41,10 +36,18 @@ jobs:
 
       - name: Generate context documentation
         env:
-          SINCE: ${{ github.event.inputs.since || '1 day ago' }}
-          BRANCH: ${{ github.event.inputs.branch || github.ref_name }}
+          BRANCH: ${{ github.event.inputs.branch || 'dev' }}
+          PR_TITLE: ${{ github.event.pull_request.title || '' }}
+          PR_NUMBER: ${{ github.event.pull_request.number || '' }}
+          MERGE_COMMIT: ${{ github.event.pull_request.merge_commit_sha || '' }}
         run: |
-          node scripts/analyze-commits.js --since "${{ env.SINCE }}" --branch "${{ env.BRANCH }}"
+          echo "Generating documentation for merged PR #${PR_NUMBER}: ${PR_TITLE}"
+          if [ -n "$MERGE_COMMIT" ]; then
+            echo "Using merge commit: ${MERGE_COMMIT}"
+            node scripts/analyze-commits.js --merge-commit "${MERGE_COMMIT}" --branch "${{ env.BRANCH }}" --output "pr-${PR_NUMBER}-$(date +%Y-%m-%d)"
+          else
+            node scripts/analyze-commits.js --branch "${{ env.BRANCH }}" --output "manual-$(date +%Y-%m-%d)"
+          fi
 
       - name: Commit context documentation
         run: |
@@ -55,6 +58,6 @@ jobs:
             echo "No new context documentation"
           else
             git add webapps/documentation/docusaurus/docs/context-logs/
-            git commit -m "docs: add context documentation for main branch commits" || true
+            git commit -m "docs: generate context documentation for merged PR #${{ github.event.pull_request.number }}" || true
             git push || true
           fi
