@@ -65,33 +65,22 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 		fetchUsers();
 	}, [searchKey, typeId, id, usersUrl, type]);
 
-	function returnAccessTypeLabel(permission) {
-		switch (permission) {
-			case "can view":
-				return "READ_ONLY";
-			case "can edit":
-				return "EDIT";
-			case "owner":
-				return "OWNER";
-			default:
-				return "select access";
-		}
-	}
-
 	/**
 	 * Add selected members to the current project or engine.
 	 *
 	 * @param {function} onClose - callback to close the overlay
 	 */
 	async function addNewMembers() {
-		const selectedUserObj = selectedUsers.map((m) => ({
-			userid: m.id,
-			permission: returnAccessTypeLabel(selectedPermission),
-			email: m.email,
-			name: m.name,
-			type: m.type,
-			username: m.username,
-		}));
+		const selectedUserObj = (selectedUsers as AddPopupSearchResult[]).map(
+			(m) => ({
+				userid: m.id,
+				permission: returnAccessType(selectedPermission, true),
+				email: m.email,
+				name: m.name,
+				type: m.type,
+				username: m.username,
+			}),
+		);
 
 		const response = await apiPost(
 			`${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "addProjectUserPermissions" : "addEngineUserPermissions"}`,
@@ -101,8 +90,7 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 					: "engineId"]: id,
 				userpermissions: selectedUserObj,
 			},
-		).catch((error) => {
-			console.error("Error adding new members:", error);
+		).catch((_error) => {
 			if (type === "WORKSPACE") {
 				toast.error("There was an error adding the selected members.");
 			} else {
@@ -200,19 +188,9 @@ export const AddMembersOverlay = ({ id, type, open, onClose }) => {
 												e: ChangeEvent<HTMLInputElement>,
 											) => {
 												setSearchKey(e.target.value);
-												if (e.target.value.length > 2) {
-													setTimeout(
-														() =>
-															setPopupOpen(true),
-														30,
-													);
-												} else {
-													setTimeout(
-														() =>
-															setPopupOpen(false),
-														30,
-													);
-												}
+												setPopupOpen(
+													e.target.value.length > 2,
+												);
 											}}
 										/>
 									</div>

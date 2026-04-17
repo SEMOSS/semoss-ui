@@ -8,6 +8,12 @@ import {
 	Card,
 	CardContent,
 	CardHeader,
+	Dialog,
+	DialogClose,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogTitle,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -17,8 +23,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
-import { DeleteMembersOverlay } from "./delete-members";
-import type { SETTINGS_PROVISIONED_USER } from "./members-types";
 
 interface MembersProps {
 	id: string;
@@ -36,6 +40,17 @@ interface MembersProps {
 	isAddMember?: boolean;
 	refreshList?: boolean;
 	permission?: string;
+}
+
+interface SETTINGS_PROVISIONED_USER {
+	id: string;
+	name: string;
+	type: string;
+	email: string;
+	permission: string;
+	permission_granted_by: string;
+	permission_granted_by_type: string;
+	date_added: string;
 }
 
 /**
@@ -71,7 +86,7 @@ export const MembersList = ({
 	/**
 	 * Central managing of fetching records from api based on scroll by adding the limit
 	 */
-	//biome-ignore lint: elint/correctness/useExhaustiveDependencies: this is essential for fetching data
+	// biome-ignore lint/correctness/useExhaustiveDependencies: this is essential for fetching data
 	useEffect(() => {
 		const observer = new IntersectionObserver(
 			(observerObj) => {
@@ -144,13 +159,13 @@ export const MembersList = ({
 	 */
 	const updateUserPermission = async (userId, permission) => {
 		// Implement API call to update user permission
-		const response = await post(
-			`${Env.MODULE}/api/auth/project/${type === "PROJECT" || type === "WORKSPACE" ? "editProjectUserPermissions" : "editEngineUserPermissions"}`,
-			{
-				projectId: id,
-				userpermissions: [{ userid: userId, permission: permission }],
-			},
-		).catch((error) => {
+		const url = `${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "editProjectUserPermissions" : "editEngineUserPermissions"}`;
+		const response = await post(url, {
+			[type === "PROJECT" || type === "WORKSPACE"
+				? "projectId"
+				: "engineId"]: id,
+			userpermissions: [{ userid: userId, permission: permission }],
+		}).catch((error) => {
 			console.error("Error updating user permission:", error);
 			if (type === "WORKSPACE") {
 				toast.error("Error updating user permission.");
@@ -178,10 +193,65 @@ export const MembersList = ({
 			}
 		}
 	};
+	const resetSelectedMembers = () => {
+		setIdsToDelete([]);
+		setRefreshData((prev) => prev + 1); //fetches latest user data when a user is deleted
+	};
+
+	const deleteSelectedMembers = () => {
+		const usersUrl =
+			type === "PROJECT" || type === "WORKSPACE"
+				? "removeProjectUserPermissions"
+				: "removeEngineUserPermissions";
+
+		post(
+			`${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${usersUrl}`,
+			{
+				[type === "PROJECT" || type === "WORKSPACE"
+					? "projectId"
+					: "engineId"]: id,
+				ids: idsToDelete,
+			},
+		)
+			.then(() => {
+				if (type === "WORKSPACE") {
+					toast.success(
+						"Selected members have been deleted successfully.",
+					);
+				} else {
+					notification.add({
+						id: "success",
+						color: "success",
+						message:
+							"Selected members have been deleted successfully.",
+					});
+				}
+				resetSelectedMembers();
+			})
+			.catch(() => {
+				if (type === "WORKSPACE") {
+					toast.error(
+						"There was an error deleting the selected members.",
+					);
+				} else {
+					notification.add({
+						id: "error",
+						color: "error",
+						message:
+							"There was an error deleting the selected members.",
+					});
+				}
+				resetSelectedMembers();
+			});
+	};
 	//filtering user data based on permission group like, can view/ can edit
 	const userDataFiltered =
 		permission !== ""
-			? userData.filter((user) => user.permission === permission)
+			? userData.filter((user) => {
+					if (permission !== "select access")
+						return user.permission === permission;
+					return true;
+				})
 			: userData;
 
 	return (
@@ -308,7 +378,7 @@ export const MembersList = ({
 					</CardContent>
 				</Card>
 			</div>
-			<DeleteMembersOverlay
+			{/* <DeleteMembersOverlay
 				id={id}
 				type={type}
 				open={idsToDelete.length > 0}
@@ -317,7 +387,35 @@ export const MembersList = ({
 					setRefreshData((prev) => prev + 1); //fetches latest user data when a user is deleted
 				}}
 				idsToDelete={idsToDelete}
-			/>
+			/> */}
+			<Dialog
+				open={idsToDelete.length > 0}
+				onOpenChange={resetSelectedMembers}
+			>
+				<DialogContent className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-lg">
+					<DialogTitle>Delete Members</DialogTitle>
+
+					<DialogDescription className="mb-4 flex flex-col gap-4 text-gray-600">
+						Do you want to delete the selected members?
+					</DialogDescription>
+					<DialogFooter>
+						<DialogClose>
+							<Button
+								variant="destructive"
+								onClick={deleteSelectedMembers}
+							>
+								Confirm
+							</Button>
+							<Button
+								variant="ghost"
+								onClick={resetSelectedMembers}
+							>
+								Cancel
+							</Button>
+						</DialogClose>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 };

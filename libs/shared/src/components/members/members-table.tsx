@@ -1,5 +1,5 @@
 import { ChevronDown, LockOpen, Plus, Search } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Button,
 	DropdownMenu,
@@ -12,6 +12,7 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import { AddMembersOverlay } from "./add-members";
+import { returnAccessType } from "./common";
 import { MembersList } from "./members-list";
 
 interface MembersProps {
@@ -34,20 +35,7 @@ export const MembersTable = ({ id, type, onChange }: MembersProps) => {
 	const [searchKey, setSearchKey] = useState<string>("");
 	const debouncedValue = useDebouncedValue(searchKey, 300);
 	const [filterPermission, setFilterPermission] = useState("");
-
-	const returnAccessType = useCallback((permission: string) => {
-		switch (permission) {
-			case "can view":
-				return "READ_ONLY";
-			case "can edit":
-				return "EDIT";
-			case "owner":
-				return "OWNER";
-			default:
-				return "";
-		}
-	}, []);
-
+	// biome-ignore lint/correctness/useExhaustiveDependencies: keeping essential dependencies
 	useEffect(() => {
 		if (!openAddMembers && onChange) {
 			onChange();
@@ -138,7 +126,7 @@ export const MembersTable = ({ id, type, onChange }: MembersProps) => {
 				type={type}
 				refreshList={!openAddMembers}
 				search={debouncedValue}
-				permission={returnAccessType(filterPermission)}
+				permission={returnAccessType(filterPermission, true)}
 			/>
 			{/** Add members overlay */}
 			<AddMembersOverlay
