@@ -8,7 +8,6 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
-// import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Muted,
@@ -53,8 +52,6 @@ interface FileCodeEditorProps {
 	onChange?: (content: string, isModified: boolean) => void;
 }
 
-// const MonacoEditor = lazy(() => import("@semoss/shared/monaco").then(mod => ({ default: mod.MonacoEditor })));
-
 export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	mode,
 	path,
@@ -69,10 +66,10 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 	// If you need MONACO_CONFIG and MONACO_EXT_LANGUAGE_MAPPING, import them dynamically as well:
 	const useMonacoConfig = useAsyncImport(() =>
-		import("../monaco").then((mod) => mod.MONACO_CONFIG),
+		import("@semoss/shared/monaco").then((mod) => mod.MONACO_CONFIG),
 	);
 	const useMonacoExtMapping = useAsyncImport(() =>
-		import("../monaco").then((mod) => mod.MONACO_EXT_LANGUAGE_MAPPING),
+		import("@semoss/shared/monaco").then((mod) => mod.MONACO_EXT_LANGUAGE_MAPPING),
 	);
 	type OnMount = import("@monaco-editor/react").OnMount;
 
