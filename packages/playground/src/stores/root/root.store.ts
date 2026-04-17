@@ -15,6 +15,7 @@ const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
 const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
 const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
 const ENABLE_COMPACTION = import.meta.env.VITE_ENABLE_COMPACTION;
+const ENABLE_PROMPT_OPTIMIZER = import.meta.env.VITE_ENABLE_PROMPT_OPTIMIZER;
 
 interface RootStoreInterface {
 	/**
@@ -95,6 +96,7 @@ export class RootStore {
 				enablePlan: ENABLE_PLAN === "true",
 				enableRewrite: ENABLE_REWRITE === "true",
 				enableCompaction: ENABLE_COMPACTION === "true",
+				enablePromptOptimizer: ENABLE_PROMPT_OPTIMIZER === "true",
 			},
 		},
 	};

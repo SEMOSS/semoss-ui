@@ -57,6 +57,7 @@ import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
+import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
 // ============================================================================
 // Constants & Helper Functions
@@ -199,6 +200,9 @@ interface RoomInputProps {
 
 	/** Maximum token capacity for context window */
 	tokensMax?: number;
+
+	/** Room store for prompt optimizer */
+	room: RoomStore;
 }
 
 // ============================================================================
@@ -234,6 +238,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		initialValue,
 		tokensUsed,
 		tokensMax,
+		room,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -246,6 +251,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
 		const [isScrollable, setIsScrollable] = useState(false);
+		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
 
 		// Refs for DOM elements and Lexical editor
@@ -254,6 +260,31 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
 		const scrollViewportRef = useRef<HTMLElement | null>(null);
+
+		// Bridge setInput() (PromptOptimizer) -> Lexical editor content
+		const setInputFromOptimizer: React.Dispatch<
+			React.SetStateAction<string>
+		> = (nextValue) => {
+			setInputText((prev) => {
+				const next =
+					typeof nextValue === "function"
+						? (nextValue as (p: string) => string)(prev)
+						: nextValue;
+
+				editorRef.current?.update(() => {
+					const root = $getRoot();
+					root.clear();
+
+					const paragraphNode = $createParagraphNode();
+					if (next?.length) {
+						paragraphNode.append($createTextNode(next));
+					}
+					root.append(paragraphNode);
+				});
+				editorRef.current?.focus();
+				return next;
+			});
+		};
 
 		// File handling
 		const [isDragging, setIsDragging] = useState(false);
@@ -783,9 +814,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									</TooltipContent>
 								</Tooltip>
 
+								{root.theme.featureFlags
+									?.enablePromptOptimizer && (
+									<PromptOptimizer
+										input={inputText}
+										setInput={setInputFromOptimizer}
+										disabled={Boolean(
+											isLoading || hasOutstandingTools,
+										)}
+										modelId={model?.engine_id || undefined}
+										room={room}
+									/>
+								)}
+
 								{/* Primary action button - dual purpose:
-									     - When idle: Send prompt
-									     - When loading: Pause tool execution */}
+                                         - When idle: Send prompt
+                                         - When loading: Pause tool execution */}
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span>
@@ -857,9 +901,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								const root = $getRoot();
 
 								// Track empty state to disable send button
-								setIsEmpty(
-									root.getTextContent().trim().length === 0,
-								);
+								const text = root.getTextContent();
+								setIsEmpty(text.trim().length === 0);
+								setInputText(text);
 
 								// Check if content is scrollable
 								setTimeout(() => {
