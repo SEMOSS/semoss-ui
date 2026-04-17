@@ -49,6 +49,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
+import { ResourceNotFound } from "@/components/common";
 import { UpdateSMSS } from "@/components/settings";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
@@ -148,6 +149,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
+	const [permissionError, setPermissionError] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tab = searchParams.get("tab");
 
@@ -161,18 +163,25 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		[notification.add],
 	);
 	const getPermission = useCallback(async () => {
-		const role = await getUserProjectPermission(appId);
+		try {
+			const role = await getUserProjectPermission(appId);
 
-		setValue("userRole", role);
-		const nextPermission = determineUserPermission(role);
-		setValue("permission", nextPermission);
+			setValue("userRole", role);
+			const nextPermission = determineUserPermission(role);
+			setValue("permission", nextPermission);
 
-		if (nextPermission === "author")
-			setValue("requestedPermission", "OWNER");
-		if (nextPermission === "editor")
-			setValue("requestedPermission", "EDIT");
-		if (nextPermission === "readOnly" || nextPermission === "discoverable")
-			setValue("requestedPermission", "READ_ONLY");
+			if (nextPermission === "author")
+				setValue("requestedPermission", "OWNER");
+			if (nextPermission === "editor")
+				setValue("requestedPermission", "EDIT");
+			if (
+				nextPermission === "readOnly" ||
+				nextPermission === "discoverable"
+			)
+				setValue("requestedPermission", "READ_ONLY");
+		} catch {
+			setPermissionError(true);
+		}
 	}, [appId, setValue]);
 
 	const fetchSimilarApps = useCallback(() => {
@@ -352,6 +361,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		setSelectedTab("Overview");
 		setMcpTools([]);
 		setMcpToolsError("");
+		setPermissionError(false);
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		if (appId) {
@@ -558,6 +568,22 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
 
+	if (permissionError) {
+		return (
+			<>
+				{showNav && (
+					<NavbarLeft>
+						<NavbarHeader />
+					</NavbarLeft>
+				)}
+				<ResourceNotFound
+					catalogPath="/app"
+					catalogLabel="App Catalog"
+				/>
+			</>
+		);
+	}
+
 	return (
 		<div className="w-full">
 			{showNav && (
@@ -687,9 +713,21 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 												: "outline"
 									}
 									className="gap-2"
-									onClick={() =>
-										setIsChangeAccessModalOpen(true)
-									}
+									onClick={() => {
+										const appName =
+											appInfo?.project_display_name ||
+											appInfo?.project_name ||
+											"this app";
+										setValue(
+											"requestedPermission",
+											"READ_ONLY",
+										);
+										setValue(
+											"roleChangeComment",
+											`I am requesting access to ${appName} for [please provide a reason]`,
+										);
+										setIsChangeAccessModalOpen(true);
+									}}
 									data-testid={"appDetail-access-btn"}
 								>
 									{responseStatus ? (
