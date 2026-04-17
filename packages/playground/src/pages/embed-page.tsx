@@ -32,7 +32,7 @@ export const EmbedPage: React.FC = observer(() => {
 				const { workspaceId, knowledgeId, prompt } =
 					event.data.payload ?? {};
 				const promptParam = prompt
-					? `&prompt=${encodeURIComponent(prompt)}`
+					? `?prompt=${encodeURIComponent(prompt)}`
 					: "";
 				if (workspaceId) {
 					navigate(`/new?workspaceId=${workspaceId}`);
