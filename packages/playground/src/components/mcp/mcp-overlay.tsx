@@ -52,6 +52,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
 						? t("overlay.editToolbox")
 						: t("overlay.editKnowledge")
 				}
+				onOpenAutoFocus={(e) => e.preventDefault()}
 				onCloseAutoFocus={(e) => {
 					// Prevent focus from returning to the trigger element
 					e.preventDefault();
