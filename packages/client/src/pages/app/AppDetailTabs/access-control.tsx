@@ -44,7 +44,7 @@ export const AccessControl = ({
 							name={appInfo?.project_name || "app"}
 							id={appId}
 							onDelete={() => {
-								navigate("/settings/app");
+								navigate("/app");
 							}}
 						/>
 					</section>

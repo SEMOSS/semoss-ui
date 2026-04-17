@@ -52,14 +52,6 @@
 	"mcp": {
 		"noToolboxes": "No se encontraron cajas de herramientas",
 		"noKnowledge": "No se encontraron bibliotecas de conocimiento",
-		"accessRequested": "Acceso solicitado",
-		"requestAccess": "Solicitar acceso",
-		"noAccess": "Sin acceso",
-		"requestAccessButton": "Solicitar Acceso",
-		"noDescription": "No hay descripción disponible.",
-		"tooltipNoAccess": "No tienes acceso a este {{type}}. Por favor, solicita acceso al propietario.",
-		"tooltipMissingDependencies": "No tienes acceso a todas las dependencias de este {{type}}, por lo que la funcionalidad puede ser limitada. Ábrelo en la plataforma para más información.",
-		"tooltipOpen": "Abrir este {{type}} en la plataforma",
 		"failedToLoad": "Error al cargar los recursos del espacio de trabajo",
 		"requestedSuccess": "Acceso solicitado a {{name}}",
 		"requestedFailed": "Error al solicitar acceso"

@@ -153,6 +153,7 @@ export const Metamodel = (props: MetamodelProps) => {
 	const flowInstanceRef = useRef<ReactFlowInstance | null>(null);
 	const lastFocusedSearchMatchRef = useRef<string | null>(null);
 	const lastEmittedSearchMatchRef = useRef<string | null>(null);
+	const lastAutoFocusedSelectedNodeRef = useRef<string | null>(null);
 	const lastPropsRef = useRef<{ nodes: MetamodelNodeType[]; edges: Edge[] }>({
 		nodes: [],
 		edges: [],
@@ -468,6 +469,58 @@ export const Metamodel = (props: MetamodelProps) => {
 		[availableColumnNames, callback, onMetaModelUpdate, setFlowNodes],
 	);
 
+	const handleNodeDragStop = useCallback(
+		(
+			_event: unknown,
+			_node: unknown,
+			draggedNodes: MetamodelNodeType[],
+		) => {
+			const flowInstanceNodes = flowInstanceRef.current?.getNodes?.() as
+				| MetamodelNodeType[]
+				| undefined;
+
+			// `draggedNodes` can be only the dragged/selected subset.
+			// Build the next state from the full graph to avoid dropping nodes.
+			const nextSourceNodes =
+				Array.isArray(flowInstanceNodes) && flowInstanceNodes.length > 0
+					? flowInstanceNodes
+					: (() => {
+							const draggedById = new Map(
+								(Array.isArray(draggedNodes)
+									? draggedNodes
+									: []
+								).map((dragged) => [dragged.id, dragged]),
+							);
+
+							return flowNodes.map((existing) => {
+								const dragged = draggedById.get(existing.id);
+								if (!dragged) {
+									return existing;
+								}
+
+								return {
+									...existing,
+									position: dragged.position,
+								};
+							});
+						})();
+
+			const nextNodes = injectIsAction(nextSourceNodes);
+
+			setData((prev) => ({ ...prev, nodes: nextNodes }));
+			setFlowNodes(nextNodes);
+
+			if (onMetaModelUpdate) {
+				try {
+					onMetaModelUpdate(JSON.parse(JSON.stringify(nextNodes)));
+				} catch {
+					onMetaModelUpdate(nextNodes);
+				}
+			}
+		},
+		[flowNodes, injectIsAction, onMetaModelUpdate, setFlowNodes],
+	);
+
 	const updateData = useCallback((nodeData, action: string) => {
 		setData((prev) => {
 			const temp = { ...prev };
@@ -773,6 +826,11 @@ export const Metamodel = (props: MetamodelProps) => {
 
 	useEffect(() => {
 		if (!autoFocusSelectedNode || !selectedNode?.id) {
+			lastAutoFocusedSelectedNodeRef.current = null;
+			return;
+		}
+
+		if (lastAutoFocusedSelectedNodeRef.current === selectedNode.id) {
 			return;
 		}
 
@@ -781,12 +839,14 @@ export const Metamodel = (props: MetamodelProps) => {
 			return;
 		}
 
-		const selectedFlowNode = flowNodes.find(
-			(n) => n.id === selectedNode.id,
-		);
+		const selectedFlowNode =
+			flowInstance.getNode?.(selectedNode.id) ??
+			flowNodes.find((n) => n.id === selectedNode.id);
 		if (!selectedFlowNode) {
 			return;
 		}
+
+		lastAutoFocusedSelectedNodeRef.current = selectedNode.id;
 
 		flowInstance.setCenter(
 			selectedFlowNode.position.x + 180,
@@ -860,6 +920,7 @@ export const Metamodel = (props: MetamodelProps) => {
 					}}
 					fitView={true}
 					onNodesChange={onFlowNodesChange}
+					onNodeDragStop={handleNodeDragStop}
 					onEdgesChange={onFlowEdgesChange}
 					defaultViewport={{ x: 70, y: 50, zoom: 1 }}
 				>

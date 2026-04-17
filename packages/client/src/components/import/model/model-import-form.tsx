@@ -50,6 +50,16 @@ interface ModelImportFormProps {
 	importableModelsCategory: CategoryTexts;
 }
 
+const getModelFieldTestId = (
+	fieldKey: string,
+	target: "field" | "input" | "error" | "option" | "label",
+	optionValue?: string,
+) => {
+	const base = `model-import-form-${target}-${fieldKey}`;
+
+	return formatToDataTestId(optionValue ? `${base}-${optionValue}` : base);
+};
+
 export const ModelImportForm = (props: ModelImportFormProps) => {
 	const {
 		fields,
@@ -254,6 +264,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	const renderField = (f: FieldDefinition) => {
 		const defaultVal =
 			f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+		const fieldWrapperTestId = getModelFieldTestId(f.key, "field");
+		const fieldInputTestId = getModelFieldTestId(f.key, "input");
+		const fieldErrorTestId = getModelFieldTestId(f.key, "error");
 
 		if (f.type === "hidden") {
 			return (
@@ -268,7 +281,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							type="hidden"
 							name={field.name}
 							value={String(field.value ?? "")}
-							data-testId={`model-ImportForm-${f.key}-hidden-input`}
+							data-testid={fieldInputTestId}
 							onChange={(e) =>
 								field.onChange(
 									(e.target as HTMLInputElement).value,
@@ -329,7 +342,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							const isReadOnlyInitScript =
 								f.key === "INIT_MODEL_ENGINE" && !!f.disabled;
 							return (
-								<Field>
+								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
 										{f.label}
 										{f.required && (
@@ -407,9 +420,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												: undefined
 										}
 										autoComplete="off"
-										data-testId={formatToDataTestId(
-											`importForm-${f.label}-textField`,
-										)}
+										data-testid={fieldInputTestId}
 									/>
 									<FieldDescription
 										className={
@@ -417,6 +428,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												? "text-destructive"
 												: ""
 										}
+										data-testid={fieldErrorTestId}
 									>
 										{getHelperText(errors?.[f.key], f)}
 									</FieldDescription>
@@ -427,7 +439,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							return (
 								<div
 									className="flex flex-col gap-2"
-									data-testid={`function-form-field-${f.key}`}
+									data-testid={fieldWrapperTestId}
 								>
 									<P>
 										{f.label}
@@ -477,7 +489,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												)
 											}
 											disabled={f.disabled}
-											data-testid={`function-form-input-${f.key}`}
+											data-testid={fieldInputTestId}
 										/>
 										<div className="text-center">
 											<P className="font-medium text-foreground">
@@ -560,7 +572,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									{error && (
 										<P
 											className="text-destructive text-sm"
-											data-testid={`function-form-error-${f.key}`}
+											data-testid={fieldErrorTestId}
 										>
 											{error.message ||
 												(f.rules?.pattern?.message ??
@@ -571,7 +583,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							);
 						case "url":
 							return (
-								<Field>
+								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
 										{f.label}
 										{f.required && (
@@ -589,15 +601,13 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										}
 										disabled={f.disabled}
 										autoComplete="off"
-										data-testId={formatToDataTestId(
-											`model-importForm-${f.label}-url`,
-										)}
+										data-testid={fieldInputTestId}
 									/>
 								</Field>
 							);
 						case "password":
 							return (
-								<Field>
+								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
 										{f.label}
 										{f.required && (
@@ -615,12 +625,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										}
 										disabled={f.disabled}
 										autoComplete="new-password"
-										data-testId={formatToDataTestId(
-											`model-importForm-${f.label}-password`,
-										)}
+										data-testid={fieldInputTestId}
 									/>
 									{f.helperText && (
-										<FieldDescription>
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
 											{f.helperText}
 										</FieldDescription>
 									)}
@@ -628,7 +638,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							);
 						case "number":
 							return (
-								<Field>
+								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
 										{f.label}
 										{f.required && (
@@ -646,9 +656,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										}
 										disabled={f.disabled}
 										autoComplete="off"
-										data-testId={formatToDataTestId(
-											`model-importForm-${f.label}`,
-										)}
+										data-testid={fieldInputTestId}
 										onFocus={() => {
 											_lastField.current = {
 												..._lastField.current,
@@ -667,7 +675,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										}}
 									/>
 									{f.helperText && !error && (
-										<FieldDescription>
+										<FieldDescription
+											data-testid={fieldErrorTestId}
+										>
 											{f.helperText}
 										</FieldDescription>
 									)}
@@ -675,7 +685,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							);
 						case "textarea":
 							return (
-								<Field>
+								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
 										{f.label}
 										{f.required && (
@@ -693,15 +703,13 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										rows={4}
 										disabled={f.disabled}
 										autoComplete="off"
-										data-testId={formatToDataTestId(
-											`model-importForm-${f.label}-textarea`,
-										)}
+										data-testid={fieldInputTestId}
 									/>
 								</Field>
 							);
 						case "select":
 							return (
-								<Field>
+								<Field data-testid={fieldWrapperTestId}>
 									<FieldLabel htmlFor={f.key}>
 										{f.label}
 										{f.required && (
@@ -720,9 +728,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										<SelectTrigger
 											id={f.key}
 											className="w-full"
-											data-testId={formatToDataTestId(
-												`model-importForm-${f.label}-select`,
-											)}
+											data-testid={fieldInputTestId}
 										>
 											<SelectValue
 												placeholder={`Select ${f.label}`}
@@ -733,6 +739,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												<SelectItem
 													key={opt}
 													value={opt}
+													data-testid={getModelFieldTestId(
+														f.key,
+														"option",
+														opt,
+													)}
 												>
 													{opt}
 												</SelectItem>
@@ -746,6 +757,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								<div
 									key={f.key}
 									className="flex flex-row items-center gap-2"
+									data-testid={fieldWrapperTestId}
 								>
 									<Switch
 										checked={!!field.value}
@@ -754,10 +766,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										}}
 										required={f.required}
 										disabled={f.disabled}
+										data-testid={fieldInputTestId}
 									/>
 									<P
-										data-testId={formatToDataTestId(
-											`model-importForm-${f.label}-text`,
+										data-testid={getModelFieldTestId(
+											f.key,
+											"label",
 										)}
 									>
 										{f.label}
@@ -783,10 +797,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 						{/* Left: Category title + description */}
 						<div className="flex flex-1 flex-col gap-1">
-							<H4 data-testId={`model-importForm-category-title`}>
+							<H4
+								className="font-semibold text-base tracking-tight"
+								data-testId={`model-importForm-category-title`}
+							>
 								{category}
 							</H4>
 							<Muted
+								className="text-muted-foreground text-sm leading-6"
 								data-testId={`model-importForm-category-description`}
 							>
 								{importableModelsCategory[selectedProvider]?.[

@@ -10,6 +10,7 @@ import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
 import { InsightSettingsDetailPage } from "./InsightSettingsDetailPage";
 import { InsightSettingsPage } from "./insight-settings-page";
+import { LLMFeedbackPage } from "./LLMFeedbackPage";
 import { MemberSettingsPage } from "./MemberSettingsPage";
 import { MyProfilePage } from "./MyProfilePage";
 import { ProjectSettingsPage } from "./project-settings-page";
@@ -38,6 +39,7 @@ const SETTINGS_COMPONETS = {
 	"team-permissions": TeamsSettingsPage,
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
+	"llm-feedback": LLMFeedbackPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,
