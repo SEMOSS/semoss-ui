@@ -32,6 +32,7 @@ import {
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
@@ -403,38 +404,15 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 											/>
 										)}
 
-										{m.type === "OUTPUT" &&
-											m.conversationCompactedAbove && (
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<div className="relative mb-4 flex h-6 w-full cursor-default items-center justify-center overflow-hidden rounded-sm">
-															<div
-																className="absolute inset-0 opacity-[0.18]"
-																style={{
-																	backgroundImage:
-																		"repeating-linear-gradient(-45deg, currentColor, currentColor 1px, transparent 1px, transparent 8px)",
-																}}
-															/>
-															<div className="relative z-10 flex items-center gap-1.5 rounded bg-secondary-background px-2 text-muted-foreground text-xs leading-normal">
-																<ArchiveIcon className="h-3 w-3" />
-																<span>
-																	{t(
-																		"settings.compactedAbove",
-																	)}
-																</span>
-															</div>
-														</div>
-													</TooltipTrigger>
-													<TooltipContent>
-														{t(
-															"settings.compactedAboveTooltip",
-														)}
-													</TooltipContent>
-												</Tooltip>
-											)}
+										{m.type === "OUTPUT" && (
+											<RoomCompactionIndicator
+												message={m}
+											/>
+										)}
 									</React.Fragment>
 								);
 							})}
+							<RoomCompactionIndicator room={room} />
 							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}

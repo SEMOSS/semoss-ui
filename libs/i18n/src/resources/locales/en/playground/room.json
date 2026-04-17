@@ -9,6 +9,7 @@
 		"compact": "Compact Conversation",
 		"compactSuccess": "Conversation compacted successfully",
 		"compactError": "Failed to compact conversation",
+		"compacting": "Compacting conversation...",
 		"compactedAbove": "Conversation compacted",
 		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size"
 	},

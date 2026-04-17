@@ -51,6 +51,11 @@ interface RoomStoreInterface {
 	isLoading: boolean;
 
 	/**
+	 *  Track if the room is compacting messages
+	 */
+	isCompacting: boolean;
+
+	/**
 	 *  Track if the room has errored
 	 */
 	error?: Error | null;
@@ -151,6 +156,7 @@ export class RoomStore {
 		roomId: "",
 		insightId: "new",
 		isLoading: false,
+		isCompacting: false,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -231,6 +237,13 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Indicator to check if the room is compacting messages
+	 */
+	get isCompacting() {
+		return this._store.isCompacting;
 	}
 
 	/**
@@ -922,6 +935,10 @@ export class RoomStore {
 		this._store.isLoading = isLoading;
 	};
 
+	private setIsCompacting = (isCompacting: boolean): void => {
+		this._store.isCompacting = isCompacting;
+	};
+
 	/**
 	 * Ask a message to the room
 	 * @param prompt - user message
@@ -1246,29 +1263,7 @@ export class RoomStore {
 
 		const curResponse = cur as ResponseMessageStore;
 
-		// Add a placeholder to show compaction is in progress
-		const compactionPlaceholder = new ResponseMessageStore(this, {
-			io: "OUTPUT",
-			messageId: STREAMING_PLACEHOLDER_ID,
-			visible: true,
-			platform_generated: true,
-			modelId: this._store.model?.engine_id || "",
-			dateCreated: new Date().toISOString(),
-			parts: [{ type: "THINKING", thinking: "" }],
-			tokens: 0,
-			ornaments: {
-				modelName:
-					this._store.model?.engine_display_name ||
-					this._store.model?.engine_name ||
-					"",
-			},
-			pruneToolsAbove: false,
-		} as ResponsePixelMessage);
-
-		runInAction(() => {
-			compactionPlaceholder.isThinking = true;
-			curResponse.addChild(compactionPlaceholder);
-		});
+		this.setIsCompacting(true);
 
 		try {
 			const response = await this.runRoomPixel<
@@ -1315,10 +1310,7 @@ export class RoomStore {
 				}
 			});
 		} finally {
-			runInAction(() => {
-				compactionPlaceholder.isThinking = false;
-				curResponse.removeChild(compactionPlaceholder);
-			});
+			this.setIsCompacting(false);
 		}
 	};
 }
