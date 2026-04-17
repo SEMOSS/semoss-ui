@@ -508,19 +508,23 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									editorRef={editorRef}
 									onOverlayClose={() => onOpenChange(false)}
 								/>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									onSelect={async (e) => {
-										e.preventDefault();
-										await handleCompactMessages();
-										onOpenChange(false);
-									}}
-								>
-									<ArchiveIcon />
-									<span className="flex-1">
-										{t("settings.compact")}
-									</span>
-								</DropdownMenuItem>
+								{room.theme.featureFlags?.enableCompaction && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onSelect={async (e) => {
+												e.preventDefault();
+												await handleCompactMessages();
+												onOpenChange(false);
+											}}
+										>
+											<ArchiveIcon />
+											<span className="flex-1">
+												{t("settings.compact")}
+											</span>
+										</DropdownMenuItem>
+									</>
+								)}
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
 									room={room}
