@@ -446,6 +446,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					isLoading={showLoadingState}
 					hidePauseButton={!room.numberOfTools}
 					model={room.model}
+					room={room}
 					setModel={(model) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);
