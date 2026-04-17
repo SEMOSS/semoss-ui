@@ -8,6 +8,7 @@
 		"edit": "Edit Settings",
 		"compact": "Compact Conversation",
 		"compactSuccess": "Conversation compacted successfully",
+		"compactSkipped": "Nothing to compact — conversation is already concise",
 		"compactError": "Failed to compact conversation",
 		"compacting": "Compacting conversation...",
 		"compactedAbove": "Conversation compacted",

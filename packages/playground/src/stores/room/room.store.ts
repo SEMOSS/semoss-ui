@@ -51,11 +51,6 @@ interface RoomStoreInterface {
 	isLoading: boolean;
 
 	/**
-	 *  Track if the room is compacting messages
-	 */
-	isCompacting: boolean;
-
-	/**
 	 *  Track if the room has errored
 	 */
 	error?: Error | null;
@@ -156,7 +151,6 @@ export class RoomStore {
 		roomId: "",
 		insightId: "new",
 		isLoading: false,
-		isCompacting: false,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -237,13 +231,6 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
-	}
-
-	/**
-	 * Indicator to check if the room is compacting messages
-	 */
-	get isCompacting() {
-		return this._store.isCompacting;
 	}
 
 	/**
@@ -935,10 +922,6 @@ export class RoomStore {
 		this._store.isLoading = isLoading;
 	};
 
-	private setIsCompacting = (isCompacting: boolean): void => {
-		this._store.isCompacting = isCompacting;
-	};
-
 	/**
 	 * Ask a message to the room
 	 * @param prompt - user message
@@ -1263,23 +1246,25 @@ export class RoomStore {
 
 		const curResponse = cur as ResponseMessageStore;
 
-		this.setIsCompacting(true);
+		curResponse.setIsCompacting(true);
+
+		type SummaryResponse = {
+			type: "SUMMARY";
+			inputMessage: InputPixelMessage;
+			responseMessage: ResponsePixelMessage;
+			success: boolean;
+			error?: string;
+		};
+
+		type ToolPruneResponse = {
+			type: "TOOL_PRUNE";
+			success: boolean;
+			error?: string;
+		};
 
 		try {
 			const response = await this.runRoomPixel<
-				{
-					success: boolean;
-					types: (
-						| {
-								type: "SUMMARY";
-								inputMessage: InputPixelMessage;
-								responseMessage: ResponsePixelMessage;
-						  }
-						| {
-								type: "TOOL_PRUNE";
-						  }
-					)[];
-				}[]
+				(SummaryResponse | ToolPruneResponse)[][]
 			>(
 				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}, autoDetect=${JSON.stringify(true)});`,
 				true,
@@ -1287,12 +1272,26 @@ export class RoomStore {
 
 			const { output } = response.pixelReturn[0];
 
-			if (!response || response.errors.length || !output?.success)
+			if (!response || response.errors.length || !output)
 				throw new Error();
+
+			if (output.length === 0) {
+				return "skipped" as const;
+			}
 
 			curResponse.setConversationCompactedAbove(true);
 
-			output.types.forEach((compactionMethod) => {
+			let success = false;
+
+			output.forEach((compactionMethod) => {
+				if (!compactionMethod.success) {
+					console.warn(
+						compactionMethod.error ||
+							"Unknown error during compaction",
+					);
+					return;
+				}
+				success = true;
 				if (compactionMethod.type === "SUMMARY") {
 					const { inputMessage, responseMessage } = compactionMethod;
 					const inputStore = new InputMessageStore(
@@ -1309,8 +1308,14 @@ export class RoomStore {
 					// setting conversationCompactedAbove to true is enough for the UI
 				}
 			});
+
+			if (!success) {
+				throw new Error();
+			}
+
+			return "compacted" as const;
 		} finally {
-			this.setIsCompacting(false);
+			curResponse.setIsCompacting(false);
 		}
 	};
 }

@@ -80,8 +80,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 */
 	const handleCompactMessages = async () => {
 		try {
-			await room.compactMessages();
-			toast.success(t("settings.compactSuccess"));
+			const result = await room.compactMessages();
+			if (result === "skipped") {
+				toast.info(t("settings.compactSkipped"));
+			} else {
+				toast.success(t("settings.compactSuccess"));
+			}
 		} catch {
 			toast.error(t("settings.compactError"));
 		}
@@ -412,7 +416,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									</React.Fragment>
 								);
 							})}
-							<RoomCompactionIndicator room={room} />
 							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
@@ -514,8 +517,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 										<DropdownMenuItem
 											onSelect={async (e) => {
 												e.preventDefault();
-												await handleCompactMessages();
 												onOpenChange(false);
+												await handleCompactMessages();
 											}}
 										>
 											<ArchiveIcon />
