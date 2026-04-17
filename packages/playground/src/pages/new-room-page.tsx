@@ -336,8 +336,13 @@ export const NewRoomPage = observer(() => {
 	]);
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<ResizablePanelGroup direction="horizontal">
+		<div className="flex h-full w-full flex-col overflow-hidden">
+			{root.theme.banner ? (
+				<div className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white">
+					{root.theme.banner}
+				</div>
+			) : null}
+			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
 						src={root.theme.images.landing || landingImage}
