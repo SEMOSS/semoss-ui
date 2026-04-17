@@ -52,14 +52,6 @@
 	"mcp": {
 		"noToolboxes": "ツールボックスが見つかりません",
 		"noKnowledge": "ナレッジライブラリが見つかりません",
-		"accessRequested": "アクセスをリクエスト済み",
-		"requestAccess": "アクセスをリクエスト",
-		"noAccess": "アクセス権なし",
-		"requestAccessButton": "アクセスをリクエスト",
-		"noDescription": "説明がありません。",
-		"tooltipNoAccess": "この{{type}}へのアクセス権がありません。オーナーにアクセスをリクエストしてください。",
-		"tooltipMissingDependencies": "この{{type}}のすべての依存関係にアクセスできないため、機能が制限される場合があります。詳細については、プラットフォームで開いてください。",
-		"tooltipOpen": "プラットフォームでこの{{type}}を開く",
 		"failedToLoad": "ワークスペースリソースの読み込みに失敗しました",
 		"requestedSuccess": "{{name}}へのアクセスをリクエストしました",
 		"requestedFailed": "アクセスのリクエストに失敗しました"

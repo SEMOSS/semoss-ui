@@ -145,7 +145,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<Breadcrumb data-testid="breadcrumbs" className="mb-4">
+		<Breadcrumb data-testid="breadcrumbs" className="mb-6">
 			<BreadcrumbList>
 				<BreadcrumbItem>
 					<BreadcrumbLink
