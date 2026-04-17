@@ -1244,45 +1244,81 @@ export class RoomStore {
 
 		if (!cur) throw new Error();
 
-		const response = await this.runRoomPixel<
-			{
-				success: boolean;
-				types: (
-					| {
-							type: "SUMMARY";
-							inputMessage: InputPixelMessage;
-							responseMessage: ResponsePixelMessage;
-					  }
-					| {
-							type: "TOOL_PRUNE";
-					  }
-				)[];
-			}[]
-		>(
-			`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}, autoDetect=${JSON.stringify(true)});`,
-			false,
-		);
+		const curResponse = cur as ResponseMessageStore;
 
-		const { output } = response.pixelReturn[0];
+		// Add a placeholder to show compaction is in progress
+		const compactionPlaceholder = new ResponseMessageStore(this, {
+			io: "OUTPUT",
+			messageId: STREAMING_PLACEHOLDER_ID,
+			visible: true,
+			platform_generated: true,
+			modelId: this._store.model?.engine_id || "",
+			dateCreated: new Date().toISOString(),
+			parts: [{ type: "THINKING", thinking: "" }],
+			tokens: 0,
+			ornaments: {
+				modelName:
+					this._store.model?.engine_display_name ||
+					this._store.model?.engine_name ||
+					"",
+			},
+			pruneToolsAbove: false,
+		} as ResponsePixelMessage);
 
-		if (!response || response.errors.length || !output?.success)
-			throw new Error();
-
-		cur.setConversationCompactedAbove(true);
-
-		output.types.forEach((compactionMethod) => {
-			if (compactionMethod.type === "SUMMARY") {
-				const { inputMessage, responseMessage } = compactionMethod;
-				const inputStore = new InputMessageStore(this, inputMessage);
-				const responseStore = new ResponseMessageStore(
-					this,
-					responseMessage,
-				);
-				inputStore.addChild(responseStore);
-				cur.addChild(inputStore);
-			} else if (compactionMethod.type === "TOOL_PRUNE") {
-				// setting conversationCompactedAbove to true is enough for the UI
-			}
+		runInAction(() => {
+			compactionPlaceholder.isThinking = true;
+			curResponse.addChild(compactionPlaceholder);
 		});
+
+		try {
+			const response = await this.runRoomPixel<
+				{
+					success: boolean;
+					types: (
+						| {
+								type: "SUMMARY";
+								inputMessage: InputPixelMessage;
+								responseMessage: ResponsePixelMessage;
+						  }
+						| {
+								type: "TOOL_PRUNE";
+						  }
+					)[];
+				}[]
+			>(
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}, autoDetect=${JSON.stringify(true)});`,
+				true,
+			);
+
+			const { output } = response.pixelReturn[0];
+
+			if (!response || response.errors.length || !output?.success)
+				throw new Error();
+
+			curResponse.setConversationCompactedAbove(true);
+
+			output.types.forEach((compactionMethod) => {
+				if (compactionMethod.type === "SUMMARY") {
+					const { inputMessage, responseMessage } = compactionMethod;
+					const inputStore = new InputMessageStore(
+						this,
+						inputMessage,
+					);
+					const responseStore = new ResponseMessageStore(
+						this,
+						responseMessage,
+					);
+					inputStore.addChild(responseStore);
+					curResponse.addChild(inputStore);
+				} else if (compactionMethod.type === "TOOL_PRUNE") {
+					// setting conversationCompactedAbove to true is enough for the UI
+				}
+			});
+		} finally {
+			runInAction(() => {
+				compactionPlaceholder.isThinking = false;
+				curResponse.removeChild(compactionPlaceholder);
+			});
+		}
 	};
 }

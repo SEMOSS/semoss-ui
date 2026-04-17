@@ -382,11 +382,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			};
 		}, []);
 
-		// Disable editor during loading to prevent user input
-		useEffect(() => {
-			editorRef.current?.setEditable(!isLoading);
-		}, [isLoading]);
-
 		useEffect(() => {
 			if (!initialValue) return;
 			editorRef.current?.update(() => {
@@ -627,8 +622,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										aria-placeholder={t(
 											"input.ariaPlaceholder",
 										)}
-										aria-disabled={isLoading}
-										disabled={isLoading}
 										placeholder={
 											<div
 												className={cn(
