@@ -11,6 +11,8 @@ interface TreeViewContextProps<T = unknown> {
 
 const TreeViewContext = createContext<TreeViewContextProps | null>(null);
 
+const DepthContext = createContext(0);
+
 function useTreeView<T>() {
 	const context = useContext(
 		TreeViewContext,
@@ -78,6 +80,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 	ref: React.ForwardedRef<HTMLLIElement>,
 ) {
 	const treeView = useTreeView<T>();
+	const depth = useContext(DepthContext);
 
 	const isExpanded = treeView.expanded.includes(id);
 	const hasChildren = React.Children.count(children) > 0;
@@ -110,8 +113,9 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		>
 			<div
 				className={cn(
-					"flex w-full cursor-pointer items-center gap-1 rounded px-2 py-1 transition-colors hover:bg-muted",
+					"flex w-full cursor-pointer items-center gap-1 rounded py-1 pr-2 transition-colors hover:bg-muted",
 				)}
+				style={{ paddingLeft: depth * 16 + 8 }}
 			>
 				{hasChildren ? (
 					<button
@@ -154,10 +158,9 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 				</div>
 			</div>
 			{isExpanded && hasChildren && (
-				// biome-ignore lint/a11y/useSemanticElements: this is correct
-				<ul role="group" className="ml-4">
-					{children}
-				</ul>
+				<DepthContext.Provider value={depth + 1}>
+					<ul>{children}</ul>
+				</DepthContext.Provider>
 			)}
 		</li>
 	);

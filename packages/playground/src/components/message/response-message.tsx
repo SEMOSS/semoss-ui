@@ -685,12 +685,18 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						if (!open) setPreviewPdf(null);
 					}}
 				>
-					<DialogContent className="flex h-[80vh] max-w-4xl flex-col">
-						<DialogHeader>
-							<DialogTitle className="truncate">
+					<DialogContent className="flex h-[80vh] max-w-4xl flex-col gap-3 p-4">
+						<div className="flex items-center gap-2 border-b pb-3">
+							<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+								<FileBadgeIcon className="size-4 text-muted-foreground" />
+							</div>
+							<span
+								className="truncate text-muted-foreground text-sm"
+								title={previewPdf?.fileName}
+							>
 								{previewPdf?.fileName}
-							</DialogTitle>
-						</DialogHeader>
+							</span>
+						</div>
 						{previewPdf && (
 							<object
 								className="flex-1"
