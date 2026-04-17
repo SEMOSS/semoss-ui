@@ -432,22 +432,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 
 			try {
-				// Optimistically clear editor before sending
+				// Optimistically clear editor and files before sending
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
 					const paragraphNode = $createParagraphNode();
 					root.append(paragraphNode);
 				});
+				setFiles([]);
 
 				// Submit to parent handler
 				const result = Boolean(await onPrompt(userInput, userFiles));
 				if (result === null || result === false) {
 					throw new Error(`Error processing chat`);
 				}
-
-				// Success: clear attached files
-				setFiles([]);
 			} catch (e) {
 				// Show error to user
 				toast.error(getGracefulErrorMessage(e as Error as Error));
