@@ -18,7 +18,7 @@ import {
 } from "@semoss/ui/next";
 
 /** Allowed search token categories */
-export type SearchCategory = "methodName" | "args" | "engineType";
+export type SearchCategory = "methodName" | "requestMessage" | "engineType";
 
 /** A single search token — one per category, holding multiple values */
 export interface SearchToken {
@@ -31,7 +31,7 @@ export interface SearchToken {
 export interface SearchPayload {
 	search?: {
 		methodName?: string[];
-		args?: string[];
+		requestMessage?: string[];
 		engineType?: string[];
 	};
 	others?: string;
@@ -47,7 +47,11 @@ interface CategoryMeta {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORIES: SearchCategory[] = ["methodName", "args", "engineType"];
+const CATEGORIES: SearchCategory[] = [
+	"methodName",
+	"requestMessage",
+	"engineType",
+];
 
 const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 	methodName: {
@@ -56,7 +60,7 @@ const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 		bgColor: "bg-blue-100 dark:bg-blue-900/40",
 		borderColor: "border-blue-300 dark:border-blue-700",
 	},
-	args: {
+	requestMessage: {
 		label: "Request Message",
 		color: "text-amber-700 dark:text-amber-300",
 		bgColor: "bg-amber-100 dark:bg-amber-900/40",
@@ -129,7 +133,7 @@ export const TokenizedSearchBar = ({
 	onTokensChange,
 	onFreeTextChange,
 	onSearch,
-	placeholder = "Search method, args, engine… or pick a category",
+	placeholder = "Search method, requestMessage, engine… or pick a category",
 }: TokenizedSearchBarProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [pendingCategory, setPendingCategory] =
@@ -250,6 +254,13 @@ export const TokenizedSearchBar = ({
 					// Remove the last value from the last token
 					removeValue(lastToken.id, lastToken.values?.length - 1);
 				}
+				return;
+			}
+
+			// Ctrl+Space  →  open category dropdown
+			if (e.key === " " && e.ctrlKey) {
+				e.preventDefault();
+				setDropdownOpen(true);
 				return;
 			}
 

@@ -283,7 +283,7 @@ export const AuditLogPage = () => {
 
 				setIsOwner(true);
 
-				const pixel = `GetAuditLogReportUserList(engine=["${id}"]);`;
+				const pixel = `GetAuditLogReportUsers(engine=["${id}"]);`;
 				const resp = await runPixel(pixel, insightId);
 				const data = resp.pixelReturn[0].output;
 				if (Array.isArray(data)) {
@@ -528,7 +528,7 @@ export const AuditLogPage = () => {
 				{/* Row 2: Chart (65%) + Event History (35%) */}
 				<div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-2">
 					{/* Right: Event History + pagination — first on small screens */}
-					<div className="order-1 lg:order-2">
+					<div className="order-2 lg:order-2">
 						<EventHistory
 							loading={loading}
 							logs={logs}
@@ -556,7 +556,7 @@ export const AuditLogPage = () => {
 						/>
 					</div>
 					{/* Left: Chart + Detail panel — second on small screens */}
-					<div className="order-2 lg:order-1">
+					<div className="order-1 lg:order-1">
 						<ChartPanel
 							logs={logs}
 							loading={loading}

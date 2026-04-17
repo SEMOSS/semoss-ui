@@ -5,6 +5,7 @@ import {
 	CheckCircle,
 	ChevronLeft,
 	ChevronRight,
+	Info,
 	Loader2,
 	XCircle,
 } from "lucide-react";
@@ -70,6 +71,14 @@ export const EventHistory = ({
 					<span className="text-[10px] text-muted-foreground uppercase tracking-widest">
 						Event History — {searchFiltered.length}
 					</span>
+
+					<div className="group relative">
+						<Info className="h-4 w-4 cursor-pointer text-muted-foreground" />
+
+						<div className="absolute right-0 bottom-full z-10 mb-2 w-max max-w-xs whitespace-nowrap rounded-md bg-black px-2 py-1 text-[10px] text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+							engineType and methodName should be case sensitive
+						</div>
+					</div>
 				</div>
 
 				<TokenizedSearchBar
@@ -148,9 +157,6 @@ export const EventHistory = ({
 											{/* Method + engine info */}
 											<div className="min-w-0 flex-1">
 												<div className="flex items-center gap-1.5">
-													<span className="font-mono text-[10px] text-primary">
-														{log.methodName}
-													</span>
 													{parseArg(log.request) && (
 														<span className="inline-block max-w-[300px] truncate rounded border border-primary/20 bg-primary/10 px-1 py-0 font-mono text-[8px] text-primary">
 															{parseArg(
@@ -158,6 +164,9 @@ export const EventHistory = ({
 															)}
 														</span>
 													)}
+													<span className="font-mono text-[10px] text-primary">
+														{log.methodName}
+													</span>
 													<span className="ml-auto rounded bg-secondary px-1 font-mono text-[8px] text-muted-foreground">
 														{log.engineType}
 													</span>
