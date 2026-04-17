@@ -560,6 +560,25 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 													onClick={() => {
 														navigate(
 															`${db.engine_id}`,
+															{
+																state: {
+																	fromDiscoverable:
+																		isDiscoverable,
+																	engineName:
+																		db.engine_display_name ||
+																		db.engine_name,
+																	engineDescription:
+																		db.description,
+																	engineSubtype:
+																		db.engine_subtype,
+																	engineCreatedBy:
+																		db.engine_created_by,
+																	engineDateCreated:
+																		db.engine_date_created,
+																	engineTags:
+																		db.tag,
+																},
+															},
 														);
 													}}
 													favorite={() => {
@@ -658,6 +677,25 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 													onClick={() => {
 														navigate(
 															`${db.engine_id}`,
+															{
+																state: {
+																	fromDiscoverable:
+																		isDiscoverable,
+																	engineName:
+																		db.engine_display_name ||
+																		db.engine_name,
+																	engineDescription:
+																		db.description,
+																	engineSubtype:
+																		db.engine_subtype,
+																	engineCreatedBy:
+																		db.engine_created_by,
+																	engineDateCreated:
+																		db.engine_date_created,
+																	engineTags:
+																		db.tag,
+																},
+															},
 														);
 													}}
 													favorite={() => {
