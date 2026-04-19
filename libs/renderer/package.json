@@ -66,6 +66,7 @@
     "peerDependencies": {
         "@emotion/react": "11.11.1",
         "@emotion/styled": "11.11.0",
+        "@mui/icons-material": "6.0.0",
         "@mui/material": "6.0.0",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
