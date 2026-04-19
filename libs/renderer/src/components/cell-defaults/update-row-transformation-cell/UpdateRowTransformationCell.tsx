@@ -1,8 +1,14 @@
-import { Autocomplete } from "@mui/material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { Stack, TextField, Typography } from "@semoss/ui";
+import {
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -39,14 +45,7 @@ export interface UpdateRowTransformationCellDef
 	extends TransformationCellDef<"update-row-transformation"> {
 	widget: "update-row-transformation";
 	parameters: {
-		/**
-		 * Routine type
-		 */
 		transformation: Transformation<UpdateRowTransformationDef>;
-
-		/**
-		 * ID of the query cell that defines the frame we want to transform
-		 */
 		targetCell: TransformationTargetCell;
 	};
 }
@@ -56,11 +55,8 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
-		/**
-		 * Cell that Transformation will be made to
-		 */
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c;
+			let c: CellState<QueryImportCellDef> | undefined;
 			Object.values(state.queries).forEach((query) => {
 				if (query.cells[cell.parameters.targetCell.id]) {
 					c = query.cells[
@@ -68,7 +64,6 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 					] as CellState<QueryImportCellDef>;
 				}
 			});
-
 			return c;
 		}).get();
 
@@ -84,14 +79,8 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 			);
 		}).get();
 
-		/**
-		 * A list of cells that are query imports,
-		 * Added here in case we want to show particular frames whether Grid, Py, R, etc
-		 * TODO: Do we want to reference other queries
-		 */
 		const frames = useMemo(() => {
 			const frameList = [];
-
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
@@ -100,7 +89,6 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 					}
 				});
 			});
-
 			return frameList;
 		}, []);
 
@@ -124,6 +112,17 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 			? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
 			: "A Python or R target frame variable must be defined in order to apply a transformation.";
 
+		const dispatch = (path: string, value: unknown) =>
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell.query.id,
+					cellId: cell.id,
+					path,
+					value,
+				},
+			});
+
 		if (
 			(!doesFrameExist &&
 				!cellTransformation.parameters.compareColumn.name) ||
@@ -134,16 +133,11 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 					isExpanded={isExpanded}
 					display={Transformations[cellTransformation.key].display}
 					Icon={Transformations[cellTransformation.key].icon}
-					frame={{
-						cell: cell,
-						options: frames,
-					}}
+					frame={{ cell, options: frames }}
 				>
-					<Stack width="100%" paddingY={0.75}>
-						<Typography variant="caption">
-							<em>{helpText}</em>
-						</Typography>
-					</Stack>
+					<div className="w-full py-1.5">
+						<span className="text-xs italic">{helpText}</span>
+					</div>
 				</TransformationCellInput>
 			);
 		}
@@ -153,20 +147,17 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 				isExpanded={isExpanded}
 				display={Transformations[cellTransformation.key].display}
 				Icon={Transformations[cellTransformation.key].icon}
-				frame={{
-					cell: cell,
-					options: frames,
-				}}
+				frame={{ cell, options: frames }}
 			>
-				<Stack spacing={2}>
-					<Typography variant="caption">
+				<div className="flex flex-col gap-4">
+					<span className="text-xs">
 						{!doesFrameExist ? (
 							<em>{helpText}</em>
 						) : (
 							"Replace values of a column by defining a conditional statement"
 						)}
-					</Typography>
-					<Stack direction="row" flex={1} spacing={2}>
+					</span>
+					<div className="flex w-full flex-row gap-4">
 						<ColumnTransformationField
 							disabled={!doesFrameExist}
 							cell={cell}
@@ -177,82 +168,64 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 								}
 							}
 							onChange={(newColumn: ColumnInfo) => {
-								state.dispatch({
-									message: ActionMessages.UPDATE_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-										path: "parameters.transformation.parameters.compareColumn",
-										value: newColumn,
-									},
-								});
+								dispatch(
+									"parameters.transformation.parameters.compareColumn",
+									newColumn,
+								);
 							}}
 							label="Compare Column"
 						/>
-						<Autocomplete
-							disableClearable
+						<Select
 							disabled={!doesFrameExist}
-							size="small"
 							value={
-								cellTransformation.parameters.compareOperation
+								cellTransformation.parameters
+									.compareOperation as string
 							}
-							fullWidth
-							onChange={(_, newOperation: string) => {
-								state.dispatch({
-									message: ActionMessages.UPDATE_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-										path: "parameters.transformation.parameters.compareOperation",
-										value: newOperation,
-									},
-								});
-							}}
-							options={operations}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									variant="outlined"
-									label="Operation"
-								/>
-							)}
-						/>
-						<TextField
-							onChange={(e) => {
-								state.dispatch({
-									message: ActionMessages.UPDATE_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-										path: "parameters.transformation.parameters.compareValue",
-										value: e.target.value,
-									},
-								});
-							}}
-							disabled={!doesFrameExist}
-							variant="outlined"
-							label="Compare Value"
-							value={cellTransformation.parameters.compareValue}
-							fullWidth
-							size="small"
-							InputLabelProps={{
-								shrink: ["text", "number"].includes(
-									getTextFieldType(
-										cellTransformation.parameters
-											.compareColumn.dataType,
-									),
+							onValueChange={(val) =>
+								dispatch(
+									"parameters.transformation.parameters.compareOperation",
+									val,
 								)
-									? !!cellTransformation.parameters
-											.compareValue
-									: true,
-							}}
-							type={getTextFieldType(
-								cellTransformation.parameters.compareColumn
-									.dataType,
-							)}
-						/>
-					</Stack>
-					<Stack direction="row" flex={1} spacing={2}>
+							}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Operation" />
+							</SelectTrigger>
+							<SelectContent>
+								{operations.map((op) => (
+									<SelectItem
+										key={String(op)}
+										value={String(op)}
+									>
+										{String(op)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<div className="flex flex-1 flex-col gap-1.5">
+							{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+							<label className="text-muted-foreground text-xs">
+								Compare Value
+							</label>
+							<Input
+								disabled={!doesFrameExist}
+								type={getTextFieldType(
+									cellTransformation.parameters.compareColumn
+										.dataType,
+								)}
+								value={
+									cellTransformation.parameters.compareValue
+								}
+								onChange={(e) =>
+									dispatch(
+										"parameters.transformation.parameters.compareValue",
+										e.target.value,
+									)
+								}
+							/>
+						</div>
+					</div>
+					<div className="flex w-full flex-row gap-4">
 						<ColumnTransformationField
 							disabled={!doesFrameExist}
 							cell={cell}
@@ -263,54 +236,37 @@ export const UpdateRowTransformationCell: CellComponent<UpdateRowTransformationC
 								}
 							}
 							onChange={(newColumn: ColumnInfo) => {
-								state.dispatch({
-									message: ActionMessages.UPDATE_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-										path: "parameters.transformation.parameters.targetColumn",
-										value: newColumn,
-									},
-								});
+								dispatch(
+									"parameters.transformation.parameters.targetColumn",
+									newColumn,
+								);
 							}}
 							label="Update Column"
 						/>
-						<TextField
-							onChange={(e) => {
-								state.dispatch({
-									message: ActionMessages.UPDATE_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-										path: "parameters.transformation.parameters.targetValue",
-										value: e.target.value,
-									},
-								});
-							}}
-							disabled={!doesFrameExist}
-							variant="outlined"
-							label="Update Value"
-							value={cellTransformation.parameters.targetValue}
-							fullWidth
-							size="small"
-							InputLabelProps={{
-								shrink: ["text", "number"].includes(
-									getTextFieldType(
-										cellTransformation.parameters
-											.targetColumn.dataType,
-									),
-								)
-									? !!cellTransformation.parameters
-											.targetValue
-									: true,
-							}}
-							type={getTextFieldType(
-								cellTransformation.parameters.targetColumn
-									.dataType,
-							)}
-						/>
-					</Stack>
-				</Stack>
+						<div className="flex flex-1 flex-col gap-1.5">
+							{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+							<label className="text-muted-foreground text-xs">
+								Update Value
+							</label>
+							<Input
+								disabled={!doesFrameExist}
+								type={getTextFieldType(
+									cellTransformation.parameters.targetColumn
+										.dataType,
+								)}
+								value={
+									cellTransformation.parameters.targetValue
+								}
+								onChange={(e) =>
+									dispatch(
+										"parameters.transformation.parameters.targetValue",
+										e.target.value,
+									)
+								}
+							/>
+						</div>
+					</div>
+				</div>
 			</TransformationCellInput>
 		);
 	});

@@ -1,9 +1,5 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import {
-	CropFree,
-	DriveFileRenameOutlineRounded,
-	KeyboardArrowDown,
-} from "@mui/icons-material";
+import { FilePenLine, Maximize2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
@@ -12,13 +8,13 @@ import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
-	FormControlLabel,
-	InputAdornment,
+	Input,
 	Select,
-	Stack,
-	styled,
-	TextField,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -27,71 +23,22 @@ import {
 } from "../../../store";
 import { DatabaseTables } from "./DatabaseTables";
 
-const StyledSelect = styled(Select)(({ theme }) => ({
-	"& .MuiSelect-select": {
-		color: theme.palette.text.secondary,
-		display: "flex",
-		gap: theme.spacing(1),
-		alignItems: "center",
-		textOverflow: "ellipsis",
-		overflow: "hidden",
-		whiteSpace: "nowrap",
-		"&:focus": {
-			backgroundColor: "inherit !important",
-		},
-	},
-}));
-
-const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(1),
-	color: theme.palette.text.secondary,
-}));
-
 const EDITOR_LINE_HEIGHT = 19;
-const EDITOR_MAX_HEIGHT = 500; // ~25 lines
-
-const StyledContent = styled("div")({
-	position: "relative",
-	width: "100%",
-});
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	"& .MuiInputBase-root": {
-		color: theme.palette.text.secondary,
-		display: "flex",
-		gap: theme.spacing(1),
-		height: "30px",
-	},
-}));
+const EDITOR_MAX_HEIGHT = 500;
 
 export interface QueryImportCellDef extends CellDef<"query-import"> {
 	widget: "query-import";
 	parameters: {
-		/** Database associated with the cell */
 		databaseId: string;
-
-		/** Output frame type */
 		frameType: "NATIVE" | "PY" | "R" | "GRID";
-
-		/** Ouput variable name */
 		frameVariableName: string;
-
-		/** Select query rendered in the cell */
 		selectQuery: string;
-
-		/** Enable batching for query results */
 		enableBatching?: boolean;
-
-		/** Number of rows per batch */
 		batchSize?: number;
-
-		/** Current offset for batching */
 		currentOffset?: number;
 	};
 }
 
-// TODO:: Refactor height to account for Layout
 export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 	(props) => {
 		const editorRef = useRef(null);
@@ -110,8 +57,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			`MyEngines(engineTypes=['DATABASE']);`,
 		);
 
-		// Ensure offset starts at 0 when component first mounts with batching enabled
-		// This handles the case where cell was saved with batching enabled and a non-zero offset
 		const hasInitialized = useRef(false);
 		useEffect(() => {
 			if (
@@ -133,9 +78,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 		}, []);
 
 		useEffect(() => {
-			if (myDbs.status !== "SUCCESS") {
-				return;
-			}
+			if (myDbs.status !== "SUCCESS") return;
 
 			const dbIds: string[] = [];
 			const dbDisplay = {};
@@ -162,40 +105,26 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			}
 		}, [myDbs.status, myDbs.data]);
 
-		/**
-		 * Handle mounting of the editor
-		 *
-		 * @param editor - editor that mounted
-		 * @param monaco - monaco instance
-		 */
 		const handleEditorMount = (editor, monaco) => {
 			editorRef.current = editor;
 
-			// add on change
 			let ignoreResize = false;
 			editor.onDidContentSizeChange(() => {
 				try {
-					// set the ignoreResize flag
-					if (ignoreResize) {
-						return;
-					}
+					if (ignoreResize) return;
 					ignoreResize = true;
-
 					resizeEditor();
 				} finally {
 					ignoreResize = false;
 				}
 			});
 
-			// update the action
 			editor.addAction({
 				id: "run",
 				label: "Run",
 				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
 				run: (editor) => {
 					const newValue = editor.getValue();
-
-					// update with the new code
 					state.dispatch({
 						message: ActionMessages.UPDATE_CELL,
 						payload: {
@@ -206,7 +135,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 						},
 					});
 
-					// If batching is enabled, reset offset to 0 when manually running the cell
 					if (cell.parameters.enableBatching) {
 						state.dispatch({
 							message: ActionMessages.UPDATE_CELL,
@@ -217,8 +145,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								value: 0,
 							},
 						});
-
-						// Small delay to ensure offset is updated before running
 						setTimeout(() => {
 							state.dispatch({
 								message: ActionMessages.RUN_CELL,
@@ -229,7 +155,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							});
 						}, 50);
 					} else {
-						// No batching - run immediately
 						state.dispatch({
 							message: ActionMessages.RUN_CELL,
 							payload: {
@@ -245,52 +170,29 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 				base: "vs",
 				inherit: false,
 				rules: [],
-				colors: {
-					"editor.background": "#FAFAFA", // Background color
-					// 'editor.lineHighlightBorder': '#FFF', // Border around selected line
-				},
+				colors: { "editor.background": "#FAFAFA" },
 			});
-
 			monaco.editor.setTheme("custom-theme");
-
-			// resize the editor
 			resizeEditor();
 		};
 
-		/**
-		 * Resize the editor
-		 */
 		const resizeEditor = () => {
-			// set the initial height
 			let height = 0;
-
-			// if expanded scale to lines, but do not go over the max height
 			if (isExpanded) {
 				height = Math.min(
 					editorRef.current.getContentHeight(),
 					EDITOR_MAX_HEIGHT,
 				);
 			}
-
-			// add the trailing line
 			height += EDITOR_LINE_HEIGHT;
-
 			editorRef.current.layout({
 				width: editorRef.current.getContainerDomNode().clientWidth,
-				height: height,
+				height,
 			});
 		};
 
-		/**
-		 * Handle changes in the editor
-		 * @param newValue - newValue
-		 * @returns
-		 */
 		const handleEditorChange = (newValue: string) => {
-			if (cell.isLoading) {
-				return;
-			}
-
+			if (cell.isLoading) return;
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
@@ -302,320 +204,203 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			});
 		};
 
+		const dispatch = (path: string, value: unknown) =>
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell.query.id,
+					cellId: cell.id,
+					path,
+					value,
+				},
+			});
+
 		return (
-			<StyledContent>
-				<Stack direction="column" spacing={1}>
-					{isExpanded && (
-						<Stack direction={"column"}>
-							<Stack
-								direction="row"
-								justifyContent={"space-between"}
+			<div className="relative flex w-full flex-col gap-2">
+				{isExpanded && (
+					<div className="flex flex-col gap-1">
+						<div className="flex flex-row items-center justify-between">
+							<Select
+								disabled={cell.isLoading}
+								value={cell.parameters.databaseId}
+								onValueChange={(val) =>
+									dispatch("parameters.databaseId", val)
+								}
 							>
-								<StyledSelect
-									size={"small"}
-									variant="standard"
-									disabled={cell.isLoading}
-									title={"Select Database"}
-									value={cell.parameters.databaseId}
-									SelectProps={{
-										IconComponent: KeyboardArrowDown,
-									}}
-									InputProps={{
-										disableUnderline: true,
-									}}
-									onChange={(e) => {
-										const value = e.target.value;
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.databaseId",
-												value: value,
-											},
-										});
-									}}
-								>
-									{Array.from(
-										cfgLibraryDatabases.ids,
-										(databaseId, i) => (
-											<StyledSelectItem
+								<SelectTrigger className="h-[30px] w-[200px]">
+									<SelectValue placeholder="Select Database" />
+								</SelectTrigger>
+								<SelectContent>
+									{cfgLibraryDatabases.ids.map(
+										(databaseId: string, i: number) => (
+											<SelectItem
 												key={`${i}-${cell.id}-${databaseId}`}
 												value={databaseId}
 											>
 												{cfgLibraryDatabases.display[
 													databaseId
 												] ?? ""}
-											</StyledSelectItem>
+											</SelectItem>
 										),
 									)}
-								</StyledSelect>
-								<Button
-									variant={"text"}
-									color={"secondary"}
-									onClick={() => {
-										setShowTables(!showTables);
-									}}
-								>
-									{showTables ? "Hide" : "Show"} Available
-									Columns
-								</Button>
-							</Stack>
-							{showTables && cell.parameters.databaseId ? (
-								<DatabaseTables
-									databaseId={cell.parameters.databaseId}
-								/>
-							) : null}
-						</Stack>
-					)}
-					<div>
-						<Suspense fallback={<>...</>}>
-							<MonacoEditor
-								value={cell.parameters.selectQuery}
-								defaultValue="--SELECT * FROM..."
-								language="sql" /** TODO: language support? can we tell this from the database type? */
-								options={{
-									scrollbar: {
-										alwaysConsumeMouseWheel: false,
-									},
-									readOnly: false,
-									minimap: { enabled: false },
-									automaticLayout: true,
-									scrollBeyondLastLine: false,
-									lineHeight: EDITOR_LINE_HEIGHT,
-									overviewRulerBorder: false,
-									lineNumbers: "on",
-									glyphMargin: false,
-									folding: false,
-									lineNumbersMinChars: 2,
-								}}
-								onChange={handleEditorChange}
-								onMount={handleEditorMount}
-							/>
-						</Suspense>
-					</div>
-					{isExpanded && (
-						<Stack
-							direction="row"
-							alignItems={"center"}
-							justifyContent={"flex-end"}
-							spacing={2}
-							sx={{ flexWrap: "nowrap" }}
-						>
-							<StyledSelect
-								size={"small"}
-								disabled={cell.isLoading}
-								title={"Select Type"}
-								value={cell.parameters.frameType}
-								SelectProps={{
-									IconComponent: KeyboardArrowDown,
-									style: {
-										height: "30px",
-										width: "120px",
-									},
-									startAdornment: (
-										<InputAdornment position="start">
-											<CropFree />
-										</InputAdornment>
-									),
-								}}
-								onChange={(e) => {
-									const value = e.target.value;
-									state.dispatch({
-										message: ActionMessages.UPDATE_CELL,
-										payload: {
-											queryId: cell.query.id,
-											cellId: cell.id,
-											path: "parameters.frameType",
-											value: value,
-										},
-									});
-								}}
+								</SelectContent>
+							</Select>
+							<Button
+								variant="ghost"
+								onClick={() => setShowTables(!showTables)}
 							>
+								{showTables ? "Hide" : "Show"} Available Columns
+							</Button>
+						</div>
+						{showTables && cell.parameters.databaseId ? (
+							<DatabaseTables
+								databaseId={cell.parameters.databaseId}
+							/>
+						) : null}
+					</div>
+				)}
+				<div>
+					<Suspense fallback={<>...</>}>
+						<MonacoEditor
+							value={cell.parameters.selectQuery}
+							defaultValue="--SELECT * FROM..."
+							language="sql"
+							options={{
+								scrollbar: { alwaysConsumeMouseWheel: false },
+								readOnly: false,
+								minimap: { enabled: false },
+								automaticLayout: true,
+								scrollBeyondLastLine: false,
+								lineHeight: EDITOR_LINE_HEIGHT,
+								overviewRulerBorder: false,
+								lineNumbers: "on",
+								glyphMargin: false,
+								folding: false,
+								lineNumbersMinChars: 2,
+							}}
+							onChange={handleEditorChange}
+							onMount={handleEditorMount}
+						/>
+					</Suspense>
+				</div>
+				{isExpanded && (
+					<div className="flex flex-row flex-nowrap items-center justify-end gap-4">
+						<Select
+							disabled={cell.isLoading}
+							value={cell.parameters.frameType}
+							onValueChange={(val) =>
+								dispatch("parameters.frameType", val)
+							}
+						>
+							<SelectTrigger className="h-[30px] w-[120px]">
+								<Maximize2 className="mr-1 size-4 shrink-0" />
+								<SelectValue placeholder="Frame type" />
+							</SelectTrigger>
+							<SelectContent>
 								{Object.values(DATA_FRAME_TYPES).map(
 									(frame, i) => (
-										<StyledSelectItem
+										<SelectItem
 											key={`${i}-${cell.id}-${frame.value}`}
 											value={frame.value}
 										>
 											{frame.display}
-										</StyledSelectItem>
+										</SelectItem>
 									),
 								)}
-							</StyledSelect>
-							<StyledTextField
+							</SelectContent>
+						</Select>
+						<div className="relative flex items-center">
+							<FilePenLine className="absolute left-2 size-4 text-muted-foreground" />
+							<Input
 								title="Set Frame Variable Name"
 								value={cell.parameters.frameVariableName}
 								disabled={cell.isLoading}
-								InputProps={{
-									startAdornment: (
-										<DriveFileRenameOutlineRounded />
-									),
-								}}
-								onChange={(e) => {
-									state.dispatch({
-										message: ActionMessages.UPDATE_CELL,
-										payload: {
-											queryId: cell.query.id,
-											cellId: cell.id,
-											path: "parameters.frameVariableName",
-											value: e.target.value,
-										},
-									});
-								}}
-								sx={{ width: "150px" }}
-							/>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={
-											cell.parameters.enableBatching ??
-											false
-										}
-										disabled={cell.isLoading}
-										label="Enable Batching"
-										onChange={(
-											e: React.ChangeEvent<HTMLInputElement>,
-										) => {
-											const isEnabling = e.target.checked;
-
-											state.dispatch({
-												message:
-													ActionMessages.UPDATE_CELL,
-												payload: {
-													queryId: cell.query.id,
-													cellId: cell.id,
-													path: "parameters.enableBatching",
-													value: isEnabling,
-												},
-											});
-
-											// ALWAYS reset offset to 0 when toggling batching
-											state.dispatch({
-												message:
-													ActionMessages.UPDATE_CELL,
-												payload: {
-													queryId: cell.query.id,
-													cellId: cell.id,
-													path: "parameters.currentOffset",
-													value: 0,
-												},
-											});
-
-											if (isEnabling) {
-												// Set initial batch size when enabling batching
-												state.dispatch({
-													message:
-														ActionMessages.UPDATE_CELL,
-													payload: {
-														queryId: cell.query.id,
-														cellId: cell.id,
-														path: "parameters.batchSize",
-														value: 100,
-													},
-												});
-											}
-										}}
-										sx={{
-											color: "text.secondary",
-											paddingLeft: "4px",
-										}}
-									/>
+								className="h-[30px] w-[150px] pl-7"
+								onChange={(e) =>
+									dispatch(
+										"parameters.frameVariableName",
+										e.target.value,
+									)
 								}
-								label=""
-								sx={{
-									color: "text.secondary",
-									marginRight: 0,
-									marginLeft: 0,
-									gap: 0,
-									"& .MuiFormControlLabel-label": {
-										fontSize: "14px",
-									},
+							/>
+						</div>
+						{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+						<label className="flex cursor-pointer items-center gap-1">
+							<Checkbox
+								checked={
+									cell.parameters.enableBatching ?? false
+								}
+								disabled={cell.isLoading}
+								onCheckedChange={(checked: boolean) => {
+									dispatch(
+										"parameters.enableBatching",
+										checked,
+									);
+									dispatch("parameters.currentOffset", 0);
+									if (checked) {
+										dispatch("parameters.batchSize", 100);
+									}
 								}}
 							/>
-							{cell.parameters.enableBatching && (
-								<>
-									<StyledTextField
-										title="Batch Size"
-										type="number"
-										placeholder="Batch Amount..."
-										value={cell.parameters.batchSize ?? 100}
-										disabled={cell.isLoading}
-										onChange={(e) => {
-											const inputValue = e.target.value;
-
-											// Allow empty string for deletion
-											if (inputValue === "") {
-												state.dispatch({
-													message:
-														ActionMessages.UPDATE_CELL,
-													payload: {
-														queryId: cell.query.id,
-														cellId: cell.id,
-														path: "parameters.batchSize",
-														value: "",
-													},
-												});
-												return;
-											}
-
-											const value = Number.parseInt(
-												inputValue,
-												10,
+							<span className="text-muted-foreground text-sm">
+								Enable Batching
+							</span>
+						</label>
+						{cell.parameters.enableBatching && (
+							<>
+								<Input
+									title="Batch Size"
+									type="number"
+									placeholder="Batch Amount..."
+									value={cell.parameters.batchSize ?? 100}
+									disabled={cell.isLoading}
+									className="h-[30px] w-[120px]"
+									onChange={(e) => {
+										const inputValue = e.target.value;
+										if (inputValue === "") {
+											dispatch(
+												"parameters.batchSize",
+												"",
 											);
-											if (
-												!Number.isNaN(value) &&
-												value >= 0
-											) {
-												state.dispatch({
-													message:
-														ActionMessages.UPDATE_CELL,
-													payload: {
-														queryId: cell.query.id,
-														cellId: cell.id,
-														path: "parameters.batchSize",
-														value: value,
-													},
-												});
-											}
-										}}
-										sx={{ width: "120px" }}
-									/>
-									<StyledTextField
-										title="Current Offset"
-										type="number"
-										value={
-											cell.parameters.currentOffset ?? 0
+											return;
 										}
-										disabled
-										sx={{ width: "80px" }}
-									/>
-									<Button
-										variant="outlined"
-										size="small"
-										onClick={() => {
-											state.dispatch({
-												message:
-													ActionMessages.UPDATE_CELL,
-												payload: {
-													queryId: cell.query.id,
-													cellId: cell.id,
-													path: "parameters.currentOffset",
-													value: 0,
-												},
-											});
-										}}
-										disabled={cell.isLoading}
-										sx={{ minWidth: "60px" }}
-									>
-										Reset
-									</Button>
-								</>
-							)}
-						</Stack>
-					)}
-				</Stack>
-			</StyledContent>
+										const value = Number.parseInt(
+											inputValue,
+											10,
+										);
+										if (
+											!Number.isNaN(value) &&
+											value >= 0
+										) {
+											dispatch(
+												"parameters.batchSize",
+												value,
+											);
+										}
+									}}
+								/>
+								<Input
+									title="Current Offset"
+									type="number"
+									value={cell.parameters.currentOffset ?? 0}
+									disabled
+									className="h-[30px] w-[80px]"
+								/>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() =>
+										dispatch("parameters.currentOffset", 0)
+									}
+									disabled={cell.isLoading}
+								>
+									Reset
+								</Button>
+							</>
+						)}
+					</div>
+				)}
+			</div>
 		);
 	},
 );
