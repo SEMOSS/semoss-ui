@@ -43,7 +43,7 @@ function TreeView<T>({
 		<TreeViewContext.Provider
 			value={{
 				expanded: expanded,
-				onItemSelect: onItemSelect,
+				onItemSelect: onItemSelect as (item: unknown) => void,
 				onExpandChange: onExpandChange,
 			}}
 		>
@@ -168,4 +168,5 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 	props: TreeViewItemProps<T> & React.RefAttributes<HTMLLIElement>,
 ) => React.ReactElement | null;
 
+export type { TreeViewProps, TreeViewItemProps };
 export { TreeView, TreeViewItem, useTreeView };
