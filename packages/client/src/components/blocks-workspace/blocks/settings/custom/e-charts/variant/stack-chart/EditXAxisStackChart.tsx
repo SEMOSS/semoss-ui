@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,64 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import {
-	Button,
-	Slider,
-	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+import { Button, Input, Slider, Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-	marginLeft: "4px",
-}));
-
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "0.5rem",
-	position: "relative",
-	right: "3px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-
-const StyledTypography = styled(Typography)({
-	paddingLeft: "10px",
-});
 
 export const EditXAxisStackChart = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -90,456 +39,238 @@ export const EditXAxisStackChart = observer(
 				} else if (typeof v === "string") {
 					return v;
 				}
-
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
 			}
 		}, [id]);
-		/**
-		 * Reinitializes the features of the x-axis based on the provided options
-		 * @param options The options to reinitialize the features with
-		 */
+
 		const reinitializeFeatures = (options) => {
-			// Check if the x-axis show property exists
 			if (Object.hasOwn(options, "xAxis")) {
-				// Check if the show property exists
 				if (options.xAxis && Object.hasOwn(options.xAxis, "show")) {
-					// Update the showXaxis state
-					setShowXaxis(options["xAxis"]["show"]);
+					setShowXaxis(options.xAxis.show);
 				}
-
-				// Check if the name property exists
 				if (options.xAxis && Object.hasOwn(options.xAxis, "name")) {
-					// Update the showXaxisTitle state
-					setShowXaxisTitle(
-						options["xAxis"]["name"] == "" ? false : true,
-					);
+					setShowXaxisTitle(options.xAxis.name !== "");
 				}
-
-				// Check if the axis tick show property exists
 				if (
-					options.xAxis &&
-					options.xAxis.axisTick &&
+					options.xAxis?.axisTick &&
 					Object.hasOwn(options.xAxis.axisTick, "show")
 				) {
-					// Update the showXaxisTick state
-					setShowXaxisTick(options["xAxis"]["axisTick"]["show"]);
+					setShowXaxisTick(options.xAxis.axisTick.show);
 				}
-
-				// Check if the axis label show property exists
-				if (options.xAxis && options.xAxis.axisLabel) {
-					// Update the rotateXaxis state
-					setRotateXaxis(options["xAxis"]["axisLabel"]["rotate"]);
-					// Update the showAxisLabel state
-					setShowAxisLabel(options["xAxis"]["axisLabel"]["show"]);
-					// Update the fontSizeXAxisLabel state
-					setFontSizeXAxisLabel(
-						options["xAxis"]["axisLabel"]["fontSize"],
-					);
+				if (options.xAxis?.axisLabel) {
+					setRotateXaxis(options.xAxis.axisLabel.rotate);
+					setShowAxisLabel(options.xAxis.axisLabel.show);
+					setFontSizeXAxisLabel(options.xAxis.axisLabel.fontSize);
 				}
-
-				// Check if the name text style exists
 				if (
-					options.xAxis &&
-					options.xAxis.nameTextStyle &&
+					options.xAxis?.nameTextStyle &&
 					Object.hasOwn(options.xAxis.nameTextStyle, "fontSize")
 				) {
-					// Update the fontSizeXAxis state
-					setFontSizeXAxis(
-						options["xAxis"]["nameTextStyle"]["fontSize"],
-					);
+					setFontSizeXAxis(options.xAxis.nameTextStyle.fontSize);
 				}
 			}
 		};
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				retainXAxisTitle(data.option);
 			}
-		}, [data.option["xAxis"]["name"]]);
+		}, [data.option.xAxis.name]);
 
-		/**
-		 * @name retainXAxisTitle
-		 * @function
-		 * @description A function that checks if the data option has an xAxis property and if the xAxis property has a name property.
-		 *              If both conditions are true, it sets the xaxisTitle state to the value of the name property.
-		 * @param {Object} options - The data option object
-		 * @returns {void}
-		 */
 		const retainXAxisTitle = (options) => {
 			if (Object.hasOwn(options, "xAxis")) {
 				if (options.xAxis && Object.hasOwn(options.xAxis, "name")) {
-					setXaxisTitle(data.option["xAxis"]["name"]);
+					setXaxisTitle(data.option.xAxis.name);
 				}
 			}
 		};
 
-		/**
-		 * @name showXAxis
-		 * @function
-		 * @description A function that toggles the visibility of the x-axis.
-		 *              If the x-axis is visible, it sets the showXaxis state to false.
-		 *              If the x-axis is not visible, it sets the showXaxis state to true.
-		 *              It also updates the show property of the x-axis in the data option.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object
-		 * @returns {void}
-		 */
-		const showXAxis = (e: ChangeEvent<HTMLInputElement>) => {
+		const showXAxis = (checked: boolean) => {
 			const option = JSON.parse(value);
-			setShowXaxis(!showXaxis);
-			option["xAxis"]["show"] = e.target.checked;
+			setShowXaxis(checked);
+			option.xAxis.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name showXAxisTitle
-		 * @function
-		 * @description A function that toggles the visibility of the x-axis title.
-		 *              If the x-axis title is visible, it sets the showXaxisTitle state to false.
-		 *              If the x-axis title is not visible, it sets the showXaxisTitle state to true.
-		 *              It also updates the x-axis title in the data option.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object
-		 * @returns {void}
-		 */
-		const showXAxisTitle = (e) => {
+		const showXAxisTitle = (checked: boolean) => {
 			const option = JSON.parse(value);
-			setShowXaxisTitle(!showXaxisTitle);
-			option["xAxis"]["name"] =
-				option["xAxis"]["name"] == ""
-					? option["xAxis"]["pixelName"]
-					: "";
+			setShowXaxisTitle(checked);
+			option.xAxis.name =
+				option.xAxis.name === "" ? option.xAxis.pixelName : "";
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name handleXaxisTitleChange
-		 * @function
-		 * @description A function that updates the x-axis title in the data option.
-		 *              It is called when the user changes the value of the x-axis title input field.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object
-		 * @returns {void}
-		 */
 		const handleXaxisTitleChange = (e) => {
-			// Update the xaxisTitle state
 			setXaxisTitle(e.target.value);
-			// Parse the data option
 			const option = JSON.parse(value);
-			// Update the x-axis title in the data option
-			option["xAxis"]["name"] = e.target.value;
-			option["xAxis"]["flipAxisName"] = e.target.value;
-			// Set the data option with the updated title
+			option.xAxis.name = e.target.value;
+			option.xAxis.flipAxisName = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name handleChangeXAxisFontSize
-		 * @function
-		 * @description A function that updates the font size of the x-axis title.
-		 *              It is called when the user changes the value of the x-axis title font size input field.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object
-		 * @returns {void}
-		 */
 		const handleChangeXAxisFontSize = (e) => {
-			// Parse the data option
 			const option = JSON.parse(value);
-			// Update the fontSizeXAxis state
 			setFontSizeXAxis(e.target.value);
-			// Update the font size of the x-axis title in the data option
-			option["xAxis"]["nameTextStyle"]["fontSize"] = e.target.value;
-			// Set the data option with the updated font size
+			option.xAxis.nameTextStyle.fontSize = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name handleChangeXAxisLabelFontSize
-		 * @function
-		 * @description A function that updates the font size of the x-axis label.
-		 *              It is called when the user changes the value of the x-axis label font size input field.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object
-		 * @returns {void}
-		 */
 		const handleChangeXAxisLabelFontSize = (e) => {
-			// Parse the data option
 			const option = JSON.parse(value);
-			// Update the fontSizeXAxisLabel state
 			setFontSizeXAxisLabel(e.target.value);
-			// Update the font size of the x-axis label in the data option
-			option["xAxis"]["axisLabel"]["fontSize"] = e.target.value;
-			// Set the data option with the updated font size
+			option.xAxis.axisLabel.fontSize = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name rotateXAxis
-		 * @function
-		 * @description Updates the rotation angle of the x-axis labels based on the user's input.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object containing the new rotation angle for the x-axis labels.
-		 * @returns {void}
-		 */
-		const rotateXAxis = (e) => {
-			// Parse the current data option from the JSON string
+		const rotateXAxis = (newValue: number[]) => {
 			const option = JSON.parse(value);
-
-			// Update the rotateXaxis state with the new value from the event
-			setRotateXaxis(e.target.value);
-
-			// Update the rotation angle of the x-axis labels in the data option
-			option["xAxis"]["axisLabel"]["rotate"] = e.target.value;
-
-			// Save the updated data option back to the state
+			setRotateXaxis(newValue[0]);
+			option.xAxis.axisLabel.rotate = newValue[0];
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name showXAxisTick
-		 * @function
-		 * @description Toggles the visibility of the x-axis tick marks.
-		 *              Updates the showXaxisTick state and the data option accordingly.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object
-		 * @returns {void}
-		 */
-		const showXAxisTick = (e: ChangeEvent<HTMLInputElement>) => {
-			// Parse the current data option from the JSON string
+		const showXAxisTick = (checked: boolean) => {
 			const option = JSON.parse(value);
-
-			// Toggle the showXaxisTick state
-			setShowXaxisTick(!showXaxisTick);
-
-			// Update the visibility of the x-axis tick marks in the data option
-			option["xAxis"]["axisTick"]["show"] = e.target.checked;
-
-			// Save the updated data option back to the state
+			setShowXaxisTick(checked);
+			option.xAxis.axisTick.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name showXAxisLabel
-		 * @function
-		 * @description Toggles the visibility of the x-axis labels.
-		 *              Updates the showAxisLabel state and the data option accordingly.
-		 * @param {ChangeEvent<HTMLInputElement>} e - The event object
-		 * @returns {void}
-		 */
-		const showXAxisLabel = (e: ChangeEvent<HTMLInputElement>) => {
-			// Parse the current data option from the JSON string
+		const showXAxisLabel = (checked: boolean) => {
 			const option = JSON.parse(value);
-
-			// Toggle the showAxisLabel state
-			setShowAxisLabel(!showAxisLabel);
-
-			// Update the visibility of the x-axis labels in the data option
-			option["xAxis"]["axisLabel"]["show"] = e.target.checked;
-
-			// Save the updated data option back to the state
+			setShowAxisLabel(checked);
+			option.xAxis.axisLabel.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * @name Reset
-		 * @function
-		 * @description Resets the x-axis settings to their default values based on the 'reset' configuration.
-		 *              Updates the states and data options accordingly.
-		 * @returns {void}
-		 */
 		const Reset = () => {
-			// Parse the current data option from the JSON string
 			const option = JSON.parse(value);
-
-			// Reset the show state of the x-axis
-			setShowXaxis(option["reset"]["axis"]["xaxis"]["show"]);
-			// Always show the x-axis title
+			setShowXaxis(option.reset.axis.xaxis.show);
 			setShowXaxisTitle(true);
-			// Set the x-axis title based on the default pixel name
-			setXaxisTitle(option["xAxis"]["pixelName"]);
-			// Set the font size for the x-axis title
-			setFontSizeXAxis(
-				option["reset"]["axis"]["xaxis"]["nameTextStyle"]["fontSize"],
-			);
-			// Set the font size for the x-axis labels
-			setFontSizeXAxisLabel(
-				option["reset"]["axis"]["xaxis"]["axisLabel"]["fontSize"],
-			);
-			// Rotate the x-axis labels based on the reset configuration
-			setRotateXaxis(
-				option["reset"]["axis"]["xaxis"]["axisLabel"]["rotate"],
-			);
-			// Reset the show state of the x-axis tick marks
-			setShowXaxisTick(
-				option["reset"]["axis"]["xaxis"]["axisTick"]["show"],
-			);
-			// Reset the show state of the x-axis labels
-			setShowAxisLabel(
-				option["reset"]["axis"]["xaxis"]["axisLabel"]["show"],
-			);
-
-			// Update the data option with the reset x-axis settings
-			option["xAxis"]["show"] = option["reset"]["axis"]["xaxis"]["show"];
-			option["xAxis"]["name"] = option["xAxis"]["pixelName"];
-			option["xAxis"]["flipAxisName"] = option["xAxis"]["pixelName"];
-			option["xAxis"]["nameTextStyle"]["fontSize"] =
-				option["reset"]["axis"]["xaxis"]["nameTextStyle"]["fontSize"];
-			option["xAxis"]["axisLabel"]["fontSize"] =
-				option["reset"]["axis"]["xaxis"]["axisLabel"]["fontSize"];
-			option["xAxis"]["axisLabel"]["rotate"] =
-				option["reset"]["axis"]["xaxis"]["axisLabel"]["rotate"];
-			option["xAxis"]["axisTick"]["show"] =
-				option["reset"]["axis"]["xaxis"]["axisTick"]["show"];
-			option["xAxis"]["axisLabel"]["show"] =
-				option["reset"]["axis"]["xaxis"]["axisLabel"]["show"];
-
-			// Save the updated data option back to the state
+			setXaxisTitle(option.xAxis.pixelName);
+			setFontSizeXAxis(option.reset.axis.xaxis.nameTextStyle.fontSize);
+			setFontSizeXAxisLabel(option.reset.axis.xaxis.axisLabel.fontSize);
+			setRotateXaxis(option.reset.axis.xaxis.axisLabel.rotate);
+			setShowXaxisTick(option.reset.axis.xaxis.axisTick.show);
+			setShowAxisLabel(option.reset.axis.xaxis.axisLabel.show);
+			option.xAxis.show = option.reset.axis.xaxis.show;
+			option.xAxis.name = option.xAxis.pixelName;
+			option.xAxis.flipAxisName = option.xAxis.pixelName;
+			option.xAxis.nameTextStyle.fontSize =
+				option.reset.axis.xaxis.nameTextStyle.fontSize;
+			option.xAxis.axisLabel.fontSize =
+				option.reset.axis.xaxis.axisLabel.fontSize;
+			option.xAxis.axisLabel.rotate =
+				option.reset.axis.xaxis.axisLabel.rotate;
+			option.xAxis.axisTick.show = option.reset.axis.xaxis.axisTick.show;
+			option.xAxis.axisLabel.show =
+				option.reset.axis.xaxis.axisLabel.show;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxis>
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
-					<Switch
-						checked={showXaxis}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showXAxis(e)
-						}
-						title="Show/Hide Axis"
-						size="small"
-					/>
-					<StyledTypography variant="body1">
-						Show/Hide Axis
-					</StyledTypography>
-				</StyledAxisDiv>
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
+			<div className="flex flex-col">
+				<div className="ml-1 flex flex-row items-center p-2">
+					<Switch checked={showXaxis} onCheckedChange={showXAxis} />
+					<span className="pl-2.5 text-sm">Show/Hide Axis</span>
+				</div>
+				<div className="ml-1 flex flex-row items-center p-2">
 					<Switch
 						checked={showXaxisTitle}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showXAxisTitle(e)
-						}
-						title="Show Axis Title"
-						size="small"
+						onCheckedChange={showXAxisTitle}
 					/>
-					<StyledTypography variant="body1">
-						Show Axis Title
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="pl-2.5 text-sm">Show Axis Title</span>
+				</div>
 				{showXaxisTitle && (
-					<StyledAxis>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
-								Set X Axis Title
-							</Typography>
-							<StyledTextField
+					<div className="flex flex-col p-2">
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">Set X Axis Title</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							lint/correctness/useUniqueElementIds: component
+							instance ids
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
 								id="xaxis-title"
 								value={xaxisTitle}
-								size="small"
-								onChange={(e: ChangeEvent<HTMLInputElement>) =>
-									handleXaxisTitleChange(e)
-								}
+								onChange={handleXaxisTitleChange}
 							/>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
+						</div>
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">
 								Edit Axis Title Font Size
-							</Typography>
-							<TextField
+							</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							lint/correctness/useUniqueElementIds: component
+							instance ids
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
 								id="xaxis-edit-title-font-size"
 								type="number"
-								size="small"
 								value={fontSizeXAxis}
-								onChange={(e) => handleChangeXAxisFontSize(e)}
+								onChange={handleChangeXAxisFontSize}
 							/>
-						</StyledAxisColDiv>
-					</StyledAxis>
+						</div>
+					</div>
 				)}
 
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
+				<div className="ml-1 flex flex-row items-center p-2">
 					<Switch
 						checked={showAxisLabel}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showXAxisLabel(e)
-						}
-						title="Show Labels"
-						size="small"
+						onCheckedChange={showXAxisLabel}
 					/>
-					<StyledTypography variant="body1">
-						Show Labels
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="pl-2.5 text-sm">Show Labels</span>
+				</div>
 				{showAxisLabel && (
-					<StyledAxis>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
+					<div className="flex flex-col p-2">
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">
 								Edit Label Font Size
-							</Typography>
-							<TextField
-								id="xaxis-edit-title-font-size"
+							</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							lint/correctness/useUniqueElementIds: component
+							instance ids
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
+								id="xaxis-label-font-size"
 								type="number"
-								size="small"
 								value={fontSizeXAxisLabel}
-								onChange={(e) =>
-									handleChangeXAxisLabelFontSize(e)
-								}
+								onChange={handleChangeXAxisLabelFontSize}
 							/>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
-								Rotate Labels
-							</Typography>
+						</div>
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">Rotate Labels</span>
 							<Slider
-								size="small"
 								min={0}
 								max={360}
-								value={rotateXaxis}
-								valueLabelDisplay="auto"
-								marks={[
-									{ value: 0, label: "0" },
-									{ value: 360, label: "360" },
-								]}
-								onChange={(e) => rotateXAxis(e)}
+								value={[rotateXaxis]}
+								onValueChange={rotateXAxis}
 							/>
-						</StyledAxisColDiv>
-					</StyledAxis>
+						</div>
+					</div>
 				)}
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
+				<div className="ml-1 flex flex-row items-center p-2">
 					<Switch
 						checked={showXaxisTick}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showXAxisTick(e)
-						}
-						title="Show/Hide Axis"
-						size="small"
+						onCheckedChange={showXAxisTick}
 					/>
-					<StyledTypography variant="body1">
-						Show Axis Line Ticks
-					</StyledTypography>
-				</StyledAxisDiv>
-				<StyledAxisDiv display="flex" justifyContent="flex-end">
-					<Button
-						variant="contained"
-						color="primary"
-						size="small"
-						onClick={Reset}
-					>
-						Reset
-					</Button>
-				</StyledAxisDiv>
-			</StyledAxis>
+					<span className="pl-2.5 text-sm">Show Axis Line Ticks</span>
+				</div>
+				<div className="flex justify-end p-2">
+					<Button onClick={Reset}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

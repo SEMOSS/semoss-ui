@@ -1,4 +1,4 @@
-import { FormatColorFill } from "@mui/icons-material";
+import { PaintBucket } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -10,16 +10,17 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import {
-	Box,
-	ClickAwayListener,
-	IconButton,
-	Menu,
+	Button,
+	Input,
+	Muted,
 	Select,
-	TextField,
-	ToggleButton,
-	ToggleButtonGroup,
-	Typography,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -46,14 +47,20 @@ export const BorderSettings = observer(
 		const { data, setData } = useBlockSettings(id);
 
 		// track the value
-		const [borderSizeValue, setBorderSizeValue] = useState(null);
-		const [borderStyleValue, setBorderStyleValue] = useState(null);
-		const [borderColorValue, setBorderColorValue] = useState("#FFFFFF");
+		const [borderSizeValue, setBorderSizeValue] = useState<string | null>(
+			null,
+		);
+		const [borderStyleValue, setBorderStyleValue] = useState<string | null>(
+			null,
+		);
+		const [borderColorValue, setBorderColorValue] = useState<string | null>(
+			"#FFFFFF",
+		);
 		// track the unit of the value, ex % or px
-		const [valueType, setValueType] = useState(null);
+		const [valueType, setValueType] = useState<string | null>(null);
 		const [showPicker, setShowPicker] = useState(false);
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
 			return computed(() => {
@@ -130,9 +137,11 @@ export const BorderSettings = observer(
 			if (borderSizeValue) {
 				return borderSizeValue.replace(/\D+/g, "");
 			}
+			return "";
 		}, [borderSizeValue]);
 
 		// update data when unit changes
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only re-runs when valueType changes
 		useMemo(() => {
 			if (numericSizeValue) {
 				onChange(
@@ -145,6 +154,7 @@ export const BorderSettings = observer(
 
 		// default value type % if one is not set when the value is set
 		// remove type when value is unset
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only re-runs when numericSizeValue changes
 		useMemo(() => {
 			if (numericSizeValue && !valueType) {
 				setValueType("px");
@@ -153,18 +163,11 @@ export const BorderSettings = observer(
 			}
 		}, [numericSizeValue]);
 
-		const getColorForButtonValue = (
-			buttonValue: string,
-		): "primary" | undefined => {
-			return valueType === buttonValue ? "primary" : undefined;
-		};
-
 		return (
 			<>
 				<BaseSettingSection label="Border Size">
-					<TextField
-						fullWidth
-						value={numericSizeValue ?? ""}
+					<Input
+						value={numericSizeValue}
 						onChange={(e) => {
 							// sync the data on change
 							if (e.target.value) {
@@ -177,42 +180,39 @@ export const BorderSettings = observer(
 								onChange("", "", "");
 							}
 						}}
-						size="small"
-						variant="outlined"
 						autoComplete="off"
+						className="w-full"
 					/>
-					<ToggleButtonGroup value={valueType} exclusive size="small">
+					<ToggleGroup
+						type="single"
+						value={valueType ?? ""}
+						onValueChange={(val) => val && setValueType(val)}
+					>
 						{Array.from(
 							SIZE_VALUE_TYPES,
 							(buttonValueType: string) => {
 								return (
-									<ToggleButton
+									<ToggleGroupItem
 										key={buttonValueType}
 										value={buttonValueType}
-										color={getColorForButtonValue(
-											buttonValueType,
-										)}
-										onClick={() =>
-											setValueType(buttonValueType)
-										}
+										variant="outline"
+										size="sm"
 									>
 										{buttonValueType}
-									</ToggleButton>
+									</ToggleGroupItem>
 								);
 							},
 						)}
-					</ToggleButtonGroup>
+					</ToggleGroup>
 				</BaseSettingSection>
 				<BaseSettingSection label="Border Style">
 					<Select
-						fullWidth
-						size="small"
 						value={borderStyleValue ?? ""}
-						onChange={(e) => {
-							if (e.target.value) {
+						onValueChange={(val) => {
+							if (val && val !== "__none__") {
 								onChange(
 									borderSizeValue ?? "0px",
-									e.target.value,
+									val,
 									borderColorValue ?? "#FFFFFF",
 								);
 							} else {
@@ -220,35 +220,25 @@ export const BorderSettings = observer(
 							}
 						}}
 					>
-						<Menu.Item value={""}>
-							<em>None</em>
-						</Menu.Item>
-						<Menu.Item value={"solid"}>Solid</Menu.Item>
-						<Menu.Item value={"dashed"}>Dashed</Menu.Item>
-						<Menu.Item value={"dotted"}>Dotted</Menu.Item>
+						<SelectTrigger className="w-full">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value={"__none__"}>
+								<em>None</em>
+							</SelectItem>
+							<SelectItem value={"solid"}>Solid</SelectItem>
+							<SelectItem value={"dashed"}>Dashed</SelectItem>
+							<SelectItem value={"dotted"}>Dotted</SelectItem>
+						</SelectContent>
 					</Select>
 				</BaseSettingSection>
-				<Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-					<Typography variant="body2" color="black">
-						Border Color
-					</Typography>
-					<Box
-						sx={{
-							display: "flex",
-							alignItems: "center",
-							gap: 1,
-							justifyContent: "space-between",
-						}}
-					>
-						<Box
-							sx={{
-								display: "flex",
-								alignItems: "center",
-								gap: 3,
-							}}
-						>
-							<Box
-								sx={{
+				<div className="flex flex-col gap-1">
+					<Muted className="text-black">Border Color</Muted>
+					<div className="flex items-center justify-between gap-1">
+						<div className="flex items-center gap-3">
+							<div
+								style={{
 									width: 33,
 									height: 33,
 									borderRadius: "4px",
@@ -257,49 +247,43 @@ export const BorderSettings = observer(
 									border: "1px solid #ccc",
 								}}
 							/>
-							<Typography variant="body2" color="textPrimary">
-								{borderColorValue ?? "#FFFFFF"}
-							</Typography>
-						</Box>
-						<IconButton onClick={() => setShowPicker(!showPicker)}>
-							<FormatColorFill />
-						</IconButton>
-					</Box>
+							<Muted>{borderColorValue ?? "#FFFFFF"}</Muted>
+						</div>
+						<Button
+							variant="ghost"
+							size="icon-sm"
+							onClick={() => setShowPicker(!showPicker)}
+						>
+							<PaintBucket />
+						</Button>
+					</div>
 
 					{showPicker && (
-						<ClickAwayListener
-							onClickAway={() => setShowPicker(false)}
+						/* biome-ignore lint/a11y/noStaticElementInteractions: mouse-leave dismiss pattern for color picker overlay */
+						<div
+							className="mt-1 flex justify-end"
+							onMouseLeave={() => setShowPicker(false)}
 						>
-							<Box
-								sx={{
-									display: "flex",
-									justifyContent: "flex-end",
-									mt: 1,
-								}}
-							>
-								<Box sx={{ borderRadius: 1 }}>
-									<TextField
-										fullWidth
-										type="color"
-										value={borderColorValue ?? "#FFFFFF"}
-										onChange={(color) => {
-											onChange(
-												borderSizeValue ?? "0px",
-												borderStyleValue ?? "solid",
-												color.currentTarget.value ??
-													"#FFFFFF",
-											);
-										}}
-										size="small"
-										variant="outlined"
-										autoComplete="off"
-										data-testid={`colorSettings-Border Color-txt`}
-									/>
-								</Box>
-							</Box>
-						</ClickAwayListener>
+							<div className="rounded">
+								<Input
+									type="color"
+									value={borderColorValue ?? "#FFFFFF"}
+									onChange={(color) => {
+										onChange(
+											borderSizeValue ?? "0px",
+											borderStyleValue ?? "solid",
+											color.currentTarget.value ??
+												"#FFFFFF",
+										);
+									}}
+									autoComplete="off"
+									data-testid={`colorSettings-Border Color-txt`}
+									className="w-full"
+								/>
+							</div>
+						</div>
 					)}
-				</Box>
+				</div>
 			</>
 		);
 	},

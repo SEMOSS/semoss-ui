@@ -1,18 +1,18 @@
 import {
-	AlignHorizontalCenter,
-	AlignHorizontalLeft,
-	AlignHorizontalRight,
-	ArrowDownward,
-	ArrowForward,
-	FormatLineSpacing,
-	SpaceBar,
-	VerticalAlignBottom,
-	VerticalAlignCenter,
-	VerticalAlignTop,
-} from "@mui/icons-material";
+	AlignCenterHorizontal as AlignHorizontalCenter,
+	AlignStartHorizontal as AlignHorizontalLeft,
+	AlignEndHorizontal as AlignHorizontalRight,
+	ArrowDown,
+	ArrowRight,
+	Rows2 as FormatLineSpacing,
+	Space,
+	AlignEndVertical as VerticalAlignBottom,
+	AlignCenterVertical as VerticalAlignCenter,
+	AlignStartVertical as VerticalAlignTop,
+} from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	ActionMessages,
 	type Block,
@@ -22,46 +22,20 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	InputAdornment,
-	Menu,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Select,
-	Stack,
-	styled,
-	TextField,
-	ToggleButton,
-	ToggleButtonGroup,
-	ToggleTabsGroup,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 import { ButtonGroupSettings, SizeSettings } from "../shared";
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	border: "1px",
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-	width: "100%",
-	display: "flex",
-	justifyContent: "space-between",
-	">.MuiTabs-scroller": {
-		display: "flex",
-		justifyContent: "space-around",
-	},
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 11px",
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
 
 const calculateItemWidth = (containerWidth, numItems, gap, unit): string => {
 	const totalGapSpace = (numItems - 1) * gap;
@@ -70,7 +44,7 @@ const calculateItemWidth = (containerWidth, numItems, gap, unit): string => {
 	return `${itemWidth + unit}`;
 };
 
-interface ContainerLayoutSettingsProps<D extends BlockDef = BlockDef> {
+interface ContainerLayoutSettingsProps<_D extends BlockDef = BlockDef> {
 	/**
 	 * Id of the block that is being worked with
 	 */
@@ -277,7 +251,7 @@ export const ContainerLayoutSettings = observer(
 				gapSpacing.unit,
 			) as string;
 
-			const elsCount = parseInt(val as string);
+			const elsCount = parseInt(val as string, 10);
 
 			// Modify width of existing blocks in container
 			if (b.slots.children.children.length) {
@@ -341,11 +315,11 @@ export const ContainerLayoutSettings = observer(
 							},
 						});
 
-						position["sibling"] = id as string;
+						position.sibling = id as string;
 					});
 				}
 			} else {
-				const l = Array.from({ length: parseInt(val as string) });
+				const l = Array.from({ length: parseInt(val as string, 10) });
 				const position = {
 					parent: b.id,
 					slot: "children",
@@ -387,236 +361,173 @@ export const ContainerLayoutSettings = observer(
 						},
 					});
 
-					position["sibling"] = id as string;
+					position.sibling = id as string;
 				});
 			}
 		};
 
 		return (
-			<Stack gap={1}>
+			<div className="flex flex-col gap-1">
 				<BaseSettingSection label="">
-					<StyledToggleTabsGroup
-						value={layoutType}
-						onChange={(e: React.SyntheticEvent, val: string) => {
-							setData("type", val);
-
-							if (val === "custom") {
-								setData("dimension", null);
-								setData(
-									"style.flexDirection",
-									"column" as never,
-								);
-								setData("style.gap", "0px" as never);
-
-								const b: Block = state.getBlock(id);
-								// Go through each child and put marginBottom to 0px
-								b.slots.children.children.forEach((c) => {
-									state.dispatch({
-										message: ActionMessages.SET_BLOCK_DATA,
-										payload: {
-											id: c,
-											path: "style.marginBottom",
-											value: "0px",
-										},
-									});
-								});
-							} else {
-								setData("style.flexDirection", "row" as never);
-								setData("style.gap", "2%" as never);
-							}
-						}}
-					>
-						<StyledToggleTabsGroupItem
-							label="Custom"
-							value={"custom"}
-						/>
-						<StyledToggleTabsGroupItem
-							label="Grid"
-							value={"grid"}
-						/>
-					</StyledToggleTabsGroup>
+					{/* Layout type tab switcher */}
+					<div className="flex min-h-[42px] w-full items-center gap-0.5 rounded-md border border-input p-0.5">
+						{["custom", "grid"].map((tab) => (
+							<button
+								key={tab}
+								type="button"
+								onClick={() => {
+									setData("type", tab);
+									if (tab === "custom") {
+										setData("dimension", null);
+										setData(
+											"style.flexDirection",
+											"column" as never,
+										);
+										setData("style.gap", "0px" as never);
+										const b: Block = state.getBlock(id);
+										b.slots.children.children.forEach(
+											(c) => {
+												state.dispatch({
+													message:
+														ActionMessages.SET_BLOCK_DATA,
+													payload: {
+														id: c,
+														path: "style.marginBottom",
+														value: "0px",
+													},
+												});
+											},
+										);
+									} else {
+										setData(
+											"style.flexDirection",
+											"row" as never,
+										);
+										setData("style.gap", "2%" as never);
+									}
+								}}
+								className={`flex-1 rounded-sm py-1 font-medium text-sm transition-colors ${
+									layoutType === tab
+										? "bg-background shadow-sm"
+										: "hover:bg-muted/50"
+								}`}
+							>
+								{tab.charAt(0).toUpperCase() + tab.slice(1)}
+							</button>
+						))}
+					</div>
 				</BaseSettingSection>
 				{layoutType === "grid" ? (
-					<Stack>
+					<div className="flex flex-col">
 						<BaseSettingSection label={"Column Count"}>
 							<Select
-								fullWidth
-								size="small"
 								value={gridDimension}
-								onChange={(e) => {
-									setData("dimension", e.target.value);
-									// sync the data on change
-									modifyGrid(e.target.value);
+								onValueChange={(val) => {
+									setData("dimension", val);
+									modifyGrid(val);
 								}}
 							>
-								{/* <Menu.Item value={"33.33%"}>3 columns</Menu.Item>
-                                <Menu.Item value={"25%"}>4 columns</Menu.Item>
-                                <Menu.Item value={"20%"}>5 columns</Menu.Item>
-                                <Menu.Item value={"16.66%"}>6 columns</Menu.Item> */}
-								<Menu.Item value={"3"}>3 columns</Menu.Item>
-								<Menu.Item value={"4"}>4 columns</Menu.Item>
-								<Menu.Item value={"5"}>5 columns</Menu.Item>
-								<Menu.Item value={"6"}>6 columns</Menu.Item>
+								<SelectTrigger className="w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value={"3"}>
+										3 columns
+									</SelectItem>
+									<SelectItem value={"4"}>
+										4 columns
+									</SelectItem>
+									<SelectItem value={"5"}>
+										5 columns
+									</SelectItem>
+									<SelectItem value={"6"}>
+										6 columns
+									</SelectItem>
+								</SelectContent>
 							</Select>
 						</BaseSettingSection>
 
 						<BaseSettingSection label={"Row Spacing"} wide>
-							<TextField
-								fullWidth
-								value={rowSpacing.value}
-								onChange={(e) => {
-									// sync the data on change
-									changeRowSpacing(
-										e.target.value,
-										rowSpacing.unit,
-									);
-								}}
-								size="small"
-								variant="outlined"
-								autoComplete="off"
-								InputProps={{
-									startAdornment: (
-										<InputAdornment position="start">
-											<FormatLineSpacing />
-										</InputAdornment>
-									),
-								}}
-							/>
-							<ToggleButtonGroup
+							<InputGroup className="w-full">
+								<InputGroupAddon>
+									<FormatLineSpacing className="size-4" />
+								</InputGroupAddon>
+								<InputGroupInput
+									value={rowSpacing.value}
+									onChange={(e) => {
+										changeRowSpacing(
+											e.target.value,
+											rowSpacing.unit,
+										);
+									}}
+									autoComplete="off"
+								/>
+							</InputGroup>
+							<ToggleGroup
+								type="single"
 								value={rowSpacing.unit}
-								exclusive
-								size="small"
+								onValueChange={(val) => {
+									if (val)
+										changeRowSpacing(
+											rowSpacing.value,
+											val as "%" | "px" | "em" | "",
+										);
+								}}
 							>
-								<ToggleButton
-									key={"em"}
-									value={"em"}
-									color={
-										rowSpacing.unit === "em"
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										changeRowSpacing(
-											rowSpacing.value,
-											"em",
-										);
-									}}
-								>
-									em
-								</ToggleButton>
-								<ToggleButton
-									key={"px"}
-									value={"px"}
-									color={
-										rowSpacing.unit === "px"
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										changeRowSpacing(
-											rowSpacing.value,
-											"px",
-										);
-									}}
-								>
-									px
-								</ToggleButton>
-								<ToggleButton
-									key={"%"}
-									value={"%"}
-									color={
-										rowSpacing.unit === "%"
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										changeRowSpacing(rowSpacing.value, "%");
-									}}
-								>
-									%
-								</ToggleButton>
-							</ToggleButtonGroup>
+								{(["em", "px", "%"] as const).map((unit) => (
+									<ToggleGroupItem
+										key={unit}
+										value={unit}
+										variant="outline"
+										size="sm"
+									>
+										{unit}
+									</ToggleGroupItem>
+								))}
+							</ToggleGroup>
 						</BaseSettingSection>
 						<BaseSettingSection label={"Gap"} wide>
-							<TextField
-								fullWidth
-								value={gapSpacing.value}
-								onChange={(e) => {
-									// sync the data on change
-									changeGapSpacing(
-										e.target.value,
-										gapSpacing.unit,
-									);
-								}}
-								size="small"
-								variant="outlined"
-								autoComplete="off"
-								InputProps={{
-									startAdornment: (
-										<InputAdornment position="start">
-											<SpaceBar />
-										</InputAdornment>
-									),
-								}}
-							/>
-							<ToggleButtonGroup
+							<InputGroup className="w-full">
+								<InputGroupAddon>
+									<Space className="size-4" />
+								</InputGroupAddon>
+								<InputGroupInput
+									value={gapSpacing.value}
+									onChange={(e) => {
+										changeGapSpacing(
+											e.target.value,
+											gapSpacing.unit,
+										);
+									}}
+									autoComplete="off"
+								/>
+							</InputGroup>
+							<ToggleGroup
+								type="single"
 								value={gapSpacing.unit}
-								exclusive
-								size="small"
+								onValueChange={(val) => {
+									if (val)
+										changeGapSpacing(
+											gapSpacing.value,
+											val as "%" | "px" | "em" | "",
+										);
+								}}
 							>
-								<ToggleButton
-									key={"em"}
-									value={"em"}
-									color={
-										gapSpacing.unit === "em"
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										changeGapSpacing(
-											gapSpacing.value,
-											"em",
-										);
-									}}
-								>
-									em
-								</ToggleButton>
-								<ToggleButton
-									key={"px"}
-									value={"px"}
-									color={
-										gapSpacing.unit === "px"
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										changeGapSpacing(
-											gapSpacing.value,
-											"px",
-										);
-									}}
-								>
-									px
-								</ToggleButton>
-								<ToggleButton
-									key={"%"}
-									value={"%"}
-									color={
-										gapSpacing.unit === "%"
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										changeGapSpacing(gapSpacing.value, "%");
-									}}
-								>
-									%
-								</ToggleButton>
-							</ToggleButtonGroup>
+								{(["em", "px", "%"] as const).map((unit) => (
+									<ToggleGroupItem
+										key={unit}
+										value={unit}
+										variant="outline"
+										size="sm"
+									>
+										{unit}
+									</ToggleGroupItem>
+								))}
+							</ToggleGroup>
 						</BaseSettingSection>
-					</Stack>
+					</div>
 				) : (
-					<Stack gap={1}>
+					<div className="flex flex-col gap-1">
 						<ButtonGroupSettings
 							id={id}
 							path="style.flexDirection"
@@ -624,13 +535,13 @@ export const ContainerLayoutSettings = observer(
 							options={[
 								{
 									value: "column",
-									icon: ArrowDownward,
+									icon: ArrowDown,
 									title: "Column",
 									isDefault: true,
 								},
 								{
 									value: "row",
-									icon: ArrowForward,
+									icon: ArrowRight,
 									title: "Row",
 									isDefault: false,
 								},
@@ -713,9 +624,9 @@ export const ContainerLayoutSettings = observer(
 							]}
 						/>
 						<SizeSettings id={id} label="Gap" path="style.gap" />
-					</Stack>
+					</div>
 				)}
-			</Stack>
+			</div>
 		);
 	},
 );

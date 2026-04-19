@@ -1,4 +1,4 @@
-import { FormatColorFill } from "@mui/icons-material";
+import { PaintBucket } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -11,13 +11,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import {
-	Box,
-	ClickAwayListener,
-	IconButton,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+import { Button, Input, Muted } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface StandardColorSettingProps<D extends BlockDef = BlockDef> {
@@ -70,99 +64,64 @@ export const StandardColorSettings = observer(
 			setColor(computedColor);
 		}, [computedColor]);
 
-		/**
-		 * When the color is changed via the SketchPicker, this is called.
-		 * It does the following:
-		 * 1. Sets the color in the local component state
-		 * 2. Sets the color in the block's data
-		 * 3. Calls the onChange callback (if provided) with the new color
-		 * 4. Dispatches an event to the block editor to resize the block
-		 *    (this is necessary because changing the color of the block can change its size)
-		 */
 		const handleColorChange = useCallback(
 			// biome-ignore lint/suspicious/noExplicitAny: TODO
 			(newColor: any) => {
-				// Get the hex color from the SketchPicker
-				const hexColor = newColor.hex;
+				const hexColor = newColor.hex ?? newColor;
 
-				// Set the color in the local component state
 				setColor(hexColor);
-
-				// Set the color in the block's data
 				setData(path, hexColor as PathValue<D["data"], typeof path>);
-
-				// Call the onChange callback (if provided) with the new color
 				onChange?.(hexColor);
 
-				// Dispatch an event to the block editor to resize the block
 				state.dispatch({
 					message: ActionMessages.DISPATCH_EVENT,
 					payload: { name: "blockResized" },
 				});
 			},
-			// The dependencies of this useCallback are:
-			//  - setData: the function to set the color in the block's data
-			//  - path: the path to the color in the block's data
 			[setData, path, state.dispatch, onChange],
 		);
 
 		return (
-			<Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-				<Typography variant="body2" color="black">
-					{label}
-				</Typography>
-				<Box
-					sx={{
-						display: "flex",
-						alignItems: "center",
-						gap: 1,
-						justifyContent: "space-between",
-					}}
-				>
-					<Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-						<Box
-							sx={{
-								width: 33,
-								height: 33,
-								borderRadius: "4px",
-								backgroundColor: color,
-								border: "1px solid #ccc",
-							}}
+			<div className="flex flex-col gap-1">
+				<Muted>{label}</Muted>
+				<div className="flex items-center justify-between gap-1">
+					<div className="flex items-center gap-3">
+						<div
+							className="h-[33px] w-[33px] rounded border border-[#ccc]"
+							style={{ backgroundColor: color }}
 						/>
-						<Typography variant="body2" color="textPrimary">
-							{color}
-						</Typography>
-					</Box>
-					<IconButton onClick={() => setShowPicker(!showPicker)}>
-						<FormatColorFill />
-					</IconButton>
-				</Box>
+						<Muted>{color}</Muted>
+					</div>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => setShowPicker(!showPicker)}
+					>
+						<PaintBucket />
+					</Button>
+				</div>
 
 				{showPicker && (
-					<ClickAwayListener onClickAway={() => setShowPicker(false)}>
-						<Box
-							sx={{
-								display: "flex",
-								justifyContent: "flex-end",
-								mt: 1,
-							}}
-						>
-							<Box sx={{ borderRadius: 1 }}>
-								<TextField
-									fullWidth
-									type="color"
-									value={color}
-									onChange={handleColorChange}
-									size="small"
-									variant="outlined"
-									autoComplete="off"
-									data-testid={`colorSettings-${label}-txt`}
-								/>
-							</Box>
-						</Box>
-					</ClickAwayListener>
+					// biome-ignore lint/a11y/noStaticElementInteractions: color swatch
+					<div
+						className="mt-1 flex justify-end"
+						onMouseLeave={() => setShowPicker(false)}
+					>
+						<div className="rounded">
+							<Input
+								className="h-8 w-full p-0.5"
+								type="color"
+								value={color}
+								onChange={(e) =>
+									handleColorChange(e.target.value)
+								}
+								autoComplete="off"
+								data-testid={`colorSettings-${label}-txt`}
+							/>
+						</div>
+					</div>
 				)}
-			</Box>
+			</div>
 		);
 	},
 );

@@ -1,6 +1,5 @@
 import { observer } from "mobx-react-lite";
 import type { Block, BlockDef, Paths } from "@semoss/renderer";
-import { ButtonGroup } from "@semoss/ui";
 import { BaseSettingSection } from "../BaseSettingSection";
 import { DistinctPathButtonGroupButton } from "./DistinctPathButtonGroupButton";
 
@@ -26,6 +25,7 @@ interface DistinctPathButtonGroupSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	options: Array<{
 		value: string;
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 		icon: any;
 		path: Paths<Block<D>["data"], 4>;
 		title: string;
@@ -41,10 +41,11 @@ export const DistinctPathButtonGroupSettings = observer(
 	}: DistinctPathButtonGroupSettingsProps<D>) => {
 		return (
 			<BaseSettingSection label={label}>
-				<ButtonGroup>
+				<div className="flex">
 					{Array.from(options, (option, i) => {
 						return (
 							<DistinctPathButtonGroupButton
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 								key={i}
 								id={id}
 								path={option.path}
@@ -55,7 +56,7 @@ export const DistinctPathButtonGroupSettings = observer(
 							/>
 						);
 					})}
-				</ButtonGroup>
+				</div>
 			</BaseSettingSection>
 		);
 	},

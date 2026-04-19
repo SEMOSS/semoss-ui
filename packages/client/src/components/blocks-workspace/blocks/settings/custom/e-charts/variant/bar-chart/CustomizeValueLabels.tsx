@@ -1,65 +1,15 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-	type BlockDef,
 	type EchartVisualizationBlockConfig,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import {
-	Select,
-	Switch,
-	styled,
-	TextField,
-	ToggleTabsGroup,
-	Typography,
-} from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
-import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 
-//styled select field to have full width
-const StyledSelect = styled(Select)(() => ({
-	width: "100%",
-}));
-//a main section field with custom styling
-const StyledMainSection = styled("div")(() => ({
-	display: "block",
-	width: "100%",
-}));
-//a sub section field with custom styling
-const StyledSubSection = styled("div", {
-	shouldForwardProp: (prop) => prop != "display" && prop != "justifyContent",
-})<{ display?: string; justifyContent?: string; gap?: string }>(
-	({ theme, display, justifyContent, gap }) => ({
-		width: "100%",
-		padding: "8px 16px",
-		display: display ?? undefined,
-		justifyContent: justifyContent ?? undefined,
-		gap: gap ?? undefined,
-	}),
-);
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-}));
-//a text field with custom styling for full width
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
 //Initial state of custom value labels as default values for managing and restoring
 const DEFAULT_VALUE_LABELS = {
 	show: false,
@@ -73,10 +23,8 @@ const DEFAULT_VALUE_LABELS = {
 	seriesIndex: "0",
 };
 
-//Customize value labels initial value
-const INITIAL_VALUE_LABELS = [];
+const INITIAL_VALUE_LABELS: CustomizeValueLabelsKeys[] = [];
 
-//Customize value labels component's key properties
 interface CustomizeValueLabelsKeys {
 	show: boolean;
 	position: string;
@@ -89,8 +37,8 @@ interface CustomizeValueLabelsKeys {
 	seriesIndex: number | string;
 }
 
-//having custom fields to customize charts text parts like: position, alignment, rotate, etc
 export const CustomizeValueLabels = observer(
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 	<D extends BlockDef = BlockDef>({ option, chartType, id, path }) => {
 		const [fieldData, setFieldData] =
 			useState<CustomizeValueLabelsKeys[]>(INITIAL_VALUE_LABELS);
@@ -99,12 +47,12 @@ export const CustomizeValueLabels = observer(
 		const [value, setValue] = useState<
 			typeof EchartVisualizationBlockConfig.data.option
 		>(data.option);
-		const [selectedSeries, setSelectedSeries] = useState<string>("0");
+		const [selectedSeries, _setSelectedSeries] = useState<string>("0");
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const [valueLabelsUpdated, setValueLabelsUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
-		const labelPositionValues: string[] = [
+		const _labelPositionValues: string[] = [
 			"top",
 			"left",
 			"right",
@@ -119,9 +67,9 @@ export const CustomizeValueLabels = observer(
 			"insideTopRight",
 			"insideBottomRight",
 		];
-		const alignment: string[] = ["left", "center", "right"];
-		const fontFamily: string[] = ["sans-serif", "serif", "monospace"];
-		const fontWeight: string[] = [
+		const _alignment: string[] = ["left", "center", "right"];
+		const _fontFamily: string[] = ["sans-serif", "serif", "monospace"];
+		const _fontWeight: string[] = [
 			"normal",
 			"bold",
 			"bolder",
@@ -136,17 +84,13 @@ export const CustomizeValueLabels = observer(
 			"800",
 			"900",
 		];
-		//for retaining the previously selected values, this useeffect will help
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			const option =
-				typeof value === "string" ? JSON.parse(value) : value;
-			if (option["series"]) {
+			const opt = typeof value === "string" ? JSON.parse(value) : value;
+			if (opt.series) {
 				const seriesData = getFilteredSeriesIndex();
-				const fieldsData = fieldData;
 				const fieldsDataToUpdate = seriesData.map((seriesChartData) => {
-					if (
-						option["series"][seriesChartData]["label"] === undefined
-					) {
+					if (opt.series[seriesChartData].label === undefined) {
 						return {
 							...DEFAULT_VALUE_LABELS,
 							seriesIndex: seriesChartData,
@@ -154,91 +98,76 @@ export const CustomizeValueLabels = observer(
 					} else {
 						return {
 							show:
-								option["series"][seriesChartData]["label"]
-									.show ?? false,
+								opt.series[seriesChartData].label.show ?? false,
 							position:
-								option["series"][seriesChartData]["label"]
-									.position ?? DEFAULT_VALUE_LABELS.position,
+								opt.series[seriesChartData].label.position ??
+								DEFAULT_VALUE_LABELS.position,
 							rotate:
-								option["series"][seriesChartData]["label"]
-									.rotate ?? DEFAULT_VALUE_LABELS.rotate,
+								opt.series[seriesChartData].label.rotate ??
+								DEFAULT_VALUE_LABELS.rotate,
 							alignment:
-								option["series"][seriesChartData]["label"]
-									.align ?? DEFAULT_VALUE_LABELS.alignment,
+								opt.series[seriesChartData].label.align ??
+								DEFAULT_VALUE_LABELS.alignment,
 							font:
-								option["series"][seriesChartData]["label"]
-									.fontFamily ?? DEFAULT_VALUE_LABELS.font,
+								opt.series[seriesChartData].label.fontFamily ??
+								DEFAULT_VALUE_LABELS.font,
 							fontsize:
-								option["series"][seriesChartData]["label"]
-									.fontSize ?? DEFAULT_VALUE_LABELS.fontsize,
+								opt.series[seriesChartData].label.fontSize ??
+								DEFAULT_VALUE_LABELS.fontsize,
 							fontweight:
-								option["series"][seriesChartData]["label"]
-									.fontWeight ??
+								opt.series[seriesChartData].label.fontWeight ??
 								DEFAULT_VALUE_LABELS.fontweight,
 							fontcolour:
-								option["series"][seriesChartData]["label"]
-									.color ?? DEFAULT_VALUE_LABELS.fontcolour,
+								opt.series[seriesChartData].label.color ??
+								DEFAULT_VALUE_LABELS.fontcolour,
 							seriesIndex: seriesChartData,
 						};
 					}
 				});
-				setFieldData((prevFieldsData) => {
-					return fieldsDataToUpdate;
-				});
+				setFieldData(fieldsDataToUpdate);
 			}
 		}, []);
-		// get the value of the input (wrapped in usememo because of path prop)
+
 		const computedValue = useMemo(() => {
 			return computed(() => {
-				if (!data) {
-					return "";
-				}
+				if (!data) return "";
 				const v = getValueByPath(data, path);
-				if (typeof v === "undefined") {
-					return "";
-				} else if (typeof v === "string") {
-					return v;
-				}
+				if (typeof v === "undefined") return "";
+				else if (typeof v === "string") return v;
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
-		//updating local 'value' state to the most recent state
+
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue]);
-		//update the chart data to state, when any of customize value labels field is changed
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (valueLabelsUpdated === "updated") {
 				updateChartData(fieldData);
 			}
 		}, [fieldData]);
-		//handles different input fields by setting values to state, whenever a change happens
-		const updateFields = (
-			fieldName,
-			fieldValue,
-			fieldType,
-			seriesIndex,
+
+		const _updateFields = (
+			fieldName: string,
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			fieldValue: any,
+			seriesIndex: string | number,
 		): void => {
-			if (valueLabelsUpdated === "initial") {
+			if (valueLabelsUpdated === "initial")
 				setValueLabelsUpdated("updated");
-			}
-			const fieldsData = fieldData;
-			fieldsData[seriesIndex] = {
-				...fieldsData[seriesIndex],
-				[fieldName]:
-					fieldType === "switch"
-						? fieldValue.target.checked
-						: fieldValue.target.value,
+			const fieldsData = [...fieldData];
+			fieldsData[Number(seriesIndex)] = {
+				...fieldsData[Number(seriesIndex)],
+				[fieldName]: fieldValue,
 			};
-			setFieldData((prevData) => {
-				return [...fieldsData];
-			});
+			setFieldData(fieldsData);
 		};
-		//update the chart data to state, when customize value labels fields section is updated to new value
+
 		function updateChartData(values: CustomizeValueLabelsKeys[]) {
-			let option = typeof value === "string" ? JSON.parse(value) : value;
-			let optionUpdated = option;
-			const customizeLabelOptionsData = {};
+			let opt = typeof value === "string" ? JSON.parse(value) : value;
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			const customizeLabelOptionsData: Record<string | number, any> = {};
 			values.forEach((item) => {
 				customizeLabelOptionsData[item.seriesIndex] = {
 					show: item.show,
@@ -251,194 +180,55 @@ export const CustomizeValueLabels = observer(
 					fontcolour: item.fontcolour,
 				};
 			});
-			const customizeLabelOptionsValue = customizeLabelOptionsData;
-			//get matching series index for bar chart
 			const filteredSeries: number[] = getFilteredSeriesIndex();
-			//update the series with new styles for every matching series index
 			filteredSeries.forEach((item) => {
-				const displayPositionIndex: number = item;
+				const idx: number = item;
 				const showValueLabel: boolean =
-					customizeLabelOptionsValue[displayPositionIndex]["show"] ??
-					false;
-				if (customizeLabelOptionsValue[displayPositionIndex]["show"]) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-							},
-						};
-					}
-				}
-				if (
-					customizeLabelOptionsValue[displayPositionIndex]["position"]
-				) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-								["position"]:
-									customizeLabelOptionsValue[
-										displayPositionIndex
-									]["position"],
-							},
-						};
-					}
-				}
-				if (
-					customizeLabelOptionsValue[displayPositionIndex]["rotate"]
-				) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-								["rotate"]:
-									customizeLabelOptionsValue[
-										displayPositionIndex
-									]["rotate"],
-							},
-						};
-					}
-				}
-				if (
-					customizeLabelOptionsValue[displayPositionIndex][
-						"alignment"
-					]
-				) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-								["align"]:
-									customizeLabelOptionsValue[
-										displayPositionIndex
-									]["alignment"],
-							},
-						};
-					}
-				}
-				if (customizeLabelOptionsValue[displayPositionIndex]["font"]) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-								["fontFamily"]:
-									customizeLabelOptionsValue[
-										displayPositionIndex
-									]["font"],
-							},
-						};
-					}
-				}
-				if (
-					customizeLabelOptionsValue[displayPositionIndex]["fontsize"]
-				) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-								["fontSize"]:
-									Number(
-										customizeLabelOptionsValue[
-											displayPositionIndex
-										]["fontsize"],
-									) || undefined,
-							},
-						};
-					}
-				}
-				if (
-					customizeLabelOptionsValue[displayPositionIndex][
-						"fontweight"
-					]
-				) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-								["fontWeight"]:
-									customizeLabelOptionsValue[
-										displayPositionIndex
-									]["fontweight"],
-							},
-						};
-					}
-				}
-				if (
-					customizeLabelOptionsValue[displayPositionIndex][
-						"fontcolour"
-					]
-				) {
-					if (option["series"][displayPositionIndex]) {
-						option["series"][displayPositionIndex] = {
-							...option["series"][displayPositionIndex],
-							["label"]: {
-								...option["series"][displayPositionIndex][
-									"label"
-								],
-								["show"]: showValueLabel,
-								["color"]:
-									customizeLabelOptionsValue[
-										displayPositionIndex
-									]["fontcolour"] ||
-									option["series"][displayPositionIndex][
-										"label"
-									]["color"],
-							},
-						};
-					}
+					customizeLabelOptionsData[idx].show ?? false;
+				if (opt.series[idx]) {
+					opt.series[idx] = {
+						...opt.series[idx],
+						label: {
+							...opt.series[idx].label,
+							show: showValueLabel,
+							position: customizeLabelOptionsData[idx].position,
+							rotate: customizeLabelOptionsData[idx].rotate,
+							align: customizeLabelOptionsData[idx].alignment,
+							fontFamily: customizeLabelOptionsData[idx].font,
+							fontSize:
+								Number(
+									customizeLabelOptionsData[idx].fontsize,
+								) || undefined,
+							fontWeight:
+								customizeLabelOptionsData[idx].fontweight,
+							color:
+								customizeLabelOptionsData[idx].fontcolour ||
+								opt.series[idx].label.color,
+						},
+					};
 				}
 			});
-			option = {
-				...option,
-				["customSettings"]: {
-					["toolsUpdated"]: true,
+			opt = {
+				...opt,
+				customSettings: {
+					toolsUpdated: true,
 				},
 			};
-			optionUpdated = option;
-			runStateUpdateCustom(optionUpdated);
+			runStateUpdateCustom(opt);
 		}
-		//function to check and retrieve the indexes for bar chart type
+
 		function getFilteredSeriesIndex() {
-			const index = [];
-			const option =
-				typeof value === "string" ? JSON.parse(value) : value;
-			const seriesAvailable = option["series"].filter((item) =>
+			const index: number[] = [];
+			const opt = typeof value === "string" ? JSON.parse(value) : value;
+			const seriesAvailable = opt.series.filter((item) =>
 				BAR_CHART_DATA.JSONVALUE.includes(item.type),
 			);
-			seriesAvailable.forEach((item, seriesIndex) => {
+			seriesAvailable.forEach((_, seriesIndex) => {
 				index.push(seriesIndex);
 			});
 			return index;
 		}
-		//update the state when any of the fields in custom value labels is changed
+
 		function runStateUpdateCustom(
 			optionUpdated: typeof EchartVisualizationBlockConfig.data.option,
 		) {
@@ -458,252 +248,203 @@ export const CustomizeValueLabels = observer(
 			}, 300);
 		}
 
-		const fieldSelectedSeries: CustomizeValueLabelsKeys =
-			fieldData[parseInt(selectedSeries)] || DEFAULT_VALUE_LABELS;
+		const _fieldSelectedSeries: CustomizeValueLabelsKeys =
+			fieldData[parseInt(selectedSeries, 10)] || DEFAULT_VALUE_LABELS;
 
-		const getAccordianDetails = (
-			<StyledMainSection>
-				<StyledSubSection display="flex" justifyContent="space-between">
-					<ToggleTabsGroup
-						onChange={(e: React.SyntheticEvent, val: string) =>
-							setSelectedSeries((prevSelectedSeries) => val)
-						}
-						value={selectedSeries}
-					>
-						{fieldData.length &&
-							fieldData.map((item, index) => {
-								return (
-									<ToggleTabsGroup.Item
-										label={`Series ${index + 1}`}
-										value={`${index}`}
-										key={`series${index}`}
-									/>
-								);
-							})}
-						;
-					</ToggleTabsGroup>
-				</StyledSubSection>
-				{parseInt(selectedSeries) >= 0 && (
-					<StyledSubSection
-						display="flex"
-						justifyContent="flex-start"
-						gap="8px"
-					>
+		return (
+			<div className="flex w-full flex-col">
+				{/* Series tabs */}
+				{fieldData.length > 1 && (
+					<div className="flex flex-row gap-1 px-4 py-2">
+						{fieldData.map((_, _index) => (
+							// biome-ignore lint/a11y/useButtonType: handled by caller
+							<button
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								key={`series${index}`}
+								className={`rounded border px-3 py-1 text-sm ${
+									selectedSeries === `${index}`
+										? "border-primary bg-primary text-primary-foreground"
+										: "border-border"
+								}`}
+								onClick={() => setSelectedSeries(`${index}`)}
+							>
+								{`Series ${index + 1}`}
+							</button>
+						))}
+					</div>
+				)}
+				{parseInt(selectedSeries, 10) >= 0 && (
+					<div className="flex flex-row items-center gap-2 px-4 py-2">
 						<Switch
-							size="small"
-							checked={fieldSelectedSeries?.show ?? undefined}
-							onChange={(e: ChangeEvent<HTMLInputElement>) =>
-								updateFields(
-									"show",
-									e,
-									"switch",
-									selectedSeries,
-								)
+							checked={!!fieldSelectedSeries?.show}
+							onCheckedChange={(checked: boolean) =>
+								updateFields("show", checked, selectedSeries)
 							}
-							title="Show Value Labels"
 						/>
-						<StyledTypography variant="body2">
-							Show Value Labels
-						</StyledTypography>
-					</StyledSubSection>
+						<span className="text-sm">Show Value Labels</span>
+					</div>
 				)}
 				{fieldSelectedSeries?.show && (
 					<>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Position
-							</Typography>
-							<StyledSelect
-								size="small"
-								id="label-position"
+							</span>
+							<Select
 								value={fieldSelectedSeries.position ?? ""}
-								onChange={(e) =>
+								onValueChange={(val) =>
 									updateFields(
 										"position",
-										e,
-										"select",
+										val,
 										selectedSeries,
 									)
 								}
 							>
-								<Select.Item key="-1" value="">
-									Select
-								</Select.Item>
-								{labelPositionValues.map((label, index) => {
-									return (
-										<Select.Item value={label} key={index}>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select" />
+								</SelectTrigger>
+								<SelectContent>
+									{labelPositionValues.map((label, index) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										<SelectItem key={index} value={label}>
 											{label}
-										</Select.Item>
-									);
-								})}
-							</StyledSelect>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
-								Rotate Label(In Degrees)
-							</Typography>
-							<StyledTextField
-								size="small"
-								variant={"outlined"}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
+								Rotate Label (In Degrees)
+							</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							lint/correctness/useUniqueElementIds: component
+							instance ids
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
 								type="number"
 								id="rotate-label"
 								value={fieldSelectedSeries.rotate ?? ""}
 								onChange={(e) =>
 									updateFields(
 										"rotate",
-										e,
-										"text",
+										e.target.value,
 										selectedSeries,
 									)
 								}
-							></StyledTextField>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
+							/>
+						</div>
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Select Alignment
-							</Typography>
-							<StyledSelect
-								size="small"
-								id="alignment-label"
+							</span>
+							<Select
 								value={fieldSelectedSeries.alignment ?? ""}
-								onChange={(e) =>
+								onValueChange={(val) =>
 									updateFields(
 										"alignment",
-										e,
-										"select",
+										val,
 										selectedSeries,
 									)
 								}
 							>
-								<Select.Item key="-1" value="">
-									Select Alignment
-								</Select.Item>
-								{alignment.map((label, index) => {
-									return (
-										<Select.Item value={label} key={index}>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select Alignment" />
+								</SelectTrigger>
+								<SelectContent>
+									{alignment.map((label, index) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										<SelectItem key={index} value={label}>
 											{label}
-										</Select.Item>
-									);
-								})}
-							</StyledSelect>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Select Font
-							</Typography>
-							<StyledSelect
-								size="small"
-								id="font"
+							</span>
+							<Select
 								value={fieldSelectedSeries.font ?? ""}
-								onChange={(e) =>
-									updateFields(
-										"font",
-										e,
-										"select",
-										selectedSeries,
-									)
+								onValueChange={(val) =>
+									updateFields("font", val, selectedSeries)
 								}
 							>
-								<Select.Item key="-1" value="">
-									Select Font
-								</Select.Item>
-								{fontFamily.map((label, index) => {
-									return (
-										<Select.Item value={label} key={index}>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select Font" />
+								</SelectTrigger>
+								<SelectContent>
+									{fontFamily.map((label, index) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										<SelectItem key={index} value={label}>
 											{label}
-										</Select.Item>
-									);
-								})}
-							</StyledSelect>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Select Font Size (Default: 12)
-							</Typography>
-							<StyledTextField
-								size="small"
-								variant={"outlined"}
+							</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							lint/correctness/useUniqueElementIds: component
+							instance ids
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
 								type="number"
 								id="font-size"
-								// defaultValue={fieldData.fontsize}
 								value={fieldSelectedSeries.fontsize}
 								onChange={(e) =>
 									updateFields(
 										"fontsize",
-										e,
-										"text",
+										e.target.value,
 										selectedSeries,
 									)
 								}
-							></StyledTextField>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
+							/>
+						</div>
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Select Font Weight
-							</Typography>
-							<StyledSelect
-								size="small"
-								id="font-weight"
+							</span>
+							<Select
 								value={fieldSelectedSeries.fontweight}
-								onChange={(e) =>
+								onValueChange={(val) =>
 									updateFields(
 										"fontweight",
-										e,
-										"select",
+										val,
 										selectedSeries,
 									)
 								}
 							>
-								<Select.Item key="-1" value="">
-									Select Font Weight
-								</Select.Item>
-								{fontWeight.map((label, index) => {
-									return (
-										<Select.Item value={label} key={index}>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select Font Weight" />
+								</SelectTrigger>
+								<SelectContent>
+									{fontWeight.map((label, index) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										<SelectItem key={index} value={label}>
 											{label}
-										</Select.Item>
-									);
-								})}
-							</StyledSelect>
-						</StyledAxisColDiv>
-
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
 						<ColorPickerSettings
 							id={id}
 							path={`option.series.${selectedSeries}.label.color`}
 							colorValue={fieldSelectedSeries.fontcolour}
 							onChange={(e) =>
-								updateFields(
-									"fontcolour",
-									{ target: { value: e } },
-									"text",
-									selectedSeries,
-								)
+								updateFields("fontcolour", e, selectedSeries)
 							}
 						/>
 					</>
 				)}
-				<br />
-			</StyledMainSection>
+			</div>
 		);
-
-		return <>{getAccordianDetails}</>;
 	},
 );

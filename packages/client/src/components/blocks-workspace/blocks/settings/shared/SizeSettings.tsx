@@ -1,4 +1,4 @@
-import { SpaceBar } from "@mui/icons-material";
+import { Space } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -11,12 +11,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import {
-	InputAdornment,
-	TextField,
-	ToggleButton,
-	ToggleButtonGroup,
-} from "@semoss/ui";
+import { Input, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -63,7 +58,7 @@ export const SizeSettings = observer(
 		});
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -125,7 +120,6 @@ export const SizeSettings = observer(
 			// clear the old timeout
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
-				timeoutRef.current = null;
 			}
 
 			timeoutRef.current = setTimeout(() => {
@@ -147,46 +141,39 @@ export const SizeSettings = observer(
 
 		return (
 			<BaseSettingSection label={label} wide>
-				<TextField
-					fullWidth
-					value={parsed.amount}
-					onChange={(e) => {
-						// sync the data on change
-						onChange(e.target.value, parsed.unit);
+				<div className="relative w-full">
+					<Input
+						value={parsed.amount}
+						onChange={(e) => {
+							// sync the data on change
+							onChange(e.target.value, parsed.unit);
+						}}
+						autoComplete="off"
+						className={label === "Gap" ? "pl-8" : undefined}
+					/>
+					{label === "Gap" && (
+						<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 text-muted-foreground">
+							<Space className="size-4" />
+						</span>
+					)}
+				</div>
+				<ToggleGroup
+					type="single"
+					value={parsed.unit}
+					onValueChange={(unit) => {
+						if (unit) {
+							onChange(parsed.amount, unit as "%" | "px" | "em");
+						}
 					}}
-					size="small"
-					variant="outlined"
-					autoComplete="off"
-					InputProps={{
-						startAdornment: (
-							<>
-								{label == "Gap" && (
-									<InputAdornment position="start">
-										<SpaceBar />
-									</InputAdornment>
-								)}
-							</>
-						),
-					}}
-				/>
-				<ToggleButtonGroup value={parsed.unit} exclusive size="small">
+				>
 					{SIZE_VALUE_TYPES.map((unit) => {
 						return (
-							<ToggleButton
-								key={unit}
-								value={unit}
-								color={
-									parsed.unit === unit ? "primary" : undefined
-								}
-								onClick={() => {
-									onChange(parsed.amount, unit);
-								}}
-							>
+							<ToggleGroupItem key={unit} value={unit}>
 								{unit}
-							</ToggleButton>
+							</ToggleGroupItem>
 						);
 					})}
-				</ToggleButtonGroup>
+				</ToggleGroup>
 			</BaseSettingSection>
 		);
 	},

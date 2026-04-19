@@ -1,34 +1,19 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import { Button, Switch, styled, TextField } from "@semoss/ui";
+import { Button, Input, Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
+// biome-ignore lint/correctness/noUnusedVariables: used in JSX or callback
 interface GanttTargetLineProps {
 	id: string;
 }
-//styled main container with padding and border
-const StyledMainContainer = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	padding: "0.75rem",
-	borderBottom: "1px solid #E6E6E6",
-}));
-//styled sub container with flex direction column
-const StyledSubContainer = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-}));
-//styled label with padding left
-const StyledLabel = styled("label")(() => ({
-	paddingLeft: "10px",
-}));
 //initial target line data
 const INITIAL_TARGET_LINE = {
 	targetdate: "",
@@ -42,7 +27,7 @@ export const GanttTargetLine = observer(
 			useBlockSettings<EchartVisualizationBlockDef>(id); //block data
 		const [targetLineData, setTargetLineData] =
 			useState(INITIAL_TARGET_LINE); //target line data
-		//get the computed value of the block data
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -58,26 +43,23 @@ export const GanttTargetLine = observer(
 			});
 		}, [data, "option"]).get();
 		const timeoutRef = useRef(null); //timeout ref for setting data
-		//to retain the values from state
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const option = JSON.parse(computedValue);
-			if (option["customSettings"]?.["gantttools"]) {
-				const gantttool = option["customSettings"]?.["gantttools"];
+			if (option.customSettings?.gantttools) {
+				const gantttool = option.customSettings?.gantttools;
 				const targetLineDataTemp = targetLineData;
-				if (gantttool?.["targetLineColor"]) {
-					targetLineDataTemp["targetcolor"] =
-						gantttool["targetLineColor"];
+				if (gantttool?.targetLineColor) {
+					targetLineDataTemp.targetcolor = gantttool.targetLineColor;
 				}
-				if (gantttool?.["targetLineName"]) {
-					targetLineDataTemp["targetlabel"] =
-						gantttool["targetLineName"];
+				if (gantttool?.targetLineName) {
+					targetLineDataTemp.targetlabel = gantttool.targetLineName;
 				}
-				if (gantttool?.["targetDate"]) {
-					targetLineDataTemp["targetdate"] = gantttool["targetDate"];
+				if (gantttool?.targetDate) {
+					targetLineDataTemp.targetdate = gantttool.targetDate;
 				}
-				if (gantttool?.["showTodayDate"]) {
-					targetLineDataTemp["showTodayDate"] =
-						gantttool["showTodayDate"];
+				if (gantttool?.showTodayDate) {
+					targetLineDataTemp.showTodayDate = gantttool.showTodayDate;
 				}
 				setTargetLineData((prevTargetLineData) => {
 					return {
@@ -87,37 +69,39 @@ export const GanttTargetLine = observer(
 				});
 			}
 		}, []);
-		//update the fields and also the state when target line fields are changed
-		function updateFields(e, field = "", directVal = undefined) {
-			if (field != "") {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function updateFields(e: any, field = "", directVal: any = undefined) {
+			if (field !== "") {
 				setTargetLineData((prevTargetLineData) => {
 					return {
 						...prevTargetLineData,
 						[field]:
-							directVal != undefined ? directVal : e.target.value,
+							directVal !== undefined
+								? directVal
+								: e.target.value,
 					};
 				});
 			}
 		}
-		//update the chart data when target line data is changed
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			updateChartData();
 		}, [targetLineData]);
 		//update the chart data to state by making needed changes
 		function updateChartData() {
 			let option = JSON.parse(computedValue);
-			if (targetLineData.targetdate != "") {
+			if (targetLineData.targetdate !== "") {
 				const date = targetLineData.targetdate;
-				const seriesIndex = option["series"].findIndex(
+				const seriesIndex = option.series.findIndex(
 					(optItem) => optItem.name === "targetDateSegment",
 				);
 				if (seriesIndex > -1) {
-					option["series"][seriesIndex] = {
-						...option["series"][seriesIndex],
-						["data"]: [
+					option.series[seriesIndex] = {
+						...option.series[seriesIndex],
+						data: [
 							{
-								["name"]: "targetDateSegment",
-								["value"]: [new Date(date).getTime()],
+								name: "targetDateSegment",
+								value: [new Date(date).getTime()],
 							},
 						],
 					};
@@ -134,49 +118,49 @@ export const GanttTargetLine = observer(
 					};
 					option = {
 						...option,
-						["series"]: [...option["series"], optionToUpdate],
+						series: [...option.series, optionToUpdate],
 					};
 				}
 			} else {
-				let seriesData = option["series"];
+				let seriesData = option.series;
 				seriesData = seriesData.filter(
 					(item) => item.name !== "targetDateSegment",
 				);
-				option["series"] = seriesData;
+				option.series = seriesData;
 			}
-			if (targetLineData.targetlabel != "") {
-				option["customSettings"] = {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["targetLineName"]: targetLineData.targetlabel,
+			if (targetLineData.targetlabel !== "") {
+				option.customSettings = {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						targetLineName: targetLineData.targetlabel,
 					},
 				};
 			}
-			if (targetLineData.targetcolor != "") {
-				option["customSettings"] = {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["targetLineColor"]: targetLineData.targetcolor,
+			if (targetLineData.targetcolor !== "") {
+				option.customSettings = {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						targetLineColor: targetLineData.targetcolor,
 					},
 				};
 			}
 			if (Object.hasOwn(targetLineData, "targetdate")) {
-				option["customSettings"] = {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["targetDate"]: targetLineData.targetdate,
+				option.customSettings = {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						targetDate: targetLineData.targetdate,
 					},
 				};
 			}
 			if (Object.hasOwn(targetLineData, "showTodayDate")) {
-				option["customSettings"] = {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["showTodayDate"]: targetLineData.showTodayDate,
+				option.customSettings = {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						showTodayDate: targetLineData.showTodayDate,
 					},
 				};
 			}
@@ -195,24 +179,20 @@ export const GanttTargetLine = observer(
 						"option",
 						option as PathValue<D["data"], typeof path>,
 					);
-				} catch (e) {}
+				} catch (_e) {}
 			}, 300);
 		}
 		//reset the target line data to initial state
 		function resetToInitialState() {
-			setTargetLineData((prevTargetLine) => {
-				return {
-					targetdate: "",
-					targetlabel: "",
-					targetcolor: "#FF0000",
-					showTodayDate: false,
-				};
+			setTargetLineData({
+				targetdate: "",
+				targetlabel: "",
+				targetcolor: "#FF0000",
+				showTodayDate: false,
 			});
 		}
 		//timezone based changes for date
 		function convertTimeZone(date) {
-			const currentTimezone =
-				Intl.DateTimeFormat().resolvedOptions().timeZone;
 			const dateConvertedToTimeZone = new Date(date)
 				.toISOString()
 				.split("T")[0];
@@ -221,83 +201,75 @@ export const GanttTargetLine = observer(
 				new Date(dateConvertedToTimeZone).getFullYear() +
 				"-" +
 				(new Date(dateConvertedToTimeZone).getMonth() + 1 < 10
-					? "0" + (new Date(dateConvertedToTimeZone).getMonth() + 1)
+					? `0${new Date(dateConvertedToTimeZone).getMonth() + 1}`
 					: new Date(dateConvertedToTimeZone).getMonth() + 1) +
 				"-" +
 				(new Date(dateConvertedToTimeZone).getDate() < 10
-					? "0" + new Date(dateConvertedToTimeZone).getDate()
+					? `0${new Date(dateConvertedToTimeZone).getDate()}`
 					: new Date(dateConvertedToTimeZone).getDate())
 			);
 		}
 		return (
-			<StyledMainContainer>
-				<StyledSubContainer style={{ flexDirection: "row" }}>
+			<div className="flex flex-col border-[#E6E6E6] border-b p-3">
+				<div className="flex flex-row items-center gap-2 py-2">
 					<Switch
 						checked={targetLineData.showTodayDate}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => {
-							if (Object.hasOwn(e.target, "checked")) {
-								updateFields(
-									e,
-									"showTodayDate",
-									e.target.checked,
-								);
-								updateFields(
-									{
-										target: {
-											value: e.target.checked
-												? convertTimeZone(new Date())
-												: "",
-										},
+						onCheckedChange={(checked: boolean) => {
+							updateFields(null, "showTodayDate", checked);
+							updateFields(
+								{
+									target: {
+										value: checked
+											? convertTimeZone(new Date())
+											: "",
 									},
-									"targetdate",
-								);
-							}
+								},
+								"targetdate",
+							);
 						}}
 					/>
-					<StyledLabel htmlFor="">Show Today Date</StyledLabel>
-				</StyledSubContainer>
-				<StyledSubContainer>
-					<label htmlFor="">Select Target Date</label>
-					<TextField
+					<span className="pl-2.5 text-sm">Show Today Date</span>
+				</div>
+				<div className="flex flex-col gap-2 py-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="text-muted-foreground text-sm">
+						Select Target Date
+					</label>
+					<Input
 						type="date"
 						value={targetLineData.targetdate}
 						onChange={(e) => updateFields(e, "targetdate")}
 					/>
-				</StyledSubContainer>
-				<StyledSubContainer>
-					<label htmlFor="">Enter Target Label</label>
-					<TextField
+				</div>
+				<div className="flex flex-col gap-2 py-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="text-muted-foreground text-sm">
+						Enter Target Label
+					</label>
+					<Input
 						type="text"
 						value={targetLineData.targetlabel}
 						onChange={(e) => updateFields(e, "targetlabel")}
 					/>
-				</StyledSubContainer>
-				<StyledSubContainer>
-					<label htmlFor="">Select Line/Label Color</label>
-					<TextField
+				</div>
+				<div className="flex flex-col gap-2 py-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="text-muted-foreground text-sm">
+						Select Line/Label Color
+					</label>
+					<Input
 						type="color"
 						value={targetLineData.targetcolor}
 						onChange={(e) => updateFields(e, "targetcolor")}
 					/>
-				</StyledSubContainer>
-				<StyledSubContainer
-					style={{
-						width: "100%",
-						display: "block",
-						textAlign: "end",
-						paddingTop: "0.5rem",
-					}}
-				>
-					<Button
-						color="primary"
-						variant="contained"
-						size="small"
-						onClick={resetToInitialState}
-					>
-						Reset
-					</Button>
-				</StyledSubContainer>
-			</StyledMainContainer>
+				</div>
+				<div className="flex justify-end pt-2">
+					<Button onClick={resetToInitialState}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

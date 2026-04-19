@@ -6,12 +6,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-	Add,
-	Delete,
-	Edit,
-	PlayCircleOutlineRounded,
-} from "@mui/icons-material";
+import { Pencil, Play, Plus, Trash2 } from "lucide-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
@@ -22,41 +17,15 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	Box,
 	Button,
-	IconButton,
-	Link,
-	List,
-	Modal,
-	Stack,
-	styled,
-	ToggleButton,
-	ToggleButtonGroup,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Dialog,
+	DialogContent,
+	ToggleGroup,
+	ToggleGroupItem,
+	toast,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { ListenerActionOverlay } from "./ListenerActionOverlay";
-
-const StyledStatusIconContainer = styled("div")(() => ({
-	height: "100%",
-	width: "1.5em",
-	display: "flex",
-}));
-
-const StyledRedDot = styled("div")(({ theme }) => ({
-	width: ".50em",
-	height: ".50em",
-	backgroundColor: theme.palette.error.main,
-	borderRadius: "50%",
-}));
-
-const StyledGreenDot = styled("div")(({ theme }) => ({
-	width: ".50em",
-	height: ".50em",
-	backgroundColor: theme.palette.success.main,
-	borderRadius: "50%",
-}));
 
 /**
  * TODO: reorganize and update the styling once app/blocks is up and working
@@ -80,7 +49,6 @@ export const ListenerSettings = observer(
 	}: ListenerSettingsProps<D>) => {
 		const { state } = useBlocks();
 		const { listeners, setListener } = useBlockSettings(id);
-		const notification = useNotification();
 		const blockListeners: ListenerActions[] =
 			toJS(listeners)[listener]?.order;
 		const type = toJS(listeners)[listener]?.type;
@@ -98,11 +66,7 @@ export const ListenerSettings = observer(
 				// dispatch it
 				state.dispatch(action);
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
-
+				toast.error((e as Error).message);
 				console.error(e);
 			}
 		};
@@ -114,10 +78,14 @@ export const ListenerSettings = observer(
 		const getQueryStatusIcon = (a) => {
 			if (a.message === "RUN_QUERY") {
 				const query = state.getQuery(a.payload.queryId);
-				if (query && query.isSuccessful) {
-					return <StyledGreenDot />;
-				} else if (query && query.isError) {
-					return <StyledRedDot />;
+				if (query?.isSuccessful) {
+					return (
+						<span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+					);
+				} else if (query?.isError) {
+					return (
+						<span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+					);
 				} else {
 					return;
 				}
@@ -205,41 +173,42 @@ export const ListenerSettings = observer(
 			};
 
 			return (
-				<Box
+				<div
 					key={`action-${id}`}
 					ref={setNodeRef}
 					{...attributes}
 					{...listeners}
-					sx={style}
+					style={style}
 				>
 					{children}
-				</Box>
+				</div>
 			);
 		};
 
 		// Transform items for sortable list
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const transformedItems = useMemo(() => {
 			return (blockListeners ? blockListeners : []).map((item, index) => {
 				console.log(item);
 				let display = "";
 
-				if (item.payload["queryId"]) {
-					if (item.payload["cellId"]) {
+				if (item.payload.queryId) {
+					if (item.payload.cellId) {
 						display = state.getAlias(
-							item.payload["queryId"],
-							item.payload["cellId"],
+							item.payload.queryId,
+							item.payload.cellId,
 						);
 					} else {
-						display = state.getAlias(item.payload["queryId"]);
+						display = state.getAlias(item.payload.queryId);
 					}
-				} else if (item.payload["destinationType"]) {
-					if (item.payload["destination"])
-						display = item.payload["destination"];
-				} else if (item.payload["variable"]) {
-					display = item.payload["variable"];
+				} else if (item.payload.destinationType) {
+					if (item.payload.destination)
+						display = item.payload.destination;
+				} else if (item.payload.variable) {
+					display = item.payload.variable;
 				} else {
-					if (item.payload["name"]) {
-						display = item.payload["name"];
+					if (item.payload.name) {
+						display = item.payload.name;
 					}
 				}
 
@@ -266,148 +235,125 @@ export const ListenerSettings = observer(
 						items={transformedItems?.map((item) => item.id)}
 						strategy={verticalListSortingStrategy}
 					>
-						<List>
+						<ul className="m-0 list-none p-0">
 							{transformedItems?.map(
 								({ id, content, original: a }, aIdx) => (
 									<SortableItems key={id} id={id}>
-										<List.Item
-											dense={true}
-											secondaryAction={
-												<>
-													<IconButton
-														size="small"
-														color="primary"
-														onClick={() =>
-															runAction(a)
-														}
-														onPointerDown={(e) =>
-															e.stopPropagation()
-														}
-													>
-														<PlayCircleOutlineRounded
-															fontSize="medium"
-															color={"inherit"}
-														/>
-													</IconButton>
-													<IconButton
-														size="small"
-														onClick={() =>
-															openActionOverlay(
-																aIdx,
-															)
-														}
-														onPointerDown={(e) =>
-															e.stopPropagation()
-														}
-													>
-														<Edit />
-													</IconButton>
-													<IconButton
-														size="small"
-														onClick={() =>
-															deleteListener(aIdx)
-														}
-														onPointerDown={(e) =>
-															e.stopPropagation()
-														}
-													>
-														<Delete />
-													</IconButton>
-												</>
-											}
-										>
-											<StyledStatusIconContainer>
+										<li className="flex items-center gap-1 border-b py-1 last:border-b-0">
+											<div className="flex w-6 items-center">
 												{getQueryStatusIcon(a)}
-											</StyledStatusIconContainer>
-											<List.ItemText
-												disableTypography={true}
-												primary={
-													<Typography
-														variant="body2"
-														noWrap={true}
-														title={
-															ACTIONS_DISPLAY[
-																a.message
-															]
-														}
-													>
-														{
-															ACTIONS_DISPLAY[
-																a.message
-															]
-														}
-													</Typography>
-												}
-												secondary={
-													<Typography
-														variant="caption"
-														noWrap={true}
+											</div>
+											<div className="min-w-0 flex-1">
+												<p
+													className="truncate text-sm"
+													title={
+														ACTIONS_DISPLAY[
+															a.message
+														]
+													}
+												>
+													{ACTIONS_DISPLAY[a.message]}
+												</p>
+												{content && (
+													<p
+														className="w-4/5 truncate text-muted-foreground text-xs"
 														title={content}
-														sx={{
-															display: "block",
-															flex: "unset",
-															width: "80%",
-														}}
 													>
 														{isLink(content) ? (
-															<Link
-																// rel="noopener noreferrer"
-																target="_blank"
+															<a
 																href={content}
+																target="_blank"
+																rel="noopener noreferrer"
+																className="underline"
 															>
 																{content}
-															</Link>
+															</a>
 														) : (
 															content
 														)}
-													</Typography>
-												}
-											/>
-										</List.Item>
+													</p>
+												)}
+											</div>
+											<div className="flex shrink-0 items-center gap-0.5">
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													onClick={() => runAction(a)}
+													onPointerDown={(e) =>
+														e.stopPropagation()
+													}
+												>
+													<Play className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													onClick={() =>
+														openActionOverlay(aIdx)
+													}
+													onPointerDown={(e) =>
+														e.stopPropagation()
+													}
+												>
+													<Pencil className="size-4" />
+												</Button>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													onClick={() =>
+														deleteListener(aIdx)
+													}
+													onPointerDown={(e) =>
+														e.stopPropagation()
+													}
+												>
+													<Trash2 className="size-4" />
+												</Button>
+											</div>
+										</li>
 									</SortableItems>
 								),
 							)}
-						</List>
+						</ul>
 					</SortableContext>
 				</DndContext>
-				<Stack direction="row" gap={1}>
+				<div className="flex flex-row gap-1">
 					<Button
-						fullWidth={true}
-						variant={"outlined"}
-						size="small"
+						className="flex-1"
+						variant="outline"
+						size="sm"
 						onClick={() => openActionOverlay(-1)}
-						startIcon={<Add />}
 					>
+						<Plus className="mr-1 size-4" />
 						New Action
 					</Button>
-					<ToggleButtonGroup size={"small"} value={type}>
-						<ToggleButton
-							value="async"
-							onClick={() => {
-								updateExecutionType("async");
-							}}
-						>
+					<ToggleGroup
+						type="single"
+						value={type}
+						onValueChange={(val) => {
+							if (val)
+								updateExecutionType(val as "sync" | "async");
+						}}
+					>
+						<ToggleGroupItem value="async" size="sm">
 							Async
-						</ToggleButton>
-						<ToggleButton
-							value="sync"
-							onClick={() => {
-								updateExecutionType("sync");
-							}}
-						>
+						</ToggleGroupItem>
+						<ToggleGroupItem value="sync" size="sm">
 							Sync
-						</ToggleButton>
-					</ToggleButtonGroup>
-				</Stack>
-				<Modal open={openModal} fullWidth={true}>
-					<ListenerActionOverlay
-						id={id}
-						type={type}
-						listener={listener}
-						actionIdx={actionIndex}
-						onClose={() => setOpenModal(false)}
-					/>
-				</Modal>
+						</ToggleGroupItem>
+					</ToggleGroup>
+				</div>
+				<Dialog open={openModal} onOpenChange={(o) => setOpenModal(o)}>
+					<DialogContent className="max-w-sm">
+						<ListenerActionOverlay
+							id={id}
+							type={type}
+							listener={listener}
+							actionIdx={actionIndex}
+							onClose={() => setOpenModal(false)}
+						/>
+					</DialogContent>
+				</Dialog>
 			</>
 		);
 	},

@@ -1,33 +1,19 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 } from "@semoss/renderer";
-import { Button, Menu, Select, styled, Typography } from "@semoss/ui";
+import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
-
-const StyledMainContainer = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledSubSection = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "0.5rem",
-	marginLeft: "2px",
-}));
 
 interface ChangeOrientationProps {
 	id: string;
@@ -36,9 +22,8 @@ interface ChangeOrientationProps {
 export const ChangeOrientation = observer(({ id }: ChangeOrientationProps) => {
 	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 	const [orientationData, setOrientationData] = useState("LR");
-	const [changeOrientationUpdated, setChangeOrientationUpdated] =
-		useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const computedValue = useMemo(() => {
 		return computed(() => {
 			if (!data) {
@@ -54,36 +39,38 @@ export const ChangeOrientation = observer(({ id }: ChangeOrientationProps) => {
 		});
 	}, [data, "option"]).get();
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
 		const option =
 			typeof computedValue === "string"
 				? JSON.parse(computedValue)
 				: computedValue;
-		const seriesIndex = option["series"].findIndex(
+		const seriesIndex = option.series.findIndex(
 			(item) => item.type === "tree",
 		);
 
 		const orientation =
-			option["series"][seriesIndex]["orient"] || orientationData;
+			option.series[seriesIndex].orient || orientationData;
 		setOrientationData(orientation);
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
-		if (orientationData != "") {
+		if (orientationData !== "") {
 			const option =
 				typeof computedValue === "string"
 					? JSON.parse(computedValue)
 					: computedValue;
-			const seriesIndex = option["series"].findIndex(
+			const seriesIndex = option.series.findIndex(
 				(item) => item.type === "tree",
 			);
-			option["series"][seriesIndex]["orient"] = orientationData;
+			option.series[seriesIndex].orient = orientationData;
 			runStateUpdate(option);
-			setChangeOrientationUpdated(false);
 		}
 	}, [orientationData]);
 
-	function runStateUpdate(option) {
+	// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+	function runStateUpdate(option: any) {
 		setTimeout(() => {
 			try {
 				setData("option", option);
@@ -92,42 +79,33 @@ export const ChangeOrientation = observer(({ id }: ChangeOrientationProps) => {
 			}
 		}, 300);
 	}
+
 	function resetToInitialState() {
-		setChangeOrientationUpdated(false);
 		setOrientationData("LR");
 	}
 
 	return (
-		<StyledMainContainer>
-			<StyledSubSection display="flex" justifyContent="space-around">
-				<Typography variant="body2">Select Orientation</Typography>
+		<div className="flex flex-col p-2">
+			<div className="flex flex-col gap-2 p-2">
+				<span className="text-muted-foreground text-sm">
+					Select Orientation
+				</span>
 				<Select
-					name="Orientation"
 					value={orientationData}
-					onChange={(e: ChangeEvent<HTMLInputElement>) => {
-						console.log(e, "symbolshape");
-						setChangeOrientationUpdated(true);
-						setOrientationData(e.target.value);
-					}}
-					size="medium"
+					onValueChange={(val) => setOrientationData(val)}
 				>
-					<Menu.Item value="LR">Horizontal</Menu.Item>
-					<Menu.Item value="TB">Vertical</Menu.Item>
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder="Select" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="LR">Horizontal</SelectItem>
+						<SelectItem value="TB">Vertical</SelectItem>
+					</SelectContent>
 				</Select>
-			</StyledSubSection>
-			<StyledSubSection
-				display="flex"
-				justifyContent="end"
-				style={{ flexDirection: "row" }}
-			>
-				<Button
-					color="primary"
-					variant="contained"
-					onClick={resetToInitialState}
-				>
-					Reset
-				</Button>
-			</StyledSubSection>
-		</StyledMainContainer>
+			</div>
+			<div className="flex justify-end p-2">
+				<Button onClick={resetToInitialState}>Reset</Button>
+			</div>
+		</div>
 	);
 });
