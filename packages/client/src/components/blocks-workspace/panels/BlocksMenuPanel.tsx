@@ -1,23 +1,21 @@
-import { Search, Tune } from "@mui/icons-material";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
-	Divider,
-	Grid,
-	IconButton,
-	InputAdornment,
-	Modal,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Separator,
 	Skeleton,
-	Stack,
-	styled,
-	TextField,
-	ToggleTabsGroup,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Tabs,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { AddBlocksMenuCard } from "@/components/designer";
 import { AddClientBlockModal } from "@/components/designer/AddClientBlockModal";
 import { Panel } from "@/components/workspace";
@@ -30,76 +28,6 @@ import type {
 } from "../menus/menu-types";
 import { BlocksMenuPanelFilterMenu } from "./BlocksMenuPanelFilterMenu";
 
-const StyledTitle = styled("div")(({ theme }) => ({
-	borderRadius: "16px",
-	background: " #EBF4FE",
-	width: "fit-content",
-	marginTop: "8px",
-	paddingRight: theme.spacing(2),
-	paddingLeft: theme.spacing(2),
-	marginBottom: "8px",
-	backgroundColor: theme.palette.primary.selected,
-	color: theme.palette.info.dark,
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	border: "1px",
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-	width: "100%",
-}));
-
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 11px",
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
-
-const StyledMenu = styled("div")(({ theme }) => ({
-	height: "100%",
-	width: "100%",
-	overflowY: "auto",
-	overflowX: "hidden",
-	paddingBottom: theme.spacing(2),
-}));
-
-const StyledGridWrapper = styled("div")({
-	width: "100%",
-});
-
-const StyledTypography = styled(Typography)({
-	userSelect: "none",
-});
-
-const StyledTitleSpan = styled("span")({
-	color: "var(--Primary-Dark, #1260DD)",
-	fontFeatureSettings: "'liga' off, 'clig' off",
-	fontFamily: "Inter",
-	fontSize: "13px",
-	fontStyle: "normal",
-	fontWeight: 400,
-	lineHeight: "18px",
-	letterSpacing: "0.16px",
-});
-
-const StyledStack = styled(Stack)({
-	marginLeft: "16px",
-	marginTop: "8px",
-});
-
-const StyledTextFiled = styled(TextField)({
-	marginRight: "8px",
-	width: "95%",
-	borderRadius: "8px",
-});
 type MODE = "COMMUNITY" | "SYSTEM";
 export interface AddBlocksMenuProps {
 	/** Title to render in the menu */
@@ -118,14 +46,13 @@ const defaultSection = "Miscellaneous";
  */
 export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const { title, items } = props;
-	const notification = useNotification();
 	const { workspace } = useWorkspace();
 	const [search, setSearch] = useState("");
 	const [communityBlock, setCommunityBlock] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [mode, setMode] = useState<MODE>("SYSTEM");
 
-	const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+	const [filterMenuOpen, setFilterMenuOpen] = useState(false);
 	const [filterCategoryMap, setFilterCategoryMap] = useState<
 		Record<string, FilterCategory>
 	>({});
@@ -146,14 +73,11 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 		await runPixel("GetClientBlocks()").then((res) => {
 			const { pixelReturn, errors } = res;
 			if (errors.length) {
-				notification.add({
-					color: "error",
-					message: errors.join(""),
-				});
+				toast.error(errors.join(""));
 				setLoading(false);
 			} else {
 				const { output } = pixelReturn[0];
-				const res = (output as DesignerMenuItem[]).map((item) => {
+				const _res = (output as DesignerMenuItem[]).map((item) => {
 					return {
 						...item,
 						json: JSON.parse(JSON.stringify(item.json)),
@@ -171,22 +95,14 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	 * @param blockId - The unique identifier of the block to be deleted.
 	 */
 	const deleteBlock = (blockId: string) => {
-		setCommunityBlock(
-			communityBlock.filter((item) => item["id"] !== blockId),
-		);
+		setCommunityBlock(communityBlock.filter((item) => item.id !== blockId));
 		runPixel(`DeleteBlock(blockId = "${blockId}", hardDelete = true)`).then(
 			(res) => {
 				const { errors } = res;
 				if (errors.length || !res.pixelReturn[0].output) {
-					notification.add({
-						color: "error",
-						message: errors.join("") ?? "Error deleting block",
-					});
+					toast.error(errors.join("") ?? "Error deleting block");
 				} else {
-					notification.add({
-						color: "success",
-						message: "Block deleted successfully",
-					});
+					toast.success("Block deleted successfully");
 				}
 			},
 		);
@@ -196,35 +112,36 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	/**
 	 * Open the delete modal
 	 */
-	const handleOnTrashClick = (blockId: string, blockName: string) => {
+	const handleOnTrashClick = (blockId: string, _blockName: string) => {
 		workspace.openOverlay(() => (
 			<>
-				<Modal.Title>Delete Selected Block?</Modal.Title>
-				<Modal.Content>
-					<Typography variant="body2">
+				<DialogHeader>
+					<DialogTitle>Delete Selected Block?</DialogTitle>
+				</DialogHeader>
+				<div className="px-6 py-4">
+					<p className="text-muted-foreground text-sm">
 						You will permanently remove the block from the community
 						block section.
-					</Typography>
-				</Modal.Content>
-				<Modal.Actions>
+					</p>
+				</div>
+				<DialogFooter>
 					<Button
-						variant={"text"}
-						color="secondary"
+						variant="ghost"
 						onClick={() => workspace.closeOverlay()}
 					>
 						Cancel
 					</Button>
 					<Button
-						color={"error"}
-						variant={"contained"}
+						variant="destructive"
 						onClick={() => deleteBlock(blockId)}
 					>
 						Delete
 					</Button>
-				</Modal.Actions>
+				</DialogFooter>
 			</>
 		));
 	};
+
 	const handleOnEditClick = (blockId: string, item: DesignerMenuItem) => {
 		workspace.openOverlay(() => (
 			<AddClientBlockModal
@@ -237,6 +154,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 		));
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const sortedItems = useMemo(() => {
 		// Use community Block when mode is COMMUNITY otherwise use items from the props
 		const dataToProcess = mode === "COMMUNITY" ? communityBlock : items;
@@ -359,93 +277,85 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
 	return (
 		<Panel>
-			<Stack height="100%" spacing={undefined}>
-				<StyledTitle>
-					<StyledTitleSpan>{title}</StyledTitleSpan>
-				</StyledTitle>
-				<StyledStack>
-					<StyledTextFiled
-						placeholder="Search"
-						size="small"
-						fullWidth
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-						InputProps={{
-							startAdornment: (
-								<InputAdornment position="start">
-									<Search />
-								</InputAdornment>
-							),
-							endAdornment: (
-								<InputAdornment position="end">
-									<IconButton
-										size="small"
-										onClick={(e) =>
-											setMenuAnchorEl(e.currentTarget)
-										}
-									>
-										<Badge
-											variant="dot"
-											invisible={!anyEnabledFilter}
-											color="primary"
-										>
-											<Tune />
-										</Badge>
-									</IconButton>
-								</InputAdornment>
-							),
-						}}
-					/>
-					<StyledToggleTabsGroup
+			<div className="flex h-full flex-col">
+				<div className="mt-2 mb-2 w-fit rounded-2xl bg-[#EBF4FE] px-4">
+					<span className="font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
+						{title}
+					</span>
+				</div>
+				<div className="mx-3 mt-2 flex flex-col gap-2">
+					<div className="relative w-full">
+						<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+						<Input
+							placeholder="Search"
+							className="w-full pr-10 pl-9"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+						/>
+						<button
+							type="button"
+							className="-translate-y-1/2 absolute top-1/2 right-2 rounded p-1 hover:bg-accent"
+							onClick={() => setFilterMenuOpen(true)}
+						>
+							<Badge
+								variant={
+									anyEnabledFilter ? "default" : "outline"
+								}
+								className="p-0.5"
+							>
+								<SlidersHorizontal className="size-4" />
+							</Badge>
+						</button>
+					</div>
+					<Tabs
 						value={mode}
-						onChange={(e: React.SyntheticEvent, val) => {
+						onValueChange={(val) => {
 							setMode(val as MODE);
 							if (val === "COMMUNITY") {
 								getClientBlocks();
 							}
 						}}
+						className="w-full"
 					>
-						<StyledToggleTabsGroupItem
-							label="System Blocks"
-							value={"SYSTEM"}
-						/>
-						<StyledToggleTabsGroupItem
-							label="Community Blocks"
-							value={"COMMUNITY"}
-						/>
-					</StyledToggleTabsGroup>
-				</StyledStack>
+						<TabsList className="w-full">
+							<TabsTrigger
+								value="SYSTEM"
+								className="min-w-0 flex-1"
+							>
+								System Blocks
+							</TabsTrigger>
+							<TabsTrigger
+								value="COMMUNITY"
+								className="min-w-0 flex-1"
+							>
+								Community Blocks
+							</TabsTrigger>
+						</TabsList>
+					</Tabs>
+				</div>
 
 				{renderedItems.length ? (
-					<StyledMenu>
+					<div className="h-full w-full overflow-y-auto overflow-x-hidden pb-4">
 						{renderedItems.map((sectionItems, index) => (
-							<Stack
+							<div
 								key={sectionItems[0].section ?? defaultSection}
-								width="100%"
+								className="w-full"
 							>
 								{index > 0 && (
-									<Stack paddingTop={1}>
-										<Divider variant="fullWidth" flexItem />
-									</Stack>
+									<div className="pt-2">
+										<Separator />
+									</div>
 								)}
-								<Stack padding={2}>
-									<StyledTypography
-										variant="subtitle2"
-										key={index}
-									>
+								<div className="p-4">
+									<p className="m-0 select-none font-semibold text-gray-500 text-xs uppercase tracking-[0.05em]">
 										{sectionItems[0].section ??
 											defaultSection}
-									</StyledTypography>
-								</Stack>
-								<StyledGridWrapper>
-									<Grid
-										container
-										spacing={2}
-										width="100%"
-										paddingLeft={2}
-									>
+									</p>
+								</div>
+								<div className="w-full">
+									<div className="grid w-full grid-cols-2 gap-4 pl-4">
 										{sectionItems.map((block) => (
-											<Grid item key={block.name}>
+											<div key={block.name}>
 												<AddBlocksMenuCard
 													item={block}
 													isCommunity={isCommunity}
@@ -456,36 +366,35 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 														handleOnEditClick
 													}
 												/>
-											</Grid>
+											</div>
 										))}
-									</Grid>
-								</StyledGridWrapper>
-							</Stack>
+									</div>
+								</div>
+							</div>
 						))}
-					</StyledMenu>
+					</div>
 				) : (
-					<Stack padding={2}>
+					<div className="p-4">
 						{loading ? (
-							<Grid container gap={2} width="100%">
+							<div className="flex w-full flex-wrap gap-4">
 								{[1, 2, 3].map((n) => (
 									<Skeleton
-										variant="rectangular"
-										height={133}
-										width={133}
+										key={n}
+										className="h-[133px] w-[133px]"
 									/>
 								))}
-							</Grid>
+							</div>
 						) : (
-							<Typography variant="subtitle2">
+							<p className="text-muted-foreground text-sm">
 								No items found
-							</Typography>
+							</p>
 						)}
-					</Stack>
+					</div>
 				)}
-			</Stack>
+			</div>
 			<BlocksMenuPanelFilterMenu
-				anchorEl={menuAnchorEl}
-				onClose={() => setMenuAnchorEl(null)}
+				open={filterMenuOpen}
+				onClose={() => setFilterMenuOpen(false)}
 				categoryMap={filterCategoryMap}
 				setCategoryMap={setFilterCategoryMap}
 			/>
