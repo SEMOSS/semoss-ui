@@ -26,7 +26,6 @@
     "license": "ISC",
     "dependencies": {
         "@mui/x-data-grid": "^7.28.3",
-        "@mui/x-date-pickers": "6.8.0",
         "dayjs": "1.11.8",
         "echarts-wordcloud": "^2.1.0",
         "mermaid": "^11.12.3"
@@ -66,7 +65,6 @@
     "peerDependencies": {
         "@emotion/react": "11.11.1",
         "@emotion/styled": "11.11.0",
-        "@mui/icons-material": "6.0.0",
         "@mui/material": "6.0.0",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
