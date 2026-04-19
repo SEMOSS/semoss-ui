@@ -346,9 +346,6 @@ export const DataTabStyling = observer(
 					<div className="fixed inset-0 z-50 flex items-start justify-start pt-[14vh] pl-[51vw]">
 						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item*/}
-						{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-						visual item // biome-ignore
-						lint/a11y/useKeyWithClickEvents: visual item
 						{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
 						<div
@@ -558,9 +555,6 @@ export const DataTabStyling = observer(
 					>
 						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 						{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item*/}
-						{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-						visual item // biome-ignore
-						lint/a11y/useKeyWithClickEvents: visual item
 						{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
 						{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
 						// biome-ignore lint/a11y/useKeyWithClickEvents: visual

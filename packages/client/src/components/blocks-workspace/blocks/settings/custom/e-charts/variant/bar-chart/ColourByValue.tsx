@@ -451,9 +451,7 @@ const ColourByValue = observer(
 									<td className="py-1">
 										<div className="flex gap-2">
 											{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-											// biome-ignore
-											lint/a11y/useButtonType: handled by
-											caller
+											// biome-ignore caller
 											{/* biome-ignore lint/a11y/useButtonType: handled by parent */}
 											<button
 												className="text-muted-foreground hover:text-foreground"
@@ -467,9 +465,7 @@ const ColourByValue = observer(
 												<Trash2 className="h-4 w-4" />
 											</button>
 											{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-											// biome-ignore
-											lint/a11y/useButtonType: handled by
-											caller
+											// biome-ignore caller
 											{/* biome-ignore lint/a11y/useButtonType: handled by parent */}
 											<button
 												className="text-muted-foreground hover:text-foreground"

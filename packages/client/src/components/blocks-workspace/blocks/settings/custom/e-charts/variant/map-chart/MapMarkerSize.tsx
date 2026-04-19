@@ -69,9 +69,6 @@ export const MapMarkerSize = observer(
 				<span className="text-muted-foreground text-sm">
 					Marker Size
 				</span>
-				{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-				{/* biome-ignore lint/correctness/useUniqueElementIds: component */}
-				instance ids
 				{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 				<Input
 					id="Symbol Size"

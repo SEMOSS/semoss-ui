@@ -195,8 +195,6 @@ export const EditYAxisStackChart = observer(
 							<span className="text-sm">Set Y Axis Title</span>
 							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 							// biome-ignore
-							lint/correctness/useUniqueElementIds: component
-							instance ids
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="yaxis-title"
@@ -210,8 +208,6 @@ export const EditYAxisStackChart = observer(
 							</span>
 							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 							// biome-ignore
-							lint/correctness/useUniqueElementIds: component
-							instance ids
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="yaxis-edit-title-font-size"
@@ -237,8 +233,6 @@ export const EditYAxisStackChart = observer(
 							</span>
 							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 							// biome-ignore
-							lint/correctness/useUniqueElementIds: component
-							instance ids
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="yaxis-label-font-size"

@@ -13,8 +13,6 @@ export function ColorPickerWithSwatch({ value, onChange }: colorPickerProps) {
 			// biome-ignore lint/suspicious/noCommentText: original comment text
 			// biome-ignore lint/suspicious/noCommentText: JSX comment in text
 			node
-			{/* biome-ignore lint/correctness/useUniqueElementIds: component */}
-			instance ids
 			{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 			<Input
 				id="color-input"

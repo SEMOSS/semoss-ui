@@ -450,8 +450,6 @@ export const CustomizeSymbol = observer(
 						>
 							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 							// biome-ignore
-							lint/correctness/useUniqueElementIds: component
-							instance ids
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<SelectTrigger
 								className="w-full"

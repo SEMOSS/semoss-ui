@@ -176,8 +176,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 							<div className="flex items-center gap-2 pl-3">
 								{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 								// biome-ignore
-								lint/correctness/useUniqueElementIds: component
-								instance ids
 								{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 								<Checkbox
 									id="enable-export"

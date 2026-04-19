@@ -288,23 +288,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 									onOpenChange={setDropdownOpen}
 								>
 									<PopoverTrigger asChild>
-										{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-										{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-										// biome-ignore
-										lint/suspicious/noCommentText: original
-										comment text // biome-ignore
-										lint/suspicious/noCommentText: JSX
-										comment in text node // biome-ignore
-										lint/a11y/noStaticElementInteractions:
-										visual item // biome-ignore
-										lint/a11y/useKeyWithClickEvents: visual
-										item
-										{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
-										{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
-										{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-										// biome-ignore
-										lint/a11y/useKeyWithClickEvents: visual
-										item
 										{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
 										{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
 										<div
@@ -336,25 +319,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 										className="w-[var(--radix-popover-trigger-width)] p-0"
 										align="start"
 									>
-										{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
 										<div className="flex max-h-[200px] flex-col overflow-y-auto">
-											{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-											// biome-ignore
-											lint/suspicious/noCommentText:
-											original comment text //
-											biome-ignore
-											lint/suspicious/noCommentText: JSX
-											comment in text node // biome-ignore
-											lint/a11y/noStaticElementInteractions:
-											visual item // biome-ignore
-											lint/a11y/useKeyWithClickEvents:
-											{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
-											{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
-											{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-											{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
-											// biome-ignore
-											lint/a11y/useKeyWithClickEvents:
-											visual item
 											{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
 											{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
 											<div
