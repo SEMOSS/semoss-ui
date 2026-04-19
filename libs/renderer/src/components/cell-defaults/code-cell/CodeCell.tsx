@@ -556,7 +556,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 			<div className="flex flex-row gap-2">
 				{allFunctions.length > 0 && (
-					<div className="w-[98%]">
+					<div className="min-w-0 flex-1">
 						{!isExpanded ? (
 							<Suspense fallback={<>...</>}>
 								{EDITOR_TYPE[cell.parameters.type].language ===
