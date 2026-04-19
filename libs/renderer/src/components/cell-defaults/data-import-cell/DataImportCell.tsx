@@ -463,7 +463,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							value={dataLimit ?? ""}
 							onChange={handleDataLimitUpdate}
 							disabled={cell.parameters.enableBatching ?? false}
-							className="h-[30px] w-[100px]"
+							className="h-[30px] w-[120px]"
 							key="data-limit-number"
 						/>
 						<Button
@@ -482,7 +482,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 								dispatch("parameters.frameType", val)
 							}
 						>
-							<SelectTrigger className="h-[30px] w-[140px]">
+							<SelectTrigger className="h-[30px] w-[125px]">
 								<Maximize2 className="mr-1 size-4 shrink-0" />
 								<SelectValue placeholder="Frame type" />
 							</SelectTrigger>
@@ -501,13 +501,13 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 						</Select>
 
 						<div className="relative flex items-center">
-							<FilePenLine className="absolute left-2 size-4 text-muted-foreground" />
+							<FilePenLine className="-translate-y-1/2 absolute top-1/2 left-2 size-4 text-muted-foreground" />
 							<Input
 								title="Set Frame Variable Name"
 								value={cell.parameters.frameVariableName}
 								key={`frame-variable-name-${cell.id}`}
 								disabled={cell.isLoading}
-								className="h-[30px] w-[200px] pl-7"
+								className="h-[30px] w-[150px] pl-9"
 								onChange={(e) =>
 									dispatch(
 										"parameters.frameVariableName",

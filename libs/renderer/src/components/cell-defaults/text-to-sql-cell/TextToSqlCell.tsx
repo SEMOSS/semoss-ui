@@ -332,12 +332,12 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 			{isExpanded && (
 				<div className="flex flex-row items-center justify-start gap-4 px-4">
 					<div className="relative flex items-center">
-						<FilePenLine className="absolute left-2 size-4 text-muted-foreground" />
+						<FilePenLine className="-translate-y-1/2 absolute top-1/2 left-2 size-4 text-muted-foreground" />
 						<Input
 							title="Set Frame Variable Name"
 							value={cell.parameters.frameVariableName}
 							disabled={cell.isLoading}
-							className="h-[40px] pl-7"
+							className="h-[40px] pl-9"
 							data-testid={`frame-variable-${cell.id}`}
 							onChange={(e) =>
 								runStateDispatch([

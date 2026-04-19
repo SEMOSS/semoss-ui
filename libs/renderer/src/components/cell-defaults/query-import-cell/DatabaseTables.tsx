@@ -63,13 +63,13 @@ export const DatabaseTables = (props: { databaseId: string }) => {
 	}
 
 	return (
-		<div>
-			<div className="flex w-full flex-row gap-4 overflow-auto p-0.5">
+		<div className="w-full overflow-hidden">
+			<div className="flex flex-row gap-4 overflow-x-auto p-0.5">
 				{Array.from(Object.keys(tables), (tableName, index) => (
 					<div
 						// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 						key={`${tableName}-${index}`}
-						className="min-w-[140px] rounded-md border bg-card shadow-sm"
+						className="min-w-[140px] shrink-0 rounded-md border bg-card shadow-sm"
 					>
 						<div className="flex items-center gap-2 px-3 py-2">
 							<Table className="size-4 shrink-0" />
@@ -78,7 +78,7 @@ export const DatabaseTables = (props: { databaseId: string }) => {
 							</span>
 						</div>
 						<Separator />
-						<ul className="max-h-[60px] overflow-auto">
+						<ul className="max-h-[160px] overflow-y-auto">
 							{Array.from(
 								tables[tableName].columnNames,
 								(columnName: string, idx) => (

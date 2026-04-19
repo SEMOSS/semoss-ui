@@ -216,7 +216,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			});
 
 		return (
-			<div className="relative flex w-full flex-col gap-2">
+			<div className="relative flex w-full min-w-0 flex-col gap-2 overflow-hidden">
 				{isExpanded && (
 					<div className="flex flex-col gap-1">
 						<div className="flex flex-row items-center justify-between">
@@ -284,7 +284,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 					</Suspense>
 				</div>
 				{isExpanded && (
-					<div className="flex flex-row flex-nowrap items-center justify-end gap-4">
+					<div className="flex flex-row flex-nowrap items-center justify-end gap-2">
 						<Select
 							disabled={cell.isLoading}
 							value={cell.parameters.frameType}
@@ -292,7 +292,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								dispatch("parameters.frameType", val)
 							}
 						>
-							<SelectTrigger className="h-[30px] w-[120px]">
+							<SelectTrigger className="h-[30px] w-[125px]">
 								<Maximize2 className="mr-1 size-4 shrink-0" />
 								<SelectValue placeholder="Frame type" />
 							</SelectTrigger>
@@ -310,12 +310,12 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							</SelectContent>
 						</Select>
 						<div className="relative flex items-center">
-							<FilePenLine className="absolute left-2 size-4 text-muted-foreground" />
+							<FilePenLine className="-translate-y-1/2 absolute top-1/2 left-2 size-4 text-muted-foreground" />
 							<Input
 								title="Set Frame Variable Name"
 								value={cell.parameters.frameVariableName}
 								disabled={cell.isLoading}
-								className="h-[30px] w-[150px] pl-7"
+								className="h-[30px] w-[150px] pl-9"
 								onChange={(e) =>
 									dispatch(
 										"parameters.frameVariableName",
@@ -342,9 +342,11 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 									}
 								}}
 							/>
-							<span className="text-muted-foreground text-sm">
-								Enable Batching
-							</span>
+							{!cell.parameters.enableBatching && (
+								<span className="text-muted-foreground text-sm">
+									Enable Batching
+								</span>
+							)}
 						</label>
 						{cell.parameters.enableBatching && (
 							<>
