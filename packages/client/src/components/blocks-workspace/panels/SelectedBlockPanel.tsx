@@ -505,7 +505,7 @@ export const SelectedBlockPanel = observer(() => {
 						)}
 					</div>
 				</div>
-				<div className="h-full w-full flex-1 overflow-y-auto pb-1">
+				<div className="h-full w-full flex-1 overflow-y-auto pr-2 pb-1">
 					{!!menu &&
 						createElement(menu, {
 							id: block.id,
