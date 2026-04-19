@@ -1,6 +1,6 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -9,6 +9,8 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
+	Popover,
+	PopoverTrigger,
 	Separator,
 	Skeleton,
 	Tabs,
@@ -18,7 +20,6 @@ import {
 } from "@semoss/ui/next";
 import { AddBlocksMenuCard } from "@/components/designer";
 import { AddClientBlockModal } from "@/components/designer/AddClientBlockModal";
-import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { SECTION_ORDER } from "../menus/default-menu";
 import type {
@@ -51,11 +52,16 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const [communityBlock, setCommunityBlock] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [mode, setMode] = useState<MODE>("SYSTEM");
+	const [stackTabs, setStackTabs] = useState(false);
 
 	const [filterMenuOpen, setFilterMenuOpen] = useState(false);
 	const [filterCategoryMap, setFilterCategoryMap] = useState<
 		Record<string, FilterCategory>
 	>({});
+
+	const tabsListRef = useRef<HTMLDivElement | null>(null);
+	const systemLabelRef = useRef<HTMLSpanElement | null>(null);
+	const communityLabelRef = useRef<HTMLSpanElement | null>(null);
 
 	const anyEnabledFilter = useMemo(
 		() =>
@@ -248,10 +254,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
 	useEffect(() => {
 		setFilterCategoryMap(() => {
-			const uniqueSectionMap = items.reduce((acc, curr) => {
-				acc[curr.section] = true;
-				return acc;
-			}, {});
+			const uniqueSectionMap = items.reduce(
+				(acc, curr) => {
+					acc[curr.section] = true;
+					return acc;
+				},
+				{} as Record<string, boolean>,
+			);
 			const sortedSections = Object.keys(uniqueSectionMap).sort();
 			return sortedSections.reduce(
 				(acc, curr) => {
@@ -273,106 +282,201 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 		});
 	}, [items]);
 
+	const updateTabLayout = useCallback(() => {
+		const tabsList = tabsListRef.current;
+		const labels = [systemLabelRef.current, communityLabelRef.current];
+		const triggers =
+			tabsList?.querySelectorAll<HTMLElement>("[role='tab']");
+		if (
+			!tabsList ||
+			!triggers?.length ||
+			triggers.length < 2 ||
+			labels.some((label) => !label)
+		) {
+			return;
+		}
+
+		const styles = window.getComputedStyle(tabsList);
+		const columnGap =
+			Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
+		const availablePerTab = (tabsList.clientWidth - columnGap) / 2;
+		const triggerStyles = window.getComputedStyle(triggers[0]);
+		const triggerHorizontalPadding =
+			(Number.parseFloat(triggerStyles.paddingLeft || "0") || 0) +
+			(Number.parseFloat(triggerStyles.paddingRight || "0") || 0);
+		const borderAllowance = 6;
+
+		const shouldStack = labels.some((label) => {
+			return (
+				label.scrollWidth + triggerHorizontalPadding + borderAllowance >
+				availablePerTab
+			);
+		});
+		setStackTabs(shouldStack);
+	}, []);
+
+	useEffect(() => {
+		updateTabLayout();
+		const tabsList = tabsListRef.current;
+		if (!tabsList) {
+			return;
+		}
+
+		if (typeof ResizeObserver === "undefined") {
+			window.addEventListener("resize", updateTabLayout);
+			return () => window.removeEventListener("resize", updateTabLayout);
+		}
+
+		const observer = new ResizeObserver(() => {
+			updateTabLayout();
+		});
+		observer.observe(tabsList);
+
+		return () => observer.disconnect();
+	}, [updateTabLayout]);
+
 	const isCommunity = mode === "COMMUNITY";
 
 	return (
-		<Panel>
-			<div className="flex h-full flex-col">
-				<div className="mt-2 mb-2 w-fit rounded-2xl bg-[#EBF4FE] px-4">
+		<div
+			style={{
+				position: "absolute",
+				inset: 0,
+				display: "flex",
+				flexDirection: "column",
+				overflow: "hidden",
+				backgroundColor: "#fff",
+			}}
+		>
+			<div
+				style={{ flexShrink: 0 }}
+				className="flex w-full flex-col gap-2 px-3 py-1"
+			>
+				<div className="w-fit rounded-2xl bg-[#EBF4FE] px-4">
 					<span className="font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
 						{title}
 					</span>
 				</div>
-				<div className="mx-3 mt-2 flex flex-col gap-2">
-					<div className="relative w-full">
-						<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-						<Input
-							placeholder="Search"
-							className="w-full pr-10 pl-9"
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-						<button
-							type="button"
-							className="-translate-y-1/2 absolute top-1/2 right-2 rounded p-1 hover:bg-accent"
-							onClick={() => setFilterMenuOpen(true)}
-						>
-							<Badge
-								variant={
-									anyEnabledFilter ? "default" : "outline"
-								}
-								className="p-0.5"
-							>
-								<SlidersHorizontal className="size-4" />
-							</Badge>
-						</button>
-					</div>
-					<Tabs
-						value={mode}
-						onValueChange={(val) => {
-							setMode(val as MODE);
-							if (val === "COMMUNITY") {
-								getClientBlocks();
-							}
-						}}
-						className="w-full"
+				<div className="relative w-full">
+					<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+					<Input
+						placeholder="Search"
+						className="w-full pr-10 pl-9"
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+					/>
+					<Popover
+						open={filterMenuOpen}
+						onOpenChange={setFilterMenuOpen}
 					>
-						<TabsList className="w-full">
-							<TabsTrigger
-								value="SYSTEM"
-								className="min-w-0 flex-1"
+						<PopoverTrigger asChild>
+							<button
+								type="button"
+								className="-translate-y-1/2 absolute top-1/2 right-2 rounded p-1 hover:bg-accent"
+							>
+								<Badge
+									variant={
+										anyEnabledFilter ? "default" : "outline"
+									}
+									className="p-0.5"
+								>
+									<SlidersHorizontal className="size-4" />
+								</Badge>
+							</button>
+						</PopoverTrigger>
+						<BlocksMenuPanelFilterMenu
+							categoryMap={filterCategoryMap}
+							setCategoryMap={setFilterCategoryMap}
+							onClose={() => setFilterMenuOpen(false)}
+						/>
+					</Popover>
+				</div>
+				<Tabs
+					value={mode}
+					onValueChange={(val) => {
+						setMode(val as MODE);
+						if (val === "COMMUNITY") {
+							getClientBlocks();
+						}
+					}}
+					className="w-full"
+				>
+					<TabsList
+						ref={tabsListRef}
+						className={`grid w-full gap-0.5 ${stackTabs ? "grid-cols-1" : "grid-cols-2"}`}
+					>
+						<TabsTrigger
+							value="SYSTEM"
+							className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
+						>
+							<span
+								ref={systemLabelRef}
+								className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
+								title="System Blocks"
 							>
 								System Blocks
-							</TabsTrigger>
-							<TabsTrigger
-								value="COMMUNITY"
-								className="min-w-0 flex-1"
+							</span>
+						</TabsTrigger>
+						<TabsTrigger
+							value="COMMUNITY"
+							className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
+						>
+							<span
+								ref={communityLabelRef}
+								className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
+								title="Community Blocks"
 							>
 								Community Blocks
-							</TabsTrigger>
-						</TabsList>
-					</Tabs>
-				</div>
-
+							</span>
+						</TabsTrigger>
+					</TabsList>
+				</Tabs>
+			</div>
+			<div
+				style={{
+					flex: 1,
+					minHeight: 0,
+					overflowY: "auto",
+					overflowX: "hidden",
+				}}
+				className="pb-4"
+			>
 				{renderedItems.length ? (
-					<div className="h-full w-full overflow-y-auto overflow-x-hidden pb-4">
-						{renderedItems.map((sectionItems, index) => (
-							<div
-								key={sectionItems[0].section ?? defaultSection}
-								className="w-full"
-							>
-								{index > 0 && (
-									<div className="pt-2">
-										<Separator />
-									</div>
-								)}
-								<div className="p-4">
-									<p className="m-0 select-none font-semibold text-gray-500 text-xs uppercase tracking-[0.05em]">
-										{sectionItems[0].section ??
-											defaultSection}
-									</p>
+					renderedItems.map((sectionItems, index) => (
+						<div
+							key={sectionItems[0].section ?? defaultSection}
+							className="w-full"
+						>
+							{index > 0 && (
+								<div className="pt-2">
+									<Separator />
 								</div>
-								<div className="w-full">
-									<div className="grid w-full grid-cols-2 gap-4 pl-4">
-										{sectionItems.map((block) => (
-											<div key={block.name}>
-												<AddBlocksMenuCard
-													item={block}
-													isCommunity={isCommunity}
-													handleOnTrashClick={
-														handleOnTrashClick
-													}
-													handleOnEditClick={
-														handleOnEditClick
-													}
-												/>
-											</div>
-										))}
-									</div>
+							)}
+							<div className="px-3 pt-2 pb-1.5">
+								<p className="m-0 select-none font-semibold text-gray-500 text-xs uppercase tracking-[0.05em]">
+									{sectionItems[0].section ?? defaultSection}
+								</p>
+							</div>
+							<div className="w-full">
+								<div className="grid w-full gap-2 px-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
+									{sectionItems.map((block) => (
+										<div key={block.name}>
+											<AddBlocksMenuCard
+												item={block}
+												isCommunity={isCommunity}
+												handleOnTrashClick={
+													handleOnTrashClick
+												}
+												handleOnEditClick={
+													handleOnEditClick
+												}
+											/>
+										</div>
+									))}
 								</div>
 							</div>
-						))}
-					</div>
+						</div>
+					))
 				) : (
 					<div className="p-4">
 						{loading ? (
@@ -392,12 +496,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 					</div>
 				)}
 			</div>
-			<BlocksMenuPanelFilterMenu
-				open={filterMenuOpen}
-				onClose={() => setFilterMenuOpen(false)}
-				categoryMap={filterCategoryMap}
-				setCategoryMap={setFilterCategoryMap}
-			/>
-		</Panel>
+		</div>
 	);
 });
