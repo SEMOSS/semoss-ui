@@ -143,7 +143,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	/**
 	 * Handle the mouseup event on the document
 	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: isCommunity and notification are stable
 	const handleDocumentMouseUp = useCallback(async () => {
 		if (!designer.drag.active) {
 			return;
@@ -305,6 +304,8 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	}, [
 		item.name,
 		item.json,
+		isCommunity,
+		notification,
 		designer.drag.active,
 		designer.drag.placeholderAction,
 		designer,
