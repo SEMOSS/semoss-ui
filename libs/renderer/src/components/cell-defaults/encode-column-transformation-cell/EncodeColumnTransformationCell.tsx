@@ -70,7 +70,11 @@ export const EncodeColumnTransformationCell: CellComponent<EncodeColumnTransform
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
-					if (cell.widget === "query-import") frameList.push(cell);
+					if (
+						cell.widget === "query-import" ||
+						cell.widget === "data-import"
+					)
+						frameList.push(cell);
 				});
 			});
 			return frameList;

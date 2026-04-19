@@ -75,7 +75,11 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
-					if (cell.widget === "query-import") frameList.push(cell);
+					if (
+						cell.widget === "query-import" ||
+						cell.widget === "data-import"
+					)
+						frameList.push(cell);
 				});
 			});
 			return frameList;
@@ -83,7 +87,9 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 
 		const targetCells: CellState<QueryImportCellDef>[] = computed(() => {
 			return frames.filter(
-				(item) => item.widget === "query-import",
+				(item) =>
+					item.widget === "query-import" ||
+					item.widget === "data-import",
 			) as CellState<QueryImportCellDef>[];
 		}).get();
 
