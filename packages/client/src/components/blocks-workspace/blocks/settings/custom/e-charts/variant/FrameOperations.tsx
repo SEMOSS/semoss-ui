@@ -1761,7 +1761,7 @@ export const FrameOperations = observer(
 				<div className="flex h-full w-full items-stretch justify-between p-2">
 					{/* Left: Dimension panel */}
 					<div className="flex min-h-[639px] w-[40%] flex-col items-center border-[#ccc] border-r p-2">
-						<span className="relative self-start p-2 text-[#808080] text-base">
+						<span className="relative self-start p-2 text-[#808080] text-sm">
 							Dimension
 						</span>
 						<div className="w-[95%] pt-2">

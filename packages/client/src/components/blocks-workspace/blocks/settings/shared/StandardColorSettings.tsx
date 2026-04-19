@@ -1,4 +1,3 @@
-import { PaintBucket } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -11,28 +10,13 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Button, Input, Muted } from "@semoss/ui/next";
+import { Muted } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface StandardColorSettingProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
-	/**
-	 * Label to pass into the input
-	 */
 	label: string;
-
-	/**
-	 * Path to update
-	 */
 	path: Paths<Block<D>["data"], 4>;
-
-	/**
-	 * required fields
-	 */
 	onChange?: (color: string) => void;
 }
 
@@ -44,22 +28,19 @@ export const StandardColorSettings = observer(
 		onChange,
 	}: StandardColorSettingProps<D>) => {
 		const [color, setColor] = useState("#FFFFFF");
-		const [showPicker, setShowPicker] = useState(false);
 		const { state } = useBlocks();
 		// biome-ignore lint/suspicious/noExplicitAny: TODO
 		const { data, setData } = useBlockSettings<any>(id);
 
-		// get the value of the input (wrapped in usememo because of path prop)
 		const computedColor = useMemo(() => {
 			return computed(() => {
-				if (!data) return "#FFFFFF"; // fallback
+				if (!data) return "#FFFFFF";
 				const v = getValueByPath(data, path);
 				if (typeof v === "string") return v;
-				return "#FFFFFF"; // fallback if not a string
+				return "#FFFFFF";
 			});
 		}, [data, path]).get();
 
-		// update the value whenever the computed one changes
 		useEffect(() => {
 			setColor(computedColor);
 		}, [computedColor]);
@@ -68,11 +49,9 @@ export const StandardColorSettings = observer(
 			// biome-ignore lint/suspicious/noExplicitAny: TODO
 			(newColor: any) => {
 				const hexColor = newColor.hex ?? newColor;
-
 				setColor(hexColor);
 				setData(path, hexColor as PathValue<D["data"], typeof path>);
 				onChange?.(hexColor);
-
 				state.dispatch({
 					message: ActionMessages.DISPATCH_EVENT,
 					payload: { name: "blockResized" },
@@ -84,43 +63,23 @@ export const StandardColorSettings = observer(
 		return (
 			<div className="flex flex-col gap-1">
 				<Muted>{label}</Muted>
-				<div className="flex items-center justify-between gap-1">
-					<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2">
+					<div className="relative h-7 w-7 shrink-0">
+						<input
+							type="color"
+							value={color}
+							onChange={(e) => handleColorChange(e.target.value)}
+							className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+							autoComplete="off"
+							data-testid={`colorSettings-${label}-txt`}
+						/>
 						<div
-							className="h-[33px] w-[33px] rounded border border-[#ccc]"
+							className="h-full w-full rounded border border-input shadow-xs"
 							style={{ backgroundColor: color }}
 						/>
-						<Muted>{color}</Muted>
 					</div>
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						onClick={() => setShowPicker(!showPicker)}
-					>
-						<PaintBucket />
-					</Button>
+					<Muted className="font-mono text-xs">{color}</Muted>
 				</div>
-
-				{showPicker && (
-					// biome-ignore lint/a11y/noStaticElementInteractions: color swatch
-					<div
-						className="mt-1 flex justify-end"
-						onMouseLeave={() => setShowPicker(false)}
-					>
-						<div className="rounded">
-							<Input
-								className="h-8 w-full p-0.5"
-								type="color"
-								value={color}
-								onChange={(e) =>
-									handleColorChange(e.target.value)
-								}
-								autoComplete="off"
-								data-testid={`colorSettings-${label}-txt`}
-							/>
-						</div>
-					</div>
-				)}
 			</div>
 		);
 	},

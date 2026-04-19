@@ -494,6 +494,7 @@ export const SizeSpacingSettings = observer(
 				)}
 				<ToggleGroup
 					type="single"
+					variant="outline"
 					value={parsed.unit}
 					onValueChange={(val) => {
 						if (val)

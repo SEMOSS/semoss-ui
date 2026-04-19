@@ -386,7 +386,7 @@ export const PDFViewerSettings = observer(
 
 					<TabsContent value="Insight">
 						<SubSection>
-							<span className="relative pl-[9px] text-base text-secondary">
+							<span className="relative pl-[9px] text-secondary text-sm">
 								{selectedTab}
 							</span>
 							<InsightTab options={options} />
@@ -395,7 +395,7 @@ export const PDFViewerSettings = observer(
 
 					<TabsContent value="Engine">
 						<SubSection>
-							<span className="relative pl-[9px] text-base text-secondary">
+							<span className="relative pl-[9px] text-secondary text-sm">
 								{selectedTab}
 							</span>
 							<EngineTab
@@ -414,7 +414,7 @@ export const PDFViewerSettings = observer(
 
 					<TabsContent value="App">
 						<SubSection>
-							<span className="relative pl-[9px] text-base text-secondary">
+							<span className="relative pl-[9px] text-secondary text-sm">
 								{selectedTab === "App" && uploadFiles
 									? "File Selected"
 									: selectedTab}
@@ -591,7 +591,7 @@ const AppTab: React.FC<{
 				</div>
 				<div className="flex items-center pt-2">
 					<Info className="size-4 cursor-pointer text-secondary" />
-					<span className="relative pl-[9px] text-base text-secondary">
+					<span className="relative pl-[9px] text-secondary text-sm">
 						Delete current file to upload a new one
 					</span>
 				</div>
@@ -618,7 +618,7 @@ const AppTab: React.FC<{
 					))}
 				</select>
 				<div className="mb-2 flex items-center justify-center">
-					<span className="relative pl-[9px] text-base text-secondary">
+					<span className="relative pl-[9px] text-secondary text-sm">
 						Or
 					</span>
 				</div>

@@ -56,7 +56,7 @@ export const VisualMap = observer(
 						className="absolute top-0 z-10 ml-[84%] cursor-pointer text-[#808080]"
 						onClick={handleClose}
 					/>
-					<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-base">
+					<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-sm">
 						Select a chart type for your data visualization
 					</span>
 				</div>
@@ -76,7 +76,7 @@ export const VisualMap = observer(
 					</div>
 					{Object.entries(filteredData).map(([key, value]) => (
 						<div key={key} className="w-[85%] pt-2">
-							<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-base">
+							<span className="relative mt-1 block whitespace-normal break-words text-[#808080] text-sm">
 								{key}
 							</span>
 							{value?.map((item) => (

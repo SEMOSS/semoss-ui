@@ -1,4 +1,3 @@
-import { Space } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,25 +14,9 @@ import { Input, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
-/**
- * Used for any style settings that utilize a size number, ex width and height
- * Supports % and px units for size
- */
-
 interface SizeSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
-	/**
-	 * Label to pass into the input
-	 */
 	label: string;
-
-	/**
-	 * Path to update
-	 */
 	path: Paths<Block<D>["data"], 4>;
 }
 
@@ -48,90 +31,44 @@ export const SizeSettings = observer(
 		const { state } = useBlocks();
 		const { data, setData } = useBlockSettings<D>(id);
 
-		// track the value
 		const [parsed, setParsed] = useState<{
 			unit: "%" | "px" | "em" | "";
 			amount: string;
-		}>({
-			unit: "",
-			amount: "",
-		});
+		}>({ unit: "", amount: "" });
 
-		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
 			return computed(() => {
-				if (!data) {
-					return "";
-				}
-
+				if (!data) return "";
 				const v = getValueByPath(data, path);
-				if (typeof v === "undefined") {
-					return "";
-				} else if (typeof v === "string") {
-					return v;
-				}
-
+				if (typeof v === "undefined") return "";
+				if (typeof v === "string") return v;
 				return JSON.stringify(v);
 			});
 		}, [data, path]).get();
 
-		// update the value whenever the computed one changes
 		useEffect(() => {
-			const p: typeof parsed = {
-				unit: "",
-				amount: "",
-			};
-
-			// get the unit
-			if (computedValue.includes("%")) {
-				p.unit = "%";
-			} else if (computedValue.includes("px")) {
-				p.unit = "px";
-			} else if (computedValue.includes("em")) {
-				p.unit = "em";
-			}
-
-			// get the value
-			if (p.unit) {
-				p.amount = computedValue.replace(/\D+/g, "");
-			} else {
-				p.amount = computedValue;
-			}
-
+			const p: typeof parsed = { unit: "", amount: "" };
+			if (computedValue.includes("%")) p.unit = "%";
+			else if (computedValue.includes("px")) p.unit = "px";
+			else if (computedValue.includes("em")) p.unit = "em";
+			p.amount = p.unit
+				? computedValue.replace(/\D+/g, "")
+				: computedValue;
 			setParsed(p);
 		}, [computedValue]);
 
-		/**
-		 * Sync the data on change
-		 */
 		const onChange = (amount: string, unit: "%" | "px" | "em" | "") => {
-			// updated the parsted value
-			setParsed({
-				amount: amount,
-				unit: unit,
-			});
-
-			// get value with unit for setting data
+			setParsed({ amount, unit });
 			const v = unit ? amount + unit : amount;
-
-			// clear the old timeout
-			if (timeoutRef.current) {
-				clearTimeout(timeoutRef.current);
-			}
-
+			if (timeoutRef.current) clearTimeout(timeoutRef.current);
 			timeoutRef.current = setTimeout(() => {
 				try {
-					// set the value
 					setData(path, v as PathValue<D["data"], typeof path>);
-					// emit event to resize the block on the screen
 					state.dispatch({
 						message: ActionMessages.DISPATCH_EVENT,
-						payload: {
-							name: "blockResized",
-						},
+						payload: { name: "blockResized" },
 					});
 				} catch (e) {
 					console.log(e);
@@ -141,38 +78,25 @@ export const SizeSettings = observer(
 
 		return (
 			<BaseSettingSection label={label} wide>
-				<div className="relative w-full">
-					<Input
-						value={parsed.amount}
-						onChange={(e) => {
-							// sync the data on change
-							onChange(e.target.value, parsed.unit);
-						}}
-						autoComplete="off"
-						className={label === "Gap" ? "pl-8" : undefined}
-					/>
-					{label === "Gap" && (
-						<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-2 text-muted-foreground">
-							<Space className="size-4" />
-						</span>
-					)}
-				</div>
+				<Input
+					value={parsed.amount}
+					onChange={(e) => onChange(e.target.value, parsed.unit)}
+					autoComplete="off"
+				/>
 				<ToggleGroup
 					type="single"
+					variant="outline"
 					value={parsed.unit}
 					onValueChange={(unit) => {
-						if (unit) {
+						if (unit)
 							onChange(parsed.amount, unit as "%" | "px" | "em");
-						}
 					}}
 				>
-					{SIZE_VALUE_TYPES.map((unit) => {
-						return (
-							<ToggleGroupItem key={unit} value={unit}>
-								{unit}
-							</ToggleGroupItem>
-						);
-					})}
+					{SIZE_VALUE_TYPES.map((unit) => (
+						<ToggleGroupItem key={unit} value={unit} size="sm">
+							{unit}
+						</ToggleGroupItem>
+					))}
 				</ToggleGroup>
 			</BaseSettingSection>
 		);

@@ -291,7 +291,7 @@ export const DataTabStyling = observer(
 
 		return (
 			<div className="mt-px h-full w-full">
-				<span className="relative pl-4 text-[#808080] text-base">
+				<span className="relative pl-4 text-[#808080] text-sm">
 					Selected Frame
 				</span>
 				<div className="mt-1 flex w-full justify-center p-2">
@@ -314,7 +314,7 @@ export const DataTabStyling = observer(
 						))}
 					</select>
 				</div>
-				<span className="relative pl-4 text-[#808080] text-base">
+				<span className="relative pl-4 text-[#808080] text-sm">
 					Selected Visual
 				</span>
 				{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
@@ -364,7 +364,7 @@ export const DataTabStyling = observer(
 				{chart.map((item, index) => (
 					<div key={`chart-field-${item.name}`} className="mt-2">
 						<div className="flex w-full">
-							<span className="relative pl-4 text-base">
+							<span className="relative pl-4 text-sm">
 								Select {item.name}
 							</span>
 							<Info className="mt-1 ml-2 h-4 w-4 cursor-pointer text-[#888]" />
@@ -526,7 +526,7 @@ export const DataTabStyling = observer(
 							setCheckedInstruction(checked)
 						}
 					/>
-					<span className="relative mt-1 text-[#808080] text-base">
+					<span className="relative mt-1 text-[#808080] text-sm">
 						Show All Instruction
 					</span>
 				</div>
@@ -537,7 +537,7 @@ export const DataTabStyling = observer(
 							setCheckedVisual(checked)
 						}
 					/>
-					<span className="relative mt-1 text-[#808080] text-base">
+					<span className="relative mt-1 text-[#808080] text-sm">
 						Auto Visualize
 					</span>
 				</div>

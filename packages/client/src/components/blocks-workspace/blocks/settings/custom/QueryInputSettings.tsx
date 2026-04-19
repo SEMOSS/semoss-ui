@@ -1,4 +1,4 @@
-import { ExternalLink, X } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -631,16 +631,7 @@ export const QueryInputSettings = observer(
 						}
 					>
 						<DialogHeader>
-							<div className="flex flex-row items-center justify-between">
-								<DialogTitle>{`Edit ${label}`}</DialogTitle>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={() => setOpen(false)}
-								>
-									<X className="size-4" />
-								</Button>
-							</div>
+							<DialogTitle>{`Edit ${label}`}</DialogTitle>
 						</DialogHeader>
 						<Separator />
 						<textarea

@@ -566,7 +566,7 @@ export const ColorPalatteSettings = observer(
 							>
 								<ArrowLeft className="size-4" />
 							</button>
-							<span className="text-base">
+							<span className="text-sm">
 								&nbsp;
 								{toggleAddEdit === "add" ? "Create" : "Edit"} a
 								Custom Color Palette

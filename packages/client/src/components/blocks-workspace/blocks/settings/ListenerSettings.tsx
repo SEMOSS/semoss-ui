@@ -329,6 +329,7 @@ export const ListenerSettings = observer(
 					</Button>
 					<ToggleGroup
 						type="single"
+						variant="outline"
 						value={type}
 						onValueChange={(val) => {
 							if (val)

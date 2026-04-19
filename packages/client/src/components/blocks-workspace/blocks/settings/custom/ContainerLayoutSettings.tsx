@@ -5,7 +5,6 @@ import {
 	ArrowDown,
 	ArrowRight,
 	Rows2 as FormatLineSpacing,
-	Space,
 	AlignEndVertical as VerticalAlignBottom,
 	AlignCenterVertical as VerticalAlignCenter,
 	AlignStartVertical as VerticalAlignTop,
@@ -465,6 +464,7 @@ export const ContainerLayoutSettings = observer(
 							</InputGroup>
 							<ToggleGroup
 								type="single"
+								variant="outline"
 								value={rowSpacing.unit}
 								onValueChange={(val) => {
 									if (val)
@@ -488,9 +488,6 @@ export const ContainerLayoutSettings = observer(
 						</BaseSettingSection>
 						<BaseSettingSection label={"Gap"} wide>
 							<InputGroup className="w-full">
-								<InputGroupAddon>
-									<Space className="size-4" />
-								</InputGroupAddon>
 								<InputGroupInput
 									value={gapSpacing.value}
 									onChange={(e) => {
@@ -504,6 +501,7 @@ export const ContainerLayoutSettings = observer(
 							</InputGroup>
 							<ToggleGroup
 								type="single"
+								variant="outline"
 								value={gapSpacing.unit}
 								onValueChange={(val) => {
 									if (val)
@@ -517,7 +515,6 @@ export const ContainerLayoutSettings = observer(
 									<ToggleGroupItem
 										key={unit}
 										value={unit}
-										variant="outline"
 										size="sm"
 									>
 										{unit}

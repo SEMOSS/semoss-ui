@@ -8,11 +8,6 @@ export interface colorPickerProps {
 export function ColorPickerWithSwatch({ value, onChange }: colorPickerProps) {
 	return (
 		<div className="relative w-full">
-			{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-			{/* biome-ignore lint/suspicious/noCommentText: original comment text */}
-			// biome-ignore lint/suspicious/noCommentText: original comment text
-			// biome-ignore lint/suspicious/noCommentText: JSX comment in text
-			node
 			{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 			<Input
 				id="color-input"
@@ -29,7 +24,7 @@ export function ColorPickerWithSwatch({ value, onChange }: colorPickerProps) {
 						className="absolute inset-0 h-6 w-6 cursor-pointer opacity-0"
 					/>
 					<div
-						className="h-6 w-6 rounded border border-[#ccc]"
+						className="h-6 w-6 rounded border border-input"
 						style={{ backgroundColor: value }}
 					/>
 				</div>

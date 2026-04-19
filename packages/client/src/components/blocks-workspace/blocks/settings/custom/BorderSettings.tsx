@@ -1,4 +1,3 @@
-import { PaintBucket } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -10,7 +9,6 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import {
-	Button,
 	Input,
 	Muted,
 	Select,
@@ -58,7 +56,6 @@ export const BorderSettings = observer(
 		);
 		// track the unit of the value, ex % or px
 		const [valueType, setValueType] = useState<string | null>(null);
-		const [showPicker, setShowPicker] = useState(false);
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		// get the value of the input (wrapped in usememo because of path prop)
@@ -185,6 +182,7 @@ export const BorderSettings = observer(
 					/>
 					<ToggleGroup
 						type="single"
+						variant="outline"
 						value={valueType ?? ""}
 						onValueChange={(val) => val && setValueType(val)}
 					>
@@ -234,55 +232,35 @@ export const BorderSettings = observer(
 					</Select>
 				</BaseSettingSection>
 				<div className="flex flex-col gap-1">
-					<Muted className="text-black">Border Color</Muted>
-					<div className="flex items-center justify-between gap-1">
-						<div className="flex items-center gap-3">
+					<Muted>Border Color</Muted>
+					<div className="flex items-center gap-2">
+						<div className="relative h-7 w-7 shrink-0">
+							<Input
+								type="color"
+								value={borderColorValue ?? "#FFFFFF"}
+								onChange={(e) =>
+									onChange(
+										borderSizeValue ?? "0px",
+										borderStyleValue ?? "solid",
+										e.currentTarget.value ?? "#FFFFFF",
+									)
+								}
+								className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+								autoComplete="off"
+								data-testid="colorSettings-Border Color-txt"
+							/>
 							<div
+								className="h-full w-full rounded border border-input shadow-xs"
 								style={{
-									width: 33,
-									height: 33,
-									borderRadius: "4px",
 									backgroundColor:
 										borderColorValue ?? "#FFFFFF",
-									border: "1px solid #ccc",
 								}}
 							/>
-							<Muted>{borderColorValue ?? "#FFFFFF"}</Muted>
 						</div>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							onClick={() => setShowPicker(!showPicker)}
-						>
-							<PaintBucket />
-						</Button>
+						<Muted className="font-mono text-xs">
+							{borderColorValue ?? "#FFFFFF"}
+						</Muted>
 					</div>
-
-					{showPicker && (
-						/* biome-ignore lint/a11y/noStaticElementInteractions: mouse-leave dismiss pattern for color picker overlay */
-						<div
-							className="mt-1 flex justify-end"
-							onMouseLeave={() => setShowPicker(false)}
-						>
-							<div className="rounded">
-								<Input
-									type="color"
-									value={borderColorValue ?? "#FFFFFF"}
-									onChange={(color) => {
-										onChange(
-											borderSizeValue ?? "0px",
-											borderStyleValue ?? "solid",
-											color.currentTarget.value ??
-												"#FFFFFF",
-										);
-									}}
-									autoComplete="off"
-									data-testid={`colorSettings-Border Color-txt`}
-									className="w-full"
-								/>
-							</div>
-						</div>
-					)}
 				</div>
 			</>
 		);
