@@ -1138,7 +1138,10 @@ export const DataImportFormModal = observer(
 					if (!open) closeImportModalHandler();
 				}}
 			>
-				<DialogContent className="max-h-[90vh] w-full max-w-[1150px] overflow-y-auto">
+				<DialogContent
+					style={{ maxWidth: "70vw", width: "70vw" }}
+					className="max-h-[90vh] overflow-y-auto"
+				>
 					<DialogHeader>
 						<DialogTitle>Import Data</DialogTitle>
 					</DialogHeader>

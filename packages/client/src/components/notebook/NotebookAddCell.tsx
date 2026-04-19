@@ -28,7 +28,6 @@ import {
 	InputAdornment,
 	Menu,
 	type MenuProps,
-	Modal,
 	Stack,
 	styled,
 	TextField,
@@ -171,6 +170,7 @@ const AddCellOptions: Record<string, AddCellOption> = {
 					></path>
 				</g>
 				<defs>
+					{/* biome-ignore lint/correctness/useUniqueElementIds: static SVG icon, not reused */}
 					<clipPath id="clip0_2378_103062">
 						<rect width="24" height="24" fill="#666666"></rect>
 					</clipPath>
@@ -257,7 +257,7 @@ export const NotebookAddCell = observer(
 			});
 
 			return categories;
-		}, [TransformationCells]);
+		}, []);
 
 		/**
 		 * filters transformations based on search term
@@ -365,7 +365,7 @@ export const NotebookAddCell = observer(
 				>
 					<StyledBorderDiv>
 						{AddCellOptions &&
-							Object.entries(AddCellOptions).map((add, i) => {
+							Object.entries(AddCellOptions).map((add, _i) => {
 								const value = add[1];
 								return (
 									<StyledButton
@@ -430,7 +430,7 @@ export const NotebookAddCell = observer(
 					>
 						{selectedAddCell === "data" && // Ensure we are showing the options for "Data"
 							DataOptions.map(
-								({ display, defaultCellType }, index) => {
+								({ display, defaultCellType }, _index) => {
 									return (
 										<StyledMenuItem
 											key={`${query.id}-${previousCellId}-${display}`}
@@ -488,7 +488,7 @@ export const NotebookAddCell = observer(
 									{filteredCategories.map(
 										(
 											{ category, transformations },
-											index,
+											_index,
 										) => (
 											<MenuSectionRoot
 												key={`${query.id}-${previousCellId}-${category}`}
@@ -509,7 +509,7 @@ export const NotebookAddCell = observer(
 												{transformations.map(
 													(
 														transformation,
-														tIndex,
+														_tIndex,
 													) => (
 														<StyledMenuItem
 															value={
@@ -543,7 +543,7 @@ export const NotebookAddCell = observer(
 						{selectedAddCell === "others" &&
 							Array.from(
 								AddCellOptions[selectedAddCell]?.options || [],
-								({ display, defaultCellType }, index) => {
+								({ display, defaultCellType }, _index) => {
 									return (
 										<StyledMenuItem
 											key={`${query.id}-${previousCellId}-${display}`}
@@ -566,7 +566,7 @@ export const NotebookAddCell = observer(
 										[],
 									(
 										{ display, defaultCellType, disabled },
-										index,
+										_index,
 									) => {
 										return (
 											<StyledMenuItem
@@ -597,17 +597,13 @@ export const NotebookAddCell = observer(
 				</Stack>
 
 				{isDataImportModalOpen && (
-					<Modal
-						open={setIsDataImportModalOpen as unknown as boolean}
-					>
-						<DataImportFormModal
-							setIsDataImportModalOpen={setIsDataImportModalOpen}
-							query={query}
-							previousCellId={previousCellId}
-							cell={null}
-							editMode={false}
-						/>
-					</Modal>
+					<DataImportFormModal
+						setIsDataImportModalOpen={setIsDataImportModalOpen}
+						query={query}
+						previousCellId={previousCellId}
+						cell={null}
+						editMode={false}
+					/>
 				)}
 			</>
 		);
