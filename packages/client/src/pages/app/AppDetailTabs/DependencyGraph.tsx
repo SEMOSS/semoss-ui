@@ -11,7 +11,7 @@ import {
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import { Env } from "@semoss/sdk";
 import { Badge } from "@semoss/ui/next";
@@ -276,7 +276,6 @@ export const DependencyGraph = ({
 				source: currentAppId,
 				target: depId,
 				type: "smoothstep",
-				animated: true,
 				markerEnd: { type: MarkerType.ArrowClosed },
 				style: {
 					stroke: hasAccessWarning ? "#f97316" : "#2563eb",
@@ -292,7 +291,6 @@ export const DependencyGraph = ({
 					source: currentAppId,
 					target: depId,
 					type: "smoothstep",
-					animated: true,
 					markerEnd: { type: MarkerType.ArrowClosed },
 					style: {
 						stroke: "#9333ea",
@@ -326,7 +324,6 @@ export const DependencyGraph = ({
 						source: engine.engine_id,
 						target: depId,
 						type: "smoothstep",
-						animated: true,
 						markerEnd: { type: MarkerType.ArrowClosed },
 						style: {
 							stroke: hasAccessWarning ? "#f97316" : "#2563eb",
@@ -344,7 +341,6 @@ export const DependencyGraph = ({
 							source: engine.engine_id,
 							target: depId,
 							type: "smoothstep",
-							animated: true,
 							markerEnd: { type: MarkerType.ArrowClosed },
 							style: {
 								stroke: "#9333ea",
@@ -361,13 +357,25 @@ export const DependencyGraph = ({
 		return { initialNodes: nodes, initialEdges: edges };
 	}, [engines, topLevelDependencies, currentAppId, currentAppName]);
 
+	const [show, setShow] = useState({
+		hasAccess: true,
+		limitedAccess: true,
+		circular: true,
+	});
 	const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
 	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
 	useEffect(() => {
 		setNodes(initialNodes);
-		setEdges(initialEdges);
-	}, [initialNodes, initialEdges, setNodes, setEdges]);
+		setEdges(
+			initialEdges.filter((e) => {
+				if (e.id.includes("edge-circular-")) return show.circular;
+				if ((e.style as { stroke?: string })?.stroke === "#f97316")
+					return show.limitedAccess;
+				return show.hasAccess;
+			}),
+		);
+	}, [initialNodes, initialEdges, show, setNodes, setEdges]);
 
 	if (!currentAppId || !currentAppName) {
 		return (
@@ -398,24 +406,39 @@ export const DependencyGraph = ({
 				<MiniMap nodeStrokeWidth={3} zoomable pannable />
 				<div className="absolute top-3 right-3 z-10 flex flex-col gap-2 rounded-lg border border-border bg-background p-3 shadow-md">
 					<span className="font-semibold text-xs">Legend</span>
-					<div className="flex items-center gap-2">
-						<div className="h-0.5 w-8 bg-blue-600" />
-						<span className="text-muted-foreground text-xs">
-							Has Access
-						</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<div className="h-0.5 w-8 border border-orange-500 border-dashed bg-transparent" />
-						<span className="text-muted-foreground text-xs">
-							Limited Access ⚠️
-						</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<div className="h-0.5 w-8 border border-purple-600 border-dashed bg-transparent" />
-						<span className="text-muted-foreground text-xs">
-							Circular Dependency 🔄
-						</span>
-					</div>
+					{(
+						[
+							{
+								key: "hasAccess",
+								color: "bg-blue-600",
+								label: "Has Access",
+							},
+							{
+								key: "limitedAccess",
+								color: "border border-orange-500 border-dashed",
+								label: "Limited Access ⚠️",
+							},
+							{
+								key: "circular",
+								color: "border border-purple-600 border-dashed",
+								label: "Circular Dependency 🔄",
+							},
+						] as const
+					).map(({ key, color, label }) => (
+						<button
+							key={key}
+							type="button"
+							onClick={() =>
+								setShow((s) => ({ ...s, [key]: !s[key] }))
+							}
+							className={`flex items-center gap-2 rounded px-1 py-0.5 text-left transition-opacity hover:bg-muted ${show[key] ? "" : "opacity-40"}`}
+						>
+							<div className={`h-0.5 w-8 shrink-0 ${color}`} />
+							<span className="text-muted-foreground text-xs">
+								{label}
+							</span>
+						</button>
+					))}
 				</div>
 			</ReactFlow>
 		</div>
