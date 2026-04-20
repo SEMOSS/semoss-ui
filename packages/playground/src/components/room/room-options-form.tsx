@@ -704,6 +704,8 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 												placeholder={t(
 													"common:placeholders.updateImageSeed",
 												)}
+												min={0}
+												max={2147483646}
 												value={options.seed ?? ""}
 												onChange={(e) =>
 													onOptionsChange({
@@ -711,9 +713,16 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															e.target.value ===
 															""
 																? undefined
-																: Number(
-																		e.target
-																			.value,
+																: Math.min(
+																		Math.max(
+																			Number(
+																				e
+																					.target
+																					.value,
+																			),
+																			0,
+																		),
+																		2147483646,
 																	),
 													})
 												}
