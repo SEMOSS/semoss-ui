@@ -1,15 +1,17 @@
-import { CalendarMonth, TableChartOutlined } from "@mui/icons-material";
-import { Autocomplete } from "@mui/material";
+import { Calendar, Table } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import {
-	Stack,
-	TextField,
-	ToggleButton,
-	ToggleButtonGroup,
-	Typography,
-} from "@semoss/ui";
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -50,14 +52,7 @@ export interface DateDifferenceTransformationCellDef
 	extends TransformationCellDef<"date-difference-transformation"> {
 	widget: "date-difference-transformation";
 	parameters: {
-		/**
-		 * Routine type
-		 */
 		transformation: Transformation<DateDifferenceTransformationDef>;
-
-		/**
-		 * ID of the query cell that defines the frame we want to transform
-		 */
 		targetCell: TransformationTargetCell;
 	};
 }
@@ -67,11 +62,8 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
-		/**
-		 * Cell that Transformation will be made to
-		 */
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c;
+			let c: CellState<QueryImportCellDef> | undefined;
 			Object.values(state.queries).forEach((query) => {
 				if (query.cells[cell.parameters.targetCell.id]) {
 					c = query.cells[
@@ -79,7 +71,6 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
 					] as CellState<QueryImportCellDef>;
 				}
 			});
-
 			return c;
 		}).get();
 
@@ -95,23 +86,18 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
 			);
 		}).get();
 
-		/**
-		 * A list of cells that are query imports,
-		 * Added here in case we want to show particular frames whether Grid, Py, R, etc
-		 * TODO: Do we want to reference other queries
-		 */
 		const frames = useMemo(() => {
 			const frameList = [];
-
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
-					if (cell.widget === "query-import") {
+					if (
+						cell.widget === "query-import" ||
+						cell.widget === "data-import"
+					)
 						frameList.push(cell);
-					}
 				});
 			});
-
 			return frameList;
 		}, []);
 
@@ -128,81 +114,67 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
 					isExpanded={isExpanded}
 					display={Transformations[cellTransformation.key].display}
 					Icon={Transformations[cellTransformation.key].icon}
-					frame={{
-						cell: cell,
-						options: frames,
-					}}
+					frame={{ cell, options: frames }}
 				>
-					<Stack width="100%" paddingY={0.75}>
-						<Typography variant="caption">
-							<em>{helpText}</em>
-						</Typography>
-					</Stack>
+					<div className="w-full py-1.5">
+						<span className="text-xs italic">{helpText}</span>
+					</div>
 				</TransformationCellInput>
 			);
 		}
+
+		const dispatch = (path: string, value: unknown) =>
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell.query.id,
+					cellId: cell.id,
+					path,
+					value,
+				},
+			});
 
 		return (
 			<TransformationCellInput
 				isExpanded={isExpanded}
 				display={Transformations[cellTransformation.key].display}
 				Icon={Transformations[cellTransformation.key].icon}
-				frame={{
-					cell: cell,
-					options: frames,
-				}}
+				frame={{ cell, options: frames }}
 			>
-				<Stack spacing={2}>
-					<Typography variant="caption">
+				<div className="flex flex-col gap-4">
+					<span className="text-xs">
 						{!doesFrameExist ? (
 							<em>{helpText}</em>
 						) : (
 							"Compute the difference between dates and add the computed value as a new column"
 						)}
-					</Typography>
-					<Stack direction="row" spacing={2} width="100%">
-						<Stack direction="row" spacing={1} minWidth="40%">
-							<ToggleButtonGroup
-								size="small"
+					</span>
+					<div className="flex w-full flex-row gap-4">
+						{/* Start date */}
+						<div className="flex min-w-[40%] flex-row gap-2">
+							<ToggleGroup
+								type="single"
+								size="sm"
 								value={cellTransformation.parameters.startType}
 								disabled={
 									cellTransformation.parameters.endType ===
 									"custom"
 								}
+								onValueChange={(val) => {
+									if (val)
+										dispatch(
+											"parameters.transformation.parameters.startType",
+											val,
+										);
+								}}
 							>
-								<ToggleButton
-									value="column"
-									onClick={() => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.startType",
-												value: "column",
-											},
-										});
-									}}
-								>
-									<TableChartOutlined />
-								</ToggleButton>
-								<ToggleButton
-									value="custom"
-									onClick={() => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.startType",
-												value: "custom",
-											},
-										});
-									}}
-								>
-									<CalendarMonth />
-								</ToggleButton>
-							</ToggleButtonGroup>
+								<ToggleGroupItem value="column">
+									<Table className="size-4" />
+								</ToggleGroupItem>
+								<ToggleGroupItem value="custom">
+									<Calendar className="size-4" />
+								</ToggleGroupItem>
+							</ToggleGroup>
 							{cellTransformation.parameters.startType ===
 							"column" ? (
 								<ColumnTransformationField
@@ -215,86 +187,60 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
 									}
 									columnTypes={["DATE"]}
 									onChange={(newColumn: ColumnInfo) => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.startColumn",
-												value: newColumn,
-											},
-										});
+										dispatch(
+											"parameters.transformation.parameters.startColumn",
+											newColumn,
+										);
 									}}
 								/>
 							) : (
-								<TextField
-									type="date"
-									size="small"
-									label="Custom Start Date"
-									value={
-										cellTransformation.parameters
-											.startCustomDate
-									}
-									InputLabelProps={{
-										shrink: true,
-									}}
-									fullWidth
-									onChange={(e) => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.startCustomDate",
-												value: e.target.value,
-											},
-										});
-									}}
-								/>
+								<div className="flex flex-1 flex-col gap-1.5">
+									{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+									<label className="text-muted-foreground text-xs">
+										Custom Start Date
+									</label>
+									<Input
+										type="date"
+										value={
+											cellTransformation.parameters
+												.startCustomDate
+										}
+										onChange={(e) =>
+											dispatch(
+												"parameters.transformation.parameters.startCustomDate",
+												e.target.value,
+											)
+										}
+									/>
+								</div>
 							)}
-						</Stack>
-						<Stack direction="row" spacing={1} minWidth="40%">
-							<ToggleButtonGroup
-								size="small"
+						</div>
+
+						{/* End date */}
+						<div className="flex min-w-[40%] flex-row gap-2">
+							<ToggleGroup
+								type="single"
+								size="sm"
 								value={cellTransformation.parameters.endType}
 								disabled={
 									cellTransformation.parameters.startType ===
 									"custom"
 								}
+								onValueChange={(val) => {
+									if (val)
+										dispatch(
+											"parameters.transformation.parameters.endType",
+											val,
+										);
+								}}
 							>
-								<ToggleButton
-									value="column"
-									onClick={() => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.endType",
-												value: "column",
-											},
-										});
-									}}
-								>
-									<TableChartOutlined />
-								</ToggleButton>
-								<ToggleButton
-									value="custom"
-									onClick={() => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.endType",
-												value: "custom",
-											},
-										});
-									}}
-								>
-									<CalendarMonth />
-								</ToggleButton>
-							</ToggleButtonGroup>
+								<ToggleGroupItem value="column">
+									<Table className="size-4" />
+								</ToggleGroupItem>
+								<ToggleGroupItem value="custom">
+									<Calendar className="size-4" />
+								</ToggleGroupItem>
+							</ToggleGroup>
 							{cellTransformation.parameters.endType ===
 							"column" ? (
 								<ColumnTransformationField
@@ -306,89 +252,78 @@ export const DateDifferenceTransformationCell: CellComponent<DateDifferenceTrans
 									}
 									columnTypes={["DATE"]}
 									onChange={(newColumn: ColumnInfo) => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.endColumn",
-												value: newColumn,
-											},
-										});
+										dispatch(
+											"parameters.transformation.parameters.endColumn",
+											newColumn,
+										);
 									}}
 								/>
 							) : (
-								<TextField
-									type="date"
-									size="small"
-									label="Custom End Date"
-									value={
-										cellTransformation.parameters
-											.endCustomDate
-									}
-									InputLabelProps={{
-										shrink: true,
-									}}
-									fullWidth
-									onChange={(e) => {
-										state.dispatch({
-											message: ActionMessages.UPDATE_CELL,
-											payload: {
-												queryId: cell.query.id,
-												cellId: cell.id,
-												path: "parameters.transformation.parameters.endCustomDate",
-												value: e.target.value,
-											},
-										});
-									}}
-								/>
+								<div className="flex flex-1 flex-col gap-1.5">
+									{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+									<label className="text-muted-foreground text-xs">
+										Custom End Date
+									</label>
+									<Input
+										type="date"
+										value={
+											cellTransformation.parameters
+												.endCustomDate
+										}
+										onChange={(e) =>
+											dispatch(
+												"parameters.transformation.parameters.endCustomDate",
+												e.target.value,
+											)
+										}
+									/>
+								</div>
 							)}
-						</Stack>
-						<Autocomplete
-							disableClearable
+						</div>
+
+						{/* Unit */}
+						<Select
 							disabled={!doesFrameExist}
-							size="small"
-							fullWidth
-							value={cellTransformation.parameters.unit}
-							onChange={(_, newOperation: string) => {
-								state.dispatch({
-									message: ActionMessages.UPDATE_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-										path: "parameters.transformation.parameters.unit",
-										value: newOperation,
-									},
-								});
-							}}
-							options={dateUnitTypes}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									variant="outlined"
-									label="Unit of Measure"
-								/>
-							)}
+							value={cellTransformation.parameters.unit as string}
+							onValueChange={(val) =>
+								dispatch(
+									"parameters.transformation.parameters.unit",
+									val,
+								)
+							}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Unit of Measure" />
+							</SelectTrigger>
+							<SelectContent>
+								{dateUnitTypes.map((u) => (
+									<SelectItem
+										key={String(u)}
+										value={String(u)}
+									>
+										{String(u)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					<div className="flex flex-col gap-1.5">
+						{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+						<label className="text-muted-foreground text-xs">
+							Column Name
+						</label>
+						<Input
+							value={cellTransformation.parameters.columnName}
+							onChange={(e) =>
+								dispatch(
+									"parameters.transformation.parameters.columnName",
+									e.target.value,
+								)
+							}
 						/>
-					</Stack>
-					<TextField
-						size="small"
-						label="Column Name"
-						value={cellTransformation.parameters.columnName}
-						fullWidth
-						onChange={(e) => {
-							state.dispatch({
-								message: ActionMessages.UPDATE_CELL,
-								payload: {
-									queryId: cell.query.id,
-									cellId: cell.id,
-									path: "parameters.transformation.parameters.columnName",
-									value: e.target.value,
-								},
-							});
-						}}
-					/>
-				</Stack>
+					</div>
+				</div>
 			</TransformationCellInput>
 		);
 	});

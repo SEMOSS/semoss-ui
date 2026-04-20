@@ -1,4 +1,4 @@
-import { closestCenter, DndContext } from "@dnd-kit/core";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToParentElement } from "@dnd-kit/modifiers";
 import {
 	SortableContext,
@@ -6,7 +6,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Add, Delete, DragIndicator } from "@mui/icons-material";
+import { GripVertical, Plus, Trash2 } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -18,7 +18,7 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Box, Button, IconButton, Stack, TextField } from "@semoss/ui";
+import { Button, Input } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -62,7 +62,7 @@ export const OptionsSettings = observer(
 		const [isDragging, setIsDragging] = useState<boolean>(false);
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -164,7 +164,7 @@ export const OptionsSettings = observer(
 			}, 300);
 		};
 
-		const reorder = ({ active, over }: { active: any; over: any }) => {
+		const reorder = ({ active, over }: DragEndEvent) => {
 			setIsDragging(false);
 			if (!options.length) {
 				return;
@@ -213,7 +213,7 @@ export const OptionsSettings = observer(
 				label={label ?? "Options"}
 				description={tooltip}
 			>
-				<Stack spacing={1}>
+				<div className="flex w-full flex-col gap-1">
 					<DndContext
 						collisionDetection={closestCenter}
 						onDragEnd={reorder}
@@ -224,7 +224,7 @@ export const OptionsSettings = observer(
 							items={options.map((option) => option.id)}
 							strategy={verticalListSortingStrategy}
 						>
-							<Stack gap={1}>
+							<div className="flex flex-col gap-1">
 								{Array.from(
 									options,
 									(
@@ -240,15 +240,9 @@ export const OptionsSettings = observer(
 												key={option.id}
 												id={option.id}
 											>
-												<Stack
-													direction="row"
-													alignItems="center"
-													gap={1}
-													key={option.id}
-												>
-													<TextField
+												<div className="flex flex-row items-center gap-1">
+													<Input
 														disabled={isDragging}
-														fullWidth
 														value={option.display}
 														onChange={(e) => {
 															// sync the data on change
@@ -261,13 +255,11 @@ export const OptionsSettings = observer(
 															);
 														}}
 														placeholder="Display"
-														size="small"
-														variant="outlined"
 														autoComplete="off"
+														className="w-full"
 													/>
-													<TextField
+													<Input
 														disabled={isDragging}
-														fullWidth
 														value={option.value}
 														onChange={(e) => {
 															// sync the data on change
@@ -280,49 +272,44 @@ export const OptionsSettings = observer(
 															);
 														}}
 														placeholder="Value"
-														size="small"
-														variant="outlined"
 														autoComplete="off"
+														className="w-full"
 													/>
-													<IconButton
+													<Button
+														variant="ghost"
+														size="icon-sm"
 														disabled={isDragging}
-														size="small"
 														onClick={() =>
 															onRemoveCustomOption(
 																i,
 															)
 														}
 													>
-														<Delete />
-													</IconButton>
-												</Stack>
+														<Trash2 />
+													</Button>
+												</div>
 											</SortableItems>
 										);
 									},
 								)}
-							</Stack>
+							</div>
 						</SortableContext>
 					</DndContext>
-					<Stack
-						alignItems="center"
-						justifyContent="center"
-						flex="1"
-						direction="row"
-					>
+					<div className="flex flex-1 flex-row items-center justify-center">
 						<Button
-							size="small"
+							size="sm"
 							onClick={() =>
 								setOptions([
 									...options,
 									{ display: "", value: "", id: "" },
 								])
 							}
-							startIcon={<Add />}
 						>
+							<Plus className="mr-1 size-4" />
 							Add {label ?? "Option"}
 						</Button>
-					</Stack>
-				</Stack>
+					</div>
+				</div>
 			</BaseSettingSection>
 		);
 	},
@@ -345,23 +332,11 @@ const SortableItems = ({
 	};
 
 	return (
-		<Box
-			ref={setNodeRef}
-			sx={{
-				...style,
-				display: "flex",
-				gap: 1,
-				alignItems: "center",
-			}}
-		>
+		<div ref={setNodeRef} style={style} className="flex items-center gap-1">
 			{children}
-			<Box
-				{...attributes}
-				{...listeners}
-				sx={{ display: "flex", alignItems: "center" }}
-			>
-				<DragIndicator />
-			</Box>
-		</Box>
+			<div {...attributes} {...listeners} className="flex items-center">
+				<GripVertical />
+			</div>
+		</div>
 	);
 };

@@ -8,7 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Menu, Select } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -42,7 +48,7 @@ export const FontSizeSettings = observer(
 		const [value, setValue] = useState("");
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -110,53 +116,59 @@ export const FontSizeSettings = observer(
 		return (
 			<BaseSettingSection label="Font Size">
 				<Select
-					fullWidth
-					size="small"
 					value={value}
-					onChange={(e) => {
-						// sync the data on change
-						onChange(e.target.value);
+					onValueChange={(val) => {
+						onChange(val);
 					}}
 				>
-					<Menu.Item value={"1rem"}>Body</Menu.Item>
-					<Menu.Item value={"1.125rem"}>
-						<span style={{ fontSize: "1.125rem" }}>Subtitle 2</span>
-					</Menu.Item>
-					<Menu.Item value={"1.25rem"}>
-						<span style={{ fontSize: "1.25rem" }}>Subtitle 1</span>
-					</Menu.Item>
-					<Menu.Item value={"1.5rem"}>
-						<span
-							style={{
-								fontSize: "1.5rem",
-								fontWeight: "bold",
-							}}
-						>
-							Header 3
-						</span>
-					</Menu.Item>
-					<Menu.Item value={"1.875rem"}>
-						<span
-							style={{
-								fontSize: "1.875rem",
-								fontWeight: "bold",
-								padding: "2px 0",
-							}}
-						>
-							Header 2
-						</span>
-					</Menu.Item>
-					<Menu.Item value={"2.125rem"}>
-						<span
-							style={{
-								fontSize: "2.125rem",
-								fontWeight: "bold",
-								padding: "2px 0",
-							}}
-						>
-							Header 1
-						</span>
-					</Menu.Item>
+					<SelectTrigger className="w-full">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value={"1rem"}>Body</SelectItem>
+						<SelectItem value={"1.125rem"}>
+							<span style={{ fontSize: "1.125rem" }}>
+								Subtitle 2
+							</span>
+						</SelectItem>
+						<SelectItem value={"1.25rem"}>
+							<span style={{ fontSize: "1.25rem" }}>
+								Subtitle 1
+							</span>
+						</SelectItem>
+						<SelectItem value={"1.5rem"}>
+							<span
+								style={{
+									fontSize: "1.5rem",
+									fontWeight: "bold",
+								}}
+							>
+								Header 3
+							</span>
+						</SelectItem>
+						<SelectItem value={"1.875rem"}>
+							<span
+								style={{
+									fontSize: "1.875rem",
+									fontWeight: "bold",
+									padding: "2px 0",
+								}}
+							>
+								Header 2
+							</span>
+						</SelectItem>
+						<SelectItem value={"2.125rem"}>
+							<span
+								style={{
+									fontSize: "2.125rem",
+									fontWeight: "bold",
+									padding: "2px 0",
+								}}
+							>
+								Header 1
+							</span>
+						</SelectItem>
+					</SelectContent>
 				</Select>
 			</BaseSettingSection>
 		);

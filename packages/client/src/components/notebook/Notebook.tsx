@@ -6,49 +6,12 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { DragIndicator, PlayArrowRounded } from "@mui/icons-material";
+import { GripVertical, Play } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import {
-	Box,
-	Button,
-	CircularProgress,
-	Container,
-	Stack,
-	styled,
-} from "@semoss/ui";
+import { Button, Spinner } from "@semoss/ui/next";
 import { NotebookCell } from "./NotebookCell";
-
-const StyledSheet = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "100%",
-	backgroundColor: theme.palette.background.paper,
-	flex: 1,
-	overflow: "hidden",
-}));
-
-const StyledContainer = styled(Container)(({ theme }) => ({
-	flex: 1,
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "inherit",
-	overflow: "auto",
-	padding: theme.spacing(2),
-}));
-
-const StyledCell = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	width: "100%",
-}));
-
-const StyledContainedButton = styled(Button)(() => ({
-	lineHeight: "1.25rem",
-}));
 
 interface NotebookProps {
 	/** Id of the notebook */
@@ -73,18 +36,18 @@ const SortableItems = ({
 		transition,
 		display: "flex",
 		alignItems: "center",
-		gap: 1,
+		gap: 4,
 	};
 
 	return (
 		<div key={`action-${id}`} ref={setNodeRef} style={style}>
-			<Box
+			<div
 				{...attributes}
 				{...listeners}
-				sx={{ cursor: "grab", alignSelf: "baseline", paddingTop: 2 }}
+				className="cursor-grab self-start pt-2"
 			>
-				<DragIndicator color="disabled" />
-			</Box>
+				<GripVertical className="size-4 text-muted-foreground/40" />
+			</div>
 			{children}
 		</div>
 	);
@@ -129,31 +92,13 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 	}
 
 	return (
-		<StyledSheet>
-			<Stack
-				alignItems={"center"}
-				justifyContent={"space-between"}
-				direction="row"
-				paddingLeft={3}
-				paddingRight={3}
-				paddingY={1.25}
-				spacing={2}
-			>
-				&nbsp;
-				<Stack direction="row" alignItems="center" spacing={1}>
-					<StyledContainedButton
+		<div className="flex h-full w-full flex-1 flex-col overflow-hidden bg-background">
+			<div className="flex items-center justify-between px-6 py-2.5">
+				<span>&nbsp;</span>
+				<div className="flex items-center gap-2">
+					<Button
 						title="Run all cells"
-						variant="contained"
-						size="small"
-						color="primary"
-						disableElevation
-						startIcon={
-							notebook.isLoading ? (
-								<CircularProgress size="0.75em" />
-							) : (
-								<PlayArrowRounded />
-							)
-						}
+						size="sm"
 						disabled={notebook.isLoading}
 						onClick={() =>
 							state.dispatch({
@@ -164,10 +109,15 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 							})
 						}
 					>
+						{notebook.isLoading ? (
+							<Spinner className="size-3" />
+						) : (
+							<Play className="size-3" />
+						)}
 						Run All
-					</StyledContainedButton>
-				</Stack>
-			</Stack>
+					</Button>
+				</div>
+			</div>
 			<DndContext
 				collisionDetection={closestCenter}
 				onDragEnd={handleDragEnd}
@@ -177,22 +127,25 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 					items={notebook.list?.map((item) => item)}
 					strategy={verticalListSortingStrategy}
 				>
-					<StyledContainer maxWidth={false}>
+					<div className="flex h-full w-full flex-1 flex-col overflow-auto px-3 py-2">
 						{notebook.list.map((cellId) => (
 							<SortableItems key={cellId} id={cellId}>
-								<StyledCell key={cellId}>
+								<div
+									key={cellId}
+									className="flex w-full flex-col"
+								>
 									<NotebookCell
 										queryId={id}
 										cellId={cellId}
 										cellPlayCounter={cellPlayCounter}
 										setCellPlayCounter={setCellPlayCounter}
-									></NotebookCell>
-								</StyledCell>
+									/>
+								</div>
 							</SortableItems>
 						))}
-					</StyledContainer>
+					</div>
 				</SortableContext>
 			</DndContext>
-		</StyledSheet>
+		</div>
 	);
 });

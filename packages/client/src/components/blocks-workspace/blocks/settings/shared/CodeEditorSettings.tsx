@@ -16,7 +16,7 @@ import {
 } from "@semoss/renderer";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import { MonacoEditor } from "@semoss/shared";
-import { useNotification } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface CodeEditorSettingsProps<D extends BlockDef = BlockDef> {
@@ -49,7 +49,6 @@ export const CodeEditorSettings = observer(
 		>(`
             MyEngines(engineTypes=['MODEL']);
         `);
-		const notification = useNotification();
 		const wordWrapRef = useRef(true);
 
 		const [_models, setModels] = useState<
@@ -146,7 +145,9 @@ export const CodeEditorSettings = observer(
 				const res = await runPixel(pixel);
 				setLLMLoading(false);
 
-				const LLMResponse = res.pixelReturn[0].output.response;
+				const LLMResponse = (
+					res.pixelReturn[0].output as { response: string }
+				).response;
 				let trimmedStarterCode = LLMResponse;
 				trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
 
@@ -157,10 +158,7 @@ export const CodeEditorSettings = observer(
 				return trimmedStarterCode;
 			} catch {
 				setLLMLoading(false);
-				notification.add({
-					color: "error",
-					message: "Failed response from AI Code Generator",
-				});
+				toast.error("Failed response from AI Code Generator");
 				return "";
 			}
 		};
