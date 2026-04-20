@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -10,81 +10,29 @@ import {
 } from "@semoss/renderer";
 import {
 	Button,
+	Input,
 	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Slider,
 	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
 import { FontFamily, Pie_Alignment } from "../../Visualization.constants";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
 
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
-const StyledButtonWrapper = styled("div")({
-	display: "flex",
-	justifyContent: "flex-end",
-	margin: "8px 16px",
-});
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-	marginBottom: "8px",
-}));
-const StyledAxisSpan = styled("span")<{
-	display?: string;
-	justifyContent?: string;
-	width?: string;
-}>(({ theme, display, justifyContent, width }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	width: width ?? undefined,
-}));
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-const StyledSelect = styled(Select)(() => ({
-	width: "100%",
-}));
 export const PieValueLabel = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
-		const [value, setValue] = useState("");
+		// biome-ignore lint/style/useConst: reassigned
+		let [value, setValue] = useState("");
 		const [showValueLabel, setShowValueLabel] = useState(true);
 		const [valueLabel, setvalueLabel] = useState({
 			position: "outside",
@@ -111,194 +59,138 @@ export const PieValueLabel = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reInitializeFeatures(data.option);
 			}
 		}, [id]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				retainLocalState(data.option);
 			}
 		}, [showValueLabel]);
-		//Retain the local state of the feature on toggle switch and on reset button
-		//With the local state we will be displaying the values in the fields
-		const retainLocalState = (options) => {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const retainLocalState = (options: any) => {
 			setvalueLabel((prev) => ({
 				...prev,
-				position: options["series"][0]["label"]["position"],
-				size: options["series"][0]["label"]["fontSize"],
-				lineLength: options["series"][0]["labelLine"]["length"],
-				family: options["series"][0]["label"]["fontFamily"],
-				rotate: options["series"][0]["label"]["rotate"],
+				position: options.series[0].label.position,
+				size: options.series[0].label.fontSize,
+				lineLength: options.series[0].labelLine.length,
+				family: options.series[0].label.fontFamily,
+				rotate: options.series[0].label.rotate,
 			}));
 		};
-		//Reinitialize the feature when the chart is loaded
-		const reInitializeFeatures = (options) => {
-			setShowValueLabel(options["series"][0]["label"].show ?? true);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const reInitializeFeatures = (options: any) => {
+			setShowValueLabel(options.series[0].label.show ?? true);
 		};
-		//Handle the change event for any Value Label input
-		function handleInputChange(title, inputValue) {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function handleInputChange(title: string, inputValue: any) {
 			const option = JSON.parse(value);
 			if (title === "showValueLabel") {
-				option["series"][0]["label"].show = inputValue;
+				option.series[0].label.show = inputValue;
 				setShowValueLabel(inputValue);
 			} else if (title === "labelPosition") {
-				option["series"][0]["label"]["position"] = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					position: inputValue,
-				}));
+				option.series[0].label.position = inputValue;
+				setvalueLabel((prev) => ({ ...prev, position: inputValue }));
 			} else if (title === "labelRotate") {
-				option["series"][0]["label"]["rotate"] = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					rotate: inputValue,
-				}));
+				option.series[0].label.rotate = inputValue;
+				setvalueLabel((prev) => ({ ...prev, rotate: inputValue }));
 			} else if (title === "labelSize") {
-				option["series"][0]["label"]["fontSize"] = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					size: inputValue,
-				}));
+				option.series[0].label.fontSize = inputValue;
+				setvalueLabel((prev) => ({ ...prev, size: inputValue }));
 			} else if (title === "labelLength") {
-				option["series"][0]["labelLine"]["length"] = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					lineLength: inputValue,
-				}));
+				option.series[0].labelLine.length = inputValue;
+				setvalueLabel((prev) => ({ ...prev, lineLength: inputValue }));
 			} else if (title === "labelFamily") {
-				option["series"][0]["label"]["fontFamily"] = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					family: inputValue,
-				}));
+				option.series[0].label.fontFamily = inputValue;
+				setvalueLabel((prev) => ({ ...prev, family: inputValue }));
 			}
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
-		//Retain the local state of the feature on reset button
-		//The default values are set in the reset object in the option
-		function handleReset() {
+
+		function _handleReset() {
 			const option = JSON.parse(value);
-			option["series"][0]["label"].show =
-				option["reset"]["label"]["show"];
-			option["series"][0]["label"]["position"] =
-				option["reset"]["label"]["position"];
-			option["series"][0]["label"]["rotate"] =
-				option["reset"]["label"]["rotate"];
-			option["series"][0]["label"]["fontSize"] =
-				option["reset"]["label"]["fontSize"];
-			option["series"][0]["labelLine"]["length"] =
-				option["reset"]["labelLine"]["length"];
-			option["series"][0]["label"]["fontFamily"] =
-				option["reset"]["label"]["fontFamily"];
-			option["series"][0]["label"]["color"] =
-				option["reset"]["label"]["color"];
+			option.series[0].label.show = option.reset.label.show;
+			option.series[0].label.position = option.reset.label.position;
+			option.series[0].label.rotate = option.reset.label.rotate;
+			option.series[0].label.fontSize = option.reset.label.fontSize;
+			option.series[0].labelLine.length = option.reset.labelLine.length;
+			option.series[0].label.fontFamily = option.reset.label.fontFamily;
+			option.series[0].label.color = option.reset.label.color;
 			setData(path, option as PathValue<D["data"], typeof path>);
 			retainLocalState(option);
 		}
-		return (
-			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					gap="8px"
-					style={{ marginTop: "8px" }}
-				>
-					<Switch
-						size="small"
-						checked={showValueLabel}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange(
-								"showValueLabel",
-								e.target.checked,
-							)
-						}
-						title="Show Value Label"
-					/>
 
-					<Typography variant="body2" color="primary">
-						Show Value Label
-					</Typography>
-				</StyledAxisDiv>
+		return (
+			<div className="flex flex-col">
+				<div className="mt-2 flex flex-row items-center gap-2 px-4 py-2">
+					<Switch
+						checked={!!showValueLabel}
+						onCheckedChange={(checked: boolean) =>
+							handleInputChange("showValueLabel", checked)
+						}
+					/>
+					<span className="text-sm">Show Value Label</span>
+				</div>
 				{showValueLabel && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Choose a position for Value Label
-						</Typography>
-						<StyledSelect
-							size="small"
-							id="position"
-							name="position"
+						</span>
+						<Select
 							value={valueLabel?.position}
-							onChange={(e) =>
-								handleInputChange(
-									"labelPosition",
-									e.target.value,
-								)
+							onValueChange={(val) =>
+								handleInputChange("labelPosition", val)
 							}
 						>
-							<Select.Item key="-1" value="">
-								Select
-							</Select.Item>
-							{Pie_Alignment.map((label, index) => {
-								return (
-									<Select.Item value={label} key={index}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select" />
+							</SelectTrigger>
+							<SelectContent>
+								{Pie_Alignment.map((label, index) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									<SelectItem key={index} value={label}>
 										{label}
-									</Select.Item>
-								);
-							})}
-						</StyledSelect>
-					</StyledAxisColDiv>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				)}
 				{showValueLabel && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Rotate Value Label:
-						</Typography>
-
-						<Typography variant="body2" color="secondary">
-							Choose a position for Value Label
-						</Typography>
+						</span>
 						<Slider
-							size="small"
-							aria-label="Always visible"
-							value={valueLabel.rotate}
+							value={[valueLabel.rotate]}
 							min={valueLabel.rotateLabelMinValue}
 							max={valueLabel.rotateLabelMaxValue}
-							valueLabelDisplay="on"
-							onChange={(event, newValue) =>
-								handleInputChange("labelRotate", newValue)
+							onValueChange={(v: number[]) =>
+								handleInputChange("labelRotate", v[0])
 							}
 						/>
-						<StyledAxisSpan
-							display="flex"
-							width="100%"
-							justifyContent="space-between"
-						>
+						<div className="flex justify-between text-xs">
 							<span>{valueLabel.rotateLabelMinValue}</span>
 							<span>{valueLabel.rotateLabelMaxValue}</span>
-						</StyledAxisSpan>
-					</StyledAxisColDiv>
+						</div>
+					</div>
 				)}
 				{showValueLabel && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Value Label Size
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<Input
 							id="size"
 							name="size"
 							value={valueLabel?.size}
@@ -306,18 +198,16 @@ export const PieValueLabel = observer(
 								handleInputChange("labelSize", e.target.value)
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{showValueLabel && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Value Label Line Length
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<Input
 							id="length"
 							name="length"
 							value={valueLabel?.lineLength}
@@ -325,38 +215,32 @@ export const PieValueLabel = observer(
 								handleInputChange("labelLength", e.target.value)
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{showValueLabel && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Select Font Family
-						</Typography>
-
-						<StyledSelect
-							size="small"
-							id="font-family"
-							name="fontFamily"
+						</span>
+						<Select
 							value={valueLabel?.family}
-							onChange={(e) =>
-								handleInputChange("labelFamily", e.target.value)
+							onValueChange={(val) =>
+								handleInputChange("labelFamily", val)
 							}
 						>
-							<Select.Item key="-1" value="">
-								Select
-							</Select.Item>
-							{FontFamily.map((label, index) => {
-								return (
-									<Select.Item value={label} key={index}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select" />
+							</SelectTrigger>
+							<SelectContent>
+								{FontFamily.map((label, index) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									<SelectItem key={index} value={label}>
 										{label}
-									</Select.Item>
-								);
-							})}
-						</StyledSelect>
-					</StyledAxisColDiv>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				)}
 				{showValueLabel && (
 					<ColorPickerSettings
@@ -367,18 +251,11 @@ export const PieValueLabel = observer(
 					/>
 				)}
 				{showValueLabel && (
-					<StyledButtonWrapper>
-						<Button
-							variant="contained"
-							color="primary"
-							size="small"
-							onClick={handleReset}
-						>
-							Reset
-						</Button>
-					</StyledButtonWrapper>
+					<div className="flex justify-end px-4 py-2">
+						<Button onClick={handleReset}>Reset</Button>
+					</div>
 				)}
-			</StyledAxis>
+			</div>
 		);
 	},
 );

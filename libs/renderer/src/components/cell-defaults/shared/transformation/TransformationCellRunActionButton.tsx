@@ -1,15 +1,13 @@
-import { PlayCircle } from "@mui/icons-material";
+import { PlayCircle } from "lucide-react";
 import { computed } from "mobx";
-import { IconButton } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { useBlocks } from "../../../../hooks";
 import { ActionMessages, type CellState } from "../../../../store";
 import type { QueryImportCellDef } from "../../query-import-cell";
 import type { TransformationCellDef } from "./transformation.types";
 
 export const TransformationCellRunActionButton = (props: {
-	/** Cell that is controlling the cell */
 	cell: CellState<TransformationCellDef>;
-	/** Whether the content is expanded */
 	isExpanded?: boolean;
 }) => {
 	const { cell } = props;
@@ -25,10 +23,10 @@ export const TransformationCellRunActionButton = (props: {
 		return !!targetCell && (targetCell.isExecuted || !!targetCell.output);
 	}).get();
 
-	const checkFieldsValid = (object: object): void | boolean => {
+	const checkFieldsValid = (object: object): undefined | boolean => {
 		for (const value of Object.values(object)) {
 			console.log(object);
-			if (!Array.isArray(value) && typeof value == "object") {
+			if (!Array.isArray(value) && typeof value === "object") {
 				return checkFieldsValid(value);
 			} else if (!value || (Array.isArray(value) && !value.length)) {
 				return false;
@@ -44,10 +42,11 @@ export const TransformationCellRunActionButton = (props: {
 	}).get();
 
 	return (
-		<IconButton
+		<Button
 			title="Run cell"
+			variant="ghost"
+			size="icon-sm"
 			disabled={cell.isLoading || !doesFrameExist || !hasRequiredFields}
-			size="small"
 			onClick={() =>
 				state.dispatch({
 					message: ActionMessages.RUN_CELL,
@@ -58,7 +57,7 @@ export const TransformationCellRunActionButton = (props: {
 				})
 			}
 		>
-			<PlayCircle fontSize="small" />
-		</IconButton>
+			<PlayCircle className="size-4" />
+		</Button>
 	);
 };

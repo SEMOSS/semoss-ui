@@ -1,77 +1,24 @@
-import { AccountTree, KeyboardArrowDown } from "@mui/icons-material";
-import { green } from "@mui/material/colors";
+import { Network } from "lucide-react";
 import type React from "react";
 import {
-	Avatar,
-	Chip,
-	InputAdornment,
 	Select,
-	Stack,
-	styled,
-	Typography,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../../hooks";
 import { ActionMessages } from "../../../../store";
 
-const StyledSelect = styled(Select)(({ theme }) => ({
-	"& .MuiSelect-select": {
-		color: theme.palette.text.secondary,
-		display: "flex",
-		gap: theme.spacing(1),
-		alignItems: "center",
-		textOverflow: "ellipsis",
-		overflow: "hidden",
-		whiteSpace: "nowrap",
-		"&:focus": {
-			backgroundColor: "inherit !important",
-		},
-	},
-}));
-
-const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(1),
-	color: theme.palette.text.secondary,
-}));
-
-const TransformationChip = styled(Chip)(({ theme }) => ({
-	paddingLeft: theme.spacing(0.5),
-}));
-
-const TransformationChipAvatar = styled(Avatar, {
-	shouldForwardProp: (prop) => prop !== "color",
-})<{ color: string }>(({ theme, color }) => ({
-	borderRadius: "4px",
-	svg: {
-		fontSize: "1.25rem",
-	},
-	...(color === "primary" && {
-		backgroundColor: theme.palette.primary.main,
-	}),
-	...(color === "green" && {
-		backgroundColor: green[700],
-	}),
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	lineHeight: "24px",
-	fontWeight: theme.typography.fontWeightBold,
-}));
-
 type TransformationCellInputComponent = React.FunctionComponent<{
-	/** Whether the content is expanded */
 	isExpanded?: boolean;
-	/** User facing name to display */
 	display: string;
-	/** Icon to display */
 	Icon: React.FunctionComponent;
-	/** Main content slot */
 	children: React.ReactNode;
-	/** Update frame Selection */
 	frame?: {
-		/**  */
+		// biome-ignore lint/suspicious/noExplicitAny: external API type
 		cell: any;
-		/**  */
+		// biome-ignore lint/suspicious/noExplicitAny: external API type
 		options: Record<string, any>[];
 	};
 }>;
@@ -84,50 +31,21 @@ export const TransformationCellInput: TransformationCellInputComponent = (
 
 	if (!isExpanded) {
 		return (
-			<Stack width="100%" paddingY={0.5}>
-				<div>
-					<TransformationChip
-						size="small"
-						color={"primary"}
-						label={display}
-						avatar={
-							<TransformationChipAvatar
-								color={"primary"}
-								variant="rounded"
-							>
-								<Icon />
-							</TransformationChipAvatar>
-						}
-					/>
-				</div>
-			</Stack>
+			<div className="w-full py-0.5">
+				<span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-primary-foreground text-xs">
+					<Icon />
+					{display}
+				</span>
+			</div>
 		);
 	}
 
 	return (
-		<Stack width="100%" paddingY={0.5}>
-			<StyledSelect
-				size={"small"}
+		<div className="flex w-full flex-col gap-2 py-0.5">
+			<Select
 				value={frame ? frame.cell.parameters.targetCell.id : ""}
-				SelectProps={{
-					IconComponent: KeyboardArrowDown,
-					style: {
-						height: "30px",
-						width: "200px",
-					},
-					startAdornment: (
-						<InputAdornment position="start">
-							<AccountTree />
-						</InputAdornment>
-					),
-				}}
-				onChange={(e) => {
-					const target = frame.options.find((f) => {
-						if (f.id === e.target.value) {
-							return f;
-						}
-					});
-
+				onValueChange={(val) => {
+					const target = frame.options.find((f) => f.id === val);
 					state.dispatch({
 						message: ActionMessages.UPDATE_CELL,
 						payload: {
@@ -143,17 +61,20 @@ export const TransformationCellInput: TransformationCellInputComponent = (
 					});
 				}}
 			>
-				{frame &&
-					frame.options.map((c) => {
-						return (
-							<StyledSelectItem key={c.id} value={c.id}>
-								{c.parameters.frameVariableName}
-							</StyledSelectItem>
-						);
-					})}
-			</StyledSelect>
-			<StyledTypography variant="body1">{display}</StyledTypography>
+				<SelectTrigger className="h-[30px] w-[200px]">
+					<Network className="mr-1 size-4 shrink-0" />
+					<SelectValue placeholder="Select frame" />
+				</SelectTrigger>
+				<SelectContent>
+					{frame?.options.map((c) => (
+						<SelectItem key={c.id} value={c.id}>
+							{c.parameters.frameVariableName}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+			<p className="font-bold text-sm leading-6">{display}</p>
 			{children}
-		</Stack>
+		</div>
 	);
 };

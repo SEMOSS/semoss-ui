@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,36 +8,14 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
+
 export const LineLegend = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
@@ -57,9 +35,11 @@ export const LineLegend = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reInitializeFeatures(data.option);
@@ -68,36 +48,28 @@ export const LineLegend = observer(
 		//Reinitialize the feature when the chart is loaded
 		const reInitializeFeatures = (options) => {
 			if (Object.hasOwn(options, "legend")) {
-				setShowLegend(options["legend"]["show"]);
+				setShowLegend(options.legend.show);
 			}
 		};
 		//Handle the change event for the toggle switch
-		const handleLegend = (e) => {
+		const handleLegend = (checked: boolean) => {
 			const option = JSON.parse(value);
-			setShowLegend(!showLegend);
-			option["legend"]["show"] = e.target.checked;
+			setShowLegend(checked);
+			option.legend.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					gap="8px"
-					style={{ marginTop: "8px" }}
-				>
+			<div>
+				<div className="mt-2 flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
 						checked={showLegend}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleLegend(e)
-						}
-						title="Show Legend"
-						size="small"
+						onCheckedChange={handleLegend}
 					/>
-					<Typography variant="body2" color="secondary">
+					<span className="text-muted-foreground text-sm">
 						Show Legend
-					</Typography>
-				</StyledAxisDiv>
-			</StyledAxis>
+					</span>
+				</div>
+			</div>
 		);
 	},
 );

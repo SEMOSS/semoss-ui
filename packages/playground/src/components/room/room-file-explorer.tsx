@@ -1,11 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { download, useInsight } from "@semoss/sdk/react";
-import {
-	FileExplorer,
-	FileExplorerItem,
-	type FlexLayout,
-} from "@semoss/shared";
+import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import type { RoomStore } from "@/stores";
 
 interface RoomFileExplorerProps {
@@ -25,6 +21,30 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 		const { t } = useTranslation("room");
 
 		const config: { initialPath?: string } = node.getConfig() ?? {};
+
+		const removeTabsForPath = (
+			deletedPath: string,
+			isDirectory: boolean,
+		) => {
+			const model = room.sidebar.model;
+			const prefix =
+				isDirectory && !deletedPath.endsWith("/")
+					? `${deletedPath}/`
+					: null;
+			const tabsToRemove: string[] = [];
+			model.visitNodes((n) => {
+				if (!(n instanceof FlexLayout.TabNode)) return;
+				const cfg = n.getConfig() as { path?: string } | undefined;
+				const p = cfg?.path;
+				if (!p) return;
+				if (p === deletedPath || (prefix && p.startsWith(prefix))) {
+					tabsToRemove.push(n.getId());
+				}
+			});
+			for (const id of tabsToRemove) {
+				model.doAction(FlexLayout.Actions.deleteTab(id));
+			}
+		};
 
 		return (
 			<FileExplorer
@@ -78,6 +98,19 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 								);
 							}}
 							{...otherProps}
+							onAfterRename={(oldPath, newPath) => {
+								const newName =
+									newPath.split("/").filter(Boolean).pop() ??
+									newPath;
+								removeTabsForPath(oldPath, false);
+								room.addSidebarNode(`FILE--${newPath}`, {
+									type: "tab",
+									name: newName,
+									component: "room-file-editor",
+									config: { name: newName, path: newPath },
+									enableClose: true,
+								});
+							}}
 							secondaryActions={[
 								{
 									name: t("fileExplorer.copyPath"),
@@ -121,6 +154,10 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 											`DeleteInsightAssets(filePath=["${item.path}"]);`,
 										);
 
+										removeTabsForPath(
+											item.path,
+											item.type === "directory",
+										);
 										refresh();
 									},
 								},
