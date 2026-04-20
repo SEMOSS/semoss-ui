@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
@@ -99,8 +97,8 @@ const DateRangeFilter = ({
 
 	const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 	const firstDay = new Date(calYear, calMonth, 1).getDay();
-	const calDays: (number | null)[] = [];
-	for (let i = 0; i < firstDay; i++) calDays.push(null);
+	const calDays: number[] = [];
+	for (let i = 0; i < firstDay; i++) calDays.push(-(i + 1));
 	for (let i = 1; i <= daysInMonth; i++) calDays.push(i);
 
 	const isToday = (day: number) =>
@@ -277,12 +275,12 @@ const DateRangeFilter = ({
 
 					{/* Days grid */}
 					<div className="grid grid-cols-7">
-						{calDays.map((day, i) => (
+						{calDays.map((day) => (
 							<div
-								key={i}
+								key={day}
 								className="flex items-center justify-center"
 							>
-								{day ? (
+								{day > 0 ? (
 									<Button
 										onClick={() =>
 											!isPastDate(day) &&

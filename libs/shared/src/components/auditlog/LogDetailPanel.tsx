@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import {
 	Check,
 	CheckCircle,
@@ -61,8 +59,9 @@ const JSONTreeView = ({
 		<div style={{ marginLeft: isChild ? 3 : 0 }}>
 			<div className="flex items-center">
 				{isChild && (
-					<div
-						className="mr-1 inline-flex cursor-pointer items-center px-1 [&>svg]:h-4 [&>svg]:w-4"
+					<button
+						type="button"
+						className="mr-1 inline-flex cursor-pointer items-center border-none bg-transparent px-1 [&>svg]:h-4 [&>svg]:w-4"
 						onClick={toggleExpand}
 					>
 						{isExpanded ? (
@@ -74,7 +73,7 @@ const JSONTreeView = ({
 								<ChevronRight size={13} />
 							</span>
 						)}
-					</div>
+					</button>
 				)}
 				{isChild && (
 					<>
@@ -94,7 +93,7 @@ const JSONTreeView = ({
 				)}
 			</div>
 			{isExpanded && (
-				<div style={isChild ? null : { padding: "20px" }}>
+				<div style={isChild ? { padding: "0px" } : { padding: "20px" }}>
 					{Object.entries(data).map(([key, value]) => (
 						<div key={key} style={{ marginLeft: isChild ? 16 : 0 }}>
 							{!isArray && (

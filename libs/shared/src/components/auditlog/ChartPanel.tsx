@@ -1,6 +1,3 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-
 import {
 	Activity,
 	BarChart3,
@@ -153,12 +150,13 @@ export const ChartPanel = ({
 						/* Timeline view */
 						<div className="flex-1 space-y-0.5 overflow-y-auto [scrollbar-width:thin]">
 							{logs.map((log) => (
-								<div
+								<button
+									type="button"
 									key={log.spanId}
-									className={`flex h-5 cursor-pointer items-center gap-2 rounded px-1 transition-colors ${
+									className={`flex h-5 w-full cursor-pointer items-center gap-2 rounded border-none px-1 transition-colors ${
 										selected?.spanId === log.spanId
-											? "bg-primary/10"
-											: "hover:bg-secondary/50"
+											? "bg-muted"
+											: "bg-transparent hover:bg-secondary/50"
 									}`}
 									onClick={() => onSelectLog(log)}
 								>
@@ -191,7 +189,7 @@ export const ChartPanel = ({
 									>
 										{log.latency}ms
 									</span>
-								</div>
+								</button>
 							))}
 						</div>
 					)}

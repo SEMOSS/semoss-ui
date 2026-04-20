@@ -1,6 +1,3 @@
-/** biome-ignore-all lint/style/noNonNullAssertion: <explanation> */
-/** biome-ignore-all lint/a11y/noSvgWithoutTitle: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
 import { useEffect, useRef, useState } from "react";
 import { type AuditLog, parseArg } from "./types/audit";
 
@@ -88,9 +85,32 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 	return (
 		<div ref={containerRef} className="relative h-full w-full select-none">
 			<svg
+				role="img"
+				aria-label="Latency Chart"
 				width={dims.w}
 				height={dims.h}
 				className="overflow-visible"
+				onMouseMove={(e) => {
+					const rect = containerRef.current?.getBoundingClientRect();
+					if (!rect) return;
+					const mx = e.clientX - rect.left;
+					const my = e.clientY - rect.top;
+					const idx = Math.floor((mx - PL) / groupW);
+					if (
+						idx >= 0 &&
+						idx < data.length &&
+						my >= PT &&
+						my <= PT + chartH
+					) {
+						setTooltip({
+							x: e.clientX - rect.left,
+							y: e.clientY - rect.top,
+							log: data[idx],
+						});
+					} else {
+						setTooltip(null);
+					}
+				}}
 				onMouseLeave={() => setTooltip(null)}
 			>
 				{/* ── Y-axis grid lines + tick labels ── */}
@@ -162,18 +182,7 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 								fill={fill}
 								rx={2}
 								ry={2}
-								className="cursor-pointer"
 								opacity={0.85}
-								onMouseEnter={(e) => {
-									const rect =
-										containerRef.current!.getBoundingClientRect();
-									setTooltip({
-										x: e.clientX - rect.left,
-										y: e.clientY - rect.top,
-										log,
-									});
-								}}
-								onMouseLeave={() => setTooltip(null)}
 							/>
 							{/* X-axis label — rotated -35° around its anchor */}
 							<text

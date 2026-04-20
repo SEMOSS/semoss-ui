@@ -1,7 +1,3 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: interactive containers */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: token UI interactions */
-/** biome-ignore-all lint/nursery/useSortedClasses: dynamic class merging */
-
 import { Search, X } from "lucide-react";
 import {
 	type KeyboardEvent,
@@ -139,11 +135,6 @@ export const TokenizedSearchBar = ({
 	const [pendingCategory, setPendingCategory] =
 		useState<SearchCategory | null>(null);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
-
-	// Focus input whenever user clicks the container
-	const focusInput = useCallback(() => {
-		inputRef.current?.focus();
-	}, []);
 
 	// ── Add a value to a category (merges into existing token or creates new) ─
 	const addToken = useCallback(
@@ -287,10 +278,7 @@ export const TokenizedSearchBar = ({
 
 	return (
 		<div className="px-3 pb-2">
-			<div
-				onClick={focusInput}
-				className="flex min-h-[32px] flex-wrap items-center gap-1 rounded border border-border bg-secondary px-2 py-1 transition-colors focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20"
-			>
+			<label className="flex min-h-[32px] flex-wrap items-center gap-1 rounded border border-border bg-secondary px-2 py-1 transition-colors focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
 				<Search
 					size={12}
 					className="flex-shrink-0 text-muted-foreground"
@@ -315,15 +303,16 @@ export const TokenizedSearchBar = ({
 										<span className="opacity-40">,</span>
 									)}
 									<span>{val}</span>
-									<span
+									<button
+										type="button"
 										onClick={(e) => {
 											e.stopPropagation();
 											removeValue(token.id, vi);
 										}}
-										className="cursor-pointer rounded-sm opacity-60 transition-opacity hover:opacity-100"
+										className="cursor-pointer rounded-sm border-none bg-transparent p-0 opacity-60 transition-opacity hover:opacity-100"
 									>
 										<X size={8} />
-									</span>
+									</button>
 								</span>
 							))}
 						</Badge>
@@ -385,10 +374,11 @@ export const TokenizedSearchBar = ({
 							{CATEGORIES?.map((cat) => {
 								const meta = CATEGORY_META[cat];
 								return (
-									<div
+									<button
+										type="button"
 										key={cat}
 										onClick={() => selectCategory(cat)}
-										className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+										className="flex w-full cursor-pointer items-center gap-2 rounded-sm border-none bg-transparent px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
 									>
 										<span
 											className={`flex h-5 w-5 items-center justify-center rounded font-bold text-[10px] ${meta.bgColor} ${meta.color}`}
@@ -401,7 +391,7 @@ export const TokenizedSearchBar = ({
 										<span className="ml-auto font-mono text-[9px] text-muted-foreground">
 											{cat}
 										</span>
-									</div>
+									</button>
 								);
 							})}
 							<div className="mt-1 border-border border-t px-2 py-1.5">
@@ -415,7 +405,8 @@ export const TokenizedSearchBar = ({
 
 				{/* Clear all button */}
 				{(tokens?.length > 0 || freeText) && (
-					<span
+					<button
+						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onTokensChange([]);
@@ -423,12 +414,12 @@ export const TokenizedSearchBar = ({
 							setPendingCategory(null);
 							onSearch?.([], "");
 						}}
-						className="flex-shrink-0 cursor-pointer text-muted-foreground transition-colors hover:text-foreground"
+						className="flex-shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
 					>
 						<X size={12} />
-					</span>
+					</button>
 				)}
-			</div>
+			</label>
 		</div>
 	);
 };

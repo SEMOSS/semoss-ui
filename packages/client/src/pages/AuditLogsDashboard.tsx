@@ -1,4 +1,3 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	type AuditLog,

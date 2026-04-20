@@ -1,6 +1,3 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-
 import {
 	CheckCircle,
 	ChevronLeft,
@@ -124,7 +121,8 @@ export const EventHistory = ({
 										selected?.spanId === log.spanId;
 
 									return (
-										<div
+										<button
+											type="button"
 											key={log.spanId}
 											onClick={() => onSelectLog(log)}
 											onMouseEnter={() =>
@@ -133,12 +131,12 @@ export const EventHistory = ({
 											onMouseLeave={() =>
 												onHoverLog(null)
 											}
-											className={`flex cursor-pointer items-center gap-2 border-border/30 border-b px-3 py-1.5 transition-colors ${
+											className={`flex w-full cursor-pointer items-center gap-2 border-border/30 border-b border-none px-3 py-1.5 text-left transition-colors ${
 												isSelected
 													? "border-l-2 border-l-primary bg-primary/10"
 													: isHovered
 														? "bg-secondary"
-														: "hover:bg-secondary/50"
+														: "bg-transparent hover:bg-secondary/50"
 											}`}
 										>
 											{/* Status icon */}
@@ -198,7 +196,7 @@ export const EventHistory = ({
 													{log.latency}ms
 												</span>
 											</div>
-										</div>
+										</button>
 									);
 								})}
 							</div>

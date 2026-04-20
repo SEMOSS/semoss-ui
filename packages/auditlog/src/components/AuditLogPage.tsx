@@ -1,7 +1,3 @@
-/** biome-ignore-all lint/nursery/useSortedClasses: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-
 import { Loader2, Moon, Radio, Sun } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk";
@@ -457,23 +453,23 @@ export const AuditLogPage = () => {
 
 	console.log(logs, "logs");
 	return (
-		<div className="min-h-screen lg:h-screen flex flex-col bg-background overflow-auto">
+		<div className="flex min-h-screen flex-col overflow-auto bg-background lg:h-screen">
 			{/* ── Top Bar ── */}
-			<div className="flex-shrink-0 border-b border-border bg-card">
-				<div className="max-w-[1600px] mx-auto px-4 flex items-center justify-between h-10">
+			<div className="flex-shrink-0 border-border border-b bg-card">
+				<div className="mx-auto flex h-10 max-w-[1600px] items-center justify-between px-4">
 					<div className="flex items-center gap-2 text-xs">
-						<span className="text-foreground font-medium">
+						<span className="font-medium text-foreground">
 							Audit Logs
 						</span>
 						{loading && (
 							<Loader2
 								size={11}
-								className="text-muted-foreground animate-spin"
+								className="animate-spin text-muted-foreground"
 							/>
 						)}
 					</div>
 					<div className="flex items-center gap-3">
-						<div className="flex items-center gap-1.5 px-2 py-1 rounded border border-border bg-secondary">
+						<div className="flex items-center gap-1.5 rounded border border-border bg-secondary px-2 py-1">
 							<Radio size={10} className="text-success" />
 							<span className="text-[10px] text-muted-foreground">
 								Live
@@ -481,7 +477,7 @@ export const AuditLogPage = () => {
 						</div>
 						<Button
 							onClick={toggleDark}
-							className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors text-[10px] cursor-pointer hover:text-primary"
+							className="flex cursor-pointer items-center gap-1.5 text-[10px] text-muted-foreground transition-colors hover:text-foreground hover:text-primary"
 							variant="ghost"
 						>
 							{dark ? (
@@ -502,7 +498,7 @@ export const AuditLogPage = () => {
 			</div>
 
 			{/* ── Main Content ── */}
-			<div className="flex-1 min-h-0 max-w-[1600px] mx-auto w-full px-4 py-2 flex flex-col gap-2 ">
+			<div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col gap-2 px-4 py-2">
 				<FiltersRow
 					totalCount={totalCount}
 					successPct={successPct}
@@ -526,7 +522,7 @@ export const AuditLogPage = () => {
 				/>
 
 				{/* Row 2: Chart (65%) + Event History (35%) */}
-				<div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[65fr_35fr] gap-2">
+				<div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-[65fr_35fr]">
 					{/* Right: Event History + pagination — first on small screens */}
 					<div className="order-2 lg:order-2">
 						<EventHistory
