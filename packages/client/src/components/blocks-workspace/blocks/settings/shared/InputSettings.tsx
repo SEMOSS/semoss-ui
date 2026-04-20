@@ -8,7 +8,7 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { TextField } from "@semoss/ui";
+import { Input } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { BaseSettingSection } from "../BaseSettingSection";
@@ -151,8 +151,7 @@ export const InputSettings = observer(
 
 		return (
 			<BaseSettingSection label={label} description={description}>
-				<TextField
-					fullWidth
+				<Input
 					value={value}
 					onChange={(e) => {
 						// sync the data on change
@@ -163,11 +162,9 @@ export const InputSettings = observer(
 						data.type === "date" &&
 						path === "value"
 							? "YYYY-MM-DD"
-							: null
+							: undefined
 					}
 					type={type}
-					size="small"
-					variant="outlined"
 					autoComplete="off"
 					data-testid={formatToDataTestId(
 						`inputSettings-${label}-${id}-txt`,

@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,68 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import {
-	Button,
-	Slider,
-	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+import { Button, Input, Slider, Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
-const StyledButton = styled(Button)({
-	left: "80%",
-});
 
 export const EditYAxisScatterPlot = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -99,423 +44,225 @@ export const EditYAxisScatterPlot = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
 			}
 		}, [id]);
 
-		/**
-		 * Reinitializes the Y-Axis features based on the provided options.
-		 * @param options The options to reinitialize the features with.
-		 */
 		const reinitializeFeatures = (options) => {
-			// Check if the y-axis property exists
 			if (Object.hasOwn(options, "yAxis")) {
-				// Check if the show property exists
 				if (options.yAxis && Object.hasOwn(options.yAxis, "show")) {
-					// Update the showYaxis state
-					setShowYaxis(options["yAxis"]["show"]);
+					setShowYaxis(options.yAxis.show);
 				}
-
-				// Check if the axis tick show property exists
 				if (
-					options.yAxis &&
-					options.yAxis.axisTick &&
+					options.yAxis?.axisTick &&
 					Object.hasOwn(options.yAxis.axisTick, "show")
 				) {
-					// Update the showYaxisTick state
-					setShowYaxisTick(options["yAxis"]["axisTick"]["show"]);
+					setShowYaxisTick(options.yAxis.axisTick.show);
 				}
-
-				// Check if the axis label property exists
-				if (options.yAxis && options.yAxis.axisLabel) {
-					// Update the rotateYaxis state
-					setRotateYaxis(options["yAxis"]["axisLabel"]["rotate"]);
-					// Update the showAxisLabel state
-					setShowAxisLabel(options["yAxis"]["axisLabel"]["show"]);
-					// Update the fontSizeYAxisLabel state
-					setFontSizeYAxisLabel(
-						options["yAxis"]["axisLabel"]["fontSize"],
-					);
+				if (options.yAxis?.axisLabel) {
+					setRotateYaxis(options.yAxis.axisLabel.rotate);
+					setShowAxisLabel(options.yAxis.axisLabel.show);
+					setFontSizeYAxisLabel(options.yAxis.axisLabel.fontSize);
 				}
-
-				// Check if the name text style font size exists
 				if (
-					options.yAxis &&
-					options.yAxis.nameTextStyle &&
+					options.yAxis?.nameTextStyle &&
 					Object.hasOwn(options.yAxis.nameTextStyle, "fontSize")
 				) {
-					// Update the fontSizeYAxis state
-					setFontSizeYAxis(
-						options["yAxis"]["nameTextStyle"]["fontSize"],
-					);
+					setFontSizeYAxis(options.yAxis.nameTextStyle.fontSize);
 				}
 			}
 		};
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				retainYAxisTitle(data.option);
 			}
-		}, [data.option["yAxis"]["name"]]);
+		}, [data.option.yAxis.name]);
 
-		/**
-		 * Checks if the y-axis property exists and if the name property exists.
-		 * If both conditions are true, it sets the yaxisTitle state to the value of the name property.
-		 * @param {Object} options - The options object to check.
-		 */
 		const retainYAxisTitle = (options) => {
 			if (Object.hasOwn(options, "yAxis")) {
-				// Check if the name property exists
 				if (options.yAxis && Object.hasOwn(options.yAxis, "name")) {
-					// Set the yaxisTitle state to the value of the name property
-					setYaxisTitle(data.option["yAxis"]["name"]);
+					setYaxisTitle(data.option.yAxis.name);
 				}
 			}
 		};
 
-		/**
-		 * Handles the change event of the show Y-axis switch.
-		 * Updates the showYaxis state and the 'show' property of the yAxis object in the chart options.
-		 * @param  e - The change event.
-		 * @returns {void}
-		 */
-		const showYAxis = (e) => {
-			// Create a copy of the chart options
+		const showYAxis = (checked: boolean) => {
 			const option = JSON.parse(value);
-			// Toggle the showYaxis state
-			setShowYaxis(!showYaxis);
-			// Update the 'show' property of the yAxis object in the chart options
-			option["yAxis"]["show"] = e.target.checked;
-			// Save the updated chart options to the state
+			setShowYaxis(checked);
+			option.yAxis.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event of the show Y-axis title switch.
-		 * If the switch is checked, the y-axis title is set to the value of the pixelName property.
-		 * If the switch is unchecked, the y-axis title is set to an empty string.
-		 * The updated chart options are then saved to the state.
-		 * @param  e - The change event.
-		 * @returns {void}
-		 */
-		const showYAxisTitle = (e) => {
-			// Create a copy of the chart options
+		const showYAxisTitle = (checked: boolean) => {
 			const option = JSON.parse(value);
-			// Toggle the showYaxisTitle state
-			setShowYaxisTitle(!showYaxisTitle);
-			// Update the y-axis title based on the switch state
-			option["yAxis"]["name"] =
-				option["yAxis"]["name"] == ""
-					? option["yAxis"]["pixelName"]
-					: "";
-			// Save the updated chart options to the state
+			setShowYaxisTitle(checked);
+			option.yAxis.name =
+				option.yAxis.name === "" ? option.yAxis.pixelName : "";
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event of the Y-axis title input field.
-		 * Updates the yaxisTitle state and the 'name' property of the yAxis object in the chart options.
-		 * @param  e - The change event.
-		 * @returns {void}
-		 */
 		const handleYaxisTitleChange = (e) => {
-			// Update the yaxisTitle state
 			setYaxisTitle(e.target.value);
-			// Create a copy of the chart options
 			const option = JSON.parse(value);
-			// Update the 'name' property of the yAxis object in the chart options
-			option["yAxis"]["name"] = e.target.value;
-			// Save the updated chart options to the state
+			option.yAxis.name = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event of the Y-axis font size input field.
-		 * Updates the fontSizeYAxis state and the 'fontSize' property of the 'nameTextStyle' object in the yAxis object in the chart options.
-		 * @param  e - The change event.
-		 * @returns {void}
-		 */
 		const handleChangeYAxisFontSize = (e) => {
-			// Create a copy of the chart options
 			const option = JSON.parse(value);
-			// Update the fontSizeYAxis state
 			setFontSizeYAxis(e.target.valueAsNumber);
-			// Update the 'fontSize' property of the 'nameTextStyle' object in the yAxis object in the chart options
-			option["yAxis"]["nameTextStyle"]["fontSize"] =
-				e.target.valueAsNumber;
-			// Save the updated chart options to the state
+			option.yAxis.nameTextStyle.fontSize = e.target.valueAsNumber;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event of the Y-axis label font size input field.
-		 * Updates the fontSizeYAxisLabel state and the 'fontSize' property of the 'axisLabel' object in the yAxis object in the chart options.
-		 * @param e - The change event.
-		 * @returns {void}
-		 */
 		const handleChangeYAxisLabelFontSize = (e) => {
-			// Create a copy of the chart options
 			const option = JSON.parse(value);
-			// Update the fontSizeYAxisLabel state
 			setFontSizeYAxisLabel(e.target.value);
-			// Update the 'fontSize' property of the 'axisLabel' object in the yAxis object in the chart options
-			option["yAxis"]["axisLabel"]["fontSize"] = e.target.value;
-			// Save the updated chart options to the state
+			option.yAxis.axisLabel.fontSize = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event for rotating the Y-axis labels.
-		 * Updates the rotateYaxis state and the 'rotate' property of the 'axisLabel' object in the yAxis object in the chart options.
-		 * @param e - The change event.
-		 */
-		const rotateYAxis = (e) => {
-			// Parse the current chart options from the state value
+		const rotateYAxis = (newValue: number[]) => {
 			const option = JSON.parse(value);
-			// Update the rotateYaxis state with the new rotation value
-			setRotateYaxis(e.target.value);
-			// Set the 'rotate' property of the 'axisLabel' object in the yAxis to the new value
-			option["yAxis"]["axisLabel"]["rotate"] = e.target.value;
-			// Save the updated chart options back to the state
+			setRotateYaxis(newValue[0]);
+			option.yAxis.axisLabel.rotate = newValue[0];
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event of the Y-axis tick show checkbox.
-		 * Updates the showYaxisTick state and the 'show' property of the 'axisTick' object in the yAxis object in the chart options.
-		 * @param e - The change event.
-		 */
-		const showYAxisTick = (e: React.ChangeEvent<HTMLInputElement>) => {
-			// Parse the current chart options from the state value
+		const showYAxisTick = (checked: boolean) => {
 			const option = JSON.parse(value);
-			// Update the showYaxisTick state with the new value
-			setShowYaxisTick(!showYaxisTick);
-			// Set the 'show' property of the 'axisTick' object in the yAxis to the new value
-			option["yAxis"]["axisTick"]["show"] = e.target.checked;
-			// Save the updated chart options back to the state
+			setShowYaxisTick(checked);
+			option.yAxis.axisTick.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event of the Y-axis label show checkbox.
-		 * Updates the showYAxisLabel state and the 'show' property of the 'axisLabel' object in the yAxis object in the chart options.
-		 * @param e - The change event.
-		 */
-		const showYAxisLabel = (e: React.ChangeEvent<HTMLInputElement>) => {
-			// Parse the current chart options from the state value
+		const showYAxisLabel = (checked: boolean) => {
 			const option = JSON.parse(value);
-			// Update the showYAxisLabel state with the new value
-			setShowAxisLabel(!showAxisLabel);
-			// Set the 'show' property of the 'axisLabel' object in the yAxis to the new value
-			option["yAxis"]["axisLabel"]["show"] = e.target.checked;
-			// Save the updated chart options back to the state
+			setShowAxisLabel(checked);
+			option.yAxis.axisLabel.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Resets the Y-axis options to their default values.
-		 * This function is called when the user clicks the "Reset" button.
-		 * It updates the state of the Y-axis options and saves the updated chart options to the state.
-		 * @returns {void}
-		 */
 		const Reset = () => {
 			const option = JSON.parse(value);
-			// Update the state of the Y-axis options
-			setShowYaxis(option["reset"]["axis"]["yaxis"]["show"]);
+			setShowYaxis(option.reset.axis.yaxis.show);
 			setShowYaxisTitle(true);
-			setYaxisTitle(option["yAxis"]["pixelName"]);
-			setFontSizeYAxis(
-				option["reset"]["axis"]["yaxis"]["nameTextStyle"]["fontSize"],
-			);
-			setFontSizeYAxisLabel(
-				option["reset"]["axis"]["yaxis"]["axisLabel"]["fontSize"],
-			);
-			setRotateYaxis(
-				option["reset"]["axis"]["yaxis"]["axisLabel"]["rotate"],
-			);
-			setShowYaxisTick(
-				option["reset"]["axis"]["yaxis"]["axisTick"]["show"],
-			);
-			setShowAxisLabel(
-				option["reset"]["axis"]["yaxis"]["axisLabel"]["show"],
-			);
-			// Update the Y-axis options in the chart options
-			option["yAxis"]["show"] = option["reset"]["axis"]["yaxis"]["show"];
-			option["yAxis"]["name"] = option["yAxis"]["pixelName"];
-			option["yAxis"]["nameTextStyle"]["fontSize"] =
-				option["reset"]["axis"]["yaxis"]["nameTextStyle"]["fontSize"];
-			option["yAxis"]["axisLabel"]["fontSize"] =
-				option["reset"]["axis"]["yaxis"]["axisLabel"]["fontSize"];
-			option["yAxis"]["axisLabel"]["rotate"] =
-				option["reset"]["axis"]["yaxis"]["axisLabel"]["rotate"];
-			option["yAxis"]["axisTick"]["show"] =
-				option["reset"]["axis"]["yaxis"]["axisTick"]["show"];
-			option["yAxis"]["axisLabel"]["show"] =
-				option["reset"]["axis"]["yaxis"]["axisLabel"]["show"];
-			// Save the updated chart options to the state
+			setYaxisTitle(option.yAxis.pixelName);
+			setFontSizeYAxis(option.reset.axis.yaxis.nameTextStyle.fontSize);
+			setFontSizeYAxisLabel(option.reset.axis.yaxis.axisLabel.fontSize);
+			setRotateYaxis(option.reset.axis.yaxis.axisLabel.rotate);
+			setShowYaxisTick(option.reset.axis.yaxis.axisTick.show);
+			setShowAxisLabel(option.reset.axis.yaxis.axisLabel.show);
+			option.yAxis.show = option.reset.axis.yaxis.show;
+			option.yAxis.name = option.yAxis.pixelName;
+			option.yAxis.nameTextStyle.fontSize =
+				option.reset.axis.yaxis.nameTextStyle.fontSize;
+			option.yAxis.axisLabel.fontSize =
+				option.reset.axis.yaxis.axisLabel.fontSize;
+			option.yAxis.axisLabel.rotate =
+				option.reset.axis.yaxis.axisLabel.rotate;
+			option.yAxis.axisTick.show = option.reset.axis.yaxis.axisTick.show;
+			option.yAxis.axisLabel.show =
+				option.reset.axis.yaxis.axisLabel.show;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
-					<Switch
-						checked={showYaxis}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showYAxis(e)
-						}
-						title="Show/Hide Axis"
-						size="small"
-					/>
-					<StyledTypography variant="body2">
-						Show/Hide Axis
-					</StyledTypography>
-				</StyledAxisDiv>
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
+			<div className="flex flex-col">
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
+					<Switch checked={showYaxis} onCheckedChange={showYAxis} />
+					<span className="text-sm">Show/Hide Axis</span>
+				</div>
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
 						checked={showYaxisTitle}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showYAxisTitle(e)
-						}
-						title="Show Axis Title"
-						size="small"
+						onCheckedChange={showYAxisTitle}
 					/>
-					<StyledTypography variant="body2">
-						Show Axis Title
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="text-sm">Show Axis Title</span>
+				</div>
 				{showYaxisTitle && (
-					<StyledAxis>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
+					<div className="flex flex-col">
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Set Y Axis Title
-							</Typography>
-							<StyledTextField
+							</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
 								id="xaxis-title"
 								value={yaxisTitle}
-								size="small"
-								onChange={(e) => handleYaxisTitleChange(e)}
+								onChange={handleYaxisTitleChange}
 							/>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2" color="secondary">
+						</div>
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Edit Axis Title Font Size
-							</Typography>
-							<TextField
+							</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
 								id="xaxis-edit-title-font-size"
 								type="number"
-								size="small"
 								value={fontSizeYAxis}
-								onChange={(e) => handleChangeYAxisFontSize(e)}
+								onChange={handleChangeYAxisFontSize}
 							/>
-						</StyledAxisColDiv>
-					</StyledAxis>
+						</div>
+					</div>
 				)}
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
 						checked={showAxisLabel}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showYAxisLabel(e)
-						}
-						title="Show Labels"
-						size="small"
+						onCheckedChange={showYAxisLabel}
 					/>
-					<StyledTypography variant="body2">
-						Show Labels
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="text-sm">Show Labels</span>
+				</div>
 				{showAxisLabel && (
-					<StyledAxis>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<Typography variant="body2" color="secondary">
+					<div className="flex flex-col">
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Edit Label Font Size
-							</Typography>
-							<TextField
-								id="xaxis-edit-title-font-size"
+							</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
+								id="yaxis-label-font-size"
 								type="number"
-								size="small"
 								value={fontSizeYAxisLabel}
-								onChange={(e) =>
-									handleChangeYAxisLabelFontSize(e)
-								}
+								onChange={handleChangeYAxisLabelFontSize}
 							/>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
-								Rotate Labels
-							</Typography>
+						</div>
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-sm">Rotate Labels</span>
 							<Slider
-								size="small"
 								min={0}
 								max={360}
-								value={rotateYaxis}
-								valueLabelDisplay="auto"
-								onChange={(e) => rotateYAxis(e)}
+								value={[rotateYaxis]}
+								onValueChange={rotateYAxis}
 							/>
-						</StyledAxisColDiv>
-					</StyledAxis>
+						</div>
+					</div>
 				)}
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
 						checked={showYaxisTick}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showYAxisTick(e)
-						}
-						title="Show Axis Line Ticks"
-						size="small"
+						onCheckedChange={showYAxisTick}
 					/>
-					<StyledTypography variant="body2">
-						Show Axis Line Ticks
-					</StyledTypography>
-				</StyledAxisDiv>
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-end"
-					gap="8px"
-				>
-					<Button
-						variant="contained"
-						color="primary"
-						size="small"
-						onClick={Reset}
-					>
-						Reset
-					</Button>
-				</StyledAxisDiv>
-			</StyledAxis>
+					<span className="text-sm">Show Axis Line Ticks</span>
+				</div>
+				<div className="flex justify-end px-4 py-2">
+					<Button onClick={Reset}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

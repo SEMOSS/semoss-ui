@@ -77,14 +77,14 @@
     padding-left: 34px;
 }
 
-.flexlayout__theme_smss--legacy .workspace_layout .flexlayout__border_bottom {
+.flexlayout__theme_smss--legacy .flexlayout__border_bottom {
     padding-left: 0;
     position: absolute;
     bottom: 0;
     min-width: 90px;
 }
 
-.flexlayout__theme_smss--legacy .workspace_layout .flexlayout__border_bottom .flexlayout__border_button_bottom {
+.flexlayout__theme_smss--legacy .flexlayout__border_bottom .flexlayout__border_button_bottom {
    background: transparent;
 }
 
@@ -127,6 +127,7 @@ Main Content tabs
     gap: 4px;
     flex: 1 0 0;
 }
+
 .flexlayout__theme_smss--legacy .flexlayout__tabset_container{
     border-radius: var(--Shape-borderRadiusLg, 12px);
     background: var(--Background-Paper1, #fff);

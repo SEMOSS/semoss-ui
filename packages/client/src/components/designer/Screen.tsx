@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { styled } from "@semoss/ui";
 import { useDesigner } from "@/hooks";
 import {
 	getNearestBlock,
@@ -20,57 +19,6 @@ import { Placeholder } from "./Placeholder";
 // TODO: FIX
 import { SelectedMask } from "./SelectedMask";
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	position: "relative",
-	height: "100%",
-	display: "flex",
-	flexGrow: 1,
-	padding: `${theme.spacing(2.5)} ${theme.spacing(2)}`,
-	overflow: "auto",
-}));
-
-const StyledContent = styled("div", {
-	shouldForwardProp: (prop) => prop !== "off",
-})<{
-	/** Track if the drag is on */
-	off: boolean;
-}>(({ off }) => ({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "center",
-	userSelect: off ? "none" : "auto",
-	flexGrow: "1",
-}));
-
-const StyledContentOuter = styled("div")(({ theme }) => ({
-	padding: theme.spacing(1),
-	display: "flex",
-	flex: 1,
-	minWidth: "100%",
-	height: "inherit",
-}));
-
-const StyledContentInner = styled("div", {
-	shouldForwardProp: (prop) => prop !== "isHoveredOverSelectedBlock",
-})<{ isHoveredOverSelectedBlock: boolean }>(
-	({ isHoveredOverSelectedBlock }) => ({
-		flex: 1,
-		position: "relative",
-		minWidth: "100%",
-		height: "inherit",
-		cursor: !isHoveredOverSelectedBlock ? "pointer!important" : "inherit",
-		// iframes should not get pointer events in design mode
-		iframe: {
-			pointerEvents: "none!important",
-		},
-		// page scrolling is handled in the designer in design mode
-		"[data-page]": {
-			overflow: "unset!important",
-			minHeight: "100%",
-		},
-	}),
-);
-
 interface ScreenProps {
 	/** Children to render */
 	children: React.ReactNode;
@@ -79,24 +27,16 @@ interface ScreenProps {
 export const Screen = observer((props: ScreenProps) => {
 	const { children } = props;
 
-	// save the ref
 	const eleRef = useRef<HTMLDivElement | null>(null);
 
-	// get the designer
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
 
-	/**
-	 * Handle the click events on the page. This will select the hovered block and prevent block clicks if it hasn't been selected yet.
-	 *
-	 *  @param event - mouse event
-	 */
 	const handleClickCapture = (event: React.MouseEvent) => {
 		if (!designer.hovered || designer.hovered === designer.selected) {
 			return;
 		}
 
-		// prevent click events for elements until selected
 		event.stopPropagation();
 		event.preventDefault();
 
@@ -109,11 +49,10 @@ export const Screen = observer((props: ScreenProps) => {
 		}
 		const id = getNearestBlock(event.target as Element);
 
-		// prevent events for elements until selected
 		event.stopPropagation();
 		event.preventDefault();
 		if (designer.selectedBlocks.includes(id)) {
-			return; // Do nothing if the id is already selected
+			return;
 		}
 
 		designer.setSelected(id);
@@ -123,11 +62,6 @@ export const Screen = observer((props: ScreenProps) => {
 		}
 	};
 
-	/**
-	 * Handle the mouseover on the page. This will hover the nearest block.
-	 *
-	 *  @param event - mouse event
-	 */
 	const handleMouseOver = (event: React.MouseEvent) => {
 		const id = getNearestBlock(event.target as Element);
 
@@ -138,43 +72,32 @@ export const Screen = observer((props: ScreenProps) => {
 		designer.setHovered(id);
 	};
 
-	/**
-	 * Handle the mouseleave on the page. This will deselect hovered widgets
-	 */
 	const handleMouseLeave = () => {
 		designer.setHovered("");
 
-		// reset the placeholder / clear the ghost if is its off the screen
 		if (designer.drag.active) {
 			designer.resetPlaceholder();
 			designer.updateGhostPosition(null);
 		}
 	};
-	/**
-	 * Handle the mousemove event on the document. This will render the placeholder based on the target block.
-	 */
+
 	const handleDocumentMouseMove = useCallback(
 		(event: MouseEvent) => {
-			// if there is nothing dragged ignore it
 			if (!designer.drag.active) {
 				return;
 			}
 
-			// if there is not root ref ignore it
 			if (!eleRef.current) {
 				return;
 			}
 
-			// prevent the default action (scroll + text selection)
 			event.preventDefault();
 
-			// update the ghost
 			designer.updateGhostPosition({
 				x: event.clientX,
 				y: event.clientY,
 			});
 
-			// get the nearest element, this will be used to update the position of the place holder
 			const nearestElement = getNearestBlockElement(
 				event.target as Element,
 			);
@@ -183,23 +106,18 @@ export const Screen = observer((props: ScreenProps) => {
 				return;
 			}
 
-			// get the id from the element
 			const id = getNearestBlock(nearestElement) as string;
 
-			// set the hovered
 			designer.setHovered(id);
 
-			// try to add to the slot if its present
 			const slotElement = getNearestSlotElement(event.target as Element);
 			if (slotElement) {
 				const slot = getNearestSlot(slotElement) as string;
 
-				// check if we can drop
 				if (!designer.drag.canDrop(id, slot)) {
 					return;
 				}
 
-				// update
 				designer.updatePlaceholder(
 					{
 						type: "replace",
@@ -212,20 +130,16 @@ export const Screen = observer((props: ScreenProps) => {
 				return;
 			}
 
-			// get the block
 			const block = state.getBlock(id);
 
-			// if there is no parent, we cannot add
 			if (!block.parent) {
 				return;
 			}
 
-			// check if we can drop
 			if (!designer.drag.canDrop(block.parent.id, block.parent.slot)) {
 				return;
 			}
 
-			// calculate the current percent of the block
 			const widgetClientRect = nearestElement.getBoundingClientRect();
 			const percent = Math.round(
 				((event.clientY - widgetClientRect.y) /
@@ -254,7 +168,6 @@ export const Screen = observer((props: ScreenProps) => {
 		[designer.drag.active, designer.drag.canDrop, designer, state],
 	);
 
-	// add the mouse up listener when dragged
 	useEffect(() => {
 		if (!designer.drag.active) {
 			return;
@@ -269,8 +182,9 @@ export const Screen = observer((props: ScreenProps) => {
 
 	const isHoveredOverSelectedBlock = useMemo(() => {
 		return designer.hovered === designer.selected;
-	}, [designer.hovered, designer.selected, handleMouseOver]);
+	}, [designer.hovered, designer.selected]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (
@@ -279,11 +193,9 @@ export const Screen = observer((props: ScreenProps) => {
 				(event.key === "x" || event.key === "X")
 			) {
 				if (designer.selected) {
-					// Prevent deletion if id contains 'page'
 					if (designer.selected.includes("page")) {
 						return;
 					}
-					// Delete the selected block
 					state.dispatch({
 						message: ActionMessages.REMOVE_BLOCK,
 						payload: {
@@ -293,7 +205,6 @@ export const Screen = observer((props: ScreenProps) => {
 					});
 					designer.setSelected("");
 				} else if (designer.selectedBlocks.length > 0) {
-					// Delete all multiselected blocks
 					designer.selectedBlocks.forEach((id: string) => {
 						if (!id.includes("page")) {
 							state.dispatch({
@@ -319,7 +230,11 @@ export const Screen = observer((props: ScreenProps) => {
 	}, [designer]);
 
 	return (
-		<StyledContainer ref={eleRef}>
+		<div
+			ref={eleRef}
+			className="relative flex h-full flex-grow overflow-auto"
+			style={{ padding: "20px 16px" }}
+		>
 			{eleRef.current ? (
 				<>
 					{(designer.selected ||
@@ -342,11 +257,25 @@ export const Screen = observer((props: ScreenProps) => {
 			{designer.drag.active && <Ghost />}
 			{<FormMenuHost />}
 
-			<StyledContent off={designer.drag.active ? true : false}>
-				<StyledContentOuter onMouseLeave={handleMouseLeave}>
-					<StyledContentInner
+			<div
+				className="flex flex-grow flex-col items-center"
+				style={{ userSelect: designer.drag.active ? "none" : "auto" }}
+			>
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: designer canvas */}
+				<div
+					className="flex h-inherit min-w-full flex-1 p-2"
+					onMouseLeave={handleMouseLeave}
+				>
+					{/* biome-ignore lint/a11y/noStaticElementInteractions: designer canvas */}
+					{/* biome-ignore lint/a11y/useKeyWithMouseEvents: designer canvas */}
+					<div
+						className="relative h-inherit min-w-full flex-1"
+						style={{
+							cursor: !isHoveredOverSelectedBlock
+								? "pointer"
+								: "inherit",
+						}}
 						onMouseOver={handleMouseOver}
-						isHoveredOverSelectedBlock={isHoveredOverSelectedBlock}
 						onClickCapture={(e) => {
 							if (e.ctrlKey || e.metaKey || e.shiftKey) {
 								e.stopPropagation();
@@ -359,9 +288,9 @@ export const Screen = observer((props: ScreenProps) => {
 						}}
 					>
 						{children}
-					</StyledContentInner>
-				</StyledContentOuter>
-			</StyledContent>
-		</StyledContainer>
+					</div>
+				</div>
+			</div>
+		</div>
 	);
 });

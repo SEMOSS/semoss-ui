@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
 	Block,
 	BlockDef,
@@ -7,7 +7,7 @@ import type {
 	Paths,
 	PathValue,
 } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
@@ -15,30 +15,13 @@ export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
 	path: Paths<Block<D>["data"], 4>;
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 0",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
 export const RowSpanning = observer(
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 	<D extends BlockDef = GridBlockDef>({ id, path }: TitleStylingProps<D>) => {
 		const { data, setData } = useBlockSettings<GridBlockDef>(id);
 		const [rowSpanning, setRowSpanning] = useState(false);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (data.option?.rowSpanning !== rowSpanning) {
 				setRowSpanning(data.option.rowSpanning);
@@ -59,25 +42,21 @@ export const RowSpanning = observer(
 		};
 
 		return (
-			<StyledContainer>
-				<StyledAxisDiv
-					display="flex"
-					gap="8px"
+			<div className="flex flex-col gap-2">
+				<div
+					className="flex flex-row items-center gap-2 py-2"
 					style={{ marginTop: "8px" }}
 				>
 					<Switch
-						size="small"
 						checked={rowSpanning}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange(e.target.checked)
-						}
+						onCheckedChange={handleInputChange}
 						title="Show Row Spanning"
 					/>
-					<Typography variant="body2" color="secondary">
+					<p className="text-muted-foreground text-sm">
 						Show Row Spanning
-					</Typography>
-				</StyledAxisDiv>
-			</StyledContainer>
+					</p>
+				</div>
+			</div>
 		);
 	},
 );

@@ -338,7 +338,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
+						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -384,7 +384,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -440,12 +440,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto flex w-full max-w-4xl shrink-0 flex-col p-4">
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				<RoomInput
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
 					hidePauseButton={!room.numberOfTools}
 					model={room.model}
+					room={room}
 					setModel={(model) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);

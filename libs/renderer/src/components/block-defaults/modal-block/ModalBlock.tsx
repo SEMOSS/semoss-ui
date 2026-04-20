@@ -1,13 +1,8 @@
-import CloseIcon from "@mui/icons-material/Close";
-import {
-	Box,
-	IconButton,
-	Modal as MuiModal,
-	styled,
-	Typography,
-} from "@mui/material";
+import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, type FC, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { Button } from "@semoss/ui/next";
 import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
@@ -21,7 +16,7 @@ export interface ModalBlockDef extends BlockDef<"modal"> {
 		maxWidth: "xs" | "sm" | "md" | "lg" | "xl";
 		minWidth: "xs" | "sm" | "md" | "lg" | "xl";
 		designMode: boolean;
-		open: string | boolean | number; // Changed to string to store query
+		open: string | boolean | number;
 	};
 	slots: {
 		content: true;
@@ -39,75 +34,13 @@ export interface ModalBlockDef extends BlockDef<"modal"> {
 	};
 }
 
-const ModalWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
-	visibility: $visible ? "visible" : "hidden",
-	minHeight: $visible ? "auto" : "1px",
-}));
-
-const ModalOverlay = styled(Box)(() => ({
-	position: "absolute",
-	top: 0,
-	left: 0,
-	right: 0,
-	bottom: 0,
-	backgroundColor: "rgba(0, 0, 0, 0.5)",
-	zIndex: 1,
-	pointerEvents: "none",
-}));
-
-const ModalContainer = styled(Box)(() => ({
-	position: "relative",
-	zIndex: 2,
-	width: "fit-content",
-	margin: "32px auto",
-	"& .delete-duplicate-mask": {
-		zIndex: 3,
-	},
-}));
-
-const StyledModalContainer = styled(Box)(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper,
-	boxShadow: theme.shadows[24],
-	borderRadius: theme.shape.borderRadius,
-	padding: theme.spacing(4),
-	maxHeight: "90vh",
-	overflow: "auto",
-	outline: "none",
-}));
-
-const StyledModalHeader = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	marginBottom: theme.spacing(2),
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	paddingBottom: theme.spacing(1),
-}));
-
-const StyledDropZone = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "isStatic",
-})<{ isStatic: boolean }>(({ theme, isStatic }) => ({
-	border: `1px dashed ${theme.palette.primary.main}`,
-	borderRadius: theme.shape.borderRadius,
-	padding: theme.spacing(2),
-	minHeight: 100,
-	position: "relative",
-	"&:empty::after": {
-		content: isStatic ? '"Drop components here"' : '""',
-		position: "absolute",
-		top: "50%",
-		left: "50%",
-		transform: "translate(-50%, -50%)",
-		color: theme.palette.text.disabled,
-		pointerEvents: "none",
-	},
-}));
-
-const StyledFooterArea = styled(Box)(({ theme }) => ({
-	marginTop: theme.spacing(3),
-	paddingTop: theme.spacing(2),
-	borderTop: `1px solid ${theme.palette.divider}`,
-}));
+const widthMap: Record<"xs" | "sm" | "md" | "lg" | "xl", string> = {
+	xs: "444px",
+	sm: "600px",
+	md: "900px",
+	lg: "1200px",
+	xl: "1536px",
+};
 
 const ModalContent: FC<{
 	data: ModalBlockDef["data"];
@@ -116,46 +49,35 @@ const ModalContent: FC<{
 	onClose?: () => void;
 	isStatic: boolean;
 }> = observer(({ data, slots, onClose, isStatic }) => {
-	const getWidthValue = (size: "xs" | "sm" | "md" | "lg" | "xl"): string => {
-		switch (size) {
-			case "xs":
-				return "444px";
-			case "sm":
-				return "600px";
-			case "md":
-				return "900px";
-			case "lg":
-				return "1200px";
-			case "xl":
-				return "1536px";
-			default:
-				return "444px";
-		}
-	};
+	const minWidth = widthMap[data.minWidth] ?? "444px";
+	const maxWidth = data.fullWidth
+		? (widthMap[data.maxWidth] ?? undefined)
+		: undefined;
 
-	const minWidth = getWidthValue(data.minWidth);
-	const maxWidth = data.fullWidth ? getWidthValue(data.maxWidth) : undefined;
 	return (
-		<StyledModalContainer style={{ minWidth, maxWidth }}>
-			<StyledModalHeader>
-				<Typography variant="h6" component="h2">
-					{data.title}
-				</Typography>
+		<div
+			style={{ minWidth, maxWidth, ...data.style }}
+			className="relative z-[2] max-h-[90vh] overflow-auto rounded-md bg-background p-8 shadow-2xl outline-none"
+		>
+			<div className="mb-4 flex items-center justify-between border-b pb-2">
+				<h2 className="font-semibold text-lg">{data.title}</h2>
 				{onClose && (
-					<IconButton onClick={onClose} size="small">
-						<CloseIcon />
-					</IconButton>
+					<Button variant="ghost" size="icon-sm" onClick={onClose}>
+						<X className="size-4" />
+					</Button>
 				)}
-			</StyledModalHeader>
+			</div>
 
-			<StyledDropZone isStatic={isStatic}>
+			<div
+				className={`min-h-[100px] rounded-md border border-primary border-dashed p-4 relative${isStatic ? '[&:empty::after]:-translate-x-1/2 [&:empty::after]:-translate-y-1/2 [&:empty::after]:pointer-events-none [&:empty::after]:absolute [&:empty::after]:top-1/2 [&:empty::after]:left-1/2 [&:empty::after]:text-muted-foreground [&:empty::after]:content-["Drop_components_here"]' : ""}`}
+			>
 				<Slot slot={slots.content} />
-			</StyledDropZone>
+			</div>
 
-			<StyledFooterArea>
+			<div className="mt-6 border-t pt-4">
 				<Slot slot={slots.footer} />
-			</StyledFooterArea>
-		</StyledModalContainer>
+			</div>
+		</div>
 	);
 });
 
@@ -164,6 +86,7 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 	const { state } = useBlocks();
 	const isStatic = state.mode === "static";
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (
 			data.open === true ||
@@ -179,19 +102,13 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 	}, [data.open]);
 
 	const open = useMemo(() => {
-		let o = false;
-		// Interpret Python
-		if (
+		return (
 			data.open === true ||
 			data.open === "true" ||
 			data.open === "True" ||
 			data.open === 1 ||
 			data.open === "1"
-		) {
-			o = true;
-		}
-
-		return o;
+		);
 	}, [data.open]);
 
 	const handleClose = () => {
@@ -200,70 +117,66 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 		}
 	};
 
-	// Helper to determine if modal should be shown
-	const shouldShowModal = isStatic
-		? data.designMode // In static mode, show when design mode is on
-		: open; // In interactive mode, show when query returns true
+	const shouldShowModal = isStatic ? data.designMode : open;
 
 	if (!shouldShowModal && !isStatic) {
 		return null;
 	}
 
-	// In static mode with design mode on, show as modal but without portal
+	// In static (design) mode — inline overlay without portal
 	if (isStatic) {
 		return (
-			<ModalWrapper {...attrs} $visible={shouldShowModal}>
+			<div
+				{...attrs}
+				style={{
+					visibility: shouldShowModal ? "visible" : "hidden",
+					minHeight: shouldShowModal ? "auto" : "1px",
+				}}
+			>
 				{shouldShowModal && (
 					<>
-						<ModalOverlay />
-						<ModalContainer>
+						<div className="pointer-events-none absolute inset-0 z-[1] bg-black/50" />
+						<div className="relative z-[2] mx-auto mt-8 w-fit">
 							<ModalContent
 								data={data}
 								slots={slots}
 								isStatic={isStatic}
 							/>
-						</ModalContainer>
+						</div>
 					</>
 				)}
-			</ModalWrapper>
+			</div>
 		);
 	}
 
-	// Non-Design Mode View - Simple view with preview button
+	// Interactive mode — portal to #page-1
+	const container = (() => {
+		const elements = Array.from(document.querySelectorAll('[id="page-1"]'));
+		return (elements.at(-1) as HTMLElement) || document.body;
+	})();
+
 	return (
-		<div>
-			<Box {...attrs}>
-				<MuiModal
-					open={shouldShowModal}
-					onClose={handleClose}
-					container={() => {
-						const elements = Array.from(
-							document.querySelectorAll('[id="page-1"]'),
-						);
-						return elements.at(-1) || elements[elements.length - 1];
-					}}
-					sx={{
-						position: "absolute",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						zIndex: 1500,
-					}}
-					BackdropProps={{
-						style: {
-							position: "absolute",
-							backgroundColor: "rgba(0, 0, 0, 0.5)",
-						},
-					}}
+		<div {...attrs}>
+			{createPortal(
+				<div
+					className="absolute inset-0 z-[1500] flex items-center justify-center"
+					style={{ position: "absolute" }}
 				>
+					{/* biome-ignore lint/a11y/noStaticElementInteractions: interactive overlay with click handler */}
+					{/* biome-ignore lint/a11y/useKeyWithClickEvents: click-only interaction by design */}
+					<div
+						className="absolute inset-0 bg-black/50"
+						onClick={handleClose}
+					/>
 					<ModalContent
 						data={data}
 						slots={slots}
 						onClose={handleClose}
 						isStatic={isStatic}
 					/>
-				</MuiModal>
-			</Box>
+				</div>,
+				container,
+			)}
 		</div>
 	);
 });

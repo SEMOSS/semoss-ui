@@ -1,10 +1,10 @@
-import { IconButton } from "@mui/material";
-import Filter from "../../../../assets/visualizationFilterBlock/FilterIcon.png";
+import { Filter } from "lucide-react";
+import { Button } from "@semoss/ui/next";
 
 const FilterIconComponent = ({ handleReset }: { handleReset: () => void }) => (
-	<IconButton onClick={handleReset} size="small">
-		<img src={Filter.toString()} alt="Filter Icon" />
-	</IconButton>
+	<Button variant="ghost" size="icon-sm" onClick={handleReset}>
+		<Filter className="size-4" />
+	</Button>
 );
 
 export default FilterIconComponent;

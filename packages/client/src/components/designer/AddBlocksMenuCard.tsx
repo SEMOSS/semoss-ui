@@ -1,6 +1,5 @@
 import {
 	DeleteOutline,
-	EditOutlined,
 	InfoOutlined,
 	ReportRounded,
 } from "@mui/icons-material";
@@ -24,7 +23,10 @@ import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
 } from "../blocks-workspace/menus/menu-types";
-import { BlockCardContent, blockCardWidth } from "./BlockMenuCardContent";
+import { BlockCardContent } from "./BlockMenuCardContent";
+
+const addBlocksCardWidth = "120px";
+const addBlocksCardHeight = "94px";
 
 const StyledCard = styled(Card)({
 	cursor: "grab",
@@ -35,22 +37,24 @@ const StyledCard = styled(Card)({
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
 	color: theme.palette.secondary.dark,
-	width: blockCardWidth,
+	width: addBlocksCardWidth,
 	userSelect: "none",
+	textAlign: "center",
+	overflowWrap: "anywhere",
 	alignItems: "center",
 }));
 
 const StyledDiv = styled("div")({
 	position: "relative",
 	display: "inline-block",
-	paddingTop: "16px",
-	paddingRight: "16px",
+	paddingTop: "6px",
+	paddingRight: "6px",
 });
 
 const StyledContainer = styled(Box)({
 	position: "absolute",
-	top: 18, // slightly down from top of card
-	right: -35, // position just outside card (adjust as needed)
+	top: 10,
+	right: -24,
 	zIndex: 1000,
 	display: "flex",
 	flexDirection: "column",
@@ -308,6 +312,8 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	}, [
 		item.name,
 		item.json,
+		isCommunity,
+		notification,
 		designer.drag.active,
 		designer.drag.placeholderAction,
 		designer,
@@ -329,12 +335,13 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
 	return (
 		<Stack
-			spacing={1}
+			spacing={0.25}
 			alignItems="center"
 			height="100%"
 			justifyContent="flex-end"
 		>
 			<StyledTypography
+				component="div"
 				variant="body2"
 				fontWeight="medium"
 				align="center"
@@ -344,6 +351,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 					gap={1}
 					alignContent={"center"}
 					justifyContent={"center"}
+					flexWrap={"wrap"}
 				>
 					{item.name}
 					{item.recentChanges && (
@@ -385,7 +393,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 								onClick={(e) => {
 									e.stopPropagation();
 									handleOnTrashClick(
-										item['id'] ?? '',
+										item.id ?? "",
 										item.name,
 									);
 								}}
@@ -413,6 +421,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 											: item.activeImage
 								}
 								name={item.name}
+								width={addBlocksCardWidth}
+								height={addBlocksCardHeight}
+								paddingX={0.75}
+								paddingY={1}
 							/>
 						</div>
 					</Tooltip>
