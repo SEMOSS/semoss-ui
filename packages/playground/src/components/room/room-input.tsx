@@ -777,12 +777,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										engineTypes={["MODEL"]}
 										metaFilters={[
 											{
-												tag: [
-													"text-generation",
-													...(isImageGenEnabled
-														? ["image-generation"]
-														: []),
-												],
+												tag: isImageGenEnabled
+													? [
+															"text-generation",
+															"image-generation",
+														]
+													: ["text-generation"],
 											},
 										]}
 										onChange={(v) => {
