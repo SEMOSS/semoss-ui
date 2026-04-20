@@ -76,6 +76,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	conversationCompactedAbove: boolean = false;
 
+	/**
+	 * Whether this message's conversation is currently being compacted
+	 */
+	isCompacting: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
@@ -91,6 +96,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			feedback: observable,
 			isPaused: observable,
 			conversationCompactedAbove: observable,
+			isCompacting: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -99,6 +105,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			continueToolExecution: action,
 			saveToolExecution: action,
 			setConversationCompactedAbove: action,
+			setIsCompacting: action,
 			toggleIsPaused: action,
 		});
 
@@ -317,6 +324,13 @@ paramValues=[${JSON.stringify({
 	 */
 	setConversationCompactedAbove = (compacted: boolean) => {
 		this.conversationCompactedAbove = compacted;
+	};
+
+	/*
+	 * Set whether this message's conversation is currently being compacted
+	 */
+	setIsCompacting = (compacting: boolean) => {
+		this.isCompacting = compacting;
 	};
 
 	/**

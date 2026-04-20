@@ -1244,45 +1244,78 @@ export class RoomStore {
 
 		if (!cur) throw new Error();
 
-		const response = await this.runRoomPixel<
-			{
-				success: boolean;
-				types: (
-					| {
-							type: "SUMMARY";
-							inputMessage: InputPixelMessage;
-							responseMessage: ResponsePixelMessage;
-					  }
-					| {
-							type: "TOOL_PRUNE";
-					  }
-				)[];
-			}[]
-		>(
-			`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}, autoDetect=${JSON.stringify(true)});`,
-			false,
-		);
+		const curResponse = cur as ResponseMessageStore;
 
-		const { output } = response.pixelReturn[0];
+		curResponse.setIsCompacting(true);
 
-		if (!response || response.errors.length || !output?.success)
-			throw new Error();
+		type SummaryResponse = {
+			type: "SUMMARY";
+			inputMessage: InputPixelMessage;
+			responseMessage: ResponsePixelMessage;
+			success: boolean;
+			error?: string;
+		};
 
-		cur.setConversationCompactedAbove(true);
+		type ToolPruneResponse = {
+			type: "TOOL_PRUNE";
+			success: boolean;
+			error?: string;
+		};
 
-		output.types.forEach((compactionMethod) => {
-			if (compactionMethod.type === "SUMMARY") {
-				const { inputMessage, responseMessage } = compactionMethod;
-				const inputStore = new InputMessageStore(this, inputMessage);
-				const responseStore = new ResponseMessageStore(
-					this,
-					responseMessage,
-				);
-				inputStore.addChild(responseStore);
-				cur.addChild(inputStore);
-			} else if (compactionMethod.type === "TOOL_PRUNE") {
-				// setting conversationCompactedAbove to true is enough for the UI
+		try {
+			const response = await this.runRoomPixel<
+				(SummaryResponse | ToolPruneResponse)[][]
+			>(
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}, autoDetect=${JSON.stringify(true)});`,
+				true,
+			);
+
+			const { output } = response.pixelReturn[0];
+
+			if (!response || response.errors.length || !output)
+				throw new Error();
+
+			if (output.length === 0) {
+				return "skipped" as const;
 			}
-		});
+
+			curResponse.setConversationCompactedAbove(true);
+
+			let success = false;
+
+			output.forEach((compactionMethod) => {
+				if (!compactionMethod.success) {
+					console.warn(
+						compactionMethod.error ||
+							"Unknown error during compaction",
+					);
+					return;
+				}
+				success = true;
+				if (compactionMethod.type === "SUMMARY") {
+					const { inputMessage, responseMessage } = compactionMethod;
+					const inputStore = new InputMessageStore(
+						this,
+						inputMessage,
+					);
+					const responseStore = new ResponseMessageStore(
+						this,
+						responseMessage,
+					);
+					inputStore.addChild(responseStore);
+					curResponse.addChild(inputStore);
+				} else if (compactionMethod.type === "TOOL_PRUNE") {
+					// setting conversationCompactedAbove to true is enough for the UI
+				}
+			});
+
+			if (!success) {
+				throw new Error();
+			}
+
+			return "compacted" as const;
+		} finally {
+			curResponse.setIsCompacting(false);
+		}
 	};
 }

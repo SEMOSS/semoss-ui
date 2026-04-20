@@ -214,6 +214,7 @@ export const AdminThemePage: React.FC = () => {
 						headerItems: [],
 						footerItems: [],
 						chatHistoryDate: false,
+						expandedByDefault: false,
 					},
 					toolAutoExecutionLimit: undefined,
 					defaultTools: [],
@@ -224,6 +225,7 @@ export const AdminThemePage: React.FC = () => {
 						enablePlan: true,
 						enableSuggestions: false,
 						enableRewrite: true,
+						enableCompaction: true,
 					},
 				},
 			};

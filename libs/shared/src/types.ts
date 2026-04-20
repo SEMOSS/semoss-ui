@@ -190,6 +190,7 @@ export interface ThemeMap {
 			enablePlan?: boolean;
 			enableRewrite?: boolean;
 			enablePromptOptimizer?: boolean;
+			enableCompaction?: boolean;
 		};
 	};
 }

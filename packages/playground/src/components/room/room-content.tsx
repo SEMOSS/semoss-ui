@@ -32,6 +32,7 @@ import {
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
@@ -79,8 +80,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 */
 	const handleCompactMessages = async () => {
 		try {
-			await room.compactMessages();
-			toast.success(t("settings.compactSuccess"));
+			const result = await room.compactMessages();
+			if (result === "skipped") {
+				toast.info(t("settings.compactSkipped"));
+			} else {
+				toast.success(t("settings.compactSuccess"));
+			}
 		} catch {
 			toast.error(t("settings.compactError"));
 		}
@@ -374,7 +379,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								return (
 									<React.Fragment key={m.key}>
 										{showModelName && (
-											<div className="relative flex flex-col items-center justify-center">
+											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
 													{m.ornaments.modelName}
 												</div>
@@ -403,29 +408,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 											/>
 										)}
 
-										{m.type === "OUTPUT" &&
-											m.conversationCompactedAbove && (
-												<div className="relative flex flex-col items-center justify-center">
-													<Tooltip>
-														<TooltipTrigger asChild>
-															<div className="z-10 flex cursor-default items-center gap-1.5 bg-background px-2 text-muted-foreground text-xs leading-normal">
-																<ArchiveIcon className="h-3 w-3" />
-																<span>
-																	{t(
-																		"settings.compactedAbove",
-																	)}
-																</span>
-															</div>
-														</TooltipTrigger>
-														<TooltipContent>
-															{t(
-																"settings.compactedAboveTooltip",
-															)}
-														</TooltipContent>
-													</Tooltip>
-													<Separator className="absolute top-1/2" />
-												</div>
-											)}
+										{m.type === "OUTPUT" && (
+											<RoomCompactionIndicator
+												message={m}
+											/>
+										)}
 									</React.Fragment>
 								);
 							})}
@@ -525,19 +512,23 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									editorRef={editorRef}
 									onOverlayClose={() => onOpenChange(false)}
 								/>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem
-									onSelect={async (e) => {
-										e.preventDefault();
-										await handleCompactMessages();
-										onOpenChange(false);
-									}}
-								>
-									<ArchiveIcon />
-									<span className="flex-1">
-										{t("settings.compact")}
-									</span>
-								</DropdownMenuItem>
+								{room.theme.featureFlags?.enableCompaction && (
+									<>
+										<DropdownMenuSeparator />
+										<DropdownMenuItem
+											onSelect={async (e) => {
+												e.preventDefault();
+												onOpenChange(false);
+												await handleCompactMessages();
+											}}
+										>
+											<ArchiveIcon />
+											<span className="flex-1">
+												{t("settings.compact")}
+											</span>
+										</DropdownMenuItem>
+									</>
+								)}
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
 									room={room}
