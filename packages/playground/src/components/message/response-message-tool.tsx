@@ -20,21 +20,21 @@ const getToolState = (
 				ERROR: {
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
-						text: t("tool.failed"),
+						text: t("status.failed"),
 						variant: "muted" as const,
 					},
 				},
 				CANCELLED: {
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
-						text: t("tool.cancelled"),
+						text: t("status.cancelled"),
 						variant: "muted" as const,
 					},
 				},
 				PAUSED: {
 					icon: <CirclePause className="size-5" />,
 					badge: {
-						text: t("tool.paused"),
+						text: t("status.paused"),
 						variant: "muted" as const,
 					},
 				},
@@ -92,7 +92,7 @@ const getToolState = (
 			return {
 				icon: <HammerIcon className="size-5" />,
 				iconClassName: "bg-muted text-muted-foreground",
-				subtext: t("tool.queued"),
+				subtext: t("status.queued"),
 				badge: null,
 
 				actionType: "cancel" as const,
@@ -116,7 +116,7 @@ interface ResponseMessageToolProps {
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool, isLarge }) => {
-		const { t } = useTranslation("chat");
+		const { t } = useTranslation("tool");
 		const { room } = message;
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
@@ -218,7 +218,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
 								onClick={handleCancel}
 							>
-								{t("tool.cancel")}
+								{t("actions.cancel")}
 							</button>
 						)}
 						{toolState.badge && (
@@ -315,7 +315,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							className="mr-2 shrink-0"
 							onClick={handleCancel}
 						>
-							{t("tool.cancel")}
+							{t("actions.cancel")}
 						</Button>
 					)}
 					{toolState.badge && (

@@ -1,6 +1,7 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -46,6 +47,8 @@ interface FieldSchema {
 
 export const ToolsDefaultView = observer(
 	({ room, app, message, tool }: ToolsDefaultViewProps) => {
+		const { t } = useTranslation("tool");
+
 		/*
 		 * Library hooks
 		 */
@@ -337,7 +340,7 @@ export const ToolsDefaultView = observer(
 								htmlFor="tool-response"
 								className="shrink-0 font-semibold"
 							>
-								Result
+								{t("form.result")}
 							</Label>
 							<Textarea
 								readOnly
@@ -350,11 +353,10 @@ export const ToolsDefaultView = observer(
 						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 							<div className="text-destructive">
 								<p className="font-semibold text-lg">
-									Failed to load tool schema
+									{t("form.schemaLoadFailed")}
 								</p>
 								<p className="text-muted-foreground text-sm">
-									Unable to retrieve tool configuration.
-									Please try again later.
+									{t("form.schemaLoadFailedDescription")}
 								</p>
 							</div>
 						</div>
@@ -371,7 +373,15 @@ export const ToolsDefaultView = observer(
 										}
 										className="w-full"
 									>
-										{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
+										{t(
+											showOptional
+												? "form.hideParameters"
+												: "form.showParameters",
+											{
+												count: Object.keys(properties)
+													.length,
+											},
+										)}
 									</Button>
 
 									{showOptional &&
@@ -387,7 +397,7 @@ export const ToolsDefaultView = observer(
 									{Object.keys(properties).length === 0 &&
 										!scriptForBrowserAutomation && (
 											<p className="py-8 text-center text-muted-foreground text-sm">
-												No parameters required
+												{t("form.noParameters")}
 											</p>
 										)}
 
@@ -398,12 +408,15 @@ export const ToolsDefaultView = observer(
 									{scriptForBrowserAutomation && (
 										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
 											<h3 className="font-semibold text-base">
-												Playwright Script Details
+												{t("playwright.details")}
 											</h3>
 											<div className="space-y-2 text-sm">
 												<div>
 													<span className="font-medium">
-														Project ID:
+														{t(
+															"playwright.projectId",
+														)}
+														:
 													</span>
 													<span className="ml-2 text-muted-foreground">
 														{app}
@@ -411,7 +424,10 @@ export const ToolsDefaultView = observer(
 												</div>
 												<div>
 													<span className="font-medium">
-														Recorded File:
+														{t(
+															"playwright.recordedFile",
+														)}
+														:
 													</span>
 													<span className="ml-2 text-muted-foreground">
 														{
@@ -437,7 +453,14 @@ export const ToolsDefaultView = observer(
 												}
 												className="w-full"
 											>
-												{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
+												{t(
+													showOptional
+														? "form.hideOptionalFields"
+														: "form.showOptionalFields",
+													{
+														count: optionalFields.length,
+													},
+												)}
 											</Button>
 
 											{showOptional &&
@@ -454,7 +477,7 @@ export const ToolsDefaultView = observer(
 						<div className="flex flex-col items-center justify-center gap-2 py-12">
 							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 							<p className="text-muted-foreground text-sm">
-								Loading tool schema...
+								{t("form.schemaLoading")}
 							</p>
 						</div>
 					)}
@@ -477,10 +500,10 @@ export const ToolsDefaultView = observer(
 								{isSubmitting ? (
 									<>
 										<Loader2 className="animate-spin" />
-										Executing...
+										{t("form.executing")}
 									</>
 								) : (
-									"Execute Tool"
+									t("form.execute")
 								)}
 							</Button>
 						</div>
@@ -495,31 +518,22 @@ export const ToolsDefaultView = observer(
 						<DialogHeader>
 							<DialogTitle className="flex items-center gap-2">
 								<AlertCircle className="h-5 w-5 text-warning" />
-								Browser Extension Required
+								{t("extension.required")}
 							</DialogTitle>
 							<DialogDescription>
-								The browser extension is not responding. To
-								execute Playwright scripts, please ensure the
-								SEMOSS Chrome Extension is installed and the
-								side panel is open.
+								{t("extension.notResponding")}
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-3 py-4">
 							<p className="font-medium text-sm">
-								Steps to open the extension:
+								{t("extension.stepsTitle")}
 							</p>
 							{/* biome-ignore lint/nursery/useSortedClasses: order is correct */}
 							<ol className="ml-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
-								<li>
-									Look for the SEMOSS extension icon in your
-									browser toolbar (puzzle piece icon)
-								</li>
-								<li>
-									Click the extension icon to open the side
-									panel
-								</li>
-								<li>Wait for the panel to load completely</li>
-								<li>Click "Retry" below to continue</li>
+								<li>{t("extension.step1")}</li>
+								<li>{t("extension.step2")}</li>
+								<li>{t("extension.step3")}</li>
+								<li>{t("extension.step4")}</li>
 							</ol>
 						</div>
 						<DialogFooter className="gap-2">
@@ -527,7 +541,7 @@ export const ToolsDefaultView = observer(
 								variant="outline"
 								onClick={() => setShowExtensionDialog(false)}
 							>
-								Cancel
+								{t("extension.cancel")}
 							</Button>
 							<Button
 								onClick={async () => {
@@ -552,10 +566,10 @@ export const ToolsDefaultView = observer(
 								{extensionCheckRetrying ? (
 									<>
 										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Checking...
+										{t("extension.checking")}
 									</>
 								) : (
-									"Retry"
+									t("extensionRetry")
 								)}
 							</Button>
 						</DialogFooter>

@@ -31,7 +31,7 @@ export const ResponseMessageToolMenu = ({
 	isFullButton,
 	showCancelInMenu,
 }: ResponseMessageToolMenuProps) => {
-	const { t } = useTranslation("chat");
+	const { t } = useTranslation("tool");
 
 	return (
 		<DropdownMenu>
@@ -72,8 +72,8 @@ export const ResponseMessageToolMenu = ({
 						<ChevronsLeftRightIcon />
 					)}
 					{tool.isOpen && tool.display === "inline"
-						? t("tool.collapse")
-						: t("tool.openInline")}
+						? t("actions.collapse")
+						: t("actions.openInline")}
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => {
@@ -82,7 +82,7 @@ export const ResponseMessageToolMenu = ({
 					}}
 				>
 					<TvMinimalIcon />
-					{t("tool.expand")}
+					{t("actions.expand")}
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => {
@@ -99,8 +99,8 @@ export const ResponseMessageToolMenu = ({
 						<PanelRightCloseIcon />
 					)}
 					{tool.isOpen && tool.display === "sidebar"
-						? t("tool.closeInSidebar")
-						: t("tool.openInSidebar")}
+						? t("actions.closeInSidebar")
+						: t("actions.openInSidebar")}
 				</DropdownMenuItem>
 				{showCancelInMenu && (
 					<>
@@ -118,7 +118,7 @@ export const ResponseMessageToolMenu = ({
 							}}
 						>
 							<XCircleIcon />
-							{t("tool.cancel")}
+							{t("actions.cancel")}
 						</DropdownMenuItem>
 					</>
 				)}
