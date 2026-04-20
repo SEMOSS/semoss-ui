@@ -1,31 +1,4 @@
 import type React from "react";
-import { Stack, styled } from "@semoss/ui";
-
-const StyledPanel = styled(Stack)(() => ({
-	height: "100%",
-	width: "100%",
-	overflow: "hidden",
-}));
-
-const StyledPanelActions = styled(Stack)(({ theme }) => ({
-	width: "100%",
-	backgroundColor: "#FFF",
-	padding: theme.spacing(0.5),
-}));
-
-const StyledPanelContent = styled(Stack)(({ theme }) => ({
-	flex: 1,
-	minHeight: 0,
-	width: "100%",
-	overflow: "hidden",
-	backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledPanelFooter = styled(Stack)(({ theme }) => ({
-	width: "100%",
-	backgroundColor: "#FFF",
-	padding: theme.spacing(0.5),
-}));
 
 interface PanelProps {
 	/** Children */
@@ -43,26 +16,20 @@ export const Panel: React.FC<PanelProps> = ({
 	footer = null,
 }) => {
 	return (
-		<StyledPanel spacing={0}>
+		<div className="flex h-full w-full flex-col overflow-hidden">
 			{actions ? (
-				<StyledPanelActions
-					direction="row"
-					alignItems={"center"}
-					spacing={0}
-				>
+				<div className="flex w-full flex-row items-center bg-white px-1 py-1">
 					{actions}
-				</StyledPanelActions>
+				</div>
 			) : null}
-			<StyledPanelContent>{children}</StyledPanelContent>
+			<div className="min-h-0 w-full flex-1 overflow-hidden bg-white">
+				{children}
+			</div>
 			{footer ? (
-				<StyledPanelFooter
-					direction="row"
-					alignItems={"center"}
-					spacing={0}
-				>
+				<div className="flex w-full flex-row items-center bg-white px-1 py-1">
 					{footer}
-				</StyledPanelFooter>
+				</div>
 			) : null}
-		</StyledPanel>
+		</div>
 	);
 };
