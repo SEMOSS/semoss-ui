@@ -68,10 +68,7 @@ export class ChatStore {
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
 		models: {
-			selected: {
-				engine_id: DEFAUlT_MODEL_ID,
-				engine_name: DEFAUlT_MODEL_NAME,
-			} as Engine,
+			selected: null as unknown as Engine,
 			contextWindow: undefined,
 		},
 		rooms: {},
@@ -162,14 +159,10 @@ export class ChatStore {
 	 */
 	initialize = async (): Promise<void> => {
 		try {
-			// set as initialized
-			Promise.all([
-				// get the default model info
-				this.getDefaultModel(),
-			]).finally(() => {
-				runInAction(() => {
-					this._store.isInitialized = true;
-				});
+			await this.getDefaultModel();
+
+			runInAction(() => {
+				this._store.isInitialized = true;
 			});
 		} catch (e) {
 			console.error(e);
