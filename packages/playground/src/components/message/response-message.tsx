@@ -4,7 +4,19 @@ import {
 	CircleAlert,
 	CopyIcon,
 	DownloadIcon,
+	FileArchiveIcon,
+	FileAudioIcon,
+	FileBadgeIcon,
+	FileChartPieIcon,
+	FileCodeIcon,
 	FileIcon,
+	FileJsonIcon,
+	FileSpreadsheetIcon,
+	FileTerminalIcon,
+	FileTextIcon,
+	FileTypeIcon,
+	FileVideoIcon,
+	ImageIcon,
 	Loader2Icon,
 	RefreshCwIcon,
 	ThumbsDownIcon,
@@ -33,11 +45,47 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
-import { ResponseMessageImage } from "./response-message-image";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
 import { ResponseMessageToolGroup } from "./response-message-tool-group";
+
+const getExtIcon = (fileName: string) => {
+	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+	if (["xls", "xlsx", "csv"].includes(ext))
+		return { Icon: FileSpreadsheetIcon, ext };
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		].includes(ext)
+	)
+		return { Icon: FileCodeIcon, ext };
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
+		return { Icon: FileTerminalIcon, ext };
+	if (ext === "json") return { Icon: FileJsonIcon, ext };
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
+		return { Icon: FileArchiveIcon, ext };
+	if (["ppt", "pptx"].includes(ext)) return { Icon: FileChartPieIcon, ext };
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
+		return { Icon: FileAudioIcon, ext };
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+		return { Icon: FileVideoIcon, ext };
+	if (["html", "xml", "md", "mdx", "rtf"].includes(ext))
+		return { Icon: FileTypeIcon, ext };
+	if (ext === "pdf") return { Icon: FileBadgeIcon, ext };
+	if (["doc", "docx", "msg", "txt"].includes(ext))
+		return { Icon: FileTextIcon, ext };
+	return { Icon: FileIcon, ext };
+};
 
 interface ResponseMessageProps {
 	/** Room */
@@ -52,6 +100,15 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const { t } = useTranslation("chat");
 		const { root } = useRoot();
 
+		const [previewPdf, setPreviewPdf] = useState<{
+			fileName: string;
+			base64Data: string;
+		} | null>(null);
+		const [previewImage, setPreviewImage] = useState<{
+			fileName: string;
+			base64Data: string;
+			mimeType: string;
+		} | null>(null);
 		const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false);
 		const [downloadingFormat, setDownloadingFormat] = useState<
 			string | null
@@ -121,7 +178,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		const copyImage = async () => {
 			const mediaPart = message.parts.find((p) => p.type === "MEDIA");
-			if (!mediaPart || mediaPart.type !== "MEDIA") return;
+			if (
+				!mediaPart ||
+				mediaPart.type !== "MEDIA" ||
+				!mediaPart.mediaInfo.base64Data
+			)
+				return;
 			try {
 				const byteString = atob(mediaPart.mediaInfo.base64Data);
 				const bytes = new Uint8Array(byteString.length);
@@ -204,53 +266,121 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								/>
 							);
 						} else if (p.type === "MEDIA") {
-							if (hasOnlyMedia) {
-								return (
-									<ResponseMessageImage
-										key={key}
-										message={message}
-										part={p}
-									/>
+							const { Icon, ext } = getExtIcon(
+								p.mediaInfo.fileName,
+							);
+							const isImage =
+								p.mediaInfo.mimeType?.startsWith("image/") ||
+								[
+									"png",
+									"jpg",
+									"jpeg",
+									"gif",
+									"webp",
+									"svg",
+									"bmp",
+									"img",
+								].includes(
+									p.mediaInfo.fileName
+										?.split(".")
+										.pop()
+										?.toLowerCase() ?? "",
 								);
-							}
-							return (
-								<div key={`${message.id}-part-${pIdx}`}>
-									<button
-										type="button"
-										className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden rounded-md border border-border bg-muted"
-										onClick={() => {
-											// this will select if there or open if not
-											room.addSidebarNode(
-												`FILE--${p.mediaInfo.fileLocation}`,
-												{
-													type: "tab",
-													name: p.mediaInfo.fileName,
-													component:
-														"room-file-editor",
-													config: {
-														name: p.mediaInfo
-															.fileName,
-														path: p.mediaInfo
-															.fileLocation,
-													},
-													enableClose: true,
-												},
-											);
-										}}
-										aria-label={`View ${p.mediaInfo.fileName}`}
-									>
-										{p.mediaInfo.mimeType?.startsWith(
-											"image/",
-										) ? (
+							const imgSrc =
+								isImage && p.mediaInfo.base64Data
+									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : ({ jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" } as Record<string, string>)[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
+									: "";
+							const handleClick = () => {
+								if (p.mediaInfo.fileLocation) {
+									room.addSidebarNode(
+										`FILE--${p.mediaInfo.fileLocation}`,
+										{
+											type: "tab",
+											name: p.mediaInfo.fileName,
+											component: "room-file-editor",
+											config: {
+												name: p.mediaInfo.fileName,
+												path: p.mediaInfo.fileLocation,
+											},
+											enableClose: true,
+										},
+									);
+								} else if (p.mediaInfo.base64Data && isImage) {
+									const imgExt =
+										p.mediaInfo.fileName
+											?.split(".")
+											.pop()
+											?.toLowerCase() ?? "png";
+									const mimeMap: Record<string, string> = {
+										jpg: "image/jpeg",
+										jpeg: "image/jpeg",
+										gif: "image/gif",
+										webp: "image/webp",
+										svg: "image/svg+xml",
+										bmp: "image/bmp",
+									};
+									setPreviewImage({
+										fileName: p.mediaInfo.fileName,
+										base64Data: p.mediaInfo.base64Data,
+										mimeType:
+											p.mediaInfo.mimeType ||
+											mimeMap[imgExt] ||
+											"image/png",
+									});
+								} else if (p.mediaInfo.base64Data) {
+									setPreviewPdf({
+										fileName: p.mediaInfo.fileName,
+										base64Data: p.mediaInfo.base64Data,
+									});
+								}
+							};
+							return isImage && !!p.mediaInfo.base64Data ? (
+								<Tooltip key={`${message.id}-part-${pIdx}`}>
+									<TooltipTrigger asChild>
+										<button
+											type="button"
+											className="cursor-zoom-in overflow-hidden rounded-lg border border-border"
+											onClick={handleClick}
+											aria-label={`View ${p.mediaInfo.fileName}`}
+										>
 											<img
-												className="w-full"
-												src={`data:image/png;base64,${p.mediaInfo.base64Data}`}
+												className="max-h-[480px] max-w-full object-contain"
+												src={imgSrc}
 												alt={p.mediaInfo.fileName}
 											/>
-										) : (
-											<FileIcon className="size-6 text-muted-foreground" />
-										)}
-									</button>
+										</button>
+									</TooltipTrigger>
+									<TooltipContent>
+										<p className="max-w-48 truncate text-xs">
+											{p.mediaInfo.fileName}
+										</p>
+									</TooltipContent>
+								</Tooltip>
+							) : (
+								<div key={`${message.id}-part-${pIdx}`}>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<button
+												type="button"
+												className="group relative flex size-22 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-md border border-border bg-muted"
+												onClick={handleClick}
+												aria-label={`View ${p.mediaInfo.fileName}`}
+											>
+												<Icon
+													className="size-8 shrink-0 text-muted-foreground"
+													strokeWidth={1.25}
+												/>
+												<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
+													{ext}
+												</span>
+											</button>
+										</TooltipTrigger>
+										<TooltipContent>
+											<p className="max-w-48 truncate text-xs">
+												{p.mediaInfo.fileName}
+											</p>
+										</TooltipContent>
+									</Tooltip>
 								</div>
 							);
 						} else if (p.type === "THINKING") {
@@ -594,6 +724,67 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								</Button>
 							))}
 						</div>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog
+					open={previewPdf !== null}
+					onOpenChange={(open) => {
+						if (!open) setPreviewPdf(null);
+					}}
+				>
+					<DialogContent className="flex h-[80vh] max-w-4xl flex-col gap-3 p-4">
+						<div className="flex items-center gap-2 border-b pb-3">
+							<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+								<FileBadgeIcon className="size-4 text-muted-foreground" />
+							</div>
+							<span
+								className="truncate text-muted-foreground text-sm"
+								title={previewPdf?.fileName}
+							>
+								{previewPdf?.fileName}
+							</span>
+						</div>
+						{previewPdf && (
+							<object
+								className="flex-1"
+								data={`data:application/pdf;base64,${previewPdf.base64Data}`}
+								type="application/pdf"
+								aria-label={`Preview of ${previewPdf.fileName}`}
+							>
+								<p className="p-4 text-muted-foreground text-sm">
+									Your browser doesn't support PDF viewing.
+								</p>
+							</object>
+						)}
+					</DialogContent>
+				</Dialog>
+
+				<Dialog
+					open={previewImage !== null}
+					onOpenChange={(open) => {
+						if (!open) setPreviewImage(null);
+					}}
+				>
+					<DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-3 p-4">
+						<div className="flex items-center gap-2 border-b pb-3">
+							<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
+								<ImageIcon className="size-4 text-muted-foreground" />
+							</div>
+							<span
+								className="truncate text-muted-foreground text-sm"
+								title={previewImage?.fileName}
+							>
+								{previewImage?.fileName}
+							</span>
+						</div>
+						{previewImage && (
+							<img
+								className="max-h-[78vh] max-w-full rounded object-contain"
+								src={`data:${previewImage.mimeType};base64,${previewImage.base64Data}`}
+								alt={previewImage.fileName}
+							/>
+						)}
 					</DialogContent>
 				</Dialog>
 			</div>

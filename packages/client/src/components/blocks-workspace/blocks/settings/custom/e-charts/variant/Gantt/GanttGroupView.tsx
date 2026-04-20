@@ -1,35 +1,24 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-// eslint-disable-next-line prettier/prettier
-import { Switch, styled } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
-interface GanttGroupViewProps {
-	id: string;
-}
-//styled main container with padding and border
-const StyledMainContainer = styled("div")(({}) => ({
-	padding: "0.5rem",
-	borderBottom: "1px solid #E6E6E6",
-}));
-//styled label with padding left
-const StyledLabel = styled("label")(({}) => ({
-	paddingLeft: "10px",
-}));
 export const GanttGroupView = observer(
 	<D extends BlockDef = BlockDef>({ id, path }) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id); // block data
 		const [groupViewData, setGroupViewData] = useState(false); // groupview component state
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref for setting data
+		const groupViewId = useId();
 		//get the computed value of the block data
+		// biome-ignore lint/correctness/useExhaustiveDependencies: "option" is a literal string dependency
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -43,31 +32,28 @@ export const GanttGroupView = observer(
 				}
 				return JSON.stringify(v, null, 2);
 			});
-		}, [data, "option"]).get();
+		}, [data]).get();
 		//to retain the values from state
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 		useEffect(() => {
 			const parsedJson = JSON.parse(computedValue);
-			if (
-				parsedJson["customSettings"]?.["gantttools"]?.["showGroupView"]
-			) {
-				setGroupViewData((prevGroupViewData) => {
-					return parsedJson["customSettings"]["gantttools"][
-						"showGroupView"
-					];
-				});
+			if (parsedJson.customSettings?.gantttools?.showGroupView) {
+				setGroupViewData(
+					() => parsedJson.customSettings.gantttools.showGroupView,
+				);
 			}
 		}, []);
 		//update the fields and also the state when group view fields are changed
-		function updateFields(e) {
-			setGroupViewData((prevGroupViewData) => e.target.checked);
+		function updateFields(checked: boolean) {
+			setGroupViewData(checked);
 			let option = JSON.parse(computedValue);
 			option = {
 				...option,
-				["customSettings"]: {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["showGroupView"]: e.target.checked,
+				customSettings: {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						showGroupView: checked,
 					},
 				},
 			};
@@ -91,17 +77,16 @@ export const GanttGroupView = observer(
 			}, 300);
 		}
 		return (
-			<>
-				<StyledMainContainer>
-					<Switch
-						checked={groupViewData}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields(e)
-						}
-					/>
-					<StyledLabel>Show Group View</StyledLabel>
-				</StyledMainContainer>
-			</>
+			<div className="border-[#E6E6E6] border-b p-2">
+				<Switch
+					id={groupViewId}
+					checked={groupViewData}
+					onCheckedChange={(checked) => updateFields(checked)}
+				/>
+				<label htmlFor={groupViewId} className="pl-2.5">
+					Show Group View
+				</label>
+			</div>
 		);
 	},
 );

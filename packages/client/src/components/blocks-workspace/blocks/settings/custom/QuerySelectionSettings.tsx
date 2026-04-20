@@ -1,4 +1,4 @@
-import { ExpandMore } from "@mui/icons-material";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -15,35 +15,20 @@ import {
 } from "@semoss/renderer";
 import {
 	Accordion,
-	Autocomplete,
-	List,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+	Button,
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandList,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
-
-const StyledMenuSection = styled(Accordion)(({ theme }) => ({
-	boxShadow: "none",
-	borderRadius: "0 !important",
-	border: "0px",
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	"&:before": {
-		display: "none",
-	},
-	"&.Mui-expanded": {
-		margin: "0",
-		"&:last-child": {
-			borderBottom: "0px",
-		},
-	},
-}));
-
-const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
-	minHeight: "auto !important",
-	height: theme.spacing(6),
-}));
 
 interface Option {
 	id: string;
@@ -114,9 +99,8 @@ export const QuerySelectionSettings = observer(
 
 		// track the value
 		const [value, setValue] = useState("");
-
-		// track the expanded accordion group
-		const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+		const [open, setOpen] = useState(false);
+		const [search, setSearch] = useState("");
 
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -145,6 +129,7 @@ export const QuerySelectionSettings = observer(
 		}, [computedValue]);
 
 		// available options for autocomplete (categorized)
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const optionMap = useMemo<Record<string, Option>>(() => {
 			const pathMap: Record<string, Option> = {};
 
@@ -200,7 +185,7 @@ export const QuerySelectionSettings = observer(
 					// Add cells within queries
 					if (query.cellList.length > 0) {
 						Object.entries(query.cells).forEach(
-							([cellAlias, cell]: [string, CellState]) => {
+							([cellAlias, _cell]: [string, CellState]) => {
 								const cellOption = `{{${alias}.${cellAlias}.${queryPath}}}`;
 								pathMap[cellOption] = {
 									id: cellOption,
@@ -242,28 +227,40 @@ export const QuerySelectionSettings = observer(
 			return pathMap;
 		}, [state.variables, state.blocks, state.queries, queryPath]);
 
-		// Get sorted options for display
-		const sortedOptions = useMemo(() => {
-			return Object.keys(optionMap).sort((a, b) => {
-				const optionA = optionMap[a];
-				const optionB = optionMap[b];
+		// Get options grouped by category
+		const groupedOptions = useMemo(() => {
+			const groups: Record<string, Option[]> = {};
+			const allCategories = ["Block", "Notebook", "Cell", "Variable"];
 
-				// First sort by group
-				if (optionA.groupAlias !== optionB.groupAlias) {
-					return optionA.groupAlias.localeCompare(optionB.groupAlias);
-				}
-
-				// Then sort by display name
-				return optionA.display.localeCompare(optionB.display);
+			allCategories.forEach((cat) => {
+				groups[cat] = [];
 			});
+
+			Object.values(optionMap).forEach((option) => {
+				if (!groups[option.groupAlias]) {
+					groups[option.groupAlias] = [];
+				}
+				groups[option.groupAlias].push(option);
+			});
+
+			// Sort items within each group by display name
+			Object.keys(groups).forEach((group) => {
+				groups[group].sort((a, b) =>
+					a.display.localeCompare(b.display),
+				);
+			});
+
+			return groups;
 		}, [optionMap]);
 
 		/**
 		 * Sync the data on change
 		 */
-		const onChange = (value: string) => {
+		const onChange = (newValue: string) => {
 			// set the value
-			setValue(value);
+			setValue(newValue);
+			setOpen(false);
+			setSearch("");
 
 			// clear out the old timeout
 			if (timeoutRef.current) {
@@ -273,10 +270,13 @@ export const QuerySelectionSettings = observer(
 
 			timeoutRef.current = setTimeout(() => {
 				try {
-					setData(path, value as PathValue<D["data"], typeof path>);
+					setData(
+						path,
+						newValue as PathValue<D["data"], typeof path>,
+					);
 
 					// If the value is empty/null, clear the options array to show placeholder
-					if (!value || value.trim() === "") {
+					if (!newValue || newValue.trim() === "") {
 						setData(
 							"options" as Paths<Block<D>["data"], 4>,
 							[] as PathValue<D["data"], typeof path>,
@@ -290,62 +290,117 @@ export const QuerySelectionSettings = observer(
 			}, 300);
 		};
 
+		const categories = ["Block", "Notebook", "Cell", "Variable"];
+
 		return (
 			<BaseSettingSection label={label}>
-				<Autocomplete
-					fullWidth
-					disableClearable={value === ""}
-					size="small"
-					multiple={false}
-					value={value}
-					options={sortedOptions}
-					getOptionLabel={(option: string) => {
-						return optionMap[option]?.display ?? option;
-					}}
-					getOptionDisabled={(option: string) => {
-						return optionMap[option]?.isPlaceholder ?? false;
-					}}
-					groupBy={(option) => optionMap[option]?.groupAlias}
-					renderGroup={(params) => {
-						return (
-							<li key={params.key}>
-								<StyledMenuSection
-									onChange={() => {
-										if (params.group === expandedGroup)
-											setExpandedGroup(null);
-										else setExpandedGroup(params.group);
-									}}
-									expanded={expandedGroup === params.group}
+				<Popover open={open} onOpenChange={setOpen}>
+					<PopoverTrigger asChild>
+						<Button
+							variant="outline"
+							role="combobox"
+							aria-expanded={open}
+							className="w-full justify-between font-normal"
+						>
+							<span className="truncate text-left">
+								{value
+									? (optionMap[value]?.display ?? value)
+									: "Enter text or select option"}
+							</span>
+							<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent
+						className="w-[var(--radix-popover-trigger-width)] p-0"
+						align="start"
+					>
+						<Command>
+							<CommandInput
+								placeholder="Search..."
+								value={search}
+								onValueChange={setSearch}
+							/>
+							<CommandList className="max-h-[300px]">
+								<CommandEmpty>No options found.</CommandEmpty>
+								<Accordion
+									type="multiple"
+									defaultValue={categories}
 								>
-									<StyledMenuSectionTitle
-										expandIcon={<ExpandMore />}
-										aria-controls="panel1a-content"
-									>
-										<Typography variant="body2">
-											{params.group}
-										</Typography>
-									</StyledMenuSectionTitle>
-									<Accordion.Content>
-										<List disablePadding>
-											{params.children}
-										</List>
-									</Accordion.Content>
-								</StyledMenuSection>
-							</li>
-						);
-					}}
-					onChange={(_, value) => {
-						onChange(value);
-					}}
-					renderInput={(params) => (
-						<TextField
-							{...params}
-							placeholder="Enter text or select option"
-							size="small"
-							variant="outlined"
-						/>
-					)}
-				/>
+									{categories.map((category) => {
+										const items = (
+											groupedOptions[category] ?? []
+										).filter(
+											(opt) =>
+												!search ||
+												opt.display
+													.toLowerCase()
+													.includes(
+														search.toLowerCase(),
+													),
+										);
+										return (
+											<AccordionItem
+												key={category}
+												value={category}
+												className="border-0"
+											>
+												<AccordionTrigger className="px-3 py-2 font-medium text-sm hover:bg-accent/50 hover:no-underline">
+													{category}
+												</AccordionTrigger>
+												<AccordionContent className="pb-0">
+													{items.length === 0 ? (
+														<div className="px-3 py-2 text-muted-foreground text-sm">
+															No options available
+														</div>
+													) : (
+														items.map((option) => (
+															// biome-ignore lint/a11y/noStaticElementInteractions: list option div
+															// biome-ignore lint/a11y/useKeyWithClickEvents: list option div
+															<div
+																key={option.id}
+																className={`flex cursor-pointer items-center gap-2 px-6 py-1.5 text-sm hover:bg-accent ${
+																	option.isPlaceholder
+																		? "pointer-events-none opacity-50"
+																		: ""
+																}`}
+																onClick={() => {
+																	if (
+																		!option.isPlaceholder
+																	) {
+																		onChange(
+																			option.id,
+																		);
+																	}
+																}}
+															>
+																{value ===
+																	option.id && (
+																	<Check className="size-3.5 shrink-0" />
+																)}
+																<span
+																	className={
+																		value ===
+																		option.id
+																			? "ml-0"
+																			: "ml-5"
+																	}
+																>
+																	{
+																		option.display
+																	}
+																</span>
+															</div>
+														))
+													)}
+												</AccordionContent>
+											</AccordionItem>
+										);
+									})}
+								</Accordion>
+							</CommandList>
+						</Command>
+					</PopoverContent>
+				</Popover>
 			</BaseSettingSection>
 		);
 	},

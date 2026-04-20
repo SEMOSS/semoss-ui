@@ -1,23 +1,16 @@
-import {
-	ContentCopy,
-	LibraryAdd,
-	Search,
-	SearchOff,
-} from "@mui/icons-material";
+import { BookmarkPlus, Copy, Search, SearchX } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
-	Alert,
-	Collapse,
-	IconButton,
-	Stack,
-	styled,
-	TextField,
-	ToggleTabsGroup,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Button,
+	Input,
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { SelectedMenuSection } from "@/components/designer";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
@@ -37,7 +30,8 @@ const IconButtonWrapper = ({
 	onClick?: () => void;
 	title?: string;
 }) => (
-	<span
+	<button
+		type="button"
 		style={{
 			display: "inline-flex",
 			flexDirection: "column",
@@ -47,14 +41,14 @@ const IconButtonWrapper = ({
 			borderRadius: 8,
 			boxSizing: "border-box",
 			cursor: "pointer",
+			background: "none",
+			padding: 0,
 		}}
 		onClick={onClick}
 		title={title}
-		tabIndex={0}
-		role="button"
 	>
 		{children}
-	</span>
+	</button>
 );
 // UnstyledIconButton parent of Icon
 const UnstyledIconButton = ({
@@ -62,7 +56,7 @@ const UnstyledIconButton = ({
 	...props
 }: {
 	children: React.ReactNode;
-	[key: string]: any;
+	[key: string]: unknown;
 }) => (
 	<span
 		style={{
@@ -108,7 +102,7 @@ const CssRounded = ({ children }: { children: React.ReactNode }) => (
 );
 
 // CssRoundedSVG component (the SVG, child of CssRounded)
-const CssRoundedSVG = (props: React.SVGProps<SVGSVGElement>) => (
+const CssRoundedSVG = (_props: React.SVGProps<SVGSVGElement>) => (
 	<span
 		style={{
 			display: "flex",
@@ -160,144 +154,6 @@ const Vector = () => (
 	</svg>
 );
 
-const StyledTitle = styled(Typography)(() => ({
-	textTransform: "capitalize",
-	fontWeight: "bold",
-}));
-
-const StyledMenu = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "100%",
-	paddingTop: theme.spacing(1),
-}));
-
-const StyledMenuHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "row",
-	alignItems: "center",
-	paddingTop: theme.spacing(1.5),
-	paddingRight: theme.spacing(1),
-	paddingBottom: theme.spacing(1.5),
-	paddingLeft: theme.spacing(2),
-	gap: theme.spacing(1),
-}));
-
-const StyledMenuScroll = styled("div")(({ theme }) => ({
-	flex: "1",
-	height: "100%",
-	width: "100%",
-	paddingBottom: theme.spacing(1),
-	overflowY: "auto",
-	">.MuiBox-root": {
-		width: "100%",
-		backgroundColor: "transparent",
-	},
-}));
-
-const StyledMessage = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "100%",
-	alignItems: "center",
-	justifyContent: "center",
-	padding: "6px 0px",
-}));
-const StyledMultiBlockMessage = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	justifyContent: "center",
-	padding: "8px 0px",
-	flex: "1 0 0",
-}));
-const StyledAlertTitle = styled(Alert.Title)(() => ({
-	alignSelf: "stretch",
-	color: "#666",
-	fontFamily: "Inter",
-	fontSize: "16px",
-	fontStyle: "normal",
-	fontWeight: 500,
-	lineHeight: "150%",
-	letterSpacing: "0.15px",
-}));
-const StyledTypography = styled(Typography)(() => ({
-	alignSelf: "stretch",
-	color: "#666",
-	fontFamily: "Inter",
-	fontSize: "14px",
-	fontStyle: "normal",
-	fontWeight: 400,
-	lineHeight: "150%",
-	letterSpacing: "0.17px",
-}));
-//Tab group with custom style with width and margin
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-	width: "100%",
-	margin: "0 auto",
-	display: "flex",
-	alignSelf: "stretch",
-	justifyContent: "space-between",
-	".MuiTabs-scroller": {
-		display: "flex",
-		justifyContent: "space-around",
-		".MuiTabs-flexContainer": {
-			flex: 1,
-			padding: "3px",
-			backgroundColor: "rgb(0, 0, 0, 0.04)",
-			borderRadius: "12px",
-			".MuiButtonBase-root": {
-				padding: "6px 8px",
-			},
-		},
-	},
-}));
-//toggle group item styling
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 16px",
-
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
-const StyledCustomTabPanel = styled("div")(() => ({}));
-
-const StyledParentDiv = styled("div")(() => ({
-	padding: "16px 8px",
-}));
-
-const StyledDiv = styled("div")(() => ({
-	display: "flex",
-	alignItems: "center",
-	padding: "6px 16px",
-	gap: "12px",
-	alignSelf: "stretch",
-	borderRadius: "4px",
-	background: "#F5F5F5",
-}));
-
-const StyledImgDiv = styled("div")(() => ({
-	display: "flex",
-	alignItems: "flex-start",
-	width: "22px",
-	height: "22px",
-}));
-
-const StyledVariationIcon = styled("img")(({ theme }) => ({
-	width: theme.spacing(4),
-	height: theme.spacing(4),
-}));
 export interface SelectedBlocksProps {
 	/** Title to render in the menu */
 	title: string;
@@ -306,7 +162,6 @@ export interface SelectedBlocksProps {
 export const SelectedBlockPanel = observer(() => {
 	const { designer } = useDesigner();
 	const { state } = useBlocks();
-	const notification = useNotification();
 	const [contentAccordion, setContentAccordion] = useState<
 		Record<string, boolean>
 	>({});
@@ -324,12 +179,13 @@ export const SelectedBlockPanel = observer(() => {
 	const canVariabilize = block
 		? INPUT_BLOCK_TYPES.indexOf(block.widget) > -1
 		: false;
-	const [settingSection, setSettingSection] = useState<string | number>(0); //state to maintain the selected tab in setting appearance tab
+	const [settingSection, setSettingSection] = useState<string>("0");
 	const [showJsonEditor, setShowJsonEditor] = useState(false);
 	const [jsonValue, setJsonValue] = useState(
 		block ? JSON.stringify(block.data?.style ?? {}, null, 2) : "{}",
 	);
 	// get the content menu
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const contentMenu = useMemo(() => {
 		if (
 			!BlockSettingsRegistry ||
@@ -375,6 +231,7 @@ export const SelectedBlockPanel = observer(() => {
 	}, [BlockSettingsRegistry, block ? block.widget : "", search]);
 
 	// get the style menu
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const styleMenu = useMemo(() => {
 		if (
 			!BlockSettingsRegistry ||
@@ -420,6 +277,7 @@ export const SelectedBlockPanel = observer(() => {
 	}, [BlockSettingsRegistry, block ? block.widget : "", search]);
 
 	// new custom righthand menu content
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const menu = useMemo(() => {
 		if (
 			!BlockSettingsRegistry ||
@@ -440,15 +298,9 @@ export const SelectedBlockPanel = observer(() => {
 		try {
 			await navigator.clipboard.writeText(text);
 
-			notification.add({
-				color: "success",
-				message: "Successfully copied ID",
-			});
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy ID",
-			});
+			toast.success("Successfully copied ID");
+		} catch (_e) {
+			toast.error("Unable to copy ID");
 		}
 	};
 
@@ -460,6 +312,7 @@ export const SelectedBlockPanel = observer(() => {
 		}
 		setShowJsonEditor(false);
 	}, [block]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: JSON.stringify used as stable dep
 	useEffect(() => {
 		if (block) {
 			setJsonValue(JSON.stringify(block.data?.style ?? {}, null, 2));
@@ -478,24 +331,45 @@ export const SelectedBlockPanel = observer(() => {
 	if (designer.selectedBlocks.length > 1) {
 		return (
 			<Panel>
-				<StyledParentDiv>
-					<StyledDiv>
-						<StyledImgDiv>
+				<div className="p-4">
+					<div className="flex items-center gap-3 rounded bg-[#F5F5F5] p-3">
+						<div className="flex h-[22px] w-[22px] items-start">
 							<img
 								src={MultiBlockIcon}
 								alt="Multiple Blocks Selected"
-							></img>
-						</StyledImgDiv>
-						<StyledMultiBlockMessage>
-							<StyledAlertTitle>
+							/>
+						</div>
+						<div className="flex flex-1 flex-col items-start justify-center">
+							<p
+								className="font-medium"
+								style={{
+									alignSelf: "stretch",
+									color: "#666",
+									fontFamily: "Inter",
+									fontSize: "16px",
+									fontWeight: 500,
+									lineHeight: "150%",
+									letterSpacing: "0.15px",
+								}}
+							>
 								Multiple Blocks Selected
-							</StyledAlertTitle>
-							<StyledTypography variant="body2">
+							</p>
+							<p
+								style={{
+									alignSelf: "stretch",
+									color: "#666",
+									fontFamily: "Inter",
+									fontSize: "14px",
+									fontWeight: 400,
+									lineHeight: "150%",
+									letterSpacing: "0.17px",
+								}}
+							>
 								Select a single block to view its setting
-							</StyledTypography>
-						</StyledMultiBlockMessage>
-					</StyledDiv>
-				</StyledParentDiv>
+							</p>
+						</div>
+					</div>
+				</div>
 			</Panel>
 		);
 	}
@@ -504,78 +378,88 @@ export const SelectedBlockPanel = observer(() => {
 	if (!block) {
 		return (
 			<Panel>
-				<StyledParentDiv>
-					<StyledDiv>
-						<StyledImgDiv>
-							<img src={GroupIcon} alt="No Blocks Selected"></img>
-						</StyledImgDiv>
-						<StyledMessage>
-							<StyledAlertTitle>
+				<div className="p-4">
+					<div className="flex items-center gap-3 rounded bg-[#F5F5F5] p-3">
+						<div className="flex h-[22px] w-[22px] items-start">
+							<img src={GroupIcon} alt="No Blocks Selected" />
+						</div>
+						<div className="flex h-full w-full flex-col items-center justify-center py-1.5">
+							<p
+								className="font-medium"
+								style={{
+									alignSelf: "stretch",
+									color: "#666",
+									fontFamily: "Inter",
+									fontSize: "16px",
+									fontWeight: 500,
+									lineHeight: "150%",
+									letterSpacing: "0.15px",
+								}}
+							>
 								No Block Selected
-							</StyledAlertTitle>
-							<StyledTypography variant="body2">
+							</p>
+							<p
+								style={{
+									alignSelf: "stretch",
+									color: "#666",
+									fontFamily: "Inter",
+									fontSize: "14px",
+									fontWeight: 400,
+									lineHeight: "150%",
+									letterSpacing: "0.17px",
+								}}
+							>
 								Select a block to view its setting
-							</StyledTypography>
-						</StyledMessage>
-					</StyledDiv>
-				</StyledParentDiv>
+							</p>
+						</div>
+					</div>
+				</div>
 			</Panel>
 		);
 	}
 
 	return (
 		<Panel>
-			<StyledMenu>
-				<StyledMenuHeader>
-					<Stack
-						flex={1}
-						spacing={2}
-						direction="row"
-						alignItems="center"
-					>
-						<StyledVariationIcon src={VariationIcon} />
-						<Stack
-							direction={"row"}
-							spacing={0.5}
-							alignItems="center"
-						>
-							<StyledTitle variant="h6">
+			<div className="flex h-full w-full flex-col pt-1">
+				<div className="flex flex-row items-center gap-1 pt-1.5 pr-1 pb-1.5 pl-2">
+					<div className="flex flex-1 flex-row items-center gap-2">
+						<img
+							src={VariationIcon}
+							className="h-4 w-4"
+							alt="Variation"
+						/>
+						<div className="flex flex-row items-center gap-1">
+							<span className="font-bold text-base capitalize">
 								{getBlockDisplay()}
-							</StyledTitle>
+							</span>
 							{variableName ? (
-								<IconButton
+								<Button
 									aria-label="copy"
-									color="default"
-									size="small"
+									variant="ghost"
+									size="icon-sm"
 									title={`{{${variableName}}}`}
 									onClick={() => copy(`{{${variableName}}}`)}
 								>
-									<ContentCopy fontSize="small" />
-								</IconButton>
+									<Copy className="size-4" />
+								</Button>
 							) : canVariabilize ? (
-								<IconButton
+								<Button
 									aria-label="copy"
-									color="default"
-									size="small"
+									variant="ghost"
+									size="icon-sm"
 									title={"Add variable"}
 									onClick={() => {
 										setAddVariableModal(true);
 									}}
 								>
-									<LibraryAdd fontSize="small" />
-								</IconButton>
+									<BookmarkPlus className="size-4" />
+								</Button>
 							) : null}
-						</Stack>
+						</div>
 
 						{!menu && (
-							<Stack
-								flex={1}
-								spacing={1}
-								direction="column"
-								alignItems="end"
-								justifyContent="end"
-							>
-								{settingSection === 1 && (
+							<div className="flex flex-1 flex-col items-end justify-end gap-1">
+								{settingSection === "1" && (
 									<IconButtonWrapper
 										onClick={() =>
 											setShowJsonEditor((v) => !v)
@@ -591,231 +475,189 @@ export const SelectedBlockPanel = observer(() => {
 										</UnstyledIconButton>
 									</IconButtonWrapper>
 								)}
-								<Stack
-									spacing={1}
-									direction="row"
-									alignItems="center"
-									justifyContent="end"
-								>
-									<Collapse
-										orientation="horizontal"
-										in={showSearch}
-									>
-										<TextField
+								<div className="flex flex-row items-center justify-end gap-1">
+									{showSearch && (
+										<Input
 											placeholder="Search"
-											size="small"
 											value={search}
-											variant="outlined"
 											onChange={(e) =>
 												setSearch(e.target.value)
 											}
 										/>
-									</Collapse>
-									<IconButton
+									)}
+									<Button
 										aria-label="toggle-search"
-										color="default"
-										size="small"
+										variant="ghost"
+										size="icon-sm"
 										onClick={() => {
 											setShowSearch(!showSearch);
 											setSearch("");
 										}}
 									>
 										{showSearch ? (
-											<SearchOff fontSize="medium" />
+											<SearchX className="size-5" />
 										) : (
-											<Search fontSize="medium" />
+											<Search className="size-5" />
 										)}
-									</IconButton>
-								</Stack>
-							</Stack>
+									</Button>
+								</div>
+							</div>
 						)}
-					</Stack>
-				</StyledMenuHeader>
-				<StyledMenuScroll>
+					</div>
+				</div>
+				<div className="h-full w-full flex-1 overflow-y-auto pr-2 pb-1">
 					{!!menu &&
 						createElement(menu, {
 							id: block.id,
 						})}
 
-					{
-						/**
-						 * This section will show Setting and Appearance tabs if there are any content or style menus
-						 * If there are no content or style menus, it will not show the tabs
-						 */
-						(contentMenu.length > 0 || styleMenu.length > 0) && (
-							<StyledToggleTabsGroup
-								variant="fullWidth"
-								value={settingSection}
-								onChange={(
-									e: React.SyntheticEvent,
-									val: string,
-								) => {
-									setSettingSection(val);
-								}}
-							>
-								<StyledToggleTabsGroupItem
-									label="Settings"
-									value={0}
+					{(contentMenu.length > 0 || styleMenu.length > 0) && (
+						<Tabs
+							value={settingSection}
+							onValueChange={(val) => setSettingSection(val)}
+							className="w-full"
+						>
+							<TabsList className="flex min-h-[42px] w-full rounded px-[3px]">
+								<TabsTrigger
+									value="0"
+									className="h-[38px] flex-1 px-4 py-2"
 									data-testId={
 										"selectedBlockPanel-settings-toggle"
 									}
-								/>
-								<StyledToggleTabsGroupItem
-									label="Appearance"
-									value={1}
+								>
+									Settings
+								</TabsTrigger>
+								<TabsTrigger
+									value="1"
+									className="h-[38px] flex-1 px-4 py-2"
 									data-testId={
 										"selectedBlockPanel-appearance-toggle"
 									}
-								/>
-							</StyledToggleTabsGroup>
-						)
-					}
+								>
+									Appearance
+								</TabsTrigger>
+							</TabsList>
 
-					{
-						/**
-						 * This section will show the content menu when setting tab is selected
-						 */
-						contentMenu.length > 0 && (
-							<StyledCustomTabPanel
-								role="tabpanel"
-								id={`simple-tabpanel-0`}
-								aria-labelledby={`simple-tab-0`}
-								hidden={settingSection !== 0 ? true : false}
-							>
-								{contentMenu.length ? (
-									<SelectedMenuSection
-										id={block.id}
-										sectionTitle=""
-										menu={contentMenu}
-										accordion={contentAccordion}
-										setAccordion={setContentAccordion}
-									/>
-								) : (
-									<></>
-								)}
-							</StyledCustomTabPanel>
-						)
-					}
-					{
-						/**
-						 * This section will show the style menu when appearance tab is selected
-						 */
-						styleMenu.length > 0 && (
-							<StyledCustomTabPanel
-								role="tabpanel"
-								id={`simple-tabpanel-1`}
-								aria-labelledby={`simple-tab-1`}
-								hidden={settingSection !== 1 ? true : false}
-							>
-								{!showJsonEditor ? (
-									styleMenu.length ? (
+							{contentMenu.length > 0 && (
+								<TabsContent value="0">
+									{contentMenu.length ? (
 										<SelectedMenuSection
 											id={block.id}
 											sectionTitle=""
-											menu={styleMenu}
-											accordion={styleAccordion}
-											setAccordion={setStyleAccordion}
+											menu={contentMenu}
+											accordion={contentAccordion}
+											setAccordion={setContentAccordion}
 										/>
-									) : null
-								) : (
-									<Stack spacing={2} sx={{ mt: 4 }}>
-										<TextField
-											multiline
-											minRows={8}
-											maxRows={20}
-											fullWidth
-											label="CSS Settings"
-											value={jsonValue}
-											onChange={(e) =>
-												setJsonValue(e.target.value)
-											}
-											variant="outlined"
-											size="small"
-										/>
-										<Stack
-											direction="row"
-											spacing={2}
-											justifyContent="flex-end"
-										>
-											<button
-												type="button"
+									) : null}
+								</TabsContent>
+							)}
+
+							{styleMenu.length > 0 && (
+								<TabsContent value="1">
+									{!showJsonEditor ? (
+										styleMenu.length ? (
+											<SelectedMenuSection
+												id={block.id}
+												sectionTitle=""
+												menu={styleMenu}
+												accordion={styleAccordion}
+												setAccordion={setStyleAccordion}
+											/>
+										) : null
+									) : (
+										<div className="mt-4 flex flex-col gap-2">
+											<textarea
+												rows={8}
+												className="w-full resize-y rounded border border-input px-2 py-1 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-ring"
 												style={{
-													background: "#f5f5f5",
-													color: "#666",
-													border: "none",
-													borderRadius: 4,
-													padding: "6px 16px",
-													cursor: "pointer",
+													minHeight: "8rem",
+													maxHeight: "20rem",
 												}}
-												onClick={() => {
-													setJsonValue(
-														block
-															? JSON.stringify(
-																	block.data
-																		?.style ??
-																		{},
-																	null,
-																	2,
-																)
-															: "{}",
-													);
-													setShowJsonEditor(false);
-												}}
-											>
-												Cancel
-											</button>
-											<button
-												type="button"
-												style={{
-													background: "#1260DD",
-													color: "#fff",
-													border: "none",
-													borderRadius: 4,
-													padding: "6px 16px",
-													cursor: "pointer",
-												}}
-												onClick={() => {
-													try {
-														const parsed =
-															JSON.parse(
-																jsonValue,
-															);
-														state.dispatch({
-															message:
-																ActionMessages.SET_BLOCK_DATA,
-															payload: {
-																id: block.id,
-																path: "style",
-																value: parsed,
-															},
-														});
-														notification.add({
-															color: "success",
-															message:
-																"Style updated!",
-														});
+												placeholder="CSS Settings"
+												value={jsonValue}
+												onChange={(e) =>
+													setJsonValue(e.target.value)
+												}
+											/>
+											<div className="flex flex-row justify-end gap-2">
+												<button
+													type="button"
+													style={{
+														background: "#f5f5f5",
+														color: "#666",
+														border: "none",
+														borderRadius: 4,
+														padding: "6px 16px",
+														cursor: "pointer",
+													}}
+													onClick={() => {
+														setJsonValue(
+															block
+																? JSON.stringify(
+																		block
+																			.data
+																			?.style ??
+																			{},
+																		null,
+																		2,
+																	)
+																: "{}",
+														);
 														setShowJsonEditor(
 															false,
 														);
-													} catch (err) {
-														notification.add({
-															color: "error",
-															message:
+													}}
+												>
+													Cancel
+												</button>
+												<button
+													type="button"
+													style={{
+														background: "#1260DD",
+														color: "#fff",
+														border: "none",
+														borderRadius: 4,
+														padding: "6px 16px",
+														cursor: "pointer",
+													}}
+													onClick={() => {
+														try {
+															const parsed =
+																JSON.parse(
+																	jsonValue,
+																);
+															state.dispatch({
+																message:
+																	ActionMessages.SET_BLOCK_DATA,
+																payload: {
+																	id: block.id,
+																	path: "style",
+																	value: parsed,
+																},
+															});
+															toast.success(
+																"Style updated!",
+															);
+															setShowJsonEditor(
+																false,
+															);
+														} catch (_err) {
+															toast.error(
 																"Invalid JSON",
-														});
-													}
-												}}
-											>
-												Save Changes
-											</button>
-										</Stack>
-									</Stack>
-								)}
-								{/* Removed Edit CSS button from here, now at top right */}
-							</StyledCustomTabPanel>
-						)
-					}
-				</StyledMenuScroll>
+															);
+														}
+													}}
+												>
+													Save Changes
+												</button>
+											</div>
+										</div>
+									)}
+								</TabsContent>
+							)}
+						</Tabs>
+					)}
+				</div>
 				{addVariableModal ? (
 					<AddVariableModal
 						open={true}
@@ -824,7 +666,7 @@ export const SelectedBlockPanel = observer(() => {
 						onClose={() => setAddVariableModal(false)}
 					/>
 				) : null}
-			</StyledMenu>
+			</div>
 		</Panel>
 	);
 });

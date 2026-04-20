@@ -1,15 +1,4 @@
-import {
-	CalendarMonth,
-	Close,
-	DataArray,
-	DataObject,
-	ExpandMore,
-	Gesture,
-	Inventory2Outlined,
-	OpenInNew,
-	SwitchAccessShortcutOutlined,
-	TokenOutlined,
-} from "@mui/icons-material";
+import { ExternalLink } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,24 +17,15 @@ import {
 	type VariableType,
 } from "@semoss/renderer";
 import {
-	Accordion,
-	Autocomplete,
-	Divider,
-	Icon,
-	IconButton,
-	List,
-	Modal,
-	Popper,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Button,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	Separator,
+	toast,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
-import { AddVariable } from "../../../../../assets/AddVariable";
-import { Database } from "../../../../../assets/Database";
-import { ModelBrain } from "../../../../../assets/ModelBrain";
 
 interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
 	/**
@@ -65,7 +45,7 @@ interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
 	/**
 	 * Default path map by default {}
 	 */
-	defaultPathMap?: any;
+	defaultPathMap?: Record<string, Option>;
 	/**
 	 * Spell check for the input
 	 */
@@ -110,34 +90,6 @@ interface Option {
 	groupAlias: string;
 }
 
-const StyledModalHeader = styled(Stack)(({ theme }) => ({
-	padding: theme.spacing(2),
-	flexDirection: "row",
-	justifyContent: "space-between",
-	alignItems: "center",
-}));
-
-const StyledMenuSection = styled(Accordion)(({ theme }) => ({
-	boxShadow: "none",
-	borderRadius: "0 !important",
-	border: "0px",
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	"&:before": {
-		display: "none",
-	},
-	"&.Mui-expanded": {
-		margin: "0",
-		"&:last-child": {
-			borderBottom: "0px",
-		},
-	},
-}));
-
-const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
-	minHeight: "auto !important",
-	height: theme.spacing(6),
-}));
-
 // Group name mapper function
 const groupAliasMapper = (type: string) => {
 	switch (type) {
@@ -178,7 +130,6 @@ export const QueryInputSettings = observer(
 	}: QueryInputSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings(id);
 		const { state, notebook } = useBlocks();
-		const notification = useNotification();
 
 		// track the value
 		const [value, setValue] = useState("");
@@ -186,10 +137,6 @@ export const QueryInputSettings = observer(
 		const [inputValue, setInputValue] = useState("");
 		// track the modal
 		const [open, setOpen] = useState(false);
-		// track the expanded accordion group
-		const [expandedQueryInputGroup, setExpandedQueryInputGroup] = useState<
-			string | null
-		>(null);
 		// Track the input ref to grab the cursor position
 		const inputRef = useRef(null);
 		const suggestionRef = useRef(null);
@@ -244,6 +191,7 @@ export const QueryInputSettings = observer(
 			}, 300);
 		};
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const optionMap = useMemo<Record<string, Option>>(() => {
 			const pathMap = {};
 			const variabilizedList = [];
@@ -430,76 +378,6 @@ export const QueryInputSettings = observer(
 			return pathMap;
 		}, [state, notebook, value]);
 
-		// handle 'input' changes vs 'selections'
-		const handleInputChange = (event, newInputValue, reason) => {
-			if (reason === "input") {
-				setInputValue(newInputValue);
-			} else if (newInputValue?.path && reason === "selectOption") {
-				setInputValue((currentInputValue) => {
-					const cursorPosition = inputRef?.current
-						? inputRef.current?.selectionStart
-						: null;
-					const leftText = value.substring(0, cursorPosition);
-					const rightText = value.substring(cursorPosition);
-
-					return leftText + " {{" + newInputValue + "}} " + rightText;
-				});
-			}
-		};
-
-		const getIndent = (type: Option["blockType"]) => {
-			switch (type) {
-				case "cell-prop":
-					return 2;
-				case "query-prop":
-					return 2;
-				case "cell":
-					return 1;
-				case "query":
-					return 1;
-				default:
-					return 0;
-			}
-		};
-
-		/**
-		 * @name getIcon
-		 * Used for the Select Dropdown
-		 * TODO: Add the icons for other data types
-		 */
-		const getIcon = (type: string) => {
-			switch (type) {
-				case "cell-prop":
-					return <DataObject />;
-				case "query-prop":
-					return <DataObject />;
-				case "cell":
-					return <DataObject />;
-				case "query":
-					return <DataObject />;
-				case "array":
-					return <DataArray />;
-				case "string":
-					return <Gesture />;
-				case "date":
-					return <CalendarMonth />;
-				case "JSON":
-					return <DataObject />;
-				case "vector":
-					return <TokenOutlined />;
-				case "database":
-					return <Database color="black" />;
-				case "model":
-					return <ModelBrain color="black" />;
-				case "function":
-					return <SwitchAccessShortcutOutlined />;
-				case "storage":
-					return <Inventory2Outlined />;
-				default:
-					return <DataObject />;
-			}
-		};
-
 		/**
 		 * @name handleVariablize
 		 * Adds a new variable to the state
@@ -520,397 +398,261 @@ export const QueryInputSettings = observer(
 					cellId:
 						option.blockType === "cell"
 							? option?.path?.split(".")[1]
-							: null,
+							: undefined,
 					type: option.blockType as VariableType,
 				},
 			});
 
 			// Create notification
-			notification.add({
-				color: success ? "success" : "error",
-				message: success
-					? `Successfully added ${option.id} as a variable.`
-					: `Unable to add ${option.id}, due to syntax or a duplicated alias`,
+			if (success) {
+				toast.success(`Successfully added ${option.id} as a variable.`);
+			} else {
+				toast.error(
+					`Unable to add ${option.id}, due to syntax or a duplicated alias`,
+				);
+			}
+		};
+
+		const handleSelectOption = (val: string) => {
+			if (!val) {
+				onChange("");
+				return;
+			}
+			const cursorPosition = inputRef?.current
+				? inputRef.current?.selectionStart
+				: null;
+			const leftText = value.substring(0, cursorPosition);
+			const rightText = value.substring(cursorPosition);
+			const option = optionMap?.[val];
+			const valf =
+				option.blockType === "cell"
+					? (option?.path?.split(".")[1] ?? option?.path)
+					: option?.path || "";
+			if (option?.path === undefined) {
+				onChange(
+					leftText +
+						(optionMap?.[val]?.id
+							? optionMap?.[val]?.id
+							: valf.toString()) +
+						rightText,
+				);
+			} else {
+				onChange(`${leftText} {{${valf}}} ${rightText}`);
+			}
+			if (!optionMap?.[val]?.variabilized) {
+				handleVariablize(optionMap?.[val]);
+			}
+		};
+
+		const groupedOptions = useMemo(() => {
+			const groups: Record<string, string[]> = {};
+			Object.keys(optionMap).forEach((key) => {
+				const group = optionMap[key].groupAlias;
+				if (!groups[group]) groups[group] = [];
+				groups[group].push(key);
 			});
+			return groups;
+		}, [optionMap]);
+
+		const wordArray = inputValue.split(" ");
+		const filteredSuggestions = !inputValue
+			? []
+			: Object.keys(optionMap)
+					.sort(
+						(a, b) =>
+							(DISPLAY_PRIORITY_MAP[optionMap[a].blockType] ||
+								Infinity) -
+							(DISPLAY_PRIORITY_MAP[optionMap[b].blockType] ||
+								Infinity),
+					)
+					.filter((option) =>
+						option.includes(
+							wordArray[wordArray.length - 1]
+								.replace("{{", "")
+								.replace("}}", ""),
+						),
+					);
+
+		const suggestion = filteredSuggestions.length
+			? filteredSuggestions[0]
+			: "";
+
+		const cursorIndex = inputRef?.current?.selectionStart ?? null;
+		const textBeforeCursor = value.substring(0, cursorIndex);
+		const textAfterCursor = value.substring(cursorIndex);
+
+		const calculateTextWidth = () => {
+			if (!measureRef.current) return 0;
+			(measureRef.current as HTMLElement).textContent = textBeforeCursor;
+			return (measureRef.current as HTMLElement).offsetWidth;
 		};
 
-		/**
-		 * Renders the input field with a suggestion feature.
-		 * @param {Object} params The props passed to the TextField component.
-		 * @returns {ReactElement} The rendered input field.
-		 */
-		const renderInputField = (params) => {
-			const wordArray = inputValue.split(" ");
-			const filteredOptions = !inputValue
-				? []
-				: Object.keys(optionMap)
-						.sort(
-							(a, b) =>
-								(DISPLAY_PRIORITY_MAP[
-									optionMap[a]["blockType"]
-								] || Infinity) -
-								(DISPLAY_PRIORITY_MAP[
-									optionMap[b]["blockType"]
-								] || Infinity),
-						)
-						.filter((option) =>
-							option.includes(
-								wordArray[wordArray.length - 1]
-									.replace("{{", "")
-									.replace("}}", ""),
-							),
-						);
+		const textWidth = calculateTextWidth();
+		const containerWidth =
+			(inputRef.current as HTMLElement | null)?.offsetWidth || 0;
+		const suggestionScrollLeft = Math.max(
+			0,
+			textWidth - containerWidth + 20,
+		);
 
-			const suggestion = filteredOptions.length ? filteredOptions[0] : "";
-
-			const cursorIndex = inputRef?.current?.selectionStart ?? null;
-			const textBeforeCursor = value.substring(0, cursorIndex);
-			const textAfterCursor = value.substring(cursorIndex);
-
-			const calculateTextWidth = () => {
-				if (!measureRef.current) return 0;
-				measureRef.current.textContent = textBeforeCursor;
-				return measureRef.current.offsetWidth;
-			};
-
-			const textWidth = calculateTextWidth();
-			const containerWidth = inputRef.current?.offsetWidth || 0;
-			const suggestionScrollLeft = Math.max(
-				0,
-				textWidth - containerWidth + 20,
-			);
-
-			const incompleteWordArray = textBeforeCursor
-				.split(" ")
-				.map((word) => word.replace("{{", "").replace("}}", ""));
-			const suggestionToDisplay =
-				suggestion && inputValue.length
-					? suggestion.replace(
-							incompleteWordArray[incompleteWordArray.length - 1],
-							"",
-						)
-					: "";
-
-			return (
-				<div style={{ position: "relative", overflow: "hidden" }}>
-					<TextField
-						{...params}
-						inputRef={inputRef}
-						fullWidth
-						placeholder="Enter text or select query"
-						onChange={(e) => {
-							const updatedValue = e.target.value;
-							setInputValue(updatedValue);
-							onChange(updatedValue);
-						}}
-						onScroll={(e) => {
-							if (suggestionRef.current)
-								suggestionRef.current.scrollLeft =
-									e.currentTarget.scrollLeft;
-						}}
-						inputProps={{
-							...params.inputProps,
-							style: {
-								whiteSpace: "nowrap",
-								overflowX: "auto",
-								scrollBehavior: "smooth",
-							},
-							spellCheck: spellCheck ?? false,
-						}}
-						onKeyDown={(e) => {
-							if (e.key === "Tab" && suggestionToDisplay) {
-								e.preventDefault();
-								const textArr = textBeforeCursor.split(" ");
-								textArr.splice(-1, 1, `{{${suggestion}}}`);
-								const completeValue = textArr.join(" ");
-								onChange(completeValue);
-								setInputValue(completeValue);
-							}
-						}}
-					/>
-					{suggestionToDisplay && !textAfterCursor && (
-						<div
-							ref={suggestionRef}
-							style={{
-								position: "absolute",
-								left: 0,
-								top: "37%",
-								transform: "translateY(-50%)",
-								pointerEvents: "none",
-								color: "#999",
-								padding: "14px",
-								height: "100%",
-								width: "100%",
-								overflow: "hidden",
-							}}
-						>
-							<div
-								style={{
-									position: "relative",
-									whiteSpace: "nowrap",
-									transform: `translateX(-${suggestionScrollLeft}px)`,
-								}}
-							>
-								<span style={{ visibility: "hidden" }}>
-									{textBeforeCursor}
-								</span>
-								<span style={{ color: "#999" }}>
-									{suggestionToDisplay}
-								</span>
-							</div>
-						</div>
-					)}
-				</div>
-			);
-		};
+		const incompleteWordArray = textBeforeCursor
+			.split(" ")
+			.map((word) => word.replace("{{", "").replace("}}", ""));
+		const suggestionToDisplay =
+			suggestion && inputValue.length
+				? suggestion.replace(
+						incompleteWordArray[incompleteWordArray.length - 1],
+						"",
+					)
+				: "";
 
 		return (
 			<>
-				<Stack>
-					<Stack
-						direction="row"
-						justifyContent="space-between"
-						alignItems="center"
-					>
-						<Typography variant="body2">{label}</Typography>
-						<Stack direction="row" alignItems="center">
+				<div className="flex flex-col gap-2">
+					<div className="flex flex-row items-center justify-between">
+						<p className="text-sm">{label}</p>
+						<div className="flex flex-row items-center">
 							{/* Neel pointed this out 3/31 */}
-							{/* <Typography variant="body1" color="primary">
-                                Open text view
-                            </Typography> */}
-							<IconButton
-								size="small"
+							{/* <p className="text-sm text-primary">Open text view</p> */}
+							<Button
+								variant="ghost"
+								size="icon-sm"
 								onClick={() => setOpen(true)}
 							>
-								<OpenInNew color="primary" />
-							</IconButton>
-						</Stack>
-					</Stack>
-					<Autocomplete
-						fullWidth
-						disableClearable={value === ""}
-						size="small"
-						freeSolo
-						style={{ marginTop: "10px" }}
-						multiple={false}
-						value={value}
-						inputValue={inputValue}
-						onInputChange={handleInputChange}
-						options={Object.keys(optionMap)}
-						getOptionLabel={(o: string) => {
-							return optionMap?.[o]?.path as string;
-						}}
-						onChange={(e, val) => {
-							// Reset
-							if (!val) {
-								onChange("");
-							} else {
-								// current cursor
-								const cursorPosition = inputRef?.current
-									? inputRef.current?.selectionStart
-									: null;
-								// text to left of cursor
-								const leftText = value.substring(
-									0,
-									cursorPosition,
-								);
-								//text to right of cursor
-								const rightText =
-									value.substring(cursorPosition);
-								const option = optionMap?.[val];
-								const valf =
-									option.blockType === "cell"
-										? (option?.path?.split(".")[1] ??
-											option?.path)
-										: option?.path || "";
-								if (option?.path === undefined) {
-									console.log(
-										optionMap?.[val]?.id
-											? optionMap?.[val]?.id
-											: valf.toString(),
-										typeof optionMap?.[val]?.id,
-										optionMap?.[val]?.id,
-										valf.toString(),
-									);
-									onChange(
-										leftText +
-											(optionMap?.[val]?.id
-												? optionMap?.[val]?.id
-												: valf.toString()) +
-											rightText,
-									);
-								} else {
-									// reform and submit
-									onChange(
-										leftText +
-											" {{" +
-											valf +
-											"}} " +
-											rightText,
-									);
+								<ExternalLink className="size-4" />
+							</Button>
+						</div>
+					</div>
+					<div style={{ position: "relative", overflow: "hidden" }}>
+						<input
+							ref={inputRef}
+							className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+							style={{
+								whiteSpace: "nowrap",
+								overflowX: "auto",
+								scrollBehavior: "smooth",
+							}}
+							placeholder="Enter text or select query"
+							value={inputValue}
+							spellCheck={spellCheck ?? false}
+							onChange={(e) => {
+								const updatedValue = e.target.value;
+								setInputValue(updatedValue);
+								onChange(updatedValue);
+							}}
+							onScroll={(e) => {
+								if (suggestionRef.current)
+									(
+										suggestionRef.current as HTMLElement
+									).scrollLeft = e.currentTarget.scrollLeft;
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Tab" && suggestionToDisplay) {
+									e.preventDefault();
+									const textArr = textBeforeCursor.split(" ");
+									textArr.splice(-1, 1, `{{${suggestion}}}`);
+									const completeValue = textArr.join(" ");
+									onChange(completeValue);
+									setInputValue(completeValue);
 								}
-								// if variablizable and not already variabilized, variablize the option
-								if (!optionMap?.[val]?.variabilized) {
-									handleVariablize(optionMap?.[val]);
-								}
-							}
+							}}
+						/>
+						{suggestionToDisplay && !textAfterCursor && (
+							<div
+								ref={suggestionRef}
+								style={{
+									position: "absolute",
+									left: 0,
+									top: "37%",
+									transform: "translateY(-50%)",
+									pointerEvents: "none",
+									color: "#999",
+									padding: "14px",
+									height: "100%",
+									width: "100%",
+									overflow: "hidden",
+								}}
+							>
+								<div
+									style={{
+										position: "relative",
+										whiteSpace: "nowrap",
+										transform: `translateX(-${suggestionScrollLeft}px)`,
+									}}
+								>
+									<span style={{ visibility: "hidden" }}>
+										{textBeforeCursor}
+									</span>
+									<span style={{ color: "#999" }}>
+										{suggestionToDisplay}
+									</span>
+								</div>
+							</div>
+						)}
+					</div>
+					<select
+						className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-muted-foreground text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+						value=""
+						onChange={(e) => {
+							handleSelectOption(e.target.value);
+							e.target.value = "";
 						}}
-						filterOptions={(options, state) => {
-							const words = state.inputValue
-								.toLowerCase()
-								.split(" ");
-							const res = options
-								.sort(
-									(a, b) =>
-										(DISPLAY_PRIORITY_MAP[
-											optionMap[a]["blockType"]
-										] || Infinity) -
-										(DISPLAY_PRIORITY_MAP[
-											optionMap[b]["blockType"]
-										] || Infinity),
-								)
-								.filter((option) => {
-									const lowerCase = option.toLowerCase();
-									return words.some((word) =>
-										lowerCase.includes(word.toLowerCase()),
-									);
-								});
-							return res.length ? res : [];
-						}}
-						renderOption={(props, o) => {
-							const option = optionMap[o];
-							return (
-								<li {...props} key={option.path}>
-									<Stack
-										direction="row"
-										justifyContent="space-between"
-										alignItems="center"
-										sx={{
-											width: "100%",
-											// pl: getIndent(option.blockType),
-										}}
-									>
-										<Typography variant="body2">
-											{option.display}
-										</Typography>
-										{/* TODO: Icon should actually reflect value data type */}
-										<Stack
-											direction="row"
-											alignItems={"center"}
-										>
-											{!option.variabilized && (
-												<IconButton
-													size="small"
-													title="Add as variable"
-												>
-													<AddVariable />
-												</IconButton>
-											)}
-											{option.groupAlias === "Others" && (
-												<Icon>
-													{getIcon(option.blockType)}
-												</Icon>
-											)}
-										</Stack>
-									</Stack>
-								</li>
-							);
-						}}
-						renderInput={(params) => renderInputField(params)}
-						groupBy={(option) => optionMap[option]?.groupAlias}
-						renderGroup={(params) => {
-							return (
-								<li key={params.key}>
-									<StyledMenuSection
-										onChange={() => {
-											if (
-												params.group ===
-												expandedQueryInputGroup
-											)
-												setExpandedQueryInputGroup(
-													null,
-												);
-											else
-												setExpandedQueryInputGroup(
-													params.group,
-												);
-										}}
-										expanded={
-											expandedQueryInputGroup ===
-											params.group
-										}
-									>
-										<StyledMenuSectionTitle
-											expandIcon={<ExpandMore />}
-											aria-controls="panel1a-content"
-										>
-											<Typography variant="body2">
-												{params.group}
-											</Typography>
-										</StyledMenuSectionTitle>
-										<Accordion.Content>
-											<List disablePadding>
-												{params.children}
-											</List>
-										</Accordion.Content>
-									</StyledMenuSection>
-								</li>
-							);
-						}}
-						slotProps={{
-							paper: {
-								sx: {
-									"& .MuiAutocomplete-listbox": {
-										padding: 0,
-									},
-								},
-							},
-						}}
-					/>
-				</Stack>
-				<Modal
-					open={open}
-					fullWidth
-					maxWidth={
-						Object.hasOwn(data, "type") && data.type === "date"
-							? "sm"
-							: "lg"
-					}
-				>
-					<StyledModalHeader>
-						<Typography variant="h5">{`Edit ${label}`}</Typography>
-						<IconButton onClick={() => setOpen(false)}>
-							<Close />
-						</IconButton>
-					</StyledModalHeader>
-					<Divider />
-					<Modal.Content>
-						<TextField
-							fullWidth
-							placeholder="Enter Text..."
-							multiline
+					>
+						<option value="" disabled>
+							Select option...
+						</option>
+						{Object.entries(groupedOptions).map(([group, keys]) => (
+							<optgroup key={group} label={group}>
+								{keys
+									.sort(
+										(a, b) =>
+											(DISPLAY_PRIORITY_MAP[
+												optionMap[a].blockType
+											] || Infinity) -
+											(DISPLAY_PRIORITY_MAP[
+												optionMap[b].blockType
+											] || Infinity),
+									)
+									.map((key) => (
+										<option key={key} value={key}>
+											{optionMap[key].display}
+										</option>
+									))}
+							</optgroup>
+						))}
+					</select>
+				</div>
+				<Dialog open={open} onOpenChange={(o) => setOpen(o)}>
+					<DialogContent
+						className={
+							Object.hasOwn(data, "type") && data.type === "date"
+								? "max-w-sm"
+								: "max-w-4xl"
+						}
+					>
+						<DialogHeader>
+							<DialogTitle>{`Edit ${label}`}</DialogTitle>
+						</DialogHeader>
+						<Separator />
+						<textarea
+							className="w-full resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
 							rows={
 								Object.hasOwn(data, "type") &&
 								data.type === "date"
 									? 1
 									: 15
 							}
+							placeholder="Enter Text..."
 							value={value}
 							onChange={(e) => {
 								// sync the data on change
 								onChange(e.target.value);
 							}}
-							type={
-								Object.hasOwn(data, "type") && path === "value"
-									? (data.type as string)
-									: undefined
-							}
-							size="small"
-							variant="outlined"
 							autoComplete="off"
+							spellCheck={spellCheck ?? false}
 						/>
-					</Modal.Content>
-				</Modal>
+					</DialogContent>
+				</Dialog>
 			</>
 		);
 	},

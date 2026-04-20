@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { AppSettings } from "@/components/app";
 import {
-	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 	UpdateSMSS,
@@ -80,11 +80,7 @@ const AppSettingsUserDetailPage = () => {
 					</TabsList>
 				</Tabs>
 				{view === "CURRENT" && (
-					<MembersTable
-						id={id}
-						type={"PROJECT"}
-						onChange={() => getUserEnginePermission.refresh()}
-					/>
+					<MembersTable id={id} type={"PROJECT"} />
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />
@@ -129,7 +125,10 @@ const AppSettingsAdminDetailPage = () => {
 					</TabsList>
 				</Tabs>
 				{view === "CURRENT" && (
-					<MembersTable id={id} type={"PROJECT"} />
+					<>
+						<MembersTable id={id} type={"PROJECT"} />
+						{/* <MembersTableShared id={id} type={"PROJECT"} /> */}
+					</>
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />

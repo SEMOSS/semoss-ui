@@ -12,7 +12,16 @@ import { useRootStore } from "@/hooks";
 export const Help = observer((): JSX.Element => {
 	const { configStore } = useRootStore();
 
-	if (configStore.theme.helpBannerOrder.length === 0) {
+	let themeMap;
+
+	const parsedThemeMap = JSON.parse(configStore.store.config.theme.THEME_MAP);
+
+	themeMap =
+		typeof parsedThemeMap === "string"
+			? JSON.parse(parsedThemeMap)
+			: parsedThemeMap;
+
+	if (themeMap.helpBannerOrder.length === 0) {
 		return null;
 	}
 
@@ -30,30 +39,34 @@ export const Help = observer((): JSX.Element => {
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" side="top" sideOffset={8}>
-					{configStore.theme.helpBannerOrder.map((key) => {
-						const v = configStore.theme.helpBannerValues[key];
+					{themeMap.helpBannerOrder
+						.filter((key) => key !== "tutorials") // Filter out the "tutorials" value
+						.map((key) => {
+							const v = themeMap.helpBannerValues[key];
 
-						if (v) {
-							return (
-								<DropdownMenuItem
-									key={key}
-									disabled={v.disabled ? v.disabled : false}
-									asChild
-								>
-									<a
-										href={v.src}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-foreground no-underline"
+							if (v) {
+								return (
+									<DropdownMenuItem
+										key={key}
+										disabled={
+											v.disabled ? v.disabled : false
+										}
+										asChild
 									>
-										{v.label}
-									</a>
-								</DropdownMenuItem>
-							);
-						}
+										<a
+											href={v.src}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-foreground no-underline"
+										>
+											{v.label}
+										</a>
+									</DropdownMenuItem>
+								);
+							}
 
-						return null;
-					})}
+							return null;
+						})}
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</div>

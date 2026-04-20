@@ -1,39 +1,7 @@
-import {
-	AccessTime,
-	DateRange,
-	FontDownload,
-	KeyboardArrowRight,
-	Numbers,
-	TableChartOutlined,
-} from "@mui/icons-material";
+import { CalendarDays, Clock, Hash, Table, Type } from "lucide-react";
 import { useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
-import {
-	Card,
-	Collapse,
-	Divider,
-	LinearProgress,
-	List,
-	Stack,
-	styled,
-	Typography,
-} from "@semoss/ui";
-
-const StyledHeader = styled(Stack)(() => ({
-	cursor: "pointer",
-}));
-const StyledTableScroll = styled(Stack)(({ theme }) => ({
-	width: "100%",
-	overflow: "auto",
-	padding: theme.spacing(0.5),
-}));
-const StyledCard = styled(Card)(({ theme }) => ({
-	minWidth: theme.spacing(35),
-}));
-const StyledList = styled(List)(({ theme }) => ({
-	maxHeight: theme.spacing(15),
-	overflow: "auto",
-}));
+import { Progress, Separator } from "@semoss/ui/next";
 
 export const DatabaseTables = (props: { databaseId: string }) => {
 	const [tables, setTables] = useState({});
@@ -76,68 +44,66 @@ export const DatabaseTables = (props: { databaseId: string }) => {
 			case "DOUBLE":
 			case "DECIMAL":
 			case "NUMBER":
-				return <Numbers />;
+				return <Hash className="size-4" />;
 			case "STRING":
 			case "TEXT":
-				return <FontDownload />;
+				return <Type className="size-4" />;
 			case "DATE":
 			case "DATETIME":
-				return <DateRange />;
+				return <CalendarDays className="size-4" />;
 			case "TIME":
-				return <AccessTime />;
+				return <Clock className="size-4" />;
 			default:
-				return <></>;
+				return null;
 		}
 	};
 
 	if (isLoading) {
-		return <LinearProgress variant="indeterminate" />;
+		return <Progress value={undefined} className="w-full" />;
 	}
 
 	return (
-		<div>
-			{isLoading && <LinearProgress variant="indeterminate" />}
-			<Collapse in={!isLoading}>
-				<StyledTableScroll direction="row" spacing={2}>
-					{Array.from(Object.keys(tables), (tableName, index) => {
-						return (
-							<StyledCard key={`${tableName}-${index}`}>
-								<List.Item>
-									<List.ItemIcon>
-										<TableChartOutlined />
-									</List.ItemIcon>
-									<List.ItemText primary={tableName} />
-								</List.Item>
-								<Divider />
-								<StyledList disablePadding dense>
-									{Array.from(
-										tables[tableName].columnNames,
-										(columnName, index) => {
-											return (
-												<List.Item
-													key={`${columnName}-${index}`}
-												>
-													<List.ItemIcon>
-														{getIconForDataType(
-															tables[tableName]
-																.columnTypes[
-																`${tableName}__${columnName}`
-															],
-														)}
-													</List.ItemIcon>
-													<List.ItemText
-														primary={`${columnName}`}
-													/>
-												</List.Item>
-											);
-										},
-									)}
-								</StyledList>
-							</StyledCard>
-						);
-					})}
-				</StyledTableScroll>
-			</Collapse>
+		<div className="w-full overflow-hidden">
+			<div className="flex flex-row gap-4 overflow-x-auto p-0.5">
+				{Array.from(Object.keys(tables), (tableName, index) => (
+					<div
+						// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+						key={`${tableName}-${index}`}
+						className="min-w-[140px] shrink-0 rounded-md border bg-card shadow-sm"
+					>
+						<div className="flex items-center gap-2 px-3 py-2">
+							<Table className="size-4 shrink-0" />
+							<span className="truncate font-medium text-sm">
+								{tableName}
+							</span>
+						</div>
+						<Separator />
+						<ul className="max-h-[160px] overflow-y-auto">
+							{Array.from(
+								tables[tableName].columnNames,
+								(columnName: string, idx) => (
+									<li
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										key={`${columnName}-${idx}`}
+										className="flex items-center gap-2 px-3 py-1"
+									>
+										<span className="shrink-0">
+											{getIconForDataType(
+												tables[tableName].columnTypes[
+													`${tableName}__${columnName}`
+												],
+											)}
+										</span>
+										<span className="truncate text-xs">
+											{columnName}
+										</span>
+									</li>
+								),
+							)}
+						</ul>
+					</div>
+				))}
+			</div>
 		</div>
 	);
 };

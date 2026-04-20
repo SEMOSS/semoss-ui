@@ -1,29 +1,24 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
-	useBlocksPixel,
-	useFrame,
-	useFrameHeaders,
 } from "@semoss/renderer";
-import { Button, Select, Switch, styled, TextField } from "@semoss/ui";
+import {
+	Button,
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Switch,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
-//Main container with padding and border
-const StyledMainContainer = styled("div")(() => ({
-	padding: "0.75rem",
-	borderBottom: "1px solid #E6E6E6",
-}));
-//sub container with padding and display direction as column
-const StyledSubContainer = styled("div")((props) => ({
-	padding: "0.5rem",
-	display: "flex",
-	flexDirection: "column",
-}));
 //Initial fiscal axis state
 const INITIAL_FISCAL_AXIS = {
 	enableFiscalAxis: false,
@@ -100,7 +95,7 @@ export const GanttFiscal = observer(
 			},
 		];
 		const [fiscalData, setFiscalData] = useState(INITIAL_FISCAL_AXIS); //fiscal data state
-		//get the computed value of the block data
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -115,38 +110,30 @@ export const GanttFiscal = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, "option"]).get();
-		//update the fiscal data when fiscal axis fields are changed
-		function updateData(e, field, directVal = undefined) {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function updateData(field: string, directVal: any) {
 			setFiscalData((prevFiscalData) => {
 				return {
 					...prevFiscalData,
-					[field]: directVal ?? e.target.value,
+					[field]: directVal,
 				};
 			});
 		}
-		//retain the selected values into fiscal component
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const option = JSON.parse(computedValue);
 			const fiscalDataForUpdate = fiscalData;
-			if (
-				option["customSettings"]?.["gantttools"]?.["enableFiscalAxis"]
-			) {
+			if (option.customSettings?.gantttools?.enableFiscalAxis) {
 				fiscalDataForUpdate.enableFiscalAxis =
-					option["customSettings"]?.["gantttools"]?.[
-						"enableFiscalAxis"
-					];
+					option.customSettings?.gantttools?.enableFiscalAxis;
 			}
-			if (option["customSettings"]?.["gantttools"]?.["fiscalYearStart"]) {
+			if (option.customSettings?.gantttools?.fiscalYearStart) {
 				fiscalDataForUpdate.fiscalYearStart =
-					option["customSettings"]?.["gantttools"]?.[
-						"fiscalYearStart"
-					];
+					option.customSettings?.gantttools?.fiscalYearStart;
 			}
-			if (option["customSettings"]?.["gantttools"]?.["fiscalYearStart"]) {
+			if (option.customSettings?.gantttools?.fiscalYearStart) {
 				fiscalDataForUpdate.fiscalBackGroundColor =
-					option["customSettings"]?.["gantttools"]?.[
-						"fiscalAxisBackgroundColor"
-					];
+					option.customSettings?.gantttools?.fiscalAxisBackgroundColor;
 			}
 			setFiscalData((prevFiscalData) => {
 				return {
@@ -155,32 +142,32 @@ export const GanttFiscal = observer(
 				};
 			});
 		}, []);
-		//update the state when fiscal data is changed
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			let option = JSON.parse(computedValue);
 			option = {
 				...option,
-				["customSettings"]: {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["enableFiscalAxis"]: fiscalData.enableFiscalAxis,
-						["fiscalYearStart"]: fiscalData.fiscalYearStart,
-						["fiscalAxisBackgroundColor"]:
+				customSettings: {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						enableFiscalAxis: fiscalData.enableFiscalAxis,
+						fiscalYearStart: fiscalData.fiscalYearStart,
+						fiscalAxisBackgroundColor:
 							fiscalData.fiscalBackGroundColor,
 					},
 				},
 			};
-			if (fiscalData.fiscalYearStart != "") {
-				const seriesIndex = option["series"].findIndex((item) =>
+			if (fiscalData.fiscalYearStart !== "") {
+				const seriesIndex = option.series.findIndex((item) =>
 					Object.hasOwn(item, "chartrendered"),
 				);
 
-				let seriesStartData = option["series"][seriesIndex]["data"].map(
+				let seriesStartData = option.series[seriesIndex].data.map(
 					(item) =>
 						new Date(item.value[0]).toISOString().split("T")[0],
 				);
-				let seriesEndData = option["series"][seriesIndex]["data"].map(
+				let seriesEndData = option.series[seriesIndex].data.map(
 					(item) =>
 						new Date(item.value[2]).toISOString().split("T")[0],
 				);
@@ -192,25 +179,25 @@ export const GanttFiscal = observer(
 				);
 				const monthDigit =
 					monthData.find(
-						(item) => item.value == fiscalData.fiscalYearStart,
+						(item) => item.value === fiscalData.fiscalYearStart,
 					).monthDigit || "-1";
 				const monthYear =
 					seriesStartData
 						.find(
 							(item) =>
-								new Date(item).getMonth() ==
-								parseInt(monthDigit),
+								new Date(item).getMonth() ===
+								parseInt(monthDigit, 10),
 						)
 						?.split("-")?.[0] || "";
-				if (monthYear != "") {
-					option["customSettings"]["gantttools"] = {
-						...option["customSettings"]["gantttools"],
-						["fiscalYearValue"]: monthYear,
+				if (monthYear !== "") {
+					option.customSettings.gantttools = {
+						...option.customSettings.gantttools,
+						fiscalYearValue: monthYear,
 					};
 				} else {
-					option["customSettings"]["gantttools"] = {
-						...option["customSettings"]["gantttools"],
-						["fiscalYearValue"]: seriesStartData[0].split("-")[0],
+					option.customSettings.gantttools = {
+						...option.customSettings.gantttools,
+						fiscalYearValue: seriesStartData[0].split("-")[0],
 					};
 				}
 			}
@@ -218,12 +205,10 @@ export const GanttFiscal = observer(
 		}, [fiscalData]);
 		//reset the fiscal data to initial state
 		function resetToInitialState() {
-			setFiscalData((prevFiscalState) => {
-				return {
-					enableFiscalAxis: false,
-					fiscalYearStart: "",
-					fiscalBackGroundColor: "#0471f0",
-				};
+			setFiscalData({
+				enableFiscalAxis: false,
+				fiscalYearStart: "",
+				fiscalBackGroundColor: "#0471f0",
 			});
 		}
 		//run the state update when fiscal data is changed
@@ -238,68 +223,62 @@ export const GanttFiscal = observer(
 						"option",
 						option as PathValue<D["data"], typeof path>,
 					);
-				} catch (e) {}
+				} catch (_e) {}
 			}, 300);
 		}
 
 		return (
-			<StyledMainContainer>
-				<StyledSubContainer
-					style={{ display: "flex", flexDirection: "row" }}
-				>
+			<div className="flex flex-col border-[#E6E6E6] border-b p-3">
+				<div className="flex flex-row items-center gap-2 py-2">
 					<Switch
 						checked={fiscalData.enableFiscalAxis}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => {
-							updateData(e, "enableFiscalAxis", e.target.checked);
+						onCheckedChange={(checked: boolean) => {
+							updateData("enableFiscalAxis", checked);
 						}}
 					/>
-					<label style={{ paddingLeft: "10px" }}>
-						Enable Fiscal Axis
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="pl-2.5 text-sm">Enable Fiscal Axis</label>
+				</div>
+				<div className="flex flex-col gap-2 py-2">
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="text-muted-foreground text-sm">
+						Fiscal Year Start
 					</label>
-				</StyledSubContainer>
-				<StyledSubContainer>
-					<label>Fiscal Year Start</label>
 					<Select
 						value={fiscalData.fiscalYearStart}
-						onChange={(e) => {
-							updateData(e, "fiscalYearStart", undefined);
-						}}
+						onValueChange={(val) =>
+							updateData("fiscalYearStart", val)
+						}
 					>
-						<Select.Item value="-1">Select Month</Select.Item>
-						{monthData.map((item) => {
-							return (
-								<Select.Item value={item.value}>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Select Month" />
+						</SelectTrigger>
+						<SelectContent>
+							{monthData.map((item) => (
+								<SelectItem key={item.value} value={item.value}>
 									{item.label}
-								</Select.Item>
-							);
-						})}
+								</SelectItem>
+							))}
+						</SelectContent>
 					</Select>
-				</StyledSubContainer>
-				<StyledSubContainer>
-					<label>Input a color Hex Code for Axis If Desired</label>
-					<TextField
-						type={"color"}
+				</div>
+				<div className="flex flex-col gap-2 py-2">
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="text-muted-foreground text-sm">
+						Input a color Hex Code for Axis If Desired
+					</label>
+					<Input
+						type="color"
 						value={fiscalData.fiscalBackGroundColor}
-						onChange={(e) => updateData(e, "fiscalBackGroundColor")}
+						onChange={(e) =>
+							updateData("fiscalBackGroundColor", e.target.value)
+						}
 					/>
-				</StyledSubContainer>
-				<StyledSubContainer
-					style={{
-						width: "100%",
-						display: "block",
-						textAlign: "end",
-					}}
-				>
-					<Button
-						color="primary"
-						variant="contained"
-						size="small"
-						onClick={resetToInitialState}
-					>
-						Reset
-					</Button>
-				</StyledSubContainer>
-			</StyledMainContainer>
+				</div>
+				<div className="flex justify-end pt-2">
+					<Button onClick={resetToInitialState}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

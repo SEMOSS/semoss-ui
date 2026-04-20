@@ -5,13 +5,18 @@ import {
 	ActionMessages,
 	type Block,
 	type BlockDef,
-	BlockJSON,
 	getValueByPath,
 	type Paths,
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Autocomplete, TextField } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { iconMap } from "../../constants";
 import { BaseSettingSection } from "../BaseSettingSection";
@@ -41,19 +46,11 @@ export const IconSelectSettings = observer(
 		const { data, setData } = useBlockSettings(id);
 		const { state } = useBlocks();
 
-		const [autocompleteOptions, setAutocompleteOptions] = useState<
-			Array<string>
-		>([]);
-
-		useEffect(() => {
-			setAutocompleteOptions(options.map((option) => option.value));
-		}, [options]);
-
 		// track the value
 		const [value, setValue] = useState("");
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -117,35 +114,26 @@ export const IconSelectSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<Autocomplete
-					fullWidth
-					size="small"
-					multiple={false}
+				<Select
 					value={value}
-					onChange={(_, newValue) => {
-						onChange(newValue);
+					onValueChange={(val) => {
+						onChange(val);
 					}}
-					options={options.map((option) => option.value)}
-					renderOption={(props, option) => (
-						<li {...props}>
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: "8px",
-								}}
-							>
-								{displayIcon(option)}
-								{options.find(
-									(element) => element.value === option,
-								)?.display ?? option}
-							</div>
-						</li>
-					)}
-					renderInput={(params) => <TextField {...params} />}
-					disablePortal
-					disableClearable
-				/>
+				>
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder="Select icon" />
+					</SelectTrigger>
+					<SelectContent>
+						{options.map((option) => (
+							<SelectItem key={option.value} value={option.value}>
+								<div className="flex items-center gap-2">
+									{displayIcon(option.value)}
+									{option.display}
+								</div>
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			</BaseSettingSection>
 		);
 	},
