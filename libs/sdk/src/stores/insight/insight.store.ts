@@ -720,6 +720,8 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				);
 			}
 
+			const targetOrigin = new URL(Env.APP).origin;
+
 			window.parent.postMessage(
 				{
 					type: "SMSS_EXEC_TOOL",
@@ -734,7 +736,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						executedParameters: executedParameters,
 					} satisfies MCPToolResponse,
 				},
-				"*",
+				targetOrigin,
 			);
 		},
 

@@ -1,18 +1,7 @@
-import {
-	ZoomIn as ZoomInIcon,
-	ZoomOut as ZoomOutIcon,
-} from "@mui/icons-material";
 import * as echarts from "echarts";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-	Box,
-	ButtonGroup,
-	IconButton,
-	Paper,
-	styled,
-	Typography,
-} from "@semoss/ui";
 import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 import type { EventData } from "@/types";
 
@@ -90,66 +79,6 @@ interface RenderItemResult {
 	};
 }
 
-// MUI Styled Components
-const Container = styled(Paper)({
-	padding: 0,
-	paddingBottom: 8,
-	backgroundColor: "#ffffff",
-	borderRadius: 8,
-});
-
-const Header = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: 16,
-});
-
-const ChartWrapper = styled("div")(({ theme }) => ({
-	width: "100%",
-	height: "295px",
-	backgroundColor: theme.palette.background.paper,
-	margin: 0,
-	paddingBottom: "10px",
-}));
-
-const StyledTitle = styled(Typography)({
-	fontWeight: 600,
-	color: "#333",
-	fontSize: "18px",
-});
-
-const ZoomButtonGroup = styled(ButtonGroup)({
-	backgroundColor: "#fff",
-	boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-
-	"& .MuiButtonGroup-grouped": {
-		minWidth: "32px",
-		height: "32px",
-		border: "none",
-
-		"&:not(:last-of-type)": {
-			borderRight: "1px solid #e0e0e0",
-		},
-
-		"&:hover": {
-			backgroundColor: "#f5f5f5",
-		},
-
-		"&:disabled": {
-			backgroundColor: "#f9f9f9",
-			opacity: 0.5,
-		},
-	},
-});
-
-const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
-	({ position }) => ({
-		padding: "4px",
-		borderRadius: position === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
-	}),
-);
-
 interface AuditLogsTimelineProps {
 	logs: EventData[];
 }
@@ -185,9 +114,11 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		const eventData: ProcessedEventData[] = [];
 
 		logs.forEach((event) => {
+			// biome-ignore lint/style/noNonNullAssertion: times were inserted into map above
 			const startPos = timeToPosition.get(
 				TimeDateFormatter(event.startTime).time,
 			)!;
+			// biome-ignore lint/style/noNonNullAssertion: times were inserted into map above
 			const endPos = timeToPosition.get(
 				TimeDateFormatter(event.endTime).time,
 			)!;
@@ -212,18 +143,16 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		chartWidth: number = 800,
 	) => {
 		const totalLabels = timeCategories.length;
-		const availableWidth = chartWidth - 80; // Account for margins
-		const averageLabelWidth = 60; // Estimated width per label in pixels
+		const availableWidth = chartWidth - 80;
+		const averageLabelWidth = 60;
 		const maxLabelsWithoutOverlap = Math.floor(
 			availableWidth / averageLabelWidth,
 		);
 
-		// If we have too many labels, use smart interval calculation
 		if (totalLabels > maxLabelsWithoutOverlap) {
 			const interval =
 				Math.ceil(totalLabels / maxLabelsWithoutOverlap) - 1;
 
-			// For very congested scenarios, tilt the labels
 			if (totalLabels > maxLabelsWithoutOverlap * 1.5) {
 				return {
 					interval: interval,
@@ -238,7 +167,6 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				};
 			}
 		} else if (totalLabels > maxLabelsWithoutOverlap * 0.7) {
-			// Moderate congestion - just tilt
 			return {
 				interval: 0,
 				rotate: 30,
@@ -293,6 +221,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 		});
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: processApiData and calculateXAxisLabelConfig are stable — only logs matters
 	useEffect(() => {
 		if (chartRef.current && logs.length > 0) {
 			const chart = echarts.init(chartRef.current);
@@ -300,7 +229,6 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 			const { timeCategories, eventData } = processApiData();
 
-			// Calculate optimal x-axis configuration based on data density
 			const chartWidth = chartRef.current.clientWidth || 800;
 			const xAxisConfig = calculateXAxisLabelConfig(
 				timeCategories,
@@ -365,19 +293,19 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
                     color: #333;
                   ">${eventData.latency}ms</div>
                 </div>
-                
+
                 <div style="margin-bottom: 8px;">
                   <div style="
-                    color: #4caf50; 
-                    font-size: 11px; 
-                    font-weight: 600; 
-                    margin-bottom: 4px; 
-                    text-transform: uppercase; 
+                    color: #4caf50;
+                    font-size: 11px;
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
                     letter-spacing: 0.5px;
                   ">Request</div>
                   <div style="
-                    font-size: 12px; 
-                    line-height: 1.4; 
+                    font-size: 12px;
+                    line-height: 1.4;
                     color: #333;
                     background: #f8fcf9;
                     padding: 6px 8px;
@@ -389,19 +317,19 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
                     overflow: hidden;
                   ">${truncateText(eventData.request)}</div>
                 </div>
-                
+
                 <div style="margin-bottom: 8px;">
                   <div style="
-                    color: #e91e63; 
-                    font-size: 11px; 
-                    font-weight: 600; 
-                    margin-bottom: 4px; 
-                    text-transform: uppercase; 
+                    color: #e91e63;
+                    font-size: 11px;
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    text-transform: uppercase;
                     letter-spacing: 0.5px;
                   ">Response</div>
                   <div style="
-                    font-size: 12px; 
-                    line-height: 1.4; 
+                    font-size: 12px;
+                    line-height: 1.4;
                     color: #333;
                     background: #fdf8fc;
                     padding: 6px 8px;
@@ -413,7 +341,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
                     overflow: hidden;
                   ">${truncateText(eventData.response)}</div>
                 </div>
-                
+
                 <div style="
                   display: flex;
                   justify-content: flex-end;
@@ -488,7 +416,6 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 						rotate: xAxisConfig.rotate,
 						interval: xAxisConfig.interval,
 						formatter: (value: string): string => {
-							// Shorten the format when rotated to save space
 							if (xAxisConfig.rotate > 0) {
 								return value.replace(/:\d{2}\s(AM|PM)$/, "$1");
 							}
@@ -676,7 +603,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 			chart.on("dataZoom", (params: DataZoomParams) => {
 				try {
-					if (params.batch && params.batch[0]) {
+					if (params.batch?.[0]) {
 						const zoomInfo = params.batch[0];
 						setZoomState({
 							start: zoomInfo.start || 0,
@@ -707,45 +634,54 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 	if (logs.length === 0) {
 		return (
-			<Container elevation={1}>
-				<Header>
-					<StyledTitle variant="h6">Event History</StyledTitle>
-				</Header>
-				<Box sx={{ padding: 2, textAlign: "center" }}>
-					<Typography variant="body2" color="textSecondary">
+			<div className="rounded-lg bg-white pb-2">
+				<div className="flex items-center justify-between p-4">
+					<span className="font-semibold text-[#333] text-lg">
+						Event History
+					</span>
+				</div>
+				<div className="p-4 text-center">
+					<p className="text-muted-foreground text-sm">
 						No logs available.
-					</Typography>
-				</Box>
-			</Container>
+					</p>
+				</div>
+			</div>
 		);
 	}
 
 	return (
-		<Container elevation={1}>
-			<Header>
-				<StyledTitle variant="h6">Event History</StyledTitle>
+		<div className="rounded-lg bg-white pb-2">
+			<div className="flex items-center justify-between p-4">
+				<span className="font-semibold text-[#333] text-lg">
+					Event History
+				</span>
 
-				<ZoomButtonGroup variant="outlined" size="small">
-					<ZoomIconButton
-						position="left"
+				<div className="flex rounded border border-[#e0e0e0] bg-white shadow-sm">
+					<button
+						type="button"
+						className="flex size-8 items-center justify-center rounded-l border-[#e0e0e0] border-r hover:bg-[#f5f5f5] disabled:bg-[#f9f9f9] disabled:opacity-50"
 						onClick={handleZoomIn}
 						disabled={zoomState.end - zoomState.start <= 15}
 					>
-						<ZoomInIcon fontSize="small" sx={{ color: "#666" }} />
-					</ZoomIconButton>
-					<ZoomIconButton
-						position="right"
+						<ZoomIn className="size-4 text-[#666]" />
+					</button>
+					<button
+						type="button"
+						className="flex size-8 items-center justify-center rounded-r hover:bg-[#f5f5f5] disabled:bg-[#f9f9f9] disabled:opacity-50"
 						onClick={handleZoomOut}
 						disabled={
 							zoomState.start === 0 && zoomState.end === 100
 						}
 					>
-						<ZoomOutIcon fontSize="small" sx={{ color: "#666" }} />
-					</ZoomIconButton>
-				</ZoomButtonGroup>
-			</Header>
+						<ZoomOut className="size-4 text-[#666]" />
+					</button>
+				</div>
+			</div>
 
-			<ChartWrapper ref={chartRef} />
-		</Container>
+			<div
+				ref={chartRef}
+				className="m-0 h-[295px] w-full bg-white pb-2.5"
+			/>
+		</div>
 	);
 };
