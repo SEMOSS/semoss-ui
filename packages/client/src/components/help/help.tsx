@@ -12,13 +12,7 @@ import { useRootStore } from "@/hooks";
 export const Help = observer((): JSX.Element => {
 	const { configStore } = useRootStore();
 
-    let themeMap;
-
-    const parsedThemeMap = JSON.parse(configStore.store.config.theme.THEME_MAP);
-
-    themeMap = typeof parsedThemeMap === "string" ? JSON.parse(parsedThemeMap) : parsedThemeMap;
-
-	if (themeMap.helpBannerOrder.length === 0) {
+	if (configStore.theme.helpBannerOrder.length === 0) {
 		return null;
 	}
 
@@ -36,10 +30,8 @@ export const Help = observer((): JSX.Element => {
 					</Button>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" side="top" sideOffset={8}>
-					{themeMap.helpBannerOrder
-                        .filter((key) => key !== "tutorials") // Filter out the "tutorials" value
-                        .map((key) => {
-						const v = themeMap.helpBannerValues[key];
+					{configStore.theme.helpBannerOrder.map((key) => {
+						const v = configStore.theme.helpBannerValues[key];
 
 						if (v) {
 							return (
