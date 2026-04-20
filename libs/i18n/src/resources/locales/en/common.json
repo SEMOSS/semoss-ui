@@ -26,6 +26,7 @@
 		"enterInstructions": "Enter Instructions",
 		"updateInstructions": "Update Instructions",
 		"updateTokenLength": "Update token length",
+		"updateImageSeed": "Update image seed",
 		"uploadFiles": "Upload Files",
 		"search": "Search..."
 	},

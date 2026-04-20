@@ -456,7 +456,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 					<FieldSeparator />
 					<FieldSet>
 						<FieldLegend className="pb-2">
-							Text Generation Settings
+							{t("common:labels.textGenHeader")}
 						</FieldLegend>
 						<FieldDescription>
 							{t("room:settings.textGenDescription")}
@@ -507,7 +507,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							<FieldSeparator />
 							<FieldSet>
 								<FieldLegend>
-									Image Generation Settings
+									{t("common:labels.imageGenHeader")}
 								</FieldLegend>
 								<FieldDescription>
 									{t("room:settings.imageGenDescription")}
@@ -704,16 +704,19 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 												placeholder={t(
 													"common:placeholders.updateImageSeed",
 												)}
-												value={options.seed}
+												value={options.seed ?? ""}
 												onChange={(e) =>
 													onOptionsChange({
 														seed:
-															Number(
-																e.target.value,
-															) || 0,
+															e.target.value ===
+															""
+																? undefined
+																: Number(
+																		e.target
+																			.value,
+																	),
 													})
 												}
-												min={1}
 												className="w-full"
 											/>
 											<Button

@@ -12,7 +12,6 @@ import {
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	NUM_OF_IMAGES,
-	SEED,
 	STREAMING_PLACEHOLDER_ID,
 	TEMPERATURE,
 	TOKEN_LENGTH,
@@ -142,7 +141,7 @@ interface RoomStoreInterface {
 		/*
 		 * Seed for image generation
 		 */
-		seed: number;
+		seed: number | undefined;
 
 		/*
 		 * Workspace associated with the room
@@ -198,7 +197,7 @@ export class RoomStore {
 			imageHeight: IMAGE_HEIGHT,
 			imageWidth: IMAGE_WIDTH,
 			cfgScale: CFG_SCALE,
-			seed: SEED,
+			seed: undefined,
 		},
 		sidebar: {
 			isOpen: false,

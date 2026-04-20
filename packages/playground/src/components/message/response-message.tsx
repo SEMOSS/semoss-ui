@@ -339,7 +339,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<TooltipTrigger asChild>
 										<button
 											type="button"
-											className="cursor-zoom-in overflow-hidden rounded-lg border border-border"
+											className="w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
 											onClick={handleClick}
 											aria-label={`View ${p.mediaInfo.fileName}`}
 										>

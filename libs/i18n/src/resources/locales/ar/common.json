@@ -26,6 +26,7 @@
 		"enterInstructions": "أدخل التعليمات",
 		"updateInstructions": "تحديث التعليمات",
 		"updateTokenLength": "تحديث طول الرموز",
+		"updateImageSeed": "تحديث بذرة الصورة",
 		"uploadFiles": "رفع الملفات",
 		"search": "بحث..."
 	},
