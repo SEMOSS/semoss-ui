@@ -1,8 +1,8 @@
-import { PlayArrow, Try } from "@mui/icons-material";
+import { Play } from "lucide-react";
 import { useState } from "react";
-import { Button, IconButton, Typography } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { StyledTooltip } from "../../prompt.styled";
-import { PromptBuilderContextTestDialog } from "./PromptBuilderContextTestDialog";
+import { PromptBuilderContextTestDialog } from "./prompt-builder-context-test-dialog";
 
 export const PromptBuilderContextTestDialogButton = (props: {
 	disabled: boolean;
@@ -11,43 +11,30 @@ export const PromptBuilderContextTestDialogButton = (props: {
 }) => {
 	const [promptContextTestOpen, setPromptContextTestOpen] = useState(false);
 
-	const closePromptContextTest = () => {
-		setPromptContextTestOpen(false);
-	};
-
 	return (
 		<>
 			{props.disabled ? (
 				<StyledTooltip
 					title={
-						<Typography
-							variant="body1"
-							sx={{ padding: 1, width: "100%" }}
-						>
+						<span className="block w-full p-2 text-sm">
 							Select an LLM and add context to test your prompt
-						</Typography>
+						</span>
 					}
 				>
 					<span>
-						<Button
-							color="inherit"
-							variant="text"
-							size="small"
-							disabled
-							startIcon={<PlayArrow />}
-						>
+						<Button variant="outline" size="sm" disabled>
+							<Play className="h-4 w-4" />
 							Test Prompt
 						</Button>
 					</span>
 				</StyledTooltip>
 			) : (
 				<Button
-					color="inherit"
-					variant="text"
-					size="small"
-					startIcon={<PlayArrow />}
+					variant="outline"
+					size="sm"
 					onClick={() => setPromptContextTestOpen(true)}
 				>
+					<Play className="h-4 w-4" />
 					Test Prompt
 				</Button>
 			)}
@@ -55,7 +42,7 @@ export const PromptBuilderContextTestDialogButton = (props: {
 				llm={props.llm}
 				context={props.context}
 				open={promptContextTestOpen}
-				close={closePromptContextTest}
+				close={() => setPromptContextTestOpen(false)}
 			/>
 		</>
 	);

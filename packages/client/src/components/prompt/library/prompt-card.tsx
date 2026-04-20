@@ -18,8 +18,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { PromptModal } from "../../../pages/prompt/PromptModal";
-import { PromptDeleteModal } from "../PromptDeleteModal";
 import type { Prompt } from "../prompt.types";
+import { PromptDeleteModal } from "../prompt-delete-modal";
 
 /**
  * Hash string to number for gradient generation

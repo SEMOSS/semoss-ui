@@ -21,7 +21,7 @@ import {
 import { NavbarLeft } from "@/components/shared/NavbarLeft";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { useRootStore } from "@/hooks";
-import { PromptLibraryCards } from "../../components/prompt/library/PromptLibraryCards";
+import { PromptLibraryCards } from "../../components/prompt/library/prompt-library-cards";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptModal } from "./PromptModal";
 
@@ -46,6 +46,7 @@ export const PromptPage = observer(() => {
 	/**
 	 * @desc Load prompts and tags
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — reruns on pageReload signal only
 	useEffect(() => {
 		init();
 		loadTags();

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Typography } from "@semoss/ui";
 import { TOKEN_TYPE_INPUT, TOKEN_TYPE_TEXT } from "../../prompt.constants";
 import { StyledStepPaper, StyledTextPaper } from "../../prompt.styled";
 import type { Builder, Token } from "../../prompt.types";
@@ -19,6 +18,7 @@ export const PromptBuilderInputStep = (props: {
 
 	const [initLoadComplete, setInitLoadComplete] = useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: initLoadComplete intentionally omitted; guards initial-load-only behavior
 	useEffect(() => {
 		// initial load only runs once but does not update tokens with empty loaded builderInputSettings
 		if (!initLoadComplete && builderInputSettings) {
@@ -31,6 +31,7 @@ export const PromptBuilderInputStep = (props: {
 		setInitLoadComplete(true);
 	}, [builderInputSettings]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: tokens in deps intentional — re-registers listener when tokens change
 	useEffect(() => {
 		function handleMouseUp() {
 			const selection = window.getSelection();
@@ -49,7 +50,7 @@ export const PromptBuilderInputStep = (props: {
 						span.getAttribute("data-token-index") || "",
 						10,
 					);
-					if (!isNaN(idx)) selectedIndices.push(idx);
+					if (!Number.isNaN(idx)) selectedIndices.push(idx);
 				}
 			});
 
@@ -66,6 +67,7 @@ export const PromptBuilderInputStep = (props: {
 				container.removeEventListener("mouseup", handleMouseUp);
 		}
 	}, [tokens]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: initLoadComplete and props.setBuilderValue intentionally omitted
 	useEffect(() => {
 		// updates after user changes input tokens
 		if (initLoadComplete) {
@@ -76,6 +78,7 @@ export const PromptBuilderInputStep = (props: {
 	/**
 	 * Split context into tokens by word
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only token parse from initial context
 	useEffect(() => {
 		const contextString =
 			props.builder.context.value &&
@@ -156,9 +159,13 @@ export const PromptBuilderInputStep = (props: {
 					? token.index === token.linkedInputToken
 					: true),
 		);
-		return inputTokens.reduce((acc, token: Token) => {
-			return { ...acc, [token.key.toLowerCase()]: token.index };
-		}, {});
+		return inputTokens.reduce<Record<string, number>>(
+			(acc, token: Token) => {
+				acc[token.key.toLowerCase()] = token.index;
+				return acc;
+			},
+			{},
+		);
 	};
 	/**
 	 * Change the token type
@@ -312,7 +319,7 @@ export const PromptBuilderInputStep = (props: {
 		if (selectedInputTokens.length === 0) {
 			return false;
 		}
-		let tokenKey;
+		let tokenKey: string;
 		if (selectedInputTokens.length > 1) {
 			const selectedInputTokensCopy = [...selectedInputTokens];
 			selectedInputTokensCopy.sort((a, b) => a - b);
@@ -369,14 +376,14 @@ export const PromptBuilderInputStep = (props: {
 	};
 
 	return (
-		<StyledStepPaper elevation={2} square>
-			<Box>
-				<Typography variant="h6">Set Inputs</Typography>
-				<Typography variant="body1">
+		<StyledStepPaper>
+			<div>
+				<h2 className="font-semibold text-lg">Set Inputs</h2>
+				<p className="mt-1 text-muted-foreground text-sm">
 					Click on a word or consecutive words to set it as a
 					user-defined input. Click a defined input to deselect it.
-				</Typography>
-			</Box>
+				</p>
+			</div>
 			<StyledTextPaper>
 				{Array.from(tokens, (token: Token) => (
 					<React.Fragment key={token.index}>
@@ -399,10 +406,8 @@ export const PromptBuilderInputStep = (props: {
 							/>
 						</span>
 						{token.display.endsWith("\n") ? (
-							<div style={{ flex: 1 }} />
-						) : (
-							<></>
-						)}
+							<div className="flex-1" />
+						) : null}
 					</React.Fragment>
 				))}
 			</StyledTextPaper>

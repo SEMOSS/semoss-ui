@@ -1,5 +1,5 @@
 import type { Prompt, Token } from "../prompt.types";
-import { PromptCard } from "./PromptCard";
+import { PromptCard } from "./prompt-card";
 
 type ViewMode = "grid" | "list";
 

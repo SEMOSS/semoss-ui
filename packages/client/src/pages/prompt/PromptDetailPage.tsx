@@ -38,8 +38,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import { PromptDeleteModal } from "../../components/prompt/PromptDeleteModal";
 import type { Prompt } from "../../components/prompt/prompt.types";
+import { PromptDeleteModal } from "../../components/prompt/prompt-delete-modal";
 import { PromptModal } from "./PromptModal";
 
 const hashString = (str: string): number => {
@@ -160,6 +160,7 @@ export const PromptDetailPage = observer(() => {
 			});
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — reruns on promptId change only
 	useEffect(() => {
 		loadPrompt();
 	}, [promptId]);
@@ -229,8 +230,7 @@ export const PromptDetailPage = observer(() => {
 			tags: currentVersion.tags || [],
 			id: promptId,
 		};
-		const stringified =
-			"UpdatePrompt ( map = [" + JSON.stringify(promptMap) + " ])";
+		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
 		monolithStore
 			.runQuery(stringified)
 			.then(() => {
@@ -311,8 +311,7 @@ export const PromptDetailPage = observer(() => {
 			id: promptId,
 		};
 
-		const stringified =
-			"UpdatePrompt ( map = [" + JSON.stringify(promptMap) + " ])";
+		const stringified = `UpdatePrompt ( map = [${JSON.stringify(promptMap)} ])`;
 
 		try {
 			const response = await monolithStore.runQuery(stringified);
