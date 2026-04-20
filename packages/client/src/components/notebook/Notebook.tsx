@@ -6,49 +6,12 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { DragIndicator, PlayArrowRounded } from "@mui/icons-material";
+import { GripVertical as DragIndicator, Loader2, PlayCircle as PlayArrowRounded } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import {
-	Box,
-	Button,
-	CircularProgress,
-	Container,
-	Stack,
-	styled,
-} from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { NotebookCell } from "./NotebookCell";
-
-const StyledSheet = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "100%",
-	backgroundColor: theme.palette.background.paper,
-	flex: 1,
-	overflow: "hidden",
-}));
-
-const StyledContainer = styled(Container)(({ theme }) => ({
-	flex: 1,
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "inherit",
-	overflow: "auto",
-	padding: theme.spacing(2),
-}));
-
-const StyledCell = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	width: "100%",
-}));
-
-const StyledContainedButton = styled(Button)(() => ({
-	lineHeight: "1.25rem",
-}));
 
 interface NotebookProps {
 	/** Id of the notebook */
@@ -69,22 +32,22 @@ const SortableItems = ({
 
 	// Apply styles to the list items based on their state
 	const style: React.CSSProperties = {
-		transform: CSS.Transform.toString(transform),
+		transform: CSS.Translate.toString(transform),
 		transition,
 		display: "flex",
 		alignItems: "center",
-		gap: 1,
+		gap: 8,
 	};
 
 	return (
 		<div key={`action-${id}`} ref={setNodeRef} style={style}>
-			<Box
+			<div
 				{...attributes}
 				{...listeners}
-				sx={{ cursor: "grab", alignSelf: "baseline", paddingTop: 2 }}
+				style={{ cursor: "grab", alignSelf: "baseline", paddingTop: "16px" }}
 			>
-				<DragIndicator color="disabled" />
-			</Box>
+				<DragIndicator className="h-6 w-6 text-muted-foreground" />
+			</div>
 			{children}
 		</div>
 	);
@@ -129,31 +92,14 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 	}
 
 	return (
-		<StyledSheet>
-			<Stack
-				alignItems={"center"}
-				justifyContent={"space-between"}
-				direction="row"
-				paddingLeft={3}
-				paddingRight={3}
-				paddingY={1.25}
-				spacing={2}
-			>
+		<div className="flex flex-col h-full w-full bg-background flex-1 overflow-hidden">
+			<div className="flex items-center justify-between px-3 py-2.5 gap-2">
 				&nbsp;
-				<Stack direction="row" alignItems="center" spacing={1}>
-					<StyledContainedButton
+				<div className="flex items-center gap-1">
+					<Button
 						title="Run all cells"
-						variant="contained"
-						size="small"
-						color="primary"
-						disableElevation
-						startIcon={
-							notebook.isLoading ? (
-								<CircularProgress size="0.75em" />
-							) : (
-								<PlayArrowRounded />
-							)
-						}
+						variant="default"
+						size="sm"
 						disabled={notebook.isLoading}
 						onClick={() =>
 							state.dispatch({
@@ -163,11 +109,17 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 								},
 							})
 						}
+						style={{ lineHeight: "1.25rem" }}
 					>
+						{notebook.isLoading ? (
+							<Loader2 className="h-3 w-3 animate-spin" />
+						) : (
+							<PlayArrowRounded className="h-4 w-4" />
+						)}
 						Run All
-					</StyledContainedButton>
-				</Stack>
-			</Stack>
+					</Button>
+				</div>
+			</div>
 			<DndContext
 				collisionDetection={closestCenter}
 				onDragEnd={handleDragEnd}
@@ -177,22 +129,22 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 					items={notebook.list?.map((item) => item)}
 					strategy={verticalListSortingStrategy}
 				>
-					<StyledContainer maxWidth={false}>
+					<div className="flex-1 flex flex-col h-full w-full min-w-0 overflow-auto overflow-x-hidden p-4">
 						{notebook.list.map((cellId) => (
 							<SortableItems key={cellId} id={cellId}>
-								<StyledCell key={cellId}>
+								<div className="flex flex-col w-full min-w-0" key={cellId}>
 									<NotebookCell
 										queryId={id}
 										cellId={cellId}
 										cellPlayCounter={cellPlayCounter}
 										setCellPlayCounter={setCellPlayCounter}
 									></NotebookCell>
-								</StyledCell>
+								</div>
 							</SortableItems>
 						))}
-					</StyledContainer>
+					</div>
 				</SortableContext>
 			</DndContext>
-		</StyledSheet>
+		</div>
 	);
 });

@@ -3,7 +3,7 @@ import type React from "react";
 import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Button, Modal, Stack, TextField } from "@semoss/ui";
+import { Button, Input, Label } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 
 type NewQueryForm = {
@@ -115,54 +115,50 @@ export const NewQueryOverlay = observer(
 
 		return (
 			<>
-				<Modal.Title>New Query</Modal.Title>
-				<Modal.Content>
-					<Stack marginTop={1}>
+				<div className="px-6 py-4 text-lg font-semibold">New Query</div>
+				<div className="px-6 py-2">
+					<div className="mt-2">
 						<Controller
 							name={"ID"}
 							control={control}
 							render={({ field }) => {
 								return (
-									<TextField
-										error={!!errors?.ID?.message}
-										label="Id"
-										value={field.value ? field.value : ""}
-										onChange={(value) => {
-											clearErrors();
-											field.onChange(value);
-										}}
-										helperText={errors?.ID?.message}
-									/>
+									<div className="flex flex-col gap-1">
+										<Label htmlFor="query-id-input">Id</Label>
+										<Input
+											id="query-id-input"
+											aria-invalid={!!errors?.ID?.message}
+											value={field.value ? field.value : ""}
+											onChange={(value) => {
+												clearErrors();
+												field.onChange(value);
+											}}
+											className={errors?.ID?.message ? "border-destructive" : ""}
+										/>
+										{errors?.ID?.message && (
+											<p className="text-xs text-destructive">{errors.ID.message}</p>
+										)}
+									</div>
 								);
 							}}
 						/>
-					</Stack>
-				</Modal.Content>
-				<Modal.Actions>
-					<Stack
-						direction="row"
-						spacing={1}
-						paddingX={2}
-						paddingBottom={2}
-						justifyContent="end"
+					</div>
+				</div>
+				<div className="flex flex-row justify-end gap-2 px-4 pb-4">
+					<Button
+						variant="ghost"
+						onClick={() => onClose()}
 					>
-						<Button
-							variant="text"
-							color="primary"
-							onClick={() => onClose()}
-						>
-							Cancel
-						</Button>
-						<Button
-							variant="contained"
-							color="primary"
-							disabled={!!errors?.ID?.message || !isFormValid}
-							onClick={() => onSubmit()}
-						>
-							Submit
-						</Button>
-					</Stack>
-				</Modal.Actions>
+						Cancel
+					</Button>
+					<Button
+						variant="default"
+						disabled={!!errors?.ID?.message || !isFormValid}
+						onClick={() => onSubmit()}
+					>
+						Submit
+					</Button>
+				</div>
 			</>
 		);
 	},

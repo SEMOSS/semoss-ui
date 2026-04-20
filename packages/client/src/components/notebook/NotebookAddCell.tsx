@@ -1,14 +1,14 @@
 import {
-	Close,
+	X as Close,
 	Code,
-	ImportExport,
-	KeyboardArrowDown,
-	KeyboardArrowUp,
-	MoreVert,
-	SearchOutlined,
-} from "@mui/icons-material";
+	ArrowDownUp as ImportExport,
+	ChevronDown as KeyboardArrowDown,
+	ChevronUp as KeyboardArrowUp,
+	MoreVertical as MoreVert,
+	Search as SearchOutlined,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
 	ActionMessages,
 	type CellStateConfig,
@@ -24,60 +24,14 @@ import {
 } from "@semoss/renderer";
 import {
 	Button,
-	IconButton,
-	InputAdornment,
-	Menu,
-	type MenuProps,
-	Modal,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+	Dialog,
+	DialogContent,
+	Input,
+	Popover,
+	PopoverContent,
+	PopoverAnchor,
+} from "@semoss/ui/next";
 import { ModelBrain } from "@/assets/img/ModelBrain";
-
-const StyledButton = styled(Button)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-	backgroundColor: "unset!important",
-}));
-
-const StyledMenu = styled((props: MenuProps) => (
-	<Menu
-		anchorOrigin={{
-			vertical: "bottom",
-			horizontal: "left",
-		}}
-		transformOrigin={{
-			vertical: "top",
-			horizontal: "left",
-		}}
-		{...props}
-	/>
-))(({ theme }) => ({
-	"& .MuiPaper-root": {
-		marginTop: theme.spacing(1),
-		borderRadius: "0px",
-	},
-	".MuiList-root": {
-		padding: 0,
-	},
-}));
-
-const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
-	textTransform: "capitalize",
-	fontSize: "16px",
-	display: "flex",
-	gap: theme.spacing(1),
-}));
-
-const StyledBorderDiv = styled("div")(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.main}`,
-	padding: "8px 16px",
-	borderRadius: "8px",
-}));
-const MenuSectionRoot = styled("li")({
-	listStyle: "none",
-});
 
 interface AddCellOption {
 	display: string;
@@ -355,251 +309,198 @@ export const NotebookAddCell = observer(
 			}
 		};
 
+	const anchorRef = useRef<HTMLDivElement>(null);
+
 		return (
 			<>
-				<Stack
-					direction={"row"}
-					alignItems={"center"}
-					gap={1}
-					justifyContent={"center"}
-				>
-					<StyledBorderDiv>
-						{AddCellOptions &&
-							Object.entries(AddCellOptions).map((add, i) => {
-								const value = add[1];
-								return (
-									<StyledButton
-										key={`${query.id}-${previousCellId}-${value.display}`}
-										title={`${value.display}`}
-										variant="contained"
-										size="small"
-										disabled={
-											query.isLoading || value.disabled
-										}
-										startIcon={value.icon}
-										onClick={(e) => {
-											if (value.options) {
-												setAnchorEl(e.currentTarget);
-												setSelectedAddCell(add[0]);
-											} else {
-												appendCell(
-													value.defaultCellType,
-												);
-												setSelectedAddCell(add[0]);
-											}
-										}}
-										sx={{
-											...((value.options
-												? selectedAddCell === add[0] &&
-													open
-												: selectedAddCell ===
-													add[0]) && {
-												backgroundColor:
-													"#EBF4FE !important",
-												color: "#212121 !important",
-											}),
-										}}
-										endIcon={
-											add[0] === "others" ||
-											add[0] ===
-												"code" ? null : Array.isArray(
-													value.options,
-												) &&
-												selectedAddCell === add[0] &&
-												open ? (
-												<KeyboardArrowUp />
-											) : (
-												<KeyboardArrowDown />
-											)
-										}
-									>
-										{value.display}
-									</StyledButton>
-								);
-							})}
-					</StyledBorderDiv>
-					<StyledMenu
-						anchorEl={anchorEl}
-						open={
-							open &&
-							!!AddCellOptions[selectedAddCell]?.options?.length
-						}
-						onClose={() => {
+				<Popover
+					open={open && !!AddCellOptions[selectedAddCell]?.options?.length}
+					onOpenChange={(isOpen) => {
+						if (!isOpen) {
 							setAnchorEl(null);
-						}}
+						}
+					}}
+				>
+					<div className="flex items-center gap-2 justify-center">
+						<PopoverAnchor asChild>
+							<div
+								ref={anchorRef}
+								className="border border-secondary rounded-lg px-4 py-2"
+							>
+								{AddCellOptions &&
+									Object.entries(AddCellOptions).map((add) => {
+										const value = add[1];
+										const isSelected = value.options
+											? selectedAddCell === add[0] && open
+											: selectedAddCell === add[0];
+										return (
+											<Button
+												key={`${query.id}-${previousCellId}-${value.display}`}
+												title={`${value.display}`}
+												variant="ghost"
+												size="sm"
+												disabled={
+													query.isLoading || value.disabled
+												}
+												onClick={(e) => {
+													if (value.options) {
+														setAnchorEl(e.currentTarget);
+														setSelectedAddCell(add[0]);
+													} else {
+														appendCell(
+															value.defaultCellType,
+														);
+														setSelectedAddCell(add[0]);
+													}
+												}}
+												className="text-muted-foreground gap-1"
+												style={{
+													...(isSelected && {
+														backgroundColor: "#EBF4FE",
+														color: "#212121",
+													}),
+												}}
+											>
+												{value.icon}
+												{value.display}
+												{add[0] !== "others" &&
+													add[0] !== "code" &&
+													Array.isArray(value.options) && (
+														selectedAddCell === add[0] && open
+															? <KeyboardArrowUp className="h-4 w-4" />
+															: <KeyboardArrowDown className="h-4 w-4" />
+													)}
+											</Button>
+										);
+									})}
+							</div>
+						</PopoverAnchor>
+					</div>
+					<PopoverContent
+						align="start"
+						className="w-auto p-0 rounded-none shadow-md"
 					>
-						{selectedAddCell === "data" && // Ensure we are showing the options for "Data"
-							DataOptions.map(
-								({ display, defaultCellType }, index) => {
-									return (
-										<StyledMenuItem
-											key={`${query.id}-${previousCellId}-${display}`}
-											value={display}
-											onClick={() => {
-												appendCell(defaultCellType); // Append selected cell
-												setAnchorEl(null); // Close the menu
-											}}
-										>
-											{display}
-										</StyledMenuItem>
-									);
-								},
-							)}
+						{selectedAddCell === "data" &&
+							DataOptions.map(({ display, defaultCellType }) => (
+								<button
+									type="button"
+									key={`${query.id}-${previousCellId}-${display}`}
+									className="flex w-full items-center gap-2 px-4 py-2 text-base capitalize hover:bg-accent cursor-pointer"
+									onClick={() => {
+										appendCell(defaultCellType);
+										setAnchorEl(null);
+									}}
+								>
+									{display}
+								</button>
+							))}
 
 						{selectedAddCell === "transformation" && (
 							<>
-								{/* Search Input with Clear Icon */}
-
-								<TextField
-									placeholder="Search"
-									size="small"
-									sx={{
-										padding: "8px",
-										borderRadius: "8px",
-										width: "211px",
-									}}
-									value={searchQuery}
-									onChange={handleSearchChange}
-									InputProps={{
-										startAdornment: (
-											<InputAdornment position="start">
-												<SearchOutlined />
-											</InputAdornment>
-										),
-										endAdornment: (
-											<InputAdornment position="end">
-												<IconButton
-													size="small"
-													onClick={clearSearch}
-												>
-													<Close />
-												</IconButton>
-											</InputAdornment>
-										),
-									}}
-								/>
-								<Stack
-									sx={{
-										maxHeight: "300px",
-										overflowY: "auto",
-									}}
-								>
-									{/* Menu Section */}
+								<div className="p-2">
+									<div className="relative">
+										<SearchOutlined className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+										<Input
+											placeholder="Search"
+											className="pl-8 pr-8 w-[211px]"
+											value={searchQuery}
+											onChange={handleSearchChange}
+										/>
+										<button
+											type="button"
+											className="absolute right-1 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded cursor-pointer"
+											onClick={clearSearch}
+										>
+											<Close className="h-4 w-4" />
+										</button>
+									</div>
+								</div>
+								<div className="max-h-[300px] overflow-y-auto">
 									{filteredCategories.map(
-										(
-											{ category, transformations },
-											index,
-										) => (
-											<MenuSectionRoot
+										({ category, transformations }) => (
+											<li
 												key={`${query.id}-${previousCellId}-${category}`}
+												className="list-none"
 											>
-												<StyledMenuItem
-													value={category}
-													disabled
-												>
-													<Typography
-														variant={"button"}
-														sx={{
-															fontSize: "14px",
-														}}
-													>
-														{category}
-													</Typography>
-												</StyledMenuItem>
+												<div className="flex items-center gap-2 px-4 py-2 text-sm font-medium uppercase text-muted-foreground">
+													{category}
+												</div>
 												{transformations.map(
-													(
-														transformation,
-														tIndex,
-													) => (
-														<StyledMenuItem
-															value={
-																transformation.display
-															}
+													(transformation) => (
+														<button
+															type="button"
 															key={`${query.id}-${previousCellId}-${transformation.display}`}
+															className="flex w-full items-center gap-2 px-4 py-2 text-base capitalize hover:bg-accent cursor-pointer"
 															onClick={() => {
 																appendCell(
 																	transformation.defaultCellType,
 																);
-																setAnchorEl(
-																	null,
-																);
-																setSearchQuery(
-																	"",
-																);
+																setAnchorEl(null);
+																setSearchQuery("");
 															}}
 														>
-															{
-																transformation.display
-															}
-														</StyledMenuItem>
+															{transformation.display}
+														</button>
 													),
 												)}
-											</MenuSectionRoot>
+											</li>
 										),
 									)}
-								</Stack>
+								</div>
 							</>
 						)}
+
 						{selectedAddCell === "others" &&
 							Array.from(
 								AddCellOptions[selectedAddCell]?.options || [],
-								({ display, defaultCellType }, index) => {
-									return (
-										<StyledMenuItem
-											key={`${query.id}-${previousCellId}-${display}`}
-											value={display}
-											onClick={() => {
-												appendCell(defaultCellType);
-												setAnchorEl(null);
-											}}
-										>
-											{display}
-										</StyledMenuItem>
-									);
-								},
+								({ display, defaultCellType }) => (
+									<button
+										type="button"
+										key={`${query.id}-${previousCellId}-${display}`}
+										className="flex w-full items-center gap-2 px-4 py-2 text-base capitalize hover:bg-accent cursor-pointer"
+										onClick={() => {
+											appendCell(defaultCellType);
+											setAnchorEl(null);
+										}}
+									>
+										{display}
+									</button>
+								),
 							)}
 
 						{selectedAddCell === "import-data" && (
 							<div>
 								{Array.from(
-									AddCellOptions[selectedAddCell]?.options ||
-										[],
-									(
-										{ display, defaultCellType, disabled },
-										index,
-									) => {
-										return (
-											<StyledMenuItem
-												key={`${query.id}-${previousCellId}-${display}`}
-												value={display}
-												disabled={disabled}
-												onClick={() => {
-													if (!defaultCellType) {
-														setIsDataImportModalOpen(
-															true,
-														);
-													} else {
-														appendCell(
-															defaultCellType,
-														);
-													}
-													setAnchorEl(null);
-												}}
-											>
-												{display}
-											</StyledMenuItem>
-										);
-									},
+									AddCellOptions[selectedAddCell]?.options || [],
+									({ display, defaultCellType, disabled }) => (
+										<button
+											type="button"
+											key={`${query.id}-${previousCellId}-${display}`}
+											disabled={disabled}
+											className="flex w-full items-center gap-2 px-4 py-2 text-base capitalize hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+											onClick={() => {
+												if (!defaultCellType) {
+													setIsDataImportModalOpen(true);
+												} else {
+													appendCell(defaultCellType);
+												}
+												setAnchorEl(null);
+											}}
+										>
+											{display}
+										</button>
+									),
 								)}
 							</div>
 						)}
-					</StyledMenu>
-				</Stack>
+					</PopoverContent>
+				</Popover>
 
-				{isDataImportModalOpen && (
-					<Modal
-						open={setIsDataImportModalOpen as unknown as boolean}
-					>
+				<Dialog
+					open={isDataImportModalOpen}
+					onOpenChange={(isOpen) => setIsDataImportModalOpen(isOpen)}
+				>
+					<DialogContent className="max-w-4xl">
 						<DataImportFormModal
 							setIsDataImportModalOpen={setIsDataImportModalOpen}
 							query={query}
@@ -607,8 +508,8 @@ export const NotebookAddCell = observer(
 							cell={null}
 							editMode={false}
 						/>
-					</Modal>
-				)}
+					</DialogContent>
+				</Dialog>
 			</>
 		);
 	},

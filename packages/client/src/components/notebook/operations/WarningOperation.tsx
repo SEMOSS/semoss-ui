@@ -1,5 +1,4 @@
 import { observer } from "mobx-react-lite";
-import { Typography } from "@semoss/ui";
 
 interface WarningOperationProps {
 	/** Message returned when there is an error */
@@ -14,9 +13,9 @@ export const WarningOperation = observer(
 		const { output } = props;
 
 		return (
-			<Typography variant="caption" color="warning">
+			<span className="text-xs text-yellow-600 dark:text-yellow-500">
 				{output}
-			</Typography>
+			</span>
 		);
 	},
 );

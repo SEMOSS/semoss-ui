@@ -7,170 +7,8 @@ import {
 	useBlocks,
 	type Variable,
 } from "@semoss/renderer";
-import { Box, Divider, Stack, styled, Typography } from "@semoss/ui";
 import { capitalizeFirstLetter, isOutputJSON } from "@/utility";
 import PreviewButton from "../../assets/img/PreviewRounded.png";
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-	height: "auto",
-	width: "424px",
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	borderRadius: "12px",
-	background: "#FFF",
-	boxShadow: "0 5px 16px 0 rgba(0, 0, 0, 0.16)",
-	maxHeight: "calc(80vh)",
-	boxSizing: "border-box",
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	height: "auto",
-	display: "flex",
-	padding: "4px 16px",
-	flexDirection: "row",
-	alignItems: "flex-start",
-	gap: "10px",
-	alignSelf: "stretch",
-}));
-
-const StyledPreviewBox = styled(Box)(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	padding: "16px 16px 16px 48px",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "8px",
-	borderRadius: "var(--Shape-borderRadiusSm, 4px)",
-	maxHeight: "200px",
-	overflowY: "auto",
-}));
-
-const StyledBlocksBox = styled(Box)(({ theme }) => ({
-	width: "350px",
-	"& .MuiFormLabel-root.MuiInputLabel-root": {
-		top: "6px",
-	},
-}));
-const StyledPreviewStack = styled(Stack)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "row",
-	alignItems: "flex-start",
-	gap: "8px",
-	padding: "6px 8px",
-	borderRadius: "16px",
-}));
-
-const StyledDiv = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-}));
-const StyledImg = styled("img")(({ theme }) => ({
-	display: "flex",
-	height: "20px",
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: "#0471F0",
-	fontFamily: "Inter",
-	fontSize: "14px",
-	fontStyle: "normal",
-	fontWeight: "500",
-	lineHeight: "24px",
-	letterSpacing: "0.4px",
-}));
-
-const StyledDivider = styled(Divider)(({ theme }) => ({
-	width: "100%",
-	height: "1px",
-	border: "1px solid var(--Secondary-Divider, #E6E6E6)",
-}));
-
-const StyledPreviewTypography = styled(Typography)(({ theme }) => ({
-	color: "#666",
-	fontFamily: "Inter",
-	fontSize: "14px",
-	fontStyle: "normal",
-	fontWeight: "400",
-	lineHeight: "150%",
-	letterSpacing: "0.17px",
-}));
-
-const StyledContentBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	padding: "8px 0",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	alignSelf: "stretch",
-	width: "100%",
-	maxHeight: "200px",
-	overflowY: "auto",
-	height: "auto",
-}));
-
-const StyledContentStack = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "row",
-	alignItems: "flex-start",
-	gap: "8px",
-	alignSelf: "stretch",
-	padding: "4px 16px 4px 48px",
-	borderRadius: "var(--Shape-borderRadiusSm, 4px)",
-	width: "100%",
-}));
-
-const StyledTextTypography = styled(Typography)(({ theme }) => ({
-	color: "#212121",
-	fontFamily: "Inter",
-	fontSize: "16px",
-	fontStyle: "normal",
-	fontWeight: "400",
-	lineHeight: "24px",
-	letterSpacing: "0.15px",
-}));
-const StyledValueTextTypography = styled(Typography)(({ theme }) => ({
-	color: "#212121",
-	fontFamily: "Inter",
-	fontSize: "14px",
-	fontStyle: "normal",
-	fontWeight: "400",
-	lineHeight: "24px",
-	letterSpacing: "0.17px",
-}));
-
-const StyledContentTypography = styled(Typography)(({ theme }) => ({
-	color: "#666",
-	fontFamily: "Inter",
-	fontSize: "16px",
-	fontStyle: "normal",
-	fontWeight: "400",
-	lineHeight: "24px",
-	letterSpacing: "0.15px",
-	whiteSpace: "normal",
-	wordBreak: "break-all",
-	overflowWrap: "anywhere",
-	width: "100%",
-	display: "block",
-}));
-
-const StyledValueContentTypography = styled(Typography)(({ theme }) => ({
-	color: "#666",
-	fontFamily: "Inter",
-	fontSize: "14px",
-	fontStyle: "normal",
-	fontWeight: "400",
-	lineHeight: "24px",
-	letterSpacing: "0.17px",
-	whiteSpace: "normal",
-	wordBreak: "break-all",
-	overflowWrap: "anywhere",
-	width: "100%",
-	display: "block",
-}));
 
 interface VariablePreviewProps {
 	/**
@@ -250,19 +88,15 @@ export const VariablePreview = observer(
 				const config = getStateWithBlock(variable.to);
 				if (config) {
 					return (
-						<StyledBlocksBox>
+						<div style={{ width: "350px" }}>
 							<Renderer state={config} preview={true} />
-						</StyledBlocksBox>
+						</div>
 					);
 				} else {
 					return (
-						<Typography
-							variant="body2"
-							fontWeight="bold"
-							color="error"
-						>
+						<p className="text-sm font-bold text-destructive">
 							Block is no longer available
-						</Typography>
+						</p>
 					);
 				}
 			} else {
@@ -278,9 +112,18 @@ export const VariablePreview = observer(
 					);
 				} else {
 					return (
-						<StyledPreviewTypography variant="body2">
+						<span
+							style={{
+								color: "#666",
+								fontFamily: "Inter",
+								fontSize: "14px",
+								fontWeight: 400,
+								lineHeight: "150%",
+								letterSpacing: "0.17px",
+							}}
+						>
 							{found as string}
-						</StyledPreviewTypography>
+						</span>
 					);
 				}
 			}
@@ -306,60 +149,233 @@ export const VariablePreview = observer(
 			}
 			return (
 				<>
-					<StyledContentStack variant="body1">
-						<StyledTextTypography variant="body2">
+					<div
+						style={{
+							display: "flex",
+							flexDirection: "row",
+							alignItems: "flex-start",
+							gap: "8px",
+							alignSelf: "stretch",
+							padding: "4px 16px 4px 48px",
+							borderRadius: "4px",
+							width: "100%",
+						}}
+					>
+						<span
+							style={{
+								color: "#212121",
+								fontFamily: "Inter",
+								fontSize: "16px",
+								fontWeight: 400,
+								lineHeight: "24px",
+								letterSpacing: "0.15px",
+							}}
+						>
 							Name:
-						</StyledTextTypography>
-						<StyledContentTypography variant="body2">
+						</span>
+						<span
+							style={{
+								color: "#666",
+								fontFamily: "Inter",
+								fontSize: "16px",
+								fontWeight: 400,
+								lineHeight: "24px",
+								letterSpacing: "0.15px",
+								whiteSpace: "normal",
+								wordBreak: "break-all",
+								overflowWrap: "anywhere",
+								width: "100%",
+								display: "block",
+							}}
+						>
 							{id}
-						</StyledContentTypography>
-					</StyledContentStack>
-					<StyledContentStack variant="body1">
-						<StyledTextTypography variant="body2">
+						</span>
+					</div>
+					<div
+						style={{
+							display: "flex",
+							flexDirection: "row",
+							alignItems: "flex-start",
+							gap: "8px",
+							alignSelf: "stretch",
+							padding: "4px 16px 4px 48px",
+							borderRadius: "4px",
+							width: "100%",
+						}}
+					>
+						<span
+							style={{
+								color: "#212121",
+								fontFamily: "Inter",
+								fontSize: "16px",
+								fontWeight: 400,
+								lineHeight: "24px",
+								letterSpacing: "0.15px",
+							}}
+						>
 							Type:
-						</StyledTextTypography>
-						<StyledContentTypography variant="body2">
+						</span>
+						<span
+							style={{
+								color: "#666",
+								fontFamily: "Inter",
+								fontSize: "16px",
+								fontWeight: 400,
+								lineHeight: "24px",
+								letterSpacing: "0.15px",
+								whiteSpace: "normal",
+								wordBreak: "break-all",
+								overflowWrap: "anywhere",
+								width: "100%",
+								display: "block",
+							}}
+						>
 							{capitalizeFirstLetter(variable.type)}
-						</StyledContentTypography>
-					</StyledContentStack>
-					<StyledContentStack variant="body1">
-						<StyledValueTextTypography variant="body2">
+						</span>
+					</div>
+					<div
+						style={{
+							display: "flex",
+							flexDirection: "row",
+							alignItems: "flex-start",
+							gap: "8px",
+							alignSelf: "stretch",
+							padding: "4px 16px 4px 48px",
+							borderRadius: "4px",
+							width: "100%",
+						}}
+					>
+						<span
+							style={{
+								color: "#212121",
+								fontFamily: "Inter",
+								fontSize: "14px",
+								fontWeight: 400,
+								lineHeight: "24px",
+								letterSpacing: "0.17px",
+							}}
+						>
 							Value:
-						</StyledValueTextTypography>
-						<StyledValueContentTypography variant="body2">
+						</span>
+						<span
+							style={{
+								color: "#666",
+								fontFamily: "Inter",
+								fontSize: "14px",
+								fontWeight: 400,
+								lineHeight: "24px",
+								letterSpacing: "0.17px",
+								whiteSpace: "normal",
+								wordBreak: "break-all",
+								overflowWrap: "anywhere",
+								width: "100%",
+								display: "block",
+							}}
+						>
 							{val}
-						</StyledValueContentTypography>
-					</StyledContentStack>
+						</span>
+					</div>
 				</>
 			);
 		}, [variable, id]);
 
 		return (
-			<StyledStack spacing={0}>
-				<StyledBox>
-					<StyledPreviewStack>
-						<StyledDiv>
-							<StyledImg
+			<div
+				style={{
+					height: "auto",
+					width: "424px",
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "flex-start",
+					borderRadius: "12px",
+					background: "#FFF",
+					boxShadow: "0 5px 16px 0 rgba(0, 0, 0, 0.16)",
+					maxHeight: "calc(80vh)",
+					boxSizing: "border-box",
+				}}
+			>
+				<div
+					style={{
+						height: "auto",
+						display: "flex",
+						padding: "4px 16px",
+						flexDirection: "row",
+						alignItems: "flex-start",
+						gap: "10px",
+						alignSelf: "stretch",
+					}}
+				>
+					<div
+						style={{
+							display: "flex",
+							flexDirection: "row",
+							alignItems: "flex-start",
+							gap: "8px",
+							padding: "6px 8px",
+							borderRadius: "16px",
+						}}
+					>
+						<div className="flex items-center gap-2">
+							<img
 								src={PreviewButton}
 								alt="Expand/Collapse"
 								style={{
+									display: "flex",
+									height: "20px",
 									width: 20,
+									flexDirection: "column",
+									justifyContent: "center",
+									alignItems: "center",
 								}}
 							/>
-							<StyledTypography
-								variant={"body2"}
-								fontWeight="medium"
+							<span
+								style={{
+									color: "#0471F0",
+									fontFamily: "Inter",
+									fontSize: "14px",
+									fontWeight: 500,
+									lineHeight: "24px",
+									letterSpacing: "0.4px",
+								}}
 							>
 								Preview
-							</StyledTypography>
-						</StyledDiv>
-					</StyledPreviewStack>
-				</StyledBox>
-				<StyledDivider />
-				<StyledPreviewBox>{preview}</StyledPreviewBox>
-				<StyledDivider />
-				<StyledContentBox>{previewValue}</StyledContentBox>
-			</StyledStack>
+							</span>
+						</div>
+					</div>
+				</div>
+				<hr style={{ width: "100%", border: "1px solid #E6E6E6" }} />
+				<div
+					style={{
+						width: "100%",
+						display: "flex",
+						padding: "16px 16px 16px 48px",
+						flexDirection: "column",
+						alignItems: "flex-start",
+						gap: "8px",
+						borderRadius: "4px",
+						maxHeight: "200px",
+						overflowY: "auto",
+					}}
+				>
+					{preview}
+				</div>
+				<hr style={{ width: "100%", border: "1px solid #E6E6E6" }} />
+				<div
+					style={{
+						display: "flex",
+						padding: "8px 0",
+						flexDirection: "column",
+						alignItems: "flex-start",
+						alignSelf: "stretch",
+						width: "100%",
+						maxHeight: "200px",
+						overflowY: "auto",
+						height: "auto",
+					}}
+				>
+					{previewValue}
+				</div>
+			</div>
 		);
 	},
 );

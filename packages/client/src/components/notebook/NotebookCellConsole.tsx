@@ -1,12 +1,6 @@
 import { JsonViewer } from "@textea/json-viewer";
 import React from "react";
-import { styled, Typography } from "@semoss/ui";
 import { isOutputJSON } from "@/utility/general";
-
-const StyledConsole = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-});
 
 interface ConsoleProps {
 	/**
@@ -18,7 +12,7 @@ interface ConsoleProps {
 export const NotebookCellConsole = (props: ConsoleProps) => {
 	const { messages } = props;
 	return (
-		<StyledConsole>
+		<div className="flex flex-col">
 			{messages.map((m, i) => {
 				const value = isOutputJSON(m);
 				if (value != null) {
@@ -34,12 +28,12 @@ export const NotebookCellConsole = (props: ConsoleProps) => {
 					);
 				} else {
 					return (
-						<Typography key={`${i}-${m}`} variant="caption">
+						<span key={`${i}-${m}`} className="text-xs">
 							{m}
-						</Typography>
+						</span>
 					);
 				}
 			})}
-		</StyledConsole>
+		</div>
 	);
 };

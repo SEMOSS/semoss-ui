@@ -1,28 +1,30 @@
 import {
-	AutoFixHighOutlined,
-	Close,
-	ContentCopy,
-	MoreVert,
-} from "@mui/icons-material";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+	Wand2 as AutoFixHighOutlined,
+	Copy as ContentCopy,
+	MoreVertical as MoreVert,
+} from "lucide-react";
+import { Trash2 as DeleteOutlineOutlinedIcon } from "lucide-react";
+import { Pencil as EditOutlinedIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
 import {
-	Box,
 	Button,
-	IconButton,
-	List,
-	Menu,
-	Modal,
-	Stack,
-	styled,
-	TextField,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Popover,
+	PopoverAnchor,
+	PopoverContent,
+	toast,
 	Tooltip,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { useWorkspace } from "@/hooks";
 import VariableArray from "../../assets/img/VariableArray.svg";
 import VariableBlock from "../../assets/img/VariableBlock.svg";
@@ -41,205 +43,6 @@ import { suggestVariableRenames } from "../blocks-workspace/utils";
 import { AddVariablePopover } from "./AddVariablePopover";
 import { VariablePreview } from "./VariablePreview";
 
-const StyledListItem = styled(List.Item)(() => ({
-	"&.MuiListItem-root": {
-		paddingTop: "0px",
-		paddingBottom: "0px",
-	},
-	padding: "4px 16px",
-}));
-
-const StyledTooltip = styled(Tooltip)(() => ({
-	fontWeight: "bold",
-}));
-
-const StyledButton = styled("button")(({ theme }) => ({
-	border: "none",
-	background: "none",
-	padding: 0,
-	margin: 0,
-	outline: "none",
-	width: "100%",
-	display: "flex",
-	"&:hover": {
-		cursor: "pointer",
-	},
-}));
-
-const StyledPointerStack = styled(Stack)(({ theme }) => ({
-	width: "80%",
-	paddingLeft: "20px",
-	"&:hover": {
-		cursor: "pointer",
-	},
-}));
-
-const StyledListItemText = styled(List.ItemText)(({ theme }) => ({
-	// May not actually be needed, browser was being weird
-	"&:hover": {
-		cursor: "pointer",
-	},
-}));
-
-const StyledCapitalizedTypography = styled(Typography)(() => ({
-	textTransform: "capitalize",
-	color: "#666",
-	fontFamily: "Inter",
-	fontWeight: "400",
-	fontSize: "14px",
-	lineHeight: "150%",
-	letterSpacing: "0.17px",
-}));
-
-const StyledAnchorSpan = styled("span")(({ theme }) => ({
-	position: "absolute",
-	left: 100,
-}));
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-	paddingLeft: "20px",
-	width: "128px",
-}));
-
-const StyledTextField = styled(TextField)(() => ({
-	padding: "0px",
-}));
-
-const StyledEmptyDiv = styled("div")(() => ({
-	padding: "0px",
-}));
-
-const StyledStackVariable = styled(Stack)(() => ({
-	height: "40px",
-	width: "80px",
-}));
-
-const StyledIconButton = styled(IconButton)(() => ({
-	width: "40px",
-	gap: "10px",
-	color: "#757575",
-}));
-
-const StyledMenu = styled(Menu)(() => ({
-	".MuiPopover-paper": {
-		borderRadius: "4px",
-		padding: "8px 0px",
-		boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-	},
-}));
-
-const StyledMenuItem = styled(Menu.Item)(() => ({
-	padding: "6px 16px",
-	height: "36px",
-	"&:hover": {
-		backgroundColor: "#EBF4FE",
-	},
-}));
-
-const StyledEditIconButton = styled(IconButton)(() => ({
-	color: "#757575",
-	fontSize: "small",
-	height: "20px",
-	width: "20px",
-}));
-
-const StyledEditTypography = styled(Typography)(() => ({
-	height: "24px",
-	color: "#212121",
-	fontSize: "16px",
-	fontWeight: "400",
-	lineHeight: "150%",
-	letterSpacing: "0.15px",
-}));
-
-const StyledAutoFixIconButton = styled(IconButton)(() => ({
-	fontSize: "small",
-	height: "20px",
-	width: "20px",
-}));
-const StyledDeleteIconButton = styled(IconButton)(() => ({
-	color: "#757575",
-	fontSize: "small",
-	height: "20px",
-	width: "20px",
-}));
-
-const StyledModal = styled(Modal)(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-}));
-
-const StyledModalBox = styled(Box)(() => ({
-	width: "600px",
-	minHeight: "156px",
-	borderRadius: "12px",
-	background: "var(--Background-Paper-1, #FFF)",
-	boxShadow: "0 9px 46px 0 rgba(0, 0, 0, 0.08)",
-	padding: "8px 16px",
-	display: "flex",
-	flexDirection: "column",
-	gap: "16px",
-	position: "relative",
-}));
-
-const StyledCloseBox = styled(Box)(() => ({
-	height: "32px",
-	padding: "8px 0px",
-}));
-
-const StyledCloseIconButton = styled(IconButton)(() => ({
-	position: "absolute",
-	right: 8,
-	top: 11,
-}));
-
-const StyledTitleTypography = styled(Typography)(() => ({
-	fontSize: "20px",
-	fontWeight: 500,
-	color: "#212121",
-	lineHeight: "160%",
-	letterSpacing: "0.15px",
-}));
-
-const StyledContentBox = styled(Box)(() => ({
-	paddingTop: "8px",
-	paddingBottom: "8px",
-}));
-const StyledContentTypography = styled(Typography)(() => ({
-	fontSize: "16px",
-	fontWeight: 400,
-	color: "#212121",
-	lineHeight: "150%",
-	letterSpacing: "0.15px",
-}));
-
-const StyledCancelButton = styled(Button)(() => ({
-	textTransform: "none",
-	fontSize: "14px",
-	color: "#212121",
-	fontWeight: "500",
-}));
-
-const StyledDeleteButton = styled(Button)(() => ({
-	textTransform: "none",
-	fontSize: "14px",
-	color: "#FFF",
-}));
-
-const StyledBoxId = styled(Box)(() => ({
-	height: "42px",
-	width: "128px",
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-}));
-
-const StyledVariableIcon = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-	width: "24px",
-}));
 interface NotebookTokenProps {
 	/** Id of the variable */
 	id: string;
@@ -283,7 +86,16 @@ interface NotebookTokenProps {
 export const NotebookVariable = observer((props: NotebookTokenProps) => {
 	const { id, variable, engines } = props;
 	const { state } = useBlocks();
-	const notification = useNotification();
+
+	// notification-compatible wrapper for toast
+	const notification = {
+		add: ({ color, message }: { color: string; message: string }) => {
+			if (color === "success") toast.success(message);
+			else if (color === "error") toast.error(message);
+			else if (color === "warning") toast.warning(message);
+			else toast(message);
+		},
+	};
 
 	const { workspace } = useWorkspace();
 
@@ -555,281 +367,68 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
 	return (
 		<>
-			<StyledListItem
-				key={id}
-				secondaryAction={
-					<StyledStackVariable
-						direction="row"
-						spacing={1}
-						alignItems="center"
-						paddingY="8px"
-					>
-						<StyledIconButton
-							onClick={() => {
-								copyAlias(id);
-								setAnchorEl(null);
-							}}
-							data-testid={"notebook-variable-copy-btn"}
-						>
-							<ContentCopy />
-						</StyledIconButton>
-						<StyledIconButton
-							title="Open Menu"
-							onClick={(e) => {
-								e.preventDefault();
-								setAnchorEl(e.currentTarget);
-							}}
-							data-testid={"notebook-variable-more-btn"}
-						>
-							<MoreVert />
-						</StyledIconButton>
-						<StyledAnchorSpan ref={spanRef} />
-						<StyledMenu
-							anchorEl={anchorEl}
-							open={Boolean(anchorEl)}
-							onClose={() => {
-								setAnchorEl(null);
-							}}
-							data-testid={"notebook-variable-menu"}
-							anchorOrigin={{
-								vertical: "bottom",
-								horizontal: "right",
-							}}
-							transformOrigin={{
-								vertical: "top",
-								horizontal: "right",
-							}}
-						>
-							<StyledMenuItem
-								value="Edit"
-								onClick={(e) => {
-									setPopoverAnchorEl(spanRef.current);
-									setAnchorEl(null);
-								}}
-								data-testid={"notebook-variable-edit-menuitem"}
-							>
-								<Stack direction="row" alignItems="center">
-									<StyledEditIconButton>
-										<EditOutlinedIcon />
-									</StyledEditIconButton>
-									<StyledEditTypography variant="body2">
-										Edit
-									</StyledEditTypography>
-								</Stack>
-							</StyledMenuItem>
-							<StyledMenuItem
-								value="AutoRename"
-								onClick={() => {
-									handleAutoRename();
-									setAnchorEl(null);
-								}}
-								data-testid={
-									"notebook-variable-auto-rename-menuitem"
-								}
-								disabled={
-									isProcessing || !workspace.agentModelEngine
-								}
-							>
-								<Stack direction="row" alignItems="center">
-									<StyledAutoFixIconButton color="primary">
-										<AutoFixHighOutlined />
-									</StyledAutoFixIconButton>
-									<StyledEditTypography variant="body2">
-										{isProcessing
-											? "Processing..."
-											: "Auto Rename"}
-									</StyledEditTypography>
-								</Stack>
-							</StyledMenuItem>
-							<StyledMenuItem
-								value="Delete"
-								onClick={() => {
-									setIsOpen(true);
-									setAnchorEl(null);
-								}}
-								data-testid={
-									"notebook-variable-delete-menuitem"
-								}
-							>
-								<Stack direction="row" alignItems="center">
-									<StyledDeleteIconButton>
-										<DeleteOutlineOutlinedIcon />
-									</StyledDeleteIconButton>
-									<StyledEditTypography variant="body2">
-										Delete
-									</StyledEditTypography>
-								</Stack>
-							</StyledMenuItem>
-						</StyledMenu>
-					</StyledStackVariable>
-				}
-			>
-				<StyledModal open={isOpen} onClose={() => setIsOpen(false)}>
-					<StyledModalBox>
-						{/* Close button */}
-						<StyledCloseBox>
-							<StyledCloseIconButton
-								onClick={() => setIsOpen(false)}
-								data-testid={
-									"notebook-variable-delete-close-btn"
-								}
-							>
-								<Close />
-							</StyledCloseIconButton>
-
-							{/* Title */}
-							<StyledTitleTypography variant="h6">
-								Delete Selected Item?
-							</StyledTitleTypography>
-						</StyledCloseBox>
-
-						{/* Content with striped background */}
-						<StyledContentBox>
-							<StyledContentTypography variant="body1">
-								You will permanently remove the item from your
-								workspace.
-							</StyledContentTypography>
-						</StyledContentBox>
-
-						{/* Actions */}
-						<Stack
-							direction="row"
-							spacing={2}
-							justifyContent="flex-end"
-						>
-							<StyledCancelButton
-								variant="text"
-								onClick={() => setIsOpen(false)}
-								data-testid={
-									"notebook-variable-delete-cancel-btn"
-								}
-							>
-								Cancel
-							</StyledCancelButton>
-							<StyledDeleteButton
-								color="error"
-								variant="contained"
-								onClick={() => {
-									state.dispatch({
-										message: ActionMessages.DELETE_VARIABLE,
-										payload: {
-											id: id,
-										},
-									});
-									notification.add({
-										color: "warning",
-										message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
-									});
-									setIsOpen(false);
-								}}
-								data-testid={
-									"notebook-variable-delete-confirm-btn"
-								}
-							>
-								Delete
-							</StyledDeleteButton>
-						</Stack>
-					</StyledModalBox>
-				</StyledModal>
-				<StyledListItemText
-					disableTypography
-					primary={
-						<Stack>
-							<StyledTooltip
-								placement={"right-start"}
-								title={
-									<VariablePreview
-										variable={variable}
-										id={id}
-									/>
-								}
-								componentsProps={{
-									tooltip: {
-										sx: {
-											bgcolor: "white",
-											color: "black",
-											padding: "0px",
-											maxWidth: "600px",
-										},
-									},
-								}}
-								enterDelay={500}
-								leaveDelay={200}
-							>
-								<StyledButton>
+			<div className="px-4 py-1 flex items-center" key={id}>
+				<div className="flex-1 cursor-pointer">
+					<TooltipProvider delayDuration={500}>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<button
+									type="button"
+									className="border-none bg-transparent p-0 m-0 outline-none w-full flex cursor-pointer"
+								>
 									{!openRenameAlias ? (
-										<StyledPointerStack
-											alignItems="flex-start"
-											spacing={0}
+										<div
+											className="w-4/5 pl-5 cursor-pointer flex flex-col items-start"
 											onClick={(e) => {
 												e.stopPropagation();
 												e.preventDefault();
-
 												setOpenRenameAlias(true);
 											}}
 										>
-											<Stack direction="row">
-												<StyledVariableIcon>
+											<div className="flex flex-row">
+												<div className="flex items-center w-6">
 													<img
-														src={getImage(
-															variable.type,
-														)}
+														src={getImage(variable.type)}
 														alt="variable-type-icon"
 													/>
-												</StyledVariableIcon>
-												<StyledBoxId>
+												</div>
+												<div className="h-[42px] w-[128px] flex flex-col items-start">
 													<span className="inline-block min-w-0 max-w-[128px] flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
 														{id.length > 12
-															? id.slice(0, 12) +
-																"…"
+															? `${id.slice(0, 12)}…`
 															: id}
 													</span>
-													<StyledCapitalizedTypography variant="body2">
+													<span
+														style={{
+															textTransform: "capitalize",
+															color: "#666",
+															fontFamily: "Inter",
+															fontWeight: 400,
+															fontSize: "14px",
+															lineHeight: "150%",
+															letterSpacing: "0.17px",
+														}}
+													>
 														{getVariableTypeDisplay}
-													</StyledCapitalizedTypography>
-												</StyledBoxId>
-											</Stack>
-										</StyledPointerStack>
+													</span>
+												</div>
+											</div>
+										</div>
 									) : (
-										<StyledStack
-											spacing={1}
-											direction="column"
-										>
-											<StyledTextField
-												className="notebook-variable__alias-name-text-field"
-												inputRef={(input) =>
-													input && input.focus()
-												}
-												focused={true}
-												fullWidth
-												size={"small"}
-												variant="standard"
+										<div className="pl-5 w-[128px] flex flex-col gap-2">
+											<Input
+												className="notebook-variable__alias-name-text-field p-0 border-none border-b focus-visible:ring-0 rounded-none"
+												ref={(input: HTMLInputElement) => input && input.focus()}
+												autoFocus
 												value={newTokenAlias}
-												helperText={
-													<em>
-														Press enter to update
-														variable name
-													</em>
-												}
 												onChange={(e) => {
-													setNewTokenAlias(
-														e.target.value,
-													);
+													setNewTokenAlias(e.target.value);
 												}}
-												data-testid={
-													"notebook-variable-rename-input"
-												}
+												data-testid="notebook-variable-rename-input"
 												onKeyDown={async (e) => {
 													if (e.key === "Enter") {
-														setOpenRenameAlias(
-															false,
-														);
-
-														const isValidSyntax =
-															isValidPythonVariableName(
-																newTokenAlias,
-															);
-
+														setOpenRenameAlias(false);
+														const isValidSyntax = isValidPythonVariableName(newTokenAlias);
 														if (!isValidSyntax) {
 															notification.add({
 																color: "error",
@@ -837,54 +436,40 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 															});
 															return;
 														}
-
-														const success =
-															await state.dispatch(
-																{
-																	message:
-																		ActionMessages.RENAME_VARIABLE,
-																	payload: {
-																		id: id,
-																		alias: newTokenAlias,
-																	},
-																},
-															);
-
+														const success = await state.dispatch({
+															message: ActionMessages.RENAME_VARIABLE,
+															payload: {
+																id: id,
+																alias: newTokenAlias,
+															},
+														});
 														notification.add({
-															color: success
-																? "success"
-																: "error",
+															color: success ? "success" : "error",
 															message: success
 																? `Successfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`
 																: `Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
 														});
-
-														setNewTokenAlias(
-															success
-																? newTokenAlias
-																: id,
-														);
+														setNewTokenAlias(success ? newTokenAlias : id);
 													}
 												}}
 												onBlur={() => {
 													setOpenRenameAlias(false);
 													setNewTokenAlias(id);
 												}}
-												InputProps={{
-													disableUnderline: true,
-												}}
-												inputProps={{
-													style: {
-														fontWeight: "400",
-														fontSize: "14px",
-														color: "#212121",
-													},
+												style={{
+													fontWeight: 400,
+													fontSize: "14px",
+													color: "#212121",
 												}}
 											/>
-										</StyledStack>
+											<em className="text-xs text-muted-foreground">
+												Press enter to update variable name
+											</em>
+										</div>
 									)}
 									{isPopoverOpen && (
-										<StyledEmptyDiv
+										<div
+											className="p-0"
 											onMouseOver={(e) => {
 												e.stopPropagation();
 												e.preventDefault();
@@ -906,87 +491,185 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 												}}
 												engines={engines}
 											/>
-										</StyledEmptyDiv>
+										</div>
 									)}
-								</StyledButton>
-							</StyledTooltip>
-						</Stack>
-					}
-				/>
-			</StyledListItem>
+								</button>
+							</TooltipTrigger>
+							<TooltipContent
+								side="right"
+								className="bg-white text-black p-0 max-w-[600px] border-0 shadow-lg"
+							>
+								<VariablePreview variable={variable} id={id} />
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				</div>
 
-			{/* Auto-rename Modal */}
-			<Modal
-				open={isAutoRenameModalOpen}
-				onClose={() => setIsAutoRenameModalOpen(false)}
-				aria-labelledby="auto-rename-modal"
-			>
-				<Box
-					sx={{
-						position: "absolute",
-						top: "50%",
-						left: "50%",
-						transform: "translate(-50%, -50%)",
-						width: 500,
-						bgcolor: "background.paper",
-						borderRadius: 2,
-						boxShadow: 24,
-						p: 4,
-					}}
+				{/* Secondary actions */}
+				<Popover
+					open={Boolean(anchorEl)}
+					onOpenChange={(isOpen) => { if (!isOpen) setAnchorEl(null); }}
 				>
-					<Typography variant="h6" gutterBottom>
-						Suggested Variable Name Change
-					</Typography>
-					<Typography
-						variant="body2"
-						color="text.secondary"
-						sx={{ mb: 3 }}
-					>
-						Review the suggested variable name change for "{id}".
-					</Typography>
-
-					<Box sx={{ mb: 3 }}>
-						<Typography variant="body2" color="text.secondary">
-							Current name:
-						</Typography>
-						<Typography
-							variant="body1"
-							sx={{ fontWeight: "bold", mb: 2 }}
+					<div className="h-10 w-20 flex flex-row gap-2 items-center py-2">
+						<button
+							type="button"
+							className="w-10 flex items-center justify-center text-[#757575] hover:bg-accent rounded p-1 cursor-pointer border-none bg-transparent"
+							onClick={() => {
+								copyAlias(id);
+								setAnchorEl(null);
+							}}
+							data-testid="notebook-variable-copy-btn"
 						>
-							{id}
-						</Typography>
-						<Typography variant="body2" color="text.secondary">
-							Suggested name:
-						</Typography>
-						<Typography
-							variant="body1"
-							sx={{ fontWeight: "bold", color: "primary.main" }}
-						>
-							{suggestedNewName}
-						</Typography>
-					</Box>
-
-					<Stack
-						direction="row"
-						spacing={2}
-						justifyContent="flex-end"
+							<ContentCopy className="h-4 w-4" />
+						</button>
+						<PopoverAnchor asChild>
+							<button
+								type="button"
+								title="Open Menu"
+								className="w-10 flex items-center justify-center text-[#757575] hover:bg-accent rounded p-1 cursor-pointer border-none bg-transparent"
+								onClick={(e) => {
+									e.preventDefault();
+									setAnchorEl(e.currentTarget);
+								}}
+								data-testid="notebook-variable-more-btn"
+							>
+								<MoreVert className="h-4 w-4" />
+							</button>
+						</PopoverAnchor>
+						<span className="absolute" style={{ left: 100 }} ref={spanRef} />
+					</div>
+					<PopoverContent
+						align="end"
+						className="w-auto p-2 rounded shadow-lg"
+						data-testid="notebook-variable-menu"
 					>
+						<button
+							type="button"
+							className="flex items-center gap-2 w-full px-4 py-1.5 h-9 hover:bg-[#EBF4FE] rounded cursor-pointer border-none bg-transparent text-left"
+							onClick={() => {
+								setPopoverAnchorEl(spanRef.current);
+								setAnchorEl(null);
+							}}
+							data-testid="notebook-variable-edit-menuitem"
+						>
+							<EditOutlinedIcon className="h-5 w-5 text-[#757575]" />
+							<span style={{ color: "#212121", fontSize: "16px", fontWeight: 400, lineHeight: "150%", letterSpacing: "0.15px" }}>
+								Edit
+							</span>
+						</button>
+						<button
+							type="button"
+							className="flex items-center gap-2 w-full px-4 py-1.5 h-9 hover:bg-[#EBF4FE] rounded cursor-pointer border-none bg-transparent text-left disabled:opacity-50 disabled:cursor-not-allowed"
+							onClick={() => {
+								handleAutoRename();
+								setAnchorEl(null);
+							}}
+							data-testid="notebook-variable-auto-rename-menuitem"
+							disabled={isProcessing || !workspace.agentModelEngine}
+						>
+							<AutoFixHighOutlined className="h-5 w-5 text-primary" />
+							<span style={{ color: "#212121", fontSize: "16px", fontWeight: 400, lineHeight: "150%", letterSpacing: "0.15px" }}>
+								{isProcessing ? "Processing..." : "Auto Rename"}
+							</span>
+						</button>
+						<button
+							type="button"
+							className="flex items-center gap-2 w-full px-4 py-1.5 h-9 hover:bg-[#EBF4FE] rounded cursor-pointer border-none bg-transparent text-left"
+							onClick={() => {
+								setIsOpen(true);
+								setAnchorEl(null);
+							}}
+							data-testid="notebook-variable-delete-menuitem"
+						>
+							<DeleteOutlineOutlinedIcon className="h-5 w-5 text-[#757575]" />
+							<span style={{ color: "#212121", fontSize: "16px", fontWeight: 400, lineHeight: "150%", letterSpacing: "0.15px" }}>
+								Delete
+							</span>
+						</button>
+					</PopoverContent>
+				</Popover>
+			</div>
+
+			{/* Delete confirmation dialog */}
+			<Dialog open={isOpen} onOpenChange={(o) => { if (!o) setIsOpen(false); }}>
+				<DialogContent className="max-w-[600px]">
+					<DialogHeader>
+						<DialogTitle>Delete Selected Item?</DialogTitle>
+					</DialogHeader>
+					<p style={{ fontSize: "16px", fontWeight: 400, color: "#212121", lineHeight: "150%", letterSpacing: "0.15px" }}>
+						You will permanently remove the item from your workspace.
+					</p>
+					<DialogFooter>
 						<Button
+							variant="ghost"
+							onClick={() => setIsOpen(false)}
+							data-testid="notebook-variable-delete-cancel-btn"
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={() => {
+								state.dispatch({
+									message: ActionMessages.DELETE_VARIABLE,
+									payload: {
+										id: id,
+									},
+								});
+								notification.add({
+									color: "warning",
+									message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
+								});
+								setIsOpen(false);
+							}}
+							data-testid="notebook-variable-delete-confirm-btn"
+						>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* Auto-rename dialog */}
+			<Dialog
+				open={isAutoRenameModalOpen}
+				onOpenChange={(o) => { if (!o) setIsAutoRenameModalOpen(false); }}
+			>
+				<DialogContent className="max-w-[500px]">
+					<DialogHeader>
+						<DialogTitle>Suggested Variable Name Change</DialogTitle>
+					</DialogHeader>
+					<p className="text-sm text-muted-foreground mb-3">
+						Review the suggested variable name change for "{id}".
+					</p>
+					<div className="mb-3 space-y-2">
+						<div>
+							<p className="text-sm text-muted-foreground">Current name:</p>
+							<p className="font-bold">{id}</p>
+						</div>
+						<div>
+							<p className="text-sm text-muted-foreground">Suggested name:</p>
+							<p className="font-bold text-primary">{suggestedNewName}</p>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="ghost"
 							onClick={() => setIsAutoRenameModalOpen(false)}
 							disabled={isProcessing}
 						>
 							Cancel
 						</Button>
 						<Button
-							variant="contained"
+							variant="default"
 							onClick={handleApplyRename}
 							disabled={isProcessing || !suggestedNewName}
 						>
 							{isProcessing ? "Applying..." : "Apply Change"}
 						</Button>
-					</Stack>
-				</Box>
-			</Modal>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 });

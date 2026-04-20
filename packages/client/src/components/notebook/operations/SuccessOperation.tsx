@@ -1,6 +1,5 @@
 import { JsonViewer } from "@textea/json-viewer";
 import { observer } from "mobx-react-lite";
-import { Typography } from "@semoss/ui";
 import { isOutputJSON } from "@/utility";
 
 interface SuccessOperationProps {
@@ -26,9 +25,9 @@ export const SuccessOperation = observer(
 			);
 		} else {
 			return (
-				<Typography variant="caption" color="success">
+				<span className="text-xs text-green-600 dark:text-green-500">
 					{output}
-				</Typography>
+				</span>
 			);
 		}
 	},
