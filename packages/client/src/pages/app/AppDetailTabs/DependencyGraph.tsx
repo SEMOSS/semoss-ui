@@ -14,7 +14,8 @@ import {
 import { useEffect, useMemo } from "react";
 import "@xyflow/react/dist/style.css";
 import { Env } from "@semoss/sdk";
-import { Box, Chip, Paper, styled, Typography } from "@semoss/ui";
+import { Badge } from "@semoss/ui/next";
+import type { appDependency } from "@/components/app";
 import { PERMISSION_ICONS } from "./dependencies-tab";
 
 interface DependencyNodeData {
@@ -26,86 +27,6 @@ interface DependencyNodeData {
 	userPermission: string;
 }
 
-const StyledGraphContainer = styled(Paper)(({ theme }) => ({
-	height: "600px",
-	width: "100%",
-	borderRadius: "12px",
-	overflow: "hidden",
-	border: `1px solid ${theme.palette.divider}`,
-}));
-
-const StyledNodeContent = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(2),
-	borderRadius: "8px",
-	border: `2px solid ${theme.palette.primary.main}`,
-	backgroundColor: theme.palette.background.paper,
-	minWidth: "200px",
-	boxShadow: theme.shadows[3],
-	"&:hover": {
-		boxShadow: theme.shadows[6],
-	},
-}));
-
-const StyledNodeImage = styled("img")({
-	width: "40px",
-	height: "40px",
-	borderRadius: "6px",
-	objectFit: "cover",
-	marginBottom: "8px",
-});
-
-const StyledNodeHeader = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-	marginBottom: "8px",
-});
-
-const StyledNodeTitle = styled(Typography)(({ theme }) => ({
-	fontWeight: 600,
-	fontSize: "14px",
-	color: theme.palette.text.primary,
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-}));
-
-const StyledChipContainer = styled(Box)({
-	display: "flex",
-	gap: "4px",
-	flexWrap: "wrap",
-	marginTop: "8px",
-});
-
-const StyledLegend = styled(Box)(({ theme }) => ({
-	position: "absolute",
-	top: theme.spacing(2),
-	right: theme.spacing(2),
-	backgroundColor: theme.palette.background.paper,
-	padding: theme.spacing(1.5),
-	borderRadius: "8px",
-	boxShadow: theme.shadows[3],
-	zIndex: 10,
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledLegendItem = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-});
-
-const StyledLegendLine = styled("div")<{ dashed?: boolean; color?: string }>(
-	({ dashed, color = "#1976d2" }) => ({
-		width: "30px",
-		height: "2px",
-		backgroundColor: dashed ? "transparent" : color,
-		border: dashed ? `1px dashed ${color}` : "none",
-	}),
-);
-
 interface DependencyGraphProps {
 	engines: appDependency[];
 	topLevelDependencies: string[];
@@ -113,74 +34,54 @@ interface DependencyGraphProps {
 	currentAppName: string;
 }
 
-interface appDependency {
-	engine_id: string;
-	engine_name: string;
-	engine_type: string;
-	engine_subtype?: string;
-	engine_global?: boolean;
-	engine_discoverable?: boolean;
-	permission?: number;
-	permission_name?: string;
-	can_view_dependencies?: boolean;
-	dependencies?: string[];
-	description?: string;
-}
-
-// Custom node component
 const DependencyNode = ({ data }: { data: DependencyNodeData }) => {
-	const permissionKey = data.userPermission || "NONE";
+	const permissionKey =
+		(data.userPermission as keyof typeof PERMISSION_ICONS) || "NONE";
 
 	return (
-		<StyledNodeContent>
+		<div className="min-w-[200px] rounded-lg border-2 border-primary bg-background p-3 shadow-md hover:shadow-lg">
 			<Handle type="target" position={Position.Left} />
 			<Handle type="source" position={Position.Right} />
-			<StyledNodeHeader>
-				<StyledNodeImage
+			<div className="mb-2 flex items-center gap-2">
+				<img
 					src={
 						data.type === "PROJECT"
 							? `${Env.MODULE}/api/project-${data.id}/projectImage/download`
 							: `${Env.MODULE}/api/e-${data.id}/image/download`
 					}
 					alt={data.name}
+					className="size-10 shrink-0 rounded-md object-cover"
 				/>
-				<Box flex={1}>
-					<StyledNodeTitle variant="body2">
+				<div className="min-w-0 flex-1">
+					<p className="truncate font-semibold text-foreground text-sm">
 						{data.name}
-					</StyledNodeTitle>
-					<Box
-						sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-					>
+					</p>
+					<div className="flex items-center gap-1">
 						{PERMISSION_ICONS[permissionKey]}
-						<Typography variant="caption" color="textSecondary">
+						<span className="text-muted-foreground text-xs">
 							{data.userPermission || "NONE"}
-						</Typography>
-					</Box>
-				</Box>
-			</StyledNodeHeader>
-			<StyledChipContainer>
-				<Chip label={data.type} size="small" />
-				{data.isPublic && (
-					<Chip label="Public" size="small" color="green" />
-				)}
+						</span>
+					</div>
+				</div>
+			</div>
+			<div className="flex flex-wrap gap-1">
+				<Badge variant="outline">{data.type}</Badge>
+				{data.isPublic && <Badge variant="outline">Public</Badge>}
 				{!data.isPublic && data.isDiscoverable && (
-					<Chip label="Discoverable" size="small" color="primary" />
+					<Badge variant="outline">Discoverable</Badge>
 				)}
-			</StyledChipContainer>
-		</StyledNodeContent>
+			</div>
+		</div>
 	);
 };
 
-// Define node types
 const nodeTypes = {
 	dependencyNode: DependencyNode,
 };
 
-// Helper function to detect circular dependencies
 const detectCircularDependencies = (
 	edges: Array<{ source: string; target: string }>,
 ): Set<string> => {
-	// Build adjacency list
 	const adjList = new Map<string, string[]>();
 	edges.forEach(({ source, target }) => {
 		if (!adjList.has(source)) {
@@ -193,10 +94,8 @@ const detectCircularDependencies = (
 	const visiting = new Set<string>();
 	const visited = new Set<string>();
 
-	// DFS to detect cycles
 	const hasCycle = (node: string, path: string[]): boolean => {
 		if (visiting.has(node)) {
-			// Found a cycle - mark all edges in the cycle
 			const cycleStartIndex = path.indexOf(node);
 			for (let i = cycleStartIndex; i < path.length; i++) {
 				const source = path[i];
@@ -225,7 +124,6 @@ const detectCircularDependencies = (
 		return false;
 	};
 
-	// Check all nodes for cycles
 	adjList.forEach((_, node) => {
 		if (!visited.has(node)) {
 			hasCycle(node, []);
@@ -241,7 +139,6 @@ export const DependencyGraph = ({
 	currentAppId,
 	currentAppName,
 }: DependencyGraphProps) => {
-	// Create nodes and edges from the flattened engines structure
 	const { initialNodes, initialEdges } = useMemo(() => {
 		const nodes: Node[] = [];
 		const edges: Edge[] = [];
@@ -250,12 +147,10 @@ export const DependencyGraph = ({
 			return { initialNodes: nodes, initialEdges: edges };
 		}
 
-		// Constants for hierarchical tree layout (left to right)
 		const LEVEL_SPACING = 350;
 		const NODE_SPACING = 180;
 		const START_X = 50;
 
-		// Add the current app as the root node (leftmost)
 		nodes.push({
 			id: currentAppId,
 			type: "dependencyNode",
@@ -276,21 +171,17 @@ export const DependencyGraph = ({
 			},
 		});
 
-		// Build a map of all engines for quick lookup
 		const engineMap = new Map<string, appDependency>();
 		engines.forEach((engine) => {
 			engineMap.set(engine.engine_id, engine);
 		});
 
-		// Build dependency tree using BFS to determine levels
 		const visited = new Set<string>();
 		const nodesByLevel: Map<number, string[]> = new Map();
 
-		// Start with root node
 		visited.add(currentAppId);
 		nodesByLevel.set(0, [currentAppId]);
 
-		// BFS to assign levels (deduplicate topLevelDependencies to prevent duplicate keys)
 		const uniqueTopLevel = [...new Set(topLevelDependencies)];
 		const queue: Array<{ id: string; level: number }> = uniqueTopLevel.map(
 			(id) => ({ id, level: 1 }),
@@ -307,10 +198,7 @@ export const DependencyGraph = ({
 			if (!nodesByLevel.has(level)) {
 				nodesByLevel.set(level, []);
 			}
-			const levelNodes = nodesByLevel.get(level);
-			if (levelNodes) {
-				levelNodes.push(id);
-			}
+			nodesByLevel.get(level)?.push(id);
 
 			const engine = engineMap.get(id);
 			if (engine?.dependencies) {
@@ -322,9 +210,8 @@ export const DependencyGraph = ({
 			}
 		}
 
-		// Position nodes by level
 		nodesByLevel.forEach((nodeIds, level) => {
-			if (level === 0) return; // Skip root node (already positioned)
+			if (level === 0) return;
 
 			const x = START_X + level * LEVEL_SPACING;
 			const totalHeight = (nodeIds.length - 1) * NODE_SPACING;
@@ -354,19 +241,15 @@ export const DependencyGraph = ({
 			});
 		});
 
-		// First, collect all edge relationships to detect circular dependencies
 		const edgeRelationships: Array<{ source: string; target: string }> = [];
 
-		// Add edges from root to top-level dependencies
 		uniqueTopLevel.forEach((depId) => {
 			edgeRelationships.push({ source: currentAppId, target: depId });
 		});
 
-		// Add edges for all other dependencies
 		engines.forEach((engine) => {
 			if (engine.dependencies) {
 				engine.dependencies.forEach((depId) => {
-					// Skip if this is an edge from current app to a top-level dependency (already added above)
 					if (
 						engine.engine_id === currentAppId &&
 						uniqueTopLevel.includes(depId)
@@ -381,34 +264,28 @@ export const DependencyGraph = ({
 			}
 		});
 
-		// Detect circular dependencies
 		const circularEdges = detectCircularDependencies(edgeRelationships);
 
-		// Create edges from root to top-level dependencies
 		uniqueTopLevel.forEach((depId) => {
 			const engine = engineMap.get(depId);
 			const hasAccessWarning = engine?.can_view_dependencies === false;
 			const isCircular = circularEdges.has(`${currentAppId}->${depId}`);
 
-			// Always create the regular edge (blue or orange)
 			edges.push({
 				id: `edge-${currentAppId}-${depId}`,
 				source: currentAppId,
 				target: depId,
 				type: "smoothstep",
 				animated: true,
-				markerEnd: {
-					type: MarkerType.ArrowClosed,
-				},
+				markerEnd: { type: MarkerType.ArrowClosed },
 				style: {
-					stroke: hasAccessWarning ? "#ff9800" : "#1976d2",
+					stroke: hasAccessWarning ? "#f97316" : "#2563eb",
 					strokeWidth: 2,
 					strokeDasharray: hasAccessWarning ? "5,5" : undefined,
 				},
 				label: hasAccessWarning ? "⚠️" : undefined,
 			});
 
-			// If circular, add additional purple offset edge
 			if (isCircular) {
 				edges.push({
 					id: `edge-circular-${currentAppId}-${depId}`,
@@ -416,11 +293,9 @@ export const DependencyGraph = ({
 					target: depId,
 					type: "smoothstep",
 					animated: true,
-					markerEnd: {
-						type: MarkerType.ArrowClosed,
-					},
+					markerEnd: { type: MarkerType.ArrowClosed },
 					style: {
-						stroke: "#9c27b0",
+						stroke: "#9333ea",
 						strokeWidth: 3,
 						strokeDasharray: "8,4",
 					},
@@ -429,11 +304,9 @@ export const DependencyGraph = ({
 			}
 		});
 
-		// Create edges for all dependencies (skip edges from root to top-level deps as they're already created)
 		engines.forEach((engine) => {
 			if (engine.dependencies) {
 				engine.dependencies.forEach((depId) => {
-					// Skip if this is an edge from current app to a top-level dependency (already created above)
 					if (
 						engine.engine_id === currentAppId &&
 						uniqueTopLevel.includes(depId)
@@ -448,18 +321,15 @@ export const DependencyGraph = ({
 						`${engine.engine_id}->${depId}`,
 					);
 
-					// Always create the regular edge (blue or orange)
 					edges.push({
 						id: `edge-${engine.engine_id}-${depId}`,
 						source: engine.engine_id,
 						target: depId,
 						type: "smoothstep",
 						animated: true,
-						markerEnd: {
-							type: MarkerType.ArrowClosed,
-						},
+						markerEnd: { type: MarkerType.ArrowClosed },
 						style: {
-							stroke: hasAccessWarning ? "#ff9800" : "#1976d2",
+							stroke: hasAccessWarning ? "#f97316" : "#2563eb",
 							strokeWidth: 2,
 							strokeDasharray: hasAccessWarning
 								? "5,5"
@@ -468,7 +338,6 @@ export const DependencyGraph = ({
 						label: hasAccessWarning ? "⚠️" : undefined,
 					});
 
-					// If circular, add additional purple offset edge
 					if (isCircular) {
 						edges.push({
 							id: `edge-circular-${engine.engine_id}-${depId}`,
@@ -476,11 +345,9 @@ export const DependencyGraph = ({
 							target: depId,
 							type: "smoothstep",
 							animated: true,
-							markerEnd: {
-								type: MarkerType.ArrowClosed,
-							},
+							markerEnd: { type: MarkerType.ArrowClosed },
 							style: {
-								stroke: "#9c27b0",
+								stroke: "#9333ea",
 								strokeWidth: 3,
 								strokeDasharray: "8,4",
 							},
@@ -491,24 +358,12 @@ export const DependencyGraph = ({
 			}
 		});
 
-		console.log("React Flow Graph Data:", {
-			nodeCount: nodes.length,
-			edgeCount: edges.length,
-			nodeIds: nodes.map((n) => n.id),
-			edges: edges.map((e) => ({
-				id: e.id,
-				source: e.source,
-				target: e.target,
-			})),
-		});
-
 		return { initialNodes: nodes, initialEdges: edges };
 	}, [engines, topLevelDependencies, currentAppId, currentAppName]);
 
 	const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
 	const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-	// Update nodes and edges when dependencies change
 	useEffect(() => {
 		setNodes(initialNodes);
 		setEdges(initialEdges);
@@ -516,25 +371,16 @@ export const DependencyGraph = ({
 
 	if (!currentAppId || !currentAppName) {
 		return (
-			<StyledGraphContainer>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "center",
-						alignItems: "center",
-						height: "100%",
-					}}
-				>
-					<Typography variant="body1" color="textSecondary">
-						Unable to display graph: Missing app information
-					</Typography>
-				</Box>
-			</StyledGraphContainer>
+			<div className="flex h-[600px] w-full items-center justify-center rounded-xl border border-border">
+				<p className="text-muted-foreground text-sm">
+					Unable to display graph: Missing app information
+				</p>
+			</div>
 		);
 	}
 
 	return (
-		<StyledGraphContainer>
+		<div className="relative h-[600px] w-full overflow-hidden rounded-xl border border-border">
 			<ReactFlow
 				nodes={nodes}
 				edges={edges}
@@ -545,35 +391,33 @@ export const DependencyGraph = ({
 				minZoom={0.3}
 				maxZoom={1.5}
 				attributionPosition="bottom-left"
-				fitViewOptions={{
-					padding: 0.2,
-				}}
+				fitViewOptions={{ padding: 0.2 }}
 			>
 				<Background />
 				<Controls />
 				<MiniMap nodeStrokeWidth={3} zoomable pannable />
-				<StyledLegend>
-					<Typography variant="caption" fontWeight="bold">
-						Legend
-					</Typography>
-					<StyledLegendItem>
-						<StyledLegendLine />
-						<Typography variant="caption">Has Access</Typography>
-					</StyledLegendItem>
-					<StyledLegendItem>
-						<StyledLegendLine dashed color="#ff9800" />
-						<Typography variant="caption">
+				<div className="absolute top-3 right-3 z-10 flex flex-col gap-2 rounded-lg border border-border bg-background p-3 shadow-md">
+					<span className="font-semibold text-xs">Legend</span>
+					<div className="flex items-center gap-2">
+						<div className="h-0.5 w-8 bg-blue-600" />
+						<span className="text-muted-foreground text-xs">
+							Has Access
+						</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<div className="h-0.5 w-8 border border-orange-500 border-dashed bg-transparent" />
+						<span className="text-muted-foreground text-xs">
 							Limited Access ⚠️
-						</Typography>
-					</StyledLegendItem>
-					<StyledLegendItem>
-						<StyledLegendLine dashed color="#9c27b0" />
-						<Typography variant="caption">
+						</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<div className="h-0.5 w-8 border border-purple-600 border-dashed bg-transparent" />
+						<span className="text-muted-foreground text-xs">
 							Circular Dependency 🔄
-						</Typography>
-					</StyledLegendItem>
-				</StyledLegend>
+						</span>
+					</div>
+				</div>
 			</ReactFlow>
-		</StyledGraphContainer>
+		</div>
 	);
 };

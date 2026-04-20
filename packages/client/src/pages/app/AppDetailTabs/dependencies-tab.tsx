@@ -1,15 +1,10 @@
-import { Ban, Edit, Eye, Pencil, TriangleAlert, User } from "lucide-react";
+import { Ban, Edit, Eye, TriangleAlert, User } from "lucide-react";
 import { Env } from "@semoss/sdk";
 import { Link } from "@semoss/ui";
 import {
 	Badge,
-	Button,
-	Card,
-	CardContent,
-	H3,
 	Muted,
 	P,
-	TabsContent,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -148,56 +143,5 @@ export const Dependencies = ({
 				})
 			)}
 		</div>
-	);
-};
-
-interface DependenciesTabProps {
-	dependencies: modelledDependency[];
-	effectiveRole: Role | null;
-	effectiveMetadata?: {
-		project_name?: string;
-		project_type?: string;
-	};
-	onEditClick: () => void;
-}
-
-export const DependenciesTab = ({
-	dependencies,
-	effectiveRole,
-	effectiveMetadata,
-	onEditClick,
-}: DependenciesTabProps) => {
-	return (
-		<TabsContent value="dependencies" className="mt-0">
-			<Card className="p-0 shadow-md">
-				<CardContent className="p-6">
-					<div className="space-y-6">
-						<div>
-							<div className="flex items-center gap-2">
-								<H3 className="font-bold">Dependencies</H3>
-								{effectiveMetadata?.project_type === "CODE" &&
-									effectiveRole === "OWNER" && (
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-6 w-6"
-											onClick={onEditClick}
-										>
-											<Pencil className="h-4 w-4" />
-										</Button>
-									)}
-							</div>
-							<Muted className="mt-1">
-								{effectiveMetadata?.project_type === "CODE"
-									? "Add/Remove dependencies using the Edit Icon"
-									: "Add/Remove dependencies using the Variables Tab"}
-							</Muted>
-						</div>
-
-						<Dependencies dependencies={dependencies} />
-					</div>
-				</CardContent>
-			</Card>
-		</TabsContent>
 	);
 };
