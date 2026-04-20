@@ -8,7 +8,7 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { TextField } from "@semoss/ui";
+import { Input } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { BaseSettingSection } from "../BaseSettingSection";
@@ -57,6 +57,7 @@ export const ColorSettings = observer(
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -104,16 +105,14 @@ export const ColorSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<TextField
-					fullWidth
+				<Input
+					className="h-8 w-full p-0.5"
 					type="color"
 					value={value}
 					onChange={(e) => {
 						// sync the data on change
 						onChange(e.target.value);
 					}}
-					size="small"
-					variant="outlined"
 					autoComplete="off"
 					data-testid={formatToDataTestId(
 						`colorSettings-${label}-txt`,

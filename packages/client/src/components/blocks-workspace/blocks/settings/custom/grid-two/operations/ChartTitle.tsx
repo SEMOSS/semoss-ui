@@ -1,17 +1,14 @@
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import type {
 	Block,
 	BlockDef,
 	ChartTitleSettings,
-	GridBlockColumn,
 	GridBlockDef,
 	Paths,
 	PathValue,
 } from "@semoss/renderer";
-import { Button, Checkbox, styled, TextField, Typography } from "@semoss/ui";
+import { Button, Input } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { ColorPickerSettingsNew } from "../../../../settings/shared/ColorPickerSettingsNew";
 
@@ -20,37 +17,8 @@ export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
 	path: Paths<Block<D>["data"], 4>;
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledFieldWrapper = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "center",
-	gap: "8px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 0",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
 export const ChartTitle = observer(
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 	<D extends BlockDef = GridBlockDef>({ id, path }: TitleStylingProps<D>) => {
 		const { data, setData } = useBlockSettings<GridBlockDef>(id);
 		const [title, setTitle] = useState<ChartTitleSettings>({
@@ -143,60 +111,43 @@ export const ChartTitle = observer(
 			);
 		};
 
-		const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
-		const checkedIcon = <CheckBoxIcon fontSize="small" />;
-		const renderOption = (
-			props: any,
-			option: GridBlockColumn,
-			{ selected }: any,
-		) => {
-			return (
-				<li {...props}>
-					<Checkbox checked={selected} />
-					{option.name}
-				</li>
-			);
-		};
-
 		return (
-			<StyledContainer>
-				{/* Grid Title  */}
-				<StyledFieldWrapper>
+			<div className="flex flex-col gap-2">
+				{/* Grid Title */}
+				<div className="flex flex-col justify-center gap-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label>
-						<Typography variant="body2" color="secondary">
-							Title
-						</Typography>{" "}
+						<p className="text-muted-foreground text-sm">Title</p>
 					</label>
-					<StyledTextField
-						id="length"
-						size="small"
-						name="length"
+					<Input
 						value={title?.chartTitle}
 						onChange={handleTitleChange}
 					/>
-				</StyledFieldWrapper>
+				</div>
 
-				{/* Font Size  */}
-				<StyledFieldWrapper>
+				{/* Font Size */}
+				<div className="flex flex-col justify-center gap-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label>
-						<Typography variant="body2" color="secondary">
+						<p className="text-muted-foreground text-sm">
 							Font Size
-						</Typography>{" "}
+						</p>
 					</label>
-					<StyledTextField
-						id="length"
-						size="small"
-						name="length"
+					<Input
 						value={title?.fontSize}
 						onChange={handleFontSizeChange}
 					/>
-				</StyledFieldWrapper>
+				</div>
 
-				<StyledFieldWrapper>
+				<div className="flex flex-col justify-center gap-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label>
-						<Typography variant="body2" color="secondary">
+						<p className="text-muted-foreground text-sm">
 							Font Color
-						</Typography>{" "}
+						</p>
 					</label>
 					<ColorPickerSettingsNew
 						id={id}
@@ -204,19 +155,14 @@ export const ChartTitle = observer(
 						colorValue={title.fontColor}
 						onChange={handleFontColorChange}
 					/>
-				</StyledFieldWrapper>
+				</div>
 
-				<StyledAxisDiv display="flex" justifyContent="end">
-					<Button
-						size="small"
-						color="primary"
-						variant="contained"
-						onClick={resetToInitialState}
-					>
+				<div className="flex flex-row items-center justify-end py-2">
+					<Button size="sm" onClick={resetToInitialState}>
 						Reset
 					</Button>
-				</StyledAxisDiv>
-			</StyledContainer>
+				</div>
+			</div>
 		);
 	},
 );

@@ -115,7 +115,35 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 	({ navbarActions, options, factory = () => null }) => {
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
+		const containerRef = useRef<HTMLDivElement | null>(null);
 		const model = workspace.model;
+
+		useEffect(() => {
+			const container = containerRef.current;
+			if (!container) return;
+			const onWheel = (e: WheelEvent) => {
+				if (!(e.target instanceof Element)) return;
+				const tabBar = e.target.closest(
+					".flexlayout__tabset_tabbar_inner",
+				) as HTMLElement | null;
+				if (!tabBar || !container.contains(tabBar)) return;
+				if (tabBar.scrollWidth <= tabBar.clientWidth) return;
+				const delta =
+					Math.abs(e.deltaX) > Math.abs(e.deltaY)
+						? e.deltaX
+						: e.deltaY;
+				if (delta === 0) return;
+				tabBar.scrollLeft += delta;
+				e.preventDefault();
+				e.stopPropagation();
+			};
+			container.addEventListener("wheel", onWheel, {
+				capture: true,
+				passive: false,
+			});
+			return () => container.removeEventListener("wheel", onWheel, true);
+		}, []);
+
 		// build the model from the layout
 		useEffect(() => {
 			const handler = (e: CustomEvent) => {
@@ -394,15 +422,15 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				<StyledMain>
 					<StyledContent>
 						<WorkspaceLoading />
-						<StyledSpacer className="flexlayout__theme_smss--legacy">
+						<StyledSpacer
+							ref={containerRef}
+							className="flexlayout__theme_smss--legacy"
+						>
 							{workspace.model ? (
 								<>
 									<FlexLayout.Layout
 										ref={layoutRef}
 										model={workspace.model}
-										classNameMapper={(defaultClassName) =>
-											`${defaultClassName} workspace_layout`
-										}
 										factory={(node) => {
 											return factory(
 												node,

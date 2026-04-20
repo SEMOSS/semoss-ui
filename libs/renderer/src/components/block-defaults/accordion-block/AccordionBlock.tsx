@@ -1,42 +1,14 @@
-import { ArrowDropDown } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
-import { Accordion, Stack, styled } from "@semoss/ui";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
-
-const StyledAccordion = styled(Accordion)({
-	padding: 0,
-	margin: 0,
-	borderRadius: "12px",
-	"&.MuiAccordion-root:before": {
-		backgroundColor: "white",
-	},
-});
-
-const AccordionTrigger = styled(Accordion.Trigger)({
-	"& .MuiAccordionSummary-content": {
-		margin: 0,
-	},
-	minHeight: "fit-content",
-	margin: 0,
-	padding: 0,
-	borderRadius: "inherit",
-	//if accordion is expanded, then remove the border radius from bottom left and right side of the trigger element
-	"&.MuiButtonBase-root.Mui-expanded": {
-		borderBottomLeftRadius: 0,
-		borderBottomRightRadius: 0,
-	},
-});
-
-const AccordionContent = styled(Accordion.Content)({
-	margin: 0,
-	padding: 0,
-	borderRadius: "inherit",
-	borderTopLeftRadius: 0,
-	borderTopRightRadius: 0,
-});
 
 export interface AccordionBlockDef extends BlockDef<"accordion"> {
 	widget: "accordion";
@@ -62,6 +34,7 @@ export interface AccordionBlockDef extends BlockDef<"accordion"> {
 export const AccordionBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, slots, listeners } = useBlock<AccordionBlockDef>(id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -69,25 +42,29 @@ export const AccordionBlock: BlockComponent = observer(({ id }) => {
 	}, []);
 
 	return (
-		<StyledAccordion
+		<Accordion
 			{...attrs}
-			sx={{ ...data.style, overflow: "hidden" }}
-			square={true}
-			disableGutters={true}
+			type="single"
+			collapsible
+			style={{ ...data.style, overflow: "hidden" }}
+			className="m-0 rounded-xl p-0"
 		>
-			<AccordionTrigger
-				sx={{
-					backgroundColor: data.triggerBgColor,
-				}}
-				expandIcon={data.showExpandIcon ? <ArrowDropDown /> : null}
-			>
-				<Stack sx={{ width: "100%" }}>
-					<Slot slot={slots.header} />
-				</Stack>
-			</AccordionTrigger>
-			<AccordionContent sx={{ backgroundColor: data.contentBgColor }}>
-				<Slot slot={slots.content} />
-			</AccordionContent>
-		</StyledAccordion>
+			<AccordionItem value="item-1" className="border-0">
+				<AccordionTrigger
+					style={{ backgroundColor: data.triggerBgColor }}
+					className={`m-0 min-h-fit rounded-[inherit] p-0 data-[state=open]:rounded-bl-none data-[state=open]:rounded-br-none${data.showExpandIcon ? "" : "[&>svg]:hidden"}`}
+				>
+					<div className="w-full">
+						<Slot slot={slots.header} />
+					</div>
+				</AccordionTrigger>
+				<AccordionContent
+					style={{ backgroundColor: data.contentBgColor }}
+					className="m-0 rounded-[inherit] rounded-tl-none rounded-tr-none p-0"
+				>
+					<Slot slot={slots.content} />
+				</AccordionContent>
+			</AccordionItem>
+		</Accordion>
 	);
 });

@@ -1,4 +1,4 @@
-import { Code, KeyboardArrowDown } from "@mui/icons-material";
+import { Code } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
@@ -6,10 +6,11 @@ import {
 	Button,
 	Markdown,
 	Select,
-	Stack,
-	styled,
-	useNotification,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -19,106 +20,37 @@ import {
 } from "../../../store";
 import { MarkdownIcon, PythonIcon, RIcon } from "./icons";
 
-const StyledSelect = styled(Select)(({ theme }) => ({
-	"& .MuiSelect-select": {
-		color: theme.palette.text.secondary,
-		display: "flex",
-		gap: theme.spacing(1),
-		alignItems: "center",
-		textOverflow: "ellipsis",
-		overflow: "hidden",
-		whiteSpace: "nowrap",
-		"&:focus": {
-			backgroundColor: "inherit !important",
-		},
-	},
-}));
-const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(1),
-	color: theme.palette.text.secondary,
-}));
-
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
 interface EDITOR_TYPES {
-	py: {
-		name: string;
-		value: string;
-		language: string;
-	};
-	r: {
-		name: string;
-		value: string;
-		language: string;
-	};
-	pixel: {
-		name: string;
-		value: string;
-		language: string;
-	};
-	markdown: {
-		name: string;
-		value: string;
-		language: string;
-	};
+	py: { name: string; value: string; language: string };
+	r: { name: string; value: string; language: string };
+	pixel: { name: string; value: string; language: string };
+	markdown: { name: string; value: string; language: string };
 }
 const EDITOR_TYPE: EDITOR_TYPES = {
-	py: {
-		name: "Python",
-		value: "py",
-		language: "python",
-	},
-	r: {
-		name: "R",
-		value: "r",
-		language: "r",
-	},
-	pixel: {
-		name: "Pixel",
-		value: "pixel",
-		language: "pixel",
-	},
-	markdown: {
-		name: "Markdown",
-		value: "markdown",
-		language: "Markdown",
-	},
+	py: { name: "Python", value: "py", language: "python" },
+	r: { name: "R", value: "r", language: "r" },
+	pixel: { name: "Pixel", value: "pixel", language: "pixel" },
+	markdown: { name: "Markdown", value: "markdown", language: "Markdown" },
 } as const;
 
 export interface CodeCellDef extends CellDef<"code"> {
 	widget: "code";
 	parameters: {
-		/** Type of code in the cell */
 		type: "r" | "py" | "pixel" | "markdown";
-
-		/** Code rendered in the cell */
 		code: string | string[];
-
-		/** Cell is marked as a code cell */
 		marked?: boolean;
 	};
 }
 
-// best documentation on component versions of monaco editor and diffeditor
-// https://www.npmjs.com/package/@monaco-editor/react
-const StyledContent = styled("div")(() => ({
-	position: "relative",
-	width: "100%",
-}));
+const StyledContent = ({ children }: { children: React.ReactNode }) => (
+	<div className="relative w-full">{children}</div>
+);
 
-const StyledContainer = styled("div")(() => ({
-	width: "98%",
-}));
-
-// track completion providers outside of render context
 let completionItemProviders = {};
-const EditorLanguages = {
-	py: "python",
-	pixel: "pixel",
-	r: "r",
-};
+const EditorLanguages = { py: "python", pixel: "pixel", r: "r" };
 
 const MonacoEditor = lazy(() =>
 	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
@@ -126,34 +58,29 @@ const MonacoEditor = lazy(() =>
 const MonacoDiffEditor = lazy(() =>
 	import("@semoss/shared/monaco").then((module) => module.MonacoDiffEditor),
 );
-
 const EditorLineHeight = 19;
-// TODO:: Refactor height to account for Layout
+
 export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 	const editorRef = useRef(null);
 	const monacoRef = useRef(null);
 	const selectionRef = useRef(null);
 	const LLMReturnRef = useRef("");
-
 	const diffEditorRef = useRef(null);
 
 	const { cell, isExpanded, agentModelEngine } = props;
 	const { state } = useBlocks();
-	const notification = useNotification();
 
 	const [editorHeight, setEditorHeight] = useState<number>(null);
-
 	const [LLMLoading, setLLMLoading] = useState(false);
 	const [diffEditMode, setDiffEditMode] = useState(false);
 	const wordWrapRef = useRef(true);
-
 	const [oldContentDiffEdit, setOldContentDiffEdit] = useState("");
 	const [newContentDiffEdit, setNewContentDiffEdit] = useState("");
-
 	const [isLLMRejected, setIsLLMRejected] = useState(false);
 	const [count, setCount] = useState(0);
 	const [allFunctions, setAllFunctions] = useState([]);
 	const [modelId, setModelId] = useState(agentModelEngine);
+
 	useEffect(() => {
 		async function fetchData() {
 			const response = await runPixel(`HelpJson();`);
@@ -166,17 +93,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 		}
 		fetchData();
 	}, []);
-	/**
-	 * Ask a LLM a question to generate a response
-	 * @param prompt - prompt passed to the LLM
-	 * @returns LLM Response
-	 */
+
 	const promptLLM = async (prompt: string) => {
 		try {
 			setLLMLoading(true);
-			if (!modelId) {
-				throw new Error("No Agent Model Engine");
-			}
+			if (!modelId) throw new Error("No Agent Model Engine");
 
 			const res = await runPixel(
 				`LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {"max_completion_tokens": 2000, "temperature": 0.3} ] );`,
@@ -184,12 +105,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 			const LLMResponse = res.pixelReturn[0].output.response;
 			let trimmedStarterCode = LLMResponse;
-			trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
-
+			trimmedStarterCode = LLMResponse.replace(/^```|```$/g, "");
 			trimmedStarterCode = trimmedStarterCode.substring(
 				trimmedStarterCode.indexOf("\n") + 1,
 			);
-
 			return trimmedStarterCode;
 		} catch {
 			console.error("Failed response from AI Code Generator");
@@ -199,14 +118,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 		}
 	};
 
-	/**
-	 * Handle mounting of the diff editor
-	 *
-	 * @param editor - editor that mounted
-	 * @param monaco - monaco instance
-	 */
 	const handleDiffEditorMount = (editor, monaco) => {
-		// save the editor
 		diffEditorRef.current = editor;
 
 		editor.addAction({
@@ -215,7 +127,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			id: "toggle-word-wrap",
 			label: "Toggle Word Wrap",
 			keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-
 			run: async (editor) => {
 				wordWrapRef.current = !wordWrapRef.current;
 				editor.updateOptions({
@@ -223,16 +134,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 				});
 			},
 		});
-
-		// resize the editor
 		resizeDiffEditor();
 	};
 
-	/**
-	 * Resize the diff editor
-	 */
 	const resizeDiffEditor = () => {
-		// set the height based ont the max content
 		let height = Math.min(
 			Math.max(
 				diffEditorRef.current.getModifiedEditor().getContentHeight(),
@@ -240,19 +145,14 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			),
 			EDITOR_MAX_HEIGHT,
 		);
-
-		// add the trailing line
 		height += EDITOR_LINE_HEIGHT;
-
-		// resize it
 		diffEditorRef.current.layout({
 			width: diffEditorRef.current.getContainerDomNode().clientWidth,
-			height: height,
+			height,
 		});
 	};
 
 	const handleMount = (editor, monaco) => {
-		// if diffedit code has been rejected set to old editor content
 		if (isLLMRejected) {
 			editor.getModel().setValue(oldContentDiffEdit);
 			state.dispatch({
@@ -267,12 +167,10 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			setIsLLMRejected(false);
 		}
 
-		// first time you set the height based on content Height
 		editorRef.current = editor;
 		monacoRef.current = monaco;
 		const contentHeight = editor.getContentHeight();
 		setEditorHeight(contentHeight);
-		// update the action
 
 		editor.addAction({
 			contextMenuGroupId: "1_modification",
@@ -280,7 +178,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			id: "toggle-word-wrap",
 			label: "Toggle Word Wrap",
 			keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-
 			run: async (editor) => {
 				wordWrapRef.current = !wordWrapRef.current;
 				editor.updateOptions({
@@ -295,8 +192,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
 			run: (editor) => {
 				const newValue = editor.getValue();
-
-				// update with the new code
 				state.dispatch({
 					message: ActionMessages.UPDATE_CELL,
 					payload: {
@@ -306,13 +201,9 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 						value: newValue,
 					},
 				});
-
 				state.dispatch({
 					message: ActionMessages.RUN_CELL,
-					payload: {
-						queryId: cell.query.id,
-						cellId: cell.id,
-					},
+					payload: { queryId: cell.query.id, cellId: cell.id },
 				});
 			},
 		});
@@ -327,15 +218,12 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 					monaco.KeyMod.Shift |
 					monaco.KeyCode.KeyG,
 			],
-
 			run: async (editor) => {
 				if (!modelId) {
 					console.error("No Agent Model Engine");
-					notification.add({
-						color: "error",
-						message:
-							"No Agent Model Engine selected. Please select a model.",
-					});
+					toast.error(
+						"No Agent Model Engine selected. Please select a model.",
+					);
 					return;
 				}
 				const selection = editor.getSelection();
@@ -343,29 +231,20 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 				const selectedText = editor
 					.getModel()
 					.getValueInRange(selection);
-
-				// Capture original state BEFORE any edits
 				const originalContent = editor.getModel().getValue();
 				setOldContentDiffEdit(originalContent);
 
-				// Determine comment symbol
 				const language = EditorLanguages[cell.parameters.type];
 				const commentSymbol =
-					{
-						pixel: "//",
-						python: "#",
-						r: "#",
-					}[language] || "//";
+					{ pixel: "//", python: "#", r: "#" }[language] || "//";
 
-				// Create commented version (diff preview)
 				const commentedText = selectedText
 					.split("\n")
 					.map((line) => `${commentSymbol} ${line}`)
 					.join("\n");
 
-				// Create LLM response
 				const LLMReturnText = await promptLLM(
-					`Write me code that does ${selectedText} in ${language}`, // filetype should be sent as param to LLM
+					`Write me code that does ${selectedText} in ${language}`,
 				);
 				LLMReturnRef.current = LLMReturnText;
 				setOldContentDiffEdit(editor.getModel().getValue());
@@ -414,28 +293,22 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			}
 		};
 
-		// add editor completion suggestions based on block values and query outputs
 		const generateSuggestions = (range) => {
 			const suggestions = [];
 			Object.entries(state.variables).forEach((keyValue) => {
 				const id = keyValue[0];
 				const variable = keyValue[1] as Variable;
-
 				suggestions.push({
 					label: {
 						label: `{{${id}}}`,
-						description: `${state.getVariable(
-							variable.to,
-							variable.type,
-						)}`,
+						description: `${state.getVariable(variable.to, variable.type)}`,
 					},
 					kind: monaco.languages.CompletionItemKind.Variable,
 					documentation: `This returns the value of ${id}, which is a ${variable.type}.  Feel free to change reference value in the variables panel on the left.`,
 					insertText: `{{${id}}}`,
-					range: range,
+					range,
 				});
 			});
-
 			return suggestions;
 		};
 
@@ -443,27 +316,17 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			base: "vs",
 			inherit: false,
 			rules: [],
-			colors: {
-				"editor.background": "#FAFAFA", // Background color
-				// 'editor.lineHighlightBorder': '#FFF', // Border around selected line
-			},
+			colors: { "editor.background": "#FAFAFA" },
 		});
-
 		monaco.editor.setTheme("custom-theme");
 
-		// register custom pixel language
 		monaco.languages.register({ id: "pixel" });
 
-		// add suggestions for each language
 		Object.values(EditorLanguages).forEach((language) => {
-			// if suggestion already exist, dispose and re-add
-			// this may be superfluous at times but we re-add instead of setting up suggestions once
-			// so that we are pulling more real-time values off of the blocks/queries
 			if (completionItemProviders[language]) {
 				completionItemProviders[language].dispose();
 			}
 
-			//define completion item providers by language
 			if (language === "pixel") {
 				completionItemProviders = {
 					...completionItemProviders,
@@ -471,8 +334,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 						language,
 						{
 							provideCompletionItems: async (model, position) => {
-								// getWordUntilPosition doesn't track when words are led by special characters
-								// we need to chack for wrapping curly brackets manually to know what to replace
 								const word =
 									model.getWordUntilPosition(position);
 								const languageFunctions =
@@ -480,9 +341,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 										(f) =>
 											f.key.toLowerCase() ===
 											"General".toLowerCase(),
-									)?.value || []; // General is name for key for reactors
+									)?.value || [];
 
-								//trigger reactor suggestions
 								if (word.word !== "") {
 									const suggestions = languageFunctions.map(
 										(reactor) => ({
@@ -506,7 +366,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 									return { suggestions };
 								}
 
-								// triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
 								const specialCharacterStartRange = {
 									startLineNumber: position.lineNumber,
 									endLineNumber: position.lineNumber,
@@ -519,8 +378,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 									);
 								const replaceRangeStartBuffer =
 									preceedingTwoCharacters === "{{" ? 2 : 1;
-								// python editor will automatically add closed bracket when you type a start one
-								// need to replace the closed brackets appropriately
+
 								const specialCharacterEndRange = {
 									startLineNumber: position.lineNumber,
 									endLineNumber: position.lineNumber,
@@ -534,14 +392,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 								const replaceRangeEndBuffer =
 									followingTwoCharacters === "}}"
 										? 2
-										: //biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
-											followingTwoCharacters == "} " ||
-												//biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
-												followingTwoCharacters == "}"
+										: followingTwoCharacters === "} " ||
+												followingTwoCharacters === "}"
 											? 1
 											: 0;
 
-								// compose range that we want to replace with the suggestion
 								const replaceRange = {
 									startLineNumber: position.lineNumber,
 									endLineNumber: position.lineNumber,
@@ -551,7 +406,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 									endColumn:
 										word.endColumn + replaceRangeEndBuffer,
 								};
-
 								return {
 									suggestions:
 										generateSuggestions(replaceRange),
@@ -599,6 +453,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 									);
 									return { suggestions };
 								}
+
 								const specialCharacterStartRange = {
 									startLineNumber: position.lineNumber,
 									endLineNumber: position.lineNumber,
@@ -625,10 +480,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 								const replaceRangeEndBuffer =
 									followingTwoCharacters === "}}"
 										? 2
-										: //biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
-											followingTwoCharacters == "} " ||
-												//biome-ignore lint/suspicious/noDoubleEquals: keeping double equals
-												followingTwoCharacters == "}"
+										: followingTwoCharacters === "} " ||
+												followingTwoCharacters === "}"
 											? 1
 											: 0;
 
@@ -644,7 +497,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 								const variableSuggestions =
 									generateSuggestions(replaceRange);
-
 								return { suggestions: variableSuggestions };
 							},
 							triggerCharacters: [
@@ -657,29 +509,28 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			}
 		});
 
-		const lines = editor.getModel().getLineCount();
-		const lineContentHeight = lines * EditorLineHeight;
-		const singleLineNoOverflow =
-			lines === 1 && lineContentHeight === editor.getContentHeight();
-		setEditorHeight(
-			Math.max(
-				(singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
-				lineContentHeight,
-			),
+		const newHeight = Math.min(
+			Math.max(editor.getContentHeight(), EditorLineHeight),
+			EDITOR_MAX_HEIGHT,
 		);
+		setEditorHeight(newHeight);
+
+		editor.onDidContentSizeChange(() => {
+			setEditorHeight(
+				Math.min(
+					Math.max(editor.getContentHeight(), EditorLineHeight),
+					EDITOR_MAX_HEIGHT,
+				),
+			);
+		});
 	};
 
 	const handleChange = (newValue: string) => {
-		// set editor height to content height
-		// set max height to equivalent of 25 lines
 		const maxHeight = 25 * EditorLineHeight;
 		setEditorHeight(
 			Math.min(editorRef.current.getContentHeight(), maxHeight),
 		);
-		if (cell.isLoading) {
-			return;
-		}
-
+		if (cell.isLoading) return;
 		state.dispatch({
 			message: ActionMessages.UPDATE_CELL,
 			payload: {
@@ -691,41 +542,36 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 		});
 	};
 
-	const acceptDiffEditHandler = () => {
-		setDiffEditMode(false);
-	};
-
+	const acceptDiffEditHandler = () => setDiffEditMode(false);
 	const rejectDiffEditHandler = () => {
 		setIsLLMRejected(true);
 		setDiffEditMode(false);
 	};
 
-	const getHeight = () => {
-		return isExpanded ? editorHeight : EditorLineHeight;
-	};
+	const getHeight = () => (isExpanded ? editorHeight : EditorLineHeight);
 
 	useEffect(() => {
 		setModelId(agentModelEngine);
 		setCount((count) => count + 1);
 	}, [agentModelEngine]);
 
+	const codeValue =
+		typeof cell.parameters.code === "string"
+			? cell.parameters.code
+			: cell.parameters.code.join("\n");
+
 	return (
 		<StyledContent>
 			{LLMLoading && <div>Loading...</div>}
 
-			<Stack direction="row" spacing={1}>
+			<div className="flex flex-row gap-2">
 				{allFunctions.length > 0 && (
-					<StyledContainer>
+					<div className="min-w-0 flex-1">
 						{!isExpanded ? (
 							<Suspense fallback={<>...</>}>
 								{EDITOR_TYPE[cell.parameters.type].language ===
 									"Markdown" && cell.isExecuted ? (
-									<Markdown>
-										{typeof cell.parameters.code ===
-										"string"
-											? cell.parameters.code
-											: cell.parameters.code.join("\n")}
-									</Markdown>
+									<Markdown>{codeValue}</Markdown>
 								) : (
 									<MonacoEditor
 										width="100%"
@@ -734,17 +580,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 											EDITOR_TYPE[cell.parameters.type]
 												.language
 										}
-										value={
-											typeof cell.parameters.code ===
-											"string"
-												? cell.parameters.code
-												: cell.parameters.code.join(
-														"\n",
-													)
-										}
+										value={codeValue}
 										options={{
 											scrollbar: {
 												alwaysConsumeMouseWheel: false,
+												horizontal: "hidden",
 											},
 											lineNumbers: "on",
 											readOnly: false,
@@ -776,7 +616,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 												.value
 										}
 										options={{
-											// lineNumbers: 'on',
 											readOnly: true,
 											minimap: { enabled: false },
 											automaticLayout: true,
@@ -788,42 +627,29 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 										onMount={handleDiffEditorMount}
 									/>
 								</Suspense>
-								<Stack
-									direction="row"
-									alignItems={"center"}
-									justifyContent={"center"}
-									margin={1}
-								>
+								<div className="m-2 flex flex-row items-center justify-center gap-2">
 									<Button
 										title="Accept changes"
-										size="small"
-										color="primary"
-										variant="contained"
+										size="sm"
 										onClick={acceptDiffEditHandler}
 									>
 										Keep
 									</Button>
 									<Button
 										title="Reject changes"
-										size="small"
-										color="primary"
-										variant="text"
+										size="sm"
+										variant="ghost"
 										onClick={rejectDiffEditHandler}
 									>
 										Reject
 									</Button>
-								</Stack>
+								</div>
 							</>
 						) : (
 							<Suspense fallback={<>...</>}>
 								{EDITOR_TYPE[cell.parameters.type].language ===
 									"Markdown" && cell.isExecuted ? (
-									<Markdown>
-										{typeof cell.parameters.code ===
-										"string"
-											? cell.parameters.code
-											: cell.parameters.code.join("\n")}
-									</Markdown>
+									<Markdown>{codeValue}</Markdown>
 								) : (
 									<MonacoEditor
 										key={count}
@@ -833,17 +659,11 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 											EDITOR_TYPE[cell.parameters.type]
 												.language
 										}
-										value={
-											typeof cell.parameters.code ===
-											"string"
-												? cell.parameters.code
-												: cell.parameters.code.join(
-														"\n",
-													)
-										}
+										value={codeValue}
 										options={{
 											scrollbar: {
 												alwaysConsumeMouseWheel: false,
+												horizontal: "hidden",
 											},
 											lineNumbers: "on",
 											readOnly: false,
@@ -863,23 +683,12 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 								)}
 							</Suspense>
 						)}
-					</StyledContainer>
+					</div>
 				)}
-				{/* {isExpanded && ( */}
-				<Stack direction="row" sx={{ paddingLeft: "10px" }}>
-					<StyledSelect
-						size={"small"}
-						title={"Select Language"}
-						variant="standard"
+				<div className="flex flex-row pl-1">
+					<Select
 						value={EDITOR_TYPE[cell.parameters.type].value}
-						InputProps={{
-							disableUnderline: true,
-						}}
-						SelectProps={{
-							IconComponent: KeyboardArrowDown,
-						}}
-						onChange={(e) => {
-							const value = e.target.value;
+						onValueChange={(value) => {
 							if (
 								value !==
 								EDITOR_TYPE[cell.parameters.type].value
@@ -890,50 +699,53 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 										queryId: cell.query.id,
 										cellId: cell.id,
 										path: "parameters.type",
-										value: value,
+										value,
 									},
 								});
-
 								setCount(count + 1);
 							}
 						}}
 					>
-						{Array.from(
-							Object.values(EDITOR_TYPE),
-							(language, i) => (
-								<StyledSelectItem
-									key={`${i}-${cell.id}-${language.name}`}
-									value={language.value}
-									title={language.name}
-								>
-									{language.value === "py" ? (
-										<PythonIcon
-											color="inherit"
-											fontSize="small"
-										/>
-									) : language.value === "r" ? (
-										<RIcon
-											color="inherit"
-											fontSize="small"
-										/>
-									) : language.value === "markdown" ? (
-										<MarkdownIcon
-											color="inherit"
-											fontSize="small"
-										/>
-									) : (
-										<Code
-											color="inherit"
-											fontSize="small"
-										/>
-									)}
-								</StyledSelectItem>
-							),
-						)}
-					</StyledSelect>
-				</Stack>
-				{/* )} */}
-			</Stack>
+						<SelectTrigger className="h-[26px] w-[36px] border-0 px-1 shadow-none">
+							{cell.parameters.type === "py" ? (
+								<PythonIcon fontSize="small" />
+							) : cell.parameters.type === "r" ? (
+								<RIcon fontSize="small" />
+							) : cell.parameters.type === "markdown" ? (
+								<MarkdownIcon fontSize="small" />
+							) : (
+								<Code className="size-4" />
+							)}
+						</SelectTrigger>
+						<SelectContent>
+							{Array.from(
+								Object.values(EDITOR_TYPE),
+								(language, i) => (
+									<SelectItem
+										key={`${i}-${cell.id}-${language.name}`}
+										value={language.value}
+										title={language.name}
+									>
+										<div className="flex items-center gap-2">
+											{language.value === "py" ? (
+												<PythonIcon fontSize="small" />
+											) : language.value === "r" ? (
+												<RIcon fontSize="small" />
+											) : language.value ===
+												"markdown" ? (
+												<MarkdownIcon fontSize="small" />
+											) : (
+												<Code className="size-4" />
+											)}
+											<span>{language.name}</span>
+										</div>
+									</SelectItem>
+								),
+							)}
+						</SelectContent>
+					</Select>
+				</div>
+			</div>
 		</StyledContent>
 	);
 });

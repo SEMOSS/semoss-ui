@@ -1,79 +1,35 @@
-import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-	type BlockDef,
-	type EchartVisualizationBlockConfig,
-	type EchartVisualizationBlockDef,
-	getValueByPath,
-	type PathValue,
-	useBlocksPixel,
-	useFrameHeaders,
-} from "@semoss/renderer";
-import { Slider, styled, TextField, ToggleTabsGroup } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
-import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
-import { BAR_CHART_DATA } from "../../Visualization.constants";
+import type { PathValue } from "@semoss/renderer";
 
-//Styled container for bar chart
-const StyledBarStylesContainer = styled("div")<{
-	width?: string;
-	display?: string;
-	justifyContent?: string;
-}>(({ width, display, justifyContent }) => ({
-	width: width ?? undefined,
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	padding: "8px 16px",
-}));
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-}));
-
-//styled text field for customizing text field size
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-
-//bar chart styling component structure
 interface BarChartStyle {
 	barwidth: number;
 	minBarWidth: number;
 	maxBarWidth: number;
 	barColour: string;
 }
-//custom bar chart style
-const CUSTOM_BAR_CHART_STYLES = {
+
+const _CUSTOM_BAR_CHART_STYLES = {
 	barwidth: 10,
 	minBarWidth: 1,
 	maxBarWidth: 45,
 	barColour: "#5470c6",
 };
-//initial bar chart style
-const INITIAL_BAR_CHART_STYLES = [];
 
-//Updating bar chart specific styles like bar width and its colour
+const _INITIAL_BAR_CHART_STYLES: BarChartStyle[] = [];
+
 export const VisualizationStyles = observer(
 	<D extends BlockDef = BlockDef>({
+		// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 		updateChart,
+		// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 		chartType,
 		option,
 		id,
 		path,
 	}) => {
-		//style data for bar chart with initial styles
 		const [styleData, setStyleData] = useState<BarChartStyle[]>(
 			INITIAL_BAR_CHART_STYLES,
 		);
-		//chart data
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [value, setValue] = useState<
@@ -84,130 +40,109 @@ export const VisualizationStyles = observer(
 			"initial" | "updated"
 		>("initial");
 		const [selectedSeries, setSelectedSeries] = useState<string>("0");
-		// get the value of the input (wrapped in usememo because of path prop)
+
 		const computedValue = useMemo(() => {
 			return computed(() => {
-				if (!data) {
-					return "";
-				}
+				if (!data) return "";
 				const v = getValueByPath(data, path);
-				if (typeof v === "undefined") {
-					return "";
-				} else if (typeof v === "string") {
-					return v;
-				}
+				if (typeof v === "undefined") return "";
+				else if (typeof v === "string") return v;
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
-		//update the value when the computed value is changed
+
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue]);
 
-		//parsed variable of chart data
-		const parsedJson = useMemo(() => {
-			return typeof value === "string" ? JSON.parse(value) : value;
-		}, [value]);
-
-		//for retaining the previously selected values, this will help
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			const barChartData = option["series"].filter((item) =>
+			const barChartData = option.series.filter((item) =>
 				BAR_CHART_DATA.JSONVALUE.includes(item.type),
 			);
 			if (barChartData.length) {
-				let barStyleData = [];
-				barChartData.forEach((item, index) => {
-					barStyleData = [
-						...barStyleData,
-						{
-							barwidth: item?.["barWidth"] ?? 10,
-							barColour:
-								item["itemStyle"]?.["color"] ?? "#5470c6",
-							minBarWidth: 1,
-							maxBarWidth: 45,
-						},
-					];
-				});
+				const barStyleData: BarChartStyle[] = barChartData.map(
+					(item) => ({
+						barwidth: item?.barWidth ?? 10,
+						barColour: item.itemStyle?.color ?? "#5470c6",
+						minBarWidth: 1,
+						maxBarWidth: 45,
+					}),
+				);
 				setStyleData(barStyleData);
 			}
 		}, []);
-		//whenever input values changed, the stules updated will get new value 'updated', so retaining the state from main state object will not call updatechartdata
+
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (stylesUpdated === "updated") {
 				updateChartData(styleData, selectedSeries);
 			}
 		}, [styleData]);
-		//this function will return filtered series index with type 'bar'
-		function getFilteredSeriesIndex(): number[] {
+
+		function _getFilteredSeriesIndex(): number[] {
 			const index: number[] = [];
-			const seriesAvailable = data.option["series"].filter((item) =>
+			const seriesAvailable = data.option.series.filter((item) =>
 				BAR_CHART_DATA.JSONVALUE.includes(item.type),
 			);
-			seriesAvailable.forEach((item, seriesIndex) => {
+			seriesAvailable.forEach((_, seriesIndex) => {
 				index.push(seriesIndex);
 			});
 			return index;
 		}
 
-		//handles bar width changes and updates the value to state
-		function handleInputChange(event, newValue, seriesIndex = "0") {
+		function handleInputChange(newValue: number, seriesIndex = "0") {
 			if (stylesUpdated === "initial") setStylesUpdated("updated");
-
-			const currentStyle = styleData;
-			currentStyle[seriesIndex] = {
-				...currentStyle[seriesIndex],
-				["barwidth"]: newValue,
+			const currentStyle = [...styleData];
+			currentStyle[Number(seriesIndex)] = {
+				...currentStyle[Number(seriesIndex)],
+				barwidth: newValue,
 			};
-			setStyleData((prevStyleData) => {
-				return [...currentStyle];
-			});
+			setStyleData(currentStyle);
 		}
-		//handles bar colour changes and updates the value to state
-		function handleBarColourChange(e, seriesIndex = "0") {
+
+		function handleBarColourChange(colourValue: string, seriesIndex = "0") {
 			if (stylesUpdated === "initial") setStylesUpdated("updated");
-
-			const currentStyle = styleData;
-			currentStyle[seriesIndex] = {
-				...currentStyle[seriesIndex],
-				["barColour"]: e.target.value,
+			const currentStyle = [...styleData];
+			currentStyle[Number(seriesIndex)] = {
+				...currentStyle[Number(seriesIndex)],
+				barColour: colourValue,
 			};
-			setStyleData((prevStyleData) => {
-				return [...currentStyle];
-			});
+			setStyleData(currentStyle);
 		}
-		//update bar chart data
-		function updateChartData(barData: BarChartStyle[], selectedSeries) {
-			let option = typeof value === "string" ? JSON.parse(value) : value;
+
+		function updateChartData(
+			barData: BarChartStyle[],
+			_selectedSeries: string,
+		) {
+			let opt = typeof value === "string" ? JSON.parse(value) : value;
 			barData.forEach((barDataSegment, barDataIndex) => {
-				const barWidth: number = barDataSegment["barwidth"];
-				const barColour: string = barDataSegment["barColour"];
-				if (option["series"]) {
+				const barWidth: number = barDataSegment.barwidth;
+				const barColour: string = barDataSegment.barColour;
+				if (opt.series) {
 					const barChartDataIndex = barDataIndex;
 					if (barChartDataIndex > -1) {
 						if (barWidth !== undefined && barWidth > 0) {
-							option["series"][barChartDataIndex] = {
-								...option["series"][barChartDataIndex],
-								["barWidth"]: barWidth,
+							opt.series[barChartDataIndex] = {
+								...opt.series[barChartDataIndex],
+								barWidth: barWidth,
 							};
 						}
 						if (barColour !== undefined) {
-							if (
-								option["series"][barChartDataIndex]["itemStyle"]
-							) {
-								option["series"][barChartDataIndex] = {
-									...option["series"][barChartDataIndex],
-									["itemStyle"]: {
-										...option["series"][barChartDataIndex][
-											"itemStyle"
-										],
-										["color"]: barColour,
+							if (opt.series[barChartDataIndex].itemStyle) {
+								opt.series[barChartDataIndex] = {
+									...opt.series[barChartDataIndex],
+									itemStyle: {
+										...opt.series[barChartDataIndex]
+											.itemStyle,
+										color: barColour,
 									},
 								};
 							} else {
-								option["series"][barChartDataIndex] = {
-									...option["series"][barChartDataIndex],
-									["itemStyle"]: {
-										["color"]: barColour,
+								opt.series[barChartDataIndex] = {
+									...opt.series[barChartDataIndex],
+									itemStyle: {
+										color: barColour,
 									},
 								};
 							}
@@ -215,16 +150,16 @@ export const VisualizationStyles = observer(
 					}
 				}
 			});
-			option = {
-				...option,
-				["çustomSettings"]: {
-					...option["çustomSettings"],
-					["toolsUpdated"]: true,
+			opt = {
+				...opt,
+				çustomSettings: {
+					...opt.çustomSettings,
+					toolsUpdated: true,
 				},
 			};
-			runStateUpdateCustom(option);
+			runStateUpdateCustom(opt);
 		}
-		//this function will update chart json to new option value
+
 		function runStateUpdateCustom(
 			option: typeof EchartVisualizationBlockConfig.data.option,
 		) {
@@ -243,74 +178,68 @@ export const VisualizationStyles = observer(
 				}
 			}, 300);
 		}
+
 		const currentSeriesColor =
-			styleData[selectedSeries]?.barColour || "#5470c6";
-		//bar chart component content is rendered into a single variable
-		const accordionDetails = (
-			<>
-				<StyledBarStylesContainer>
-					<ToggleTabsGroup
-						onChange={(e: React.SyntheticEvent, val: string) =>
-							setSelectedSeries(val)
-						}
-						value={selectedSeries}
-					>
-						{styleData.length &&
-							styleData.map((item, index) => {
-								return (
-									<ToggleTabsGroup.Item
-										label={`Series ${index + 1}`}
-										value={`${index}`}
-										key={`series${index}`}
-									/>
-								);
-							})}
-						;
-					</ToggleTabsGroup>
-				</StyledBarStylesContainer>
-				{styleData[selectedSeries] && (
-					// <StyledBarStylesContainer>
+			styleData[Number(selectedSeries)]?.barColour || "#5470c6";
+
+		return (
+			<div className="flex w-full flex-col p-4">
+				{/* Series tabs */}
+				{styleData.length > 1 && (
+					<div className="flex flex-row gap-1 py-2">
+						{styleData.map((_, _index) => (
+							// biome-ignore lint/a11y/useButtonType: handled by caller
+							<button
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								key={`series${index}`}
+								className={`rounded border px-3 py-1 text-sm ${
+									selectedSeries === `${index}`
+										? "border-primary bg-primary text-primary-foreground"
+										: "border-border"
+								}`}
+								onClick={() => setSelectedSeries(`${index}`)}
+							>
+								{`Series ${index + 1}`}
+							</button>
+						))}
+					</div>
+				)}
+				{styleData[Number(selectedSeries)] && (
 					<>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="flex-start"
-						>
-							<label>Bar Width</label>
+						<div className="flex flex-col gap-2 py-2">
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							{/* biome-ignore lint/a11y/noLabelWithoutControl: label paired with adjacent control*/}
+							<label className="text-muted-foreground text-sm">
+								Bar Width
+							</label>
 							<Slider
-								value={styleData[selectedSeries].barwidth}
-								min={styleData[selectedSeries].minBarWidth}
-								max={styleData[selectedSeries].maxBarWidth}
-								valueLabelDisplay="auto"
-								onChange={(event, newValue) =>
-									handleInputChange(
-										event,
-										newValue,
-										selectedSeries,
-									)
+								value={[
+									styleData[Number(selectedSeries)].barwidth,
+								]}
+								min={
+									styleData[Number(selectedSeries)]
+										.minBarWidth
+								}
+								max={
+									styleData[Number(selectedSeries)]
+										.maxBarWidth
+								}
+								onValueChange={(v: number[]) =>
+									handleInputChange(v[0], selectedSeries)
 								}
 							/>
-						</StyledAxisColDiv>
-
+						</div>
 						<ColorPickerSettings
 							id={id}
 							path={`option.series.${selectedSeries}.itemStyle.color`}
 							colorValue={currentSeriesColor}
 							onChange={(e) =>
-								handleBarColourChange(
-									{ target: { value: e } },
-									selectedSeries,
-								)
+								handleBarColourChange(e, selectedSeries)
 							}
 						/>
 					</>
-					// </StyledBarStylesContainer>
 				)}
-			</>
-		);
-		return (
-			<StyledBarStylesContainer width="100%">
-				{accordionDetails}
-			</StyledBarStylesContainer>
+			</div>
 		);
 	},
 );
