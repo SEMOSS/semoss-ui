@@ -1,11 +1,16 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { PreviewRounded, SaveRounded, ShareRounded } from "@mui/icons-material";
+import { Bot, Eye, Save, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useBlocks } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
-import { IconButton, Stack, Tooltip, useNotification } from "@semoss/ui";
-import { ModelBrain } from "@/assets/img/ModelBrain";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewOverlay } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
@@ -15,7 +20,6 @@ export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
 
 	const { monolithStore } = useRootStore();
-	const notification = useNotification();
 	const { workspace } = useWorkspace();
 
 	const removePageIdsFromURL = () => {
@@ -99,11 +103,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			);
 		} catch (e) {
 			console.error(e);
-
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		}
 	};
 
@@ -137,18 +137,12 @@ export const BlocksWorkspaceActions = observer(() => {
 				throw new Error(errors.join(""));
 			}
 
-			notification.add({
-				color: "success",
-				message:
-					"Save successful! Make sure to double-check your changes for correctness",
-			});
+			toast.success(
+				"Save successful! Make sure to double-check your changes for correctness",
+			);
 		} catch (e) {
 			console.error(e);
-
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		} finally {
 			// turn of loading
 			workspace.setLoading(false);
@@ -191,11 +185,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			));
 		} catch (e) {
 			console.error(e);
-
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		} finally {
 			// turn of loading
 			workspace.setLoading(false);
@@ -223,57 +213,65 @@ export const BlocksWorkspaceActions = observer(() => {
 	}, []);
 
 	return (
-		<Stack direction="row" spacing={1} alignItems={"center"}>
-			<Tooltip title={"Modal Selection"}>
-				<IconButton
-					size={"small"}
-					color="default"
-					onClick={() => {
-						selectModel();
-					}}
-				>
-					<ModelBrain
-						width={"18"}
-						height={"18"}
-						color={
-							workspace.agentModelEngine ? "#0471f0" : "#666666"
-						}
-					/>
-				</IconButton>
+		<div className="flex flex-row items-center gap-1">
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => {
+							selectModel();
+						}}
+					>
+						<Bot
+							className={`size-4 ${workspace.agentModelEngine ? "text-primary" : "text-muted-foreground"}`}
+						/>
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>Modal Selection</TooltipContent>
 			</Tooltip>
-			<Tooltip title="Preview App">
-				<IconButton
-					size={"small"}
-					color="default"
-					onClick={() => {
-						previewApp();
-					}}
-				>
-					<PreviewRounded fontSize="inherit" />
-				</IconButton>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => {
+							previewApp();
+						}}
+					>
+						<Eye className="h-[1em] w-[1em]" />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>Preview App</TooltipContent>
 			</Tooltip>
-			<Tooltip title={"Share App"}>
-				<IconButton
-					size={"small"}
-					color="default"
-					onClick={() => {
-						shareApp();
-					}}
-				>
-					<ShareRounded fontSize="inherit" />
-				</IconButton>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => {
+							shareApp();
+						}}
+					>
+						<Share2 className="size-4" />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>Share App</TooltipContent>
 			</Tooltip>
-			<Tooltip title={"Save App (ctrl/command + s)"}>
-				<IconButton
-					size={"small"}
-					color="default"
-					onClick={() => {
-						saveApp();
-					}}
-				>
-					<SaveRounded fontSize="inherit" />
-				</IconButton>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => {
+							saveApp();
+						}}
+					>
+						<Save className="size-4" />
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>Save App (ctrl/command + s)</TooltipContent>
 			</Tooltip>
-		</Stack>
+		</div>
 	);
 });
