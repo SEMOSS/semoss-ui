@@ -48,6 +48,7 @@ export interface FiltersRowProps {
 	userOptions: EngineOption[];
 	selectedUser: string;
 	showUserFilter?: boolean;
+	showEngineFilter?: boolean;
 
 	onEngineTypeChange: (type: string) => void;
 	onEngineChange: (id: string) => void;
@@ -70,6 +71,7 @@ export const FiltersRow = ({
 	userOptions,
 	selectedUser,
 	showUserFilter = false,
+	showEngineFilter = true,
 	onEngineTypeChange,
 	onEngineChange,
 	onDateChange,
@@ -133,52 +135,59 @@ export const FiltersRow = ({
 				<ScrollArea className="w-full lg:w-auto">
 					<div className="flex items-center gap-2">
 						{/* ── Engine Type ── */}
-						<Select
-							value={engineType || "APP"}
-							onValueChange={onEngineTypeChange}
-						>
-							<SelectTrigger
-								title={engineType || "APP"}
-								className="h-8 w-[120px] rounded-md border border-border bg-card text-xs"
+						{showEngineFilter && (
+							<Select
+								value={engineType || "APP"}
+								onValueChange={onEngineTypeChange}
 							>
-								<SelectValue placeholder="Catalogue" />
-							</SelectTrigger>
-							<SelectContent>
-								{ENGINE_TYPES?.map((t) => (
-									<SelectItem key={t} value={t}>
-										{t}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+								<SelectTrigger
+									title={engineType || "APP"}
+									className="h-8 w-[120px] rounded-md border border-border bg-card text-xs"
+								>
+									<SelectValue placeholder="Catalogue" />
+								</SelectTrigger>
+								<SelectContent>
+									{ENGINE_TYPES?.map((t) => (
+										<SelectItem key={t} value={t}>
+											{t}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
 
 						{/* ── Engine Name ── */}
-						<Select
-							value={engineId || engineNames?.[0]?.value}
-							onValueChange={onEngineChange}
-							disabled={!engineType}
-						>
-							<SelectTrigger
-								title={
-									engineNames?.find(
-										(n) =>
-											n.value ===
-											(engineId ||
-												engineNames?.[0]?.value),
-									)?.label ?? "Select"
-								}
-								className="h-8 w-[160px] truncate rounded-md border border-border bg-card text-xs"
+						{showEngineFilter && (
+							<Select
+								value={engineId || engineNames?.[0]?.value}
+								onValueChange={onEngineChange}
+								disabled={!engineType}
 							>
-								<SelectValue placeholder="Name" />
-							</SelectTrigger>
-							<SelectContent>
-								{engineNames?.map((n) => (
-									<SelectItem key={n.value} value={n.value}>
-										{n.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+								<SelectTrigger
+									title={
+										engineNames?.find(
+											(n) =>
+												n.value ===
+												(engineId ||
+													engineNames?.[0]?.value),
+										)?.label ?? "Select"
+									}
+									className="h-8 w-[160px] truncate rounded-md border border-border bg-card text-xs"
+								>
+									<SelectValue placeholder="Name" />
+								</SelectTrigger>
+								<SelectContent>
+									{engineNames?.map((n) => (
+										<SelectItem
+											key={n.value}
+											value={n.value}
+										>
+											{n.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
 
 						{/* ── User ── */}
 						{showUserFilter && (
