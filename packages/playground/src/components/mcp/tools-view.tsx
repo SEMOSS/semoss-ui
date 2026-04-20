@@ -178,18 +178,12 @@ export const ToolsView = observer(
 						onLoad={() => handleOnLoad()}
 					/>
 				)}
-				{!url && !isLoading && (
+				{!url && !isLoading && liveTool && (
 					<ToolsDefaultView
 						room={room}
 						app={app}
 						message={message}
-						tool={tool}
-						toolResponse={toolResponse}
-						toolParameters={toolParameters}
-						isExecuting={
-							tool._meta.SMSS_MCP_EXECUTION !== "ask" &&
-							!toolResponse
-						}
+						tool={liveTool}
 					/>
 				)}
 			</div>

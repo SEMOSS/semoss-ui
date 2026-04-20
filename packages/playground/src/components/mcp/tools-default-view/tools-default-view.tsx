@@ -27,16 +27,7 @@ export interface ToolsDefaultViewProps {
 	message: string;
 
 	/** Connected tool */
-	tool: ToolStore["json"];
-
-	/** Response to the tool, if already completed */
-	toolResponse?: string;
-
-	/** Parameters that were executed */
-	toolParameters?: Record<string, unknown>;
-
-	/** Whether the tool is currently being auto-executed */
-	isExecuting?: boolean;
+	tool: ToolStore;
 }
 
 interface FieldSchema {
@@ -54,15 +45,7 @@ interface FieldSchema {
 }
 
 export const ToolsDefaultView = observer(
-	({
-		room,
-		app,
-		message,
-		tool,
-		toolResponse,
-		toolParameters,
-		isExecuting,
-	}: ToolsDefaultViewProps) => {
+	({ room, app, message, tool }: ToolsDefaultViewProps) => {
 		/*
 		 * Library hooks
 		 */
@@ -89,17 +72,11 @@ export const ToolsDefaultView = observer(
 		});
 
 		/*
-		 * Constants
-		 */
-		const title = tool?.title || "";
-		const description = tool?.description || "";
-
-		/*
 		 * State
 		 */
-		const [data, setData] = useState<Record<string, unknown>>(() => {
-			return toolParameters || {};
-		});
+		const [data, setData] = useState<Record<string, unknown>>(
+			tool.parameters || {},
+		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
 		const [required, setRequired] = useState<string[]>([]);
@@ -108,7 +85,7 @@ export const ToolsDefaultView = observer(
 			Record<string, FieldSchema>
 		>({});
 		const [response, setResponse] = useState<string | undefined>(
-			toolResponse,
+			tool.status === "SUCCESS" ? tool.response : undefined,
 		);
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
@@ -145,13 +122,22 @@ export const ToolsDefaultView = observer(
 		 * Constants
 		 */
 		// Separate required and optional fields
-		const hasBeenExecuted = response !== undefined;
+		const showResponse = tool.status === "SUCCESS";
+		const toolFailed =
+			tool.status === "ERROR" ||
+			tool.status === "CANCELLED" ||
+			tool.status === "PAUSED";
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
 		const optionalFields = Object.entries(properties).filter(
 			([fieldName]) => !required.includes(fieldName),
 		);
+		const title = tool?.json.title || "";
+		const description = tool?.json.description || "";
+		const isAutoExecuting =
+			tool?.json._meta.SMSS_MCP_EXECUTION !== "ask" &&
+			tool.status !== "SUCCESS";
 
 		/*
 		 * Functions
@@ -268,7 +254,7 @@ export const ToolsDefaultView = observer(
 					// Normal MCP tool execution for non-Playwright tools
 					const response = await room.runRoomPixel<[unknown]>(
 						`RunMCPTool(project = [ "${app}" ], function=[ "${
-							tool.name
+							tool?.json.name
 						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
 						false,
 						false,
@@ -286,11 +272,7 @@ export const ToolsDefaultView = observer(
 			}
 			const m = room.getMessage(message);
 			// Only process the tool response if the tool is still open
-			if (
-				m &&
-				m instanceof ResponseMessageStore &&
-				room.getTool(tool.id).isOpen
-			) {
+			if (m && m instanceof ResponseMessageStore && tool.isOpen) {
 				room.processTool(
 					m.id,
 					tool.id,
@@ -313,8 +295,8 @@ export const ToolsDefaultView = observer(
 					key={fieldName}
 					fieldName={fieldName}
 					fieldSchema={fieldSchema}
-					required={required && !hasBeenExecuted && !isExecuting}
-					disabled={hasBeenExecuted || !!isExecuting}
+					required={required && !showResponse && !isAutoExecuting}
+					disabled={showResponse || !!isAutoExecuting}
 					value={data[fieldName] ?? ""}
 					onChange={(val) => handleChange(fieldName, val)}
 				/>
@@ -326,16 +308,16 @@ export const ToolsDefaultView = observer(
 
 		// Load tool schema
 		useEffect(() => {
-			if (getMCP.status === "SUCCESS" && tool?.original_name) {
+			if (getMCP.status === "SUCCESS" && tool?.json.original_name) {
 				const foundTool = getMCP.data.tools.find(
-					(t) => t.name === tool.original_name,
+					(t) => t.name === tool?.json.original_name,
 				);
 				if (foundTool) {
 					setProperties(foundTool.inputSchema.properties);
 					setRequired(foundTool.inputSchema.required);
 				}
 			}
-		}, [getMCP, tool.original_name]);
+		}, [getMCP, tool?.json.original_name]);
 
 		return (
 			// px-3 because applying padding on this div was clipping the shadow of the textareas
@@ -349,7 +331,7 @@ export const ToolsDefaultView = observer(
 				</div>
 
 				<div className="flex-1 space-y-4 overflow-y-auto px-1">
-					{hasBeenExecuted && (
+					{showResponse && (
 						<div className="flex flex-col space-y-2">
 							<Label
 								htmlFor="tool-response"
@@ -377,7 +359,7 @@ export const ToolsDefaultView = observer(
 							</div>
 						</div>
 					) : getMCP.status === "SUCCESS" ? (
-						hasBeenExecuted ? (
+						showResponse ? (
 							Object.keys(properties).length > 0 && (
 								<>
 									<Button
@@ -478,8 +460,9 @@ export const ToolsDefaultView = observer(
 					)}
 				</div>
 
-				{!hasBeenExecuted &&
-					!isExecuting &&
+				{!showResponse &&
+					!isAutoExecuting &&
+					!toolFailed &&
 					getMCP.status === "SUCCESS" && (
 						<div className="shrink-0 px-1">
 							<Button
