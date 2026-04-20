@@ -24,7 +24,7 @@ import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
-import { useRoot } from "@/hooks";
+import { useNavbar, useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores";
 import { setFavicon } from "@/utility/utils";
