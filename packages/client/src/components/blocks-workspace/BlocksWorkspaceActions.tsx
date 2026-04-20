@@ -1,5 +1,5 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { Eye, Save, Share2 } from "lucide-react";
+import { Bot, Eye, Save, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useBlocks } from "@semoss/renderer";
@@ -11,7 +11,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { ModelBrain } from "@/assets/img/ModelBrain";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewOverlay } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
@@ -224,14 +223,8 @@ export const BlocksWorkspaceActions = observer(() => {
 							selectModel();
 						}}
 					>
-						<ModelBrain
-							width={"18"}
-							height={"18"}
-							color={
-								workspace.agentModelEngine
-									? "#0471f0"
-									: "#666666"
-							}
+						<Bot
+							className={`size-4 ${workspace.agentModelEngine ? "text-primary" : "text-muted-foreground"}`}
 						/>
 					</Button>
 				</TooltipTrigger>
