@@ -1,19 +1,71 @@
+import { Button, Stack } from "@mui/material";
+import { Download } from "lucide-react";
 import type * as React from "react";
+import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
+import ExcelIcon from "./file-excel-solid-full.svg";
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+	const id = `${Math.random() * 1000}`;
 	return (
-		<div
-			data-slot="table-container"
-			className="relative w-full overflow-x-auto"
-		>
-			<table
-				data-slot="table"
-				className={cn("w-full caption-bottom text-sm", className)}
-				{...props}
-			/>
+		<div>
+			<Button
+				variant="contained"
+				style={{
+					float: "right",
+					marginBottom: "5px",
+					background: "#007cba",
+				}}
+				//color="#007cba"
+				onClick={() => {
+					const today = new Date();
+
+					const formattedDate = today.toISOString().slice(0, 10);
+					const fileName = `table_response_${formattedDate}.xlsx`;
+					exportTableByIdToExcel(id, fileName);
+				}}
+				size={"large"}
+				aria-label="Export to Excel"
+				title="Export to Excel"
+				sx={{
+					textTransform: "none",
+					borderRadius: 2,
+					px: 1.5,
+					gap: 1,
+				}}
+			>
+				<Stack direction="row" alignItems="center" spacing={1}>
+					<img
+						src={ExcelIcon}
+						alt="Export to Excel"
+						height="25px"
+						width="25px"
+					/>
+					<Download fontSize="medium" />
+				</Stack>
+			</Button>
+
+			<div
+				data-slot="table-container"
+				className="relative w-full overflow-x-auto"
+			>
+				<table
+					id={id}
+					data-slot="table"
+					className={cn("w-full caption-bottom text-sm", className)}
+					{...props}
+				/>
+			</div>
 		</div>
 	);
+}
+
+function exportTableByIdToExcel(id: string, filename: string): void {
+	console.log("Exporting table with ID:", id);
+	const table = document.getElementById(id);
+	if (!table) return;
+	const wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+	XLSX.writeFile(wb, filename);
 }
 
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
