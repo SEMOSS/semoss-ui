@@ -1,39 +1,33 @@
+import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import {
+	AlarmClock,
+	AlertCircle,
+	Filter,
+	Moon,
+	Pause,
+	Play,
+	Plus,
+	Search,
+	Trash,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { debounced, runPixel } from "@semoss/sdk/react";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
 	Button,
+	Field,
+	FieldContent,
 	Input,
 	Tabs,
 	TabsList,
 	TabsTrigger,
-	Field,
-	FieldContent,
-	Alert,
-	AlertDescription,
-	AlertTitle,
-  } from "@semoss/ui/next";
-  
-  import {
-	Play,
-	Pause,
-	Trash,
-	Plus,
-	Search,
-	Filter,
-	AlarmClock,
-	Moon,
-	AlertCircle,
-  } from "lucide-react";
-  
-  import { useState, useEffect, useMemo, useRef } from "react";
-  import { Navigate, useNavigate } from "react-router-dom";
-  import { useRootStore, useSettings } from "@/hooks";
-  import type { GridRowSelectionModel } from "@mui/x-data-grid";
-  import { debounced, runPixel } from "@semoss/sdk/react";
-  
-  import { JobCard } from "./job-card";
-  import { JobHistory } from "./job-history";
-  import { JobsTable } from "./jobs-table";
-  import { DeleteJobModal } from "./delete-job-modal";
-  import type {
+} from "@semoss/ui/next";
+import { useRootStore, useSettings } from "@/hooks";
+import { DeleteJobModal } from "./delete-job-modal";
+import type {
 	HistoryJob,
 	HistoryPaginationProps,
 	Job,
@@ -46,22 +40,25 @@ import {
 	convertSendEmailRecipeToJob,
 	convertTimetoDate,
 } from "./job.utils";
+import { JobCard } from "./job-card";
+import { JobHistory } from "./job-history";
+import { JobsTable } from "./jobs-table";
 
 type OutputType = {
-    failed?: string[];
-    success?: string[];
+	failed?: string[];
+	success?: string[];
 };
-  
-  export function JobsPage() {
+
+export function JobsPage() {
 	const { monolithStore } = useRootStore();
 	const { adminMode } = useSettings();
 	const navigate = useNavigate();
 
 	const [notification, setNotification] = useState<{
-        type: "success" | "error" | "warning";
-        message: string;
-    } | null>(null);
-  
+		type: "success" | "error" | "warning";
+		message: string;
+	} | null>(null);
+
 	const [searchValue, setSearchValue] = useState("");
 	const [selectedTable, setSelectedTable] = useState("Jobs");
 	const [selectedJobTab, setSelectedJobTab] = useState("All");
@@ -71,24 +68,25 @@ type OutputType = {
 	const [historyCount, setHistoryCount] = useState<number>(-1);
 	const [historySearchBuffer, setHistorySearchBuffer] = useState("");
 	const [historySearch, setHistorySearch] = useState("");
-  
+
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [filterOpen, setFilterOpen] = useState(false);
-  
+
 	const searchRef = useRef(null);
-  
+
 	const [jobs, setJobs] = useState<any[]>([]);
 	const [history, setHistory] = useState<any[]>([]);
 	const [jobsLoading, setJobsLoading] = useState(false);
 	const [historyLoading, setHistoryLoading] = useState(false);
-  
+
 	const [failedJobCount, setFailedJobCount] = useState(0);
-	const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>([]);
-  
+	const [rowSelectionModel, setRowSelectionModel] =
+		useState<GridRowSelectionModel>([]);
+
 	const [jobToDelete, setJobToDelete] = useState(null);
 	const [jobsToDelete, setJobsToDelete] = useState<any[]>([]);
 	const [deleteMultiple, setDeleteMultiple] = useState(false);
-  
+
 	const getJobs = () => {
 		setJobsLoading(true);
 		const pixel = "META|ListAllJobs()";
@@ -554,296 +552,302 @@ type OutputType = {
 		);
 		setJobsToDelete(rowsToBeDeleted);
 	};
-  
+
 	if (!adminMode) {
-	  return <Navigate to="/settings" />;
+		return <Navigate to="/settings" />;
 	}
-  
+
 	return (
-	  <div className="flex flex-col gap-6">
-		{notification && (
-			<Alert
-			variant={notification.type === "error" ? "destructive" : "default"}
-			className="mb-4"
-			>
-			<AlertTitle>
-				{notification.type === "error" ? "Error" : "Success"}
-			</AlertTitle>
-			<AlertDescription>{notification.message}</AlertDescription>
-			</Alert>
-		)}
-  
-		<hr className="border-gray-200" />
-  
-		<div className="flex gap-4 w-1/2">
-		  <JobCard
-			title="Active Jobs"
-			icon={<AlarmClock />}
-			count={jobs.filter((j) => j.isActive).length}
-			avatarColor={["#C6E4BF", "#66BB6A", "#6D7E6A"]}
-			iconColor="#fff"
-		  />
-  
-		  <JobCard
-			title="Inactive Jobs"
-			icon={<Moon />}
-			count={jobs.filter((j) => !j.isActive).length}
-			avatarColor={["#FFF59D", "#FBC02D"]}
-			iconColor="#fff"
-		  />
-  
-		  <JobCard
-			title="Failed"
-			icon={<AlertCircle />}
-			count={failedJobCount}
-			avatarColor={["#FFCCBC", "#E64A19"]}
-			iconColor="#fff"
-		  />
-		</div>
-  
-		<Field className="border rounded-lg p-4">
-		  <FieldContent className="flex flex-col gap-4">
-  
-			<div className="flex justify-between items-center">
-  
-			<Tabs value={selectedTable} onValueChange={setSelectedTable}>
-				<TabsList className="border border-blue-500 rounded-lg flex items-center bg-white">
-					<TabsTrigger
-						value="Jobs"
-						className={`px-4 py-2 text-sm font-medium  ${
-							selectedTable === "Jobs"
-							? "!bg-blue-100 text-blue-500"
-							: "!bg-white text-blue-500"
-						}`}
-					>
-						Jobs
-					</TabsTrigger>
-					<div className="w-px h-9 bg-blue-500 mx-2"></div>
-					<TabsTrigger
-						value="History"
-						className={`px-4 py-2 text-sm font-medium  ${
-							selectedTable === "History"
-							? "!bg-blue-100 text-blue-500"
-							: "!bg-white text-blue-500"
-						}`}
-					>
-						History
-					</TabsTrigger>
-				</TabsList>
-			</Tabs>
-  
-			  <div className="flex items-center gap-2">
-  
-				{selectedTable === "Jobs" && (
-				  <>
-					<Button
-					  variant="outline"
-					  size="sm"
-					  disabled={!rowSelectionModel.length}
-					  onClick={() => pauseJobs()}
-					>
-					  <Pause className="w-4 h-4 mr-1" /> Pause
-					</Button>
-  
-					<Button
-					  variant="outline"
-					  size="sm"
-					  disabled={!rowSelectionModel.length}
-					  onClick={() => resumeJobs()}
-					>
-					  <Play className="w-4 h-4 mr-1" /> Resume
-					</Button>
-  
-					<Button
-					  variant="outline"
-					  size="sm"
-					  disabled={!rowSelectionModel.length}
-					  onClick={() => deleteMutlipleJobs()}
-					>
-					  <Trash className="w-4 h-4 mr-1" /> Delete
-					</Button>
-  
-					<Button
-					  size="sm"
-					  onClick={() => navigate("/settings/add-new-job")}
-					>
-					  <Plus className="w-4 h-4 mr-1" /> Add New
-					</Button>
-				  </>
-				)}
-			  </div>
-			</div>
-  
-			<div className="relative flex justify-between items-center border rounded-t-lg p-2 w-full">
-  
-			  {selectedTable === "Jobs" && (
-				<Tabs value={selectedJobTab} onValueChange={setSelectedJobTab} className="w-full">
-					<TabsList className="flex gap-4 !w-1/2  bg-white border-none">
-					<TabsTrigger
-						value="All"
-						className={`text-sm font-medium ${
-						selectedJobTab === "All" ? "text-blue-500" : "text-gray-500"
-						}`}
-					>
-						All
-					</TabsTrigger>
-					<TabsTrigger
-						value="Active"
-						className={`text-sm font-medium ${
-						selectedJobTab === "Active" ? "text-blue-500" : "text-gray-500"
-						}`}
-					>
-						Active
-					</TabsTrigger>
-					<TabsTrigger
-						value="Inactive"
-						className={`text-sm font-medium ${
-						selectedJobTab === "Inactive" ? "text-blue-500" : "text-gray-500"
-						}`}
-					>
-						Inactive
-					</TabsTrigger>
-					</TabsList>
-				</Tabs>
+		<div className="flex flex-col gap-6">
+			{notification && (
+				<Alert
+					variant={
+						notification.type === "error"
+							? "destructive"
+							: "default"
+					}
+					className="mb-4"
+				>
+					<AlertTitle>
+						{notification.type === "error" ? "Error" : "Success"}
+					</AlertTitle>
+					<AlertDescription>{notification.message}</AlertDescription>
+				</Alert>
 			)}
-  
-			{selectedTable === "History" && (
-				<Tabs value={selectedHistoryTab} onValueChange={setSelectedHistoryTab} className="w-full">
-					<TabsList className="flex gap-4 !w-1/2  bg-white border-none">
-					<TabsTrigger
-						value="All"
-						className={`text-sm font-medium ${
-						selectedHistoryTab === "All" ? "text-blue-500" : "text-gray-500"
-						}`}
-					>
-						All
-					</TabsTrigger>
-					<TabsTrigger
-						value="Success"
-						className={`text-sm font-medium ${
-						selectedHistoryTab === "Success" ? "text-blue-500" : "text-gray-500"
-						}`}
-					>
-						Success
-					</TabsTrigger>
-					<TabsTrigger
-						value="Failed"
-						className={`text-sm font-medium ${
-						selectedHistoryTab === "Failed" ? "text-blue-500" : "text-gray-500"
-						}`}
-					>
-						Failed
-					</TabsTrigger>
-					</TabsList>
-				</Tabs>
-			)}
-  
-			  <div className="flex items-center gap-2">
-  
-				{!searchOpen && (
-				  <Search
-					className="w-4 h-4 cursor-pointer"
-					onClick={() => setSearchOpen(true)}
-				  />
-				)}
-  
-				{searchOpen && (
-				  <div ref={searchRef}>
-					<Input
-					  value={searchValue}
-					  onChange={(e) => setSearchValue(e.target.value)}
-					  placeholder="Search..."
-					  className="w-48"
-					/>
-				  </div>
-				)}
-  
-				<Filter
-				  className="w-4 h-4 cursor-pointer"
-				  onClick={() => setFilterOpen(!filterOpen)}
+
+			<hr className="border-gray-200" />
+
+			<div className="flex w-1/2 gap-4">
+				<JobCard
+					title="Active Jobs"
+					icon={<AlarmClock />}
+					count={jobs.filter((j) => j.isActive).length}
+					avatarColor={["#C6E4BF", "#66BB6A", "#6D7E6A"]}
+					iconColor="#fff"
 				/>
-  
-				{filterOpen && (
-				  <div className="absolute right-0 top-full mt-2 w-52 border rounded-md bg-white shadow-md p-2 z-50">
-  
-					<Button
-					  variant="outline"
-					  size="sm"
-					  className="w-full justify-start"
-					  onClick={() => {
-						setSelectedTable("Jobs");
-						setSelectedJobTab("Active");
-						setFilterOpen(false);
-					  }}
-					>
-					  <AlarmClock className="w-4 h-4 mr-2" />
-					  Active Jobs
-					</Button>
-  
-					<Button
-					  variant="outline"
-					  size="sm"
-					  className="w-full justify-start mt-1"
-					  onClick={() => {
-						setSelectedTable("Jobs");
-						setSelectedJobTab("Inactive");
-						setFilterOpen(false);
-					  }}
-					>
-					  <Moon className="w-4 h-4 mr-2" />
-					  Inactive Jobs
-					</Button>
-  
-					<Button
-					  variant="outline"
-					  size="sm"
-					  className="w-full justify-start mt-1"
-					  onClick={() => {
-						setSelectedTable("History");
-						setSelectedHistoryTab("Failed");
-						setFilterOpen(false);
-					  }}
-					>
-					  <AlertCircle className="w-4 h-4 mr-2" />
-					  Failed Jobs ({failedJobCount})
-					</Button>
-				  </div>
-				)}
-  
-			  </div>
+
+				<JobCard
+					title="Inactive Jobs"
+					icon={<Moon />}
+					count={jobs.filter((j) => !j.isActive).length}
+					avatarColor={["#FFF59D", "#FBC02D"]}
+					iconColor="#fff"
+				/>
+
+				<JobCard
+					title="Failed"
+					icon={<AlertCircle />}
+					count={failedJobCount}
+					avatarColor={["#FFCCBC", "#E64A19"]}
+					iconColor="#fff"
+				/>
 			</div>
-  
-			{selectedTable === "Jobs" && (
-			  <JobsTable
-				jobs={filteredJobs}
-				jobsLoading={jobsLoading}
-				rowSelectionModel={rowSelectionModel}
-				setRowSelectionModel={setRowSelectionModel}
-				getHistory={() => getHistory({ reload: true })}
-				showDeleteJobModal={(job: Job) => setJobToDelete(job)}
-				getFailedJobCount={getFailedJobCount}
-			  />
-			)}
-  
-			{selectedTable === "History" && (
-			  <JobHistory
-				history={filteredHistory}
-				historyLoading={historyLoading}
-				historyCount={historyCount}
-				historyPage={historyPage}
-				historyRowsPerPage={historyRowsPerPage}
-				onPageChange={(page) => getHistory({ page })}
-					onRowsPerPageChange={(rowsPerPage) =>
-					getHistory({ rowsPerPage })
-				}
-				onSearchChange={setHistorySearchBuffer}
-			  />
-			)}
-  
-		  </FieldContent>
-		</Field>
-  
-		<DeleteJobModal
+
+			<Field className="rounded-lg border p-4">
+				<FieldContent className="flex flex-col gap-4">
+					<div className="flex items-center justify-between">
+						<Tabs
+							value={selectedTable}
+							onValueChange={setSelectedTable}
+						>
+							<TabsList className="flex">
+								<TabsTrigger
+									value="Jobs"
+									className={`px-4 py-2 font-medium text-sm`}
+								>
+									Jobs
+								</TabsTrigger>
+								<TabsTrigger
+									value="History"
+									className={`px-4 py-2 font-medium text-sm`}
+								>
+									History
+								</TabsTrigger>
+							</TabsList>
+						</Tabs>
+
+						<div className="flex items-center gap-2">
+							{selectedTable === "Jobs" && (
+								<>
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={!rowSelectionModel.length}
+										onClick={() => pauseJobs()}
+									>
+										<Pause className="mr-1 h-4 w-4" /> Pause
+									</Button>
+
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={!rowSelectionModel.length}
+										onClick={() => resumeJobs()}
+									>
+										<Play className="mr-1 h-4 w-4" /> Resume
+									</Button>
+
+									<Button
+										variant="outline"
+										size="sm"
+										disabled={!rowSelectionModel.length}
+										onClick={() => deleteMutlipleJobs()}
+									>
+										<Trash className="mr-1 h-4 w-4" />{" "}
+										Delete
+									</Button>
+
+									<Button
+										size="sm"
+										onClick={() =>
+											navigate("/settings/add-new-job")
+										}
+									>
+										<Plus className="mr-1 h-4 w-4" /> Add
+										New
+									</Button>
+								</>
+							)}
+						</div>
+					</div>
+
+					<div className="relative flex w-full items-center justify-between rounded-t-lg p-2">
+						{selectedTable === "Jobs" && (
+							<Tabs
+								value={selectedJobTab}
+								onValueChange={setSelectedJobTab}
+								className="w-full"
+							>
+								<TabsList className="w-full flex-nowrap justify-start gap-10 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+									<TabsTrigger
+										value="All"
+										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
+											selectedJobTab === "All" ? "data-[state=active]:after:opacity-100" : ""
+										}`}
+									>
+										All
+									</TabsTrigger>
+									<TabsTrigger
+										value="Active"
+										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
+											selectedJobTab === "Active" ? "data-[state=active]:after:opacity-100" : ""
+										}`}
+									>
+										Active
+									</TabsTrigger>
+									<TabsTrigger
+										value="Inactive"
+										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
+											selectedJobTab === "Inactive" ? "data-[state=active]:after:opacity-100" : ""
+										}`}
+									>
+										Inactive
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						)}
+
+						{selectedTable === "History" && (
+							<Tabs
+								value={selectedHistoryTab}
+								onValueChange={setSelectedHistoryTab}
+								className="w-full"
+							>
+								<TabsList className="w-full flex-nowrap justify-start gap-10 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+									<TabsTrigger
+										value="All"
+										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
+											selectedHistoryTab === "All" ? "data-[state=active]:after:opacity-100" : ""
+										}`}
+									>
+										All
+									</TabsTrigger>
+									<TabsTrigger
+										value="Success"
+										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
+											selectedHistoryTab === "Success" ? "data-[state=active]:after:opacity-100" : ""
+										}`}
+									>
+										Success
+									</TabsTrigger>
+									<TabsTrigger
+										value="Failed"
+										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
+											selectedHistoryTab === "Failed" ? "data-[state=active]:after:opacity-100" : ""
+										}`}
+									>
+										Failed
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						)}
+
+						<div className="flex items-center gap-2">
+							{!searchOpen && (
+								<Search
+									className="h-4 w-4 cursor-pointer"
+									onClick={() => setSearchOpen(true)}
+								/>
+							)}
+
+							{searchOpen && (
+								<div ref={searchRef}>
+									<Input
+										value={searchValue}
+										onChange={(e) =>
+											setSearchValue(e.target.value)
+										}
+										placeholder="Search..."
+										className="w-48"
+									/>
+								</div>
+							)}
+
+							<Filter
+								className="h-4 w-4 cursor-pointer"
+								onClick={() => setFilterOpen(!filterOpen)}
+							/>
+
+							{filterOpen && (
+								<div className="absolute top-full right-0 z-50 mt-2 w-52 rounded-md border bg-white p-2 shadow-md">
+									<Button
+										variant="outline"
+										size="sm"
+										className="w-full justify-start"
+										onClick={() => {
+											setSelectedTable("Jobs");
+											setSelectedJobTab("Active");
+											setFilterOpen(false);
+										}}
+									>
+										<AlarmClock className="mr-2 h-4 w-4" />
+										Active Jobs
+									</Button>
+
+									<Button
+										variant="outline"
+										size="sm"
+										className="mt-1 w-full justify-start"
+										onClick={() => {
+											setSelectedTable("Jobs");
+											setSelectedJobTab("Inactive");
+											setFilterOpen(false);
+										}}
+									>
+										<Moon className="mr-2 h-4 w-4" />
+										Inactive Jobs
+									</Button>
+
+									<Button
+										variant="outline"
+										size="sm"
+										className="mt-1 w-full justify-start"
+										onClick={() => {
+											setSelectedTable("History");
+											setSelectedHistoryTab("Failed");
+											setFilterOpen(false);
+										}}
+									>
+										<AlertCircle className="mr-2 h-4 w-4" />
+										Failed Jobs ({failedJobCount})
+									</Button>
+								</div>
+							)}
+						</div>
+					</div>
+
+					{selectedTable === "Jobs" && (
+						<JobsTable
+							jobs={filteredJobs}
+							jobsLoading={jobsLoading}
+							rowSelectionModel={rowSelectionModel}
+							setRowSelectionModel={setRowSelectionModel}
+							getHistory={() => getHistory({ reload: true })}
+							showDeleteJobModal={(job: Job) =>
+								setJobToDelete(job)
+							}
+							getFailedJobCount={getFailedJobCount}
+						/>
+					)}
+
+					{selectedTable === "History" && (
+						<JobHistory
+							history={filteredHistory}
+							historyLoading={historyLoading}
+							historyCount={historyCount}
+							historyPage={historyPage}
+							historyRowsPerPage={historyRowsPerPage}
+							onPageChange={(page) => getHistory({ page })}
+							onRowsPerPageChange={(rowsPerPage) =>
+								getHistory({ rowsPerPage })
+							}
+							onSearchChange={setHistorySearchBuffer}
+						/>
+					)}
+				</FieldContent>
+			</Field>
+
+			<DeleteJobModal
 				job={deleteMultiple ? jobsToDelete : [jobToDelete]}
 				isOpen={
 					deleteMultiple
@@ -862,6 +866,6 @@ type OutputType = {
 				}
 				deleteJob={deleteJob}
 			/>
-	  </div>
+		</div>
 	);
-  }
+}
