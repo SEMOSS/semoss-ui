@@ -1,14 +1,9 @@
-import MicIcon from "@mui/icons-material/Mic";
-import MicOffIcon from "@mui/icons-material/MicOff";
-import { Button, styled } from "@mui/material";
+import { Mic, MicOff } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { Button } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledButton = styled(Button)({
-	borderRadius: "50%",
-});
 
 export interface AudioInputBlockDef extends BlockDef<"audio-input"> {
 	widget: "audio-input";
@@ -35,25 +30,31 @@ export interface AudioInputBlockDef extends BlockDef<"audio-input"> {
 	};
 }
 
-const StyledContainer = styled("div")(() => ({
-	padding: "4px",
-}));
+const variantMap: Record<
+	AudioInputBlockDef["data"]["variant"],
+	"default" | "outline" | "ghost"
+> = {
+	contained: "default",
+	outlined: "outline",
+	text: "ghost",
+};
 
 export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData } = useBlock<AudioInputBlockDef>(id);
 	const [recording, setRecording] = useState(false);
 	const [transcript, setTranscript] = useState("");
-	const [interimTranscript, setInterimTranscript] = useState("");
 	const recognitionRef = useRef(null);
-	const [primaryBtnColor, setPrimaryBtnColor] = useState(data.color);
+	const [primaryBtnColor, _setPrimaryBtnColor] = useState(data.color);
 	const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
 		null,
 	);
 	const chunks = useRef<Blob[]>([]);
 	const previousValueRef = useRef(data.value);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (data.mode === "transcribe") {
+			// biome-ignore lint/suspicious/noExplicitAny: webkitSpeechRecognition type is untyped
 			const recognition = new (window as any).webkitSpeechRecognition();
 			recognition.continuous = true;
 			recognition.interimResults = true;
@@ -69,17 +70,13 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 				setData("color", primaryBtnColor);
 			};
 			recognition.onresult = (event) => {
-				let interim = "";
 				let final = "";
 				for (let i = event.resultIndex; i < event.results.length; ++i) {
 					if (event.results[i].isFinal) {
 						final += event.results[i][0].transcript;
-					} else {
-						interim += event.results[i][0].transcript;
 					}
 				}
 				setTranscript((prev) => prev + final);
-				setInterimTranscript(interim);
 			};
 			recognitionRef.current = recognition;
 		} else {
@@ -89,6 +86,7 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, [data.mode]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (data.mode === "transcribe") {
 			setData("value", transcript);
@@ -112,7 +110,7 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 				setData("color", primaryBtnColor);
 				setRecording(false);
 			} else {
-				chunks.current = []; // Clear chunks before new recording
+				chunks.current = [];
 				navigator.mediaDevices
 					.getUserMedia({ audio: true })
 					.then((stream) => {
@@ -128,15 +126,12 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 							const audioBlob = new Blob(chunks.current, {
 								type: "audio/webm",
 							});
-
 							const reader = new FileReader();
 							reader.onloadend = () => {
-								const base64Audio = reader.result as string;
-								setData("value", base64Audio);
+								setData("value", reader.result as string);
 							};
 							reader.readAsDataURL(audioBlob);
-
-							// Stop and cleanup tracks
+							// biome-ignore lint/suspicious/useIterableCallbackReturn: forEach callback does not need return
 							stream.getTracks().forEach((track) => track.stop());
 						};
 
@@ -166,7 +161,7 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 		}
 	};
 
-	// Auto-download effect when recording becomes available
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (
 			data.mode === "record" &&
@@ -179,13 +174,12 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 		previousValueRef.current = data.value;
 	}, [data.value, recording]);
 
-	// Cleanup effect
 	useEffect(() => {
 		return () => {
 			if (mediaRecorder && mediaRecorder.state !== "inactive") {
 				mediaRecorder.stop();
-				const tracks = mediaRecorder.stream.getTracks();
-				tracks.forEach((track) => track.stop());
+				// biome-ignore lint/suspicious/useIterableCallbackReturn: forEach callback does not need return
+				mediaRecorder.stream.getTracks().forEach((t) => t.stop());
 			}
 			if (recognitionRef.current) {
 				recognitionRef.current.stop();
@@ -194,21 +188,20 @@ export const AudioInputBlock: BlockComponent = observer(({ id }) => {
 	}, [mediaRecorder]);
 
 	return (
-		<StyledContainer {...attrs}>
-			<StyledButton
-				size="medium"
-				color={data.color}
-				variant={data.variant}
+		<div {...attrs} className="p-1">
+			<Button
+				variant={variantMap[data.variant] ?? "default"}
 				disabled={data?.disabled || data?.loading}
-				sx={{
-					...data.style,
-				}}
-				onClick={() => {
-					handleRecording();
-				}}
+				style={data.style}
+				className="rounded-full"
+				onClick={() => handleRecording()}
 			>
-				{recording ? <MicOffIcon /> : <MicIcon />}
-			</StyledButton>
-		</StyledContainer>
+				{recording ? (
+					<MicOff className="size-4" />
+				) : (
+					<Mic className="size-4" />
+				)}
+			</Button>
+		</div>
 	);
 });

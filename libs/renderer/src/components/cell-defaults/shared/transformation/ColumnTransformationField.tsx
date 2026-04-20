@@ -1,8 +1,19 @@
-import { Autocomplete } from "@mui/material";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { TextField } from "@semoss/ui";
+import {
+	Button,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Spinner,
+} from "@semoss/ui/next";
 import { useBlocksPixel } from "../../../../hooks/useBlocksPixel";
 import type { CellState } from "../../../../store";
 import type {
@@ -38,6 +49,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
 			disabled = false,
 			onChange,
 		} = props;
+		const [open, setOpen] = useState(false);
 
 		const frameVariableName = computed(() => {
 			return (cell.parameters.targetCell as TransformationTargetCell)
@@ -53,10 +65,7 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
 		const [frameHeaders, setFrameHeaders] = useState<{
 			loading: boolean;
 			columns: ColumnInfo[];
-		}>({
-			loading: true,
-			columns: [],
-		});
+		}>({ loading: true, columns: [] });
 
 		const frameHeaderPixelReturn = useBlocksPixel<{
 			headerInfo: FrameHeaderInfo;
@@ -69,60 +78,126 @@ export const ColumnTransformationField: ColumnTransformationFieldComponent =
 		);
 
 		useEffect(() => {
-			if (frameHeaderPixelReturn.status !== "SUCCESS") {
-				return;
-			}
-
+			if (frameHeaderPixelReturn.status !== "SUCCESS") return;
 			const columns = frameHeaderPixelReturn.data.headerInfo.headers.map(
-				(header) => ({
-					name: header.alias,
-					dataType: header.dataType,
-				}),
+				(h) => ({ name: h.alias, dataType: h.dataType }),
 			);
-
-			setFrameHeaders({
-				loading: false,
-				columns: columns,
-			});
+			setFrameHeaders({ loading: false, columns });
 		}, [frameHeaderPixelReturn.status, frameHeaderPixelReturn.data]);
 
 		useEffect(() => {
-			if (targetCell && targetCell.output) {
+			if (targetCell?.output) {
 				frameHeaderPixelReturn.refresh();
 			}
 		}, [targetCell ? targetCell.output : null]);
 
+		const displayLabel = label ?? `Column${multiple ? "s" : ""}`;
+
+		if (multiple) {
+			const selected = (selectedColumns as ColumnInfo[]) ?? [];
+			const toggleColumn = (col: ColumnInfo) => {
+				const exists = selected.some((c) => c.name === col.name);
+				onChange(
+					exists
+						? selected.filter((c) => c.name !== col.name)
+						: [...selected, col],
+				);
+			};
+			return (
+				<Popover open={open} onOpenChange={setOpen}>
+					<PopoverTrigger asChild>
+						<Button
+							variant="outline"
+							role="combobox"
+							aria-expanded={open}
+							disabled={disabled}
+							className="w-full justify-between"
+						>
+							<span className="truncate">
+								{selected.length > 0
+									? selected.map((c) => c.name).join(", ")
+									: displayLabel}
+							</span>
+							{frameHeaders.loading ? (
+								<Spinner className="ml-2 size-4 shrink-0" />
+							) : (
+								<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+							)}
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+						<Command>
+							<CommandInput placeholder="Search columns..." />
+							<CommandEmpty>No columns found.</CommandEmpty>
+							<CommandGroup>
+								{frameHeaders.columns.map((col) => {
+									const isSelected = selected.some(
+										(c) => c.name === col.name,
+									);
+									return (
+										<CommandItem
+											key={col.name}
+											value={col.name}
+											onSelect={() => toggleColumn(col)}
+										>
+											<Check
+												className={`mr-2 size-4 ${isSelected ? "opacity-100" : "opacity-0"}`}
+											/>
+											{col.name}
+										</CommandItem>
+									);
+								})}
+							</CommandGroup>
+						</Command>
+					</PopoverContent>
+				</Popover>
+			);
+		}
+
+		const singleSelected = selectedColumns as ColumnInfo;
 		return (
-			<Autocomplete
-				disabled={disabled}
-				disableClearable
-				size="small"
-				loading={frameHeaders.loading}
-				value={
-					multiple
-						? (selectedColumns as ColumnInfo[])
-						: (selectedColumns as ColumnInfo)
-				}
-				fullWidth
-				multiple={multiple}
-				onChange={(_, newValue: ColumnInfo[] | ColumnInfo) => {
-					onChange(newValue);
-				}}
-				options={frameHeaders?.columns ?? []}
-				isOptionEqualToValue={(
-					option: ColumnInfo,
-					value: ColumnInfo,
-				) => {
-					return option.name === value.name;
-				}}
-				getOptionLabel={(option: ColumnInfo) => option.name}
-				renderInput={(params) => (
-					<TextField
-						{...params}
-						variant="outlined"
-						label={label ?? `Column${multiple ? "s" : ""}`}
-					/>
-				)}
-			/>
+			<Popover open={open} onOpenChange={setOpen}>
+				<PopoverTrigger asChild>
+					<Button
+						variant="outline"
+						role="combobox"
+						aria-expanded={open}
+						disabled={disabled}
+						className="w-full justify-between"
+					>
+						<span className="truncate">
+							{singleSelected?.name ?? displayLabel}
+						</span>
+						{frameHeaders.loading ? (
+							<Spinner className="ml-2 size-4 shrink-0" />
+						) : (
+							<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+						)}
+					</Button>
+				</PopoverTrigger>
+				<PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+					<Command>
+						<CommandInput placeholder="Search columns..." />
+						<CommandEmpty>No columns found.</CommandEmpty>
+						<CommandGroup>
+							{frameHeaders.columns.map((col) => (
+								<CommandItem
+									key={col.name}
+									value={col.name}
+									onSelect={() => {
+										onChange(col);
+										setOpen(false);
+									}}
+								>
+									<Check
+										className={`mr-2 size-4 ${singleSelected?.name === col.name ? "opacity-100" : "opacity-0"}`}
+									/>
+									{col.name}
+								</CommandItem>
+							))}
+						</CommandGroup>
+					</Command>
+				</PopoverContent>
+			</Popover>
 		);
 	});

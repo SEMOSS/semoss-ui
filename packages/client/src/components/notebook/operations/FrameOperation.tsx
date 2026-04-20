@@ -1,18 +1,14 @@
 import { observer } from "mobx-react-lite";
 import { useMemo, useRef } from "react";
 import { useBlocks, useBlocksPixel } from "@semoss/renderer";
-import { LinearProgress, styled, Table, Typography } from "@semoss/ui";
-
-const StyledTableContainer = styled(Table.Container)<{ $width?: number }>(
-	({ $width }) => ({
-		height: "200px",
-		width: $width ? `${$width}px` : "auto",
-	}),
-);
-
-const StyledLoadingTableCell = styled(Table.Cell)(() => ({
-	padding: "0!important",
-}));
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
 
 export interface FrameOperationProps {
 	/** Output returned that can render a preview of the frame */
@@ -83,58 +79,70 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 		);
 	};
 
+	const containerWidth = parentParent?.getBoundingClientRect().width;
+
 	return (
 		<>
-			<StyledTableContainer
-				$width={parentParent?.getBoundingClientRect().width}
+			<div
+				className="max-h-[200px] overflow-auto"
+				style={
+					containerWidth
+						? { width: `${containerWidth}px` }
+						: undefined
+				}
 			>
-				<Table ref={tableRef} stickyHeader size="small">
-					<Table.Head>
-						<Table.Row>
+				<Table ref={tableRef}>
+					<TableHeader>
+						<TableRow>
 							{getData.status === "SUCCESS" &&
 								getData.data.data.headers.map((h, _hIdx) => (
-									<Table.Cell
+									<TableHead
 										key={`header-${_hIdx}-${h[_hIdx]}`}
 									>
 										{h}
-									</Table.Cell>
+									</TableHead>
 								))}
-						</Table.Row>
-					</Table.Head>
-					<Table.Body>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
 						{isLoading && (
-							<StyledLoadingTableCell>
-								<LinearProgress variant="indeterminate" />
-							</StyledLoadingTableCell>
+							<TableRow>
+								<TableCell colSpan={100} className="p-0">
+									<div className="h-1 w-full animate-pulse rounded bg-primary/50" />
+								</TableCell>
+							</TableRow>
 						)}
 						{isError && (
-							<Table.Cell>
-								There was an issue generating a preview.
-							</Table.Cell>
+							<TableRow>
+								<TableCell>
+									There was an issue generating a preview.
+								</TableCell>
+							</TableRow>
 						)}
 						{getData.status === "SUCCESS" &&
 							getData.data.data.values.map((r, _rIdx) => (
-								<Table.Row
+								<TableRow
 									key={`data-row-${getData.data.data.headers[_rIdx]}-${_rIdx}`}
 								>
 									{r.map((v, _vIdx) => (
-										<Table.Cell
+										<TableCell
 											key={`data-row-col-${getData.data.data.headers[_rIdx]}-${_rIdx}-${_vIdx}`}
 										>
 											{isTimestamp(v)
 												? v.split(".")[0]
 												: v}
-										</Table.Cell>
+										</TableCell>
 									))}
-								</Table.Row>
+								</TableRow>
 							))}
-					</Table.Body>
+					</TableBody>
 				</Table>
-			</StyledTableContainer>
-			<Typography variant="caption">
-				{isSuccess &&
-					`Showing ${getData.data.data.values.length} of ${getCount.data}. This is a preview of ingested data`}
-			</Typography>
+			</div>
+			{isSuccess && (
+				<span className="text-muted-foreground text-xs">
+					{`Showing ${getData.data.data.values.length} of ${getCount.data}. This is a preview of ingested data`}
+				</span>
+			)}
 		</>
 	);
 });

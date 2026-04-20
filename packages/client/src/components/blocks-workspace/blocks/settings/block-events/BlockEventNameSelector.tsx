@@ -1,8 +1,9 @@
-import { Controller } from "react-hook-form";
-import { TextField } from "@semoss/ui";
+import { type Control, Controller } from "react-hook-form";
+import type { ListenerActions } from "@semoss/renderer";
+import { Input } from "@semoss/ui/next";
 
 interface BlockEventNameSelectorProps {
-	control: any;
+	control: Control<ListenerActions>;
 }
 
 export const BlockEventNameSelector = ({
@@ -13,8 +14,8 @@ export const BlockEventNameSelector = ({
 			name="payload.name"
 			control={control}
 			render={({ field }) => (
-				<TextField
-					label="Name"
+				<Input
+					placeholder="Name"
 					value={field.value || ""}
 					onChange={field.onChange}
 				/>

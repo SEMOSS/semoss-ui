@@ -1,32 +1,22 @@
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { IconButton, Menu, Select, styled } from "@semoss/ui";
+import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { getValueByPath } from "@/utility";
 import { useBlock } from "../../../../../hooks";
 import type { BlockDef } from "../../../../../store";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
-const StyledMainContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "row",
-	alignItems: "center",
-	width: "100%",
-	backgroundColor: theme.palette.background.paper,
-}));
-
-const StyledSection = styled("div")<{ justifyContent: string }>(
-	({ theme, justifyContent }) => ({
-		display: "flex",
-		justifyContent: justifyContent ?? "center",
-		width: "100%",
-	}),
-);
-
 export const DendrogramChartField = observer(
-	<D extends BlockDef = BlockDef>({ id, facetListData }) => {
+	<_D extends BlockDef = BlockDef>({ id, facetListData }) => {
 		const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
 
 		const [dropDownValue, setDropDownValue] = useState("");
@@ -37,6 +27,7 @@ export const DendrogramChartField = observer(
 		});
 		const [dendrogramFacetUpdated, setDendrogramFacetUpdated] =
 			useState(false);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -52,20 +43,21 @@ export const DendrogramChartField = observer(
 			});
 		}, [data, "facet.facetSelected"]).get();
 		useEffect(() => {
-			setFacetList((prevList: string[]) =>
+			setFacetList((_prevList: string[]) =>
 				facetListData.map((item) =>
-					item instanceof Array ? item[0] : item,
+					Array.isArray(item) ? item[0] : item,
 				),
 			);
 			setDendrogramFacetUpdated(false);
 		}, [facetListData]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 		useEffect(() => {
 			if (dendrogramFacetUpdated) return;
 			try {
 				const facetSelected = JSON.parse(computedValue);
 				if (facetSelected.length > 0) {
 					if (
-						facetSelected[0] != undefined &&
+						facetSelected[0] !== undefined &&
 						facetSelected[0]?.value !== undefined &&
 						facetSelected[0]?.value !== dropDownValue
 					) {
@@ -83,9 +75,9 @@ export const DendrogramChartField = observer(
 
 		function findAndUpdateNavigationDetails(value) {
 			const index = facetList.findIndex((item) =>
-				isNaN(parseInt(value))
-					? item == value
-					: parseInt(item) == parseInt(value),
+				Number.isNaN(parseInt(value, 10))
+					? item === value
+					: parseInt(item, 10) === parseInt(value, 10),
 			);
 			if (index !== -1) {
 				const prev = index - 1 >= 0 ? facetList[index - 1] : null;
@@ -97,13 +89,9 @@ export const DendrogramChartField = observer(
 			}
 		}
 
-		function updateField(e) {
+		function updateFieldByValue(newvalue: string) {
 			setDendrogramFacetUpdated(true);
-			const newvalue =
-				e.target.value instanceof Array
-					? e.target.value[0]
-					: e.target.value;
-			if (e.target.value == "" || e.target.value == null) return;
+			if (newvalue === "" || newvalue == null) return;
 			const prevValue = dropDownValue;
 			try {
 				let facetData = JSON.parse(computedValue);
@@ -114,16 +102,8 @@ export const DendrogramChartField = observer(
 					},
 				];
 				setData("facet.facetSelected", facetData);
-				setDropDownValue((prevValue) =>
-					e.target.value instanceof Array
-						? e.target.value[0]
-						: e.target.value,
-				);
-				findAndUpdateNavigationDetails(
-					e.target.value instanceof Array
-						? e.target.value[0]
-						: e.target.value,
-				);
+				setDropDownValue(newvalue);
+				findAndUpdateNavigationDetails(newvalue);
 			} catch (e) {
 				setDropDownValue(prevValue);
 				console.log(e);
@@ -131,49 +111,54 @@ export const DendrogramChartField = observer(
 		}
 		console.log(facetList, "facetList");
 		return (
-			<StyledMainContainer>
-				<StyledSection justifyContent="start">
-					<IconButton
-						onClick={(e) =>
-							updateField({
-								target: { value: navigationDetails.prev },
-							})
+			<div className="flex w-full flex-row items-center bg-background">
+				<div className="flex w-full justify-start">
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() =>
+							updateFieldByValue(navigationDetails.prev)
 						}
-						size="small"
 					>
-						<ChevronLeftIcon />
+						<ChevronLeft className="size-4" />
 						{navigationDetails.prev}
-					</IconButton>
-				</StyledSection>
-				<StyledSection justifyContent="center">
+					</Button>
+				</div>
+				<div className="flex w-full justify-center">
 					<Select
-						name="Select Field"
-						fullWidth
 						value={dropDownValue}
-						onChange={(e) => updateField(e)}
+						onValueChange={(value) => updateFieldByValue(value)}
 					>
-						{facetList.length > 0 &&
-							facetList.map((item, index) => (
-								<Menu.Item key={index} value={item.toString()}>
-									{item}
-								</Menu.Item>
-							))}
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Select Field" />
+						</SelectTrigger>
+						<SelectContent>
+							{facetList.length > 0 &&
+								facetList.map((item, index) => (
+									<SelectItem
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										key={index}
+										value={item.toString()}
+									>
+										{item}
+									</SelectItem>
+								))}
+						</SelectContent>
 					</Select>
-				</StyledSection>
-				<StyledSection justifyContent="end">
-					<IconButton
-						onClick={(e) =>
-							updateField({
-								target: { value: navigationDetails.next },
-							})
+				</div>
+				<div className="flex w-full justify-end">
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() =>
+							updateFieldByValue(navigationDetails.next)
 						}
-						size="small"
 					>
 						{navigationDetails.next}
-						<ChevronRightIcon />
-					</IconButton>
-				</StyledSection>
-			</StyledMainContainer>
+						<ChevronRight className="size-4" />
+					</Button>
+				</div>
+			</div>
 		);
 	},
 );

@@ -1,55 +1,25 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
-	useBlocksPixel,
-	useFrameHeaders,
 } from "@semoss/renderer";
 import {
-	Autocomplete,
 	Button,
-	Chip,
-	IconButton,
+	Input,
 	Select,
-	Slider,
-	Switch,
-	styled,
-	TextField,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../../../../BaseSettingSection";
 import { GANTT_CHART } from "../../Visualization.constants";
 
-//Sub container with column based field setting
-const StyledSubContainer = styled("div")(({}) => ({
-	padding: "0.5rem",
-	display: "flex",
-	flexDirection: "column",
-}));
-//Applied custom style container
-const StyledAppliedContainer = styled("div")(() => ({
-	border: "1px solid grey",
-	borderRadius: 9,
-	padding: "10px",
-}));
-//Styled span with custom background color for mentioning color selected for a custom symbol
-const StyledSpan = styled("span")<{ backgroundColor: string }>((props) => ({
-	backgroundColor: props.backgroundColor ?? "",
-	padding: "3px",
-	borderRadius: "50px",
-	width: "15px",
-	height: "15px",
-	display: "flex",
-}));
-//Main container for symbol section with padding
-const StyledMainContainer = styled("div")(({}) => ({
-	padding: "0.5rem",
-	borderBottom: "1px solid #E6E6E6",
-}));
 //Default custom style
 const INITIAL_CUSTOM_STYLE = {
 	dimension: "",
@@ -57,25 +27,31 @@ const INITIAL_CUSTOM_STYLE = {
 	symbolSize: 5,
 	symbolColorSelected: false,
 	symbolColor: "",
-	dimensionInstance: [],
+	dimensionInstance: [] as string[],
 };
+
 export const CustomizeSymbol = observer(
 	<D extends BlockDef = BlockDef>({ id, path }) => {
 		const { data, setData } =
-			useBlockSettings<EchartVisualizationBlockDef>(id); //block data to manage settings
+			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [customizeSymbolData, setCustomizeSymbolData] =
-			useState(INITIAL_CUSTOM_STYLE); //customize symbol component state
-		const [appliedSymbolData, setAppliedSymbolData] = useState([]); //applied symbol data state
-		const [dimensionList, setDimensionList] = useState([]); //dimension list to select for custom symbol
-		const [dimensionSelected, setDimensionSelected] = useState(""); //selected dimention in the dimension list
-		const [dimensionInstance, setDimensionInstance] = useState({
+			useState(INITIAL_CUSTOM_STYLE);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const [appliedSymbolData, setAppliedSymbolData] = useState<any[]>([]);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const [dimensionList, setDimensionList] = useState<any[]>([]);
+		const [dimensionSelected, setDimensionSelected] = useState("");
+		const [dimensionInstance, setDimensionInstance] = useState<
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			Record<string, any[]>
+		>({
 			startdate: [],
 			enddate: [],
 			milestone: [],
-		}); // dimension instance data for the available dimensions
-		const [editingInstanceIndex, setEditingInstanceIndex] = useState(-1); //if editing this will be set with some index greater than -1
-		//List of symbols to select for custom symbol
-		const symbolList = [
+		});
+		const [editingInstanceIndex, setEditingInstanceIndex] = useState(-1);
+
+		const _symbolList = [
 			{ label: "Circle", value: "circle" },
 			{ label: "Empty Circle", value: "emptycircle" },
 			{ label: "Rectangle", value: "rectangle" },
@@ -85,7 +61,7 @@ export const CustomizeSymbol = observer(
 			{ label: "Pin", value: "pin" },
 			{ label: "Arrow", value: "arrow" },
 		];
-		//Computed value from the block data
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -100,250 +76,196 @@ export const CustomizeSymbol = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, "option"]).get();
-		//useeffect to update initial state if available
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const option = JSON.parse(computedValue);
-			const columnDetails = option["customSettings"]?.["columnDetails"];
+			const columnDetails = option.customSettings?.columnDetails;
 			if (columnDetails) {
-				let startDate = {},
-					endDate = {},
-					milestone = {};
+				// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+				let startDate: any = {};
+				// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+				let endDate: any = {};
+				// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+				let milestone: any = {};
 				startDate = {
-					...columnDetails["startdate"],
-					["currentKey"]: "startdate",
+					...columnDetails.startdate,
+					currentKey: "startdate",
 				};
 				endDate = {
-					...columnDetails["enddate"],
-					["currentKey"]: "enddate",
+					...columnDetails.enddate,
+					currentKey: "enddate",
 				};
 				milestone = Object.hasOwn(columnDetails, "milestone")
 					? {
-							...columnDetails["milestone"],
-							["currentKey"]: "milestone",
+							...columnDetails.milestone,
+							currentKey: "milestone",
 						}
 					: {};
 				const finalData = [];
-				if (Object.keys(startDate).length) {
-					finalData.push(startDate);
-				}
-				if (Object.keys(endDate).length) {
-					finalData.push(endDate);
-				}
-				if (Object.keys(milestone).length) {
-					finalData.push(milestone);
-				}
-				setDimensionList((prevDimensionList) => {
-					return [...finalData];
-				});
+				if (Object.keys(startDate).length) finalData.push(startDate);
+				if (Object.keys(endDate).length) finalData.push(endDate);
+				if (Object.keys(milestone).length) finalData.push(milestone);
+				setDimensionList([...finalData]);
 			}
-			const existingOption = option["customSettings"]["gantttools"];
-			const existingOptionList = customizeSymbolData;
-			if (existingOption?.["dimension"]) {
-				existingOptionList["dimension"] = existingOption["dimension"];
-			}
-			if (existingOption?.["symbol"]) {
-				existingOptionList["symbol"] = existingOption["symbol"];
-			}
-			if (existingOption?.["symbolSize"]) {
-				existingOptionList["symbolSize"] = existingOption["symbolSize"];
-			}
-			if (existingOption?.["symbolColor"]) {
-				existingOptionList["symbolColor"] =
-					existingOption["symbolColor"];
-			}
-			if (existingOption?.["symbolColorSelected"]) {
-				existingOptionList["symbolColorSelected"] =
-					existingOption["symbolColorSelected"];
-			}
-			setCustomizeSymbolData((prevCustomizeSymbolData) => {
-				return {
-					...prevCustomizeSymbolData,
-					...existingOptionList,
-				};
-			});
-			const seriesIndex = option["series"].findIndex((item) =>
+			const existingOption = option.customSettings.gantttools;
+			const existingOptionList = { ...customizeSymbolData };
+			if (existingOption?.dimension)
+				existingOptionList.dimension = existingOption.dimension;
+			if (existingOption?.symbol)
+				existingOptionList.symbol = existingOption.symbol;
+			if (existingOption?.symbolSize)
+				existingOptionList.symbolSize = existingOption.symbolSize;
+			if (existingOption?.symbolColor)
+				existingOptionList.symbolColor = existingOption.symbolColor;
+			if (existingOption?.symbolColorSelected)
+				existingOptionList.symbolColorSelected =
+					existingOption.symbolColorSelected;
+			setCustomizeSymbolData((prev) => ({
+				...prev,
+				...existingOptionList,
+			}));
+
+			const seriesIndex = option.series.findIndex((item) =>
 				Object.hasOwn(item, "chartrendered"),
 			);
-			const mileStoneIndex = option["series"].findIndex((item) =>
+			const mileStoneIndex = option.series.findIndex((item) =>
 				Object.hasOwn(item, "milestonerendered"),
 			);
-			let startDateData = [];
-			let endDateData = [];
-			let mileStone = [];
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			let startDateData: any[] = [];
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			let endDateData: any[] = [];
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			let mileStone: any[] = [];
 			if (seriesIndex >= 0) {
 				startDateData =
-					option["series"][seriesIndex]?.["data"]?.map(
-						(item, index) => {
-							return item.value[0];
-						},
+					option.series[seriesIndex]?.data?.map(
+						(item) => item.value[0],
 					) || [];
 				endDateData =
-					option["series"][seriesIndex]?.["data"]?.map(
-						(item, index) => {
-							return item.value[2];
-						},
+					option.series[seriesIndex]?.data?.map(
+						(item) => item.value[2],
 					) || [];
 				mileStone =
-					option["series"][mileStoneIndex]?.["data"]?.map(
-						(item, index) => {
-							return item.mileStoneOriginalDate;
-						},
+					option.series[mileStoneIndex]?.data?.map(
+						(item) => item.mileStoneOriginalDate,
 					) || [];
-				setDimensionInstance((prevDimensionInstance) => {
-					return {
-						["startdate"]: startDateData,
-						["enddate"]: endDateData,
-						["milestone"]: mileStone,
-					};
+				setDimensionInstance({
+					startdate: startDateData,
+					enddate: endDateData,
+					milestone: mileStone,
 				});
 			}
-			//if applied symbol data is available then set the applied symbol data
 			const customizeSettings =
-				option["customSettings"]["gantttools"]?.["customizeSymbol"] ||
-				[];
-			setAppliedSymbolData((prevAppliedSymbol) => customizeSettings);
+				option.customSettings.gantttools?.customizeSymbol || [];
+			setAppliedSymbolData(customizeSettings);
 		}, []);
-		function convertTimeZone(date) {
-			const currentTimezone =
-				Intl.DateTimeFormat().resolvedOptions().timeZone;
-			const dateConvertedToTimeZone = new Date(date).toLocaleString(
-				"en-US",
-				{
-					timeZone: currentTimezone,
-				},
-			);
-			return (
-				new Date(dateConvertedToTimeZone).getFullYear() +
-				"-" +
-				(new Date(dateConvertedToTimeZone).getMonth() + 1 < 10
-					? "0" + (new Date(dateConvertedToTimeZone).getMonth() + 1)
-					: new Date(dateConvertedToTimeZone).getMonth() + 1) +
-				"-" +
-				(new Date(dateConvertedToTimeZone).getDate() < 10
-					? "0" + new Date(dateConvertedToTimeZone).getDate()
-					: new Date(dateConvertedToTimeZone).getDate())
-			);
-		}
-		//update fields function will be called when a field is changed
-		function updateFields(e, field, directValue = undefined) {
-			setCustomizeSymbolData((prevSymbolData) => {
-				return {
-					...prevSymbolData,
-					[field]: directValue ?? e.target.value,
-				};
-			});
-			//if a dimension field is changed, then dimension selected is also updated
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function _updateFields(field: string, directValue: any) {
+			setCustomizeSymbolData((prevSymbolData) => ({
+				...prevSymbolData,
+				[field]: directValue,
+			}));
 			if (field === "dimension") {
-				const value = e.target.value;
-				const dimensionSelected = dimensionList.find(
-					(item) => item.selector === value,
+				const dimensionSelectedItem = dimensionList.find(
+					(item) => item.selector === directValue,
 				);
-				if (Object.hasOwn(dimensionSelected, "currentKey")) {
-					setDimensionSelected((prevDimensionSelected) => {
-						return dimensionSelected["currentKey"];
-					});
+				if (
+					dimensionSelectedItem &&
+					Object.hasOwn(dimensionSelectedItem, "currentKey")
+				) {
+					setDimensionSelected(dimensionSelectedItem.currentKey);
 				}
 			}
 		}
-		//updated dimension list with label and value
-		const dimensionListUpdated =
-			dimensionList.map((item, index) => ({
-				label: item.name,
-				value: item.selector,
-			})) || [];
-		//symbol color switch
-		const showSymbolColor = customizeSymbolData.symbolColorSelected
-			? true
-			: false;
-		//based on the selected dimension, the instance values are updated and rendered in instance selection field
-		const dimensionInstanceToRender =
-			dimensionInstance[dimensionSelected]?.map((item, index) => {
-				return item;
-			}) || [];
-		//dimension name selected based on the selected dimension as selected dimension will have selector value
-		const dimensionNameSelected =
+
+		const _dimensionListUpdated = dimensionList.map((item) => ({
+			label: item.name,
+			value: item.selector,
+		}));
+
+		const _showSymbolColor = !!customizeSymbolData.symbolColorSelected;
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const _dimensionInstanceToRender: any[] =
+			dimensionInstance[dimensionSelected]?.map((item) => item) || [];
+
+		const _dimensionNameSelected =
 			dimensionList.find(
 				(item) => item.selector === customizeSymbolData.dimension,
 			)?.name || customizeSymbolData.dimension;
-		//update chart data when a field is changed
-		function updateChartData() {
+
+		function _updateChartData() {
 			const option = JSON.parse(computedValue);
-			//if customize symbol is newly being created
 			if (editingInstanceIndex === -1) {
-				option["customSettings"] = {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["customizeSymbol"]: option["customSettings"][
-							"gantttools"
-						]?.["customizeSymbol"]
+				option.customSettings = {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						customizeSymbol: option.customSettings.gantttools
+							?.customizeSymbol
 							? [
-									...option["customSettings"]["gantttools"][
-										"customizeSymbol"
-									],
+									...option.customSettings.gantttools
+										.customizeSymbol,
 									{
-										["dimension"]:
+										dimension:
 											customizeSymbolData.dimension,
-										["symbol"]: customizeSymbolData.symbol,
-										["symbolSize"]:
+										symbol: customizeSymbolData.symbol,
+										symbolSize:
 											customizeSymbolData.symbolSize,
-										["symbolColor"]:
+										symbolColor:
 											customizeSymbolData.symbolColor ||
 											GANTT_CHART.MILESTONE_COLOR,
-										["symbolColorSelected"]:
+										symbolColorSelected:
 											customizeSymbolData.symbolColorSelected,
-										["dimensionSelected"]:
-											dimensionSelected,
-										["dimensionValues"]:
+										dimensionSelected: dimensionSelected,
+										dimensionValues:
 											customizeSymbolData.dimensionInstance,
 									},
 								]
 							: [
 									{
-										["dimension"]:
+										dimension:
 											customizeSymbolData.dimension,
-										["symbol"]: customizeSymbolData.symbol,
-										["symbolSize"]:
+										symbol: customizeSymbolData.symbol,
+										symbolSize:
 											customizeSymbolData.symbolSize,
-										["symbolColor"]:
+										symbolColor:
 											customizeSymbolData.symbolColor ||
 											GANTT_CHART.MILESTONE_COLOR,
-										["symbolColorSelected"]:
+										symbolColorSelected:
 											customizeSymbolData.symbolColorSelected,
-										["dimensionSelected"]:
-											dimensionSelected,
-										["dimensionValues"]:
+										dimensionSelected: dimensionSelected,
+										dimensionValues:
 											customizeSymbolData.dimensionInstance,
 									},
 								],
 					},
 				};
 			} else {
-				//if the instance is selected for editing, then respective index in the appliedSymbolData is used to update records
 				if (
 					Object.hasOwn(
-						option["customSettings"]["gantttools"],
+						option.customSettings.gantttools,
 						"customizeSymbol",
 					)
 				) {
 					if (
-						option["customSettings"]["gantttools"][
-							"customizeSymbol"
-						]?.[editingInstanceIndex]
+						option.customSettings.gantttools.customizeSymbol?.[
+							editingInstanceIndex
+						]
 					) {
-						option["customSettings"]["gantttools"][
-							"customizeSymbol"
-						][editingInstanceIndex] = {
-							["dimension"]: customizeSymbolData.dimension,
-							["symbol"]: customizeSymbolData.symbol,
-							["symbolSize"]: customizeSymbolData.symbolSize,
-							["symbolColor"]:
+						option.customSettings.gantttools.customizeSymbol[
+							editingInstanceIndex
+						] = {
+							dimension: customizeSymbolData.dimension,
+							symbol: customizeSymbolData.symbol,
+							symbolSize: customizeSymbolData.symbolSize,
+							symbolColor:
 								customizeSymbolData.symbolColor ||
 								GANTT_CHART.MILESTONE_COLOR,
-							["symbolColorSelected"]:
+							symbolColorSelected:
 								customizeSymbolData.symbolColorSelected,
-							["dimensionSelected"]: dimensionSelected,
-							["dimensionValues"]:
+							dimensionSelected: dimensionSelected,
+							dimensionValues:
 								customizeSymbolData.dimensionInstance,
 						};
 					}
@@ -355,116 +277,56 @@ export const CustomizeSymbol = observer(
 						"option",
 						option as PathValue<D["data"], typeof path>,
 					);
-					//updating the applied symbol data only when the state is updated
-					const appliedSymbolDataList = appliedSymbolData;
+					const appliedSymbolDataList = [...appliedSymbolData];
 					if (
 						editingInstanceIndex > -1 &&
 						appliedSymbolDataList?.[editingInstanceIndex]
 					) {
 						appliedSymbolDataList[editingInstanceIndex] = {
-							["dimension"]: customizeSymbolData.dimension,
-							["symbol"]: customizeSymbolData.symbol,
-							["symbolSize"]: customizeSymbolData.symbolSize,
-							["symbolColor"]:
+							dimension: customizeSymbolData.dimension,
+							symbol: customizeSymbolData.symbol,
+							symbolSize: customizeSymbolData.symbolSize,
+							symbolColor:
 								customizeSymbolData.symbolColor ||
 								GANTT_CHART.MILESTONE_COLOR,
-							["symbolColorSelected"]:
+							symbolColorSelected:
 								customizeSymbolData.symbolColorSelected,
-							["dimensionSelected"]: dimensionSelected,
-							["dimensionValues"]:
+							dimensionSelected: dimensionSelected,
+							dimensionValues:
 								customizeSymbolData.dimensionInstance,
 						};
 					} else {
 						appliedSymbolDataList.push({
-							["dimension"]: customizeSymbolData.dimension,
-							["symbol"]: customizeSymbolData.symbol,
-							["symbolSize"]: customizeSymbolData.symbolSize,
-							["symbolColor"]:
+							dimension: customizeSymbolData.dimension,
+							symbol: customizeSymbolData.symbol,
+							symbolSize: customizeSymbolData.symbolSize,
+							symbolColor:
 								customizeSymbolData.symbolColor ||
 								GANTT_CHART.MILESTONE_COLOR,
-							["symbolColorSelected"]:
+							symbolColorSelected:
 								customizeSymbolData.symbolColorSelected,
-							["dimensionSelected"]: dimensionSelected,
-							["dimensionValues"]:
+							dimensionSelected: dimensionSelected,
+							dimensionValues:
 								customizeSymbolData.dimensionInstance,
 						});
 					}
-					setAppliedSymbolData((prevAppliedSymbol) => {
-						return appliedSymbolDataList;
-					});
-					setCustomizeSymbolData((prevCustomizeData) => {
-						return INITIAL_CUSTOM_STYLE;
-					});
-				} catch (e) {}
+					setAppliedSymbolData(appliedSymbolDataList);
+					setCustomizeSymbolData(INITIAL_CUSTOM_STYLE);
+				} catch (_e) {}
 			}, 300);
 		}
-		//removing the applied data
-		function deleteAppliedData(index) {
-			let updatedAppliedData = appliedSymbolData;
-			const option = JSON.parse(computedValue);
-			updatedAppliedData = updatedAppliedData.filter(
-				(item, itemIndex) => itemIndex !== index,
-			);
-			setAppliedSymbolData((prevSymbolData) => {
-				return updatedAppliedData;
-			});
-			if (option["customSettings"]["gantttools"]?.["customizeSymbol"]) {
-				let filteredData =
-					option["customSettings"]["gantttools"]["customizeSymbol"];
-				filteredData = filteredData.filter(
-					(filteritem, filterindex) => filterindex !== index,
-				);
 
-				option["customSettings"]["gantttools"]["customizeSymbol"] =
-					filteredData;
-				setTimeout(() => {
-					try {
-						setData(
-							"option",
-							option as PathValue<D["data"], typeof path>,
-						);
-					} catch (e) {
-						console.log(e);
-					}
-				}, 300);
-			}
-		}
-		//when the existing instance under applied symbol is clicked, then respective data is loaded into cusomizeSymbolData for editing
-		function applyToCurrentCustom(index) {
-			if (appliedSymbolData?.[index]) {
-				setCustomizeSymbolData((prevCustSymbol) => {
-					return {
-						...appliedSymbolData[index],
-						["dimensionInstance"]:
-							appliedSymbolData[index].dimensionValues,
-					};
-				});
-				setEditingInstanceIndex((prevEditingInstanceIndex) => {
-					return index;
-				});
-			}
-		}
-		//reset to Initial state will reset customize symbol component to initial state
-		function resetToInitialState() {
-			setCustomizeSymbolData((prevCustomizeData) => {
-				return {
-					dimension: "",
-					symbol: "",
-					symbolSize: 5,
-					symbolColorSelected: false,
-					symbolColor: "",
-					dimensionInstance: [],
-				};
-			});
-			setEditingInstanceIndex((prevEditingInstanceIndex) => {
-				return -1;
-			});
-			setAppliedSymbolData((prevAppliedSymbol) => {
-				return [];
-			});
+		function _deleteAppliedData(index: number) {
 			const option = JSON.parse(computedValue);
-			if (option["customSettings"]["gantttools"]?.["customizeSymbol"]) {
-				option["customSettings"]["gantttools"]["customizeSymbol"] = [];
+			const updatedAppliedData = appliedSymbolData.filter(
+				(_, itemIndex) => itemIndex !== index,
+			);
+			setAppliedSymbolData(updatedAppliedData);
+			if (option.customSettings.gantttools?.customizeSymbol) {
+				option.customSettings.gantttools.customizeSymbol =
+					option.customSettings.gantttools.customizeSymbol.filter(
+						(_, filterindex) => filterindex !== index,
+					);
 				setTimeout(() => {
 					try {
 						setData(
@@ -477,209 +339,234 @@ export const CustomizeSymbol = observer(
 				}, 300);
 			}
 		}
-		//updated instances data
-		const updatedInstances = appliedSymbolData.map((item, index) => {
-			return {
-				label:
-					"Instances of " +
-						dimensionList.find(
-							(dimItem) => dimItem.selector === item.dimension,
-						)?.["name"] || item,
-				itemData: index,
-				itemColor: item.symbolColor,
-			};
-		});
+
+		function _applyToCurrentCustom(index: number) {
+			if (appliedSymbolData?.[index]) {
+				setCustomizeSymbolData({
+					...appliedSymbolData[index],
+					dimensionInstance: appliedSymbolData[index].dimensionValues,
+				});
+				setEditingInstanceIndex(index);
+			}
+		}
+
+		function _resetToInitialState() {
+			setCustomizeSymbolData({
+				dimension: "",
+				symbol: "",
+				symbolSize: 5,
+				symbolColorSelected: false,
+				symbolColor: "",
+				dimensionInstance: [],
+			});
+			setEditingInstanceIndex(-1);
+			setAppliedSymbolData([]);
+			const option = JSON.parse(computedValue);
+			if (option.customSettings.gantttools?.customizeSymbol) {
+				option.customSettings.gantttools.customizeSymbol = [];
+				setTimeout(() => {
+					try {
+						setData(
+							"option",
+							option as PathValue<D["data"], typeof path>,
+						);
+					} catch (e) {
+						console.log(e);
+					}
+				}, 300);
+			}
+		}
+
+		const updatedInstances = appliedSymbolData.map((item, index) => ({
+			label:
+				"Instances of " +
+				(dimensionList.find(
+					(dimItem) => dimItem.selector === item.dimension,
+				)?.name || item),
+			itemData: index,
+			itemColor: item.symbolColor,
+		}));
+
 		return (
-			<StyledMainContainer>
-				<StyledSubContainer>
-					<label htmlFor="applied-custom-style">
+			<div className="flex flex-col border-[#E6E6E6] border-b p-2">
+				<div className="flex flex-col gap-2 p-2">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="applied-custom-style"
+					>
 						Applied (Add Multiple Symbol)
 					</label>
-					{updatedInstances.length > 0 && (
-						<StyledAppliedContainer>
-							{updatedInstances.length > 0 &&
-								updatedInstances.map((item, index) => (
-									<Chip
-										size="small"
-										label={item.label}
-										onClick={() =>
-											applyToCurrentCustom(item.itemData)
-										}
-										onDelete={() =>
-											deleteAppliedData(item.itemData)
-										}
-										icon={
-											<StyledSpan
-												backgroundColor={item.itemColor}
-											></StyledSpan>
-										}
+					{updatedInstances.length > 0 ? (
+						<div className="flex flex-wrap gap-1 rounded-lg border border-gray-400 p-2">
+							{updatedInstances.map((item, index) => (
+								// biome-ignore lint/a11y/noStaticElementInteractions: visual item
+								// biome-ignore lint/a11y/useKeyWithClickEvents: visual item
+								<div
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									key={index}
+									className="flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-sm"
+									onClick={() =>
+										applyToCurrentCustom(item.itemData)
+									}
+								>
+									<span
+										className="h-3 w-3 shrink-0 rounded-full"
+										style={{
+											backgroundColor:
+												item.itemColor ?? "",
+										}}
 									/>
-								))}
-						</StyledAppliedContainer>
+									<span>{item.label}</span>
+									{/* biome-ignore lint/a11y/useButtonType: handled by caller*/}
+									<button
+										className="ml-1 text-muted-foreground hover:text-foreground"
+										onClick={(e) => {
+											e.stopPropagation();
+											deleteAppliedData(item.itemData);
+										}}
+									>
+										×
+									</button>
+								</div>
+							))}
+						</div>
+					) : (
+						<Input placeholder="No Symbol Applied" disabled />
 					)}
-					{updatedInstances.length == 0 && (
-						<TextField
-							placeholder="No Symbol Applied"
-							disabled={true}
-						/>
-					)}
-				</StyledSubContainer>
+				</div>
 				{dimensionListUpdated.length > 0 && (
-					<StyledSubContainer>
-						<label htmlFor="dimension">Select Dimension</label>
-						<Select
-							id="dimension-field"
-							label="Select Dimension Field"
-							SelectProps={{
-								multiple: false,
-							}}
-							value={customizeSymbolData.dimension}
-							onChange={(e) => {
-								updateFields(e, "dimension");
-							}}
+					<div className="flex flex-col gap-2 p-2">
+						<label
+							className="text-muted-foreground text-sm"
+							htmlFor="dimension"
 						>
-							<Select.Item value="-1">All Nodes</Select.Item>
-							{dimensionListUpdated.length &&
-								dimensionListUpdated.map((item, index) => (
-									<Select.Item value={item.value} key={index}>
+							Select Dimension
+						</label>
+						<Select
+							value={customizeSymbolData.dimension}
+							onValueChange={(val) =>
+								updateFields("dimension", val)
+							}
+						>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<SelectTrigger
+								className="w-full"
+								id="dimension-field"
+							>
+								<SelectValue placeholder="Select Dimension Field" />
+							</SelectTrigger>
+							<SelectContent>
+								{dimensionListUpdated.map((item, index) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									<SelectItem key={index} value={item.value}>
 										{item.label}
-									</Select.Item>
+									</SelectItem>
 								))}
+							</SelectContent>
 						</Select>
-					</StyledSubContainer>
+					</div>
 				)}
 				{customizeSymbolData.dimension && (
-					<StyledSubContainer>
-						{/* <label htmlFor='dimensionInstance'>Instance for {dimensionNameSelected}</label> */}
-						{/* <Select
-                            id="dimension-field"
-                            label="Select Dimension Field"
-                            SelectProps={{
-                                multiple: true,
-                            }}
-                            value={customizeSymbolData.dimensionInstance}
-                            onChange={(e)=>{
-                                updateFields(e,'dimensionInstance');
-                            }}
-                        >
-                            <Select.Item value='-1'>Select All</Select.Item>
-                            {
-                                dimensionInstanceToRender.length &&
-                                dimensionInstanceToRender.map((item, index)=>(<Select.Item value={item.value}>{item.label}</Select.Item>))
-                            }
-                        </Select> */}
+					<div className="flex flex-col gap-2 p-2">
 						<BaseSettingSection
 							label={`Instance for ${dimensionNameSelected}`}
 						>
-							<Autocomplete
-								fullWidth
+							<select
 								multiple
+								className="min-h-[80px] w-full rounded border px-2 py-1 text-sm"
 								value={customizeSymbolData.dimensionInstance}
-								options={dimensionInstanceToRender}
-								getOptionLabel={(option) => {
-									return option;
+								onChange={(e) => {
+									const selected = Array.from(
+										e.target.selectedOptions,
+									).map((opt) => opt.value);
+									updateFields("dimensionInstance", selected);
 								}}
-								onChange={(_, value) => {
-									// update the frame
-									updateFields(
-										{},
-										"dimensionInstance",
-										value,
-									);
-								}}
-								freeSolo={false}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										placeholder="Select Instance"
-										size="small"
-										variant="outlined"
-									/>
+							>
+								{dimensionInstanceToRender.map(
+									(item, index) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										<option key={index} value={item}>
+											{item}
+										</option>
+									),
 								)}
-							/>
+							</select>
 						</BaseSettingSection>
-					</StyledSubContainer>
+					</div>
 				)}
-				<StyledSubContainer>
-					<label htmlFor="symbol">Select a Symbol</label>
-					<Select
-						id="symbol-field"
-						label="Select Symbol Field"
-						SelectProps={{
-							multiple: false,
-						}}
-						value={customizeSymbolData.symbol}
-						onChange={(e) => {
-							updateFields(e, "symbol");
-						}}
+				<div className="flex flex-col gap-2 p-2">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="symbol"
 					>
-						{symbolList.length &&
-							symbolList.map((item, index) => (
-								<Select.Item value={item.value} key={index}>
+						Select a Symbol
+					</label>
+					<Select
+						value={customizeSymbolData.symbol}
+						onValueChange={(val) => updateFields("symbol", val)}
+					>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<SelectTrigger className="w-full" id="symbol-field">
+							<SelectValue placeholder="Select Symbol" />
+						</SelectTrigger>
+						<SelectContent>
+							{symbolList.map((item, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={item.value}>
 									{item.label}
-								</Select.Item>
+								</SelectItem>
 							))}
+						</SelectContent>
 					</Select>
-				</StyledSubContainer>
-				<StyledSubContainer>
-					<label>Select Symbol Size:</label>
+				</div>
+				<div className="flex flex-col gap-2 p-2">
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="text-muted-foreground text-sm">
+						Select Symbol Size:
+					</label>
 					<Slider
-						value={customizeSymbolData.symbolSize}
+						value={[customizeSymbolData.symbolSize]}
 						min={1}
 						max={360}
-						valueLabelDisplay="auto"
-						onChange={(event, newValue) =>
-							updateFields(event, "symbolSize", newValue)
+						onValueChange={(_v: number[]) =>
+							updateFields("symbolSize", _v[0])
 						}
 					/>
-				</StyledSubContainer>
-				<StyledSubContainer>
-					<label>Select Symbol Color</label>
+				</div>
+				<div className="flex flex-row items-center gap-2 p-2">
 					<Switch
-						checked={customizeSymbolData.symbolColorSelected}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields(
-								e,
-								"symbolColorSelected",
-								e.target.checked,
-							)
+						checked={!!customizeSymbolData.symbolColorSelected}
+						onCheckedChange={(_checked: boolean) =>
+							updateFields("symbolColorSelected", _checked)
 						}
 					/>
-				</StyledSubContainer>
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="pl-2 text-sm">Select Symbol Color</label>
+				</div>
 				{showSymbolColor && (
-					<StyledSubContainer>
-						<label>Symbol Color</label>
-						<TextField
+					<div className="flex flex-col gap-2 p-2">
+						{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+						<label className="text-muted-foreground text-sm">
+							Symbol Color
+						</label>
+						<Input
 							type="color"
 							value={customizeSymbolData.symbolColor}
-							onChange={(e) => updateFields(e, "symbolColor")}
+							onChange={(e) =>
+								updateFields("symbolColor", e.target.value)
+							}
 						/>
-					</StyledSubContainer>
+					</div>
 				)}
-				<StyledSubContainer
-					style={{
-						width: "100%",
-						display: "block",
-						textAlign: "end",
-					}}
-				>
-					<Button
-						color="secondary"
-						size="small"
-						onClick={resetToInitialState}
-					>
+				<div className="flex justify-end gap-2 p-2">
+					<Button variant="ghost" onClick={resetToInitialState}>
 						Reset
 					</Button>
-					<Button
-						variant="contained"
-						color="primary"
-						size="small"
-						onClick={(e) => updateChartData()}
-					>
-						Execute
-					</Button>
-				</StyledSubContainer>
-			</StyledMainContainer>
+					<Button onClick={() => updateChartData()}>Execute</Button>
+				</div>
+			</div>
 		);
 	},
 );

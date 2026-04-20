@@ -1,10 +1,20 @@
-import { Controller } from "react-hook-form";
-import { useBlocks } from "@semoss/renderer";
-import { Select, Typography } from "@semoss/ui";
+import { type Control, Controller } from "react-hook-form";
+import {
+	type CellState,
+	type ListenerActions,
+	useBlocks,
+} from "@semoss/renderer";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 
 interface CellIdSelectorProps {
-	control: any;
-	cells: any[];
+	control: Control<ListenerActions>;
+	cells: CellState[];
 	queryId: string;
 }
 
@@ -21,20 +31,25 @@ export const CellIdSelector = ({
 			control={control}
 			render={({ field }) => (
 				<Select
-					label="Cell"
 					value={field.value || ""}
-					onChange={field.onChange}
+					onValueChange={field.onChange}
 				>
-					{cells.map((cell: any) => {
-						const variableName = state.getAlias(queryId, cell.id);
-						return (
-							<Select.Item key={cell.id} value={cell.id}>
-								<Typography variant="body2">
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder="Cell" />
+					</SelectTrigger>
+					<SelectContent>
+						{cells.map((cell) => {
+							const variableName = state.getAlias(
+								queryId,
+								cell.id,
+							);
+							return (
+								<SelectItem key={cell.id} value={cell.id}>
 									{variableName}
-								</Typography>
-							</Select.Item>
-						);
-					})}
+								</SelectItem>
+							);
+						})}
+					</SelectContent>
 				</Select>
 			)}
 		/>

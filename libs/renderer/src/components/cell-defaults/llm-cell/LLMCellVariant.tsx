@@ -1,47 +1,19 @@
-import { Close } from "@mui/icons-material";
+import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
-	IconButton,
+	Button,
+	Input,
 	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Slider,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import { ActionMessages, type QueryState } from "../../../store";
 import type { LLMCellDef } from "./LLMCell";
 
-const StyledHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: `${theme.spacing(2)} 0 ${theme.spacing(1)}`,
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper,
-	padding: theme.spacing(2),
-	borderRadius: theme.spacing(1),
-}));
-
-const StyledSelect = styled(Select)(({ theme }) => ({
-	width: "100%",
-}));
-
-const StyledField = styled("div")(({ theme }) => ({
-	paddingBottom: theme.spacing(1),
-	wdith: "100%",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	maxWidth: theme.spacing(9),
-}));
-
-/**
- * TODO: Fix types
- */
 interface CellVariantProps extends LLMCellDef {
 	id: string;
 	query: QueryState;
@@ -71,7 +43,7 @@ export const LLMCellVariant = observer((props: LLMCellVariantProps) => {
 				path: `parameters.variants.${variantName}.model`,
 				value: {
 					...variant.model,
-					id: id,
+					id,
 					name: match.name,
 				},
 			},
@@ -85,7 +57,7 @@ export const LLMCellVariant = observer((props: LLMCellVariantProps) => {
 				queryId: cell.query.id,
 				cellId: cell.id,
 				path: `parameters.variants.${variantName}.model.${name}`,
-				value: value,
+				value,
 			},
 		});
 	};
@@ -98,7 +70,7 @@ export const LLMCellVariant = observer((props: LLMCellVariantProps) => {
 			payload: {
 				queryId: cell.query.id,
 				cellId: cell.id,
-				path: `parameters.variants`,
+				path: "parameters.variants",
 				value: variantsCopy,
 			},
 		});
@@ -106,146 +78,129 @@ export const LLMCellVariant = observer((props: LLMCellVariantProps) => {
 
 	return (
 		<div>
-			<StyledHeader>
-				<Typography variant="subtitle2">
+			<div className="flex items-center justify-between py-4 pb-2">
+				<p className="font-semibold text-sm">
 					{isDefault
 						? "Default Variant"
 						: `Variant ${variantName.toUpperCase()}`}
-				</Typography>
+				</p>
 
 				{!isDefault && (
-					<IconButton onClick={handleDeleteVariant}>
-						<Close />
-					</IconButton>
-				)}
-			</StyledHeader>
-
-			<StyledContent>
-				<StyledField>
-					<Typography variant="body2">Select Model</Typography>
-
-					<StyledSelect
-						value={variant.model.id}
-						size="small"
-						onChange={(e) => {
-							handleModelChange(e.target.value);
-						}}
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={handleDeleteVariant}
 					>
-						{allModels.map((model, idx) => (
-							<Select.Item
-								key={`${model.name}-${idx}`}
-								value={model.id}
-							>
-								{model.name}
-							</Select.Item>
-						))}
-					</StyledSelect>
-				</StyledField>
+						<X className="size-4" />
+					</Button>
+				)}
+			</div>
 
-				<StyledField>
-					<Typography variant="body2">Top P</Typography>
+			<div className="flex flex-col gap-4 rounded-md bg-card p-4">
+				<div className="flex flex-col gap-1.5">
+					<p className="text-muted-foreground text-sm">
+						Select Model
+					</p>
+					<Select
+						value={variant.model.id}
+						onValueChange={(val) => handleModelChange(val)}
+					>
+						<SelectTrigger>
+							<SelectValue placeholder="Select model" />
+						</SelectTrigger>
+						<SelectContent>
+							{allModels.map((model, idx) => (
+								<SelectItem
+									key={`${model.name}-${idx}`}
+									value={model.id}
+								>
+									{model.name}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 
-					<Stack gap={2} direction="row" justifyContent="center">
+				<div className="flex flex-col gap-1.5">
+					<p className="text-muted-foreground text-sm">Top P</p>
+					<div className="flex flex-row items-center gap-4">
 						<Slider
-							onChange={(e) =>
-								handleModelParamsChange(e.target.value, "topP")
+							value={[variant.model.topP]}
+							onValueChange={([val]) =>
+								handleModelParamsChange(val, "topP")
 							}
-							value={variant.model.topP}
 							min={0}
 							max={1}
 							step={0.1}
-							size="small"
-							marks={[
-								{ value: 0, label: "0" },
-								{ value: 1, label: "1" },
-							]}
-							valueLabelDisplay="auto"
+							className="flex-1"
 						/>
-						<StyledTextField
+						<Input
 							type="number"
-							size="small"
+							className="max-w-[72px]"
+							value={variant.model.topP}
 							onChange={(e) =>
 								handleModelParamsChange(e.target.value, "topP")
 							}
-							value={variant.model.topP}
 						/>
-					</Stack>
-				</StyledField>
+					</div>
+				</div>
 
-				<StyledField>
-					<Typography variant="body2">Temperature</Typography>
-
-					<Stack gap={2} direction="row" justifyContent="center">
+				<div className="flex flex-col gap-1.5">
+					<p className="text-muted-foreground text-sm">Temperature</p>
+					<div className="flex flex-row items-center gap-4">
 						<Slider
+							value={[variant.model.temperature]}
+							onValueChange={([val]) =>
+								handleModelParamsChange(val, "temperature")
+							}
+							min={0}
+							max={1}
+							step={0.1}
+							className="flex-1"
+						/>
+						<Input
+							type="number"
+							className="max-w-[72px]"
+							value={variant.model.temperature}
 							onChange={(e) =>
 								handleModelParamsChange(
 									e.target.value,
 									"temperature",
 								)
 							}
-							value={variant.model.temperature}
-							min={0}
-							max={1}
-							step={0.1}
-							size="small"
-							marks={[
-								{ value: 0, label: "0" },
-								{ value: 1, label: "1" },
-							]}
-							valueLabelDisplay="auto"
 						/>
-						<StyledTextField
-							type="number"
-							size="small"
-							onChange={(e) =>
-								handleModelParamsChange(
-									e.target.value,
-									"temperature",
-								)
-							}
-							value={variant.model.temperature}
-						/>
-					</Stack>
-				</StyledField>
+					</div>
+				</div>
 
-				<StyledField>
-					<Typography variant="body2">Token Length</Typography>
-
-					<Stack gap={2} direction="row" justifyContent="center">
+				<div className="flex flex-col gap-1.5">
+					<p className="text-muted-foreground text-sm">
+						Token Length
+					</p>
+					<div className="flex flex-row items-center gap-4">
 						<Slider
-							onChange={(e) =>
-								handleModelParamsChange(
-									e.target.value,
-									"length",
-								)
+							value={[variant.model.length]}
+							onValueChange={([val]) =>
+								handleModelParamsChange(val, "length")
 							}
-							value={variant.model.length}
 							min={0}
 							max={1024}
 							step={1}
-							size="small"
-							marks={[
-								{ value: 0, label: "0" },
-								{ value: 1024, label: "1024" },
-							]}
-							valueLabelDisplay="auto"
+							className="flex-1"
 						/>
-						<StyledTextField
+						<Input
 							type="number"
-							size="small"
+							className="max-w-[72px]"
+							value={variant.model.length}
 							onChange={(e) =>
 								handleModelParamsChange(
 									e.target.value,
 									"length",
 								)
 							}
-							value={variant.model.length}
 						/>
-					</Stack>
-				</StyledField>
-			</StyledContent>
+					</div>
+				</div>
+			</div>
 		</div>
 	);
-
-	return <>Show Variant</>;
 });

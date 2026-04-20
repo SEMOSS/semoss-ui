@@ -10,7 +10,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { InputAdornment, TextField, Typography } from "@semoss/ui";
+import { Input } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -45,6 +45,7 @@ export const BoxShadowSizeSettings = observer(
 		id,
 		label,
 		path,
+		// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 		required,
 	}: BoxShadowInputProps<D>) => {
 		const { state } = useBlocks();
@@ -58,20 +59,20 @@ export const BoxShadowSizeSettings = observer(
 			});
 		}, [data, path]).get();
 
-		const initialValue =
+		const initialValue: string =
 			typeof computedRawValue === "string" &&
 			computedRawValue.endsWith("px")
 				? computedRawValue.replace("px", "")
-				: computedRawValue;
+				: String(computedRawValue ?? "");
 
-		const [input, setInput] = useState(initialValue);
+		const [input, setInput] = useState<string>(initialValue);
 
 		useEffect(() => {
-			const current =
+			const current: string =
 				typeof computedRawValue === "string" &&
 				computedRawValue.endsWith("px")
 					? computedRawValue.replace("px", "")
-					: computedRawValue;
+					: String(computedRawValue ?? "");
 			setInput(current);
 		}, [computedRawValue]);
 
@@ -82,7 +83,8 @@ export const BoxShadowSizeSettings = observer(
 			const isEmpty = val.trim() === "";
 
 			// If the value is not empty and is either not a number or less than 0, exit the function
-			if (!isEmpty && (isNaN(numericValue) || numericValue < 0)) return;
+			if (!isEmpty && (Number.isNaN(numericValue) || numericValue < 0))
+				return;
 
 			// Update the input state with the current value
 			setInput(val);
@@ -109,30 +111,19 @@ export const BoxShadowSizeSettings = observer(
 
 		return (
 			<BaseSettingSection label={label} wide>
-				<TextField
-					fullWidth
-					value={input}
-					onChange={(e) => onChange(e.target.value)}
-					size="small"
-					variant="outlined"
-					placeholder="Enter a number"
-					autoComplete="off"
-					inputProps={{ inputMode: "numeric" }}
-					InputProps={{
-						endAdornment: (
-							<InputAdornment position="end">
-								<Typography
-									variant="body2"
-									fontSize={13}
-									fontWeight={600}
-									color="#0000008A"
-								>
-									px
-								</Typography>
-							</InputAdornment>
-						),
-					}}
-				/>
+				<div className="relative w-full">
+					<Input
+						className="w-full pr-8"
+						value={input}
+						onChange={(e) => onChange(e.target.value)}
+						placeholder="Enter a number"
+						autoComplete="off"
+						inputMode="numeric"
+					/>
+					<span className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-2 font-semibold text-muted-foreground text-xs">
+						px
+					</span>
+				</div>
 			</BaseSettingSection>
 		);
 	},
