@@ -12,8 +12,10 @@ import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
+import { MembersTable } from "@semoss/shared";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -37,15 +39,9 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
-import {
-	PaginationButtons,
-	WorkspaceChatList,
-	WorkspaceMCPList,
-	WorkspaceMembersList,
-} from "@/components";
+import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
-import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
 
 /**
@@ -63,7 +59,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
-	const pagination = usePagination();
 
 	/**
 	 * State
@@ -72,8 +67,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
 	const [deleteModal, setDeleteModal] = useState<boolean>(false);
-	const [isSharingModalOpen, setIsSharingModalOpen] =
-		useState<boolean>(false);
 
 	/**
 	 * Library Hooks
@@ -129,8 +122,21 @@ export const WorkspaceDetailPage = observer(() => {
 	}
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
+		<div
+			className={cn(
+				"relative",
+				tab !== "members" && "h-full",
+				"w-full overflow-hidden",
+			)}
+		>
+			<div
+				className={cn(
+					"mx-auto flex",
+					tab !== "members" && "h-full",
+					tab === "members" && "px-4",
+					"w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4",
+				)}
+			>
 				<div className="flex flex-row gap-2">
 					<div className="items-center text-2xl">
 						<img
@@ -194,11 +200,6 @@ export const WorkspaceDetailPage = observer(() => {
 							</DropdownMenuGroup>
 						</DropdownMenuContent>
 					</DropdownMenu>
-					{/* <Button
-								variant="outline"
-							>
-								<PinIcon />
-							</Button> */}
 				</div>
 
 				<Tabs
@@ -236,28 +237,22 @@ export const WorkspaceDetailPage = observer(() => {
 						</Button>
 					</div>
 					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
-						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
-							<InputGroup className="bg-background">
-								<InputGroupInput
-									placeholder={t("common:buttons.search")}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-								<InputGroupAddon>
-									<SearchIcon />
-								</InputGroupAddon>
-							</InputGroup>
-							{/* Tab-specific actions go here */}
-							{tab === "members" ? (
-								<Button
-									variant="outline"
-									onClick={() => setIsSharingModalOpen(true)}
-								>
-									<PlusIcon />
-									{t("workspace:sharing.title")}
-								</Button>
-							) : null}
-						</div>
+						{tab === "members" ? null : (
+							<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
+								<InputGroup className="bg-background">
+									<InputGroupInput
+										placeholder={t("common:buttons.search")}
+										value={search}
+										onChange={(e) =>
+											setSearch(e.target.value)
+										}
+									/>
+									<InputGroupAddon>
+										<SearchIcon />
+									</InputGroupAddon>
+								</InputGroup>
+							</div>
+						)}
 
 						<TabsContent
 							value="chats"
@@ -296,26 +291,15 @@ export const WorkspaceDetailPage = observer(() => {
 						</TabsContent>
 						<TabsContent
 							value="members"
-							className="w-full overflow-hidden"
+							className="w-full overflow-hidden rounded-md"
 						>
 							{tab === "members" && (
-								<WorkspaceMembersList
-									workspaceId={workspaceId}
-									search={debouncedSearch}
-									paginationControl={pagination}
-									isSharingModalOpen={isSharingModalOpen}
-									onSharingModalClose={() =>
-										setIsSharingModalOpen(false)
-									}
+								<MembersTable
+									id={workspaceId}
+									type="WORKSPACE"
 								/>
 							)}
 						</TabsContent>
-
-						{tab === "members" && (
-							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
-								<PaginationButtons {...pagination} />
-							</div>
-						)}
 					</div>
 				</Tabs>
 			</div>
