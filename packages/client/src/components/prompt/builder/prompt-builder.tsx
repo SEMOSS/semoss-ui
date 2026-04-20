@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-	Box,
-	Button,
-	Grid,
-	Paper,
-	Stack,
-	styled,
-	useNotification,
-} from "@semoss/ui";
+import { Button, toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import {
 	INPUT_TYPE_DATABASE,
@@ -29,20 +21,6 @@ import type {
 } from "../prompt.types";
 import { PromptBuilderStep } from "./step";
 import { PromptBuilderSummary } from "./summary";
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-	padding: theme.spacing(2),
-	margin: `${theme.spacing(1)} 0`,
-	height: "100%",
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	marginRight: theme.spacing(1),
-	marginTop: theme.spacing(4),
-	gap: theme.spacing(1),
-}));
 
 const initialBuilder: Builder = {
 	title: {
@@ -89,7 +67,6 @@ export const PromptBuilder = () => {
 	const [currentBuilderStep, changeBuilderStep] = useState<number>(1);
 	const [createAppLoading, setCreateAppLoading] = useState<boolean>(false);
 	const navigate = useNavigate();
-	const notification = useNotification();
 
 	const setBuilderValue = (
 		builderStepKey: string,
@@ -108,7 +85,6 @@ export const PromptBuilder = () => {
 				? "Preview"
 				: "Create App";
 
-	// adds explanation to error message if input types are not set properly
 	const checkForInputTypesSkipped = (errorMessage) => {
 		if (
 			errorMessage ===
@@ -123,7 +99,6 @@ export const PromptBuilder = () => {
 	const nextButtonAction = async () => {
 		if (currentBuilderStep === PROMPT_BUILDER_PREVIEW_STEP) {
 			setCreateAppLoading(true);
-			// prompt flow finished, move on
 			try {
 				await setBlocksAndOpenUIBuilder(
 					builder,
@@ -131,14 +106,10 @@ export const PromptBuilder = () => {
 					navigate,
 				);
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: checkForInputTypesSkipped(e.message),
-				});
+				toast.error(checkForInputTypesSkipped(e.message));
 				setCreateAppLoading(false);
 			}
 		} else if (currentBuilderStep === PROMPT_BUILDER_INPUTS_STEP) {
-			// skip input types step if no inputs configured
 			const hasInputs = (builder.inputs.value as Token[]).some(
 				(token: Token) => {
 					return token.type === TOKEN_TYPE_INPUT;
@@ -156,7 +127,6 @@ export const PromptBuilder = () => {
 
 	const backButtonAction = () => {
 		if (currentBuilderStep === PROMPT_BUILDER_INPUT_TYPES_STEP + 1) {
-			// moving back from step after input types step - if no input types, skip that step moving backwards
 			const hasInputs = (builder.inputs.value as Token[]).some(
 				(token: Token) => {
 					return token.type === TOKEN_TYPE_INPUT;
@@ -179,12 +149,9 @@ export const PromptBuilder = () => {
 		);
 		switch (step) {
 			case PROMPT_BUILDER_INPUT_TYPES_STEP:
-				// input type step - required only if there are inputs
 				if (stepItems[0].value === undefined) {
 					return false;
 				}
-				// if there are inputs, make sure we have types for all
-				// and types that require extra info have the extra info
 				return (
 					Object.values(stepItems[0].value).length &&
 					Object.values(stepItems[0].value).every(
@@ -220,49 +187,42 @@ export const PromptBuilder = () => {
 	};
 
 	return (
-		<Stack gap={3}>
-			<Grid container>
-				<Grid item xs={3}>
-					<StyledPaper elevation={2}>
-						<PromptBuilderSummary
-							builder={builder}
-							currentBuilderStep={currentBuilderStep}
-							isBuilderStepComplete={isBuilderStepComplete}
-							isBuildStepsComplete={isBuildStepsComplete}
-							// using this instead of navigateBuilderSteps seems to haved desired behavior
-							// had to add seperate handling for disabling Input Types step
-							changeBuilderStep={changeBuilderStep}
-						/>
-					</StyledPaper>
-				</Grid>
-				<Grid item xs={9}>
-					<PromptBuilderStep
+		<div className="flex flex-col gap-6">
+			<div className="grid grid-cols-[1fr_3fr]">
+				<div className="m-[4px_0] rounded-md bg-background p-4 shadow-sm">
+					<PromptBuilderSummary
 						builder={builder}
 						currentBuilderStep={currentBuilderStep}
-						setBuilderValue={setBuilderValue}
+						isBuilderStepComplete={isBuilderStepComplete}
+						isBuildStepsComplete={isBuildStepsComplete}
+						changeBuilderStep={changeBuilderStep}
 					/>
-				</Grid>
-			</Grid>
-			<StyledBox>
+				</div>
+				<PromptBuilderStep
+					builder={builder}
+					currentBuilderStep={currentBuilderStep}
+					setBuilderValue={setBuilderValue}
+				/>
+			</div>
+			<div className="mt-4 mr-1 flex justify-end gap-2">
 				{currentBuilderStep !== PROMPT_BUILDER_CONTEXT_STEP && (
-					<Button
-						color="primary"
-						variant="text"
-						onClick={backButtonAction}
-					>
+					<Button variant="ghost" onClick={backButtonAction}>
 						Back
 					</Button>
 				)}
 				<Button
-					color="primary"
-					disabled={!isBuilderStepComplete(currentBuilderStep)}
-					variant="contained"
+					disabled={
+						!isBuilderStepComplete(currentBuilderStep) ||
+						createAppLoading
+					}
 					onClick={nextButtonAction}
-					loading={createAppLoading}
 				>
+					{createAppLoading && (
+						<div className="mr-1 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+					)}
 					{nextButtonText}
 				</Button>
-			</StyledBox>
-		</Stack>
+			</div>
+		</div>
 	);
 };

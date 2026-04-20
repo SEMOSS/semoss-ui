@@ -1,4 +1,3 @@
-import { Paper, styled } from "@semoss/ui";
 import {
 	PROMPT_BUILDER_CONSTRAINTS_STEP,
 	PROMPT_BUILDER_CONTEXT_STEP,
@@ -7,16 +6,11 @@ import {
 	PROMPT_BUILDER_PREVIEW_STEP,
 } from "../../prompt.constants";
 import type { Builder, ConstraintSettings, Token } from "../../prompt.types";
-import { PromptBuilderConstraintsStep } from "./PromptBuilderConstraintsStep";
-import { PromptBuilderContextStep } from "./PromptBuilderContextStep";
-import { PromptBuilderInputStep } from "./PromptBuilderInputStep";
-import { PromptBuilderInputTypeStep } from "./PromptBuilderInputTypeStep";
-import { PromptBuilderPreviewStep } from "./PromptBuilderPreviewStep";
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-	padding: theme.spacing(4),
-	margin: theme.spacing(1),
-}));
+import { PromptBuilderConstraintsStep } from "./prompt-builder-constraints-step";
+import { PromptBuilderContextStep } from "./prompt-builder-context-step";
+import { PromptBuilderInputStep } from "./prompt-builder-input-step";
+import { PromptBuilderInputTypeStep } from "./prompt-builder-input-type-step";
+import { PromptBuilderPreviewStep } from "./prompt-builder-preview-step";
 
 export const PromptBuilderStep = (props: {
 	builder: Builder;
@@ -38,6 +32,6 @@ export const PromptBuilderStep = (props: {
 		case PROMPT_BUILDER_PREVIEW_STEP:
 			return <PromptBuilderPreviewStep {...props} />;
 		default:
-			return <StyledPaper elevation={2} square />;
+			return <div className="m-1 bg-background p-8 shadow-sm" />;
 	}
 };

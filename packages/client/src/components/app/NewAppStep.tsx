@@ -10,7 +10,7 @@ export const NewAppStep = (props: NewAppStepProps) => {
 	const navigate = useNavigate();
 	return (
 		<div className="flex flex-col gap-1">
-			<div className="flex flex-col items-start gap-1">
+			<div className="flex flex-col items-start gap-2">
 				<div className="flex flex-row items-center gap-1">
 					<button
 						type="button"
