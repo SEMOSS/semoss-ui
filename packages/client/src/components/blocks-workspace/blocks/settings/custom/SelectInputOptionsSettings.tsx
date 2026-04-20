@@ -8,7 +8,7 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { TextField } from "@semoss/ui";
+import { Input } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -40,7 +40,7 @@ export const SelectInputOptionsSettings = observer(
 		const [value, setValue] = useState([]);
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -90,17 +90,15 @@ export const SelectInputOptionsSettings = observer(
 
 		return (
 			<BaseSettingSection label="Options">
-				<TextField
+				<Input
 					value={value.join(",")}
 					onChange={(e) => {
 						// sync the data on change
 						onChange(e.target.value.split(","));
 					}}
 					placeholder="Comma-separated list"
-					size="small"
-					variant="outlined"
-					fullWidth={true}
 					autoComplete="off"
+					className="w-full"
 				/>
 			</BaseSettingSection>
 		);

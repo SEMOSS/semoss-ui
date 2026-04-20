@@ -1,5 +1,4 @@
 import { observer } from "mobx-react-lite";
-import { Typography } from "@semoss/ui";
 
 interface ErrorOperationProps {
 	/** Message returned when there is an error */
@@ -13,10 +12,6 @@ export const ErrorOperation = observer(
 	(props: ErrorOperationProps): JSX.Element => {
 		const { output } = props;
 
-		return (
-			<Typography variant="caption" color="error">
-				{output}
-			</Typography>
-		);
+		return <span className="text-destructive text-xs">{output}</span>;
 	},
 );

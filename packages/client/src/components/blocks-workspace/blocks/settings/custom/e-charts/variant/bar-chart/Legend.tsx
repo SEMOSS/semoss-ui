@@ -1,57 +1,15 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
-//the wrapper container for holding legend tool
-const StyledContainer = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	padding?: string;
-}>(({ theme, display, justifyContent, padding }) => ({
-	width: "100%",
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	padding: padding ?? undefined,
-}));
-
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
-
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
-
-//legend component props
-interface legendProps {
-	id: string;
-}
 //Legend component
 export const Legend = observer(
 	<D extends BlockDef = BlockDef>({ id, path }) => {
@@ -79,35 +37,36 @@ export const Legend = observer(
 			setValue(computedValue);
 		}, [computedValue]);
 		//retain the legend value from the current state
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const option =
 				typeof value === "string" ? JSON.parse(value) : value;
 			let legendShown = isLegendShown;
-			if (Object.hasOwn(option, "legend") && option["legend"]) {
-				legendShown = Object.hasOwn(option["legend"], "show")
-					? option["legend"]["show"]
+			if (Object.hasOwn(option, "legend") && option.legend) {
+				legendShown = Object.hasOwn(option.legend, "show")
+					? option.legend.show
 					: false;
 			}
 			setIsLegendShown(legendShown);
 		}, []);
 		//handles legend toggle input changes
-		function handleInputChange(fieldName, newVal) {
-			setIsLegendShown((prevProps) => {
+		function handleInputChange(_fieldName, newVal) {
+			setIsLegendShown((_prevProps) => {
 				return newVal;
 			});
 			let option = typeof value === "string" ? JSON.parse(value) : value;
-			if (option["legend"]) {
+			if (option.legend) {
 				option = {
 					...option,
-					["legend"]: {
-						...option["legend"],
-						["show"]: !option["legend"]["show"],
+					legend: {
+						...option.legend,
+						show: !option.legend.show,
 					},
 				};
 			} else {
 				option = {
 					...option,
-					["legend"]: {
+					legend: {
 						type: "plain",
 						show: true,
 					},
@@ -115,9 +74,9 @@ export const Legend = observer(
 			}
 			option = {
 				...option,
-				["customSettings"]: {
-					...option["customSettings"],
-					["toolsUpdated"]: true,
+				customSettings: {
+					...option.customSettings,
+					toolsUpdated: true,
 				},
 			};
 			runStateUpdateCustom(option);
@@ -138,28 +97,17 @@ export const Legend = observer(
 			}, 300);
 		}
 		return (
-			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					justifyContent="flex-start"
-					gap="8px"
-				>
+			<div>
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
 						checked={isLegendShown}
-						onChange={(e: ChangeEvent<HTMLInputElement>) => {
-							handleInputChange(
-								"isLegendShown",
-								e.target.checked,
-							);
+						onCheckedChange={(checked) => {
+							handleInputChange("isLegendShown", checked);
 						}}
-						title="Show Legend"
 					/>
-					<StyledTypography variant="body2">
-						Show Legend
-					</StyledTypography>
-				</StyledAxisDiv>
-			</StyledAxis>
+					<span className="text-sm">Show Legend</span>
+				</div>
+			</div>
 		);
 	},
 );

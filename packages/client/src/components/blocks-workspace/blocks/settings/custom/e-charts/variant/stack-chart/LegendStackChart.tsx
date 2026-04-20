@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,40 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-	marginLeft: "4px",
-}));
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledTypography = styled(Typography)({
-	paddingLeft: "10px",
-});
 
 export const LegendStackChart = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -64,10 +37,12 @@ export const LegendStackChart = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
@@ -78,38 +53,30 @@ export const LegendStackChart = observer(
 		 * Reinitializes the features of the tooltip based on the provided options.
 		 * @param options The options to reinitialize the features with.
 		 */
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 		const reinitializeFeatures = (options: any) => {
 			if (Object.hasOwn(options, "legend")) {
 				// Set the showTooltips state to the value of the show property of the tooltip object
-				setShowLegend(options["legend"]["show"]);
+				setShowLegend(options.legend.show);
 			}
 		};
 		/**
 		 * Handles the switch change event for the tooltip by toggling the showTooltips state and updating the tooltip options in the data.
-		 * @param e The switch change event.
+		 * @param checked The new checked value.
 		 */
-		const showLegend = (e) => {
+		const showLegend = (checked: boolean) => {
 			const option = JSON.parse(value);
-			setShowLegend(!legend);
-			option["legend"]["show"] = e.target.checked;
+			setShowLegend(checked);
+			option.legend.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxis>
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
-					<Switch
-						checked={legend}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showLegend(e)
-						}
-						title="Show Legend"
-						size="small"
-					/>
-					<StyledTypography variant="body1">
-						Show Legend
-					</StyledTypography>
-				</StyledAxisDiv>
-			</StyledAxis>
+			<div className="flex flex-row p-2">
+				<div className="ml-1 flex flex-row items-center p-2">
+					<Switch checked={legend} onCheckedChange={showLegend} />
+					<span className="pl-2.5 text-sm">Show Legend</span>
+				</div>
+			</div>
 		);
 	},
 );

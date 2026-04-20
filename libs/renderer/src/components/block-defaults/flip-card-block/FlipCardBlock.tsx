@@ -1,28 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useState } from "react";
-import { Card, styled } from "@semoss/ui";
+import { Card, CardContent } from "@semoss/ui/next";
 import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
-
-const CardContainer = styled("div")<{ cssStyle: CSSProperties }>(
-	({ cssStyle }) => ({
-		...cssStyle,
-		width: cssStyle.width || "300px",
-		height: cssStyle.height || "200px",
-		perspective: "1000px",
-		border: "none",
-	}),
-);
-
-const CardFlipper = styled("div")<{ flipped: boolean }>(({ flipped }) => ({
-	width: "100%",
-	height: "100%",
-	position: "relative",
-	transformStyle: "preserve-3d",
-	transition: "transform 0.6s",
-	transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
-}));
 
 const sharedFaceStyles: CSSProperties = {
 	position: "absolute",
@@ -33,16 +14,6 @@ const sharedFaceStyles: CSSProperties = {
 	borderRadius: "12px",
 	boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
 };
-
-const FrontCard = styled(Card)({
-	...sharedFaceStyles,
-	zIndex: 2,
-});
-
-const BackCard = styled(Card)({
-	...sharedFaceStyles,
-	transform: "rotateY(180deg)",
-});
 
 export interface FlipCardBlockDef extends BlockDef<"flip-card"> {
 	widget: "flip-card";
@@ -74,37 +45,66 @@ export const FlipCardBlock: BlockComponent = observer(({ id }) => {
 
 	const [flipped, setFlipped] = useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
 		}
 	}, []);
 
+	const containerStyle: CSSProperties = {
+		...data.style,
+		width: data.style.width || "300px",
+		height: data.style.height || "200px",
+		perspective: "1000px",
+		border: "none",
+	};
+
+	const flipperStyle: CSSProperties = {
+		width: "100%",
+		height: "100%",
+		position: "relative",
+		transformStyle: "preserve-3d",
+		transition: "transform 0.6s",
+		transform: (isStatic ? data.isFlipped : flipped)
+			? "rotateY(180deg)"
+			: "rotateY(0deg)",
+	};
+
 	return (
-		<CardContainer
+		// biome-ignore lint/a11y/noStaticElementInteractions: interactive div with click handler
+		<div
 			onMouseEnter={() => setFlipped(true)}
 			onMouseLeave={() => setFlipped(false)}
-			cssStyle={data.style}
+			style={containerStyle}
 			{...attrs}
 		>
-			<CardFlipper flipped={isStatic ? data.isFlipped : flipped}>
-				<FrontCard
+			<div style={flipperStyle}>
+				<Card
 					style={{
+						...sharedFaceStyles,
 						...withoutDimensions,
 						backgroundColor: data.frontBgColor,
+						zIndex: 2,
 					}}
 				>
-					<Slot slot={slots.front}></Slot>
-				</FrontCard>
-				<BackCard
+					<CardContent className="h-full p-0">
+						<Slot slot={slots.front}></Slot>
+					</CardContent>
+				</Card>
+				<Card
 					style={{
+						...sharedFaceStyles,
 						...withoutDimensions,
 						backgroundColor: data.backBgColor,
+						transform: "rotateY(180deg)",
 					}}
 				>
-					<Slot slot={slots.back}></Slot>
-				</BackCard>
-			</CardFlipper>
-		</CardContainer>
+					<CardContent className="h-full p-0">
+						<Slot slot={slots.back}></Slot>
+					</CardContent>
+				</Card>
+			</div>
+		</div>
 	);
 });

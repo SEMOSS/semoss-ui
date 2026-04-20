@@ -3,44 +3,16 @@ import EChartsReact from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { DendrogramChartField } from "./DendrogramChartField";
 
-//Main Container for displaying Bar chart
-const StyledMainContainer = styled("div")(({ theme }) => ({
-	height: "100%",
-	width: "100%",
-}));
-//container for displaying invalid or no data
-const StyledNoDataContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
-	height: "inherit",
-	width: "inherit",
-	maxHeight: "30vh",
-	maxWidth: "80vh",
-	display: "flex",
-	flexWrap: "wrap",
-	alignContent: "flex-start",
-	color: error ? theme.palette.error.main : "unset",
-}));
-//sub styled container to manage facet field with chart
-const StyledContainer = styled("div")(() => ({
-	display: "flex",
-	justifyContent: "flex-start",
-	width: "100%",
-	height: "12%",
-	maxHeight: "12%",
-	overflow: "auto",
-}));
 //bar component properties
 interface DendrogramProps {
 	id: string;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: echart data/path types are untyped
 	updateJson: (data: any, path: any) => void;
 }
 
@@ -52,6 +24,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 		mouseY: number; //y axis position for the click/brush event
 		value: unknown; //value can be of object or string or number type
 	} | null>(null);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
 	const computedValue = useMemo(() => {
 		return computed(() => {
 			if (!data) {
@@ -66,7 +39,8 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 			return JSON.stringify(v, null, 2);
 		});
 	}, [data, "option"]).get();
-	const facetcomputedValue = useMemo(() => {
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
+	const _facetcomputedValue = useMemo(() => {
 		return computed(() => {
 			if (!data) {
 				return "";
@@ -84,15 +58,15 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 	const parsedJson = useMemo(() => {
 		try {
 			return JSON.parse(computedValue);
-		} catch (e) {
+		} catch (_e) {
 			return null;
 		}
 	}, [computedValue]);
 	//Select (bp_1d) | Sort(columns=["bp_1d"], sort=["asc"]) | Collect(-1)
 	const facetSelector = useMemo(() => {
-		return `Select (${data.facet?.facetSelected?.map((c, index) => {
+		return `Select (${data.facet?.facetSelected?.map((c, _index) => {
 			return c.selector;
-		})}).as([${data.facet?.facetSelected?.map((c, index) => {
+		})}).as([${data.facet?.facetSelected?.map((c, _index) => {
 			return c.name;
 		})}]) | Sort(columns=["${data.facet?.facetSelected?.map(
 			(c) => c.name,
@@ -102,21 +76,22 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 	const facetFrame = useFrame(data.frame.name, {
 		selector: facetSelector,
 	});
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
 	const facetAndDimensionSelector = useMemo(() => {
 		let valueToCheck =
-			data.facet?.facetSelected?.[0]?.value == 0
+			data.facet?.facetSelected?.[0]?.value === 0
 				? facetFrame.data.values[0]?.[0]
 				: data.facet?.facetSelected?.[0]?.value;
-		valueToCheck = isNaN(parseInt(valueToCheck?.toString()))
+		valueToCheck = Number.isNaN(parseInt(valueToCheck?.toString(), 10))
 			? `"${valueToCheck}"`
 			: valueToCheck;
 		return `Select(${data.columns
-			?.map((c, index) => {
+			?.map((c, _index) => {
 				//Converting Y axis columns to Average by default
 				return c.selector;
 			})
 			.join(", ")}).as([${data.columns
-			?.map((c, index) => {
+			?.map((c, _index) => {
 				return c.name;
 			})
 			.join(", ")}]) | Filter(${
@@ -124,25 +99,27 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 		} == ${valueToCheck})`;
 	}, [data.facet.facetSelected, facetFrame.data.values]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
 	const selector = useMemo(() => {
 		if (
 			data.facet?.facetSelected?.length &&
-			data.facet?.facetSelected?.[0]?.selector != ""
+			data.facet?.facetSelected?.[0]?.selector !== ""
 		) {
 			return facetAndDimensionSelector;
 		}
 		return `Select(${data.columns
-			?.map((c, index) => {
+			?.map((c, _index) => {
 				//Converting Y axis columns to Average by default
 				return c.selector;
 			})
 			.join(", ")}).as([${data.columns
-			?.map((c, index) => {
+			?.map((c, _index) => {
 				return c.name;
 			})
 			.join(", ")}])`;
 	}, [data.columns, data.facet.facetSelected, facetFrame.data.values]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
 	useEffect(() => {
 		if (
 			facetFrame.isLoading === false &&
@@ -169,23 +146,24 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 	});
 	function getSelectorData(header) {
 		const headerDataList =
-			data.columns.find((item) => item.name == header)?.selector || "";
+			data.columns.find((item) => item.name === header)?.selector || "";
 		return headerDataList;
 	}
 	function getColorData(currentIndex) {
 		const colorList = parsedJson?.color || [];
 		return colorList[currentIndex % colorList.length] || "#b0c4de";
 	}
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
 	const dataOption = useMemo(() => {
 		let option = JSON.parse(computedValue);
 
-		const seriesIndex = option["series"].findIndex(
+		const seriesIndex = option.series.findIndex(
 			(item) => item.type === "tree" && item.data.length,
 		);
 		const dataColumns =
 			data.columns?.find((item) => Object.hasOwn(item, "isFacet")) || {};
 		if (seriesIndex > -1) {
-			const data = option["series"][seriesIndex]["data"];
+			const _data = option.series[seriesIndex].data;
 			// let updatedDataListres = getDataValuesUpdate(0,frame.data.headers.length, [{name: 'Root', children: [], childrenIndex: 0, itemStyle: {color: getColorData(0)}}], -1);
 			const updatedDataListresLoop = [
 				{
@@ -200,7 +178,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 				for (let j = 0; j < frame.data.values[i].length; j++) {
 					if (
 						Object.hasOwn(dataColumns, "name") &&
-						j + 1 == frame.data.values[i].length
+						j + 1 === frame.data.values[i].length
 					)
 						continue;
 					const childNode = {
@@ -218,11 +196,11 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 					currentParent = childNode; // Move deeper for the next child
 				}
 			}
-			option["series"][seriesIndex]["data"] = updatedDataListresLoop;
-			option["series"][seriesIndex] = {
-				...option["series"][seriesIndex],
+			option.series[seriesIndex].data = updatedDataListresLoop;
+			option.series[seriesIndex] = {
+				...option.series[seriesIndex],
 				label: {
-					...option["series"][seriesIndex].label,
+					...option.series[seriesIndex].label,
 					formatter: (params) => {
 						if (
 							params.data.name === "Root" &&
@@ -236,30 +214,30 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 			};
 		}
 		const legendData = ["Root", ...frame.data.headers];
-		if (option["legend"]?.["show"]) {
-			const legendSeries = legendData.map((item, index) => {
+		if (option.legend?.show) {
+			const legendSeries = legendData.map((item, _index) => {
 				return {
 					name: item,
 					type: "tree",
 					data: [],
 				};
 			});
-			option["series"] = [...option["series"], ...legendSeries];
+			option.series = [...option.series, ...legendSeries];
 		}
 		option = {
 			...option,
-			["legend"]: {
-				...option["legend"],
-				["orient"]: "horizontal",
-				["left"]: "center",
-				["data"]: ["Root", ...frame.data.headers].map((item, index) => {
+			legend: {
+				...option.legend,
+				orient: "horizontal",
+				left: "center",
+				data: ["Root", ...frame.data.headers].map((item, index) => {
 					return {
 						name: item,
 						icon: Object.hasOwn(
-							option["series"][seriesIndex],
+							option.series[seriesIndex],
 							"symbol",
 						)
-							? option["series"][seriesIndex]["symbol"]
+							? option.series[seriesIndex].symbol
 							: "circle",
 						itemStyle: {
 							color: getColorData(index),
@@ -271,6 +249,7 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 		return option;
 	}, [frame.data.values, computedValue]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency list
 	useEffect(() => {
 		if (frame.isLoading === false && frame.data.values.length > 0) {
 			updateJson(dataOption, "option");
@@ -305,11 +284,9 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 			}
 		},
 	};
-	const showDendrogramChartField = data.facet.facetSelected.length
-		? true
-		: false;
+	const showDendrogramChartField = !!data.facet.facetSelected.length;
 	return (
-		<StyledMainContainer id={id}>
+		<div id={id} className="h-full w-full">
 			<EChartsReact
 				option={dataOption as EChartsOption}
 				// onChartReady={echartsLoaded}
@@ -320,14 +297,14 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 					width: "100%",
 				}}
 			/>
-			<StyledContainer>
+			<div className="flex h-[12%] max-h-[12%] w-full justify-start overflow-auto">
 				{showDendrogramChartField && (
 					<DendrogramChartField
 						id={id}
 						facetListData={facetFrame.data.values}
 					/>
 				)}
-			</StyledContainer>
+			</div>
 			<VizBlockContextMenu
 				id={id}
 				frame={frame}
@@ -336,6 +313,6 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
 					setContextMenu(null);
 				}}
 			/>
-		</StyledMainContainer>
+		</div>
 	);
 });

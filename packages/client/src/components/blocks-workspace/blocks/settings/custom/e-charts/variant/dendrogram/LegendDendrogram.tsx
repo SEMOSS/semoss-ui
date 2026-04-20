@@ -1,30 +1,9 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getValueByPath } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
-
-const StyledMainContainer = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledSubSection = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-	marginLeft: "2px",
-}));
 
 interface LegendDendrogramProps {
 	id: string;
@@ -33,8 +12,8 @@ interface LegendDendrogramProps {
 export const LegendDendrogram = observer(({ id }: LegendDendrogramProps) => {
 	const { data, setData } = useBlockSettings(id);
 	const [legend, setLegend] = useState(false);
-	const [legendUpdated, setLegendUpdated] = useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	const computedValue = useMemo(() => {
 		return computed(() => {
 			if (!data) {
@@ -49,6 +28,7 @@ export const LegendDendrogram = observer(({ id }: LegendDendrogramProps) => {
 			return JSON.stringify(v, null, 2);
 		});
 	}, [data, "option"]).get();
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
 		let option =
 			typeof computedValue === "string"
@@ -56,19 +36,20 @@ export const LegendDendrogram = observer(({ id }: LegendDendrogramProps) => {
 				: computedValue;
 		option = {
 			...option,
-			["legend"]: {
-				...option["legend"],
-				["show"]: legend,
+			legend: {
+				...option.legend,
+				show: legend,
 			},
 		};
 		runStateUpdate(option);
 	}, [legend]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
 		const option =
 			typeof computedValue === "string"
 				? JSON.parse(computedValue)
 				: computedValue;
-		const legendData = option["legend"]?.["show"] || false;
+		const legendData = option.legend?.show || false;
 		setLegend(legendData);
 	}, []);
 	function runStateUpdate(option) {
@@ -82,30 +63,14 @@ export const LegendDendrogram = observer(({ id }: LegendDendrogramProps) => {
 	}
 
 	return (
-		<StyledMainContainer>
-			<StyledSubSection
-				display="inline-flex"
-				justifyContent="space-around"
-				style={{ width: "100%" }}
-			>
+		<div className="flex flex-row p-2">
+			<div className="ml-0.5 inline-flex w-full justify-around p-2">
 				<Switch
 					checked={legend ?? undefined}
-					onChange={(e: ChangeEvent<HTMLInputElement>) =>
-						setLegend(e.target.checked)
-					}
-					title="Show Legend"
+					onCheckedChange={(checked) => setLegend(checked)}
 				/>
-				<Typography
-					variant="body2"
-					sx={{
-						fontSize: "15px",
-						paddingLeft: "20px",
-						width: "100%",
-					}}
-				>
-					Show Legend
-				</Typography>
-			</StyledSubSection>
-		</StyledMainContainer>
+				<span className="w-full pl-5 text-sm">Show Legend</span>
+			</div>
+		</div>
 	);
 });
