@@ -40,6 +40,7 @@ import {
 	AppDetailsFormValues,
 	type appDependency,
 	ChangeAccessModal,
+	type DependencyGraphData,
 	type DetailsForm,
 	determineUserPermission,
 	EditDependenciesModal,
@@ -58,6 +59,7 @@ import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { AccessControl } from "./AppDetailTabs/access-control";
+import { DependencyGraph } from "./AppDetailTabs/DependencyGraph";
 import { Dependencies } from "./AppDetailTabs/dependencies-tab";
 import { Overview } from "./AppDetailTabs/overview-tab";
 import { SettingsTab } from "./AppDetailTabs/settings-tab";
@@ -140,6 +142,12 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		AppDetailsFormValues.detailsForm,
 	);
 	const [pendingRequest, setPendingRequest] = useState(false);
+	const [dependencyGraphData, setDependencyGraphData] = useState<
+		DependencyGraphData | undefined
+	>(undefined);
+	const [dependencyView, setDependencyView] = useState<"list" | "graph">(
+		"list",
+	);
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const { appId } = useParams();
@@ -342,6 +350,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 								res.value.output,
 							);
 							setValue("dependencies", modelled);
+							const successValue = res.value as {
+								type: "success";
+								output: appDependency[];
+								graphData?: DependencyGraphData;
+							};
+							if (successValue.graphData) {
+								setDependencyGraphData(successValue.graphData);
+							}
 						}
 					}
 				}
@@ -453,6 +469,9 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			if (res.type === "success") {
 				const modelled = modelDependencies(res.output);
 				setValue("dependencies", modelled);
+				if (res.graphData) {
+					setDependencyGraphData(res.graphData);
+				}
 			} else {
 				toast.error(res.output);
 			}
@@ -909,7 +928,59 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 										)}
 								</div>
 
-								<Dependencies dependencies={dependencies} />
+								<Tabs
+									value={dependencyView}
+									onValueChange={(value) =>
+										setDependencyView(
+											value as "list" | "graph",
+										)
+									}
+									className="w-full"
+								>
+									<div className="mb-4">
+										<TabsList className="w-max">
+											<TabsTrigger value="list">
+												List View
+											</TabsTrigger>
+											{dependencyGraphData?.engines
+												?.length &&
+												dependencyGraphData.engines
+													.length > 0 && (
+													<TabsTrigger value="graph">
+														Graph View
+													</TabsTrigger>
+												)}
+										</TabsList>
+									</div>
+
+									{dependencyView === "list" && (
+										<Dependencies
+											dependencies={dependencies}
+										/>
+									)}
+
+									{dependencyView === "graph" &&
+										dependencyGraphData?.engines?.length &&
+										dependencyGraphData.engines.length >
+											0 && (
+											<div className="rounded-xl border border-border bg-card p-4">
+												<DependencyGraph
+													engines={
+														dependencyGraphData.engines
+													}
+													topLevelDependencies={
+														dependencyGraphData.dependencies ||
+														[]
+													}
+													currentAppId={appId || ""}
+													currentAppName={
+														appInfo.project_name ||
+														""
+													}
+												/>
+											</div>
+										)}
+								</Tabs>
 							</div>
 						)}
 						{selectedTab === "MCP Usage" && (

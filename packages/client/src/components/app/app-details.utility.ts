@@ -36,6 +36,11 @@ export interface modelledDependency {
 	can_view_dependencies?: boolean;
 }
 
+export interface DependencyGraphData {
+	engines: appDependency[];
+	dependencies: string[]; // Top-level dependency IDs
+}
+
 export interface engine {
 	app_cost: string;
 	app_favorite: number;
@@ -183,6 +188,7 @@ export const fetchDependencies = async (
 	| {
 			type: "success";
 			output: appDependency[];
+			graphData?: DependencyGraphData;
 	  }
 	| {
 			type: "error";
@@ -210,6 +216,7 @@ export const fetchDependencies = async (
 		return {
 			type: "success",
 			output: topLevelDeps,
+			graphData: output,
 		};
 	} else {
 		return {
