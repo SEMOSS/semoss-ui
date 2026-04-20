@@ -159,7 +159,7 @@ export const MembersTable = ({
 	};
 
 	return (
-		<div className="h-full w-full py-4">
+		<div className="w-full">
 			{/* Header Section */}
 			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-[#f4f4f4] p-4 align-start">
 				<div className="flex h-[36px] w-full flex-column gap-2">

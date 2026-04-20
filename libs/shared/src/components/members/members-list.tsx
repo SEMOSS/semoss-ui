@@ -90,9 +90,9 @@ export const MembersList = ({
 	myPermission = "",
 }: MembersProps) => {
 	const [userData, setUserData] = useState<MemberUser[]>([]);
+	const [totalMembers, setTotalMembers] = useState<number>(0);
 	const [refreshData, setRefreshData] = useState<number>(0);
 	const [offset, setOffset] = useState<number>(0);
-	const [totalMembers, setTotalMembers] = useState<number>(0);
 	const [usersToDelete, setUsersToDelete] = useState<MemberUser[]>([]);
 	const [userDataLoading, setUserDataLoading] = useState<boolean>(false);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -293,12 +293,9 @@ export const MembersList = ({
 
 	return (
 		<>
-			<div
-				className="flex h-full w-full flex-col gap-2"
-				id={membersListId}
-			>
+			<div className="flex h-full w-full flex-col" id={membersListId}>
 				{!isAddMember && selectedIds.size > 0 && (
-					<div className="flex items-center justify-between rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+					<div className="flex items-center justify-between border border-destructive/30 bg-destructive/5 px-3 py-2">
 						<span className="font-medium text-sm">
 							{selectedIds.size} user
 							{selectedIds.size !== 1 ? "s" : ""} selected
@@ -318,9 +315,9 @@ export const MembersList = ({
 						</Button>
 					</div>
 				)}
-				<div className="max-h-[400px] w-full overflow-y-auto rounded border border-border">
-					<Table>
-						<TableHeader>
+				<div className="max-h-[400px] w-full overflow-y-auto">
+					<Table wrapperClassName="overflow-x-clip">
+						<TableHeader className="sticky top-0 z-10 bg-background">
 							<TableRow>
 								{!isAddMember && (
 									<TableHead className="w-10">
@@ -615,9 +612,9 @@ export const MembersList = ({
 						</TableBody>
 					</Table>
 				</div>
-				<p className="text-right text-muted-foreground text-xs">
-					{userData.length} of {totalMembers} member
-					{totalMembers !== 1 ? "s" : ""}
+				<p className="mt-2 text-right text-muted-foreground text-sm">
+					{userData.length} of {totalMembers}{" "}
+					{totalMembers === 1 ? "member" : "members"}
 				</p>
 			</div>
 			<Dialog
