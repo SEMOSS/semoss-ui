@@ -40,5 +40,11 @@
 			"run_at": "document_idle"
 		}
 	],
+	"web_accessible_resources": [
+		{
+			"resources": ["main-bridge.js"],
+			"matches": ["<all_urls>"]
+		}
+	],
 	"devtools_page": "src/devtools/index.html"
 }

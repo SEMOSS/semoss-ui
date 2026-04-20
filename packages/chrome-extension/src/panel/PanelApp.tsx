@@ -41,6 +41,8 @@ const PanelApp: React.FC = () => {
 	}, []);
 
 	useEffect(() => {
+		console.log("[PANEL] ✅ Panel mounted, announcing presence");
+
 		chrome.runtime
 			.sendMessage({
 				type: "SMSS_EXTENSION_PANEL_OPENED",
@@ -67,33 +69,25 @@ const PanelApp: React.FC = () => {
 
 	// Listen for playground chat events from content script
 	useEffect(() => {
+		console.log("[PANEL] 🎧 Setting up message listener");
+
 		const messageListener = (
 			message: any,
 			sender: chrome.runtime.MessageSender,
-			_sendResponse: (response?: any) => void,
+			sendResponse: (response?: any) => void,
 		) => {
+			console.log("[PANEL] 📨 Received message:", message.type, message);
+
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
 			if (sender.tab && message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
+				console.log("[PANEL] ⏭️ Ignoring direct message from content script");
 				return;
 			}
 
 			// CRITICAL: Block script execution if already running
 			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" && isRunning) {
-				return;
-			}
-
-			// Handle ping request from Playground to validate extension is alive
-			if (message.type === "SMSS_EXTENSION_PING") {
-				console.log("[PANEL] 🏓 Received PING - sending PONG");
-				chrome.runtime
-					.sendMessage({
-						type: "SMSS_EXTENSION_PONG",
-						timestamp: Date.now(),
-					})
-					.catch((error) => {
-						console.error("[PANEL] ❌ Failed to send PONG:", error);
-					});
+				console.log("[PANEL] ⏸️ Already running, ignoring duplicate execution");
 				return;
 			}
 
@@ -143,49 +137,120 @@ const PanelApp: React.FC = () => {
 						`✅ Script loaded: ${script.name}`,
 					]);
 
-					// Auto-execute the script
+					// Auto-execute the script in a new tab
 					setActionHistory((prev) => [
 						...prev,
-						`▶️ Waiting for page to load before executing script...`,
+						`▶️ Preparing to execute script in new tab...`,
 					]);
 
-					// Wait longer and check if page is loaded before executing
+					// Execute immediately - executeScriptWithContent handles new tab creation
 					setTimeout(async () => {
-						// Wait for current tab to be in complete state
-						const [currentTab] = await chrome.tabs.query({
-							active: true,
-							currentWindow: true,
-						});
-						if (currentTab?.id) {
-							// Wait for tab to be fully loaded
-							let retries = 20; // 10 seconds total
-							while (retries > 0) {
-								const tabs = await chrome.tabs.query({});
-								const tab = tabs.find(
-									(t) => t.id === currentTab.id,
-								);
-								if (tab?.status === "complete") {
-									break;
-								}
-								await new Promise((resolve) =>
-									setTimeout(resolve, 500),
-								);
-								retries--;
-							}
-							// Additional buffer time after page load
-							await new Promise((resolve) =>
-								setTimeout(resolve, 1500),
-							);
-						}
 						setActionHistory((prev) => [
 							...prev,
-							`▶️ Page loaded, executing script...`,
+							`▶️ Executing script...`,
 						]);
 						await executeScriptWithContent(
 							scriptContent,
 							"playwright",
 						);
-					}, 1000);
+					}, 500);
+				} else if (script.autoExecute && script.fileName && script.projectId) {
+					// Script from portal - need to fetch content from SEMOSS backend
+					setActionHistory((prev) => [
+						...prev,
+						`🔄 Fetching script from backend: ${script.fileName}`,
+					]);
+
+					// Use async IIFE to handle async operations
+					(async () => {
+						try {
+							// Get the SEMOSS module path (usually /Monolith)
+							const MODULE = '/Monolith';
+							const SEMOSS_URL = window.location.origin + MODULE;
+
+							// First get a session ID
+							const sessionResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								credentials: 'include',
+								body: JSON.stringify({ expression: 'Session();' }),
+							});
+
+							if (!sessionResponse.ok) {
+								throw new Error('Failed to get session ID');
+							}
+
+							const sessionData = await sessionResponse.json();
+							const sessionId = sessionData.pixelReturn?.[0]?.output;
+
+							if (!sessionId) {
+								throw new Error('No session ID returned');
+							}
+
+							console.log('[PANEL] 📋 Session ID:', sessionId);
+
+							// Now fetch the script using GetAllSteps
+							const scriptResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								credentials: 'include',
+								body: JSON.stringify({
+									expression: `GetAllSteps(project=["${script.projectId}"], sessionId=["${sessionId}"], fileName=["${script.fileName}"]);`,
+								}),
+							});
+
+							if (!scriptResponse.ok) {
+								throw new Error('Failed to fetch script content');
+							}
+
+							const scriptData = await scriptResponse.json();
+							const scriptContent = scriptData.pixelReturn?.[0]?.output;
+
+							if (!scriptContent) {
+								throw new Error('No script content returned');
+							}
+
+							console.log('[PANEL] ✅ Script fetched successfully');
+
+							// Parse and set the script
+							let content = scriptContent;
+							if (typeof content === "string") {
+								try {
+									content = JSON.parse(content);
+								} catch (e) {
+									console.error("[PANEL] ❌ Failed to parse script:", e);
+								}
+							}
+
+							if (content && typeof content.steps === "string") {
+								try {
+									content.steps = JSON.parse(content.steps);
+								} catch (e) {
+									console.error("[PANEL] ❌ Failed to parse steps:", e);
+								}
+							}
+
+							const finalScriptContent = JSON.stringify(content, null, 2);
+							setScriptJson(finalScriptContent);
+							setJsonFormat("playwright");
+
+							setActionHistory((prev) => [
+								...prev,
+								`✅ Script loaded: ${script.fileName}`,
+								`▶️ Executing script in new tab...`,
+							]);
+
+							// Execute immediately
+							await executeScriptWithContent(finalScriptContent, "playwright");
+
+						} catch (error) {
+							console.error('[PANEL] ❌ Error fetching/executing script:', error);
+							setActionHistory((prev) => [
+								...prev,
+								`❌ Failed to fetch script: ${error instanceof Error ? error.message : String(error)}`,
+							]);
+						}
+					})();
 				}
 			}
 
@@ -202,9 +267,10 @@ const PanelApp: React.FC = () => {
 		};
 
 		chrome.runtime.onMessage.addListener(messageListener);
+		console.log("[PANEL] ✅ Message listener registered");
 
 		return () => {
-			chrome.runtime.onMessage.removeListener(messageListener);
+			console.log("[PANEL] 🔇 Removing message listener");
 		};
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [isRunning, waitingForUserInput, userInputCallback]);
@@ -828,8 +894,8 @@ const PanelApp: React.FC = () => {
 																: "text.primary",
 													fontWeight:
 														isNumbered ||
-														isError ||
-														isSuccess
+															isError ||
+															isSuccess
 															? 500
 															: 400,
 													fontFamily: isNumbered

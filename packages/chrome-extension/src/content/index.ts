@@ -6,6 +6,51 @@ initializeRPC();
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
 
+// Inject MAIN world bridge script
+const script = document.createElement("script");
+script.src = chrome.runtime.getURL("main-bridge.js");
+script.onload = () => {
+	script.remove();
+	console.log("[CONTENT] Bridge script injected into MAIN world");
+};
+(document.head || document.documentElement).appendChild(script);
+
+// Listen for messages from MAIN bridge
+window.addEventListener("message", (event) => {
+	// Only accept messages from the same window
+	if (event.source !== window) return;
+
+	// Bridge relays PING from portal
+	if (event.data?.type === "EXTENSION_PING_BRIDGE") {
+		console.log("[CONTENT] 🏓 Received PING from bridge, responding");
+		window.postMessage({ type: "EXTENSION_READY_BRIDGE" }, "*");
+	}
+
+	// Bridge relays EXECUTE from portal
+	if (event.data?.type === "EXECUTE_SCRIPT_BRIDGE") {
+		if (!isExtensionContextValid()) {
+			alert("Chrome Extension was reloaded. Please refresh this page.");
+			return;
+		}
+
+		console.log("[CONTENT] 📤 Received EXECUTE from bridge, forwarding to extension");
+
+		const payload = event.data.payload;
+		chrome.runtime.sendMessage({
+			type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+			script: {
+				projectId: payload.projectID,
+				name: payload.fileName,
+				fileName: payload.fileName,
+				title: payload.title,
+				autoExecute: true
+			},
+		}).catch((error) => {
+			console.error("[CONTENT] ❌ Failed to forward:", error);
+		});
+	}
+});
+
 // Field monitoring state
 let monitoredField: HTMLInputElement | HTMLTextAreaElement | null = null;
 let fieldMonitoringListeners: {
@@ -66,53 +111,6 @@ function setupPlaygroundListeners() {
 			data: event.detail,
 		});
 	}) as EventListener);
-
-	// Listen for Playwright script execution requests from Playground
-	const messageHandler = (event: MessageEvent) => {
-		// Log all messages for debugging
-
-		// Only accept messages from same origin
-		if (event.origin !== window.location.origin) {
-			return;
-		}
-
-		// Handle ping request from playground to extension
-		if (event.data && event.data.type === "SMSS_EXTENSION_PING") {
-			console.log(
-				"[CONTENT] 🏓 Received PING from Playground - forwarding to extension",
-			);
-			chrome.runtime
-				.sendMessage(event.data)
-				.then(() => {
-					// Successfully sent ping to extension
-				})
-				.catch(() => {
-					// Extension not available - no pong will be sent
-					console.warn(
-						"[CONTENT] ❌ Failed to send PING - extension may not be available",
-					);
-				});
-			return;
-		}
-
-		if (event.data && event.data.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-			if (!isExtensionContextValid()) {
-				console.warn("[CONTENT SCRIPT] Extension context invalidated!");
-				alert(
-					"Chrome Extension was reloaded. Please refresh this page to execute Playwright scripts.",
-				);
-				return;
-			}
-
-			// Forward to extension panel
-			chrome.runtime.sendMessage({
-				type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
-				script: event.data.script,
-			});
-		}
-	};
-
-	window.addEventListener("message", messageHandler);
 }
 
 checkIfPlayground();
@@ -129,6 +127,30 @@ new MutationObserver(() => {
 
 // Listen for messages from popup/background
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+	// Forward completion messages back to portal via bridge
+	if (message.type === "SCRIPT_EXECUTION_COMPLETE") {
+		console.log("[CONTENT] ✅ Execution complete, forwarding to portal");
+		window.postMessage(
+			{
+				type: "PLAYWRIGHT_SCRIPT_COMPLETED",
+				fileName: message.fileName,
+			},
+			"*"
+		);
+	}
+
+	// Forward error messages back to portal via bridge
+	if (message.type === "SCRIPT_EXECUTION_ERROR") {
+		console.log("[CONTENT] ❌ Execution error, forwarding to portal");
+		window.postMessage(
+			{
+				type: "PLAYWRIGHT_SCRIPT_ERROR",
+				error: message.error,
+			},
+			"*"
+		);
+	}
+
 	switch (message.type) {
 		case "GET_ANNOTATED_DOM":
 			try {
@@ -212,52 +234,49 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			break;
 
 		case "SCRIPT_EXECUTION_COMPLETE":
-			// Post message to window so playground can receive it
-			window.postMessage(
-				{
+			// Post message to page via bridge
+			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
+				detail: {
 					type: "SMSS_SCRIPT_EXECUTION_COMPLETE",
 					success: message.success,
 					message: message.message,
-				},
-				window.location.origin,
-			);
+				}
+			}));
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_OPENED":
-			window.postMessage(
-				{
+			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
+				detail: {
 					type: "SMSS_EXTENSION_OPENED",
 					timestamp: Date.now(),
-				},
-				window.location.origin,
-			);
+				}
+			}));
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_CLOSED":
-			window.postMessage(
-				{
+			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
+				detail: {
 					type: "SMSS_EXTENSION_CLOSED",
 					timestamp: Date.now(),
-				},
-				window.location.origin,
-			);
+				}
+			}));
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PONG":
-			// Forward pong response from panel to playground window
-			window.postMessage(
-				{
+			// Forward pong response from background to page via bridge
+			console.log("[CONTENT] ✅ Received PONG from background - forwarding to page");
+			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
+				detail: {
 					type: "SMSS_EXTENSION_PONG",
 					timestamp: message.timestamp || Date.now(),
-				},
-				window.location.origin,
-			);
+				}
+			}));
 
 			sendResponse({ success: true });
 			break;

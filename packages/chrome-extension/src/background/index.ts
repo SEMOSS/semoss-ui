@@ -92,43 +92,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true;
 	}
 
-	// Forward extension ping from content script to panel
-	if (sender.tab && message.type === "SMSS_EXTENSION_PING") {
-		// Broadcast to all extension contexts (panel)
-		chrome.runtime
-			.sendMessage(message)
-			.then(() => {
-				// Successfully broadcasted ping
-			})
-			.catch(() => {
-				// Failed to broadcast (extension might be closed)
-			});
-		sendResponse({ success: true });
-		return true;
-	}
-
-	// Forward extension pong from panel back to all tabs
-	if (!sender.tab && message.type === "SMSS_EXTENSION_PONG") {
-		// Send to all tabs
-		chrome.tabs.query({}, (tabs) => {
-			tabs.forEach((tab) => {
-				if (tab.id) {
-					chrome.tabs
-						.sendMessage(tab.id, message)
-						.then(() => {
-							// Sent pong to tab
-						})
-						.catch(() => {
-							// Could not send to tab
-						});
-				}
-			});
-		});
-
-		sendResponse({ success: true });
-		return true;
-	}
-
 	// Forward field monitoring messages from panel to specific tab
 	if (
 		!sender.tab &&

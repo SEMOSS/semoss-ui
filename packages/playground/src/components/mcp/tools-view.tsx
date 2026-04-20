@@ -78,6 +78,25 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 				},
 				"*",
 			);
+
+			// Send auto-select message if recordedFile exists in parameters
+			const recordedFile = toolParameters?.recordedFile;
+			if (recordedFile && typeof recordedFile === "string") {
+				console.log(
+					"[PLAYGROUND] Sending auto-select to iframe:",
+					recordedFile,
+				);
+				// Wait a bit for the iframe to be fully loaded and listening
+				setTimeout(() => {
+					iframeRef.current?.contentWindow?.postMessage(
+						{
+							type: "AUTO_SELECT_SCRIPT",
+							fileName: recordedFile,
+						},
+						"*",
+					);
+				}, 500);
+			}
 		};
 
 		/**
@@ -101,8 +120,6 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					return;
 				}
 
-				setIsLoading(true);
-
 				if (!tool._meta.SMSS_MCP_UI) {
 					// Legacy, check for portals
 
@@ -124,8 +141,8 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 							response.status === 200 &&
 							text &&
 							text !==
-								"Publish is not enabled on this project or there was an error publishing this project";
-					} catch (_e) {}
+							"Publish is not enabled on this project or there was an error publishing this project";
+					} catch (_e) { }
 
 					// Portals view else use default view off tool JSON
 					setUrl(
