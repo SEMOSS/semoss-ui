@@ -1,4 +1,3 @@
-import { Box, Typography } from "@semoss/ui";
 import { StyledStepPaper, StyledTextPaper } from "../../prompt.styled";
 import type { Builder, Token } from "../../prompt.types";
 import { PromptPreview } from "../../shared";
@@ -12,13 +11,13 @@ export const PromptBuilderPreviewStep = (props: {
 	};
 
 	return (
-		<StyledStepPaper elevation={2} square>
-			<Box>
-				<Typography variant="h6">Preview Prompt</Typography>
-				<Typography variant="body1">
+		<StyledStepPaper>
+			<div>
+				<h2 className="font-semibold text-lg">Preview Prompt</h2>
+				<p className="mt-1 text-muted-foreground text-sm">
 					Preview your prompt before exporting to an app.
-				</Typography>
-			</Box>
+				</p>
+			</div>
 			<StyledTextPaper>
 				<PromptPreview
 					tokens={getBuilderTokens(props.builder)}

@@ -1,5 +1,4 @@
-import { Token } from "../../prompt.types";
-import { PromptTokenChip } from "./PromptTokenChip";
+import { PromptTokenChip } from "./prompt-token-chip";
 
 export const PromptReadonlyInputToken = (props: { tokenKey: string }) => {
 	return (
