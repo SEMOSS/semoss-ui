@@ -503,16 +503,20 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			}
 		});
 
-		const lines = editor.getModel().getLineCount();
-		const lineContentHeight = lines * EditorLineHeight;
-		const singleLineNoOverflow =
-			lines === 1 && lineContentHeight === editor.getContentHeight();
-		setEditorHeight(
-			Math.max(
-				(singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
-				lineContentHeight,
-			),
+		const newHeight = Math.min(
+			Math.max(editor.getContentHeight(), EditorLineHeight),
+			EDITOR_MAX_HEIGHT,
 		);
+		setEditorHeight(newHeight);
+
+		editor.onDidContentSizeChange(() => {
+			setEditorHeight(
+				Math.min(
+					Math.max(editor.getContentHeight(), EditorLineHeight),
+					EDITOR_MAX_HEIGHT,
+				),
+			);
+		});
 	};
 
 	const handleChange = (newValue: string) => {
@@ -574,6 +578,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 										options={{
 											scrollbar: {
 												alwaysConsumeMouseWheel: false,
+												horizontal: "hidden",
 											},
 											lineNumbers: "on",
 											readOnly: false,
@@ -652,6 +657,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 										options={{
 											scrollbar: {
 												alwaysConsumeMouseWheel: false,
+												horizontal: "hidden",
 											},
 											lineNumbers: "on",
 											readOnly: false,
@@ -673,7 +679,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 						)}
 					</div>
 				)}
-				<div className="flex flex-row pl-2.5">
+				<div className="flex flex-row pl-1">
 					<Select
 						value={EDITOR_TYPE[cell.parameters.type].value}
 						onValueChange={(value) => {
@@ -694,7 +700,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 							}
 						}}
 					>
-						<SelectTrigger className="h-[30px] w-[48px] border-0 shadow-none">
+						<SelectTrigger className="h-[26px] w-[36px] border-0 px-1 shadow-none">
 							{cell.parameters.type === "py" ? (
 								<PythonIcon fontSize="small" />
 							) : cell.parameters.type === "r" ? (

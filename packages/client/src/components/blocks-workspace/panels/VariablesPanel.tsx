@@ -1,9 +1,16 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
+	Archive,
 	ArrowDown,
 	ArrowUp,
+	Bolt,
+	Bot,
+	ChevronsUpDown,
+	Database,
+	type LucideIcon,
 	Plus,
 	Search,
+	Sigma,
 	SlidersHorizontal,
 	Wand2,
 	X,
@@ -36,8 +43,32 @@ import {
 import { AddVariablePopover, NotebookVariable } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { usePixel, useWorkspace } from "@/hooks";
-import ExpandCollapseIcon from "../../../assets/img/ExpandCollapseIcon.png";
+import VariableArray from "../../../assets/img/VariableArray.svg";
+import VariableBlock from "../../../assets/img/VariableBlock.svg";
+import VariableCell from "../../../assets/img/VariableCell.svg";
+import VariableDate from "../../../assets/img/VariableDate.svg";
+import VariableJSON from "../../../assets/img/VariableJSON.svg";
+import VariableQuery from "../../../assets/img/VariableQuery.svg";
+import VariableString from "../../../assets/img/VariableString.svg";
 import { suggestVariableRenames } from "../utils";
+
+const ENGINE_TYPE_ICONS: Record<string, LucideIcon> = {
+	model: Bot,
+	database: Database,
+	vector: Bolt,
+	storage: Archive,
+	function: Sigma,
+};
+
+const VARIABLE_TYPE_ICONS: Record<string, string> = {
+	block: VariableBlock,
+	cell: VariableCell,
+	query: VariableQuery,
+	string: VariableString,
+	JSON: VariableJSON,
+	date: VariableDate,
+	array: VariableArray,
+};
 
 interface VariablePanelProps {
 	title: string;
@@ -390,12 +421,12 @@ export const VariablesPanel = observer(
 			<Panel
 				actions={
 					<div className="flex w-full flex-col bg-white p-0">
-						<div className="mt-1 mb-2 w-fit rounded-2xl bg-[#EBF4FE] px-4">
+						<div className="mt-1 mb-2 ml-3 w-fit rounded-2xl bg-[#EBF4FE] px-3">
 							<span className="mt-2 mb-2 inline-block font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
 								{title}
 							</span>
 						</div>
-						<div className="mt-1 mb-0 flex items-center gap-2 px-4">
+						<div className="mt-1 mb-0 flex items-center gap-2 px-3">
 							<div className="relative flex-1">
 								<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
 								<Input
@@ -621,7 +652,7 @@ export const VariablesPanel = observer(
 								</PopoverContent>
 							</Popover>
 						</div>
-						<div className="flex items-center justify-between px-4 py-3">
+						<div className="flex items-center justify-between px-3 py-3">
 							<p className="m-0 font-semibold text-sm">
 								Variables
 							</p>
@@ -697,11 +728,7 @@ export const VariablesPanel = observer(
 												"variable-panel-expand-collapse-btn"
 											}
 										>
-											<img
-												src={ExpandCollapseIcon}
-												alt="Expand/Collapse"
-												className="h-4 w-4"
-											/>
+											<ChevronsUpDown className="h-4 w-4" />
 										</Button>
 									</TooltipTrigger>
 									<TooltipContent side="bottom">
@@ -740,9 +767,44 @@ export const VariablesPanel = observer(
 												}));
 											}}
 										>
-											<span className="font-medium text-foreground text-sm">
-												{capitalizeFirstLetter(type)}
-											</span>
+											<div className="flex items-center gap-2">
+												{(() => {
+													const LucideIcon =
+														ENGINE_TYPE_ICONS[type];
+													if (LucideIcon)
+														return (
+															<LucideIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+														);
+													if (type === "number")
+														return (
+															<span className="flex h-4 w-4 shrink-0 items-center justify-center font-bold text-muted-foreground text-xs">
+																#
+															</span>
+														);
+													if (
+														VARIABLE_TYPE_ICONS[
+															type
+														]
+													)
+														return (
+															<img
+																src={
+																	VARIABLE_TYPE_ICONS[
+																		type
+																	]
+																}
+																alt={type}
+																className="h-4 w-4 shrink-0"
+															/>
+														);
+													return null;
+												})()}
+												<span className="font-medium text-foreground text-sm">
+													{capitalizeFirstLetter(
+														type,
+													)}
+												</span>
+											</div>
 										</AccordionTrigger>
 										<AccordionContent className="p-0 pb-0">
 											<ul className="m-0 list-none p-0">
