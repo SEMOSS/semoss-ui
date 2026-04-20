@@ -10,7 +10,13 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Autocomplete, TextField } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -60,7 +66,7 @@ export const SelectInputValueSettings = observer(
 		);
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -78,7 +84,7 @@ export const SelectInputValueSettings = observer(
 					return v;
 				}
 
-				return JSON.stringify(v); // check if parsedData.multiple ? [] : ''
+				return JSON.stringify(v);
 			});
 		}, [data, path, parsedData.multiple]).get();
 
@@ -126,7 +132,7 @@ export const SelectInputValueSettings = observer(
 						opts = opts.replace(/,\s+/g, ",");
 						try {
 							arr = JSON.parse(opts);
-						} catch (e) {
+						} catch (_e) {
 							// fallback: try to split manually
 							arr = opts
 								.slice(1, -1)
@@ -146,6 +152,7 @@ export const SelectInputValueSettings = observer(
 				}
 			});
 		}, [parsedData.options]);
+
 		const multipleple =
 			typeof parsedData.multiple === "boolean"
 				? parsedData.multiple
@@ -159,25 +166,55 @@ export const SelectInputValueSettings = observer(
 			return value || null;
 		}, [parsedData.multiple, value]);
 
+		if (multipleple) {
+			// For multiple select, use a native multi-select
+			return (
+				<BaseSettingSection label="Value">
+					<select
+						multiple
+						value={
+							Array.isArray(selectedValue) ? selectedValue : []
+						}
+						onChange={(e) => {
+							const selected = Array.from(
+								e.target.selectedOptions,
+								(opt) => opt.value,
+							);
+							onChange(selected);
+						}}
+						className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+					>
+						{stringifiedOptions.map((opt) => (
+							<option key={opt} value={opt}>
+								{opt}
+							</option>
+						))}
+					</select>
+				</BaseSettingSection>
+			);
+		}
+
 		return (
 			<BaseSettingSection label="Value">
-				<Autocomplete
-					fullWidth
-					multiple={multipleple as boolean}
-					options={stringifiedOptions}
-					value={selectedValue}
-					onChange={(_, newValue: string | string[]) => {
-						// sync the data on change
-						onChange(newValue);
+				<Select
+					value={
+						typeof selectedValue === "string" ? selectedValue : ""
+					}
+					onValueChange={(val) => {
+						onChange(val);
 					}}
-					renderInput={(params) => (
-						<TextField
-							{...params}
-							size="small"
-							variant="outlined"
-						/>
-					)}
-				/>
+				>
+					<SelectTrigger className="w-full">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{stringifiedOptions.map((opt) => (
+							<SelectItem key={opt} value={opt}>
+								{opt}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			</BaseSettingSection>
 		);
 	},

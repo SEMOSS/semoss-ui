@@ -11,12 +11,12 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	Autocomplete,
-	createFilterOptions,
-	Menu,
 	Select,
-	TextField,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { BaseSettingSection } from "../BaseSettingSection";
@@ -65,8 +65,6 @@ interface SelectInputSettingsProps<D extends BlockDef = BlockDef> {
 	tooltip?: string;
 }
 
-const filter = createFilterOptions<string>();
-
 export const SelectInputSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
@@ -80,21 +78,6 @@ export const SelectInputSettings = observer(
 	}: SelectInputSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings(id);
 		const { state } = useBlocks();
-
-		const [autocompleteOptions, setAutocompleteOptions] = useState<
-			Array<string>
-		>([]);
-
-		useEffect(() => {
-			if (allowUnset) {
-				setAutocompleteOptions([
-					"",
-					...options.map((option) => option.value),
-				]);
-			} else {
-				setAutocompleteOptions(options.map((option) => option.value));
-			}
-		}, [options]);
 
 		// track the value
 		const [value, setValue] = useState("");
@@ -167,87 +150,48 @@ export const SelectInputSettings = observer(
 		return (
 			<BaseSettingSection label={label} description={tooltip}>
 				{allowCustomInput ? (
-					<Autocomplete
-						fullWidth
-						size="small"
-						multiple={false}
+					<input
+						list={`${id}-${label}-datalist`}
+						className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
 						value={value}
-						onChange={(_, newValue) => {
-							onChange(newValue.replace("Custom: ", ""));
-						}}
-						filterOptions={(autocompleteOptions, params) => {
-							const filtered = filter(
-								autocompleteOptions,
-								params,
-							);
-
-							const { inputValue } = params;
-							// Suggest the creation of a new value
-							const isExisting = autocompleteOptions.some(
-								(option) => inputValue === option,
-							);
-							if (inputValue !== "" && !isExisting) {
-								filtered.push(`${inputValue}`);
-							}
-
-							return filtered;
-						}}
-						selectOnFocus
-						clearOnBlur
-						handleHomeEndKeys
-						options={autocompleteOptions}
-						getOptionLabel={(option) => {
-							const dropdownOptions = options.find(
-								(element) => element.value == option,
-							);
-							return dropdownOptions?.display ?? option;
-						}}
-						renderOption={(props, option) => {
-							const dropdownOptions = options.find(
-								(element) => element.value == option,
-							);
-							return (
-								<li {...props}>
-									{dropdownOptions?.display ??
-										(option == ""
-											? "None"
-											: `Custom: ${option}`)}
-								</li>
-							);
-						}}
-						freeSolo
+						onChange={(e) => onChange(e.target.value)}
 						data-testid={formatToDataTestId(
 							`selectInputSettings-${label}-${id}-txt`,
 						)}
-						renderInput={(params) => <TextField {...params} />}
-					/>
+					></input>
 				) : (
 					<Select
-						fullWidth
-						size="small"
 						value={value}
-						InputProps={{
-							"data-testid": formatToDataTestId(
-								`selectInputSettings-${label}-${id}-select`,
-							),
-						}}
-						onChange={(e) => {
+						onValueChange={(val) => {
 							// sync the data on change
-							onChange(e.target.value);
+							onChange(val);
 						}}
 					>
-						{allowUnset ? (
-							<Menu.Item value={""}>
-								<em>None</em>
-							</Menu.Item>
-						) : null}
-						{Array.from(options, (option, i) => {
-							return (
-								<Menu.Item key={option.value} value={option.value}>
-									{option.display}
-								</Menu.Item>
-							);
-						})}
+						<SelectTrigger
+							className="w-full"
+							data-testid={formatToDataTestId(
+								`selectInputSettings-${label}-${id}-select`,
+							)}
+						>
+							<SelectValue placeholder="Select..." />
+						</SelectTrigger>
+						<SelectContent>
+							{allowUnset ? (
+								<SelectItem value="">
+									<em>None</em>
+								</SelectItem>
+							) : null}
+							{Array.from(options, (option, _i) => {
+								return (
+									<SelectItem
+										key={option.value}
+										value={option.value}
+									>
+										{option.display}
+									</SelectItem>
+								);
+							})}
+						</SelectContent>
 					</Select>
 				)}
 			</BaseSettingSection>

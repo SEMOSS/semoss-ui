@@ -1,12 +1,23 @@
 import { useEffect } from "react";
-import { Controller } from "react-hook-form";
-import { useBlocks } from "@semoss/renderer";
-import { Select, Stack, TextField } from "@semoss/ui";
+import {
+	type Control,
+	Controller,
+	type UseFormSetValue,
+} from "react-hook-form";
+import { type ListenerActions, useBlocks } from "@semoss/renderer";
+import {
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 
 interface ModifyVariableSelectorProps {
 	id: string;
-	control: any;
-	setValue: any;
+	control: Control<ListenerActions>;
+	setValue: UseFormSetValue<ListenerActions>;
 }
 
 export const ModifyVariableSelector = ({
@@ -19,7 +30,7 @@ export const ModifyVariableSelector = ({
 
 	useEffect(() => {
 		setValue("payload.blockId", id);
-	}, [id]);
+	}, [id, setValue]);
 
 	// get all primitive variables from state
 	const primitiveVarTypes = [
@@ -35,27 +46,31 @@ export const ModifyVariableSelector = ({
 		?.map(([k]) => k);
 
 	return (
-		<Stack>
+		<div className="flex flex-col gap-2">
 			<Controller
 				name="payload.variable"
 				control={control}
 				render={({ field }) => (
 					<Select
-						label="Variable"
 						value={field.value || ""}
-						onChange={(value) => {
+						onValueChange={(value) => {
 							setValue("payload.variable", "");
 							field.onChange(value);
 						}}
 					>
-						{primitiveVariables?.map((type) => (
-							<Select.Item
-								key={`update-var--${type}`}
-								value={type}
-							>
-								{type}
-							</Select.Item>
-						))}
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Variable" />
+						</SelectTrigger>
+						<SelectContent>
+							{primitiveVariables?.map((type) => (
+								<SelectItem
+									key={`update-var--${type}`}
+									value={type}
+								>
+									{type}
+								</SelectItem>
+							))}
+						</SelectContent>
 					</Select>
 				)}
 			/>
@@ -63,17 +78,15 @@ export const ModifyVariableSelector = ({
 				name="payload.value"
 				control={control}
 				render={({ field }) => (
-					<>
-						<TextField
-							label={"Update Value"}
-							value={field.value || ""}
-							onChange={(value) => {
-								field.onChange(value);
-							}}
-						/>
-					</>
+					<Input
+						placeholder="Update Value"
+						value={field.value || ""}
+						onChange={(value) => {
+							field.onChange(value);
+						}}
+					/>
 				)}
 			/>
-		</Stack>
+		</div>
 	);
 };

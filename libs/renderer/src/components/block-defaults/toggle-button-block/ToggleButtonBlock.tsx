@@ -1,14 +1,9 @@
-import { styled, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { debounced } from "@semoss/sdk/react";
+import { ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledContainer = styled("div")(() => ({
-	padding: "4px",
-	width: "fit-content",
-}));
 
 export interface ToggleButtonBlockDef extends BlockDef<"toggle-button"> {
 	widget: "toggle-button";
@@ -38,6 +33,7 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } =
 		useBlock<ToggleButtonBlockDef>(id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -48,44 +44,55 @@ export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
 		listeners.onChange();
 	}, 200);
 
-	return (
-		<StyledContainer {...attrs}>
-			<ToggleButtonGroup
-				disabled={data.disabled}
-				size={data.size}
-				color={data.color}
-				onChange={(_, newValue: string | string[] | null) => {
-					if (data.mandatory) {
-						if (Array.isArray(newValue)) {
-							if (newValue.length) {
-								setData("value", newValue);
-								debouncedCallback();
-							}
-						} else {
-							if (newValue !== null) {
-								setData("value", newValue);
-								debouncedCallback();
-							}
-						}
-					} else {
+	if (data.multiple) {
+		return (
+			<div {...attrs} className="w-fit p-1">
+				<ToggleGroup
+					type="multiple"
+					disabled={data.disabled}
+					value={Array.isArray(data.value) ? data.value : []}
+					onValueChange={(newValue: string[]) => {
+						if (data.mandatory && !newValue.length) return;
 						setData("value", newValue);
 						debouncedCallback();
-					}
-				}}
-				value={data.value}
-				exclusive={!data.multiple}
-			>
-				{Array.from(data.options, (option, index) => {
-					return (
-						<ToggleButton
+					}}
+				>
+					{data.options.map((option, index) => (
+						<ToggleGroupItem
+							// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available for toggle options
 							key={`${id}-${index}`}
 							value={option.value}
 						>
 							{option.display}
-						</ToggleButton>
-					);
-				})}
-			</ToggleButtonGroup>
-		</StyledContainer>
+						</ToggleGroupItem>
+					))}
+				</ToggleGroup>
+			</div>
+		);
+	}
+
+	return (
+		<div {...attrs} className="w-fit p-1">
+			<ToggleGroup
+				type="single"
+				disabled={data.disabled}
+				value={typeof data.value === "string" ? data.value : ""}
+				onValueChange={(newValue: string) => {
+					if (data.mandatory && !newValue) return;
+					setData("value", newValue);
+					debouncedCallback();
+				}}
+			>
+				{data.options.map((option, index) => (
+					<ToggleGroupItem
+						// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available for toggle options
+						key={`${id}-${index}`}
+						value={option.value}
+					>
+						{option.display}
+					</ToggleGroupItem>
+				))}
+			</ToggleGroup>
+		</div>
 	);
 });

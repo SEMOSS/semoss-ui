@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useState } from "react";
-import { Box, styled, Typography, useNotification } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import FilterChecklistComponent from "./ModularFilterComponents/FilterChecklistComponent";
@@ -8,38 +8,6 @@ import FilterDropdownComponent from "./ModularFilterComponents/FilterDropdownCom
 import FilterMultiselectComponent from "./ModularFilterComponents/FilterMultiselectComponent";
 import FilterSliderComponent from "./ModularFilterComponents/FilterSliderComponent";
 
-const FilterContainer = styled(Box)(({ theme }) => ({
-	display: "flex",
-	padding: theme.spacing(0.5),
-	flexDirection: "column",
-	justifyContent: "center",
-	alignItems: "center",
-	gap: theme.spacing(1.25),
-	alignSelf: "stretch",
-	borderRadius: theme.shape.borderRadius,
-	border: `1px solid ${theme.palette.divider}`,
-}));
-
-const FilterHeader = styled(Box)(({ theme }) => ({
-	display: "flex",
-	height: theme.spacing(5),
-	alignItems: "center",
-	gap: theme.spacing(1.25),
-	flexShrink: 0,
-	alignSelf: "stretch",
-	borderRadius: theme.shape.borderRadius / 4,
-	backgroundColor: "#F5F9FE",
-	padding: theme.spacing(0, 1.25),
-}));
-
-const FilterBody = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	padding: theme.spacing(1.25),
-	width: "100%",
-	height: "100%",
-}));
 export interface VisualizationFilterBlockDef
 	extends BlockDef<"visualization-filter"> {
 	widget: "visualization-filter";
@@ -70,11 +38,11 @@ export interface VisualizationFilterBlockDef
 export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } =
 		useBlock<VisualizationFilterBlockDef>(id);
-	const notification = useNotification();
 	const { state } = useBlocks();
 	const [resetChecked, setResetChecked] = useState(false);
 	// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
 	const blocks = state.blocks;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -84,10 +52,7 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 	const mode = data.displayType.toLowerCase();
 	const handleApply = async (selected, type?: string) => {
 		if (selected.length === 0) {
-			notification.add({
-				color: "warning",
-				message: "No options selected.",
-			});
+			toast.warning("No options selected.");
 			return;
 		}
 		//set initial value of valuesString -- will change based off mode and array length
@@ -109,11 +74,9 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 			// biome-ignore lint/correctness/noUnusedVariables: <use error as needed>
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
-			notification.add({
-				color: "error",
-				message:
-					"Invalid response or errors found while applying the filter.",
-			});
+			toast.error(
+				"Invalid response or errors found while applying the filter.",
+			);
 		}
 
 		if (type === "slider") {
@@ -142,11 +105,9 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 			// biome-ignore lint/correctness/noUnusedVariables: <use as needed>
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
-			notification.add({
-				color: "error",
-				message:
-					"Invalid response or errors found while applying the filter.",
-			});
+			toast.error(
+				"Invalid response or errors found while applying the filter.",
+			);
 		}
 	};
 
@@ -185,10 +146,9 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 			}
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
-			notification.add({
-				color: "error",
-				message: `Invalid response or errors found while fetching options. ${error}`,
-			});
+			toast.error(
+				`Invalid response or errors found while fetching options. ${error}`,
+			);
 		}
 	};
 	return (
@@ -198,13 +158,13 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 			}}
 			{...attrs}
 		>
-			<FilterContainer>
-				<FilterHeader>
-					<Typography variant="subtitle1">
-						{data.showPanelTitle ? "Filter by " + data.column : ""}
-					</Typography>
-				</FilterHeader>
-				<FilterBody>
+			<div className="flex flex-col items-center justify-center gap-[10px] self-stretch rounded border border-border p-0.5">
+				<div className="flex h-10 shrink-0 items-center gap-[10px] self-stretch rounded-sm bg-[#F5F9FE] px-[10px]">
+					<p className="font-semibold text-base">
+						{data.showPanelTitle ? `Filter by ${data.column}` : ""}
+					</p>
+				</div>
+				<div className="flex h-full w-full items-center justify-center p-[10px]">
 					{mode === "dropdown" && (
 						<FilterDropdownComponent
 							key={JSON.stringify(data)}
@@ -286,8 +246,8 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 							setResetChecked={setResetChecked}
 						/>
 					)}
-				</FilterBody>
-			</FilterContainer>
+				</div>
+			</div>
 		</div>
 	);
 });

@@ -1,27 +1,18 @@
-import { CodeRounded, TerminalRounded } from "@mui/icons-material";
+import { Code, Terminal as TerminalIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
-	Button,
 	buildTable,
-	Stack,
-	styled,
 	Terminal,
 	type TerminalProps,
-	ToggleButton,
-	ToggleButtonGroup,
 	useNotification,
 } from "@semoss/ui";
+import { Button, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
 import PythonLogo from "@/assets/img/PYTHON.svg";
 import RLogo from "@/assets/img/R-logo.svg";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
-
-const StyledImage = styled("img")({
-	height: "13px",
-	wdith: "13px",
-});
 
 const LANGUAGE = {
 	PIXEL: "Pixel",
@@ -93,7 +84,6 @@ export const TerminalPanel: React.FC = observer(() => {
 			const suggestionsIndexBased = suggesstionsArray
 				.map((item, index) => (item.indexOf(":") > -1 ? index : -1))
 				.filter((item) => item > -1);
-			// const suggesstionsArraySplitCount = (suggestionsIndexBased.length - 2  > 0) ? (suggestionsIndexBased.length - 2) * 2 : 2;
 			const suggesstionsSection = [];
 			const suggesstionsData = {} as {
 				GeneralReactors: string[];
@@ -124,7 +114,6 @@ export const TerminalPanel: React.FC = observer(() => {
 					item.split(" ").filter((innerItem) => innerItem.length > 0),
 				);
 			});
-			//returning GeneralReactors for testing suggesstions
 			return suggesstionsData;
 		};
 
@@ -170,7 +159,6 @@ export const TerminalPanel: React.FC = observer(() => {
 				pixel = `Py("<encode>${cleaned}</encode>");`;
 			}
 
-			// run the pixel
 			// TODO: We need to fix workspace.store so we just call runWorkspacePixel
 			const response = await workspace.runWorkspacePixel(pixel);
 
@@ -284,20 +272,16 @@ export const TerminalPanel: React.FC = observer(() => {
 				/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g,
 				(match) => {
 					if (/:$/.test(match)) {
-						// key (yellow: 33m), (blue: 34m)
 						return `\x1b[34m${match}\x1b[0m`;
 					} else {
-						// string value (green)
 						return `\x1b[32m${match}\x1b[0m`;
 					}
 				},
 			)
 			.replace(/\b(true|false|null)\b/g, (match) => {
-				// boolean/null (magenta)
 				return `\x1b[35m${match}\x1b[0m`;
 			})
 			.replace(/:\s*"([^"]+)"/, (match) => {
-				// number (cyan)
 				return `\x1b[36m${match}\x1b[0m`;
 			});
 	};
@@ -306,43 +290,53 @@ export const TerminalPanel: React.FC = observer(() => {
 		<Panel
 			footer={
 				<>
-					<ToggleButtonGroup value={language} exclusive size="small">
+					<ToggleGroup
+						type="single"
+						value={language}
+						onValueChange={(val) => {
+							if (val) {
+								setCommand("");
+								setLanguage(val);
+							}
+						}}
+						variant="outline"
+						spacing={0}
+					>
 						{Object.entries(LANGUAGE).map(([value, name]) => {
 							return (
-								<ToggleButton
+								<ToggleGroupItem
 									key={value}
 									value={value}
 									title={`Switch to ${name}`}
-									color={
-										language === value
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										setCommand("");
-										setLanguage(value);
-									}}
+									className="h-7 px-2"
 								>
 									{value === "PIXEL" && (
-										<CodeRounded fontSize="inherit" />
+										<Code className="size-3.5" />
 									)}
 									{value === "PYTHON" && (
-										<StyledImage src={PythonLogo} />
+										<img
+											src={PythonLogo}
+											className="h-[13px] w-[13px]"
+											alt="Python"
+										/>
 									)}
 									{value === "R" && (
-										<StyledImage src={RLogo} />
+										<img
+											src={RLogo}
+											className="h-[13px] w-[13px]"
+											alt="R"
+										/>
 									)}
 									{value === "SHELL" && (
-										<TerminalRounded fontSize="inherit" />
+										<TerminalIcon className="size-3.5" />
 									)}
-								</ToggleButton>
+								</ToggleGroupItem>
 							);
 						})}
-					</ToggleButtonGroup>
-					<Stack flex={1}>&nbsp;</Stack>
+					</ToggleGroup>
+					<div className="flex-1">&nbsp;</div>
 					<Button
-						variant="contained"
-						size={"small"}
+						size="sm"
 						onClick={() => runCommand()}
 						disabled={command?.trim() === ""}
 					>
@@ -351,7 +345,7 @@ export const TerminalPanel: React.FC = observer(() => {
 				</>
 			}
 		>
-			<Terminal //removing loading option from terminal as per request from ticket 1960
+			<Terminal
 				history={history}
 				instructions={getInstructions(language, "Running ")}
 				suggestions={suggesstionsList.current}

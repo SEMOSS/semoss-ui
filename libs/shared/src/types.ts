@@ -195,6 +195,7 @@ export interface ThemeMap {
 			enablePlan?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
+			enablePromptOptimizer?: boolean;
 		};
 	};
 }

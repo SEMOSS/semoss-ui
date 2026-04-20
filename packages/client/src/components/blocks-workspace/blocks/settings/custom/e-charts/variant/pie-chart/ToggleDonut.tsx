@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,33 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-}));
 
 export const ToogleDonut = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -57,9 +37,11 @@ export const ToogleDonut = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
@@ -67,40 +49,31 @@ export const ToogleDonut = observer(
 		}, [id]);
 		//Reinitialize the feature when the chart is loaded
 		const reinitializeFeatures = (options) => {
-			if (typeof options["series"][0].radius === "string") {
+			if (typeof options.series[0].radius === "string") {
 				setShowDonut(false);
 			} else {
 				setShowDonut(true);
 			}
 		};
 		//Handle the change event for the toggle switch
-		const handleDonut = (e) => {
+		const handleDonut = (checked: boolean) => {
 			const option = JSON.parse(value);
-			setShowDonut(!showDonut);
-			if (e.target.checked) {
-				option["series"][0].radius = ["20%", "50%"];
+			setShowDonut(checked);
+			if (checked) {
+				option.series[0].radius = ["20%", "50%"];
 			} else {
-				option["series"][0].radius = "50%";
+				option.series[0].radius = "50%";
 			}
-			option["tooltip"]["show"] = e.target.checked;
+			option.tooltip.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxisDiv>
-				<StyledAxisDiv display="flex" gap="8px">
-					<Switch
-						checked={showDonut}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleDonut(e)
-						}
-						title="Toggle Donut"
-						size="small"
-					/>
-					<StyledTypography variant="body2">
-						Donut Toggle ON / OFF
-					</StyledTypography>
-				</StyledAxisDiv>
-			</StyledAxisDiv>
+			<div className="px-4 py-2">
+				<div className="flex flex-row items-center gap-2">
+					<Switch checked={showDonut} onCheckedChange={handleDonut} />
+					<span className="text-sm">Donut Toggle ON / OFF</span>
+				</div>
+			</div>
 		);
 	},
 );

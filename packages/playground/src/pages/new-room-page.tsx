@@ -385,6 +385,7 @@ export const NewRoomPage = observer(() => {
 							isLoading={isLoading}
 							initialValue={initialPrompt}
 							model={chat.models.selected}
+							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}

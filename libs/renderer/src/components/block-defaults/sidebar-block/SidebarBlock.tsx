@@ -1,6 +1,5 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo } from "react";
-import { Drawer, Stack } from "@semoss/ui";
 import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
@@ -33,6 +32,7 @@ export const SidebarBlock: BlockComponent = observer(({ id }) => {
 	const { state } = useBlocks();
 	const isStatic = state.mode === "static";
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (
 			data.open === true ||
@@ -50,6 +50,7 @@ export const SidebarBlock: BlockComponent = observer(({ id }) => {
 			}
 		}
 	}, [data.open]);
+
 	const open = useMemo(() => {
 		let o = false;
 		// Interpret Python
@@ -65,31 +66,35 @@ export const SidebarBlock: BlockComponent = observer(({ id }) => {
 		return o;
 	}, [data.open]);
 
-	// Helper to determine if modal should be shown
+	// Helper to determine if sidebar should be shown
 	const shouldShowSidebar = isStatic
 		? data.designMode // In static mode, show when design mode is on
 		: Boolean(open); // In interactive mode, show when query returns true
 
+	const isTop = data.anchor === "top";
+
+	const panelStyle: CSSProperties = {
+		position: "absolute",
+		zIndex: !isStatic ? 40 : 19,
+		height: isTop ? undefined : (data.style.height ?? "100%"),
+		width: isTop ? "100%" : data.style.width,
+		top: isTop ? 0 : undefined,
+		left: isTop ? undefined : 0,
+		transition: "transform 250ms ease",
+		transform: shouldShowSidebar
+			? "translate(0, 0)"
+			: isTop
+				? "translateY(-100%)"
+				: "translateX(-100%)",
+		overflow: "hidden",
+		...data.style,
+	};
+
 	return (
-		<Drawer
-			{...attrs}
-			variant="persistent"
-			anchor={data.anchor}
-			open={shouldShowSidebar}
-			PaperProps={{
-				sx: {
-					position: "absolute",
-					height: data.style.height ?? "100%",
-					width: data.style.width,
-					zIndex: !isStatic ? 40 : 19,
-					...data.style,
-				},
-			}}
-			transitionDuration={250}
-		>
-			<Stack>
+		<div {...attrs} style={panelStyle}>
+			<div>
 				<Slot slot={slots.content} />
-			</Stack>
-		</Drawer>
+			</div>
+		</div>
 	);
 });

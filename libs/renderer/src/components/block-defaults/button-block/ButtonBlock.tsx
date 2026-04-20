@@ -1,30 +1,8 @@
-import { Button, CircularProgress, styled } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Button, Spinner } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledButton = styled(Button, {
-	shouldForwardProp: (prop) => prop !== "loading",
-})<{ loading?: boolean }>(({ loading }) => ({
-	"& .MuiButton-endIcon svg": {
-		visibility: loading === true ? "hidden" : "visible",
-	},
-	"& .MuiButton-startIcon svg": {
-		visibility: loading === true ? "hidden" : "visible",
-	},
-}));
-
-const StyledLabel = styled("span", {
-	shouldForwardProp: (prop) => prop !== "loading",
-})<{ loading?: boolean }>(({ loading }) => ({
-	visibility: loading ? "hidden" : "visible",
-}));
-
-const StyledCircularProgress = styled(CircularProgress)({
-	zIndex: 10,
-	position: "absolute",
-});
 
 export interface ButtonBlockDef extends BlockDef<"button"> {
 	widget: "button";
@@ -50,39 +28,43 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
 	};
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: theme.spacing(0.5),
-}));
+const variantMap: Record<
+	ButtonBlockDef["data"]["variant"],
+	"default" | "outline" | "ghost"
+> = {
+	contained: "default",
+	outlined: "outline",
+	text: "ghost",
+};
 
 export const ButtonBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, listeners } = useBlock<ButtonBlockDef>(id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
 		}
 	}, []);
+
 	return (
-		<StyledContainer {...attrs}>
-			<StyledButton
-				size="medium"
-				color={data.color}
-				variant={data.variant}
-				loading={data?.loading}
+		<div {...attrs} className="p-0.5">
+			<Button
+				variant={variantMap[data.variant] ?? "default"}
 				disabled={data?.disabled || data?.loading}
 				type={data?.type}
-				sx={{
-					...data.style,
-				}}
+				style={data.style}
 				onClick={() => {
 					listeners.onClick();
 				}}
 			>
-				<StyledLabel loading={data?.loading}>{data.label}</StyledLabel>
-				{data.loading ? (
-					<StyledCircularProgress color="inherit" size="2em" />
-				) : null}
-			</StyledButton>
-		</StyledContainer>
+				{data?.loading && <Spinner className="mr-1 size-4" />}
+				<span
+					style={{ visibility: data?.loading ? "hidden" : "visible" }}
+				>
+					{data.label}
+				</span>
+			</Button>
+		</div>
 	);
 });
