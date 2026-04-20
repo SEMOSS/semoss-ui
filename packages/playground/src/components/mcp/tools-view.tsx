@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
-import type { RoomStore, ToolStore } from "@/stores";
+import type { RoomStore } from "@/stores";
 import { ToolsDefaultView } from "./tools-default-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
@@ -20,18 +20,18 @@ interface ToolsViewProps {
 	/** Id of the message */
 	message: string;
 
-	/** Connected tool */
-	tool: ToolStore["json"];
-
-	/** Response to the tool */
-	toolResponse?: string;
-
-	/** Parameters that were executed */
-	toolParameters?: Record<string, unknown>;
+	/** Id of the tool */
+	toolId: string;
 }
 
-export const ToolsView: React.FC<ToolsViewProps> = observer(
-	({ room, app, message, tool, toolResponse, toolParameters }) => {
+export const ToolsView = observer(
+	({ room, app, message, toolId }: ToolsViewProps) => {
+		const liveTool = room.getTool(toolId);
+		const tool = liveTool?.json;
+		const toolResponse =
+			liveTool?.status === "SUCCESS" ? liveTool.response : undefined;
+		const toolParameters = liveTool?.parameters;
+
 		/**
 		 * State
 		 */
@@ -71,7 +71,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						name: tool?.name || "",
 						parameters: toJS(toolParameters || {}),
 						roomId: room.roomId,
-						original_name: tool.original_name || "",
+						original_name: tool?.original_name || "",
 						tool_response: toolResponse,
 						executedParameters: toJS(toolParameters || {}),
 					} satisfies MCPToolRequest,
@@ -101,6 +101,13 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					return;
 				}
 
+				// Auto-executing tool that hasn't completed yet — show default view
+				if (tool._meta.SMSS_MCP_EXECUTION !== "ask" && !toolResponse) {
+					setUrl("");
+					setIsLoading(false);
+					return;
+				}
+
 				setIsLoading(true);
 
 				if (!tool._meta.SMSS_MCP_UI) {
@@ -122,7 +129,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						//FixMe: Always returns a 200 so currently checking against default text returned
 						foundApp =
 							response.status === 200 &&
-							text &&
+							Boolean(text) &&
 							text !==
 								"Publish is not enabled on this project or there was an error publishing this project";
 					} catch (_e) {}
@@ -131,14 +138,14 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 					setUrl(
 						foundApp
 							? `${Env.MODULE}/public_home/${app}/portals/`
-							: null,
+							: "",
 					);
 				} else {
 					// Modern
 					const resourceURI = tool._meta.SMSS_MCP_UI?.resourceURI;
 					if (!resourceURI) {
 						// No UI defined, show form
-						setUrl(null);
+						setUrl("");
 					} else if (getAppInfo.data.project_type === "BLOCKS") {
 						// Low code app
 						setUrl(`${PLATFORM_URL}/#/s/${app}${resourceURI}`);
@@ -153,7 +160,11 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 			};
 
 			chooseUrl();
-		}, [app, tool, getAppInfo.status, getAppInfo.data]);
+		}, [app, tool, toolResponse, getAppInfo.status, getAppInfo.data]);
+
+		if (!tool) {
+			return null;
+		}
 
 		return (
 			<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
@@ -167,7 +178,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						onLoad={() => handleOnLoad()}
 					/>
 				)}
-				{!url && !isLoading && tool && (
+				{!url && !isLoading && (
 					<ToolsDefaultView
 						room={room}
 						app={app}
@@ -175,6 +186,10 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						tool={tool}
 						toolResponse={toolResponse}
 						toolParameters={toolParameters}
+						isExecuting={
+							tool._meta.SMSS_MCP_EXECUTION !== "ask" &&
+							!toolResponse
+						}
 					/>
 				)}
 			</div>

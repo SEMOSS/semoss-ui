@@ -1,6 +1,5 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -35,6 +34,9 @@ export interface ToolsDefaultViewProps {
 
 	/** Parameters that were executed */
 	toolParameters?: Record<string, unknown>;
+
+	/** Whether the tool is currently being auto-executed */
+	isExecuting?: boolean;
 }
 
 interface FieldSchema {
@@ -51,8 +53,16 @@ interface FieldSchema {
 	description?: string;
 }
 
-export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, toolResponse, toolParameters }) => {
+export const ToolsDefaultView = observer(
+	({
+		room,
+		app,
+		message,
+		tool,
+		toolResponse,
+		toolParameters,
+		isExecuting,
+	}: ToolsDefaultViewProps) => {
 		/*
 		 * Library hooks
 		 */
@@ -303,8 +313,8 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					key={fieldName}
 					fieldName={fieldName}
 					fieldSchema={fieldSchema}
-					required={required && !hasBeenExecuted}
-					disabled={hasBeenExecuted}
+					required={required && !hasBeenExecuted && !isExecuting}
+					disabled={hasBeenExecuted || !!isExecuting}
 					value={data[fieldName] ?? ""}
 					onChange={(val) => handleChange(fieldName, val)}
 				/>
@@ -392,6 +402,13 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						) : (
 							<form onSubmit={handleSubmit}>
 								<div className="space-y-4">
+									{Object.keys(properties).length === 0 &&
+										!scriptForBrowserAutomation && (
+											<p className="py-8 text-center text-muted-foreground text-sm">
+												No parameters required
+											</p>
+										)}
+
 									{/* Required fields */}
 									{renderFields(requiredFields, true)}
 
@@ -461,28 +478,30 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					)}
 				</div>
 
-				{!hasBeenExecuted && getMCP.status === "SUCCESS" && (
-					<div className="shrink-0 px-1">
-						<Button
-							type="button"
-							className="w-full"
-							size="lg"
-							onClick={() => {
-								handleSubmit();
-							}}
-							disabled={isSubmitting}
-						>
-							{isSubmitting ? (
-								<>
-									<Loader2 className="animate-spin" />
-									Executing...
-								</>
-							) : (
-								"Execute Tool"
-							)}
-						</Button>
-					</div>
-				)}
+				{!hasBeenExecuted &&
+					!isExecuting &&
+					getMCP.status === "SUCCESS" && (
+						<div className="shrink-0 px-1">
+							<Button
+								type="button"
+								className="w-full"
+								size="lg"
+								onClick={() => {
+									handleSubmit();
+								}}
+								disabled={isSubmitting}
+							>
+								{isSubmitting ? (
+									<>
+										<Loader2 className="animate-spin" />
+										Executing...
+									</>
+								) : (
+									"Execute Tool"
+								)}
+							</Button>
+						</div>
+					)}
 
 				{/* Extension Not Available Dialog */}
 				<Dialog

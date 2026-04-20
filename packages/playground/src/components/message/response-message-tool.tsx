@@ -44,10 +44,9 @@ const getToolState = (
 				...config[tool.status],
 				iconClassName: "bg-muted text-muted-foreground",
 				subtext: tool.json.description,
-				canInteract: false,
 				actionType: null,
 				background: "bg-background" as const,
-				showHoverAccent: false,
+				showHoverAccent: true,
 				showCancelInMenu: false,
 			};
 		}
@@ -57,7 +56,7 @@ const getToolState = (
 				iconClassName: "bg-primary/10 text-primary",
 				subtext: tool.json.description,
 				badge: null,
-				canInteract: true,
+
 				actionType: "menu" as const,
 				background: "bg-sidebar" as const,
 				showHoverAccent: false,
@@ -69,10 +68,10 @@ const getToolState = (
 				iconClassName: "bg-muted text-muted-foreground",
 				subtext: toolExecutionMessage,
 				badge: null,
-				canInteract: false,
+
 				actionType: "cancel" as const,
 				background: "bg-background" as const,
-				showHoverAccent: false,
+				showHoverAccent: true,
 				showCancelInMenu: false,
 			};
 		default:
@@ -82,7 +81,7 @@ const getToolState = (
 					iconClassName: "bg-primary/10 text-primary",
 					subtext: tool.json.description,
 					badge: null,
-					canInteract: true,
+
 					actionType: "menu" as const,
 					background: "bg-background" as const,
 					showHoverAccent: true,
@@ -95,10 +94,10 @@ const getToolState = (
 				iconClassName: "bg-muted text-muted-foreground",
 				subtext: t("tool.queued"),
 				badge: null,
-				canInteract: false,
+
 				actionType: "cancel" as const,
 				background: "bg-background" as const,
-				showHoverAccent: false,
+				showHoverAccent: true,
 				showCancelInMenu: false,
 			};
 	}
@@ -141,7 +140,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		const toolState = getToolState(tool, t, toolExecutionMessage);
 
-		const isButtonDisabled = isDisabled || !toolState.canInteract;
+		const isButtonDisabled = !tool.isOpen && isDisabled;
 
 		// Don't render if hidden
 		if (tool.display === "hidden") {
