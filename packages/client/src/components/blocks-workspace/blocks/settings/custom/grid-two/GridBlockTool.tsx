@@ -1,17 +1,8 @@
-import { InfoOutlined } from "@mui/icons-material";
-import ImageIcon from "@mui/icons-material/Image";
+import { Image, Info } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import type { GridBlockDef, PathValue } from "@semoss/renderer";
-import {
-	Box,
-	Button,
-	Checkbox,
-	FormControlLabel,
-	List,
-	Stack,
-	styled,
-} from "@semoss/ui";
+import { Button, Checkbox } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { CellStyling } from "./operations/CellStyling";
 import { ChartTitle } from "./operations/ChartTitle";
@@ -24,26 +15,6 @@ import { ColumnTextWrap } from "./operations/WrapTextSettings";
 interface GridBlockToolProps {
 	id: string;
 }
-
-const StyledItem = styled("div")(() => ({
-	display: "block",
-	width: "100%",
-	padding: "0.5rem 1rem",
-}));
-
-const StyledItemWithoutPadding = styled("div")(() => ({
-	display: "block",
-	width: "100%",
-	padding: "0.5rem 0",
-}));
-
-const StyledBox = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-	gap: "10px",
-}));
-
-const StyledGridBlockTool = styled("div")();
 
 export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 	const { data, setData } = useBlockSettings<GridBlockDef>(id);
@@ -62,347 +33,178 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 		setData("style", newOption as PathValue<GridBlockDef["data"], "style">);
 	};
 
+	const toolSections = [
+		{
+			key: "generalchartsettings",
+			label: "Header Styling",
+			content: <HeaderStyling id={id} path={"option"} />,
+			padded: true,
+		},
+		{
+			key: "cellStylingSettings",
+			label: "Cell Styling",
+			content: <CellStyling id={id} path={"option"} />,
+			padded: true,
+		},
+		{
+			key: "titleSettings",
+			label: "Title",
+			content: <ChartTitle id={id} path={"option"} />,
+			padded: true,
+		},
+		{
+			key: "colorByValue",
+			label: "Color By Value",
+			content: <ColorByValue id={id} path={"option"} />,
+			padded: false,
+		},
+		{
+			key: "wrapText",
+			label: "Wrap Text",
+			content: <ColumnTextWrap id={id} path={"option"} />,
+			padded: true,
+		},
+		{
+			key: "rowSpanning",
+			label: "Row Spanning",
+			content: <RowSpanning id={id} path={"option"} />,
+			padded: true,
+		},
+	];
+
 	return (
-		<StyledGridBlockTool>
-			<List sx={{ width: "100%" }}>
-				{/* Header Styling Section  */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
-						onClick={(e) =>
-							setSelectedList((prevList) =>
-								prevList === "generalchartsettings"
-									? ""
-									: "generalchartsettings",
-							)
-						}
-						selected={selectedList === "generalchartsettings"}
-					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
+		<div className="w-full">
+			<div className="flex w-full flex-col">
+				{toolSections.map(({ key, label, content, padded }) => (
+					<div key={key}>
+						<button
+							type="button"
+							className="flex w-full cursor-pointer items-center px-4 py-3 hover:bg-accent data-[selected=true]:bg-accent/50"
+							data-selected={selectedList === key}
+							onClick={() =>
+								setSelectedList((prev) =>
+									prev === key ? "" : key,
+								)
+							}
 						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "generalchartsettings"
-										? "primary"
-										: "disabled"
+							<Image className="mr-4 size-4 shrink-0" />
+							<div className="flex items-center gap-2.5">
+								<span className="text-sm">{label}</span>
+								<Info className="size-4" />
+							</div>
+						</button>
+						{selectedList === key && (
+							<div
+								className={
+									padded
+										? "block w-full px-4 py-2"
+										: "block w-full px-0 py-2"
 								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Header Styling" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
-					{selectedList === "generalchartsettings" && (
-						<StyledItem>
-							<HeaderStyling id={id} path={"option"} />
-						</StyledItem>
-					)}
-				</List.Item>
-
-				{/* Cell Styling section */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
-						onClick={(e) =>
-							setSelectedList((prevList) =>
-								prevList === "cellStylingSettings"
-									? ""
-									: "cellStylingSettings",
-							)
-						}
-						selected={selectedList === "cellStylingSettings"}
-					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
-						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "cellStylingSettings"
-										? "primary"
-										: "disabled"
-								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Cell Styling" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
-					{selectedList === "cellStylingSettings" && (
-						<StyledItem>
-							{/* <SelectInputSettings
-                                id={id}
-                                path={"show"}
-                                label={"Show Block"}
-                                options={[]}
-                            />
-                            <p>Some contents will show here</p> */}
-							<CellStyling id={id} path={"option"} />
-						</StyledItem>
-					)}
-				</List.Item>
-
-				{/* Title section  */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
-						onClick={(e) =>
-							setSelectedList((prevList) =>
-								prevList === "titleSettings"
-									? ""
-									: "titleSettings",
-							)
-						}
-						selected={selectedList === "titleSettings"}
-					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
-						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "titleSettings"
-										? "primary"
-										: "disabled"
-								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Title" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
-					{selectedList === "titleSettings" && (
-						<StyledItem>
-							<ChartTitle id={id} path={"option"} />
-						</StyledItem>
-					)}
-				</List.Item>
-
-				{/* Color By Value  */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
-						onClick={(e) =>
-							setSelectedList((prevList) =>
-								prevList === "colorByValue"
-									? ""
-									: "colorByValue",
-							)
-						}
-						selected={selectedList === "colorByValue"}
-					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
-						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "colorByValue"
-										? "primary"
-										: "disabled"
-								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Color By Value" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
-					{selectedList === "colorByValue" && (
-						<StyledItemWithoutPadding>
-							<ColorByValue id={id} path={"option"} />
-						</StyledItemWithoutPadding>
-					)}
-				</List.Item>
-
-				{/* Text Wrap  */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
-						onClick={(e) =>
-							setSelectedList((prevList) =>
-								prevList === "wrapText" ? "" : "wrapText",
-							)
-						}
-						selected={selectedList === "wrapText"}
-					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
-						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "wrapText"
-										? "primary"
-										: "disabled"
-								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Wrap Text" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
-					{selectedList === "wrapText" && (
-						<StyledItem>
-							<ColumnTextWrap id={id} path={"option"} />
-						</StyledItem>
-					)}
-				</List.Item>
-
-				{/* Row Spanning  */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
-						onClick={(e) =>
-							setSelectedList((prevList) =>
-								prevList === "rowSpanning" ? "" : "rowSpanning",
-							)
-						}
-						selected={selectedList === "rowSpanning"}
-					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
-						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "rowSpanning"
-										? "primary"
-										: "disabled"
-								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Row Spanning" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
-					{selectedList === "rowSpanning" && (
-						<StyledItem>
-							{/* <ColumnTextWrap id={id} path={"option"} /> */}
-							<RowSpanning id={id} path={"option"} />
-						</StyledItem>
-					)}
-				</List.Item>
-
-				{/* Resizing  */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
-						onClick={(e) =>
-							setSelectedList((prevList) =>
-								prevList === "resizing" ? "" : "resizing",
-							)
-						}
-						selected={selectedList === "resizing"}
-					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
-						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "resizing"
-										? "primary"
-										: "disabled"
-								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Resizing" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
-					{selectedList === "resizing" && (
-						<StyledItem>
-							<Stack
-								display="flex"
-								flexDirection="column"
-								gap={1}
 							>
+								{content}
+							</div>
+						)}
+					</div>
+				))}
+
+				{/* Resizing */}
+				<div>
+					<button
+						type="button"
+						className="flex w-full cursor-pointer items-center px-4 py-3 hover:bg-accent data-[selected=true]:bg-accent/50"
+						data-selected={selectedList === "resizing"}
+						onClick={() =>
+							setSelectedList((prev) =>
+								prev === "resizing" ? "" : "resizing",
+							)
+						}
+					>
+						<Image className="mr-4 size-4 shrink-0" />
+						<div className="flex items-center gap-2.5">
+							<span className="text-sm">Resizing</span>
+							<Info className="size-4" />
+						</div>
+					</button>
+					{selectedList === "resizing" && (
+						<div className="block w-full px-4 py-2">
+							<div className="flex flex-col gap-1">
 								<GridResizeSettings
 									path={"style.height"}
 									id={id}
 									label={"Height"}
-								></GridResizeSettings>
+								/>
 								<GridResizeSettings
 									path={"style.width"}
 									id={id}
 									label={"Width"}
-								></GridResizeSettings>
-								<Stack display="flex" alignItems="end">
+								/>
+								<div className="flex justify-end">
 									<Button
-										size="small"
-										color="primary"
-										variant="contained"
+										size="sm"
 										onClick={resetToInitialState}
 									>
 										Reset
 									</Button>
-								</Stack>
-							</Stack>
-						</StyledItem>
+								</div>
+							</div>
+						</div>
 					)}
-				</List.Item>
+				</div>
 
-				{/* Export Settings  */}
-				<List.Item disablePadding sx={{ display: "block" }}>
-					<List.ItemButton
+				{/* Export Settings */}
+				<div>
+					<button
+						type="button"
+						className="flex w-full cursor-pointer items-center px-4 py-3 hover:bg-accent data-[selected=true]:bg-accent/50"
+						data-selected={selectedList === "export"}
 						onClick={() =>
-							setSelectedList((prevList) =>
-								prevList === "export" ? "" : "export",
+							setSelectedList((prev) =>
+								prev === "export" ? "" : "export",
 							)
 						}
-						selected={selectedList === "export"}
 					>
-						<List.ItemIcon
-							sx={{ minWidth: 0, marginRight: "16px" }}
-						>
-							<ImageIcon
-								fontSize="large"
-								color={
-									selectedList === "export"
-										? "primary"
-										: "disabled"
-								}
-							/>
-						</List.ItemIcon>
-						<StyledBox>
-							<List.ItemText primary="Export from Data Grid" />
-							<InfoOutlined color="disabled" />
-						</StyledBox>
-					</List.ItemButton>
+						<Image className="mr-4 size-4 shrink-0" />
+						<div className="flex items-center gap-2.5">
+							<span className="text-sm">
+								Export from Data Grid
+							</span>
+							<Info className="size-4" />
+						</div>
+					</button>
 					{selectedList === "export" && (
-						<StyledItem>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={
-											data.option?.enableExport ?? false
-										}
-										onChange={(e) => {
-											const newOption = {
-												...data.option,
-												enableExport: (
-													e.target as HTMLInputElement
-												).checked,
-											};
-											setData(
-												"option",
-												newOption as PathValue<
-													GridBlockDef["data"],
-													"option"
-												>,
-											);
-										}}
-									/>
-								}
-								label="Enable CSV Export"
-								sx={{ paddingLeft: 3 }}
-							/>
-						</StyledItem>
+						<div className="block w-full px-4 py-2">
+							<div className="flex items-center gap-2 pl-3">
+								{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+								// biome-ignore
+								{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+								<Checkbox
+									id="enable-export"
+									checked={data.option?.enableExport ?? false}
+									onCheckedChange={(checked) => {
+										const newOption = {
+											...data.option,
+											enableExport: !!checked,
+										};
+										setData(
+											"option",
+											newOption as PathValue<
+												GridBlockDef["data"],
+												"option"
+											>,
+										);
+									}}
+								/>
+								<label
+									htmlFor="enable-export"
+									className="cursor-pointer text-sm"
+								>
+									Enable CSV Export
+								</label>
+							</div>
+						</div>
 					)}
-				</List.Item>
-			</List>
-		</StyledGridBlockTool>
+				</div>
+			</div>
+		</div>
 	);
 });

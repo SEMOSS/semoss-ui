@@ -1,7 +1,7 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { Stack, TextField, Typography } from "@semoss/ui";
+import { Input } from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -24,16 +24,9 @@ export interface CumulativeSumTransformationDef
 	extends TransformationDef<"cumulative-sum"> {
 	key: "cumulative-sum";
 	parameters: {
-		//** New column title*/
 		newColumn: string;
-
-		//** Value to aggregate */
 		valueColumn: ColumnInfo;
-
-		//** Optional column(s) to sort by */
 		sortColumns?: ColumnInfo[];
-
-		//** Optional column(s) to group by */
 		groupByColumns?: ColumnInfo[];
 	};
 }
@@ -42,14 +35,7 @@ export interface CumulativeSumTransformationCellDef
 	extends TransformationCellDef<"cumulative-sum-transformation"> {
 	widget: "cumulative-sum-transformation";
 	parameters: {
-		/**
-		 * Routine type
-		 */
 		transformation: Transformation<CumulativeSumTransformationDef>;
-
-		/**
-		 * ID of the query cell that defines the frame we want to transform
-		 */
 		targetCell: TransformationTargetCell;
 	};
 }
@@ -59,11 +45,8 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
-		/**
-		 * Cell that Transformation will be made to
-		 */
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c;
+			let c: CellState<QueryImportCellDef> | undefined;
 			Object.values(state.queries).forEach((query) => {
 				if (query.cells[cell.parameters.targetCell.id]) {
 					c = query.cells[
@@ -71,7 +54,6 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 					] as CellState<QueryImportCellDef>;
 				}
 			});
-
 			return c;
 		}).get();
 
@@ -87,29 +69,35 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 			);
 		}).get();
 
-		/**
-		 * A list of cells that are query imports,
-		 * Added here in case we want to show particular frames whether Grid, Py, R, etc
-		 * TODO: Do we want to reference other queries
-		 */
 		const frames = useMemo(() => {
 			const frameList = [];
-
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
-					if (cell.widget === "query-import") {
+					if (
+						cell.widget === "query-import" ||
+						cell.widget === "data-import"
+					)
 						frameList.push(cell);
-					}
 				});
 			});
-
 			return frameList;
 		}, []);
 
 		const helpText = cell.parameters.targetCell.id
 			? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
 			: "A Python or R target frame variable must be defined in order to apply a transformation.";
+
+		const dispatch = (path: string, value: unknown) =>
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId: cell.query.id,
+					cellId: cell.id,
+					path,
+					value,
+				},
+			});
 
 		if (
 			(!doesFrameExist && !cellTransformation.parameters.newColumn) ||
@@ -120,16 +108,11 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 					isExpanded={isExpanded}
 					display={Transformations[cellTransformation.key].display}
 					Icon={Transformations[cellTransformation.key].icon}
-					frame={{
-						cell: cell,
-						options: frames,
-					}}
+					frame={{ cell, options: frames }}
 				>
-					<Stack width="100%" paddingY={0.75}>
-						<Typography variant="caption">
-							<em>{helpText}</em>
-						</Typography>
-					</Stack>
+					<div className="w-full py-1.5">
+						<span className="text-xs italic">{helpText}</span>
+					</div>
 				</TransformationCellInput>
 			);
 		}
@@ -139,38 +122,32 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 				isExpanded={isExpanded}
 				display={Transformations[cellTransformation.key].display}
 				Icon={Transformations[cellTransformation.key].icon}
-				frame={{
-					cell: cell,
-					options: frames,
-				}}
+				frame={{ cell, options: frames }}
 			>
-				<Stack spacing={2}>
-					<Typography variant="caption">
+				<div className="flex flex-col gap-4">
+					<span className="text-xs">
 						{!doesFrameExist ? (
 							<em>{helpText}</em>
 						) : (
 							"Add a new column for the cumulative sum of another column's values"
 						)}
-					</Typography>
-					<TextField
-						label="Column Name"
-						disabled={!doesFrameExist}
-						variant="outlined"
-						value={cellTransformation.parameters.newColumn}
-						fullWidth
-						size="small"
-						onChange={(e) => {
-							state.dispatch({
-								message: ActionMessages.UPDATE_CELL,
-								payload: {
-									queryId: cell.query.id,
-									cellId: cell.id,
-									path: "parameters.transformation.parameters.newColumn",
-									value: e.target.value,
-								},
-							});
-						}}
-					/>
+					</span>
+					<div className="flex flex-col gap-1.5">
+						{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+						<label className="text-muted-foreground text-xs">
+							Column Name
+						</label>
+						<Input
+							disabled={!doesFrameExist}
+							value={cellTransformation.parameters.newColumn}
+							onChange={(e) =>
+								dispatch(
+									"parameters.transformation.parameters.newColumn",
+									e.target.value,
+								)
+							}
+						/>
+					</div>
 					<ColumnTransformationField
 						label="Aggregate Value"
 						disabled={!doesFrameExist}
@@ -178,17 +155,12 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 						selectedColumns={
 							cellTransformation.parameters.valueColumn
 						}
-						onChange={(newColumn: ColumnInfo) => {
-							state.dispatch({
-								message: ActionMessages.UPDATE_CELL,
-								payload: {
-									queryId: cell.query.id,
-									cellId: cell.id,
-									path: "parameters.transformation.parameters.valueColumn",
-									value: newColumn,
-								},
-							});
-						}}
+						onChange={(newColumn: ColumnInfo) =>
+							dispatch(
+								"parameters.transformation.parameters.valueColumn",
+								newColumn,
+							)
+						}
 					/>
 					<ColumnTransformationField
 						label="Sort by Column(s)"
@@ -198,17 +170,12 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 							cellTransformation.parameters.sortColumns
 						}
 						multiple
-						onChange={(newColumn: ColumnInfo) => {
-							state.dispatch({
-								message: ActionMessages.UPDATE_CELL,
-								payload: {
-									queryId: cell.query.id,
-									cellId: cell.id,
-									path: "parameters.transformation.parameters.sortColumns",
-									value: newColumn,
-								},
-							});
-						}}
+						onChange={(newColumn: ColumnInfo) =>
+							dispatch(
+								"parameters.transformation.parameters.sortColumns",
+								newColumn,
+							)
+						}
 					/>
 					<ColumnTransformationField
 						label="Group by Column(s)"
@@ -218,19 +185,14 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 							cellTransformation.parameters.groupByColumns
 						}
 						multiple
-						onChange={(newColumn: ColumnInfo) => {
-							state.dispatch({
-								message: ActionMessages.UPDATE_CELL,
-								payload: {
-									queryId: cell.query.id,
-									cellId: cell.id,
-									path: "parameters.transformation.parameters.groupByColumns",
-									value: newColumn,
-								},
-							});
-						}}
+						onChange={(newColumn: ColumnInfo) =>
+							dispatch(
+								"parameters.transformation.parameters.groupByColumns",
+								newColumn,
+							)
+						}
 					/>
-				</Stack>
+				</div>
 			</TransformationCellInput>
 		);
 	});

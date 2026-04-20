@@ -1,9 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
 import type { PathValue } from "react-hook-form";
-import { Menu } from "@semoss/ui";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+} from "@semoss/ui/next";
 import { useBlock, type useFrame } from "../../../../../hooks";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
@@ -13,8 +15,10 @@ export interface ChartContextMenuProps {
 	contextMenu: {
 		mouseX: number;
 		mouseY: number;
+		// biome-ignore lint/suspicious/noExplicitAny: echart event value type is untyped
 		value: any;
 	} | null;
+	// biome-ignore lint/suspicious/noExplicitAny: echart instance type is untyped
 	chartInstance: any;
 	onClose: () => void;
 }
@@ -28,6 +32,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 			excludeActive: false,
 		});
 		//Checking the current action state for filtering and unfiltering to set and update the data to chart using setoption and setData
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data only
 		useEffect(() => {
 			if (frame.isLoading === false && frame.error === undefined) {
 				//in contextmenu, when the unfilter is made active
@@ -36,16 +41,15 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 						const optionDataProcessed = processReceivedData(
 							frame.data,
 						);
-						data.option["xAxis"]["data"] =
-							optionDataProcessed["xAxis"];
-						data.option["series"][0]["data"] =
-							optionDataProcessed["yAxis"];
+						data.option.xAxis.data = optionDataProcessed.xAxis;
+						data.option.series[0].data = optionDataProcessed.yAxis;
+						// biome-ignore lint/suspicious/noExplicitAny: echart PathValue type is untyped
 						setData("option", data.option as PathValue<any, any>);
 						if (chartInstance.setOption !== null) {
 							chartInstance.setOption(data.option);
 							currentOperation.current.unfilterActive = false;
 						}
-					} catch (e) {}
+					} catch (_e) {}
 				}
 				//in contextmenu, when the filter is made active
 				if (currentOperation.current.filterActive) {
@@ -53,21 +57,20 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 						const optionDataProcessed = processReceivedData(
 							frame.data,
 						);
-						data.option["xAxis"]["data"] =
-							optionDataProcessed["xAxis"];
-						data.option["series"][0]["data"] =
-							optionDataProcessed["yAxis"];
+						data.option.xAxis.data = optionDataProcessed.xAxis;
+						data.option.series[0].data = optionDataProcessed.yAxis;
+						// biome-ignore lint/suspicious/noExplicitAny: echart PathValue type is untyped
 						setData("option", data.option as PathValue<any, any>);
 						if (chartInstance.setOption !== null) {
 							chartInstance.setOption(data.option);
 							currentOperation.current.filterActive = false;
 							contextMenu = {
 								...contextMenu,
-								["value"]: null,
+								value: null,
 							};
 							disableSelection();
 						}
-					} catch (e) {}
+					} catch (_e) {}
 				}
 				//in contextmenu, when the exclude is made active
 				if (currentOperation.current.excludeActive) {
@@ -75,21 +78,20 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 						const optionDataProcessed = processReceivedData(
 							frame.data,
 						);
-						data.option["xAxis"]["data"] =
-							optionDataProcessed["xAxis"];
-						data.option["series"][0]["data"] =
-							optionDataProcessed["yAxis"];
+						data.option.xAxis.data = optionDataProcessed.xAxis;
+						data.option.series[0].data = optionDataProcessed.yAxis;
+						// biome-ignore lint/suspicious/noExplicitAny: echart PathValue type is untyped
 						setData("option", data.option as PathValue<any, any>);
 						if (chartInstance.setOption !== null) {
 							chartInstance.setOption(data.option);
 							currentOperation.current.excludeActive = false;
 							contextMenu = {
 								...contextMenu,
-								["value"]: null,
+								value: null,
 							};
 							disableSelection();
 						}
-					} catch (e) {}
+					} catch (_e) {}
 				}
 			}
 		}, [frame.data]);
@@ -113,97 +115,105 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 				}),
 			};
 		}
+		const isOpen = contextMenu !== null;
+
 		return (
-			<Menu
-				open={contextMenu !== null}
-				onClose={() => onClose()}
-				anchorReference="anchorPosition"
-				anchorPosition={
-					contextMenu !== null
-						? {
-								top: contextMenu.mouseY,
-								left: contextMenu.mouseX,
-							}
-						: undefined
-				}
+			<DropdownMenu
+				open={isOpen}
+				onOpenChange={(open) => !open && onClose()}
 			>
-				{contextMenu && !data.contextMenu?.hideUnfilter ? (
-					<Menu.Item
-						dense={true}
-						value={"unfilter"}
-						onClick={() => {
-							frame.unfilter();
-							let optionUp = data.option;
-							const reUpdate = data.option["series"];
-							optionUp = {
-								...optionUp,
-								["series"]: null,
-							};
-							try {
+				<DropdownMenuContent
+					style={
+						contextMenu
+							? {
+									position: "fixed",
+									top: contextMenu.mouseY,
+									left: contextMenu.mouseX,
+								}
+							: {}
+					}
+				>
+					{contextMenu && !data.contextMenu?.hideUnfilter ? (
+						<DropdownMenuItem
+							onClick={() => {
+								frame.unfilter();
+								let optionUp = data.option;
+								const _reUpdate = data.option.series;
+								optionUp = {
+									...optionUp,
+									series: null,
+								};
+								try {
+									setData(
+										"option",
+										// biome-ignore lint/suspicious/noExplicitAny: echart PathValue type is untyped
+										optionUp as PathValue<any, any>,
+									);
+									currentOperation.current.unfilterActive = true;
+								} catch (_e) {}
+
+								onClose();
+							}}
+						>
+							Unfilter
+						</DropdownMenuItem>
+					) : null}
+					{contextMenu && !data.contextMenu?.hideFilter ? (
+						<DropdownMenuItem
+							onClick={() => {
+								frame.filter(
+									`SetFrameFilter(${
+										contextMenu.value.name
+									}==${JSON.stringify(contextMenu.value.value)})`,
+								);
+								let optionUp = data.option;
+								const _reUpdate = data.option.series;
+								optionUp = {
+									...optionUp,
+									series: null,
+								};
 								setData(
 									"option",
+									// biome-ignore lint/suspicious/noExplicitAny: echart PathValue type is untyped
 									optionUp as PathValue<any, any>,
 								);
-								currentOperation.current.unfilterActive = true;
-							} catch (e) {}
-
-							onClose();
-						}}
-					>
-						Unfilter
-					</Menu.Item>
-				) : null}
-				{contextMenu && !data.contextMenu?.hideFilter ? (
-					<Menu.Item
-						dense={true}
-						value={"filter"}
-						onClick={() => {
-							frame.filter(
-								`SetFrameFilter(${
-									contextMenu.value.name
-								}==${JSON.stringify(contextMenu.value.value)})`,
-							);
-							let optionUp = data.option;
-							const reUpdate = data.option["series"];
-							optionUp = {
-								...optionUp,
-								["series"]: null,
-							};
-							setData("option", optionUp as PathValue<any, any>);
-							currentOperation.current.filterActive = true;
-							onClose();
-						}}
-					>
-						Filter {contextMenu.value.name} ==
-						{typeof contextMenu.value === "string"
-							? contextMenu.value
-							: JSON.stringify(contextMenu.value.value)}
-					</Menu.Item>
-				) : null}
-				{contextMenu && !data.contextMenu?.hideExclude ? (
-					<Menu.Item
-						dense={true}
-						value={"exclude"}
-						onClick={() => {
-							frame.filter(
-								`SetFrameFilter(${contextMenu.value.name}!="${contextMenu.value.value}")`,
-							);
-							let optionUp = data.option;
-							const reUpdate = data.option["series"];
-							optionUp = {
-								...optionUp,
-								["series"]: null,
-							};
-							setData("option", optionUp as PathValue<any, any>);
-							currentOperation.current.excludeActive = true;
-							onClose();
-						}}
-					>
-						Exclude {contextMenu.value.name} !={" "}
-						{contextMenu?.value?.value}
-					</Menu.Item>
-				) : null}
-			</Menu>
+								currentOperation.current.filterActive = true;
+								onClose();
+							}}
+						>
+							Filter {contextMenu.value.name} ==
+							{typeof contextMenu.value === "string"
+								? contextMenu.value
+								: JSON.stringify(contextMenu.value.value)}
+						</DropdownMenuItem>
+					) : null}
+					{contextMenu && !data.contextMenu?.hideExclude ? (
+						<DropdownMenuItem
+							onClick={() => {
+								frame.filter(
+									`SetFrameFilter(${contextMenu.value.name}!="${contextMenu.value.value}")`,
+								);
+								let optionUp = data.option;
+								const _reUpdate = data.option.series;
+								optionUp = {
+									...optionUp,
+									series: null,
+								};
+								setData(
+									"option",
+									// biome-ignore lint/suspicious/noExplicitAny: echart PathValue type is untyped
+									optionUp as PathValue<any, any>,
+								);
+								currentOperation.current.excludeActive = true;
+								onClose();
+							}}
+						>
+							Exclude {contextMenu.value.name} !={" "}
+							{contextMenu?.value?.value}
+						</DropdownMenuItem>
+					) : null}
+				</DropdownMenuContent>
+			</DropdownMenu>
 		);
 	},
 );

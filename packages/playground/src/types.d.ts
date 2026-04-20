@@ -167,12 +167,12 @@ export interface PixelMessageTextPart {
 export interface PixelMessageMediaPart {
 	type: "MEDIA";
 	mediaInfo: {
-		base64Data: string;
-		fileFormat: string;
+		base64Data?: string;
+		fileFormat?: string;
 		fileName: string;
-		fileLocation: string;
+		fileLocation?: string;
 		mediaInputType: "FILE";
-		mimeType: string;
+		mimeType?: string;
 	};
 }
 

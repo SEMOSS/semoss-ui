@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { ActionMessages, useBlocks, type VariableType } from "@semoss/renderer";
+import { useNotification } from "@semoss/ui";
 import {
 	Button,
-	Modal,
-	Stack,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
+} from "@semoss/ui/next";
 
 export interface AddVariableModalProps {
 	/**
@@ -41,77 +44,67 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
 	const { state } = useBlocks();
 	const notification = useNotification();
 
+	const aliasId = useId();
 	const [newAlias, setNewAlias] = useState("");
 
+	const hasError =
+		Boolean(state.variables[newAlias]) || newAlias.includes(".");
+
 	return (
-		<Modal open={open} fullWidth>
-			<Modal.Title>Add Variable</Modal.Title>
-			<Modal.Content>
-				<Stack
-					direction="row"
-					spacing={1}
-					pt={1}
-					className="add-variable-modal__content"
-				>
-					<TextField
+		<Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+			<DialogContent showCloseButton={false}>
+				<DialogHeader>
+					<DialogTitle>Add Variable</DialogTitle>
+				</DialogHeader>
+				<div className="add-variable-modal__content flex flex-col gap-1.5 pt-1">
+					<Label htmlFor={aliasId}>Alias</Label>
+					<Input
+						id={aliasId}
 						autoFocus
-						fullWidth
-						label={"Alias"}
-						error={
-							Boolean(state.variables[newAlias]) ||
-							newAlias.includes(".")
-						}
+						aria-invalid={hasError}
 						onChange={(e) => setNewAlias(e.target.value)}
-						helperText={
-							state.variables[newAlias] ||
-							newAlias.includes(".") ? (
-								<Typography variant={"caption"} color={"error"}>
-									{newAlias.includes(".")
-										? "Periods aren't acceptable characters"
-										: "Please provide a unique alias"}
-								</Typography>
-							) : (
-								""
-							)
-						}
 					/>
-				</Stack>
-			</Modal.Content>
-			<Modal.Actions>
-				<Button onClick={() => onClose()}>Cancel</Button>
-				<Button
-					variant={"contained"}
-					disabled={
-						!newAlias ||
-						Boolean(state.variables[newAlias]) ||
-						newAlias.includes(".")
-					}
-					onClick={() => {
-						const success = state.dispatch({
-							message: ActionMessages.ADD_VARIABLE,
-							payload: {
-								id: newAlias,
-								to: to,
-								cellId: cellId,
-								type: type,
-							},
-						});
+					{hasError && (
+						<span className="text-destructive text-xs">
+							{newAlias.includes(".")
+								? "Periods aren't acceptable characters"
+								: "Please provide a unique alias"}
+						</span>
+					)}
+				</div>
+				<DialogFooter>
+					<Button variant="outline" onClick={() => onClose()}>
+						Cancel
+					</Button>
+					<Button
+						disabled={!newAlias || hasError}
+						onClick={() => {
+							const success = state.dispatch({
+								message: ActionMessages.ADD_VARIABLE,
+								payload: {
+									id: newAlias,
+									to: to,
+									cellId: cellId,
+									type: type,
+								},
+							});
 
-						notification.add({
-							color: success ? "success" : "error",
-							message: success
-								? `Successfully added ${newAlias}`
-								: `Unable to add ${newAlias}, due to syntax or a duplicated alias`,
-						});
+							notification.add({
+								color: success ? "success" : "error",
+								message: success
+									? `Successfully added ${newAlias}`
+									: `Unable to add ${newAlias}, due to syntax or a duplicated alias`,
+							});
 
-						if (success) {
-							onClose();
-						}
-					}}
-				>
-					Add
-				</Button>
-			</Modal.Actions>
-		</Modal>
+							if (success) {
+								onClose();
+							}
+						}}
+					>
+						Add
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };
