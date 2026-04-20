@@ -46,10 +46,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 	// Forward script execution completion from extension (panel) back to all tabs (content scripts)
 	// This allows the playground to receive execution status
-	if (
-		!sender.tab &&
-		message.type === "SCRIPT_EXECUTION_COMPLETE"
-	) {
+	if (!sender.tab && message.type === "SCRIPT_EXECUTION_COMPLETE") {
 		// Send to all tabs
 		chrome.tabs.query({}, (tabs) => {
 			tabs.forEach((tab) => {
@@ -65,7 +62,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				}
 			});
 		});
-		
+
 		sendResponse({ success: true });
 		return true;
 	}
@@ -135,7 +132,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	// Forward field monitoring messages from panel to specific tab
 	if (
 		!sender.tab &&
-		(message.type === "START_FIELD_MONITORING" || message.type === "STOP_FIELD_MONITORING")
+		(message.type === "START_FIELD_MONITORING" ||
+			message.type === "STOP_FIELD_MONITORING")
 	) {
 		if (message.tabId) {
 			chrome.tabs
@@ -145,14 +143,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				})
 				.catch((err) => {
 					// Check if this is a bfcache error (tab moved to back/forward cache)
-					const isBfcacheError = err.message && (
-						err.message.includes("back/forward cache") ||
-						err.message.includes("message channel is closed")
-					);
-					
+					const isBfcacheError =
+						err.message &&
+						(err.message.includes("back/forward cache") ||
+							err.message.includes("message channel is closed"));
+
 					if (isBfcacheError) {
 						// This is expected when tab is in bfcache - not a critical error
-						sendResponse({ success: false, error: "Tab in back/forward cache" });
+						sendResponse({
+							success: false,
+							error: "Tab in back/forward cache",
+						});
 					} else {
 						sendResponse({ success: false, error: err.message });
 					}
@@ -160,15 +161,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		} else {
 			sendResponse({ success: false, error: "No tabId provided" });
 		}
-		
+
 		return true; // Keep channel open for async response
 	}
 
 	// Forward field input detected from content script to panel
-	if (
-		sender.tab &&
-		message.type === "FIELD_INPUT_DETECTED"
-	) {
+	if (sender.tab && message.type === "FIELD_INPUT_DETECTED") {
 		// Broadcast to all extension contexts (panel, popup, etc.)
 		chrome.runtime
 			.sendMessage(message)
@@ -178,7 +176,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			.catch(() => {
 				// Failed to notify panel
 			});
-		
+
 		sendResponse({ success: true });
 		return true;
 	}
@@ -248,7 +246,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 					sendResponse({ success: false, error: error.message }),
 				);
 			return true;
-			case "UPDATE_FIELD_VALUE":
+		case "UPDATE_FIELD_VALUE":
 			// Update field value on the webpage (real-time mirroring from panel)
 			chrome.tabs
 				.sendMessage(message.tabId, {
@@ -265,7 +263,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 				);
 			return true;
 		default:
-			// Unknown message type
+		// Unknown message type
 	}
 });
 
@@ -433,10 +431,7 @@ async function highlightElement(
 }
 
 // Remove highlight from an element
-async function removeHighlight(
-	tabId: number,
-	selector: string,
-): Promise<void> {
+async function removeHighlight(tabId: number, selector: string): Promise<void> {
 	try {
 		await sendDebuggerCommand(tabId, "Runtime.evaluate", {
 			expression: `
@@ -543,13 +538,13 @@ async function clickBySelector(tabId: number, selector: string): Promise<void> {
 	let lastError: string | undefined;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
-			try {
-				// Use Runtime.evaluate to directly call .click() on the element
-				const result = (await sendDebuggerCommand(
-					tabId,
-					"Runtime.evaluate",
-					{
-						expression: `
+		try {
+			// Use Runtime.evaluate to directly call .click() on the element
+			const result = (await sendDebuggerCommand(
+				tabId,
+				"Runtime.evaluate",
+				{
+					expression: `
 					(function() {
 						const element = document.querySelector(${JSON.stringify(selector)});
 						if (!element) {
@@ -565,30 +560,30 @@ async function clickBySelector(tabId: number, selector: string): Promise<void> {
 						return { success: true };
 					})()
 				`,
-						returnByValue: true,
-						awaitPromise: false,
-					},
-				)) as {
-					result?: { value?: { success: boolean; error?: string } };
-				};
+					returnByValue: true,
+					awaitPromise: false,
+				},
+			)) as {
+				result?: { value?: { success: boolean; error?: string } };
+			};
 
-				if (result?.result?.value?.success) {
-					// Wait for click to process
-					await wait(150);
-					return; // Success, exit function
-				}
-
-				lastError = result?.result?.value?.error || "Unknown error";
-			} catch (error) {
-				lastError =
-					error instanceof Error ? error.message : "Unknown error";
+			if (result?.result?.value?.success) {
+				// Wait for click to process
+				await wait(150);
+				return; // Success, exit function
 			}
 
-			// Wait before retry (but not after last attempt)
-			if (attempt < maxRetries) {
-				await wait(1500);
-			}
+			lastError = result?.result?.value?.error || "Unknown error";
+		} catch (error) {
+			lastError =
+				error instanceof Error ? error.message : "Unknown error";
 		}
+
+		// Wait before retry (but not after last attempt)
+		if (attempt < maxRetries) {
+			await wait(1500);
+		}
+	}
 
 	// All retries failed
 	throw new Error(
@@ -629,13 +624,13 @@ async function typeBySelector(
 	let lastError: string | undefined;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
-			try {
-				// Use Runtime.evaluate to directly set value and trigger events
-				const result = (await sendDebuggerCommand(
-					tabId,
-					"Runtime.evaluate",
-					{
-						expression: `
+		try {
+			// Use Runtime.evaluate to directly set value and trigger events
+			const result = (await sendDebuggerCommand(
+				tabId,
+				"Runtime.evaluate",
+				{
+					expression: `
 					(function() {
 						const element = document.querySelector(${JSON.stringify(selector)});
 						if (!element) {
@@ -668,29 +663,29 @@ async function typeBySelector(
 						return { success: true };
 					})()
 				`,
-						returnByValue: true,
-					},
-				)) as {
-					result?: { value?: { success: boolean; error?: string } };
-				};
+					returnByValue: true,
+				},
+			)) as {
+				result?: { value?: { success: boolean; error?: string } };
+			};
 
-				if (result?.result?.value?.success) {
-					// Add small delay after typing to let the page react
-					await wait(200);
-					return; // Success, exit function
-				}
-
-				lastError = result?.result?.value?.error || "Unknown error";
-			} catch (error) {
-				lastError =
-					error instanceof Error ? error.message : "Unknown error";
+			if (result?.result?.value?.success) {
+				// Add small delay after typing to let the page react
+				await wait(200);
+				return; // Success, exit function
 			}
 
-			// Wait before retry (but not after last attempt)
-			if (attempt < maxRetries) {
-				await wait(1500);
-			}
+			lastError = result?.result?.value?.error || "Unknown error";
+		} catch (error) {
+			lastError =
+				error instanceof Error ? error.message : "Unknown error";
 		}
+
+		// Wait before retry (but not after last attempt)
+		if (attempt < maxRetries) {
+			await wait(1500);
+		}
+	}
 
 	// All retries failed
 	throw new Error(

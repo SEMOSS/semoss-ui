@@ -11,26 +11,19 @@
 		"selectPlaceholder": "Select a knowledge source"
 	},
 	"selector": {
-		"title": "Select MCP",
 		"search": "Search",
-		"searchPlaceholder": "Search...",
-		"noResults": "No results found",
 		"createKnowledgeSource": "Create Knowledge Source",
 		"viewDetails": "View Details",
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found"
 	},
 	"overlay": {
-		"title": "MCP Configuration",
-		"description": "Configure your MCP settings",
-		"editToolbox": "Edit Toolbox",
-		"editKnowledge": "Edit Knowledge",
-		"toolboxDescription": "Add capabilities to your agent and extend what it can do",
-		"knowledgeDescription": "Edit the knowledge sources your agent can access"
+		"editToolbox": "Configure Toolboxes",
+		"editKnowledge": "Configure Knowledge",
+		"toolboxDescription": "Add tools to give this chat more capabilities",
+		"knowledgeDescription": "Add knowledge sources to give the model more context"
 	},
 	"tools": {
-		"selectMcp": "Select MCP",
-		"selectTool": "Select Tool",
 		"enterValues": "Enter comma-separated values",
 		"selectField": "Select {{field}}",
 		"enterField": "Enter {{field}}"
@@ -48,5 +41,15 @@
 		"embed": "Embed",
 		"save": "Save",
 		"close": "Close"
+	},
+	"permission": {
+		"accessRequested": "Access requested",
+		"requestAccess": "Request access",
+		"noAccess": "No access",
+		"requestAccessButton": "Request Access",
+		"noDescription": "No description available.",
+		"tooltipNoAccess": "You don't have access to this {{type}}. Please request access from the owner.",
+		"tooltipMissingDependencies": "You don't have access to all dependencies of this {{type}}, so functionality may be limited. Open in the platform for more information.",
+		"tooltipOpen": "Open this {{type}} in the platform"
 	}
 }

@@ -2,7 +2,7 @@
 
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { XIcon } from "lucide-react";
-import type * as React from "react";
+import * as React from "react";
 import { cn } from "@/lib/utils";
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
@@ -27,21 +27,21 @@ function SheetPortal({
 	return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />;
 }
 
-function SheetOverlay({
-	className,
-	...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
-	return (
-		<SheetPrimitive.Overlay
-			data-slot="sheet-overlay"
-			className={cn(
-				"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in",
-				className,
-			)}
-			{...props}
-		/>
-	);
-}
+const SheetOverlay = React.forwardRef<
+	React.ElementRef<typeof SheetPrimitive.Overlay>,
+	React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+	<SheetPrimitive.Overlay
+		ref={ref}
+		data-slot="sheet-overlay"
+		className={cn(
+			"data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=open]:animate-in",
+			className,
+		)}
+		{...props}
+	/>
+));
+SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 function SheetContent({
 	className,
@@ -56,6 +56,7 @@ function SheetContent({
 			<SheetOverlay />
 			<SheetPrimitive.Content
 				data-slot="sheet-content"
+				aria-describedby={undefined}
 				className={cn(
 					"fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:duration-300 data-[state=open]:duration-500",
 					side === "right" &&

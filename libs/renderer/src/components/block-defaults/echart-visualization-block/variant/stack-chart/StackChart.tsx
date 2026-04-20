@@ -7,18 +7,9 @@ import { CanvasRenderer } from "echarts/renderers";
 import EChartsReact, { type EChartsOption } from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockComponent } from "../../../../../store";
 import { ChartContextMenu } from "../bar-chart/ChartContextMenu";
-
-const StyledNoDataContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
-	height: "100%",
-	width: "100%",
-	color: error ? theme.palette.error.main : "unset",
-}));
 export interface EChartColumns {
 	name: string;
 	selector: string;
@@ -27,13 +18,13 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
 	widget: "e-chart";
 	data: {
-		option: {};
+		option: Record<string, unknown>;
 		frame: {
 			name: string;
 		};
 		variation: undefined | string;
 		columns: EChartColumns[];
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: echart aggregate type is dynamic
 		aggregate: Record<string, any>;
 		contextMenu: {
 			hideUnfilter: boolean;
@@ -41,7 +32,7 @@ export interface EchartVisualizationBlockDef {
 			hideExclude: boolean;
 		};
 	};
-	listeners: {};
+	listeners: Record<string, unknown>;
 	slots: never;
 }
 
@@ -60,17 +51,18 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 		yAxisColumn: { name: "", selector: "", width: undefined },
 		chartInstance: { setOption: null },
 	});
+	// biome-ignore lint/suspicious/noExplicitAny: echart fields type is dynamic
 	let fields: Record<string, any> = {};
 	let xAxis = "";
 	let yAxis = "";
 	let category = "";
 	let tooltip = "";
 	if (Object.hasOwn(data.option, "_state")) {
-		fields = data.option["_state"]["fields"];
-		xAxis = fields["XAxis"];
-		yAxis = fields["YAxis"];
-		category = fields["category"];
-		tooltip = fields["tooltip"];
+		fields = data.option._state.fields;
+		xAxis = fields.XAxis;
+		yAxis = fields.YAxis;
+		category = fields.category;
+		tooltip = fields.tooltip;
 	}
 
 	/**
@@ -139,12 +131,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 			if (selectedDataIndexes.length > 0) {
 				const currentOption = chart.getOption();
 				const xAxisData =
-					data.option["flipAxis"] === true
+					data.option.flipAxis === true
 						? currentOption.yAxis[0].data
 						: currentOption.xAxis[0].data;
 				const filteredXaxis = [...selectedDataIndexes]
 					.filter((index) => {
-						return data.option["series"].some((series) => {
+						return data.option.series.some((series) => {
 							const yValue = series.data[index]?.value;
 							return (
 								yValue !== null &&
@@ -158,12 +150,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 					.map((index) => xAxisData[index]);
 				handleSelection(
 					filteredXaxis,
-					currentOption["_state"]["fields"]["XAxis"],
+					currentOption._state.fields.XAxis,
 				);
 			}
 		});
 	};
 	//Brushed Data points selection and pixel expression of brushed data points to send to the server
+	// biome-ignore lint/suspicious/noExplicitAny: echart handleSelection value/name types are untyped
 	const handleSelection = (value: any, name: any) => {
 		// update the frame
 		frame.filter(`SetFrameFilter(${name}==[${JSON.stringify(value)}])`);
@@ -176,9 +169,9 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 				const XAxisName = xAxis;
 				const selectedData = params.dataIndex;
 				const filteredXaxis =
-					data.option["flipAxis"] === true
-						? data.option["yAxis"]["data"][selectedData]
-						: data.option["xAxis"]["data"][selectedData];
+					data.option.flipAxis === true
+						? data.option.yAxis.data[selectedData]
+						: data.option.xAxis.data[selectedData];
 				setContextMenu(
 					contextMenu === null
 						? {
@@ -207,7 +200,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 		data.option.series = [];
 		data.option.xAxis.data = [];
 
-		if (apiData["values"]) {
+		if (apiData.values) {
 			if (Object.hasOwn(data.option, "_state")) {
 				if (
 					Object.hasOwn(fields, "XAxis") &&
@@ -216,8 +209,8 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 					Object.hasOwn(fields, "tooltip")
 				) {
 					if (
-						JSON.stringify(xAxis) == JSON.stringify(category) &&
-						JSON.stringify(yAxis) == JSON.stringify(tooltip)
+						JSON.stringify(xAxis) === JSON.stringify(category) &&
+						JSON.stringify(yAxis) === JSON.stringify(tooltip)
 					) {
 						apiData.values.forEach(([x, y]) => {
 							if (!groupedData[x]) {
@@ -232,11 +225,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
+									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
 									(arr: any) => arr.length,
 								),
 							);
 						});
-						const colorList = data.option["color"];
+						const colorList = data.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
@@ -247,7 +241,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						});
 						//  Ensure we only create the exact number of stacks needed
 						const series = uniqueCategories.map(
-							(category, index) => ({
+							(category, _index) => ({
 								type: "bar",
 								stack: "stack",
 								name: category.toString(), //  Legend name
@@ -259,7 +253,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 										) || {};
 									return {
 										value:
-											isNaN(point.y) ||
+											Number.isNaN(point.y) ||
 											point.y === undefined
 												? point.y
 												: parseFloat(point.y)
@@ -277,7 +271,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						const legendData = uniqueCategories.map(String);
 						return { xAxisData, series, maxStackSize, legendData };
 					}
-					if (JSON.stringify(xAxis) == JSON.stringify(category)) {
+					if (JSON.stringify(xAxis) === JSON.stringify(category)) {
 						apiData.values.forEach(([x, y, tooltip]) => {
 							if (!groupedData[x]) {
 								groupedData[x] = [];
@@ -293,12 +287,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
+									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
 									(arr: any) => arr.length,
 								),
 							);
 						});
 
-						const colorList = data.option["color"];
+						const colorList = data.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
@@ -309,7 +304,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						});
 						//  Ensure we only create the exact number of stacks needed
 						const series = uniqueCategories.map(
-							(category, index) => ({
+							(category, _index) => ({
 								type: "bar",
 								stack: "stack",
 								name: category.toString(), //  Legend name
@@ -321,7 +316,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 										) || {};
 									return {
 										value:
-											isNaN(point.y) ||
+											Number.isNaN(point.y) ||
 											point.y === undefined
 												? point.y
 												: parseFloat(point.y)
@@ -339,7 +334,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						const legendData = uniqueCategories.map(String);
 						return { xAxisData, series, maxStackSize, legendData };
 					}
-					if (JSON.stringify(yAxis) == JSON.stringify(tooltip)) {
+					if (JSON.stringify(yAxis) === JSON.stringify(tooltip)) {
 						apiData.values.forEach(([x, y, category]) => {
 							if (!groupedData[x]) {
 								groupedData[x] = [];
@@ -356,11 +351,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
+									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
 									(arr: any) => arr.length,
 								),
 							);
 						});
-						const colorList = data.option["color"];
+						const colorList = data.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
@@ -371,7 +367,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						});
 						//  Ensure we only create the exact number of stacks needed
 						const series = uniqueCategories.map(
-							(category, index) => ({
+							(category, _index) => ({
 								type: "bar",
 								stack: "stack",
 								name: category.toString(), //  Legend name
@@ -383,7 +379,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 										) || {};
 									return {
 										value:
-											isNaN(point.y) ||
+											Number.isNaN(point.y) ||
 											point.y === undefined
 												? point.y
 												: parseFloat(point.y)
@@ -414,12 +410,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						//  Calculate max stack size (Max number of bars stacked at any x value)
 						maxStackSize = Math.max(
 							...Object.values(groupedData).map(
+								// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
 								(arr: any) => arr.length,
 							),
 						);
 					});
 
-					const colorList = data.option["color"];
+					const colorList = data.option.color;
 					const colorCount = colorList.length;
 
 					//  Assign colors to categories
@@ -429,7 +426,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							colorList[index % colorCount]; //  Cycle colors
 					});
 					//  Ensure we only create the exact number of stacks needed
-					const series = uniqueCategories.map((category, index) => ({
+					const series = uniqueCategories.map((category, _index) => ({
 						type: "bar",
 						stack: "stack",
 						name: category.toString(), //  Legend name
@@ -440,7 +437,8 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 								) || {};
 							return {
 								value:
-									isNaN(point.y) || point.y === undefined
+									Number.isNaN(point.y) ||
+									point.y === undefined
 										? point.y
 										: parseFloat(point.y)
 												.toFixed(2)
@@ -461,7 +459,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 					Object.hasOwn(fields, "YAxis") &&
 					Object.hasOwn(fields, "category")
 				) {
-					if (JSON.stringify(xAxis) == JSON.stringify(category)) {
+					if (JSON.stringify(xAxis) === JSON.stringify(category)) {
 						apiData.values.forEach(([x, y]) => {
 							if (!groupedData[x]) {
 								groupedData[x] = [];
@@ -477,11 +475,12 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							//  Calculate max stack size (Max number of bars stacked at any x value)
 							maxStackSize = Math.max(
 								...Object.values(groupedData).map(
+									// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
 									(arr: any) => arr.length,
 								),
 							);
 						});
-						const colorList = data.option["color"];
+						const colorList = data.option.color;
 						const colorCount = colorList.length;
 
 						//  Assign colors to categories
@@ -492,7 +491,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						});
 						//  Ensure we only create the exact number of stacks needed
 						const series = uniqueCategories.map(
-							(category, index) => ({
+							(category, _index) => ({
 								type: "bar",
 								stack: "stack",
 								name: category.toString(), //  Legend name
@@ -504,7 +503,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 										) || {};
 									return {
 										value:
-											isNaN(point.y) ||
+											Number.isNaN(point.y) ||
 											point.y === undefined
 												? point.y
 												: parseFloat(point.y)
@@ -537,12 +536,13 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						//  Calculate max stack size (Max number of bars stacked at any x value)
 						maxStackSize = Math.max(
 							...Object.values(groupedData).map(
+								// biome-ignore lint/suspicious/noExplicitAny: echart arr type is untyped
 								(arr: any) => arr.length,
 							),
 						);
 					});
 
-					const colorList = data.option["color"];
+					const colorList = data.option.color;
 					const colorCount = colorList.length;
 
 					//  Assign colors to categories
@@ -552,7 +552,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							colorList[index % colorCount]; //  Cycle colors
 					});
 					//  Ensure we only create the exact number of stacks needed
-					const series = uniqueCategories.map((category, index) => ({
+					const series = uniqueCategories.map((category, _index) => ({
 						type: "bar",
 						stack: "stack",
 						name: category.toString(), //  Legend name
@@ -563,7 +563,8 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 								) || {};
 							return {
 								value:
-									isNaN(point.y) || point.y === undefined
+									Number.isNaN(point.y) ||
+									point.y === undefined
 										? point.y
 										: parseFloat(point.y)
 												.toFixed(2)
@@ -584,9 +585,9 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 	};
 	// this function is used to show the data in tooltip
 	const formatdatapoints = (apiData, data, maxStackSize) => {
-		if (apiData["values"]) {
+		if (apiData.values) {
 			if (Object.hasOwn(data.option, "_state")) {
-				if (Object.hasOwn(data.option["_state"], "fields")) {
+				if (Object.hasOwn(data.option._state, "fields")) {
 					if (
 						Object.hasOwn(fields, "XAxis") &&
 						Object.hasOwn(fields, "YAxis") &&
@@ -598,9 +599,8 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							const tooltipValues = [];
 							let totalTooltipValue = 0;
 							const tooltipPrefix =
-								data.option["_state"]["fields"][
-									"tooltipDataType"
-								] === "NUMBER"
+								data.option._state.fields.tooltipDataType ===
+								"NUMBER"
 									? "Average of"
 									: "Count of";
 							params.forEach((param) => {
@@ -647,55 +647,55 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 	};
 	if (!data.option) {
 		return (
-			<StyledNoDataContainer>
+			<div className="h-full w-full">
 				Add JSON to render your visualization
-			</StyledNoDataContainer>
+			</div>
 		);
 	}
 	if (typeof data.option === "string") {
 		try {
 			return (
-				<StyledNoDataContainer>
+				<div className="h-full w-full">
 					<EChartsReact
 						option={data.option as unknown as EChartsOption}
 						style={{ height: "inherit", width: "inherit" }}
 					/>
-				</StyledNoDataContainer>
+				</div>
 			);
-		} catch (e) {
+		} catch (_e) {
 			return (
-				<StyledNoDataContainer error>
+				<div className="h-full w-full text-destructive">
 					There was an issue parsing your JSON.
-				</StyledNoDataContainer>
+				</div>
 			);
 		}
 	} else {
-		data.option["series"] = [];
-		data.option["xAxis"]["data"] = [];
-		data.option["yAxis"]["data"] = [];
+		data.option.series = [];
+		data.option.xAxis.data = [];
+		data.option.yAxis.data = [];
 		const processedFrameData = processData(frame.data, data);
 		if (
 			processedFrameData &&
 			Object.hasOwn(processedFrameData, "xAxisData") &&
 			Object.hasOwn(processedFrameData, "series")
 		) {
-			data.option["series"] = processedFrameData.series;
-			data.option["legend"]["data"] = processedFrameData.legendData;
-			if (data.option["flipAxis"] === true) {
-				data.option["xAxis"]["data"] = [];
-				data.option["yAxis"]["data"] = processedFrameData["xAxisData"];
+			data.option.series = processedFrameData.series;
+			data.option.legend.data = processedFrameData.legendData;
+			if (data.option.flipAxis === true) {
+				data.option.xAxis.data = [];
+				data.option.yAxis.data = processedFrameData.xAxisData;
 			} else {
-				data.option["yAxis"]["data"] = [];
-				data.option["xAxis"]["data"] = processedFrameData["xAxisData"];
+				data.option.yAxis.data = [];
+				data.option.xAxis.data = processedFrameData.xAxisData;
 			}
 		}
 		if (frame.data.values.length > 0) {
 			if (
-				!Object.hasOwn(data.option["tooltip"], "formatter") ||
-				data.option["tooltip"]["formatter"] === ""
+				!Object.hasOwn(data.option.tooltip, "formatter") ||
+				data.option.tooltip.formatter === ""
 			) {
-				data.option["tooltip"] = {
-					...data.option["tooltip"],
+				data.option.tooltip = {
+					...data.option.tooltip,
 					formatter: formatdatapoints(
 						frame.data,
 						data,
@@ -705,7 +705,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 			}
 		}
 		return (
-			<StyledNoDataContainer>
+			<div className="h-full w-full">
 				<EChartsReact
 					option={data.option as EChartsOption}
 					style={{ height: "inherit", width: "inherit" }}
@@ -726,7 +726,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 						setContextMenu(null);
 					}}
 				/>
-			</StyledNoDataContainer>
+			</div>
 		);
 	}
 });

@@ -11,8 +11,7 @@ import {
 	StateStore,
 } from "@semoss/renderer";
 import { runPixel, useInsight } from "@semoss/sdk/react";
-import { LoadingScreen, useNotification } from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import type { FlexLayout } from "@/components/flex-layout";
@@ -198,7 +197,6 @@ const ACTIVE = "page-1";
 export const BlocksWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
 	const insight = useInsight();
-	const notification = useNotification();
 	const [state, setState] = useState<StateStore>();
 
 	//to throw a warning when the user tried to reload the page
@@ -217,6 +215,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		}
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
 		// start the loading screen
 		workspace.setLoading(true);
@@ -255,10 +254,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 				setState(s);
 			})
 			.catch((e) => {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 				console.error(e);
 			})
 			.finally(() => {
@@ -315,7 +311,11 @@ export const BlocksWorkspace: React.FC = observer(() => {
 	}, [workspace.model, designer]);
 
 	if (!state) {
-		return <LoadingScreen.Trigger />;
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (

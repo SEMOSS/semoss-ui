@@ -1,37 +1,30 @@
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
-	getValueByPath,
 	type PathValue,
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
-import { Autocomplete, Button, Select, styled, TextField } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
+// biome-ignore lint/correctness/noUnusedVariables: used in JSX or callback
 interface GanttFrameSectionProps {
 	id: string;
 }
-//styled main container
-const StyledMainContainer = styled("div")(() => ({}));
-//styled frame section
-const StyledFrameSection = styled("div")(() => ({}));
-//dropdown section with custom styling
-const StyledDataSection = styled("div")(() => ({
-	display: "block",
-	padding: "0.65rem",
-}));
-//select section with full width
-const StyledSelect = styled(Select)(() => ({
-	width: "100%",
-}));
+
 export const GanttFrameSection = observer(
 	<D extends BlockDef = BlockDef>({ id, path }) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id); //block data
-		const [columnsData, setColumnsData] = useState([]); //column data to select for various fields
 		const [framesData, setFramesData] = useState({
 			task: "",
 			startdate: "",
@@ -39,17 +32,13 @@ export const GanttFrameSection = observer(
 			taskgroup: "",
 			taskprogress: "",
 			milestone: "",
-			tooltip: [],
+			tooltip: [] as string[],
 		}); // frame component data
-		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-
-		// get all of the frames
+		const _timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const getFrames = useBlocksPixel<string[]>("GetFrames();", {
 			data: [],
 		});
 		const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
-		// using frameheaders hook to get the header details for the selected frame
 		const frameHeaders = useFrameHeaders(data.frame?.name);
 		const columns = frameHeaders.data.list.map((item) => {
 			return {
@@ -58,18 +47,17 @@ export const GanttFrameSection = observer(
 				width: undefined,
 			};
 		});
-		const columnsSelected = data.columns;
-		//retain the frame section component with state data
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const optionData = data.option;
 			if (
 				Object.hasOwn(optionData, "customSettings") &&
-				Object.hasOwn(optionData["customSettings"], "columnDetails")
+				Object.hasOwn(optionData.customSettings, "columnDetails")
 			) {
 				const columnDetails =
-					optionData["customSettings"]["columnDetails"] || {};
+					optionData.customSettings.columnDetails || {};
 				const fieldsState = { ...framesData };
-				Object.keys(columnDetails).forEach((item, index) => {
+				Object.keys(columnDetails).forEach((item) => {
 					if (
 						typeof columnDetails[item] === "object" &&
 						Array.isArray(columnDetails[item])
@@ -78,7 +66,7 @@ export const GanttFrameSection = observer(
 							(item) => item.selector,
 						);
 					} else {
-						fieldsState[item] = columnDetails[item]["selector"];
+						fieldsState[item] = columnDetails[item].selector;
 					}
 				});
 				setFramesData((prevFramesData) => {
@@ -89,48 +77,49 @@ export const GanttFrameSection = observer(
 				});
 			}
 		}, []);
-		//update the state when the frame section fields are changed
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (
-				framesData.task != "" &&
-				framesData.startdate != "" &&
-				framesData.enddate != "" &&
+				framesData.task !== "" &&
+				framesData.startdate !== "" &&
+				framesData.enddate !== "" &&
 				columns.length
 			) {
 				let columnsToSet = [];
-				const columnsObject = {};
+				// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+				const columnsObject: Record<string, any> = {};
 
 				const columnsTask = columns.find(
 					(item) => item.selector === framesData.task,
 				);
 				if (Object.hasOwn(columnsTask, "name")) {
 					columnsToSet.push(columnsTask);
-					columnsObject["task"] = columnsTask;
+					columnsObject.task = columnsTask;
 				}
 				const columnsStartDate = columns.find(
 					(item) => item.selector === framesData.startdate,
 				);
 				if (Object.hasOwn(columnsStartDate, "name")) {
 					columnsToSet.push(columnsStartDate);
-					columnsObject["startdate"] = columnsStartDate;
+					columnsObject.startdate = columnsStartDate;
 				}
 				const columnsEndDate = columns.find(
 					(item) => item.selector === framesData.enddate,
 				);
 				if (Object.hasOwn(columnsEndDate, "name")) {
 					columnsToSet.push(columnsEndDate);
-					columnsObject["enddate"] = columnsEndDate;
+					columnsObject.enddate = columnsEndDate;
 				}
 				if (framesData?.taskgroup !== "") {
 					const columnsTaskGroup = columns.find(
 						(item) => item.selector === framesData.taskgroup,
 					);
 					if (
-						columnsTaskGroup != undefined &&
+						columnsTaskGroup !== undefined &&
 						Object.hasOwn(columnsTaskGroup, "name")
 					) {
 						columnsToSet.push(columnsTaskGroup);
-						columnsObject["taskgroup"] = columnsTaskGroup;
+						columnsObject.taskgroup = columnsTaskGroup;
 					}
 				}
 				if (framesData?.taskprogress !== "") {
@@ -138,11 +127,11 @@ export const GanttFrameSection = observer(
 						(item) => item.selector === framesData.taskprogress,
 					);
 					if (
-						columnsTaskProgress != undefined &&
+						columnsTaskProgress !== undefined &&
 						Object.hasOwn(columnsTaskProgress, "name")
 					) {
 						columnsToSet.push(columnsTaskProgress);
-						columnsObject["taskprogress"] = columnsTaskProgress;
+						columnsObject.taskprogress = columnsTaskProgress;
 					}
 				}
 				if (framesData.milestone !== "") {
@@ -150,11 +139,11 @@ export const GanttFrameSection = observer(
 						(item) => item.selector === framesData.milestone,
 					);
 					if (
-						columnsMileStone != undefined &&
+						columnsMileStone !== undefined &&
 						Object.hasOwn(columnsMileStone, "name")
 					) {
 						columnsToSet.push(columnsMileStone);
-						columnsObject["milestone"] = columnsMileStone;
+						columnsObject.milestone = columnsMileStone;
 					}
 				}
 				if (framesData?.tooltip?.length) {
@@ -163,7 +152,7 @@ export const GanttFrameSection = observer(
 					);
 					if (columnsToolTip.length) {
 						columnsToSet = [...columnsToSet, ...columnsToolTip];
-						columnsObject["tooltip"] = columnsToolTip;
+						columnsObject.tooltip = columnsToolTip;
 					}
 				}
 				const tempDataSet = new Set(columnsToSet);
@@ -175,20 +164,17 @@ export const GanttFrameSection = observer(
 				setData("columns", columnsToSet);
 				if (
 					Object.hasOwn(data.option, "customSettings") &&
-					Object.hasOwn(
-						data.option["customSettings"],
-						"columnDetails",
-					)
+					Object.hasOwn(data.option.customSettings, "columnDetails")
 				) {
 					let option = data.option;
 					option = {
 						...option,
-						["customSettings"]: {
-							...option["customSettings"],
-							["columnDetails"]: {
+						customSettings: {
+							...option.customSettings,
+							columnDetails: {
 								...columnsObject,
 							},
-							["columnIndexDetails"]: {
+							columnIndexDetails: {
 								...columnsIndexToSet,
 							},
 						},
@@ -201,17 +187,23 @@ export const GanttFrameSection = observer(
 			}
 		}, [framesData]);
 		//get the columns index, to use in selector for fetching the records from backend
-		function getColumnIndexToSetData(columnsObject, columnsToSet) {
-			const colIndex = {};
-			Object.keys(columnsObject).forEach((item, index) => {
+		function getColumnIndexToSetData(
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			columnsObject: any,
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			columnsToSet: any[],
+		) {
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			const colIndex: Record<string, any> = {};
+			Object.keys(columnsObject).forEach((item) => {
 				if (
 					typeof columnsObject[item] === "object" &&
 					Array.isArray(columnsObject[item])
 				) {
 					colIndex[item] = [];
-					columnsObject[item].forEach((colObjItem, colObjIndex) => {
+					columnsObject[item].forEach((colObjItem) => {
 						const indexToUpdate = columnsToSet.findIndex(
-							(colSetItem, colSetIndex) =>
+							(colSetItem) =>
 								colSetItem.selector === colObjItem.selector,
 						);
 						colIndex[item].push(indexToUpdate);
@@ -219,7 +211,7 @@ export const GanttFrameSection = observer(
 					colIndex[item].sort();
 				} else {
 					colIndex[item] = columnsToSet.findIndex(
-						(colSetItem, colSetIndex) =>
+						(colSetItem) =>
 							colSetItem.selector ===
 							columnsObject[item].selector,
 					);
@@ -228,220 +220,223 @@ export const GanttFrameSection = observer(
 			return colIndex;
 		}
 		//update the fields when the frame section fields are changed
-		function updateFields(fieldName, event) {
-			setFramesData((prevFrameData) => {
-				return {
-					...prevFrameData,
-					[fieldName]: event.target.value,
-				};
-			});
-			// setData('columns',);
+		function updateField(fieldName: string, value: string) {
+			setFramesData((prevFrameData) => ({
+				...prevFrameData,
+				[fieldName]: value,
+			}));
+		}
+		//update tooltip (multi-select) field
+		function _updateTooltipField(e: React.ChangeEvent<HTMLSelectElement>) {
+			const selected = Array.from(e.target.selectedOptions).map(
+				(opt) => opt.value,
+			);
+			setFramesData((prevFrameData) => ({
+				...prevFrameData,
+				tooltip: selected,
+			}));
 		}
 
 		return (
-			<StyledMainContainer>
-				<StyledFrameSection>
-					<Autocomplete
-						fullWidth
-						id="Echart-Frame"
-						multiple={false}
+			<div className="flex flex-col">
+				<div className="flex flex-col gap-2 p-3">
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="text-muted-foreground text-sm">
+						Frame
+					</label>
+					<select
+						className="w-full rounded border px-2 py-1 text-sm"
 						disabled={getFrames.status !== "SUCCESS"}
-						value={data.frame?.name}
-						options={options}
-						getOptionLabel={(option) => {
-							return option;
-						}}
-						onChange={(_, value) => {
-							// update the frame
-							setData("frame.name", value);
-						}}
-						freeSolo={false}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								placeholder="Select frame"
-								size="small"
-								variant="outlined"
-							/>
-						)}
-					/>
-				</StyledFrameSection>
-				<StyledDataSection>
-					<label htmlFor="task-field">Task</label>
-					<StyledSelect
-						id="task-field"
-						label="Select X Axis Field"
-						SelectProps={{
-							multiple: false,
-						}}
+						value={data.frame?.name ?? ""}
+						onChange={(e) => setData("frame.name", e.target.value)}
+					>
+						<option value="">Select frame</option>
+						{options.map((opt) => (
+							<option key={opt} value={opt}>
+								{opt}
+							</option>
+						))}
+					</select>
+				</div>
+				<div className="flex flex-col gap-2 p-3">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="task-field"
+					>
+						Task
+					</label>
+					<Select
 						value={framesData.task}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("task", e)
-						}
+						onValueChange={(val) => updateField("task", val)}
 					>
-						<Select.Item key="-1" value="">
-							Select X Axis Field
-						</Select.Item>
-						{columns?.map((label, index) => {
-							return (
-								<Select.Item value={label.selector} key={index}>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<SelectTrigger className="w-full" id="task-field">
+							<SelectValue placeholder="Select X Axis Field" />
+						</SelectTrigger>
+						<SelectContent>
+							{columns?.map((label, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={label.selector}>
 									{label.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledDataSection>
-				<StyledDataSection>
-					<label htmlFor="start-date-field">Start Date</label>
-					<StyledSelect
-						id="start-date-field"
-						label="Select Start Date"
-						SelectProps={{
-							multiple: false,
-						}}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex flex-col gap-2 p-3">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="start-date-field"
+					>
+						Start Date
+					</label>
+					<Select
 						value={framesData.startdate}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("startdate", e)
-						}
+						onValueChange={(val) => updateField("startdate", val)}
 					>
-						<Select.Item key="-1" value="">
-							Select Start Date
-						</Select.Item>
-						{columns?.map((label, index) => {
-							return (
-								<Select.Item value={label.selector} key={index}>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+						<SelectTrigger className="w-full" id="start-date-field">
+							<SelectValue placeholder="Select Start Date" />
+						</SelectTrigger>
+						<SelectContent>
+							{columns?.map((label, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={label.selector}>
 									{label.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledDataSection>
-				<StyledDataSection>
-					<label htmlFor="end-date-field">End Date</label>
-					<StyledSelect
-						id="end-date-field"
-						label="Select End Date"
-						SelectProps={{
-							multiple: false,
-						}}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex flex-col gap-2 p-3">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="end-date-field"
+					>
+						End Date
+					</label>
+					<Select
 						value={framesData.enddate}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("enddate", e)
-						}
+						onValueChange={(val) => updateField("enddate", val)}
 					>
-						<Select.Item key="-1" value="">
-							Select End Date
-						</Select.Item>
-						{columns?.map((label, index) => {
-							return (
-								<Select.Item value={label.selector} key={index}>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+						<SelectTrigger className="w-full" id="end-date-field">
+							<SelectValue placeholder="Select End Date" />
+						</SelectTrigger>
+						<SelectContent>
+							{columns?.map((label, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={label.selector}>
 									{label.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledDataSection>
-				<StyledDataSection>
-					<label htmlFor="task-group-field">Task Group</label>
-					<StyledSelect
-						id="task-group-field"
-						label="Select Task Group"
-						SelectProps={{
-							multiple: false,
-						}}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex flex-col gap-2 p-3">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="task-group-field"
+					>
+						Task Group
+					</label>
+					<Select
 						value={framesData.taskgroup}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("taskgroup", e)
-						}
+						onValueChange={(val) => updateField("taskgroup", val)}
 					>
-						<Select.Item key="-1" value="">
-							Select Task Group
-						</Select.Item>
-						{columns?.map((label, index) => {
-							return (
-								<Select.Item value={label.selector} key={index}>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+						<SelectTrigger className="w-full" id="task-group-field">
+							<SelectValue placeholder="Select Task Group" />
+						</SelectTrigger>
+						<SelectContent>
+							{columns?.map((label, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={label.selector}>
 									{label.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledDataSection>
-				<StyledDataSection>
-					<label htmlFor="task-progress-field">Task Progress</label>
-					<StyledSelect
-						id="task-progress-field"
-						label="Select Task Progress"
-						SelectProps={{
-							multiple: false,
-						}}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex flex-col gap-2 p-3">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="task-progress-field"
+					>
+						Task Progress
+					</label>
+					<Select
 						value={framesData.taskprogress}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("taskprogress", e)
+						onValueChange={(val) =>
+							updateField("taskprogress", val)
 						}
 					>
-						<Select.Item key="-1" value="">
-							Select Task Progress
-						</Select.Item>
-						{columns?.map((label, index) => {
-							return (
-								<Select.Item value={label.selector} key={index}>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+						<SelectTrigger
+							className="w-full"
+							id="task-progress-field"
+						>
+							<SelectValue placeholder="Select Task Progress" />
+						</SelectTrigger>
+						<SelectContent>
+							{columns?.map((label, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={label.selector}>
 									{label.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledDataSection>
-				<StyledDataSection>
-					<label htmlFor="milestone-field">MileStone</label>
-					<StyledSelect
-						id="milestone-field"
-						label="Select MileStone"
-						SelectProps={{
-							multiple: false,
-						}}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex flex-col gap-2 p-3">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="milestone-field"
+					>
+						MileStone
+					</label>
+					<Select
 						value={framesData.milestone}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("milestone", e)
-						}
+						onValueChange={(val) => updateField("milestone", val)}
 					>
-						<Select.Item key="-1" value="">
-							Select Milestone
-						</Select.Item>
-						{columns?.map((label, index) => {
-							return (
-								<Select.Item value={label.selector} key={index}>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+						<SelectTrigger className="w-full" id="milestone-field">
+							<SelectValue placeholder="Select Milestone" />
+						</SelectTrigger>
+						<SelectContent>
+							{columns?.map((label, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={label.selector}>
 									{label.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledDataSection>
-				<StyledDataSection>
-					<label htmlFor="tooltip-field">Tooltip</label>
-					<StyledSelect
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex flex-col gap-2 p-3">
+					<label
+						className="text-muted-foreground text-sm"
+						htmlFor="tooltip-field"
+					>
+						Tooltip
+					</label>
+					{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+					<select
 						id="tooltip-field"
-						label="Select Tooltip"
-						SelectProps={{
-							multiple: true,
-						}}
+						multiple
+						className="min-h-[80px] w-full rounded border px-2 py-1 text-sm"
 						value={framesData.tooltip}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("tooltip", e)
-						}
+						onChange={_updateTooltipField}
 					>
-						<Select.Item key="-1" value="">
-							Select Tooltip
-						</Select.Item>
-						{columns?.map((label, index) => {
-							return (
-								<Select.Item value={label.selector} key={index}>
-									{label.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledDataSection>
-			</StyledMainContainer>
+						{columns?.map((label, index) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+							<option key={index} value={label.selector}>
+								{label.name}
+							</option>
+						))}
+					</select>
+				</div>
+			</div>
 		);
 	},
 );

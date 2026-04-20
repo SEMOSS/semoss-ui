@@ -1,4 +1,4 @@
-import { ContentCopyOutlined, ErrorOutlined } from "@mui/icons-material";
+import { CircleAlert, Copy } from "lucide-react";
 import { autorun } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
@@ -8,19 +8,19 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	Alert,
 	Button,
-	Modal,
-	Stack,
-	TextField,
-	useNotification,
-} from "@semoss/ui";
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	toast,
+} from "@semoss/ui/next";
 
 /**
  * Dev Mode for the BlocksWorkspace
  */
 export const BlocksWorkspaceDev = observer(() => {
-	const notification = useNotification();
 	const { state } = useBlocks();
 
 	// const json = state.toJSON();
@@ -69,10 +69,7 @@ export const BlocksWorkspaceDev = observer(() => {
 				},
 			});
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 
 			// set the alert
 			setAlert(e.message);
@@ -87,15 +84,9 @@ export const BlocksWorkspaceDev = observer(() => {
 		try {
 			navigator.clipboard.writeText(content);
 
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
+			toast.success("Successfully copied to clipboard");
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		}
 	};
 
@@ -111,6 +102,7 @@ export const BlocksWorkspaceDev = observer(() => {
 		}
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(
 		() =>
 			autorun(() => {
@@ -142,22 +134,20 @@ export const BlocksWorkspaceDev = observer(() => {
 	}
 
 	return (
-		<Modal
-			fullWidth={true}
-			maxWidth={"sm"}
+		<Dialog
 			open={isOpen}
-			onClose={() => {
-				setIsOpen(true);
+			onOpenChange={(open) => {
+				if (!open) setIsOpen(false);
 			}}
 		>
-			<Modal.Title>Dev</Modal.Title>
-			<Modal.Content>
-				<Stack direction="column" spacing={2} py={1}>
-					<TextField
-						label={"State"}
-						multiline={true}
-						minRows={5}
-						maxRows={15}
+			<DialogContent className="max-w-sm">
+				<DialogHeader>
+					<DialogTitle>Dev</DialogTitle>
+				</DialogHeader>
+				<div className="flex flex-col gap-2 py-1">
+					<textarea
+						className="min-h-[120px] w-full resize-y rounded-md border border-input bg-background px-3 py-2 font-mono text-sm"
+						rows={5}
 						value={stateStr}
 						onChange={(e) => {
 							const str = e.target.value;
@@ -170,48 +160,42 @@ export const BlocksWorkspaceDev = observer(() => {
 						}}
 					/>
 
-					<Stack
-						direction="row"
-						spacing={1}
-						justifyContent={"space-between"}
-					>
+					<div className="flex flex-row justify-between gap-1">
 						<Button
-							size="small"
-							variant="outlined"
-							color="secondary"
+							size="sm"
+							variant="outline"
 							onClick={() => {
 								copy(stateStr);
 							}}
-							startIcon={
-								<ContentCopyOutlined fontSize="inherit" />
-							}
 						>
+							<Copy className="mr-1 size-4" />
 							Copy
 						</Button>
 
 						<Button
-							size="small"
-							variant="outlined"
+							size="sm"
+							variant="outline"
 							onClick={() => {
 								updateState(stateStr);
 							}}
-							startIcon={
-								<ContentCopyOutlined fontSize="inherit" />
-							}
 						>
+							<Copy className="mr-1 size-4" />
 							Update
 						</Button>
-					</Stack>
+					</div>
 					{alert && (
-						<Alert severity="error" icon={<ErrorOutlined />}>
-							<Alert.Title>{alert}</Alert.Title>
-						</Alert>
+						<div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-destructive text-sm">
+							<CircleAlert className="size-4 shrink-0" />
+							<span>{alert}</span>
+						</div>
 					)}
-				</Stack>
-			</Modal.Content>
-			<Modal.Actions>
-				<Button onClick={() => setIsOpen(false)}>Cancel</Button>
-			</Modal.Actions>
-		</Modal>
+				</div>
+				<DialogFooter>
+					<Button variant="ghost" onClick={() => setIsOpen(false)}>
+						Cancel
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 });

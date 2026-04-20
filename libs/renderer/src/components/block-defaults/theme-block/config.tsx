@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import { lightTheme } from "@semoss/ui";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_THEME } from "../block-defaults.constants";
 import { ThemeBlock, type ThemeBlockDef } from "./ThemeBlock";
@@ -17,7 +16,7 @@ export const config: BlockConfig<ThemeBlockDef> = {
 	widget: "theme",
 	type: BLOCK_TYPE_THEME,
 	data: {
-		theme: lightTheme,
+		theme: {},
 	},
 	listeners: {},
 	slots: {

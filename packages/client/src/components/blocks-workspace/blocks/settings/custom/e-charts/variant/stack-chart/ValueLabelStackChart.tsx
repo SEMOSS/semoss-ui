@@ -1,74 +1,31 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
 	getValueByPath,
 	type Paths,
 	type PathValue,
-	useBlocksPixel,
 } from "@semoss/renderer";
 import {
 	Button,
-	Menu,
+	Input,
 	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Slider,
 	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-	marginLeft: "4px",
-}));
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "0.5rem",
-	position: "relative",
-	right: "3px",
-}));
-
-const StyledTypography = styled(Typography)({
-	paddingLeft: "10px",
-});
-
-const StyledButton = styled(Button)({
-	left: "80%",
-});
 
 export const ValueLabelStackChart = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -99,273 +56,180 @@ export const ValueLabelStackChart = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
 			}
 		}, [id]);
-
-		/**
-		 * Reinitializes the label features based on the provided options.
-		 * @param options The options to reinitialize the label features with.
-		 */
-		const reinitializeFeatures = (options) => {
-			// Check if the label property exists in the first series
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const reinitializeFeatures = (options: any) => {
 			if (Object.hasOwn(options, "label")) {
-				// Update the label position state
-				setLabelPosition(options["label"]["position"]);
-				// Update the label rotation state
-				setLabelRotation(options["label"]["rotate"]);
-				// Update the label font family state
-				setLabelFont(options["label"]["fontFamily"]);
-				// Update the label font size state
-				setLabelFontSize(options["label"]["fontSize"]);
-				// Update the show label state
-				setShowLabel(options["label"]["show"]);
-				setLabelColor(options["label"]["color"]);
+				setLabelPosition(options.label.position);
+				setLabelRotation(options.label.rotate);
+				setLabelFont(options.label.fontFamily);
+				setLabelFontSize(options.label.fontSize);
+				setShowLabel(options.label.show);
+				setLabelColor(options.label.color);
 			}
 		};
 
-		/**
-		 * Handles the switch change event for the value labels by toggling the showLabel state and updating the label options in the data.
-		 * @param e The switch change event.
-		 */
-		const showValueLabel = (e) => {
+		const showValueLabel = (checked: boolean) => {
 			const parsedValue = JSON.parse(value);
-			// Toggle the showLabel state
-			setShowLabel(!showLabel);
-			// Update the 'show' property of the 'label' object in the series to the new value
-			parsedValue["label"]["show"] = e.target.checked;
-			// Save the updated chart options back to the state
+			setShowLabel(checked);
+			parsedValue.label.show = checked;
 			setData(path, parsedValue as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event for the value label position by updating the label position state and the label options in the data.
-		 * @param e The change event.
-		 */
-		const handleValuePosition = (e) => {
-			// Update the label position state
-			setLabelPosition(e.target.value);
-			// Parse the value to a JSON object
+		const handleValuePosition = (val: string) => {
+			setLabelPosition(val);
 			const option = JSON.parse(value);
-			// Update the 'position' property of the 'label' object in the series to the new value
-			option["label"]["position"] = e.target.value;
-			// Save the updated chart options back to the state
+			option.label.position = val;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event for the value label rotation by updating the label rotation state and the label options in the data.
-		 * @param e The change event.
-		 */
-		const handleChangelabelRotation = (e) => {
-			// Parse the value to a JSON object
+		const handleChangelabelRotation = (newValue: number[]) => {
 			const option = JSON.parse(value);
-			// Update the label rotation state
-			setLabelRotation(e.target.value);
-			// Update the 'rotate' property of the 'label' object in the series to the new value
-			option["label"]["rotate"] = e.target.value;
-			// Save the updated chart options back to the state
+			setLabelRotation(newValue[0]);
+			option.label.rotate = newValue[0];
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event for the value label font family by updating the label font family state and the label options in the data.
-		 * @param e The change event.
-		 */
-		const handlelabelFont = (e) => {
-			// Update the label font family state
-			setLabelFont(e.target.value);
-			// Parse the value to a JSON object
+		const handlelabelFont = (val: string) => {
+			setLabelFont(val);
 			const option = JSON.parse(value);
-			// Update the 'fontFamily' property of the 'label' object in the series to the new value
-			option["label"]["fontFamily"] = e.target.value;
-			// Save the updated chart options back to the state
+			option.label.fontFamily = val;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Handles the change event for the label font size by updating the label font size state and the label options in the data.
-		 * @param e The change event.
-		 */
-		const handleLabelSize = (e) => {
-			// Parse the value to a JSON object
+		const handleLabelSize = (e: React.ChangeEvent<HTMLInputElement>) => {
 			const option = JSON.parse(value);
-			// Update the label font size state
-			setLabelFontSize(e.target.value);
-			// Update the 'fontSize' property of the 'label' object in the series to the new value
-			option["label"]["fontSize"] = e.target.value;
-			// Save the updated chart options back to the state
+			setLabelFontSize(Number(e.target.value));
+			option.label.fontSize = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		/**
-		 * Resets the label options to their default values.
-		 * This function is called when the user clicks the "Reset" button.
-		 * It updates the state of the label options and saves the updated chart options to the state.
-		 * @returns {void}
-		 */
 		const Reset = () => {
 			const option = JSON.parse(value);
-
-			// Update the state of the label position
-			setLabelPosition(option["reset"]["label"]["position"]);
-
-			// Update the state of the label rotation
-			setLabelRotation(option["reset"]["label"]["rotate"]);
-
-			// Update the state of the label font family
-			setLabelFont(option["reset"]["label"]["fontFamily"]);
-
-			// Update the state of the label font size
-			setLabelFontSize(option["reset"]["label"]["fontSize"]);
-
-			// Update the state of the label show
-			setShowLabel(option["reset"]["label"]["show"]);
-
-			// Update the label options in the series to the new values
-			option["label"]["show"] = option["reset"]["label"]["show"];
-			option["label"]["position"] = option["reset"]["label"]["position"];
-			option["label"]["rotate"] = option["reset"]["label"]["rotate"];
-			option["label"]["fontFamily"] =
-				option["reset"]["label"]["fontFamily"];
-			option["label"]["fontSize"] = option["reset"]["label"]["fontSize"];
-			option["label"]["color"] = option["reset"]["label"]["color"];
-
-			// Save the updated chart options back to the state
+			setLabelPosition(option.reset.label.position);
+			setLabelRotation(option.reset.label.rotate);
+			setLabelFont(option.reset.label.fontFamily);
+			setLabelFontSize(option.reset.label.fontSize);
+			setShowLabel(option.reset.label.show);
+			option.label.show = option.reset.label.show;
+			option.label.position = option.reset.label.position;
+			option.label.rotate = option.reset.label.rotate;
+			option.label.fontFamily = option.reset.label.fontFamily;
+			option.label.fontSize = option.reset.label.fontSize;
+			option.label.color = option.reset.label.color;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		return (
-			<StyledAxis>
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
+			<div className="flex flex-col">
+				<div className="ml-1 flex flex-row items-center p-2">
 					<Switch
 						checked={showLabel}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showValueLabel(e)
-						}
-						title="Show Labels"
-						size="small"
+						onCheckedChange={showValueLabel}
 					/>
-					<StyledTypography variant="body1">
-						Show Labels
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="pl-2.5 text-sm">Show Labels</span>
+				</div>
 				{showLabel && (
-					<StyledAxis>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
+					<div className="flex flex-col p-2">
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">
 								Choose a Position For Value Label
-							</Typography>
+							</span>
 							<Select
-								name="Choose a position for the Label"
 								value={labelPosition}
-								onChange={handleValuePosition}
-								size="small"
+								onValueChange={handleValuePosition}
 							>
-								<Menu.Item value="top">Top</Menu.Item>
-								<Menu.Item value="left">Left</Menu.Item>
-								<Menu.Item value="right">Right</Menu.Item>
-								<Menu.Item value="bottom">Bottom</Menu.Item>
-								<Menu.Item value="inside">Inside</Menu.Item>
-								<Menu.Item value="insideLeft">
-									Inside Left
-								</Menu.Item>
-								<Menu.Item value="insideRight">
-									Inside Right
-								</Menu.Item>
-								<Menu.Item value="insideBottom">
-									Inside Bottom
-								</Menu.Item>
-								<Menu.Item value="insideTop">
-									Inside Top
-								</Menu.Item>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="top">Top</SelectItem>
+									<SelectItem value="left">Left</SelectItem>
+									<SelectItem value="right">Right</SelectItem>
+									<SelectItem value="bottom">
+										Bottom
+									</SelectItem>
+									<SelectItem value="inside">
+										Inside
+									</SelectItem>
+									<SelectItem value="insideLeft">
+										Inside Left
+									</SelectItem>
+									<SelectItem value="insideRight">
+										Inside Right
+									</SelectItem>
+									<SelectItem value="insideBottom">
+										Inside Bottom
+									</SelectItem>
+									<SelectItem value="insideTop">
+										Inside Top
+									</SelectItem>
+								</SelectContent>
 							</Select>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
-								Rotate Value Label
-							</Typography>
+						</div>
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">Rotate Value Label</span>
 							<Slider
-								size="small"
 								min={0}
 								max={360}
-								value={labelRotation}
-								valueLabelDisplay="auto"
-								marks={[
-									{ value: 0, label: "0" },
-									{ value: 360, label: "360" },
-								]}
-								onChange={(e) => handleChangelabelRotation(e)}
+								value={[labelRotation]}
+								onValueChange={handleChangelabelRotation}
 							/>
-						</StyledAxisColDiv>
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">Select Font</Typography>
+						</div>
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">Select Font</span>
 							<Select
-								name="Select Font"
 								value={labelFont}
-								onChange={handlelabelFont}
-								size="small"
+								onValueChange={handlelabelFont}
 							>
-								<Menu.Item value="sans-serif">
-									sans-serif
-								</Menu.Item>
-								<Menu.Item value="serif">serif</Menu.Item>
-								<Menu.Item value="monospace">
-									monospace
-								</Menu.Item>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="sans-serif">
+										sans-serif
+									</SelectItem>
+									<SelectItem value="serif">serif</SelectItem>
+									<SelectItem value="monospace">
+										monospace
+									</SelectItem>
+								</SelectContent>
 							</Select>
-						</StyledAxisColDiv>
-
-						<StyledAxisColDiv
-							display="flex"
-							justifyContent="space-around"
-						>
-							<Typography variant="body2">
-								Select Font Size
-							</Typography>
-							<TextField
-								id={"Select Font Size"}
-								size="small"
+						</div>
+						<div className="flex flex-col gap-2 p-2">
+							<span className="text-sm">Select Font Size</span>
+							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+							// biome-ignore
+							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+							<Input
+								id="Select Font Size"
 								value={labelFontSize}
 								onChange={handleLabelSize}
 							/>
-						</StyledAxisColDiv>
+						</div>
 						<ColorPickerSettings
 							id={id}
 							path={"option.label.color"}
 							colorValue={labelColor}
-							onChange={(e) => {
+							onChange={() => {
 								console.log("what is this for?");
 							}}
-						></ColorPickerSettings>
-					</StyledAxis>
+						/>
+					</div>
 				)}
-				<StyledAxisDiv display="flex" justifyContent="flex-end">
-					<Button
-						variant="contained"
-						color="primary"
-						size="small"
-						onClick={Reset}
-					>
-						Reset
-					</Button>
-				</StyledAxisDiv>
-			</StyledAxis>
+				<div className="flex justify-end p-2">
+					<Button onClick={Reset}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

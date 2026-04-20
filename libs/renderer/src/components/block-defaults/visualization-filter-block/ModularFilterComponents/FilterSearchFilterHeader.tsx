@@ -1,8 +1,6 @@
-import ClearIcon from "@mui/icons-material/Close";
-import SearchIcon from "@mui/icons-material/Search";
-import { Box, IconButton, InputAdornment, TextField } from "@mui/material";
+import { Search, X } from "lucide-react";
+import { Button, Input } from "@semoss/ui/next";
 
-// 👉 Separate Search Filter Header Component
 const FilterSearchFilterHeader = ({
 	searchText,
 	setSearchText,
@@ -12,38 +10,28 @@ const FilterSearchFilterHeader = ({
 	setSearchText: (val: string) => void;
 	setChecked: (val: string[]) => void;
 }) => (
-	<Box sx={{ alignItems: "center" }}>
-		<TextField
-			variant="outlined"
-			size="small"
+	<div className="relative flex items-center">
+		<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+		<Input
 			placeholder="Search"
 			value={searchText}
-			onChange={(e) => {
-				setSearchText(e.target.value);
-			}}
-			fullWidth
-			InputProps={{
-				startAdornment: (
-					<InputAdornment position="start">
-						<SearchIcon />
-					</InputAdornment>
-				),
-				endAdornment: searchText && (
-					<InputAdornment position="end">
-						<IconButton
-							size="small"
-							onClick={() => {
-								setSearchText("");
-								setChecked([]);
-							}}
-						>
-							<ClearIcon />
-						</IconButton>
-					</InputAdornment>
-				),
-			}}
+			className="pr-9 pl-9"
+			onChange={(e) => setSearchText(e.target.value)}
 		/>
-	</Box>
+		{searchText && (
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				className="-translate-y-1/2 absolute top-1/2 right-1"
+				onClick={() => {
+					setSearchText("");
+					setChecked([]);
+				}}
+			>
+				<X className="size-4" />
+			</Button>
+		)}
+	</div>
 );
 
 export default FilterSearchFilterHeader;
