@@ -1,60 +1,69 @@
-import {
-	Paper,
-	styled,
-	Tooltip,
-	type TooltipProps,
-	tooltipClasses,
-} from "@semoss/ui";
+import type React from "react";
+import { cn } from "@semoss/ui/next";
 
-export const StyledStepPaper = styled(Paper)(({ theme }) => ({
-	padding: theme.spacing(4),
-	margin: theme.spacing(1),
-	height: "100%",
-}));
+export const StyledStepPaper = ({
+	className,
+	children,
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+	<div
+		className={cn("m-1 h-full bg-background p-8 shadow-sm", className)}
+		{...props}
+	>
+		{children}
+	</div>
+);
 
-export const StyledTextPaper = styled(Paper)(({ theme }) => ({
-	borderStyle: "solid",
-	borderWidth: "2px",
-	borderColor: theme.palette.grey[300],
-	minHeight: "50%",
-	marginTop: theme.spacing(3),
-	paddingTop: theme.spacing(1.5),
-	paddingRight: theme.spacing(1),
-	paddingBottom: theme.spacing(1.5),
-	paddingLeft: theme.spacing(1),
-}));
+export const StyledTextPaper = ({
+	className,
+	children,
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+	<div
+		className={cn(
+			"mt-6 min-h-[50%] border-2 border-muted px-2 py-3",
+			className,
+		)}
+		{...props}
+	>
+		{children}
+	</div>
+);
 
-interface StyledTooltipProps {
+// Controlled tooltip used in PromptSetToken; hover tooltip used elsewhere.
+// Renders children always; shows title as absolute popup when open=true.
+export const StyledTooltip = ({
+	title,
+	children,
+	open,
+	disableHoverListener,
+}: {
+	title: React.ReactNode;
+	children: React.ReactElement;
 	disableBorder?: boolean;
-}
-export const StyledTooltip = styled(
-	({ className, ...props }: TooltipProps) => (
-		<Tooltip
-			{...props}
-			classes={{ popper: className }}
-			PopperProps={{
-				modifiers: [
-					{
-						name: "offset",
-						options: {
-							offset: [0, -10],
-						},
-					},
-				],
-			}}
-		/>
-	),
-	{
-		shouldForwardProp: (prop) => prop !== "disableBorder",
-	},
-)<StyledTooltipProps>(({ disableBorder, theme }) => ({
-	[`& .${tooltipClasses.tooltip}`]: {
-		backgroundColor: theme.palette.background.default,
-		color: "inherit",
-		border: disableBorder
-			? "unset"
-			: `0.5px solid ${theme.palette.divider}`,
-		fontSize: theme.typography.pxToRem(12),
-		padding: 0,
-	},
-}));
+	open?: boolean;
+	disableHoverListener?: boolean;
+}) => {
+	if (!disableHoverListener) {
+		// Simple hover tooltip via CSS group
+		return (
+			<span className="group/tooltip relative inline-block">
+				{children}
+				<span className="pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden min-w-max rounded border border-border bg-background px-2 py-1 text-xs shadow-md group-hover/tooltip:block">
+					{title}
+				</span>
+			</span>
+		);
+	}
+	// Controlled popup (open prop)
+	return (
+		<span className="relative inline-block">
+			{children}
+			{open && (
+				<span className="absolute bottom-full left-0 z-50 mb-1 min-w-max rounded bg-background shadow-md">
+					{title}
+				</span>
+			)}
+		</span>
+	);
+};
