@@ -2,11 +2,11 @@
 export const returnAccessType = (permission: string, getLabels = false) => {
 	if (getLabels) {
 		switch (permission) {
-			case "can view":
+			case "Viewer":
 				return "READ_ONLY";
-			case "can edit":
+			case "Editor":
 				return "EDIT";
-			case "owner":
+			case "Owner":
 				return "OWNER";
 			default:
 				return "select access";
@@ -14,11 +14,11 @@ export const returnAccessType = (permission: string, getLabels = false) => {
 	}
 	switch (permission) {
 		case "READ_ONLY":
-			return "can view";
+			return "Viewer";
 		case "EDIT":
-			return "can edit";
+			return "Editor";
 		case "OWNER":
-			return "owner";
+			return "Owner";
 		default:
 			return "select access";
 	}
