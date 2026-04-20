@@ -1,14 +1,13 @@
 import { useMemo, useState } from "react";
 import {
-	Autocomplete,
-	Box,
-	createFilterOptions,
-	Grid,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Textarea,
+} from "@semoss/ui/next";
 import { usePixel } from "@/hooks";
 import { StyledStepPaper } from "../../prompt.styled";
 import type { Builder } from "../../prompt.types";
@@ -17,17 +16,13 @@ import { PromptBuilderContextTestDialogButton } from "./PromptBuilderContextTest
 type CfgLibraryEngineState = {
 	loading: boolean;
 	ids: string[];
-	display: object;
+	display: Record<string, string>;
 };
 const InitialCfgLibraryEngineState: CfgLibraryEngineState = {
 	loading: true,
 	ids: [],
 	display: {},
 };
-
-const StyledContainerGrid = styled(Grid)(({ theme }) => ({
-	marginTop: theme.spacing(3),
-}));
 
 export const PromptBuilderContextStep = (props: {
 	builder: Builder;
@@ -36,10 +31,11 @@ export const PromptBuilderContextStep = (props: {
 	const [cfgLibraryModels, setCfgLibraryModels] = useState(
 		InitialCfgLibraryEngineState,
 	);
-	const _filter = createFilterOptions<string>();
+	const [nameFocused, setNameFocused] = useState(false);
+	const [modelOpen, setModelOpen] = useState(false);
 
-	const _isPromptLibraryDisabled =
-		!props.builder.model.value || !props.builder.title.value;
+	const nameHasValue = !!((props.builder.title.value as string) ?? "");
+	const modelHasValue = !!((props.builder.model.value as string) ?? "");
 
 	const isPromptContextTestDisabled =
 		!props.builder.model.value || !props.builder.context.value;
@@ -53,7 +49,7 @@ export const PromptBuilderContextStep = (props: {
 		}
 
 		const modelIds: string[] = [];
-		const modelDisplay = {};
+		const modelDisplay: Record<string, string> = {};
 		myModels.data.forEach((model) => {
 			// embeddings models are not set up for response generation
 			if (model.tag !== "embeddings") {
@@ -68,95 +64,182 @@ export const PromptBuilderContextStep = (props: {
 		});
 	}, [myModels.status, myModels.data]);
 
+	const floatingLabelBase: React.CSSProperties = {
+		position: "absolute",
+		left: "12px",
+		pointerEvents: "none",
+		transition: "all 0.2s ease",
+		backgroundColor: "white",
+		paddingInline: "4px",
+		fontSize: "16px",
+		color: "#6b7280",
+	};
+
+	const floatingLabelResting: React.CSSProperties = {
+		...floatingLabelBase,
+		top: "50%",
+		transform: "translateY(-50%)",
+	};
+
+	const floatingLabelFloated: React.CSSProperties = {
+		...floatingLabelBase,
+		top: "0",
+		transform: "translateY(-50%)",
+		fontSize: "13px",
+	};
+
 	return (
-		<StyledStepPaper elevation={2} square>
-			<Box>
-				<Typography variant="h6">Create Prompt</Typography>
-				<Typography variant="body1">
+		<StyledStepPaper>
+			<style>
+				{`
+				[data-highlighted] {
+					background-color: #dcfce7 !important;
+					color: #166534 !important;
+				}
+				[data-state="checked"] {
+					background-color: #f0fdf4 !important;
+				}
+				`}
+			</style>
+			<div>
+				<h6 className="text-lg font-semibold">Create Prompt</h6>
+				<p className="text-base">
 					Construct your prompt by providing the context and inputs.
 					The context provides supplementary information so the model
 					can better understand the ask and generate a more tailored
 					response.
-				</Typography>
-			</Box>
-			<StyledContainerGrid container direction="row">
-				<Grid item xs={4}>
-					<Typography variant="body1">Prompt Details</Typography>
-				</Grid>
-				<Grid item xs={8}>
-					<Stack direction="column" spacing={2}>
-						<TextField
-							label="Name"
-							variant="outlined"
-							value={props.builder.title.value ?? ""}
-							onChange={(e) =>
-								props.setBuilderValue("title", e.target.value)
-							}
-						/>
-						<Autocomplete
-							disableClearable
-							fullWidth
-							multiple={false}
-							id={"model-autocomplete"}
-							loading={cfgLibraryModels.loading}
-							options={cfgLibraryModels.ids}
-							value={props.builder.model.value ?? null}
-							getOptionLabel={(modelId: string) =>
-								cfgLibraryModels.display[modelId] ?? ""
-							}
-							onChange={(_, newModelId) => {
-								props.setBuilderValue(
-									"model",
-									newModelId as string,
-								);
-							}}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									label="Large Language Model"
-									variant="outlined"
-								/>
-							)}
-						/>
-					</Stack>
-				</Grid>
-			</StyledContainerGrid>
-			<Stack spacing={1} mt={2}>
-				<Stack
-					direction="row"
-					justifyContent="space-between"
-					paddingBottom={1}
-				>
-					<Typography variant="body1">Prompt Context</Typography>
-					{/* TODO: Pull from our Prompt Library */}
-					{/* <PromptLibraryDialogButton
-                        disabled={isPromptLibraryDisabled}
-                        builder={props.builder}
-                    /> */}
-				</Stack>
-				<TextField
-					fullWidth
-					inputProps={{ sx: { height: "100%" } }}
-					placeholder="Enter your prompt here. For example, &#8220;Suppose you are a policy expert with 30 years of experience.&#8221;"
-					multiline
-					rows={6}
-					value={props.builder.context.value}
+				</p>
+			</div>
+			<div className="mt-3 flex flex-row">
+				<div className="w-1/3">
+					<p className="text-base">Prompt Details</p>
+				</div>
+				<div className="w-2/3">
+					<div className="flex flex-col gap-4">
+						<div style={{ position: "relative" }}>
+							<label
+								htmlFor="prompt-name"
+								style={
+									nameFocused || nameHasValue
+										? {
+												...floatingLabelFloated,
+												color: nameFocused
+													? "#16a34a"
+													: "#6b7280",
+											}
+										: floatingLabelResting
+								}
+							>
+								Name
+							</label>
+							<Input
+								id="prompt-name"
+								value={
+									(props.builder.title.value as string) ?? ""
+								}
+								onFocus={() => setNameFocused(true)}
+								onBlur={() => setNameFocused(false)}
+								onChange={(e) =>
+									props.setBuilderValue(
+										"title",
+										e.target.value,
+									)
+								}
+								style={{										height: "54px",									borderColor: nameFocused
+										? "#16a34a"
+										: undefined,
+									boxShadow: nameFocused
+										? "0 0 0 1px #16a34a"
+										: undefined,
+								}}
+							/>
+						</div>
+						<div style={{ position: "relative" }}>
+							<label
+								htmlFor="model-select"
+								style={
+									modelOpen || modelHasValue
+										? {
+												...floatingLabelFloated,
+												color: modelOpen
+													? "#16a34a"
+													: "#6b7280",
+											}
+										: floatingLabelResting
+								}
+							>
+								Large Language Model
+							</label>
+							<Select
+								open={modelOpen}
+								onOpenChange={setModelOpen}
+								value={
+									(props.builder.model.value as string) ?? ""
+								}
+								onValueChange={(newModelId) => {
+									props.setBuilderValue("model", newModelId);
+								}}
+							>
+								<SelectTrigger
+									id="model-select"
+									className="w-full"
+									style={{
+										height: "54px",
+										borderColor: modelOpen
+											? "#16a34a"
+											: undefined,
+										boxShadow: modelOpen
+											? "0 0 0 1px #16a34a"
+											: undefined,
+									}}
+								>
+									<SelectValue placeholder="" />
+								</SelectTrigger>
+								<SelectContent>
+									{cfgLibraryModels.loading ? (
+										<div className="px-2 py-1.5 text-sm text-muted-foreground">
+											Loading...
+										</div>
+									) : (
+										cfgLibraryModels.ids.map((modelId) => (
+											<SelectItem
+												key={modelId}
+												value={modelId}
+											>
+												{cfgLibraryModels.display[
+													modelId
+												] ?? ""}
+											</SelectItem>
+										))
+									)}
+								</SelectContent>
+							</Select>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div className="mt-4 flex flex-col gap-2">
+				<div className="flex flex-row justify-between pb-2">
+					<p className="text-base">Prompt Context</p>
+				</div>
+				<Textarea
+					placeholder='Enter your prompt here. For example, "Suppose you are a policy expert with 30 years of experience."'
+					rows={10}
+					value={props.builder.context.value as string}
 					onChange={(e) => {
-						// Reset Values that are dependent on Context
 						props.setBuilderValue("inputTypes", undefined);
 						props.setBuilderValue("inputs", undefined);
-
 						props.setBuilderValue("context", e.target.value);
 					}}
 				/>
-				<Stack direction="row">
+				<div className="flex flex-row">
 					<PromptBuilderContextTestDialogButton
 						disabled={isPromptContextTestDisabled}
 						llm={props.builder.model.value as string}
 						context={props.builder.context.value as string}
 					/>
-				</Stack>
-			</Stack>
+				</div>
+			</div>
 		</StyledStepPaper>
 	);
 };

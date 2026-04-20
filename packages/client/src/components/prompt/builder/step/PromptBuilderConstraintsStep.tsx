@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Stack, Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { StyledStepPaper } from "../../prompt.styled";
 import type { Builder, ConstraintSettings } from "../../prompt.types";
 
@@ -55,65 +55,6 @@ const initialConstraintSettings: ConstraintSettings = {
 	bulletpoints: false,
 };
 
-const StyledStack = styled(Stack)(({ theme }) => ({
-	paddingTop: theme.spacing(3),
-	paddingBottom: theme.spacing(3),
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "start",
-	"&:not(:last-child)": {
-		marginBottom: theme.spacing(2),
-	},
-}));
-
-const StyledSwitch = styled(Switch)(({ theme }) => ({
-	width: "42px!important",
-	height: "26px!important",
-	padding: "0px!important",
-	"& .MuiSwitch-switchBase": {
-		padding: 0,
-		margin: 2,
-		transitionDuration: "300ms",
-		"&.Mui-checked": {
-			transform: "translateX(16px)",
-			color: "#fff",
-			"& + .MuiSwitch-track": {
-				backgroundColor: theme.palette.primary.main,
-				opacity: 1,
-				border: 0,
-			},
-			"&.Mui-disabled + .MuiSwitch-track": {
-				opacity: 0.5,
-			},
-		},
-		"&.Mui-disabled .MuiSwitch-thumb": {
-			color:
-				theme.palette.mode === "light"
-					? theme.palette.grey[100]
-					: theme.palette.grey[600],
-		},
-		"&.Mui-disabled + .MuiSwitch-track": {
-			opacity: theme.palette.mode === "light" ? 0.7 : 0.3,
-		},
-	},
-	"& .MuiSwitch-thumb": {
-		boxSizing: "border-box",
-		width: 22,
-		height: 22,
-	},
-	"& .MuiSwitch-track": {
-		borderRadius: 26 / 2,
-		backgroundColor: theme.palette.mode === "light" ? "#E9E9EA" : "#39393D",
-		opacity: 1,
-		transition: theme.transitions.create(["background-color"], {
-			duration: 500,
-		}),
-	},
-}));
-
 export const PromptBuilderConstraint = (props: {
 	constraint: Constraint;
 	constraintSettings: ConstraintSettings;
@@ -123,38 +64,27 @@ export const PromptBuilderConstraint = (props: {
 	) => void;
 }) => {
 	return (
-		// <StyledBox onClick={() => alert(props.constraintSettings[props.constraint.key])}>
-		<StyledBox>
-			<StyledSwitch
-				disableRipple
+		<div className="flex items-center justify-start [&:not(:last-child)]:mb-4">
+			<Switch
 				checked={
 					props.constraintSettings[props.constraint.key] ?? false
 				}
-				onChange={(e) => {
-					// console.log({"props.constraintSettings": props.constraintSettings});
-
-					// copy the constraint settings
-					// these are probably specific to this options page
+				onCheckedChange={() => {
 					const copy = props.constraintSettings;
-
-					// key into the copy and flip the value for the switch
 					copy[props.constraint.key] = !copy[props.constraint.key];
-
-					// reset the whole builder value with two args
-					// 'constraints' indicates this page, can this be anything?
-					// the copy, does this have all values for all pages?
 					props.setBuilderValue("constraints", copy);
 				}}
+				className="!h-7 !w-12 data-[state=checked]:!bg-[#16a34a] [&>span]:!h-6 [&>span]:!w-6 [&>span[data-state=checked]]:!translate-x-[calc(48px-24px-2px)]"
 			/>
-			<Stack direction="column" ml="12px">
-				<Typography variant="body1">
+			<div className="ml-3 flex flex-col">
+				<p className="text-base">
 					{props.constraint.title}
-				</Typography>
-				<Typography variant="body2">
+				</p>
+				<p className="text-sm">
 					{props.constraint.description}
-				</Typography>
-			</Stack>
-		</StyledBox>
+				</p>
+			</div>
+		</div>
 	);
 };
 
@@ -189,15 +119,15 @@ export function PromptBuilderConstraintsStep(props: {
 
 	return (
 		<StyledStepPaper elevation={2} square>
-			<Box>
-				<Typography variant="h6">Set Constraints</Typography>
-				<Typography variant="body1">
+			<div>
+				<h6 className="text-lg font-semibold">Set Constraints</h6>
+				<p className="text-base">
 					Add constraints or rules to your prompt to help the LLM
 					tailor a response based on specific requirements
-				</Typography>
-			</Box>
-			<StyledStack direction="column">
-				<Typography variant="h6">Input Constraints</Typography>
+				</p>
+			</div>
+			<div className="flex flex-col py-6">
+				<h6 className="text-lg font-semibold">Input Constraints</h6>
 				{Array.from(
 					Object.values(inputConstraints),
 					(constraint: Constraint, i) => (
@@ -209,7 +139,7 @@ export function PromptBuilderConstraintsStep(props: {
 						/>
 					),
 				)}
-				<Typography variant="h6">Ouput Constraints</Typography>
+				<h6 className="text-lg font-semibold">Ouput Constraints</h6>
 				{Array.from(
 					Object.values(outputConstraints),
 					(constraint: Constraint, i) => (
@@ -221,7 +151,7 @@ export function PromptBuilderConstraintsStep(props: {
 						/>
 					),
 				)}
-			</StyledStack>
+			</div>
 		</StyledStepPaper>
 	);
 }

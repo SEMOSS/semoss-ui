@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { List, Paper, styled } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import {
 	LIBRARY_PROMPT_TAG_BUSINESS,
@@ -13,21 +12,6 @@ const LIBRARY_CATEGORIES = [
 	LIBRARY_PROMPT_TAG_COMMUNICATIONS,
 	LIBRARY_PROMPT_TAG_TRAVEL,
 ];
-
-interface StyledListItemProps {
-	selected: boolean;
-}
-const StyledListItem = styled(List.Item, {
-	shouldForwardProp: (prop) => prop !== "selected",
-})<StyledListItemProps>(({ selected, theme }) => ({
-	backgroundColor: selected
-		? theme.palette.grey[200]
-		: theme.palette.background.paper,
-}));
-
-const StyledListItemText = styled(List.ItemText)(() => ({
-	textTransform: "capitalize",
-}));
 
 interface PromptLibraryListProps {
 	/**
@@ -79,21 +63,23 @@ export const PromptLibraryList = (props: PromptLibraryListProps) => {
 	};
 
 	return (
-		<Paper>
-			<List disablePadding>
+		<div className="rounded-md border bg-card shadow-sm">
+			<div className="flex flex-col">
 				{Array.from(promptTags, (category) => (
-					<StyledListItem
+					<button
 						key={category}
-						disableGutters
-						disablePadding
-						selected={category === filter}
+						type="button"
+						className={`px-4 py-2 text-left capitalize ${
+							category === filter
+								? "bg-gray-200"
+								: "bg-transparent hover:bg-gray-100"
+						}`}
+						onClick={() => setFilter(category)}
 					>
-						<List.ItemButton onClick={() => setFilter(category)}>
-							<StyledListItemText>{category}</StyledListItemText>
-						</List.ItemButton>
-					</StyledListItem>
+						{category}
+					</button>
 				))}
-			</List>
-		</Paper>
+			</div>
+		</div>
 	);
 };

@@ -1,10 +1,5 @@
-import { Grid, styled, Typography } from "@semoss/ui";
 import type { Prompt, Token } from "../prompt.types";
 import { PromptCard } from "./PromptCard";
-
-const StyledTypography = styled(Typography)(() => ({
-	textTransform: "capitalize",
-}));
 
 interface PromptLibraryCardsProps {
 	/**
@@ -41,15 +36,15 @@ export const PromptLibraryCards = (props: PromptLibraryCardsProps) => {
 	const { prompts, filter, onClick } = props;
 
 	return (
-		<Grid container spacing={2}>
-			<Grid item xs={12}>
-				<StyledTypography variant="h6">
+		<div className="grid grid-cols-12 gap-4">
+			<div className="col-span-12">
+				<h6 className="text-lg font-semibold capitalize">
 					{`${filter} (${prompts.length})`}
-				</StyledTypography>
-			</Grid>
+				</h6>
+			</div>
 			{Array.from(prompts, (prompt, i) => {
 				return (
-					<Grid item xs={4} key={i}>
+					<div className="col-span-4" key={i}>
 						<PromptCard
 							prompt={prompt}
 							onClick={(p) => {
@@ -71,9 +66,9 @@ export const PromptLibraryCards = (props: PromptLibraryCardsProps) => {
                                 );
                             }}
                         /> */}
-					</Grid>
+					</div>
 				);
 			})}
-		</Grid>
+		</div>
 	);
 };

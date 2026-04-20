@@ -1,15 +1,17 @@
-import { InfoOutlined } from "@mui/icons-material";
+import { Info } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import {
-	Autocomplete,
-	Fade,
-	Grid,
-	Stack,
-	styled,
-	TextField,
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Tooltip,
-	Typography,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import {
 	INPUT_TYPE_DATABASE,
 	INPUT_TYPE_DISPLAY,
@@ -21,10 +23,39 @@ import {
 import type { Token } from "../../prompt.types";
 import { PromptReadonlyInputToken } from "../../shared/token";
 
-const HelpTextIcon = styled(InfoOutlined)(({ theme }) => ({
-	color: theme.palette.grey[400],
-	cursor: "pointer",
-}));
+const floatingLabelBase: React.CSSProperties = {
+	position: "absolute",
+	left: "12px",
+	pointerEvents: "none",
+	transition: "all 0.2s ease",
+	backgroundColor: "white",
+	paddingInline: "4px",
+	fontSize: "16px",
+	color: "#6b7280",
+};
+
+const floatingLabelResting: React.CSSProperties = {
+	...floatingLabelBase,
+	top: "50%",
+	transform: "translateY(-50%)",
+};
+
+const floatingLabelFloated: React.CSSProperties = {
+	...floatingLabelBase,
+	top: "0",
+	transform: "translateY(-50%)",
+	fontSize: "13px",
+};
+
+const greenItemStyles = `
+	[data-highlighted] {
+		background-color: #dcfce7 !important;
+		color: #166534 !important;
+	}
+	[data-state="checked"] {
+		background-color: #f0fdf4 !important;
+	}
+`;
 
 export const PromptBuilderInputTypeSelection = (props: {
 	inputToken: Token;
@@ -33,12 +64,12 @@ export const PromptBuilderInputTypeSelection = (props: {
 	cfgLibraryVectorDbs: {
 		loading: boolean;
 		ids: Array<string>;
-		display: object;
+		display: Record<string, string>;
 	};
 	cfgLibraryDatabases: {
 		loading: boolean;
 		ids: Array<string>;
-		display: object;
+		display: Record<string, string>;
 	};
 	setInputType: (
 		inputTokenIndex: number,
@@ -48,6 +79,13 @@ export const PromptBuilderInputTypeSelection = (props: {
 }) => {
 	const [selectOptions, setSelectOptions] = useState<string[]>([]);
 	const [newOption, setNewOption] = useState<string>("");
+	const [inputTypeOpen, setInputTypeOpen] = useState(false);
+	const [metaOpen, setMetaOpen] = useState(false);
+	const [optionsFocused, setOptionsFocused] = useState(false);
+
+	const inputTypeHasValue = !!props.inputType;
+	const metaHasValue = !!(props.inputTypeMeta ?? "");
+	const optionsHasValue = !!newOption;
 
 	// Initialize select options from existing meta data
 	useEffect(() => {
@@ -66,25 +104,12 @@ export const PromptBuilderInputTypeSelection = (props: {
 		props.inputType === INPUT_TYPE_DATABASE ||
 		props.inputType === INPUT_TYPE_SELECT;
 
-	const getMetaSelectorLoading = (): boolean => {
-		switch (props.inputType) {
-			case INPUT_TYPE_VECTOR:
-				return props.cfgLibraryVectorDbs.loading;
-			case INPUT_TYPE_DATABASE:
-				return props.cfgLibraryDatabases.loading;
-			default:
-				return false;
-		}
-	};
-
 	const getMetaSelectorOptions = (): Array<string> => {
 		switch (props.inputType) {
 			case INPUT_TYPE_VECTOR:
 				return props.cfgLibraryVectorDbs.ids;
 			case INPUT_TYPE_DATABASE:
 				return props.cfgLibraryDatabases.ids;
-			case INPUT_TYPE_SELECT:
-				return selectOptions;
 			default:
 				return [];
 		}
@@ -97,7 +122,7 @@ export const PromptBuilderInputTypeSelection = (props: {
 			case INPUT_TYPE_DATABASE:
 				return props.cfgLibraryDatabases.display[value] ?? "";
 			case INPUT_TYPE_SELECT:
-				return value; // For select options, display the value as-is
+				return value;
 			default:
 				return "";
 		}
@@ -118,7 +143,6 @@ export const PromptBuilderInputTypeSelection = (props: {
 
 	const parseAndAddOptions = (input: string) => {
 		if (input.trim()) {
-			// Handle comma-separated values
 			const newOptions = input
 				.split(",")
 				.map((option) => option.trim())
@@ -141,201 +165,226 @@ export const PromptBuilderInputTypeSelection = (props: {
 	};
 
 	return (
-		<Grid
-			sx={{
-				justifyContent: "space-between",
-				alignItems: "start",
-			}}
-			container
-		>
-			<Grid item>
+		<div className="flex items-start justify-between">
+			<div>
 				<PromptReadonlyInputToken tokenKey={props.inputToken.key} />
-			</Grid>
-			<Grid item xs={9} md={6}>
-				<Stack spacing={2}>
-					<Autocomplete
-						fullWidth
-						disableClearable
-						multiple={false}
-						id="input-token-autocomplete"
-						options={INPUT_TYPES}
-						value={props.inputType}
-						getOptionLabel={(option) => INPUT_TYPE_DISPLAY[option]}
-						onChange={(_, newInputType: string) => {
-							if (newInputType === INPUT_TYPE_SELECT) {
-								props.setInputType(
-									props.inputToken.index,
-									newInputType,
-									{ options: [] },
-								);
-							} else {
-								props.setInputType(
-									props.inputToken.index,
-									newInputType,
-									null,
-								);
+			</div>
+			<div className="w-7/12">
+				<style>{greenItemStyles}</style>
+				<div className="flex flex-col gap-4">
+					<div style={{ position: "relative" }}>
+						<label
+							htmlFor={`input-type-select-${props.inputToken.index}`}
+							style={
+								inputTypeOpen || inputTypeHasValue
+									? {
+											...floatingLabelFloated,
+											color: inputTypeOpen
+												? "#16a34a"
+												: "#6b7280",
+										}
+									: floatingLabelResting
 							}
-						}}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								label="Input Type"
-								variant="outlined"
-							/>
-						)}
-					/>
-					<Fade in={showMetaAutocomplete}>
-						<span>
-							<Stack direction="row" alignItems="center">
-								<Autocomplete
-									fullWidth
-									disableClearable
-									size="small"
-									id="meta-autocomplete"
-									multiple={false}
-									loading={getMetaSelectorLoading()}
-									options={getMetaSelectorOptions()}
-									value={
-										props.inputType === INPUT_TYPE_SELECT
-											? ""
-											: (props.inputTypeMeta ?? "")
-									}
-									getOptionLabel={getMetaSelectorDisplay}
-									freeSolo={
-										props.inputType === INPUT_TYPE_SELECT
-									}
-									onChange={(_, newMetaValue: string) => {
-										if (
-											props.inputType ===
-											INPUT_TYPE_SELECT
-										) {
-											// For select type, don't auto-process - let user control when to add options
-											setNewOption(newMetaValue || "");
-										} else {
+						>
+							Input Type
+						</label>
+						<Select
+							open={inputTypeOpen}
+							onOpenChange={setInputTypeOpen}
+							value={props.inputType ?? ""}
+							onValueChange={(newInputType: string) => {
+								if (newInputType === INPUT_TYPE_SELECT) {
+									props.setInputType(
+										props.inputToken.index,
+										newInputType,
+										{ options: [] },
+									);
+								} else {
+									props.setInputType(
+										props.inputToken.index,
+										newInputType,
+										null,
+									);
+								}
+							}}
+						>
+							<SelectTrigger
+								id={`input-type-select-${props.inputToken.index}`}
+								className="w-full"
+								style={{
+									height: "54px",
+									fontSize: "15px",
+									borderColor: inputTypeOpen
+										? "#16a34a"
+										: undefined,
+									boxShadow: inputTypeOpen
+										? "0 0 0 1px #16a34a"
+										: undefined,
+								}}
+							>
+								<SelectValue placeholder="" />
+							</SelectTrigger>
+							<SelectContent>
+								{INPUT_TYPES.map((type) => (
+									<SelectItem key={type} value={type}>
+										{INPUT_TYPE_DISPLAY[type]}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					{showMetaAutocomplete && (
+						<div className="flex flex-row items-center gap-2">
+							{props.inputType === INPUT_TYPE_SELECT ? (
+								<div className="flex-1" style={{ position: "relative" }}>
+									<label
+										htmlFor="select-options-input"
+										style={
+											optionsFocused || optionsHasValue
+												? {
+														...floatingLabelFloated,
+														color: optionsFocused
+															? "#16a34a"
+															: "#6b7280",
+													}
+												: floatingLabelResting
+										}
+									>
+										{getMetaSelectorLabel()}
+									</label>
+									<Input
+										id="select-options-input"
+										placeholder={optionsFocused ? "Enter options (comma separated)" : ""}
+										value={newOption}
+										onFocus={() => setOptionsFocused(true)}
+										onBlur={() => {
+											setOptionsFocused(false);
+											if (newOption.trim()) {
+												parseAndAddOptions(newOption);
+											}
+										}}
+										onChange={(e) =>
+											setNewOption(e.target.value)
+										}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												e.preventDefault();
+												parseAndAddOptions(newOption);
+											}
+										}}
+										style={{
+											height: "54px",
+											fontSize: "15px",
+											borderColor: optionsFocused
+												? "#16a34a"
+												: undefined,
+											boxShadow: optionsFocused
+												? "0 0 0 1px #16a34a"
+												: undefined,
+										}}
+									/>
+								</div>
+							) : (
+								<div className="flex-1" style={{ position: "relative" }}>
+									<label
+										htmlFor="meta-select"
+										style={
+											metaOpen || metaHasValue
+												? {
+														...floatingLabelFloated,
+														color: metaOpen
+															? "#16a34a"
+															: "#6b7280",
+													}
+												: floatingLabelResting
+										}
+									>
+										{getMetaSelectorLabel()}
+									</label>
+									<Select
+										open={metaOpen}
+										onOpenChange={setMetaOpen}
+										value={
+											(props.inputTypeMeta as string) ??
+											""
+										}
+										onValueChange={(
+											newMetaValue: string,
+										) => {
 											props.setInputType(
 												props.inputToken.index,
 												props.inputType,
 												newMetaValue,
 											);
-										}
-									}}
-									onInputChange={(
-										_,
-										newInputValue: string,
-										reason,
-									) => {
-										if (
-											props.inputType ===
-											INPUT_TYPE_SELECT
-										) {
-											if (reason === "input") {
-												setNewOption(newInputValue);
+										}}
+									>
+										<SelectTrigger
+											id="meta-select"
+											className="w-full"
+											style={{
+												height: "54px",
+												fontSize: "15px",
+												borderColor: metaOpen
+													? "#16a34a"
+													: undefined,
+												boxShadow: metaOpen
+													? "0 0 0 1px #16a34a"
+													: undefined,
+											}}
+										>
+											<SelectValue placeholder="" />
+										</SelectTrigger>
+										<SelectContent>
+											{getMetaSelectorOptions().map(
+												(option) => (
+													<SelectItem
+														key={option}
+														value={option}
+													>
+														{getMetaSelectorDisplay(
+															option,
+														)}
+													</SelectItem>
+												),
+											)}
+										</SelectContent>
+									</Select>
+								</div>
+							)}
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Info className="mt-5 h-4 w-4 cursor-pointer text-gray-400" />
+									</TooltipTrigger>
+									<TooltipContent>
+										<p className="text-sm">
+											{
+												INPUT_TYPE_HELP_TEXT[
+													props.inputType
+												]
 											}
-										}
-									}}
-									renderInput={(params) => (
-										<TextField
-											{...params}
-											label={getMetaSelectorLabel()}
-											variant="outlined"
-											placeholder={
-												props.inputType ===
-												INPUT_TYPE_SELECT
-													? "Enter options (comma separated)"
-													: undefined
-											}
-											value={
-												props.inputType ===
-												INPUT_TYPE_SELECT
-													? newOption
-													: params.inputProps?.value
-											}
-											onChange={
-												props.inputType ===
-												INPUT_TYPE_SELECT
-													? (e) => {
-															const value =
-																e.target.value;
-															setNewOption(value);
-														}
-													: params.inputProps
-															?.onChange
-											}
-											onKeyDown={
-												props.inputType ===
-												INPUT_TYPE_SELECT
-													? (e) => {
-															if (
-																e.key ===
-																"Enter"
-															) {
-																e.preventDefault();
-																parseAndAddOptions(
-																	newOption,
-																);
-															}
-														}
-													: undefined
-											}
-											onBlur={
-												props.inputType ===
-												INPUT_TYPE_SELECT
-													? (e) => {
-															if (
-																newOption.trim()
-															) {
-																parseAndAddOptions(
-																	newOption,
-																);
-															}
-														}
-													: undefined
-											}
-										/>
-									)}
-								/>
-								<Tooltip
-									title={
-										<React.Fragment>
-											<Typography variant="body2">
-												{
-													INPUT_TYPE_HELP_TEXT[
-														props.inputType
-													]
-												}
-											</Typography>
-											{props.inputType ===
-												INPUT_TYPE_SELECT &&
-												selectOptions.length > 0 && (
-													<>
-														<Typography
-															variant="body2"
-															sx={{
-																mt: 1,
-																fontWeight:
-																	"bold",
-															}}
-														>
-															Current options:
-														</Typography>
-														<Typography variant="body2">
-															{selectOptions.join(
-																", ",
-															)}
-														</Typography>
-													</>
-												)}
-										</React.Fragment>
-									}
-									arrow
-								>
-									<HelpTextIcon fontSize="small" />
+										</p>
+										{props.inputType ===
+											INPUT_TYPE_SELECT &&
+											selectOptions.length > 0 && (
+												<>
+													<p className="mt-2 text-sm font-bold">
+														Current options:
+													</p>
+													<p className="text-sm">
+														{selectOptions.join(
+															", ",
+														)}
+													</p>
+												</>
+											)}
+									</TooltipContent>
 								</Tooltip>
-							</Stack>
-						</span>
-					</Fade>
-				</Stack>
-			</Grid>
-		</Grid>
+							</TooltipProvider>
+						</div>
+					)}
+				</div>
+			</div>
+		</div>
 	);
 };

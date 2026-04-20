@@ -1,54 +1,63 @@
 import { useCallback, useState } from "react";
-import { blue, Chip, green, styled } from "@semoss/ui";
-import { THEME } from "@/constants";
 
-interface ChipRootProps {
-	isChipSelected: boolean;
-	disableHover: boolean;
-	hovered: boolean;
+interface PromptTokenChipProps {
+	isChipSelected?: boolean;
+	disableHover?: boolean;
+	label?: string;
+	size?: "small" | "medium";
+	onClick?: () => void;
+	[key: string]: unknown;
 }
-export const StyledPromptTokenChip = styled(Chip, {
-	shouldForwardProp: (prop) =>
-		prop !== "isChipSelected" &&
-		prop !== "disableHover" &&
-		prop !== "hovered",
-})<ChipRootProps>(({ theme, isChipSelected, disableHover, hovered }) => ({
-	cursor: disableHover ? "default" : "pointer",
-	fontWeight: "600",
-	margin: "0 1px 2px",
 
-	...((!hovered || disableHover) && {
-		backgroundColor: isChipSelected ? theme.palette.primary.main : blue[50],
-		color: isChipSelected ? blue[50] : theme.palette.primary.main,
-	}),
-}));
+export const PromptTokenChip = (props: PromptTokenChipProps) => {
+	const {
+		disableHover,
+		isChipSelected,
+		label,
+		size = "medium",
+		onClick,
+		...rest
+	} = props;
+	const [hovered, setHovered] = useState(false);
 
-export const PromptTokenChip = (props) => {
-	const { disableHover, ...rest } = props;
-	const { mouseOver, mouseOut, hovered } = useHover();
+	const mouseOver = useCallback(() => {
+		setHovered(true);
+	}, []);
 
-	function useHover() {
-		const [hovered, setHovered] = useState(false);
+	const mouseOut = useCallback(() => {
+		setHovered(false);
+	}, []);
 
-		const mouseOver = useCallback(() => {
-			setHovered(true);
-		}, []);
-
-		const mouseOut = useCallback(() => {
-			setHovered(false);
-		}, []);
-
-		return { mouseOver, mouseOut, hovered };
-	}
+	const isHoveredActive = hovered && !disableHover;
 
 	return (
-		<StyledPromptTokenChip
+		<span
+			role="button"
+			tabIndex={0}
 			onMouseOver={mouseOver}
 			onMouseOut={mouseOut}
-			color={hovered && !disableHover ? "secondary" : null}
-			hovered={hovered}
-			disableHover={disableHover}
-			{...rest}
-		/>
+			onClick={onClick}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") onClick?.();
+			}}
+			className={`inline-flex items-center rounded-full font-semibold ${
+				size === "small" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
+			} ${disableHover ? "cursor-default" : "cursor-pointer"}`}
+			style={{
+				margin: "0 1px 2px",
+				backgroundColor: isHoveredActive
+					? "hsl(var(--secondary))"
+					: isChipSelected
+						? "#16a34a"
+						: "#e3f2fd",
+				color: isHoveredActive
+					? "hsl(var(--secondary-foreground))"
+					: isChipSelected
+						? "#e3f2fd"
+						: "#16a34a",
+			}}
+		>
+			{label}
+		</span>
 	);
 };

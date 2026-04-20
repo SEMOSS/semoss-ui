@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Box, Typography } from "@semoss/ui";
 import { TOKEN_TYPE_INPUT, TOKEN_TYPE_TEXT } from "../../prompt.constants";
 import { StyledStepPaper, StyledTextPaper } from "../../prompt.styled";
 import type { Builder, Token } from "../../prompt.types";
@@ -369,14 +368,14 @@ export const PromptBuilderInputStep = (props: {
 	};
 
 	return (
-		<StyledStepPaper elevation={2} square>
-			<Box>
-				<Typography variant="h6">Set Inputs</Typography>
-				<Typography variant="body1">
+		<StyledStepPaper>
+			<div>
+				<h6 className="font-semibold text-lg">Set Inputs</h6>
+				<p className="text-base">
 					Click on a word or consecutive words to set it as a
 					user-defined input. Click a defined input to deselect it.
-				</Typography>
-			</Box>
+				</p>
+			</div>
 			<StyledTextPaper>
 				{Array.from(tokens, (token: Token) => (
 					<React.Fragment key={token.index}>

@@ -1,27 +1,9 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { useEffect, useMemo, useState } from "react";
-// import { StyledStepPaper } from '../../prompt.styled';
-import { Box, Paper, Stack, styled, Typography } from "@semoss/ui";
 import { usePixel } from "@/hooks";
 import { INPUT_TYPE_TEXT, TOKEN_TYPE_INPUT } from "../../prompt.constants";
 import type { Builder, Token } from "../../prompt.types";
 import { PromptBuilderInputTypeSelection } from "./PromptBuilderInputTypeSelection";
-
-export const StyledStepPaper = styled(Paper)(({ theme }) => ({
-	margin: theme.spacing(1),
-	height: "100%",
-}));
-
-export const StyledBox = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(4),
-	paddingBottom: theme.spacing(3),
-}));
-
-export const StyledStack = styled(Stack)(({ theme }) => ({
-	padding: `${theme.spacing(1)} ${theme.spacing(4)}`,
-	maxHeight: "480px",
-	overflowY: "scroll",
-}));
 
 export const PromptBuilderInputTypeStep = (props: {
 	builder: Builder;
@@ -137,15 +119,15 @@ export const PromptBuilderInputTypeStep = (props: {
 	// }
 
 	return (
-		<StyledStepPaper elevation={2} square>
-			<StyledBox>
-				<Typography variant="h6">Define Input Types</Typography>
-				<Typography variant="body1">
+		<div className="m-2 h-full rounded-md border bg-card shadow-sm">
+			<div className="px-8 pb-6 pt-8">
+				<h6 className="text-lg font-semibold">Define Input Types</h6>
+				<p className="text-base">
 					Use the dropdowns to define the input types for each of your
 					inputs.
-				</Typography>
-			</StyledBox>
-			<StyledStack spacing={3}>
+				</p>
+			</div>
+			<div className="max-h-[480px] overflow-y-scroll px-8 py-2 flex flex-col gap-6">
 				{Array.from(inputTokens, (inputToken: Token) => (
 					<PromptBuilderInputTypeSelection
 						inputToken={inputToken}
@@ -158,7 +140,7 @@ export const PromptBuilderInputTypeStep = (props: {
 						setInputType={setInputType}
 					/>
 				))}
-			</StyledStack>
-		</StyledStepPaper>
+			</div>
+		</div>
 	);
 };

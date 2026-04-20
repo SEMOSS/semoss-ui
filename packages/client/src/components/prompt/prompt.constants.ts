@@ -1,10 +1,10 @@
 import {
-	Block,
-	Create,
-	DisplaySettings,
-	Input,
-	Preview,
-} from "@mui/icons-material";
+	Eye,
+	Pencil,
+	ShieldBan,
+	SlidersHorizontal,
+	TextCursorInput,
+} from "lucide-react";
 
 // use contants for steps so it's easy to reorder/add new ones
 export const PROMPT_BUILDER_CONTEXT_STEP = 1;
@@ -51,22 +51,22 @@ export const INPUT_TYPE_HELP_TEXT = {
 export const SUMMARY_STEPS = [
 	{
 		title: "Create Prompt",
-		icon: Create,
+		icon: Pencil,
 	},
 	{
 		title: "Set Inputs",
-		icon: Input,
+		icon: TextCursorInput,
 	},
 	{
 		title: "Define Input Types",
-		icon: DisplaySettings,
+		icon: SlidersHorizontal,
 	},
 	{
 		title: "Set Constraints",
-		icon: Block,
+		icon: ShieldBan,
 	},
 	{
 		title: "Preview Prompt",
-		icon: Preview,
+		icon: Eye,
 	},
 ];

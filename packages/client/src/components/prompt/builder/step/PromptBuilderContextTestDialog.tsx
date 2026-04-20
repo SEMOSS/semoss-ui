@@ -1,13 +1,13 @@
-import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import {
 	Button,
-	CircularProgress,
-	IconButton,
-	Modal,
-	Stack,
-	Typography,
-} from "@semoss/ui";
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Spinner,
+} from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 
 export const PromptBuilderContextTestDialog = (props: {
@@ -40,66 +40,40 @@ export const PromptBuilderContextTestDialog = (props: {
 	}, [props.open]);
 
 	return (
-		<Modal
-			onClose={(_, reason: string) => {
-				if (reason && reason == "backdropClick") {
-					return;
-				}
-				props.close();
-			}}
-			fullWidth
-			maxWidth="md"
-			open={props.open}
-		>
-			<Modal.Title>Test Prompt</Modal.Title>
-			<IconButton
-				aria-label="close"
-				onClick={() => props.close()}
-				sx={{
-					position: "absolute",
-					right: 8,
-					top: 8,
-				}}
-			>
-				<Close />
-			</IconButton>
-			<Modal.Content sx={{ height: "35vh" }}>
-				{loading ? (
-					<Stack
-						width="100%"
-						height="100%"
-						justifyContent="center"
-						alignItems="center"
-					>
-						<CircularProgress variant="indeterminate" />
-						<Typography variant="caption">
-							Running your prompt context against the selected
-							LLM...
-						</Typography>
-					</Stack>
-				) : (
-					response
-				)}
-			</Modal.Content>
-			<Modal.Actions>
-				<Stack direction="row" spacing={1} padding={1}>
+		<Dialog open={props.open} onOpenChange={(open) => { if (!open) props.close(); }}>
+			<DialogContent className="max-w-2xl">
+				<DialogHeader>
+					<DialogTitle>Test Prompt</DialogTitle>
+				</DialogHeader>
+				<div className="h-[35vh] overflow-auto">
+					{loading ? (
+						<div className="flex h-full w-full flex-col items-center justify-center gap-2">
+							<Spinner />
+							<span className="text-xs text-muted-foreground">
+								Running your prompt context against the selected
+								LLM...
+							</span>
+						</div>
+					) : (
+						response
+					)}
+				</div>
+				<DialogFooter>
 					<Button
-						variant="text"
+						variant="outline"
 						onClick={props.close}
-						color="primary"
 					>
 						Cancel
 					</Button>
 					<Button
-						variant="contained"
+						variant="default"
 						onClick={ask}
-						color="primary"
 						disabled={loading}
 					>
 						Retry
 					</Button>
-				</Stack>
-			</Modal.Actions>
-		</Modal>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };

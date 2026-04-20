@@ -1,5 +1,4 @@
-import { CheckCircleOutlined, PendingOutlined } from "@mui/icons-material";
-import { Avatar, List, styled, Typography } from "@semoss/ui";
+import { CheckCircle, Clock } from "lucide-react";
 import {
 	PROMPT_BUILDER_INPUT_TYPES_STEP,
 	PROMPT_BUILDER_PREVIEW_STEP,
@@ -9,64 +8,6 @@ import {
 import type { Builder, BuilderStepItem, Token } from "../../prompt.types";
 import { PromptBuilderSummaryProgress } from "./PromptBuilderSummaryProgress";
 
-const StyledListItem = styled(List.Item)(({ theme }) => ({
-	borderRadius: theme.shape.borderRadius,
-	marginBottom: theme.spacing(1),
-}));
-
-const StyledProgressSubtitle = styled(Typography)(({ theme }) => ({
-	color: theme.palette.success.main,
-	fontWeight: "bold",
-}));
-
-const StyledStepListItem = styled(StyledListItem, {
-	shouldForwardProp: (prop) =>
-		prop !== "disabled" && prop !== "isStepComplete" && prop !== "isActive",
-})<{ disabled?: boolean; isStepComplete?: boolean; isActive?: boolean }>(
-	({ theme, disabled, isStepComplete, isActive }) => ({
-		color: disabled
-			? theme.palette.grey[400]
-			: isStepComplete
-				? theme.palette.success.main
-				: theme.palette.grey[900],
-
-		"&:hover": {
-			cursor: !disabled ? "pointer" : "inherit",
-
-			...(!isActive &&
-				!disabled && { backgroundColor: theme.palette.grey[100] }),
-		},
-
-		...(isActive && { backgroundColor: theme.palette.success.selected }),
-	}),
-);
-
-const StyledAvatar = styled(Avatar, {
-	shouldForwardProp: (prop) => prop !== "isActive",
-})<{ isActive: boolean }>(({ theme, isActive }) => ({
-	backgroundColor: "white",
-
-	...(isActive ? { color: theme.palette.grey[900] } : { color: "inherit" }),
-}));
-
-const StyledCheckCircleOutlined = styled(CheckCircleOutlined, {
-	shouldForwardProp: (prop) => prop !== "isActive",
-})<{ isActive?: boolean }>(({ theme, isActive }) => ({
-	marginTop: "8px",
-
-	...(isActive
-		? { color: theme.palette.grey[900] }
-		: { color: theme.palette.success.main }),
-}));
-
-const StyledListItemTypography = styled(Typography, {
-	shouldForwardProp: (prop) => prop !== "isActive",
-})<{ isActive?: boolean }>(({ isActive, theme }) => ({
-	fontWeight: "bold",
-
-	...(isActive ? { color: theme.palette.grey[900] } : { color: "inherit" }),
-}));
-
 export const PromptBuilderSummary = (props: {
 	builder: Builder;
 	currentBuilderStep: number;
@@ -74,7 +15,6 @@ export const PromptBuilderSummary = (props: {
 	isBuildStepsComplete: () => boolean;
 	changeBuilderStep: (step: number) => void;
 }) => {
-	// don't count optional step items as part of overall completion until the step is active
 	const builderProgress = () => {
 		const builderArray = Object.values(props.builder);
 		const completedStepsToCount = builderArray.filter(
@@ -100,22 +40,15 @@ export const PromptBuilderSummary = (props: {
 	};
 
 	return (
-		<List component="nav">
-			<StyledListItem>
-				<List.ItemText
-					disableTypography
-					primary={
-						<StyledProgressSubtitle variant="subtitle2">
-							Overall Completion
-						</StyledProgressSubtitle>
-					}
-					secondary={
-						<PromptBuilderSummaryProgress
-							progress={builderProgress()}
-						/>
-					}
+		<nav className="flex flex-col gap-1">
+			<div className="mb-2 rounded-md p-2">
+				<p className="text-sm font-bold text-green-600">
+					Overall Completion
+				</p>
+				<PromptBuilderSummaryProgress
+					progress={builderProgress()}
 				/>
-			</StyledListItem>
+			</div>
 
 			{Array.from(SUMMARY_STEPS, (step: { title; icon }, i) => {
 				let isStepComplete = props.isBuilderStepComplete(i + 1);
@@ -123,14 +56,12 @@ export const PromptBuilderSummary = (props: {
 					i + 1 > props.currentBuilderStep && !isStepComplete;
 				const isActive = props.currentBuilderStep === i + 1;
 
-				// Preview Step, depends on completion of other steps
 				if (i === PROMPT_BUILDER_PREVIEW_STEP - 1) {
 					const completedSteps = props.isBuildStepsComplete();
 					disabled = !completedSteps;
 					isStepComplete = false;
 				}
 
-				// checks to see if inputs have been set properly and disables / enables step accordingly
 				if (i + 1 === PROMPT_BUILDER_INPUT_TYPES_STEP) {
 					const hasInputs = (
 						props.builder.inputs.value as Token[]
@@ -141,50 +72,53 @@ export const PromptBuilderSummary = (props: {
 				}
 
 				return (
-					<span
+					<div
 						key={i + 1}
+						className={`flex items-center rounded-md p-2 ${
+							disabled
+								? "cursor-default text-gray-400"
+								: isStepComplete
+									? "cursor-pointer text-green-600"
+									: "cursor-pointer text-gray-900"
+						} ${
+							isActive
+								? "bg-green-50"
+								: !disabled
+									? "hover:bg-gray-100"
+									: ""
+						}`}
 						onClick={() => {
 							if (!disabled) {
 								props.changeBuilderStep(i + 1);
 							}
 						}}
 					>
-						<StyledStepListItem
-							disabled={disabled}
-							isStepComplete={isStepComplete}
-							isActive={isActive}
-							secondaryAction={
-								isStepComplete ? (
-									<StyledCheckCircleOutlined
-										isActive={isActive}
-									/>
-								) : (
-									<PendingOutlined
-										sx={{ marginTop: "8px" }}
-									/>
-								)
-							}
+						<div
+							className={`mr-3 flex h-10 w-10 items-center justify-center rounded-full bg-white ${
+								isActive ? "text-gray-900" : "text-inherit"
+							}`}
 						>
-							<List.ItemAvatar>
-								<StyledAvatar isActive={isActive}>
-									<step.icon />
-								</StyledAvatar>
-							</List.ItemAvatar>
-							<List.ItemText
-								disableTypography
-								primary={
-									<StyledListItemTypography
-										isActive={isActive}
-										variant="subtitle2"
-									>
-										{step.title}
-									</StyledListItemTypography>
-								}
+							<step.icon className="h-5 w-5" />
+						</div>
+						<span
+							className={`flex-1 text-sm font-bold ${
+								isActive ? "text-gray-900" : "text-inherit"
+							}`}
+						>
+							{step.title}
+						</span>
+						{isStepComplete ? (
+							<CheckCircle
+								className={`mt-1 h-5 w-5 ${
+									isActive ? "text-gray-900" : "text-green-600"
+								}`}
 							/>
-						</StyledStepListItem>
-					</span>
+						) : (
+							<Clock className="mt-1 h-5 w-5 text-gray-400" />
+						)}
+					</div>
 				);
 			})}
-		</List>
+		</nav>
 	);
 };

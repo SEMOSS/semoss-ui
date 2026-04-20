@@ -1,4 +1,3 @@
-import { Typography } from "@semoss/ui";
 import { INPUT_TYPE_DISPLAY, TOKEN_TYPE_TEXT } from "../../prompt.constants";
 import { StyledTooltip } from "../../prompt.styled";
 import type { Token } from "../../prompt.types";
@@ -20,9 +19,9 @@ export const PromptHoverToken = (props: {
 			) : (
 				<StyledTooltip
 					title={
-						<Typography variant="body1" sx={{ marginX: 1 }}>
+						<span className="mx-2 text-base">
 							{INPUT_TYPE_DISPLAY[props.tokenInputType]}
-						</Typography>
+						</span>
 					}
 				>
 					<span>

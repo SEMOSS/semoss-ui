@@ -1,26 +1,23 @@
-import { blue, green, styled } from "@semoss/ui";
-import { THEME } from "@/constants";
+import type { ButtonHTMLAttributes } from "react";
 
-interface HoverButtonRootProps {
+interface PromptTokenTextButtonProps
+	extends ButtonHTMLAttributes<HTMLButtonElement> {
 	disableHover: boolean;
 }
 
-export const PromptTokenTextButton = styled("button", {
-	shouldForwardProp: (prop) => prop !== "disableHover",
-})<HoverButtonRootProps>(({ disableHover }) => ({
-	background: "none",
-	color: "inherit",
-	border: "none",
-	paddingTop: 0,
-	paddingBottom: 0,
-	paddingLeft: "4px",
-	paddingRight: "4px",
-	marginLeft: "-2px",
-	marginRight: "-2px",
-	font: "inherit",
-	cursor: disableHover ? "default" : "pointer",
-	outline: "inherit",
-	"&:hover": {
-		backgroundColor: disableHover ? "unset" : blue[50],
-	},
-}));
+export const PromptTokenTextButton = ({
+	disableHover,
+	className,
+	style,
+	...rest
+}: PromptTokenTextButtonProps) => {
+	return (
+		<button
+			type="button"
+			className={`border-none bg-transparent px-1 -mx-0.5 py-0 font-inherit text-inherit outline-inherit ${
+				disableHover ? "cursor-default" : "cursor-pointer hover:bg-[#e3f2fd]"
+			} ${className ?? ""}`}
+			{...rest}
+		/>
+	);
+};

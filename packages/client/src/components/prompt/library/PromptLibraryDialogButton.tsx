@@ -1,6 +1,6 @@
-import { ArrowOutward } from "@mui/icons-material";
+import { ExternalLink } from "lucide-react";
 import { useState } from "react";
-import { Button, Typography } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { StyledTooltip } from "../prompt.styled";
 import type { Builder } from "../prompt.types";
 import { PromptLibraryDialog } from "./PromptLibraryDialog";
@@ -20,35 +20,28 @@ export const PromptLibraryDialogButton = (props: {
 			{props.disabled ? (
 				<StyledTooltip
 					title={
-						<Typography
-							variant="body1"
-							sx={{ padding: 1, width: "100%" }}
-						>
+						<p className="w-full p-2 text-base">
 							Add a name and select an LLM to browse
-						</Typography>
+						</p>
 					}
 				>
 					<span>
 						<Button
-							color="primary"
 							disabled
-							endIcon={<ArrowOutward />}
-							variant="text"
-							disableElevation
+							variant="ghost"
 						>
 							Browse Prompt Templates
+							<ExternalLink className="ml-2 h-4 w-4" />
 						</Button>
 					</span>
 				</StyledTooltip>
 			) : (
 				<Button
-					color="primary"
 					onClick={() => setPromptLibraryOpen(true)}
-					endIcon={<ArrowOutward />}
-					variant="text"
-					disableElevation
+					variant="ghost"
 				>
 					Browse Prompt Templates
+					<ExternalLink className="ml-2 h-4 w-4" />
 				</Button>
 			)}
 			<PromptLibraryDialog

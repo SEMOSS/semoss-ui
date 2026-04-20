@@ -1,60 +1,51 @@
+import type React from "react";
 import {
-	Paper,
-	styled,
 	Tooltip,
-	type TooltipProps,
-	tooltipClasses,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 
-export const StyledStepPaper = styled(Paper)(({ theme }) => ({
-	padding: theme.spacing(4),
-	margin: theme.spacing(1),
-	height: "100%",
-}));
+export const StyledStepPaper = ({
+	children,
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+	<div
+		className="m-2 h-full rounded-md border bg-card p-8 shadow-sm"
+		{...props}
+	>
+		{children}
+	</div>
+);
 
-export const StyledTextPaper = styled(Paper)(({ theme }) => ({
-	borderStyle: "solid",
-	borderWidth: "2px",
-	borderColor: theme.palette.grey[300],
-	minHeight: "50%",
-	marginTop: theme.spacing(3),
-	paddingTop: theme.spacing(1.5),
-	paddingRight: theme.spacing(1),
-	paddingBottom: theme.spacing(1.5),
-	paddingLeft: theme.spacing(1),
-}));
+export const StyledTextPaper = ({
+	children,
+	...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+	<div
+		className="mt-6 min-h-[50%] rounded-md border-2 border-gray-300 px-2 py-3"
+		{...props}
+	>
+		{children}
+	</div>
+);
 
 interface StyledTooltipProps {
+	title: React.ReactNode;
+	children: React.ReactElement;
 	disableBorder?: boolean;
 }
-export const StyledTooltip = styled(
-	({ className, ...props }: TooltipProps) => (
-		<Tooltip
-			{...props}
-			classes={{ popper: className }}
-			PopperProps={{
-				modifiers: [
-					{
-						name: "offset",
-						options: {
-							offset: [0, -10],
-						},
-					},
-				],
-			}}
-		/>
-	),
-	{
-		shouldForwardProp: (prop) => prop !== "disableBorder",
-	},
-)<StyledTooltipProps>(({ disableBorder, theme }) => ({
-	[`& .${tooltipClasses.tooltip}`]: {
-		backgroundColor: theme.palette.background.default,
-		color: "inherit",
-		border: disableBorder
-			? "unset"
-			: `0.5px solid ${theme.palette.divider}`,
-		fontSize: theme.typography.pxToRem(12),
-		padding: 0,
-	},
-}));
+
+export const StyledTooltip = ({
+	title,
+	children,
+}: StyledTooltipProps) => (
+	<TooltipProvider>
+		<Tooltip>
+			<TooltipTrigger asChild>{children}</TooltipTrigger>
+			<TooltipContent className="border bg-background p-0 text-foreground">
+				{title}
+			</TooltipContent>
+		</Tooltip>
+	</TooltipProvider>
+);

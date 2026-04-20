@@ -1,24 +1,11 @@
-import { Input, Sync } from "@mui/icons-material";
+import { LogIn, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button, List, styled } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { TOKEN_TYPE_INPUT, TOKEN_TYPE_TEXT } from "../../prompt.constants";
 import { StyledTooltip } from "../../prompt.styled";
 import type { Token } from "../../prompt.types";
 import { PromptTokenChip } from "./PromptTokenChip";
 import { PromptTokenTextButton } from "./PromptTokenTextButton";
-
-const StyledListItem = styled(List.Item)(({ theme }) => ({
-	padding: 0,
-	border: `1px solid ${theme.palette.primary.main}`,
-	"&:not(:last-child)": {
-		borderBottom: "0px",
-	},
-}));
-
-const StyledTooltipContentButton = styled(Button)(({ theme }) => ({
-	padding: `${theme.spacing(0.5)} ${theme.spacing(1.5)}`,
-	borderRadius: 0,
-}));
 
 export const PromptSetToken = (props: {
 	token: Token;
@@ -53,38 +40,34 @@ export const PromptSetToken = (props: {
 					disableHoverListener
 					open={isTooltipOpen}
 					title={
-						<List disablePadding>
+						<div className="flex flex-col">
 							{props.isSelectedLinkable !== false ? (
-								<StyledListItem>
-									<StyledTooltipContentButton
-										fullWidth
-										variant="text"
-										startIcon={<Sync />}
-										onClick={() =>
-											props.setSelectedTokensAsInputs(
-												true,
-											)
-										}
-									>
-										Link Input
-									</StyledTooltipContentButton>
-								</StyledListItem>
+								<Button
+									variant="ghost"
+									className="w-full justify-start rounded-none border border-b-0 border-primary px-3 py-1"
+									onClick={() =>
+										props.setSelectedTokensAsInputs(
+											true,
+										)
+									}
+								>
+									<RefreshCw className="mr-2 h-4 w-4" />
+									Link Input
+								</Button>
 							) : (
 								<></>
 							)}
-							<StyledListItem>
-								<StyledTooltipContentButton
-									fullWidth
-									variant="text"
-									startIcon={<Input />}
-									onClick={() =>
-										props.setSelectedTokensAsInputs()
-									}
-								>
-									Set Input
-								</StyledTooltipContentButton>
-							</StyledListItem>
-						</List>
+							<Button
+								variant="ghost"
+								className="w-full justify-start rounded-none border border-primary px-3 py-1"
+								onClick={() =>
+									props.setSelectedTokensAsInputs()
+								}
+							>
+								<LogIn className="mr-2 h-4 w-4" />
+								Set Input
+							</Button>
+						</div>
 					}
 				>
 					<span>

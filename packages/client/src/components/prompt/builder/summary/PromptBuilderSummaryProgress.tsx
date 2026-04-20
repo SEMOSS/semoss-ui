@@ -1,33 +1,12 @@
-import {
-	Box,
-	LinearProgress,
-	type LinearProgressProps,
-	styled,
-	Typography,
-} from "@semoss/ui";
+import { Progress } from "@semoss/ui/next";
 
-const FlexBox = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-export const PromptBuilderSummaryProgress = (
-	props: LinearProgressProps & { progress: number },
-) => {
+export const PromptBuilderSummaryProgress = (props: { progress: number }) => {
 	return (
-		<FlexBox>
-			<Box sx={{ width: "100%", mr: 1 }}>
-				<LinearProgress
-					variant="determinate"
-					color="success"
-					value={props.progress}
-				/>
-			</Box>
-			<Box>
-				<Typography variant="body2">{`${Math.round(
-					props.progress,
-				)}%`}</Typography>
-			</Box>
-		</FlexBox>
+		<div className="flex items-center">
+			<div className="mr-2 w-full">
+				<Progress value={props.progress} className="h-2" />
+			</div>
+			<span className="text-sm">{`${Math.round(props.progress)}%`}</span>
+		</div>
 	);
 };

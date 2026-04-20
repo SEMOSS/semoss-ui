@@ -1,4 +1,3 @@
-import { Paper, styled } from "@semoss/ui";
 import {
 	PROMPT_BUILDER_CONSTRAINTS_STEP,
 	PROMPT_BUILDER_CONTEXT_STEP,
@@ -12,11 +11,6 @@ import { PromptBuilderContextStep } from "./PromptBuilderContextStep";
 import { PromptBuilderInputStep } from "./PromptBuilderInputStep";
 import { PromptBuilderInputTypeStep } from "./PromptBuilderInputTypeStep";
 import { PromptBuilderPreviewStep } from "./PromptBuilderPreviewStep";
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-	padding: theme.spacing(4),
-	margin: theme.spacing(1),
-}));
 
 export const PromptBuilderStep = (props: {
 	builder: Builder;
@@ -38,6 +32,8 @@ export const PromptBuilderStep = (props: {
 		case PROMPT_BUILDER_PREVIEW_STEP:
 			return <PromptBuilderPreviewStep {...props} />;
 		default:
-			return <StyledPaper elevation={2} square />;
+			return (
+				<div className="m-2 rounded-md border bg-card p-8 shadow-sm" />
+			);
 	}
 };

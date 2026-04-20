@@ -1,7 +1,12 @@
-import { Close } from "@mui/icons-material";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Grid, IconButton, Modal, useNotification } from "@semoss/ui";
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	toast,
+} from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { setBlocksAndOpenUIBuilder } from "../prompt.helpers";
 import type { Builder, Token } from "../prompt.types";
@@ -16,7 +21,6 @@ export const PromptLibraryDialog = (props: {
 }) => {
 	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
-	const notification = useNotification();
 	const [filter, setFilter] = useState("all");
 
 	const filteredPrompts = () => {
@@ -49,7 +53,6 @@ export const PromptLibraryDialog = (props: {
 			JSON.stringify(props.builder),
 		);
 		templateBuilder.title.value = templateBuilder.title.value ?? title;
-		// templateBuilder.tags.value = tags;
 		templateBuilder.inputs.value = inputs;
 		templateBuilder.inputTypes.value = inputTypes;
 		try {
@@ -59,57 +62,27 @@ export const PromptLibraryDialog = (props: {
 				navigate,
 			);
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		}
 	}
 
 	return (
-		<Modal
-			onClose={(_, reason: string) => {
-				if (reason && reason == "backdropClick") {
-					return;
-				}
-				props.closePromptLibrary();
-			}}
-			aria-labelledby="dialog-title"
-			fullWidth
-			maxWidth="xl"
-			open={props.promptLibraryOpen}
-		>
-			<Modal.Title>Prompt Library</Modal.Title>
-			<IconButton
-				aria-label="close"
-				onClick={() => props.closePromptLibrary()}
-				sx={{
-					position: "absolute",
-					right: 8,
-					top: 8,
-				}}
-			>
-				<Close />
-			</IconButton>
-			<Modal.Content sx={{ height: "60vh" }}>
-				<Grid container spacing={2}>
-					<Grid item xs={2}>
-						{/* TODO: Needs to play well with what we have */}
-						{/* <PromptLibraryList
-                            filter={filter}
-                            setFilter={setFilter}
-                        /> */}
-					</Grid>
-					<Grid item xs={10}>
-						{/* TODO: onClick needs to play well with Agent Builders openUIBuilderForTemplate  */}
-						{/* <PromptLibraryCards
-                            filter={filter}
-                            prompts={filteredPrompts()}
-                            openUIBuilderForTemplate={openUIBuilderForTemplate}
-                        /> */}
-					</Grid>
-				</Grid>
-			</Modal.Content>
-		</Modal>
+		<Dialog open={props.promptLibraryOpen} onOpenChange={(open) => { if (!open) props.closePromptLibrary(); }}>
+			<DialogContent className="max-w-5xl">
+				<DialogHeader>
+					<DialogTitle>Prompt Library</DialogTitle>
+				</DialogHeader>
+				<div className="h-[60vh] overflow-auto">
+					<div className="grid grid-cols-12 gap-4">
+						<div className="col-span-2">
+							{/* TODO: Needs to play well with what we have */}
+						</div>
+						<div className="col-span-10">
+							{/* TODO: onClick needs to play well with Agent Builders openUIBuilderForTemplate  */}
+						</div>
+					</div>
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 };
