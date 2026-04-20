@@ -1,15 +1,11 @@
-import { ChevronDown, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, Pencil, Star, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Env, get, post } from "@semoss/sdk";
-import { useNotification } from "@semoss/ui";
 import {
 	Avatar,
 	Button,
-	Card,
-	CardContent,
-	CardHeader,
+	Checkbox,
 	Dialog,
-	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
@@ -20,9 +16,30 @@ import {
 	DropdownMenuRadioGroup,
 	DropdownMenuTrigger,
 	Muted,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 	toast,
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
+
+export interface MemberUser {
+	id: string;
+	name: string;
+	type: string;
+	email: string;
+	permission: string;
+	permission_granted_by: string;
+	permission_granted_by_type: string;
+	date_added: string;
+	usage_restriction?: string;
+	usage_frequency?: string;
+	max_tokens?: number;
+	max_response_time?: number;
+}
 
 interface MembersProps {
 	id: string;
@@ -38,213 +55,203 @@ interface MembersProps {
 		| "GUARDRAIL";
 	search?: string;
 	isAddMember?: boolean;
-	refreshList?: boolean;
+	refreshList?: number;
 	permission?: string;
+	onEdit?: (user: MemberUser) => void;
+	isOwner?: boolean;
+	adminMode?: boolean;
+	currentUserId?: string;
+	myPermission?: string;
 }
 
-interface SETTINGS_PROVISIONED_USER {
-	id: string;
-	name: string;
-	type: string;
-	email: string;
-	permission: string;
-	permission_granted_by: string;
-	permission_granted_by_type: string;
-	date_added: string;
-}
+const formatValue = (input?: string) => {
+	if (!input) return "—";
+	const mappings: Record<string, string> = {
+		TOKEN: "Token",
+		COMPUTE: "Compute time",
+		DAY: "Daily",
+		WEEK: "Weekly",
+		MONTH: "Monthly",
+	};
+	return mappings[input.toUpperCase()] ?? input;
+};
 
-/**
- * Renders a list of members for a given project/engine.
- * This component is reused in main members table and add members overlay.
- * It fetches records from api on initial render and on search and also when the scrolling is reaching the bottom.
- * It also handles refreshing the list of members when add members popup is closed or when a user is deleted.
- * @param {string} id - The ID of the project/engine to fetch members for.
- * @param {string} type - The type of the project/engine to fetch members for.
- * @param {string} [search] - The search query to filter members by.
- * @param {boolean} [isAddMember] - Whether to display add members button or not.
- * @param {number} [refreshList] - Whether to refresh the list of members or not.
- * @param {string} [permission] - The permission to filter members by.
- */
 export const MembersList = ({
 	id,
 	type,
 	search = "",
 	isAddMember = false,
-	refreshList = false,
+	refreshList = 0,
 	permission = "",
+	onEdit,
+	isOwner = false,
+	adminMode = false,
+	currentUserId,
+	myPermission = "",
 }: MembersProps) => {
-	const [userData, setUserData] = useState<SETTINGS_PROVISIONED_USER[]>([]);
+	const [userData, setUserData] = useState<MemberUser[]>([]);
 	const [refreshData, setRefreshData] = useState<number>(0);
-	const [limit, setLimit] = useState<number>(5);
+	const [offset, setOffset] = useState<number>(0);
 	const [totalMembers, setTotalMembers] = useState<number>(0);
-	const [idsToDelete, setIdsToDelete] = useState<string[]>([]);
+	const [usersToDelete, setUsersToDelete] = useState<MemberUser[]>([]);
 	const [userDataLoading, setUserDataLoading] = useState<boolean>(false);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const membersListId = `members-table-list-container-${isAddMember ? "add-member" : "default"}`;
 	const apiCallTriggerId = `triggerAPICall-${isAddMember ? "add-member" : "default"}`;
-	const notification = useNotification();
+	const isFetchingRef = useRef(false);
+	const fetchVersionRef = useRef(0);
+	const canLoadMoreRef = useRef(false);
 
-	/**
-	 * Central managing of fetching records from api based on scroll by adding the limit
-	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: this is essential for fetching data
+	// Reset to page 0 whenever identity or search changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset
 	useEffect(() => {
+		setOffset(0);
+		setUserData([]);
+		setTotalMembers(0);
+		canLoadMoreRef.current = false;
+		isFetchingRef.current = false;
+	}, [id, type, search, refreshData]);
+
+	// Set up intersection observer once; refs keep guards current
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only setup
+	useEffect(() => {
+		const root = document.getElementById(membersListId);
+		const trigger = document.getElementById(apiCallTriggerId);
+		if (!trigger) return;
 		const observer = new IntersectionObserver(
-			(observerObj) => {
+			(entries) => {
 				if (
-					observerObj[0].isIntersecting &&
-					userData.length < totalMembers
+					entries[0].isIntersecting &&
+					canLoadMoreRef.current &&
+					!isFetchingRef.current
 				) {
-					setLimit((prevLimit) => prevLimit + 5);
+					isFetchingRef.current = true;
+					setOffset((prev) => prev + 50);
 				}
 			},
-			{
-				root: document.getElementById(membersListId),
-				threshold: 1.0,
-			},
+			{ root, threshold: 1.0 },
 		);
+		observer.observe(trigger);
+		return () => observer.disconnect();
+	}, []);
 
-		observer.observe(document.getElementById(apiCallTriggerId));
-
-		return () => {
-			observer.disconnect();
-		};
-	}, [userData, totalMembers]);
-
-	/**
-	 * fetches records from api on initial render and on search
-	 */
-	//biome-ignore lint: elint/correctness/useExhaustiveDependencies: this is essential for fetching data
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional
 	useEffect(() => {
+		const version = ++fetchVersionRef.current;
 		async function fetchUserData() {
-			// Fetch user data based on type and id
+			isFetchingRef.current = true;
+			setUserDataLoading(true);
+			const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
+			const isProject = type === "PROJECT" || type === "WORKSPACE";
 			try {
-				setUserDataLoading(true);
 				const response = await get(
-					`${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "getProjectUsers" : "getEngineUsers"}?${type === "PROJECT" || type === "WORKSPACE" ? "projectId" : "engineId"}=${id}&limit=${limit}${search !== "" ? `&userId=${search}` : ""}`,
+					`${authBase}/${isProject ? "project" : "engine"}/${isProject ? "getProjectUsers" : "getEngineUsers"}?${isProject ? "projectId" : "engineId"}=${id}&limit=50&offset=${offset}${search !== "" ? `&userId=${search}` : ""}`,
 				).catch((error) => {
 					throw Error(error);
 				});
-
+				if (fetchVersionRef.current !== version) return;
 				if (response?.data) {
-					setUserData(response?.data?.members || []);
-					setTotalMembers(response?.data?.totalMembers || 0);
+					const data = response.data as {
+						members?: MemberUser[];
+						totalMembers?: number;
+					};
+					const page: MemberUser[] = data.members || [];
+					const total: number = data.totalMembers || 0;
+					setUserData((prev) =>
+						offset === 0 ? page : [...prev, ...page],
+					);
+					setTotalMembers(total);
+					canLoadMoreRef.current = offset + page.length < total;
 				}
-				console.log(response.data, "memberslistresponse");
-				setTimeout(() => {
-					setUserDataLoading(false);
-				}, 100);
 			} catch (error) {
+				if (fetchVersionRef.current !== version) return;
 				console.error("Error fetching user data:", error);
-				setUserDataLoading(false);
 			} finally {
-				setUserDataLoading(false);
+				isFetchingRef.current = false;
+				if (fetchVersionRef.current === version)
+					setUserDataLoading(false);
 			}
 		}
 		fetchUserData();
-	}, [id, type, refreshData, limit, search]);
-	/**
-	 * refreshes members list, when add members is closed
-	 */
+	}, [id, type, search, refreshData, offset, adminMode]);
+
 	useEffect(() => {
 		if (refreshList) {
 			setRefreshData((prev) => prev + 1);
-			refreshList = false;
 		}
 	}, [refreshList]);
 
-	/**
-	 * Updates a user's permission for the given project/engine.
-	 * @param {string} userId - The ID of the user to update.
-	 * @param {string} permission - The permission to update the user to.
-	 */
-	const updateUserPermission = async (userId, permission) => {
-		// Implement API call to update user permission
-		const url = `${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${type === "PROJECT" || type === "WORKSPACE" ? "editProjectUserPermissions" : "editEngineUserPermissions"}`;
-		const response = await post(url, {
-			[type === "PROJECT" || type === "WORKSPACE"
-				? "projectId"
-				: "engineId"]: id,
-			userpermissions: [{ userid: userId, permission: permission }],
-		}).catch((error) => {
-			console.error("Error updating user permission:", error);
-			if (type === "WORKSPACE") {
-				toast.error("Error updating user permission.");
-			} else {
-				notification.add({
-					id: "error",
-					color: "error",
-					message: "Error updating user permission.",
-				});
-			}
-		});
-		if (response?.data?.success) {
-			// Refresh user data
-			setRefreshData((prev) => {
-				return prev + 1;
-			});
-			if (type === "WORKSPACE") {
-				toast.success("User permission updated successfully.");
-			} else {
-				notification.add({
-					id: "success",
-					color: "success",
-					message: "User permission updated successfully.",
-				});
+	const updateUserPermission = async (
+		user: MemberUser,
+		permission: string,
+	) => {
+		const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
+		const isProject = type === "PROJECT" || type === "WORKSPACE";
+		const url = `${authBase}/${isProject ? "project" : "engine"}/${isProject ? "editProjectUserPermissions" : "editEngineUserPermissions"}`;
+		const payload: Record<string, unknown> = {
+			userid: user.id,
+			permission,
+		};
+		if (type === "MODEL") {
+			const r = user.usage_restriction;
+			if (r && r !== "null") {
+				payload.usageRestriction = r;
+				if (r.toUpperCase() === "TOKEN" && user.max_tokens != null)
+					payload.maxTokens = user.max_tokens;
+				if (
+					r.toUpperCase() === "COMPUTE" &&
+					user.max_response_time != null
+				)
+					payload.maxResponseTime = user.max_response_time;
+				payload.usageFrequency = user.usage_frequency;
 			}
 		}
+		const response = await post(url, {
+			[isProject ? "projectId" : "engineId"]: id,
+			userpermissions: [payload],
+		}).catch((error: Error) => {
+			toast.error(error?.message || "Error updating user permission.");
+		});
+		if ((response?.data as { success?: boolean })?.success) {
+			setUserData((prev) =>
+				prev.map((u) => (u.id === user.id ? { ...u, permission } : u)),
+			);
+			toast.success("User permission updated successfully.");
+		}
 	};
+
 	const resetSelectedMembers = () => {
-		setIdsToDelete([]);
-		setRefreshData((prev) => prev + 1); //fetches latest user data when a user is deleted
+		setUsersToDelete([]);
+		setSelectedIds(new Set());
+		setRefreshData((prev) => prev + 1);
 	};
 
 	const deleteSelectedMembers = () => {
-		const usersUrl =
-			type === "PROJECT" || type === "WORKSPACE"
-				? "removeProjectUserPermissions"
-				: "removeEngineUserPermissions";
+		const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
+		const isProjectDel = type === "PROJECT" || type === "WORKSPACE";
+		const usersUrl = isProjectDel
+			? "removeProjectUserPermissions"
+			: "removeEngineUserPermissions";
 
-		post(
-			`${Env.MODULE}/api/auth/${type === "PROJECT" || type === "WORKSPACE" ? "project" : "engine"}/${usersUrl}`,
-			{
-				[type === "PROJECT" || type === "WORKSPACE"
-					? "projectId"
-					: "engineId"]: id,
-				ids: idsToDelete,
-			},
-		)
+		post(`${authBase}/${isProjectDel ? "project" : "engine"}/${usersUrl}`, {
+			[isProjectDel ? "projectId" : "engineId"]: id,
+			ids: usersToDelete.map((u) => u.id),
+		})
 			.then(() => {
-				if (type === "WORKSPACE") {
-					toast.success(
-						"Selected members have been deleted successfully.",
-					);
-				} else {
-					notification.add({
-						id: "success",
-						color: "success",
-						message:
-							"Selected members have been deleted successfully.",
-					});
-				}
+				toast.success(
+					"Selected members have been deleted successfully.",
+				);
 				resetSelectedMembers();
 			})
-			.catch(() => {
-				if (type === "WORKSPACE") {
-					toast.error(
+			.catch((error: Error) => {
+				toast.error(
+					error?.message ||
 						"There was an error deleting the selected members.",
-					);
-				} else {
-					notification.add({
-						id: "error",
-						color: "error",
-						message:
-							"There was an error deleting the selected members.",
-					});
-				}
+				);
 				resetSelectedMembers();
 			});
 	};
-	//filtering user data based on permission group like, can view/ can edit
+
 	const userDataFiltered =
 		permission !== ""
 			? userData.filter((user) => {
@@ -254,165 +261,412 @@ export const MembersList = ({
 				})
 			: userData;
 
+	const canActOnOwners = adminMode || isOwner;
+	const canShowOwnerOption = adminMode || isOwner;
+	const canEditMembers =
+		adminMode || myPermission === "OWNER" || myPermission === "EDIT";
+	const selectableUsers = userDataFiltered.filter(
+		(u) => (u.permission !== "OWNER" || canActOnOwners) && canEditMembers,
+	);
+	const allSelected =
+		selectableUsers.length > 0 &&
+		selectableUsers.every((u) => selectedIds.has(u.id));
+	const someSelected = selectableUsers.some((u) => selectedIds.has(u.id));
+	const colCount = (type === "MODEL" ? 6 : 3) + (!isAddMember ? 2 : 0) + 1;
+
+	function toggleSelectAll() {
+		if (allSelected) {
+			setSelectedIds(new Set());
+		} else {
+			setSelectedIds(new Set(selectableUsers.map((u) => u.id)));
+		}
+	}
+
+	function toggleSelectUser(user: MemberUser) {
+		setSelectedIds((prev) => {
+			const next = new Set(prev);
+			if (next.has(user.id)) next.delete(user.id);
+			else next.add(user.id);
+			return next;
+		});
+	}
+
 	return (
 		<>
 			<div
-				className="flex h-full w-full flex-column gap-2"
+				className="flex h-full w-full flex-col gap-2"
 				id={membersListId}
 			>
-				<Card className="max-h-[300px] w-full gap-0 overflow-y-auto rounded-none p-4">
-					<CardHeader className="px-2 py-0">
-						<span className="font-geist font-medium text-neutral-500 text-sm leading-[20px]">
-							Who has access{" "}
+				{!isAddMember && selectedIds.size > 0 && (
+					<div className="flex items-center justify-between rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
+						<span className="font-medium text-sm">
+							{selectedIds.size} user
+							{selectedIds.size !== 1 ? "s" : ""} selected
 						</span>
-					</CardHeader>
-					<CardContent className="px-2 py-0">
-						{userDataFiltered.length > 0 ? (
-							userDataFiltered.map((user) => (
-								<div
-									className="flex flex-column items-center gap-2 py-2"
-									key={`members-row-${user.email}`}
-								>
-									<div className="width-[50px] flex rounded-2xl bg-[#ECEDEF]">
-										<Avatar className="items-center justify-center text-gray-500">
-											{user.name.charAt(0).toUpperCase()}
-										</Avatar>
-									</div>
-									<span className="flex w-full flex-col overflow-hidden font-geist">
-										<span className="flex font-semibold font-style-normal text-accent-foreground text-sm">
-											{user.name}
-										</span>
-										<span className="flex font-normal font-style-normal text-muted-foreground text-xs">
-											{user.email}
-										</span>
-									</span>
-									{user.permission !== "OWNER" ? (
-										<DropdownMenu>
-											<DropdownMenuTrigger
-												asChild
-												className="flex h-auto items-center"
-											>
-												<Button
-													variant="outline"
-													size="default"
-													className="w-[120px]"
+						<Button
+							variant="destructive"
+							size="sm"
+							onClick={() => {
+								const users = userDataFiltered.filter((u) =>
+									selectedIds.has(u.id),
+								);
+								setUsersToDelete(users);
+							}}
+						>
+							<Trash2 className="mr-1.5 h-4 w-4" />
+							Delete Selected
+						</Button>
+					</div>
+				)}
+				<div className="max-h-[400px] w-full overflow-y-auto rounded border border-border">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								{!isAddMember && (
+									<TableHead className="w-10">
+										<Checkbox
+											checked={
+												allSelected
+													? true
+													: someSelected
+														? "indeterminate"
+														: false
+											}
+											onCheckedChange={toggleSelectAll}
+											aria-label="Select all"
+										/>
+									</TableHead>
+								)}
+								<TableHead>Name</TableHead>
+								<TableHead>Login Type</TableHead>
+								<TableHead>Permission</TableHead>
+								{type === "MODEL" && (
+									<>
+										<TableHead>Limit Type</TableHead>
+										<TableHead>Limit Value</TableHead>
+										<TableHead>Frequency</TableHead>
+									</>
+								)}
+								<TableHead>Permission Date</TableHead>
+								{!isAddMember && (
+									<TableHead className="w-px whitespace-nowrap">
+										Actions
+									</TableHead>
+								)}
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{userDataFiltered.length > 0 ? (
+								userDataFiltered.map((user) => (
+									<TableRow
+										key={`members-row-${user.email}`}
+										data-state={
+											selectedIds.has(user.id)
+												? "selected"
+												: undefined
+										}
+										className={
+											!canEditMembers ||
+											(user.permission === "OWNER" &&
+												!canActOnOwners)
+												? "opacity-50"
+												: undefined
+										}
+									>
+										{!isAddMember && (
+											<TableCell className="w-10">
+												<Checkbox
+													checked={selectedIds.has(
+														user.id,
+													)}
+													disabled={
+														!canEditMembers ||
+														(user.permission ===
+															"OWNER" &&
+															!canActOnOwners)
+													}
+													onCheckedChange={() =>
+														toggleSelectUser(user)
+													}
+													aria-label={`Select ${user.name}`}
+												/>
+											</TableCell>
+										)}
+										<TableCell>
+											<div className="flex items-center gap-2">
+												{user.id === currentUserId ? (
+													<Avatar className="items-center justify-center bg-primary/10 text-primary">
+														<Star className="h-4 w-4 fill-primary" />
+													</Avatar>
+												) : (
+													<Avatar className="items-center justify-center bg-[#ECEDEF] text-gray-500">
+														{user.name
+															.charAt(0)
+															.toUpperCase()}
+													</Avatar>
+												)}
+												<span className="flex flex-col overflow-hidden">
+													<span className="font-semibold text-accent-foreground text-sm">
+														{user.name}
+													</span>
+													<span className="text-muted-foreground text-xs">
+														id: {user.id}
+													</span>
+													<span className="text-muted-foreground text-xs">
+														email: {user.email}
+													</span>
+												</span>
+											</div>
+										</TableCell>
+										<TableCell>
+											<span className="text-sm">
+												{user.type ?? "—"}
+											</span>
+										</TableCell>
+										<TableCell>
+											<DropdownMenu>
+												<DropdownMenuTrigger
+													asChild
+													disabled={
+														!canEditMembers ||
+														(user.permission ===
+															"OWNER" &&
+															!canActOnOwners)
+													}
 												>
-													<div className="flex flex-column items-center justify-between gap-2">
-														<span className="flex">
+													<Button
+														variant="outline"
+														size="default"
+														className="w-[120px]"
+														disabled={
+															!canEditMembers ||
+															(user.permission ===
+																"OWNER" &&
+																!canActOnOwners)
+														}
+													>
+														<span>
 															{returnAccessType(
 																user.permission,
-															)}{" "}
+															)}
 														</span>
-														<ChevronDown />
-													</div>
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent>
-												<DropdownMenuRadioGroup>
-													<DropdownMenuCheckboxItem
-														key={`can-view-${user.email}`}
-														checked={
-															returnAccessType(
-																user.permission,
-															) === "can view"
+														<ChevronDown className="ml-auto h-4 w-4" />
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent>
+													<DropdownMenuRadioGroup>
+														<DropdownMenuCheckboxItem
+															checked={
+																returnAccessType(
+																	user.permission,
+																) === "Viewer"
+															}
+															onCheckedChange={() =>
+																updateUserPermission(
+																	user,
+																	"READ_ONLY",
+																)
+															}
+														>
+															Viewer
+														</DropdownMenuCheckboxItem>
+														<DropdownMenuCheckboxItem
+															checked={
+																returnAccessType(
+																	user.permission,
+																) === "Editor"
+															}
+															onCheckedChange={() =>
+																updateUserPermission(
+																	user,
+																	"EDIT",
+																)
+															}
+														>
+															Editor
+														</DropdownMenuCheckboxItem>
+														{canShowOwnerOption && (
+															<DropdownMenuCheckboxItem
+																checked={
+																	returnAccessType(
+																		user.permission,
+																	) ===
+																	"Owner"
+																}
+																onCheckedChange={() =>
+																	updateUserPermission(
+																		user,
+																		"OWNER",
+																	)
+																}
+															>
+																Owner
+															</DropdownMenuCheckboxItem>
+														)}
+													</DropdownMenuRadioGroup>
+												</DropdownMenuContent>
+											</DropdownMenu>
+										</TableCell>
+										{type === "MODEL" &&
+											(() => {
+												const limitValue =
+													user.usage_restriction?.toUpperCase() ===
+													"COMPUTE"
+														? `${user.max_response_time?.toLocaleString() ?? "—"} ms`
+														: user.usage_restriction?.toUpperCase() ===
+																"TOKEN"
+															? (user.max_tokens?.toLocaleString() ??
+																"—")
+															: "—";
+												return (
+													<>
+														<TableCell>
+															<span className="text-sm">
+																{formatValue(
+																	user.usage_restriction,
+																)}
+															</span>
+														</TableCell>
+														<TableCell>
+															<span className="text-sm">
+																{limitValue}
+															</span>
+														</TableCell>
+														<TableCell>
+															<span className="text-sm">
+																{formatValue(
+																	user.usage_frequency,
+																)}
+															</span>
+														</TableCell>
+													</>
+												);
+											})()}
+										<TableCell>
+											<span className="text-muted-foreground text-sm">
+												{user.date_added ?? "—"}
+											</span>
+										</TableCell>
+										{!isAddMember && (
+											<TableCell>
+												<div className="flex items-center gap-1">
+													<Button
+														variant="outline"
+														size="icon-sm"
+														className="border-none"
+														disabled={
+															!canEditMembers ||
+															(user.permission ===
+																"OWNER" &&
+																!canActOnOwners)
 														}
-														onCheckedChange={async () => {
-															updateUserPermission(
-																user.id,
-																"READ_ONLY",
-															);
-														}}
-													>
-														can view
-													</DropdownMenuCheckboxItem>
-													<DropdownMenuCheckboxItem
-														key={`can-edit-${user.email}`}
-														checked={
-															returnAccessType(
-																user.permission,
-															) === "can edit"
+														onClick={() =>
+															onEdit?.(user)
 														}
-														onCheckedChange={async () => {
-															updateUserPermission(
-																user.id,
-																"EDIT",
-															);
-														}}
 													>
-														can edit
-													</DropdownMenuCheckboxItem>
-												</DropdownMenuRadioGroup>
-											</DropdownMenuContent>
-										</DropdownMenu>
-									) : (
-										<Muted className="w-[120px] px-4 py-2">
-											Owner
-										</Muted>
-									)}
-									<Button
-										variant="outline"
-										size="icon-sm"
-										className="border-none"
-										disabled={user.permission === "OWNER"}
-										onClick={() => {
-											setIdsToDelete([
-												...idsToDelete,
-												user.id,
-											]);
-										}}
+														<Pencil className="h-4 w-4" />
+													</Button>
+													<Button
+														variant="outline"
+														size="icon-sm"
+														className="border-none"
+														disabled={
+															!canEditMembers ||
+															(user.permission ===
+																"OWNER" &&
+																!canActOnOwners)
+														}
+														onClick={() =>
+															setUsersToDelete(
+																(prev) => [
+																	...prev,
+																	user,
+																],
+															)
+														}
+													>
+														<Trash2 className="h-4 w-4" />
+													</Button>
+												</div>
+											</TableCell>
+										)}
+									</TableRow>
+								))
+							) : userDataLoading ? (
+								<TableRow>
+									<TableCell
+										colSpan={colCount}
+										className="text-center"
 									>
-										<Trash2 className="h-4 w-4" />
-									</Button>
-								</div>
-							))
-						) : userDataLoading ? (
-							<div className="flex h-full w-full items-center justify-center">
-								Loading...
-							</div>
-						) : (
-							<div className="flex h-full w-full items-center justify-center">
-								<Muted>No members found</Muted>
-							</div>
-						)}
-						<div id={apiCallTriggerId}>&nbsp;</div>
-					</CardContent>
-				</Card>
+										Loading...
+									</TableCell>
+								</TableRow>
+							) : (
+								<TableRow>
+									<TableCell
+										colSpan={colCount}
+										className="text-center"
+									>
+										<Muted>No members found</Muted>
+									</TableCell>
+								</TableRow>
+							)}
+							<tr id={apiCallTriggerId} />
+						</TableBody>
+					</Table>
+				</div>
+				<p className="text-right text-muted-foreground text-xs">
+					{userData.length} of {totalMembers} member
+					{totalMembers !== 1 ? "s" : ""}
+				</p>
 			</div>
-			{/* <DeleteMembersOverlay
-				id={id}
-				type={type}
-				open={idsToDelete.length > 0}
-				onClose={() => {
-					setIdsToDelete([]);
-					setRefreshData((prev) => prev + 1); //fetches latest user data when a user is deleted
-				}}
-				idsToDelete={idsToDelete}
-			/> */}
 			<Dialog
-				open={idsToDelete.length > 0}
+				open={usersToDelete.length > 0}
 				onOpenChange={resetSelectedMembers}
 			>
-				<DialogContent className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-lg">
-					<DialogTitle>Delete Members</DialogTitle>
-
-					<DialogDescription className="mb-4 flex flex-col gap-4 text-gray-600">
-						Do you want to delete the selected members?
+				<DialogContent className="w-full max-w-md">
+					<DialogTitle>
+						{usersToDelete.length === 1
+							? "Delete Member"
+							: `Delete ${usersToDelete.length} Members`}
+					</DialogTitle>
+					<DialogDescription>
+						Remove member access from this resource. This action
+						cannot be undone.
 					</DialogDescription>
+					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2 pr-1">
+						{usersToDelete.map((u) => (
+							<div
+								key={u.id}
+								className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2.5"
+							>
+								<Avatar className="h-9 w-9 items-center justify-center bg-muted text-muted-foreground text-sm">
+									{u.name.charAt(0).toUpperCase()}
+								</Avatar>
+								<div className="flex flex-col">
+									<span className="font-medium text-sm">
+										{u.name}
+									</span>
+									<span className="text-muted-foreground text-xs">
+										id: {u.id}
+									</span>
+									<span className="text-muted-foreground text-xs">
+										email: {u.email}
+									</span>
+								</div>
+							</div>
+						))}
+					</div>
 					<DialogFooter>
-						<DialogClose>
-							<Button
-								variant="destructive"
-								onClick={deleteSelectedMembers}
-							>
-								Confirm
-							</Button>
-							<Button
-								variant="ghost"
-								onClick={resetSelectedMembers}
-							>
-								Cancel
-							</Button>
-						</DialogClose>
+						<Button variant="ghost" onClick={resetSelectedMembers}>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={deleteSelectedMembers}
+						>
+							Delete
+						</Button>
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>

@@ -136,7 +136,9 @@ export const EngineSettingsAdminDetailPage = (
 						</TabsTrigger>
 					</TabsList>
 				</Tabs>
-				{view === "CURRENT" && <MembersTable type={type} id={id} />}
+				{view === "CURRENT" && (
+					<MembersTable type={type} id={id} adminMode />
+				)}
 				{view === "PENDING" && (
 					<PendingMembersTable type={type} id={id} />
 				)}
