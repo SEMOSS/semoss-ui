@@ -1,7 +1,7 @@
 import type React from "react";
 import { Stack, styled } from "@semoss/ui";
 
-const StyledPanel = styled(Stack)(({ theme }) => ({
+const StyledPanel = styled(Stack)(() => ({
 	height: "100%",
 	width: "100%",
 	overflow: "hidden",
@@ -14,7 +14,8 @@ const StyledPanelActions = styled(Stack)(({ theme }) => ({
 }));
 
 const StyledPanelContent = styled(Stack)(({ theme }) => ({
-	height: "100%",
+	flex: 1,
+	minHeight: 0,
 	width: "100%",
 	overflow: "hidden",
 	backgroundColor: theme.palette.background.paper,

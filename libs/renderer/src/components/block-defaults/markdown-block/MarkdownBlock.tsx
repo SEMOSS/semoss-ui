@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
-import { Markdown, Skeleton } from "@semoss/ui";
+import { Markdown, Skeleton } from "@semoss/ui/next";
 import { useBlock, useTypeWriter } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
@@ -26,13 +26,14 @@ export interface MarkdownBlockDef extends BlockDef<"markdown"> {
 export const MarkdownBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, listeners } = useBlock<MarkdownBlockDef>(id);
 	const markdownTxt =
-		typeof data.markdown == "string"
+		typeof data.markdown === "string"
 			? data.markdown
 			: JSON.stringify(data.markdown);
 	let displayTxt = useTypeWriter(data.isStreaming ? markdownTxt : "");
 
 	if (!data.isStreaming) displayTxt = markdownTxt;
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -56,7 +57,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
 				}}
 				{...attrs}
 			>
-				<Skeleton width={"auto"} height={"auto"} />
+				<Skeleton className="h-full w-full" />
 			</div>
 		);
 	}

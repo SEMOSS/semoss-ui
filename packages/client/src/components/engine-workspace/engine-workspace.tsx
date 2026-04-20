@@ -1,12 +1,68 @@
 import {
+	FileArchiveIcon,
+	FileAudioIcon,
+	FileBadgeIcon,
+	FileChartPieIcon,
+	FileCodeIcon,
 	FileIcon,
+	FileJsonIcon,
+	FileSpreadsheetIcon,
+	FileTerminalIcon,
+	FileTextIcon,
+	FileTypeIcon,
+	FileVideoIcon,
 	FolderTreeIcon,
+	ImageIcon,
 	MonitorXIcon,
 	TvMinimalIcon,
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const getFileTabIcon = (fileName: string) => {
+	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+	if (
+		["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "img"].includes(ext)
+	)
+		return <ImageIcon className="size-4" />;
+	if (ext === "pdf") return <FileBadgeIcon className="size-4" />;
+	if (["xls", "xlsx", "csv"].includes(ext))
+		return <FileSpreadsheetIcon className="size-4" />;
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		].includes(ext)
+	)
+		return <FileCodeIcon className="size-4" />;
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
+		return <FileTerminalIcon className="size-4" />;
+	if (ext === "json") return <FileJsonIcon className="size-4" />;
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
+		return <FileArchiveIcon className="size-4" />;
+	if (["ppt", "pptx"].includes(ext))
+		return <FileChartPieIcon className="size-4" />;
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
+		return <FileAudioIcon className="size-4" />;
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+		return <FileVideoIcon className="size-4" />;
+	if (["html", "xml", "md", "mdx", "rtf"].includes(ext))
+		return <FileTypeIcon className="size-4" />;
+	if (["doc", "docx", "msg", "txt"].includes(ext))
+		return <FileTextIcon className="size-4" />;
+	return <FileIcon className="size-4" />;
+};
+
+import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
@@ -28,11 +84,121 @@ interface EngineWorkspaceProps {
 
 export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 	({ engine, model }) => {
+		const insight = useInsight();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
+		const containerRef = useRef<HTMLDivElement | null>(null);
 		const [isMaximized, setIsMaximized] = useState(false);
+		const [explorerRefreshKey, setExplorerRefreshKey] = useState(0);
+		const [pendingRename, setPendingRename] = useState<{
+			id: string;
+			newName: string;
+			path: string;
+		} | null>(null);
+
+		useEffect(() => {
+			if (!pendingRename) return;
+			const { id, newName, path } = pendingRename;
+			const dir = path.substring(0, path.lastIndexOf("/") + 1);
+			const newPath = `${dir}${newName}`;
+			(async () => {
+				try {
+					await insight.actions.run(
+						`RenameEngineAsset(engine=["${engine}"], filePath=["${path}"], newValue=["${newPath}"]);`,
+					);
+					const tabNode = model.getNodeById(id);
+					const tabsetId =
+						tabNode instanceof FlexLayout.TabNode
+							? (tabNode.getParent()?.getId() ?? "")
+							: (model.getActiveTabset()?.getId() ??
+								model.getRoot().getChildren()[0]?.getId() ??
+								"");
+					model.doAction(FlexLayout.Actions.deleteTab(id));
+					model.doAction(
+						FlexLayout.Actions.addNode(
+							{
+								id: `ENGINE_FILE--${newPath}`,
+								type: "tab",
+								name: newName,
+								component: "engine-file-editor",
+								config: { name: newName, path: newPath },
+								enableClose: true,
+							},
+							tabsetId,
+							FlexLayout.DockLocation.CENTER,
+							-1,
+							true,
+						),
+					);
+					setExplorerRefreshKey((k) => k + 1);
+				} catch (e) {
+					console.error(e);
+				} finally {
+					setPendingRename(null);
+				}
+			})();
+		}, [pendingRename, engine, model, insight.actions.run]);
+
+		useEffect(() => {
+			const container = containerRef.current;
+			if (!container) return;
+			const observer = new MutationObserver((mutations) => {
+				for (const mutation of mutations) {
+					for (const added of Array.from(mutation.addedNodes)) {
+						if (!(added instanceof HTMLElement)) continue;
+						const input = added.classList.contains(
+							"flexlayout__tab_button_textbox",
+						)
+							? (added as HTMLInputElement)
+							: (added.querySelector(
+									".flexlayout__tab_button_textbox",
+								) as HTMLInputElement | null);
+						if (!input) continue;
+						requestAnimationFrame(() => {
+							const dot = input.value.lastIndexOf(".");
+							input.setSelectionRange(
+								0,
+								dot > 0 ? dot : input.value.length,
+							);
+						});
+						return;
+					}
+				}
+			});
+			observer.observe(container, { childList: true, subtree: true });
+			return () => observer.disconnect();
+		}, []);
+
+		useEffect(() => {
+			const container = containerRef.current;
+			if (!container) return;
+			const onWheel = (e: WheelEvent) => {
+				if (!(e.target instanceof Element)) return;
+				const tabBar = e.target.closest(
+					".flexlayout__tabset_tabbar_inner",
+				) as HTMLElement | null;
+				if (!tabBar || !container.contains(tabBar)) return;
+				if (tabBar.scrollWidth <= tabBar.clientWidth) return;
+				const delta =
+					Math.abs(e.deltaX) > Math.abs(e.deltaY)
+						? e.deltaX
+						: e.deltaY;
+				if (delta === 0) return;
+				tabBar.scrollLeft += delta;
+				e.preventDefault();
+				e.stopPropagation();
+			};
+			container.addEventListener("wheel", onWheel, {
+				capture: true,
+				passive: false,
+			});
+			return () => container.removeEventListener("wheel", onWheel, true);
+		}, []);
 
 		return (
-			<div className="relative h-full w-full overflow-hidden">
+			<div
+				ref={containerRef}
+				className="relative h-full w-full overflow-hidden"
+			>
 				<div
 					className={`fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 ${
 						isMaximized
@@ -93,16 +259,49 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 									} else if (
 										component === "engine-file-editor"
 									) {
-										renderValues.leading = (
-											<FileIcon className="size-4" />
+										renderValues.leading = getFileTabIcon(
+											node.getName(),
 										);
 									}
+								}}
+								onAction={(action) => {
+									if (
+										action.type ===
+										FlexLayout.Actions.RENAME_TAB
+									) {
+										const { node: id, text } =
+											action.data as {
+												node: string;
+												text: string;
+											};
+										const tabNode = model.getNodeById(id);
+										if (
+											tabNode instanceof
+												FlexLayout.TabNode &&
+											tabNode.getComponent() ===
+												"engine-file-editor"
+										) {
+											const cfg = tabNode.getConfig() as {
+												path?: string;
+											};
+											if (cfg?.path) {
+												setPendingRename({
+													id,
+													newName: text,
+													path: cfg.path,
+												});
+												return undefined;
+											}
+										}
+									}
+									return action;
 								}}
 								factory={(node) => {
 									const component = node.getComponent();
 									if (component === "engine-file-explorer") {
 										return (
 											<EngineFileExplorer
+												key={explorerRefreshKey}
 												layout={
 													layoutRef.current || null
 												}

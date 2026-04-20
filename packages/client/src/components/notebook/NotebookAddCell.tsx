@@ -1,12 +1,15 @@
 import {
-	Close,
-	Code,
-	ImportExport,
-	KeyboardArrowDown,
-	KeyboardArrowUp,
-	MoreVert,
-	SearchOutlined,
-} from "@mui/icons-material";
+	Bot,
+	ChevronDown,
+	ChevronUp,
+	Code2,
+	Database,
+	Filter,
+	MoreVertical,
+	RefreshCw,
+	Search,
+	X,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import {
@@ -24,60 +27,14 @@ import {
 } from "@semoss/renderer";
 import {
 	Button,
-	IconButton,
-	InputAdornment,
-	Menu,
-	type MenuProps,
-	Modal,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { ModelBrain } from "@/assets/img/ModelBrain";
-
-const StyledButton = styled(Button)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-	backgroundColor: "unset!important",
-}));
-
-const StyledMenu = styled((props: MenuProps) => (
-	<Menu
-		anchorOrigin={{
-			vertical: "bottom",
-			horizontal: "left",
-		}}
-		transformOrigin={{
-			vertical: "top",
-			horizontal: "left",
-		}}
-		{...props}
-	/>
-))(({ theme }) => ({
-	"& .MuiPaper-root": {
-		marginTop: theme.spacing(1),
-		borderRadius: "0px",
-	},
-	".MuiList-root": {
-		padding: 0,
-	},
-}));
-
-const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
-	textTransform: "capitalize",
-	fontSize: "16px",
-	display: "flex",
-	gap: theme.spacing(1),
-}));
-
-const StyledBorderDiv = styled("div")(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.main}`,
-	padding: "8px 16px",
-	borderRadius: "8px",
-}));
-const MenuSectionRoot = styled("li")({
-	listStyle: "none",
-});
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+	Input,
+} from "@semoss/ui/next";
 
 interface AddCellOption {
 	display: string;
@@ -142,81 +99,41 @@ const AddCellOptions: Record<string, AddCellOption> = {
 	code: {
 		display: "Cell",
 		defaultCellType: "code",
-		icon: <Code />,
+		icon: <Code2 className="size-4" />,
 	},
 	"import-data": {
 		display: "Import Data",
-		icon: <ImportExport />,
+		icon: <Database className="size-4" />,
 		options: DataImportDropdownOptions,
 		disabled: false,
 	},
 	data: {
 		display: "Data Filters",
-		icon: (
-			<svg
-				role="img"
-				xmlns="http://www.w3.org/2000/svg"
-				width="18"
-				height="18"
-				viewBox="0 0 24 24"
-				fill="none"
-			>
-				<title>data-filter-icon</title>
-				<g clipPath="url(#clip0_2378_103062)">
-					<path
-						fillRule="evenodd"
-						clipRule="evenodd"
-						d="M12 3C7.58 3 4 4.79 4 7V17C4 19.21 7.59 21 12 21C16.41 21 20 19.21 20 17V7C20 4.79 16.42 3 12 3ZM18 17C18 17.5 15.87 19 12 19C8.13 19 6 17.5 6 17V14.77C7.61 15.55 9.72 16 12 16C14.28 16 16.39 15.55 18 14.77V17ZM18 12.45C16.7 13.4 14.42 14 12 14C9.58 14 7.3 13.4 6 12.45V9.64C7.47 10.47 9.61 11 12 11C14.39 11 16.53 10.47 18 9.64V12.45ZM12 9C8.13 9 6 7.5 6 7C6 6.5 8.13 5 12 5C15.87 5 18 6.5 18 7C18 7.5 15.87 9 12 9Z"
-						fill="#666666"
-					></path>
-				</g>
-				<defs>
-					<clipPath id="clip0_2378_103062">
-						<rect width="24" height="24" fill="#666666"></rect>
-					</clipPath>
-				</defs>
-			</svg>
-		),
+		icon: <Filter className="size-4" />,
 		options: DataOptions,
 	},
 	transformation: {
 		display: "Transformation",
-		icon: (
-			<svg
-				width="18"
-				height="18"
-				viewBox="0 0 24 24"
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-			>
-				<title>transformation-icon</title>
-				<path
-					d="M9.9987 3.33203V0.832031L6.66536 4.16536L9.9987 7.4987V4.9987C12.757 4.9987 14.9987 7.24036 14.9987 9.9987C14.9987 10.8404 14.7904 11.6404 14.4154 12.332L15.632 13.5487C16.282 12.5237 16.6654 11.307 16.6654 9.9987C16.6654 6.31536 13.682 3.33203 9.9987 3.33203ZM9.9987 14.9987C7.24036 14.9987 4.9987 12.757 4.9987 9.9987C4.9987 9.15703 5.20703 8.35703 5.58203 7.66536L4.36536 6.4487C3.71536 7.4737 3.33203 8.69036 3.33203 9.9987C3.33203 13.682 6.31536 16.6654 9.9987 16.6654V19.1654L13.332 15.832L9.9987 12.4987V14.9987Z"
-					fill="#757575"
-				/>
-			</svg>
-		),
+		icon: <RefreshCw className="size-4" />,
 		options: Transformations,
 	},
 	llm: {
 		display: "LLM",
 		defaultCellType: "llm",
-		icon: <ModelBrain color={"#666666"} width={"20"} height={"20"} />,
+		icon: <Bot className="size-4" />,
 	},
 	others: {
 		display: "",
-		icon: <MoreVert />,
+		icon: <MoreVertical className="size-4" />,
 		options: OtherOptions,
 	},
 };
 
 export const NotebookAddCell = observer(
 	(props: { query: QueryState; previousCellId?: string }): JSX.Element => {
-		const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 		const [selectedAddCell, setSelectedAddCell] = useState<string>("");
 		const [isDataImportModalOpen, setIsDataImportModalOpen] =
 			useState<boolean>(false);
-		const open = Boolean(anchorEl);
 		const { query, previousCellId = "" } = props;
 		const { state, notebook } = useBlocks();
 		const [searchQuery, setSearchQuery] = useState("");
@@ -257,7 +174,7 @@ export const NotebookAddCell = observer(
 			});
 
 			return categories;
-		}, [TransformationCells]);
+		}, []);
 
 		/**
 		 * filters transformations based on search term
@@ -278,21 +195,6 @@ export const NotebookAddCell = observer(
 				};
 			})
 			.filter(({ transformations }) => transformations.length > 0);
-
-		/**
-		 * @description - sets search term in state
-		 * @param event
-		 */
-		const handleSearchChange = (event) => {
-			setSearchQuery(event.target.value);
-		};
-
-		/**
-		 * @description - clears search term in state
-		 */
-		const clearSearch = () => {
-			setSearchQuery("");
-		};
 
 		/**
 		 * @description - Create a New Cell and Add to Notebook
@@ -357,257 +259,206 @@ export const NotebookAddCell = observer(
 
 		return (
 			<>
-				<Stack
-					direction={"row"}
-					alignItems={"center"}
-					gap={1}
-					justifyContent={"center"}
-				>
-					<StyledBorderDiv>
-						{AddCellOptions &&
-							Object.entries(AddCellOptions).map((add, i) => {
-								const value = add[1];
-								return (
-									<StyledButton
-										key={`${query.id}-${previousCellId}-${value.display}`}
-										title={`${value.display}`}
-										variant="contained"
-										size="small"
-										disabled={
-											query.isLoading || value.disabled
-										}
-										startIcon={value.icon}
-										onClick={(e) => {
-											if (value.options) {
-												setAnchorEl(e.currentTarget);
-												setSelectedAddCell(add[0]);
-											} else {
-												appendCell(
-													value.defaultCellType,
-												);
-												setSelectedAddCell(add[0]);
-											}
-										}}
-										sx={{
-											...((value.options
-												? selectedAddCell === add[0] &&
-													open
-												: selectedAddCell ===
-													add[0]) && {
-												backgroundColor:
-													"#EBF4FE !important",
-												color: "#212121 !important",
-											}),
-										}}
-										endIcon={
-											add[0] === "others" ||
-											add[0] ===
-												"code" ? null : Array.isArray(
-													value.options,
-												) &&
-												selectedAddCell === add[0] &&
-												open ? (
-												<KeyboardArrowUp />
-											) : (
-												<KeyboardArrowDown />
-											)
-										}
-									>
-										{value.display}
-									</StyledButton>
-								);
-							})}
-					</StyledBorderDiv>
-					<StyledMenu
-						anchorEl={anchorEl}
-						open={
-							open &&
-							!!AddCellOptions[selectedAddCell]?.options?.length
-						}
-						onClose={() => {
-							setAnchorEl(null);
-						}}
+				<div className="group relative flex h-8 w-full items-center">
+					<div className="flex-1" />
+
+					{/* Hover-reveal button bar centered over the divider */}
+					<div
+						className={`absolute inset-0 flex items-center justify-center transition-opacity ${selectedAddCell ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}
 					>
-						{selectedAddCell === "data" && // Ensure we are showing the options for "Data"
-							DataOptions.map(
-								({ display, defaultCellType }, index) => {
-									return (
-										<StyledMenuItem
-											key={`${query.id}-${previousCellId}-${display}`}
-											value={display}
-											onClick={() => {
-												appendCell(defaultCellType); // Append selected cell
-												setAnchorEl(null); // Close the menu
-											}}
-										>
-											{display}
-										</StyledMenuItem>
-									);
-								},
-							)}
+						<div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-background px-2.5 py-0.5 shadow-sm">
+							{AddCellOptions &&
+								Object.entries(AddCellOptions).map(
+									(add, _i) => {
+										const [key, value] = add;
 
-						{selectedAddCell === "transformation" && (
-							<>
-								{/* Search Input with Clear Icon */}
-
-								<TextField
-									placeholder="Search"
-									size="small"
-									sx={{
-										padding: "8px",
-										borderRadius: "8px",
-										width: "211px",
-									}}
-									value={searchQuery}
-									onChange={handleSearchChange}
-									InputProps={{
-										startAdornment: (
-											<InputAdornment position="start">
-												<SearchOutlined />
-											</InputAdornment>
-										),
-										endAdornment: (
-											<InputAdornment position="end">
-												<IconButton
-													size="small"
-													onClick={clearSearch}
-												>
-													<Close />
-												</IconButton>
-											</InputAdornment>
-										),
-									}}
-								/>
-								<Stack
-									sx={{
-										maxHeight: "300px",
-										overflowY: "auto",
-									}}
-								>
-									{/* Menu Section */}
-									{filteredCategories.map(
-										(
-											{ category, transformations },
-											index,
-										) => (
-											<MenuSectionRoot
-												key={`${query.id}-${previousCellId}-${category}`}
-											>
-												<StyledMenuItem
-													value={category}
-													disabled
-												>
-													<Typography
-														variant={"button"}
-														sx={{
-															fontSize: "14px",
-														}}
-													>
-														{category}
-													</Typography>
-												</StyledMenuItem>
-												{transformations.map(
-													(
-														transformation,
-														tIndex,
-													) => (
-														<StyledMenuItem
-															value={
-																transformation.display
-															}
-															key={`${query.id}-${previousCellId}-${transformation.display}`}
-															onClick={() => {
-																appendCell(
-																	transformation.defaultCellType,
-																);
-																setAnchorEl(
-																	null,
-																);
-																setSearchQuery(
-																	"",
-																);
-															}}
-														>
-															{
-																transformation.display
-															}
-														</StyledMenuItem>
-													),
-												)}
-											</MenuSectionRoot>
-										),
-									)}
-								</Stack>
-							</>
-						)}
-						{selectedAddCell === "others" &&
-							Array.from(
-								AddCellOptions[selectedAddCell]?.options || [],
-								({ display, defaultCellType }, index) => {
-									return (
-										<StyledMenuItem
-											key={`${query.id}-${previousCellId}-${display}`}
-											value={display}
-											onClick={() => {
-												appendCell(defaultCellType);
-												setAnchorEl(null);
-											}}
-										>
-											{display}
-										</StyledMenuItem>
-									);
-								},
-							)}
-
-						{selectedAddCell === "import-data" && (
-							<div>
-								{Array.from(
-									AddCellOptions[selectedAddCell]?.options ||
-										[],
-									(
-										{ display, defaultCellType, disabled },
-										index,
-									) => {
-										return (
-											<StyledMenuItem
-												key={`${query.id}-${previousCellId}-${display}`}
-												value={display}
-												disabled={disabled}
-												onClick={() => {
-													if (!defaultCellType) {
-														setIsDataImportModalOpen(
-															true,
-														);
-													} else {
-														appendCell(
-															defaultCellType,
-														);
+										if (!value.options) {
+											// Simple button — no dropdown
+											return (
+												<Button
+													key={`${query.id}-${previousCellId}-${value.display}`}
+													title={value.display}
+													variant="ghost"
+													size="sm"
+													disabled={
+														query.isLoading ||
+														value.disabled
 													}
-													setAnchorEl(null);
+													className="h-7 w-7 p-0 text-muted-foreground"
+													onClick={() => {
+														appendCell(
+															value.defaultCellType,
+														);
+														setSelectedAddCell(key);
+													}}
+												>
+													{value.icon}
+												</Button>
+											);
+										}
+
+										// Button with dropdown menu
+										return (
+											<DropdownMenu
+												key={`${query.id}-${previousCellId}-${value.display}`}
+												onOpenChange={(open) => {
+													setSelectedAddCell(
+														open ? key : "",
+													);
 												}}
 											>
-												{display}
-											</StyledMenuItem>
+												<DropdownMenuTrigger asChild>
+													<Button
+														title={value.display}
+														variant="ghost"
+														size="sm"
+														disabled={
+															query.isLoading ||
+															value.disabled
+														}
+														className="h-7 w-7 p-0 text-muted-foreground"
+													>
+														{value.icon}
+														{key !== "others" &&
+															(selectedAddCell ===
+															key ? (
+																<ChevronUp className="-ml-1 size-2.5" />
+															) : (
+																<ChevronDown className="-ml-1 size-2.5" />
+															))}
+													</Button>
+												</DropdownMenuTrigger>
+												<DropdownMenuContent align="start">
+													{key ===
+														"transformation" && (
+														<>
+															<div className="p-2">
+																<div className="relative">
+																	<Search className="-translate-y-1/2 absolute top-1/2 left-2 size-3.5 text-muted-foreground" />
+																	<Input
+																		placeholder="Search"
+																		className="h-7 pl-7 text-xs"
+																		value={
+																			searchQuery
+																		}
+																		onChange={(
+																			e,
+																		) =>
+																			setSearchQuery(
+																				e
+																					.target
+																					.value,
+																			)
+																		}
+																	/>
+																	{searchQuery && (
+																		<button
+																			type="button"
+																			className="-translate-y-1/2 absolute top-1/2 right-2 text-muted-foreground hover:text-foreground"
+																			onClick={() =>
+																				setSearchQuery(
+																					"",
+																				)
+																			}
+																		>
+																			<X className="size-3" />
+																		</button>
+																	)}
+																</div>
+															</div>
+															<div className="max-h-[300px] overflow-y-auto">
+																{filteredCategories.map(
+																	({
+																		category,
+																		transformations,
+																	}) => (
+																		<div
+																			key={`${query.id}-${previousCellId}-${category}`}
+																		>
+																			<DropdownMenuLabel className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">
+																				{
+																					category
+																				}
+																			</DropdownMenuLabel>
+																			{transformations.map(
+																				(
+																					transformation,
+																				) => (
+																					<DropdownMenuItem
+																						key={`${query.id}-${previousCellId}-${transformation.display}`}
+																						onClick={() => {
+																							appendCell(
+																								transformation.defaultCellType,
+																							);
+																							setSearchQuery(
+																								"",
+																							);
+																						}}
+																					>
+																						{
+																							transformation.display
+																						}
+																					</DropdownMenuItem>
+																				),
+																			)}
+																			<DropdownMenuSeparator />
+																		</div>
+																	),
+																)}
+															</div>
+														</>
+													)}
+													{key !== "transformation" &&
+														Array.from(
+															value.options || [],
+															({
+																display,
+																defaultCellType,
+																disabled,
+																// biome-ignore lint/suspicious/noExplicitAny: dynamic option type
+															}: any) => (
+																<DropdownMenuItem
+																	key={`${query.id}-${previousCellId}-${display}`}
+																	disabled={
+																		disabled
+																	}
+																	onClick={() => {
+																		if (
+																			key ===
+																				"import-data" &&
+																			!defaultCellType
+																		) {
+																			setIsDataImportModalOpen(
+																				true,
+																			);
+																		} else {
+																			appendCell(
+																				defaultCellType,
+																			);
+																		}
+																	}}
+																>
+																	{display}
+																</DropdownMenuItem>
+															),
+														)}
+												</DropdownMenuContent>
+											</DropdownMenu>
 										);
 									},
 								)}
-							</div>
-						)}
-					</StyledMenu>
-				</Stack>
+						</div>
+					</div>
+				</div>
 
 				{isDataImportModalOpen && (
-					<Modal
-						open={setIsDataImportModalOpen as unknown as boolean}
-					>
-						<DataImportFormModal
-							setIsDataImportModalOpen={setIsDataImportModalOpen}
-							query={query}
-							previousCellId={previousCellId}
-							cell={null}
-							editMode={false}
-						/>
-					</Modal>
+					<DataImportFormModal
+						setIsDataImportModalOpen={setIsDataImportModalOpen}
+						query={query}
+						previousCellId={previousCellId}
+						cell={null}
+						editMode={false}
+					/>
 				)}
 			</>
 		);

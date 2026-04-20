@@ -114,6 +114,8 @@ const InlineStyledTypography = styled(Typography)(({ theme }) => ({
 	color: theme.palette.secondary.dark,
 	width: blockCardWidth,
 	userSelect: "none",
+	textAlign: "center",
+	overflowWrap: "anywhere",
 	alignItems: "center",
 }));
 
@@ -159,6 +161,7 @@ const FormMenuBlockCard: React.FC<FormMenuCardProps> = ({
 			justifyContent="flex-end"
 		>
 			<InlineStyledTypography
+				component="div"
 				variant="body2"
 				fontWeight="medium"
 				align="center"
@@ -168,6 +171,7 @@ const FormMenuBlockCard: React.FC<FormMenuCardProps> = ({
 					gap={1}
 					alignContent={"center"}
 					justifyContent={"center"}
+					flexWrap={"wrap"}
 				>
 					{item.name}
 					{item.recentChanges && (
@@ -236,7 +240,7 @@ export const FormMenu: React.FC<FormMenuProps> = ({
 			const res = await runPixel("GetClientBlocks()");
 			const { pixelReturn, errors } = res;
 
-			if (errors && errors.length) {
+			if (errors?.length) {
 				notification.add({
 					color: "error",
 					message:
@@ -327,7 +331,7 @@ export const FormMenu: React.FC<FormMenuProps> = ({
 
 				<StyledToggleTabsGroup
 					value={mode}
-					onChange={(e: React.SyntheticEvent, val) => {
+					onChange={(_e: React.SyntheticEvent, val) => {
 						setMode(val as MODE);
 					}}
 				>

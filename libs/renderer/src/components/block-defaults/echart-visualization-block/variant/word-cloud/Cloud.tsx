@@ -3,29 +3,8 @@ import "echarts-wordcloud";
 import EChartsReact from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-
-//Main Container for displaying word cloud chart
-const StyledMainContainer = styled("div")(() => ({
-	height: "100%",
-	width: "100%",
-}));
-
-//container for displaying invalid or no data
-const StyledNoDataContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
-	height: "inherit",
-	width: "inherit",
-	maxHeight: "30vh",
-	maxWidth: "80vh",
-	display: "flex",
-	flexWrap: "wrap",
-	alignContent: "flex-start",
-	color: error ? theme.palette.error.main : "unset",
-}));
 
 //Word Cloud component properties
 interface CloudProps {
@@ -326,15 +305,15 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 		try {
 			const cloudOptions = JSON.parse(data.option);
 			return (
-				<StyledMainContainer id={id}>
+				<div id={id} className="h-full w-full">
 					<EChartsReact option={cloudOptions} />
-				</StyledMainContainer>
+				</div>
 			);
 		} catch {
 			return (
-				<StyledNoDataContainer error>
+				<div className="flex h-[inherit] max-h-[30vh] w-[inherit] max-w-[80vh] flex-wrap content-start text-destructive">
 					There was an issue parsing your JSON.
-				</StyledNoDataContainer>
+				</div>
 			);
 		}
 	} else {
@@ -355,10 +334,10 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 		// Show empty state if no words are available
 		if (hasRealData && !hasWords) {
 			return (
-				<StyledNoDataContainer>
+				<div className="flex h-[inherit] max-h-[30vh] w-[inherit] max-w-[80vh] flex-wrap content-start">
 					No words available to display. Please check your data
 					configuration.
-				</StyledNoDataContainer>
+				</div>
 			);
 		}
 
@@ -366,7 +345,7 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 		const chartKey = `cloud-${id}-${JSON.stringify(finalOption?.series?.[0]?.data)}`;
 
 		return (
-			<StyledMainContainer id={id}>
+			<div id={id} className="h-full w-full">
 				<EChartsReact
 					key={chartKey}
 					option={finalOption as EChartsOption}
@@ -375,7 +354,7 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 						width: "inherit",
 					}}
 				/>
-			</StyledMainContainer>
+			</div>
 		);
 	}
 });

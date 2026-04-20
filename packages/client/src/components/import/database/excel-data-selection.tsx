@@ -192,13 +192,13 @@ const ExcelDataSelection = ({
 
 				newTableStates[`${fileIndex}-${sheetName}`] = {
 					rowEditableState: Object.fromEntries(
-						parsedData.cleanHeaders.map((_, index) => [
+						(parsedData.cleanHeaders || []).map((_, index) => [
 							index,
 							true,
 						]),
 					),
 					columnMetadata: Object.fromEntries(
-						parsedData.cleanHeaders.map((header) => [
+						(parsedData.cleanHeaders || []).map((header) => [
 							header,
 							{
 								alias: header,

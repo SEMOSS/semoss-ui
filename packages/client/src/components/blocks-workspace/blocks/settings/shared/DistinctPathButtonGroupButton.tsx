@@ -9,7 +9,7 @@ import {
 	type PathValue,
 	useBlock,
 } from "@semoss/renderer";
-import { IconButton } from "@semoss/ui";
+import { Button, cn } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 
@@ -36,6 +36,7 @@ interface DistinctPathButtonGroupButtonProps<D extends BlockDef = BlockDef> {
 	/**
 	 * Icon for button display
 	 */
+	// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 	ButtonIcon: any;
 
 	/**
@@ -116,10 +117,14 @@ export const DistinctPathButtonGroupButton = observer(
 			}, 300);
 		};
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const isDisabled = useMemo(() => {
-			return !!(
-				(blockData?.hasOwnProperty("href") && title === "Underlined") ||
-				(blockData?.hasOwnProperty("variant") &&
+			return (
+				(blockData != null &&
+					Object.hasOwn(blockData, "href") &&
+					title === "Underlined") ||
+				(blockData != null &&
+					Object.hasOwn(blockData, "variant") &&
 					["h1", "h2", "h3", "h4", "h5", "h6"].includes(
 						blockData.variant as string,
 					) &&
@@ -127,14 +132,13 @@ export const DistinctPathButtonGroupButton = observer(
 			);
 		}, [blockData, id, title]);
 
+		const isActive = value === styleValue || (isDefault ? !value : false);
+
 		return (
-			<IconButton
-				color={
-					value == styleValue || (isDefault ? !value : false)
-						? "primary"
-						: undefined
-				}
-				size="small"
+			<Button
+				variant="ghost"
+				size="icon-sm"
+				className={cn(isActive && "text-primary")}
 				onClick={onClick}
 				title={title}
 				disabled={isDisabled}
@@ -143,7 +147,7 @@ export const DistinctPathButtonGroupButton = observer(
 				)}
 			>
 				<ButtonIcon />
-			</IconButton>
+			</Button>
 		);
 	},
 );

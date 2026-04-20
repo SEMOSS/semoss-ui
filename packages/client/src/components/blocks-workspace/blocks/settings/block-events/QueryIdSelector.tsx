@@ -1,9 +1,16 @@
-import { Controller } from "react-hook-form";
-import { Select } from "@semoss/ui";
+import { type Control, Controller } from "react-hook-form";
+import type { ListenerActions, QueryState } from "@semoss/renderer";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 
 interface QueryIdSelectorProps {
-	control: any;
-	queries: any[];
+	control: Control<ListenerActions>;
+	queries: QueryState[];
 	label?: string;
 }
 
@@ -18,15 +25,19 @@ export const QueryIdSelector = ({
 			control={control}
 			render={({ field }) => (
 				<Select
-					label={label}
 					value={field.value || ""}
-					onChange={field.onChange}
+					onValueChange={field.onChange}
 				>
-					{queries.map((query: any) => (
-						<Select.Item key={query.id} value={query.id}>
-							{query.id}
-						</Select.Item>
-					))}
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder={label} />
+					</SelectTrigger>
+					<SelectContent>
+						{queries.map((query) => (
+							<SelectItem key={query.id} value={query.id}>
+								{query.id}
+							</SelectItem>
+						))}
+					</SelectContent>
 				</Select>
 			)}
 		/>

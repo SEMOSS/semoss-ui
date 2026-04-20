@@ -63,6 +63,7 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const initialPrompt = searchParams.get("prompt") ?? "";
 
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
@@ -355,7 +356,9 @@ export const NewRoomPage = observer(() => {
 						) : (
 							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									{t("room:welcome")}
+									{t("room:welcome", {
+										name: chat.user.name,
+									})}
 								</div>
 								{root.theme.description ? (
 									<div className="text-center text-muted-foreground text-sm leading-normal">
@@ -368,7 +371,9 @@ export const NewRoomPage = observer(() => {
 						<RoomInput
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
+							initialValue={initialPrompt}
 							model={chat.models.selected}
+							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}

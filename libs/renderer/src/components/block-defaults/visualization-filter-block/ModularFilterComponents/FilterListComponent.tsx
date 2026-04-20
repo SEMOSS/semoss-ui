@@ -1,6 +1,6 @@
-import { Checkbox } from "@mui/material";
+import { Minus } from "lucide-react";
 import { useEffect } from "react";
-import { List } from "@semoss/ui";
+import { Checkbox } from "@semoss/ui/next";
 
 const FilterListComponent = ({
 	listOptions,
@@ -26,19 +26,15 @@ const FilterListComponent = ({
 		}
 
 		if (value === "Select All") {
-			// Select all filtered options, not all listOptions
 			const allFilteredChecked = filteredOptions.every((opt) =>
 				checked.includes(opt),
 			);
 			if (allFilteredChecked) {
-				// Uncheck all filtered options
 				setChecked(checked.filter((c) => !filteredOptions.includes(c)));
 			} else {
-				// Add all filtered options to checked (avoid duplicates)
-				const newChecked = Array.from(
-					new Set([...checked, ...filteredOptions]),
+				setChecked(
+					Array.from(new Set([...checked, ...filteredOptions])),
 				);
-				setChecked(newChecked);
 			}
 		} else {
 			const newChecked = checked.includes(value)
@@ -48,7 +44,7 @@ const FilterListComponent = ({
 		}
 	};
 
-	// reset checked when resetChecked changes to true (unfilter action)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (resetChecked) {
 			setChecked([...listOptions]);
@@ -56,7 +52,6 @@ const FilterListComponent = ({
 		}
 	}, [resetChecked]);
 
-	// Select All should reflect only filteredOptions
 	const allFilteredChecked =
 		filteredOptions.length > 0 &&
 		filteredOptions.every((opt) => checked.includes(opt));
@@ -64,39 +59,40 @@ const FilterListComponent = ({
 		checked.some((c) => filteredOptions.includes(c)) && !allFilteredChecked;
 
 	return (
-		<List sx={{ maxHeight: 200, overflowY: "auto" }} dense>
+		<ul className="max-h-[200px] space-y-0.5 overflow-y-auto">
 			{multi && (
-				<List.Item
-					key="select-all"
+				// biome-ignore lint/a11y/useKeyWithClickEvents: click-only interaction by design
+				<li
+					className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 hover:bg-muted"
 					onClick={handleToggle("Select All")}
 				>
-					<List.ItemIcon>
+					<div className="relative">
 						<Checkbox
-							edge="start"
 							checked={allFilteredChecked}
-							indeterminate={indeterminate}
-							tabIndex={-1}
-							disableRipple
+							onCheckedChange={() => handleToggle("Select All")()}
 						/>
-					</List.ItemIcon>
-					<List.ItemText primary="Select All" />
-				</List.Item>
+						{indeterminate && (
+							<Minus className="pointer-events-none absolute inset-0 m-auto size-3" />
+						)}
+					</div>
+					<span className="text-sm">Select All</span>
+				</li>
 			)}
-
 			{filteredOptions.map((option) => (
-				<List.Item key={option} onClick={handleToggle(option)}>
-					<List.ItemIcon>
-						<Checkbox
-							edge="start"
-							checked={checked.includes(option)}
-							tabIndex={-1}
-							disableRipple
-						/>
-					</List.ItemIcon>
-					<List.ItemText primary={option} />
-				</List.Item>
+				// biome-ignore lint/a11y/useKeyWithClickEvents: click-only interaction by design
+				<li
+					key={option}
+					className="flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1 hover:bg-muted"
+					onClick={handleToggle(option)}
+				>
+					<Checkbox
+						checked={checked.includes(option)}
+						onCheckedChange={() => handleToggle(option)()}
+					/>
+					<span className="text-sm">{option}</span>
+				</li>
 			))}
-		</List>
+		</ul>
 	);
 };
 

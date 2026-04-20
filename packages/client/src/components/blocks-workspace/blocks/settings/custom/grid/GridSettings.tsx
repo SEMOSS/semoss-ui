@@ -8,7 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Menu, Select, Stack, Typography } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../../BaseSettingSection";
 import {
@@ -39,6 +45,7 @@ interface GridSettingsProps<D extends BlockDef = BlockDef> {
 interface GridLayoutOption {
 	value: string;
 	config: { rows: number; cols: number };
+	// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 	icon: any;
 }
 
@@ -110,10 +117,7 @@ export const GridSettings = observer(
 			setValue(computedValue.value);
 		}, [computedValue]);
 
-		const handleChange = (
-			event: React.ChangeEvent<{ value: string | unknown }>,
-		) => {
-			const newLayoutId = event.target.value as string;
+		const handleChange = (newLayoutId: string) => {
 			const newLayout = gridLayouts.find(
 				(layout) => layout.value === newLayoutId,
 			);
@@ -142,27 +146,20 @@ export const GridSettings = observer(
 
 		return (
 			<BaseSettingSection label="Grid">
-				<Select
-					id="grid-layout-select"
-					fullWidth
-					size="small"
-					value={value}
-					onChange={handleChange}
-				>
-					{gridLayouts.map((layout) => (
-						<Menu.Item key={layout.value} value={layout.value}>
-							<Stack
-								direction="row"
-								alignItems="center"
-								spacing={2}
-							>
-								<layout.icon color="disabled" />
-								<Typography variant="body1">
-									{`${layout.config.rows}x${layout.config.cols}`}
-								</Typography>
-							</Stack>
-						</Menu.Item>
-					))}
+				<Select value={value} onValueChange={handleChange}>
+					<SelectTrigger className="w-full">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{gridLayouts.map((layout) => (
+							<SelectItem key={layout.value} value={layout.value}>
+								<div className="flex flex-row items-center gap-2">
+									<layout.icon color="disabled" />
+									<span>{`${layout.config.rows}x${layout.config.cols}`}</span>
+								</div>
+							</SelectItem>
+						))}
+					</SelectContent>
 				</Select>
 			</BaseSettingSection>
 		);

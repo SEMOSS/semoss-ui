@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
-import { Skeleton } from "@semoss/ui";
+import { Skeleton } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
@@ -70,6 +70,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
 		return shadow as string;
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -93,7 +94,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
 				}}
 				{...attrs}
 			>
-				<Skeleton width={"auto"} height={"auto"} />
+				<Skeleton className="h-full w-full" />
 			</div>
 		);
 	}

@@ -9,7 +9,13 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Autocomplete, TextField } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -43,7 +49,7 @@ export const QueryNameDropdownSettings = observer(
 		const [value, setValue] = useState("");
 
 		// Track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// Get the value of the input (wrapped in useMemo because of path prop)
 		const computedValue = useMemo(() => {
@@ -97,21 +103,23 @@ export const QueryNameDropdownSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<Autocomplete
-					fullWidth
-					disableClearable={value === ""}
-					size="small"
-					multiple={false}
+				<Select
 					value={value}
-					options={queries}
-					getOptionLabel={(queryKey: string) => queryKey}
-					onChange={(_, newValue) => {
-						onChange(newValue);
+					onValueChange={(val) => {
+						onChange(val);
 					}}
-					renderInput={(params) => (
-						<TextField {...params} placeholder="Query" />
-					)}
-				/>
+				>
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder="Query" />
+					</SelectTrigger>
+					<SelectContent>
+						{queries.map((queryKey) => (
+							<SelectItem key={queryKey} value={queryKey}>
+								{queryKey}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 			</BaseSettingSection>
 		);
 	},
