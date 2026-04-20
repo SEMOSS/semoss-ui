@@ -60,6 +60,10 @@ export const ToolsView = observer(
 		 * Process iframe on load
 		 */
 		const handleOnLoad = () => {
+			const targetOrigin = url
+				? new URL(url, window.location.origin).origin
+				: window.location.origin;
+
 			// send the parameters
 			iframeRef.current?.contentWindow?.postMessage(
 				{
@@ -76,7 +80,7 @@ export const ToolsView = observer(
 						executedParameters: toJS(toolParameters || {}),
 					} satisfies MCPToolRequest,
 				},
-				"*",
+				targetOrigin,
 			);
 		};
 
