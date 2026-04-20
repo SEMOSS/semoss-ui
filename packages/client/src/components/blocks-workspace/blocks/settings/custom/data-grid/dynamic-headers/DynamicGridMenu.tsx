@@ -3,7 +3,13 @@ import {
 	type GridDynamicFrameBlockDef,
 	useBlocksPixel,
 } from "@semoss/renderer";
-import { Autocomplete, Stack, TextField } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 export const DynamicGridMenu: BlockComponent = ({ id }) => {
@@ -13,34 +19,30 @@ export const DynamicGridMenu: BlockComponent = ({ id }) => {
 		data: [],
 	});
 
-	// options for the autocomplete
+	// options for the select
 	const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
 
 	return (
-		<Stack>
-			<Autocomplete
-				fullWidth
-				multiple={false}
+		<div>
+			<Select
 				disabled={getFrames.status !== "SUCCESS"}
 				value={data.frame.name}
-				options={options}
-				getOptionLabel={(option) => {
-					return option;
-				}}
-				onChange={(_, value) => {
+				onValueChange={(value) => {
 					// update the frame
 					setData("frame.name", value);
 				}}
-				freeSolo={false}
-				renderInput={(params) => (
-					<TextField
-						{...params}
-						placeholder="Select frame"
-						size="small"
-						variant="outlined"
-					/>
-				)}
-			/>
-		</Stack>
+			>
+				<SelectTrigger className="w-full">
+					<SelectValue placeholder="Select frame" />
+				</SelectTrigger>
+				<SelectContent>
+					{options.map((option) => (
+						<SelectItem key={option} value={option}>
+							{option}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</div>
 	);
 };

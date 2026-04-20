@@ -1,11 +1,9 @@
-import ClearIcon from "@mui/icons-material/Clear";
-import { Box, CircularProgress, Paper, Typography } from "@mui/material";
-import IconButton from "@mui/material/IconButton";
-import { styled } from "@mui/material/styles";
+import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Env, runPixel } from "@semoss/sdk/react";
+import { Button, Spinner } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
@@ -29,52 +27,6 @@ export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
 	};
 }
 
-// Styled components
-const ViewerContainer = styled(Paper)(({ theme }) => ({
-	position: "relative",
-	height: "100%",
-	padding: theme.spacing(1),
-}));
-
-const Header = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	marginBottom: theme.spacing(0),
-}));
-
-const LoadingContainer = styled(Box)({
-	display: "flex",
-	justifyContent: "center",
-	alignItems: "center",
-	minHeight: 200,
-});
-
-const ErrorMessage = styled(Typography)(({ theme }) => ({
-	padding: theme.spacing(2.5),
-	color: theme.palette.error.main,
-}));
-
-const PDFContainer = styled(Box)(({ theme }) => ({
-	height: "92%",
-	flex: 1,
-	border: `1px solid ${theme.palette.divider}`,
-	borderRadius: theme.shape.borderRadius,
-	overflow: "hidden",
-}));
-
-const PDFObject = styled("object")({
-	width: "100%",
-	height: "100%",
-});
-
-const PDFIframe = styled("iframe")({
-	width: "100%",
-	border: "none",
-	height: "calc(100% - 35px)", // Subtract header height
-	minHeight: 340,
-});
-
 export const PDF_FILE_PREFIX = "data:application/pdf;base64,";
 
 export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
@@ -84,6 +36,7 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	const [pdfContent, setPdfContent] = useState<string | null>(null);
 	const { appId } = useParams();
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -99,11 +52,9 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 					const response = await runPixel<[string]>(
 						`GetEngineAssetsBase64(filePath=["${path}"], engine=["${engineIds}"]);`,
 					);
-					// Directly use base64 from response
 					const base64Content = response?.pixelReturn[0]?.output;
 					if (!base64Content)
 						throw new Error("Failed to get base64 PDF");
-					// Ensure prefix
 					return base64Content.startsWith(PDF_FILE_PREFIX)
 						? base64Content
 						: PDF_FILE_PREFIX +
@@ -128,11 +79,13 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 						reader.onloadend = () => {
 							const base64data = reader.result as string;
 							if (!base64data.startsWith(PDF_FILE_PREFIX)) {
-								const base64Content = base64data.replace(
-									/^data:.*?;base64,/,
-									"",
+								resolve(
+									PDF_FILE_PREFIX +
+										base64data.replace(
+											/^data:.*?;base64,/,
+											"",
+										),
 								);
-								resolve(PDF_FILE_PREFIX + base64Content);
 							} else {
 								resolve(base64data);
 							}
@@ -149,9 +102,10 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 		[appId],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (data?.selectedPdf) {
-			downloadAndPrepareFile(data?.selectedPdf, data?.engineId)
+			downloadAndPrepareFile(data.selectedPdf, data.engineId)
 				.then((content) => {
 					setPdfContent(content as string);
 					setLoading(false);
@@ -168,10 +122,8 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, [data.selectedPdf]);
 
-	// Extract file name from path
 	const fileName = data.selectedPdf?.split("/").pop() || "";
 
-	// Clear the selection
 	const handleClear = useCallback(() => {
 		setData("selectedPdf", "", true);
 		setPdfContent(null);
@@ -181,44 +133,56 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	if (!data.selectedPdf) {
 		return (
 			<div style={data.style} {...attrs}>
-				<Typography variant="body2" color="secondary">
+				<span className="text-muted-foreground text-sm">
 					Select a PDF from settings to view it here
-				</Typography>
+				</span>
 			</div>
 		);
 	}
 
 	return (
-		<ViewerContainer elevation={2} {...attrs}>
-			<Header>
-				<Typography variant="h6" noWrap sx={{ flex: 1 }}>
+		<div
+			{...attrs}
+			className="relative h-full rounded-md border bg-card p-2 shadow-sm"
+		>
+			<div className="mb-0 flex items-center justify-between">
+				<span className="flex-1 truncate font-semibold text-base">
 					{fileName}
-				</Typography>
-				<IconButton
+				</span>
+				<Button
+					variant="ghost"
+					size="icon-sm"
 					onClick={handleClear}
-					size="small"
 					aria-label="clear pdf"
-					edge="end"
 				>
-					<ClearIcon />
-				</IconButton>
-			</Header>
+					<X className="size-4" />
+				</Button>
+			</div>
 
 			{loading && (
-				<LoadingContainer>
-					<CircularProgress />
-				</LoadingContainer>
+				<div className="flex min-h-[200px] items-center justify-center">
+					<Spinner className="size-8" />
+				</div>
 			)}
 
-			{error && <ErrorMessage variant="body1">{error}</ErrorMessage>}
+			{error && <p className="p-2.5 text-destructive text-sm">{error}</p>}
 
 			{pdfContent && !loading && !error && (
-				<PDFContainer>
-					<PDFObject data={pdfContent} type="application/pdf">
-						<PDFIframe src={pdfContent} title={fileName} />
-					</PDFObject>
-				</PDFContainer>
+				<div className="h-[92%] flex-1 overflow-hidden rounded-md border">
+					<object
+						data={pdfContent}
+						type="application/pdf"
+						className="h-full w-full"
+					>
+						<iframe
+							src={pdfContent}
+							title={fileName}
+							className="h-full min-h-[340px] w-full border-none"
+							style={{ height: "calc(100% - 35px)" }}
+						/>
+					</object>
+				</div>
 			)}
-		</ViewerContainer>
+		</div>
 	);
 });

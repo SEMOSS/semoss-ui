@@ -115,7 +115,7 @@ const filteredOtherCells: Partial<CellRegistry<DefaultCellDefinitions>> = {};
 Object.entries(DefaultCells).forEach(([key, value]) => {
 	const val = value;
 
-	if (val.parameters && val.parameters.transformation) {
+	if (val.parameters?.transformation) {
 		filteredTransformations[key] = value;
 	}
 });
@@ -123,7 +123,7 @@ Object.entries(DefaultCells).forEach(([key, value]) => {
 Object.entries(DefaultCells).forEach(([key, value]) => {
 	const val = value;
 
-	if (val.parameters && val.parameters.others) {
+	if (val.parameters?.others) {
 		filteredTransformations[key] = value;
 	}
 });

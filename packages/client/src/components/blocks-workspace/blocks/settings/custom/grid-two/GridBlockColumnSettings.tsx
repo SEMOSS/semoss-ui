@@ -1,4 +1,4 @@
-import { closestCenter, DndContext } from "@dnd-kit/core";
+import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToParentElement } from "@dnd-kit/modifiers";
 import {
 	SortableContext,
@@ -6,7 +6,7 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Sync } from "@mui/icons-material";
+import { RefreshCw } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import {
 	type GridBlockColumn,
@@ -15,14 +15,14 @@ import {
 	useFrameHeaders,
 } from "@semoss/renderer";
 import {
-	Autocomplete,
-	Box,
-	IconButton,
-	List,
-	Stack,
-	TextField,
-	useNotification,
-} from "@semoss/ui";
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	toast,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../../../settings/BaseSettingSection";
 import { GridBlockColumnSettingsItem } from "./GridBlockColumnSettingsItem";
@@ -34,7 +34,6 @@ interface GridBlockColumnSettingsProps {
 
 export const GridBlockColumnSettings = observer(
 	({ id }: GridBlockColumnSettingsProps) => {
-		const notification = useNotification();
 		const { data, setData } = useBlockSettings<GridBlockDef>(id);
 		// get all of the frames
 		const getFrames = useBlocksPixel<string[]>("GetFrames();", {
@@ -52,15 +51,18 @@ export const GridBlockColumnSettings = observer(
 			try {
 				// get the columns by selector
 				const columnMap: Record<string, GridBlockColumn> =
-					data.columns.reduce((acc, val) => {
-						acc[val.name] = acc;
+					data.columns.reduce<Record<string, GridBlockColumn>>(
+						(acc, val) => {
+							acc[val.name] = val;
 
-						return acc;
-					}, {});
+							return acc;
+						},
+						{},
+					);
 
 				// get the frameHeaders as columns
 				const columns: GridBlockColumn[] = frameHeaders.data.list.map(
-					(h) => {
+					(h: { alias: string; header: string }) => {
 						return {
 							name: h.alias,
 							width: undefined,
@@ -78,15 +80,9 @@ export const GridBlockColumnSettings = observer(
 
 				console.log(columns, "columns");
 
-				notification.add({
-					color: "success",
-					message: "Successfully synchronized headers",
-				});
+				toast.success("Successfully synchronized headers");
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error((e as Error).message);
 			}
 		};
 
@@ -95,7 +91,7 @@ export const GridBlockColumnSettings = observer(
 		 * @param startDragIndex
 		 * @param stopDragIndex
 		 */
-		const handleDragEnd = ({ active, over }) => {
+		const handleDragEnd = ({ active, over }: DragEndEvent) => {
 			if (!active || !over) {
 				console.error("Invalid item!");
 				return;
@@ -125,7 +121,7 @@ export const GridBlockColumnSettings = observer(
 			}
 		};
 
-		// options for the autocomplete
+		// options for the select
 		const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
 
 		// columns to render
@@ -134,35 +130,35 @@ export const GridBlockColumnSettings = observer(
 		return (
 			<>
 				<BaseSettingSection label="Frame">
-					<Autocomplete
-						fullWidth
-						multiple={false}
+					<Select
 						disabled={getFrames.status !== "SUCCESS"}
 						value={data.frame.name}
-						options={options}
-						getOptionLabel={(option) => {
-							return option;
-						}}
-						onChange={(_, value) => {
+						onValueChange={(value) => {
 							// update the frame
 							setData("frame.name", value);
 						}}
-						freeSolo={false}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								placeholder="Select frame"
-								size="small"
-								variant="outlined"
-							/>
-						)}
-					/>
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Select frame" />
+						</SelectTrigger>
+						<SelectContent>
+							{options.map((option) => (
+								<SelectItem key={option} value={option}>
+									{option}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
 
-					<IconButton size="small" onClick={() => syncFrameHeaders()}>
-						<Sync />
-					</IconButton>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => syncFrameHeaders()}
+					>
+						<RefreshCw className="size-4" />
+					</Button>
 				</BaseSettingSection>
-				<Stack direction={"column"} width={"100%"} overflow={"hidden"}>
+				<div className="flex w-full flex-col overflow-hidden">
 					<DndContext
 						collisionDetection={closestCenter}
 						onDragEnd={handleDragEnd}
@@ -172,11 +168,7 @@ export const GridBlockColumnSettings = observer(
 							items={columns?.map((item) => item.selector)}
 							strategy={verticalListSortingStrategy}
 						>
-							<List
-								sx={{
-									width: "100%",
-								}}
-							>
+							<div className="flex w-full flex-col">
 								{columns.map((c, cIdx) => {
 									return (
 										<SortableItems
@@ -185,6 +177,7 @@ export const GridBlockColumnSettings = observer(
 										>
 											<GridBlockColumnSettingsItem
 												id={id}
+												// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 												key={cIdx}
 												column={c}
 												index={cIdx}
@@ -192,19 +185,10 @@ export const GridBlockColumnSettings = observer(
 										</SortableItems>
 									);
 								})}
-								{/* <List.Item
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        dense={true}
-                                        divider
-                                    >
-                                        <List.ItemText primary={'Add Column'} />
-                                    </List.Item> */}
-							</List>
+							</div>
 						</SortableContext>
 					</DndContext>
-				</Stack>
+				</div>
 			</>
 		);
 	},
@@ -229,14 +213,14 @@ const SortableItems = ({
 	};
 
 	return (
-		<Box
+		<div
 			key={`action-${id}`}
 			ref={setNodeRef}
 			{...attributes}
 			{...listeners}
-			sx={style}
+			style={style}
 		>
 			{children}
-		</Box>
+		</div>
 	);
 };

@@ -1,10 +1,10 @@
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { Tooltip } from "@mui/material";
 import {
 	type GridApi,
 	GridToolbarContainer,
 	GridToolbarFilterButton,
 } from "@mui/x-data-grid";
+import { FileDown } from "lucide-react";
 import { Button } from "@semoss/ui";
 
 interface CustomToolbarProps {
@@ -42,7 +42,7 @@ export const CustomToolbar = ({
 				<Button
 					variant="text"
 					size="small"
-					startIcon={<FileDownloadIcon fontSize="small" />}
+					startIcon={<FileDown className="size-4" />}
 					onClick={handleExportClick}
 				>
 					Export
