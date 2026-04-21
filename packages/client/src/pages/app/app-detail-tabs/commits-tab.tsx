@@ -8,6 +8,7 @@ import {
 	GitCommitHorizontal,
 	History,
 	Loader2,
+	RotateCcw,
 	User,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
@@ -19,6 +20,11 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	H4,
 	Muted,
 	Spinner,
@@ -312,14 +318,18 @@ function FileChangeItem({
 function CommitItem({
 	commit,
 	appId,
+	onRevertSuccess,
 }: {
 	commit: CommitDetails;
 	appId: string;
+	onRevertSuccess: () => void;
 }) {
 	const { monolithStore } = useRootStore();
 	const [isOpen, setIsOpen] = useState(false);
 	const [files, setFiles] = useState<ChangedFile[] | null>(null);
 	const [filesLoading, setFilesLoading] = useState(false);
+	const [revertDialogOpen, setRevertDialogOpen] = useState(false);
+	const [reverting, setReverting] = useState(false);
 
 	const shortSha = commit.commitId.substring(0, 7);
 	const authorName = commit.author?.userId || "Unknown";
@@ -351,116 +361,231 @@ function CommitItem({
 		if (open) fetchFiles();
 	};
 
+	const handleRevert = async () => {
+		setReverting(true);
+		try {
+			const res = await monolithStore.runQuery(
+				`ProjectCommitRestore(project=["${appId}"], commitId=["${commit.commitId}"]);`,
+			);
+			const operationType = res?.pixelReturn?.[0]?.operationType as
+				| string[]
+				| string
+				| undefined;
+			const isError = Array.isArray(operationType)
+				? operationType.includes("ERROR")
+				: typeof operationType === "string" &&
+					(operationType as string).includes("ERROR");
+
+			if (isError) {
+				const output = res?.pixelReturn?.[0]?.output;
+				throw new Error(
+					typeof output === "string"
+						? output
+						: "Failed to revert commit",
+				);
+			}
+
+			toast.success(
+				`Reverted to commit ${shortSha}. A new commit has been created.`,
+			);
+			setRevertDialogOpen(false);
+			onRevertSuccess();
+		} catch (err) {
+			const message =
+				err instanceof Error
+					? err.message
+					: "Failed to revert to this commit";
+			toast.error(message);
+		} finally {
+			setReverting(false);
+		}
+	};
+
 	// Parse the commit message: first line is summary, rest is body
 	const messageLines = commit.commitMessage.trim().split("\n");
 	const summary = messageLines[0];
 	const hasBody = messageLines.length > 1;
 
 	return (
-		<Collapsible open={isOpen} onOpenChange={handleToggle}>
-			<div className="relative flex gap-3 py-3">
-				{/* Timeline line */}
-				<div className="flex flex-col items-center">
-					<Avatar className="size-8 shrink-0">
-						<AvatarFallback className="text-xs">
-							{initials || <User className="size-3.5" />}
-						</AvatarFallback>
-					</Avatar>
-					<div className="mt-2 w-px flex-1 bg-border" />
-				</div>
+		<>
+			<Collapsible open={isOpen} onOpenChange={handleToggle}>
+				<div className="relative flex gap-3 py-3">
+					{/* Timeline line */}
+					<div className="flex flex-col items-center">
+						<Avatar className="size-8 shrink-0">
+							<AvatarFallback className="text-xs">
+								{initials || <User className="size-3.5" />}
+							</AvatarFallback>
+						</Avatar>
+						<div className="mt-2 w-px flex-1 bg-border" />
+					</div>
 
-				{/* Content */}
-				<div className="min-w-0 flex-1 pb-2">
-					<CollapsibleTrigger asChild>
-						<button
-							type="button"
-							className="group flex w-full cursor-pointer items-start gap-2 text-left"
-						>
-							<div className="min-w-0 flex-1">
-								<div className="flex items-center gap-2">
-									<span className="font-medium text-sm leading-tight">
-										{summary}
-									</span>
-								</div>
-								<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
-									<span className="font-medium text-foreground/80">
-										{authorName}
-									</span>
-									<span title={formatFullDate(commit.date)}>
-										{formatRelativeDate(commit.date)}
-									</span>
-									<Badge
-										variant="outline"
-										className="font-mono text-[10px]"
-									>
-										{shortSha}
-									</Badge>
-									{commit.tags.map((tag) => (
-										<Badge
-											key={tag}
-											variant="secondary"
-											className="text-[10px]"
-										>
-											{tag}
-										</Badge>
-									))}
-								</div>
-								{hasBody && (
-									<Muted className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs">
-										{messageLines
-											.slice(1)
-											.join("\n")
-											.trim()}
-									</Muted>
-								)}
-							</div>
-							<ChevronRight
-								className={`mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform ${
-									isOpen ? "rotate-90" : ""
-								}`}
-							/>
-						</button>
-					</CollapsibleTrigger>
-
-					<CollapsibleContent>
-						<div className="mt-3 rounded-lg border border-border bg-background/50 p-2">
-							{filesLoading && (
-								<div className="flex items-center gap-2 px-3 py-3 text-muted-foreground text-sm">
-									<Loader2 className="size-4 animate-spin" />
-									Loading changed files...
-								</div>
-							)}
-							{!filesLoading &&
-								files !== null &&
-								files.length === 0 && (
-									<div className="px-3 py-3 text-muted-foreground text-sm">
-										No file changes found for this commit
-									</div>
-								)}
-							{!filesLoading && files && files.length > 0 && (
-								<div className="space-y-0.5">
-									<div className="mb-2 flex items-center gap-2 px-3 text-muted-foreground text-xs">
-										<span>
-											{files.length} file
-											{files.length !== 1 ? "s" : ""}{" "}
-											changed
+					{/* Content */}
+					<div className="min-w-0 flex-1 pb-2">
+						<CollapsibleTrigger asChild>
+							<button
+								type="button"
+								className="group flex w-full cursor-pointer items-start gap-2 text-left"
+							>
+								<div className="min-w-0 flex-1">
+									<div className="flex items-center gap-2">
+										<span className="font-medium text-sm leading-tight">
+											{summary}
 										</span>
 									</div>
-									{files.map((file) => (
-										<FileChangeItem
-											key={file.fileName}
-											file={file}
-											appId={appId}
-											commitId={commit.commitId}
-										/>
-									))}
+									<div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-xs">
+										<span className="font-medium text-foreground/80">
+											{authorName}
+										</span>
+										<span
+											title={formatFullDate(commit.date)}
+										>
+											{formatRelativeDate(commit.date)}
+										</span>
+										<Badge
+											variant="outline"
+											className="font-mono text-[10px]"
+										>
+											{shortSha}
+										</Badge>
+										{commit.tags.map((tag) => (
+											<Badge
+												key={tag}
+												variant="secondary"
+												className="text-[10px]"
+											>
+												{tag}
+											</Badge>
+										))}
+									</div>
+									{hasBody && (
+										<Muted className="mt-1 line-clamp-2 whitespace-pre-wrap text-xs">
+											{messageLines
+												.slice(1)
+												.join("\n")
+												.trim()}
+										</Muted>
+									)}
 								</div>
-							)}
+								<ChevronRight
+									className={`mt-0.5 size-4 shrink-0 text-muted-foreground transition-transform ${
+										isOpen ? "rotate-90" : ""
+									}`}
+								/>
+							</button>
+						</CollapsibleTrigger>
+						<div className="mt-1 flex items-center gap-1">
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-7 gap-1.5 text-muted-foreground text-xs hover:text-foreground"
+								onClick={(e) => {
+									e.stopPropagation();
+									setRevertDialogOpen(true);
+								}}
+							>
+								<RotateCcw className="size-3" />
+								Revert
+							</Button>
 						</div>
-					</CollapsibleContent>
+
+						<CollapsibleContent>
+							<div className="mt-3 rounded-lg border border-border bg-background/50 p-2">
+								{filesLoading && (
+									<div className="flex items-center gap-2 px-3 py-3 text-muted-foreground text-sm">
+										<Loader2 className="size-4 animate-spin" />
+										Loading changed files...
+									</div>
+								)}
+								{!filesLoading &&
+									files !== null &&
+									files.length === 0 && (
+										<div className="px-3 py-3 text-muted-foreground text-sm">
+											No file changes found for this
+											commit
+										</div>
+									)}
+								{!filesLoading && files && files.length > 0 && (
+									<div className="space-y-0.5">
+										<div className="mb-2 flex items-center gap-2 px-3 text-muted-foreground text-xs">
+											<span>
+												{files.length} file
+												{files.length !== 1 ? "s" : ""}{" "}
+												changed
+											</span>
+										</div>
+										{files.map((file) => (
+											<FileChangeItem
+												key={file.fileName}
+												file={file}
+												appId={appId}
+												commitId={commit.commitId}
+											/>
+										))}
+									</div>
+								)}
+							</div>
+						</CollapsibleContent>
+					</div>
 				</div>
-			</div>
-		</Collapsible>
+			</Collapsible>
+
+			<Dialog
+				open={revertDialogOpen}
+				onOpenChange={(open) => !open && setRevertDialogOpen(false)}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Revert to this commit?</DialogTitle>
+					</DialogHeader>
+					<div className="space-y-3 text-sm">
+						<p>
+							This will restore all files to the state they were
+							in at commit{" "}
+							<Badge
+								variant="outline"
+								className="font-mono text-[10px]"
+							>
+								{shortSha}
+							</Badge>
+						</p>
+						<div className="rounded-md border border-border bg-muted/30 p-3">
+							<p className="font-medium">{summary}</p>
+							<p className="mt-1 text-muted-foreground text-xs">
+								{authorName} • {formatFullDate(commit.date)}
+							</p>
+						</div>
+						<p className="text-muted-foreground text-xs">
+							A new commit will be created to record the revert.
+							No history will be lost.
+						</p>
+					</div>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setRevertDialogOpen(false)}
+							disabled={reverting}
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={handleRevert}
+							disabled={reverting}
+						>
+							{reverting ? (
+								<>
+									<Loader2 className="mr-2 size-4 animate-spin" />
+									Reverting...
+								</>
+							) : (
+								"Revert"
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }
 
@@ -590,6 +715,7 @@ export const CommitsTab = ({ appId }: CommitsTabProps) => {
 						key={commit.commitId}
 						commit={commit}
 						appId={appId}
+						onRevertSuccess={() => fetchCommits(0, false)}
 					/>
 				))}
 			</div>
