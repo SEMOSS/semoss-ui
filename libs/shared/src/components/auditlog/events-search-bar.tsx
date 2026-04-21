@@ -13,7 +13,11 @@ import {
 	PopoverTrigger,
 } from "@semoss/ui/next";
 
-export type SearchCategory = "methodName" | "requestMessage" | "engineType";
+export type SearchCategory =
+	| "methodName"
+	| "requestMessage"
+	| "engineType"
+	| "roomId";
 
 export interface SearchToken {
 	id: string;
@@ -28,6 +32,7 @@ export interface SearchPayload {
 		engineType?: string[];
 	};
 	others?: string;
+	roomId?: string;
 }
 
 interface CategoryMeta {
@@ -41,6 +46,7 @@ const CATEGORIES: SearchCategory[] = [
 	"methodName",
 	"requestMessage",
 	"engineType",
+	"roomId",
 ];
 
 const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
@@ -62,6 +68,12 @@ const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 		bgColor: "bg-emerald-100 dark:bg-emerald-900/40",
 		borderColor: "border-emerald-300 dark:border-emerald-700",
 	},
+	roomId: {
+		label: "Room",
+		color: "text-violet-700 dark:text-violet-300",
+		bgColor: "bg-violet-100 dark:bg-violet-900/40",
+		borderColor: "border-violet-300 dark:border-violet-700",
+	},
 };
 
 let _tokenIdCounter = 0;
@@ -71,24 +83,40 @@ export const buildSearchPayload = (
 	tokens: SearchToken[],
 	freeText: string,
 ): SearchPayload => {
-	if (tokens?.length === 0 && !freeText.trim()) return {};
+	const roomIdTokens = tokens.filter((t) => t.category === "roomId");
+	const categoryTokens = tokens.filter((t) => t.category !== "roomId");
+	const roomIdValues = roomIdTokens.flatMap((t) => t.values);
 
-	if (tokens?.length === 0 && freeText.trim()) {
-		return { others: freeText.trim() };
+	if (
+		categoryTokens.length === 0 &&
+		!freeText.trim() &&
+		roomIdValues.length === 0
+	)
+		return {};
+
+	const result: SearchPayload = {};
+
+	if (roomIdValues.length > 0) {
+		result.roomId = roomIdValues[roomIdValues.length - 1];
 	}
 
-	const search: NonNullable<SearchPayload["search"]> = {};
-	for (const token of tokens) {
-		const key = token.category;
-		if (!search[key]) search[key] = [];
-		search[key].push(...token.values);
+	if (categoryTokens.length > 0) {
+		const search: NonNullable<SearchPayload["search"]> = {};
+		for (const token of categoryTokens) {
+			const key = token.category as keyof NonNullable<
+				SearchPayload["search"]
+			>;
+			if (!search[key]) search[key] = [];
+			search[key].push(...token.values);
+		}
+		result.search = search;
 	}
 
 	if (freeText.trim()) {
-		return { search, others: freeText.trim() };
+		result.others = freeText.trim();
 	}
 
-	return { search };
+	return result;
 };
 
 export interface TokenizedSearchBarProps {

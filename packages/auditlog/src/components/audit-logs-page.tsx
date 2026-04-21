@@ -179,6 +179,9 @@ export const AuditLogPage = () => {
 					if (searchPayload.others) {
 						searchPart += `,"others":"${searchPayload.others}"`;
 					}
+					if (searchPayload.roomId) {
+						searchPart += `,"roomId":"${searchPayload.roomId}"`;
+					}
 				}
 
 				const pixel =
