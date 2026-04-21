@@ -1,11 +1,11 @@
-import { PictureAsPdf } from "@mui/icons-material";
+import { FileText } from "lucide-react";
 import { PDFViewerSettings } from "../../settings/shared/PDFViewerSettings";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {
 	type: "display",
-	icon: PictureAsPdf,
+	icon: FileText,
 	contentMenu: [
 		{
 			name: "General",
