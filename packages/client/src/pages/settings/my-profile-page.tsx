@@ -495,33 +495,25 @@ export const MyProfilePage = () => {
 										disabled
 									/>
 								</div>
-								{Object.entries(configStore.store.user).map(
-									(kv) => {
-										if (
-											kv[0] !== "loggedIn" &&
-											kv[0] !== "admin"
-										) {
-											return (
-												<div
-													key={kv[0]}
-													className="flex flex-col gap-1"
-												>
-													<Label className="text-xs">
-														{kv[0]
-															.charAt(0)
-															.toUpperCase() +
-															kv[0].slice(1)}
-													</Label>
-													<Input
-														value={kv[1] as string}
-														maxLength={500}
-														disabled
-													/>
-												</div>
-											);
-										}
-										return null;
-									},
+								{name && (
+									<div className="flex flex-col gap-1">
+										<Label className="text-xs">Name</Label>
+										<Input
+											value={name}
+											maxLength={500}
+											disabled
+										/>
+									</div>
+								)}
+								{email && (
+									<div className="flex flex-col gap-1">
+										<Label className="text-xs">Email</Label>
+										<Input
+											value={email}
+											maxLength={500}
+											disabled
+										/>
+									</div>
 								)}
 							</div>
 						)}
