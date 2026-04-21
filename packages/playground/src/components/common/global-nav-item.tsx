@@ -55,7 +55,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 							pathname,
 						)
 					}
-          tooltip={{ children: returnToolTip(name), hidden: false }}
+					tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (

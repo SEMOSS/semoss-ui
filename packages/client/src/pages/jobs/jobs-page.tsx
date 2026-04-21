@@ -418,7 +418,6 @@ export function JobsPage() {
 			reload
 		) {
 			setHistorySearch(newSearch);
-
 			const newHistoryData = await loadHistory(
 				newPage,
 				newNumOfRows,
