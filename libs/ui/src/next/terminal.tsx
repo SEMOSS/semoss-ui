@@ -2,15 +2,15 @@ import { Clipboard, Copy, Moon, Sun } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import "@xterm/xterm/css/xterm.css";
-import "../components/Terminal/terminal.css";
+import "./terminal.css";
 import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { cn } from "@/lib/utils";
-import { TerminalSpinner } from "../components/Terminal/TerminalSpinner";
 import { Button } from "./button";
+import { TerminalSpinner } from "./terminal-spinner";
 
 const THEME_OPTIONS = {
 	darkTheme: {
