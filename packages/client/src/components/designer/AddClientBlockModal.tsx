@@ -7,16 +7,14 @@ import {
 	Autocomplete,
 	Box,
 	Button,
-	createFilterOptions,
 	IconButton,
 	Modal,
-	RadioGroup,
 	styled,
 	TextField,
 	Tooltip,
 	Typography,
-	useNotification,
 } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { getBlockElement } from "@/stores";
 import { SECTION_ORDER } from "../blocks-workspace/menus/default-menu";
@@ -57,6 +55,7 @@ const StyledButtonGroupIconButton = styled(IconButton)(({ theme }) => ({
 
 interface EditDetailsModalProps {
 	isOpen: boolean;
+	// biome-ignore lint/suspicious/noExplicitAny: complex nested block shape
 	selected: any;
 	onClose: (reset?: boolean) => void;
 	isEdit?: boolean;
@@ -68,9 +67,11 @@ interface AddAsClientBlockTypes {
 	section: string;
 	helperText: string;
 	visibility: "private" | "public";
+	// biome-ignore lint/suspicious/noExplicitAny: block JSON is untyped
 	block_json: any;
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: generic dict type
 type Dict<T = any> = Record<string, T>;
 
 interface ScanResult {
@@ -90,24 +91,26 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	const { isOpen, selected, onClose, isEdit, block_json } = props;
 	const { control, setValue, reset, handleSubmit } =
 		useForm<AddAsClientBlockTypes>({ defaultValues: AddAsClientBlock });
-	const { monolithStore, configStore } = useRootStore();
-	const { registry, state } = useBlocks();
-	const notification = useNotification();
+	const { monolithStore } = useRootStore();
+	const { state } = useBlocks();
 	const allowedKeys = ["widget", "data", "listeners", "slots", "id"];
 	const [showPreviewModal, setShowPreviewModal] = useState(false);
 	const [imageDimensions, setImageDimensions] = useState<{
 		width: number;
 		height: number;
 	}>({ width: 0, height: 0 });
+	// biome-ignore lint/suspicious/noExplicitAny: block item shape varies
 	const [localBlockItem, setLocalBlockItem] = useState<any>([]);
 	const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only
 	useEffect(() => {
 		if (block_json) {
 			setLocalBlockItem(structuredClone(block_json));
 		}
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — isOpen triggers re-sync
 	useEffect(() => {
 		if (isEdit && block_json) {
 			setValue("name", block_json.name ?? "");
@@ -116,7 +119,9 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		}
 	}, [isEdit, block_json, setValue, isOpen]);
 
+	// biome-ignore lint/suspicious/noExplicitAny: block JSON is untyped
 	const handleLayersPanelUpdate = (updatedJson: any) => {
+		// biome-ignore lint/suspicious/noExplicitAny: block JSON is untyped
 		setLocalBlockItem((prev: any) => ({
 			...prev,
 			json: updatedJson.json,
@@ -124,6 +129,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	};
 
 	const handleFieldChange = (field: string, value: string) => {
+		// biome-ignore lint/suspicious/noExplicitAny: block item shape varies
 		setLocalBlockItem((prev: any) => ({
 			...prev,
 			[field]: value,
@@ -133,10 +139,10 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	/**
 	 * Recursively processes the slots of a block to retain only the allowed keys.
 	 *
-	 * @param {any} value - The slots or part of slots to process.
-	 * @param {Record<string, any>} blocks - The entire blocks object for reference.
-	 * @returns {any} Processed slots with only allowed keys retained.
+	 * @param value - The slots or part of slots to process.
+	 * @param blocks - The entire blocks object for reference.
 	 */
+	// biome-ignore lint/suspicious/noExplicitAny: recursive slot structure is untyped
 	const processSlots = (value: any, blocks: Record<string, any>): any => {
 		// Check if the current value is an array
 		if (Array.isArray(value)) {
@@ -169,6 +175,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	};
 
 	const scanBlocks = (
+		// biome-ignore lint/suspicious/noExplicitAny: block structure is untyped
 		blocks: any,
 		allQueries: Dict,
 		allVariables: Dict,
@@ -179,8 +186,10 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		const mustacheRE = /{{\s*([^{}\s]+?)\s*}}/g;
 
 		/** push-based walk = no recursion, cycle-safe */
+		// biome-ignore lint/suspicious/noExplicitAny: generic walk over untyped block tree
 		function walk(root: any) {
 			const seen = new WeakSet<object>();
+			// biome-ignore lint/suspicious/noExplicitAny: untyped stack
 			const stack: any[] = [root];
 
 			while (stack.length) {
@@ -201,8 +210,11 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 					seen.add(node);
 
 					const queryId =
+						// biome-ignore lint/suspicious/noExplicitAny: untyped node
 						(node as any).payload?.queryId ??
+						// biome-ignore lint/suspicious/noExplicitAny: untyped node
 						(node as any).queryId ??
+						// biome-ignore lint/suspicious/noExplicitAny: untyped node
 						(node as any).id;
 
 					// query found, maybe add
@@ -231,6 +243,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 				/* ---------- strings ---------- */
 				if (typeof node === "string") {
 					let m: RegExpExecArray | null;
+					// biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop pattern
 					while ((m = mustacheRE.exec(node))) {
 						const rootId = m[1].split(".")[0]; // trim .prop chain
 						if (rootId in allQueries) qIds.add(rootId);
@@ -248,6 +261,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		const queue = Array.from(qIds);
 
 		while (queue.length) {
+			// biome-ignore lint/style/noNonNullAssertion: queue.length check ensures non-null
 			const qId = queue.pop()!;
 			if (processed.has(qId)) continue;
 			processed.add(qId);
@@ -319,15 +333,9 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 			const { output, operationType } = response.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") === -1) {
-				notification.add({
-					color: "success",
-					message: "Successfully added document",
-				});
+				toast.success("Successfully added document");
 			} else {
-				notification.add({
-					color: "error",
-					message: output,
-				});
+				toast.error(output);
 			}
             refreshCommunityTab.setRefresh(true);
 			reset(AddAsClientBlock);
@@ -339,7 +347,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	const handleSaveAsClientBlock = async () => {
 		const itemToSave = localBlockItem;
 		if (!itemToSave) return;
-		const updatedClientBlock = {
+		const _updatedClientBlock = {
 			widget: itemToSave.json?.widget,
 			data: itemToSave.json?.data,
 			listeners: itemToSave.json?.listeners,
@@ -381,7 +389,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 		onClose();
 		setShowPreviewModal(false);
 	};
-	const handleInputValidations = (val: string, field: string) => {
+	const handleInputValidations = (val: string, _field: string) => {
 		if (!/^[a-zA-Z_-]*$/.test(val)) {
 			return false;
 		}
@@ -391,7 +399,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 	/** html2canvas to PNG conversion */
 	const handleCanvasPreview = async () => {
 		const block = state.blocks[selected];
-		if (block && block.id) {
+		if (block?.id) {
 			const element = getBlockElement(block.id) as HTMLElement;
 			if (element) {
 				// Capture the element's dimensions

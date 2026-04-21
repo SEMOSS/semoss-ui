@@ -1,6 +1,6 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -59,16 +59,11 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const [communityBlock, setCommunityBlock] = useState([]);
 	const [loading, setLoading] = useState(false);
 	const [mode, setMode] = useState<MODE>("SYSTEM");
-	const [stackTabs, setStackTabs] = useState(false);
 
 	const [filterMenuOpen, setFilterMenuOpen] = useState(false);
 	const [filterCategoryMap, setFilterCategoryMap] = useState<
 		Record<string, FilterCategory>
 	>({});
-
-	const tabsListRef = useRef<HTMLDivElement | null>(null);
-	const systemLabelRef = useRef<HTMLSpanElement | null>(null);
-	const communityLabelRef = useRef<HTMLSpanElement | null>(null);
 
 	const anyEnabledFilter = useMemo(
 		() =>
@@ -296,59 +291,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 		});
 	}, [items]);
 
-	const updateTabLayout = useCallback(() => {
-		const tabsList = tabsListRef.current;
-		const labels = [systemLabelRef.current, communityLabelRef.current];
-		const triggers =
-			tabsList?.querySelectorAll<HTMLElement>("[role='tab']");
-		if (
-			!tabsList ||
-			!triggers?.length ||
-			triggers.length < 2 ||
-			labels.some((label) => !label)
-		) {
-			return;
-		}
-
-		const styles = window.getComputedStyle(tabsList);
-		const columnGap =
-			Number.parseFloat(styles.columnGap || styles.gap || "0") || 0;
-		const availablePerTab = (tabsList.clientWidth - columnGap) / 2;
-		const triggerStyles = window.getComputedStyle(triggers[0]);
-		const triggerHorizontalPadding =
-			(Number.parseFloat(triggerStyles.paddingLeft || "0") || 0) +
-			(Number.parseFloat(triggerStyles.paddingRight || "0") || 0);
-		const borderAllowance = 6;
-
-		const shouldStack = labels.some((label) => {
-			return (
-				label.scrollWidth + triggerHorizontalPadding + borderAllowance >
-				availablePerTab
-			);
-		});
-		setStackTabs(shouldStack);
-	}, []);
-
-	useEffect(() => {
-		updateTabLayout();
-		const tabsList = tabsListRef.current;
-		if (!tabsList) {
-			return;
-		}
-
-		if (typeof ResizeObserver === "undefined") {
-			window.addEventListener("resize", updateTabLayout);
-			return () => window.removeEventListener("resize", updateTabLayout);
-		}
-
-		const observer = new ResizeObserver(() => {
-			updateTabLayout();
-		});
-		observer.observe(tabsList);
-
-		return () => observer.disconnect();
-	}, [updateTabLayout]);
-
 	const isCommunity = mode === "COMMUNITY";
 
 	return (
@@ -415,16 +357,12 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 					}}
 					className="w-full"
 				>
-					<TabsList
-						ref={tabsListRef}
-						className={`grid w-full gap-0.5 ${stackTabs ? "grid-cols-1" : "grid-cols-2"}`}
-					>
+					<TabsList className="grid w-full grid-cols-2 gap-0.5">
 						<TabsTrigger
 							value="SYSTEM"
 							className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
 						>
 							<span
-								ref={systemLabelRef}
 								className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
 								title="System Blocks"
 							>
@@ -436,7 +374,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 							className="w-full min-w-0 max-w-full flex-none px-1 text-xs"
 						>
 							<span
-								ref={communityLabelRef}
 								className="block w-full overflow-hidden text-ellipsis whitespace-nowrap text-center"
 								title="Community Blocks"
 							>

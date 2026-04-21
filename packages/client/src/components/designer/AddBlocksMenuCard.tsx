@@ -10,14 +10,12 @@ import {
 	Box,
 	ButtonGroup,
 	Card,
-	Icon,
 	IconButton,
 	Stack,
 	styled,
 	Tooltip,
-	Typography,
-	useNotification,
 } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useDesigner, useRootStore } from "@/hooks";
 import type {
 	BlockLocalStorageData,
@@ -34,15 +32,6 @@ const StyledCard = styled(Card)({
 	borderRadius: "6px",
 	justifyContent: "center",
 });
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-	width: addBlocksCardWidth,
-	userSelect: "none",
-	textAlign: "center",
-	overflowWrap: "anywhere",
-	alignItems: "center",
-}));
 
 const StyledDiv = styled("div")({
 	position: "relative",
@@ -105,7 +94,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	const { item, isCommunity, handleOnTrashClick } = props;
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
-	const notification = useNotification();
 	const { configStore } = useRootStore();
 
 	const [imageSrc, _setImageSrc] = useState(null);
@@ -195,11 +183,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
 		if (sw.widget === "iteration") {
 			if (sw.slots.children.children.length) {
-				notification.add({
-					color: "error",
-					message:
-						"Please delete block within iterator before adding another child",
-				});
+				toast.error(
+					"Please delete block within iterator before adding another child",
+				);
 				return;
 			}
 		}
@@ -225,11 +211,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 					}
 					if (parent.widget === "iteration") {
 						if (parent.slots.children.children.length) {
-							notification.add({
-								color: "error",
-								message:
-									"Please delete block within iterator before adding another child",
-							});
+							toast.error(
+								"Please delete block within iterator before adding another child",
+							);
 							designer.deactivateDrag();
 							return;
 						}
@@ -313,7 +297,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 		item.name,
 		item.json,
 		isCommunity,
-		notification,
 		designer.drag.active,
 		designer.drag.placeholderAction,
 		designer,
@@ -340,36 +323,36 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			height="100%"
 			justifyContent="flex-end"
 		>
-			<StyledTypography
-				component="div"
-				variant="body2"
-				fontWeight="medium"
-				align="center"
+			<div
+				className="flex select-none flex-wrap items-center justify-center gap-1 text-center font-medium text-foreground text-xs"
+				style={{ width: addBlocksCardWidth, overflowWrap: "anywhere" }}
 			>
-				<Stack
-					direction={"row"}
-					gap={1}
-					alignContent={"center"}
-					justifyContent={"center"}
-					flexWrap={"wrap"}
-				>
-					{item.name}
-					{item.recentChanges && (
-						<Tooltip title={item.recentChanges}>
-							<Icon color={"info"} fontSize="small">
-								<InfoOutlined />
-							</Icon>
-						</Tooltip>
-					)}
-					{item.isBeta && (
-						<Tooltip title={"This block is currently in beta"}>
-							<Icon color={"warning"} fontSize="small">
-								<ReportRounded />
-							</Icon>
-						</Tooltip>
-					)}
-				</Stack>
-			</StyledTypography>
+				{item.name}
+				{item.recentChanges && (
+					<Tooltip title={item.recentChanges}>
+						<span
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+							}}
+						>
+							<InfoOutlined fontSize="small" color="info" />
+						</span>
+					</Tooltip>
+				)}
+				{item.isBeta && (
+					<Tooltip title={"This block is currently in beta"}>
+						<span
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+							}}
+						>
+							<ReportRounded fontSize="small" color="warning" />
+						</span>
+					</Tooltip>
+				)}
+			</div>
 			<StyledDiv
 				onMouseEnter={() => setHovered(true)}
 				onMouseLeave={() => setHovered(false)}
