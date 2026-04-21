@@ -387,9 +387,18 @@ export const MembersList = ({
 										{!isAddMember && (
 											<TableCell className="w-10">
 												<Checkbox
-													checked={selectedIds.has(
-														user.id,
-													)}
+													checked={
+														selectedIds.has(
+															user.id,
+														) &&
+														!(
+															allSelected &&
+															user.permission ===
+																"OWNER" &&
+															user.id ===
+																currentUserId
+														)
+													}
 													disabled={
 														!canEditMembers ||
 														(user.permission ===
