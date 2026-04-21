@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { LoadingScreen } from "@semoss/ui";
+import { Spinner } from "@semoss/ui/next";
 import { StepperContext, type StepperContextType } from "@/contexts";
 
 /**
@@ -72,7 +72,11 @@ export const ImportLayout = (props) => {
 				setActiveStep: setActiveStep,
 			}}
 		>
-			{isLoading && <LoadingScreen.Trigger />}
+			{isLoading && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-background/60">
+					<Spinner />
+				</div>
+			)}
 			{children}{" "}
 		</StepperContext.Provider>
 	);

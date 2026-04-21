@@ -1,27 +1,22 @@
-import { ChevronRight } from "@mui/icons-material";
-import { useEffect, useState } from "react";
-import { Accordion, LinearProgress, Search, styled, Table } from "@semoss/ui";
+import { ChevronRight, Search } from "lucide-react";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+	Button,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { HistoryRow } from "./HistoryRow";
 import type { HistoryJob } from "./job.types";
 
-const StyledAccordion = styled(Accordion)(() => ({
-	"&:before": {
-		display: "none",
-	},
-}));
-const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
-	"& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
-		transform: "rotate(90deg)",
-	},
-}));
-const LoadingTableCell = styled(Table.Cell)(() => ({
-	padding: 0,
-}));
-
-/**
- * TODO: this component is mostly just ported over from the old version - it's functional but pretty crusty
- * Would be good to clean this file up and make it more readable in the future
- */
 export const JobHistory = (props: {
 	history: HistoryJob[];
 	historyLoading: boolean;
@@ -43,76 +38,131 @@ export const JobHistory = (props: {
 		onSearchChange,
 	} = props;
 
-	const [historyExpanded, setHistoryExpanded] = useState(false);
+	const startRow = historyPage * historyRowsPerPage + 1;
+	const endRow = Math.min(
+		(historyPage + 1) * historyRowsPerPage,
+		historyCount >= 0
+			? historyCount
+			: (historyPage + 1) * historyRowsPerPage,
+	);
+	const isLastPage =
+		historyCount >= 0 &&
+		(historyPage + 1) * historyRowsPerPage >= historyCount;
 
 	return (
-		<StyledAccordion
-			expanded={historyExpanded}
-			onChange={(e) => {
-				setHistoryExpanded(!historyExpanded);
-			}}
+		<Accordion
+			type="single"
+			collapsible
+			className="w-full rounded-md border"
 		>
-			<StyledAccordionTrigger expandIcon={<ChevronRight />}>
-				History
-			</StyledAccordionTrigger>
-			<Accordion.Content>
-				<Search
-					fullWidth
-					size="small"
-					onChange={(e) => onSearchChange(e.target.value)}
-				/>
-				<Table.Container>
-					<Table>
-						<Table.Head>
-							<Table.Row>
-								<Table.Cell></Table.Cell>
-								<Table.Cell>Name</Table.Cell>
-								<Table.Cell>Run Date</Table.Cell>
-								<Table.Cell>Time</Table.Cell>
-								<Table.Cell>Status</Table.Cell>
-							</Table.Row>
-						</Table.Head>
-						<Table.Body>
-							{historyLoading && (
-								<Table.Row>
-									<LoadingTableCell colSpan={5}>
-										<LinearProgress variant="indeterminate" />
-									</LoadingTableCell>
-								</Table.Row>
-							)}
-							{history.length === 0 && !historyLoading ? (
-								<Table.Row>
-									<Table.Cell colSpan={5}>
-										No job history, please try again.
-									</Table.Cell>
-								</Table.Row>
-							) : (
-								history.map((history, i) => {
-									return <HistoryRow key={i} row={history} />;
-								})
-							)}
-						</Table.Body>
-						<Table.Footer>
-							<Table.Row>
-								<Table.Pagination
-									rowsPerPageOptions={[5, 10, 25]}
-									onPageChange={(e, v) => {
-										onPageChange(v);
-									}}
-									page={historyPage}
-									rowsPerPage={historyRowsPerPage}
-									onRowsPerPageChange={(e) => {
-										onRowsPerPageChange(
-											Number(e.target.value),
-										);
-									}}
-									count={historyCount}
-								/>
-							</Table.Row>
-						</Table.Footer>
-					</Table>
-				</Table.Container>
-			</Accordion.Content>
-		</StyledAccordion>
+			<AccordionItem value="history" className="border-0">
+				<AccordionTrigger className="px-4">
+					<div className="flex items-center gap-2">
+						<ChevronRight className="size-4 shrink-0 transition-transform duration-200 group-data-[state=open]/accordion:rotate-90" />
+						History
+					</div>
+				</AccordionTrigger>
+				<AccordionContent className="px-4 pb-4">
+					<InputGroup className="mb-3 w-full">
+						<InputGroupAddon>
+							<Search className="size-4" />
+						</InputGroupAddon>
+						<InputGroupInput
+							placeholder="Search history..."
+							onChange={(e) => onSearchChange?.(e.target.value)}
+						/>
+					</InputGroup>
+					<div className="overflow-auto rounded-md border">
+						<table className="w-full text-sm">
+							<thead className="bg-muted/50">
+								<tr>
+									<th className="w-8 px-2 py-2" />
+									<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+										Name
+									</th>
+									<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+										Run Date
+									</th>
+									<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+										Time
+									</th>
+									<th className="px-3 py-2 text-left font-medium text-muted-foreground">
+										Status
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								{historyLoading && (
+									<tr>
+										<td colSpan={5} className="p-0">
+											<div className="h-1 w-full animate-pulse bg-primary/30" />
+										</td>
+									</tr>
+								)}
+								{!historyLoading && history.length === 0 ? (
+									<tr>
+										<td
+											colSpan={5}
+											className="py-6 text-center text-muted-foreground"
+										>
+											No job history, please try again.
+										</td>
+									</tr>
+								) : (
+									history.map((h, i) => (
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										<HistoryRow key={i} row={h} />
+									))
+								)}
+							</tbody>
+						</table>
+					</div>
+					<div className="mt-2 flex items-center justify-between text-muted-foreground text-sm">
+						<div className="flex items-center gap-2">
+							<span>Rows per page:</span>
+							<Select
+								value={String(historyRowsPerPage)}
+								onValueChange={(val) =>
+									onRowsPerPageChange?.(Number(val))
+								}
+							>
+								<SelectTrigger className="h-8 w-[70px]">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{[5, 10, 25].map((n) => (
+										<SelectItem key={n} value={String(n)}>
+											{n}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<div className="flex items-center gap-2">
+							<span>
+								{startRow}–{endRow}
+								{historyCount >= 0 ? ` of ${historyCount}` : ""}
+							</span>
+							<Button
+								variant="outline"
+								size="icon"
+								disabled={historyPage === 0}
+								onClick={() => onPageChange?.(historyPage - 1)}
+							>
+								<ChevronRight className="size-4 rotate-180" />
+							</Button>
+							<Button
+								variant="outline"
+								size="icon"
+								disabled={isLastPage || history.length === 0}
+								onClick={() => onPageChange?.(historyPage + 1)}
+							>
+								<ChevronRight className="size-4" />
+							</Button>
+						</div>
+					</div>
+				</AccordionContent>
+			</AccordionItem>
+		</Accordion>
 	);
 };

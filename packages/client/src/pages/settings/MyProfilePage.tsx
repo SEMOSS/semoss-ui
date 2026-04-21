@@ -1,32 +1,32 @@
-import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from "lucide-react";
+import {
+	Check,
+	ChevronDown,
+	ChevronUp,
+	Copy,
+	Plus,
+	Trash2,
+} from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-	Alert,
-	Avatar,
 	Button,
-	Collapse,
-	Grid,
-	IconButton,
-	LoadingScreen,
-	Modal,
-	Paper,
-	Stack,
-	styled,
-	Table,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
-import {
+	CodeContainer,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Field,
 	FieldDescription,
 	FieldLabel,
+	Input,
+	Label,
 	Select,
 	SelectContent,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Spinner,
 	toast,
 } from "@semoss/ui/next";
 import {
@@ -36,149 +36,14 @@ import {
 	setUserDefaultModel,
 } from "@/api/auth";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
-import { getSDKSnippet } from "@/utility";
+import { formatDate, getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./ChangePasswordModal";
-
-const StyledAvatar = styled(Avatar)({
-	display: "flex",
-	alignContent: "center",
-	justifyContent: "center",
-	backgroundColor: "#975FE4",
-});
-
-const StyledPaper = styled(Paper)({
-	padding: "40px 30px 20px 50px",
-});
-
-const StyledAccessTokensPaper = styled(Paper)({
-	padding: "40px 30px 20px 28px",
-});
-
-const HeaderCell = styled(Table.Cell)({
-	backgroundColor: "#f3f3f3",
-	borderBottom: "1px solid #ccc",
-});
-
-const LeftHeaderCell = styled(Table.Cell)({
-	backgroundColor: "#f3f3f3",
-	borderBottom: "1px solid #ccc",
-	borderRadius: "20px 0 0 0",
-	textAlign: "center",
-});
-
-const RightHeaderCell = styled(Table.Cell)({
-	backgroundColor: "#f3f3f3",
-	borderBottom: "1px solid #ccc",
-	borderRadius: "0 20px 0 0",
-	textAlign: "center",
-});
-
-const MessageDiv = styled("div")({
-	textAlign: "center",
-	marginTop: "100px",
-	fontSize: "13px",
-	display: "block",
-	color: "#666",
-	width: "100%",
-	margin: "75px auto 85px",
-});
-
-const AvatarForm = styled("form")({
-	paddingTop: "15px",
-	width: "750px",
-});
-
-const CurrentAvatarStack = styled(Stack)({
-	alignItems: "center",
-});
-
-const StyledTableContainer = styled(Table.Container)({
-	marginTop: "20px",
-});
-
-const StyledGrid = styled(Grid)({
-	marginBottom: "40px",
-});
-
-const MonolithGrid = styled(Grid)({
-	display: "flex",
-	alignItems: "center",
-});
-
-const StyledStack = styled(Stack)({
-	marginBottom: "15px",
-});
-
-const CopyGridItem = styled(Grid)({
-	padding: 0,
-	display: "flex",
-	justifyContent: "right",
-});
-
-const GridItem = styled(Grid)({
-	padding: 0,
-});
-
-const CustomGridItem = styled(GridItem)({
-	padding: 0,
-	zIndex: 8,
-});
-
-const _StyledCodeBlock = styled("pre")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(5),
-	background: theme.palette.background.default,
-	borderRadius: theme.shape.borderRadius,
-	padding: theme.spacing(2),
-	overflowX: "scroll",
-	margin: "0px",
-}));
-
-const StyledCodeContent = styled("code", {
-	shouldForwardProp: (prop) => prop !== "maxWidth",
-})<{
-	/** Track if the page header is stuck */
-	maxWidth?: string;
-}>(({ theme, maxWidth }) => ({
-	flex: 1,
-	maxWidth: maxWidth ? maxWidth : "auto",
-	overflowY: "scroll",
-}));
-
-const StyledSDKBlock = styled("pre")(({ theme }) => ({
-	display: "flex",
-	alignItems: "flex-start",
-	gap: "40px",
-	background: theme.palette.background.paper,
-	borderRadius: theme.shape.borderRadius,
-	padding: theme.spacing(2),
-	margin: "0px",
-}));
-
-const StyledCreatedKeyContainer = styled(Stack)(({ theme }) => ({
-	background: theme.palette.background.default,
-	padding: theme.spacing(1),
-}));
-
-const StyledLink = styled("a")(({ theme }) => ({
-	textDecoration: "underline",
-	cursor: "pointer",
-	color: "#0471F0",
-	fontFamily: "Inter",
-	fontStyle: "normal",
-	fontWeight: 500,
-	fontSize: "16px",
-	lineHeight: "24px",
-	letterSpacing: "0.15px",
-}));
 
 interface CreateAccessKeyForm {
 	TOKENNAME: string;
 	TOKENDESCRIPTION?: string;
 	ACCESSKEY: string;
 	SECRETKEY: string;
-	PLACEHOLDER: string;
 }
 
 interface Engine {
@@ -194,40 +59,88 @@ interface EditUserInfoForm {
 	USERID?: string | undefined;
 }
 
+const SdkBlock = ({
+	label,
+	code,
+	testId,
+}: {
+	label: string;
+	code: string;
+	testId: string;
+}) => {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(code);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch {
+			toast.error("Unable to copy code");
+		}
+	};
+
+	return (
+		<div className="overflow-hidden rounded-md border border-border">
+			<div className="flex items-center justify-between border-border border-b bg-muted px-3 py-1.5">
+				<span className="font-mono text-muted-foreground text-xs">
+					{label}
+				</span>
+				<button
+					type="button"
+					onClick={handleCopy}
+					className="ml-auto flex items-center gap-1 rounded px-2 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-background hover:text-foreground"
+					data-testid={testId}
+				>
+					{copied ? (
+						<>
+							<Check className="size-3" />
+							Copied
+						</>
+					) : (
+						<>
+							<Copy className="size-3" />
+							Copy
+						</>
+					)}
+				</button>
+			</div>
+			<div className="overflow-x-auto bg-muted/30">
+				<CodeContainer className="min-w-max whitespace-pre rounded-none bg-transparent p-4 text-sm">
+					{code}
+				</CodeContainer>
+			</div>
+		</div>
+	);
+};
+
 export const MyProfilePage = () => {
 	const modelSelectId = useId();
-	const notification = useNotification();
 	const { configStore, insightStore } = useRootStore();
 	const { email, id, name } = configStore.store.user;
 	const { isNative } = configStore.store;
+	const lastLogin = configStore.store.user.lastLogin;
+	const groups = configStore.store.user.groupInfo?.groups ?? [];
 	const { adminMode } = useSettings();
 
-	// track the models
 	const [addModal, setAddModal] = useState(false);
-	const [profileImgModal, setProfileImgModal] = useState(false);
 	const [passwordModal, setPasswordModal] = useState(false);
 	const [editName, setEditName] = useState(name);
 	const [editEmail, setEditEmail] = useState(email);
 
-	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
-
-	// get the models
 	const getModals = useAPI(["getEngines", adminMode, "", "MODEL"]);
 
-	// track selected default text generation model
 	const [
 		selectedTextGenerationDefaultModel,
 		setSelectedTextGenerationDefaultModel,
 	] = useState<string>("");
 
-	// track selected default code generation model
 	const [
 		selectedCodeGenerationDefaultModel,
 		setSelectedCodeGenerationDefaultModel,
 	] = useState<string>("");
 
-	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
 	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 
@@ -238,7 +151,6 @@ export const MyProfilePage = () => {
 				TOKENDESCRIPTION: "",
 				ACCESSKEY: "",
 				SECRETKEY: "",
-				PLACEHOLDER: "",
 			},
 		});
 
@@ -258,8 +170,6 @@ export const MyProfilePage = () => {
 
 	const ACCESSKEY = watch("ACCESSKEY");
 	const SECRETKEY = watch("SECRETKEY");
-
-	// track if we can create a key
 	const isCreated = !!(ACCESSKEY && SECRETKEY);
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
@@ -297,14 +207,9 @@ export const MyProfilePage = () => {
 		modals,
 	]);
 
-	/**
-	 * Submit edit profile info
-	 */
 	const profileEditSubmit = async (data: EditUserInfoForm) => {
 		try {
-			// need to confirm reactor for runQuery or monolithStore method for editing profile
 			console.log(data);
-
 			const userObj: Record<string, unknown> = {
 				password: "",
 				id: nativeLogin,
@@ -316,7 +221,6 @@ export const MyProfilePage = () => {
 					: "CUSTOM",
 				admin: configStore.store.user?.admin || false,
 			};
-
 			userObj.id =
 				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
 			userObj.newUsername = data.USERNAME !== id ? data.USERNAME : null;
@@ -327,27 +231,15 @@ export const MyProfilePage = () => {
 			setEditEmail(data.EMAIL);
 
 			if (response.data) {
-				notification.add({
-					color: "success",
-					message: "Successfully edited profile information",
-				});
+				toast.success("Successfully edited profile information");
 			} else {
-				notification.add({
-					color: "error",
-					message: "Error editing profile information",
-				});
+				toast.error("Error editing profile information");
 			}
 		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Error editing profile information",
-			});
+			toast.error("Error editing profile information");
 		}
 	};
 
-	/**
-	 * Handle selecting a default model
-	 */
 	const handleSelectModel = async (
 		selectedAppId: string,
 		modelType: string,
@@ -358,25 +250,15 @@ export const MyProfilePage = () => {
 			} else if (modelType === "code-generation-model") {
 				setSelectedCodeGenerationDefaultModel(selectedAppId);
 			}
+			if (!selectedAppId) return;
 
-			if (!selectedAppId) {
-				return;
-			}
-
-			// Find the selected engine
 			const selectedEngine = modals.find(
 				(e) => e.app_id === selectedAppId,
 			);
-			if (!selectedEngine) {
-				throw new Error("Selected model not found");
-			}
+			if (!selectedEngine) throw new Error("Selected model not found");
 
-			// Update the store's meta to reflect the new default model
 			insightStore.updateUserDefaultModel(modelType, selectedAppId);
-
-			// Send the new default model selection to the backend
 			await setUserDefaultModel(modelType, selectedAppId);
-
 			toast.success(`Default ${modelType} saved successfully`);
 		} catch (e) {
 			if (e instanceof Error) {
@@ -387,330 +269,232 @@ export const MyProfilePage = () => {
 		}
 	};
 
-	/**
-	 * Delete an accesskey
-	 * @param accessKey - delete an access key
-	 */
 	const createAccessKey = async (data: CreateAccessKeyForm) => {
 		try {
 			const output = await createUserAccessKey(
 				data.TOKENNAME,
 				data.TOKENDESCRIPTION || "",
 			);
-
-			// update the values
 			setValue("ACCESSKEY", output.ACCESSKEY);
 			setValue("SECRETKEY", output.SECRETKEY);
-
-			// add a new one
-			notification.add({
-				color: "success",
-				message: "Successfully created key",
-			});
+			toast.success("Successfully created key");
 		} catch (e) {
 			if (e instanceof Error) {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 			}
 		}
 	};
 
-	/**
-	 * Delete an accesskey
-	 * @param accessKey - delete an access key
-	 */
 	const deleteAccessKey = async (accessKey: string) => {
 		try {
 			const response = await deleteUserAccessKeys(accessKey);
-
-			if (!response) {
-				throw new Error("Error deleting key");
-			}
-
-			// refresh the keys
+			if (!response) throw new Error("Error deleting key");
 			getUserAccessKeys.refresh();
-
-			// add a new one
-			notification.add({
-				color: "success",
-				message: "Successfully deleted key",
-			});
+			toast.success("Successfully deleted key");
 		} catch (e) {
 			if (e instanceof Error) {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 			}
 		}
 	};
 
-	/**
-	 * Callback that is triggered when the add modal closes
-	 */
 	const closeModel = () => {
-		// close it
 		setAddModal(false);
-
-		// a new key was added refresh the current keys
-		if (isCreated) {
-			getUserAccessKeys.refresh();
-		}
-
-		// reset the form
+		if (isCreated) getUserAccessKeys.refresh();
 		reset({});
+		setIsJsSdkOpen(false);
+		setIsPySdkOpen(false);
 	};
 
-	const closeProfileEditModel = () => {
-		setProfileImgModal(false);
-	};
-
-	/**
-	 * Copy text and add it to the clipboard
-	 * @param text - text to copy
-	 */
 	const copy = async (text: string) => {
 		try {
 			await navigator.clipboard.writeText(text);
-
-			notification.add({
-				color: "success",
-				message: "Successfully copied code",
-			});
+			toast.success("Successfully copied code");
 		} catch (_e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy code",
-			});
+			toast.error("Unable to copy code");
 		}
 	};
 
-	if (
-		getUserAccessKeys.status === "INITIAL" ||
-		getUserAccessKeys.status === "LOADING"
-	) {
-		return <LoadingScreen.Trigger description="Getting access keys" />;
-	}
 	const pySnippet = getSDKSnippet("py", ACCESSKEY, SECRETKEY);
 	const jsSnippet = getSDKSnippet("js", ACCESSKEY, SECRETKEY);
 
 	const watchedName = userInfoWatch("NAME");
 	const watchedEmail = userInfoWatch("EMAIL");
-
-	// Check if either Name or Email is changed
 	const isChanged = watchedName !== editName || watchedEmail !== editEmail;
 
 	return (
-		<Stack gap={3} className="my-profile-page">
-			<StyledPaper>
-				<StyledGrid container spacing={3}>
-					<GridItem sm={4}>
-						<Typography variant="h6">
+		<div className="my-profile-page flex flex-col gap-4">
+			{/* Profile Info */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<div className="grid gap-8 [grid-template-columns:1fr_2fr]">
+					{/* Left: account details */}
+					<div>
+						<h3 className="mb-3 font-semibold text-base">
+							Account Details
+						</h3>
+						<div className="flex flex-col gap-4">
+							<div className="flex flex-col gap-1">
+								<Label className="text-muted-foreground text-xs">
+									User Id
+								</Label>
+								<span className="text-sm">{id}</span>
+							</div>
+							{isNative && (
+								<div className="flex flex-col gap-1">
+									<Label className="text-muted-foreground text-xs">
+										Username
+									</Label>
+									<span className="text-sm">{id}</span>
+								</div>
+							)}
+							<div className="flex flex-col gap-1">
+								<Label className="text-muted-foreground text-xs">
+									Last Login
+								</Label>
+								<span className="text-sm">
+									{lastLogin
+										? formatDate(lastLogin) || lastLogin
+										: "—"}
+								</span>
+							</div>
+							<div className="flex flex-col gap-1">
+								<Label className="text-muted-foreground text-xs">
+									Groups
+								</Label>
+								{groups.length > 0 ? (
+									<div className="flex max-h-28 flex-wrap gap-1.5 overflow-y-auto pt-0.5">
+										{groups.map((g) => (
+											<span
+												key={g}
+												className="rounded-full border px-2.5 py-0.5 font-medium text-xs"
+											>
+												{g}
+											</span>
+										))}
+									</div>
+								) : (
+									<span className="text-muted-foreground text-sm">
+										No groups
+									</span>
+								)}
+							</div>
+						</div>
+					</div>
+					{/* Right: edit form */}
+					<div className="border-l pl-8">
+						<h3 className="mb-3 font-semibold text-base">
 							{isNative
 								? "Edit profile information"
 								: "Profile Info"}
-						</Typography>
-					</GridItem>
-
-					<GridItem sm={0.6}>
-						<StyledAvatar>{name[0].toUpperCase()}</StyledAvatar>
-					</GridItem>
-
-					<GridItem sm={3}>
-						<Button
-							variant="text"
-							onClick={() => {
-								setProfileImgModal(true);
-							}}
-							disabled
-							data-testid={"myProfilePage-upload-btn"}
-						>
-							Upload
-						</Button>
-					</GridItem>
-				</StyledGrid>
-				<Grid container spacing={3}>
-					<GridItem sm={4}>{/* spacer */}</GridItem>
-					<GridItem sm={8}>
+						</h3>
 						{isNative ? (
 							<form
 								onSubmit={userInfoHandleSubmit(
 									profileEditSubmit,
 								)}
 							>
-								<StyledStack direction="row" spacing={2}>
-									<Controller
-										name={"NAME"}
-										control={userInfoControl}
-										rules={{ required: true }}
-										render={({ field }) => {
-											return (
-												<TextField
-													label="Name"
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onChange={(value) =>
-														field.onChange(value)
-													}
-													inputProps={{
-														maxLength: 255,
-													}}
-													fullWidth={true}
-												></TextField>
-											);
-										}}
-									/>
-								</StyledStack>
-
-								<StyledStack direction="row">
-									<Controller
-										name={"USERID"}
-										control={userInfoControl}
-										rules={{ required: false }}
-										render={({ field }) => {
-											return (
-												<TextField
-													label="User Id"
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onChange={(value) =>
-														field.onChange(value)
-													}
-													inputProps={{
-														maxLength: 500,
-													}}
-													fullWidth={true}
-													disabled
-												></TextField>
-											);
-										}}
-									/>
-								</StyledStack>
-								<StyledStack direction="row">
-									<Controller
-										name={"USERNAME"}
-										control={userInfoControl}
-										rules={{ required: false }}
-										render={({ field }) => {
-											return (
-												<TextField
-													label="Username"
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onChange={(value) =>
-														field.onChange(value)
-													}
-													inputProps={{
-														maxLength: 500,
-													}}
-													fullWidth={true}
-													disabled
-												></TextField>
-											);
-										}}
-									/>
-								</StyledStack>
-
-								<StyledStack direction="row">
-									<Controller
-										name={"EMAIL"}
-										control={userInfoControl}
-										rules={{ required: false }}
-										render={({ field }) => {
-											return (
-												<TextField
-													label="Email"
-													value={
-														field.value
-															? field.value
-															: ""
-													}
-													onChange={(value) =>
-														field.onChange(value)
-													}
-													inputProps={{
-														maxLength: 500,
-													}}
-													fullWidth={true}
-												></TextField>
-											);
-										}}
-									/>
-								</StyledStack>
-								<Stack direction="row">
-									<StyledLink
-										onClick={() => setPasswordModal(true)}
-									>
-										Change Password
-									</StyledLink>
-								</Stack>
-
-								<Stack
-									direction="row"
-									sx={{ marginTop: "6px" }}
-								>
-									<Button
-										variant="contained"
-										color="primary"
-										type="submit"
-										disabled={
-											!isChanged ||
-											!(
-												(watchedName ?? "")
-													.toString()
-													.trim().length > 0 &&
-												(watchedEmail ?? "")
-													.toString()
-													.trim().length > 0
-											)
-										}
-										data-testid={"myProfilePage-save-btn"}
-									>
-										Save
-									</Button>
-
-									<Button
-										variant="text"
-										color="inherit"
-										onClick={() => {
-											userInfoReset();
-										}}
-										disabled={!isChanged}
-										data-testid={"myProfilePage-reset-btn"}
-									>
-										Reset
-									</Button>
-								</Stack>
+								<div className="flex flex-col gap-3">
+									<div className="grid grid-cols-2 gap-3">
+										<Controller
+											name="NAME"
+											control={userInfoControl}
+											rules={{ required: true }}
+											render={({ field }) => (
+												<div className="flex flex-col gap-1">
+													<Label className="text-xs">
+														Name
+													</Label>
+													<Input
+														value={
+															field.value ?? ""
+														}
+														onChange={
+															field.onChange
+														}
+														maxLength={255}
+													/>
+												</div>
+											)}
+										/>
+										<Controller
+											name="EMAIL"
+											control={userInfoControl}
+											render={({ field }) => (
+												<div className="flex flex-col gap-1">
+													<Label className="text-xs">
+														Email
+													</Label>
+													<Input
+														value={
+															field.value ?? ""
+														}
+														onChange={
+															field.onChange
+														}
+														maxLength={500}
+													/>
+												</div>
+											)}
+										/>
+									</div>
+									<div>
+										<button
+											type="button"
+											className="cursor-pointer font-medium text-[#0471F0] text-sm underline"
+											onClick={() =>
+												setPasswordModal(true)
+											}
+										>
+											Change Password
+										</button>
+									</div>
+									<div className="flex gap-2">
+										<Button
+											type="submit"
+											disabled={
+												!isChanged ||
+												!(
+													(watchedName ?? "")
+														.toString()
+														.trim().length > 0 &&
+													(watchedEmail ?? "")
+														.toString()
+														.trim().length > 0
+												)
+											}
+											data-testid="myProfilePage-save-btn"
+										>
+											Save
+										</Button>
+										<Button
+											type="button"
+											variant="ghost"
+											onClick={() => userInfoReset()}
+											disabled={!isChanged}
+											data-testid="myProfilePage-reset-btn"
+										>
+											Reset
+										</Button>
+									</div>
+								</div>
 							</form>
 						) : (
-							<>
-								<StyledStack direction="row">
-									<TextField
-										label={"Login Type"}
+							<div className="flex flex-col gap-2">
+								<div className="flex flex-col gap-1">
+									<Label className="text-xs">
+										Login Type
+									</Label>
+									<Input
 										value={
 											Object.keys(
 												configStore.store.config
-													.loginDetails,
+													.loginDetails as object,
 											)[0]
 										}
-										inputProps={{
-											maxLength: 500,
-										}}
-										fullWidth={true}
+										maxLength={500}
 										disabled
-									></TextField>
-								</StyledStack>
+									/>
+								</div>
 								{Object.entries(configStore.store.user).map(
 									(kv) => {
 										if (
@@ -718,610 +502,449 @@ export const MyProfilePage = () => {
 											kv[0] !== "admin"
 										) {
 											return (
-												<StyledStack
-													direction="row"
+												<div
 													key={kv[0]}
+													className="flex flex-col gap-1"
 												>
-													<TextField
-														label={
-															kv[0]
-																.charAt(0)
-																.toUpperCase() +
-															kv[0].slice(1)
-														}
-														value={kv[1]}
-														inputProps={{
-															maxLength: 500,
-														}}
-														fullWidth={true}
+													<Label className="text-xs">
+														{kv[0]
+															.charAt(0)
+															.toUpperCase() +
+															kv[0].slice(1)}
+													</Label>
+													<Input
+														value={kv[1] as string}
+														maxLength={500}
 														disabled
-													></TextField>
-												</StyledStack>
+													/>
+												</div>
 											);
 										}
 										return null;
 									},
 								)}
-							</>
+							</div>
 						)}
-					</GridItem>
-				</Grid>
-			</StyledPaper>
-			<StyledPaper>
-				<div className="-ml-5 -mt-5 mb-5">
-					<h2 className="mr-1 mb-6 font-semibold text-gray-900 text-xl">
-						Choose which AI model will be used by default for your
-						requests
-					</h2>
-					{getModals.status === "INITIAL" ||
-					getModals.status === "LOADING" ? (
-						<span className="font-medium text-gray-700 text-sm">
-							Loading models...
-						</span>
-					) : getModals.status === "ERROR" ? (
-						<span className="font-medium text-red-600 text-sm">
-							Error loading models
-						</span>
-					) : (
-						<div className="ml-3 grid grid-cols-1 gap-6 md:grid-cols-2">
-							<Field>
-								<FieldLabel htmlFor={modelSelectId}>
-									Text Generation Model
-								</FieldLabel>
-								<Select
-									value={selectedTextGenerationDefaultModel}
-									onValueChange={(value) =>
-										handleSelectModel(
-											value,
-											"text-generation-model",
-										)
-									}
-								>
-									<SelectTrigger
-										id={modelSelectId}
-										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-										data-testid="myProfilePage-default-model-select"
-									>
-										<SelectValue placeholder="Select a model" />
-									</SelectTrigger>
-									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
-										{modals.map((engine) => (
-											<SelectItem
-												key={engine.app_id}
-												value={engine.app_id}
-												data-testid={`myProfilePage-model-option-${engine.app_id}`}
-												className="cursor-pointer px-4 py-3 text-base text-gray-900"
-											>
-												<span>{engine.app_name}</span>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<FieldDescription className="mt-2 text-gray-600 text-sm">
-									This text generation model will be used to
-									power AI-driven user requests
-								</FieldDescription>
-							</Field>
-
-							<Field>
-								<FieldLabel
-									htmlFor={`${modelSelectId}-secondary`}
-								>
-									Code Generation Model
-								</FieldLabel>
-								<Select
-									value={selectedCodeGenerationDefaultModel}
-									onValueChange={(value) =>
-										handleSelectModel(
-											value,
-											"code-generation-model",
-										)
-									}
-								>
-									<SelectTrigger
-										id={`${modelSelectId}-secondary`}
-										className="flex h-11 w-full items-center rounded-[7px] border border-black-300 bg-white px-4 py-2.5 text-base text-gray-900 shadow-sm transition-all duration-200 ease-in-out hover:border-blue-400 hover:shadow-md focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-										data-testid="myProfilePage-secondary-model-select"
-									>
-										<SelectValue placeholder="Select a model" />
-									</SelectTrigger>
-									<SelectContent className="max-h-[300px] overflow-y-auto rounded-[7px] border border-black-300 bg-white shadow-lg">
-										{modals.map((engine) => (
-											<SelectItem
-												key={`secondary-${engine.app_id}`}
-												value={engine.app_id}
-												data-testid={`myProfilePage-secondary-model-option-${engine.app_id}`}
-												className="cursor-pointer px-4 py-3 text-base text-gray-900"
-											>
-												<span>{engine.app_name}</span>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-								<FieldDescription className="mt-2 text-gray-600 text-sm">
-									This code generation model will be used to
-									power AI-driven user requests
-								</FieldDescription>
-							</Field>
-						</div>
-					)}
+					</div>
 				</div>
-			</StyledPaper>
-			<StyledPaper>
-				<MonolithGrid container spacing={3}>
-					<CustomGridItem sm={11}>
-						<Typography variant="h6">Javascript SDK</Typography>
-					</CustomGridItem>
-					<CopyGridItem sm={1}>
-						<IconButton
-							title="Copy"
-							onClick={() => {
-								copy(jsSnippet);
-							}}
-							data-testid={"myProfilePage-js-copy-btn"}
-						>
-							<Copy />
-						</IconButton>
-					</CopyGridItem>
-				</MonolithGrid>
-				<MonolithGrid container spacing={3}>
-					<GridItem sm={12}>
-						<StyledSDKBlock>
-							<StyledCodeContent>{jsSnippet}</StyledCodeContent>
-						</StyledSDKBlock>
-					</GridItem>
-				</MonolithGrid>
-			</StyledPaper>
+			</div>
 
-			<StyledPaper>
-				<MonolithGrid container spacing={3}>
-					<CustomGridItem sm={11}>
-						<Typography variant="h6">Python SDK</Typography>
-					</CustomGridItem>
+			{/* Default Model Selection */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<h2 className="mb-4 font-semibold text-base">
+					Default AI models for your requests
+				</h2>
+				{getModals.status === "INITIAL" ||
+				getModals.status === "LOADING" ? (
+					<span className="font-medium text-gray-700 text-sm">
+						Loading models...
+					</span>
+				) : getModals.status === "ERROR" ? (
+					<span className="font-medium text-red-600 text-sm">
+						Error loading models
+					</span>
+				) : (
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+						<Field>
+							<FieldLabel htmlFor={modelSelectId}>
+								Text Generation Model
+							</FieldLabel>
+							<Select
+								value={selectedTextGenerationDefaultModel}
+								onValueChange={(value) =>
+									handleSelectModel(
+										value,
+										"text-generation-model",
+									)
+								}
+							>
+								<SelectTrigger
+									id={modelSelectId}
+									data-testid="myProfilePage-default-model-select"
+								>
+									<SelectValue placeholder="Select a model" />
+								</SelectTrigger>
+								<SelectContent>
+									{modals.map((engine) => (
+										<SelectItem
+											key={engine.app_id}
+											value={engine.app_id}
+											data-testid={`myProfilePage-model-option-${engine.app_id}`}
+										>
+											<span className="flex w-full flex-col items-start text-left">
+												<span className="text-sm">
+													{engine.app_name}
+												</span>
+												<span className="text-muted-foreground text-xs">
+													id: {engine.app_id}
+												</span>
+											</span>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<FieldDescription className="text-muted-foreground text-xs">
+								Powers AI-driven text generation requests
+							</FieldDescription>
+						</Field>
 
-					<CopyGridItem sm={1}>
-						<IconButton
-							title="Copy"
-							onClick={() => {
-								copy(pySnippet);
-							}}
-							data-testid={"myProfilePage-py-copy-btn"}
-						>
-							<Copy />
-						</IconButton>
-					</CopyGridItem>
-				</MonolithGrid>
-				<MonolithGrid container spacing={3}>
-					<GridItem sm={12}>
-						<StyledSDKBlock>
-							<StyledCodeContent>{pySnippet}</StyledCodeContent>
-						</StyledSDKBlock>
-					</GridItem>
-				</MonolithGrid>
-			</StyledPaper>
+						<Field>
+							<FieldLabel htmlFor={`${modelSelectId}-secondary`}>
+								Code Generation Model
+							</FieldLabel>
+							<Select
+								value={selectedCodeGenerationDefaultModel}
+								onValueChange={(value) =>
+									handleSelectModel(
+										value,
+										"code-generation-model",
+									)
+								}
+							>
+								<SelectTrigger
+									id={`${modelSelectId}-secondary`}
+									data-testid="myProfilePage-secondary-model-select"
+								>
+									<SelectValue placeholder="Select a model" />
+								</SelectTrigger>
+								<SelectContent>
+									{modals.map((engine) => (
+										<SelectItem
+											key={`secondary-${engine.app_id}`}
+											value={engine.app_id}
+											data-testid={`myProfilePage-secondary-model-option-${engine.app_id}`}
+										>
+											<span className="flex w-full flex-col items-start text-left">
+												<span className="text-sm">
+													{engine.app_name}
+												</span>
+												<span className="text-muted-foreground text-xs">
+													id: {engine.app_id}
+												</span>
+											</span>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<FieldDescription className="text-muted-foreground text-xs">
+								Powers AI-driven code generation requests
+							</FieldDescription>
+						</Field>
+					</div>
+				)}
+			</div>
 
-			<StyledAccessTokensPaper>
-				<Stack direction="row" justifyContent={"space-between"} mb={1}>
-					<Typography variant="h6">Personal Access Tokens</Typography>
+			{/* JS SDK */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<h3 className="mb-3 font-semibold text-base">Javascript SDK</h3>
+				<SdkBlock
+					label="javascript"
+					code={jsSnippet}
+					testId="myProfilePage-js-copy-btn"
+				/>
+			</div>
 
+			{/* Python SDK */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<h3 className="mb-3 font-semibold text-base">Python SDK</h3>
+				<SdkBlock
+					label="python"
+					code={pySnippet}
+					testId="myProfilePage-py-copy-btn"
+				/>
+			</div>
+
+			{/* Personal Access Tokens */}
+			<div className="rounded-lg border bg-card px-6 py-5">
+				<div className="mb-2 flex flex-row items-center justify-between">
+					<h3 className="font-semibold text-base">
+						Personal Access Tokens
+					</h3>
 					<Button
-						variant="contained"
-						startIcon={<Plus />}
-						onClick={() => {
-							setAddModal(true);
-						}}
-						data-testid={"myProfilePage-new-key-btn"}
+						onClick={() => setAddModal(true)}
+						data-testid="myProfilePage-new-key-btn"
 					>
+						<Plus className="mr-2 size-4" />
 						New Key
 					</Button>
-				</Stack>
-
-				<StyledTableContainer>
-					<Table>
-						<Table.Head>
-							<Table.Row>
-								<LeftHeaderCell align={"left"}>
+				</div>
+				<div className="mt-4 overflow-x-auto">
+					<table className="w-full text-sm">
+						<thead>
+							<tr className="bg-[#f3f3f3]">
+								<th className="rounded-tl-xl border-[#ccc] border-b px-3 py-2 text-left font-medium">
 									Name
-								</LeftHeaderCell>
-								<HeaderCell align={"left"}>
+								</th>
+								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
 									Description
-								</HeaderCell>
-								<HeaderCell align={"left"}>
+								</th>
+								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
 									Date Created
-								</HeaderCell>
-								<HeaderCell align={"left"}>
+								</th>
+								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
 									Last Used Created
-								</HeaderCell>
-								<HeaderCell align={"left"}>
+								</th>
+								<th className="border-[#ccc] border-b px-3 py-2 text-left font-medium">
 									Access Key
-								</HeaderCell>
-								<RightHeaderCell>&nbsp;</RightHeaderCell>
-							</Table.Row>
-						</Table.Head>
-						<Table.Body>
+								</th>
+								<th className="rounded-tr-xl border-[#ccc] border-b px-3 py-2">
+									&nbsp;
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							{(getUserAccessKeys.status === "INITIAL" ||
+								getUserAccessKeys.status === "LOADING") && (
+								<tr>
+									<td
+										colSpan={6}
+										className="py-8 text-center"
+									>
+										<div className="flex items-center justify-center gap-2">
+											<Spinner className="size-4" />
+											<span className="text-muted-foreground text-sm">
+												Loading keys...
+											</span>
+										</div>
+									</td>
+								</tr>
+							)}
 							{getUserAccessKeys.status === "SUCCESS" &&
-							getUserAccessKeys.data.length !== 0
-								? getUserAccessKeys.data.map((k, idx) => {
-										return (
-											<Table.Row
-												key={`${k.TOKENNAME}-${idx}`}
-											>
-												<Table.Cell align={"left"}>
-													{k.TOKENNAME}
-												</Table.Cell>
-												<Table.Cell align={"left"}>
-													{k.TOKENDESCRIPTION || ""}
-												</Table.Cell>
-												<Table.Cell align={"left"}>
-													{k.DATECREATED}
-												</Table.Cell>
-												<Table.Cell align={"left"}>
-													{k.LASTUSED}
-												</Table.Cell>
-												<Table.Cell align={"left"}>
-													{k.ACCESSKEY}
-												</Table.Cell>
-												<Table.Cell align={"right"}>
-													<IconButton
+							getUserAccessKeys.data?.length !== 0
+								? getUserAccessKeys.data?.map((k, idx) => (
+										<tr key={`${k.TOKENNAME}-${idx}`}>
+											<td className="px-3 py-2">
+												{k.TOKENNAME}
+											</td>
+											<td className="px-3 py-2">
+												{k.TOKENDESCRIPTION || ""}
+											</td>
+											<td className="px-3 py-2">
+												{k.DATECREATED}
+											</td>
+											<td className="px-3 py-2">
+												{k.LASTUSED}
+											</td>
+											<td className="px-3 py-2">
+												<div className="flex items-center gap-1">
+													<Button
+														variant="ghost"
+														size="icon"
+														className="size-6 shrink-0"
 														title="Copy"
-														onClick={() => {
-															copy(k.ACCESSKEY);
-														}}
-														data-testid={
-															"myProfilePage-access-key-copy-btn"
+														onClick={() =>
+															copy(k.ACCESSKEY)
 														}
+														data-testid="myProfilePage-access-key-copy-btn"
 													>
-														<Copy />
-													</IconButton>
-													<IconButton
-														title="Delete"
-														onClick={() => {
-															deleteAccessKey(
-																k.ACCESSKEY,
-															);
-														}}
-														data-testid={
-															"myProfilePage-access-key-delete-btn"
-														}
-													>
-														<Trash2 />
-													</IconButton>
-												</Table.Cell>
-											</Table.Row>
-										);
-									})
+														<Copy className="size-3.5" />
+													</Button>
+													<span className="font-mono text-xs">
+														{k.ACCESSKEY}
+													</span>
+												</div>
+											</td>
+											<td className="px-3 py-2 text-right">
+												<Button
+													variant="ghost"
+													size="icon"
+													title="Delete"
+													onClick={() =>
+														deleteAccessKey(
+															k.ACCESSKEY,
+														)
+													}
+													data-testid="myProfilePage-access-key-delete-btn"
+												>
+													<Trash2 className="size-4" />
+												</Button>
+											</td>
+										</tr>
+									))
 								: null}
-						</Table.Body>
-					</Table>
-				</StyledTableContainer>
+						</tbody>
+					</table>
+				</div>
 				{getUserAccessKeys.status === "SUCCESS" &&
-					getUserAccessKeys.data.length === 0 && (
-						<MessageDiv>
+					getUserAccessKeys.data?.length === 0 && (
+						<div className="mx-auto my-[75px] block w-full text-center text-[#666] text-[13px]">
 							No Personal Access Tokens to display at this time
 							<br />
 							Click New Key to create a new Personal Access Token
-						</MessageDiv>
+						</div>
 					)}
-			</StyledAccessTokensPaper>
+			</div>
 
-			<Modal open={addModal} onClose={() => closeModel()} maxWidth="lg">
-				<Modal.Title>Generate Key</Modal.Title>
-				<Modal.Content>
-					<Stack sx={{ width: "800px" }} spacing={4}>
+			{/* Generate Key Modal */}
+			<Dialog
+				open={addModal}
+				onOpenChange={(open) => !open && closeModel()}
+			>
+				<DialogContent className="flex max-h-[90vh] max-w-3xl flex-col">
+					<DialogHeader className="shrink-0">
+						<DialogTitle>Generate Key</DialogTitle>
+					</DialogHeader>
+					<div className="min-h-0 flex-1 overflow-y-auto">
 						<form
 							onSubmit={handleSubmit(createAccessKey)}
 							className="my-profile-page__generate-key-form"
 						>
-							<Stack direction="column" spacing={2}>
-								<Alert severity="info">
+							<div className="flex flex-col gap-3">
+								<div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm">
 									Note: Your private key will only be
 									generated once
-								</Alert>
-
+								</div>
 								<Controller
-									name={"TOKENNAME"}
+									name="TOKENNAME"
 									control={control}
 									rules={{ required: true }}
-									render={({ field }) => {
-										return (
-											<TextField
-												required
-												label="Name"
-												value={
-													field.value
-														? field.value
-														: ""
-												}
+									render={({ field }) => (
+										<div className="flex flex-col gap-1">
+											<Label className="text-xs">
+												Name{" "}
+												<span className="text-destructive">
+													*
+												</span>
+											</Label>
+											<Input
+												value={field.value ?? ""}
 												disabled={isCreated}
-												onChange={(value) =>
-													field.onChange(value)
-												}
-												inputProps={{ maxLength: 255 }}
-												data-testid={
-													"myProfilePage-generate-key-name-txt"
-												}
-											></TextField>
-										);
-									}}
+												onChange={field.onChange}
+												maxLength={255}
+												data-testid="myProfilePage-generate-key-name-txt"
+											/>
+										</div>
+									)}
 								/>
-
 								<Controller
-									name={"TOKENDESCRIPTION"}
+									name="TOKENDESCRIPTION"
 									control={control}
-									rules={{ required: false }}
-									render={({ field }) => {
-										return (
-											<TextField
-												label="Description"
-												value={
-													field.value
-														? field.value
-														: ""
-												}
+									render={({ field }) => (
+										<div className="flex flex-col gap-1">
+											<Label className="text-xs">
+												Description
+											</Label>
+											<Input
+												value={field.value ?? ""}
 												disabled={isCreated}
-												onChange={(value) =>
-													field.onChange(value)
-												}
-												inputProps={{ maxLength: 500 }}
-												data-testid={
-													"myProfilePage-generate-key-description-txt"
-												}
-											></TextField>
-										);
-									}}
+												onChange={field.onChange}
+												maxLength={500}
+												data-testid="myProfilePage-generate-key-description-txt"
+											/>
+										</div>
+									)}
 								/>
-
-								<Stack direction="row" justifyContent={"start"}>
+								<div>
 									<Button
 										disabled={isCreated}
 										type="submit"
-										variant={"outlined"}
-										color="primary"
-										data-testid={
-											"myProfilePage-generate-btn"
-										}
+										variant="outline"
+										data-testid="myProfilePage-generate-btn"
 									>
 										Generate
 									</Button>
-								</Stack>
+								</div>
 								{isCreated && (
-									<StyledCreatedKeyContainer direction="column">
-										<Stack direction="column" spacing={1}>
-											<Typography variant={"subtitle2"}>
+									<div className="flex flex-col gap-3 rounded bg-background p-2">
+										<div className="flex flex-col gap-1.5">
+											<p className="font-medium text-sm">
 												Access Key
-											</Typography>
-											<StyledSDKBlock>
-												<StyledCodeContent>
-													{ACCESSKEY}
-												</StyledCodeContent>
-												<Button
-													size={"medium"}
-													variant="outlined"
-													startIcon={
-														<Copy size={16} />
-													}
-													onClick={() =>
-														copy(ACCESSKEY)
-													}
-													data-testid={
-														"myProfilePage-created-access-copy-btn"
-													}
-												>
-													Copy
-												</Button>
-											</StyledSDKBlock>
-										</Stack>
-										<Stack direction="column" spacing={1}>
-											<Typography variant={"subtitle2"}>
+											</p>
+											<SdkBlock
+												label="access key"
+												code={ACCESSKEY}
+												testId="myProfilePage-created-access-copy-btn"
+											/>
+										</div>
+										<div className="flex flex-col gap-1.5">
+											<p className="font-medium text-sm">
 												Secret Key
-											</Typography>
-											<StyledSDKBlock>
-												<StyledCodeContent>
-													{SECRETKEY}
-												</StyledCodeContent>
-												<Button
-													size={"medium"}
-													variant="outlined"
-													startIcon={
-														<Copy size={16} />
-													}
-													onClick={() =>
-														copy(SECRETKEY)
-													}
-													data-testid={
-														"myProfilePage-secret-key-copy-btn"
-													}
-												>
-													Copy
-												</Button>
-											</StyledSDKBlock>
-										</Stack>
-										<Stack
-											direction="column"
-											spacing={1}
-											className="myProfilePage_js-sdk-access key"
-										>
-											<Stack
-												direction="row"
-												justifyContent={"space-between"}
-												alignItems={"center"}
-											>
-												<Typography
-													variant={"subtitle2"}
-												>
+											</p>
+											<SdkBlock
+												label="secret key"
+												code={SECRETKEY}
+												testId="myProfilePage-secret-key-copy-btn"
+											/>
+										</div>
+										<div className="myProfilePage_js-sdk-access flex flex-col gap-1.5">
+											<div className="flex items-center justify-between">
+												<p className="font-medium text-sm">
 													Javascript Example
-												</Typography>
-												<IconButton
-													onClick={() => {
+												</p>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													onClick={() =>
 														setIsJsSdkOpen(
 															!isJsSdkOpen,
-														);
-													}}
-													data-testid={
-														"myProfilePage-js-toggle-btn"
+														)
 													}
+													data-testid="myProfilePage-js-toggle-btn"
 												>
 													{isJsSdkOpen ? (
-														<ChevronUp />
+														<ChevronUp className="size-4" />
 													) : (
-														<ChevronDown />
+														<ChevronDown className="size-4" />
 													)}
-												</IconButton>
-											</Stack>
-
-											<Collapse in={isJsSdkOpen}>
-												<StyledSDKBlock>
-													<StyledCodeContent maxWidth="600px">
-														{jsSnippet}
-													</StyledCodeContent>
-													<Button
-														size={"medium"}
-														variant="outlined"
-														startIcon={
-															<Copy size={16} />
-														}
-														onClick={() =>
-															copy(jsSnippet)
-														}
-														data-testid={
-															"myProfilePage-js-sdk-copy-btn"
-														}
-													>
-														Copy
-													</Button>
-												</StyledSDKBlock>
-											</Collapse>
-										</Stack>
-										<Stack
-											direction="column"
-											spacing={1}
-											className="myProfilePage-py-sdk-access key"
-										>
-											<Stack
-												direction="row"
-												justifyContent={"space-between"}
-												alignItems={"center"}
-											>
-												<Typography
-													variant={"subtitle2"}
-												>
+												</Button>
+											</div>
+											{isJsSdkOpen && (
+												<SdkBlock
+													label="javascript"
+													code={jsSnippet}
+													testId="myProfilePage-js-sdk-copy-btn"
+												/>
+											)}
+										</div>
+										<div className="myProfilePage-py-sdk-access flex flex-col gap-1.5">
+											<div className="flex items-center justify-between">
+												<p className="font-medium text-sm">
 													Python Example
-												</Typography>
-												<IconButton
-													onClick={() => {
+												</p>
+												<Button
+													type="button"
+													variant="ghost"
+													size="icon"
+													onClick={() =>
 														setIsPySdkOpen(
 															!isPySdkOpen,
-														);
-													}}
-													data-testid={
-														"myProfilePage-py-toggle-btn"
+														)
 													}
+													data-testid="myProfilePage-py-toggle-btn"
 												>
 													{isPySdkOpen ? (
-														<ChevronUp />
+														<ChevronUp className="size-4" />
 													) : (
-														<ChevronDown />
+														<ChevronDown className="size-4" />
 													)}
-												</IconButton>
-											</Stack>
-											<Collapse in={isPySdkOpen}>
-												<StyledSDKBlock>
-													<StyledCodeContent maxWidth="600px">
-														{pySnippet}
-													</StyledCodeContent>
-													<Button
-														size={"medium"}
-														variant="outlined"
-														startIcon={
-															<Copy size={16} />
-														}
-														onClick={() =>
-															copy(pySnippet)
-														}
-														data-testid={
-															"myProfilePage-py-sdk-copy-btn"
-														}
-													>
-														Copy
-													</Button>
-												</StyledSDKBlock>
-											</Collapse>
-										</Stack>
-									</StyledCreatedKeyContainer>
+												</Button>
+											</div>
+											{isPySdkOpen && (
+												<SdkBlock
+													label="python"
+													code={pySnippet}
+													testId="myProfilePage-py-sdk-copy-btn"
+												/>
+											)}
+										</div>
+									</div>
 								)}
-							</Stack>
+							</div>
 						</form>
-					</Stack>
-				</Modal.Content>
-				<Modal.Actions>
-					<Button variant="text" onClick={() => closeModel()}>
-						Close
-					</Button>
-				</Modal.Actions>
-			</Modal>
-
-			<Modal
-				open={profileImgModal}
-				onClose={() => closeModel()}
-				maxWidth="md"
-			>
-				<Modal.Title>Upload Profile Picture</Modal.Title>
-				<Modal.Content>
-					<CurrentAvatarStack direction="row" spacing={2}>
-						<StyledAvatar>{name[0].toUpperCase()}</StyledAvatar>
-						<span>Current avatar</span>
-					</CurrentAvatarStack>
-
-					<Stack direction="row" spacing={2}>
-						<AvatarForm>
-							<Controller
-								name={"PLACEHOLDER"}
-								control={control}
-								rules={{ required: true }}
-								render={({ field }) => {
-									return (
-										<TextField
-											label="Placeholder"
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											inputProps={{ maxLength: 255 }}
-											fullWidth={true}
-										></TextField>
-									);
-								}}
-							/>
-							<Modal.Actions>
-								<Button
-									variant="contained"
-									disabled
-									type="submit"
-									data-testid={"myProfilePage-submit-btn"}
-								>
-									Save
-								</Button>
-								<Button
-									variant="text"
-									onClick={() => closeProfileEditModel()}
-									data-testid={
-										"myProfilePage-close-profile-btn"
-									}
-								>
-									Close
-								</Button>
-							</Modal.Actions>
-						</AvatarForm>
-					</Stack>
-				</Modal.Content>
-			</Modal>
+					</div>
+					<DialogFooter className="shrink-0">
+						<Button variant="ghost" onClick={() => closeModel()}>
+							Close
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 
 			<ChangePasswordModal
 				open={passwordModal}
 				onClose={() => setPasswordModal(false)}
 			/>
-		</Stack>
+		</div>
 	);
 };

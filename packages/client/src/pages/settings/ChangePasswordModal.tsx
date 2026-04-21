@@ -2,127 +2,84 @@ import { CircleCheck, Eye, EyeOff, Lock } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Env } from "@semoss/sdk/react";
 import {
-	Box,
 	Button,
-	IconButton,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Input,
-	InputAdornment,
-	Modal,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Separator,
+	toast,
+} from "@semoss/ui/next";
 
-interface StyledPasswordIndicatorProps {
-	bgColor?: string;
+interface PasswordFieldProps {
+	label: string;
+	value: string;
+	setValue: (val: string) => void;
+	show: boolean;
+	setShow: (val: boolean) => void;
+	isError?: boolean;
+	errorMessage?: string;
 }
 
-const StyledModelContent = styled(Modal.Content)({
-	paddingBottom: 0,
-});
-
-const StyledModalTitle = styled(Modal.Title)({
-	"&.MuiDialogTitle-root": {
-		padding: 0,
-	},
-	marginBottom: "12px",
-});
-
-const StyledTitleTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-	paddingBottom: "16px",
-}));
-
-const StyledDiv = styled("div")({
-	display: "flex",
-	gap: "4px",
-	paddingTop: "16px",
-	paddingBottom: "16px",
-});
-
-const StyledPasswordIndicator = styled("div")<StyledPasswordIndicatorProps>(
-	({ bgColor }) => ({
-		flex: 1,
-		height: "4px",
-		width: "106px",
-		borderRadius: "8px",
-		backgroundColor: bgColor,
-		transition: "background-color 0.3s ease",
-	}),
+const PasswordField = ({
+	label,
+	value,
+	setValue,
+	show,
+	setShow,
+	isError,
+	errorMessage,
+}: PasswordFieldProps) => (
+	<div className="flex flex-col gap-1">
+		<span className="text-muted-foreground text-sm">{label}</span>
+		{/* Hidden dummy fields to prevent Chrome autofill */}
+		<input type="text" autoComplete="off" className="hidden" />
+		<input type="password" autoComplete="new-password" className="hidden" />
+		<div className="relative">
+			<Lock className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+			<Input
+				type={show ? "text" : "password"}
+				value={value}
+				onChange={(e) => setValue(e.target.value)}
+				className={`pr-9 pl-9 ${isError ? "border-destructive" : ""}`}
+				autoComplete="new-password"
+			/>
+			<Button
+				variant="ghost"
+				size="icon"
+				className="-translate-y-1/2 absolute top-1/2 right-1 size-7"
+				onClick={() => setShow(!show)}
+				type="button"
+			>
+				{show ? (
+					<Eye className="size-4" />
+				) : (
+					<EyeOff className="size-4" />
+				)}
+			</Button>
+		</div>
+		{isError && errorMessage && (
+			<span className="text-destructive text-xs">{errorMessage}</span>
+		)}
+	</div>
 );
 
-const StyledValidationBox = styled(Box)({
-	mt: 2,
-	mb: 2,
-});
-
-const StyledValidationTypography = styled(Typography)(({ theme }) => ({
-	mb: 1,
-	fontWeight: 400,
-	color: theme.palette.text.primary,
-	fontFamily: "Inter",
-	fontSize: "16px",
-	fontStyle: "normal",
-	lineHeight: "24px",
-	letterSpacing: "0.15px",
-	paddingBottom: "14px",
-}));
-
-const StyledLineBox = styled(Box)(({ theme }) => ({
-	borderTop: `1px solid ${theme.palette.divider}`,
-	marginBottom: "16px",
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-	color: theme.palette.text.primary,
-	fontSize: "14px",
-	fontStyle: "normal",
-	fontWeight: 500,
-	lineHeight: "20px",
-	letterSpacing: "0.4px",
-}));
-
-const StyledBox = styled(Box)({
-	display: "flex",
-	flexDirection: "column",
-	gap: "8px",
-});
-
-const StyledLabelTypography = styled(Typography)(({ theme }) => ({
-	fontWeight: 400,
-	color: theme.palette.text.secondary,
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	"& .MuiOutlinedInput-root": {
-		"&.Mui-error fieldset": { borderColor: theme.palette.error.main },
-	},
-	marginTop: 0,
-}));
-
-const StyledValidationMessage = styled(Typography)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	mb: 0.5,
-	color: theme.palette.text.secondary,
-	letterSpacing: "0.17px",
-	fontSize: "14px",
-	fontWeight: 400,
-	marginBottom: "14px",
-}));
-
-const StyledInput = styled(Input)({
-	display: "none",
-});
-
-const StyledFooterBox = styled(Box)({
-	display: "flex",
-	justifyContent: "flex-end",
-	gap: 2,
-	marginBottom: "16px",
-	marginRight: "16px",
-});
+const ValidationItem = ({
+	label,
+	isValid,
+}: {
+	label: string;
+	isValid: boolean;
+}) => (
+	<div className="mb-3 flex items-center gap-2 text-muted-foreground text-sm">
+		<CircleCheck
+			className={`size-4 shrink-0 ${isValid ? "text-green-500" : "text-muted-foreground"}`}
+		/>
+		{label}
+	</div>
+);
 
 export const ChangePasswordModal = ({ open, onClose }) => {
 	const [currentPassword, setCurrentPassword] = useState("");
@@ -134,7 +91,6 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 	const [showConfirm, setShowConfirm] = useState(false);
 
 	const [loading, setLoading] = useState(false);
-	const notification = useNotification();
 
 	const confirmError =
 		confirmPassword.length > 0 && newPassword !== confirmPassword;
@@ -170,9 +126,7 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 				`${Env.MODULE}/api/auth/user/changePassword`,
 				{
 					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
+					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ currentPassword, newPassword }),
 				},
 			);
@@ -192,11 +146,7 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 				throw new Error(data.message || "Password change failed");
 			}
 
-			notification.add({
-				message: data.message,
-				color: "success",
-			});
-
+			toast.success(data.message);
 			setCurrentPassword("");
 			setNewPassword("");
 			setConfirmPassword("");
@@ -205,10 +155,7 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 			setShowConfirm(false);
 			onClose();
 		} catch (e) {
-			notification.add({
-				message: e.message || "Network error. Please try again.",
-				color: "error",
-			});
+			toast.error(e.message || "Network error. Please try again.");
 		} finally {
 			setLoading(false);
 		}
@@ -233,172 +180,106 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 		return Object.values(rules).filter(Boolean).length;
 	}, [newPassword]);
 
-	const renderPasswordField = (
-		label: string,
-		value: string,
-		setValue: (val: string) => void,
-		show: boolean,
-		setShow: (val: boolean) => void,
-		isError?: boolean,
-	) => (
-		<StyledBox>
-			<StyledLabelTypography variant="body2">
-				{label}
-			</StyledLabelTypography>
-			{/* Hidden dummy fields to prevent Chrome autofill */}
-			<StyledInput type="text" autoComplete="off" />
-			<StyledInput type="password" autoComplete="new-password" />
-			<StyledTextField
-				type={show ? "text" : "password"}
-				value={value}
-				onChange={(e) => setValue(e.target.value)}
-				fullWidth
-				margin="normal"
-				error={isError}
-				helperText={
-					isError
-						? label === "New Password" && sameAsCurrent
-							? "New password cannot be the same as current password"
-							: "The passwords do not match"
-						: ""
-				}
-				FormHelperTextProps={{ sx: { marginLeft: 0 } }}
-				InputProps={{
-					startAdornment: (
-						<InputAdornment position="start">
-							<Lock color="#666" size={18} />
-						</InputAdornment>
-					),
-					endAdornment: (
-						<InputAdornment position="end">
-							<IconButton
-								onClick={() => setShow(!show)}
-								edge="end"
-							>
-								{show ? (
-									<Eye size={18} />
-								) : (
-									<EyeOff size={18} />
-								)}
-							</IconButton>
-						</InputAdornment>
-					),
-				}}
-			/>
-		</StyledBox>
-	);
-
-	const renderValidationItem = (label: string, isValid: boolean) => (
-		<StyledValidationMessage variant="body2">
-			<CircleCheck
-				color={isValid ? "green" : "gray"}
-				size={16}
-				style={{ marginRight: "8px" }}
-			/>
-			{label}
-		</StyledValidationMessage>
-	);
+	const getBarColor = (index: number) => {
+		if (index >= rulesPassed) return "#D9D9D9";
+		if (rulesPassed === 5) return "green";
+		if (rulesPassed >= 3) return "orange";
+		return "red";
+	};
 
 	return (
-		<Modal open={open} fullWidth>
-			<StyledModelContent>
-				<StyledModalTitle>
-					<Typography variant="h6">Change Password</Typography>
-				</StyledModalTitle>
-				<StyledTitleTypography variant="body1">
-					Your new password must be different from previously used{" "}
-					<br />
-					passwords.
-				</StyledTitleTypography>
+		<Dialog open={open} onOpenChange={(val) => !val && onCancel()}>
+			<DialogContent className="max-w-md">
+				<DialogHeader>
+					<DialogTitle>Change Password</DialogTitle>
+				</DialogHeader>
 
-				{renderPasswordField(
-					"Current Password",
-					currentPassword,
-					setCurrentPassword,
-					showCurrent,
-					setShowCurrent,
-				)}
-				{renderPasswordField(
-					"New Password",
-					newPassword,
-					setNewPassword,
-					showNew,
-					setShowNew,
-					sameAsCurrent,
-				)}
-				{renderPasswordField(
-					"Confirm New Password",
-					confirmPassword,
-					setConfirmPassword,
-					showConfirm,
-					setShowConfirm,
-					confirmError,
-				)}
+				<div className="flex flex-col gap-4">
+					<p className="text-muted-foreground text-sm">
+						Your new password must be different from previously used
+						passwords.
+					</p>
 
-				{/* Password Strength Indicator */}
-				<StyledDiv>
-					{["length", "upper", "lower", "number", "special"].map(
-						(rule, i) => {
-							let bgColor = "#D9D9D9";
-							if (i < rulesPassed) {
-								if (rulesPassed === 5) bgColor = "green";
-								else if (rulesPassed >= 3) bgColor = "orange";
-								else bgColor = "red";
-							}
-							return (
-								<StyledPasswordIndicator
+					<PasswordField
+						label="Current Password"
+						value={currentPassword}
+						setValue={setCurrentPassword}
+						show={showCurrent}
+						setShow={setShowCurrent}
+					/>
+					<PasswordField
+						label="New Password"
+						value={newPassword}
+						setValue={setNewPassword}
+						show={showNew}
+						setShow={setShowNew}
+						isError={sameAsCurrent}
+						errorMessage="New password cannot be the same as current password"
+					/>
+					<PasswordField
+						label="Confirm New Password"
+						value={confirmPassword}
+						setValue={setConfirmPassword}
+						show={showConfirm}
+						setShow={setShowConfirm}
+						isError={confirmError}
+						errorMessage="The passwords do not match"
+					/>
+
+					{/* Password Strength Indicator */}
+					<div className="flex gap-1 py-2">
+						{["length", "upper", "lower", "number", "special"].map(
+							(rule, i) => (
+								<div
 									key={rule}
-									bgColor={bgColor}
+									className="h-1 flex-1 rounded-full transition-colors duration-300"
+									style={{ backgroundColor: getBarColor(i) }}
 								/>
-							);
-						},
-					)}
-				</StyledDiv>
+							),
+						)}
+					</div>
 
-				{/* Validations */}
-				<StyledValidationBox>
-					<StyledValidationTypography variant="body1">
-						Password must contain:
-					</StyledValidationTypography>
-					{renderValidationItem(
-						"8 or more characters",
-						validations.length,
-					)}
-					{renderValidationItem(
-						"At least 1 uppercase letter",
-						validations.upper,
-					)}
-					{renderValidationItem(
-						"At least 1 lowercase letter",
-						validations.lower,
-					)}
-					{renderValidationItem(
-						"At least 1 number",
-						validations.number,
-					)}
-					{renderValidationItem(
-						"At least 1 special character",
-						validations.special,
-					)}
-				</StyledValidationBox>
-			</StyledModelContent>
+					{/* Validations */}
+					<div>
+						<p className="mb-3 font-medium text-sm">
+							Password must contain:
+						</p>
+						<ValidationItem
+							label="8 or more characters"
+							isValid={validations.length}
+						/>
+						<ValidationItem
+							label="At least 1 uppercase letter"
+							isValid={validations.upper}
+						/>
+						<ValidationItem
+							label="At least 1 lowercase letter"
+							isValid={validations.lower}
+						/>
+						<ValidationItem
+							label="At least 1 number"
+							isValid={validations.number}
+						/>
+						<ValidationItem
+							label="At least 1 special character"
+							isValid={validations.special}
+						/>
+					</div>
+				</div>
 
-			{/* Footer */}
-			<StyledLineBox />
-			<StyledFooterBox>
-				<StyledButton variant="text" size="medium" onClick={onCancel}>
-					Cancel
-				</StyledButton>
-				<Button
-					disabled={!allValid || loading}
-					variant="contained"
-					size="medium"
-					onClick={onChangePassword}
-					loading={loading}
-				>
-					Change Password
-				</Button>
-			</StyledFooterBox>
-		</Modal>
+				<Separator />
+				<DialogFooter>
+					<Button variant="ghost" onClick={onCancel}>
+						Cancel
+					</Button>
+					<Button
+						disabled={!allValid || loading}
+						onClick={onChangePassword}
+					>
+						{loading ? "Changing..." : "Change Password"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };

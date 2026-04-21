@@ -1,6 +1,6 @@
 //Drag and Drop Data
 
-import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
+import { Terminal } from "lucide-react";
 //Add Storage
 import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
 //Connect to an External Database
@@ -10095,7 +10095,7 @@ export const SIDEBAR_MENU = {
 			icon: {
 				default: NOTEBOOK,
 				active: NOTEBOOK_SELECTED,
-				component: TerminalRoundedIcon,
+				component: Terminal,
 				tooltip: "Terminal",
 			},
 		},

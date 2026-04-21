@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { LoadingScreen } from "@semoss/ui";
+import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { AuditLogsDashboard } from "./AuditLogsDashboard";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
@@ -27,7 +27,11 @@ export const Router = observer(() => {
 
 	// don't load anything if it is pending
 	if (configStore.store.status === "INITIALIZING") {
-		return <LoadingScreen.Trigger message={"Initializing"} />;
+		return (
+			<div className="flex h-screen w-screen items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	const showCookieNotice = !!configStore.theme.cookiePolicyNoticePage;

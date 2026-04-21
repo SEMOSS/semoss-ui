@@ -1,5 +1,11 @@
-import { DataGrid } from "@mui/x-data-grid";
-import { CalendarIcon, Search, X } from "lucide-react";
+import {
+	CalendarIcon,
+	ChevronLeft,
+	ChevronRight,
+	Search,
+	X,
+} from "lucide-react";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -49,7 +55,13 @@ export const LLMFeedbackPage = () => {
 
 	const [feedback, setFeedback] = useState<LLMFeedback[]>([]);
 	const [columns, setColumns] = useState<
-		{ field: string; headerName: string; flex: number; minWidth: number }[]
+		{
+			field: string;
+			headerName: string;
+			flex: number;
+			minWidth: number;
+			renderCell?: (params: { value: unknown }) => ReactNode;
+		}[]
 	>([]);
 	const [count, setCount] = useState<number>(0);
 	const [paginationModel, setPaginationModel] = useState({
@@ -124,7 +136,7 @@ export const LLMFeedbackPage = () => {
 						return (
 							<button
 								type="button"
-								className="flex h-full w-full items-center leading-normal text-left"
+								className="flex h-full w-full items-center text-left leading-normal"
 								onClick={() => {
 									setSelectedMessageData(params.value);
 									setOpenMessageModal(true);
@@ -208,7 +220,7 @@ export const LLMFeedbackPage = () => {
 	useEffect(() => {
 		if (getFeedback.status === "SUCCESS") {
 			const dataGridRows = getFeedback.data.map((item, index) => {
-				const { USER_NAME, ...rest } = item;
+				const { USER_NAME: _USER_NAME, ...rest } = item;
 				return {
 					id: index + 1,
 					...rest,
@@ -408,26 +420,123 @@ export const LLMFeedbackPage = () => {
 					</DialogContent>
 				</Dialog>
 			)}
-			<DataGrid
-				rows={feedback}
-				rowCount={count}
-				columns={columns}
-				initialState={{
-					pagination: {
-						paginationModel: { pageSize: 10, page: 0 },
-					},
-					sorting: {
-						sortModel: [{ field: "DATE_CREATED", sort: "desc" }],
-					},
-				}}
-				localeText={{
-					noRowsLabel: "No data to display.",
-				}}
-				paginationMode="server"
-				pageSizeOptions={[10, 25, 50]}
-				paginationModel={paginationModel}
-				onPaginationModelChange={setPaginationModel}
-			/>
+			<div className="mt-4 overflow-auto rounded-md border">
+				<table className="w-full text-sm">
+					<thead className="bg-muted/50">
+						<tr>
+							{columns.map((col) => (
+								<th
+									key={col.field}
+									className="px-3 py-2 text-left font-medium text-muted-foreground"
+									style={{ minWidth: col.minWidth }}
+								>
+									{col.headerName}
+								</th>
+							))}
+						</tr>
+					</thead>
+					<tbody>
+						{feedback.length === 0 ? (
+							<tr>
+								<td
+									colSpan={columns.length}
+									className="py-8 text-center text-muted-foreground"
+								>
+									No data to display.
+								</td>
+							</tr>
+						) : (
+							feedback.map((row) => (
+								<tr
+									key={row.id}
+									className="border-t hover:bg-muted/30"
+								>
+									{columns.map((col) => (
+										<td
+											key={col.field}
+											className="px-3 py-2"
+											style={{ minWidth: col.minWidth }}
+										>
+											{col.renderCell
+												? col.renderCell({
+														value: row[col.field],
+													})
+												: String(row[col.field] ?? "")}
+										</td>
+									))}
+								</tr>
+							))
+						)}
+					</tbody>
+				</table>
+			</div>
+			{/* Pagination */}
+			<div className="mt-2 flex items-center justify-between text-muted-foreground text-sm">
+				<div className="flex items-center gap-2">
+					<span>Rows per page:</span>
+					<Select
+						value={String(paginationModel.pageSize)}
+						onValueChange={(val) =>
+							setPaginationModel({
+								page: 0,
+								pageSize: Number(val),
+							})
+						}
+					>
+						<SelectTrigger className="h-8 w-[70px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{[10, 25, 50].map((size) => (
+								<SelectItem key={size} value={String(size)}>
+									{size}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+				<div className="flex items-center gap-2">
+					<span>
+						{paginationModel.page * paginationModel.pageSize + 1}–
+						{Math.min(
+							(paginationModel.page + 1) *
+								paginationModel.pageSize,
+							count,
+						)}{" "}
+						of {count}
+					</span>
+					<Button
+						variant="outline"
+						size="icon"
+						disabled={paginationModel.page === 0}
+						onClick={() =>
+							setPaginationModel((prev) => ({
+								...prev,
+								page: prev.page - 1,
+							}))
+						}
+					>
+						<ChevronLeft className="size-4" />
+					</Button>
+					<Button
+						variant="outline"
+						size="icon"
+						disabled={
+							(paginationModel.page + 1) *
+								paginationModel.pageSize >=
+							count
+						}
+						onClick={() =>
+							setPaginationModel((prev) => ({
+								...prev,
+								page: prev.page + 1,
+							}))
+						}
+					>
+						<ChevronRight className="size-4" />
+					</Button>
+				</div>
+			</div>
 		</>
 	);
 };

@@ -1,165 +1,10 @@
-import { CheckCircle, Error as ErrorIcon, Info } from "@mui/icons-material";
-import { Alert, Box, styled, Table, Typography } from "@semoss/ui";
+import { CheckCircle2, Info, XCircle } from "lucide-react";
 import {
 	getErrorMessage,
 	hasTabularData,
 	isErrorResponse,
 	type QueryResult,
 } from "./useDatabaseQueryExecution";
-
-// Styled components
-const StyledEmptyStateContainer = styled(Box)(() => ({
-	display: "flex",
-	justifyContent: "center",
-	alignItems: "center",
-	height: "100%",
-	color: "secondary",
-}));
-
-const StyledResultsContainer = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(2),
-}));
-
-const StyledExecutionTimeContainer = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(1),
-	backgroundColor: theme.palette.grey[100],
-	borderRadius: theme.spacing(1),
-	fontSize: "12px",
-}));
-
-const StyledExecutionTimeContainerWithMargin = styled(
-	StyledExecutionTimeContainer,
-)(({ theme }) => ({
-	marginBottom: theme.spacing(2),
-}));
-
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
-	padding: theme.spacing(2),
-	paddingTop: 0,
-	overflow: "auto",
-	width: "100%",
-	height: "100%",
-	minHeight: 0,
-}));
-
-const StyledTable = styled(Table)(() => ({
-	border: "none",
-	display: "table",
-	width: "max-content",
-	minWidth: "100%",
-	tableLayout: "fixed",
-}));
-
-const StyledTableHeader = styled(Table.Head)(() => ({
-	display: "flex",
-	fontWeight: "bold",
-	backgroundColor: "#F5F9FE",
-	color: "#0471F0",
-	borderBottom: "1px solid #e0e0e0",
-	position: "sticky",
-	top: 0,
-	zIndex: 1,
-}));
-
-const StyledHeaderCell = styled(Table.Cell)(() => ({
-	flex: 1,
-	padding: "8px",
-	fontSize: "12px",
-	borderRight: "none",
-	minWidth: "100px",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-	color: "#0471F0",
-	backgroundColor: "#F5F9FE",
-}));
-
-const StyledTableBody = styled(Table.Body)(() => ({}));
-
-const StyledEmptyDataContainer = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(3),
-	textAlign: "center",
-	color: "secondary",
-}));
-
-const StyledTableRow = styled(Table.Row)(({ theme }) => ({
-	display: "flex",
-	borderBottom: "1px solid #e0e0e0",
-	"&:hover": {
-		backgroundColor: theme.palette.grey[50],
-	},
-}));
-
-const StyledDataCell = styled(Table.Cell)(() => ({
-	flex: 1,
-	padding: "8px",
-	fontSize: "12px",
-	borderRight: "none",
-	minWidth: "100px",
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-}));
-
-const StyledOutputContainer = styled(Box)(({ theme }) => ({
-	marginTop: theme.spacing(2),
-}));
-
-const StyledOutputLabel = styled(Typography)(({ theme }) => ({
-	fontWeight: 600,
-	display: "block",
-	marginBottom: theme.spacing(1),
-}));
-
-const StyledOutputContent = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(1),
-	backgroundColor: theme.palette.grey[50],
-	border: "1px solid",
-	borderColor: theme.palette.grey[300],
-	borderRadius: theme.spacing(1),
-	fontSize: "12px",
-	fontFamily: "monospace",
-	whiteSpace: "pre-wrap",
-	maxHeight: "200px",
-	overflow: "auto",
-}));
-
-const StyledPreBlock = styled("pre")(() => ({
-	fontSize: "11px",
-	overflow: "auto",
-	margin: 0,
-	whiteSpace: "pre-wrap",
-	padding: "8px",
-	maxHeight: "150px",
-	backgroundColor: "#f5f5f5",
-	border: "1px solid #ddd",
-	borderRadius: "4px",
-}));
-
-const StyledAlert = styled(Alert)(({ theme }) => ({
-	marginBottom: theme.spacing(2),
-}));
-
-const StyledErrorTypography = styled(Typography)(({ theme }) => ({
-	marginTop: theme.spacing(1),
-	whiteSpace: "pre-wrap",
-}));
-
-const StyledOperationTypography = styled(Typography)(() => ({
-	display: "block",
-}));
-
-const StyledSuccessTypography = styled(Typography)(() => ({
-	fontWeight: 600,
-}));
-
-const StyledInfoTypography = styled(Typography)(() => ({
-	fontWeight: 600,
-}));
-
-const StyledInfoBodyTypography = styled(Typography)(({ theme }) => ({
-	marginTop: theme.spacing(1),
-}));
 
 export function useQueryResults() {
 	const renderResults = (
@@ -169,71 +14,79 @@ export function useQueryResults() {
 	) => {
 		if (!previewData) {
 			return (
-				<StyledEmptyStateContainer>
-					<Typography variant="body2">
+				<div className="flex h-full items-center justify-center">
+					<span className="text-muted-foreground text-sm">
 						Click "RUN" to see query results here
-					</Typography>
-				</StyledEmptyStateContainer>
+					</span>
+				</div>
 			);
 		}
 
 		if (isErrorResponse(previewData)) {
 			const errorMessage = getErrorMessage(previewData);
 			return (
-				<StyledResultsContainer>
-					<StyledAlert severity="error" icon={<ErrorIcon />}>
-						<StyledSuccessTypography variant="subtitle2">
-							Query Error
-						</StyledSuccessTypography>
-						<StyledErrorTypography variant="body2">
-							{errorMessage}
-						</StyledErrorTypography>
-					</StyledAlert>
-				</StyledResultsContainer>
+				<div className="p-4">
+					<div className="mb-4 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive">
+						<XCircle className="mt-0.5 size-4 shrink-0" />
+						<div>
+							<p className="font-semibold text-sm">Query Error</p>
+							<p className="mt-1 whitespace-pre-wrap text-sm">
+								{errorMessage}
+							</p>
+						</div>
+					</div>
+				</div>
 			);
 		}
 
 		if (previewData.queryType && previewData.queryType !== "SELECT") {
 			const isSuccess = previewData.isSuccess !== false;
-
 			return (
-				<StyledResultsContainer>
-					<StyledAlert
-						severity={isSuccess ? "success" : "warning"}
-						icon={isSuccess ? <CheckCircle /> : <Info />}
+				<div className="p-4">
+					<div
+						className={`mb-4 flex items-start gap-2 rounded-md border p-3 ${
+							isSuccess
+								? "border-green-300 bg-green-50 text-green-700"
+								: "border-yellow-300 bg-yellow-50 text-yellow-700"
+						}`}
 					>
-						<StyledSuccessTypography variant="subtitle2">
+						{isSuccess ? (
+							<CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+						) : (
+							<Info className="mt-0.5 size-4 shrink-0" />
+						)}
+						<p className="font-semibold text-sm">
 							{isSuccess
-								? `Statement Executed`
-								: `Statement Completed`}
-						</StyledSuccessTypography>
-					</StyledAlert>
+								? "Statement Executed"
+								: "Statement Completed"}
+						</p>
+					</div>
 
-					<StyledExecutionTimeContainerWithMargin>
-						<Typography variant="caption">
+					<div className="mb-4 rounded-md bg-muted/50 p-2 text-xs">
+						<span>
 							Execution time: {previewData.timeToRun || 0}ms
-						</Typography>
+						</span>
 						{previewData.queryText && (
-							<StyledOperationTypography variant="caption">
+							<span className="block">
 								Query: {previewData.queryText}
-							</StyledOperationTypography>
+							</span>
 						)}
 						{previewData.operationType && (
-							<StyledOperationTypography variant="caption">
+							<span className="block">
 								Operation:{" "}
 								{Array.isArray(previewData.operationType)
 									? previewData.operationType.join(", ")
 									: previewData.operationType}
-							</StyledOperationTypography>
+							</span>
 						)}
-					</StyledExecutionTimeContainerWithMargin>
+					</div>
 
 					{previewData.output && (
-						<StyledOutputContainer>
-							<StyledOutputLabel variant="caption">
+						<div className="mt-2">
+							<span className="mb-1 block font-semibold text-xs">
 								Database Response:
-							</StyledOutputLabel>
-							<StyledOutputContent>
+							</span>
+							<div className="max-h-[200px] overflow-auto whitespace-pre-wrap rounded-md border bg-muted/50 p-2 font-mono text-xs">
 								{typeof previewData.output === "string"
 									? previewData.output
 									: JSON.stringify(
@@ -241,10 +94,10 @@ export function useQueryResults() {
 											null,
 											2,
 										)}
-							</StyledOutputContent>
-						</StyledOutputContainer>
+							</div>
+						</div>
 					)}
-				</StyledResultsContainer>
+				</div>
 			);
 		}
 
@@ -256,32 +109,44 @@ export function useQueryResults() {
 			);
 
 			return (
-				<StyledTableContainer data-testid="query-results-table-container">
-					<StyledTable
+				<div
+					className="h-full w-full overflow-auto p-4 pt-0"
+					data-testid="query-results-table-container"
+				>
+					<table
+						className="border-none text-left"
+						style={{ width: "max-content", minWidth: "100%" }}
 						aria-label="sticky table"
 						data-testid="query-results-table"
 					>
 						{headers.length > 0 && (
-							<StyledTableHeader>
-								{headers.map((header: string) => (
-									<StyledHeaderCell key={`header-${header}`}>
-										{header}
-									</StyledHeaderCell>
-								))}
-							</StyledTableHeader>
+							<thead className="sticky top-0 z-[1] border-[#e0e0e0] border-b bg-[#F5F9FE]">
+								<tr>
+									{headers.map((header: string) => (
+										<th
+											key={`header-${header}`}
+											className="min-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap bg-[#F5F9FE] p-2 font-bold text-[#0471F0] text-xs"
+										>
+											{header}
+										</th>
+									))}
+								</tr>
+							</thead>
 						)}
-
 						{values && (
-							<StyledTableBody data-testid="query-results-table-body">
+							<tbody data-testid="query-results-table-body">
 								{values.length === 0 ? (
-									<StyledEmptyDataContainer>
-										<Typography variant="body2">
+									<tr>
+										<td
+											colSpan={headers.length}
+											className="p-6 text-center text-muted-foreground text-sm"
+										>
 											No data returned
-										</Typography>
-									</StyledEmptyDataContainer>
+										</td>
+									</tr>
 								) : (
 									values.map((row: unknown[]) => (
-										<StyledTableRow
+										<tr
 											key={`row-${headers
 												.map((header, columnIndex) => {
 													const cell =
@@ -289,6 +154,7 @@ export function useQueryResults() {
 													return `${header}:${String(cell ?? "(null)")}`;
 												})
 												.join("|")}`}
+											className="border-[#e0e0e0] border-b hover:bg-muted/50"
 										>
 											{headers.map(
 												(
@@ -298,63 +164,63 @@ export function useQueryResults() {
 													const cell =
 														row[columnIndex];
 													return (
-														<StyledDataCell
+														<td
 															key={`${header}-${String(cell ?? "(null)")}`}
+															className="min-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap p-2 text-xs"
 														>
 															{cell !== null &&
 															cell !== undefined
 																? String(cell)
 																: "(null)"}
-														</StyledDataCell>
+														</td>
 													);
 												},
 											)}
-										</StyledTableRow>
+										</tr>
 									))
 								)}
-							</StyledTableBody>
+							</tbody>
 						)}
-					</StyledTable>
-				</StyledTableContainer>
+					</table>
+				</div>
 			);
 		}
 
 		return (
-			<StyledResultsContainer>
-				<StyledAlert severity="info" icon={<Info />}>
-					<StyledInfoTypography variant="subtitle2">
-						Query Executed
-					</StyledInfoTypography>
-					<StyledInfoBodyTypography variant="body2">
-						The query was executed successfully but returned no
-						tabular data
-					</StyledInfoBodyTypography>
-				</StyledAlert>
+			<div className="p-4">
+				<div className="mb-4 flex items-start gap-2 rounded-md border border-blue-300 bg-blue-50 p-3 text-blue-700">
+					<Info className="mt-0.5 size-4 shrink-0" />
+					<div>
+						<p className="font-semibold text-sm">Query Executed</p>
+						<p className="mt-1 text-sm">
+							The query was executed successfully but returned no
+							tabular data
+						</p>
+					</div>
+				</div>
 
-				<StyledExecutionTimeContainer>
-					<Typography variant="caption">
-						Execution time: {previewData.timeToRun || 0}ms
-					</Typography>
+				<div className="rounded-md bg-muted/50 p-2 text-xs">
+					<span>Execution time: {previewData.timeToRun || 0}ms</span>
 					{previewData.queryText && (
-						<StyledOperationTypography variant="caption">
+						<span className="block">
 							Query: {previewData.queryText}
-						</StyledOperationTypography>
+						</span>
 					)}
-				</StyledExecutionTimeContainer>
+				</div>
 
 				{previewData.output && (
-					<StyledOutputContainer>
-						<StyledOutputLabel variant="caption">
+					<div className="mt-2">
+						<span className="mb-1 block font-semibold text-xs">
 							Raw Output:
-						</StyledOutputLabel>
-						<StyledPreBlock>
+						</span>
+						<pre className="max-h-[150px] overflow-auto whitespace-pre-wrap rounded border border-[#ddd] bg-[#f5f5f5] p-2 text-[11px]">
 							{typeof previewData.output === "string"
 								? previewData.output
 								: JSON.stringify(previewData.output, null, 2)}
-						</StyledPreBlock>
-					</StyledOutputContainer>
+						</pre>
+					</div>
 				)}
-			</StyledResultsContainer>
+			</div>
 		);
 	};
 

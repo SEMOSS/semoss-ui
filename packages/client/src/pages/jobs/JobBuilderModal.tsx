@@ -1,17 +1,29 @@
-import { Close } from "@mui/icons-material";
+import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
-	Autocomplete,
 	Button,
-	IconButton,
-	Modal,
-	Stack,
-	TextField,
-	ToggleButton,
-	ToggleButtonGroup,
-	useNotification,
-} from "@semoss/ui";
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Spinner,
+	ToggleGroup,
+	ToggleGroupItem,
+	toast,
+} from "@semoss/ui/next";
 import {
 	hasValidDays,
 	hasValidHours,
@@ -54,7 +66,6 @@ export const JobBuilderModal = (props: {
 	jobs: Job[];
 }) => {
 	const { isOpen, close, getJobs, initialBuilder, jobs } = props;
-	const notification = useNotification();
 
 	const [frequencyType, setFrequencyType] = useState<"custom" | "standard">(
 		"standard",
@@ -64,23 +75,16 @@ export const JobBuilderModal = (props: {
 	const [cronExpression, setCronExpression] = useState<string>(
 		emptyBuilder.cronExpression,
 	);
+	const [tzOpen, setTzOpen] = useState(false);
+
 	const setBuilderField = (field: string, value: string | string[]) => {
-		setBuilder((previousBuilder) => ({
-			...previousBuilder,
-			[field]: value,
-		}));
+		setBuilder((prev) => ({ ...prev, [field]: value }));
 	};
 
-	const isEditMode = useMemo(() => {
-		return !!builder.id;
-	}, [builder.id]);
+	const isEditMode = useMemo(() => !!builder.id, [builder.id]);
 
 	const isDuplicateName: boolean = useMemo(() => {
-		if (!builder.name.trim()) {
-			return false;
-		}
-		// Check if job name exists in the jobs list
-		// If in edit mode, exclude the current job being edited
+		if (!builder.name.trim()) return false;
 		return jobs.some(
 			(job) =>
 				job.name.toLowerCase() === builder.name.toLowerCase() &&
@@ -88,68 +92,40 @@ export const JobBuilderModal = (props: {
 		);
 	}, [builder.name, jobs, isEditMode, builder.id]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - keyed on builder id
 	useEffect(() => {
 		const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
 		setBuilder(builderToSet);
 		setCronExpression(builderToSet.cronExpression);
 		const cronValues = builderToSet.cronExpression.split(" ");
-		if (cronValues.length < 6) {
-			// invalid cron syntax, send to standard builder
-			setFrequencyType("standard");
-			return;
-		} else if (
-			isNaN(Number(cronValues[1])) ||
-			isNaN(Number(cronValues[2]))
-		) {
-			// non-integer time values, must be custom
-			setFrequencyType("custom");
-			return;
-		}
-
 		if (
-			cronValues[3] === "*" &&
-			cronValues[4] === "*" &&
-			cronValues[5] === "*"
+			cronValues.length < 6 ||
+			Number.isNaN(Number(cronValues[1])) ||
+			Number.isNaN(Number(cronValues[2]))
 		) {
-			setFrequencyType("standard");
-			return;
-		} else if (cronValues[3] === "*" && cronValues[4] === "*") {
-			setFrequencyType("standard");
-			return;
-		} else if (cronValues[4] === "*" && cronValues[5] === "*") {
-			setFrequencyType("standard");
-			return;
-		} else if (cronValues[5] === "*") {
-			setFrequencyType("standard");
-			return;
-		} else {
-			setFrequencyType("custom");
+			setFrequencyType(cronValues.length < 6 ? "standard" : "custom");
 			return;
 		}
+		const isStandard =
+			(cronValues[3] === "*" &&
+				cronValues[4] === "*" &&
+				cronValues[5] === "*") ||
+			(cronValues[3] === "*" && cronValues[4] === "*") ||
+			(cronValues[4] === "*" && cronValues[5] === "*") ||
+			cronValues[5] === "*";
+		setFrequencyType(isStandard ? "standard" : "custom");
 	}, [initialBuilder ? initialBuilder.id : null]);
 
 	const isCronExpressionValid: boolean = useMemo(() => {
 		const cronValues = builder.cronExpression.split(" ");
-		if (cronValues.length < 6) {
-			// make sure it's valid cron syntax
-			return false;
-		}
-		if (hasValidMinutes(cronValues[1]).error) {
-			return false;
-		}
-		if (hasValidHours(cronValues[2]).error) {
-			return false;
-		}
-		if (hasValidDays(cronValues[3]).error) {
-			return false;
-		}
-		if (hasValidMonths(cronValues[4]).error) {
-			return false;
-		}
-		if (hasValidWeekdays(cronValues[5]).error) {
-			return false;
-		}
-		return true;
+		if (cronValues.length < 6) return false;
+		return (
+			!hasValidMinutes(cronValues[1]).error &&
+			!hasValidHours(cronValues[2]).error &&
+			!hasValidDays(cronValues[3]).error &&
+			!hasValidMonths(cronValues[4]).error &&
+			!hasValidWeekdays(cronValues[5]).error
+		);
 	}, [builder.cronExpression]);
 
 	const isBaseFormValid: boolean = useMemo(() => {
@@ -170,6 +146,8 @@ export const JobBuilderModal = (props: {
 				);
 			case JobTypeCustomJob:
 				return !!builder.name && !!builder.pixel && !!builder.cronTz;
+			default:
+				return false;
 		}
 	}, [
 		builder.name,
@@ -186,11 +164,9 @@ export const JobBuilderModal = (props: {
 		builder.password,
 	]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - initialBuilder is stable ref
 	const hasChanges: boolean = useMemo(() => {
-		if (builder.id == null) {
-			return true;
-		}
-
+		if (builder.id == null) return true;
 		return (
 			builder.name !== initialBuilder.name ||
 			builder.pixel !== initialBuilder.pixel ||
@@ -237,28 +213,18 @@ export const JobBuilderModal = (props: {
 					builder.tags.length
 						? ` jobTags=${JSON.stringify(builder.tags)},`
 						: ""
-				} jobGroup=["defaultGroup"], cronExpression=["${
-					builder.cronExpression
-				}"], cronTz=["${
+				} jobGroup=["defaultGroup"], cronExpression=["${builder.cronExpression}"], cronTz=["${
 					builder.cronTz
 				}"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${
 					builder.jobType
-				}","jobName":"${builder.name}", "cronExpression":"${
-					builder.cronExpression
-				}","cronTimeZone":"${builder.cronTz}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+				}","jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}","cronTimeZone":"${
+					builder.cronTz
+				}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
-			if (response.errors.length) {
-				throw new Error(response.errors[0]);
-			}
-			notification.add({
-				color: "success",
-				message: "Job added successfully",
-			});
+			if (response.errors.length) throw new Error(response.errors[0]);
+			toast.success("Job added successfully");
 		} catch {
-			notification.add({
-				color: "error",
-				message: "Unable to add job",
-			});
+			toast.error("Unable to add job");
 		}
 		getJobs();
 		closeModal();
@@ -273,9 +239,7 @@ export const JobBuilderModal = (props: {
 				? `${builder.cronExpression} *`
 				: builder.cronExpression;
 		await runPixel(
-			`META|EditScheduledJob(jobId="${builder.id}",jobName="${
-				builder.name
-			}",${
+			`META|EditScheduledJob(jobId="${builder.id}",jobName="${builder.name}",${
 				builder.tags.length
 					? `jobTags=${JSON.stringify(builder.tags)},`
 					: ""
@@ -283,9 +247,7 @@ export const JobBuilderModal = (props: {
 				builder.cronTz
 			}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${
 				builder.jobType
-			}", "jobName":"${builder.name}", "cronExpression":"${
-				cronExpr
-			}", "cronTimeZone":"${
+			}", "jobName":"${builder.name}", "cronExpression":"${cronExpr}", "cronTimeZone":"${
 				builder.cronTz
 			}"}',triggerOnLoad=[false],triggerNow=[false]);`,
 		);
@@ -300,78 +262,107 @@ export const JobBuilderModal = (props: {
 	};
 
 	return (
-		<Modal open={isOpen} maxWidth="md" fullWidth>
-			<Modal.Title>
-				<Stack
-					direction="row"
-					justifyContent="space-between"
-					alignItems="center"
-				>
-					<span>{isEditMode ? "Edit" : "Add"} Job</span>
-					<IconButton
-						aria-label="close"
-						onClick={closeModal}
-						data-testid={"jobBuilder-close-btn"}
-					>
-						<Close />
-					</IconButton>
-				</Stack>
-			</Modal.Title>
-			<Modal.Content>
-				<Stack spacing={2} paddingTop={1}>
-					<TextField
-						label="Name"
-						size="small"
-						value={builder.name}
-						onChange={(e) =>
-							setBuilderField("name", e.target.value)
-						}
-						error={isDuplicateName}
-						helperText={
-							isDuplicateName
-								? "A job with this name already exists"
-								: ""
-						}
-					/>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
+			<DialogContent className="max-w-2xl">
+				<DialogHeader>
+					<DialogTitle className="flex items-center justify-between">
+						<span>{isEditMode ? "Edit" : "Add"} Job</span>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={closeModal}
+							data-testid={"jobBuilder-close-btn"}
+						>
+							<X className="size-4" />
+						</Button>
+					</DialogTitle>
+				</DialogHeader>
+				<div className="flex flex-col gap-4 pt-1">
+					<div className="flex flex-col gap-1">
+						<Label className="text-xs">Name</Label>
+						<Input
+							value={builder.name}
+							onChange={(e) =>
+								setBuilderField("name", e.target.value)
+							}
+							className={
+								isDuplicateName ? "border-destructive" : ""
+							}
+						/>
+						{isDuplicateName && (
+							<p className="text-destructive text-xs">
+								A job with this name already exists
+							</p>
+						)}
+					</div>
 					<JobTypesBuilder
 						builder={builder}
 						setBuilderField={setBuilderField}
 					/>
-					<ToggleButtonGroup value={frequencyType} size="small">
-						<ToggleButton
+					<ToggleGroup
+						type="single"
+						value={frequencyType}
+						onValueChange={(val) =>
+							val &&
+							setFrequencyType(val as "custom" | "standard")
+						}
+						variant="outline"
+					>
+						<ToggleGroupItem
 							value="standard"
-							onClick={() => setFrequencyType("standard")}
 							data-testid={"jobBuilder-standard-btn"}
 						>
 							Standard
-						</ToggleButton>
-						<ToggleButton
+						</ToggleGroupItem>
+						<ToggleGroupItem
 							value="custom"
-							onClick={() => setFrequencyType("custom")}
 							data-testid={"jobBuilder-custom-btn"}
 						>
 							Custom
-						</ToggleButton>
-					</ToggleButtonGroup>
-					<Autocomplete
-						multiple={false}
-						value={builder.cronTz}
-						options={timezones}
-						onChange={(_, value) =>
-							setBuilderField("cronTz", value)
-						}
-						size="small"
-						getOptionLabel={(option: string) =>
-							option.replaceAll("_", " ")
-						}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								variant="outlined"
-								label="Timezone"
-							/>
-						)}
-					/>
+						</ToggleGroupItem>
+					</ToggleGroup>
+					<div className="flex flex-col gap-1">
+						<Label className="text-xs">Timezone</Label>
+						<Popover open={tzOpen} onOpenChange={setTzOpen}>
+							<PopoverTrigger asChild>
+								<Button
+									variant="outline"
+									className="w-full justify-start font-normal"
+								>
+									{builder.cronTz
+										? builder.cronTz.replaceAll("_", " ")
+										: "Select timezone..."}
+								</Button>
+							</PopoverTrigger>
+							<PopoverContent className="w-[300px] p-0">
+								<Command>
+									<CommandInput placeholder="Search timezone..." />
+									<CommandList>
+										<CommandEmpty>
+											No timezone found.
+										</CommandEmpty>
+										<CommandGroup>
+											{timezones.map((tz) => (
+												<CommandItem
+													key={tz}
+													value={tz}
+													onSelect={() => {
+														setBuilderField(
+															"cronTz",
+															tz,
+														);
+														setTzOpen(false);
+													}}
+												>
+													{tz.replaceAll("_", " ")}
+												</CommandItem>
+											))}
+										</CommandGroup>
+									</CommandList>
+								</Command>
+							</PopoverContent>
+						</Popover>
+					</div>
 					{frequencyType === "standard" ? (
 						<JobStandardFrequencyBuilder
 							cronExpression={cronExpression}
@@ -383,17 +374,11 @@ export const JobBuilderModal = (props: {
 							setBuilderField={setBuilderField}
 						/>
 					)}
-				</Stack>
-			</Modal.Content>
-			<Modal.Actions>
-				<Stack
-					direction="row"
-					spacing={1}
-					paddingX={2}
-					paddingBottom={2}
-				>
+				</div>
+				<DialogFooter>
 					<Button
 						type="button"
+						variant="ghost"
 						disabled={isLoading}
 						onClick={closeModal}
 						data-testid={"jobBuilder-cancel-btn"}
@@ -402,7 +387,6 @@ export const JobBuilderModal = (props: {
 					</Button>
 					<Button
 						type="submit"
-						variant={"contained"}
 						disabled={
 							isLoading ||
 							!isBaseFormValid ||
@@ -410,16 +394,14 @@ export const JobBuilderModal = (props: {
 							!hasChanges ||
 							isDuplicateName
 						}
-						onClick={() => {
-							isEditMode ? updateJob() : addJob();
-						}}
-						loading={isLoading}
+						onClick={() => (isEditMode ? updateJob() : addJob())}
 						data-testid={"jobBuilder-add-save-btn"}
 					>
+						{isLoading && <Spinner className="mr-2 size-4" />}
 						{isEditMode ? "Save" : "Add"}
 					</Button>
-				</Stack>
-			</Modal.Actions>
-		</Modal>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };

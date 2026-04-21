@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
-import { Modal, useNotification } from "@semoss/ui";
+import { Modal } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -141,7 +141,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	);
 	const [pendingRequest, setPendingRequest] = useState(false);
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
@@ -153,15 +152,10 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tab = searchParams.get("tab");
 
-	const emitMessage = useCallback(
-		(isError: boolean, message: string) => {
-			notification.add({
-				color: isError ? "error" : "success",
-				message,
-			});
-		},
-		[notification.add],
-	);
+	const emitMessage = useCallback((isError: boolean, message: string) => {
+		if (isError) toast.error(message);
+		else toast.success(message);
+	}, []);
 	const getPermission = useCallback(async () => {
 		try {
 			const role = await getUserProjectPermission(appId);
@@ -397,6 +391,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		}
 	}, [appId, monolithStore]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: setSearchParams is stable
 	useEffect(() => {
 		if (tab === "accesscontrol") {
 			setSelectedTab("Access Control");

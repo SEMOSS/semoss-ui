@@ -1,29 +1,19 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Search } from "lucide-react";
 import type React from "react";
-import {
-	Suspense,
-	type SyntheticEvent,
-	useEffect,
-	useReducer,
-	useRef,
-	useState,
-} from "react";
+import { Suspense, useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MonacoEditor } from "@semoss/shared";
 import {
-	Accordion,
-	Box,
 	Button,
-	Divider,
-	LoadingScreen,
-	Search,
-	styled,
-	TextField,
-	ToggleTabsGroup,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	Input,
+	Label,
+	Spinner,
+	Tabs,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import dropbox from "../../assets/img/DROPBOX.png";
@@ -55,87 +45,6 @@ const SOCIAL = {
 	},
 };
 
-const StyledConfigurationsOptionsAccordion = styled("div")({
-	display: "flex",
-});
-
-const StyledAccordion = styled(Accordion)({
-	width: "291px",
-});
-
-const StyledBox = styled(Box)({
-	padding: "0px 12px 12px 12px",
-});
-
-const StyledAccordionContent = styled(Accordion.Content)({
-	fontSize: "14px",
-	margin: 0,
-	padding: "12px 16px 16px 16px",
-});
-
-const StyledListButton = styled(Button)(() => ({
-	textTransform: "none",
-	width: "100%",
-	justifyContent: "left",
-}));
-
-const StyledDivider = styled(Divider)({
-	marginBottom: "8px",
-});
-
-const StyledImage = styled("img")({
-	objectFit: "cover",
-	maxHeight: "28px",
-	maxWidth: "28px",
-	verticalAlign: "middle",
-	padding: "4px",
-});
-
-const StyledTitle = styled("div")(({ theme }) => ({
-	marginBottom: theme.spacing(2),
-	display: "flex",
-	justifyContent: "space-between",
-}));
-
-const StyledActionButtonsDiv = styled("div")(() => ({
-	display: "flex",
-	justifyContent: "center",
-	gap: ".5rem",
-}));
-
-const StyledButton = styled(Button)({
-	textTransform: "none",
-	fontWeight: "bold",
-});
-
-const StyledForm = styled("form")(({ theme }) => ({
-	marginLeft: theme.spacing(8),
-	width: "100%",
-}));
-
-const StyledKeyValue = styled("div")(({ theme }) => ({
-	display: "flex",
-	marginBottom: theme.spacing(2),
-}));
-
-const StyledPropContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	marginBottom: theme.spacing(2),
-	padding: "24px",
-	borderRadius: "15px",
-	backgroundColor: "rgba(255, 255, 255, 1)",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)({
-	marginBottom: "16px",
-});
-
-const StyledTextField = styled(TextField)({
-	marginRight: "12px",
-});
-
 const initialState = {
 	socialProps: {},
 };
@@ -165,35 +74,29 @@ export const ConfigurationsPage = () => {
 	const { socialProps } = state;
 
 	const [accordionValue, setAccordionValue] = useState<string>();
-
 	const [authentication, setAuthentication] = useState(
 		Object.keys(socialProps),
 	);
-
-	const [tabValue, setTabValue] = useState(0);
-
+	const [tabValue, setTabValue] = useState("settings");
 	const [authSearch, setAuthSearch] = useState("");
 	const authSearchBarRef = useRef(null);
 
 	const loginProperties = useAPI(["getLoginProperties"]);
 
 	useEffect(() => {
-		// pixel call to get pending members
 		if (loginProperties.status !== "SUCCESS" || !loginProperties.data) {
 			return;
 		}
 
-		// Key is the label for each accordion, the value is an array of fields
 		const formattedProperties = {};
 		Object.entries(loginProperties.data).forEach((pr) => {
-			if (pr[0] === "cac") return; // angular js ui doesn't paint cac
+			if (pr[0] === "cac") return;
 			const fields = [];
 			Object.entries(pr[1]).forEach((prop) => {
 				const fieldMap = {
 					label: prop[0],
 					value: prop[1],
 				};
-
 				fields.push(fieldMap);
 			});
 
@@ -216,14 +119,12 @@ export const ConfigurationsPage = () => {
 	}, [loginProperties.status, loginProperties.data]);
 
 	useEffect(() => {
-		// reset the options if there is no search value
 		if (!authSearch) {
 			setAuthentication(Object.keys(socialProps));
 			return;
 		}
 
 		const cleanedSearch = authSearch.toLowerCase();
-
 		const filtered = authentication.filter((c) => {
 			return c.toLowerCase().includes(cleanedSearch);
 		});
@@ -231,16 +132,16 @@ export const ConfigurationsPage = () => {
 		setAuthentication(filtered);
 	}, [authSearch]);
 
-	// show a loading screen when loginProperties is pending
 	if (loginProperties.status !== "SUCCESS" || !Object.keys(socialProps)) {
 		return (
-			<LoadingScreen.Trigger description="Retrieving social properties" />
+			<div className="flex h-full items-center justify-center gap-2">
+				<Spinner className="size-6" />
+				<span className="text-muted-foreground text-sm">
+					Retrieving social properties
+				</span>
+			</div>
 		);
 	}
-
-	const onTabChange = (_: SyntheticEvent, newValue: number) => {
-		setTabValue(newValue);
-	};
 
 	const updateSocialProps = (
 		fieldName: string,
@@ -250,49 +151,50 @@ export const ConfigurationsPage = () => {
 	) => {
 		const socialPropsCopy = socialProps;
 		socialPropsCopy[fieldName][index].value = value;
-
 		dispatch({
 			type: "field",
 			field: "socialProps",
 			value: socialPropsCopy,
 		});
-		// setSocialProps(socialPropsCopy);
 	};
 
-	/**
-	 * @name resetLoginProperties
-	 * @desc refreshes getLoginProperties
-	 */
 	const resetLoginProperties = () => {
 		loginProperties.refresh();
 	};
 
 	const settingsPage = () => {
 		return Object.keys(socialProps) ? (
-			<StyledConfigurationsOptionsAccordion>
-				<div>
-					<StyledAccordion>
-						<Accordion.Trigger
-							expandIcon={<ChevronDown size={18} />}
+			<div className="flex">
+				{/* Left nav */}
+				<div className="w-[291px] shrink-0">
+					<div className="rounded-md border">
+						<button
+							type="button"
+							className="flex w-full items-center justify-between px-4 py-3 font-medium text-sm"
 						>
-							<Typography variant="body1">
-								Authentication
-							</Typography>
-						</Accordion.Trigger>
-						<StyledBox>
-							<Search
-								size="small"
-								value={authSearch}
-								onChange={(e) => {
-									setAuthSearch(e.target.value);
-								}}
-							/>
-						</StyledBox>
-						{authentication.map((value) => {
-							return (
-								<StyledAccordionContent key={value}>
-									<StyledListButton
-										color="inherit"
+							<span>Authentication</span>
+							<ChevronDown className="size-4" />
+						</button>
+						<div className="border-t px-3 pt-2 pb-3">
+							<div className="relative">
+								<Search className="-translate-y-1/2 absolute top-1/2 left-2 size-4 text-muted-foreground" />
+								<Input
+									ref={authSearchBarRef}
+									className="h-8 pl-8 text-sm"
+									value={authSearch}
+									onChange={(e) =>
+										setAuthSearch(e.target.value)
+									}
+									placeholder="Search..."
+								/>
+							</div>
+						</div>
+						<div className="flex flex-col pb-2">
+							{authentication.map((value) => (
+								<div key={value} className="px-4 py-1 text-sm">
+									<Button
+										variant="ghost"
+										className="w-full justify-start font-normal"
 										onClick={() => {
 											setAccordionValue(value);
 										}}
@@ -300,21 +202,24 @@ export const ConfigurationsPage = () => {
 											`configurationPage-auth-${value}-btn`,
 										)}
 									>
-										<StyledImage
+										<img
 											src={
 												SOCIAL[value]?.image ||
 												SOCIAL.native.image
 											}
+											alt=""
+											className="mr-2 max-h-7 max-w-7 object-cover p-1 align-middle"
 										/>
 										{SOCIAL[value]?.name ||
 											value[0].toUpperCase() +
 												value.slice(1)}
-									</StyledListButton>
-								</StyledAccordionContent>
-							);
-						})}
-					</StyledAccordion>
+									</Button>
+								</div>
+							))}
+						</div>
+					</div>
 				</div>
+				{/* Right panel */}
 				{accordionValue && (
 					<SocialProperty
 						key={authentication.indexOf(accordionValue)}
@@ -322,41 +227,37 @@ export const ConfigurationsPage = () => {
 						fields={socialProps[accordionValue]}
 						updateSocialProps={updateSocialProps}
 						resetLoginProperties={resetLoginProperties}
-					></SocialProperty>
+					/>
 				)}
-			</StyledConfigurationsOptionsAccordion>
+			</div>
 		) : (
-			<div> No socials props</div>
+			<div>No socials props</div>
 		);
 	};
 
 	const fileContentsPage = () => {
 		const defaultTyping = ``;
 		return (
-			<StyledPropContainer>
-				<StyledTitle>
-					<Typography variant="h5">social.properties</Typography>
-
-					<StyledActionButtonsDiv>
-						<StyledButton
-							variant="outlined"
-							data-testid={
-								"configurationPage-social-prop-reset-btn"
-							}
+			<div className="mb-4 flex flex-col rounded-[15px] bg-white p-6 shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+				<div className="mb-2 flex justify-between">
+					<h2 className="font-semibold text-xl">social.properties</h2>
+					<div className="flex justify-center gap-2">
+						<Button
+							variant="outline"
+							className="font-bold"
+							data-testid="configurationPage-social-prop-reset-btn"
 						>
 							Reset
-						</StyledButton>
-						<StyledButton
-							variant="contained"
-							data-testid={
-								"configurationPage-social-prop-save-btn"
-							}
+						</Button>
+						<Button
+							className="font-bold"
+							data-testid="configurationPage-social-prop-save-btn"
 						>
 							Save
-						</StyledButton>
-					</StyledActionButtonsDiv>
-				</StyledTitle>
-				<StyledDivider />
+						</Button>
+					</div>
+				</div>
+				<hr className="mb-2" />
 				<Suspense fallback={<>...</>}>
 					<MonacoEditor
 						height="60vh"
@@ -364,14 +265,14 @@ export const ConfigurationsPage = () => {
 						defaultValue={defaultTyping}
 					/>
 				</Suspense>
-			</StyledPropContainer>
+			</div>
 		);
 	};
 
 	const customTogglePanel = (
 		children: React.ReactNode,
-		index: number,
-		value: number,
+		index: string,
+		value: string,
 	) => {
 		return (
 			<div hidden={value !== index}>
@@ -381,14 +282,18 @@ export const ConfigurationsPage = () => {
 	};
 
 	return (
-		<Box>
-			<StyledToggleTabsGroup value={tabValue} onChange={onTabChange}>
-				<ToggleTabsGroup.Item label="Settings" />
-				<ToggleTabsGroup.Item disabled label="File Contents" />
-			</StyledToggleTabsGroup>
-			{customTogglePanel(settingsPage(), 0, tabValue)}
-			{customTogglePanel(fileContentsPage(), 1, tabValue)}
-		</Box>
+		<div>
+			<Tabs value={tabValue} onValueChange={setTabValue} className="mb-4">
+				<TabsList>
+					<TabsTrigger value="settings">Settings</TabsTrigger>
+					<TabsTrigger value="file-contents" disabled>
+						File Contents
+					</TabsTrigger>
+				</TabsList>
+			</Tabs>
+			{customTogglePanel(settingsPage(), "settings", tabValue)}
+			{customTogglePanel(fileContentsPage(), "file-contents", tabValue)}
+		</div>
 	);
 };
 
@@ -401,81 +306,65 @@ const mapDefaultValues = (vals: FieldProps[]) => {
 
 	return value;
 };
+
 interface FieldProps {
 	label: string;
 	value: string;
 }
-
-// interface PropertyProps {
-//     fieldName: string;
-//     fields: FieldProps[];
-//     onChange: (string, FieldProps) => void;
-// }
 
 const SocialProperty = (props) => {
 	const { fieldName, fields, resetLoginProperties, updateSocialProps } =
 		props;
 
 	const { monolithStore } = useRootStore();
-	const notification = useNotification();
 
-	/**
-	 * @name onSubmit
-	 * @desc changes properties based on updates to social props
-	 * @param data - form data
-	 */
 	const onSubmit = () => {
 		const values = mapDefaultValues(fields);
 		monolithStore.modifyLoginProperties(fieldName, values).then(() => {
-			notification.add({
-				color: "success",
-				message: `Successfully modified ${fieldName} properties`,
-			});
+			toast.success(`Successfully modified ${fieldName} properties`);
 		});
 	};
 
 	return (
-		<StyledForm>
-			<StyledTitle>
-				<Typography variant="h5">
+		<form className="ml-8 w-full">
+			<div className="mb-2 flex justify-between">
+				<h2 className="font-semibold text-xl">
 					{fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}
-				</Typography>
-
-				<StyledActionButtonsDiv>
-					<StyledButton
-						variant="outlined"
-						onClick={() => {
-							resetLoginProperties(fieldName);
-						}}
-						data-testid={"configurationPage-reset-btn"}
+				</h2>
+				<div className="flex justify-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						className="font-bold"
+						onClick={() => resetLoginProperties(fieldName)}
+						data-testid="configurationPage-reset-btn"
 					>
 						Reset
-					</StyledButton>
-					<StyledButton
-						variant="contained"
+					</Button>
+					<Button
+						type="button"
+						className="font-bold"
 						onClick={() => onSubmit()}
-						data-testid={"configurationPage-save-btn"}
+						data-testid="configurationPage-save-btn"
 					>
 						Save
-					</StyledButton>
-				</StyledActionButtonsDiv>
-			</StyledTitle>
-
-			{fields.map((f, i) => {
-				return (
-					<StyledPropContainer key={`${fieldName}-${f.label}`}>
-						<StyledKeyValue>
-							<StyledTextField
-								label="key"
-								value={f.label}
-								variant="outlined"
-								fullWidth
-								disabled={true}
-							/>
-							<TextField
-								label="value"
+					</Button>
+				</div>
+			</div>
+			{fields.map((f, i) => (
+				<div
+					key={`${fieldName}-${f.label}`}
+					className="mb-4 flex flex-col rounded-[15px] bg-white p-6 shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]"
+				>
+					<div className="flex gap-3">
+						<div className="flex flex-1 flex-col gap-1">
+							<Label className="text-xs">Key</Label>
+							<Input className="mr-3" value={f.label} disabled />
+						</div>
+						<div className="flex flex-1 flex-col gap-1">
+							<Label className="text-xs">Value</Label>
+							<Input
 								value={f.value}
-								fullWidth
 								onChange={(e) => {
 									updateSocialProps(
 										fieldName,
@@ -485,10 +374,10 @@ const SocialProperty = (props) => {
 									);
 								}}
 							/>
-						</StyledKeyValue>
-					</StyledPropContainer>
-				);
-			})}
-		</StyledForm>
+						</div>
+					</div>
+				</div>
+			))}
+		</form>
 	);
 };

@@ -1,4 +1,11 @@
-import { Button, Modal, Typography } from "@semoss/ui";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@semoss/ui/next";
 import type { Job } from "./job.types";
 
 export const DeleteJobModal = (props: {
@@ -9,27 +16,26 @@ export const DeleteJobModal = (props: {
 }) => {
 	const { job, isOpen, close, deleteJob } = props;
 	return (
-		<Modal onClose={close} open={isOpen}>
-			<Modal.Content>
-				<Modal.Title>Delete Job</Modal.Title>
-				<Modal.Content>
-					<Typography variant="body1">
-						Are you sure you want to delete
-						{job.length > 1 ? "all selected jobs" : job[0]?.name}?
-						This action is permanent.
-					</Typography>
-				</Modal.Content>
-				<Modal.Actions>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+			<DialogContent>
+				<DialogHeader>
+					<DialogTitle>Delete Job</DialogTitle>
+				</DialogHeader>
+				<p className="text-sm">
+					Are you sure you want to delete{" "}
+					{job.length > 1 ? "all selected jobs" : job[0]?.name}? This
+					action is permanent.
+				</p>
+				<DialogFooter>
 					<Button
-						variant="text"
+						variant="ghost"
 						onClick={close}
 						data-testid={"deleteJobModal-cancel-btn"}
 					>
 						Cancel
 					</Button>
 					<Button
-						variant="contained"
-						color="error"
+						variant="destructive"
 						onClick={() => {
 							deleteJob(
 								job.map((j) => j.id),
@@ -40,8 +46,8 @@ export const DeleteJobModal = (props: {
 					>
 						Delete
 					</Button>
-				</Modal.Actions>
-			</Modal.Content>
-		</Modal>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };

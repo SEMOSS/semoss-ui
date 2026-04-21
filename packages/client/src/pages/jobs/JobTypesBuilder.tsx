@@ -1,4 +1,10 @@
-import { Autocomplete, Stack, TextField } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { JobTypesCustomJobBuilder } from "./JobTypesCustomJobBuilder";
 import { JobTypesSendEmailBuilder } from "./JobTypesSendEmailBuilder";
 import {
@@ -14,18 +20,22 @@ export const JobTypesBuilder = (props: {
 }) => {
 	const { builder, setBuilderField } = props;
 	return (
-		<Stack spacing={2} width="100%">
-			<Autocomplete
-				size="small"
-				multiple={false}
-				options={JobTypeOptions}
+		<div className="flex w-full flex-col gap-4">
+			<Select
 				value={builder.jobType}
-				renderInput={(params) => {
-					return <TextField {...params} label="Job Type" />;
-				}}
-				fullWidth
-				onChange={(_, value) => setBuilderField("jobType", value)}
-			/>
+				onValueChange={(val) => setBuilderField("jobType", val)}
+			>
+				<SelectTrigger className="w-full">
+					<SelectValue placeholder="Job Type" />
+				</SelectTrigger>
+				<SelectContent>
+					{JobTypeOptions.map((opt) => (
+						<SelectItem key={opt} value={opt}>
+							{opt}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
 			{builder.jobType === JobTypeCustomJob && (
 				<JobTypesCustomJobBuilder
 					builder={builder}
@@ -38,6 +48,6 @@ export const JobTypesBuilder = (props: {
 					setBuilderField={setBuilderField}
 				/>
 			)}
-		</Stack>
+		</div>
 	);
 };

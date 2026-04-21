@@ -1,22 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Stack, styled, Typography } from "@semoss/ui";
-import Error from "@/assets/img/Error.svg";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	width: "100vw",
-	height: "100vh",
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-	alignItems: "center",
-	justifyContent: "center",
-}));
-
-const StyledImg = styled("img")(() => ({
-	height: "25%",
-	maxHeight: "200px",
-}));
+import ErrorSvg from "@/assets/img/Error.svg";
 
 /**
  * Component to be rendered in the ErrorBoundary on the NavigatorLayout
@@ -28,8 +12,9 @@ export const ErrorPage = () => {
 	const navigate = useNavigate();
 	const { pathname } = useLocation();
 
-	const isOnHomepage = pathname == "" || pathname == "/";
+	const isOnHomepage = pathname === "" || pathname === "/";
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (!isOnHomepage) {
 			timer.current = setInterval(() => {
@@ -38,6 +23,7 @@ export const ErrorPage = () => {
 		}
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - navigate is stable
 	useEffect(() => {
 		if (countdown < 1) {
 			clearInterval(timer.current);
@@ -46,19 +32,19 @@ export const ErrorPage = () => {
 	}, [countdown]);
 
 	return (
-		<StyledContainer>
-			<StyledImg src={Error} />
-			<Typography variant="h6">Something went wrong!</Typography>
-			<Typography variant="body1">
+		<div className="flex h-screen w-screen flex-col items-center justify-center gap-2">
+			<img src={ErrorSvg} className="h-[25%] max-h-[200px]" alt="Error" />
+			<h2 className="font-semibold text-xl">Something went wrong!</h2>
+			<p className="text-muted-foreground text-sm">
 				We&apos;re working hard to fix it. If the issue persists, please
 				reach out and let us know.
-			</Typography>
+			</p>
 			{!isOnHomepage && (
-				<Typography variant="body1">
+				<p className="text-muted-foreground text-sm">
 					Taking you back to the home page in {countdown} second
-					{countdown == 1 ? "" : "s"}...
-				</Typography>
+					{countdown === 1 ? "" : "s"}...
+				</p>
 			)}
-		</StyledContainer>
+		</div>
 	);
 };

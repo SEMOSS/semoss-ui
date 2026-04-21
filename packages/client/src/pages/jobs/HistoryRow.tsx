@@ -1,26 +1,6 @@
-import { ChevronRight, KeyboardArrowDown } from "@mui/icons-material";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import {
-	Box,
-	Chip,
-	Collapse,
-	IconButton,
-	Stack,
-	styled,
-	Table,
-	Typography,
-} from "@semoss/ui";
-
-const StyledExpandTableCell = styled(Table.Cell)(({ theme }) => ({
-	padding: 0,
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(1),
-	margin: theme.spacing(1),
-	borderRadius: theme.spacing(3),
-	backgroundColor: "#F0F0F0",
-}));
+import { Badge, Button } from "@semoss/ui/next";
 
 export const HistoryRow = (props: {
 	row: {
@@ -36,38 +16,48 @@ export const HistoryRow = (props: {
 
 	return (
 		<>
-			<Table.Row>
-				<Table.Cell>
-					<IconButton
-						size="small"
+			<tr className="border-t hover:bg-muted/30">
+				<td className="px-2 py-1">
+					<Button
+						variant="ghost"
+						size="icon"
+						className="size-7"
 						onClick={() => setOpen(!open)}
 						data-testid={"historyRow-table-toggle-btn"}
 					>
-						{open ? <KeyboardArrowDown /> : <ChevronRight />}
-					</IconButton>
-				</Table.Cell>
-				<Table.Cell>{row.jobName}</Table.Cell>
-				<Table.Cell>{row.execStart}</Table.Cell>
-				<Table.Cell>{row.execDelta}</Table.Cell>
-				<Table.Cell>
-					<Chip
-						label={row.success ? "Success" : "Failed"}
-						avatar={null}
-						variant="filled"
-						color={row.success ? "green" : "red"}
-					/>
-				</Table.Cell>
-			</Table.Row>
-			<Table.Row>
-				<StyledExpandTableCell colSpan={6}>
-					<Collapse in={open} timeout="auto">
-						<Stack padding={2} spacing={2}>
-							<Typography variant="subtitle1">Output:</Typography>
-							<StyledBox>{row.schedulerOutput}</StyledBox>
-						</Stack>
-					</Collapse>
-				</StyledExpandTableCell>
-			</Table.Row>
+						{open ? (
+							<ChevronDown className="size-4" />
+						) : (
+							<ChevronRight className="size-4" />
+						)}
+					</Button>
+				</td>
+				<td className="px-3 py-2 text-sm">{row.jobName}</td>
+				<td className="px-3 py-2 text-sm">{row.execStart}</td>
+				<td className="px-3 py-2 text-sm">{row.execDelta}</td>
+				<td className="px-3 py-2 text-sm">
+					<Badge
+						variant="outline"
+						className={
+							row.success
+								? "border-green-500 text-green-600"
+								: "border-red-500 text-red-600"
+						}
+					>
+						{row.success ? "Success" : "Failed"}
+					</Badge>
+				</td>
+			</tr>
+			{open && (
+				<tr className="border-t bg-muted/20">
+					<td colSpan={5} className="px-4 py-3">
+						<p className="mb-2 font-medium text-sm">Output:</p>
+						<div className="rounded-2xl bg-[#F0F0F0] p-2 text-sm">
+							{row.schedulerOutput}
+						</div>
+					</td>
+				</tr>
+			)}
 		</>
 	);
 };
