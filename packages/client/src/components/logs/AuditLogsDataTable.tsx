@@ -1,207 +1,33 @@
 import {
-	Cancel,
+	XCircle as Cancel,
 	CheckCircle as CheckCircleIcon,
-	Clear as ClearIcon,
-	FilterList as FilterListIcon,
+	ChevronLeft,
+	ChevronRight,
+	X as ClearIcon,
+	Filter as FilterListIcon,
 	Search as SearchIcon,
-} from "@mui/icons-material";
+} from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import {
-	Badge,
-	Box,
 	Button,
 	Checkbox,
-	Drawer,
-	IconButton,
-	InputAdornment,
-	List,
-	Paper,
+	Input,
 	Popover,
-	Stack,
-	styled,
+	PopoverContent,
+	PopoverTrigger,
+	Sheet,
+	SheetContent,
 	Table,
-	TextField,
-	Typography,
-	useTheme,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
 import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 import type { EventData } from "@/types";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
-
-// Styled Components
-const Container = styled(Paper)(({ theme }) => ({
-	padding: 0,
-	backgroundColor: theme.palette.common.white,
-	borderRadius: 8,
-	border: `1px solid ${theme.palette.divider}`,
-	marginTop: 16,
-}));
-
-const Header = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: 16,
-});
-
-const StyledTitle = styled(Typography)(({ theme }) => ({
-	fontWeight: 600,
-	color: theme.palette.text.primary,
-	fontSize: "18px",
-}));
-
-const SearchSection = styled(Box)(({ theme }) => ({
-	padding: "16px",
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	display: "flex",
-	alignItems: "center",
-	gap: "16px",
-	flexWrap: "wrap",
-}));
-
-const SearchField = styled(TextField)(({ theme }) => ({
-	minWidth: "400px",
-	"& .MuiOutlinedInput-root": {
-		backgroundColor: theme.palette.common.white,
-		height: "40px",
-	},
-}));
-
-const ResultsInfo = styled(Box)(({ theme }) => ({
-	padding: "8px 16px",
-	backgroundColor: theme.palette.primary.hover,
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-}));
-
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
-	backgroundColor: theme.palette.common.white,
-	padding: "16px",
-	"& .MuiTable-root": {
-		borderCollapse: "separate",
-		borderSpacing: 0,
-	},
-}));
-
-const StyledTableHead = styled(Table.Head)(({ theme }) => ({
-	"& .MuiTableCell-head": {
-		backgroundColor: theme.palette.primary.hover,
-		fontWeight: 600,
-		color: theme.palette.primary.main,
-		padding: "6px 16px",
-		borderBottom: `1px solid ${theme.palette.divider}`,
-		zIndex: 0,
-	},
-}));
-
-const StyledTableRow = styled(Table.Row)(({ theme }) => ({
-	cursor: "pointer",
-	transition: "background-color 0.15s ease",
-	"&:hover": {
-		backgroundColor: theme.palette.primary.hover,
-	},
-	"& .MuiTableCell-root": {
-		borderBottom: `1px solid ${theme.palette.divider}`,
-		padding: "12px 16px",
-	},
-}));
-
-const StyledTableCell = styled(Table.Cell)(({ theme }) => ({
-	padding: "12px 16px",
-	fontSize: "14px",
-	color: theme.palette.text.primary,
-	verticalAlign: "middle",
-	width: "fit-content",
-	maxWidth: "fit-content",
-	"&:nth-of-type(3), &:nth-of-type(4)": {
-		width: "15%",
-		maxWidth: "15%",
-	},
-}));
-
-const HeaderCellContent = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	width: "100%",
-	gap: "8px",
-});
-
-const FilterPopover = styled(Popover)({
-	"& .MuiPaper-root": {
-		padding: 0,
-		boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-		borderRadius: "8px",
-		border: "1px solid #e0e0e0",
-		minWidth: "250px",
-		maxWidth: "350px",
-	},
-});
-
-const FilterPopoverContent = styled(Box)({
-	maxHeight: "300px",
-	overflowY: "auto",
-});
-
-const FilterOptionsList = styled(List)({
-	padding: 0,
-	margin: 0,
-});
-
-const FilterListItem = styled(List.Item)({
-	padding: 0,
-	margin: 0,
-});
-
-const StyledListItemButton = styled(List.ItemButton)({
-	padding: "8px 16px",
-	borderRadius: 0,
-	margin: 0,
-	display: "flex",
-	alignItems: "center",
-	"&:hover": {
-		backgroundColor: "#f5f5f5",
-	},
-	"& .MuiListItemText-primary": {
-		fontSize: "14px",
-		color: "#333",
-		fontWeight: 400,
-	},
-});
-
-const StyledCheckbox = styled(Checkbox)({
-	"& .MuiSvgIcon-root": {
-		fontSize: "20px",
-	},
-});
-
-const FilterActions = styled(Box)({
-	padding: "12px 16px",
-	borderTop: "1px solid #e0e0e0",
-	backgroundColor: "#fafafa",
-	display: "flex",
-	justifyContent: "space-between",
-	gap: "12px",
-});
-
-const FilterActionButton = styled(Button)({
-	flex: 1,
-	height: "32px",
-	fontSize: "14px",
-	fontWeight: 500,
-	textTransform: "none",
-});
-
-const PaginationContainer = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	alignItems: "center",
-	borderTop: `1px solid ${theme.palette.divider}`,
-	backgroundColor: theme.palette.common.white,
-}));
 
 // Types
 interface FilterState {
@@ -213,7 +39,6 @@ interface FilterState {
 }
 
 interface PopoverState {
-	anchorEl: HTMLElement | null;
 	column: keyof FilterState | null;
 }
 
@@ -245,8 +70,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	rowsPerPage,
 	onPaginationChange,
 }) => {
-	const theme = useTheme();
-
 	// State Management
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
 	const [drawerOpen, setDrawerOpen] = useState(false);
@@ -266,7 +89,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		tokenRange: [],
 	});
 	const [popoverState, setPopoverState] = useState<PopoverState>({
-		anchorEl: null,
 		column: null,
 	});
 
@@ -551,30 +373,23 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	}, [logs, searchQuery, appliedFilters]);
 
 	// Event Handlers
-	const handleFilterClick = useCallback(
-		(event: React.MouseEvent<HTMLElement>, column: keyof FilterState) => {
-			event.stopPropagation();
+	const handleFilterOpen = useCallback(
+		(column: keyof FilterState) => {
 			setTempFilters({ ...appliedFilters });
-			setPopoverState({
-				anchorEl: event.currentTarget,
-				column,
-			});
+			setPopoverState({ column });
 		},
 		[appliedFilters],
 	);
 
 	const handlePopoverClose = useCallback(() => {
-		setPopoverState({
-			anchorEl: null,
-			column: null,
-		});
+		setPopoverState({ column: null });
 		setTempFilters({ ...appliedFilters });
 	}, [appliedFilters]);
 
 	const handleApplyFilters = useCallback(() => {
 		setAppliedFilters({ ...tempFilters });
-		handlePopoverClose();
-	}, [tempFilters, handlePopoverClose]);
+		setPopoverState({ column: null });
+	}, [tempFilters]);
 
 	const handleClearFilterPopover = useCallback(() => {
 		if (popoverState.column) {
@@ -637,15 +452,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	}, []);
 
 	const handleChangePage = useCallback(
-		(_event: unknown, newPage: number) => {
+		(newPage: number) => {
 			onPaginationChange(newPage, rowsPerPage);
 		},
 		[onPaginationChange, rowsPerPage],
 	);
 
 	const handleChangeRowsPerPage = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) => {
-			const newRowsPerPage = parseInt(event.target.value, 10);
+		(value: string) => {
+			const newRowsPerPage = parseInt(value, 10);
 			onPaginationChange(0, newRowsPerPage);
 		},
 		[onPaginationChange],
@@ -685,60 +500,60 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 		return (
 			<>
-				<FilterPopoverContent>
-					<FilterOptionsList>
-						<FilterListItem>
-							<StyledListItemButton
-								onClick={() =>
-									handleSelectAll(column, optionValues)
+				<div className="max-h-[300px] overflow-y-auto">
+					<div>
+						<button
+							type="button"
+							className="flex w-full items-center px-4 py-2 hover:bg-muted/50"
+							onClick={() =>
+								handleSelectAll(column, optionValues)
+							}
+						>
+							<Checkbox
+								checked={
+									allSelected
+										? true
+										: tempFilters[column].length > 0
+											? "indeterminate"
+											: false
 								}
-							>
-								<StyledCheckbox
-									checked={allSelected}
-									checkboxProps={{
-										indeterminate:
-											tempFilters[column].length > 0 &&
-											!allSelected,
-									}}
-								/>
-								<List.ItemText
-									primary="Select All"
-									primaryTypographyProps={{
-										fontSize: "14px",
-										fontWeight: 500,
-									}}
-								/>
-							</StyledListItemButton>
-						</FilterListItem>
+								className="mr-3"
+							/>
+							<span className="text-sm font-medium">
+								Select All
+							</span>
+						</button>
 						{column === "latencyRange" || column === "tokenRange"
 							? (options as FilterOption[]).map((option) => (
-									<FilterListItem key={option.value}>
-										<StyledListItemButton
-											onClick={() =>
-												handleMultiSelectFilter(
-													column,
+									<button
+										type="button"
+										key={option.value}
+										className="flex w-full items-center px-4 py-2 hover:bg-muted/50"
+										onClick={() =>
+											handleMultiSelectFilter(
+												column,
+												option.value,
+											)
+										}
+									>
+										<Checkbox
+											checked={tempFilters[
+												column
+											].includes(option.value)}
+											className="mr-3"
+										/>
+										<span
+											className={`text-sm ${
+												tempFilters[column].includes(
 													option.value,
 												)
-											}
+													? "font-medium"
+													: ""
+											}`}
 										>
-											<StyledCheckbox
-												checked={tempFilters[
-													column
-												].includes(option.value)}
-											/>
-											<List.ItemText
-												primary={option.label}
-												primaryTypographyProps={{
-													fontSize: "14px",
-													fontWeight: tempFilters[
-														column
-													].includes(option.value)
-														? 500
-														: 400,
-												}}
-											/>
-										</StyledListItemButton>
-									</FilterListItem>
+											{option.label}
+										</span>
+									</button>
 								))
 							: (options as string[]).map((value) => {
 									const displayValue =
@@ -749,53 +564,55 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											: value;
 
 									return (
-										<FilterListItem key={value}>
-											<StyledListItemButton
-												onClick={() =>
-													handleMultiSelectFilter(
-														column,
-														value,
-													)
-												}
-											>
-												<StyledCheckbox
-													checked={tempFilters[
+										<button
+											type="button"
+											key={value}
+											className="flex w-full items-center px-4 py-2 hover:bg-muted/50"
+											onClick={() =>
+												handleMultiSelectFilter(
+													column,
+													value,
+												)
+											}
+										>
+											<Checkbox
+												checked={tempFilters[
+													column
+												].includes(value)}
+												className="mr-3"
+											/>
+											<span
+												className={`text-sm ${
+													tempFilters[
 														column
-													].includes(value)}
-												/>
-												<List.ItemText
-													primary={displayValue}
-													primaryTypographyProps={{
-														fontSize: "14px",
-														fontWeight: tempFilters[
-															column
-														].includes(value)
-															? 500
-															: 400,
-													}}
-												/>
-											</StyledListItemButton>
-										</FilterListItem>
+													].includes(value)
+														? "font-medium"
+														: ""
+												}`}
+											>
+												{displayValue}
+											</span>
+										</button>
 									);
 								})}
-					</FilterOptionsList>
-				</FilterPopoverContent>
-				<FilterActions>
-					<FilterActionButton
-						variant="text"
+					</div>
+				</div>
+				<div className="flex justify-between gap-3 border-t bg-muted/30 p-3">
+					<Button
+						variant="ghost"
+						className="flex-1 h-8 text-sm"
 						onClick={handleClearFilterPopover}
-						color="inherit"
 					>
 						Clear
-					</FilterActionButton>
-					<FilterActionButton
-						variant="contained"
+					</Button>
+					<Button
+						variant="default"
+						className="flex-1 h-8 text-sm"
 						onClick={handleApplyFilters}
-						color="primary"
 					>
 						Apply
-					</FilterActionButton>
-				</FilterActions>
+					</Button>
+				</div>
 			</>
 		);
 	}, [
@@ -811,408 +628,483 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	// Empty State
 	if (!logs || logs.length === 0) {
 		return (
-			<Container elevation={1}>
-				<Header>
-					<StyledTitle variant="h6">
+			<div className="mt-4 rounded-lg border bg-white">
+				<div className="flex items-center justify-between p-4">
+					<h6 className="text-lg font-semibold">
 						Prompt & Response Timeline
-					</StyledTitle>
-				</Header>
-				<SearchSection sx={{ justifyContent: "center" }}>
-					<Typography variant="body2" color="textSecondary">
+					</h6>
+				</div>
+				<div className="flex items-center justify-center border-b p-4">
+					<span className="text-sm text-muted-foreground">
 						No logs available.
-					</Typography>
-				</SearchSection>
-			</Container>
+					</span>
+				</div>
+			</div>
 		);
 	}
 
 	return (
 		<>
-			<Container elevation={1}>
-				<Header>
-					<StyledTitle variant="h6">
+			<div className="mt-4 rounded-lg border bg-white">
+				<div className="flex items-center justify-between p-4">
+					<h6 className="text-lg font-semibold">
 						Prompt & Response Timeline
-					</StyledTitle>
-					<Box display="flex" alignItems="center" gap={2}>
+					</h6>
+					<div className="flex items-center gap-2">
 						{totalActiveFilters > 0 && (
 							<Button
-								variant="outlined"
-								// size="small"
+								variant="outline"
 								onClick={handleClearAllFilters}
-								startIcon={<ClearIcon />}
 							>
+								<ClearIcon className="mr-2 h-4 w-4" />
 								Clear Filters
 							</Button>
 						)}
-						<SearchField
-							placeholder="Search logs..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<SearchIcon
-											sx={{
-												color: theme.palette.text
-													.secondary,
+						<div className="relative min-w-[400px]">
+							<SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								placeholder="Search logs..."
+								value={searchQuery}
+								onChange={(e) =>
+									setSearchQuery(e.target.value)
+								}
+								className="h-10 pl-10 pr-10"
+							/>
+							{searchQuery && (
+								<button
+									type="button"
+									className="absolute right-3 top-1/2 -translate-y-1/2"
+									onClick={() => setSearchQuery("")}
+								>
+									<ClearIcon className="h-4 w-4 text-muted-foreground" />
+								</button>
+							)}
+						</div>
+					</div>
+				</div>
+				<div className="bg-white p-4">
+					<Table>
+						<TableHeader>
+							<TableRow>
+								<TableHead>
+									<span className="text-sm font-semibold">
+										User Id
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="text-sm font-semibold">
+										Session Id
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="text-sm font-semibold">
+										Request
+									</span>
+								</TableHead>
+								<TableHead>
+									<span className="text-sm font-semibold">
+										Response
+									</span>
+								</TableHead>
+								<TableHead>
+									<div className="flex items-center gap-1">
+										<span className="text-sm font-semibold">
+											Engine Type
+										</span>
+										<Popover
+											open={
+												popoverState.column ===
+												"engineType"
+											}
+											onOpenChange={(open) => {
+												if (open) {
+													handleFilterOpen(
+														"engineType",
+													);
+												} else {
+													handlePopoverClose();
+												}
 											}}
-										/>
-									</InputAdornment>
-								),
-								endAdornment: searchQuery && (
-									<InputAdornment position="end">
-										<IconButton
-											size="small"
-											onClick={() => setSearchQuery("")}
 										>
-											<ClearIcon fontSize="small" />
-										</IconButton>
-									</InputAdornment>
-								),
-							}}
-						/>
-					</Box>
-				</Header>
-				<StyledTableContainer>
-					<Table stickyHeader>
-						<StyledTableHead>
-							<Table.Row>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											User Id
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Session Id
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Request
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Response
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
-										>
-											<Typography variant="subtitle2">
-												Engine Type
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"engineType",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"engineType",
-													)}
+											<PopoverTrigger asChild>
+												<button
+													type="button"
+													className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50"
 												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
-										>
-											<Typography variant="subtitle2">
-												Engine Name
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
+													<span className="relative inline-flex">
+														<FilterListIcon className="h-5 w-5" />
+														{getActiveFiltersCount(
+															"engineType",
+														) > 0 && (
+															<span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+																{getActiveFiltersCount(
+																	"engineType",
+																)}
+															</span>
+														)}
+													</span>
+												</button>
+											</PopoverTrigger>
+											<PopoverContent
+												align="start"
+												className="min-w-[250px] max-w-[350px] p-0"
+											>
+												{popoverState.column ===
+													"engineType" &&
+													renderFilterPopover()}
+											</PopoverContent>
+										</Popover>
+									</div>
+								</TableHead>
+								<TableHead>
+									<div className="flex items-center gap-1">
+										<span className="text-sm font-semibold">
+											Engine Name
+										</span>
+										<Popover
+											open={
+												popoverState.column ===
+												"engineName"
+											}
+											onOpenChange={(open) => {
+												if (open) {
+													handleFilterOpen(
 														"engineName",
-													)
+													);
+												} else {
+													handlePopoverClose();
 												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"engineName",
-													)}
-												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
+											}}
 										>
-											<Typography variant="subtitle2">
-												Latency
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
+											<PopoverTrigger asChild>
+												<button
+													type="button"
+													className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50"
+												>
+													<span className="relative inline-flex">
+														<FilterListIcon className="h-5 w-5" />
+														{getActiveFiltersCount(
+															"engineName",
+														) > 0 && (
+															<span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+																{getActiveFiltersCount(
+																	"engineName",
+																)}
+															</span>
+														)}
+													</span>
+												</button>
+											</PopoverTrigger>
+											<PopoverContent
+												align="start"
+												className="min-w-[250px] max-w-[350px] p-0"
+											>
+												{popoverState.column ===
+													"engineName" &&
+													renderFilterPopover()}
+											</PopoverContent>
+										</Popover>
+									</div>
+								</TableHead>
+								<TableHead>
+									<div className="flex items-center gap-1">
+										<span className="text-sm font-semibold">
+											Latency
+										</span>
+										<Popover
+											open={
+												popoverState.column ===
+												"latencyRange"
+											}
+											onOpenChange={(open) => {
+												if (open) {
+													handleFilterOpen(
 														"latencyRange",
-													)
+													);
+												} else {
+													handlePopoverClose();
 												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"latencyRange",
-													)}
-												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
+											}}
 										>
-											<Typography variant="subtitle2">
-												Tokens
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"tokenRange",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"tokenRange",
-													)}
+											<PopoverTrigger asChild>
+												<button
+													type="button"
+													className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50"
 												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Timestamp
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
+													<span className="relative inline-flex">
+														<FilterListIcon className="h-5 w-5" />
+														{getActiveFiltersCount(
+															"latencyRange",
+														) > 0 && (
+															<span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+																{getActiveFiltersCount(
+																	"latencyRange",
+																)}
+															</span>
+														)}
+													</span>
+												</button>
+											</PopoverTrigger>
+											<PopoverContent
+												align="start"
+												className="min-w-[250px] max-w-[350px] p-0"
+											>
+												{popoverState.column ===
+													"latencyRange" &&
+													renderFilterPopover()}
+											</PopoverContent>
+										</Popover>
+									</div>
+								</TableHead>
+								<TableHead>
+									<div className="flex items-center gap-1">
+										<span className="text-sm font-semibold">
+											Tokens
+										</span>
+										<Popover
+											open={
+												popoverState.column ===
+												"tokenRange"
+											}
+											onOpenChange={(open) => {
+												if (open) {
+													handleFilterOpen(
+														"tokenRange",
+													);
+												} else {
+													handlePopoverClose();
+												}
+											}}
 										>
-											<Typography variant="subtitle2">
-												Status
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"status",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"status",
-													)}
+											<PopoverTrigger asChild>
+												<button
+													type="button"
+													className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50"
 												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-							</Table.Row>
-						</StyledTableHead>
-						<Table.Body>
+													<span className="relative inline-flex">
+														<FilterListIcon className="h-5 w-5" />
+														{getActiveFiltersCount(
+															"tokenRange",
+														) > 0 && (
+															<span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+																{getActiveFiltersCount(
+																	"tokenRange",
+																)}
+															</span>
+														)}
+													</span>
+												</button>
+											</PopoverTrigger>
+											<PopoverContent
+												align="start"
+												className="min-w-[250px] max-w-[350px] p-0"
+											>
+												{popoverState.column ===
+													"tokenRange" &&
+													renderFilterPopover()}
+											</PopoverContent>
+										</Popover>
+									</div>
+								</TableHead>
+								<TableHead>
+									<span className="text-sm font-semibold">
+										Timestamp
+									</span>
+								</TableHead>
+								<TableHead>
+									<div className="flex items-center gap-1">
+										<span className="text-sm font-semibold">
+											Status
+										</span>
+										<Popover
+											open={
+												popoverState.column ===
+												"status"
+											}
+											onOpenChange={(open) => {
+												if (open) {
+													handleFilterOpen("status");
+												} else {
+													handlePopoverClose();
+												}
+											}}
+										>
+											<PopoverTrigger asChild>
+												<button
+													type="button"
+													className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50"
+												>
+													<span className="relative inline-flex">
+														<FilterListIcon className="h-5 w-5" />
+														{getActiveFiltersCount(
+															"status",
+														) > 0 && (
+															<span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+																{getActiveFiltersCount(
+																	"status",
+																)}
+															</span>
+														)}
+													</span>
+												</button>
+											</PopoverTrigger>
+											<PopoverContent
+												align="start"
+												className="min-w-[250px] max-w-[350px] p-0"
+											>
+												{popoverState.column ===
+													"status" &&
+													renderFilterPopover()}
+											</PopoverContent>
+										</Popover>
+									</div>
+								</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
 							{filteredLogs.map((event, index) => (
-								<StyledTableRow
+								<TableRow
 									key={`Log-${event.endTime}-${index}`}
 									data-testid={`log-row-${index}`}
+									className="cursor-pointer"
 									onClick={() => handleRowClick(event)}
 								>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
-											title={event.userId}
-										>
+									<TableCell className="text-sm">
+										<span title={event.userId}>
 											{ellipsed(event.userId, 23)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
-											title={event.sessionId}
-										>
+										</span>
+									</TableCell>
+									<TableCell className="text-sm">
+										<span title={event.sessionId}>
 											{ellipsed(event.sessionId, 23)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
-											title={event.request}
-										>
+										</span>
+									</TableCell>
+									<TableCell className="max-w-[15%] text-sm">
+										<span title={event.request}>
 											{ellipsed(event.request)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
-											title={event.response}
-										>
+										</span>
+									</TableCell>
+									<TableCell className="max-w-[15%] text-sm">
+										<span title={event.response}>
 											{ellipsed(event.response)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
-											{event.engineType}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
-											{event.engineName}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
-											{event.latency}ms
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
-											{event.tokens}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="caption">
-											{`${TimeDateFormatter(event.startTime).time} - ${
-												TimeDateFormatter(event.endTime)
-													.time
-											}`}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell align="center">
+										</span>
+									</TableCell>
+									<TableCell className="text-sm">
+										{event.engineType}
+									</TableCell>
+									<TableCell className="text-sm">
+										{event.engineName}
+									</TableCell>
+									<TableCell className="text-sm">
+										{event.latency}ms
+									</TableCell>
+									<TableCell className="text-sm">
+										{event.tokens}
+									</TableCell>
+									<TableCell className="text-xs">
+										{`${TimeDateFormatter(event.startTime).time} - ${
+											TimeDateFormatter(event.endTime)
+												.time
+										}`}
+									</TableCell>
+									<TableCell className="text-center">
 										{event.status ? (
-											<CheckCircleIcon color="success" />
+											<CheckCircleIcon className="text-green-600" />
 										) : (
-											<Cancel color="error" />
+											<Cancel className="text-red-600" />
 										)}
-									</StyledTableCell>
-								</StyledTableRow>
+									</TableCell>
+								</TableRow>
 							))}
-						</Table.Body>
+						</TableBody>
 					</Table>
-				</StyledTableContainer>
+				</div>
 
-				<PaginationContainer>
-					<Table.Pagination
-						count={totalCount}
-						page={page}
-						onPageChange={handleChangePage}
-						rowsPerPage={rowsPerPage}
-						onRowsPerPageChange={handleChangeRowsPerPage}
-						rowsPerPageOptions={[5, 10, 25, 50]}
-						disabled={totalActiveFilters > 0}
-					/>
-				</PaginationContainer>
-			</Container>
+				<div className="flex items-center justify-end border-t bg-white px-4 py-2">
+					<div className="flex items-center gap-4">
+						<div className="flex items-center gap-2 text-sm">
+							<span>Rows per page:</span>
+							<select
+								value={rowsPerPage}
+								onChange={(e) =>
+									handleChangeRowsPerPage(e.target.value)
+								}
+								className="h-8 rounded border px-2 text-sm"
+								disabled={totalActiveFilters > 0}
+							>
+								{[5, 10, 25, 50].map((option) => (
+									<option key={option} value={option}>
+										{option}
+									</option>
+								))}
+							</select>
+						</div>
+						<span className="text-sm text-muted-foreground">
+							{page * rowsPerPage + 1}–
+							{Math.min(
+								(page + 1) * rowsPerPage,
+								totalCount,
+							)}{" "}
+							of {totalCount}
+						</span>
+						<div className="flex gap-1">
+							<button
+								type="button"
+								className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50 disabled:opacity-50"
+								disabled={
+									page === 0 || totalActiveFilters > 0
+								}
+								onClick={() => handleChangePage(page - 1)}
+							>
+								<ChevronLeft className="h-5 w-5" />
+							</button>
+							<button
+								type="button"
+								className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50 disabled:opacity-50"
+								disabled={
+									(page + 1) * rowsPerPage >= totalCount ||
+									totalActiveFilters > 0
+								}
+								onClick={() => handleChangePage(page + 1)}
+							>
+								<ChevronRight className="h-5 w-5" />
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
 
-			<ResultsInfo>
-				<Typography variant="body2" color="textSecondary">
+			<div className="flex items-center justify-between border-b bg-accent/50 px-4 py-2">
+				<span className="text-sm text-muted-foreground">
 					Showing {filteredLogs.length} of {totalCount} results
 					{totalActiveFilters > 0 &&
 						` (${totalActiveFilters} filter${
 							totalActiveFilters > 1 ? "s" : ""
 						} applied)`}
-				</Typography>
+				</span>
 				{filteredLogs.length === 0 && logs.length > 0 && (
-					<Typography variant="body2" color="error">
+					<span className="text-sm text-destructive">
 						No results found. Try adjusting your filters.
-					</Typography>
+					</span>
 				)}
-			</ResultsInfo>
+			</div>
 
-			<FilterPopover
-				id={"filter-popover"}
-				open={Boolean(popoverState.anchorEl)}
-				anchorEl={popoverState.anchorEl}
-				onClose={handlePopoverClose}
-				anchorOrigin={{
-					vertical: "bottom",
-					horizontal: "left",
-				}}
-				transformOrigin={{
-					vertical: "top",
-					horizontal: "left",
-				}}
-			>
-				{renderFilterPopover()}
-			</FilterPopover>
-
-			<Drawer
-				anchor="right"
+			<Sheet
 				open={drawerOpen}
-				onClose={handleDrawerClose}
-				PaperProps={{
-					sx: {
-						borderRadius: "8px",
-					},
-				}}
-				transitionDuration={{
-					enter: 300,
-					exit: 150,
+				onOpenChange={(open) => {
+					if (!open) handleDrawerClose();
 				}}
 			>
-				<AuditLogsDetailDrawer
-					logDetails={selectedEvent}
-					handleDrawerClose={handleDrawerClose}
-				/>
-			</Drawer>
+				<SheetContent
+					side="right"
+					className="w-auto max-w-none p-0 sm:max-w-none"
+				>
+					<AuditLogsDetailDrawer
+						logDetails={selectedEvent}
+						handleDrawerClose={handleDrawerClose}
+					/>
+				</SheetContent>
+			</Sheet>
 		</>
 	);
 };

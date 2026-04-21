@@ -1,18 +1,7 @@
-import {
-	ZoomIn as ZoomInIcon,
-	ZoomOut as ZoomOutIcon,
-} from "@mui/icons-material";
+import { ZoomIn as ZoomInIcon, ZoomOut as ZoomOutIcon } from "lucide-react";
 import * as echarts from "echarts";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-	Box,
-	ButtonGroup,
-	IconButton,
-	Paper,
-	styled,
-	Typography,
-} from "@semoss/ui";
 import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 import type { EventData } from "@/types";
 
@@ -89,66 +78,6 @@ interface RenderItemResult {
 		fill: string;
 	};
 }
-
-// MUI Styled Components
-const Container = styled(Paper)({
-	padding: 0,
-	paddingBottom: 8,
-	backgroundColor: "#ffffff",
-	borderRadius: 8,
-});
-
-const Header = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: 16,
-});
-
-const ChartWrapper = styled("div")(({ theme }) => ({
-	width: "100%",
-	height: "295px",
-	backgroundColor: theme.palette.background.paper,
-	margin: 0,
-	paddingBottom: "10px",
-}));
-
-const StyledTitle = styled(Typography)({
-	fontWeight: 600,
-	color: "#333",
-	fontSize: "18px",
-});
-
-const ZoomButtonGroup = styled(ButtonGroup)({
-	backgroundColor: "#fff",
-	boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-
-	"& .MuiButtonGroup-grouped": {
-		minWidth: "32px",
-		height: "32px",
-		border: "none",
-
-		"&:not(:last-of-type)": {
-			borderRight: "1px solid #e0e0e0",
-		},
-
-		"&:hover": {
-			backgroundColor: "#f5f5f5",
-		},
-
-		"&:disabled": {
-			backgroundColor: "#f9f9f9",
-			opacity: 0.5,
-		},
-	},
-});
-
-const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
-	({ position }) => ({
-		padding: "4px",
-		borderRadius: position === "left" ? "4px 0 0 4px" : "0 4px 4px 0",
-	}),
-);
 
 interface AuditLogsTimelineProps {
 	logs: EventData[];
@@ -707,45 +636,60 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 	if (logs.length === 0) {
 		return (
-			<Container elevation={1}>
-				<Header>
-					<StyledTitle variant="h6">Event History</StyledTitle>
-				</Header>
-				<Box sx={{ padding: 2, textAlign: "center" }}>
-					<Typography variant="body2" color="textSecondary">
+			<div className="rounded-lg border bg-white pb-2">
+				<div className="flex items-center justify-between p-4">
+					<h6 className="text-lg font-semibold text-foreground">
+						Event History
+					</h6>
+				</div>
+				<div className="p-4 text-center">
+					<span className="text-sm text-muted-foreground">
 						No logs available.
-					</Typography>
-				</Box>
-			</Container>
+					</span>
+				</div>
+			</div>
 		);
 	}
 
 	return (
-		<Container elevation={1}>
-			<Header>
-				<StyledTitle variant="h6">Event History</StyledTitle>
+		<div className="rounded-lg border bg-white pb-2">
+			<div className="flex items-center justify-between p-4">
+				<h6 className="text-lg font-semibold text-foreground">
+					Event History
+				</h6>
 
-				<ZoomButtonGroup variant="outlined" size="small">
-					<ZoomIconButton
-						position="left"
+				<div className="flex rounded-md border bg-white shadow-sm">
+					<button
+						type="button"
+						className="inline-flex h-8 min-w-[32px] items-center justify-center border-r px-1 hover:bg-muted/50 disabled:opacity-50"
 						onClick={handleZoomIn}
 						disabled={zoomState.end - zoomState.start <= 15}
 					>
-						<ZoomInIcon fontSize="small" sx={{ color: "#666" }} />
-					</ZoomIconButton>
-					<ZoomIconButton
-						position="right"
+						<ZoomInIcon
+							size={20}
+							style={{ color: "#666" }}
+						/>
+					</button>
+					<button
+						type="button"
+						className="inline-flex h-8 min-w-[32px] items-center justify-center px-1 hover:bg-muted/50 disabled:opacity-50"
 						onClick={handleZoomOut}
 						disabled={
 							zoomState.start === 0 && zoomState.end === 100
 						}
 					>
-						<ZoomOutIcon fontSize="small" sx={{ color: "#666" }} />
-					</ZoomIconButton>
-				</ZoomButtonGroup>
-			</Header>
+						<ZoomOutIcon
+							size={20}
+							style={{ color: "#666" }}
+						/>
+					</button>
+				</div>
+			</div>
 
-			<ChartWrapper ref={chartRef} />
-		</Container>
+			<div
+				ref={chartRef}
+				className="h-[295px] w-full bg-background pb-2.5"
+			/>
+		</div>
 	);
 };

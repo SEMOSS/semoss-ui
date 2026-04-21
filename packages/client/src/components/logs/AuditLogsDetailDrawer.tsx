@@ -1,167 +1,15 @@
 import {
-	Cancel,
+	XCircle as Cancel,
 	CheckCircle as CheckCircleIcon,
-	Close as CloseIcon,
-	KeyboardArrowDown as KeyboardArrowDownIcon,
-	KeyboardArrowRight as KeyboardArrowRightIcon,
-	UnfoldLess as UnfoldLessIcon,
-	UnfoldMore as UnfoldMoreIcon,
-} from "@mui/icons-material";
+	X as CloseIcon,
+	ChevronDown as KeyboardArrowDownIcon,
+	ChevronRight as KeyboardArrowRightIcon,
+	ChevronsDownUp as UnfoldLessIcon,
+	ChevronsUpDown as UnfoldMoreIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	Box,
-	Button,
-	IconButton,
-	styled,
-	Typography,
-	useTheme,
-} from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
-
-const DrawerContainer = styled(Box)(({ theme }) => ({
-	position: "relative",
-	minWidth: 500,
-	height: "100%",
-	backgroundColor: theme.palette.common.white,
-	display: "flex",
-	flexDirection: "column",
-}));
-
-const DragHandle = styled(Box)(({ theme }) => ({
-	position: "absolute",
-	left: 0,
-	top: 0,
-	bottom: 0,
-	width: "4px",
-	cursor: "ew-resize",
-	"&:hover": {
-		backgroundColor: theme.palette.action.hover,
-	},
-	"&:active": {
-		backgroundColor: theme.palette.action.selected,
-	},
-}));
-
-const DrawerHeader = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: "8px 12px",
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	backgroundColor: theme.palette.primary.hover,
-}));
-
-const DrawerContent = styled(Box)(({ theme }) => ({
-	flex: 1,
-	padding: "0",
-	overflowY: "auto",
-	backgroundColor: theme.palette.common.white,
-}));
-
-const SummarySection = styled(Box)({
-	padding: "20px",
-	borderBottom: "1px solid #e9ecef",
-});
-
-const SummaryTitle = styled(Typography)(({ theme }) => ({
-	fontWeight: 600,
-	color: theme.palette.text.primary,
-	marginBottom: "16px",
-}));
-
-const SummaryGrid = styled(Box)({
-	display: "grid",
-	gridTemplateColumns: "1fr 1fr",
-	gap: "12px",
-	padding: "20px",
-});
-
-const SummaryItem = styled(Box)({
-	display: "flex",
-	flexDirection: "column",
-	gap: "4px",
-});
-
-const SummaryLabel = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-	fontWeight: 500,
-}));
-
-const SummaryValue = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.primary,
-	fontWeight: 600,
-}));
-
-const ContentTitle = styled(Typography)(({ theme }) => ({
-	fontWeight: 600,
-	color: theme.palette.text.primary,
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-}));
-
-const ContentTitleWrapper = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	marginBottom: "8px",
-});
-
-const ContentBox = styled(Box)(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper2,
-	border: `1px solid ${theme.palette.divider}`,
-	borderRadius: "6px",
-	padding: "4px",
-	marginBottom: "16px",
-}));
-
-const ContentText = styled(Typography)(({ theme }) => ({
-	lineHeight: 1.6,
-	color: theme.palette.text.primary,
-	wordBreak: "break-word",
-	whiteSpace: "pre-wrap",
-}));
-
-const JSONTreeContainer = styled(Box)(({ theme }) => ({
-	fontSize: "13px",
-	fontFamily: "Monaco, monospace",
-	lineHeight: "1.4",
-	color: theme.palette.text.primary,
-	padding: "12px",
-	borderRadius: "4px",
-	overflowX: "auto",
-}));
-
-const JSONKey = styled("span")(({ theme }) => ({
-	color: theme.palette.primary.main, // Blue for keys
-}));
-
-const JSONString = styled("span")(({ theme }) => ({
-	color: theme.palette.error.main, // Red for strings
-}));
-
-const JSONNumber = styled("span")(({ theme }) => ({
-	color: theme.palette.success.main, // Green for numbers
-}));
-
-const JSONBoolean = styled("span")(({ theme }) => ({
-	color: theme.palette.info.main, // Blue for booleans
-}));
-
-const JSONNull = styled("span")(({ theme }) => ({
-	color: theme.palette.info.main, // Blue for null
-}));
-
-const ExpandButton = styled(Box)({
-	display: "inline-flex",
-	alignItems: "center",
-	cursor: "pointer",
-	padding: "0 4px",
-	marginRight: "4px",
-	"& svg": {
-		fontSize: "16px",
-	},
-});
 
 interface JSONTreeViewProps {
 	data: unknown;
@@ -176,7 +24,6 @@ const JSONTreeView = ({
 }: JSONTreeViewProps) => {
 	const [isExpanded, setIsExpanded] = useState(!isChild);
 	const hasChildren = data !== null && typeof data === "object";
-	const theme = useTheme();
 
 	useEffect(() => {
 		if (expandAll !== undefined && hasChildren && isChild) {
@@ -189,54 +36,59 @@ const JSONTreeView = ({
 	};
 
 	const renderValue = (value: unknown) => {
-		if (value === null) return <JSONNull>null</JSONNull>;
+		if (value === null)
+			return <span className="text-blue-500">null</span>;
 		if (typeof value === "string")
-			return <JSONString>"{value}"</JSONString>;
-		if (typeof value === "number") return <JSONNumber>{value}</JSONNumber>;
+			return <span className="text-red-500">"{value}"</span>;
+		if (typeof value === "number")
+			return <span className="text-green-600">{value}</span>;
 		if (typeof value === "boolean")
-			return <JSONBoolean>{value.toString()}</JSONBoolean>;
+			return (
+				<span className="text-blue-500">{value.toString()}</span>
+			);
 		return null;
 	};
 
 	if (!hasChildren) {
-		return <Box component="span">{renderValue(data)}</Box>;
+		return <span>{renderValue(data)}</span>;
 	}
 
 	const isArray = Array.isArray(data);
 
 	return (
-		<Box sx={{ ml: isChild ? 3 : 0 }}>
-			<Box sx={{ display: "flex", alignItems: "center" }}>
+		<div style={{ marginLeft: isChild ? 24 : 0 }}>
+			<div className="flex items-center">
 				{isChild && (
-					<ExpandButton onClick={toggleExpand}>
+					<span
+						className="inline-flex cursor-pointer items-center px-1 mr-1"
+						onClick={toggleExpand}
+					>
 						{isExpanded ? (
 							<KeyboardArrowDownIcon />
 						) : (
 							<KeyboardArrowRightIcon />
 						)}
-					</ExpandButton>
+					</span>
 				)}
 				{isChild && (
 					<>
-						{isArray ? "" : <JSONKey>"</JSONKey>}
-						<Box
-							component="span"
-							sx={{
-								color: () => theme.palette.primary.main,
-							}}
-						>
+						{isArray ? "" : <span className="text-primary">"</span>}
+						<span className="text-primary">
 							{isArray ? "[" : "{"}
-						</Box>
+						</span>
 					</>
 				)}
-			</Box>
+			</div>
 			{isExpanded && (
-				<Box>
+				<div>
 					{Object.entries(data).map(([key, value]) => (
-						<Box key={key} sx={{ ml: isChild ? 4 : 0 }}>
+						<div key={key} style={{ marginLeft: isChild ? 32 : 0 }}>
 							{!isArray && (
 								<>
-									<JSONKey>"{key}"</JSONKey>:{" "}
+									<span className="text-primary">
+										"{key}"
+									</span>
+									:{" "}
 								</>
 							)}
 							<JSONTreeView
@@ -244,14 +96,14 @@ const JSONTreeView = ({
 								isChild
 								expandAll={expandAll}
 							/>
-						</Box>
+						</div>
 					))}
-				</Box>
+				</div>
 			)}
 			{isExpanded && isChild && (
-				<Box sx={{ ml: isChild ? 0 : 4 }}>{isArray ? "]" : "}"}</Box>
+				<div>{isArray ? "]" : "}"}</div>
 			)}
-		</Box>
+		</div>
 	);
 };
 
@@ -346,199 +198,200 @@ export const AuditLogsDetailDrawer = (props) => {
 		responseData && hasExpandableContent(responseData);
 
 	if (!logDetails)
-		return <Typography variant="body2">No details available</Typography>;
+		return (
+			<span className="text-sm">No details available</span>
+		);
 	return (
-		<DrawerContainer ref={drawerRef} sx={{ width: `${width}px` }}>
-			<DragHandle onMouseDown={handleMouseDown} />
-			<DrawerHeader>
-				<Typography variant="body1" color="primary">
+		<div
+			ref={drawerRef}
+			className="relative flex min-w-[500px] flex-col bg-white"
+			style={{ width: `${width}px`, height: "100%" }}
+		>
+			<div
+				className="absolute bottom-0 left-0 top-0 w-1 cursor-ew-resize hover:bg-muted active:bg-muted-foreground/20"
+				onMouseDown={handleMouseDown}
+			/>
+			<div className="flex items-center justify-between border-b bg-accent/50 px-3 py-2">
+				<span className="text-sm font-medium text-primary">
 					Audit Details
-				</Typography>
-				<IconButton onClick={handleDrawerClose} size="small">
-					<CloseIcon />
-				</IconButton>
-			</DrawerHeader>
+				</span>
+				<button
+					type="button"
+					className="inline-flex items-center justify-center rounded-md p-1 hover:bg-muted/50"
+					onClick={handleDrawerClose}
+				>
+					<CloseIcon className="h-4 w-4" />
+				</button>
+			</div>
 
 			{logDetails && (
-				<DrawerContent>
-					<SummarySection>
-						<SummaryTitle variant="subtitle2">
+				<div className="flex-1 overflow-y-auto bg-white">
+					<div className="border-b p-5">
+						<h6 className="mb-4 text-sm font-semibold">
 							Event Summary
-						</SummaryTitle>
-						<ContentTitleWrapper>
-							<ContentTitle variant="subtitle2">
+						</h6>
+						<div className="mb-2 flex items-center justify-between">
+							<span className="flex items-center gap-2 text-sm font-semibold">
 								Request
-							</ContentTitle>
+							</span>
 							{showPromptExpandButton && (
 								<Button
-									variant="contained"
-									size="small"
+									variant="default"
+									size="sm"
 									onClick={handlePromptToggle}
-									startIcon={
-										promptExpandAll ? (
-											<UnfoldLessIcon />
-										) : (
-											<UnfoldMoreIcon />
-										)
-									}
 								>
+									{promptExpandAll ? (
+										<UnfoldLessIcon className="mr-2 h-4 w-4" />
+									) : (
+										<UnfoldMoreIcon className="mr-2 h-4 w-4" />
+									)}
 									{promptExpandAll
 										? "Collapse All"
 										: "Expand All"}
 								</Button>
 							)}
-						</ContentTitleWrapper>
-						<ContentBox>
+						</div>
+						<div className="mb-4 rounded-md border bg-muted/30 p-1">
 							{(() => {
 								if (promptData) {
 									return (
-										<JSONTreeContainer>
+										<div className="overflow-x-auto rounded p-3 font-mono text-[13px] leading-snug">
 											<JSONTreeView
 												data={promptData}
 												expandAll={promptExpandAll}
 											/>
-										</JSONTreeContainer>
+										</div>
 									);
 								}
 								return (
-									<ContentText variant="body2">
+									<p className="whitespace-pre-wrap break-words leading-relaxed text-sm">
 										{logDetails.request}
-									</ContentText>
+									</p>
 								);
 							})()}
-						</ContentBox>
+						</div>
 
-						<ContentTitleWrapper>
-							<ContentTitle variant="subtitle2">
+						<div className="mb-2 flex items-center justify-between">
+							<span className="flex items-center gap-2 text-sm font-semibold">
 								Response
-							</ContentTitle>
+							</span>
 							{showResponseExpandButton && (
 								<Button
-									variant="contained"
-									size="small"
+									variant="default"
+									size="sm"
 									onClick={handleResponseToggle}
-									startIcon={
-										responseExpandAll ? (
-											<UnfoldLessIcon />
-										) : (
-											<UnfoldMoreIcon />
-										)
-									}
 								>
+									{responseExpandAll ? (
+										<UnfoldLessIcon className="mr-2 h-4 w-4" />
+									) : (
+										<UnfoldMoreIcon className="mr-2 h-4 w-4" />
+									)}
 									{responseExpandAll
 										? "Collapse All"
 										: "Expand All"}
 								</Button>
 							)}
-						</ContentTitleWrapper>
-						<ContentBox>
+						</div>
+						<div className="mb-4 rounded-md border bg-muted/30 p-1">
 							{(() => {
 								if (responseData) {
 									return (
-										<JSONTreeContainer>
+										<div className="overflow-x-auto rounded p-3 font-mono text-[13px] leading-snug">
 											<JSONTreeView
 												data={responseData}
 												expandAll={responseExpandAll}
 											/>
-										</JSONTreeContainer>
+										</div>
 									);
 								}
 								return (
-									<ContentText variant="body2">
+									<p className="whitespace-pre-wrap break-words leading-relaxed text-sm">
 										{logDetails.response}
-									</ContentText>
+									</p>
 								);
 							})()}
-						</ContentBox>
-					</SummarySection>
+						</div>
+					</div>
 
-					<SummaryGrid>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+					<div className="grid grid-cols-2 gap-3 p-5">
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Engine Type
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{logDetails.engineType}
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Engine Name
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{logDetails.engineName}
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Latency
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{logDetails.latency}s
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Tokens
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{logDetails.tokens}
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Timestamp
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{`${TimeDateFormatter(logDetails.startTime).time} - ${
 									TimeDateFormatter(logDetails.endTime).time
 								}`}
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Request Status
-							</SummaryLabel>
-							<SummaryValue variant="body2">
-								<Box
-									sx={{
-										display: "flex",
-										alignItems: "center",
-										gap: 1,
-									}}
-								>
+							</span>
+							<span className="text-sm font-semibold">
+								<span className="flex items-center gap-1">
 									{logDetails.status ? (
-										<CheckCircleIcon color="success" />
+										<CheckCircleIcon className="text-green-600" />
 									) : (
-										<Cancel color="error" />
+										<Cancel className="text-red-600" />
 									)}
-									<Typography variant="body2">
-										{logDetails.status}
-									</Typography>
-								</Box>
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+									<span>{logDetails.status}</span>
+								</span>
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								User Id
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{logDetails.userId}
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Session Id
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{logDetails.sessionId}
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
+							</span>
+						</div>
+						<div className="flex flex-col gap-1">
+							<span className="text-xs font-medium text-muted-foreground">
 								Log Timestamp
-							</SummaryLabel>
-							<SummaryValue variant="body2">
+							</span>
+							<span className="text-sm font-semibold">
 								{
 									TimeDateFormatter(logDetails.logTimestamp)
 										.time
@@ -547,11 +400,11 @@ export const AuditLogsDetailDrawer = (props) => {
 									TimeDateFormatter(logDetails.logTimestamp)
 										.date
 								}
-							</SummaryValue>
-						</SummaryItem>
-					</SummaryGrid>
-				</DrawerContent>
+							</span>
+						</div>
+					</div>
+				</div>
 			)}
-		</DrawerContainer>
+		</div>
 	);
 };

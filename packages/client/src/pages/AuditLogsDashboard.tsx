@@ -1,29 +1,14 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { Refresh } from "@mui/icons-material";
+import { RotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
 	AuditLogFilter,
 	AuditLogsDataTable,
 	AuditLogsTimeline,
 } from "@semoss/shared";
-import {
-	Button,
-	Skeleton,
-	Stack,
-	styled,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+import { Button, Skeleton, toast } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
-
-//Custom dashboard header styling
-const DashboardHeader = styled("div")(({ theme }) => ({
-	width: "100%",
-	paddingY: theme.spacing(2),
-	display: "flex",
-	alignItems: "center",
-}));
 
 /**
  * A function to format a timestamp into a date and time string.
@@ -99,7 +84,13 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
-	const notification = useNotification();
+	const notification = {
+		add: ({ color, message }: { color: string; message: string }) => {
+			if (color === "success") toast.success(message);
+			else if (color === "error") toast.error(message);
+			else toast(message);
+		},
+	};
 	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
@@ -243,62 +234,33 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 					<NavbarHeader />
 				</NavbarLeft>
 			)}
-			<Stack gap={2}>
-				<DashboardHeader>
-					<Typography variant="h6">
+			<div className="flex flex-col gap-4">
+				<div className="flex w-full items-center py-2">
+					<h6 className="font-semibold text-lg">
 						{catalogName} Insight Dashboard
-					</Typography>
-					<Stack
-						direction="row"
-						spacing={2}
-						sx={{ marginLeft: "auto" }}
-					>
-						{/* Disabled for now */}
-						{/* <Select
-										variant="outlined"
-										size="small"
-										onChange={() => {}}
-										sx={{ minWidth: 120 }}
-										value={"Last 30 Days"}
-									>
-										<Menu.Item value="Last 30 Days">
-											Last 30 Days
-										</Menu.Item>
-										<Menu.Item value="Last 90 Days">
-											Last 90 Days
-										</Menu.Item>
-										<Menu.Item value="Last Year">Last Year</Menu.Item>
-									</Select> */}
+					</h6>
+					<div className="ml-auto flex flex-row gap-4">
 						<AuditLogFilter
 							updateLogs={updateLogs}
 							insightId={configStore.store.insightID}
 							parent={"client"}
 						/>
 						<Button
-							variant="contained"
-							color="primary"
-							startIcon={<Refresh />}
+							variant="default"
 							onClick={() =>
 								fetchLogs(rowsPerPage, page * rowsPerPage)
 							}
 						>
+							<RotateCw className="mr-2 h-4 w-4" />
 							Refresh
 						</Button>
-					</Stack>
-				</DashboardHeader>
+					</div>
+				</div>
 				{loading ? (
-					<Stack gap={2}>
-						<Skeleton
-							variant="rectangular"
-							height={400}
-							width={"100%"}
-						/>{" "}
-						<Skeleton
-							variant="rectangular"
-							height={400}
-							width={"100%"}
-						/>
-					</Stack>
+					<div className="flex flex-col gap-4">
+						<Skeleton className="h-[400px] w-full rounded-md" />
+						<Skeleton className="h-[400px] w-full rounded-md" />
+					</div>
 				) : (
 					<>
 						<AuditLogsTimeline logs={logs} />
@@ -311,7 +273,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 						/>
 					</>
 				)}
-			</Stack>
+			</div>
 		</>
 	);
 };
