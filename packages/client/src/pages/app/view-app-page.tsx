@@ -1,24 +1,18 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import {
-	Bookmark,
-	BookmarkBorderOutlined,
-	EditOutlined,
-	ShareRounded,
-} from "@mui/icons-material";
-import { Settings } from "lucide-react";
+import { Bookmark, Pencil, Settings, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Renderer } from "@semoss/renderer";
+import { Modal } from "@semoss/ui";
 import {
 	Button,
-	IconButton,
-	LoadingScreen,
-	Modal,
-	styled,
+	Spinner,
 	Tooltip,
-	useNotification,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
 import { CodeRenderer } from "@/components/code-workspace";
 import { ShareOverlay } from "@/components/ui";
@@ -26,17 +20,11 @@ import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
-const StyledContent = styled("div")({
-	position: "absolute",
-	inset: 0,
-});
-
 export const ViewAppPage = observer(() => {
 	// App ID Needed for pixel calls
 	const { appId } = useParams();
 	const { configStore } = useRootStore();
 
-	const notification = useNotification();
 	const navigate = useNavigate();
 
 	const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
@@ -47,16 +35,12 @@ export const ViewAppPage = observer(() => {
 		setBookmarked(status);
 		setProjectFavorite(appId, status)
 			.then(() => {
-				notification.add({
-					color: "success",
-					message: `Project ${
-						bookmarked ? "unbookmarked" : "bookmarked"
-					}`,
-				});
+				toast.success(
+					`Project ${bookmarked ? "unbookmarked" : "bookmarked"}`,
+				);
 				return;
 			})
 			.catch((err) => {
-				// throw error if promise doesn't fulfill
 				throw Error(err);
 			});
 	};
@@ -79,18 +63,18 @@ export const ViewAppPage = observer(() => {
 				);
 			})
 			.catch((e) => {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
-
+				toast.error(e.message);
 				navigate("/");
 			});
 	}, [appId]);
 
 	// hide the screen while it loads
 	if (!workspace) {
-		return <LoadingScreen.Trigger description="Initializing app" />;
+		return (
+			<div className="flex h-screen w-screen items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	return (
@@ -112,70 +96,71 @@ export const ViewAppPage = observer(() => {
 				/>
 			</NavbarLeft>
 			<NavbarRight>
-				<Tooltip title={"Settings"}>
-					<IconButton
-						size="small"
-						onClick={() => {
-							navigate(`/app/${appId}`);
-						}}
-						data-testid={"settings"}
-					>
-						<Settings className="h-4 w-4" />
-					</IconButton>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => navigate(`/app/${appId}`)}
+							data-testid={"settings"}
+						>
+							<Settings className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Settings</TooltipContent>
 				</Tooltip>
-				<Tooltip title={"Bookmark App"}>
-					<IconButton
-						size="small"
-						color={bookmarked ? "primary" : "default"}
-						onClick={() => handleBookmark(!bookmarked)}
-						data-testid={"viewAppPage-bookmark-btn"}
-					>
-						{bookmarked ? (
-							<Bookmark fontSize={"inherit"} />
-						) : (
-							<BookmarkBorderOutlined fontSize={"inherit"} />
-						)}
-					</IconButton>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => handleBookmark(!bookmarked)}
+							data-testid={"viewAppPage-bookmark-btn"}
+						>
+							<Bookmark
+								className={`size-4 ${bookmarked ? "fill-primary text-primary" : ""}`}
+							/>
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Bookmark App</TooltipContent>
 				</Tooltip>
-				<Tooltip title={"Share App"}>
-					<IconButton
-						size="small"
-						color="default"
-						onClick={() => {
-							setIsShareOpen(true);
-						}}
-						data-testid={"viewAppPage-share-btn"}
-					>
-						<ShareRounded fontSize={"inherit"} />
-					</IconButton>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => setIsShareOpen(true)}
+							data-testid={"viewAppPage-share-btn"}
+						>
+							<Share2 className="size-4" />
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Share App</TooltipContent>
 				</Tooltip>
 				<Button
-					variant="contained"
-					size={"small"}
-					color="primary"
+					variant="default"
+					size="sm"
 					disabled={
 						!(
 							workspace.role === "OWNER" ||
 							workspace.role === "EDIT"
 						)
 					}
-					endIcon={<EditOutlined fontSize="inherit" />}
-					component={Link}
-					//@ts-expect-error this is expected. props are forwarded
-					to={`../../../app/${appId}/edit`}
+					onClick={() => navigate(`../../../app/${appId}/edit`)}
 					data-testid={"viewAppPage-edit-btn"}
 				>
+					<Pencil className="mr-1 size-4" />
 					Edit
 				</Button>
 			</NavbarRight>
-			<StyledContent>
+			<div className="absolute inset-0">
 				{workspace.type === "BLOCKS" ? (
 					<Renderer appId={appId} insightId={workspace.insightId} />
 				) : null}
 				{workspace.type === "CODE" ? (
 					<CodeRenderer appId={appId} />
 				) : null}
-			</StyledContent>
+			</div>
 
 			<Modal open={isShareOpen} onClose={() => setIsShareOpen(false)}>
 				<ShareOverlay

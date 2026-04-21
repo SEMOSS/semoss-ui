@@ -53,7 +53,7 @@ import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
 import { useEngine, useRootStore } from "@/hooks";
-import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
+import { useQueryResults } from "@/hooks/use-database-query-results";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");

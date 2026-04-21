@@ -1,6 +1,5 @@
 import { Ban, Edit, Eye, Pencil, TriangleAlert, User } from "lucide-react";
 import { Env } from "@semoss/sdk";
-import { Link } from "@semoss/ui";
 import {
 	Badge,
 	Button,
@@ -64,18 +63,18 @@ export const Dependencies = ({
 								/>
 								<div className="flex min-w-0 flex-col">
 									<div className="flex items-center gap-1.5">
-										<Link
+										<a
 											href={
 												dep.type === "PROJECT"
 													? `./#/app/${dep.id}`
 													: `./#/engine/${dep.type}/${dep.id}`
 											}
-											//className="text-base text-primary"
+											className="text-primary hover:underline"
 										>
 											<P className="truncate">
 												{dep.name}
 											</P>
-										</Link>
+										</a>
 										{missingSubDependencies && (
 											<Tooltip>
 												<TooltipTrigger asChild>

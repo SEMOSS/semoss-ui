@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FileDropzone, LoadingScreen } from "@semoss/ui";
+import { FileDropzone } from "@semoss/ui";
 import {
 	Avatar,
 	AvatarFallback,
@@ -21,6 +21,7 @@ import {
 	Input,
 	Large,
 	Separator,
+	Spinner,
 	Switch,
 	Table,
 	TableBody,
@@ -101,7 +102,9 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 	if (getPortalDetails.status !== "SUCCESS") {
 		return (
-			<LoadingScreen.Trigger description="Getting app portal details" />
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
 		);
 	}
 
@@ -492,9 +495,11 @@ export const AppSettings = (props: AppSettingsProps) => {
 			</div>
 
 			{/* Update Project */}
-			<div className="w-full rounded-md bg-background shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+			<div className="relative w-full rounded-md bg-background shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
 				{isLoading && (
-					<LoadingScreen.Trigger description="Updating Project" />
+					<div className="absolute inset-0 z-50 flex items-center justify-center rounded-md bg-background/60">
+						<Spinner />
+					</div>
 				)}
 				<div className="flex gap-4 p-4">
 					<div className="w-1/2">

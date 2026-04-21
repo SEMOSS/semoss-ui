@@ -112,8 +112,7 @@ export const getSDKSnippet = (
 	secretKey?: string,
 ) => {
 	if (type === "py") {
-		return `
-# import the ai platform package
+		return `# import the ai platform package
 import ai_server
 
 # pass in your access and secret keys to authenticate
@@ -125,17 +124,14 @@ server_connection=ai_server.ServerClient(
 		secretKey ? secretKey : "<your access key>"
 	}",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
     base="${Env.MODULE}/api"
-)
-`;
+)`;
 	} else {
-		return `
-# .env
+		return `# .env
 MODULE="${Env.MODULE}"
 
 #.env.local
 ACCESS_KEY="${accessKey ? accessKey : "<your access key>"}"
-SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"
-`;
+SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"`;
 	}
 };
 

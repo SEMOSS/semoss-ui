@@ -1,8 +1,20 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Button, Modal } from "@semoss/ui";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@semoss/ui/next";
 import { useRootStore } from "@/hooks/";
+
+const RawHtml = ({ html }: { html: string }) => {
+	// biome-ignore lint/security/noDangerouslySetInnerHtml: server-controlled terms content
+	return <div dangerouslySetInnerHTML={{ __html: html }} />;
+};
 
 export const PlatformMessages: React.FC = observer(() => {
 	const { configStore } = useRootStore();
@@ -13,6 +25,7 @@ export const PlatformMessages: React.FC = observer(() => {
 		text: configStore.theme.termsReact,
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - config is used for side effects only
 	useEffect(() => {
 		if (configStore.store.userEpoch) {
 			const key = `smss--terms--${configStore.store.userEpoch}`;
@@ -37,29 +50,24 @@ export const PlatformMessages: React.FC = observer(() => {
 	return (
 		<>
 			{!acceptedTerms && terms.header && terms.text && (
-				<Modal open={true}>
-					<Modal.Title sx={{ paddingBottom: "0" }}>
-						<div
-							id="attention-modal-header"
-							dangerouslySetInnerHTML={{ __html: terms.header }}
-						/>
-					</Modal.Title>
-					<Modal.Content>
-						<div
-							id="attention-modal-body"
-							dangerouslySetInnerHTML={{ __html: terms.text }}
-						/>
-					</Modal.Content>
-					<Modal.Actions>
-						<Button
-							variant="contained"
-							onClick={acceptTerms}
-							data-testid={"platformMessages-accept-btn"}
-						>
-							Accept
-						</Button>
-					</Modal.Actions>
-				</Modal>
+				<Dialog open={true}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>
+								<RawHtml html={terms.header} />
+							</DialogTitle>
+						</DialogHeader>
+						<RawHtml html={terms.text} />
+						<DialogFooter>
+							<Button
+								onClick={acceptTerms}
+								data-testid={"platformMessages-accept-btn"}
+							>
+								Accept
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			)}
 		</>
 	);

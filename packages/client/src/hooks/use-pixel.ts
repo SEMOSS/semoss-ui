@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNotification } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useRootStore } from "./useRootStore";
 
 interface PixelState<D> {
@@ -40,7 +40,6 @@ export function usePixel<D>(
 	insightId?: string,
 ): usePixel<D> {
 	const { monolithStore } = useRootStore();
-	const notification = useNotification();
 
 	// store the initial config options
 	const options: PixelConfig<D> = useMemo(() => {
@@ -86,6 +85,7 @@ export function usePixel<D>(
 	);
 
 	// get the data
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - pixel and count are the only trigger deps
 	useEffect(() => {
 		// no command reset it
 		if (!pixel) {
@@ -134,10 +134,7 @@ export function usePixel<D>(
 				}
 
 				if (!options.silent) {
-					notification.add({
-						color: "error",
-						message: error.message,
-					});
+					toast.error(error.message);
 				} else {
 					console.log(error.message);
 				}
