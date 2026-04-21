@@ -1,4 +1,4 @@
-import { AutoAwesome, ContentCopyOutlined } from "@mui/icons-material/";
+import { Copy, Sparkles } from "lucide-react";
 import { useState } from "react";
 import {
 	Button,
@@ -133,7 +133,7 @@ export const TextEditorCodeGeneration = () => {
 		<>
 			<StyledGenerateButton
 				full={true}
-				startIcon={<AutoAwesome />}
+				startIcon={<Sparkles className="size-4" />}
 				variant="contained"
 				color="secondary"
 				onClick={() => {
@@ -194,11 +194,7 @@ export const TextEditorCodeGeneration = () => {
 										size={"medium"}
 										variant="outlined"
 										color="secondary"
-										startIcon={
-											<ContentCopyOutlined
-												color={"inherit"}
-											/>
-										}
+										startIcon={<Copy className="size-4" />}
 										onClick={() => copy(code)}
 									>
 										Copy

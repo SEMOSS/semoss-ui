@@ -1,4 +1,4 @@
-import { ThumbDownOffAlt, ThumbUpOffAlt } from "@mui/icons-material";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
 import { IconButton, Stack, styled } from "@semoss/ui";
 import { toast } from "@semoss/ui/next";
@@ -38,14 +38,14 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 				onClick={() => handleFeedback("true")}
 				disabled={!!feedback}
 			>
-				<ThumbUpOffAlt fontSize="small" />
+				<ThumbsUp className="size-4" />
 			</StyledIcon>
 
 			<StyledIcon
 				onClick={() => handleFeedback("false")}
 				disabled={!!feedback}
 			>
-				<ThumbDownOffAlt fontSize="small" />
+				<ThumbsDown className="size-4" />
 			</StyledIcon>
 		</Stack>
 	);

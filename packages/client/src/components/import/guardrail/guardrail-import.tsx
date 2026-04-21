@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { FileUploadOutlined } from "@mui/icons-material";
+
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -278,7 +278,7 @@ export const GuardrailImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<UploadIcon className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
