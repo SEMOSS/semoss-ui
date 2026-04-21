@@ -1,17 +1,13 @@
-import { Avatar, styled } from "@semoss/ui";
+import type React from "react";
 
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
-	width: theme.spacing(4),
-	height: theme.spacing(4),
-	backgroundColor: `${theme.palette.primary.light}33`,
-	border: `1px solid ${theme.palette.primary.main}`,
-	color: theme.palette.primary.main,
-}));
-
-export const BlockAvatar = (props: { icon: any; xs?: boolean }) => {
+export const BlockAvatar = (props: {
+	icon: React.ElementType;
+	xs?: boolean;
+}) => {
+	const { icon: Icon } = props;
 	return (
-		<StyledAvatar variant="rounded">
-			<props.icon />
-		</StyledAvatar>
+		<div className="flex size-8 shrink-0 items-center justify-center rounded border border-primary bg-primary/20 text-primary">
+			<Icon className="size-4" />
+		</div>
 	);
 };

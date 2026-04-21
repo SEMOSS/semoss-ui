@@ -1,4 +1,5 @@
-import { Button, CircularProgress } from "@semoss/ui";
+import { Loader2 } from "lucide-react";
+import { Button } from "@semoss/ui/next";
 
 interface GridFooterProps {
 	isBatchingEnabled: boolean;
@@ -25,13 +26,15 @@ export const GridFooter = ({
 			}}
 		>
 			<Button
-				variant="outlined"
-				size="small"
+				variant="outline"
+				size="sm"
 				onClick={onLoadMore}
 				disabled={shouldDisableLoadMore}
-				startIcon={loadingMore ? <CircularProgress size={16} /> : null}
-				sx={{ width: "100%" }}
+				className="w-full"
 			>
+				{loadingMore && (
+					<Loader2 className="mr-1.5 size-4 animate-spin" />
+				)}
 				{loadingMore ? "Loading..." : "Load More"}
 			</Button>
 		</div>
