@@ -1,12 +1,13 @@
 import { Copy, ExternalLink, X } from "lucide-react";
 import { type CSSProperties, useState } from "react";
-import { darkTheme, lightTheme } from "@semoss/ui";
 import {
 	Button,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	darkTheme,
+	lightTheme,
 	Select,
 	SelectContent,
 	SelectItem,

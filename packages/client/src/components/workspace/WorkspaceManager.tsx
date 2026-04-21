@@ -432,13 +432,9 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 																<Icon
 																	className={
 																		isSelected
-																			? "text-primary"
-																			: "text-inherit"
+																			? "size-4 text-primary"
+																			: "size-4 text-inherit"
 																	}
-																	style={{
-																		fontSize:
-																			"inherit",
-																	}}
 																/>
 															</button>
 														</TooltipTrigger>
