@@ -174,8 +174,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 					{selectedList === "export" && (
 						<div className="block w-full px-4 py-2">
 							<div className="flex items-center gap-2 pl-3">
-								{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-								// biome-ignore
 								{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 								<Checkbox
 									id="enable-export"
