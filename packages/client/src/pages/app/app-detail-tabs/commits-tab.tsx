@@ -56,7 +56,8 @@ interface ChangedFile {
 }
 
 interface CommitsTabProps {
-	appId: string;
+	appId?: string;
+	engineId?: string;
 }
 
 const PAGE_SIZE = 20;
@@ -202,11 +203,15 @@ function DiffView({ diff }: { diff: string }) {
 
 function FileChangeItem({
 	file,
-	appId,
+	id,
+	pixelKey,
+	reactorPrefix,
 	commitId,
 }: {
 	file: ChangedFile;
-	appId: string;
+	id: string;
+	pixelKey: string;
+	reactorPrefix: string;
 	commitId: string;
 }) {
 	const { monolithStore } = useRootStore();
@@ -225,7 +230,7 @@ function FileChangeItem({
 		setDiffLoading(true);
 		try {
 			const res = await monolithStore.runQuery(
-				`ProjectCommitDiff(project=["${appId}"], commitId=["${commitId}"], filePath=["${file.fileName}"]);`,
+				`${reactorPrefix}CommitDiff(${pixelKey}=["${id}"], commitId=["${commitId}"], filePath=["${file.fileName}"]);`,
 			);
 			const output = res?.pixelReturn?.[0]?.output;
 			if (Array.isArray(output) && output.length > 0) {
@@ -242,7 +247,16 @@ function FileChangeItem({
 		} finally {
 			setDiffLoading(false);
 		}
-	}, [appId, commitId, file.fileName, diff, diffLoading, monolithStore]);
+	}, [
+		id,
+		pixelKey,
+		reactorPrefix,
+		commitId,
+		file.fileName,
+		diff,
+		diffLoading,
+		monolithStore,
+	]);
 
 	const handleToggle = (open: boolean) => {
 		setIsOpen(open);
@@ -317,11 +331,15 @@ function FileChangeItem({
 
 function CommitItem({
 	commit,
-	appId,
+	id,
+	pixelKey,
+	reactorPrefix,
 	onRevertSuccess,
 }: {
 	commit: CommitDetails;
-	appId: string;
+	id: string;
+	pixelKey: string;
+	reactorPrefix: string;
 	onRevertSuccess: () => void;
 }) {
 	const { monolithStore } = useRootStore();
@@ -340,7 +358,7 @@ function CommitItem({
 		setFilesLoading(true);
 		try {
 			const res = await monolithStore.runQuery(
-				`ProjectCommitDiff(project=["${appId}"], commitId=["${commit.commitId}"]);`,
+				`${reactorPrefix}CommitDiff(${pixelKey}=["${id}"], commitId=["${commit.commitId}"]);`,
 			);
 			const output = res?.pixelReturn?.[0]?.output;
 			if (Array.isArray(output)) {
@@ -354,7 +372,15 @@ function CommitItem({
 		} finally {
 			setFilesLoading(false);
 		}
-	}, [appId, commit.commitId, files, filesLoading, monolithStore]);
+	}, [
+		id,
+		pixelKey,
+		reactorPrefix,
+		commit.commitId,
+		files,
+		filesLoading,
+		monolithStore,
+	]);
 
 	const handleToggle = (open: boolean) => {
 		setIsOpen(open);
@@ -365,7 +391,7 @@ function CommitItem({
 		setReverting(true);
 		try {
 			const res = await monolithStore.runQuery(
-				`ProjectCommitRestore(project=["${appId}"], commitId=["${commit.commitId}"]);`,
+				`${reactorPrefix}CommitRestore(${pixelKey}=["${id}"], commitId=["${commit.commitId}"]);`,
 			);
 			const operationType = res?.pixelReturn?.[0]?.operationType as
 				| string[]
@@ -518,7 +544,9 @@ function CommitItem({
 											<FileChangeItem
 												key={file.fileName}
 												file={file}
-												appId={appId}
+												id={id}
+												pixelKey={pixelKey}
+												reactorPrefix={reactorPrefix}
 												commitId={commit.commitId}
 											/>
 										))}
@@ -589,7 +617,11 @@ function CommitItem({
 	);
 }
 
-export const CommitsTab = ({ appId }: CommitsTabProps) => {
+export const CommitsTab = ({ appId, engineId }: CommitsTabProps) => {
+	const id = appId || engineId || "";
+	const isEngine = !!engineId;
+	const pixelKey = isEngine ? "engine" : "project";
+	const reactorPrefix = isEngine ? "Engine" : "Project";
 	const { monolithStore } = useRootStore();
 	const [commits, setCommits] = useState<CommitDetails[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -608,7 +640,7 @@ export const CommitsTab = ({ appId }: CommitsTabProps) => {
 
 			try {
 				const res = await monolithStore.runQuery(
-					`ProjectCommitDetails(project=["${appId}"], limit=["${PAGE_SIZE}"], offset=["${offset}"]);`,
+					`${reactorPrefix}CommitDetails(${pixelKey}=["${id}"], limit=["${PAGE_SIZE}"], offset=["${offset}"]);`,
 				);
 
 				const operationType = res?.pixelReturn?.[0]?.operationType as
@@ -653,7 +685,7 @@ export const CommitsTab = ({ appId }: CommitsTabProps) => {
 				setLoadingMore(false);
 			}
 		},
-		[appId, monolithStore],
+		[id, pixelKey, reactorPrefix, monolithStore],
 	);
 
 	useEffect(() => {
@@ -714,7 +746,9 @@ export const CommitsTab = ({ appId }: CommitsTabProps) => {
 					<CommitItem
 						key={commit.commitId}
 						commit={commit}
-						appId={appId}
+						id={id}
+						pixelKey={pixelKey}
+						reactorPrefix={reactorPrefix}
 						onRevertSuccess={() => fetchCommits(0, false)}
 					/>
 				))}
