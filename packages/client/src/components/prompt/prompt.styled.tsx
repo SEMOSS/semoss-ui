@@ -7,7 +7,7 @@ export const StyledStepPaper = ({
 	...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
 	<div
-		className={cn("m-1 h-full bg-background p-8 shadow-sm", className)}
+		className={cn("h-full rounded-md border bg-background p-8 shadow-sm", className)}
 		{...props}
 	>
 		{children}

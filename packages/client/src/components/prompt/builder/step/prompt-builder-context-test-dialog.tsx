@@ -39,7 +39,7 @@ export const PromptBuilderContextTestDialog = (props: {
 			open={props.open}
 			onOpenChange={(open) => !open && props.close()}
 		>
-			<DialogContent className="max-w-2xl">
+			<DialogContent className="sm:max-w-4xl">
 				<DialogHeader>
 					<DialogTitle>Test Prompt</DialogTitle>
 				</DialogHeader>

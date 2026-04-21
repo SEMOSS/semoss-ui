@@ -188,8 +188,8 @@ export const PromptBuilder = () => {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="grid grid-cols-[1fr_3fr]">
-				<div className="m-[4px_0] rounded-md bg-background p-4 shadow-sm">
+			<div className="grid grid-cols-[1fr_3fr] gap-x-6">
+				<div className="my-1 rounded-md border bg-background p-4 shadow-sm">
 					<PromptBuilderSummary
 						builder={builder}
 						currentBuilderStep={currentBuilderStep}
@@ -209,7 +209,6 @@ export const PromptBuilder = () => {
 					<Button
 						variant="ghost"
 						onClick={backButtonAction}
-						style={{ color: "#16a34a" }}
 					>
 						Back
 					</Button>
@@ -220,7 +219,6 @@ export const PromptBuilder = () => {
 						createAppLoading
 					}
 					onClick={nextButtonAction}
-					style={{ backgroundColor: "#16a34a" }}
 				>
 					{createAppLoading && (
 						<div className="mr-1 h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
