@@ -95,13 +95,13 @@ const parseUtcDate = (rawDate?: string) => {
 const getDashboardPath = (engineType: string | undefined, engineId: string) => {
 	const normalizedType = (engineType || "").trim().toLowerCase();
 	if (!normalizedType) {
-		return `${engineId}/dashboard`;
+		return `${engineId}/auditlogs`;
 	}
 	if (normalizedType === "project" || normalizedType === "app") {
-		return `/app/${engineId}/dashboard`;
+		return `/app/${engineId}/auditlogs`;
 	}
 
-	return `/engine/${normalizedType}/${engineId}/dashboard`;
+	return `/engine/${normalizedType}/${engineId}/auditlogs`;
 };
 
 const isProjectType = (engineType?: string) => {

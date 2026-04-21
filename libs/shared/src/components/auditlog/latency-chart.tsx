@@ -50,7 +50,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 	const maxVal = Math.max(...data.map((l) => l.latency), 1);
 	const avg = data.reduce((s, l) => s + l.latency, 0) / data.length;
 
-	// Round maxVal up to a nice ceiling for Y axis
 	const niceMax = Math.ceil(maxVal);
 	const tickStep = Math.max(1, Math.ceil(niceMax / 5));
 	const yMax = tickStep * 5;
@@ -66,7 +65,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 	const yVal = (v: number) => PT + chartH - (v / yMax) * chartH;
 	const xBar = (i: number) => PL + i * groupW + barGap;
 
-	// ── Colors ────────────────────────────────────────────────────────────────
 	const gridColor = dark ? "hsl(228,15%,15%)" : "hsl(220,13%,88%)";
 	const tickColor = dark ? "hsl(220,8%,50%)" : "hsl(220,8%,55%)";
 	const okFill = "hsla(239,84%,67%,0.82)";

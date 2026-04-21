@@ -219,7 +219,6 @@ const DetailContent = ({
 									})()}
 								</div>
 
-								{/* Expand all + Copy buttons */}
 								<div className="absolute top-1 right-3 flex items-center gap-1 bg-transparent">
 									<Button
 										onClick={(e) => {
@@ -259,7 +258,6 @@ const DetailContent = ({
 									{value || "empty"}
 								</span>
 
-								{/* show copy only for Span ID & Session ID */}
 								{value &&
 									mono &&
 									(label === "Span ID" ||
@@ -290,9 +288,7 @@ const LogDetailPanel = ({ log }: LogDetailPanelProps) => {
 
 	return (
 		<>
-			{/* Main Panel */}
 			<div className="flex h-full flex-col">
-				{/* Header */}
 				<div className="flex flex-shrink-0 items-center justify-between gap-2 border-border border-b px-3 py-2">
 					<div className="flex min-w-0 items-center gap-2">
 						{log.status ? (
@@ -341,16 +337,13 @@ const LogDetailPanel = ({ log }: LogDetailPanelProps) => {
 					</div>
 				</div>
 
-				{/* Detail rows */}
 				<div className="flex-1 overflow-y-auto px-3 py-1 [scrollbar-width:thin]">
 					<DetailContent log={log} isExpanded={false} />
 				</div>
 			</div>
 
-			{/* Fullscreen Dialog */}
 			{isExpanded && (
 				<div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm">
-					{/* Dialog Header */}
 					<div className="flex flex-shrink-0 items-center justify-between gap-2 border-border border-b bg-card px-4 py-3">
 						<div className="flex min-w-0 items-center gap-2">
 							{log.status ? (
@@ -398,7 +391,6 @@ const LogDetailPanel = ({ log }: LogDetailPanelProps) => {
 						</div>
 					</div>
 
-					{/* Dialog Content */}
 					<div className="flex-1 overflow-y-auto px-6 py-4 [scrollbar-width:thin]">
 						<div className="max-w-[90vw]">
 							<DetailContent log={log} isExpanded={true} />

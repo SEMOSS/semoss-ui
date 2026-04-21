@@ -7,7 +7,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { Button } from "@semoss/ui/next";
-import { type SearchToken, TokenizedSearchBar } from "./tokenized-search-bar";
+import { type SearchToken, TokenizedSearchBar } from "./events-search-bar";
 import {
 	type AuditLog,
 	latencyBg,
@@ -86,7 +86,6 @@ export const EventHistory = ({
 				/>
 			</div>
 
-			{/* ── Log list ── */}
 			<div className="flex-1 overflow-y-auto [scrollbar-width:thin]">
 				{loading ? (
 					<div className="flex items-center justify-center gap-2 py-16 text-muted-foreground text-xs">
@@ -95,13 +94,12 @@ export const EventHistory = ({
 					</div>
 				) : (
 					<>
-						{sessions.map(([sessionId, sessionLogs], si) => (
+						{sessions.map(([sessionId, sessionLogs]) => (
 							<div key={sessionId}>
-								{/* Session header */}
 								<div className="sticky top-0 z-10 flex items-center gap-2 border-border/50 border-b bg-card px-3 py-1">
 									<div className="h-3 w-1 flex-shrink-0 rounded-full bg-primary text-primary" />
 									<span className="font-mono font-semibold text-[9px] text-primary uppercase tracking-widest">
-										Session {si + 1}
+										Session
 									</span>
 									<span className="inline-block font-mono text-[9px] text-muted-foreground">
 										{sessionId}
@@ -111,7 +109,6 @@ export const EventHistory = ({
 									</span>
 								</div>
 
-								{/* Log rows */}
 								{sessionLogs.map((log) => {
 									const globalIdx =
 										searchFiltered.indexOf(log);
@@ -138,7 +135,6 @@ export const EventHistory = ({
 														: "bg-transparent hover:bg-secondary/50"
 											}`}
 										>
-											{/* Status icon */}
 											{log.status ? (
 												<CheckCircle
 													size={11}
@@ -151,7 +147,6 @@ export const EventHistory = ({
 												/>
 											)}
 
-											{/* Method + engine info */}
 											<div className="min-w-0 flex-1">
 												<div className="flex items-center gap-1.5">
 													{parseArg(log.request) && (
@@ -174,7 +169,6 @@ export const EventHistory = ({
 												</span>
 											</div>
 
-											{/* Latency bar + value */}
 											<div className="flex w-20 flex-shrink-0 items-center gap-1">
 												<div className="h-1 flex-1 overflow-hidden rounded-full bg-muted">
 													<div
@@ -201,7 +195,6 @@ export const EventHistory = ({
 							</div>
 						))}
 
-						{/* Empty states */}
 						{!loading && logs.length === 0 && (
 							<div className="flex items-center justify-center py-16 text-muted-foreground text-xs">
 								No executions match the current filters
@@ -218,7 +211,6 @@ export const EventHistory = ({
 				)}
 			</div>
 
-			{/* ── Footer: count + pagination ── */}
 			<div className="flex flex-shrink-0 items-center justify-between gap-2 border-border border-t px-3 py-1">
 				<span className="text-[9px] text-muted-foreground">
 					{page * ROWS_PER_PAGE + 1}–

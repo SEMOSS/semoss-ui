@@ -54,7 +54,7 @@ export const Router = observer(() => {
 						<Route path=":appId/view/*" element={<ViewAppPage />} />
 						<Route path=":appId/edit/*" element={<EditAppPage />} />
 						<Route
-							path=":appId/dashboard/*"
+							path=":appId/auditlogs/*"
 							element={
 								<AuditLogsDashboard catalogName={"Apps"} />
 							}

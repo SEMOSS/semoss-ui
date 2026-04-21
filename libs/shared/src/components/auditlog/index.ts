@@ -1,26 +1,24 @@
 import { AuditLogFilter } from "./AuditLogFilter";
 import { AuditLogsDataTable } from "./AuditLogsDataTable";
 import { AuditLogsTimeline } from "./AuditLogsTimeline";
-import { ChartPanel } from "./chart-panel";
 import { dateFormat } from "./common";
-import EventHistory from "./event-history";
-import FilterRow from "./filter-row";
-import LogDetailPanel from "./log-detail-panel";
 import {
 	buildSearchPayload,
 	type SearchCategory,
 	type SearchPayload,
 	type SearchToken,
 	TokenizedSearchBar,
-} from "./tokenized-search-bar";
+} from "./events-search-bar";
+import { ChartPanel } from "./left-panel";
+import LogDetailPanel from "./log-details-panel";
+import EventHistory from "./right-panel";
+import FilterRow from "./top-panel";
 import {
 	type AuditLog,
 	latencyBg,
 	latencyColor,
 	parseArg,
 } from "./types/audit";
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 export {
 	AuditLogsDataTable,

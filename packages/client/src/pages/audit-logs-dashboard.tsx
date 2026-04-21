@@ -60,7 +60,6 @@ export const TimeDateFormatter = (timeStamp: string | number | null) => {
 	try {
 		const tempDate = new Date(timeStamp);
 
-		// Check if date is invalid
 		if (Number.isNaN(tempDate.getTime())) {
 			return { date: "", time: "" };
 		}
@@ -81,20 +80,13 @@ export const TimeDateFormatter = (timeStamp: string | number | null) => {
 			const time = timePart ? timePart.split(" ")[0] : "";
 			return { date, time };
 		} catch (_formatError) {
-			// Handle string parsing errors
 			return { date: "", time: "" };
 		}
 	} catch (_dateError) {
-		// Handle date creation errors
 		return { date: "", time: "" };
 	}
 };
-/**
- * A component for displaying the audit logs dashboard for a given catalog.
- *
- * @param {string} catalogName - The name of the catalog.
- * @returns {JSX.Element} - A JSX element containing the audit logs dashboard.
- */
+
 export const AuditLogsDashboard = ({
 	catalogName,
 }: {
@@ -137,7 +129,6 @@ export const AuditLogsDashboard = ({
 			DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
 	});
 
-	// Keep search state in a ref so fetchLogs always reads the latest values
 	const searchRef = useRef<{
 		tokens: SearchToken[];
 		freeText: string;
@@ -145,8 +136,6 @@ export const AuditLogsDashboard = ({
 		tokens: [],
 		freeText: "",
 	});
-
-	// ── Callbacks ──
 
 	const fetchLogs = useCallback(
 		async (limit: number, offset: number) => {
@@ -185,7 +174,6 @@ export const AuditLogsDashboard = ({
 						? `,"startDate":"${startDate.toISOString()}","endDate":"${endDate.toISOString()}"`
 						: "";
 
-				// Build search payload from tokens + free text
 				const searchPayload = buildSearchPayload(
 					searchRef.current.tokens,
 					searchRef.current.freeText,
@@ -296,8 +284,6 @@ export const AuditLogsDashboard = ({
 		[monolithStore],
 	);
 
-	// ── Handlers ──
-
 	const handleUserChange = (uid: string) => {
 		setSelectedUser(uid);
 		setChartPage(0);
@@ -344,8 +330,6 @@ export const AuditLogsDashboard = ({
 		fetchLogs(ROWS_PER_PAGE, 0);
 	};
 
-	// ── Effects ──
-
 	useEffect(() => {
 		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
 	}, [searchTokens, searchFreeText]);
@@ -377,8 +361,6 @@ export const AuditLogsDashboard = ({
 		}
 	}, [catalogId, catalogName, fetchUserList]);
 
-	// ── Derived values ──
-
 	const avgLat =
 		Array.isArray(logs) && logs.length > 0
 			? (logs.reduce((s, l) => s + l.latency, 0) / logs.length).toFixed(1)
@@ -391,7 +373,6 @@ export const AuditLogsDashboard = ({
 
 	const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
 
-	// Server-side search: no client-side filtering, just use logs as-is
 	const searchFiltered = logs;
 
 	const sessions = useMemo(() => {
@@ -427,22 +408,24 @@ export const AuditLogsDashboard = ({
 					<BreadcrumbList>
 						<BreadcrumbItem>
 							<BreadcrumbLink asChild>
-								<Link to={backPath}>Audit Logs</Link>
+								<Link to={backPath}>
+									{catalogName === "Apps"
+										? "App"
+										: catalogName}
+								</Link>
 							</BreadcrumbLink>
 						</BreadcrumbItem>
 						<BreadcrumbSeparator />
 						<BreadcrumbItem>
 							<BreadcrumbPage>
-								{catalogName === "Apps" ? "App" : catalogName}
+								{catalogDisplayName || catalogId}
 							</BreadcrumbPage>
 						</BreadcrumbItem>
 						{engineNames.length > 0 && (
 							<>
 								<BreadcrumbSeparator />
 								<BreadcrumbItem>
-									<BreadcrumbPage>
-										{catalogDisplayName || catalogId}
-									</BreadcrumbPage>
+									<BreadcrumbPage>Audit Logs</BreadcrumbPage>
 								</BreadcrumbItem>
 							</>
 						)}

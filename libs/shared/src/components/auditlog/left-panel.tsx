@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@semoss/ui/next";
 import LatencyChart from "./latency-chart";
-import LogDetailPanel from "./log-detail-panel";
+import LogDetailPanel from "./log-details-panel";
 import { type AuditLog, latencyColor, parseArg } from "./types/audit";
 
 const CHART_PAGE_SIZE = 15;
@@ -57,9 +57,7 @@ export const ChartPanel = ({
 
 	return (
 		<div className="flex h-[600px] flex-col gap-2">
-			{/* ── Chart Panel ── */}
 			<div className="flex max-h-[300px] flex-1 flex-col rounded-lg border border-border bg-card">
-				{/* Tab bar */}
 				<div className="flex flex-shrink-0 items-center gap-0 border-border border-b px-3 pt-1">
 					{tabs.map((t) => (
 						<Button
@@ -77,7 +75,6 @@ export const ChartPanel = ({
 						</Button>
 					))}
 
-					{/* Legend */}
 					<div className="ml-auto flex items-center gap-3 pr-1 pb-1">
 						<span className="flex items-center gap-1 text-[9px] text-muted-foreground">
 							<span className="inline-block h-2 w-2 rounded-sm bg-primary" />
@@ -90,7 +87,6 @@ export const ChartPanel = ({
 					</div>
 				</div>
 
-				{/* Chart body */}
 				<div className="flex flex-1 flex-col p-3">
 					{loading ? (
 						<div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground text-xs">
@@ -103,12 +99,10 @@ export const ChartPanel = ({
 						</div>
 					) : chartTab === "bar" ? (
 						<>
-							{/* Latency bar chart */}
 							<div className="min-h-0 flex-1 overflow-hidden">
 								<LatencyChart data={chartData} dark={dark} />
 							</div>
 
-							{/* Chart pagination */}
 							{chartTotalPages > 1 && (
 								<div className="mt-2 flex flex-shrink-0 items-center justify-center gap-2 border-border border-t pt-2">
 									<Button
@@ -196,7 +190,6 @@ export const ChartPanel = ({
 				</div>
 			</div>
 
-			{/* ── Detail Panel ── */}
 			<div className="h-[370px] flex-1 overflow-hidden rounded-lg border border-border bg-card">
 				<LogDetailPanel log={logs.length === 0 ? null : selected} />
 			</div>

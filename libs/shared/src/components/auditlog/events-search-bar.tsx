@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { Search, Space, X } from "lucide-react";
 import {
 	type KeyboardEvent,
 	useCallback,
@@ -74,7 +74,7 @@ const nextTokenId = (): string => `tok_${++_tokenIdCounter}`;
 export const buildSearchPayload = (
 	tokens: SearchToken[],
 	freeText: string,
-): SearchPayload | {} => {
+): SearchPayload => {
 	if (tokens?.length === 0 && !freeText.trim()) return {};
 
 	if (tokens?.length === 0 && freeText.trim()) {
@@ -368,8 +368,9 @@ export const TokenizedSearchBar = ({
 				{/* Hint + Clear */}
 				<span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
 					{!dropdownOpen && (
-						<span className="select-none whitespace-nowrap font-mono text-[9px] text-muted-foreground/60">
-							Ctrl+Space to filter
+						<span className="flex select-none items-center gap-1 whitespace-nowrap font-mono text-[9px] text-muted-foreground/60">
+							Ctrl +
+							<Space className="h-3 w-3" />
 						</span>
 					)}
 					{(tokens?.length > 0 || freeText) && (

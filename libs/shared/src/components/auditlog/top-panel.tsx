@@ -216,7 +216,6 @@ export const FilterRow = ({
 
 	return (
 		<div className="mb-2 flex w-full flex-col gap-3">
-			{/* ── Header + Filters ── */}
 			<div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
 				<h2 className="flex-shrink-0 font-semibold text-foreground text-lg">
 					Timeline &amp; Logs Dashboard
@@ -224,7 +223,6 @@ export const FilterRow = ({
 
 				<ScrollArea className="w-full lg:w-auto">
 					<div className="flex items-center gap-2">
-						{/* ── Engine Type ── */}
 						{showEngineFilter && (
 							<Select
 								value={engineType || "APP"}
@@ -246,7 +244,6 @@ export const FilterRow = ({
 							</Select>
 						)}
 
-						{/* ── Engine Name ── */}
 						{showEngineFilter && (
 							<Select
 								value={engineId || engineNames?.[0]?.value}
@@ -279,7 +276,6 @@ export const FilterRow = ({
 							</Select>
 						)}
 
-						{/* ── User ── */}
 						{showUserFilter && (
 							<Select
 								value={selectedUser || "__all__"}
