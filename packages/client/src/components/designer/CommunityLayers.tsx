@@ -14,23 +14,15 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { ChevronDown, ChevronRight, GripVertical } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import {
-	Box,
-	Collapse,
-	IconButton,
-	Paper,
-	styled,
-	Typography,
-} from "@semoss/ui";
+import { Collapsible, CollapsibleContent } from "@semoss/ui/next";
 import { BlockSettingsRegistry } from "../blocks-workspace/blocks";
 
 type WidgetItem = {
 	widget: string;
+	// biome-ignore lint/suspicious/noExplicitAny: block data is untyped
 	data: any;
 	slots?: {
 		[slotName: string]: {
@@ -41,51 +33,11 @@ type WidgetItem = {
 };
 
 type Props = {
+	// biome-ignore lint/suspicious/noExplicitAny: item shape varies
 	item: any;
-	onJsonUpdate?: (updated: WidgetItem) => void; // optional callback for parent
+	onJsonUpdate?: (updated: WidgetItem) => void;
 };
-const StyledLabelTitle = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	gap: 8,
-	padding: 8,
-	margin: "4px 0",
-	marginLeft: 40,
-	cursor: "grab",
-	borderRadius: 8,
-	height: "70px",
-}));
 
-const StyledContent = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-}));
-
-const StyledChildContent = styled(Box)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "center",
-}));
-
-const StyledPaper = styled(Paper)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: "7px",
-	my: 0.5,
-	height: "70px",
-	boxShadow: "none",
-	padding: theme.spacing(1),
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	border: "1px solid #e0e0e0",
-	borderRadius: "8px",
-	mb: 1,
-	width: "100%",
-}));
-// === DRAGGABLE SORTABLE BLOCK (for leaf nodes only) ===
 const SortableLeaf: React.FC<{
 	id: string;
 	block: WidgetItem;
@@ -108,45 +60,34 @@ const SortableLeaf: React.FC<{
 	const WidgetIcon = BlockSettingsRegistry[block?.widget]?.icon;
 
 	return (
-		<StyledLabelTitle
+		<div
 			ref={setNodeRef}
 			style={style}
+			className="my-1 ml-10 flex h-[70px] cursor-grab items-center justify-between gap-2 rounded-lg p-2"
 			{...attributes}
 			{...listeners}
 		>
-			<StyledContent>
+			<div className="flex items-center gap-2">
 				{WidgetIcon && (
-					<WidgetIcon
-						fontSize="small"
-						sx={{ color: "text.secondary" }}
-					/>
+					<WidgetIcon className="size-4 text-muted-foreground" />
 				)}
-				<StyledChildContent>
-					<Typography
-						variant="body1"
-						fontWeight={400}
-						sx={{ fontSize: "14px" }}
-					>
-						{block?.widget}
-					</Typography>
-					<Typography
-						variant="body1"
-						fontWeight={400}
-						sx={{ fontSize: "14px" }}
-						color="text.secondary"
-					>
-						{block?.widget + "11"}
-					</Typography>
-				</StyledChildContent>
-			</StyledContent>
-			<IconButton size="small">
-				<DragIndicatorIcon />
-			</IconButton>
-		</StyledLabelTitle>
+				<div className="flex flex-col justify-center">
+					<span className="text-sm">{block?.widget}</span>
+					<span className="text-muted-foreground text-sm">
+						{`${block?.widget}11`}
+					</span>
+				</div>
+			</div>
+			<button
+				type="button"
+				className="flex size-8 items-center justify-center rounded hover:bg-accent"
+			>
+				<GripVertical className="size-4" />
+			</button>
+		</div>
 	);
 };
 
-// === RECURSIVE RENDERING ===
 const RecursiveRenderer: React.FC<{
 	block: WidgetItem;
 	path: string;
@@ -157,12 +98,11 @@ const RecursiveRenderer: React.FC<{
 		block?.slots &&
 		Object.values(block?.slots).some((slot) => slot.children?.length);
 
-	const [expanded, setExpanded] = useState(false); // collapsed by default
+	const [expanded, setExpanded] = useState(false);
 	const toggleExpand = () => setExpanded((prev) => !prev);
 
 	const WidgetIcon = BlockSettingsRegistry[block?.widget]?.icon;
 
-	// handle reorder inside each slot
 	const handleReorder = (
 		slotKey: string,
 		oldIndex: number,
@@ -175,101 +115,108 @@ const RecursiveRenderer: React.FC<{
 		onUpdate(updated);
 	};
 
+	// suppress unused variable warning — handleReorder used by DnD context
+	void handleReorder;
+
 	return (
-		<StyledBox sx={{ ml: hasParent ? 5 : 0 }}>
-			<StyledPaper elevation={1}>
+		<div
+			className="w-full rounded-lg border border-border"
+			style={{ marginLeft: hasParent ? "20px" : 0, marginBottom: "4px" }}
+		>
+			<div className="flex h-[70px] items-center gap-2 rounded-lg p-2 shadow-none">
 				{isParent && (
-					<IconButton size="small" onClick={toggleExpand}>
-						{expanded ? <ExpandMoreIcon /> : <ChevronRightIcon />}
-					</IconButton>
+					<button
+						type="button"
+						className="flex size-8 items-center justify-center rounded hover:bg-accent"
+						onClick={toggleExpand}
+					>
+						{expanded ? (
+							<ChevronDown className="size-4" />
+						) : (
+							<ChevronRight className="size-4" />
+						)}
+					</button>
 				)}
-				<StyledContent>
+				<div className="flex items-center gap-2">
 					{WidgetIcon && (
-						<WidgetIcon
-							fontSize="small"
-							sx={{ color: "text.secondary" }}
-						/>
+						<WidgetIcon className="size-4 text-muted-foreground" />
 					)}
-					<StyledChildContent>
-						<Typography
-							variant="body1"
-							fontWeight={400}
-							sx={{ fontSize: "14px" }}
-						>
-							{block?.widget}
-						</Typography>
-						<Typography
-							variant="body1"
-							fontWeight={400}
-							sx={{ fontSize: "14px" }}
-							color="text.secondary"
-						>
-							{block?.widget + "11"}
-						</Typography>
-					</StyledChildContent>
-				</StyledContent>
-			</StyledPaper>
+					<div className="flex flex-col justify-center">
+						<span className="text-sm">{block?.widget}</span>
+						<span className="text-muted-foreground text-sm">
+							{`${block?.widget}11`}
+						</span>
+					</div>
+				</div>
+			</div>
 
 			{isParent && (
-				<Collapse in={expanded}>
-					{Object.entries(block?.slots || {}).map(
-						([slotKey, slotValue]) => {
-							const children = slotValue.children ?? [];
-							const ids = children.map(
-								(_, i) => `${path}-${slotKey}-${i}`,
-							);
+				<Collapsible open={expanded}>
+					<CollapsibleContent>
+						{Object.entries(block?.slots || {}).map(
+							([slotKey, slotValue]) => {
+								const children = slotValue.children ?? [];
+								const ids = children.map(
+									(_, i) => `${path}-${slotKey}-${i}`,
+								);
 
-							return (
-								<SortableContext
-									key={slotKey}
-									items={ids}
-									strategy={verticalListSortingStrategy}
-								>
-									{children.map((child, index) => {
-										const isLeaf =
-											!child.slots ||
-											!Object.values(child.slots).some(
-												(s) => s.children?.length,
+								return (
+									<SortableContext
+										key={slotKey}
+										items={ids}
+										strategy={verticalListSortingStrategy}
+									>
+										{children.map((child, index) => {
+											const isLeaf =
+												!child.slots ||
+												!Object.values(
+													child.slots,
+												).some(
+													(s) => s.children?.length,
+												);
+											const childPath = `${path}-${slotKey}-${index}`;
+
+											return isLeaf ? (
+												<SortableLeaf
+													key={childPath}
+													id={childPath}
+													block={child}
+												/>
+											) : (
+												<RecursiveRenderer
+													key={childPath}
+													block={child}
+													path={childPath}
+													onUpdate={(
+														updatedChild,
+													) => {
+														const updated = {
+															...block,
+														};
+														// biome-ignore lint/style/noNonNullAssertion: slot exists since we're iterating
+														updated.slots![slotKey]
+															.children![index] =
+															updatedChild;
+														onUpdate(updated);
+													}}
+													hasParent={true}
+												/>
 											);
-										const childPath = `${path}-${slotKey}-${index}`;
-
-										return isLeaf ? (
-											<SortableLeaf
-												key={childPath}
-												id={childPath}
-												block={child}
-											/>
-										) : (
-											<RecursiveRenderer
-												key={childPath}
-												block={child}
-												path={childPath}
-												onUpdate={(updatedChild) => {
-													const updated = {
-														...block,
-													};
-													updated.slots![slotKey]
-														.children![index] =
-														updatedChild;
-													onUpdate(updated);
-												}}
-												hasParent={true}
-											/>
-										);
-									})}
-								</SortableContext>
-							);
-						},
-					)}
-				</Collapse>
+										})}
+									</SortableContext>
+								);
+							},
+						)}
+					</CollapsibleContent>
+				</Collapsible>
 			)}
-		</StyledBox>
+		</div>
 	);
 };
 
-// === ROOT COMPONENT ===
 export const CommunityLayers: React.FC<Props> = ({ item, onJsonUpdate }) => {
 	const [json, setJson] = useState<WidgetItem>(item.json);
+	// biome-ignore lint/suspicious/noExplicitAny: item shape varies
 	const [localItem, setLocalItem] = useState<any>(item);
 	const sensors = useSensors(useSensor(MouseSensor), useSensor(TouchSensor));
 
@@ -280,6 +227,9 @@ export const CommunityLayers: React.FC<Props> = ({ item, onJsonUpdate }) => {
 		if (onJsonUpdate) onJsonUpdate(updatedItem);
 	};
 
+	// suppress unused variable warning
+	void json;
+
 	const handleDragEnd = (event: DragEndEvent) => {
 		const activeId = String(event.active.id);
 		const overId = String(event.over?.id);
@@ -287,24 +237,26 @@ export const CommunityLayers: React.FC<Props> = ({ item, onJsonUpdate }) => {
 
 		const pathParts = activeId.split("-");
 		const slotKey = pathParts[pathParts.length - 2];
-		const fromIndex = parseInt(pathParts[pathParts.length - 1]);
-		const toIndex = parseInt(overId.split("-").pop() || "0");
+		const fromIndex = Number.parseInt(pathParts[pathParts.length - 1], 10);
+		const toIndex = Number.parseInt(overId.split("-").pop() || "0", 10);
 
 		const updated = { ...localItem.json };
 
 		const parentPath = pathParts.slice(0, -2);
+		// biome-ignore lint/suspicious/noExplicitAny: recursive traversal of untyped structure
 		let parent: any = updated;
 
 		for (const p of parentPath) {
 			const slot = Object.values(parent.slots || {}).find(
+				// biome-ignore lint/suspicious/noExplicitAny: untyped slot traversal
 				(s: any) =>
 					Array.isArray(s.children) &&
-					s.children.length > parseInt(p),
+					s.children.length > Number.parseInt(p, 10),
 			) as { children?: WidgetItem[] } | undefined;
 
 			if (!slot || !slot.children) break;
 
-			parent = slot.children[parseInt(p)];
+			parent = slot.children[Number.parseInt(p, 10)];
 		}
 
 		const slot = parent.slots?.[slotKey];
@@ -320,14 +272,14 @@ export const CommunityLayers: React.FC<Props> = ({ item, onJsonUpdate }) => {
 			collisionDetection={closestCenter}
 			onDragEnd={handleDragEnd}
 		>
-			<Box>
+			<div>
 				<RecursiveRenderer
-					block={json}
+					block={localItem.json}
 					path="root"
 					onUpdate={handleUpdate}
 					hasParent={false}
 				/>
-			</Box>
+			</div>
 		</DndContext>
 	);
 };

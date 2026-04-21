@@ -161,10 +161,9 @@ export const SelectInputSettings = observer(
 					></input>
 				) : (
 					<Select
-						value={value}
+						value={value || (allowUnset ? "__none__" : value)}
 						onValueChange={(val) => {
-							// sync the data on change
-							onChange(val);
+							onChange(val === "__none__" ? "" : val);
 						}}
 					>
 						<SelectTrigger
@@ -177,9 +176,7 @@ export const SelectInputSettings = observer(
 						</SelectTrigger>
 						<SelectContent>
 							{allowUnset ? (
-								<SelectItem value="">
-									<em>None</em>
-								</SelectItem>
+								<SelectItem value="__none__">None</SelectItem>
 							) : null}
 							{Array.from(options, (option, _i) => {
 								return (

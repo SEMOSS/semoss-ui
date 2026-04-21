@@ -1,4 +1,4 @@
-import { LabelRounded } from "@mui/icons-material";
+import { Tag } from "lucide-react";
 import type { CSSProperties } from "react";
 import {
 	ColorSettings,
@@ -15,7 +15,7 @@ export const DefaultStyles: CSSProperties = {};
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
-	icon: LabelRounded,
+	icon: Tag,
 	contentMenu: [
 		{
 			name: "General",

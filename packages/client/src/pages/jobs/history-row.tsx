@@ -1,6 +1,6 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
-import { Badge, Button } from "@semoss/ui/next";
+import { Button, TableCell, TableRow } from "@semoss/ui/next";
 
 export const HistoryRow = (props: {
 	row: {
@@ -16,47 +16,52 @@ export const HistoryRow = (props: {
 
 	return (
 		<>
-			<tr className="border-t hover:bg-muted/30">
-				<td className="px-2 py-1">
-					<Button
-						variant="ghost"
-						size="icon"
-						className="size-7"
-						onClick={() => setOpen(!open)}
-						data-testid={"historyRow-table-toggle-btn"}
-					>
-						{open ? (
-							<ChevronDown className="size-4" />
-						) : (
-							<ChevronRight className="size-4" />
-						)}
-					</Button>
-				</td>
-				<td className="px-3 py-2 text-sm">{row.jobName}</td>
-				<td className="px-3 py-2 text-sm">{row.execStart}</td>
-				<td className="px-3 py-2 text-sm">{row.execDelta}</td>
-				<td className="px-3 py-2 text-sm">
-					<Badge
-						variant="outline"
-						className={
-							row.success
-								? "border-green-500 text-green-600"
-								: "border-red-500 text-red-600"
-						}
+			<TableRow>
+				<TableCell>
+					<div className="flex items-center gap-2">
+						<Button
+							variant="ghost"
+							size="icon"
+							onClick={() => setOpen(!open)}
+							data-testid="historyRow-table-toggle-btn"
+						>
+							{open ? (
+								<ChevronUp className="h-4 w-4" />
+							) : (
+								<ChevronDown className="h-4 w-4" />
+							)}
+						</Button>
+
+						<span className="text-sm">{row.jobName}</span>
+					</div>
+				</TableCell>
+
+				<TableCell className="text-xs">{row.execStart}</TableCell>
+				<TableCell className="text-xs">{row.execDelta}</TableCell>
+
+				<TableCell>
+					<span
+						className={`rounded-full px-4 py-2 font-semibold text-white text-xs ${
+							row.success ? "bg-green-600" : "bg-red-600"
+						}`}
 					>
 						{row.success ? "Success" : "Failed"}
-					</Badge>
-				</td>
-			</tr>
+					</span>
+				</TableCell>
+			</TableRow>
+
 			{open && (
-				<tr className="border-t bg-muted/20">
-					<td colSpan={5} className="px-4 py-3">
-						<p className="mb-2 font-medium text-sm">Output:</p>
-						<div className="rounded-2xl bg-[#F0F0F0] p-2 text-sm">
-							{row.schedulerOutput}
+				<TableRow>
+					<TableCell colSpan={6} className="p-0">
+						<div className="space-y-3 p-4">
+							<p className="font-medium text-sm">Output:</p>
+
+							<div className="rounded-xl bg-gray-100 p-3 text-sm">
+								{row.schedulerOutput}
+							</div>
 						</div>
-					</td>
-				</tr>
+					</TableCell>
+				</TableRow>
 			)}
 		</>
 	);

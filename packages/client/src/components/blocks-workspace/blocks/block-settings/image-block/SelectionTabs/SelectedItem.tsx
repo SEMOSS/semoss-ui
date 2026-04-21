@@ -1,46 +1,28 @@
-import DeleteIcon from "@mui/icons-material/Delete";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { Box, IconButton, List, styled, Typography } from "@semoss/ui";
-
-const StyledListItem = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-}));
-
-const StyledInfo = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.disabled,
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(1),
-	marginTop: 0,
-}));
-
-const StyledInfoIcon = styled(InfoOutlinedIcon)({
-	fontSize: 2,
-});
+import { Info, Trash2 } from "lucide-react";
+import { Button } from "@semoss/ui/next";
 
 const SelectedItem = ({ file, setData }) => {
 	return file ? (
-		<Box>
-			<StyledListItem>
-				<List.ItemText>{file.fileName}</List.ItemText>
-				<IconButton
+		<div>
+			<div className="flex items-center gap-2">
+				<span className="text-sm">{file.fileName}</span>
+				<Button
+					variant="ghost"
+					size="icon-sm"
 					data-testid="remove-image"
-					edge="end"
 					aria-label="delete"
 					onClick={() => {
 						setData("src", "");
 					}}
 				>
-					<DeleteIcon color="error" />
-				</IconButton>
-			</StyledListItem>
-			<StyledInfo variant="caption">
-				<StyledInfoIcon />
+					<Trash2 className="size-4 text-destructive" />
+				</Button>
+			</div>
+			<p className="mt-0 flex items-center gap-1 text-muted-foreground text-xs">
+				<Info className="size-4" />
 				Delete current file to upload a new one.
-			</StyledInfo>
-		</Box>
+			</p>
+		</div>
 	) : null;
 };
 
