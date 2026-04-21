@@ -18,13 +18,8 @@ import {
 	INPUT_BLOCK_TYPES,
 	useBlocks,
 } from "@semoss/renderer";
-import {
-	ButtonGroup,
-	IconButton,
-	styled,
-	Tooltip,
-	useNotification,
-} from "@semoss/ui";
+import { ButtonGroup, IconButton, styled, Tooltip } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useDesigner, useRootStore } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
 import { getDependencyCells } from "@/utility/dependencyScanner";
@@ -94,7 +89,6 @@ export const DeleteDuplicateMask = observer(
 		// get the store
 		const { registry, state } = useBlocks();
 		const { designer } = useDesigner();
-		const notification = useNotification();
 		const { configStore } = useRootStore();
 
 		// get the block
@@ -319,10 +313,9 @@ export const DeleteDuplicateMask = observer(
 
 			const parentBlock = state.getBlock(block.parent.id);
 			if (parentBlock.widget === "iteration") {
-				notification.add({
-					color: "error",
-					message: `Unable to duplicate ${block.widget} within an Iterator Block`,
-				});
+				toast.error(
+					`Unable to duplicate ${block.widget} within an Iterator Block`,
+				);
 				return;
 			}
 

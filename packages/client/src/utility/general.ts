@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Env } from "@semoss/sdk/react";
+import { toast } from "@semoss/ui/next";
 import type { Role } from "@/types";
 
 /**
@@ -90,19 +91,12 @@ export const formatPermission = (permission: Role | ""): string => {
 /**
  * @desc Copies string to clipboard
  */
-export const copyTextToClipboard = (text: string, notificationService) => {
+export const copyTextToClipboard = (text: string) => {
 	try {
 		navigator.clipboard.writeText(text);
-
-		notificationService.add({
-			color: "success",
-			message: "Successfully copied to clipboard",
-		});
+		toast.success("Successfully copied to clipboard");
 	} catch (e) {
-		notificationService.add({
-			color: "error",
-			message: e.message,
-		});
+		toast.error(e.message);
 	}
 };
 

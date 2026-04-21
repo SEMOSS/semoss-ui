@@ -2,13 +2,8 @@ import { Code, Terminal as TerminalIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import {
-	buildTable,
-	Terminal,
-	type TerminalProps,
-	useNotification,
-} from "@semoss/ui";
-import { Button, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
+import { buildTable, Terminal, type TerminalProps } from "@semoss/ui";
+import { Button, ToggleGroup, ToggleGroupItem, toast } from "@semoss/ui/next";
 import PythonLogo from "@/assets/img/PYTHON.svg";
 import RLogo from "@/assets/img/R-logo.svg";
 import { useRootStore, useWorkspace } from "@/hooks";
@@ -44,8 +39,6 @@ interface TaskData {
 }
 
 export const TerminalPanel: React.FC = observer(() => {
-	const notification = useNotification();
-
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
 	const [, setIsLoading] = useState<boolean>(false);
 	const { workspace } = useWorkspace();
@@ -224,17 +217,13 @@ export const TerminalPanel: React.FC = observer(() => {
 						.download(insightId, formatted as string)
 						.then(() => {
 							if (output && response.errors.length === 0) {
-								notification.add({
-									color: "success",
-									message: `file downloaded successfully`,
-								});
+								toast.success("file downloaded successfully");
 							}
 						})
 						.catch(() => {
-							notification.add({
-								color: "error",
-								message: `Error occurred while trying to download`,
-							});
+							toast.error(
+								"Error occurred while trying to download",
+							);
 						});
 				}
 
@@ -256,10 +245,7 @@ export const TerminalPanel: React.FC = observer(() => {
 			// update the history
 			setHistory(updatedHistory);
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e,
-			});
+			toast.error(e);
 
 			console.error(e);
 		} finally {
