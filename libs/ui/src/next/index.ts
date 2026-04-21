@@ -7,6 +7,7 @@ export * from "../lib";
 // export the hooks
 
 export * from "../hooks";
+export { darkTheme, lightTheme } from "../theme";
 // Re-export all components (only export what exists)
 export * from "./accordion";
 export * from "./alert";
@@ -31,6 +32,7 @@ export * from "./input";
 export * from "./input-group";
 export * from "./item";
 export * from "./label";
+export * from "./loading-screen";
 export * from "./markdown";
 export * from "./pagination";
 export * from "./popover";

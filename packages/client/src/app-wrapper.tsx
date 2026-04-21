@@ -1,8 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { HashRouter } from "react-router-dom";
-import { LoadingScreen } from "@semoss/ui";
-import { ThemeProvider, Toaster } from "@semoss/ui/next";
+import { LoadingScreen, ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
 import { useRootStore } from "./hooks";
