@@ -3,7 +3,7 @@ import { AppDetailPage } from "./app-detail-page";
 import { CreateAppPage } from "./create-app-page";
 import { EditAppPage } from "./edit-app-page";
 import { NewPromptBuilderAppPage } from "./NewPromptBuilderAppPage";
-import { ViewAppPage } from "./ViewAppPage";
+import { ViewAppPage } from "./view-app-page";
 
 export {
 	AppCatalogPage,

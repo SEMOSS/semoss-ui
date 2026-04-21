@@ -27,7 +27,6 @@ import {
 	type VariableWithId,
 } from "@semoss/renderer";
 // import { MonacoEditor } from "@semoss/shared/monaco";
-import { useNotification } from "@semoss/ui";
 import {
 	Alert,
 	AlertDescription,
@@ -44,6 +43,7 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	toast,
 } from "@semoss/ui/next";
 import PreviewButton from "../../assets/img/PreviewRounded.png";
 // TODO: MOVE TO SDK/UTILITY LIB
@@ -127,7 +127,6 @@ const MonacoEditor = lazy(() =>
 export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	const { open, onClose, variable, engines } = props;
 	const { state } = useBlocks();
-	const notification = useNotification();
 
 	const [variableName, setVariableName] = useState("");
 	const [variableType, setVariableType] = useState<VariableType | "">("");
@@ -199,6 +198,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	/**
 	 * Select options depending on variable type
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: comparisonBlocks intentionally omitted
 	const selectOptions = useMemo((): {
 		value: string;
 		label: string;
@@ -260,12 +260,14 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	const isPointerType = (type: string) =>
 		["block", "query", "cell", "LLM Comparison"].includes(type);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: isPointerType/isEngineType are stable
 	const selectValue = useMemo(() => {
 		if (isPointerType(variableType)) return variablePointer;
 		if (isEngineType(variableType)) return engine?.engine_id ?? "";
 		return "";
 	}, [variableType, variablePointer, engine]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: complex memo with stable callbacks
 	const input = useMemo(() => {
 		if (variableType === "string") {
 			return (
@@ -402,6 +404,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		return null;
 	}, [variableType, variableInputValue, selectOptions, selectValue]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dep subset
 	const preview = useMemo(() => {
 		try {
 			if (
@@ -551,7 +554,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			return <span className="text-sm">Value is undefined</span>;
 		}
 	}, [variableType, variablePointer, engine, variableInputValue]);
-	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dep subset
 	const addVariableDisabled = useMemo(() => {
 		const hasRequiredFields = Boolean(
 			variableType.length > 0 && variableName.length > 0,
@@ -594,7 +598,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		variableInputValue,
 		alreadyAliased,
 	]);
-	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping dependencies for functionality
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only re-sync on variable change
 	useEffect(() => {
 		if (variable?.id) {
 			setVariableName(variable.id);
@@ -789,10 +794,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 										},
 									});
 
-									notification.add({
-										color: "success",
-										message: `Successfully editted ${variable.id}, remember to save your app.`,
-									});
+									toast.success(
+										`Successfully editted ${variable.id}, remember to save your app.`,
+									);
 									onClose();
 								} else {
 									console.warn(
@@ -832,12 +836,15 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 													},
 									});
 
-									notification.add({
-										color: success ? "success" : "error",
-										message: success
-											? `Successfully added ${variableName}, remember to save your app.`
-											: `Unable to create ${variableName}`,
-									});
+									if (success) {
+										toast.success(
+											`Successfully added ${variableName}, remember to save your app.`,
+										);
+									} else {
+										toast.error(
+											`Unable to create ${variableName}`,
+										);
+									}
 									onClose();
 								}
 							}

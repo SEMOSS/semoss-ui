@@ -145,7 +145,6 @@ export const VectorForm = ({
 					if (operationType.includes("ERROR")) {
 						toast.error(String(output));
 						setLoading(false);
-						return;
 					}
 				} catch {
 					toast.error("Upload failed or returned invalid response.");
@@ -770,13 +769,13 @@ export const VectorForm = ({
 								<div className="flex flex-1 flex-col gap-1">
 									<H4
 										className="font-semibold text-base tracking-tight"
-										data-testId="vector-importForm-category-title"
+										data-testid="vector-importForm-category-title"
 									>
 										{category}
 									</H4>
 									<Muted
 										className="text-muted-foreground text-sm leading-6"
-										data-testId="model-importForm-category-description"
+										data-testid="model-importForm-category-description"
 									>
 										{categoryDescriptions[category] ??
 											"No description available."}

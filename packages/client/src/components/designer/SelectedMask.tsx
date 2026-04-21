@@ -2,7 +2,8 @@ import { DragIndicator } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Stack, styled, Typography, useNotification } from "@semoss/ui";
+import { Stack, styled, Typography } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useDesigner } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
 import { BlockSettingsRegistry } from "../blocks-workspace/blocks";
@@ -47,9 +48,9 @@ interface SelectedMaskProps {
  */
 export const SelectedMask = observer((props: SelectedMaskProps) => {
 	const { screenEle } = props;
-	const notification = useNotification();
 
 	// create the state
+
 	const [size, setSize] = useState<{
 		top: number;
 		left: number;
@@ -168,11 +169,9 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 							const parent = state.getBlock(sw.parent.id);
 							if (parent.widget === "iteration") {
 								if (parent.slots.children.children.length) {
-									notification.add({
-										color: "error",
-										message:
-											"Please delete block within iterator before adding another child",
-									});
+									toast.error(
+										"Please delete block within iterator before adding another child",
+									);
 									designer.deactivateDrag();
 									return;
 								}
@@ -235,11 +234,9 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 						const parent = state.getBlock(sw.parent.id);
 						if (parent.widget === "iteration") {
 							if (parent.slots.children.children.length) {
-								notification.add({
-									color: "error",
-									message:
-										"Please delete block within iterator before adding another child",
-								});
+								toast.error(
+									"Please delete block within iterator before adding another child",
+								);
 								designer.deactivateDrag();
 								return;
 							}
@@ -320,17 +317,20 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 	};
 
 	// update the mask when the screen is resized
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only listener
 	useEffect(() => {
 		window.addEventListener("resize", repositionMask);
 	}, []);
 
 	// block resized is a custom event emitted by SizeSettings
 	// so we know to updated the mask when width/height changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only listener
 	useEffect(() => {
 		window.addEventListener("blockResized", repositionMask);
 	}, []);
 
 	// get the root, watch changes, and reposition the mask
+	// biome-ignore lint/correctness/useExhaustiveDependencies: repositionMask is stable
 	useLayoutEffect(() => {
 		const observer = new MutationObserver(() => {
 			repositionMask();
@@ -366,7 +366,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 
 	const handleRename = (id: string): string => {
 		const block = state.getBlock(id);
-		if (block && block?.data?.id) {
+		if (block?.data?.id) {
 			return block.data.id as string;
 		}
 		return id;
@@ -375,7 +375,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 	if (designer.selectedBlocks.length > 1) {
 		return (
 			<>
-				{designer.selectedBlocks.map((id, index) => {
+				{designer.selectedBlocks.map((id, _index) => {
 					const blockElement = getBlockElement(id);
 					if (!blockElement) return null;
 

@@ -1,59 +1,33 @@
-import {
-	ExpandLess,
-	ExpandMore,
-	FormatListBulletedOutlined,
-	SpaceDashboardOutlined,
-} from "@mui/icons-material";
-import React, { useState } from "react";
-import { List, styled, Typography } from "@semoss/ui";
-
-const StyledFilter = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "fit-content",
-	width: "355px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-	background: theme.palette.background.paper,
-}));
-
-const StyledFilterList = styled(List)(({ theme }) => ({
-	width: "100%",
-	borderRadius: theme.shape.borderRadius,
-	gap: theme.spacing(2),
-}));
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 interface AppFilterProps {
 	onChange: (filters) => void;
 }
-export const AppFilter = (props: AppFilterProps) => {
+
+export const AppFilter = (_props: AppFilterProps) => {
 	const [filterByVisibility, setFilterByVisibility] = useState(true);
 
 	return (
-		<StyledFilter>
-			<StyledFilterList>
-				<List.Item
-					secondaryAction={
-						<List.ItemButton
-							onClick={() => {
-								setFilterByVisibility(!filterByVisibility);
-							}}
-						>
-							{filterByVisibility ? (
-								<ExpandLess />
-							) : (
-								<ExpandMore />
-							)}
-						</List.ItemButton>
-					}
-				>
-					<List.ItemText
-						disableTypography
-						primary={
-							<Typography variant="h6">Filter Byss</Typography>
+		<div className="flex h-fit w-[355px] flex-col bg-background shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+			<ul className="w-full">
+				<li className="flex items-center justify-between px-4 py-2">
+					<span className="font-semibold text-base">Filter By</span>
+					<button
+						type="button"
+						onClick={() =>
+							setFilterByVisibility(!filterByVisibility)
 						}
-					/>
-				</List.Item>
-			</StyledFilterList>
-		</StyledFilter>
+						className="rounded p-1 hover:bg-accent"
+					>
+						{filterByVisibility ? (
+							<ChevronUp className="size-5" />
+						) : (
+							<ChevronDown className="size-5" />
+						)}
+					</button>
+				</li>
+			</ul>
+		</div>
 	);
 };

@@ -36,7 +36,7 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
 			height={height}
 			alignItems="center"
 			justifyContent="center"
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`blockMenuCardContent-card-${name}`,
 			)}
 		>

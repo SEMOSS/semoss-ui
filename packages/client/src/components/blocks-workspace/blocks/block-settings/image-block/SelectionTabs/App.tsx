@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { upload, usePixel } from "@semoss/sdk/react";
-import { FileDropzone, Typography, useNotification } from "@semoss/ui";
+import { FileDropzone, Typography } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { getImageFiles, imageExtensions } from "../utils";
 import SelectedItem from "./SelectedItem";
 import SelectImage from "./SelectImage";
 
 const AppTab = ({ id, data, setData, appId, insightId }) => {
-	const notification = useNotification();
 	const [isLoading, setIsLoading] = useState(false);
+	// biome-ignore lint/suspicious/noExplicitAny: pixel response shape uses any
 	const getAssets = usePixel<{ status: string; data: any }>(
 		`BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
 	);
@@ -21,18 +22,12 @@ const AppTab = ({ id, data, setData, appId, insightId }) => {
 			uploadRes = await upload(file, insightId, appId, "version/assets/");
 			setData("title", "");
 			setData("src", uploadRes[0]);
-			notification.add({
-				color: "success",
-				message: "Image uploaded successfully",
-			});
+			toast.success("Image uploaded successfully");
 			if (!uploadRes) {
 				throw new Error("Error missing uploading image");
 			}
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: "Error uploading image",
-			});
+			toast.error("Error uploading image");
 			console.error(e);
 		} finally {
 			setIsLoading(false);
