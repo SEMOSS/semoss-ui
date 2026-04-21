@@ -1,5 +1,5 @@
 import { AutoAwesome, ContentCopyOutlined } from "@mui/icons-material/";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
 	Button,
 	Menu,
@@ -10,9 +10,9 @@ import {
 	styled,
 	TextField,
 	Typography,
-	useNotification,
 } from "@semoss/ui";
-import { useLLM, usePixel, useRootStore } from "@/hooks";
+import { toast } from "@semoss/ui/next";
+import { useLLM, useRootStore } from "@/hooks";
 
 const StyledGenerateButton = styled(Button, {
 	shouldForwardProp: (prop) => prop !== "full",
@@ -63,8 +63,6 @@ const StyledSkeletonContainer = styled("div")(() => ({
 export const TextEditorCodeGeneration = () => {
 	const { modelId, modelOptions, setModel: setModelId } = useLLM();
 	const { monolithStore } = useRootStore();
-	const notification = useNotification();
-
 	const [isLoading, setIsLoading] = useState(false);
 	const [isOpen, setIsOpen] = useState(false);
 	const [code, setCode] = useState("");
@@ -110,11 +108,7 @@ export const TextEditorCodeGeneration = () => {
 			// }
 		} catch (e) {
 			console.log(e);
-
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		} finally {
 			// turn off loading
 			setIsLoading(false);
@@ -129,15 +123,9 @@ export const TextEditorCodeGeneration = () => {
 		try {
 			await navigator.clipboard.writeText(text);
 
-			notification.add({
-				color: "success",
-				message: "Successfully copied code",
-			});
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: "Unable to copy code",
-			});
+			toast.success("Successfully copied code");
+		} catch (_e) {
+			toast.error("Unable to copy code");
 		}
 	};
 
@@ -190,15 +178,13 @@ export const TextEditorCodeGeneration = () => {
 							rows={3}
 						></TextField>
 						{isLoading ? (
-							<>
-								<StyledSkeletonContainer>
-									<Skeleton
-										variant={"rectangular"}
-										width={"100%"}
-										height={"100%"}
-									/>
-								</StyledSkeletonContainer>
-							</>
+							<StyledSkeletonContainer>
+								<Skeleton
+									variant={"rectangular"}
+									width={"100%"}
+									height={"100%"}
+								/>
+							</StyledSkeletonContainer>
 						) : null}
 						{!isLoading && code ? (
 							<div>

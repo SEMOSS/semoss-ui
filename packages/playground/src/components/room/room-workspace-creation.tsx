@@ -65,6 +65,7 @@ export const SaveWorkspaceDialog = observer(
 					description,
 					system_prompt: systemPrompt,
 					mcp: mcps,
+					prompts: [],
 				});
 
 				toast.success(t("workspace.publishSuccess"));

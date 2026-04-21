@@ -19,7 +19,6 @@ import {
 import { createPortal } from "react-dom";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
-import { Tooltip } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -35,6 +34,9 @@ import {
 	P,
 	Separator,
 	Textarea,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { MarkdownEditor } from "@/components/common";
@@ -456,6 +458,7 @@ export const EngineEditPage: React.FC = observer(() => {
 		data: [],
 	});
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - status is the trigger
 	useEffect(() => {
 		if (getEngineMetaValues.status !== "SUCCESS") return;
 		const updated = getEngineMetaValues.data.reduce(
@@ -522,11 +525,13 @@ export const EngineEditPage: React.FC = observer(() => {
 	const handleCancelLeave = () => setPendingNavPath(null);
 	const handleConfirmLeave = () => {
 		reset(metadata || {});
+		// biome-ignore lint/style/noNonNullAssertion: only called when pendingNavPath is set
 		navigate(pendingNavPath!);
 		setPendingNavPath(null);
 	};
 	const handleSaveAndLeave = handleSubmit((data) =>
 		runSave(data, () => {
+			// biome-ignore lint/style/noNonNullAssertion: only called when pendingNavPath is set
 			navigate(pendingNavPath!);
 			setPendingNavPath(null);
 		}),
@@ -762,21 +767,23 @@ export const EngineEditPage: React.FC = observer(() => {
 							</span>
 						</Button>
 						{!insightStore.defaultTextGenerationModel && (
-							<Tooltip
-								title={
-									"Set a default text generation model to enable this feature. Click to configure now."
-								}
-							>
-								<CircleQuestionMark
-									className="size-4 cursor-pointer text-primary hover:text-primary/80"
-									onClick={() =>
-										navigate("/settings/my-profile")
-									}
-									data-testid={formatToDataTestId(
-										`editEngineDetails-${name}-generate-help-icon`,
-									)}
-									aria-label="Generate with AI help icon"
-								/>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<CircleQuestionMark
+										className="size-4 cursor-pointer text-primary hover:text-primary/80"
+										onClick={() =>
+											navigate("/settings/my-profile")
+										}
+										data-testid={formatToDataTestId(
+											`editEngineDetails-${name}-generate-help-icon`,
+										)}
+										aria-label="Generate with AI help icon"
+									/>
+								</TooltipTrigger>
+								<TooltipContent>
+									Set a default text generation model to
+									enable this feature. Click to configure now.
+								</TooltipContent>
 							</Tooltip>
 						)}
 					</div>

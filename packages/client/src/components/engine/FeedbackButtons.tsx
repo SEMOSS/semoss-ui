@@ -1,6 +1,7 @@
 import { ThumbDownOffAlt, ThumbUpOffAlt } from "@mui/icons-material";
 import { useState } from "react";
-import { IconButton, Stack, styled, useNotification } from "@semoss/ui";
+import { IconButton, Stack, styled } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 
 interface FeedbackButtonsProps {
 	messageId: string;
@@ -18,8 +19,6 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 	onFeedbackCall,
 	initialValue = null,
 }) => {
-	const notification = useNotification();
-
 	const [feedback, setFeedback] = useState<"true" | "false" | null>(
 		initialValue,
 	);
@@ -30,10 +29,7 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 		setFeedback(value);
 		onFeedbackCall(messageId, value);
 
-		notification.add({
-			color: "success",
-			message: "Successfully added feedback",
-		});
+		toast.success("Successfully added feedback");
 	};
 
 	return (
