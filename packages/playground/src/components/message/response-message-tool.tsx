@@ -44,7 +44,7 @@ const getToolState = (
 				...config[tool.status],
 				iconClassName: "bg-muted text-muted-foreground",
 				subtext: tool.json.description,
-				actionType: null,
+				actionType: "menu" as const,
 				background: "bg-background" as const,
 				showHoverAccent: true,
 				showCancelInMenu: false,
@@ -221,22 +221,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								{t("actions.cancel")}
 							</button>
 						)}
-						{toolState.badge && (
-							<span
-								className={cn(
-									"shrink-0 pr-3 text-sm",
-									toolState.badge.variant === "muted" &&
-										"text-muted-foreground",
-								)}
-							>
-								{toolState.badge.text}
-							</span>
-						)}
 						{toolState.actionType === "menu" && (
 							<ResponseMessageToolMenu
 								message={message}
 								tool={tool}
 								isFullButton
+								label={toolState.badge?.text}
 								showCancelInMenu={toolState.showCancelInMenu}
 							/>
 						)}
@@ -318,21 +308,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							{t("actions.cancel")}
 						</Button>
 					)}
-					{toolState.badge && (
-						<span
-							className={cn(
-								"shrink-0 pr-3 font-medium text-sm",
-								toolState.badge.variant === "muted" &&
-									"text-muted-foreground",
-							)}
-						>
-							{toolState.badge.text}
-						</span>
-					)}
 					{toolState.actionType === "menu" && (
 						<ResponseMessageToolMenu
 							message={message}
 							tool={tool}
+							label={toolState.badge?.text}
 							showCancelInMenu={toolState.showCancelInMenu}
 						/>
 					)}
