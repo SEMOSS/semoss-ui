@@ -1,6 +1,12 @@
-import { BlurLinear } from "@mui/icons-material";
+import { SlidersHorizontal } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Menu, Select } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import {
 	ColorSettings,
@@ -15,7 +21,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: BlurLinear,
+	icon: SlidersHorizontal,
 	contentMenu: [
 		{
 			name: "General",
@@ -35,26 +41,26 @@ export const config: BlockSettingsConfig = {
 								display: "Discrete",
 							},
 						];
-						const onChange = (value: string) => {
-							setData("type", value);
-						};
 						return (
 							<Select
-								label="Type"
-								fullWidth
-								size="small"
 								value={data.type}
-								onChange={(e) => {
-									onChange(e.target.value);
+								onValueChange={(value) => {
+									setData("type", value);
 								}}
 							>
-								{Array.from(options, (option, i) => {
-									return (
-										<Menu.Item key={i} value={option.value}>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Type" />
+								</SelectTrigger>
+								<SelectContent>
+									{options.map((option) => (
+										<SelectItem
+											key={option.value}
+											value={option.value}
+										>
 											{option.display}
-										</Menu.Item>
-									);
-								})}
+										</SelectItem>
+									))}
+								</SelectContent>
 							</Select>
 						);
 					}),

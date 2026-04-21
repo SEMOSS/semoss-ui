@@ -1,5 +1,5 @@
-import { Schema } from "@mui/icons-material";
-import { useEffect, useRef, useState } from "react";
+import { Network } from "lucide-react";
+import { useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -7,14 +7,19 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Autocomplete, TextField, Typography } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection, ColorSettings } from "../../settings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import {
 	buildBorderSection,
-	buildColorSection,
 	buildDimensionsSection,
 	buildListener,
 	buildShowField,
@@ -68,36 +73,21 @@ const SettingAutocomplete = <D extends BlockDef>({
 	};
 
 	return (
-		<Autocomplete
-			fullWidth
-			options={options}
-			multiple={false}
-			value={options.find((opt) => opt.value === selectedValue) || null}
-			onChange={(_, newValue) => {
-				setBlockData(
-					typeof newValue === "object" && newValue !== null
-						? newValue.value
-						: undefined,
-				);
-			}}
-			getOptionLabel={(option) =>
-				typeof option === "object" && option !== null
-					? option.label
-					: ""
-			}
-			isOptionEqualToValue={(option, value) =>
-				typeof option === "object" &&
-				option !== null &&
-				typeof value === "object" &&
-				value !== null &&
-				"value" in option &&
-				"value" in value &&
-				option.value === value.value
-			}
-			renderInput={(params) => (
-				<TextField {...params} size="small" variant="outlined" />
-			)}
-		/>
+		<Select
+			value={selectedValue ?? ""}
+			onValueChange={(val) => setBlockData(val)}
+		>
+			<SelectTrigger className="w-full">
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				{options.map((opt) => (
+					<SelectItem key={opt.value} value={opt.value}>
+						{opt.label}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
 	);
 };
 
@@ -110,7 +100,7 @@ const LayersDropdown = ({ id }) => {
 	const getAllBlock = allBlocks.map((block) => block.id);
 
 	if (getAllBlock.length === 0) {
-		return <Typography variant="body2">Layers panel not found</Typography>;
+		return <p className="text-sm">Layers panel not found</p>;
 	}
 
 	const options = getAllBlock.map((block) => {
@@ -136,7 +126,7 @@ export default LayersDropdown;
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: Schema,
+	icon: Network,
 	contentMenu: [
 		{
 			name: "General",
