@@ -1,4 +1,4 @@
-import HeadsetIcon from "@mui/icons-material/Headset";
+import { Headphones } from "lucide-react";
 import type { CSSProperties } from "react";
 import { InputSettings, QueryInputSettings } from "../../settings/";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
@@ -11,7 +11,7 @@ export const DefaultStyles: CSSProperties = {};
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_ACTION,
-	icon: HeadsetIcon,
+	icon: Headphones,
 	contentMenu: [
 		{
 			name: "General",

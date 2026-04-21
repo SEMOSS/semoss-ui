@@ -363,35 +363,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											workspace.saveToCache();
 										}}
 										onAction={(action) => {
-											// Prevent collapsing a border panel when clicking its already-selected tab
-											if (
-												action.type ===
-												"FlexLayout_SelectTab"
-											) {
-												const tabId =
-													action.data?.tabNode;
-												const isSelectedBorderTab =
-													model
-														?.getBorderSet()
-														?.getBorders()
-														?.some((border) => {
-															const sel =
-																border.getSelected();
-															if (sel < 0)
-																return false;
-															const children =
-																border.getChildren();
-															return (
-																children[
-																	sel
-																]?.getId() ===
-																tabId
-															);
-														});
-												if (isSelectedBorderTab) {
-													return false;
-												}
-											}
 											const handled = updateModel(action);
 											return !handled ? action : false;
 										}}

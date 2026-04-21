@@ -1,4 +1,3 @@
-import { Stack, styled, Typography } from "@semoss/ui";
 import { formatToDataTestId } from "@/utility";
 
 export interface BlockCardContentProps {
@@ -13,11 +12,6 @@ export interface BlockCardContentProps {
 export const blockCardWidth = "133px";
 export const blockCardHeight = "106px";
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-	userSelect: "none",
-}));
-
 export const BlockCardContent = (props: BlockCardContentProps) => {
 	const {
 		name = "",
@@ -29,13 +23,16 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
 	} = props;
 
 	return (
-		<Stack
-			paddingX={paddingX}
-			paddingY={paddingY}
-			width={width}
-			height={height}
-			alignItems="center"
-			justifyContent="center"
+		<div
+			className="flex flex-col items-center justify-center"
+			style={{
+				width,
+				height,
+				paddingLeft: `${paddingX * 8}px`,
+				paddingRight: `${paddingX * 8}px`,
+				paddingTop: `${paddingY * 8}px`,
+				paddingBottom: `${paddingY * 8}px`,
+			}}
 			data-testid={formatToDataTestId(
 				`blockMenuCardContent-card-${name}`,
 			)}
@@ -50,14 +47,10 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
 					aria-hidden="true"
 				/>
 			) : (
-				<StyledTypography
-					variant="body2"
-					fontWeight="medium"
-					align="center"
-				>
+				<span className="select-none text-center font-medium text-muted-foreground text-sm">
 					{name}
-				</StyledTypography>
+				</span>
 			)}
-		</Stack>
+		</div>
 	);
 };

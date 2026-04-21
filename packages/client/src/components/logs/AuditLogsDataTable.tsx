@@ -21,7 +21,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
-import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
+import { TimeDateFormatter } from "@/pages/audit-logs-dashboard";
 import type { EventData } from "@/types";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
 

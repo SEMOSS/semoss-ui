@@ -3,7 +3,7 @@ import { CSRF, Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
-import { AppWrapper } from "./AppWrapper";
+import { AppWrapper } from "./app-wrapper";
 
 // use the environment variable to set the module
 Env.update({

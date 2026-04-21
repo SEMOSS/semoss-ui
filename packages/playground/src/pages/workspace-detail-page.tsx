@@ -236,7 +236,12 @@ export const WorkspaceDetailPage = observer(() => {
 							{t("workspace:actions.newChat")}
 						</Button>
 					</div>
-					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
+					<div
+						className={cn(
+							"flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl",
+							tab !== "members" && "border border-border bg-card",
+						)}
+					>
 						{tab === "members" ? null : (
 							<div className="flex w-full flex-row gap-2 border-border border-b bg-secondary p-4">
 								<InputGroup className="bg-background">

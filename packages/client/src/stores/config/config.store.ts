@@ -29,6 +29,8 @@ interface ConfigStoreInterface {
 		email: string;
 		admin: boolean;
 		meta: unknown;
+		lastLogin?: string;
+		groupInfo?: { groups: string[] };
 	};
 	/** Native mode */
 	isNative: boolean;
@@ -169,6 +171,8 @@ export class ConfigStore {
 			email: "",
 			admin: false,
 			meta: {},
+			lastLogin: undefined,
+			groupInfo: undefined,
 		},
 		config: {
 			databaseMetaKeys: [],
@@ -516,6 +520,10 @@ export class ConfigStore {
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;
+				this._store.user.lastLogin = (user as Record<string, unknown>)
+					.lastLogin as string | undefined;
+				this._store.user.groupInfo = (user as Record<string, unknown>)
+					.groupInfo as { groups: string[] } | undefined;
 
 				// sync meta into insight store
 				this._root.insightStore.setUserDefaultModel(

@@ -1,5 +1,5 @@
 import { Controller, useForm } from "react-hook-form";
-import { Button, Stack, TextField } from "@semoss/ui";
+import { Input, Label } from "@semoss/ui/next";
 
 /**
  * @deprecated
@@ -9,21 +9,27 @@ export const CopyDatabaseForm = () => {
 
 	return (
 		<form>
-			<Stack rowGap={2}>
+			<div className="flex flex-col gap-2">
 				<Controller
 					name={"DATABASE_NAME"}
 					control={control}
 					rules={{ required: true }}
-					render={({ field, fieldState }) => {
-						const hasError = fieldState.error;
+					render={({ field, fieldState: _fieldState }) => {
 						return (
-							<TextField
-								fullWidth
-								required
-								label="Database Name"
-								value={field.value ? field.value : ""}
-								onChange={(value) => field.onChange(value)}
-							></TextField>
+							<div>
+								<Label htmlFor="database-name">
+									Database Name *
+								</Label>
+								{/* biome-ignore lint/correctness/useUniqueElementIds: IDs are scoped to component instances */}
+								<Input
+									id="database-name"
+									required
+									value={field.value ? field.value : ""}
+									onChange={(e) =>
+										field.onChange(e.target.value)
+									}
+								/>
+							</div>
 						);
 					}}
 				/>
@@ -31,19 +37,25 @@ export const CopyDatabaseForm = () => {
 					name={"DATABASE_LOCATION"}
 					control={control}
 					rules={{ required: false }}
-					render={({ field, fieldState }) => {
-						const hasError = fieldState.error;
+					render={({ field, fieldState: _fieldState }) => {
 						return (
-							<TextField
-								fullWidth
-								label="Database LOCATION"
-								value={field.value ? field.value : ""}
-								onChange={(value) => field.onChange(value)}
-							></TextField>
+							<div>
+								<Label htmlFor="database-location">
+									Database LOCATION
+								</Label>
+								{/* biome-ignore lint/correctness/useUniqueElementIds: IDs are scoped to component instances */}
+								<Input
+									id="database-location"
+									value={field.value ? field.value : ""}
+									onChange={(e) =>
+										field.onChange(e.target.value)
+									}
+								/>
+							</div>
 						);
 					}}
 				/>
-			</Stack>
+			</div>
 		</form>
 	);
 };

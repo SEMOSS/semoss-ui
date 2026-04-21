@@ -12,13 +12,24 @@ import { useRootStore } from "@/hooks";
 export const Help = observer((): JSX.Element => {
 	const { configStore } = useRootStore();
 
-    let themeMap;
+	const raw = configStore.store.config.theme.THEME_MAP;
+	if (!raw) return null;
 
-    const parsedThemeMap = JSON.parse(configStore.store.config.theme.THEME_MAP);
+	let themeMap: {
+		helpBannerOrder: string[];
+		helpBannerValues: Record<
+			string,
+			{ src: string; label: string; disabled?: boolean }
+		>;
+	};
+	try {
+		const parsed = JSON.parse(raw);
+		themeMap = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
+	} catch {
+		return null;
+	}
 
-    themeMap = typeof parsedThemeMap === "string" ? JSON.parse(parsedThemeMap) : parsedThemeMap;
-
-	if (themeMap.helpBannerOrder.length === 0) {
+	if (!themeMap?.helpBannerOrder?.length) {
 		return null;
 	}
 
@@ -37,31 +48,33 @@ export const Help = observer((): JSX.Element => {
 				</DropdownMenuTrigger>
 				<DropdownMenuContent align="end" side="top" sideOffset={8}>
 					{themeMap.helpBannerOrder
-                        .filter((key) => key !== "tutorials") // Filter out the "tutorials" value
-                        .map((key) => {
-						const v = themeMap.helpBannerValues[key];
+						.filter((key) => key !== "tutorials")
+						.map((key) => {
+							const v = themeMap.helpBannerValues[key];
 
-						if (v) {
-							return (
-								<DropdownMenuItem
-									key={key}
-									disabled={v.disabled ? v.disabled : false}
-									asChild
-								>
-									<a
-										href={v.src}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="text-foreground no-underline"
+							if (v) {
+								return (
+									<DropdownMenuItem
+										key={key}
+										disabled={
+											v.disabled ? v.disabled : false
+										}
+										asChild
 									>
-										{v.label}
-									</a>
-								</DropdownMenuItem>
-							);
-						}
+										<a
+											href={v.src}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-foreground no-underline"
+										>
+											{v.label}
+										</a>
+									</DropdownMenuItem>
+								);
+							}
 
-						return null;
-					})}
+							return null;
+						})}
 				</DropdownMenuContent>
 			</DropdownMenu>
 		</div>
