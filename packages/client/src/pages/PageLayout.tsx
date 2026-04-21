@@ -5,7 +5,7 @@ import { ErrorBoundary } from "@/components/common";
 import { Page } from "@/components/shared/page";
 import { PageContext } from "@/contexts";
 import { PageStore } from "@/stores";
-import { ErrorPage } from "./ErrorPage";
+import { ErrorPage } from "./error-page";
 
 /**
  * Wrap the routes with a side navigation

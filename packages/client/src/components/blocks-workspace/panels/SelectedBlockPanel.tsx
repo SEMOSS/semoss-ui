@@ -521,7 +521,7 @@ export const SelectedBlockPanel = observer(() => {
 								<TabsTrigger
 									value="0"
 									className="h-[38px] flex-1 px-4 py-2"
-									data-testId={
+									data-testid={
 										"selectedBlockPanel-settings-toggle"
 									}
 								>
@@ -530,7 +530,7 @@ export const SelectedBlockPanel = observer(() => {
 								<TabsTrigger
 									value="1"
 									className="h-[38px] flex-1 px-4 py-2"
-									data-testId={
+									data-testid={
 										"selectedBlockPanel-appearance-toggle"
 									}
 								>

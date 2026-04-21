@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import {
-	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 	UpdateSMSS,
@@ -136,7 +136,9 @@ export const EngineSettingsAdminDetailPage = (
 						</TabsTrigger>
 					</TabsList>
 				</Tabs>
-				{view === "CURRENT" && <MembersTable type={type} id={id} />}
+				{view === "CURRENT" && (
+					<MembersTable type={type} id={id} adminMode />
+				)}
 				{view === "PENDING" && (
 					<PendingMembersTable type={type} id={id} />
 				)}

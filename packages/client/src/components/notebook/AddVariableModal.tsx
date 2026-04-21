@@ -1,6 +1,5 @@
 import { useId, useState } from "react";
 import { ActionMessages, useBlocks, type VariableType } from "@semoss/renderer";
-import { useNotification } from "@semoss/ui";
 import {
 	Button,
 	Dialog,
@@ -10,6 +9,7 @@ import {
 	DialogTitle,
 	Input,
 	Label,
+	toast,
 } from "@semoss/ui/next";
 
 export interface AddVariableModalProps {
@@ -42,7 +42,6 @@ export interface AddVariableModalProps {
 export const AddVariableModal = (props: AddVariableModalProps) => {
 	const { open, type, to, cellId, onClose } = props;
 	const { state } = useBlocks();
-	const notification = useNotification();
 
 	const aliasId = useId();
 	const [newAlias, setNewAlias] = useState("");
@@ -89,12 +88,13 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
 								},
 							});
 
-							notification.add({
-								color: success ? "success" : "error",
-								message: success
-									? `Successfully added ${newAlias}`
-									: `Unable to add ${newAlias}, due to syntax or a duplicated alias`,
-							});
+							if (success) {
+								toast.success(`Successfully added ${newAlias}`);
+							} else {
+								toast.error(
+									`Unable to add ${newAlias}, due to syntax or a duplicated alias`,
+								);
+							}
 
 							if (success) {
 								onClose();

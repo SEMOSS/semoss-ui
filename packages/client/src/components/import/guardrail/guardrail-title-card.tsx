@@ -76,7 +76,7 @@ export const GuardrailTitleCard: React.FC<GuardrailTileCardProps> = ({
 			)}
 			onClick={handleCardClick}
 			onKeyDown={handleCardKeyDown}
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`importPageContent-connect-to-${guardrail.name}-img`,
 			)}
 			role="button"

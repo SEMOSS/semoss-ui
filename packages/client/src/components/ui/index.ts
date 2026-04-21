@@ -1,3 +1,3 @@
 export * from "./Filterbox";
-export * from "./Section";
-export * from "./Share";
+export * from "./section";
+export * from "./share";

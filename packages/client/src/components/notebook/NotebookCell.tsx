@@ -16,8 +16,13 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
-import { useNotification } from "@semoss/ui";
-import { Button, ButtonGroup, Separator, Spinner } from "@semoss/ui/next";
+import {
+	Button,
+	ButtonGroup,
+	Separator,
+	Spinner,
+	toast,
+} from "@semoss/ui/next";
 import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
@@ -54,7 +59,6 @@ export const NotebookCell = observer(
 
 		const { state, notebook } = useBlocks();
 		const { workspace } = useWorkspace();
-		const notification = useNotification();
 
 		const [showRaw, setShowRaw] = useState(false);
 		const [showCellActions, setShowCellActions] = useState(false);
@@ -74,6 +78,7 @@ export const NotebookCell = observer(
 
 		const variableName = state.getAlias(queryId, cellId);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: dependentBlocksModal is intentional dep
 		const replacementCellOptions = useMemo(() => {
 			if (!state.queries) return [];
 			const allCellsList = [];
@@ -86,6 +91,7 @@ export const NotebookCell = observer(
 			return allCellsList;
 		}, [state.queries, dependentBlocksModal === true]);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only react to isExecuted
 		useEffect(() => {
 			if (cell.isExecuted === false) {
 				setLocalCellPlayNumber(null);
@@ -96,6 +102,7 @@ export const NotebookCell = observer(
 			}
 		}, [cell.isExecuted]);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only react to counter
 		useEffect(() => {
 			if (cellPlayCounter == null) {
 				setLocalCellPlayNumber(null);
@@ -173,10 +180,7 @@ export const NotebookCell = observer(
 					},
 				});
 				await dispatchDeleteCell();
-				notification.add({
-					color: "success",
-					message: "Successfully replaced cells",
-				});
+				toast.success("Successfully replaced cells");
 				workspace.setLoading(false);
 			} catch (e) {
 				console.error(e);
@@ -221,6 +225,7 @@ export const NotebookCell = observer(
 		};
 
 		// render the view
+		// biome-ignore lint/correctness/useExhaustiveDependencies: cell.component is stable once set
 		const rendered = useMemo(() => {
 			if (!cell.component) {
 				return;
@@ -350,10 +355,7 @@ export const NotebookCell = observer(
 
 				// Handle pixel call errors
 				if (errors?.length) {
-					notification.add({
-						message: errors[0],
-						color: "error",
-					});
+					toast.error(errors[0]);
 					return;
 				}
 
@@ -421,10 +423,7 @@ export const NotebookCell = observer(
 				console.error("Error in makeCellMCP:", error);
 				workspace.setLoading(false);
 
-				notification.add({
-					message: error.message || "Failed to create MCP cell",
-					color: "error",
-				});
+				toast.error(error.message || "Failed to create MCP cell");
 			}
 		};
 
@@ -455,9 +454,7 @@ export const NotebookCell = observer(
 							<button
 								type="button"
 								className="rounded px-1.5 py-0.5 text-muted-foreground text-xs hover:text-foreground"
-								onClick={() =>
-									copyTextToClipboard(rawOutput, notification)
-								}
+								onClick={() => copyTextToClipboard(rawOutput)}
 							>
 								<Copy className="inline size-3" /> Copy
 							</button>
@@ -540,10 +537,7 @@ export const NotebookCell = observer(
 						type="button"
 						className="absolute top-[-12px] left-[calc(theme(spacing.10)+theme(spacing.6))] z-10 cursor-pointer overflow-hidden rounded bg-background px-1.5 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-primary/10"
 						onClick={() =>
-							copyTextToClipboard(
-								`{{${variableName}}}`,
-								notification,
-							)
+							copyTextToClipboard(`{{${variableName}}}`)
 						}
 					>
 						{variableName}
@@ -644,7 +638,6 @@ export const NotebookCell = observer(
 												e.stopPropagation();
 												copyTextToClipboard(
 													`{{${variableName}}}`,
-													notification,
 												);
 											}}
 										>

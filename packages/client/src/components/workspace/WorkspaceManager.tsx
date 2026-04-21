@@ -1,16 +1,9 @@
-import { RestartAlt } from "@mui/icons-material";
+import { RotateCcw } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import {
-	Breadcrumbs,
-	IconButton,
-	Stack,
-	styled,
-	Tooltip,
-	Typography,
-} from "@semoss/ui";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ClosePage } from "@/assets/img/ClosePage";
 import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
@@ -20,82 +13,6 @@ import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
-
-const StyledMain = styled("div")(() => ({
-	position: "relative",
-	height: "100%",
-	width: "100%",
-	display: "flex",
-	flexDirection: "column",
-	overflow: "hidden",
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	position: "relative",
-	flex: "1",
-	height: "100%",
-	width: "100%",
-	overflow: "hidden",
-	marginTop: theme.spacing(1),
-	paddingTop: theme.spacing(1.5),
-	paddingLeft: theme.spacing(1.5),
-	paddingRight: theme.spacing(1.5),
-	paddingBottom: theme.spacing(1.5),
-}));
-
-const StyledSpacer = styled("div")(({ theme }) => ({
-	position: "absolute",
-	top: 0,
-	left: theme.spacing(1.5),
-	right: theme.spacing(1.5),
-	bottom: theme.spacing(1.5),
-	overflow: "hidden",
-}));
-
-const StyledAppTypography = styled(Typography)(() => ({
-	color: "rgb(0, 0, 0)",
-}));
-
-const StyledLetTabImage = styled("img")(() => ({
-	width: 50,
-	height: 40,
-	display: "block",
-	margin: "auto",
-	transition: "all 0.2s ease",
-	maxWidth: "none",
-}));
-
-const StyledHeaderLogo = styled(Link)(({ theme }) => ({
-	color: "inherit",
-	textDecoration: "none",
-	cursor: "pointer",
-	display: "flex",
-	alignItems: "center",
-	":hover": {
-		bacakground: theme.palette.action.hover,
-	},
-}));
-
-const StyledActions = styled(Stack)(({ theme }) => ({
-	position: "absolute",
-	bottom: "36px",
-	left: "5px",
-	width: "32px", // from flexlayout
-	zIndex: 1,
-}));
-
-const StyledNavLeft = styled(Stack)(({ theme }) => ({
-	minWidth: 0,
-	overflow: "hidden",
-	whiteSpace: "nowrap",
-	textOverflow: "ellipsis",
-}));
-
-const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
-	"& .MuiBreadcrumbs-ol": {
-		flexWrap: "nowrap",
-	},
-}));
 
 type WorkspaceManagerProps = {
 	/** Actions to render in the navbar */
@@ -145,6 +62,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 		}, []);
 
 		// build the model from the layout
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only event registration
 		useEffect(() => {
 			const handler = (e: CustomEvent) => {
 				const { destinationType, destination } = e.detail;
@@ -224,6 +142,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 			};
 		}, []);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only run when options identity changes
 		useEffect(() => {
 			// default options if not loaded from cache
 			const defaultOptions = JSON.parse(JSON.stringify(options));
@@ -302,11 +221,10 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						settingsNode?.getConfig()?.isSettingsActive;
 
 					if (isAlreadyActive) {
-						setSettingsActive(false);
 						const existingId = findTabIdByName("AppSettings");
 						if (existingId) {
 							model.doAction(
-								FlexLayout.Actions.deleteTab(existingId),
+								FlexLayout.Actions.selectTab(existingId),
 							);
 						}
 						return true;
@@ -398,10 +316,11 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 			<>
 				<NavbarLeft>
 					<NavbarHeader logo={null} />
-					<StyledNavLeft>
-						<StyledBreadcrumbs separator=" /">
-							<StyledHeaderLogo
+					<div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
+						<div className="flex items-center gap-1">
+							<Link
 								to={`/app/${workspace.metadata.project_id}/view`}
+								className="flex items-center text-inherit no-underline"
 							>
 								<div
 									title={workspace?.metadata?.project_name}
@@ -409,22 +328,22 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 								>
 									{workspace?.metadata?.project_name}
 								</div>
-							</StyledHeaderLogo>
-
-							<StyledAppTypography variant={"subtitle1"}>
-								Editing
-							</StyledAppTypography>
-						</StyledBreadcrumbs>
-					</StyledNavLeft>
+							</Link>
+							<span className="text-muted-foreground text-sm">
+								{" /"}&nbsp;
+							</span>
+							<span className="text-sm">Editing</span>
+						</div>
+					</div>
 				</NavbarLeft>
 				<NavbarRight>{navbarActions}</NavbarRight>
 				<WorkspaceOverlay />
-				<StyledMain>
-					<StyledContent>
+				<div className="relative flex h-full w-full flex-col overflow-hidden">
+					<div className="relative mt-2 flex h-full w-full flex-1 overflow-hidden px-3 pt-3 pb-3">
 						<WorkspaceLoading />
-						<StyledSpacer
+						<div
 							ref={containerRef}
-							className="flexlayout__theme_smss--legacy"
+							className="flexlayout__theme_smss--legacy absolute top-0 right-3 bottom-3 left-3 overflow-hidden"
 						>
 							{workspace.model ? (
 								<>
@@ -440,7 +359,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 										icons={{
 											close: <ClosePage />,
 										}}
-										// onRenderTabSet={handleRenderTabSet}
 										onModelChange={() => {
 											workspace.saveToCache();
 										}}
@@ -465,18 +383,15 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 														?.isSettingsActive
 												: tabNode.isSelected();
 
-											// Base test ID without suffix
 											const baseDataTestId =
 												formatToDataTestId(
 													`workspace-${tabNode.getName()}`,
 												);
 
-											// Ref callback to set data-testid based on ghost/original state
 											const DynamicDataTestId = (
 												el: HTMLElement | null,
 											) => {
 												if (el) {
-													// Check if this is a ghost/preview element during drag
 													const parent =
 														el.parentElement;
 													const grandParent =
@@ -490,7 +405,6 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 															"flexlayout__tab_button_stamp",
 														);
 
-													// Determine suffix: ghost for drag preview, image for original
 													const suffix = isGhost
 														? "ghost"
 														: "image";
@@ -506,27 +420,31 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 													item.icon.component;
 
 												renderValues.content = (
-													<Tooltip
-														title={
-															item.icon.tooltip
-														}
-													>
-														<IconButton
-															size={"small"}
-															color="default"
-															ref={
-																DynamicDataTestId
-															}
-														>
-															<Icon
-																color={
-																	isSelected
-																		? "primary"
-																		: "inherit"
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<button
+																type="button"
+																className="flex size-7 items-center justify-center rounded hover:bg-accent"
+																ref={
+																	DynamicDataTestId
 																}
-																fontSize="inherit"
-															/>
-														</IconButton>
+															>
+																<Icon
+																	className={
+																		isSelected
+																			? "text-primary"
+																			: "text-inherit"
+																	}
+																	style={{
+																		fontSize:
+																			"inherit",
+																	}}
+																/>
+															</button>
+														</TooltipTrigger>
+														<TooltipContent>
+															{item.icon.tooltip}
+														</TooltipContent>
 													</Tooltip>
 												);
 											} else if (item?.icon) {
@@ -534,264 +452,40 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 													? item.icon.active
 													: item.icon.default;
 												renderValues.content = (
-													<StyledLetTabImage
+													<img
 														src={iconSrc}
 														alt={tabNode.getName()}
 														ref={DynamicDataTestId}
+														className="m-auto block h-[40px] w-[50px] max-w-none transition-all duration-200"
 													/>
 												);
 											}
 											return renderValues;
 										}}
 									/>
-									<StyledActions
-										direction="column"
-										justifyContent={"center"}
-									>
-										<Tooltip title={"Reset workspace"}>
-											<IconButton
-												size={"small"}
-												color="default"
-												onClick={() => {
-													resetWorkspace();
-												}}
-											>
-												<RestartAlt fontSize="inherit" />
-											</IconButton>
+									<div className="absolute bottom-9 left-[5px] z-[1] flex w-8 flex-col justify-center">
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<button
+													type="button"
+													className="flex size-7 items-center justify-center rounded hover:bg-accent"
+													onClick={resetWorkspace}
+												>
+													<RotateCcw className="size-4" />
+												</button>
+											</TooltipTrigger>
+											<TooltipContent>
+												Reset workspace
+											</TooltipContent>
 										</Tooltip>
-									</StyledActions>
+									</div>
 								</>
 							) : null}
-						</StyledSpacer>
-					</StyledContent>
-				</StyledMain>
+						</div>
+					</div>
+				</div>
 				<WorkspaceOverlay />
 			</>
 		);
 	},
 );
-
-// NOTES: WE HAVE TO FIX ALOT HERE.
-// The code specific to blocks apps should not be here.
-// Interacting with the model seems to be something that is needed for alot of these conventions that we have here.
-// One issue i see is the renderTabSet.  it is dependent on the useBlocks hook.  We will need to figure out how to do this without the useBlocks Dependency here.
-// The quick fix is to comment out the action on the tabset
-
-// const StyledRenderTabSet = styled("div")(() => ({
-// 	padding: "0 8px",
-// 	cursor: "pointer",
-// 	display: "flex",
-// 	fontSize: "1.2rem",
-// 	alignItems: "center",
-// }));
-
-// TODO: Should not be used in workspace this is a shared component for apps that aren't drag and drop
-// const notification = useNotification();
-// const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
-// const { page } = usePage();
-// const { state } = useBlocks();
-// const { designer } = useDesigner();
-// const { configStore } = useRootStore();
-// const accordionRefs = useRef({});
-
-// TODO: probably should be passed as callback to the BlocksWorkspace
-// useEffect(() => {
-//     openTab();
-// }, [designer.selected]);
-
-// const openTab = () => {
-//     const layout = layoutRef.current;
-//     if (!layout) return;
-//     const model = workspace.model;
-//     const tabId = getIdByName(model['idMap'], 'Block Settings');
-//     model.doAction(Actions.selectTab(tabId));
-// };
-// const handlePageAdd = async () => {
-//     try{
-//     const newPageId = await state.dispatch({
-//         message: ActionMessages.ADD_BLOCK,
-//         payload: {
-//             json: PAGE_BLOCK,
-//         },
-//     });
-//     if (typeof newPageId === 'string') {
-//         const block = state.blocks[newPageId];
-//         handlePageSelection(block);
-//     } else {
-//         console.error('Invalid newPageId:', newPageId);
-//     }
-// } catch (error) {
-//     console.error('Error adding new page:', error);
-//     notification.add({
-//         color: 'error',
-//         message: 'Failed to add new page',
-//     });
-// };
-// };
-// function getIdByName(iMap, targetName: string): string | null {
-//     for (const [key, value] of iMap.entries()) {
-//         if (value?.attributes?.name === targetName) {
-//             if (!value?.visible) {
-//                 return key;
-//             }
-//         }
-//     }
-//     return null;
-// }
-// const handlePageSelection = (block) => {
-//     accordionRefs.current = {};
-//     // designer.setSelected(block.id);
-//     handleOnSelect(block);
-// };
-// const handleRenderTabSet = (tabSetNode, renderValues) => {
-//     if (
-//         tabSetNode.getId() === 'border_left' ||
-//         tabSetNode.getId() === 'border_right'
-//     ) {
-//         return;
-//     }
-//     renderValues.buttons.unshift(
-//         <StyledRenderTabSet
-//             key="custom-add-button"
-//             title="Add Tab"
-//             // onClick={() => handlePageAdd()}
-//         >
-//             <AddPage />
-//         </StyledRenderTabSet>,
-//     );
-// };
-// const handleOnSelect = (blockData) => {
-//     const id = blockData.id;
-//     if (blockData.widget !== 'page') {
-//         scrollIntoView(getBlockElement(id));
-//         return;
-//     }
-//     // try to select a panel, if it doesn't exist create it. Save the path
-//     const IsSelected = selectPanel(id);
-//     if (!IsSelected) {
-//         createPanel(id);
-//     }
-// };
-// const createPanel = (id: string): boolean => {
-//     try {
-//         if (!id) {
-//             return false;
-//         }
-
-//         // get the model
-//         const model = workspace.model;
-//         if (!model) {
-//             throw new Error('Missing model');
-//         }
-
-//         // get the name
-//         const name = id;
-
-//         // where to add the node
-//         const addId =
-//             model.getActiveTabset()?.getId() ||
-//             model.getRoot().getChildren()[0]?.getId() ||
-//             '';
-
-//         // create and select the panel
-//         model.doAction(
-//             Actions.addNode(
-//                 {
-//                     type: 'tab',
-//                     name: name,
-//                     component: 'designer',
-//                     config: {
-//                         id: id,
-//                     },
-//                     enableClose: true,
-//                 },
-//                 addId,
-//                 DockLocation.CENTER,
-//                 -1,
-//                 true,
-//             ),
-//         );
-//     } catch (e) {
-//         notification.add({
-//             color: 'error',
-//             message: e,
-//         });
-
-//         return false;
-//     }
-
-//     return true;
-// };
-// const scrollIntoView = (
-//     element: Element | null,
-//     {
-//         behavior = 'smooth' as ScrollBehavior,
-//         block = 'center' as ScrollLogicalPosition,
-//         inline = 'start' as ScrollLogicalPosition,
-//     } = {},
-// ) => {
-//     (element as HTMLElement)?.scrollIntoView({
-//         behavior,
-//         block,
-//         inline,
-//     });
-// };
-
-// const selectPanel = (id: string): boolean => {
-//     try {
-//         if (!id) {
-//             return false;
-//         }
-
-//         let selectedNode: TabNode | null = null;
-
-//         // get the model
-//         const model = workspace.model;
-//         if (!model) {
-//             throw new Error('Missing model');
-//         }
-
-//         selectedNode = getNodeInfo(id, model);
-
-//         // create a new panel if there is no node
-//         if (!selectedNode) {
-//             return false;
-//         }
-//         const selectedNodeId = selectedNode.getId();
-//         model.doAction(Actions.selectTab(selectedNodeId));
-//     } catch (e) {
-//         notification.add({
-//             color: 'error',
-//             message: e,
-//         });
-
-//         return false;
-//     }
-
-//     return true;
-// };
-
-// const getNodeInfo = (id, model) => {
-//     let returnedNode: TabNode | null = null;
-//     // visit the notes, and see if it exists
-//     model.visitNodes((node) => {
-//         // check if it is a tabNode
-//         if (node instanceof TabNode) {
-//             // it needs to be a notebook-viewer
-//             const component = node.getComponent();
-//             if (component !== 'designer') {
-//                 return;
-//             }
-
-//             // path and space need to match
-//             const config = node.getConfig();
-//             if (config.id !== id) {
-//                 return;
-//             }
-
-//             returnedNode = node;
-//         }
-//     });
-
-//     return returnedNode;
-// };

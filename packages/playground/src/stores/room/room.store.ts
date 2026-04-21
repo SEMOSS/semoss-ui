@@ -28,6 +28,7 @@ import type {
 	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
+	Prompt,
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
@@ -120,6 +121,11 @@ interface RoomStoreInterface {
 			workspace_id: string;
 			name?: string;
 		};
+
+		/**
+		 * Predefined prompts that can be used in the room
+		 */
+		predefinedPrompts: Prompt[];
 	};
 
 	/**
@@ -159,6 +165,7 @@ export class RoomStore {
 		root: null as unknown as ResponseMessageStore | PlanMessageStore,
 		tools: {},
 		options: {
+			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,

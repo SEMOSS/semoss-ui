@@ -799,13 +799,13 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						<div className="flex flex-1 flex-col gap-1">
 							<H4
 								className="font-semibold text-base tracking-tight"
-								data-testId={`model-importForm-category-title`}
+								data-testid={`model-importForm-category-title`}
 							>
 								{category}
 							</H4>
 							<Muted
 								className="text-muted-foreground text-sm leading-6"
-								data-testId={`model-importForm-category-description`}
+								data-testid={`model-importForm-category-description`}
 							>
 								{importableModelsCategory[selectedProvider]?.[
 									category
@@ -828,14 +828,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						onOpenChange={setAdvancedOpen}
 					>
 						<div className="flex flex-row items-center justify-between gap-2">
-							<H4 data-testId="model-advanced-settings-title">
+							<H4 data-testid="model-advanced-settings-title">
 								Advanced Settings
 							</H4>
 							<CollapsibleTrigger asChild>
 								<Button
 									variant="ghost"
 									size="icon"
-									data-testId="model-advanced-settings-toggle"
+									data-testid="model-advanced-settings-toggle"
 								>
 									{advancedOpen ? (
 										<ChevronUp className="size-4" />
@@ -850,7 +850,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 									{/* Left: Category title + description */}
 									<div className="flex flex-1 flex-col gap-1">
-										<Muted data-testId="model-advanced-settings-description">
+										<Muted data-testid="model-advanced-settings-description">
 											Add advanced settings here
 										</Muted>
 									</div>
@@ -867,7 +867,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			)}
 			<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
 				<Button
-					data-testId="model-importForm-connect-button"
+					data-testid="model-importForm-connect-button"
 					variant="default"
 					className="flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-[147px]"
 					type="submit"
