@@ -292,6 +292,19 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 									},
 								);
 							}}
+							onAfterRename={(oldPath, newPath) => {
+								const newName =
+									newPath.split("/").filter(Boolean).pop() ??
+									newPath;
+								removeDeletedTabs(oldPath, false);
+								addNode(`ENGINE_FILE--${newPath}`, {
+									type: "tab",
+									name: newName,
+									component: "app-file-editor",
+									config: { name: newName, path: newPath },
+									enableClose: true,
+								});
+							}}
 							{...otherProps}
 							actions={[
 								isDriverFile

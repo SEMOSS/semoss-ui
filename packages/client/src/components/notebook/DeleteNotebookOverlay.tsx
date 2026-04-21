@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Button, Modal, Typography } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 
 interface DeleteNotebookOverlayProps {
 	/** id of the deleted notebok */
@@ -51,15 +51,17 @@ export const DeleteNotebookOverlay = observer(
 
 		return (
 			<>
-				<Modal.Title>Are you sure?</Modal.Title>
-				<Modal.Content>
-					<Typography variant="body2">
+				<div className="px-6 pt-6 pb-2">
+					<h2 className="font-semibold text-lg">Are you sure?</h2>
+				</div>
+				<div className="px-6 py-2">
+					<p className="text-sm">
 						This will delete <b>{name}</b>
-					</Typography>
-				</Modal.Content>
-				<Modal.Actions>
+					</p>
+				</div>
+				<div className="flex justify-end gap-2 px-6 pt-2 pb-6">
 					<Button
-						variant={"outlined"}
+						variant="outline"
 						onClick={() => {
 							onClose(false);
 						}}
@@ -68,15 +70,14 @@ export const DeleteNotebookOverlay = observer(
 					</Button>
 					<Button
 						disabled={isLoading}
-						color={"error"}
-						variant={"contained"}
+						variant="destructive"
 						onClick={() => {
 							deleteNotebook();
 						}}
 					>
 						Delete
 					</Button>
-				</Modal.Actions>
+				</div>
 			</>
 		);
 	},

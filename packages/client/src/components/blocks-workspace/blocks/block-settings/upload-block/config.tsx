@@ -1,4 +1,4 @@
-import { Upload } from "@mui/icons-material";
+import { Upload } from "lucide-react";
 import type { CSSProperties } from "react";
 import { InputSettings, QuerySelectionSettings } from "../../settings";
 import { SelectSettings } from "../../settings/shared/SelectSettings";

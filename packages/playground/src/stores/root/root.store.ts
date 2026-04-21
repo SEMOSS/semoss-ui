@@ -14,6 +14,7 @@ const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT;
 const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
 const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
 const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
+const ENABLE_PROMPT_OPTIMIZER = import.meta.env.VITE_ENABLE_PROMPT_OPTIMIZER;
 
 interface RootStoreInterface {
 	/**
@@ -69,6 +70,8 @@ export class RootStore {
 			},
 			footer: "",
 			landing: "",
+			altLandingKey: "",
+			altLanding: "",
 			sidebar: {
 				expandedByDefault: false,
 				chatHistoryDate: false,
@@ -92,6 +95,7 @@ export class RootStore {
 				enableSuggestions: ENABLE_SUGGESTIONS === "true",
 				enablePlan: ENABLE_PLAN === "true",
 				enableRewrite: ENABLE_REWRITE === "true",
+				enablePromptOptimizer: ENABLE_PROMPT_OPTIMIZER === "true",
 			},
 		},
 	};
@@ -219,6 +223,13 @@ export class RootStore {
 			},
 			footer: theme?.footer || this._store.theme.footer,
 			landing: theme?.landing || this._store.theme.landing,
+			altLandingKey:
+				theme?.altLandingKey || this._store.theme.altLandingKey,
+			altLanding: theme?.altLanding || this._store.theme.altLanding,
+			hideToolsInIframe:
+				theme?.hideToolsInIframe ||
+				this._store.theme?.hideToolsInIframe ||
+				false,
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),

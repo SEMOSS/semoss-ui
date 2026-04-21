@@ -74,6 +74,21 @@ export interface ThemeMap {
 		landing: string;
 
 		/**
+		 * Alternate HTML content to show on the landing page
+		 */
+		altLanding?: string;
+
+		/**
+		 * URL search param key that triggers altLanding (e.g. "appt" matches ?appt in the URL)
+		 */
+		altLandingKey?: string;
+
+		/**
+		 * Whether to hide tools in iframes (e.g. when the app is embedded in another platform). Defaults to false (tools shown).
+		 */
+		hideToolsInIframe?: boolean;
+
+		/**
 		 * Content to show in the sidebar
 		 */
 		sidebar: {
@@ -266,6 +281,7 @@ export interface ThemeMap {
 			enableSuggestions?: boolean;
 			enablePlan?: boolean;
 			enableRewrite?: boolean;
+			enablePromptOptimizer?: boolean;
 		};
 	};
 }

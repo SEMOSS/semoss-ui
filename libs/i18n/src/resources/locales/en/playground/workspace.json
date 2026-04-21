@@ -6,7 +6,8 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox"
+		"toolboxLabel": "Toolbox",
+		"promptsLabel": "Prompt Library"
 	},
 	"actions": {
 		"create": "Create",
@@ -106,5 +107,9 @@
 	"new": {
 		"title": "New Agent",
 		"subtitle": "Create a new agent to get started"
+	},
+	"prompts": {
+		"noPrompts": "No prompts found",
+		"searchPlaceholder": "Search prompts..."
 	}
 }

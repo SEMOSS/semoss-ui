@@ -95,6 +95,12 @@
     @apply bg-secondary;
 }
 
+/** Rename textbox **/
+.flexlayout__theme_smss .flexlayout__tab_button_textbox {
+    @apply bg-background border border-primary rounded px-1 text-xs font-medium outline-none;
+    min-width: 4rem;
+}
+
 /** Borders **/
 .flexlayout__theme_smss .flexlayout__border {
     @apply p-2;

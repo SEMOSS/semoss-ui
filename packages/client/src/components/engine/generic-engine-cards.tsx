@@ -472,7 +472,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 	return (
 		<Card
 			onClick={() => onClick?.(id)}
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`genericEngineCards-${type}-${name}`,
 			)}
 			className="flex h-auto w-full max-w-full flex-col items-start justify-center gap-1.5 overflow-hidden rounded-lg border bg-card p-3 shadow-md hover:cursor-pointer sm:p-3.5"

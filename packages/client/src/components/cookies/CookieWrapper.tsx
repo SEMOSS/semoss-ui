@@ -1,35 +1,10 @@
-import { Close } from "@mui/icons-material";
+import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Box, Button, IconButton, Stack, styled, Typography } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { PrivacyPreferenceCenterModal } from "./PrivacyPreferenceCenterModal";
-
-const CustomBackdrop = styled(Box)(({ theme }) => ({
-	position: "fixed",
-	bottom: 0,
-	left: 0,
-	backgroundColor: "rgba(0,0,0,0.5)",
-	zIndex: 999,
-	width: "100%",
-	height: "100%",
-}));
-
-const AcceptCookieContainer = styled(Box)(({ theme }) => ({
-	border: `2px solid ${theme.palette.secondary.border}`,
-	position: "fixed",
-	bottom: theme.spacing(4),
-	left: "calc(50% - 250px)",
-	zIndex: 1000,
-	width: "500px",
-	backgroundColor: theme.palette.background.paper,
-	padding: theme.spacing(3),
-}));
-
-const StyledButton = styled(Button)(({ theme }) => ({
-	width: "initial",
-}));
 
 interface CookieWrapperProps {
 	/** Content to overlay the Loading Screen on */
@@ -81,46 +56,44 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 			{children}
 			{visible && (
 				<>
-					<CustomBackdrop />
-					<AcceptCookieContainer>
-						<Stack
-							direction="row"
-							justifyContent="space-between"
-							gap={1}
-						>
-							<Typography
-								variant="h6"
-								fontWeight="bold"
-								color="secondary"
-							>
+					<div className="fixed inset-0 z-[999] bg-black/50" />
+					<div className="fixed bottom-8 left-[calc(50%-250px)] z-[1000] w-[500px] rounded-md border border-border bg-background p-6">
+						<div className="mb-3 flex flex-row items-center justify-between gap-2">
+							<h6 className="font-bold text-base text-secondary">
 								Here&apos;s how we use cookies
-							</Typography>
+							</h6>
 
-							<IconButton size="small" onClick={acceptCookies}>
-								<Close />
-							</IconButton>
-						</Stack>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								onClick={acceptCookies}
+							>
+								<X className="size-4" />
+							</Button>
+						</div>
 
-						<Stack justifyContent="center">
+						<div className="flex justify-center">
+							{/* biome-ignore lint/correctness/useUniqueElementIds: IDs are scoped to component instances */}
 							<div
-								style={{ width: "100%" }}
+								className="w-full"
 								id="cookie-policy-banner"
+								// biome-ignore lint/security/noDangerouslySetInnerHtml: third-party cookie script content
 								dangerouslySetInnerHTML={{
 									__html: cookieBanner,
 								}}
 							/>
-						</Stack>
-						<Stack direction="row" justifyContent="center">
-							<StyledButton
-								variant="text"
+						</div>
+						<div className="flex flex-row justify-center">
+							<Button
+								variant="ghost"
 								onClick={() => {
 									setViewCookiePolicy(true);
 								}}
 							>
 								View cookies
-							</StyledButton>
-						</Stack>
-					</AcceptCookieContainer>
+							</Button>
+						</div>
+					</div>
 				</>
 			)}
 
