@@ -105,8 +105,6 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 
 	return (
 		<SidebarMenuItem data-tour={`nav-${path}`}>
-			<SidebarMenuButton asChild>
-		<SidebarMenuItem>
 			<SidebarMenuButton
 				asChild
 				tooltip={{ children: returnToolTip(name), hidden: false }}
