@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
+import { AddNewJob } from "../jobs/add-new-job";
 import { JobsPage } from "../jobs/jobs-page";
 import { AdminQueryPage } from "./admin-query-page";
 import { AdminThemePage } from "./admin-theme-page";
@@ -33,6 +34,8 @@ const SETTINGS_COMPONETS = {
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
+	"jobs/add-new-job": AddNewJob,
+	"jobs/edit-job/:id": AddNewJob,
 	"team-permissions": TeamsSettingsPage,
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
