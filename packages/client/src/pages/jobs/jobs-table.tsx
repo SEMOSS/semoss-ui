@@ -1,4 +1,5 @@
-import type { GridRowSelectionModel } from "@mui/x-data-grid";
+type GridRowSelectionModel = (string | number)[];
+
 import dayjs from "dayjs";
 import { Pencil, Play, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
