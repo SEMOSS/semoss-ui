@@ -23,8 +23,12 @@ export const DeleteJobModal = (props: {
 				</DialogHeader>
 				<p className="text-sm">
 					Are you sure you want to delete{" "}
-					{job.length > 1 ? "all selected jobs" : job[0]?.name}? This
-					action is permanent.
+					{job.length > 1 ? (
+						<strong>all selected jobs</strong>
+					) : (
+						<strong>&ldquo;{job[0]?.name}&rdquo;</strong>
+					)}
+					? This action is permanent.
 				</p>
 				<DialogFooter>
 					<Button

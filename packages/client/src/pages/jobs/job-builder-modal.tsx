@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
@@ -265,17 +264,7 @@ export const JobBuilderModal = (props: {
 		<Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
 			<DialogContent className="max-w-2xl">
 				<DialogHeader>
-					<DialogTitle className="flex items-center justify-between">
-						<span>{isEditMode ? "Edit" : "Add"} Job</span>
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={closeModal}
-							data-testid={"jobBuilder-close-btn"}
-						>
-							<X className="size-4" />
-						</Button>
-					</DialogTitle>
+					<DialogTitle>{isEditMode ? "Edit" : "Add"} Job</DialogTitle>
 				</DialogHeader>
 				<div className="flex flex-col gap-4 pt-1">
 					<div className="flex flex-col gap-1">
