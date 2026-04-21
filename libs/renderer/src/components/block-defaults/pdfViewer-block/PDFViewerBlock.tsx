@@ -150,17 +150,16 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 			{error && <p className="p-2.5 text-destructive text-sm">{error}</p>}
 
 			{pdfContent && !loading && !error && (
-				<div className="mt-1 min-h-0 flex-1 overflow-hidden rounded-md border">
+				<div className="relative mt-1 min-h-0 flex-1 overflow-hidden rounded-md border">
 					<object
 						data={pdfContent}
 						type="application/pdf"
-						className="h-full w-full"
+						className="absolute inset-0 h-full w-full"
 					>
 						<iframe
 							src={pdfContent}
 							title={fileName}
-							className="h-full min-h-[340px] w-full border-none"
-							style={{ height: "calc(100% - 35px)" }}
+							className="absolute inset-0 h-full w-full border-none"
 						/>
 					</object>
 				</div>
