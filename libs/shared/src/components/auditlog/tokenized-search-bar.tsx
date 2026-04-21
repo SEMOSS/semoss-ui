@@ -41,8 +41,6 @@ interface CategoryMeta {
 	borderColor: string;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const CATEGORIES: SearchCategory[] = [
 	"methodName",
 	"requestMessage",
@@ -73,24 +71,16 @@ const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 let _tokenIdCounter = 0;
 const nextTokenId = (): string => `tok_${++_tokenIdCounter}`;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Build a `SearchPayload` from the current list of tokens + free-text input.
- * Returns `undefined` when there is nothing to search.
- */
 export const buildSearchPayload = (
 	tokens: SearchToken[],
 	freeText: string,
-): SearchPayload | undefined => {
-	if (tokens?.length === 0 && !freeText.trim()) return undefined;
+): SearchPayload | {} => {
+	if (tokens?.length === 0 && !freeText.trim()) return {};
 
-	// Free-text only  →  `others`
 	if (tokens?.length === 0 && freeText.trim()) {
 		return { others: freeText.trim() };
 	}
 
-	// Category-based tokens  →  `search`
 	const search: NonNullable<SearchPayload["search"]> = {};
 	for (const token of tokens) {
 		const key = token.category;
@@ -98,7 +88,6 @@ export const buildSearchPayload = (
 		search[key].push(...token.values);
 	}
 
-	// If there is also free-text alongside tokens, include as `others`
 	if (freeText.trim()) {
 		return { search, others: freeText.trim() };
 	}
@@ -106,20 +95,12 @@ export const buildSearchPayload = (
 	return { search };
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 export interface TokenizedSearchBarProps {
-	/** Current tokens (lifted state) */
 	tokens: SearchToken[];
-	/** Current free-text value */
 	freeText: string;
-	/** Called whenever tokens change */
 	onTokensChange: (tokens: SearchToken[]) => void;
-	/** Called whenever free-text changes */
 	onFreeTextChange: (text: string) => void;
-	/** Called with the exact search state when user commits an action (add/remove token, Enter, clear) */
 	onSearch?: (tokens: SearchToken[], freeText: string) => void;
-	/** Placeholder when the bar is empty */
 	placeholder?: string;
 }
 
@@ -136,7 +117,6 @@ export const TokenizedSearchBar = ({
 		useState<SearchCategory | null>(null);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 
-	// ── Add a value to a category (merges into existing token or creates new) ─
 	const addToken = useCallback(
 		(category: SearchCategory, value: string) => {
 			const trimmed = value.trim();
@@ -146,14 +126,12 @@ export const TokenizedSearchBar = ({
 			let newTokens: SearchToken[];
 
 			if (existing) {
-				// Append value to existing category token
 				newTokens = tokens?.map((t) =>
 					t.id === existing.id
 						? { ...t, values: [...t.values, trimmed] }
 						: t,
 				);
 			} else {
-				// Create new category token
 				newTokens = [
 					...tokens,
 					{ id: nextTokenId(), category, values: [trimmed] },
@@ -168,7 +146,6 @@ export const TokenizedSearchBar = ({
 		[tokens, onTokensChange, onFreeTextChange, onSearch],
 	);
 
-	// ── Remove a single value from a token (removes entire token if last value)
 	const removeValue = useCallback(
 		(tokenId: string, valueIdx: number) => {
 			const token = tokens?.find((t) => t.id === tokenId);
@@ -177,10 +154,8 @@ export const TokenizedSearchBar = ({
 			let newTokens: SearchToken[];
 
 			if (token?.values?.length <= 1) {
-				// Last value — remove entire token
 				newTokens = tokens?.filter((t) => t.id !== tokenId);
 			} else {
-				// Remove just this value
 				newTokens = tokens?.map((t) =>
 					t.id === tokenId
 						? {
@@ -199,63 +174,52 @@ export const TokenizedSearchBar = ({
 		[tokens, freeText, onTokensChange, onSearch],
 	);
 
-	// ── Select a category from the dropdown ──────────────────────────────
 	const selectCategory = useCallback(
 		(cat: SearchCategory) => {
 			setPendingCategory(cat);
 			setDropdownOpen(false);
-			// If there is already text in the input, turn it into a token value
 			if (freeText.trim()) {
 				addToken(cat, freeText);
 			} else {
-				// Focus after category selection so user can type the value
 				setTimeout(() => inputRef.current?.focus(), 0);
 			}
 		},
 		[freeText, addToken],
 	);
 
-	// ── Key handling ─────────────────────────────────────────────────────
 	const handleKeyDown = useCallback(
 		(e: KeyboardEvent<HTMLInputElement>) => {
 			const value = freeText;
 
-			// Enter / comma  →  create token or trigger search
 			if (e.key === "Enter" || e.key === ",") {
 				e.preventDefault();
 				if (pendingCategory && value.trim()) {
 					addToken(pendingCategory, value);
 				} else if (pendingCategory && !value.trim()) {
-					// Empty input with pending category → cancel pending
 					setPendingCategory(null);
 				} else if (!pendingCategory && value.trim()) {
-					// Free-text submit
 					onSearch?.(tokens, value.trim());
 				}
 				return;
 			}
 
-			// Backspace on empty input  →  cancel pending category or pop last value
 			if (e.key === "Backspace" && !value) {
 				e.preventDefault();
 				if (pendingCategory) {
 					setPendingCategory(null);
 				} else if (tokens?.length > 0) {
 					const lastToken = tokens[tokens?.length - 1];
-					// Remove the last value from the last token
 					removeValue(lastToken.id, lastToken.values?.length - 1);
 				}
 				return;
 			}
 
-			// Ctrl+Space  →  open category dropdown
 			if (e.key === " " && e.ctrlKey) {
 				e.preventDefault();
 				setDropdownOpen(true);
 				return;
 			}
 
-			// Escape  →  cancel pending category
 			if (e.key === "Escape") {
 				setPendingCategory(null);
 				setDropdownOpen(false);
@@ -264,7 +228,6 @@ export const TokenizedSearchBar = ({
 		[freeText, pendingCategory, tokens, addToken, removeValue, onSearch],
 	);
 
-	// Close dropdown on Escape
 	useEffect(() => {
 		const handler = (e: globalThis.KeyboardEvent) => {
 			if (e.key === "Escape") setDropdownOpen(false);
@@ -273,7 +236,6 @@ export const TokenizedSearchBar = ({
 		return () => document.removeEventListener("keydown", handler);
 	}, []);
 
-	// ── Derived ──────────────────────────────────────────────────────────
 	const pendingMeta = pendingCategory ? CATEGORY_META[pendingCategory] : null;
 
 	return (

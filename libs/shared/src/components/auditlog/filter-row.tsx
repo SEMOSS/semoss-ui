@@ -306,7 +306,6 @@ export const FilterRow = ({
 							</Select>
 						)}
 
-						{/* ── Date Range ── */}
 						<Popover open={showCalendar}>
 							<DropdownMenu
 								open={dropdownOpen}
@@ -386,7 +385,6 @@ export const FilterRow = ({
 									setShowCalendar(false);
 								}}
 							>
-								{/* Selected date display */}
 								<div className="mb-3 flex gap-2">
 									<input
 										type="text"
@@ -426,7 +424,6 @@ export const FilterRow = ({
 									defaultMonth={range.from ?? today}
 								/>
 
-								{/* Actions */}
 								<div className="mt-3 flex items-center justify-between border-border border-t pt-2">
 									<Button
 										onClick={() => {
@@ -458,7 +455,6 @@ export const FilterRow = ({
 							</PopoverContent>
 						</Popover>
 
-						{/* ── Refresh ── */}
 						{onRefresh && (
 							<Button
 								variant="outline"
@@ -474,7 +470,6 @@ export const FilterRow = ({
 				</ScrollArea>
 			</div>
 
-			{/* ── Stat Cards ── */}
 			<ScrollArea className="w-full">
 				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 					{statCards?.map((s) => (

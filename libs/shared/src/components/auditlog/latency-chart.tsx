@@ -17,7 +17,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 	const [dims, setDims] = useState({ w: 600, h: 220 });
 	const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-	// Observe container size for responsive rendering
 	useEffect(() => {
 		const el = containerRef.current;
 		if (!el) return;
@@ -40,16 +39,14 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 		);
 	}
 
-	// ── Layout constants ──────────────────────────────────────────────────────
-	const PL = 44; // left padding — room for Y-axis labels
-	const PR = 72; // right padding — room for avg label
-	const PT = 14; // top padding
-	const PB = 52; // bottom padding — room for rotated X labels
+	const PL = 44;
+	const PR = 72;
+	const PT = 14;
+	const PB = 52;
 
 	const chartW = Math.max(dims.w - PL - PR, 1);
 	const chartH = Math.max(dims.h - PT - PB, 1);
 
-	// ── Data computations ─────────────────────────────────────────────────────
 	const maxVal = Math.max(...data.map((l) => l.latency), 1);
 	const avg = data.reduce((s, l) => s + l.latency, 0) / data.length;
 
@@ -62,7 +59,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 		(_, i) => i * tickStep,
 	);
 
-	// ── Bar geometry ──────────────────────────────────────────────────────────
 	const groupW = chartW / data.length;
 	const barGap = Math.max(2, groupW * 0.18);
 	const barW = Math.max(2, groupW - barGap * 2);
@@ -113,7 +109,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 				}}
 				onMouseLeave={() => setTooltip(null)}
 			>
-				{/* ── Y-axis grid lines + tick labels ── */}
 				{yTicks.map((tick) => {
 					const y = yVal(tick);
 					return (
@@ -141,7 +136,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 					);
 				})}
 
-				{/* ── Avg dashed line ── */}
 				<line
 					x1={PL}
 					y1={avgY}
@@ -161,7 +155,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 					avg {avg.toFixed(1)}ms
 				</text>
 
-				{/* ── Bars + X-axis labels ── */}
 				{data.map((log, i) => {
 					const x = xBar(i);
 					const bH = (log.latency / yMax) * chartH;
@@ -173,7 +166,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 
 					return (
 						<g key={log.spanId ?? i}>
-							{/* Bar */}
 							<rect
 								x={x}
 								y={y}
@@ -184,7 +176,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 								ry={2}
 								opacity={0.85}
 							/>
-							{/* X-axis label — rotated -35° around its anchor */}
 							<text
 								x={cx}
 								y={labelY}
@@ -202,7 +193,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 					);
 				})}
 
-				{/* ── Chart border (bottom + left axes) ── */}
 				<line
 					x1={PL}
 					y1={PT}
@@ -221,7 +211,6 @@ const LatencyChart = ({ data, dark }: LatencyChartProps) => {
 				/>
 			</svg>
 
-			{/* ── Tooltip ── */}
 			{tooltip && (
 				<div
 					className="pointer-events-none absolute z-50 max-w-xs rounded border px-2.5 py-2 text-[10px] leading-snug"

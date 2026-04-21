@@ -151,7 +151,6 @@ const CopyButton = ({ text }: { text: string }) => {
 	);
 };
 
-// pretty print JSON
 const formatJson = (value: string) => {
 	try {
 		return JSON.stringify(JSON.parse(value), null, 2);
@@ -160,7 +159,6 @@ const formatJson = (value: string) => {
 	}
 };
 
-// Reusable detail content component
 const DetailContent = ({
 	log,
 	isExpanded,
