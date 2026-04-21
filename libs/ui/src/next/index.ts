@@ -52,6 +52,7 @@ export * from "./stepper";
 export * from "./switch";
 export * from "./table";
 export * from "./tabs";
+export * from "./terminal";
 export * from "./textarea";
 export * from "./theme-provider";
 export * from "./toggle";
