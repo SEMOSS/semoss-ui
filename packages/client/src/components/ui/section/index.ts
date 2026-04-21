@@ -1,5 +1,5 @@
-import { Section, type SectionProps } from "./Section";
-import { SectionHeader, type SectionHeaderProps } from "./SectionHeader";
+import { Section, type SectionProps } from "./section";
+import { SectionHeader, type SectionHeaderProps } from "./section-header";
 
 const SectionNameSpace = Object.assign(Section, {
 	Header: SectionHeader,
