@@ -347,8 +347,10 @@ export class StateStore {
 	 * @returns Updated object
 	 */
 	private updateObjectVariableReferences(
+		// biome-ignore lint/suspicious/noExplicitAny: untyped object tree
 		obj: any,
 		suggestedChanges: Record<string, string>,
+		// biome-ignore lint/suspicious/noExplicitAny: recursive return matches input type
 	): any {
 		if (obj === null || obj === undefined) {
 			return obj;
@@ -452,7 +454,7 @@ export class StateStore {
 				} else if (type === "query") {
 					const query = this._store.queries[pointer];
 					if (query) {
-						if (path.length === 1) {
+						if (!path || path.length === 1) {
 							// Just get query output
 							return query.output;
 						} else {
@@ -472,7 +474,7 @@ export class StateStore {
 					const cell = query.getCell(cellId);
 
 					if (cell) {
-						if (path.length === 1) {
+						if (!path || path.length === 1) {
 							return cell.output;
 						} else {
 							const key = path[1];
@@ -838,7 +840,7 @@ export class StateStore {
 		const pointer = path[0];
 
 		// Special syntax to parse by cell order
-		const isNumber = !isNaN(parseFloat(path[1]));
+		const isNumber = !Number.isNaN(parseFloat(path[1]));
 
 		if (isNumber) {
 			let q: QueryState;
@@ -1022,7 +1024,10 @@ export class StateStore {
 		while (
 			this._store.blocks[
 				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`
-			] || generatedBlockIds.includes(`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`)
+			] ||
+			generatedBlockIds.includes(
+				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`,
+			)
 		) {
 			blockNum++;
 		}
@@ -1042,7 +1047,11 @@ export class StateStore {
 		if (json.widget === "page") {
 			return this.generatePageId();
 		}
-		return this.generateNonPageId(json.widget, isCommunityBlock, generatedBlockIds);
+		return this.generateNonPageId(
+			json.widget,
+			isCommunityBlock,
+			generatedBlockIds,
+		);
 	};
 
 	/**
@@ -1059,10 +1068,14 @@ export class StateStore {
 		parent?: Block["parent"],
 	) => {
 		// generate a new id
-		const id = this.generateBlockId(json, isCommunityBlock, generatedBlockIds);
+		const id = this.generateBlockId(
+			json,
+			isCommunityBlock,
+			generatedBlockIds,
+		);
 
 		generatedBlockIds.push(id);
-		
+
 		// create the block
 		const block = {
 			id: id,
@@ -1091,7 +1104,7 @@ export class StateStore {
 		// add the listeners
 		block.listeners = json.listeners;
 
-		if (!json["parent"] && parent) {
+		if (!json.parent && parent) {
 			block.parent = parent;
 		}
 
@@ -1102,7 +1115,7 @@ export class StateStore {
 					name: slot,
 					children: (Array.isArray(json.slots[slot])
 						? json.slots[slot]
-						: json.slots[slot]["children"]
+						: json.slots[slot].children
 					).map((child) => {
 						// form the parent object
 						const parent = { id: id, slot: slot };
@@ -1138,7 +1151,7 @@ export class StateStore {
 			if (currentBlock.widget === "iteration") {
 				return currentBlock;
 			}
-			if (currentBlock.parent && currentBlock.parent.id) {
+			if (currentBlock.parent?.id) {
 				currentBlock = this._store.blocks[currentBlock.parent.id];
 			} else {
 				break;
@@ -1419,7 +1432,12 @@ export class StateStore {
 		}
 		const generatedBlockIds = [];
 		// generate the block
-		const block = this.generateBlock(json, isCommunity, {}, generatedBlockIds);
+		const block = this.generateBlock(
+			json,
+			isCommunity,
+			{},
+			generatedBlockIds,
+		);
 
 		// try to place it if position
 		if (!position) {
@@ -1680,7 +1698,7 @@ export class StateStore {
 
 		// Find the next available slot number
 		const slotNames = Object.keys(block.slots)
-			.filter((name) => !isNaN(Number(name)))
+			.filter((name) => !Number.isNaN(Number(name)))
 			.map((name) => Number(name))
 			.sort((a, b) => a - b);
 
@@ -1710,7 +1728,7 @@ export class StateStore {
 
 		// Convert slot names to array and sort them numerically
 		const slotNames = Object.keys(block.slots)
-			.filter((name) => !isNaN(Number(name)))
+			.filter((name) => !Number.isNaN(Number(name)))
 			.map((name) => Number(name))
 			.sort((a, b) => a - b);
 
@@ -1832,7 +1850,7 @@ export class StateStore {
 	private runQuery = (
 		queryId: string,
 		type?: "sync" | "async",
-	): void | Promise<boolean> => {
+	): undefined | Promise<boolean> => {
 		const q = this._store.queries[queryId];
 
 		const key = `query--${queryId};`;
@@ -1864,7 +1882,7 @@ export class StateStore {
 			return p.promise;
 		} else {
 			p.promise
-				.then((resp) => {
+				.then((_resp) => {
 					// noop
 				})
 				.catch((e) => {
@@ -1981,7 +1999,7 @@ export class StateStore {
 		queryId: string,
 		cellId: string,
 		type?: string,
-	): void | Promise<boolean> => {
+	): undefined | Promise<boolean> => {
 		const q = this._store.queries[queryId];
 		const c = q.getCell(cellId);
 
@@ -2017,7 +2035,7 @@ export class StateStore {
 			return p.promise;
 		} else {
 			p.promise
-				.then((resp) => {
+				.then((_resp) => {
 					// noop
 				})
 				.catch((e) => {
@@ -2063,7 +2081,7 @@ export class StateStore {
 
 				if (appPageMatch || sharePageMatch) {
 					const base = appPageMatch
-						? appPageMatch[0] + "/view"
+						? `${appPageMatch[0]}/view`
 						: sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
 
 					const pageBlocks = this.getAllBlocksOfType("page");
@@ -2075,7 +2093,7 @@ export class StateStore {
 					if (urlPageRouteMatch) {
 						const newHash = destination.startsWith("/")
 							? base.replace(/\/$/, "") + destination
-							: base.replace(/\/$/, "") + "/" + destination; // Avoid double slashes
+							: `${base.replace(/\/$/, "")}/${destination}`; // Avoid double slashes
 
 						window.location.hash = newHash;
 					}
@@ -2119,13 +2137,13 @@ export class StateStore {
 		const token = { type };
 
 		if (to) {
-			token["to"] = to;
+			token.to = to;
 		}
 		if (cellId) {
-			token["cellId"] = cellId;
+			token.cellId = cellId;
 		}
 		if (value) {
-			token["value"] = value;
+			token.value = value;
 		}
 
 		this._store.variables[id] = token as Variable;
@@ -2208,12 +2226,12 @@ export class StateStore {
 	private buildCommunityBlockPreDeps = (json) => {
 		let newJson = json;
 		let variablesList = [];
-		if (json["queries"] || json["variables"]) {
+		if (json.queries || json.variables) {
 			const { placeholderJson, variableStack } =
 				this.dispatchDependencyQueriesAndVars(
 					json,
-					json["queries"],
-					json["variables"],
+					json.queries,
+					json.variables,
 				);
 			newJson = placeholderJson;
 			variablesList = variableStack;

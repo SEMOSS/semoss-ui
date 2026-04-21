@@ -364,7 +364,7 @@ export class ChatStore {
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			return pixelReturn[0].output;
@@ -388,7 +388,7 @@ export class ChatStore {
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors

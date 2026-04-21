@@ -15,38 +15,40 @@ export const DeleteJobModal = (props: {
 	deleteJob: (id: string[], group: string[]) => void;
 }) => {
 	const { job, isOpen, close, deleteJob } = props;
+
 	return (
-		<Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
-			<DialogContent>
+		<Dialog open={isOpen} onOpenChange={close}>
+			<DialogContent className="sm:max-w-md">
 				<DialogHeader>
 					<DialogTitle>Delete Job</DialogTitle>
 				</DialogHeader>
-				<p className="text-sm">
+
+				<div className="text-muted-foreground text-sm">
 					Are you sure you want to delete{" "}
-					{job.length > 1 ? (
-						<strong>all selected jobs</strong>
-					) : (
-						<strong>&ldquo;{job[0]?.name}&rdquo;</strong>
-					)}
+					<span className="font-medium text-foreground">
+						{job.length > 1 ? "all selected jobs" : job[0]?.name}
+					</span>
 					? This action is permanent.
-				</p>
-				<DialogFooter>
+				</div>
+
+				<DialogFooter className="mt-4">
 					<Button
-						variant="ghost"
+						variant="outline"
 						onClick={close}
-						data-testid={"deleteJobModal-cancel-btn"}
+						data-testid="deleteJobModal-cancel-btn"
 					>
 						Cancel
 					</Button>
+
 					<Button
 						variant="destructive"
-						onClick={() => {
+						onClick={() =>
 							deleteJob(
 								job.map((j) => j.id),
 								job.map((j) => j.group),
-							);
-						}}
-						data-testid={"deleteJobModal-delete-btn"}
+							)
+						}
+						data-testid="deleteJobModal-delete-btn"
 					>
 						Delete
 					</Button>
