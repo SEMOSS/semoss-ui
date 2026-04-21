@@ -659,7 +659,7 @@ export function JobsPage() {
 									<Button
 										size="sm"
 										onClick={() =>
-											navigate("/settings/add-new-job")
+											navigate("/settings/jobs/add-new-job")
 										}
 									>
 										<Plus className="mr-1 h-4 w-4" /> Add

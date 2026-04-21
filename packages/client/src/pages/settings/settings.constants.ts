@@ -249,7 +249,7 @@ export const SETTINGS_ROUTES: {
 	},
 	{
 		title: "Add Jobs",
-		path: "add-new-job",
+		path: "jobs/add-new-job",
 		description: "Fill out all the details in order to add the model to the catalog.",
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "add-new-job"],
@@ -257,7 +257,7 @@ export const SETTINGS_ROUTES: {
 	},
 	{
 		title: "Edit Jobs",
-		path: "edit-job/:id",
+		path: "jobs/edit-job/:id",
 		description: "Fill out all the details in order to edit the model in the catalog.",
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "edit-job/:id"],

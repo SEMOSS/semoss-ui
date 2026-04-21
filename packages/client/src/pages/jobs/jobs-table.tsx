@@ -20,7 +20,6 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
-import Avatar from "../../assets/img/Avatar.svg";
 import type { Job } from "./job.types";
 import { getHumanReadableCronExpression } from "./job.utils";
 
@@ -218,11 +217,6 @@ export const JobsTable = (props: {
 
 										<TableCell>
 											<div className="flex items-center gap-2">
-												<img
-													src={Avatar}
-													alt="Avatar"
-													className="h-6 w-6 rounded-full"
-												/>
 												{job.ownerId}
 											</div>
 										</TableCell>
@@ -250,7 +244,7 @@ export const JobsTable = (props: {
 													disabled={isRunning}
 													onClick={() => {
 														navigate(
-															`/settings/edit-job/${job?.id}`,
+															`/settings/jobs/edit-job/${job?.id}`,
 															{
 																state: {
 																	initialState:
