@@ -262,7 +262,6 @@ export const MembersList = ({
 					return true;
 				})
 			: userData;
-	console.log(adminMode, isOwner, "canActonOwners");
 	const canActOnOwners = adminMode || isOwner;
 	const canShowOwnerOption = adminMode || isOwner;
 	const canEditMembers =
