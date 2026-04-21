@@ -1,4 +1,4 @@
-import { styled } from "@mui/material";
+// biome-ignore-all lint/a11y/noStaticElementInteractions: DataGrid renderCell content — keyboard events handled by DataGrid
 import { DataGrid } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useState } from "react";
@@ -9,21 +9,6 @@ import type { GridBlockColumn } from "../grid-block/grid-block.types";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
-
-const StyledBlock = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	height: DEFAULT_HEIGHT,
-	width: DEFAULT_WIDTH,
-}));
-
-const StyledHeader = styled("div")(({ theme }) => ({
-	padding: theme.spacing(1),
-}));
-
-const StyledRow = styled("div")(({ theme }) => ({
-	padding: theme.spacing(1),
-}));
 
 export interface GridDynamicFrameBlockDef
 	extends BlockDef<"grid-dynamic-frame"> {
@@ -106,6 +91,7 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 	/**
 	 * Anytime our Frame Headers, we need to sync our column block data with our source of truth ^
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync only on header list change
 	useEffect(() => {
 		if (data.columns.length === 0 && !frameHeaders.isLoading) {
 			// If no columns are defined, fetch the frame headers
@@ -165,16 +151,17 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 		field: col.name,
 		headerName: col.name,
 		sortable: false,
-		renderHeader: () => <StyledHeader>{col.name}</StyledHeader>,
+		renderHeader: () => <div style={{ padding: "8px" }}>{col.name}</div>,
 		renderCell: (params) => {
 			return (
-				<StyledRow
+				<div
+					style={{ padding: "8px" }}
 					onContextMenu={(e) =>
 						handleTableCellOnContextMenu(e, col, params.value)
 					}
 				>
 					{params.value}
-				</StyledRow>
+				</div>
 			);
 		},
 	}));
@@ -200,14 +187,17 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 	};
 
 	return (
-		<StyledBlock sx={data.style} {...attrs}>
-			<div
-				style={{
-					flex: 1,
-					width: "100%",
-					height: "100%",
-				}}
-			>
+		<div
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				height: DEFAULT_HEIGHT,
+				width: DEFAULT_WIDTH,
+				...data.style,
+			}}
+			{...attrs}
+		>
+			<div style={{ flex: 1, width: "100%", height: "100%" }}>
 				<DataGrid
 					rows={rows}
 					columns={columns}
@@ -245,6 +235,6 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 				contextMenu={contextMenu}
 				onClose={() => setContextMenu(null)}
 			/>
-		</StyledBlock>
+		</div>
 	);
 });
