@@ -216,6 +216,8 @@ export const MembersList = ({
 			setUserData((prev) =>
 				prev.map((u) => (u.id === user.id ? { ...u, permission } : u)),
 			);
+			setUsersToDelete([]);
+			setSelectedIds(new Set());
 			toast.success("User permission updated successfully.");
 		}
 	};
@@ -260,13 +262,20 @@ export const MembersList = ({
 					return true;
 				})
 			: userData;
-
+	console.log(adminMode, isOwner, "canActonOwners");
 	const canActOnOwners = adminMode || isOwner;
 	const canShowOwnerOption = adminMode || isOwner;
 	const canEditMembers =
 		adminMode || myPermission === "OWNER" || myPermission === "EDIT";
+	const isMultipleOwnerUserAvailable =
+		userData.filter((u) => u.permission === "OWNER").length > 1;
 	const selectableUsers = userDataFiltered.filter(
-		(u) => (u.permission !== "OWNER" || canActOnOwners) && canEditMembers,
+		(u) =>
+			(u.permission !== "OWNER" || canActOnOwners) &&
+			canEditMembers &&
+			(u.permission === "OWNER"
+				? u.id !== currentUserId && isMultipleOwnerUserAvailable
+				: true),
 	);
 	const allSelected =
 		selectableUsers.length > 0 &&
@@ -305,7 +314,13 @@ export const MembersList = ({
 							size="sm"
 							onClick={() => {
 								const users = userDataFiltered.filter((u) =>
-									selectedIds.has(u.id),
+									isMultipleOwnerUserAvailable
+										? currentUserId === u.id
+											? false
+											: selectedIds.has(u.id)
+										: u.permission === "OWNER"
+											? false
+											: selectedIds.has(u.id),
 								);
 								setUsersToDelete(users);
 							}}
@@ -380,11 +395,17 @@ export const MembersList = ({
 														!canEditMembers ||
 														(user.permission ===
 															"OWNER" &&
-															!canActOnOwners)
+															(!canActOnOwners ||
+																!isMultipleOwnerUserAvailable)) ||
+														(allSelected &&
+															user.permission ===
+																"OWNER" &&
+															user.id ===
+																currentUserId)
 													}
-													onCheckedChange={() =>
-														toggleSelectUser(user)
-													}
+													onCheckedChange={() => {
+														toggleSelectUser(user);
+													}}
 													aria-label={`Select ${user.name}`}
 												/>
 											</TableCell>
@@ -428,7 +449,13 @@ export const MembersList = ({
 														!canEditMembers ||
 														(user.permission ===
 															"OWNER" &&
-															!canActOnOwners)
+															(!canActOnOwners ||
+																!isMultipleOwnerUserAvailable)) ||
+														(allSelected &&
+															user.permission ===
+																"OWNER" &&
+															user.id ===
+																currentUserId)
 													}
 												>
 													<Button
@@ -439,7 +466,13 @@ export const MembersList = ({
 															!canEditMembers ||
 															(user.permission ===
 																"OWNER" &&
-																!canActOnOwners)
+																(!canActOnOwners ||
+																	!isMultipleOwnerUserAvailable)) ||
+															(allSelected &&
+																user.permission ===
+																	"OWNER" &&
+																user.id ===
+																	currentUserId)
 														}
 													>
 														<span>
@@ -555,7 +588,13 @@ export const MembersList = ({
 															!canEditMembers ||
 															(user.permission ===
 																"OWNER" &&
-																!canActOnOwners)
+																(!canActOnOwners ||
+																	!isMultipleOwnerUserAvailable)) ||
+															(allSelected &&
+																user.permission ===
+																	"OWNER" &&
+																user.id ===
+																	currentUserId)
 														}
 														onClick={() =>
 															onEdit?.(user)
@@ -571,7 +610,13 @@ export const MembersList = ({
 															!canEditMembers ||
 															(user.permission ===
 																"OWNER" &&
-																!canActOnOwners)
+																(!canActOnOwners ||
+																	!isMultipleOwnerUserAvailable)) ||
+															(allSelected &&
+																user.permission ===
+																	"OWNER" &&
+																user.id ===
+																	currentUserId)
 														}
 														onClick={() =>
 															setUsersToDelete(
