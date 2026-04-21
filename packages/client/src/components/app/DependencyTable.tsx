@@ -1,11 +1,12 @@
 import {
-	Chip,
-	Link,
-	Stack,
+	Badge,
 	Table,
-	Typography,
-	tableCellClasses,
-} from "@semoss/ui";
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
 import { formatPermission } from "@/utility";
 import type { modelledDependency } from "./app-details.utility";
 
@@ -17,65 +18,72 @@ interface PropsDependencyTable {
 export const DependencyTable = (props: PropsDependencyTable) => {
 	const { dependencies, permission } = props;
 	return (
-		<Table
-			sx={{
-				[`& .${tableCellClasses.root}`]: {
-					borderBottom: "none",
-				},
-			}}
-		>
-			<Table.Head>
-				<Table.Row>
-					<Table.Cell>
-						<Typography variant="body2" fontWeight="bold">
-							{`Dependency (${dependencies.length})`}
-						</Typography>
-					</Table.Cell>
-					<Table.Cell>
-						<Typography variant="body2" fontWeight="bold">
+		<Table>
+			<TableHeader>
+				<TableRow>
+					<TableHead>
+						<span className="font-bold text-sm">{`Dependency (${dependencies.length})`}</span>
+					</TableHead>
+					<TableHead>
+						<span className="font-bold text-sm">
 							Current level of access
-						</Typography>
-					</Table.Cell>
+						</span>
+					</TableHead>
 					{permission === "author" && (
-						<Table.Cell>
-							<Typography variant="body2" fontWeight="bold">
+						<TableHead>
+							<span className="font-bold text-sm">
 								Access Type
-							</Typography>
-						</Table.Cell>
+							</span>
+						</TableHead>
 					)}
-				</Table.Row>
-			</Table.Head>
-
-			{dependencies.map((dep: modelledDependency) => (
-				<Table.Row key={`name-${dep.name}--id-${dep.id}`}>
-					<Table.Cell>
-						<Link href={`./#/engine/${dep.type}/${dep.id}`}>
-							<Typography variant="body2">{dep.name}</Typography>
-						</Link>
-					</Table.Cell>
-					<Table.Cell>
-						<Typography variant="body2">
-							{formatPermission(dep.userPermission)}
-						</Typography>
-					</Table.Cell>
-					{permission === "author" && (
-						<Table.Cell>
-							<Stack direction="row" spacing={1}>
-								{dep.isPublic ? (
-									<Chip label="Public" />
-								) : dep.isDiscoverable ? (
-									<Chip label="Discoverable" />
-								) : (
-									<>
-										<Chip label="Non-Discoverable" />
-										<Chip label="Non-Public" />
-									</>
-								)}
-							</Stack>
-						</Table.Cell>
-					)}
-				</Table.Row>
-			))}
+				</TableRow>
+			</TableHeader>
+			<TableBody>
+				{dependencies.map((dep: modelledDependency) => (
+					<TableRow
+						key={`name-${dep.name}--id-${dep.id}`}
+						className="border-b-0"
+					>
+						<TableCell>
+							<a
+								href={`./#/engine/${dep.type}/${dep.id}`}
+								className="text-primary underline-offset-4 hover:underline"
+							>
+								<span className="text-sm">{dep.name}</span>
+							</a>
+						</TableCell>
+						<TableCell>
+							<span className="text-sm">
+								{formatPermission(dep.userPermission)}
+							</span>
+						</TableCell>
+						{permission === "author" && (
+							<TableCell>
+								<div className="flex flex-row gap-1">
+									{dep.isPublic ? (
+										<Badge variant="secondary">
+											Public
+										</Badge>
+									) : dep.isDiscoverable ? (
+										<Badge variant="secondary">
+											Discoverable
+										</Badge>
+									) : (
+										<>
+											<Badge variant="secondary">
+												Non-Discoverable
+											</Badge>
+											<Badge variant="secondary">
+												Non-Public
+											</Badge>
+										</>
+									)}
+								</div>
+							</TableCell>
+						)}
+					</TableRow>
+				))}
+			</TableBody>
 		</Table>
 	);
 };

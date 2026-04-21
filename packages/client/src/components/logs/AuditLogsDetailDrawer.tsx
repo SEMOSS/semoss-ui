@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@semoss/ui/next";
-import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
+import { TimeDateFormatter } from "@/pages/audit-logs-dashboard";
 
 interface JSONTreeViewProps {
 	data: unknown;

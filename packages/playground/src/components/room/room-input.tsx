@@ -13,6 +13,7 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	BookOpenIcon,
 	FileArchiveIcon,
 	FileAudioIcon,
 	FileBadgeIcon,
@@ -51,13 +52,26 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+import {
+	EnterPlugin,
+	FocusPlugin,
+	MentionPlugin,
+	PromptLibraryDialog,
+	type PromptLibraryItem,
+} from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+
+let isIframed = false;
+try {
+	isIframed = window.self !== window.top;
+} catch {
+	isIframed = true;
+}
 
 // ============================================================================
 // Constants & Helper Functions
@@ -193,6 +207,9 @@ interface RoomInputProps {
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 
+	/** Predefined prompts shown in prompt library */
+	predefinedPrompts?: PromptLibraryItem[];
+
 	/** Initial value from prompt library */
 	initialValue?: string;
 	/** Current token usage for context window indicator */
@@ -235,6 +252,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		toggleToolsPaused,
 		footer = null,
 		hidePauseButton = false,
+		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
 		tokensMax,
@@ -293,6 +311,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
+		const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+
+		const runPredefinedPrompt = async (prompt: string) => {
+			if (isLoading || hasOutstandingTools) {
+				return;
+			}
+
+			try {
+				const success = await onPrompt(prompt, []);
+				if (!success) {
+					throw new Error("Error processing chat");
+				}
+			} catch (e) {
+				toast.error(getGracefulErrorMessage(e));
+			}
+		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
 		// ========================================================================
@@ -712,55 +746,55 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
 
-						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
 						<div className="flex items-center justify-between gap-2 bg-background p-2">
-							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
-								<DropdownMenu
-									open={menuOpen}
-									onOpenChange={(open) => {
-										setMenuOpen(open);
-									}}
-								>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													disabled={isLoading}
-													aria-label={t(
-														"input.openSettings",
-													)}
-												>
-													<PlusIcon />
-												</Button>
-											</DropdownMenuTrigger>
-										</TooltipTrigger>
-										<TooltipContent>
-											{t("input.openSettings")}
-										</TooltipContent>
-									</Tooltip>
-									<DropdownMenuContent
-										align="start"
-										className="w-72"
-										onCloseAutoFocus={(e) => {
-											// Prevent dropdown from restoring focus to trigger button
-											e.preventDefault();
+								{!(
+									root.theme.hideToolsInIframe && isIframed
+								) && (
+									<DropdownMenu
+										open={menuOpen}
+										onOpenChange={(open) => {
+											setMenuOpen(open);
 										}}
 									>
-										<MenuComponent
-											isOpen={menuOpen}
-											onOpenChange={setMenuOpen}
-											fileRef={fileRef}
-											editorRef={editorRef}
-										/>
-									</DropdownMenuContent>
-								</DropdownMenu>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														disabled={isLoading}
+														aria-label={t(
+															"input.openSettings",
+														)}
+													>
+														<PlusIcon />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("input.openSettings")}
+											</TooltipContent>
+										</Tooltip>
+										<DropdownMenuContent
+											align="start"
+											className="w-72"
+											onCloseAutoFocus={(e) => {
+												// Prevent dropdown from restoring focus to trigger button
+												e.preventDefault();
+											}}
+										>
+											<MenuComponent
+												isOpen={menuOpen}
+												onOpenChange={setMenuOpen}
+												fileRef={fileRef}
+												editorRef={editorRef}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
 								{footer}
 							</div>
-
-							{/* Right side: model selector, mic, send */}
 							<div className="flex items-center gap-2">
 								{root.theme.featureFlags?.enableModelSelect && (
 									<EngineSelect
@@ -789,7 +823,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										}
 									/>
 								)}
-
+								{predefinedPrompts.length > 0 ? (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												className="bg-background"
+												variant="ghost"
+												size="icon-sm"
+												disabled={isLoading}
+												aria-label="Open prompt library"
+												onClick={() =>
+													setIsPromptLibraryOpen(true)
+												}
+											>
+												<BookOpenIcon />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											Prompt Library
+										</TooltipContent>
+									</Tooltip>
+								) : null}
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
@@ -935,48 +989,58 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						scrollContainerRef={scrollViewportRef}
 					/>
 					{/* Slash command menu - searchable knowledge & toolbox only */}
-					{!isLoading && (
-						<MentionPlugin
-							trigger="/"
-							MenuComponent={({
-								isOpen,
-								onOpenChange,
-								menuPosition,
-								addToken,
-								onRequestClose,
-							}) => (
-								<DropdownMenu
-									open={isOpen}
-									onOpenChange={onOpenChange}
-								>
-									{/* Invisible trigger positioned at cursor for menu placement */}
-									<DropdownMenuTrigger
-										style={{
-											position: "fixed",
-											top: menuPosition?.top ?? 0,
-											left: menuPosition?.left ?? 0,
-											width: 0,
-											height: 0,
-										}}
-									/>
-									<DropdownMenuContent
-										align="start"
-										className="max-h-96 w-72 overflow-y-auto"
+					{!isLoading &&
+						!(root.theme.hideToolsInIframe && isIframed) && (
+							<MentionPlugin
+								trigger="/"
+								MenuComponent={({
+									isOpen,
+									onOpenChange,
+									menuPosition,
+									addToken,
+									onRequestClose,
+								}) => (
+									<DropdownMenu
+										open={isOpen}
+										onOpenChange={onOpenChange}
 									>
-										<RoomInputMenuSlash
-											options={options}
-											onRequestClose={onRequestClose}
-											onSelect={(tool) => {
-												onMcpSelect?.(tool);
-												addToken(`<${tool.name}>`);
-												onOpenChange(false);
+										{/* Invisible trigger positioned at cursor for menu placement */}
+										<DropdownMenuTrigger
+											style={{
+												position: "fixed",
+												top: menuPosition?.top ?? 0,
+												left: menuPosition?.left ?? 0,
+												width: 0,
+												height: 0,
 											}}
 										/>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							)}
-						/>
-					)}
+										<DropdownMenuContent
+											align="start"
+											className="max-h-96 w-72 overflow-y-auto"
+										>
+											<RoomInputMenuSlash
+												options={options}
+												onRequestClose={onRequestClose}
+												onSelect={(tool) => {
+													onMcpSelect?.(tool);
+													addToken(`<${tool.name}>`);
+													onOpenChange(false);
+												}}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
+							/>
+						)}
+					<PromptLibraryDialog
+						open={isPromptLibraryOpen}
+						onOpenChange={setIsPromptLibraryOpen}
+						prompts={predefinedPrompts}
+						isLoading={isLoading}
+						onSelectPrompt={(prompt) =>
+							runPredefinedPrompt(prompt.context)
+						}
+					/>
 				</LexicalComposer>
 			</div>
 		);

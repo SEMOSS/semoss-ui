@@ -22,8 +22,8 @@ import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
-import { BlocksWorkspaceActions } from "./BlocksWorkspaceActions";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
+import { BlocksWorkspaceActions } from "./blocks-workspace-actions";
 import { DEFAULT_MENU } from "./menus/default-menu";
 import {
 	BlocksMenuPanel,

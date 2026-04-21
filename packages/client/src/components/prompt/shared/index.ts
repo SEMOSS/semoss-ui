@@ -1,2 +1,2 @@
-export * from "./PromptPreview";
+export * from "./prompt-preview";
 export * from "./token";

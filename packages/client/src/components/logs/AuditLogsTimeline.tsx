@@ -2,7 +2,7 @@ import * as echarts from "echarts";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
+import { TimeDateFormatter } from "@/pages/audit-logs-dashboard";
 import type { EventData } from "@/types";
 
 // Type definitions

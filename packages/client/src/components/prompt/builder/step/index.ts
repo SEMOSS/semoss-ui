@@ -1,1 +1,1 @@
-export { PromptBuilderStep } from "./PromptBuilderStep";
+export { PromptBuilderStep } from "./prompt-builder-step";

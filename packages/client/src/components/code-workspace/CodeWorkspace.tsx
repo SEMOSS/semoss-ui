@@ -8,7 +8,7 @@ import { AppDetailPage } from "@/pages/app/app-detail-page";
 import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import type { WorkspaceOptions } from "../../stores";
 import { MCPJsonEditor } from "../shared";
-import { CodeWorkspaceActions } from "./CodeWorkspaceActions";
+import { CodeWorkspaceActions } from "./code-workspace-actions";
 import { RendererPanel } from "./panels";
 
 const DEFAULT_BORDER_SIZE = 300;

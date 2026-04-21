@@ -15,8 +15,8 @@ import {
 	ToggleTabsGroup,
 	Tooltip,
 	Typography,
-	useNotification,
 } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import type { DesignerMenuItem } from "../blocks-workspace/menus/menu-types";
 import { BlockCardContent, blockCardWidth } from "./BlockMenuCardContent";
 
@@ -169,7 +169,7 @@ const FormMenuBlockCard: React.FC<FormMenuCardProps> = ({
 				<Stack
 					direction={"row"}
 					gap={1}
-					alignContent={"center"}
+					alignItems={"center"}
 					justifyContent={"center"}
 					flexWrap={"wrap"}
 				>
@@ -222,8 +222,6 @@ export const FormMenu: React.FC<FormMenuProps> = ({
 	onSelect,
 	title = "Add blocks to form",
 }) => {
-	const notification = useNotification();
-
 	const [search, setSearch] = useState("");
 	const [mode, setMode] = useState<MODE>("SYSTEM");
 	const [communityBlocks, setCommunityBlocks] = useState<DesignerMenuItem[]>(
@@ -241,11 +239,9 @@ export const FormMenu: React.FC<FormMenuProps> = ({
 			const { pixelReturn, errors } = res;
 
 			if (errors?.length) {
-				notification.add({
-					color: "error",
-					message:
-						errors.join("") || "Error loading community blocks",
-				});
+				toast.error(
+					errors.join("") || "Error loading community blocks",
+				);
 				setLoadingCommunity(false);
 				return;
 			}
@@ -263,15 +259,12 @@ export const FormMenu: React.FC<FormMenuProps> = ({
 			}
 		} catch (e) {
 			console.error(e);
-			notification.add({
-				color: "error",
-				message: "Error loading community blocks",
-			});
+			toast.error("Error loading community blocks");
 		} finally {
 			setLoadingCommunity(false);
 			setHasLoadedCommunity(true);
 		}
-	}, [hasLoadedCommunity, notification]);
+	}, [hasLoadedCommunity]);
 
 	useEffect(() => {
 		if (mode === "COMMUNITY") {

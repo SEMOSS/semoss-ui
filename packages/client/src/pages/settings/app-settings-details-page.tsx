@@ -124,11 +124,8 @@ const AppSettingsAdminDetailPage = () => {
 						<TabsTrigger value={"APP"}>Data Apps</TabsTrigger>
 					</TabsList>
 				</Tabs>
-				{view === "CURRENT" && (
-					<>
-						<MembersTable id={id} type={"PROJECT"} />
-						{/* <MembersTableShared id={id} type={"PROJECT"} /> */}
-					</>
+				{view === "CURRENT" && id && (
+					<MembersTable id={id} type={"PROJECT"} adminMode />
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />
