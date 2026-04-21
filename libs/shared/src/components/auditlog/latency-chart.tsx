@@ -3,7 +3,7 @@ import { type AuditLog, parseArg } from "./types/audit";
 
 interface LatencyChartProps {
 	data: AuditLog[];
-	dark: boolean;
+	dark?: boolean;
 }
 
 interface TooltipState {

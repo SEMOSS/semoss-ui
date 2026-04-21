@@ -430,7 +430,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								title="View Logs Dashboard"
 								onClick={(e) => {
 									e.stopPropagation();
-									navigate(getDashboardPath(type, id));
+									navigate(getDashboardPath(type, id), {
+										state: { displayName: name },
+									});
 								}}
 							>
 								<GanttChartSquare className="size-4" />

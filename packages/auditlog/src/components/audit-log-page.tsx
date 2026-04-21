@@ -7,7 +7,7 @@ import {
 	buildSearchPayload,
 	ChartPanel,
 	EventHistory,
-	FiltersRow,
+	FilterRow,
 	getUserProjectPermission,
 	type SearchToken,
 } from "@semoss/shared";
@@ -109,7 +109,6 @@ export const AuditLogPage = () => {
 			DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
 	});
 
-	// Keep search state in a ref so fetchLogs always reads the latest values
 	const searchRef = useRef<{
 		tokens: SearchToken[];
 		freeText: string;
@@ -118,30 +117,7 @@ export const AuditLogPage = () => {
 		freeText: "",
 	});
 
-	// Sync ref whenever state changes
-	useEffect(() => {
-		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
-	}, [searchTokens, searchFreeText]);
-
-	useEffect(() => {
-		document.documentElement.classList.add("dark");
-	}, []);
-
-	useEffect(() => {
-		document.documentElement.classList.toggle("dark", dark);
-	}, [dark]);
-
 	const toggleDark = () => setDark((d) => !d);
-
-	useEffect(() => {
-		console.log("Filters:", {
-			engineType,
-			engineId,
-			dateFrom,
-			dateTo,
-			duration: durationValue,
-		});
-	}, [engineType, engineId, dateFrom, dateTo, durationValue]);
 
 	const fetchLogs = useCallback(
 		async (limit: number, offset: number) => {
@@ -253,10 +229,6 @@ export const AuditLogPage = () => {
 		},
 		[insightId, userId],
 	);
-
-	useEffect(() => {
-		fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
-	}, [page, fetchLogs]);
 
 	const fetchUserList = useCallback(
 		async (id: string, eType: string) => {
@@ -419,6 +391,26 @@ export const AuditLogPage = () => {
 		fetchLogs(ROWS_PER_PAGE, 0);
 	};
 
+	// ── Effects ──
+
+	useEffect(() => {
+		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
+	}, [searchTokens, searchFreeText]);
+
+	useEffect(() => {
+		document.documentElement.classList.add("dark");
+	}, []);
+
+	useEffect(() => {
+		document.documentElement.classList.toggle("dark", dark);
+	}, [dark]);
+
+	useEffect(() => {
+		fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
+	}, [page, fetchLogs]);
+
+	// ── Derived values ──
+
 	const engineNames = useMemo(
 		() => (engineType ? (engineDetails[engineType] ?? []) : []),
 		[engineType, engineDetails],
@@ -451,10 +443,8 @@ export const AuditLogPage = () => {
 		return Array.from(map.entries());
 	}, [searchFiltered]);
 
-	console.log(logs, "logs");
 	return (
 		<div className="flex min-h-screen flex-col overflow-auto bg-background lg:h-screen">
-			{/* ── Top Bar ── */}
 			<div className="flex-shrink-0 border-border border-b bg-card">
 				<div className="mx-auto flex h-10 max-w-[1600px] items-center justify-between px-4">
 					<div className="flex items-center gap-2 text-xs">
@@ -497,9 +487,8 @@ export const AuditLogPage = () => {
 				<div className="h-px bg-gradient-to-r from-transparent via-primary to-transparent opacity-40" />
 			</div>
 
-			{/* ── Main Content ── */}
 			<div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col gap-2 px-4 py-2">
-				<FiltersRow
+				<FilterRow
 					totalCount={totalCount}
 					successPct={successPct}
 					failCount={failCount}
@@ -521,9 +510,7 @@ export const AuditLogPage = () => {
 					onRefresh={handleRefresh}
 				/>
 
-				{/* Row 2: Chart (65%) + Event History (35%) */}
 				<div className="grid min-h-0 flex-1 grid-cols-1 gap-2 lg:grid-cols-[65fr_35fr]">
-					{/* Right: Event History + pagination — first on small screens */}
 					<div className="order-2 lg:order-2">
 						<EventHistory
 							loading={loading}
@@ -551,7 +538,6 @@ export const AuditLogPage = () => {
 							onPageChange={setPage}
 						/>
 					</div>
-					{/* Left: Chart + Detail panel — second on small screens */}
 					<div className="order-1 lg:order-1">
 						<ChartPanel
 							logs={logs}

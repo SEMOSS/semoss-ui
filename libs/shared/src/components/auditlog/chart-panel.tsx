@@ -6,8 +6,8 @@ import {
 	Loader2,
 } from "lucide-react";
 import { Button } from "@semoss/ui/next";
-import LatencyChart from "./LatencyChart";
-import LogDetailPanel from "./LogDetailPanel";
+import LatencyChart from "./latency-chart";
+import LogDetailPanel from "./log-detail-panel";
 import { type AuditLog, latencyColor, parseArg } from "./types/audit";
 
 const CHART_PAGE_SIZE = 15;
@@ -15,7 +15,7 @@ const CHART_PAGE_SIZE = 15;
 export interface ChartPanelProps {
 	logs: AuditLog[];
 	loading: boolean;
-	dark: boolean;
+	dark?: boolean;
 	selected: AuditLog | null;
 	chartTab: "bar" | "timeline";
 	chartPage: number;

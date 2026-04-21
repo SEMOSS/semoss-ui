@@ -403,22 +403,29 @@ export const TokenizedSearchBar = ({
 					</Popover>
 				</div>
 
-				{/* Clear all button */}
-				{(tokens?.length > 0 || freeText) && (
-					<button
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onTokensChange([]);
-							onFreeTextChange("");
-							setPendingCategory(null);
-							onSearch?.([], "");
-						}}
-						className="flex-shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
-					>
-						<X size={12} />
-					</button>
-				)}
+				{/* Hint + Clear */}
+				<span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
+					{!dropdownOpen && (
+						<span className="select-none whitespace-nowrap font-mono text-[9px] text-muted-foreground/60">
+							Ctrl+Space to filter
+						</span>
+					)}
+					{(tokens?.length > 0 || freeText) && (
+						<button
+							type="button"
+							onClick={(e) => {
+								e.stopPropagation();
+								onTokensChange([]);
+								onFreeTextChange("");
+								setPendingCategory(null);
+								onSearch?.([], "");
+							}}
+							className="flex-shrink-0 cursor-pointer border-none bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
+						>
+							<X size={12} />
+						</button>
+					)}
+				</span>
 			</label>
 		</div>
 	);

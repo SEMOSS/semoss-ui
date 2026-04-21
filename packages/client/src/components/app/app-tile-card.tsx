@@ -621,13 +621,17 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		},
 		[favorite, isFavorite],
 	);
-
+	console.log(app, "app"); // for debugging
 	const handleViewDashboard = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
-			navigate(`/app/${app.project_id}/dashboard`);
+			navigate(`/app/${app.project_id}/dashboard`, {
+				state: {
+					displayName: app.project_display_name || app.project_name,
+				},
+			});
 		},
-		[navigate, app.project_id],
+		[navigate, app.project_id, app.project_display_name, app.project_name],
 	);
 
 	const handleCopyId = useCallback(

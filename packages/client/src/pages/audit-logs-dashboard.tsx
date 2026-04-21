@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
 	type AuditLog,
 	buildSearchPayload,
 	ChartPanel,
 	EventHistory,
-	FiltersRow,
+	FilterRow,
 	getUserProjectPermission,
 	type SearchToken,
 } from "@semoss/shared";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@semoss/ui/next";
 import { getUserEnginePermission } from "@/api/engines";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
@@ -40,12 +49,10 @@ type DurationValue = (typeof DASHBOARD_DURATIONS)[number]["value"];
 
 /**
  * A function to format a timestamp into a date and time string.
- * @param {string | number | null | undefined} timeStamp - The timestamp to be formatted.
+ * @param {string | number | null } timeStamp - The timestamp to be formatted.
  * @returns {{date: string, time: string}} - An object containing the date and time strings.
  * */
-export const TimeDateFormatter = (
-	timeStamp: string | number | null | undefined,
-) => {
+export const TimeDateFormatter = (timeStamp: string | number | null) => {
 	if (!timeStamp) {
 		return { date: "", time: "" };
 	}
@@ -82,23 +89,6 @@ export const TimeDateFormatter = (
 		return { date: "", time: "" };
 	}
 };
-//event data object structure will have entire row details of auditlog table row
-export interface EventData {
-	startTime: string;
-	endTime: string;
-	logTimestamp: string;
-	request: string;
-	response: string;
-	tokens: string | null;
-	latency: number;
-	status: string | null;
-	engineName: string;
-	engineType: string;
-	userId: string;
-	sessionId: string;
-	spanId: string;
-}
-
 /**
  * A component for displaying the audit logs dashboard for a given catalog.
  *
@@ -111,8 +101,11 @@ export const AuditLogsDashboard = ({
 	catalogName: string;
 }) => {
 	const { monolithStore } = useRootStore();
-
-	const [dark] = useState(false);
+	const location = useLocation();
+	const params = useParams<{ appId?: string; engineId?: string }>();
+	const catalogId = catalogName === "Apps" ? params.appId : params.engineId;
+	const routeDisplayName =
+		(location.state as { displayName?: string } | null)?.displayName ?? "";
 	const [chartTab, setChartTab] = useState<"bar" | "timeline">("timeline");
 	const [chartPage, setChartPage] = useState(0);
 	const [searchTokens, setSearchTokens] = useState<SearchToken[]>([]);
@@ -153,10 +146,7 @@ export const AuditLogsDashboard = ({
 		freeText: "",
 	});
 
-	// Sync ref whenever state changes
-	useEffect(() => {
-		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
-	}, [searchTokens, searchFreeText]);
+	// ── Callbacks ──
 
 	const fetchLogs = useCallback(
 		async (limit: number, offset: number) => {
@@ -171,10 +161,6 @@ export const AuditLogsDashboard = ({
 				const ss = String(date.getSeconds()).padStart(2, "0");
 
 				const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-				const catalogId =
-					window.location.hash.split("/")[
-						catalogName === "Apps" ? 2 : 3
-					];
 				const SelectedDuration = filteredData.current.SelectedDuration;
 
 				const startDate = filteredData.current?.customDateRange?.from
@@ -260,28 +246,8 @@ export const AuditLogsDashboard = ({
 				setLoading(false);
 			}
 		},
-		[catalogName, monolithStore],
+		[catalogId, catalogName, monolithStore],
 	);
-
-	useEffect(() => {
-		if (catalogName) {
-			fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
-		}
-		const contentElement = document.querySelector(
-			'[data-home-container="true"]',
-		) as HTMLElement | null;
-		if (contentElement) {
-			contentElement.style.padding = "32px";
-			contentElement.style.maxWidth = "none";
-		}
-
-		return () => {
-			if (contentElement) {
-				contentElement.style.padding = "";
-				contentElement.style.maxWidth = "";
-			}
-		};
-	}, [catalogName, page, fetchLogs]);
 
 	const fetchUserList = useCallback(
 		async (id: string, isApp: boolean) => {
@@ -330,14 +296,7 @@ export const AuditLogsDashboard = ({
 		[monolithStore],
 	);
 
-	// Fetch user list on mount when catalogId is available
-	useEffect(() => {
-		const id =
-			window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
-		if (id) {
-			fetchUserList(id, catalogName === "Apps");
-		}
-	}, [catalogName, fetchUserList]);
+	// ── Handlers ──
 
 	const handleUserChange = (uid: string) => {
 		setSelectedUser(uid);
@@ -385,6 +344,41 @@ export const AuditLogsDashboard = ({
 		fetchLogs(ROWS_PER_PAGE, 0);
 	};
 
+	// ── Effects ──
+
+	useEffect(() => {
+		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
+	}, [searchTokens, searchFreeText]);
+
+	useEffect(() => {
+		if (catalogName) {
+			fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
+		}
+		const contentElement = document.querySelector(
+			'[data-home-container="true"]',
+		) as HTMLElement | null;
+		if (contentElement) {
+			contentElement.style.padding = "25px";
+			contentElement.style.paddingTop = "10px";
+			contentElement.style.maxWidth = "none";
+		}
+
+		return () => {
+			if (contentElement) {
+				contentElement.style.padding = "";
+				contentElement.style.maxWidth = "";
+			}
+		};
+	}, [catalogName, page, fetchLogs]);
+
+	useEffect(() => {
+		if (catalogId) {
+			fetchUserList(catalogId, catalogName === "Apps");
+		}
+	}, [catalogId, catalogName, fetchUserList]);
+
+	// ── Derived values ──
+
 	const avgLat =
 		Array.isArray(logs) && logs.length > 0
 			? (logs.reduce((s, l) => s + l.latency, 0) / logs.length).toFixed(1)
@@ -410,12 +404,16 @@ export const AuditLogsDashboard = ({
 		return Array.from(map.entries());
 	}, [searchFiltered]);
 
-	// The catalogId is used as the engine/project name for FiltersRow display
-	const catalogId =
-		window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
+	const catalogDisplayName = routeDisplayName || catalogId || "";
+
 	const engineNames = catalogId
-		? [{ value: catalogId, label: catalogName }]
+		? [{ value: catalogId, label: catalogDisplayName || catalogName }]
 		: [];
+
+	const backPath =
+		catalogName === "Apps"
+			? "/app"
+			: `/engine/${catalogName.toLowerCase()}`;
 
 	return (
 		<>
@@ -424,10 +422,35 @@ export const AuditLogsDashboard = ({
 					<NavbarHeader />
 				</NavbarLeft>
 			)}
-			<div className="flex w-full flex-col overflow-auto bg-background p-4">
-				{/* Main Content */}
-				<div className="flex min-h-0 w-full flex-1 flex-col gap-2">
-					<FiltersRow
+			<div>
+				<Breadcrumb className="ml-2">
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={backPath}>Audit Logs</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<BreadcrumbPage>
+								{catalogName === "Apps" ? "App" : catalogName}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+						{engineNames.length > 0 && (
+							<>
+								<BreadcrumbSeparator />
+								<BreadcrumbItem>
+									<BreadcrumbPage>
+										{catalogDisplayName || catalogId}
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							</>
+						)}
+					</BreadcrumbList>
+				</Breadcrumb>
+
+				<div className="m-2 flex min-h-0 w-full flex-1 flex-col gap-2">
+					<FilterRow
 						totalCount={totalCount}
 						successPct={successPct}
 						failCount={failCount}
@@ -450,14 +473,11 @@ export const AuditLogsDashboard = ({
 						onRefresh={handleRefresh}
 					/>
 
-					{/* Row 2: Chart (65%) + Event History (35%) */}
 					<div className="grid flex-1 grid-cols-1 gap-2 lg:grid-cols-[65fr_35fr]">
-						{/* Left: Chart + Detail panel */}
 						<div className="order-1 lg:order-1">
 							<ChartPanel
 								logs={logs}
 								loading={loading}
-								dark={dark}
 								selected={selected}
 								chartTab={chartTab}
 								chartPage={chartPage}
@@ -466,7 +486,6 @@ export const AuditLogsDashboard = ({
 								onSetChartPage={setChartPage}
 							/>
 						</div>
-						{/* Right: Event History + pagination */}
 						<div className="order-2 lg:order-2">
 							<EventHistory
 								loading={loading}

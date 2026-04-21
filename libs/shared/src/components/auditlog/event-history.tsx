@@ -7,7 +7,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { Button } from "@semoss/ui/next";
-import { type SearchToken, TokenizedSearchBar } from "./TokenizedSearchBar";
+import { type SearchToken, TokenizedSearchBar } from "./tokenized-search-bar";
 import {
 	type AuditLog,
 	latencyBg,
