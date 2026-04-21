@@ -1,143 +1,152 @@
-import { Check, Clear, WarningAmberOutlined } from "@mui/icons-material";
+import { Check, Copy, TriangleAlert } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { resolvePath } from "react-router-dom";
 import {
-	Alert,
 	Button,
-	IconButton,
-	Modal,
-	Stack,
+	DialogDescription,
+	DialogTitle,
 	Tabs,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
 
 interface ShareOverlayProps {
-	/** Id of the app to share */
 	appId: string;
-
-	/** Method called to close overlay  */
 	onClose: () => void;
-
-	/** Are there diffs */
 	diffs?: boolean;
 }
+
+const CopyButton = ({
+	text,
+	label = "Copy",
+}: {
+	text: string;
+	label?: string;
+}) => {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = () => {
+		try {
+			navigator.clipboard.writeText(text);
+			toast.success("Copied to clipboard");
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch (e) {
+			toast.error(e instanceof Error ? e.message : "Failed to copy");
+		}
+	};
+
+	return (
+		<Button
+			variant="outline"
+			size="sm"
+			onClick={handleCopy}
+			className="shrink-0"
+		>
+			{copied ? (
+				<>
+					<Check className="mr-1.5 size-3.5" />
+					Copied
+				</>
+			) : (
+				<>
+					<Copy className="mr-1.5 size-3.5" />
+					{label}
+				</>
+			)}
+		</Button>
+	);
+};
 
 export const ShareOverlay = observer((props: ShareOverlayProps) => {
 	const { appId, diffs, onClose = () => null } = props;
 
-	const notification = useNotification();
-
-	const [shareModalTab, setShareModalTab] = useState(0);
-	const [isCopied, setIsCopied] = useState(false);
-
-	// create the url + iframe
 	const base = window.location.href.replace(window.location.hash, "#");
 	const path = resolvePath(`./s/${appId}`, base);
 	const url = path.pathname;
 	const iframe = `<iframe frameborder="0" width="1000" height="600" style="border: 1px solid #ccc;" src="${url}"></iframe>`;
 
-	/**
-	 * Copy the content to the clipboard
-	 * @param content - content that will be copied
-	 */
-	const copy = (content: string) => {
-		try {
-			navigator.clipboard.writeText(content);
-
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
-			setIsCopied(true);
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
-		}
-	};
-
 	return (
-		<>
-			<Modal.Title>
-				<Stack direction="row" justifyContent="space-between">
-					<span>Share</span>
-					<IconButton
-						size="small"
-						title="close"
-						aria-label="close"
-						onClick={onClose}
-					>
-						<Clear />
-					</IconButton>
-				</Stack>
-			</Modal.Title>
-			<Modal.Content>
+		<div className="flex w-full min-w-0 flex-col">
+			{/* Header */}
+			<div className="border-b px-6 py-4">
+				<DialogTitle className="font-semibold text-lg leading-none">
+					Share
+				</DialogTitle>
+				<DialogDescription className="sr-only">
+					Share this app via a direct URL or embed it in another page
+					using an iframe.
+				</DialogDescription>
+			</div>
+
+			{/* Body */}
+			<div className="flex min-w-0 flex-col gap-4 px-6 py-5">
 				{diffs && (
-					<Alert severity="warning" icon={<WarningAmberOutlined />}>
-						Save app prior to sharing to reflect the latest changes
-					</Alert>
+					<div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800 text-sm">
+						<TriangleAlert className="mt-0.5 size-4 shrink-0" />
+						<span>
+							Save the app before sharing to reflect the latest
+							changes
+						</span>
+					</div>
 				)}
-				<Stack direction="column" spacing={2}>
-					<Tabs
-						value={shareModalTab}
-						onChange={(event, value: number) => {
-							setShareModalTab(value);
-						}}
+
+				<Tabs defaultValue="url" className="w-full">
+					<TabsList className="w-full">
+						<TabsTrigger value="url" className="flex-1">
+							URL
+						</TabsTrigger>
+						<TabsTrigger value="iframe" className="flex-1">
+							IFrame
+						</TabsTrigger>
+					</TabsList>
+
+					<TabsContent
+						value="url"
+						className="flex min-w-0 flex-col gap-2 pt-3"
 					>
-						<Tabs.Item label="URL"></Tabs.Item>
-						<Tabs.Item label="IFrame"></Tabs.Item>
-					</Tabs>
-					{shareModalTab === 0 && (
-						<Stack direction="row">
-							<TextField
-								size="small"
-								value={url}
-								fullWidth={true}
-								InputProps={{
-									readOnly: true,
-								}}
-							/>
-							<Button
-								variant="outlined"
-								startIcon={isCopied ? <Check /> : null}
-								onClick={() => copy(url)}
-							>
-								{isCopied ? "Copied" : "Copy"}
-							</Button>
-						</Stack>
-					)}
-					{shareModalTab === 1 && (
-						<Stack>
-							<Typography variant="subtitle1">
-								Embed the app as an iframe
-							</Typography>
-							<Stack alignItems="center" direction="row">
-								<TextField
-									size="small"
-									value={iframe}
-									multiline={true}
-									fullWidth={true}
-									InputProps={{
-										readOnly: true,
-									}}
-								/>
-								<Button
-									variant="outlined"
-									startIcon={isCopied ? <Check /> : null}
-									onClick={() => copy(iframe)}
-									sx={{ height: "auto" }}
-								>
-									{isCopied ? "Copied" : "Copy"}
-								</Button>
-							</Stack>
-						</Stack>
-					)}
-				</Stack>
-			</Modal.Content>
-		</>
+						<p className="text-muted-foreground text-xs">
+							Share a direct link to this app
+						</p>
+						<div className="flex min-w-0 items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
+							<span className="min-w-0 flex-1 truncate font-mono text-sm">
+								{url}
+							</span>
+							<CopyButton text={url} />
+						</div>
+					</TabsContent>
+
+					<TabsContent
+						value="iframe"
+						className="flex min-w-0 flex-col gap-2 pt-3"
+					>
+						<p className="text-muted-foreground text-xs">
+							Embed this app in another page using an iframe
+						</p>
+						<div className="rounded-md border bg-muted/40 p-3">
+							<div className="mb-2 flex items-center justify-between">
+								<span className="font-mono text-muted-foreground text-xs">
+									HTML
+								</span>
+								<CopyButton text={iframe} label="Copy code" />
+							</div>
+							<pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs leading-relaxed">
+								{iframe}
+							</pre>
+						</div>
+					</TabsContent>
+				</Tabs>
+			</div>
+
+			{/* Footer */}
+			<div className="flex justify-end border-t px-6 py-4">
+				<Button variant="ghost" onClick={onClose}>
+					Close
+				</Button>
+			</div>
+		</div>
 	);
 });

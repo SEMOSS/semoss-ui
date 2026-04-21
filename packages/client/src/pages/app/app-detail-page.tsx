@@ -14,7 +14,6 @@ import { useForm } from "react-hook-form";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
-import { Modal } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -24,6 +23,8 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
+	Dialog,
+	DialogContent,
 	H4,
 	Spinner,
 	Tabs,
@@ -1108,16 +1109,18 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				</div>
 			</div>
 
-			<Modal
+			<Dialog
 				open={isShareOverlayOpen}
-				onClose={() => setIsShareOverlayOpen(false)}
+				onOpenChange={(o) => !o && setIsShareOverlayOpen(false)}
 			>
-				<ShareOverlay
-					appId={appId}
-					diffs={false}
-					onClose={() => setIsShareOverlayOpen(false)}
-				/>
-			</Modal>
+				<DialogContent className="max-w-lg p-0">
+					<ShareOverlay
+						appId={appId}
+						diffs={false}
+						onClose={() => setIsShareOverlayOpen(false)}
+					/>
+				</DialogContent>
+			</Dialog>
 
 			<ChangeAccessModal
 				open={isChangeAccessModalOpen}

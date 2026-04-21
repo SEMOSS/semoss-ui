@@ -1,12 +1,8 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { HashRouter } from "react-router-dom";
-import {
-	LoadingScreen,
-	Notification,
-	type ThemeOptions,
-	ThemeProvider,
-} from "@semoss/ui";
+import { LoadingScreen } from "@semoss/ui";
+import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
 import { useRootStore } from "./hooks";
@@ -18,9 +14,7 @@ export const AppWrapper = observer(() => {
 		try {
 			document.title = configStore.theme.name;
 
-			// Set the favicon
 			const faviconLink = configStore.theme.logo;
-
 			const link = document.createElement("link");
 			link.rel = "icon";
 			link.href = faviconLink;
@@ -30,21 +24,16 @@ export const AppWrapper = observer(() => {
 		}
 	}, [configStore.theme]);
 
-	const t: ThemeOptions = useMemo(() => {
-		return (configStore.theme.materialTheme as ThemeOptions) || undefined;
-	}, [configStore.theme]);
-
 	return (
-		<ThemeProvider reset={true} theme={t}>
-			<Notification>
-				<LoadingScreen>
-					<CookieWrapper>
-						<HashRouter>
-							<Router />
-						</HashRouter>
-					</CookieWrapper>
-				</LoadingScreen>
-			</Notification>
+		<ThemeProvider defaultTheme="light">
+			<Toaster />
+			<LoadingScreen>
+				<CookieWrapper>
+					<HashRouter>
+						<Router />
+					</HashRouter>
+				</CookieWrapper>
+			</LoadingScreen>
 		</ThemeProvider>
 	);
 });

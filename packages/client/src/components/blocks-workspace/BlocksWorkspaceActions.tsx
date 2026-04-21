@@ -1,11 +1,13 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { Bot, Eye, Save, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useBlocks } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Dialog,
+	DialogContent,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -21,6 +23,9 @@ export const BlocksWorkspaceActions = observer(() => {
 
 	const { monolithStore } = useRootStore();
 	const { workspace } = useWorkspace();
+
+	const [shareOpen, setShareOpen] = useState(false);
+	const [shareDiffs, setShareDiffs] = useState(false);
 
 	const removePageIdsFromURL = () => {
 		const url = window.location.href;
@@ -176,13 +181,8 @@ export const BlocksWorkspaceActions = observer(() => {
 					JSON.stringify(output) !== JSON.stringify(state.toJSON());
 			}
 
-			workspace.openOverlay(() => (
-				<ShareOverlay
-					diffs={isChanged}
-					appId={workspace.appId}
-					onClose={() => workspace.closeOverlay()}
-				/>
-			));
+			setShareDiffs(isChanged);
+			setShareOpen(true);
 		} catch (e) {
 			console.error(e);
 			toast.error(e.message);
@@ -272,6 +272,19 @@ export const BlocksWorkspaceActions = observer(() => {
 				</TooltipTrigger>
 				<TooltipContent>Save App (ctrl/command + s)</TooltipContent>
 			</Tooltip>
+
+			<Dialog
+				open={shareOpen}
+				onOpenChange={(o) => !o && setShareOpen(false)}
+			>
+				<DialogContent className="max-w-lg p-0">
+					<ShareOverlay
+						appId={workspace.appId}
+						diffs={shareDiffs}
+						onClose={() => setShareOpen(false)}
+					/>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 });

@@ -4,9 +4,10 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Renderer } from "@semoss/renderer";
-import { Modal } from "@semoss/ui";
 import {
 	Button,
+	Dialog,
+	DialogContent,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -162,12 +163,17 @@ export const ViewAppPage = observer(() => {
 				) : null}
 			</div>
 
-			<Modal open={isShareOpen} onClose={() => setIsShareOpen(false)}>
-				<ShareOverlay
-					appId={appId}
-					onClose={() => setIsShareOpen(false)}
-				/>
-			</Modal>
+			<Dialog
+				open={isShareOpen}
+				onOpenChange={(o) => !o && setIsShareOpen(false)}
+			>
+				<DialogContent className="max-w-lg p-0">
+					<ShareOverlay
+						appId={appId}
+						onClose={() => setIsShareOpen(false)}
+					/>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 });

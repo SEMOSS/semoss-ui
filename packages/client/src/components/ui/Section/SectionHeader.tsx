@@ -3,23 +3,9 @@ import {
 	type ForwardedRef,
 	forwardRef,
 } from "react";
-import { styled, Typography } from "@semoss/ui";
-
-const StyledSectionHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	width: "100%",
-	marginBottom: theme.spacing(2),
-	gap: theme.spacing(1),
-}));
-
-const StyledSectionTitle = styled(Typography)(() => ({
-	// textTransform: 'uppercase',
-}));
+import { cn } from "@semoss/ui/next";
 
 export interface SectionHeaderProps extends ComponentPropsWithRef<"div"> {
-	/** Actions to Append after the title */
 	actions?: React.ReactNode;
 }
 
@@ -27,13 +13,20 @@ const _SectionHeader = (
 	props: SectionHeaderProps,
 	ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {
-	const { children, actions, ...otherProps } = props;
+	const { children, actions, className, ...otherProps } = props;
 
 	return (
-		<StyledSectionHeader ref={ref} {...otherProps}>
-			<StyledSectionTitle variant={"h6"}>{children}</StyledSectionTitle>
+		<div
+			ref={ref}
+			className={cn(
+				"mb-4 flex w-full items-center justify-between gap-2",
+				className,
+			)}
+			{...otherProps}
+		>
+			<h6 className="font-semibold text-base">{children}</h6>
 			{actions}
-		</StyledSectionHeader>
+		</div>
 	);
 };
 

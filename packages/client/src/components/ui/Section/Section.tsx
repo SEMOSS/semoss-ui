@@ -1,21 +1,9 @@
-import React, {
+import {
 	type ComponentPropsWithRef,
 	type ForwardedRef,
 	forwardRef,
 } from "react";
-import { styled } from "@semoss/ui";
-
-const StyledSection = styled("section")(({ theme }) => ({
-	paddingBottom: theme.spacing(2),
-	marginBottom: theme.spacing(1),
-	borderBottomWidth: "1px",
-	borderBottomStyle: "solid",
-	borderBottomColor: theme.palette.divider,
-	"&:last-child": {
-		borderBottom: "none",
-		marginBottom: 0,
-	},
-}));
+import { cn } from "@semoss/ui/next";
 
 export type SectionProps = ComponentPropsWithRef<"section">;
 
@@ -23,12 +11,19 @@ const _Section = (
 	props: SectionProps,
 	ref: ForwardedRef<HTMLDivElement>,
 ): JSX.Element => {
-	const { children, ...otherProps } = props;
+	const { children, className, ...otherProps } = props;
 
 	return (
-		<StyledSection ref={ref} {...otherProps}>
+		<section
+			ref={ref}
+			className={cn(
+				"mb-2 border-border border-b pb-2 last:mb-0 last:border-b-0",
+				className,
+			)}
+			{...otherProps}
+		>
 			{children}
-		</StyledSection>
+		</section>
 	);
 };
 
