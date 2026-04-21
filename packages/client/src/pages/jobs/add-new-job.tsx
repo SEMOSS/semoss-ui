@@ -1,11 +1,12 @@
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
-import { Autocomplete, createFilterOptions, TextField } from "@semoss/ui";
 import {
 	Alert,
 	AlertDescription,
 	AlertTitle,
+	Badge,
 	Button,
 	Field,
 	FieldContent,
@@ -21,7 +22,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 	Textarea,
-} from "@semoss/ui/next"; // Updated imports
+} from "@semoss/ui/next";
 import { useSettings } from "@/hooks";
 import {
 	DaysOfWeek,
@@ -258,7 +259,21 @@ const JobDetails = (props: {
 	setBuilderField: (field: string, value: string | string[]) => void;
 }) => {
 	const { builder, setBuilderField } = props;
-	const filter = createFilterOptions<string>();
+	const [tagInput, setTagInput] = useState("");
+	const tags = (builder.tags as string[]) ?? [];
+
+	const addTag = () => {
+		const trimmed = tagInput.trim();
+		if (!trimmed) {
+			return;
+		}
+
+		if (!tags.includes(trimmed)) {
+			setBuilderField("tags", [...tags, trimmed]);
+		}
+
+		setTagInput("");
+	};
 
 	return (
 		<div className="flex flex-col gap-6">
@@ -280,7 +295,7 @@ const JobDetails = (props: {
 					<FieldLabel>Type</FieldLabel>
 					<FieldContent>
 						<Select
-							value={builder.jobType}
+							value={builder.jobType ?? undefined}
 							onValueChange={(value) =>
 								setBuilderField("jobType", value)
 							}
@@ -319,44 +334,56 @@ const JobDetails = (props: {
 			<Field>
 				<FieldLabel>Tags</FieldLabel>
 				<FieldContent>
-					<Autocomplete
-						value={(builder.tags as string[]) ?? []}
-						fullWidth
-						multiple
-						size="small"
-						onChange={(_, newValue) => {
-							setBuilderField("tags", newValue.flat());
-						}}
-						filterOptions={(options: string[], params) => {
-							const filtered = filter(options, params);
-
-							const { inputValue } = params;
-							const isExisting = options.some(
-								(option) => inputValue === option,
-							);
-							if (inputValue !== "" && !isExisting) {
-								filtered.push(inputValue);
+					<Input
+						value={tagInput}
+						placeholder='Press "Enter" to add tag'
+						onChange={(e) => setTagInput(e.target.value)}
+						onBlur={addTag}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === ",") {
+								e.preventDefault();
+								addTag();
 							}
-
-							return filtered;
 						}}
-						options={[]}
-						renderOption={(props, option) => (
-							<li {...props}>{option}</li>
-						)}
-						freeSolo
-						renderInput={(params) => (
-							<TextField {...params} placeholder="Enter tags" />
-						)}
 					/>
+					{!!tags.length && (
+						<div className="mt-2 flex flex-wrap gap-1">
+							{tags.map((tag) => (
+								<Badge
+									key={tag}
+									variant="secondary"
+									className="gap-1"
+								>
+									{tag}
+									<button
+										type="button"
+										onClick={() =>
+											setBuilderField(
+												"tags",
+												tags.filter((t) => t !== tag),
+											)
+										}
+										className="hover:text-destructive"
+										aria-label={`Remove ${tag} tag`}
+									>
+										<X className="size-3" />
+									</button>
+								</Badge>
+							))}
+						</div>
+					)}
 				</FieldContent>
 			</Field>
 		</div>
 	);
 };
 
+type JobTimeZoneBuilder = JobBuilder & {
+	frequency?: string | null;
+};
+
 const JobTimeZone = (props: {
-	builder: any;
+	builder: JobTimeZoneBuilder;
 	setBuilderField: (field: string, value: string | string[]) => void;
 	jobType: string;
 }) => {
@@ -437,7 +464,7 @@ const JobTimeZone = (props: {
 							<FieldLabel>Frequency</FieldLabel>
 							<FieldContent>
 								<Select
-									value={builder.frequency}
+									value={builder.frequency ?? undefined}
 									onValueChange={(v) =>
 										setBuilderField("frequency", v)
 									}
@@ -607,7 +634,7 @@ const JobTimeZone = (props: {
 										<SelectValue placeholder="Month" />
 									</SelectTrigger>
 									<SelectContent>
-										{Months.map((m: any) => (
+										{Months.map((m) => (
 											<SelectItem
 												key={m.value}
 												value={`${m.value}`}
@@ -634,7 +661,7 @@ const JobTimeZone = (props: {
 										<SelectValue placeholder="Day" />
 									</SelectTrigger>
 									<SelectContent>
-										{DaysOfWeek.map((d: any) => (
+										{DaysOfWeek.map((d) => (
 											<SelectItem
 												key={d.value}
 												value={`${d.value}`}

@@ -1,5 +1,5 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { FileUploadOutlined } from "@mui/icons-material";
+
 import { ChevronRight, Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
@@ -263,7 +263,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
