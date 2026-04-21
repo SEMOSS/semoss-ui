@@ -319,7 +319,7 @@ export const EngineModelChatPage = () => {
 												</Avatar>
 												<div className="flex max-w-[90%] flex-col gap-1 sm:max-w-[85%]">
 													<div className="rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5">
-														<Markdown>
+														<Markdown className="[&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
 															{message.content}
 														</Markdown>
 													</div>
