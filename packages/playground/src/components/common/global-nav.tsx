@@ -118,11 +118,11 @@ export const GlobalNav = observer(() => {
 	>(
 		(limit, offset) =>
 			open
-				? `GetPlaygroundRooms(pinned=[true], limit=${limit}, offset=${offset}, sort=["DESC"]);`
+				? `GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"]);`
 				: "",
 		() => -1,
 		(response) => response,
-		{ limit: 500 },
+		{},
 		[],
 	);
 
