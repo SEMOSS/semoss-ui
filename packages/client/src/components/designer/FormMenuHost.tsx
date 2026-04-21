@@ -24,6 +24,7 @@ export const FormMenuHost = observer(() => {
 		setAnchorEl(null);
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: handleClose is stable — only state depends on state
 	useEffect(() => {
 		const handleOpen = (e: Event) => {
 			const { detail } = e as CustomEvent<{ formId: string }>;
