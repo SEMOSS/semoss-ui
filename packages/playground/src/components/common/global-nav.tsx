@@ -53,6 +53,13 @@ import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
 
+let isIframed = false;
+try {
+	isIframed = window.self !== window.top;
+} catch {
+	isIframed = true;
+}
+
 /**
  * Renders a sidebar allowing users to navigate between pages
  *
@@ -335,42 +342,62 @@ export const GlobalNav = observer(() => {
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
+					{root.theme.hideToolsInIframe && isIframed ? null : (
+						<>
+							<SidebarMenuItem>
+								<SidebarMenuButton
+									asChild
+									isActive={!!matchPath("/new", pathname)}
+									tooltip={{
+										children:
+											"New Chat - Start a fresh conversation anytime.",
+										hidden: false,
+									}}
+								>
+									<Link to={"/new"} aria-label={"New Chat"}>
+										<SquarePenIcon />
+										{t("new")}
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
 
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							asChild
-							isActive={!!matchPath("/new", pathname)}
-						>
-							<Link to={"/new"} aria-label={"New Chat"}>
-								<SquarePenIcon />
-								{t("new")}
-							</Link>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
+							{root.theme.featureFlags?.enableAgent && (
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										asChild
+										isActive={
+											!!matchPath("/agent", pathname)
+										}
+										tooltip={{
+											children: "Agents",
+											hidden: false,
+										}}
+									>
+										<Link
+											to={"/agent"}
+											aria-label={"agent"}
+										>
+											<ComputerIcon />
+											{t("agents")}
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							)}
 
-					{root.theme.featureFlags?.enableAgent && (
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								asChild
-								isActive={!!matchPath("/agent", pathname)}
-							>
-								<Link to={"/agent"} aria-label={"agent"}>
-									<ComputerIcon />
-									{t("agents")}
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
+							{root.theme.sidebar.headerItems.map(
+								(item, index) => (
+									<GlobalNavItem
+										key={`header-${item.name}-${index}`}
+										name={item.name}
+										icon={item.icon}
+										path={item.path}
+										url={item.url}
+										embed={item.embed}
+									/>
+								),
+							)}
+						</>
 					)}
-					{root.theme.sidebar.headerItems.map((item, index) => (
-						<GlobalNavItem
-							key={`header-${item.name}-${index}`}
-							name={item.name}
-							icon={item.icon}
-							path={item.path}
-							url={item.url}
-							embed={item.embed}
-						/>
-					))}
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
@@ -660,10 +687,21 @@ export const GlobalNav = observer(() => {
 				<Separator className="group-data-[collapsible=icon]:hidden" />
 				{root.theme.sidebar.footerItems.length > 0 && (
 					<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
+						{/* biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons */}
 						<div
 							className="relative"
+							role="button"
+							tabIndex={0}
 							onMouseEnter={() => setHelpOpen(true)}
 							onMouseLeave={() => setHelpOpen(false)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									// Add your click handler here
+									// handleClick();
+								}
+							}}
+							onClick={() => setHelpOpen((prev) => !prev)}
 						>
 							<SidebarMenuItem>
 								<SidebarMenuButton>

@@ -39,6 +39,7 @@ export interface Workspace {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	prompts: string[];
 }
 
 /**
@@ -83,14 +84,15 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
  * Item from the prompt library
  */
 export interface Prompt {
-	ID: string;
-	CREATED_BY: string;
-	DATE_CREATED: string;
-	VERSION: number;
-	INTENT: string;
-	TITLE: string;
-	CONTEXT: string;
+	id: string;
+	createdBy: string;
+	dateCreated: string;
+	version: number;
+	intent: string;
+	title: string;
+	context: string;
 	tags: string[];
+	global: boolean;
 }
 
 /**
@@ -165,12 +167,12 @@ export interface PixelMessageTextPart {
 export interface PixelMessageMediaPart {
 	type: "MEDIA";
 	mediaInfo: {
-		base64Data: string;
-		fileFormat: string;
+		base64Data?: string;
+		fileFormat?: string;
 		fileName: string;
-		fileLocation: string;
+		fileLocation?: string;
 		mediaInputType: "FILE";
-		mimeType: string;
+		mimeType?: string;
 	};
 }
 

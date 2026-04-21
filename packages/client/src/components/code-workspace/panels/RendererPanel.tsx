@@ -1,7 +1,7 @@
-import { Refresh } from "@mui/icons-material";
+import { RefreshCw } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { IconButton } from "@semoss/ui";
+import { Button } from "@semoss/ui/next";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { CodeRenderer } from "../CodeRenderer";
@@ -16,19 +16,17 @@ export const RendererPanel = observer(() => {
 	return (
 		<Panel
 			actions={
-				<>
-					<IconButton
-						size={"small"}
-						color={"default"}
-						title={"Refresh"}
-						onClick={() => {
-							// refreshApp();
-							setCounter(counter + 1);
-						}}
-					>
-						<Refresh fontSize="inherit" />
-					</IconButton>
-				</>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					title={"Refresh"}
+					onClick={() => {
+						// refreshApp();
+						setCounter(counter + 1);
+					}}
+				>
+					<RefreshCw className="h-[1em] w-[1em]" />
+				</Button>
 			}
 		>
 			<CodeRenderer appId={workspace.appId} key={counter} />

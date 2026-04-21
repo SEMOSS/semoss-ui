@@ -1,8 +1,13 @@
-import { Autocomplete } from "@mui/material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { Stack, TextField, Typography } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -36,14 +41,7 @@ export interface ColumnTypeTransformationCellDef
 	extends TransformationCellDef<"column-type-transformation"> {
 	widget: "column-type-transformation";
 	parameters: {
-		/**
-		 * Routine type
-		 */
 		transformation: Transformation<ColumnTypeTransformationDef>;
-
-		/**
-		 * ID of the query cell that defines the frame we want to transform
-		 */
 		targetCell: TransformationTargetCell;
 	};
 }
@@ -53,11 +51,8 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
-		/**
-		 * Cell that Transformation will be made to
-		 */
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c;
+			let c: CellState<QueryImportCellDef> | undefined;
 			Object.values(state.queries).forEach((query) => {
 				if (query.cells[cell.parameters.targetCell.id]) {
 					c = query.cells[
@@ -65,7 +60,6 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 					] as CellState<QueryImportCellDef>;
 				}
 			});
-
 			return c;
 		}).get();
 
@@ -81,23 +75,19 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 			);
 		}).get();
 
-		/**
-		 * A list of cells that are query imports,
-		 * Added here in case we want to show particular frames whether Grid, Py, R, etc
-		 * TODO: Do we want to reference other queries
-		 */
 		const frames = useMemo(() => {
 			const frameList = [];
-
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
-					if (cell.widget === "query-import") {
+					if (
+						cell.widget === "query-import" ||
+						cell.widget === "data-import"
+					) {
 						frameList.push(cell);
 					}
 				});
 			});
-
 			return frameList;
 		}, []);
 
@@ -114,16 +104,11 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 					isExpanded={isExpanded}
 					display={Transformations[cellTransformation.key].display}
 					Icon={Transformations[cellTransformation.key].icon}
-					frame={{
-						cell: cell,
-						options: frames,
-					}}
+					frame={{ cell, options: frames }}
 				>
-					<Stack width="100%" paddingY={0.75}>
-						<Typography variant="caption">
-							<em>{helpText}</em>
-						</Typography>
-					</Stack>
+					<div className="w-full py-1.5">
+						<span className="text-xs italic">{helpText}</span>
+					</div>
 				</TransformationCellInput>
 			);
 		}
@@ -133,19 +118,16 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 				isExpanded={isExpanded}
 				display={Transformations[cellTransformation.key].display}
 				Icon={Transformations[cellTransformation.key].icon}
-				frame={{
-					cell: cell,
-					options: frames,
-				}}
+				frame={{ cell, options: frames }}
 			>
-				<Stack spacing={2}>
-					<Typography variant="caption">
+				<div className="flex flex-col gap-4">
+					<span className="text-xs">
 						{!doesFrameExist ? (
 							<em>{helpText}</em>
 						) : (
 							"Change the type of the selected column"
 						)}
-					</Typography>
+					</span>
 					<ColumnTransformationField
 						disabled={!doesFrameExist}
 						cell={cell}
@@ -162,33 +144,33 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 							});
 						}}
 					/>
-					<Autocomplete
-						disableClearable
+					<Select
 						disabled={!doesFrameExist}
-						size="small"
 						value={cellTransformation.parameters.columnType}
-						fullWidth
-						onChange={(_, newOperation: string) => {
+						onValueChange={(val) => {
 							state.dispatch({
 								message: ActionMessages.UPDATE_CELL,
 								payload: {
 									queryId: cell.query.id,
 									cellId: cell.id,
 									path: "parameters.transformation.parameters.columnType",
-									value: newOperation,
+									value: val,
 								},
 							});
 						}}
-						options={transformationColumnTypes}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								variant="outlined"
-								label="Operation"
-							/>
-						)}
-					/>
-				</Stack>
+					>
+						<SelectTrigger>
+							<SelectValue placeholder="Operation" />
+						</SelectTrigger>
+						<SelectContent>
+							{transformationColumnTypes.map((type) => (
+								<SelectItem key={type} value={type}>
+									{type}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
 			</TransformationCellInput>
 		);
 	});

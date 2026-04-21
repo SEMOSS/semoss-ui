@@ -1,8 +1,4 @@
-import {
-	Inventory2Outlined,
-	SwitchAccessShortcutOutlined,
-	TokenOutlined,
-} from "@mui/icons-material";
+import { Boxes, Braces, Coins } from "lucide-react";
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
@@ -56,7 +52,7 @@ export const ENGINE_ROUTES: {
 		type: "FUNCTION",
 		description:
 			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
-		icon: SwitchAccessShortcutOutlined,
+		icon: Braces,
 		specific: [
 			{
 				name: "Overview",
@@ -212,7 +208,7 @@ export const ENGINE_ROUTES: {
 		type: "VECTOR",
 		description:
 			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
-		icon: TokenOutlined,
+		icon: Coins,
 		specific: [
 			{
 				name: "Overview",
@@ -270,7 +266,7 @@ export const ENGINE_ROUTES: {
 		type: "STORAGE",
 		description:
 			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our storage catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project's unstructured data.",
-		icon: Inventory2Outlined,
+		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",
@@ -322,7 +318,7 @@ export const ENGINE_ROUTES: {
 		type: "GUARDRAIL",
 		description:
 			"Guardrail Catalog is a centralized hub for managing and deploying guardrails that ensure safety, compliance, and reliability across the platform. It provides ready-to-use options like Gliner and Detoxify, and supports custom guardrail uploads via ZIP files, enabling consistent, secure, and scalable interactions.",
-		icon: Inventory2Outlined,
+		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",

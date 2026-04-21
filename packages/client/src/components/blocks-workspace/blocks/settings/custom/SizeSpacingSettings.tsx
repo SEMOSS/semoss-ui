@@ -1,4 +1,3 @@
-import { SelectAll } from "@mui/icons-material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,12 +11,13 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	IconButton,
-	InputAdornment,
-	TextField,
-	ToggleButton,
-	ToggleButtonGroup,
-} from "@semoss/ui";
+	Button,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import BottomPaddingIcon from "../../../../../assets/block-settings/BottomPaddingIcon.svg";
 import HorizontalPaddingIcon from "../../../../../assets/block-settings/HorizontalPaddingIcon.svg";
@@ -81,7 +81,7 @@ export const SizeSpacingSettings = observer(
 		});
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -132,17 +132,17 @@ export const SizeSpacingSettings = observer(
 				//determine which sides have value based on spacing
 				//i.e. padding: "8px 5px 10px"
 				if (amount.match(/\s/g)) {
-					if (amount.match(/\s/g).length == 1) {
+					if (amount.match(/\s/g).length === 1) {
 						p.top = parts[0];
 						p.bottom = parts[0];
 						p.left = parts[1];
 						p.right = parts[1];
-					} else if (amount.match(/\s/g).length == 2) {
+					} else if (amount.match(/\s/g).length === 2) {
 						p.top = parts[0];
 						p.left = parts[1];
 						p.right = parts[1];
 						p.bottom = parts[2];
-					} else if (amount.match(/\s/g).length == 3) {
+					} else if (amount.match(/\s/g).length === 3) {
 						p.top = parts[0];
 						p.right = parts[1];
 						p.bottom = parts[2];
@@ -173,7 +173,7 @@ export const SizeSpacingSettings = observer(
 			unit: "%" | "px" | "em" | "",
 		) => {
 			//value to set
-			let v;
+			let v: string | undefined;
 
 			// updated the parsed value
 			if (customView) {
@@ -312,7 +312,7 @@ export const SizeSpacingSettings = observer(
 				}
 			}
 
-			if (type == "unit") {
+			if (type === "unit") {
 				setParsed({
 					unit: unit,
 					top: parsed.top,
@@ -361,158 +361,171 @@ export const SizeSpacingSettings = observer(
 			<BaseSettingSection label={label} wide>
 				{customView ? (
 					<>
-						<TextField
-							fullWidth
-							value={parsed.left}
-							id={label + "-left"}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value, "left", parsed.unit);
-							}}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<img src={LeftPaddingIcon.toString()} />
-									</InputAdornment>
-								),
-							}}
-						/>
-						<TextField
-							fullWidth
-							value={parsed.top}
-							id={label + "-top"}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value, "top", parsed.unit);
-							}}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<img src={TopPaddingIcon.toString()} />
-									</InputAdornment>
-								),
-							}}
-						/>
-						<TextField
-							fullWidth
-							value={parsed.right}
-							id={label + "-right"}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value, "right", parsed.unit);
-							}}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<img
-											src={RightPaddingIcon.toString()}
-										/>
-									</InputAdornment>
-								),
-							}}
-						/>
-						<TextField
-							fullWidth
-							value={parsed.bottom}
-							id={label + "-bottom"}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value, "bottom", parsed.unit);
-							}}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<img
-											src={BottomPaddingIcon.toString()}
-										/>
-									</InputAdornment>
-								),
-							}}
-						/>
+						<InputGroup className="w-full">
+							<InputGroupAddon>
+								<img
+									src={LeftPaddingIcon.toString()}
+									alt=""
+									aria-hidden="true"
+								/>
+							</InputGroupAddon>
+							<InputGroupInput
+								value={parsed.left}
+								id={`${label}-left`}
+								onChange={(e) => {
+									onChange(
+										e.target.value,
+										"left",
+										parsed.unit,
+									);
+								}}
+								autoComplete="off"
+							/>
+						</InputGroup>
+						<InputGroup className="w-full">
+							<InputGroupAddon>
+								<img
+									src={TopPaddingIcon.toString()}
+									alt=""
+									aria-hidden="true"
+								/>
+							</InputGroupAddon>
+							<InputGroupInput
+								value={parsed.top}
+								id={`${label}-top`}
+								onChange={(e) => {
+									onChange(
+										e.target.value,
+										"top",
+										parsed.unit,
+									);
+								}}
+								autoComplete="off"
+							/>
+						</InputGroup>
+						<InputGroup className="w-full">
+							<InputGroupAddon>
+								<img
+									src={RightPaddingIcon.toString()}
+									alt=""
+									aria-hidden="true"
+								/>
+							</InputGroupAddon>
+							<InputGroupInput
+								value={parsed.right}
+								id={`${label}-right`}
+								onChange={(e) => {
+									onChange(
+										e.target.value,
+										"right",
+										parsed.unit,
+									);
+								}}
+								autoComplete="off"
+							/>
+						</InputGroup>
+						<InputGroup className="w-full">
+							<InputGroupAddon>
+								<img
+									src={BottomPaddingIcon.toString()}
+									alt=""
+									aria-hidden="true"
+								/>
+							</InputGroupAddon>
+							<InputGroupInput
+								value={parsed.bottom}
+								id={`${label}-bottom`}
+								onChange={(e) => {
+									onChange(
+										e.target.value,
+										"bottom",
+										parsed.unit,
+									);
+								}}
+								autoComplete="off"
+							/>
+						</InputGroup>
 					</>
 				) : (
 					<>
-						<TextField
-							fullWidth
-							value={parsed.top}
-							id={label + "-topBottom "}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value, "top", parsed.unit);
-							}}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<img
-											src={HorizontalPaddingIcon.toString()}
-										/>
-									</InputAdornment>
-								),
-							}}
-						/>
-						<TextField
-							fullWidth
-							value={parsed.left}
-							id={label + "-leftRight"}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value, "left", parsed.unit);
-							}}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<img
-											src={VeritcalPaddingIcon.toString()}
-										/>
-									</InputAdornment>
-								),
-							}}
-						/>
+						<InputGroup className="w-full">
+							<InputGroupAddon>
+								<img
+									src={HorizontalPaddingIcon.toString()}
+									alt=""
+									aria-hidden="true"
+								/>
+							</InputGroupAddon>
+							<InputGroupInput
+								value={parsed.top}
+								id={`${label}-topBottom`}
+								onChange={(e) => {
+									onChange(
+										e.target.value,
+										"top",
+										parsed.unit,
+									);
+								}}
+								autoComplete="off"
+							/>
+						</InputGroup>
+						<InputGroup className="w-full">
+							<InputGroupAddon>
+								<img
+									src={VeritcalPaddingIcon.toString()}
+									alt=""
+									aria-hidden="true"
+								/>
+							</InputGroupAddon>
+							<InputGroupInput
+								value={parsed.left}
+								id={`${label}-leftRight`}
+								onChange={(e) => {
+									onChange(
+										e.target.value,
+										"left",
+										parsed.unit,
+									);
+								}}
+								autoComplete="off"
+							/>
+						</InputGroup>
 					</>
 				)}
-				<ToggleButtonGroup value={parsed.unit} exclusive size="small">
+				<ToggleGroup
+					type="single"
+					variant="outline"
+					value={parsed.unit}
+					onValueChange={(val) => {
+						if (val)
+							onChange("", "unit", val as "%" | "px" | "em" | "");
+					}}
+				>
 					{SIZE_VALUE_TYPES.map((unit) => {
 						return (
-							<ToggleButton
+							<ToggleGroupItem
 								key={unit}
 								value={unit}
-								color={
-									parsed.unit === unit ? "primary" : undefined
-								}
-								onClick={() => {
-									onChange("", "unit", unit);
-								}}
+								variant="outline"
+								size="sm"
 							>
 								{unit}
-							</ToggleButton>
+							</ToggleGroupItem>
 						);
 					})}
-				</ToggleButtonGroup>
-				<IconButton
+				</ToggleGroup>
+				<Button
+					variant={customView ? "default" : "ghost"}
+					size="icon-sm"
 					onClick={() => setCustomView(!customView)}
-					color={customView ? "primary" : "default"}
 					data-testid={"sizeSpacingSetting-button-allSides"}
 				>
-					<img src={PaddingButton.toString()} />
-				</IconButton>
+					<img
+						src={PaddingButton.toString()}
+						alt=""
+						aria-hidden="true"
+					/>
+				</Button>
 			</BaseSettingSection>
 		);
 	},

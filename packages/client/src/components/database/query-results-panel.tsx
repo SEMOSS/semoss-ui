@@ -12,12 +12,12 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useQueryResults } from "@/hooks/use-database-query-results";
 import {
 	getErrorMessage,
 	isErrorResponse,
 	type QueryResult,
 } from "@/hooks/useDatabaseQueryExecution";
-import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
 
 interface QueryResultsPanelProps {
 	previewData: QueryResult | null;

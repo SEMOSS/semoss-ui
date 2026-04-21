@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy click handlers */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
-import { FileUploadOutlined } from "@mui/icons-material";
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -353,9 +352,7 @@ export const ModelImportPage: React.FC = () => {
 		return;
 	};
 
-	/**
-	 * Determines view
-	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional - deps cover all needed values
 	const view = useMemo(() => {
 		switch (selectedModel) {
 			case null:
@@ -693,7 +690,7 @@ export const ModelImportPage: React.FC = () => {
 									</div>
 								) : (
 									<div className="text-center">
-										<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+										<UploadIcon className="mb-2 h-12 w-12 text-muted-foreground" />
 										<P className="font-medium text-foreground">
 											Drop your file here or click to
 											browse

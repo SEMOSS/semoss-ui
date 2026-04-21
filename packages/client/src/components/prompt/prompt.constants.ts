@@ -1,10 +1,4 @@
-import {
-	Eye,
-	Pencil,
-	ShieldBan,
-	SlidersHorizontal,
-	TextCursorInput,
-} from "lucide-react";
+import { Eye, FileText, ShieldCheck, Sliders, Variable } from "lucide-react";
 
 // use contants for steps so it's easy to reorder/add new ones
 export const PROMPT_BUILDER_CONTEXT_STEP = 1;
@@ -34,7 +28,7 @@ export const INPUT_TYPES = [
 ];
 export const INPUT_TYPE_DISPLAY = {
 	[INPUT_TYPE_TEXT]: "User Text",
-	[INPUT_TYPE_SELECT]: "User Drop-Down List",
+	[INPUT_TYPE_SELECT]: "Drop-Down List",
 	[INPUT_TYPE_VECTOR]: "Perform RAG Search",
 	[INPUT_TYPE_CUSTOM_QUERY]: "Use a Parameter in API",
 	[INPUT_TYPE_DATABASE]: "Execute as Query",
@@ -51,19 +45,19 @@ export const INPUT_TYPE_HELP_TEXT = {
 export const SUMMARY_STEPS = [
 	{
 		title: "Create Prompt",
-		icon: Pencil,
+		icon: FileText,
 	},
 	{
 		title: "Set Inputs",
-		icon: TextCursorInput,
+		icon: Variable,
 	},
 	{
 		title: "Define Input Types",
-		icon: SlidersHorizontal,
+		icon: Sliders,
 	},
 	{
 		title: "Set Constraints",
-		icon: ShieldBan,
+		icon: ShieldCheck,
 	},
 	{
 		title: "Preview Prompt",
