@@ -1,6 +1,4 @@
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
-import RadioButtonCheckedOutlinedIcon from "@mui/icons-material/RadioButtonCheckedOutlined";
+import { CircleDot, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type {
 	Block,
@@ -10,14 +8,14 @@ import type {
 	RadioBlockDef,
 } from "@semoss/renderer";
 import {
-	Autocomplete,
-	Box,
 	Button,
-	IconButton,
-	Stack,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { InputSettings } from "../../settings";
 import { BaseSettingSection } from "../../settings/BaseSettingSection";
@@ -89,37 +87,21 @@ const SettingAutocomplete = <D extends BlockDef>({
 	};
 
 	return (
-		<Autocomplete
-			fullWidth
-			multiple={false}
-			options={options}
-			value={options.find((opt) => opt.value === selectedValue) || null}
-			onChange={(_, newValue) => {
-				setBlockData(
-					typeof newValue === "object" && newValue !== null
-						? newValue.value
-						: undefined,
-				);
-			}}
-			getOptionLabel={(option) =>
-				typeof option === "object" && option !== null
-					? option.label
-					: ""
-			}
-			isOptionEqualToValue={(option, value) =>
-				typeof option === "object" &&
-				option !== null &&
-				typeof value === "object" &&
-				value !== null &&
-				"value" in option &&
-				"value" in value &&
-				option.value === value.value
-			}
-			renderInput={(params) => (
-				<TextField {...params} size="small" variant="outlined" />
-			)}
-			disableClearable
-		/>
+		<Select
+			value={selectedValue ?? ""}
+			onValueChange={(val) => setBlockData(val)}
+		>
+			<SelectTrigger className="w-full">
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				{options.map((opt) => (
+					<SelectItem key={opt.value} value={opt.value}>
+						{opt.label}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
 	);
 };
 
@@ -140,35 +122,31 @@ const OptionRow = ({
 	onChange?: (field: "label" | "value", value: string) => void;
 	onDelete?: () => void;
 }) => (
-	<Box sx={{ width: "100%", mb: 2 }}>
-		<Stack direction="row" spacing={2} alignItems="center">
-			<Box sx={{ flex: 1 }}>
-				<TextField
-					size="small"
+	<div className="mb-2 w-full">
+		<div className="flex flex-row items-center gap-2">
+			<div className="flex-1">
+				<Input
 					value={label}
 					onChange={(e) => onChange?.("label", e.target.value)}
-					fullWidth
 				/>
-			</Box>
-			<Box sx={{ flex: 1 }}>
-				<TextField
-					size="small"
+			</div>
+			<div className="flex-1">
+				<Input
 					value={value}
 					onChange={(e) => onChange?.("value", e.target.value)}
-					fullWidth
 				/>
-			</Box>
+			</div>
 
-			<IconButton onClick={onDelete} size="small">
-				<CloseIcon />
-			</IconButton>
-		</Stack>
-	</Box>
+			<Button variant="ghost" size="icon-sm" onClick={onDelete}>
+				<X className="size-4" />
+			</Button>
+		</div>
+	</div>
 );
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: RadioButtonCheckedOutlinedIcon,
+	icon: CircleDot,
 	contentMenu: [
 		{
 			name: "General",
@@ -208,6 +186,7 @@ export const config: BlockSettingsConfig = {
 						});
 
 						// Ensure we always have at least one complete option
+						// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only run when configOptions length changes
 						useEffect(() => {
 							const completeOptions = configOptions.filter(
 								(opt) => opt.label.trim() && opt.value.trim(),
@@ -322,27 +301,21 @@ export const config: BlockSettingsConfig = {
 						};
 						// Find the current option object for the selected value
 						return (
-							<Box sx={{ width: "100%" }}>
+							<div className="w-full">
 								{/* Headers */}
-								<Box sx={{ mb: 2, display: "flex", gap: 2 }}>
-									<Box sx={{ flex: 1 }}>
-										<Typography
-											variant="caption"
-											fontWeight="medium"
-										>
+								<div className="mb-2 flex gap-2">
+									<div className="flex-1">
+										<p className="font-medium text-xs">
 											Label
-										</Typography>
-									</Box>
-									<Box sx={{ flex: 1 }}>
-										<Typography
-											variant="caption"
-											fontWeight="medium"
-										>
+										</p>
+									</div>
+									<div className="flex-1">
+										<p className="font-medium text-xs">
 											Value
-										</Typography>
-									</Box>
-									<Box sx={{ width: 40 }} />
-								</Box>
+										</p>
+									</div>
+									<div className="w-10" />
+								</div>
 
 								{/* Options */}
 								{configOptions.map((option) => (
@@ -365,69 +338,50 @@ export const config: BlockSettingsConfig = {
 
 								{/* Add Button */}
 								<Button
-									startIcon={<AddIcon />}
+									variant="outline"
+									size="sm"
+									className="mb-2 w-full"
 									onClick={handleAddOption}
-									variant="outlined"
-									size="small"
-									fullWidth
-									sx={{ mb: 2 }}
 								>
+									<Plus className="mr-1 size-4" />
 									Add Option
 								</Button>
 
 								{/* Current Value Selection */}
 								<BaseSettingSection label="Selected Value">
-									<Autocomplete
-										multiple={false}
+									<Select
 										value={
 											configOptions.find(
 												(opt) =>
 													opt.value === data.value,
-											) || null
+											)?.value ?? ""
 										}
-										options={configOptions.filter(
-											(opt) =>
-												opt.label.trim() &&
-												opt.value.trim(),
-										)}
-										onChange={(_, newValue) => {
-											if (newValue) {
-												setData(
-													"value",
-													typeof newValue ===
-														"object" &&
-														newValue !== null
-														? newValue.value
-														: undefined,
-												);
-											}
+										onValueChange={(val) => {
+											setData("value", val);
 										}}
-										getOptionLabel={(option) =>
-											typeof option === "object" &&
-											option !== null
-												? option.label
-												: ""
-										}
-										isOptionEqualToValue={(option, value) =>
-											typeof option === "object" &&
-											option !== null &&
-											typeof value === "object" &&
-											value !== null &&
-											"value" in option &&
-											"value" in value &&
-											option.value === value.value
-										}
-										renderInput={(params) => (
-											<TextField
-												{...params}
-												size="small"
-												variant="outlined"
-											/>
-										)}
-										fullWidth
-									/>
+									>
+										<SelectTrigger className="w-full">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											{configOptions
+												.filter(
+													(opt) =>
+														opt.label.trim() &&
+														opt.value.trim(),
+												)
+												.map((opt) => (
+													<SelectItem
+														key={opt.id}
+														value={opt.value}
+													>
+														{opt.label}
+													</SelectItem>
+												))}
+										</SelectContent>
+									</Select>
 								</BaseSettingSection>
-							</Box>
+							</div>
 						);
 					},
 				},

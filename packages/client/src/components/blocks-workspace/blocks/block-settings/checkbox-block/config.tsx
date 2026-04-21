@@ -1,5 +1,5 @@
-import { CheckBox } from "@mui/icons-material";
-import { InputSettings, SelectInputSettings } from "../../settings";
+import { CheckSquare } from "lucide-react";
+import { InputSettings } from "../../settings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
@@ -8,7 +8,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: CheckBox,
+	icon: CheckSquare,
 	contentMenu: [
 		{
 			name: "General",
