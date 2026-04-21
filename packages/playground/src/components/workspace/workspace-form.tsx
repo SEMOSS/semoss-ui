@@ -10,7 +10,7 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { MCPSelector, NewKnowledgeOverlay } from "@/components";
+import { MCPSelector, NewKnowledgeOverlay, PromptSelector } from "@/components";
 import { useChat } from "@/hooks";
 import type { MCPConfig, Workspace } from "@/types";
 
@@ -40,12 +40,14 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	const nameId = useId();
 	const descriptionId = useId();
 	const instructionId = useId();
+	const promptsId = useId();
 
 	/**
 	 * State
 	 */
 	const [name, setName] = useState<string>("");
 	const [description, setDescription] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
 	const [instructions, setInstructions] = useState<string>("");
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
@@ -62,6 +64,11 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	useEffect(() => {
 		setName(values?.name || "");
 		setDescription(values?.description || "");
+		setPrompts(
+			Array.isArray(values?.prompts)
+				? values.prompts.map((p) => (typeof p === "string" ? p : p.id))
+				: [],
+		);
 		setInstructions(values?.system_prompt || "");
 		setKnowledge(values?.mcp.filter((mcp) => mcp.type === "VECTOR") || []);
 		setToolbox(values?.mcp.filter((mcp) => mcp.type !== "VECTOR") || []);
@@ -81,6 +88,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 				name: name,
 				system_prompt: instructions,
 				description: description,
+				prompts: prompts,
 				mcp: [...toolbox, ...knowledge],
 			};
 
@@ -134,6 +142,16 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						disabled={isLoading}
 						onChange={(e) => setDescription(e.target.value)}
 						data-testid="workspaceForm-description-txt"
+					/>
+				</Field>
+				<Field>
+					<FieldLabel htmlFor={promptsId}>
+						{t("workspace:form.promptsLabel")}
+					</FieldLabel>
+					<PromptSelector
+						values={prompts}
+						disabled={isLoading}
+						onChange={(values) => setPrompts(values)}
 					/>
 				</Field>
 			</FieldGroup>

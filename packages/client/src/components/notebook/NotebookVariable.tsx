@@ -2,7 +2,6 @@ import { Copy, MoreVertical, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
-import { useNotification } from "@semoss/ui";
 import {
 	Button,
 	Dialog,
@@ -18,6 +17,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { useWorkspace } from "@/hooks";
 import { suggestVariableRenames } from "../blocks-workspace/utils";
@@ -67,7 +67,6 @@ interface NotebookTokenProps {
 export const NotebookVariable = observer((props: NotebookTokenProps) => {
 	const { id, variable, engines } = props;
 	const { state } = useBlocks();
-	const notification = useNotification();
 
 	const { workspace } = useWorkspace();
 
@@ -104,17 +103,11 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 				setSuggestedNewName(changes[id]);
 				setIsAutoRenameModalOpen(true);
 			} else {
-				notification.add({
-					color: "warning",
-					message: "No suggestion available for this variable",
-				});
+				toast.warning("No suggestion available for this variable");
 			}
 		} catch (error) {
 			console.error("Error getting suggested changes:", error);
-			notification.add({
-				color: "error",
-				message: "Failed to get variable name suggestion",
-			});
+			toast.error("Failed to get variable name suggestion");
 		} finally {
 			setIsProcessing(false);
 		}
@@ -137,10 +130,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		if (!suggestedNewName) return;
 
 		if (!isValidPythonVariableName(suggestedNewName)) {
-			notification.add({
-				color: "error",
-				message: `Invalid variable name: ${suggestedNewName}. Must start with letter/underscore and contain only letters, numbers, and underscores.`,
-			});
+			toast.error(
+				`Invalid variable name: ${suggestedNewName}. Must start with letter/underscore and contain only letters, numbers, and underscores.`,
+			);
 			return;
 		}
 
@@ -226,24 +218,17 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 			});
 
 			if (success) {
-				notification.add({
-					color: "success",
-					message: `Successfully renamed variable ${id} to ${suggestedNewName}`,
-				});
+				toast.success(
+					`Successfully renamed variable ${id} to ${suggestedNewName}`,
+				);
 				setIsAutoRenameModalOpen(false);
 				setSuggestedNewName("");
 			} else {
-				notification.add({
-					color: "error",
-					message: `Failed to rename variable ${id}`,
-				});
+				toast.error(`Failed to rename variable ${id}`);
 			}
 		} catch (error) {
 			console.error("Error applying rename:", error);
-			notification.add({
-				color: "error",
-				message: "Error applying variable rename",
-			});
+			toast.error("Error applying variable rename");
 		} finally {
 			setIsProcessing(false);
 		}
@@ -256,22 +241,16 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 	const copyAlias = (alias: string) => {
 		try {
 			navigator.clipboard.writeText(`{{${alias}}}`);
-
-			notification.add({
-				color: "success",
-				message: "Successfully copied to clipboard",
-			});
+			toast.success("Successfully copied to clipboard");
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		}
 	};
 
 	/**
 	 * Effects/Memos
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — engines shape is stable
 	const getVariableTypeDisplay: string = useMemo(() => {
 		if (
 			variable.type !== "query" &&
@@ -344,10 +323,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 													);
 
 												if (!isValidSyntax) {
-													notification.add({
-														color: "error",
-														message: `Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
-													});
+													toast.error(
+														`Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
+													);
 													return;
 												}
 
@@ -361,14 +339,15 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 														},
 													});
 
-												notification.add({
-													color: success
-														? "success"
-														: "error",
-													message: success
-														? `Successfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`
-														: `Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
-												});
+												if (success) {
+													toast.success(
+														`Successfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`,
+													);
+												} else {
+													toast.error(
+														`Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
+													);
+												}
 
 												setNewTokenAlias(
 													success
@@ -495,10 +474,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 										id: id,
 									},
 								});
-								notification.add({
-									color: "warning",
-									message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
-								});
+								toast.warning(
+									`Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
+								);
 								setIsDeleteModalOpen(false);
 							}}
 							data-testid={"notebook-variable-delete-confirm-btn"}

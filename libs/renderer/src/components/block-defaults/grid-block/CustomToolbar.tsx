@@ -1,11 +1,16 @@
-import { Tooltip } from "@mui/material";
 import {
 	type GridApi,
 	GridToolbarContainer,
 	GridToolbarFilterButton,
 } from "@mui/x-data-grid";
 import { FileDown } from "lucide-react";
-import { Button } from "@semoss/ui";
+import {
+	Button,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 
 interface CustomToolbarProps {
 	apiRef: React.MutableRefObject<GridApi>;
@@ -28,7 +33,7 @@ export const CustomToolbar = ({
 
 	return (
 		<GridToolbarContainer
-			sx={{
+			style={{
 				padding: "8px",
 				borderBottom: "1px solid rgba(224, 224, 224, 1)",
 				display: "flex",
@@ -38,16 +43,21 @@ export const CustomToolbar = ({
 		>
 			{isBatchingEnabled && <GridToolbarFilterButton />}
 			<div style={{ flex: 1 }} />
-			<Tooltip title="Export CSV">
-				<Button
-					variant="text"
-					size="small"
-					startIcon={<FileDown className="size-4" />}
-					onClick={handleExportClick}
-				>
-					Export
-				</Button>
-			</Tooltip>
+			<TooltipProvider>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={handleExportClick}
+						>
+							<FileDown className="mr-1.5 size-4" />
+							Export
+						</Button>
+					</TooltipTrigger>
+					<TooltipContent>Export CSV</TooltipContent>
+				</Tooltip>
+			</TooltipProvider>
 		</GridToolbarContainer>
 	);
 };

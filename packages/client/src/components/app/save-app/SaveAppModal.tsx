@@ -1,44 +1,25 @@
-import { Close, KeyboardArrowRight } from "@mui/icons-material";
+import { ChevronRight, X } from "lucide-react";
 import { createElement, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
-	Breadcrumbs,
+	Badge,
 	Button,
-	Chip,
-	IconButton,
-	Modal,
-	Stack,
-	styled,
-	Typography,
-} from "@semoss/ui";
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@semoss/ui/next";
 import type { AppFormStep } from "./save-app.types";
 
-const StyledModalContent = styled(Modal.Content)(() => ({
-	height: "300px",
-}));
-
 interface SaveAppProps {
-	/** Track if the model is open */
 	open: boolean;
-
-	/** Callback that is triggered handleClose */
 	handleClose: (appId?: string) => void;
-
-	/** Modal title */
 	title: string;
-
-	/** Steps for modal */
 	steps: AppFormStep[];
-
-	/** Default form values */
 	defaultFormValues: object;
-
-	/** Submit handler */
 	handleFormSubmit: (data: object) => void;
-
-	/** Error message to display */
 	errorMessage: string;
-
 	submitBtnText: string;
 }
 
@@ -56,7 +37,6 @@ export const SaveAppModal = (props: SaveAppProps) => {
 
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [showErrorMessage, setShowErrorMessage] = useState<boolean>(false);
-
 	const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
 
 	const { getValues, handleSubmit, watch, control } = useForm({
@@ -65,51 +45,31 @@ export const SaveAppModal = (props: SaveAppProps) => {
 
 	const watchAll = watch();
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: watchAll triggers re-evaluation on any field change
 	const isStepComplete = useMemo(() => {
-		// TODO: Why is this in dependecy array
-		console.log(watchAll);
 		return (steps[currentStepIndex].requiredFields as string[]).every(
-			(field) => {
-				return !!getValues(field as never);
-			},
+			(field) => !!getValues(field as never),
 		);
-	}, [
-		watchAll,
-		currentStepIndex,
-		steps[currentStepIndex].requiredFields,
-		getValues,
-	]);
+	}, [watchAll, currentStepIndex, steps, getValues]);
 
-	const isStepSelected = (index: number): boolean => {
-		return currentStepIndex === index;
-	};
+	const isStepSelected = (index: number) => currentStepIndex === index;
 
 	const handlePreviousStep = () => {
-		if (currentStepIndex === 0) {
-			handleClose();
-		} else {
-			setCurrentStepIndex(currentStepIndex - 1);
-		}
+		if (currentStepIndex === 0) handleClose();
+		else setCurrentStepIndex(currentStepIndex - 1);
 	};
 
 	const previousStepLabel = currentStepIndex === 0 ? "Cancel" : "Back";
 
 	const handleNextStep = () => {
-		if (currentStepIndex === steps.length - 1) {
-			createApp();
-		} else {
-			setCurrentStepIndex(currentStepIndex + 1);
-		}
+		if (currentStepIndex === steps.length - 1) createApp();
+		else setCurrentStepIndex(currentStepIndex + 1);
 	};
 
 	const nextStepLabel =
 		currentStepIndex === steps.length - 1 ? submitBtnText : "Next";
 
-	/**
-	 * Method that is called to create the app
-	 */
 	const createApp = handleSubmit(async (data) => {
-		// turn on loading
 		setIsLoading(true);
 		try {
 			await handleFormSubmit(data);
@@ -117,95 +77,86 @@ export const SaveAppModal = (props: SaveAppProps) => {
 			console.error(e);
 			setShowErrorMessage(true);
 		} finally {
-			// turn of loading
 			setIsLoading(false);
 		}
 	});
 
 	return (
-		<Modal open={open} fullWidth>
-			<Modal.Title>
-				<Stack>
-					<Stack
-						direction="row"
-						justifyContent="space-between"
-						alignItems="center"
-					>
-						<span>{title}</span>
-						<IconButton
+		<Dialog open={open} onOpenChange={() => !isLoading && handleClose()}>
+			<DialogContent className="sm:max-w-lg">
+				<DialogHeader>
+					<div className="flex items-center justify-between">
+						<DialogTitle>{title}</DialogTitle>
+						<Button
+							variant="ghost"
+							size="icon"
 							aria-label="close"
 							onClick={() => handleClose()}
 							disabled={isLoading}
 						>
-							<Close />
-						</IconButton>
-					</Stack>
-					<Breadcrumbs
-						separator={<KeyboardArrowRight color="disabled" />}
-					>
-						{Array.from(steps, (step, i) => {
-							return (
-								<Chip
-									key={i}
-									size="small"
-									color={
+							<X className="size-4" />
+						</Button>
+					</div>
+					<div className="flex items-center gap-1 pt-2">
+						{steps.map((step, i) => (
+							<div
+								key={step.name}
+								className="flex items-center gap-1"
+							>
+								{i > 0 && (
+									<ChevronRight className="size-3 text-muted-foreground" />
+								)}
+								<Badge
+									variant={
 										isStepSelected(i)
-											? "primary"
-											: "default"
+											? "default"
+											: "secondary"
 									}
-									label={step.name}
-									avatar={step.icon}
-								/>
-							);
-						})}
-					</Breadcrumbs>
-				</Stack>
-			</Modal.Title>
-			<form onSubmit={createApp}>
-				<StyledModalContent>
-					<Stack spacing={2}>
-						<Typography variant="subtitle2">
-							{steps[currentStepIndex].title}
-						</Typography>
-						{createElement(steps[currentStepIndex].component, {
-							control: control,
-							disabled: isLoading,
-						})}
-					</Stack>
-				</StyledModalContent>
-				<Modal.Actions>
-					<Stack
-						flex={1}
-						direction="row"
-						justifyContent="end"
-						alignItems="center"
-						spacing={1}
-						padding={2}
-					>
-						{showErrorMessage ? (
-							<Typography variant="caption" color="error">
+									className="flex items-center gap-1"
+								>
+									{step.icon}
+									{step.name}
+								</Badge>
+							</div>
+						))}
+					</div>
+				</DialogHeader>
+				<form onSubmit={createApp}>
+					<div className="h-[300px] overflow-auto py-2">
+						<div className="flex flex-col gap-3">
+							<span className="font-semibold text-sm">
+								{steps[currentStepIndex].title}
+							</span>
+							{createElement(steps[currentStepIndex].component, {
+								control: control,
+								disabled: isLoading,
+							})}
+						</div>
+					</div>
+					<DialogFooter className="flex items-center justify-end gap-2">
+						{showErrorMessage && (
+							<span className="text-destructive text-xs">
 								{errorMessage}
-							</Typography>
-						) : null}
-
+							</span>
+						)}
 						<Button
+							type="button"
+							variant="ghost"
 							disabled={isLoading}
-							variant="text"
 							onClick={handlePreviousStep}
 						>
 							{previousStepLabel}
 						</Button>
 						<Button
-							variant="contained"
+							type="button"
 							disabled={isLoading || !isStepComplete}
-							loading={isLoading}
 							onClick={handleNextStep}
 						>
 							{nextStepLabel}
 						</Button>
-					</Stack>
-				</Modal.Actions>
-			</form>
-		</Modal>
+					</DialogFooter>
+				</form>
+			</DialogContent>
+		</Dialog>
 	);
 };
