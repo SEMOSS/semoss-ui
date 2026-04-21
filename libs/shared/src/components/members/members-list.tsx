@@ -1,5 +1,5 @@
 import { ChevronDown, Pencil, Star, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Env, get, post } from "@semoss/sdk";
 import {
 	Avatar,
@@ -266,8 +266,10 @@ export const MembersList = ({
 	const canShowOwnerOption = adminMode || isOwner;
 	const canEditMembers =
 		adminMode || myPermission === "OWNER" || myPermission === "EDIT";
-	const isMultipleOwnerUserAvailable =
-		userData.filter((u) => u.permission === "OWNER").length > 1;
+	const totalOwnerUsers = userData
+		.filter((u) => u.permission === "OWNER")
+		.map((u) => u.id);
+	const isMultipleOwnerUserAvailable = totalOwnerUsers.length > 1;
 	const selectableUsers = userDataFiltered.filter(
 		(u) =>
 			(u.permission !== "OWNER" || canActOnOwners) &&
@@ -290,14 +292,29 @@ export const MembersList = ({
 		}
 	}
 
-	function toggleSelectUser(user: MemberUser) {
-		setSelectedIds((prev) => {
-			const next = new Set(prev);
-			if (next.has(user.id)) next.delete(user.id);
-			else next.add(user.id);
-			return next;
-		});
-	}
+	const toggleSelectUser = useCallback(
+		(user: MemberUser) => {
+			const totalOwners = [...selectedIds, user.id];
+			const allOwnersSelected = totalOwnerUsers.every((id) =>
+				totalOwners.includes(id),
+			);
+			//detect if all owner users are selected, if so then remove current logged in user from selected
+			if (allOwnersSelected) {
+				const usersOtherThanCurrentUser = totalOwners.filter(
+					(id) => id !== currentUserId,
+				);
+				setSelectedIds(new Set(usersOtherThanCurrentUser));
+			} else {
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					if (next.has(user.id)) next.delete(user.id);
+					else next.add(user.id);
+					return next;
+				});
+			}
+		},
+		[selectedIds, totalOwnerUsers, currentUserId],
+	);
 
 	return (
 		<>
