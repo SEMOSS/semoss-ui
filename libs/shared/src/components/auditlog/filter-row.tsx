@@ -132,13 +132,12 @@ export const FilterRow = ({
 	const applyPreset = (p: DateRangePreset) => {
 		setPreset(p);
 		if (p === "custom") {
-			// Always restore range from current props when opening calendar
 			setRange(rangeFromProps());
 			setDropdownOpen(false);
 			setTimeout(() => setShowCalendar(true), 0);
 			return;
 		}
-		setRange(rangeFromProps());
+		setRange({ from: today, to: today });
 		const t = formatDate(today);
 		if (p === "today") {
 			onDateChange(t, t, p);
@@ -416,7 +415,12 @@ export const FilterRow = ({
 									className="w-full"
 									selected={range}
 									onSelect={(newRange) =>
-										setRange(newRange ?? range)
+										setRange(
+											newRange ?? {
+												from: today,
+												to: today,
+											},
+										)
 									}
 									disabled={{ after: today }}
 									defaultMonth={range.from ?? today}
