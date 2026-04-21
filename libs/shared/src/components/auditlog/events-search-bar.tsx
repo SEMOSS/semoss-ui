@@ -13,17 +13,14 @@ import {
 	PopoverTrigger,
 } from "@semoss/ui/next";
 
-/** Allowed search token categories */
 export type SearchCategory = "methodName" | "requestMessage" | "engineType";
 
-/** A single search token — one per category, holding multiple values */
 export interface SearchToken {
 	id: string;
 	category: SearchCategory;
 	values: string[];
 }
 
-/** Structured search payload for the AuditLogReport reactor */
 export interface SearchPayload {
 	search?: {
 		methodName?: string[];
@@ -33,7 +30,6 @@ export interface SearchPayload {
 	others?: string;
 }
 
-/** Metadata for each category (label + styling) */
 interface CategoryMeta {
 	label: string;
 	color: string;
@@ -246,7 +242,6 @@ export const TokenizedSearchBar = ({
 					className="flex-shrink-0 text-muted-foreground"
 				/>
 
-				{/* Existing tokens — one pill per category */}
 				{tokens?.map((token) => {
 					const meta = CATEGORY_META[token.category];
 					return (
@@ -281,7 +276,6 @@ export const TokenizedSearchBar = ({
 					);
 				})}
 
-				{/* Pending category indicator */}
 				{pendingMeta && (
 					<span
 						className={`flex items-center gap-0.5 rounded-sm border px-1.5 py-0 font-mono text-[10px] ${pendingMeta.bgColor} ${pendingMeta.borderColor} ${pendingMeta.color}`}
@@ -290,7 +284,6 @@ export const TokenizedSearchBar = ({
 					</span>
 				)}
 
-				{/* Input + category dropdown trigger */}
 				<div className="relative flex min-w-[120px] flex-1 items-center">
 					<Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
 						<PopoverTrigger asChild>
@@ -365,7 +358,6 @@ export const TokenizedSearchBar = ({
 					</Popover>
 				</div>
 
-				{/* Hint + Clear */}
 				<span className="ml-auto flex flex-shrink-0 items-center gap-1.5">
 					{!dropdownOpen && (
 						<span className="flex select-none items-center gap-1 whitespace-nowrap font-mono text-[9px] text-muted-foreground/60">

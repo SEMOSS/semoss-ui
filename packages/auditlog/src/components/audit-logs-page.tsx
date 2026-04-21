@@ -166,7 +166,6 @@ export const AuditLogPage = () => {
 						? `,"startDate":"${startDate.toISOString()}","endDate":"${endDate.toISOString()}"`
 						: "";
 
-				// Build search payload from tokens + free text
 				const searchPayload = buildSearchPayload(
 					searchRef.current.tokens,
 					searchRef.current.freeText,
@@ -391,8 +390,6 @@ export const AuditLogPage = () => {
 		fetchLogs(ROWS_PER_PAGE, 0);
 	};
 
-	// ── Effects ──
-
 	useEffect(() => {
 		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
 	}, [searchTokens, searchFreeText]);
@@ -408,8 +405,6 @@ export const AuditLogPage = () => {
 	useEffect(() => {
 		fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 	}, [page, fetchLogs]);
-
-	// ── Derived values ──
 
 	const engineNames = useMemo(
 		() => (engineType ? (engineDetails[engineType] ?? []) : []),
@@ -430,7 +425,6 @@ export const AuditLogPage = () => {
 
 	const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
 
-	// Server-side search: no client-side filtering, just use logs as-is
 	const searchFiltered = logs;
 
 	const sessions = useMemo(() => {
