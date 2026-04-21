@@ -1,7 +1,13 @@
-import { Schema } from "@mui/icons-material";
+import { Network } from "lucide-react";
 import { useRef, useState } from "react";
 import type { Block, BlockDef, Paths, PathValue } from "@semoss/renderer";
-import { Autocomplete, TextField } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 import { InputSettings, QueryInputSettings } from "../../settings";
 import { BaseSettingSection } from "../../settings/BaseSettingSection";
@@ -59,42 +65,27 @@ const SettingAutocomplete = <D extends BlockDef>({
 	};
 
 	return (
-		<Autocomplete
-			fullWidth
-			options={options}
-			multiple={false}
-			value={options.find((opt) => opt.value === selectedValue) || null}
-			onChange={(_, newValue) => {
-				setBlockData(
-					typeof newValue === "object" && newValue !== null
-						? newValue.value
-						: undefined,
-				);
-			}}
-			getOptionLabel={(option) =>
-				typeof option === "object" && option !== null
-					? option.label
-					: ""
-			}
-			isOptionEqualToValue={(option, value) =>
-				typeof option === "object" &&
-				option !== null &&
-				typeof value === "object" &&
-				value !== null &&
-				"value" in option &&
-				"value" in value &&
-				option.value === value.value
-			}
-			renderInput={(params) => (
-				<TextField {...params} size="small" variant="outlined" />
-			)}
-		/>
+		<Select
+			value={selectedValue ?? ""}
+			onValueChange={(val) => setBlockData(val)}
+		>
+			<SelectTrigger className="w-full">
+				<SelectValue />
+			</SelectTrigger>
+			<SelectContent>
+				{options.map((opt) => (
+					<SelectItem key={opt.value} value={opt.value}>
+						{opt.label}
+					</SelectItem>
+				))}
+			</SelectContent>
+		</Select>
 	);
 };
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: Schema,
+	icon: Network,
 	contentMenu: [
 		{
 			name: "General",

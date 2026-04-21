@@ -1,21 +1,14 @@
-import {
-	DeleteOutline,
-	InfoOutlined,
-	ReportRounded,
-} from "@mui/icons-material";
+import { AlertTriangle, Info, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
-	Box,
-	ButtonGroup,
-	Card,
-	IconButton,
-	Stack,
-	styled,
 	Tooltip,
-} from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { useDesigner, useRootStore } from "@/hooks";
 import type {
 	BlockLocalStorageData,
@@ -25,53 +18,6 @@ import { BlockCardContent } from "./BlockMenuCardContent";
 
 const addBlocksCardWidth = "120px";
 const addBlocksCardHeight = "94px";
-
-const StyledCard = styled(Card)({
-	cursor: "grab",
-	border: `1px solid rgba(0, 0, 0, 0.12)`,
-	borderRadius: "6px",
-	justifyContent: "center",
-});
-
-const StyledDiv = styled("div")({
-	position: "relative",
-	display: "inline-block",
-	paddingTop: "6px",
-	paddingRight: "6px",
-});
-
-const StyledContainer = styled(Box)({
-	position: "absolute",
-	top: 10,
-	right: -24,
-	zIndex: 1000,
-	display: "flex",
-	flexDirection: "column",
-	gap: 1,
-	backgroundColor: "#fff",
-	borderRadius: "8px",
-	p: 0.5,
-});
-
-const StyleButtonGroup = styled(ButtonGroup)(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(1),
-	flexDirection: "column",
-	backgroundColor: "white",
-	padding: theme.spacing(1),
-	borderRadius: "6px",
-	boxShadow:
-		"0px 5px 22px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
-	width: "35px",
-	"& .MuiButtonBase-root.MuiButton-root": {
-		justifyContent: "unset",
-	},
-}));
-
-const StyledButtonGroupIconButton = styled(IconButton)(({ theme }) => ({
-	backgroundColor: "white",
-	borderRadius: theme.shape.borderRadius,
-}));
 
 export interface AddBlocksMenuItemProps {
 	/** Item that can be dragged onto the block */
@@ -87,28 +33,18 @@ export interface AddBlocksMenuItemProps {
 	handleOnEditClick: (blockId: string, item: DesignerMenuItem) => void;
 }
 
-/**
- * Individaul block that can be dragged onto the UI
- */
 export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	const { item, isCommunity, handleOnTrashClick } = props;
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
 	const { configStore } = useRootStore();
 
-	const [imageSrc, _setImageSrc] = useState(null);
+	const [_imageSrc, _setImageSrc] = useState(null);
 
-	// track if it is this one that is dragging
 	const [local, setLocal] = useState(false);
-
-	// track if this is being hovered
 	const [hovered, setHovered] = useState<boolean>(false);
 
-	/**
-	 * Handle the mousedown on the widget.
-	 */
 	const handleMouseDown = () => {
-		// set the dragged
 		designer.activateDrag(
 			item.json.widget,
 			() => {
@@ -118,28 +54,18 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			item.hoverImage,
 		);
 
-		// clear the hovered
 		designer.setHovered("");
-
-		// clear the selected
 		designer.setSelected("");
-
-		// set as inactive
 		setLocal(true);
 	};
 
-	/**
-	 * Handle the mouseup event on the document
-	 */
 	const handleDocumentMouseUp = useCallback(async () => {
 		if (!designer.drag.active) {
 			return;
 		}
 
-		// ID of newly added block
 		let id = "";
 
-		// put a placeholder action to check if it is valid
 		const placeholderAction = designer.drag.placeholderAction;
 		if (!placeholderAction || !placeholderAction.id) {
 			designer.deactivateDrag();
@@ -149,7 +75,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			return;
 		}
 
-		// Track block in session storage
 		localStorage.setItem(
 			"blocks--frequently-used",
 			(() => {
@@ -167,10 +92,8 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			})(),
 		);
 
-		// apply the action
 		const sw = state.getBlock(placeholderAction.id);
 
-		// Safely get the block associated with the placeholder action
 		if (!sw) {
 			designer.deactivateDrag();
 			designer.setHovered("");
@@ -178,8 +101,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			setLocal(false);
 			return;
 		}
-
-		// TODO: Add logic to prevent adding block it iter block if one is already present
 
 		if (sw.widget === "iteration") {
 			if (sw.slots.children.children.length) {
@@ -258,8 +179,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			}
 		}
 
-		// TODO: REFACTOR
-		// Add variables for all blocks that are inputs from user
 		if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1 && !isCommunity) {
 			await state.dispatch({
 				message: ActionMessages.ADD_VARIABLE,
@@ -271,19 +190,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			});
 		}
 
-		// clear the drag
 		designer.deactivateDrag();
-
-		// clear the hovered
 		designer.setHovered("");
-
-		// clear the selected
 		designer.setSelected(id ? id : "");
-
-		// clear the selectedBlocks
 		designer.addBlockToSelected("clear");
-
-		// set as active
 		setLocal(false);
 	}, [
 		item.name,
@@ -295,7 +205,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 		state,
 	]);
 
-	// add the mouse up listener when dragged
 	useEffect(() => {
 		if (!designer.drag.active || !local) {
 			return;
@@ -309,102 +218,103 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	}, [designer.drag.active, local, handleDocumentMouseUp]);
 
 	return (
-		<Stack
-			spacing={0.25}
-			alignItems="center"
-			height="100%"
-			justifyContent="flex-end"
-		>
+		<div className="flex h-full flex-col items-center justify-end gap-1">
 			<div
 				className="flex select-none flex-wrap items-center justify-center gap-1 text-center font-medium text-foreground text-xs"
 				style={{ width: addBlocksCardWidth, overflowWrap: "anywhere" }}
 			>
 				{item.name}
 				{item.recentChanges && (
-					<Tooltip title={item.recentChanges}>
-						<span
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-							}}
-						>
-							<InfoOutlined fontSize="small" color="info" />
-						</span>
-					</Tooltip>
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="inline-flex items-center">
+									<Info className="size-4 text-blue-500" />
+								</span>
+							</TooltipTrigger>
+							<TooltipContent>
+								{item.recentChanges}
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
 				)}
 				{item.isBeta && (
-					<Tooltip title={"This block is currently in beta"}>
-						<span
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-							}}
-						>
-							<ReportRounded fontSize="small" color="warning" />
-						</span>
-					</Tooltip>
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="inline-flex items-center">
+									<AlertTriangle className="size-4 text-amber-500" />
+								</span>
+							</TooltipTrigger>
+							<TooltipContent>
+								This block is currently in beta
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
 				)}
 			</div>
-			<StyledDiv
+			{/* biome-ignore lint/a11y/noStaticElementInteractions: drag container — keyboard drag not applicable */}
+			<div
+				className="relative inline-block pt-1.5 pr-1.5"
 				onMouseEnter={() => setHovered(true)}
 				onMouseLeave={() => setHovered(false)}
 				onMouseDown={handleMouseDown}
 			>
-				{/* TODO: FIX */}
 				{hovered && isCommunity && configStore.store.user.admin && (
-					<StyledContainer>
-						<StyleButtonGroup>
-							{/* <StyledButtonGroupIconButton
-                                size="small"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleOnEditClick(item['id'], item);
-                                }}
-                            >
-                                <EditOutlined sx={{ color: '#757575' }} />
-                            </StyledButtonGroupIconButton> */}
-							<StyledButtonGroupIconButton
-								size="small"
-								onClick={(e) => {
-									e.stopPropagation();
-									handleOnTrashClick(
-										item.id ?? "",
-										item.name,
-									);
-								}}
-							>
-								<DeleteOutline sx={{ color: "#757575" }} />
-							</StyledButtonGroupIconButton>
-						</StyleButtonGroup>
-					</StyledContainer>
+					<div
+						className="-right-6 absolute top-2.5 z-[1000] flex flex-col gap-1 rounded-lg bg-white p-2"
+						style={{
+							boxShadow:
+								"0px 5px 22px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+						}}
+					>
+						<button
+							type="button"
+							className="flex size-8 items-center justify-center rounded hover:bg-accent"
+							onClick={(e) => {
+								e.stopPropagation();
+								handleOnTrashClick(item.id ?? "", item.name);
+							}}
+						>
+							<Trash2 className="size-4 text-[#757575]" />
+						</button>
+					</div>
 				)}
 
-				{/* Card */}
-				<StyledCard>
-					<Tooltip
-						title={item.helperText ?? item.name}
-						arrow
-						placement="bottom"
-					>
-						<div>
-							<BlockCardContent
-								image={
-									isCommunity
-										? imageSrc
-										: hovered
-											? item.hoverImage
-											: item.activeImage
-								}
-								name={item.name}
-								width={addBlocksCardWidth}
-								height={addBlocksCardHeight}
-								paddingX={0.75}
-								paddingY={1}
-							/>
-						</div>
-					</Tooltip>
-				</StyledCard>
-			</StyledDiv>
-		</Stack>
+				<div
+					className="cursor-grab rounded-md border transition-colors"
+					style={{
+						justifyContent: "center",
+						borderColor: hovered
+							? "var(--primary)"
+							: "var(--border)",
+					}}
+				>
+					<TooltipProvider>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<div>
+									<BlockCardContent
+										image={
+											isCommunity
+												? undefined
+												: item.activeImage
+										}
+										name={item.name}
+										width={addBlocksCardWidth}
+										height={addBlocksCardHeight}
+										paddingX={0.75}
+										paddingY={1}
+									/>
+								</div>
+							</TooltipTrigger>
+							<TooltipContent>
+								{item.helperText ?? item.name}
+							</TooltipContent>
+						</Tooltip>
+					</TooltipProvider>
+				</div>
+			</div>
+		</div>
 	);
 });
