@@ -1,6 +1,11 @@
 import { FileText } from "lucide-react";
 import { PDFViewerSettings } from "../../settings/shared/PDFViewerSettings";
-import { buildListener, buildShowField } from "../block-defaults.shared";
+import {
+	buildDimensionsSection,
+	buildListener,
+	buildShowField,
+	buildSpacingSection,
+} from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {
@@ -27,4 +32,5 @@ export const config: BlockSettingsConfig = {
 			children: [...buildListener("preProcess")],
 		},
 	],
+	styleMenu: [buildDimensionsSection(), buildSpacingSection()],
 };
