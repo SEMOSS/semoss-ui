@@ -2,7 +2,6 @@ import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import { AuditLogsDashboard } from "./AuditLogsDashboard";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import {
 	AppCatalogPage,
@@ -12,15 +11,16 @@ import {
 	NewPromptBuilderAppPage,
 	ViewAppPage,
 } from "./app";
+import { AuditLogsDashboard } from "./audit-logs-dashboard";
 import { EngineRouter } from "./engine";
-import { LandingPage } from "./LandingPage";
 import { LoginPage } from "./LoginPage";
+import { LandingPage } from "./landing-page";
 import { CookieNotice } from "./legal/CookieNotice";
 import { PrivacyNotice } from "./legal/PrivacyNotice";
 import { PageLayout } from "./PageLayout";
 import { PromptRouter } from "./prompt";
-import { SharePage } from "./SharePage";
 import { SettingsRouter } from "./settings";
+import { SharePage } from "./share-page";
 
 export const Router = observer(() => {
 	const { configStore } = useRootStore();

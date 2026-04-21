@@ -37,7 +37,7 @@ import {
 } from "@/api/auth";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { formatDate, getSDKSnippet } from "@/utility";
-import { ChangePasswordModal } from "./ChangePasswordModal";
+import { ChangePasswordModal } from "./change-password-modal";
 
 interface CreateAccessKeyForm {
 	TOKENNAME: string;

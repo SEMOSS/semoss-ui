@@ -57,10 +57,10 @@ import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
-import { AccessControl } from "./AppDetailTabs/access-control";
-import { Dependencies } from "./AppDetailTabs/dependencies-tab";
-import { Overview } from "./AppDetailTabs/overview-tab";
-import { SettingsTab } from "./AppDetailTabs/settings-tab";
+import { AccessControl } from "./app-detail-tabs/access-control";
+import { Dependencies } from "./app-detail-tabs/dependencies-tab";
+import { Overview } from "./app-detail-tabs/overview-tab";
+import { SettingsTab } from "./app-detail-tabs/settings-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
 const modelDependencies = (

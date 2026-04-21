@@ -14,7 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { HistoryRow } from "./HistoryRow";
+import { HistoryRow } from "./history-row";
 import type { HistoryJob } from "./job.types";
 
 export const JobHistory = (props: {

@@ -5,14 +5,14 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { JobTypesCustomJobBuilder } from "./JobTypesCustomJobBuilder";
-import { JobTypesSendEmailBuilder } from "./JobTypesSendEmailBuilder";
 import {
 	JobTypeCustomJob,
 	JobTypeOptions,
 	JobTypeSendEmail,
 } from "./job.constants";
 import type { JobBuilder } from "./job.types";
+import { JobTypesCustomJobBuilder } from "./job-types-custom-job-builder";
+import { JobTypesSendEmailBuilder } from "./job-types-send-email-builder";
 
 export const JobTypesBuilder = (props: {
 	builder: JobBuilder;

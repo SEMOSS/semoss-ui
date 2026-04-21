@@ -31,12 +31,12 @@ import {
 	hasValidMonths,
 	hasValidWeekdays,
 } from "./cronValidator";
-import { JobCustomFrequencyBuilder } from "./JobCustomFrequencyBuilder";
-import { JobStandardFrequencyBuilder } from "./JobStandardFrequencyBuilder";
-import { JobTypesBuilder } from "./JobTypesBuilder";
 import { JobTypeCustomJob, JobTypeSendEmail, timezones } from "./job.constants";
 import type { Job, JobBuilder } from "./job.types";
 import { getEncodeByJobType } from "./job.utils";
+import { JobCustomFrequencyBuilder } from "./job-custom-frequency-builder";
+import { JobStandardFrequencyBuilder } from "./job-standard-frequency-builder";
+import { JobTypesBuilder } from "./job-types-builder";
 
 const emptyBuilder: JobBuilder = {
 	id: null,

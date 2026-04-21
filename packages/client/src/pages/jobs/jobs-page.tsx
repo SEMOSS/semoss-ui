@@ -22,11 +22,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore, useSettings } from "@/hooks";
-import { DeleteJobModal } from "./DeleteJobModal";
-import { JobBuilderModal } from "./JobBuilderModal";
-import { JobCard } from "./JobCard";
-import { JobHistory } from "./JobHistory";
-import { JobsTable } from "./JobsTable";
+import { DeleteJobModal } from "./delete-job-modal";
 import type {
 	HistoryJob,
 	HistoryPaginationProps,
@@ -41,6 +37,10 @@ import {
 	convertSendEmailRecipeToJob,
 	convertTimetoDate,
 } from "./job.utils";
+import { JobBuilderModal } from "./job-builder-modal";
+import { JobCard } from "./job-card";
+import { JobHistory } from "./job-history";
+import { JobsTable } from "./jobs-table";
 
 export function JobsPage() {
 	const { monolithStore } = useRootStore();
