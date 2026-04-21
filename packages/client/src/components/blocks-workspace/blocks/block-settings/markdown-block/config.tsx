@@ -1,15 +1,11 @@
-import { FormatListBulleted } from "@mui/icons-material";
+import { List } from "lucide-react";
 import { QueryInputSettings } from "../../settings";
 import { ShowLoadingSettings } from "../../settings/shared/ShowLoadingSettings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import {
-	buildBorderSection,
-	buildColorSection,
-	buildDimensionsSection,
 	buildListener,
 	buildShowField,
-	buildSpacingSection,
 	buildTextAlignSection,
 	buildTypographySection,
 } from "../block-defaults.shared";
@@ -18,7 +14,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
-	icon: FormatListBulleted,
+	icon: List,
 	contentMenu: [
 		{
 			name: "General",

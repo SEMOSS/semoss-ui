@@ -1,4 +1,4 @@
-import { FormatShapes } from "@mui/icons-material";
+import { Shapes } from "lucide-react";
 import type { CSSProperties } from "react";
 import { InputSettings, QuerySelectionSettings } from "../../settings";
 import { InputModalSettings } from "../../settings/shared/InputModalSettings";
@@ -15,7 +15,7 @@ export const DefaultStyles: CSSProperties = {
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: FormatShapes,
+	icon: Shapes,
 	contentMenu: [
 		{
 			name: "General",
