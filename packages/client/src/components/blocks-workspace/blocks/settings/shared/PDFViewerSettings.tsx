@@ -11,14 +11,14 @@ import {
 	useBlock,
 } from "@semoss/renderer";
 import { runPixel, upload } from "@semoss/sdk/react";
-import { FileDropzone } from "@semoss/ui";
 import {
-	Accordion,
-	AccordionContent,
-	AccordionItem,
-	AccordionTrigger,
-	Muted,
+	FileDropzone,
 	P,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -31,7 +31,7 @@ import {
 
 //styled section for the selected tab
 const SubSection = ({ children }: { children: React.ReactNode }) => (
-	<div className="mt-[10px] w-full p-2">{children}</div>
+	<div className="w-full pt-1">{children}</div>
 );
 
 interface Option {
@@ -53,12 +53,6 @@ type SetPdfViewerData = (
 	value: string,
 	tempOverrideMode?: boolean,
 ) => void;
-
-type EngineAsset = {
-	type?: string;
-	name?: string;
-	path?: string;
-};
 
 type engineIdType = {
 	engine_id: string;
@@ -82,17 +76,7 @@ export const PDFViewerSettings = observer(
 	<D extends BlockDef = BlockDef>({ id }: PDFViewerSettings<D>) => {
 		const { data, setData, insightId } = useBlock<PDFViewerBlockDef>(id);
 		const { appId } = useParams();
-		const [appOptions, setAppOptions] = useState<AppOption[]>([]);
-		const [engineOptions, setEngineOptions] = useState<
-			{
-				file_name: string;
-				file_type: string;
-				engine_type: string;
-				file_path: string;
-				engineId: string;
-				engine_name: string;
-			}[]
-		>([]);
+		const [allEngines, setAllEngines] = useState<engineIdType[]>([]);
 		const tabs = ["Insight", "Engine", "App"];
 		const [selectedPdfPath, setSelectedPdfPath] = useState(
 			data?.selectedPdf || "",
@@ -100,8 +84,6 @@ export const PDFViewerSettings = observer(
 		const [selectedTab, setSelectedTab] = useState(tabs[1]);
 		const [uploadFiles, setUploadFiles] = useState<File>(null);
 		const [isLoading, setIsLoading] = useState(false);
-		const [engineAutocompleteOpen, setEngineAutocompleteOpen] =
-			useState(false);
 		const allEngineTypes = [
 			"MODEL",
 			"DATABASE",
@@ -166,49 +148,11 @@ export const PDFViewerSettings = observer(
 			},
 		];
 
-		const getAssetsApp = useMemo(
-			() =>
-				runPixel(
-					`BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
-				),
-			[appId],
-		);
-
 		useEffect(() => {
-			// Fetch Engine Ids
 			const getengineId = `MyEngines(engineTypes=[${allEngineTypes.map((type) => `"${type}"`).join(",")}]);`;
-
-			//Fetch Engine Details
-			const engineIdResponse = runPixel(getengineId);
-
-			// Fetch App Assets
-			const fetchAssetsAndEngines = async () => {
-				try {
-					const result = await getAssetsApp;
-					const outputArray = result?.pixelReturn?.[0]?.output;
-					const outputNames = Array.isArray(outputArray)
-						? outputArray
-								.filter(
-									(item) =>
-										typeof item.name === "string" &&
-										item.name
-											.toLowerCase()
-											.endsWith(".pdf"),
-								)
-								.map((item) => ({
-									name: item.name,
-									path: item.path,
-								}))
-						: [];
-					setAppOptions(outputNames);
-				} catch (error) {
-					console.error("Error fetching assets:", error);
-				}
-
-				// Fetch Engine IDs
-				try {
-					const output = (await engineIdResponse).pixelReturn?.[0]
-						?.output;
+			runPixel(getengineId)
+				.then((res) => {
+					const output = res?.pixelReturn?.[0]?.output;
 					const engineIds = Array.isArray(output)
 						? Array.from(
 								new Map(
@@ -223,106 +167,12 @@ export const PDFViewerSettings = observer(
 								).values(),
 							)
 						: [];
-					fetchEngineOptions(engineIds);
-				} catch (error) {
-					console.error("Error fetching engines:", error);
-				}
-			};
-
-			fetchAssetsAndEngines();
+					setAllEngines(engineIds);
+				})
+				.catch((error) =>
+					console.error("Error fetching engines:", error),
+				);
 		}, []);
-
-		const fetchEngineOptions = async (engineIdsList: engineIdType[]) => {
-			let pdfFiles: {
-				file_name: string;
-				engine_type: string;
-				file_type: string;
-				file_path: string;
-				engineId: string;
-				engine_name: string;
-			}[] = [];
-			const getFiles = engineIdsList.map((id) => ({
-				promise: runPixel<unknown[]>(
-					`BrowseEngineAssets(engine=["${id.engine_id}"], filePath=["/"]);`,
-				),
-				engine_type: id.engine_type,
-				engine_id: id.engine_id,
-				engine_name: id.engine_name,
-			}));
-
-			for (const obj of getFiles) {
-				try {
-					const resolvedResult = await obj.promise;
-					const output = resolvedResult.pixelReturn?.[0]?.output;
-					const outputList = Array.isArray(output)
-						? (output as EngineAsset[])
-						: [];
-					const files = outputList.map((item) => ({
-						file_name: item.type === "pdf" ? item.name || "" : "",
-						file_path: item.type === "pdf" ? item.path || "" : "",
-						file_type: item.type === "pdf" ? item.type || "" : "",
-						engine_type: obj.engine_type || "",
-						engineId: obj.engine_id || "",
-						engine_name: obj.engine_name || "",
-					}));
-					pdfFiles = [...pdfFiles, ...files];
-				} catch (e) {
-					console.error("Error fetching engine assets:", e);
-				}
-			}
-			setEngineOptions([...pdfFiles]);
-		};
-
-		const engineOptionList: Option[] = useMemo(() => {
-			// Build group info and files by type in one pass
-			const filesByType: Record<string, Option[]> = {};
-			const allEngineGroups = allEngineTypes.map((type) => ({
-				type,
-				group: groupAliasMapper(type, "engine"),
-			}));
-
-			allEngineTypes.forEach((type) => {
-				filesByType[type] = [];
-			});
-
-			engineOptions.forEach((item, idx) => {
-				if (!filesByType[item.engine_type])
-					filesByType[item.engine_type] = [];
-				filesByType[item.engine_type].push({
-					id: `${item.engine_type}-${item.file_name}-${idx}`,
-					path: item.file_path,
-					display: item.file_name,
-					group: groupAliasMapper(item.engine_type, "engine"),
-					engineId: item.engineId,
-					engine_name: item.engine_name,
-				});
-			});
-
-			return allEngineGroups.flatMap(({ type, group }) =>
-				filesByType[type].length > 0
-					? filesByType[type]
-					: [
-							{
-								id: `${type}-empty`,
-								path: "",
-								display: "",
-								group,
-							},
-						],
-			);
-		}, [engineOptions]);
-
-		const nestedEngineOptions = engineOptionList.reduce(
-			(acc, option) => {
-				if (!option.group || !option.engine_name) return acc;
-				if (!acc[option.group]) acc[option.group] = {};
-				if (!acc[option.group][option.engine_name])
-					acc[option.group][option.engine_name] = [];
-				acc[option.group][option.engine_name].push(option);
-				return acc;
-			},
-			{} as Record<string, Record<string, Option[]>>,
-		);
 
 		const addFile = async (file: File) => {
 			try {
@@ -386,26 +236,14 @@ export const PDFViewerSettings = observer(
 
 					<TabsContent value="Insight">
 						<SubSection>
-							<span className="relative pl-[9px] text-secondary text-sm">
-								{selectedTab}
-							</span>
 							<InsightTab options={options} />
 						</SubSection>
 					</TabsContent>
 
 					<TabsContent value="Engine">
 						<SubSection>
-							<span className="relative pl-[9px] text-secondary text-sm">
-								{selectedTab}
-							</span>
 							<EngineTab
-								engineOptionList={engineOptionList}
-								nestedEngineOptions={nestedEngineOptions}
-								selectedPdfPath={selectedPdfPath}
-								engineAutocompleteOpen={engineAutocompleteOpen}
-								setEngineAutocompleteOpen={
-									setEngineAutocompleteOpen
-								}
+								allEngines={allEngines}
 								setData={setData}
 								setSelectedPdfPath={setSelectedPdfPath}
 							/>
@@ -414,13 +252,8 @@ export const PDFViewerSettings = observer(
 
 					<TabsContent value="App">
 						<SubSection>
-							<span className="relative pl-[9px] text-secondary text-sm">
-								{selectedTab === "App" && uploadFiles
-									? "File Selected"
-									: selectedTab}
-							</span>
 							<AppTab
-								appOptions={appOptions}
+								appId={appId || ""}
 								selectedPdfPath={selectedPdfPath}
 								setData={setData}
 								setSelectedPdfPath={setSelectedPdfPath}
@@ -438,7 +271,7 @@ export const PDFViewerSettings = observer(
 );
 
 const InsightTab: React.FC<{ options: Option[] }> = ({ options }) => (
-	<div className="mt-3 pl-[9px]">
+	<div className="mt-1">
 		<select className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none">
 			{options.map((option) => (
 				<option key={option.id} value={option.path}>
@@ -449,116 +282,177 @@ const InsightTab: React.FC<{ options: Option[] }> = ({ options }) => (
 	</div>
 );
 
+const ENGINE_TYPE_LABELS: Record<string, string> = {
+	MODEL: "Models",
+	DATABASE: "Databases",
+	VECTOR: "Vectors",
+	FUNCTION: "Functions",
+	STORAGE: "Storage",
+};
+
 const EngineTab: React.FC<{
-	engineOptionList: Option[];
-	nestedEngineOptions: Record<string, Record<string, Option[]>>;
-	selectedPdfPath: string;
-	engineAutocompleteOpen: boolean;
-	setEngineAutocompleteOpen: (open: boolean) => void;
+	allEngines: engineIdType[];
 	setData: SetPdfViewerData;
 	setSelectedPdfPath: (path: string) => void;
-}> = ({
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
-	engineOptionList,
-	nestedEngineOptions,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
-	selectedPdfPath,
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
-	engineAutocompleteOpen,
-	setEngineAutocompleteOpen,
-	setData,
-	setSelectedPdfPath,
-}) => (
-	<div className="mt-3 pl-[9px]">
-		<Accordion type="multiple" className="w-full">
-			{Object.entries(nestedEngineOptions).map(([group, engines]) => (
-				<AccordionItem key={group} value={group}>
-					<AccordionTrigger className="font-bold text-sm">
-						{group}
-					</AccordionTrigger>
-					<AccordionContent>
-						{Object.entries(engines).map(([engineName, files]) => {
-							const allEmpty = files.every(
-								(f) => !f.display || !f.display.trim(),
-							);
-							return (
-								<Accordion
-									key={engineName}
-									type="multiple"
-									className="w-full"
-								>
-									<AccordionItem value={engineName}>
-										<AccordionTrigger className="pl-4 font-bold text-sm">
-											{engineName}
-										</AccordionTrigger>
-										<AccordionContent>
-											<ul className="mt-[5px] border-border border-b">
-												{allEmpty ? (
-													<li className="pl-8 text-destructive text-sm">
-														No Files found
-													</li>
-												) : (
-													files.map((option) => {
-														if (
-															!option.display?.trim()
-														)
-															return null;
-														return (
-															<li
-																key={
-																	option.engineId ||
-																	option.path
-																}
-																className="pl-8"
-															>
-																<button
-																	type="button"
-																	onClick={() => {
-																		setData(
-																			"engineId",
-																			option.engineId ||
-																				"",
-																			true,
-																		);
-																		setData(
-																			"selectedPdf",
-																			option.path,
-																			true,
-																		);
-																		setSelectedPdfPath(
-																			option.path,
-																		);
-																		setEngineAutocompleteOpen(
-																			false,
-																		);
-																	}}
-																	className="cursor-pointer border-none bg-transparent p-0 text-left text-sm hover:underline"
-																>
-																	<Muted>
-																		{
-																			option.display
-																		}
-																	</Muted>
-																</button>
-															</li>
-														);
-													})
-												)}
-											</ul>
-										</AccordionContent>
-									</AccordionItem>
-								</Accordion>
-							);
-						})}
-					</AccordionContent>
-				</AccordionItem>
-			))}
-		</Accordion>
-	</div>
-);
+}> = ({ allEngines, setData, setSelectedPdfPath }) => {
+	const [selectedType, setSelectedType] = useState("");
+	const [selectedEngineId, setSelectedEngineId] = useState("");
+	const [files, setFiles] = useState<{ name: string; path: string }[]>([]);
+	const [loadingFiles, setLoadingFiles] = useState(false);
+	const [selectedFilePath, setSelectedFilePath] = useState("");
+
+	const engineTypes = useMemo(() => {
+		const seen = new Set<string>();
+		return allEngines
+			.map((e) => e.engine_type)
+			.filter((t) => {
+				if (seen.has(t)) return false;
+				seen.add(t);
+				return true;
+			});
+	}, [allEngines]);
+
+	const engines = useMemo(() => {
+		if (!selectedType) return [];
+		const seen = new Set<string>();
+		return allEngines
+			.filter((e) => e.engine_type === selectedType)
+			.filter((e) => {
+				if (seen.has(e.engine_id)) return false;
+				seen.add(e.engine_id);
+				return true;
+			})
+			.map((e) => ({ id: e.engine_id, name: e.engine_name }));
+	}, [allEngines, selectedType]);
+
+	useEffect(() => {
+		if (engineTypes.length > 0 && !selectedType) {
+			setSelectedType(engineTypes[0]);
+		}
+	}, [engineTypes]);
+
+	useEffect(() => {
+		if (engines.length > 0) {
+			setSelectedEngineId(engines[0].id);
+		} else {
+			setSelectedEngineId("");
+			setFiles([]);
+		}
+	}, [engines]);
+
+	useEffect(() => {
+		if (!selectedEngineId) return;
+		setLoadingFiles(true);
+		setSelectedFilePath("");
+		runPixel<unknown[]>(
+			`SearchEngineAssets(engine=["${selectedEngineId}"], filePath=["/"], search=[".pdf"]);`,
+		)
+			.then((result) => {
+				const output = result?.pixelReturn?.[0]?.output;
+				setFiles(
+					Array.isArray(output)
+						? output.map(
+								(item: { name?: string; path?: string }) => ({
+									name: item.name || "",
+									path: item.path || "",
+								}),
+							)
+						: [],
+				);
+			})
+			.catch(() => setFiles([]))
+			.finally(() => setLoadingFiles(false));
+	}, [selectedEngineId]);
+
+	return (
+		<div className="mt-1 flex flex-col gap-2">
+			{engineTypes.length === 0 ? (
+				<p className="text-muted-foreground text-sm">
+					No engines available
+				</p>
+			) : (
+				<Select
+					value={selectedType}
+					onValueChange={(val) => {
+						setSelectedType(val);
+						setSelectedEngineId("");
+					}}
+				>
+					<SelectTrigger className="w-full">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{engineTypes.map((t) => (
+							<SelectItem key={t} value={t}>
+								{ENGINE_TYPE_LABELS[t] ?? t}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			)}
+
+			{selectedType &&
+				(engines.length === 0 ? (
+					<p className="text-muted-foreground text-sm">
+						No {ENGINE_TYPE_LABELS[selectedType] ?? selectedType}{" "}
+						exist
+					</p>
+				) : (
+					<Select
+						value={selectedEngineId}
+						onValueChange={(val) => setSelectedEngineId(val)}
+					>
+						<SelectTrigger className="w-full">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{engines.map((e) => (
+								<SelectItem key={e.id} value={e.id}>
+									<span className="flex flex-col text-left">
+										<span>{e.name}</span>
+										<span className="text-[11px] text-muted-foreground">
+											id: {e.id}
+										</span>
+									</span>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				))}
+
+			{selectedEngineId &&
+				(loadingFiles ? (
+					<p className="text-muted-foreground text-sm">Loading...</p>
+				) : files.length === 0 ? (
+					<p className="text-muted-foreground text-sm">
+						No PDF files found
+					</p>
+				) : (
+					<select
+						className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none"
+						value={selectedFilePath}
+						onChange={(e) => {
+							const path = e.target.value;
+							setSelectedFilePath(path);
+							setData("engineId", selectedEngineId, true);
+							setData("selectedPdf", path, true);
+							setSelectedPdfPath(path);
+						}}
+					>
+						<option value="">Select File</option>
+						{files.map((f) => (
+							<option key={f.path} value={f.path}>
+								{f.name}
+							</option>
+						))}
+					</select>
+				))}
+		</div>
+	);
+};
 
 const AppTab: React.FC<{
-	appOptions: AppOption[];
+	appId: string;
 	selectedPdfPath: string;
 	setData: SetPdfViewerData;
 	setSelectedPdfPath: (path: string) => void;
@@ -567,7 +461,7 @@ const AppTab: React.FC<{
 	isLoading: boolean;
 	addFile: (file: File) => void;
 }> = ({
-	appOptions,
+	appId,
 	selectedPdfPath,
 	setData,
 	setSelectedPdfPath,
@@ -575,63 +469,102 @@ const AppTab: React.FC<{
 	setUploadFiles,
 	isLoading,
 	addFile,
-}) => (
-	<div className="mt-3 flex flex-col gap-2 pl-[9px]">
-		{uploadFiles ? (
-			<div className="flex flex-col gap-2">
-				<div className="flex items-center justify-between">
-					<P>{uploadFiles.name}</P>
-					<button
-						type="button"
-						onClick={() => setUploadFiles(null)}
-						className="rounded p-1 hover:bg-accent"
-					>
-						<Trash2 className="size-4 cursor-pointer text-destructive" />
-					</button>
+}) => {
+	const [appOptions, setAppOptions] = useState<AppOption[]>([]);
+	const [loadingOptions, setLoadingOptions] = useState(true);
+
+	useEffect(() => {
+		setLoadingOptions(true);
+		runPixel(
+			`SearchAppAssets(project=["${appId}"], filePath=["/"], search=[".pdf"]);`,
+		)
+			.then((result) => {
+				const output = result?.pixelReturn?.[0]?.output;
+				setAppOptions(
+					Array.isArray(output)
+						? output.map(
+								(item: { name?: string; path?: string }) => ({
+									name: item.name || "",
+									path: item.path || "",
+								}),
+							)
+						: [],
+				);
+			})
+			.catch(() => setAppOptions([]))
+			.finally(() => setLoadingOptions(false));
+	}, [appId]);
+
+	return (
+		<div className="mt-3 flex flex-col gap-2 pl-[9px]">
+			{uploadFiles ? (
+				<div className="flex flex-col gap-2">
+					<div className="flex items-center justify-between">
+						<P>{uploadFiles.name}</P>
+						<button
+							type="button"
+							onClick={() => setUploadFiles(null)}
+							className="rounded p-1 hover:bg-accent"
+						>
+							<Trash2 className="size-4 cursor-pointer text-destructive" />
+						</button>
+					</div>
+					<div className="flex items-center pt-2">
+						<Info className="size-4 cursor-pointer text-foreground" />
+						<span className="relative pl-[9px] text-base text-foreground">
+							Delete current file to upload a new one
+						</span>
+					</div>
 				</div>
-				<div className="flex items-center pt-2">
-					<Info className="size-4 cursor-pointer text-secondary" />
-					<span className="relative pl-[9px] text-secondary text-sm">
-						Delete current file to upload a new one
-					</span>
+			) : (
+				<div className="flex flex-col gap-2">
+					{loadingOptions ? (
+						<p className="text-muted-foreground text-sm">
+							Loading...
+						</p>
+					) : appOptions.length === 0 ? (
+						<p className="text-muted-foreground text-sm">
+							No PDF files in app assets
+						</p>
+					) : (
+						<select
+							className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none"
+							value={selectedPdfPath}
+							onChange={(e) => {
+								const opt = appOptions.find(
+									(o) => o.path === e.target.value,
+								);
+								setData("selectedPdf", opt?.path || "", true);
+								setData("engineId", "", true);
+								setSelectedPdfPath(opt?.path || "");
+							}}
+						>
+							<option value="">Select File</option>
+							{appOptions.map((opt) => (
+								<option key={opt.path} value={opt.path}>
+									{opt.name}
+								</option>
+							))}
+						</select>
+					)}
+					<div className="mb-2 flex items-center justify-center">
+						<span className="relative pl-[9px] text-base text-foreground">
+							Or
+						</span>
+					</div>
+					<FileDropzone
+						extensions={[".pdf"]}
+						description="Click to browse or drop a PDF"
+						disabled={isLoading}
+						onChange={(file) => {
+							const f = Array.isArray(file) ? file[0] : file;
+							if (!f) return;
+							setUploadFiles(f);
+							addFile(f);
+						}}
+					/>
 				</div>
-			</div>
-		) : (
-			<div className="flex flex-col gap-2">
-				<select
-					className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none"
-					value={selectedPdfPath}
-					onChange={(e) => {
-						const opt = appOptions.find(
-							(o) => o.path === e.target.value,
-						);
-						setData("selectedPdf", opt?.path || "", true);
-						setData("engineId", "", true);
-						setSelectedPdfPath(opt?.path || "");
-					}}
-				>
-					<option value="">Select File</option>
-					{appOptions.map((opt) => (
-						<option key={opt.path} value={opt.path}>
-							{opt.name}
-						</option>
-					))}
-				</select>
-				<div className="mb-2 flex items-center justify-center">
-					<span className="relative pl-[9px] text-secondary text-sm">
-						Or
-					</span>
-				</div>
-				<FileDropzone
-					multiple={false}
-					value={uploadFiles}
-					disabled={isLoading}
-					onChange={(newValue: File) => {
-						setUploadFiles(newValue);
-						addFile(newValue);
-					}}
-				/>
-			</div>
-		)}
-	</div>
-);
+			)}
+		</div>
+	);
+};
