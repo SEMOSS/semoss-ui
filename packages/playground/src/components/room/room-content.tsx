@@ -1,14 +1,22 @@
 import {
+	ComputerIcon,
+	ExternalLinkIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
+
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
+	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -507,6 +515,57 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</>
 						),
 					)}
+					footer={
+						room.options.workspace?.workspace_id ? (
+							room.theme.showPlatformLinks !== false ? (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary" asChild>
+												<a
+													target="_blank"
+													href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
+												>
+													<ComputerIcon data-icon="inline-start" />
+													<div className="w-18 truncate">
+														{room.options.workspace
+															.name ||
+															room.options
+																.workspace
+																.workspace_id}
+													</div>
+													<ExternalLinkIcon data-icon="inline-end" />
+												</a>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										Click to view agent details
+									</TooltipContent>
+								</Tooltip>
+							) : (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary">
+												<ComputerIcon data-icon="inline-start" />
+												<div className="w-18 truncate">
+													{room.options.workspace
+														.name ||
+														room.options.workspace
+															.workspace_id}
+												</div>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{room.options.workspace.name ||
+											room.options.workspace.workspace_id}
+									</TooltipContent>
+								</Tooltip>
+							)
+						) : null
+					}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
