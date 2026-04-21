@@ -220,6 +220,9 @@ interface RoomInputProps {
 
 	/** Room store for prompt optimizer */
 	room: RoomStore;
+
+	/** Callback to compact conversation; passed through to EngineSelect context tooltip */
+	onCompact?: () => void;
 }
 
 // ============================================================================
@@ -257,6 +260,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		tokensUsed,
 		tokensMax,
 		room,
+		onCompact,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -324,7 +328,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					throw new Error("Error processing chat");
 				}
 			} catch (e) {
-				toast.error(getGracefulErrorMessage(e));
+				toast.error(getGracefulErrorMessage(e as Error));
 			}
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -339,34 +343,54 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					? (tokensUsed / tokensMax) * 100
 					: undefined;
 
-			if (contextUsedPercent === undefined) return null;
+			if (contextUsedPercent === undefined && !onCompact) return null;
 
-			// Pick the appropriate description based on usage tier
 			const descriptionKey =
-				contextUsedPercent >= 100
-					? "contextWindow.descriptionExceeded"
-					: contextUsedPercent < 50
-						? "contextWindow.descriptionLow"
-						: contextUsedPercent < 75
-							? "contextWindow.descriptionMedium"
-							: "contextWindow.descriptionHigh";
+				contextUsedPercent !== undefined
+					? contextUsedPercent >= 100
+						? "contextWindow.descriptionExceeded"
+						: contextUsedPercent < 50
+							? "contextWindow.descriptionLow"
+							: contextUsedPercent < 75
+								? "contextWindow.descriptionMedium"
+								: "contextWindow.descriptionHigh"
+					: null;
 
 			return (
 				<div className="w-full space-y-1">
-					<p className="w-full">{t(descriptionKey)}</p>
-					<p className="flex w-full items-baseline justify-between gap-3">
-						<span>{t("contextWindow.memoryUsedTitle")}</span>
-						<span className="whitespace-nowrap text-right tabular-nums">
-							{t("contextWindow.memoryUsedValue", {
-								used: formatTokens(tokensUsed),
-								total: formatTokens(tokensMax),
-								percent: contextUsedPercent.toFixed(1),
-							})}
-						</span>
-					</p>
+					{contextUsedPercent !== undefined && descriptionKey && (
+						<>
+							<p className="w-full">{t(descriptionKey)}</p>
+							<p className="flex w-full items-baseline justify-between gap-3">
+								<span>
+									{t("contextWindow.memoryUsedTitle")}
+								</span>
+								<span className="whitespace-nowrap text-right tabular-nums">
+									{t("contextWindow.memoryUsedValue", {
+										used: formatTokens(tokensUsed),
+										total: formatTokens(tokensMax),
+										percent: contextUsedPercent.toFixed(1),
+									})}
+								</span>
+							</p>
+						</>
+					)}
+					{onCompact && (
+						<Button
+							size="sm"
+							variant="outline"
+							className="mt-2 w-full text-foreground"
+							onClick={(e) => {
+								e.stopPropagation();
+								onCompact();
+							}}
+						>
+							{t("settings.compact")}
+						</Button>
+					)}
 				</div>
 			);
-		}, [tokensUsed, tokensMax, t]);
+		}, [tokensUsed, tokensMax, onCompact, t]);
 
 		// ========================================================================
 		// Speech Recognition Setup

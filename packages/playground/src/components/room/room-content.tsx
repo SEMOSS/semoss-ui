@@ -1,5 +1,4 @@
 import {
-	ArchiveIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
@@ -513,23 +512,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									editorRef={editorRef}
 									onOverlayClose={() => onOpenChange(false)}
 								/>
-								{room.theme.featureFlags?.enableCompaction && (
-									<>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onSelect={async (e) => {
-												e.preventDefault();
-												onOpenChange(false);
-												await handleCompactMessages();
-											}}
-										>
-											<ArchiveIcon />
-											<span className="flex-1">
-												{t("settings.compact")}
-											</span>
-										</DropdownMenuItem>
-									</>
-								)}
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
 									room={room}
@@ -571,6 +553,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					onCompact={
+						room.theme.featureFlags?.enableCompaction
+							? handleCompactMessages
+							: undefined
+					}
 				/>
 			</div>
 		</div>
