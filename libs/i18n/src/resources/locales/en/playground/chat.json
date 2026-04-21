@@ -18,7 +18,10 @@
 		"copyResponse": "Copy Response",
 		"copyCode": "Copy Code",
 		"fastForwardToEnd": "Fast Forward to End",
-		"completeTools": "Please complete the tool(s) to proceed."
+		"completeToolsAsk_one": "Please complete the tool to proceed.",
+		"completeToolsAsk_other": "Please complete the tools to proceed.",
+		"completeToolsAuto_one": "Please wait for the tool to complete.",
+		"completeToolsAuto_other": "Please wait for the tools to complete."
 	},
 	"input": {
 		"copyMessage": "Copy Message"
@@ -45,8 +48,12 @@
 		"closeInSidebar": "Close sidebar",
 		"collapse": "Collapse",
 		"openInline": "Open in-line",
-		"groupLabel": "Executed",
-		"groupSuffix": "tool(s)"
+		"groupLabelClosed": "{{toolName}} + {{count}} more",
+		"groupLabelOpen": "Executed Tools ({{count}})",
+		"groupSummaryCompleted": "{{count}} completed",
+		"groupSummaryError": "{{count}} failed",
+		"groupSummaryCancelled": "{{count}} cancelled",
+		"groupSummaryPaused": "{{count}} paused"
 	},
 	"notifications": {
 		"feedbackSuccess": "Thank you for the feedback!",

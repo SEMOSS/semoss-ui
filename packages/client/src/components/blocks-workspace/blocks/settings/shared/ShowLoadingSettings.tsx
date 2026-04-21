@@ -1,6 +1,5 @@
 import { observer } from "mobx-react-lite";
 import type { BlockDef } from "@semoss/renderer";
-import { Stack } from "@semoss/ui";
 import {
 	DEFAULT_FALSE_VARIABLE,
 	DEFAULT_TRUE_VARIABLE,
@@ -13,7 +12,7 @@ import { SelectSettings } from "./SelectSettings";
  * Supports % and px units for size
  */
 
-interface ShowLoadingSettingsProps<D extends BlockDef = BlockDef> {
+interface ShowLoadingSettingsProps<_D extends BlockDef = BlockDef> {
 	/**
 	 * Id of the block that is being worked with
 	 */
@@ -23,7 +22,7 @@ interface ShowLoadingSettingsProps<D extends BlockDef = BlockDef> {
 export const ShowLoadingSettings = observer(
 	<D extends BlockDef = BlockDef>({ id }: ShowLoadingSettingsProps<D>) => {
 		return (
-			<Stack gap={1}>
+			<div className="flex flex-col gap-1">
 				<QueryInputSettings
 					id={id}
 					label={"Load state"}
@@ -42,7 +41,7 @@ export const ShowLoadingSettings = observer(
 					options={["None (show nothing)", "Skeleton"]}
 					multiple={false}
 				/>
-			</Stack>
+			</div>
 		);
 	},
 );

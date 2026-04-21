@@ -23,7 +23,7 @@ export const FileExplorerMenuItem: React.FC<FileExplorerMenuItemProps> = ({
 	return (
 		<DropdownMenuItem
 			key={name}
-			className="justify-between"
+			className="justify-between text-xs"
 			onClick={(e) => {
 				e.stopPropagation();
 			}}

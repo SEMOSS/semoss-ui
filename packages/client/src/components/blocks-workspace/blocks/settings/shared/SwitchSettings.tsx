@@ -1,4 +1,4 @@
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { CircleHelp } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,7 +9,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Stack, Switch, styled, Tooltip, Typography } from "@semoss/ui";
+import {
+	Muted,
+	Switch,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks";
 
 interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
@@ -36,11 +42,6 @@ interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
 	description?: string;
 }
 
-const StyledTypography = styled(Typography)(() => ({
-	overflowWrap: "break-word",
-	whiteSpace: "normal",
-}));
-
 export const SwitchSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
@@ -55,7 +56,7 @@ export const SwitchSettings = observer(
 		const [value, setValue] = useState<boolean>(false);
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -113,49 +114,34 @@ export const SwitchSettings = observer(
 
 		return (
 			<div>
-				<Stack
-					direction="row"
-					alignItems="center"
-					spacing={2}
-					marginTop="8px"
-				>
-					<Stack
-						direction="row"
-						alignItems="center"
-						spacing={0.5}
-						width="100%"
-					>
-						<StyledTypography variant="body2">
-							{label}
-						</StyledTypography>
+				<div className="mt-2 flex flex-row items-center gap-2">
+					<div className="flex w-full flex-row items-center gap-0.5">
+						<Muted className="break-words">{label}</Muted>
 						{description && (
-							<Tooltip placement="top" title={description} arrow>
-								<HelpOutlineIcon
-									color="action"
-									sx={{
-										fontSize: 15,
-										marginLeft: "5px", // Small margin to separate tooltip from label
-									}}
-								/>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<CircleHelp
+										style={{
+											color: "action",
+											marginLeft: "5px",
+										}}
+										className="size-4"
+									/>
+								</TooltipTrigger>
+								<TooltipContent>{description}</TooltipContent>
 							</Tooltip>
 						)}
-					</Stack>
-					<Stack
-						direction="row"
-						justifyContent="end"
-						height="16px"
-						alignItems="center"
-					>
+					</div>
+					<div className="flex h-4 flex-row items-center justify-end">
 						<Switch
 							checked={value}
-							onChange={() => {
+							onCheckedChange={(checked) => {
 								// sync the data on change
-								onChange(!value);
+								onChange(checked);
 							}}
-							size="small"
 						/>
-					</Stack>
-				</Stack>
+					</div>
+				</div>
 			</div>
 		);
 	},

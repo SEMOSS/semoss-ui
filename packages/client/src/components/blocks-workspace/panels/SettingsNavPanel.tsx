@@ -1,55 +1,12 @@
 import {
-	AppShortcut,
-	AssignmentOutlined,
-	DvrOutlined,
-} from "@mui/icons-material";
+	LayoutGrid as AppShortcut,
+	ClipboardList as AssignmentOutlined,
+	Monitor as DvrOutlined,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { List, styled } from "@semoss/ui";
 import { FlexLayout } from "@/components/flex-layout";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "space-between",
-	flexDirection: "column",
-}));
-
-const StyledTitle = styled("div")(({ theme }) => ({
-	borderRadius: "16px",
-	background: "#EBF4FE",
-	width: "fit-content",
-	paddingRight: theme.spacing(2),
-	paddingLeft: theme.spacing(2),
-	marginBottom: "8px",
-	backgroundColor: theme.palette.primary.selected,
-	color: theme.palette.info.dark,
-	"&&": {
-		marginTop: theme.spacing(1),
-	},
-}));
-
-const StyledTitleSpan = styled("span")(({ theme }) => ({
-	color: "var(--Primary-Dark, #1260DD)",
-	fontFeatureSettings: "'liga' off, 'clig' off",
-	fontSize: "13px",
-	fontFamily: "Inter",
-	fontWeight: 400,
-	fontStyle: "normal",
-	letterSpacing: "0.16px",
-	lineHeight: "18px",
-	marginBottom: "8px",
-	marginTop: "8px",
-}));
-
-const StyledListItemBtn = styled(List.ItemButton)(({ theme }) => ({
-	color: theme.palette.text.primary,
-	width: "100%",
-	textAlign: "left",
-	"&:hover": {
-		backgroundColor: theme.palette.primary.selected,
-	},
-}));
 
 const SETTINGS_OPTIONS: {
 	label: string;
@@ -117,24 +74,29 @@ export const SettingsNavPanel = observer(() => {
 
 	return (
 		<Panel>
-			<StyledTitle>
-				<StyledTitleSpan>Settings</StyledTitleSpan>
-			</StyledTitle>
-			<StyledContainer>
+			<div className="mt-2 mb-2 w-fit rounded-2xl bg-[#EBF4FE] px-4">
+				<span className="mt-2 mb-2 inline-block font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
+					Settings
+				</span>
+			</div>
+			<div className="flex flex-col justify-between">
 				{SETTINGS_OPTIONS.map((item) => {
 					return (
-						<StyledListItemBtn
+						<button
 							key={item.value}
+							type="button"
+							className="flex w-full flex-row items-center gap-3 px-4 py-2 text-left text-foreground text-sm transition-colors duration-150 hover:bg-primary/10"
 							onClick={() => addSettingsTab(item)}
 							aria-label={item.label}
-							dense={true}
 						>
-							<List.ItemIcon>{item.icon}</List.ItemIcon>
-							<List.ItemText primary={item.label} />
-						</StyledListItemBtn>
+							<span className="flex size-5 shrink-0 items-center justify-center">
+								{item.icon}
+							</span>
+							<span>{item.label}</span>
+						</button>
 					);
 				})}
-			</StyledContainer>
+			</div>
 		</Panel>
 	);
 });

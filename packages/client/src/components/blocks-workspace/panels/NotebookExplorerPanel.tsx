@@ -13,7 +13,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { FlexLayout } from "@/components/flex-layout";
-import { DeleteNotebookOverlay, NewQueryOverlay } from "@/components/notebook";
+import { NewQueryOverlay } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { NotebookExplorerItem } from "./NotebookExplorerPanelItem";
@@ -161,67 +161,57 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		 * Open the delete modal
 		 */
 		const handleOnTrashClick = (deletedNotebookId: string) => {
-			workspace.openOverlay(() => (
-				<DeleteNotebookOverlay
-					deletedNotebookId={deletedNotebookId}
-					onClose={(success) => {
-						if (success) {
-							// trigger the delete file callback if successful
-							removePanel(deletedNotebookId);
-
-							// refresh the content
-							refreshNotebooks();
-						}
-
-						workspace.closeOverlay();
-					}}
-				/>
-			));
+			try {
+				state.dispatch({
+					message: ActionMessages.DELETE_QUERY,
+					payload: {
+						queryId: deletedNotebookId,
+					},
+				});
+				removePanel(deletedNotebookId);
+				refreshNotebooks();
+			} catch (e) {
+				console.error(e);
+			}
 		};
 
 		/**
 		 * Open the delete modal
 		 */
-		const handleOnCopyClick = (id: string) => {
+		const handleOnCopyClick = (id: string, newName: string) => {
 			try {
-				// get the notebook
 				const notebook = state.getQuery(id);
 				if (!notebook) {
 					notification.add({
 						color: "error",
 						message: `Cannot find notebook ${id}`,
 					});
+					return;
 				}
 
-				// get the json
 				const json = notebook.toJSON();
 
-				// get a new id
-				let newQueryId = id;
-				let newQueryCount = 1;
-				while (state.getQuery(newQueryId)) {
-					newQueryId = `${id} (${newQueryCount})`;
-					newQueryCount++;
+				// ensure uniqueness if name is already taken
+				let finalId = newName;
+				let count = 1;
+				while (state.getQuery(finalId)) {
+					finalId = `${newName} (${count})`;
+					count++;
 				}
 
-				// dispatch it
 				state.dispatch({
 					message: ActionMessages.NEW_QUERY,
 					payload: {
-						queryId: newQueryId,
+						queryId: finalId,
 						config: {
 							cells: json.cells,
 						},
 					},
 				});
 
-				// select the panel in the layout
-				selectPanel(newQueryId);
+				selectPanel(finalId);
 			} catch (e) {
-				// log it
 				console.error(e);
-
-				// notify the user
 				notification.add({
 					color: "error",
 					message: e.message,
@@ -499,8 +489,8 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 								onTrashClick={() => {
 									handleOnTrashClick(q.id);
 								}}
-								onCopyClick={() => {
-									handleOnCopyClick(q.id);
+								onCopyClick={(newName) => {
+									handleOnCopyClick(q.id, newName);
 								}}
 								onDragStart={(e) => handleOnDragStart(e, q.id)}
 							/>

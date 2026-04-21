@@ -1,8 +1,6 @@
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-	Avatar,
-	AvatarFallback,
 	Badge,
 	Button,
 	Card,
@@ -44,6 +42,7 @@ import {
 	getUnassignedTeamEngines,
 } from "@/api";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import { getEngineSubtypeIcon } from "@/components/shared/platform-search-icon-utils";
 import { useServerPagination } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
@@ -62,18 +61,18 @@ const permissionOptions: {
 	{
 		label: "Author",
 		description:
-			"Ability to edit the model connection details, set the model as discoverable, provision other authors, and all editor abilities.",
+			"Ability to edit the engine connection details, set the engine as discoverable, provision other authors, and all editor abilities.",
 		value: "Author",
 	},
 	{
 		label: "Editor",
 		description:
-			"Ability to edit the model details, provision other users as editors and read only users, and all read only abilities.",
+			"Ability to edit the engine details, provision other users as editors and read only users, and all read only abilities.",
 		value: "Editor",
 	},
 	{
 		label: "Read-Only",
-		description: "Ability to view model details and usage instructions.",
+		description: "Ability to view engine details and usage instructions.",
 		value: "Read-Only",
 	},
 ];
@@ -97,6 +96,7 @@ interface Engine {
 	engine_id: string;
 	engineid: string;
 	engine_type: string;
+	engine_subtype?: string;
 	engine_date_created: string;
 	permission: string;
 	type: string;
@@ -909,13 +909,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 													}
 												}}
 											/>
-											<Avatar className="h-8 w-8">
-												<AvatarFallback className="text-xs">
-													{engine.engine_name
-														? engine.engine_name[0]
-														: "E"}
-												</AvatarFallback>
-											</Avatar>
+											<img
+												src={getEngineSubtypeIcon(
+													engine.engine_type,
+													engine.engine_subtype,
+												)}
+												alt={engine.engine_name}
+												className="size-8 rounded object-contain"
+											/>
 											<div className="flex-1">
 												<div className="font-medium text-sm">
 													{engine.engine_name}

@@ -18,7 +18,10 @@
 		"copyResponse": "Copier la réponse",
 		"copyCode": "Copier le code",
 		"fastForwardToEnd": "Aller à la fin",
-		"completeTools": "Veuillez compléter le(s) outil(s) pour continuer."
+		"completeToolsAsk_one": "Veuillez compléter l'outil pour continuer.",
+		"completeToolsAsk_other": "Veuillez compléter les outils pour continuer.",
+		"completeToolsAuto_one": "Veuillez attendre que l'outil se termine.",
+		"completeToolsAuto_other": "Veuillez attendre que les outils se terminent."
 	},
 	"input": {
 		"copyMessage": "Copier le message"
@@ -45,8 +48,16 @@
 		"closeInSidebar": "Fermer le panneau latéral",
 		"collapse": "Réduire",
 		"openInline": "Ouvrir en ligne",
-		"groupLabel": "Exécuté",
-		"groupSuffix": "outil(s)"
+		"groupLabelClosed_one": "{{toolName}} + {{count}} autre",
+		"groupLabelClosed_other": "{{toolName}} + {{count}} autres",
+		"groupLabelOpen": "Outils exécutés ({{count}})",
+		"groupSummaryCompleted_one": "{{count}} terminé",
+		"groupSummaryCompleted_other": "{{count}} terminés",
+		"groupSummaryError_one": "{{count}} échec",
+		"groupSummaryError_other": "{{count}} échecs",
+		"groupSummaryCancelled_one": "{{count}} annulé",
+		"groupSummaryCancelled_other": "{{count}} annulés",
+		"groupSummaryPaused": "{{count}} en pause"
 	},
 	"notifications": {
 		"feedbackSuccess": "Merci pour votre retour !",

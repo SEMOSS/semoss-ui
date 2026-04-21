@@ -1,6 +1,5 @@
 import {
 	DeleteOutline,
-	EditOutlined,
 	InfoOutlined,
 	ReportRounded,
 } from "@mui/icons-material";
@@ -11,20 +10,21 @@ import {
 	Box,
 	ButtonGroup,
 	Card,
-	Icon,
 	IconButton,
 	Stack,
 	styled,
 	Tooltip,
-	Typography,
-	useNotification,
 } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useDesigner, useRootStore } from "@/hooks";
 import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
 } from "../blocks-workspace/menus/menu-types";
-import { BlockCardContent, blockCardWidth } from "./BlockMenuCardContent";
+import { BlockCardContent } from "./BlockMenuCardContent";
+
+const addBlocksCardWidth = "120px";
+const addBlocksCardHeight = "94px";
 
 const StyledCard = styled(Card)({
 	cursor: "grab",
@@ -33,24 +33,17 @@ const StyledCard = styled(Card)({
 	justifyContent: "center",
 });
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-	width: blockCardWidth,
-	userSelect: "none",
-	alignItems: "center",
-}));
-
 const StyledDiv = styled("div")({
 	position: "relative",
 	display: "inline-block",
-	paddingTop: "16px",
-	paddingRight: "16px",
+	paddingTop: "6px",
+	paddingRight: "6px",
 });
 
 const StyledContainer = styled(Box)({
 	position: "absolute",
-	top: 18, // slightly down from top of card
-	right: -35, // position just outside card (adjust as needed)
+	top: 10,
+	right: -24,
 	zIndex: 1000,
 	display: "flex",
 	flexDirection: "column",
@@ -101,7 +94,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	const { item, isCommunity, handleOnTrashClick } = props;
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
-	const notification = useNotification();
 	const { configStore } = useRootStore();
 
 	const [imageSrc, _setImageSrc] = useState(null);
@@ -191,11 +183,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
 		if (sw.widget === "iteration") {
 			if (sw.slots.children.children.length) {
-				notification.add({
-					color: "error",
-					message:
-						"Please delete block within iterator before adding another child",
-				});
+				toast.error(
+					"Please delete block within iterator before adding another child",
+				);
 				return;
 			}
 		}
@@ -221,11 +211,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 					}
 					if (parent.widget === "iteration") {
 						if (parent.slots.children.children.length) {
-							notification.add({
-								color: "error",
-								message:
-									"Please delete block within iterator before adding another child",
-							});
+							toast.error(
+								"Please delete block within iterator before adding another child",
+							);
 							designer.deactivateDrag();
 							return;
 						}
@@ -300,6 +288,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	}, [
 		item.name,
 		item.json,
+		isCommunity,
 		designer.drag.active,
 		designer.drag.placeholderAction,
 		designer,
@@ -321,39 +310,41 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
 	return (
 		<Stack
-			spacing={1}
+			spacing={0.25}
 			alignItems="center"
 			height="100%"
 			justifyContent="flex-end"
 		>
-			<StyledTypography
-				variant="body2"
-				fontWeight="medium"
-				align="center"
+			<div
+				className="flex select-none flex-wrap items-center justify-center gap-1 text-center font-medium text-foreground text-xs"
+				style={{ width: addBlocksCardWidth, overflowWrap: "anywhere" }}
 			>
-				<Stack
-					direction={"row"}
-					gap={1}
-					alignContent={"center"}
-					justifyContent={"center"}
-				>
-					{item.name}
-					{item.recentChanges && (
-						<Tooltip title={item.recentChanges}>
-							<Icon color={"info"} fontSize="small">
-								<InfoOutlined />
-							</Icon>
-						</Tooltip>
-					)}
-					{item.isBeta && (
-						<Tooltip title={"This block is currently in beta"}>
-							<Icon color={"warning"} fontSize="small">
-								<ReportRounded />
-							</Icon>
-						</Tooltip>
-					)}
-				</Stack>
-			</StyledTypography>
+				{item.name}
+				{item.recentChanges && (
+					<Tooltip title={item.recentChanges}>
+						<span
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+							}}
+						>
+							<InfoOutlined fontSize="small" color="info" />
+						</span>
+					</Tooltip>
+				)}
+				{item.isBeta && (
+					<Tooltip title={"This block is currently in beta"}>
+						<span
+							style={{
+								display: "inline-flex",
+								alignItems: "center",
+							}}
+						>
+							<ReportRounded fontSize="small" color="warning" />
+						</span>
+					</Tooltip>
+				)}
+			</div>
 			<StyledDiv
 				onMouseEnter={() => setHovered(true)}
 				onMouseLeave={() => setHovered(false)}
@@ -377,7 +368,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 								onClick={(e) => {
 									e.stopPropagation();
 									handleOnTrashClick(
-										item['id'] ?? '',
+										item.id ?? "",
 										item.name,
 									);
 								}}
@@ -405,6 +396,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 											: item.activeImage
 								}
 								name={item.name}
+								width={addBlocksCardWidth}
+								height={addBlocksCardHeight}
+								paddingX={0.75}
+								paddingY={1}
 							/>
 						</div>
 					</Tooltip>
