@@ -1,9 +1,8 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDown, Search } from "lucide-react";
 import type React from "react";
-import { Suspense, useEffect, useReducer, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Input,
@@ -60,6 +59,10 @@ const reducer = (state, action) => {
 	}
 	return state;
 };
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
 
 export const ConfigurationsPage = () => {
 	const { adminMode } = useSettings();

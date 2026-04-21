@@ -26,7 +26,6 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
-// import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Alert,
 	AlertDescription,

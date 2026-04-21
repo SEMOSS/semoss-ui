@@ -1,7 +1,6 @@
 import { LockIcon, RefreshCwIcon, UnlockIcon } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
-// import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Label,
