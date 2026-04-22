@@ -36,7 +36,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors } from "@/hooks";
+import { useChat, useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
@@ -57,6 +57,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
+	const { root } = useRoot();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 

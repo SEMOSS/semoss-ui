@@ -156,6 +156,18 @@ export interface ThemeMap {
 		allowEmbeddingOptions?: boolean;
 
 		/**
+		 * Whether to show the Knowledge library picker in the chat input menu.
+		 * Defaults to true when not set.
+		 */
+		showKnowledgeMenu?: boolean;
+
+		/**
+		 * Whether to show the Toolbox picker in the chat input menu.
+		 * Defaults to true when not set.
+		 */
+		showToolboxMenu?: boolean;
+
+		/**
 		 * Default tools to show in the room
 		 */
 		defaultTools: {
@@ -180,6 +192,71 @@ export interface ThemeMap {
 		 * Defaults to true (links shown).
 		 */
 		showPlatformLinks?: boolean;
+
+		/**
+		 * Optional tour customization. When present, custom steps are appended
+		 * to the built-in tour steps. Each step targets a sidebar headerItem by
+		 * its `path` value — the nav element must be visible for the spotlight to
+		 * work. Steps are omitted entirely when this field is absent.
+		 */
+		tour?: {
+			/**
+			 * Master switch for the tour. Set to false to disable the tour
+			 * entirely — it will never auto-launch and cannot be triggered
+			 * manually. Defaults to true when omitted.
+			 */
+			show?: boolean;
+			/**
+			 * Built-in step targets to remove from the tour.
+			 * Use the `target` string of the step you want to hide:
+			 *   "welcome"          — the opening welcome card (no spotlight)
+			 *   "tour-input"       — the chat input step
+			 *   "tour-input-menu"  — the attach & configure step
+			 *   "tour-new-chat"    — the new chat sidebar button
+			 *   "tour-agents"      — the agents sidebar button
+			 * Steps not listed here are shown as normal.
+			 */
+			excludedSteps?: string[];
+			customSteps?: {
+				/**
+				 * Must match the `path` of a sidebar.headerItems entry.
+				 * The nav element is targeted via data-tour="nav-{navItemPath}".
+				 */
+				navItemPath: string;
+				/** Heading shown in the tour card */
+				title: string;
+				/** Body text shown in the tour card */
+				content: string;
+				/** Card placement relative to the highlighted element */
+				placement?: "top" | "bottom" | "left" | "right";
+			}[];
+			/**
+			 * Same shape as customSteps but inserted AFTER the Search
+			 * step instead of after New Chat. Use this for footer-area items
+			 * (e.g. Support, Bug Report).
+			 */
+			trailingCustomSteps?: {
+				navItemPath: string;
+				title: string;
+				content: string;
+				placement?: "top" | "bottom" | "left" | "right";
+			}[];
+			/**
+			 * Override the title and/or content of any built-in step.
+			 * Keys are the step's `target` string (or "welcome" for the
+			 * opening card). Only the fields you provide are replaced.
+			 *
+			 * Example:
+			 *   "stepOverrides": {
+			 *     "welcome":        { "title": "Hi there!", "content": "..." },
+			 *     "tour-new-chat":  { "content": "Start a fresh conversation." }
+			 *   }
+			 */
+			stepOverrides?: Record<
+				string,
+				{ title?: string; content?: string }
+			>;
+		};
 
 		/**
 		 * Graceful error messages to show in the UI
