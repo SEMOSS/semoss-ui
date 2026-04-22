@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FileDropzone } from "@semoss/ui";
 import {
 	Avatar,
 	AvatarFallback,
@@ -18,6 +17,7 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	FileDropzone,
 	Input,
 	Large,
 	Separator,

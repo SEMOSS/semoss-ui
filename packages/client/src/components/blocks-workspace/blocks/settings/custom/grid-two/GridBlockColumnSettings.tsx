@@ -23,7 +23,7 @@ import {
 	SelectValue,
 	toast,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../../../settings/BaseSettingSection";
 import { GridBlockColumnSettingsItem } from "./GridBlockColumnSettingsItem";
 

@@ -1,4 +1,4 @@
-import { HighlightAlt } from "@mui/icons-material";
+import { Crosshair } from "lucide-react";
 import { ContainerLayoutSettings } from "../../settings";
 import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";
 import { ShowLoadingSettings } from "../../settings/shared/ShowLoadingSettings";
@@ -18,7 +18,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: HighlightAlt,
+	icon: Crosshair,
 	contentMenu: [
 		{
 			name: "Conditional",
