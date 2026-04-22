@@ -99,49 +99,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 
 	const showAskUserOverlay =
 		pendingAskUserTools.length > 0 && !askUserDismissed;
-	const activeAskUserTool = pendingAskUserTools[0] ?? null;
 
-	const dismissedAskUserQuestions = activeAskUserTool
-		? (() => {
-				const params = (activeAskUserTool.parameters || {}) as {
-					question?: unknown;
-					questions?: unknown;
-				};
-
-				if (Array.isArray(params.questions)) {
-					return params.questions
-						.map((question) => {
-							if (typeof question === "string") {
-								return question.trim();
-							}
-
-							if (
-								typeof question === "object" &&
-								question !== null
-							) {
-								const candidate = question as {
-									question?: unknown;
-								};
-								return typeof candidate.question === "string"
-									? candidate.question.trim()
-									: "";
-							}
-
-							return "";
-						})
-						.filter(Boolean);
-				}
-
-				if (
-					typeof params.question === "string" &&
-					params.question.trim()
-				) {
-					return [params.question.trim()];
-				}
-
-				return ["The assistant has a follow-up question."];
-			})()
-		: [];
+	// Build dismissed banner questions from ALL pending tools, not just the first
+	const dismissedAskUserQuestions: string[] = pendingAskUserTools.map(
+		(tool) => {
+			const params = (tool.parameters || {}) as {
+				question?: unknown;
+			};
+			return typeof params.question === "string" && params.question.trim()
+				? params.question.trim()
+				: "The assistant has a follow-up question.";
+		},
+	);
 	const dismissedQuestionCounts = new Map<string, number>();
 	const dismissedAskUserQuestionEntries = dismissedAskUserQuestions.map(
 		(question) => {
@@ -573,7 +542,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showAskUserOverlay ? (
 					<AskUserTool
 						room={room}
-						tools={activeAskUserTool ? [activeAskUserTool] : []}
+						tools={pendingAskUserTools}
 						onClose={() => setAskUserDismissed(true)}
 					/>
 				) : (
@@ -648,14 +617,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 											options={room.options}
 											onSelect={handleToolSelect}
 											editorRef={editorRef}
-											onOverlayClose={() => onOpenChange(false)}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
 										/>
 										<RoomInputMenuMCP
 											type="TOOLBOX"
 											options={room.options}
 											onSelect={handleToolSelect}
 											editorRef={editorRef}
-											onOverlayClose={() => onOpenChange(false)}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
 										/>
 										<DropdownMenuSeparator />
 										<RoomInputMenuFileExplorer
@@ -695,14 +668,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<span>
-													<Badge variant="secondary" asChild>
+													<Badge
+														variant="secondary"
+														asChild
+													>
 														<a
 															target="_blank"
 															href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
 														>
 															<ComputerIcon data-icon="inline-start" />
 															<div className="w-18 truncate">
-																{room.options.workspace
+																{room.options
+																	.workspace
 																	.name ||
 																	room.options
 																		.workspace
@@ -724,9 +701,11 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 													<Badge variant="secondary">
 														<ComputerIcon data-icon="inline-start" />
 														<div className="w-18 truncate">
-															{room.options.workspace
+															{room.options
+																.workspace
 																.name ||
-																room.options.workspace
+																room.options
+																	.workspace
 																	.workspace_id}
 														</div>
 													</Badge>
@@ -734,7 +713,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 											</TooltipTrigger>
 											<TooltipContent>
 												{room.options.workspace.name ||
-													room.options.workspace.workspace_id}
+													room.options.workspace
+														.workspace_id}
 											</TooltipContent>
 										</Tooltip>
 									)
