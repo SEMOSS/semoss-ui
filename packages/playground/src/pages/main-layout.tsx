@@ -22,6 +22,7 @@ import {
 } from "@semoss/ui/next";
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
+import { LandingTour } from "@/components/common/landing-tour";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
 import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
@@ -167,6 +168,7 @@ export const MainLayout = observer(() => {
 						stopTour: () => setIsTourOpen(false),
 					}}
 				>
+					<LandingTour />
 					<SidebarProvider
 						open={isSidebarOpen}
 						onOpenChange={setIsSidebarOpen}
