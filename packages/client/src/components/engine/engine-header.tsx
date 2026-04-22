@@ -1,7 +1,7 @@
 import { ChevronRight, Copy, Download, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
 	Badge,
 	Breadcrumb,
@@ -25,6 +25,7 @@ import {
 } from "@semoss/ui/next";
 import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
 import { EngineAccessButton } from ".";

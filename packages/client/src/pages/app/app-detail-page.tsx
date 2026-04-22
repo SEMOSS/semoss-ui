@@ -50,7 +50,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
-import { ResourceNotFound } from "@/components/common";
+import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { UpdateSMSS } from "@/components/settings";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";

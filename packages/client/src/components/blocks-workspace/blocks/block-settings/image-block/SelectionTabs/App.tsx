@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { upload, usePixel } from "@semoss/sdk/react";
-import { FileDropzone, Typography } from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+import { FileDropzone, toast } from "@semoss/ui/next";
 import { getImageFiles, imageExtensions } from "../utils";
 import SelectedItem from "./SelectedItem";
 import SelectImage from "./SelectImage";
 
 const AppTab = ({ id, data, setData, appId, insightId }) => {
 	const [isLoading, setIsLoading] = useState(false);
-	// biome-ignore lint/suspicious/noExplicitAny: pixel response shape uses any
+	// biome-ignore lint/suspicious/noExplicitAny: pixel response data is untyped
 	const getAssets = usePixel<{ status: string; data: any }>(
 		`BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
 	);
@@ -34,7 +33,7 @@ const AppTab = ({ id, data, setData, appId, insightId }) => {
 		}
 	};
 	if (isLoading) {
-		return <Typography variant="body1">Loading...</Typography>;
+		return <p className="text-sm">Loading...</p>;
 	}
 	if (data?.src instanceof Object) {
 		return <SelectedItem file={data.src} setData={setData} />;
@@ -47,9 +46,7 @@ const AppTab = ({ id, data, setData, appId, insightId }) => {
 				setData={setData}
 				data-testid="select-image"
 			/>
-			<Typography variant="body1" align="center">
-				Or
-			</Typography>
+			<p className="text-center text-sm">Or</p>
 			<FileDropzone
 				description="Upload your image here"
 				extensions={imageExtensions}

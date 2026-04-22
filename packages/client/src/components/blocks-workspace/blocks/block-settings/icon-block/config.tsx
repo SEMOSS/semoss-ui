@@ -1,4 +1,4 @@
-import { InsertEmoticon } from "@mui/icons-material";
+import { Smile } from "lucide-react";
 import { ColorSettings } from "../../settings";
 import {
 	IconSelectSettings,
@@ -14,7 +14,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
-	icon: InsertEmoticon,
+	icon: Smile,
 	contentMenu: [
 		{
 			name: "General",

@@ -4,6 +4,7 @@ import SelectedItem from "./SelectedItem";
 import SelectImage from "./SelectImage";
 
 const InsightTab = ({ insightId, data, setData }) => {
+	// biome-ignore lint/suspicious/noExplicitAny: pixel response data is untyped
 	const getAssets = usePixel<{ status: string; data: any }>(
 		`BrowseAsset(filePath=["/"] );`,
 		{},
