@@ -12,7 +12,7 @@ import {
 	Trash,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -27,6 +27,7 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { DeleteJobModal } from "./delete-job-modal";
 import type {
 	HistoryJob,

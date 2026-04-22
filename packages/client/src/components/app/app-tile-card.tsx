@@ -8,7 +8,7 @@ import {
 	Tag,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
 	Badge,
 	Button,
@@ -23,8 +23,9 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import { AppDeleteModal } from "@/components/app";
+import { AppDeleteModal } from "@/components/app/app-delete-modal";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
@@ -296,6 +297,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 	// Memoized values
 	const displayName = app.project_display_name || app.project_name;
+	const displayId = `id: ${app.project_id}`;
 	const tags = useMemo(() => extractTags(app), [app]);
 	const descriptionText = (app.description || "").trim();
 	const hasDescription = descriptionText.length > 0;
@@ -587,31 +589,61 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	}, [isCatalog]);
 
 	// Handlers
-	const handleCardClick = useCallback(() => {
-		if (onAction) {
-			onAction();
-			return;
+	const openHrefInNewTab = useCallback((): boolean => {
+		if (!href) {
+			return false;
 		}
 
-		if (href) {
-			if (!href.startsWith("#")) {
-				window.location.assign(href);
+		window.open(href, "_blank", "noopener,noreferrer");
+		return true;
+	}, [href]);
+
+	const handleCardClick = useCallback(
+		(e?: React.MouseEvent) => {
+			if (e && href && (e.ctrlKey || e.metaKey || e.button === 1)) {
+				e.preventDefault();
+				e.stopPropagation();
+				openHrefInNewTab();
 				return;
 			}
-			navigate(href.replace(/^#/, ""));
-		}
-	}, [href, navigate, onAction]);
+
+			if (onAction) {
+				onAction();
+				return;
+			}
+
+			if (href) {
+				if (!href.startsWith("#")) {
+					window.location.assign(href);
+					return;
+				}
+				navigate(href.replace(/^#/, ""));
+			}
+		},
+		[href, navigate, onAction, openHrefInNewTab],
+	);
+
+	const handleCardAuxClick = useCallback(
+		(e: React.MouseEvent) => {
+			if (!href || e.button !== 1) {
+				return;
+			}
+
+			e.preventDefault();
+			e.stopPropagation();
+			openHrefInNewTab();
+		},
+		[href, openHrefInNewTab],
+	);
 
 	const handleOpenApp = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
-			if (!href) {
+			if (!openHrefInNewTab()) {
 				onAction?.();
-				return;
 			}
-			window.open(href, "_blank", "noopener,noreferrer");
 		},
-		[href, onAction],
+		[onAction, openHrefInNewTab],
 	);
 
 	const handleFavoriteToggle = useCallback(
@@ -744,7 +776,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						data-id-measure="true"
 						className="whitespace-nowrap text-muted-foreground text-xs"
 					>
-						{app.project_id}
+						{displayId}
 					</span>
 				</div>
 
@@ -756,6 +788,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						tabIndex={0}
 						className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left"
 						onClick={handleCardClick}
+						onAuxClick={handleCardAuxClick}
 						onKeyDown={(e) => {
 							if (e.key === "Enter" || e.key === " ")
 								handleCardClick();
@@ -778,9 +811,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 								{displayName}
 							</h3>
 							<div className="mt-1 flex min-w-0 items-center gap-1 text-muted-foreground text-xs">
-								<span className="truncate">
-									{app.project_id}
-								</span>
+								<span className="truncate">{displayId}</span>
 								<Button
 									variant="ghost"
 									size="icon-sm"
@@ -989,6 +1020,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				<Card
 					className="h-full cursor-pointer gap-2 overflow-hidden rounded-xl border bg-card p-0 shadow-sm transition-shadow hover:shadow-md"
 					onClick={handleCardClick}
+					onAuxClick={handleCardAuxClick}
 					data-testid={formatToDataTestId(
 						`appTileCard-${displayName}-tile`,
 					)}
@@ -1213,6 +1245,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				<Card
 					className="relative h-full min-h-[184px] cursor-pointer overflow-hidden rounded-xl border bg-card p-0 shadow-sm"
 					onClick={handleCardClick}
+					onAuxClick={handleCardAuxClick}
 					data-testid={formatToDataTestId(
 						`appTileCard-${displayName}-filler`,
 					)}
@@ -1282,6 +1315,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 			<Card
 				className="h-full cursor-pointer gap-3 overflow-hidden p-0"
 				onClick={handleCardClick}
+				onAuxClick={handleCardAuxClick}
 				data-testid={formatToDataTestId(
 					`appTileCard-${displayName}-tile`,
 				)}

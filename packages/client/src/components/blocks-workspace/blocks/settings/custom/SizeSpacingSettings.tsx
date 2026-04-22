@@ -18,7 +18,7 @@ import {
 	ToggleGroup,
 	ToggleGroupItem,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import BottomPaddingIcon from "../../../../../assets/block-settings/BottomPaddingIcon.svg";
 import HorizontalPaddingIcon from "../../../../../assets/block-settings/HorizontalPaddingIcon.svg";
 import LeftPaddingIcon from "../../../../../assets/block-settings/LeftPaddingIcon.svg";

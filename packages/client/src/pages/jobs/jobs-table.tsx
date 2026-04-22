@@ -3,7 +3,6 @@ type GridRowSelectionModel = (string | number)[];
 import dayjs from "dayjs";
 import { Pencil, Play, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -21,6 +20,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { Job } from "./job.types";
 import { getHumanReadableCronExpression } from "./job.utils";
 

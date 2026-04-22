@@ -1,7 +1,6 @@
 import { useQueryResults } from "./use-database-query-results";
 import { usePixel } from "./use-pixel";
 import { useAPI } from "./useAPI";
-import { useBlockSettings } from "./useBlockSettings";
 import { useCacheState } from "./useCacheState";
 import { useQueryEditor } from "./useDatabaseQueryEditor";
 import { useQueryExecution } from "./useDatabaseQueryExecution";
@@ -17,9 +16,12 @@ import { useSettings } from "./useSettings";
 import { useStepper } from "./useStepper";
 import { useWorkspace } from "./useWorkspace";
 
+// NOTE: Do not export `useBlockSettings` from this barrel.
+// Keep it as a direct import (`@/hooks/useBlockSettings`) to avoid pulling
+// block/renderer dependencies into the broad `@/hooks` import graph, which
+// increases production bundle size.
 export {
 	useAPI,
-	useBlockSettings,
 	useCacheState,
 	useDatabaseStructure,
 	useDesigner,

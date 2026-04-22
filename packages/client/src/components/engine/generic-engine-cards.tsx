@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -37,6 +36,7 @@ import {
 import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
 import GOOGLE from "@/assets/img/google.png";
+import { useNavigate } from "@/hooks/useNavigate";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
 
@@ -164,6 +164,7 @@ interface DatabaseCardProps {
 	date?: string;
 
 	onClick?: (value: string) => void;
+	href?: string;
 
 	onDelete?: () => void;
 
@@ -192,6 +193,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		desktopInlineMeta = false,
 		date,
 		onClick,
+		href,
 		onDelete,
 		favorite,
 		global,
@@ -249,6 +251,36 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 					: [];
 	const hasTags = tagArray.length > 0;
 	const hasDate = Boolean(parsedDate);
+	const displayId = `id: ${id}`;
+	const openHrefInNewTab = () => {
+		if (!href) {
+			return false;
+		}
+
+		window.open(href, "_blank", "noopener,noreferrer");
+		return true;
+	};
+
+	const handleCardClick = (event: React.MouseEvent) => {
+		if (href && (event.ctrlKey || event.metaKey || event.button === 1)) {
+			event.preventDefault();
+			event.stopPropagation();
+			openHrefInNewTab();
+			return;
+		}
+
+		onClick?.(id);
+	};
+
+	const handleCardAuxClick = (event: React.MouseEvent) => {
+		if (!href || event.button !== 1) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openHrefInNewTab();
+	};
 
 	const renderTags = (compact = false) => {
 		if (!hasTags) {
@@ -471,7 +503,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 
 	return (
 		<Card
-			onClick={() => onClick?.(id)}
+			onClick={handleCardClick}
+			onAuxClick={handleCardAuxClick}
+			data-semoss-nav-click={onClick ? "true" : undefined}
 			data-testid={formatToDataTestId(
 				`genericEngineCards-${type}-${name}`,
 			)}
@@ -487,7 +521,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				>
 					<div className="flex min-w-0 flex-1 items-start gap-2.5">
 						{/* Engine icon — always visible */}
-						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-muted/30 p-1">
+						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-transparent p-1">
 							{customIcon ? (
 								<div className="flex h-full w-full items-center justify-center">
 									{customIcon}
@@ -525,9 +559,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							<div className="flex min-w-0 items-center gap-1">
 								<P
 									className="truncate font-mono text-muted-foreground text-xs"
-									title={id}
+									title={displayId}
 								>
-									{id}
+									{displayId}
 								</P>
 								<Tooltip>
 									<TooltipTrigger asChild>
@@ -628,13 +662,49 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 		owner = "N/A",
 		votes = "0",
 		onClick,
+		href,
 		favorite,
 		upvote,
 		global,
 	} = props;
 
+	const openHrefInNewTab = () => {
+		if (!href) {
+			return false;
+		}
+
+		window.open(href, "_blank", "noopener,noreferrer");
+		return true;
+	};
+
+	const handleCardClick = (event: React.MouseEvent) => {
+		if (href && (event.ctrlKey || event.metaKey || event.button === 1)) {
+			event.preventDefault();
+			event.stopPropagation();
+			openHrefInNewTab();
+			return;
+		}
+
+		onClick?.(id);
+	};
+
+	const handleCardAuxClick = (event: React.MouseEvent) => {
+		if (!href || event.button !== 1) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openHrefInNewTab();
+	};
+
 	return (
-		<Card onClick={() => onClick(id)} className="h-full cursor-pointer p-0">
+		<Card
+			onClick={handleCardClick}
+			onAuxClick={handleCardAuxClick}
+			data-semoss-nav-click={onClick ? "true" : undefined}
+			className="h-full cursor-pointer p-0"
+		>
 			<img
 				src={`${Env.MODULE}/api/e-${id}/image/download`}
 				alt={name || id}

@@ -7,7 +7,7 @@ import {
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 
 //Initial state of custom value labels as default values for managing and restoring

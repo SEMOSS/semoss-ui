@@ -20,7 +20,7 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 					data-home-content="true"
 				>
 					<div
-						className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 md:px-8 lg:px-10 xl:px-12"
+						className="mx-auto w-full max-w-[1550px] px-4 pt-6 sm:px-6 md:px-8 lg:px-10 xl:px-12"
 						data-home-container="true"
 					>
 						{children}
