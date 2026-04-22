@@ -680,6 +680,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										"min-h-0 flex-1 bg-card",
 										isScrollable && "mr-1",
 									)}
+									onClick={() => editorRef.current?.focus()}
 								>
 									<ContentEditable
 										ref={contentEditableRef}
@@ -748,8 +749,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
 						<div
-							className="flex items-center justify-between gap-2 bg-card p-2"
+							className="flex items-center justify-between gap-2 bg-background bg-card p-2"
 							data-tour="tour-input-menu"
+							role="none"
+							onClick={(e) => {
+								const target = e.target as HTMLElement;
+								if (
+									!target.closest("button") &&
+									!target.closest('[role="button"]') &&
+									!target.closest('[role="combobox"]')
+								) {
+									editorRef.current?.focus();
+								}
+							}}
+							onKeyDown={() => editorRef.current?.focus()}
 						>
 							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">

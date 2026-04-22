@@ -25,7 +25,7 @@ import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
 import { LandingTour } from "@/components/common/landing-tour";
 import { ChatContext, NavbarContext, TourContext } from "@/contexts";
-import { useNavbar, useRoot } from "@/hooks";
+import { useRoot } from "@/hooks";
 import { useThemeTitle } from "@/hooks/use-theme-title";
 import { ChatStore } from "@/stores";
 import { setFavicon } from "@/utility/utils";
@@ -35,9 +35,16 @@ export const MainLayout = observer(() => {
 	const { root } = useRoot();
 	const theme = root.theme;
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
+	const { pathname } = useLocation();
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
-	const { pathname } = useLocation();
+
+	const { theme: colorMode } = useTheme();
+
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		theme.sidebar.expandedByDefault,
@@ -144,6 +151,7 @@ export const MainLayout = observer(() => {
 			.split("; ")
 			.find((c) => c.startsWith("hasSeenTour="));
 		if (!hasSeen) {
+			// biome-ignore lint/suspicious/noDocumentCookie: TODO: why not local storage?
 			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
 			if (root.theme.dialog) {
 				setPendingTour(true);
@@ -170,167 +178,133 @@ export const MainLayout = observer(() => {
 					}}
 				>
 					<LandingTour />
-					<MainLayoutContent
-						isSidebarOpen={isSidebarOpen}
-						setIsSidebarOpen={setIsSidebarOpen}
-						chatStore={chatStore}
-						iframeRefs={iframeRefs}
-						pathname={pathname}
-						onDialogAcknowledge={() => {
-							if (pendingTour) {
-								setPendingTour(false);
-								setIsTourOpen(true);
-							}
-						}}
-					/>
+					<SidebarProvider
+						open={isSidebarOpen}
+						onOpenChange={setIsSidebarOpen}
+						style={
+							{
+								"--sidebar-width": "19rem",
+								"--sidebar-width-mobile": "19rem",
+							} as React.CSSProperties
+						}
+					>
+						<GlobalNav />
+						<SidebarInset className="m-0! rounded-none! shadow-none">
+							<GlobalDialog
+								onAcknowledge={() => {
+									if (pendingTour) {
+										setPendingTour(false);
+										setIsTourOpen(true);
+									}
+								}}
+							/>
+							<div
+								data-testid="main-layout"
+								className="flex h-screen w-full flex-col overflow-hidden bg-background"
+								style={{
+									...(!isDark && {
+										background:
+											"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
+									}),
+									...root.theme.overrides["main-layout"],
+								}}
+							>
+								<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
+									<div className="flex flex-row items-center justify-center gap-1.5">
+										<SidebarTrigger />
+										<Separator
+											orientation="vertical"
+											style={{ height: "17px" }}
+										/>
+										<Breadcrumb>
+											<BreadcrumbList>
+												{root.breadcrumbs.map(
+													(crumb, index) => {
+														const isLast =
+															index ===
+															root.breadcrumbs
+																.length -
+																1;
+
+														return (
+															<React.Fragment
+																key={crumb.path}
+															>
+																<BreadcrumbItem>
+																	<BreadcrumbLink
+																		className={
+																			isLast
+																				? "text-foreground"
+																				: ""
+																		}
+																		asChild
+																	>
+																		<Link
+																			to={`${crumb.path}`}
+																		>
+																			{
+																				crumb.name
+																			}
+																		</Link>
+																	</BreadcrumbLink>
+																</BreadcrumbItem>
+																{!isLast && (
+																	<BreadcrumbSeparator />
+																)}
+															</React.Fragment>
+														);
+													},
+												)}
+											</BreadcrumbList>
+										</Breadcrumb>
+									</div>
+									<div className="flex-1" />
+									<div className="flex items-center gap-2">
+										{navbarActions ?? null}
+									</div>
+								</div>
+								<Separator />
+								<div className="relative w-full flex-1 overflow-hidden">
+									<Outlet />
+									{Object.values(
+										chatStore.embeddedPageMap,
+									).map((item) => {
+										const isActive = matchPath(
+											{
+												path: `/embed/${item.path}`,
+												end: false,
+											},
+											pathname,
+										);
+										return (
+											<iframe
+												key={item.path}
+												ref={(el) => {
+													iframeRefs.current[
+														item.path
+													] = el;
+												}}
+												src={item.url}
+												title={item.path}
+												className="absolute inset-0 h-full w-full border-none"
+												// @ts-expect-error fetchpriority is not yet in React's typings
+												fetchpriority="high"
+												style={{
+													opacity: isActive ? 1 : 0,
+													pointerEvents: isActive
+														? "auto"
+														: "none",
+												}}
+											/>
+										);
+									})}
+								</div>
+								<GlobalFooter />
+							</div>
+						</SidebarInset>
+					</SidebarProvider>
 				</TourContext.Provider>
 			</NavbarContext.Provider>
 		</ChatContext.Provider>
 	);
 });
-
-const MainLayoutContent = observer(
-	({
-		isSidebarOpen,
-		setIsSidebarOpen,
-		chatStore,
-		iframeRefs,
-		pathname,
-		onDialogAcknowledge,
-	}: {
-		isSidebarOpen: boolean;
-		setIsSidebarOpen: (open: boolean) => void;
-		chatStore: InstanceType<typeof ChatStore>;
-		iframeRefs: React.MutableRefObject<
-			Record<string, HTMLIFrameElement | null>
-		>;
-		pathname: string;
-		onDialogAcknowledge: () => void;
-	}) => {
-		const { root } = useRoot();
-		const { actions } = useNavbar();
-
-		const { theme: colorMode } = useTheme();
-
-		const isDark =
-			colorMode === "dark" ||
-			(colorMode === "system" &&
-				window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-		return (
-			<SidebarProvider
-				open={isSidebarOpen}
-				onOpenChange={setIsSidebarOpen}
-				style={
-					{
-						"--sidebar-width": "19rem",
-						"--sidebar-width-mobile": "19rem",
-					} as React.CSSProperties
-				}
-			>
-				<GlobalNav />
-				<SidebarInset className="m-0! rounded-none! shadow-none">
-					<GlobalDialog onAcknowledge={onDialogAcknowledge} />
-					<div
-						data-testid="main-layout"
-						className="flex h-screen w-full flex-col overflow-hidden bg-background"
-						style={{
-							...(!isDark && {
-								background:
-									"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
-							}),
-							...root.theme.overrides["main-layout"],
-						}}
-					>
-						<div className="flex h-12.5 w-full shrink-0 flex-row items-center px-4">
-							<div className="flex flex-row items-center justify-center gap-1.5">
-								<SidebarTrigger />
-								<Separator
-									orientation="vertical"
-									style={{ height: "17px" }}
-								/>
-								<Breadcrumb>
-									<BreadcrumbList>
-										{root.breadcrumbs.map(
-											(crumb, index) => {
-												const isLast =
-													index ===
-													root.breadcrumbs.length - 1;
-
-												return (
-													<React.Fragment
-														key={crumb.path}
-													>
-														<BreadcrumbItem>
-															<BreadcrumbLink
-																className={
-																	isLast
-																		? "text-foreground"
-																		: ""
-																}
-																asChild
-															>
-																<Link
-																	to={`${crumb.path}`}
-																>
-																	{crumb.name}
-																</Link>
-															</BreadcrumbLink>
-														</BreadcrumbItem>
-														{!isLast && (
-															<BreadcrumbSeparator />
-														)}
-													</React.Fragment>
-												);
-											},
-										)}
-									</BreadcrumbList>
-								</Breadcrumb>
-							</div>
-							<div className="flex-1" />
-							<div className="flex items-center gap-2">
-								{actions ?? null}
-							</div>
-						</div>
-						<Separator />
-						<div className="relative w-full flex-1 overflow-hidden">
-							<Outlet />
-							{Object.values(chatStore.embeddedPageMap).map(
-								(item) => {
-									const isActive = matchPath(
-										{
-											path: `/embed/${item.path}`,
-											end: false,
-										},
-										pathname,
-									);
-									return (
-										<iframe
-											key={item.path}
-											ref={(el) => {
-												iframeRefs.current[item.path] =
-													el;
-											}}
-											src={item.url}
-											title={item.path}
-											className="absolute inset-0 h-full w-full border-none"
-											// @ts-expect-error fetchpriority is not yet in React's typings
-											fetchpriority="high"
-											style={{
-												opacity: isActive ? 1 : 0,
-												pointerEvents: isActive
-													? "auto"
-													: "none",
-											}}
-										/>
-									);
-								},
-							)}
-						</div>
-						<GlobalFooter />
-					</div>
-				</SidebarInset>
-			</SidebarProvider>
-		);
-	},
-);
