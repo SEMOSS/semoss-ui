@@ -93,11 +93,13 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
 		const [required, setRequired] = useState<string[]>([]);
-		
+
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
 		>({});
-		const [response, setResponse] = useState<string>(toolResponse);
+		const [response, setResponse] = useState<string | undefined>(
+			toolResponse,
+		);
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
 		const [extensionCheckRetrying, setExtensionCheckRetrying] =
@@ -108,7 +110,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			typeof data.recordedFile === "string" ? data.recordedFile : "";
 
 		useEffect(() => {
-
 			const handleMessage = (event: MessageEvent) => {
 				if (event.origin !== window.location.origin) {
 					return;
@@ -150,59 +151,59 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		};
 
 		/**
-	 * Check if extension panel is open by actively pinging it
-	 */
-	const checkExtensionAvailable = async (): Promise<boolean> => {
-		if (!scriptForBrowserAutomation) {
-			return true;
-		}
+		 * Check if extension panel is open by actively pinging it
+		 */
+		const checkExtensionAvailable = async (): Promise<boolean> => {
+			if (!scriptForBrowserAutomation) {
+				return true;
+			}
 
-		// Active ping/pong validation with timeout
-		return new Promise<boolean>((resolve) => {
-			let timeoutId: ReturnType<typeof setTimeout> | null = null;
-			let resolved = false;
+			// Active ping/pong validation with timeout
+			return new Promise<boolean>((resolve) => {
+				let timeoutId: ReturnType<typeof setTimeout> | null = null;
+				let resolved = false;
 
-			// Set up one-time listener for pong response
-			const handlePong = (event: MessageEvent) => {
-				if (event.origin !== window.location.origin) {
-					return;
-				}
+				// Set up one-time listener for pong response
+				const handlePong = (event: MessageEvent) => {
+					if (event.origin !== window.location.origin) {
+						return;
+					}
 
-				if (event.data?.type === "SMSS_EXTENSION_PONG") {
+					if (event.data?.type === "SMSS_EXTENSION_PONG") {
+						if (!resolved) {
+							resolved = true;
+							if (timeoutId) clearTimeout(timeoutId);
+							window.removeEventListener("message", handlePong);
+							resolve(true);
+						}
+					}
+				};
+
+				// Add listener
+				window.addEventListener("message", handlePong);
+
+				// Set timeout for 2 seconds
+				timeoutId = setTimeout(() => {
 					if (!resolved) {
 						resolved = true;
-						if (timeoutId) clearTimeout(timeoutId);
 						window.removeEventListener("message", handlePong);
-						resolve(true);
+						resolve(false);
 					}
-				}
-			};
+				}, 2000);
 
-			// Add listener
-			window.addEventListener("message", handlePong);
+				// Send ping
+				window.postMessage(
+					{
+						type: "SMSS_EXTENSION_PING",
+						timestamp: Date.now(),
+					},
+					"*",
+				);
+			});
+		};
 
-			// Set timeout for 2 seconds
-			timeoutId = setTimeout(() => {
-				if (!resolved) {
-					resolved = true;
-					window.removeEventListener("message", handlePong);
-					resolve(false);
-				}
-			}, 2000);
-
-			// Send ping
-			window.postMessage(
-				{
-					type: "SMSS_EXTENSION_PING",
-					timestamp: Date.now(),
-				},
-				"*",
-			);
-		});
-	};
-
-	// Tool Execution
-	const handleSubmit = async () => {
+		// Tool Execution
+		const handleSubmit = async () => {
 			// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
 			if (scriptForBrowserAutomation) {
 				const extensionAvailable = await checkExtensionAvailable();
@@ -270,12 +271,16 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					success = true;
 				}
 			} catch (error) {
-				output = error.toString();
+				output = (error as Error).toString();
 				success = false;
 			}
 			const m = room.getMessage(message);
-			if (!m || m instanceof ResponseMessageStore !== true) {
-			} else {
+			// Only process the tool response if the tool is still open
+			if (
+				m &&
+				m instanceof ResponseMessageStore &&
+				room.getTool(tool.id).isOpen
+			) {
 				room.processTool(
 					m.id,
 					tool.id,
@@ -410,7 +415,9 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 														Recorded File:
 													</span>
 													<span className="ml-2 text-muted-foreground">
-														{scriptForBrowserAutomation}
+														{
+															scriptForBrowserAutomation
+														}
 													</span>
 												</div>
 											</div>

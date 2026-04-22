@@ -100,7 +100,6 @@ function isPromise(value: unknown): value is Promise<unknown> {
  * This should be called when the content script loads
  */
 export const initializeRPC = () => {
-
 	chrome.runtime.onMessage.addListener(
 		(message, _sender, sendResponse): true | undefined => {
 			const type = message.type;

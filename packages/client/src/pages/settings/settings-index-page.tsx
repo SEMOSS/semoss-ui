@@ -3,6 +3,7 @@ import {
 	Bolt,
 	Bot,
 	Briefcase,
+	ChartBar,
 	CircleUserRound,
 	Database,
 	DatabaseZap,
@@ -17,9 +18,8 @@ import {
 	Sigma,
 	Users2,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Card,
 	CardContent,
@@ -33,6 +33,7 @@ import {
 	SelectValue,
 } from "@semoss/ui/next";
 import { useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
@@ -62,12 +63,41 @@ const IconMapper: Record<string, ReactNode> = {
 	"My Profile": <CircleUserRound className={SIDEBAR_ICON_CLASS} />,
 	Jobs: <Briefcase className={SIDEBAR_ICON_CLASS} />,
 	"View RDF Map": <FileText className={SIDEBAR_ICON_CLASS} />,
+	"LLM Feedback": <ChartBar className={SIDEBAR_ICON_CLASS} />,
 };
 
 export const SettingsIndexPage = () => {
 	const navigate = useNavigate();
 	const { adminMode } = useSettings();
 	const [search, setSearch] = useState<string>("");
+
+	const openSettingsRouteInNewTab = (path: string) => {
+		const normalizedPath = path.startsWith("/")
+			? path
+			: `/settings/${path}`;
+		window.open(`#${normalizedPath}`, "_blank", "noopener,noreferrer");
+	};
+
+	const handleCardClick = (event: MouseEvent, path: string) => {
+		if (event.ctrlKey || event.metaKey || event.button === 1) {
+			event.preventDefault();
+			event.stopPropagation();
+			openSettingsRouteInNewTab(path);
+			return;
+		}
+
+		navigate(path);
+	};
+
+	const handleCardAuxClick = (event: MouseEvent, path: string) => {
+		if (event.button !== 1) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openSettingsRouteInNewTab(path);
+	};
 
 	const cards = useMemo(() => {
 		const cleanedSearch = search.trim().toLowerCase();
@@ -126,9 +156,11 @@ export const SettingsIndexPage = () => {
 					return (
 						<Card
 							key={`settingsIndexPage-${c.title}-${c.path}-${i}-card`}
-							onClick={() => {
-								navigate(c.path);
-							}}
+							onClick={(event) => handleCardClick(event, c.path)}
+							onAuxClick={(event) =>
+								handleCardAuxClick(event, c.path)
+							}
+							data-semoss-nav-click="true"
 							data-testid={formatToDataTestId(
 								`settingsIndexPage-${c.title}-card`,
 							)}

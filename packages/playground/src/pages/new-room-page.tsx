@@ -29,8 +29,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 	RoomInputMenuWorkspace,
 } from "@/components";
@@ -38,7 +37,7 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
-import type { MCPConfig, Workspace } from "@/types";
+import type { MCPConfig, Prompt, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -64,6 +63,7 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const initialPrompt = searchParams.get("prompt") ?? "";
 
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
@@ -81,6 +81,12 @@ export const NewRoomPage = observer(() => {
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
+
+	const previewPrompts = useMemo(
+		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
+		[tempRoomStore.options.predefinedPrompts],
+	);
 
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
@@ -105,6 +111,14 @@ export const NewRoomPage = observer(() => {
 		{ data: null },
 	);
 
+	const getPrompts = usePixel<Prompt[]>(
+		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
+			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
+			: "",
+		{
+			data: [],
+		},
+	);
 	// On initial load, set the default options from the theme using the temporary RoomStore
 	useEffect(() => {
 		tempRoomStore.setOptions({
@@ -115,6 +129,7 @@ export const NewRoomPage = observer(() => {
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: undefined,
+			predefinedPrompts: [],
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -122,11 +137,11 @@ export const NewRoomPage = observer(() => {
 	 * Functions
 	 */
 	/**
-	 * Handle tool selection
+	 * Handle tool selection (toggle for plus menu)
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options using the temporary RoomStore
+		// Toggle tool in options
 		const tools = tempRoomStore.options.mcp.reduce(
 			(acc, curr) => {
 				acc[curr.id] = curr;
@@ -138,6 +153,31 @@ export const NewRoomPage = observer(() => {
 		if (Object.hasOwn(tools, tool.id)) {
 			delete tools[tool.id];
 		} else {
+			tools[tool.id] = tool;
+		}
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
+	 * @param tool - selected tool
+	 */
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
+		const tools = tempRoomStore.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, MCPConfig>,
+		);
+
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -168,10 +208,11 @@ export const NewRoomPage = observer(() => {
 				mcp: tempRoomStore.options.mcp,
 			};
 
-			// add workspace id
+			// add workspace id and name
 			if (mode === "workspace") {
 				options.workspace = {
 					workspace_id: getWorkspace.data?.workspace_id || "",
+					name: getWorkspace.data?.name,
 				};
 			}
 
@@ -249,6 +290,13 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
+		setPrompts(
+			Array.isArray(getWorkspace.data.prompts)
+				? getWorkspace.data.prompts.map((p) =>
+						typeof p === "string" ? p : (p as { id: string }).id,
+					)
+				: [],
+		);
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
 			instructions:
@@ -291,6 +339,32 @@ export const NewRoomPage = observer(() => {
 			mcp: [...tempRoomStore.options.mcp, knowledgeMcp],
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
+
+	// Handle prompts from URL parameter
+	useEffect(() => {
+		if (getPrompts.status !== "SUCCESS" || !getPrompts.data?.length) {
+			return;
+		}
+
+		const prompts: Prompt[] = getPrompts.data.map((p) => ({
+			id: p.id,
+			title: p.title,
+			context: p.context,
+			tags: p.tags,
+			version: p.version,
+			intent: p.intent,
+			// TODO: figure out why this is done this way
+			createdBy: (p as unknown as { created_by: string }).created_by,
+			dateCreated: (p as unknown as { date_created: string })
+				.date_created,
+			global: false, // TODO: figure out if this is needed
+		}));
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			predefinedPrompts: prompts,
+		});
+	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
 
 	// Clear instructions and workspace MCPs when switching away from workspace mode
 	useEffect(() => {
@@ -338,7 +412,9 @@ export const NewRoomPage = observer(() => {
 						) : (
 							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									{t("room:welcome")}
+									{t("room:welcome", {
+										name: chat.user.name,
+									})}
 								</div>
 								{root.theme.description ? (
 									<div className="text-center text-muted-foreground text-sm leading-normal">
@@ -349,20 +425,33 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							predefinedPrompts={
+								tempRoomStore.options.predefinedPrompts
+							}
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
+							initialValue={initialPrompt}
 							model={chat.models.selected}
+							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
+							options={tempRoomStore.options}
+							onMcpSelect={handleToolAdd}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
 								return true;
 							}}
+							hidePauseButton
 							MenuComponent={observer(
-								({ addToken, onOpenChange, fileRef }) => (
+								({ onOpenChange, fileRef, editorRef }) => (
 									<>
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
 										{root.theme.featureFlags
 											?.enablePlan && (
 											<>
@@ -433,25 +522,25 @@ export const NewRoomPage = observer(() => {
 											}}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuUpload
-											fileRef={fileRef}
-											onSelect={() => onOpenChange(false)}
+										<RoomInputMenuMCP
+											type="KNOWLEDGE"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
+										/>
+										<RoomInputMenuMCP
+											type="TOOLBOX"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuKnowledge
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
-										<RoomInputMenuToolbox
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();
@@ -531,6 +620,30 @@ export const NewRoomPage = observer(() => {
 								) : null
 							}
 						/>
+						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
+							<div className="mx-auto flex w-full flex-col items-center gap-3">
+								<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
+									{previewPrompts.map((prompt) => {
+										return (
+											<Button
+												key={prompt.id}
+												variant="outline"
+												className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
+												disabled={isLoading}
+												onClick={() =>
+													createRoom(
+														prompt.context,
+														[],
+													)
+												}
+											>
+												{prompt.title}
+											</Button>
+										);
+									})}
+								</div>
+							</div>
+						) : null}
 					</div>
 				</ResizablePanel>
 				{isConfigurationOpen && (

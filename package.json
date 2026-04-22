@@ -33,5 +33,10 @@
   "engines": {
     "pnpm": "~10.13.0",
     "node": ">=24.4.0 <25"
+  },
+  "pnpm": {
+    "overrides": {
+      "flatted": "3.4.2"
+    }
   }
 }

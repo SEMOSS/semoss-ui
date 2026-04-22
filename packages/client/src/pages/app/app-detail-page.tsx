@@ -14,7 +14,6 @@ import { useForm } from "react-hook-form";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
-import { Modal, useNotification } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -24,6 +23,8 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
+	Dialog,
+	DialogContent,
 	H4,
 	Spinner,
 	Tabs,
@@ -49,6 +50,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
+import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { UpdateSMSS } from "@/components/settings";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
@@ -56,10 +58,10 @@ import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
-import { AccessControl } from "./AppDetailTabs/access-control";
-import { Dependencies } from "./AppDetailTabs/dependencies-tab";
-import { Overview } from "./AppDetailTabs/overview-tab";
-import { SettingsTab } from "./AppDetailTabs/settings-tab";
+import { AccessControl } from "./app-detail-tabs/access-control";
+import { Dependencies } from "./app-detail-tabs/dependencies-tab";
+import { Overview } from "./app-detail-tabs/overview-tab";
+import { SettingsTab } from "./app-detail-tabs/settings-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
 const modelDependencies = (
@@ -140,7 +142,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	);
 	const [pendingRequest, setPendingRequest] = useState(false);
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
@@ -148,31 +149,34 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
+	const [permissionError, setPermissionError] = useState(false);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tab = searchParams.get("tab");
 
-	const emitMessage = useCallback(
-		(isError: boolean, message: string) => {
-			notification.add({
-				color: isError ? "error" : "success",
-				message,
-			});
-		},
-		[notification.add],
-	);
+	const emitMessage = useCallback((isError: boolean, message: string) => {
+		if (isError) toast.error(message);
+		else toast.success(message);
+	}, []);
 	const getPermission = useCallback(async () => {
-		const role = await getUserProjectPermission(appId);
+		try {
+			const role = await getUserProjectPermission(appId);
 
-		setValue("userRole", role);
-		const nextPermission = determineUserPermission(role);
-		setValue("permission", nextPermission);
+			setValue("userRole", role);
+			const nextPermission = determineUserPermission(role);
+			setValue("permission", nextPermission);
 
-		if (nextPermission === "author")
-			setValue("requestedPermission", "OWNER");
-		if (nextPermission === "editor")
-			setValue("requestedPermission", "EDIT");
-		if (nextPermission === "readOnly" || nextPermission === "discoverable")
-			setValue("requestedPermission", "READ_ONLY");
+			if (nextPermission === "author")
+				setValue("requestedPermission", "OWNER");
+			if (nextPermission === "editor")
+				setValue("requestedPermission", "EDIT");
+			if (
+				nextPermission === "readOnly" ||
+				nextPermission === "discoverable"
+			)
+				setValue("requestedPermission", "READ_ONLY");
+		} catch {
+			setPermissionError(true);
+		}
 	}, [appId, setValue]);
 
 	const fetchSimilarApps = useCallback(() => {
@@ -352,6 +356,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		setSelectedTab("Overview");
 		setMcpTools([]);
 		setMcpToolsError("");
+		setPermissionError(false);
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		if (appId) {
@@ -387,6 +392,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		}
 	}, [appId, monolithStore]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: setSearchParams is stable
 	useEffect(() => {
 		if (tab === "accesscontrol") {
 			setSelectedTab("Access Control");
@@ -482,7 +488,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			.runQuery(
 				`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 					meta,
-				)}], jsonCleanup=[true])`,
+				)}])`,
 			)
 			.then(async (response) => {
 				const { output, additionalOutput, operationType } =
@@ -557,6 +563,22 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	};
 
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
+
+	if (permissionError) {
+		return (
+			<>
+				{showNav && (
+					<NavbarLeft>
+						<NavbarHeader />
+					</NavbarLeft>
+				)}
+				<ResourceNotFound
+					catalogPath="/app"
+					catalogLabel="App Catalog"
+				/>
+			</>
+		);
+	}
 
 	return (
 		<div className="w-full">
@@ -687,9 +709,21 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 												: "outline"
 									}
 									className="gap-2"
-									onClick={() =>
-										setIsChangeAccessModalOpen(true)
-									}
+									onClick={() => {
+										const appName =
+											appInfo?.project_display_name ||
+											appInfo?.project_name ||
+											"this app";
+										setValue(
+											"requestedPermission",
+											"READ_ONLY",
+										);
+										setValue(
+											"roleChangeComment",
+											`I am requesting access to ${appName} for [please provide a reason]`,
+										);
+										setIsChangeAccessModalOpen(true);
+									}}
 									data-testid={"appDetail-access-btn"}
 								>
 									{responseStatus ? (
@@ -1075,16 +1109,18 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				</div>
 			</div>
 
-			<Modal
+			<Dialog
 				open={isShareOverlayOpen}
-				onClose={() => setIsShareOverlayOpen(false)}
+				onOpenChange={(o) => !o && setIsShareOverlayOpen(false)}
 			>
-				<ShareOverlay
-					appId={appId}
-					diffs={false}
-					onClose={() => setIsShareOverlayOpen(false)}
-				/>
-			</Modal>
+				<DialogContent className="max-w-lg p-0">
+					<ShareOverlay
+						appId={appId}
+						diffs={false}
+						onClose={() => setIsShareOverlayOpen(false)}
+					/>
+				</DialogContent>
+			</Dialog>
 
 			<ChangeAccessModal
 				open={isChangeAccessModalOpen}

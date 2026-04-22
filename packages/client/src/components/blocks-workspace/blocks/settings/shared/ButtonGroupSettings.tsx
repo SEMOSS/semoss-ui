@@ -8,8 +8,8 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { ButtonGroup, IconButton } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Button, cn } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { formatToDataTestId } from "@/utility";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -39,6 +39,7 @@ interface ButtonGroupSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	options: Array<{
 		value: string;
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 		icon: any;
 		title: string;
 		isDefault: boolean;
@@ -108,18 +109,18 @@ export const ButtonGroupSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<ButtonGroup>
+				<div className="flex">
 					{Array.from(options, (option, i) => {
+						const isActive =
+							value === option.value ||
+							(option.isDefault ? !value : false);
 						return (
-							<IconButton
+							<Button
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 								key={i}
-								color={
-									value == option.value ||
-									(option.isDefault ? !value : false)
-										? "primary"
-										: undefined
-								}
-								size="small"
+								variant="ghost"
+								size="icon-sm"
+								className={cn(isActive && "text-primary")}
 								onClick={() => onChange(option.value)}
 								title={option.title}
 								data-testid={formatToDataTestId(
@@ -127,10 +128,10 @@ export const ButtonGroupSettings = observer(
 								)}
 							>
 								<option.icon />
-							</IconButton>
+							</Button>
 						);
 					})}
-				</ButtonGroup>
+				</div>
 			</BaseSettingSection>
 		);
 	},

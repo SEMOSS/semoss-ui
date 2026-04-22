@@ -1,51 +1,13 @@
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
 	BlockDef,
 	EchartVisualizationBlockConfig,
 	EchartVisualizationBlockDef,
 	PathValue,
 } from "@semoss/renderer";
-import {
-	Button,
-	Slider,
-	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
-
-const StyledAxisDiv = styled("div")({
-	display: "flex",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: "8px",
-});
-
-const StyledAxis = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-});
-
-const StyledAxisColDiv = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-});
-
-const StyledAxisSpan = styled("span")({
-	display: "flex",
-	justifyContent: "space-between",
-	width: "100%",
-});
-
-const StyledTextField = styled(TextField)({
-	width: "100%",
-});
-
-const StyledTypography = styled(Typography)({});
+import { Button, Input, Slider, Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 const INITIAL_AXIS_STATE = {
 	axistitle: "",
@@ -76,6 +38,7 @@ export const EditAxis = observer(
 
 		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+		// biome-ignore lint/suspicious/noExplicitAny: echart event type
 		const buildAxisTitleGraphic = (optionObj: any) => {
 			const existing = (optionObj.graphic ?? []).filter(
 				(g) => g.__axisTitle !== axisType,
@@ -172,6 +135,7 @@ export const EditAxis = observer(
 			});
 		};
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (axisDataUpdated === "updated") {
 				updateChartData();
@@ -179,8 +143,10 @@ export const EditAxis = observer(
 		}, [JSON.stringify(axisState), axisDataUpdated]);
 
 		const handleInputChange = (
-			e: ChangeEvent<HTMLInputElement> | any,
+			// biome-ignore lint/suspicious/noExplicitAny: echart event type
+			e: React.ChangeEvent<HTMLInputElement> | any,
 			key: keyof typeof INITIAL_AXIS_STATE,
+			// biome-ignore lint/suspicious/noExplicitAny: echart event type
 			directVal?: any,
 		) => {
 			if (axisDataUpdated === "initial") {
@@ -199,111 +165,94 @@ export const EditAxis = observer(
 		};
 
 		return (
-			<StyledAxis>
-				<StyledAxisDiv>
+			<div className="flex flex-col">
+				<div className="flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
 						checked={axisState.showAxisTitle}
-						onChange={(e) =>
-							handleInputChange(
-								e,
-								"showAxisTitle",
-								e.target.checked,
-							)
+						onCheckedChange={(checked) =>
+							handleInputChange(null, "showAxisTitle", checked)
 						}
 					/>
-					<StyledTypography variant="body2">
-						Show Axis Title
-					</StyledTypography>
-				</StyledAxisDiv>
+					<span className="text-sm">Show Axis Title</span>
+				</div>
 
 				{axisState.showAxisTitle && (
 					<>
-						<StyledAxisColDiv>
-							<Typography variant="body2" color="secondary">
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Set Axis Title
-							</Typography>
-							<StyledTextField
-								size="small"
+							</span>
+							<Input
 								value={axisState.axistitle}
 								onChange={(e) =>
 									handleInputChange(e, "axistitle")
 								}
 							/>
-						</StyledAxisColDiv>
+						</div>
 
-						<StyledAxisColDiv>
-							<Typography variant="body2" color="secondary">
+						<div className="flex flex-col gap-2 px-4 py-2">
+							<span className="text-muted-foreground text-sm">
 								Axis Title Font Size
-							</Typography>
-							<TextField
-								size="small"
+							</span>
+							<Input
 								type="number"
 								value={axisState.axisTitleFontSize}
 								onChange={(e) =>
 									handleInputChange(e, "axisTitleFontSize")
 								}
 							/>
-						</StyledAxisColDiv>
+						</div>
 					</>
 				)}
 
-				<StyledAxisColDiv>
-					<Typography variant="body2" color="secondary">
+				<div className="flex flex-col gap-2 px-4 py-2">
+					<span className="text-muted-foreground text-sm">
 						Label Font Size
-					</Typography>
-					<StyledTextField
-						size="small"
+					</span>
+					<Input
 						type="number"
 						value={axisState.labelFontSize}
 						onChange={(e) => handleInputChange(e, "labelFontSize")}
 					/>
-				</StyledAxisColDiv>
+				</div>
 
 				{axisType === "y" && (
-					<StyledAxisColDiv>
-						<Typography variant="body2" color="secondary">
+					<div className="flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Truncate Characters Length
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						<Input
 							type="number"
 							value={axisState.truncateCharCount}
 							onChange={(e) =>
 								handleInputChange(e, "truncateCharCount")
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 
-				<StyledAxisColDiv>
-					<Typography variant="body2">
+				<div className="flex flex-col gap-2 px-4 py-2">
+					<span className="text-sm">
 						Rotate {upperCaseAxisType}-Axis Labels
-					</Typography>
+					</span>
 					<Slider
-						size="small"
-						value={axisState.rotate}
+						value={[axisState.rotate]}
 						min={0}
 						max={360}
-						valueLabelDisplay="on"
-						onChange={(e, v) => handleInputChange(e, "rotate", v)}
+						onValueChange={(v: number[]) =>
+							handleInputChange(null, "rotate", v[0])
+						}
 					/>
-					<StyledAxisSpan>
+					<div className="flex justify-between">
 						<span>0</span>
 						<span>360</span>
-					</StyledAxisSpan>
-				</StyledAxisColDiv>
+					</div>
+				</div>
 
-				<StyledAxisDiv style={{ justifyContent: "flex-end" }}>
-					<Button
-						color="primary"
-						variant="contained"
-						onClick={resetToInitialState}
-					>
-						Reset
-					</Button>
-				</StyledAxisDiv>
-			</StyledAxis>
+				<div className="flex justify-end px-4 py-2">
+					<Button onClick={resetToInitialState}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

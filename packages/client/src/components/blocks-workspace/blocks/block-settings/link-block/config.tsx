@@ -1,4 +1,4 @@
-import { Link } from "@mui/icons-material";
+import { Link2 } from "lucide-react";
 import { InputSettings } from "../../settings";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import {
@@ -12,7 +12,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_ACTION,
-	icon: Link,
+	icon: Link2,
 	contentMenu: [
 		{
 			name: "General",
