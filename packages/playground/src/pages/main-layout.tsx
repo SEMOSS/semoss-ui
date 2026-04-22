@@ -200,7 +200,9 @@ const MainLayoutContent = observer(
 		isSidebarOpen: boolean;
 		setIsSidebarOpen: (open: boolean) => void;
 		chatStore: InstanceType<typeof ChatStore>;
-		iframeRefs: React.MutableRefObject<Record<string, HTMLIFrameElement | null>>;
+		iframeRefs: React.MutableRefObject<
+			Record<string, HTMLIFrameElement | null>
+		>;
 		pathname: string;
 		onDialogAcknowledge: () => void;
 	}) => {
@@ -247,23 +249,37 @@ const MainLayoutContent = observer(
 
 												return (
 													<React.Fragment
-														key={crumb.path}
+														key={`${index}-${crumb.path}`}
 													>
 														<BreadcrumbItem>
-															<BreadcrumbLink
-																className={
-																	isLast
-																		? "text-foreground"
-																		: ""
-																}
-																asChild
-															>
-																<Link
-																	to={`${crumb.path}`}
+															{crumb.path ? (
+																<BreadcrumbLink
+																	className={
+																		isLast
+																			? "text-foreground"
+																			: ""
+																	}
+																	asChild
+																>
+																	<Link
+																		to={`${crumb.path}`}
+																	>
+																		{
+																			crumb.name
+																		}
+																	</Link>
+																</BreadcrumbLink>
+															) : (
+																<span
+																	className={
+																		isLast
+																			? "text-foreground"
+																			: "text-muted-foreground"
+																	}
 																>
 																	{crumb.name}
-																</Link>
-															</BreadcrumbLink>
+																</span>
+															)}
 														</BreadcrumbItem>
 														{!isLast && (
 															<BreadcrumbSeparator />
@@ -296,9 +312,8 @@ const MainLayoutContent = observer(
 										<iframe
 											key={item.path}
 											ref={(el) => {
-												iframeRefs.current[
-													item.path
-												] = el;
+												iframeRefs.current[item.path] =
+													el;
 											}}
 											src={item.url}
 											title={item.path}
