@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { upload, usePixel } from "@semoss/sdk/react";
-import { FileDropzone } from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+import { FileDropzone, toast } from "@semoss/ui/next";
 import { getImageFiles, imageExtensions } from "../utils";
 import SelectedItem from "./SelectedItem";
 import SelectImage from "./SelectImage";

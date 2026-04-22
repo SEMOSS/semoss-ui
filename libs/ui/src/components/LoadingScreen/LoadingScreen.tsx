@@ -1,9 +1,6 @@
+import { Backdrop, CircularProgress, Stack, Typography } from "@mui/material";
 import type React from "react";
 import { useCallback, useState } from "react";
-import { Backdrop } from "../Backdrop";
-import { CircularProgress } from "../CircularProgress";
-import { Stack } from "../Stack";
-import { Typography } from "../Typography";
 import { LoadingScreenContext } from "./LoadingScreenContext";
 
 export interface LoadingScreenProps {

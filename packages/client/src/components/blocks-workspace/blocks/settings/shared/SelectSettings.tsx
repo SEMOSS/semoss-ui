@@ -9,7 +9,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 interface SelectSettingsProps<D extends BlockDef = BlockDef> {
