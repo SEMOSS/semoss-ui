@@ -1,6 +1,6 @@
 import { Code, Terminal as TerminalIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -20,58 +20,59 @@ const buildTable = (
 	limit = 10,
 ): string => {
 	if (table.length === 0) {
-		return `[]`;
+		return "[]";
 	}
 
 	const columns = Object.keys(table[0]);
 	const hasHeader = typeof columns[0] === "string";
 	const columnWidths: Record<string, number> = {};
-	for (const c of columns) {
-		columnWidths[c] = c.length;
+	for (const column of columns) {
+		columnWidths[column] = column.length;
 	}
 
-	for (let rowIdx = 0, rowLen = table.length; rowIdx < rowLen; rowIdx++) {
-		if (rowIdx + 1 < limit) {
-			break;
-		}
-		for (const c of columns) {
-			columnWidths[c] = Math.max(
-				columnWidths[c],
-				String((table[rowIdx] as Record<string, unknown>)[c]).length,
+	const visibleRows = Math.min(limit, table.length);
+	for (let rowIndex = 0; rowIndex < visibleRows; rowIndex++) {
+		for (const column of columns) {
+			columnWidths[column] = Math.max(
+				columnWidths[column],
+				String((table[rowIndex] as Record<string, unknown>)[column])
+					.length,
 			);
 		}
 	}
 
-	for (const c in columnWidths) {
-		columnWidths[c] += 2;
+	for (const column in columnWidths) {
+		columnWidths[column] += 2;
 	}
 
 	const generated: string[] = [];
 	generated.push(
-		`┌${columns.map((c) => "─".repeat(columnWidths[c])).join("┬")}┐`,
+		`┌${columns.map((column) => "─".repeat(columnWidths[column])).join("┬")}┐`,
 	);
 
 	if (hasHeader) {
 		generated.push(
-			`│${columns.map((c) => ` ${c.padEnd(columnWidths[c] - 2)} `).join("│")}│`,
+			`│${columns.map((column) => ` ${column.padEnd(columnWidths[column] - 2)} `).join("│")}│`,
 		);
 		generated.push(
-			`├${columns.map((c) => "─".repeat(columnWidths[c])).join("┼")}┤`,
+			`├${columns.map((column) => "─".repeat(columnWidths[column])).join("┼")}┤`,
 		);
 	}
 
-	for (let rowIdx = 0, rowLen = table.length; rowIdx < rowLen; rowIdx++) {
-		if (rowIdx + 1 < limit) {
-			break;
-		}
-		const row = table[rowIdx] as Record<string, unknown>;
+	for (let rowIndex = 0; rowIndex < visibleRows; rowIndex++) {
+		const row = table[rowIndex] as Record<string, unknown>;
 		generated.push(
-			`│${columns.map((c) => ` ${String(row[c]).padEnd(columnWidths[c] - 2)} `).join("│")}│`,
+			`│${columns
+				.map(
+					(column) =>
+						` ${String(row[column]).padEnd(columnWidths[column] - 2)} `,
+				)
+				.join("│")}│`,
 		);
 	}
 
 	generated.push(
-		`└${columns.map((c) => "─".repeat(columnWidths[c])).join("┴")}┘`,
+		`└${columns.map((column) => "─".repeat(columnWidths[column])).join("┴")}┘`,
 	);
 
 	if (limit < table.length) {
@@ -87,6 +88,32 @@ const LANGUAGE = {
 	R: "R",
 	SHELL: "Shell",
 } as const;
+
+type LanguageType = keyof typeof LANGUAGE;
+
+const HELP_KEY_BY_LANGUAGE: Record<LanguageType, string> = {
+	PIXEL: "General",
+	SHELL: "Tinker",
+	PYTHON: "Python",
+	R: "R",
+};
+
+const PIXEL_COMMAND_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+const getInstructions = (selectedLanguage: LanguageType) => {
+	switch (selectedLanguage) {
+		case "PIXEL":
+			return "\x1b[34mPixel\x1b[0m";
+		case "SHELL":
+			return "\x1b[33mShell\x1b[0m";
+		case "PYTHON":
+			return "\x1b[32mPython\x1b[0m";
+		case "R":
+			return "\x1b[36mR\x1b[0m";
+		default:
+			return "";
+	}
+};
 
 interface FrameHeaders {
 	headerInfo: {
@@ -110,202 +137,331 @@ interface TaskData {
 	};
 }
 
+const colorizeJSON = (jsonString: string) => {
+	return jsonString
+		.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, (match) => {
+			if (/:$/.test(match)) {
+				return `\x1b[34m${match}\x1b[0m`;
+			}
+			return `\x1b[32m${match}\x1b[0m`;
+		})
+		.replace(/\b(true|false|null)\b/g, (match) => {
+			return `\x1b[35m${match}\x1b[0m`;
+		})
+		.replace(/:\s*"([^"]+)"/g, (match) => {
+			return `\x1b[36m${match}\x1b[0m`;
+		});
+};
+
+const normalizeWhitespace = (value: string): string => {
+	return value.replace(/\s+/g, " ").trim();
+};
+
+const countStatements = (value: string): number => {
+	return value
+		.split(";")
+		.map((part) => part.trim())
+		.filter(Boolean).length;
+};
+
 export const TerminalPanel: React.FC = observer(() => {
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
-	const [, setIsLoading] = useState<boolean>(false);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { workspace } = useWorkspace();
 	const { monolithStore } = useRootStore();
 
 	const [command, setCommand] = useState<string>("");
-	const [language, setLanguage] = useState("PIXEL");
-	const suggesstionsList = useRef<string[]>([]);
-
-	/**
-	 * Get instructions based on the language
-	 * @param language - current language
-	 * @returns instructions
-	 */
-	const getInstructions = (language: string, prefix = "", postfix = "") => {
-		let instructions = "";
-		if (language === "PIXEL") {
-			instructions = `${prefix}\x1b[34mPixel\x1b[0m${postfix}`;
-		} else if (language === "SHELL") {
-			instructions = `${prefix}\x1b[33mShell\x1b[0m${postfix}`;
-		} else if (language === "PYTHON") {
-			instructions = `${prefix}\x1b[32mPython\x1b[0m${postfix}`;
-		} else if (language === "R") {
-			instructions = `${prefix}\x1b[36mR\x1b[0m${postfix}`;
-		}
-		return instructions;
-	};
+	const commandRef = useRef<string>("");
+	const [language, setLanguage] = useState<LanguageType>("PIXEL");
+	const [helpSuggestions, setHelpSuggestions] = useState<
+		Record<string, string[]>
+	>({});
 
 	useEffect(() => {
 		runPixel("META | HelpJson();")
 			.then((response) => {
-				const data =
-					(response?.pixelReturn[0]?.output as Record<
-						string,
-						string[]
-					>) ?? {};
-				if (language === "PIXEL") {
-					suggesstionsList.current = data?.General ?? [];
-				} else if (language === "SHELL") {
-					suggesstionsList.current = data?.Tinker ?? [];
-				} else if (language === "PYTHON") {
-					suggesstionsList.current = data?.Python ?? [];
-				} else if (language === "R") {
-					suggesstionsList.current = data?.R ?? [];
-				} else {
-					suggesstionsList.current = data?.General ?? [];
+				const output = response?.pixelReturn?.[0]?.output;
+				if (!output || typeof output !== "object") {
+					setHelpSuggestions({});
+					return;
 				}
+
+				const typedOutput = output as Record<string, unknown>;
+				const nextSuggestions = Object.entries(typedOutput).reduce<
+					Record<string, string[]>
+				>((acc, [key, value]) => {
+					if (!Array.isArray(value)) {
+						acc[key] = [];
+						return acc;
+					}
+
+					acc[key] = value
+						.filter(
+							(item): item is string => typeof item === "string",
+						)
+						.map((item) => item.trim())
+						.filter(Boolean);
+					return acc;
+				}, {});
+
+				setHelpSuggestions(nextSuggestions);
 			})
 			.catch(() => {
-				suggesstionsList.current = [];
+				setHelpSuggestions({});
 			});
-	}, [language]);
+	}, []);
 
-	/**
-	 * Run a command
-	 * @param command - command to run
-	 * @param id - ID of the file
-	 * @param path - path to the file
-	 */
-	const runCommand = async () => {
-		try {
-			setIsLoading(true);
-			const cleaned = command.trim();
+	const suggestions = useMemo(() => {
+		const helpKey = HELP_KEY_BY_LANGUAGE[language];
+		return helpSuggestions[helpKey] || [];
+	}, [helpSuggestions, language]);
+
+	const transformSuggestionForInsert = useCallback(
+		(suggestion: string) => {
+			if (language !== "PIXEL") {
+				return suggestion;
+			}
+
+			const trimmedSuggestion = suggestion.trim();
+			if (!trimmedSuggestion) {
+				return suggestion;
+			}
+
+			if (
+				trimmedSuggestion.includes("(") ||
+				trimmedSuggestion.includes(" ") ||
+				trimmedSuggestion.includes("|") ||
+				trimmedSuggestion.endsWith(";") ||
+				!PIXEL_COMMAND_PATTERN.test(trimmedSuggestion)
+			) {
+				return trimmedSuggestion;
+			}
+
+			return `${trimmedSuggestion}()`;
+		},
+		[language],
+	);
+
+	const runCommand = useCallback(
+		async (commandOverride?: string) => {
+			const sourceCommand =
+				typeof commandOverride === "string"
+					? commandOverride
+					: commandRef.current;
+			const cleaned = sourceCommand.trim();
 			if (!cleaned) {
-				throw new Error(`No Command`);
+				return;
 			}
 
-			let pixel = "";
-			if (language === "PIXEL") {
-				pixel = cleaned;
-			} else if (language === "SHELL") {
-				pixel = `Command("<encode>${cleaned}</encode>");`;
-			} else if (language === "PYTHON") {
-				pixel = `Py("<encode>${cleaned}</encode>");`;
-			}
+			try {
+				setIsLoading(true);
 
-			// TODO: We need to fix workspace.store so we just call runWorkspacePixel
-			const response = await workspace.runWorkspacePixel(pixel);
-
-			const updatedHistory = [...history];
-			const insightId = response.insightId;
-			for (const r of response.pixelReturn) {
-				const { output, operationType, timeToRun } = r;
-
-				let postfix = "";
-				// only show if longer than 5 seconds
-				if (timeToRun > 5000) {
-					const seconds = Math.floor(timeToRun / 1000); // seconds
-					const minutes = Math.floor(timeToRun / 60);
-					postfix = ` in ${minutes
-						.toString()
-						.padStart(2, "0")}:${seconds
-						.toString()
-						.padStart(2, "0")}`;
+				let pixel = "";
+				if (language === "PIXEL") {
+					pixel = cleaned;
+				} else if (language === "SHELL") {
+					pixel = `Command("<encode>${cleaned}</encode>");`;
+				} else if (language === "PYTHON") {
+					pixel = `Py("<encode>${cleaned}</encode>");`;
+				} else if (language === "R") {
+					pixel = `R("<encode>${cleaned}</encode>");`;
 				}
 
-				let formatted: unknown = output;
-				if (operationType.indexOf("TASK_DATA") > -1) {
-					const data = output as TaskData;
+				const response = await workspace.runWorkspacePixel(pixel);
+				const normalizedInputCommand = normalizeWhitespace(cleaned);
+				const parsedExpressions = response.pixelReturn
+					.map((result) => {
+						return typeof result.pixelExpression === "string"
+							? result.pixelExpression.trim()
+							: "";
+					})
+					.filter(Boolean);
+				const normalizedParsedExpressions = Array.from(
+					new Set(
+						parsedExpressions
+							.map((expression) =>
+								normalizeWhitespace(expression),
+							)
+							.filter(Boolean),
+					),
+				);
+				const hasSubExpressionBreakdown =
+					normalizedParsedExpressions.length > 1;
 
-					if (data.headerInfo) {
-						const headers = data.headerInfo.reduce(
-							(acc, val, idx) => {
-								acc[idx] = val.alias;
-								return acc;
-							},
-							{},
-						);
-
-						const table = data.data.values.map((row) => {
-							return row.reduce((acc, val, idx) => {
-								acc[headers[idx]] = val;
-								return acc;
-							}, {}) as Record<string, unknown>;
-						});
-
-						formatted = buildTable(table);
-					} else {
-						formatted = buildTable(data.data.values);
+				const isAggregateExpression = (normalizedCommand: string) => {
+					if (!hasSubExpressionBreakdown) {
+						return false;
 					}
-				} else if (operationType.indexOf("FRAME_HEADERSf") > -1) {
-					const data = output as FrameHeaders;
 
-					formatted = buildTable(data.headerInfo.headers);
-				} else if (operationType.indexOf("CODE_EXECUTION") > -1) {
-					if (
-						Array.isArray(output) &&
-						output[0] &&
-						Object.hasOwn(output[0], "output")
-					) {
-						formatted = output[0].output;
-					}
-				} else if (operationType.indexOf("INVALID_SYNTAX") > -1) {
-					formatted = `\x1b[31mInvalid Syntax: ${output}\x1b[0m`;
-				} else if (operationType.indexOf("ERROR") > -1) {
-					formatted = `\x1b[31mError: ${output}\x1b[0m`;
-				} else if (operationType.indexOf("FILE_DOWNLOAD") > -1) {
-					monolithStore
-						.download(insightId, formatted as string)
-						.then(() => {
-							if (output && response.errors.length === 0) {
-								toast.success("file downloaded successfully");
+					let containedCount = 0;
+					for (const expression of normalizedParsedExpressions) {
+						if (
+							expression.length < 12 ||
+							expression === normalizedCommand
+						) {
+							continue;
+						}
+
+						if (normalizedCommand.includes(expression)) {
+							containedCount += 1;
+							if (containedCount >= 2) {
+								return true;
 							}
-						})
-						.catch(() => {
-							toast.error(
-								"Error occurred while trying to download",
-							);
-						});
-				}
-
-				updatedHistory.push({
-					instructions: getInstructions(
-						language,
-						"Executed ",
-						postfix,
-					),
-					command: command,
-					response: colorizeJSON(
-						typeof formatted !== "string"
-							? JSON.stringify(formatted, null, 2)
-							: formatted,
-					),
-				});
-			}
-
-			// update the history
-			setHistory(updatedHistory);
-		} catch (e) {
-			toast.error(e);
-
-			console.error(e);
-		} finally {
-			setIsLoading(false);
-		}
-	};
-	const colorizeJSON = (jsonString: string) => {
-		return jsonString
-			.replace(
-				/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g,
-				(match) => {
-					if (/:$/.test(match)) {
-						return `\x1b[34m${match}\x1b[0m`;
-					} else {
-						return `\x1b[32m${match}\x1b[0m`;
+						}
 					}
-				},
-			)
-			.replace(/\b(true|false|null)\b/g, (match) => {
-				return `\x1b[35m${match}\x1b[0m`;
-			})
-			.replace(/:\s*"([^"]+)"/, (match) => {
-				return `\x1b[36m${match}\x1b[0m`;
-			});
-	};
+
+					return false;
+				};
+
+				setHistory((previousHistory) => {
+					const updatedHistory = [...previousHistory];
+					const insightId = response.insightId;
+
+					for (const result of response.pixelReturn) {
+						const { output, operationType, pixelExpression } =
+							result;
+						const commandForHistory =
+							typeof pixelExpression === "string" &&
+							pixelExpression.trim() !== ""
+								? pixelExpression.trim()
+								: parsedExpressions.length === 0
+									? cleaned
+									: "";
+						if (!commandForHistory) {
+							continue;
+						}
+						const normalizedCommandForHistory =
+							normalizeWhitespace(commandForHistory);
+						const statementCount =
+							countStatements(commandForHistory);
+						const isOversizedExpression =
+							commandForHistory.length > 1200;
+
+						const shouldDropParentExpression =
+							hasSubExpressionBreakdown &&
+							(commandForHistory.includes("\n") ||
+								statementCount > 1 ||
+								isOversizedExpression ||
+								normalizedCommandForHistory ===
+									normalizedInputCommand ||
+								isAggregateExpression(
+									normalizedCommandForHistory,
+								));
+						if (shouldDropParentExpression) {
+							continue;
+						}
+
+						let formatted: unknown = output;
+						if (operationType.indexOf("TASK_DATA") > -1) {
+							const data = output as TaskData;
+
+							if (data.headerInfo) {
+								const headers = data.headerInfo.reduce<
+									Record<number, string>
+								>((acc, value, index) => {
+									acc[index] = value.alias;
+									return acc;
+								}, {});
+
+								const table = data.data.values.map((row) => {
+									return row.reduce<Record<string, unknown>>(
+										(acc, value, index) => {
+											acc[headers[index]] = value;
+											return acc;
+										},
+										{},
+									);
+								});
+
+								formatted = buildTable(table);
+							} else {
+								formatted = buildTable(data.data.values);
+							}
+						} else if (
+							operationType.indexOf("FRAME_HEADERS") > -1
+						) {
+							const data = output as FrameHeaders;
+							formatted = buildTable(data.headerInfo.headers);
+						} else if (
+							operationType.indexOf("CODE_EXECUTION") > -1
+						) {
+							if (
+								Array.isArray(output) &&
+								output[0] &&
+								typeof output[0] === "object" &&
+								Object.hasOwn(output[0], "output")
+							) {
+								formatted = (output[0] as { output: unknown })
+									.output;
+							}
+						} else if (
+							operationType.indexOf("INVALID_SYNTAX") > -1
+						) {
+							formatted = `\x1b[31mInvalid Syntax: ${output}\x1b[0m`;
+						} else if (operationType.indexOf("ERROR") > -1) {
+							formatted = `\x1b[31mError: ${output}\x1b[0m`;
+						} else if (
+							operationType.indexOf("FILE_DOWNLOAD") > -1
+						) {
+							monolithStore
+								.download(insightId, formatted as string)
+								.then(() => {
+									if (
+										output &&
+										response.errors.length === 0
+									) {
+										toast.success(
+											"File downloaded successfully",
+										);
+									}
+								})
+								.catch(() => {
+									toast.error(
+										"Error occurred while trying to download",
+									);
+								});
+						}
+
+						updatedHistory.push({
+							command: commandForHistory,
+							response: colorizeJSON(
+								typeof formatted !== "string"
+									? JSON.stringify(formatted, null, 2)
+									: formatted,
+							),
+						});
+					}
+
+					return updatedHistory;
+				});
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Failed to run command";
+				toast.error(message);
+				console.error(error);
+			} finally {
+				setIsLoading(false);
+			}
+		},
+		[language, monolithStore, workspace],
+	);
+
+	const handleCopyCommands = useCallback(async () => {
+		const commands = history.map((entry) => entry.command).join("\n");
+		if (!commands.trim()) {
+			toast.warning("No terminal commands to copy");
+			return;
+		}
+
+		try {
+			await navigator.clipboard.writeText(commands);
+			toast.success("Terminal commands copied to clipboard");
+		} catch {
+			toast.error("Unable to copy terminal commands");
+		}
+	}, [history]);
 
 	return (
 		<Panel
@@ -314,10 +470,9 @@ export const TerminalPanel: React.FC = observer(() => {
 					<ToggleGroup
 						type="single"
 						value={language}
-						onValueChange={(val) => {
-							if (val) {
-								setCommand("");
-								setLanguage(val);
+						onValueChange={(value) => {
+							if (value) {
+								setLanguage(value as LanguageType);
 							}
 						}}
 						variant="outline"
@@ -357,9 +512,18 @@ export const TerminalPanel: React.FC = observer(() => {
 					</ToggleGroup>
 					<div className="flex-1">&nbsp;</div>
 					<Button
+						variant="outline"
 						size="sm"
+						onClick={handleCopyCommands}
+						disabled={history.length === 0}
+					>
+						Copy Commands
+					</Button>
+					<Button
+						size="sm"
+						className="ml-2"
 						onClick={() => runCommand()}
-						disabled={command?.trim() === ""}
+						disabled={command.trim() === ""}
 					>
 						Run
 					</Button>
@@ -368,11 +532,14 @@ export const TerminalPanel: React.FC = observer(() => {
 		>
 			<Terminal
 				history={history}
-				instructions={getInstructions(language, "Running ")}
-				suggestions={suggesstionsList.current}
-				onRun={() => runCommand()}
-				onCommand={(c) => {
-					setCommand(c);
+				loading={isLoading}
+				instructions={getInstructions(language)}
+				suggestions={suggestions}
+				transformSuggestion={transformSuggestionForInsert}
+				onRun={runCommand}
+				onCommand={(nextCommand) => {
+					commandRef.current = nextCommand;
+					setCommand(nextCommand);
 				}}
 			/>
 		</Panel>
