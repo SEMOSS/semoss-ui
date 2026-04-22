@@ -203,6 +203,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 					type: "APP",
 					app: app,
 				}}
+				enableMultiSelect={true}
 				headerActions={
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -262,7 +263,12 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 						enableClose: true,
 					});
 				}}
-				ItemComponent={({ item, refresh, ...otherProps }) => {
+				ItemComponent={({
+					item,
+					refresh,
+					multiSelect = false,
+					...otherProps
+				}) => {
 					const isDriverFile =
 						item.type !== "directory" &&
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
@@ -271,6 +277,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							draggable={item.type !== "directory"}
 							item={item}
 							refresh={refresh}
+							multiSelect={multiSelect}
 							onDragStart={(e) => {
 								// cannot drag directories
 								if (item.type === "directory") {
@@ -307,7 +314,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							}}
 							{...otherProps}
 							actions={[
-								isDriverFile
+								isDriverFile && !multiSelect
 									? {
 											name: "Create",
 											icon: <HammerIcon />,

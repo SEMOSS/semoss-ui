@@ -52,6 +52,7 @@ export const RoomFileExplorer: React.FC<RoomFileExplorerProps> = observer(
 					type: "INSIGHT",
 				}}
 				initialPath={config.initialPath}
+				enableMultiSelect={true}
 				onItemSelect={(item) => {
 					// don't open directories
 					if (item.type === "directory") {

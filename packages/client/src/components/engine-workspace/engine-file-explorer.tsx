@@ -162,6 +162,7 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								engine: engine,
 							}
 				}
+				enableMultiSelect={true}
 				onItemSelect={(item) => {
 					if (isStorageViewer) {
 						if (item.type === "directory") {
@@ -224,13 +225,18 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 						enableClose: true,
 					});
 				}}
-				ItemComponent={({ item, refresh, ...otherProps }) => {
+				ItemComponent={({
+					item,
+					refresh,
+					multiSelect = false,
+					...otherProps
+				}) => {
 					const isDriverFile =
 						item.type !== "directory" &&
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
 					const actions = [];
 					if (!isStorageViewer) {
-						if (isDriverFile) {
+						if (isDriverFile && !multiSelect) {
 							actions.push({
 								name: "Create",
 								icon: <HammerIcon />,
@@ -366,6 +372,7 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 							}
 							item={item}
 							refresh={refresh}
+							multiSelect={multiSelect}
 							onDragStart={(e) => {
 								if (isStorageViewer) {
 									return;

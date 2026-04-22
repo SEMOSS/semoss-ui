@@ -43,3 +43,8 @@ export type FileItem = {
 	 */
 	lastModified?: string;
 };
+
+/**
+ * Selection change callback
+ */
+export type SelectionChangeCallback = (selected: FileItem[]) => void;

@@ -20,6 +20,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Checkbox,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuGroup,
@@ -215,6 +216,26 @@ interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	 * Called after a successful rename with the old and new paths
 	 */
 	onAfterRename?: (oldPath: string, newPath: string) => void;
+
+	/**
+	 * Enable multi-select mode
+	 */
+	multiSelect?: boolean;
+
+	/**
+	 * Whether this item is selected
+	 */
+	isSelected?: boolean;
+
+	/**
+	 * Callback when selection changes
+	 */
+	onSelectionChange?: (item: FileItem, selected: boolean, shiftKey?: boolean) => void;
+
+	/**
+	 * Resolves whether a path is selected
+	 */
+	isPathSelected?: (path: string) => boolean;
 }
 
 export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
@@ -226,12 +247,19 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	ItemComponent = FileExplorerItem,
 	dateColWidth = 130,
 	onAfterRename,
+	multiSelect = false,
+	isSelected = false,
+	onSelectionChange,
+	isPathSelected,
 	...otherProps
 }) => {
 	const treeView = useTreeView<FileItem>();
 	const insight = useInsight();
 	const isDirectory = item.type === "directory";
 	const isExpanded = treeView.expanded.includes(item.path);
+	const resolvedIsSelected = isPathSelected
+		? isPathSelected(item.path)
+		: isSelected;
 
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [renameValue, setRenameValue] = useState("");
@@ -391,12 +419,34 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			item={item}
 			loading={getChildren.status === "LOADING"}
 			label={
+				// biome-ignore lint/a11y/noStaticElementInteractions: Tree row click toggles checkbox selection.
+				// biome-ignore lint/a11y/useKeyWithClickEvents: Keyboard selection is handled by checkbox and tree navigation.
 				<div
 					className="group flex min-w-full flex-row items-center"
 					title={`Path: ${item.path} Last Modified: ${item.lastModified}`}
+					onClick={(e) => {
+						if (multiSelect) {
+							e.stopPropagation();
+							onSelectionChange?.(
+								item,
+								!resolvedIsSelected,
+								e.shiftKey,
+							);
+						}
+					}}
 				>
 					{/* Column 1: Name */}
 					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pr-2">
+						{multiSelect && (
+							<Checkbox
+								checked={resolvedIsSelected}
+								onCheckedChange={(checked) => {
+									onSelectionChange?.(item, !!checked, false);
+								}}
+								onClick={(e) => e.stopPropagation()}
+								aria-label={`Select ${item.name}`}
+							/>
+						)}
 						{renderIcon()}
 						{isRenaming ? (
 							<input
@@ -543,6 +593,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								actions={actions}
 								secondaryActions={secondaryActions}
 								dateColWidth={dateColWidth}
+								multiSelect={multiSelect}
+								isSelected={isPathSelected?.(child.path) ?? false}
+								onSelectionChange={onSelectionChange}
+								isPathSelected={isPathSelected}
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&

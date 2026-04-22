@@ -1,12 +1,17 @@
 import {
 	ChevronDownIcon,
+	CopyCheckIcon,
 	FilePlus2Icon,
+	MoveIcon,
 	RefreshCwIcon,
 	SearchIcon,
+	TrashIcon,
 } from "lucide-react";
 import {
 	type CSSProperties,
 	type MouseEvent as ReactMouseEvent,
+	useCallback,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -14,6 +19,13 @@ import {
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -35,74 +47,15 @@ import {
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
-import type { FileItem, FileMode } from "./file.types";
+import type { FileItem, FileMode, SelectionChangeCallback } from "./file.types";
+import {
+	isEditableElement,
+	mapStorageEntriesToFileItems,
+	normalizeFolderPath,
+} from "./file-explorer.helpers";
 import { FileExplorerItem } from "./file-explorer-item";
+import { MoveFilesDialog } from "./move-files-dialog";
 import { NewFileOverlay } from "./new-file-overlay";
-
-interface StoragePathEntry {
-	Name?: string;
-	name?: string;
-	Path?: string;
-	path?: string;
-	IsDir?: boolean;
-	isDir?: boolean;
-	ModTime?: string;
-	lastModified?: string;
-	last_modified?: string;
-}
-
-const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
-	if (!Array.isArray(entries)) {
-		return [];
-	}
-
-	return entries.reduce<FileItem[]>((acc, entry) => {
-		if (typeof entry === "string") {
-			if (!entry) {
-				return acc;
-			}
-
-			const normalizedEntry = entry.replace(/\/+$/, "");
-			const name =
-				normalizedEntry.split("/").filter(Boolean).pop() ||
-				normalizedEntry;
-			const isDirectory = entry.endsWith("/");
-
-			acc.push({
-				name: name,
-				path: entry,
-				type: isDirectory ? "directory" : undefined,
-			});
-
-			return acc;
-		}
-
-		if (!entry || typeof entry !== "object") {
-			return acc;
-		}
-
-		const details = entry as StoragePathEntry;
-		const name = details.Name || details.name || "";
-		const path = details.Path || details.path || "";
-		if (!path) {
-			return acc;
-		}
-		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
-		const isDirectory = details.IsDir || details.isDir;
-
-		acc.push({
-			name: name || fallbackName,
-			path: path,
-			type: isDirectory ? "directory" : undefined,
-			lastModified:
-				details.ModTime ||
-				details.lastModified ||
-				details.last_modified,
-		});
-
-		return acc;
-	}, []);
-};
 
 interface FileExplorerProps {
 	/** Mode of file editor */
@@ -127,6 +80,21 @@ interface FileExplorerProps {
 	 * Initial directory path to open to (defaults to "/")
 	 */
 	initialPath?: string;
+
+	/**
+	 * Enable multi-select with checkboxes
+	 */
+	enableMultiSelect?: boolean;
+
+	/**
+	 * Currently selected items (controlled)
+	 */
+	selectedItems?: FileItem[];
+
+	/**
+	 * Callback when selection changes
+	 */
+	onSelectionChange?: SelectionChangeCallback;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -135,6 +103,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	onItemSelect = () => null,
 	ItemComponent = FileExplorerItem,
 	initialPath,
+	enableMultiSelect = false,
+	selectedItems,
+	onSelectionChange,
 }) => {
 	const insight = useInsight();
 
@@ -147,13 +118,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	const [isDragging, setIsDragging] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+	const [isSelectionMode, setIsSelectionMode] = useState(false);
 
 	const [dateColWidth, setDateColWidth] = useState(100);
+	const explorerRef = useRef<HTMLDivElement>(null);
 	const dividerDragRef = useRef<{
 		startX: number;
 		startWidth: number;
 	} | null>(null);
-
 	const handleDividerMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
 		e.preventDefault();
 		dividerDragRef.current = {
@@ -188,9 +160,49 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	const [isNewFile, setIsNewFile] = useState(false);
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
-
 	const debouncedSearch = useDebouncedValue(search);
 	const canMutateFiles = mode.type !== "STORAGE";
+
+	const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(
+		null,
+	);
+
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [showMoveDialog, setShowMoveDialog] = useState(false);
+	const showSelectionControls = enableMultiSelect && isSelectionMode;
+	const [internalSelectedItems, setInternalSelectedItems] = useState<
+		FileItem[]
+	>([]);
+	const closeDialogsIfSelectionEmpty = useCallback((nextCount: number) => {
+		if (nextCount !== 0) {
+			return;
+		}
+		setShowDeleteDialog(false);
+		setShowMoveDialog(false);
+	}, []);
+	const isSelectionControlled = selectedItems !== undefined;
+	const resolvedSelectedItems = isSelectionControlled
+		? selectedItems
+		: internalSelectedItems;
+	const commitSelectionChange = useCallback(
+		(nextSelectedItems: FileItem[]) => {
+			closeDialogsIfSelectionEmpty(nextSelectedItems.length);
+			if (!isSelectionControlled) {
+				setInternalSelectedItems(nextSelectedItems);
+			}
+			onSelectionChange?.(nextSelectedItems);
+		},
+		[
+			closeDialogsIfSelectionEmpty,
+			isSelectionControlled,
+			onSelectionChange,
+		],
+	);
+
+	const selectedPaths = useMemo(
+		() => new Set(resolvedSelectedItems.map((item) => item.path)),
+		[resolvedSelectedItems],
+	);
 
 	let getFilesPixel = "";
 	if (mode.type === "APP") {
@@ -238,10 +250,172 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			item.name.toLowerCase().includes(normalizedSearch),
 		);
 	}, [mode.type, getFiles.data, debouncedSearch]);
+	const moveDestinationSuggestions = useMemo(() => {
+		const folderPaths = files
+			.filter((item) => item.type === "directory")
+			.map((item) => item.path);
+		return Array.from(new Set(["/", ...folderPaths])).sort((a, b) =>
+			a.localeCompare(b),
+		);
+	}, [files]);
+	const clearSelection = useCallback(() => {
+		commitSelectionChange([]);
+		setLastSelectedIndex(null);
+	}, [commitSelectionChange]);
+	const closeSelectionDialogs = useCallback(() => {
+		setShowDeleteDialog(false);
+		setShowMoveDialog(false);
+	}, []);
+	const toggleSelectionMode = useCallback(() => {
+		setIsSelectionMode((prev) => {
+			const next = !prev;
+			if (!next) {
+				clearSelection();
+				closeSelectionDialogs();
+			}
+			return next;
+		});
+	}, [clearSelection, closeSelectionDialogs]);
+	const openMoveDialog = useCallback(() => {
+		setShowMoveDialog(true);
+	}, []);
+	const closeMoveDialog = useCallback(() => {
+		setShowMoveDialog(false);
+	}, []);
+
+	const handleSelectionChange = (
+		item: FileItem,
+		selected: boolean,
+		index?: number,
+		shiftKey?: boolean,
+	) => {
+		let newSelected = [...resolvedSelectedItems];
+
+		if (shiftKey && lastSelectedIndex !== null && index !== undefined) {
+			// Range selection
+			const start = Math.min(lastSelectedIndex, index);
+			const end = Math.max(lastSelectedIndex, index);
+			const allItems = files.slice(start, end + 1);
+			if (selected) {
+				// Add range
+				const toAdd = allItems.filter(
+					(i) => !selectedPaths.has(i.path),
+				);
+				newSelected = [...newSelected, ...toAdd];
+			} else {
+				// Remove range
+				newSelected = newSelected.filter(
+					(i) => !allItems.some((ai) => ai.path === i.path),
+				);
+			}
+		} else {
+			// Single toggle
+			if (selected) {
+				if (!selectedPaths.has(item.path)) {
+					newSelected.push(item);
+				}
+			} else {
+				newSelected = newSelected.filter((i) => i.path !== item.path);
+			}
+			setLastSelectedIndex(index ?? null);
+		}
+
+		commitSelectionChange(newSelected);
+	};
+
+	const buildRenamePixel = (item: FileItem, destination: string): string => {
+		const newPath =
+			destination === "/"
+				? `/${item.name}`
+				: `${destination}/${item.name}`;
+
+		if (mode.type === "APP") {
+			return `RenameAppAsset(project=["${mode.app}"], filePath=["${item.path}"], newValue=["${newPath}"]);`;
+		}
+		if (mode.type === "ENGINE") {
+			return `RenameEngineAsset(engine=["${mode.engine}"], filePath=["${item.path}"], newValue=["${newPath}"]);`;
+		}
+		if (mode.type === "INSIGHT") {
+			return `RenameInsightAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
+		}
+		return "";
+	};
+
+	const buildDeletePixel = (item: FileItem): string => {
+		if (mode.type === "APP") {
+			return `DeleteAppAssets(project=["${mode.app}"], filePath=["${item.path}"]);`;
+		}
+		if (mode.type === "ENGINE") {
+			return `DeleteEngineAssets(engine=["${mode.engine}"], filePath=["${item.path}"]);`;
+		}
+		if (mode.type === "INSIGHT") {
+			return `DeleteInsightAssets(filePath=["${item.path}"]);`;
+		}
+		return "";
+	};
 
 	/**
-	 * Upload a file to the path
+	 * Move selected files to destination
 	 */
+	const moveSelectedFiles = async (destination: string) => {
+		if (!canMutateFiles || resolvedSelectedItems.length === 0) {
+			return;
+		}
+		const trimmedDestination = destination.trim();
+		if (!trimmedDestination) {
+			return;
+		}
+
+		try {
+			const normalizedDestination =
+				normalizeFolderPath(trimmedDestination);
+			const count = resolvedSelectedItems.length;
+			for (const item of resolvedSelectedItems) {
+				const pixel = buildRenamePixel(item, normalizedDestination);
+				if (!pixel) continue;
+				await insight.actions.run(pixel);
+			}
+
+			// Clear selection
+			clearSelection();
+			closeSelectionDialogs();
+			closeMoveDialog();
+
+			// Refresh
+			getFiles.refresh();
+
+			toast.success(`Moved ${count} item(s)`);
+		} catch (e) {
+			toast.error("Failed to move files");
+			console.error(e);
+		}
+	};
+	const deleteSelectedFiles = async () => {
+		if (!canMutateFiles || resolvedSelectedItems.length === 0) {
+			return;
+		}
+
+		try {
+			const count = resolvedSelectedItems.length;
+			for (const item of resolvedSelectedItems) {
+				const pixel = buildDeletePixel(item);
+				if (!pixel) continue;
+				await insight.actions.run(pixel);
+			}
+
+			// Clear selection
+			clearSelection();
+			closeSelectionDialogs();
+
+			// Refresh
+			getFiles.refresh();
+
+			toast.success(`Deleted ${count} item(s)`);
+		} catch (e) {
+			toast.error("Failed to delete files");
+			console.error(e);
+		}
+	};
 	const uploadFile = async (files: File[]) => {
 		try {
 			if (!canMutateFiles) {
@@ -269,6 +443,40 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 	};
 
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (!enableMultiSelect) return;
+			if (!isSelectionMode) return;
+			const target = e.target;
+			if (!(target instanceof HTMLElement)) return;
+			if (!explorerRef.current?.contains(target)) return;
+			if (isEditableElement(target)) {
+				return;
+			}
+
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+				e.preventDefault();
+				commitSelectionChange(files);
+			} else if (
+				e.key === "Delete" &&
+				resolvedSelectedItems.length > 0 &&
+				canMutateFiles
+			) {
+				e.preventDefault();
+				setShowDeleteDialog(true);
+			}
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [
+		enableMultiSelect,
+		isSelectionMode,
+		resolvedSelectedItems.length,
+		canMutateFiles,
+		commitSelectionChange,
+		files,
+	]);
 	// this converts the path into crumbs based on the folder. The top level is always '/'.
 	const crumbs = path
 		.split("/")
@@ -283,6 +491,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	return (
 		// biome-ignore lint/a11y/noStaticElementInteractions: TODO: Fix accessibility issues
 		<div
+			ref={explorerRef}
 			className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1"
 			style={{ "--date-col-width": `${dateColWidth}px` } as CSSProperties}
 			onDrop={(e) => {
@@ -408,6 +617,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									<Button
 										variant="ghost"
 										size="icon-sm"
+										disabled={showSelectionControls}
 										onClick={() => {
 											setIsNewFile(true);
 										}}
@@ -416,11 +626,137 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									Create at {path}
+									{showSelectionControls
+										? "Exit selection mode to create files"
+										: `Create at ${path}`}
 								</TooltipContent>
 							</Tooltip>
 						)}
-						{headerActions}
+						{enableMultiSelect && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant={
+											isSelectionMode
+												? "secondary"
+												: "ghost"
+										}
+										size="icon-sm"
+										onClick={toggleSelectionMode}
+										aria-label="Toggle selection mode"
+									>
+										<CopyCheckIcon className="size-3" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isSelectionMode
+										? "Exit selection mode"
+										: "Enter selection mode"}
+								</TooltipContent>
+							</Tooltip>
+						)}
+						{showSelectionControls &&
+							resolvedSelectedItems.length > 0 &&
+							canMutateFiles && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
+											onClick={openMoveDialog}
+										>
+											<MoveIcon className="size-3" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Move {resolvedSelectedItems.length}{" "}
+										selected item(s)
+									</TooltipContent>
+								</Tooltip>
+							)}
+						{showSelectionControls &&
+							resolvedSelectedItems.length > 0 &&
+							canMutateFiles && (
+								<Tooltip>
+									<Dialog
+										open={showDeleteDialog}
+										onOpenChange={setShowDeleteDialog}
+									>
+										<DialogTrigger asChild>
+											<TooltipTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													className="text-destructive hover:text-destructive"
+												>
+													<TrashIcon className="size-3" />
+												</Button>
+											</TooltipTrigger>
+										</DialogTrigger>
+										<DialogContent>
+											<DialogHeader>
+												<DialogTitle>
+													Delete Files
+												</DialogTitle>
+												<DialogDescription>
+													Are you sure you want to
+													delete{" "}
+													{
+														resolvedSelectedItems.length
+													}{" "}
+													selected item(s)? This
+													action cannot be undone.
+												</DialogDescription>
+											</DialogHeader>
+											<DialogFooter>
+												<Button
+													variant="outline"
+													onClick={() =>
+														setShowDeleteDialog(
+															false,
+														)
+													}
+												>
+													Cancel
+												</Button>
+												<Button
+													onClick={
+														deleteSelectedFiles
+													}
+													className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+												>
+													Delete
+												</Button>
+											</DialogFooter>
+										</DialogContent>
+									</Dialog>
+									<TooltipContent>
+										Delete {resolvedSelectedItems.length}{" "}
+										selected item(s)
+									</TooltipContent>
+								</Tooltip>
+							)}
+						{showSelectionControls &&
+							resolvedSelectedItems.length > 0 &&
+							canMutateFiles && (
+								<MoveFilesDialog
+									open={showMoveDialog}
+									onOpenChange={setShowMoveDialog}
+									selectedCount={resolvedSelectedItems.length}
+									suggestions={moveDestinationSuggestions}
+									onMove={moveSelectedFiles}
+								/>
+							)}
+						<div
+							className={
+								showSelectionControls
+									? "pointer-events-none opacity-50"
+									: ""
+							}
+							aria-disabled={showSelectionControls}
+						>
+							{headerActions}
+						</div>
 					</div>
 				</div>
 				{showSearch && (
@@ -532,7 +868,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 								onItemSelect(item);
 							}}
 						>
-							{files.map((i) => {
+							{files.map((i, index) => {
 								return (
 									<ItemComponent
 										key={i.path}
@@ -541,6 +877,23 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 										refresh={() => getFiles.refresh()}
 										ItemComponent={ItemComponent}
 										dateColWidth={dateColWidth}
+										multiSelect={showSelectionControls}
+										isSelected={selectedPaths.has(i.path)}
+										isPathSelected={(itemPath) =>
+											selectedPaths.has(itemPath)
+										}
+										onSelectionChange={(
+											item,
+											selected,
+											shiftKey,
+										) =>
+											handleSelectionChange(
+												item,
+												selected,
+												index,
+												shiftKey,
+											)
+										}
 									/>
 								);
 							})}
