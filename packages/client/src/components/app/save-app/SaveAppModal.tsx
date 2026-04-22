@@ -83,7 +83,7 @@ export const SaveAppModal = (props: SaveAppProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={() => !isLoading && handleClose()}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent className="sm:max-w-2xl" showCloseButton={false}>
 				<DialogHeader>
 					<div className="flex items-center justify-between">
 						<DialogTitle>{title}</DialogTitle>

@@ -1,8 +1,8 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, Search } from "lucide-react";
 import type React from "react";
 import { Suspense, useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { MonacoEditor } from "@semoss/shared";
 import {
 	Button,
@@ -15,6 +15,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import dropbox from "../../assets/img/DROPBOX.png";
 import github from "../../assets/img/github.png";

@@ -1,4 +1,5 @@
-import type { GridRowSelectionModel } from "@mui/x-data-grid";
+type GridRowSelectionModel = (string | number)[];
+
 import {
 	AlarmClock,
 	AlertCircle,
@@ -11,7 +12,7 @@ import {
 	Trash,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -26,6 +27,7 @@ import {
 	TabsTrigger,
 } from "@semoss/ui/next";
 import { useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { DeleteJobModal } from "./delete-job-modal";
 import type {
 	HistoryJob,
@@ -74,8 +76,8 @@ export function JobsPage() {
 
 	const searchRef = useRef(null);
 
-	const [jobs, setJobs] = useState<any[]>([]);
-	const [history, setHistory] = useState<any[]>([]);
+	const [jobs, setJobs] = useState<Job[]>([]);
+	const [history, setHistory] = useState<HistoryJob[]>([]);
 	const [jobsLoading, setJobsLoading] = useState(false);
 	const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -84,7 +86,7 @@ export function JobsPage() {
 		useState<GridRowSelectionModel>([]);
 
 	const [jobToDelete, setJobToDelete] = useState(null);
-	const [jobsToDelete, setJobsToDelete] = useState<any[]>([]);
+	const [jobsToDelete, setJobsToDelete] = useState<Job[]>([]);
 	const [deleteMultiple, setDeleteMultiple] = useState(false);
 
 	const getJobs = () => {
@@ -659,7 +661,9 @@ export function JobsPage() {
 									<Button
 										size="sm"
 										onClick={() =>
-											navigate("/settings/jobs/add-new-job")
+											navigate(
+												"/settings/jobs/add-new-job",
+											)
 										}
 									>
 										<Plus className="mr-1 h-4 w-4" /> Add
@@ -681,7 +685,9 @@ export function JobsPage() {
 									<TabsTrigger
 										value="All"
 										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedJobTab === "All" ? "data-[state=active]:after:opacity-100" : ""
+											selectedJobTab === "All"
+												? "data-[state=active]:after:opacity-100"
+												: ""
 										}`}
 									>
 										All
@@ -689,7 +695,9 @@ export function JobsPage() {
 									<TabsTrigger
 										value="Active"
 										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedJobTab === "Active" ? "data-[state=active]:after:opacity-100" : ""
+											selectedJobTab === "Active"
+												? "data-[state=active]:after:opacity-100"
+												: ""
 										}`}
 									>
 										Active
@@ -697,7 +705,9 @@ export function JobsPage() {
 									<TabsTrigger
 										value="Inactive"
 										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedJobTab === "Inactive" ? "data-[state=active]:after:opacity-100" : ""
+											selectedJobTab === "Inactive"
+												? "data-[state=active]:after:opacity-100"
+												: ""
 										}`}
 									>
 										Inactive
@@ -716,7 +726,9 @@ export function JobsPage() {
 									<TabsTrigger
 										value="All"
 										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedHistoryTab === "All" ? "data-[state=active]:after:opacity-100" : ""
+											selectedHistoryTab === "All"
+												? "data-[state=active]:after:opacity-100"
+												: ""
 										}`}
 									>
 										All
@@ -724,7 +736,9 @@ export function JobsPage() {
 									<TabsTrigger
 										value="Success"
 										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedHistoryTab === "Success" ? "data-[state=active]:after:opacity-100" : ""
+											selectedHistoryTab === "Success"
+												? "data-[state=active]:after:opacity-100"
+												: ""
 										}`}
 									>
 										Success
@@ -732,7 +746,9 @@ export function JobsPage() {
 									<TabsTrigger
 										value="Failed"
 										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedHistoryTab === "Failed" ? "data-[state=active]:after:opacity-100" : ""
+											selectedHistoryTab === "Failed"
+												? "data-[state=active]:after:opacity-100"
+												: ""
 										}`}
 									>
 										Failed

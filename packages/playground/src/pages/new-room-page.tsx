@@ -126,7 +126,7 @@ export const NewRoomPage = observer(() => {
 	const getPrompts = usePixel<Prompt[]>(
 		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
 			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
-			: null,
+			: "",
 		{
 			data: [],
 		},
@@ -220,10 +220,11 @@ export const NewRoomPage = observer(() => {
 				mcp: tempRoomStore.options.mcp,
 			};
 
-			// add workspace id
+			// add workspace id and name
 			if (mode === "workspace") {
 				options.workspace = {
 					workspace_id: getWorkspace.data?.workspace_id || "",
+					name: getWorkspace.data?.name,
 				};
 			}
 
@@ -304,7 +305,7 @@ export const NewRoomPage = observer(() => {
 		setPrompts(
 			Array.isArray(getWorkspace.data.prompts)
 				? getWorkspace.data.prompts.map((p) =>
-						typeof p === "string" ? p : p.id,
+						typeof p === "string" ? p : (p as { id: string }).id,
 					)
 				: [],
 		);
@@ -364,8 +365,11 @@ export const NewRoomPage = observer(() => {
 			tags: p.tags,
 			version: p.version,
 			intent: p.intent,
-			createdBy: p.created_by,
-			dateCreated: p.date_created,
+			// TODO: figure out why this is done this way
+			createdBy: (p as unknown as { created_by: string }).created_by,
+			dateCreated: (p as unknown as { date_created: string })
+				.date_created,
+			global: false, // TODO: figure out if this is needed
 		}));
 
 		tempRoomStore.setOptions({

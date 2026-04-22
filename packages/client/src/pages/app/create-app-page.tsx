@@ -5,8 +5,9 @@ import {
 	UploadIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { STATE_VERSION, type Variable } from "@semoss/renderer";
+import { Link, Navigate } from "react-router-dom";
+import type { Variable } from "@semoss/renderer";
+import { STATE_VERSION } from "@semoss/renderer/version";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -29,11 +30,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import DragAndDropImage from "@/assets/img/DragDrop.png";
 import { AddAppModal, NewAppModal, TEMPLATES } from "@/components/app";
 import { LandingHeader } from "@/components/landing";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
 	BASE_APP_VARIABLES,
@@ -201,7 +202,7 @@ export const CreateAppPage = () => {
 										<div className="relative w-full overflow-hidden rounded-t-xl bg-accent">
 											<div className="absolute inset-0 z-10 bg-black/50" />
 											<img
-												src={DragAndDropImage}
+												src={template.image}
 												alt={template.name}
 												className="aspect-video w-full object-cover"
 											/>

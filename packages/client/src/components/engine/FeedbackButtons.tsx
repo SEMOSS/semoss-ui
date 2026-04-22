@@ -1,18 +1,12 @@
-import { ThumbDownOffAlt, ThumbUpOffAlt } from "@mui/icons-material";
+import { ThumbsDown, ThumbsUp } from "lucide-react";
 import { useState } from "react";
-import { IconButton, Stack, styled } from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+import { Button, toast } from "@semoss/ui/next";
 
 interface FeedbackButtonsProps {
 	messageId: string;
 	onFeedbackCall: (messageId: string, value: "true" | "false") => void;
 	initialValue?: "true" | "false" | null;
 }
-
-const StyledIcon = styled(IconButton)(() => ({
-	opacity: 0.7,
-	padding: 0,
-}));
 
 export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 	messageId,
@@ -33,20 +27,26 @@ export const FeedbackButtons: React.FC<FeedbackButtonsProps> = ({
 	};
 
 	return (
-		<Stack direction="row" display="flex" alignItems="center">
-			<StyledIcon
+		<div className="flex items-center">
+			<Button
+				variant="ghost"
+				size="icon-sm"
 				onClick={() => handleFeedback("true")}
 				disabled={!!feedback}
+				className="opacity-70"
 			>
-				<ThumbUpOffAlt fontSize="small" />
-			</StyledIcon>
+				<ThumbsUp className="size-4" />
+			</Button>
 
-			<StyledIcon
+			<Button
+				variant="ghost"
+				size="icon-sm"
 				onClick={() => handleFeedback("false")}
 				disabled={!!feedback}
+				className="opacity-70"
 			>
-				<ThumbDownOffAlt fontSize="small" />
-			</StyledIcon>
-		</Stack>
+				<ThumbsDown className="size-4" />
+			</Button>
+		</div>
 	);
 };

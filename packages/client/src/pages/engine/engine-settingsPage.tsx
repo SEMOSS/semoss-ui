@@ -1,10 +1,10 @@
-import { useNavigate } from "react-router-dom";
 import { MembersTable } from "@semoss/shared";
 import { H2 } from "@semoss/ui/next";
 import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
 import { useEngine } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export const EngineSettingsPage = () => {
 	const { name, path, type, active } = useEngine();
