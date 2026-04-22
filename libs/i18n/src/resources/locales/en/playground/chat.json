@@ -34,27 +34,6 @@
 		"addTask": "Add Task",
 		"confirmPlan": "Confirm Plan"
 	},
-	"tool": {
-		"failed": "Failed",
-		"cancelled": "Cancelled",
-		"completed": "Completed",
-		"ready": "Ready",
-		"autoExecute": "Auto-executing",
-		"paused": "Paused",
-		"queued": "In queue to auto-execute",
-		"cancel": "Cancel",
-		"expand": "Expand",
-		"openInSidebar": "Open in sidebar",
-		"closeInSidebar": "Close sidebar",
-		"collapse": "Collapse",
-		"openInline": "Open in-line",
-		"groupLabelClosed": "{{toolName}} + {{count}} more",
-		"groupLabelOpen": "Executed Tools ({{count}})",
-		"groupSummaryCompleted": "{{count}} completed",
-		"groupSummaryError": "{{count}} failed",
-		"groupSummaryCancelled": "{{count}} cancelled",
-		"groupSummaryPaused": "{{count}} paused"
-	},
 	"notifications": {
 		"feedbackSuccess": "Thank you for the feedback!",
 		"rewriteSuccess": "Successfully rewrote message",
