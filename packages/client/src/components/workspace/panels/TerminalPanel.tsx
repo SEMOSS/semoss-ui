@@ -2,12 +2,84 @@ import { Code, Terminal as TerminalIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { buildTable, Terminal, type TerminalProps } from "@semoss/ui";
-import { Button, ToggleGroup, ToggleGroupItem, toast } from "@semoss/ui/next";
+import {
+	Button,
+	Terminal,
+	type TerminalProps,
+	ToggleGroup,
+	ToggleGroupItem,
+	toast,
+} from "@semoss/ui/next";
 import PythonLogo from "@/assets/img/PYTHON.svg";
 import RLogo from "@/assets/img/R-logo.svg";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
+
+const buildTable = (
+	table: Record<string, unknown>[] | unknown[][],
+	limit = 10,
+): string => {
+	if (table.length === 0) {
+		return `[]`;
+	}
+
+	const columns = Object.keys(table[0]);
+	const hasHeader = typeof columns[0] === "string";
+	const columnWidths: Record<string, number> = {};
+	for (const c of columns) {
+		columnWidths[c] = c.length;
+	}
+
+	for (let rowIdx = 0, rowLen = table.length; rowIdx < rowLen; rowIdx++) {
+		if (rowIdx + 1 < limit) {
+			break;
+		}
+		for (const c of columns) {
+			columnWidths[c] = Math.max(
+				columnWidths[c],
+				String((table[rowIdx] as Record<string, unknown>)[c]).length,
+			);
+		}
+	}
+
+	for (const c in columnWidths) {
+		columnWidths[c] += 2;
+	}
+
+	const generated: string[] = [];
+	generated.push(
+		`┌${columns.map((c) => "─".repeat(columnWidths[c])).join("┬")}┐`,
+	);
+
+	if (hasHeader) {
+		generated.push(
+			`│${columns.map((c) => ` ${c.padEnd(columnWidths[c] - 2)} `).join("│")}│`,
+		);
+		generated.push(
+			`├${columns.map((c) => "─".repeat(columnWidths[c])).join("┼")}┤`,
+		);
+	}
+
+	for (let rowIdx = 0, rowLen = table.length; rowIdx < rowLen; rowIdx++) {
+		if (rowIdx + 1 < limit) {
+			break;
+		}
+		const row = table[rowIdx] as Record<string, unknown>;
+		generated.push(
+			`│${columns.map((c) => ` ${String(row[c]).padEnd(columnWidths[c] - 2)} `).join("│")}│`,
+		);
+	}
+
+	generated.push(
+		`└${columns.map((c) => "─".repeat(columnWidths[c])).join("┴")}┘`,
+	);
+
+	if (limit < table.length) {
+		generated.push(`Limited to ${limit} rows`);
+	}
+
+	return generated.join("\n");
+};
 
 const LANGUAGE = {
 	PIXEL: "Pixel",
@@ -46,7 +118,7 @@ export const TerminalPanel: React.FC = observer(() => {
 
 	const [command, setCommand] = useState<string>("");
 	const [language, setLanguage] = useState("PIXEL");
-	const suggesstionsList = useRef([]);
+	const suggesstionsList = useRef<string[]>([]);
 
 	/**
 	 * Get instructions based on the language
@@ -68,60 +140,23 @@ export const TerminalPanel: React.FC = observer(() => {
 	};
 
 	useEffect(() => {
-		const getSuggestions = async () => {
-			const suggestions = await runPixel<string[]>("META|help();");
-			const suggestionsData = await suggestions;
-			const suggestionsJson: string =
-				suggestionsData?.pixelReturn[0]?.output || "";
-			const suggesstionsArray = suggestionsJson.split("\n");
-			const suggestionsIndexBased = suggesstionsArray
-				.map((item, index) => (item.indexOf(":") > -1 ? index : -1))
-				.filter((item) => item > -1);
-			const suggesstionsSection = [];
-			const suggesstionsData = {} as {
-				GeneralReactors: string[];
-				TinkerFrameReactors: string[];
-				PythonFrameReactors: string[];
-				RFrameReactors: string[];
-			};
-			for (let i = 0; i < suggestionsIndexBased.length - 1; i++) {
-				suggesstionsSection.push([
-					suggestionsIndexBased[i],
-					suggestionsIndexBased?.[i + 1] || -1,
-				]);
-				suggesstionsData[
-					suggesstionsArray[suggestionsIndexBased[i]]
-						.toString()
-						.trim()
-						.replaceAll(" ", "")
-						.replaceAll(":", "")
-				] = suggestionsIndexBased?.[i + 1]
-					? suggesstionsArray.slice(
-							suggestionsIndexBased[i] + 1,
-							suggestionsIndexBased?.[i + 1],
-						)
-					: suggesstionsArray.slice(suggestionsIndexBased[i] + 1);
-			}
-			Object.keys(suggesstionsData).forEach((key) => {
-				suggesstionsData[key] = suggesstionsData[key].flatMap((item) =>
-					item.split(" ").filter((innerItem) => innerItem.length > 0),
-				);
-			});
-			return suggesstionsData;
-		};
-
-		getSuggestions()
-			.then((data) => {
+		runPixel("META | HelpJson();")
+			.then((response) => {
+				const data =
+					(response?.pixelReturn[0]?.output as Record<
+						string,
+						string[]
+					>) ?? {};
 				if (language === "PIXEL") {
-					suggesstionsList.current = data?.GeneralReactors || [];
+					suggesstionsList.current = data?.General ?? [];
 				} else if (language === "SHELL") {
-					suggesstionsList.current = data?.TinkerFrameReactors || [];
+					suggesstionsList.current = data?.Tinker ?? [];
 				} else if (language === "PYTHON") {
-					suggesstionsList.current = data?.PythonFrameReactors || [];
+					suggesstionsList.current = data?.Python ?? [];
 				} else if (language === "R") {
-					suggesstionsList.current = data?.RFrameReactors || [];
+					suggesstionsList.current = data?.R ?? [];
 				} else {
-					suggesstionsList.current = data?.GeneralReactors || [];
+					suggesstionsList.current = data?.General ?? [];
 				}
 			})
 			.catch(() => {

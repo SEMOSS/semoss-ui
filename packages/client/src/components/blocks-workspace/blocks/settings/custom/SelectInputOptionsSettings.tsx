@@ -9,7 +9,7 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import { Input } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 /**

@@ -611,6 +611,11 @@ export class RoomStore {
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
 
+				// Store workspace name for display
+				if (workspaceOutput?.name && newOptions.workspace) {
+					newOptions.workspace.name = workspaceOutput.name;
+				}
+
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
 					workspaceOutput?.mcp &&

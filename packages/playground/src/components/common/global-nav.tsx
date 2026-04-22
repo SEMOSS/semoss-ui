@@ -107,6 +107,32 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
+	const getPinnedRooms = useIteratorPixel<
+		{
+			ROOM_ID: string;
+			ROOM_NAME: string;
+			DATE_CREATED: string;
+			WORKSPACE_ID?: string;
+			PINNED?: boolean;
+		}[],
+		{
+			ROOM_ID: string;
+			ROOM_NAME: string;
+			DATE_CREATED: string;
+			WORKSPACE_ID?: string;
+			PINNED?: boolean;
+		}
+	>(
+		(limit, offset) =>
+			open
+				? `GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"]);`
+				: "",
+		() => -1,
+		(response) => response,
+		{},
+		[],
+	);
+
 	const getRooms = useIteratorPixel<
 		{
 			ROOM_ID: string;
@@ -188,7 +214,12 @@ export const GlobalNav = observer(() => {
 		// keep this counter
 		chat.keys.roomCounter;
 		getRooms.reset();
-	}, [getRooms.reset, chat.keys.roomCounter]);
+		getPinnedRooms.reset();
+		if (scrollElementRef.current) {
+			scrollElementRef.current.scrollTop = 0;
+			setSavedScrollPosition(0);
+		}
+	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
 
 	/**
 	 * Save and restore scroll position when sidebar opens/closes
@@ -212,17 +243,15 @@ export const GlobalNav = observer(() => {
 	/**
 	 * Bucket the rooms by date
 	 */
+	const pinnedRoomIds = new Set(getPinnedRooms.data.map((r) => r.ROOM_ID));
+
 	const bucketedRooms = getRooms.data.reduce(
 		(acc, val) => {
+			// Skip rooms handled by the dedicated pinned query
+			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
+
 			const d = dayjs(`${val.DATE_CREATED}Z`);
 
-			// Pinned rooms only go in Favorites bucket
-			if (val.PINNED) {
-				acc[t("buckets.favorites")].push(val);
-				return acc; // Don't add to date buckets
-			}
-
-			// Non-pinned rooms go in date-based buckets
 			if (systemDate.isSame(d, "day")) {
 				acc[t("buckets.today")].push(val);
 			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
@@ -242,7 +271,7 @@ export const GlobalNav = observer(() => {
 			return acc;
 		},
 		{
-			[t("buckets.favorites")]: [],
+			[t("buckets.favorites")]: [...getPinnedRooms.data],
 			[t("buckets.today")]: [],
 			[t("buckets.yesterday")]: [],
 			[t("buckets.fewDaysAgo")]: [],
@@ -267,6 +296,7 @@ export const GlobalNav = observer(() => {
 
 			// Refetch rooms after toggling favorite
 			getRooms.reset();
+			getPinnedRooms.reset();
 		} catch {
 			toast.error(
 				isFavorite

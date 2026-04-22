@@ -1,7 +1,6 @@
 import { Filter, LayoutGrid, List, Plus, Search, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Badge,
 	Button,
@@ -21,6 +20,7 @@ import {
 import { NavbarLeft } from "@/components/shared/NavbarLeft";
 import { NavbarHeader } from "@/components/shared/navbar-header";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { PromptLibraryCards } from "../../components/prompt/library/prompt-library-cards";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptModal } from "./PromptModal";

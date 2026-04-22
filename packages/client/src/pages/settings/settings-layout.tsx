@@ -6,7 +6,6 @@ import {
 	Outlet,
 	Link as RouterLink,
 	useLocation,
-	useNavigate,
 	useParams,
 } from "react-router-dom";
 import {
@@ -33,6 +32,7 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPrefer
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
@@ -323,7 +323,8 @@ export const SettingsLayout = observer(() => {
 											: state &&
 													typeof state === "object" &&
 													"name" in state
-												? (state as any).name
+												? (state as { name?: string })
+														.name
 												: matchedRoute.title}
 									</h1>
 								)}

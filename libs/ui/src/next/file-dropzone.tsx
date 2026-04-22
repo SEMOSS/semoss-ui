@@ -124,7 +124,7 @@ const FileDropzone = React.forwardRef<HTMLDivElement, FileDropzoneProps>(
 						{files.map((f) => (
 							<li
 								key={f.name}
-								className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-1.5 text-sm"
+								className="flex min-w-0 items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-1.5 text-sm"
 							>
 								<span className="truncate">{f.name}</span>
 								{!disabled && (

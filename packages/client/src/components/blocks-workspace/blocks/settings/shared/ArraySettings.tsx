@@ -2,7 +2,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Button, Input, Muted, Small } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface ArraySettingsProps {
 	/**

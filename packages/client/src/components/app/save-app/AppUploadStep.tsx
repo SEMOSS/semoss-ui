@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 import { useId, useState } from "react";
 import { type Control, Controller } from "react-hook-form";
-import { FileDropzone } from "@semoss/ui";
 import {
+	FileDropzone,
 	Label,
 	Select,
 	SelectContent,
