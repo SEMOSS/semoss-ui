@@ -773,7 +773,7 @@ export const GlobalNav = observer(() => {
 								onClick={handleStartTour}
 								data-tour="tour-take-tour"
 							>
-								<MapIcon className="size-4" />
+								<MapIcon />
 								{t("takeTour")}
 							</SidebarMenuButton>
 						</SidebarMenuItem>
