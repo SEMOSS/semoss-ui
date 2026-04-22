@@ -21,7 +21,6 @@ import {
 	H4,
 	Markdown,
 	P,
-	Quote,
 	ScrollArea,
 	ScrollBar,
 	Separator,
@@ -1269,7 +1268,12 @@ const createMarkdownComponents = (
 	table: ({ ...props }) => (
 		<ScrollArea className="w-full">
 			<ScrollBar orientation="horizontal"></ScrollBar>
-			<Table {...props} />
+			<Table
+				{...props}
+				showExportButton={
+					import.meta.env.VITE_ENABLE_EXCEL_DOWNLOAD_BUTTON === "true"
+				}
+			/>
 		</ScrollArea>
 	),
 });

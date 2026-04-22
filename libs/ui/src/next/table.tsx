@@ -1,56 +1,36 @@
 import { Button, Stack } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
-import { Download } from "lucide-react";
 import type * as React from "react";
-import { useState } from "react";
 import * as XLSX from "xlsx";
 import { cn } from "@/lib/utils";
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+interface TableProps extends React.ComponentProps<"table"> {
+	showExportButton?: boolean;
+}
+
+const ENV_SHOW_EXPORT_BUTTON =
+	(import.meta as unknown as { env: Record<string, string> }).env
+		.VITE_ENABLE_EXCEL_DOWNLOAD_BUTTON === "true";
+
+function Table({
+	className,
+	showExportButton = ENV_SHOW_EXPORT_BUTTON,
+	...props
+}: TableProps) {
 	const id = `table-${Math.random() * 1000}`;
-	const [showExportButton, setShowExportButton] = useState(false);
 
 	return (
 		<div>
-			<Stack
-				direction="row"
-				spacing={1}
-				style={{ float: "right", marginBottom: "5px" }}
-			>
-				{/* Toggle Button */}
-				<Button
-					variant="outlined"
-					onClick={() => setShowExportButton(!showExportButton)}
-					size="large"
-					aria-label={
-						showExportButton
-							? "Hide Export to Excel"
-							: "Show Export to Excel"
-					}
-					sx={{
-						textTransform: "none",
-						borderRadius: 2,
-						px: 2,
-						borderColor: "#b18950`",
-						color: "white",
-						backgroundColor: "#b18950",
-						"&:hover": {
-							borderColor: "#8a6a3d",
-							backgroundColor: "#b18950",
-						},
-					}}
+			{showExportButton && (
+				<Stack
+					direction="row"
+					spacing={1}
+					style={{ float: "right", marginBottom: "5px" }}
 				>
-					{showExportButton
-						? "Hide Export to Excel"
-						: "Show Export to Excel"}
-				</Button>
-
-				{/* Actual Export Button - Only visible when showExportButton is true */}
-				{showExportButton && (
 					<Tooltip
 						title="Export to Excel"
 						arrow
-						placement="right"
+						placement="left"
 						slotProps={{
 							tooltip: {
 								sx: {
@@ -67,10 +47,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
 						}}
 					>
 						<Button
-							variant="contained"
-							style={{
-								background: "#b18950",
-							}}
+							variant="text"
 							onClick={() => {
 								const today = new Date();
 								const formattedDate = today
@@ -87,31 +64,24 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
 								borderRadius: 2,
 								px: 1.5,
 								gap: 1,
+								minWidth: 0,
 							}}
 						>
-							<Stack
-								direction="row"
-								alignItems="center"
-								spacing={1}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 384 512"
+								width="24"
+								height="24"
+								fill="rgb(177, 137, 80)"
+								aria-hidden="true"
 							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									viewBox="0 0 384 512"
-									width="24"
-									height="24"
-									fill="#77b976"
-									style={{ opacity: 1 }}
-									aria-hidden="true"
-								>
-									<title>Export to Excel</title>
-									<path d="M64 0C28.7 0 0 28.7 0 64v384c0 35.3 28.7 64 64 64h256c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0zm192 0v128h128zM155.7 250.2l36.3 51.9l36.3-51.9c7.6-10.9 22.6-13.5 33.4-5.9s13.5 22.6 5.9 33.4L221.3 344l46.4 66.2c7.6 10.9 5 25.8-5.9 33.4s-25.8 5-33.4-5.9L192 385.8l-36.3 51.9c-7.6 10.9-22.6 13.5-33.4 5.9s-13.5-22.6-5.9-33.4l46.3-66.2l-46.4-66.2c-7.6-10.9-5-25.8 5.9-33.4s25.8-5 33.4 5.9z" />
-								</svg>
-								<Download fontSize="medium" />
-							</Stack>
+								<title>Export to Excel</title>
+								<path d="M64 0C28.7 0 0 28.7 0 64v384c0 35.3 28.7 64 64 64h256c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0zm192 0v128h128zM155.7 250.2l36.3 51.9l36.3-51.9c7.6-10.9 22.6-13.5 33.4-5.9s13.5 22.6 5.9 33.4L221.3 344l46.4 66.2c7.6 10.9 5 25.8-5.9 33.4s-25.8 5-33.4-5.9L192 385.8l-36.3 51.9c-7.6 10.9-22.6 13.5-33.4 5.9s-13.5-22.6-5.9-33.4l46.3-66.2l-46.4-66.2c-7.6-10.9-5-25.8 5.9-33.4s25.8-5 33.4 5.9z" />
+							</svg>
 						</Button>
 					</Tooltip>
-				)}
-			</Stack>
+				</Stack>
+			)}
 
 			<div
 				data-slot="table-container"
@@ -229,6 +199,7 @@ function TableCaption({
 	);
 }
 
+export type { TableProps };
 export {
 	Table,
 	TableHeader,
