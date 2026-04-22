@@ -1,13 +1,21 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Renderer } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import type { AppMetadata, AppType } from "@/components/app";
-import { CodeRenderer } from "@/components/code-workspace";
 import { PlatformMessages } from "@/components/shared";
+
+const Renderer = lazy(() =>
+	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
+);
+const CodeRenderer = lazy(() =>
+	import("@/components/code-workspace").then((m) => ({
+		default: m.CodeRenderer,
+	})),
+);
+
 import { useRootStore } from "@/hooks";
 
 export const SharePage = observer(() => {
@@ -87,10 +95,18 @@ export const SharePage = observer(() => {
 
 	return (
 		<div className="flex h-screen w-screen overflow-hidden">
-			{type === "CODE" ? <CodeRenderer appId={appId} /> : null}
-			{type === "BLOCKS" ? (
-				<Renderer appId={appId} insightId={insightId} />
-			) : null}
+			<Suspense
+				fallback={
+					<div className="flex h-screen w-screen items-center justify-center">
+						<Spinner />
+					</div>
+				}
+			>
+				{type === "CODE" ? <CodeRenderer appId={appId} /> : null}
+				{type === "BLOCKS" ? (
+					<Renderer appId={appId} insightId={insightId} />
+				) : null}
+			</Suspense>
 			<PlatformMessages />
 		</div>
 	);

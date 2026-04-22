@@ -1,10 +1,10 @@
-import LANDINGPAGE from "@/assets/img/LandingPage.jpeg";
+import QUERY from "@/assets/img/DragDrop.png";
 import type { Template } from "./templates.types";
 
 export const LandingPageTemplate: Template = {
 	name: "Landing Page",
 	description: "A simple starter landing page with navigation cards",
-	image: LANDINGPAGE,
+	image: QUERY,
 	author: "SYSTEM",
 	lastUpdatedDate: new Date().toISOString(),
 	tags: [],

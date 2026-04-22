@@ -10,7 +10,8 @@
         ".": {
             "types": "./dist/types/index.d.ts",
             "default": "./dist/index.mjs"
-        }
+        },
+        "./version": "./src/version.ts"
     },
     "scripts": {
         "dev": "rollup -w -c",

@@ -39,7 +39,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { MarkdownEditor } from "@/components/common";
+import { MarkdownEditor } from "@/components/common/MarkdownEditor";
 import { GenerateWithAIModal } from "@/components/engine/generate-with-ai-modal";
 import { useEngine, usePixel, useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";

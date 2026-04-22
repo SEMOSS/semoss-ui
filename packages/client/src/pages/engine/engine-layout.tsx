@@ -9,7 +9,7 @@ import {
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
-import { ResourceNotFound } from "@/components/common";
+import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
@@ -87,6 +87,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	);
 
 	// convert the data into an object
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pre-existing dep array uses JSON.stringify for stability
 	const values = useMemo(() => {
 		if (getEngineMetadata.status !== "SUCCESS") {
 			return {};
@@ -150,6 +151,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		: (permissionFromApi ?? "READ_ONLY");
 
 	// get the tabs based on permission and database type
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pre-existing dep array shape
 	const tabs = useMemo(() => {
 		// must be valid
 		if (!route) {
