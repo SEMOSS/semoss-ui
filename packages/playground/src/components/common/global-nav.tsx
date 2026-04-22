@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import {
-	MapIcon,
 	ComputerIcon,
 	HelpCircle,
+	MapIcon,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -129,7 +129,7 @@ export const GlobalNav = observer(() => {
 			PINNED?: boolean;
 		}
 	>(
-		(limit, offset) =>
+		(_limit, offset) =>
 			open
 				? `GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"]);`
 				: "",
@@ -725,11 +725,11 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
-				{root.theme.sidebar.footerItems.length > 0 && (
-					<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
-						{/* biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons */}
+				<SidebarMenu className="gap-2 p-2">
+					{root.theme.sidebar.footerItems.length > 0 && (
+						// biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons
 						<div
-							className="relative"
+							className="relative group-data-[collapsible=icon]:hidden"
 							role="button"
 							tabIndex={0}
 							onMouseEnter={() => setHelpOpen(true)}
@@ -766,22 +766,18 @@ export const GlobalNav = observer(() => {
 								</div>
 							)}
 						</div>
-					</SidebarMenu>
-				)}
-				{root.theme.tour?.show !== false && (
-					<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
-						<SidebarMenuItem>
+					)}
+					{root.theme.tour?.show !== false && (
+						<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
 							<SidebarMenuButton
 								onClick={handleStartTour}
 								data-tour="tour-take-tour"
 							>
-								<MapIcon className="size-4" />
-								Take a tour
+								<MapIcon />
+								{t("takeTour")}
 							</SidebarMenuButton>
 						</SidebarMenuItem>
-					</SidebarMenu>
-				)}
-				<SidebarMenu className="gap-2 p-2">
+					)}
 					<SidebarMenuItem>
 						<NavUser />
 					</SidebarMenuItem>
