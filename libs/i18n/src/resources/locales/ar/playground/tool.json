@@ -1,0 +1,57 @@
+{
+	"status": {
+		"failed": "فشل",
+		"cancelled": "ملغى",
+		"completed": "مكتمل",
+		"ready": "جاهز",
+		"autoExecute": "جارٍ التنفيذ التلقائي",
+		"paused": "متوقف مؤقتاً",
+		"queued": "في قائمة الانتظار للتنفيذ التلقائي"
+	},
+	"actions": {
+		"cancel": "إلغاء",
+		"expand": "توسيع",
+		"collapse": "طي",
+		"openInSidebar": "فتح في الشريط الجانبي",
+		"closeInSidebar": "إغلاق الشريط الجانبي",
+		"openInline": "فتح في السطر"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} + {{count}} أخرى",
+		"labelOpen": "الأدوات المنفذة ({{count}})",
+		"summaryCompleted": "{{count}} مكتمل",
+		"summaryError": "{{count}} فشل",
+		"summaryCancelled": "{{count}} ملغى",
+		"summaryPaused": "{{count}} متوقف مؤقتاً"
+	},
+	"form": {
+		"result": "النتيجة",
+		"schemaLoadFailed": "فشل تحميل مخطط الأداة",
+		"schemaLoadFailedDescription": "تعذّر استرداد تكوين الأداة. يرجى المحاولة مرة أخرى لاحقاً.",
+		"schemaLoading": "جارٍ تحميل مخطط الأداة...",
+		"noParameters": "لا توجد معاملات مطلوبة",
+		"showParameters": "عرض المعاملات ({{count}})",
+		"hideParameters": "إخفاء المعاملات ({{count}})",
+		"showOptionalFields": "عرض الحقول الاختيارية ({{count}})",
+		"hideOptionalFields": "إخفاء الحقول الاختيارية ({{count}})",
+		"execute": "تشغيل الأداة",
+		"executing": "جارٍ التنفيذ..."
+	},
+	"playwright": {
+		"details": "تفاصيل سكريبت Playwright",
+		"projectId": "معرّف المشروع",
+		"recordedFile": "الملف المسجّل"
+	},
+	"extension": {
+		"required": "إضافة المتصفح مطلوبة",
+		"notResponding": "إضافة المتصفح لا تستجيب. لتشغيل سكريبتات Playwright، يرجى التأكد من تثبيت إضافة SEMOSS لـ Chrome وأن اللوحة الجانبية مفتوحة.",
+		"stepsTitle": "خطوات فتح الإضافة:",
+		"step1": "ابحث عن أيقونة إضافة SEMOSS في شريط أدوات المتصفح (أيقونة قطعة الأحجية)",
+		"step2": "انقر على أيقونة الإضافة لفتح اللوحة الجانبية",
+		"step3": "انتظر حتى يتم تحميل اللوحة بالكامل",
+		"step4": "انقر على \"إعادة المحاولة\" أدناه للمتابعة",
+		"cancel": "إلغاء",
+		"retry": "إعادة المحاولة",
+		"checking": "جارٍ التحقق..."
+	}
+}

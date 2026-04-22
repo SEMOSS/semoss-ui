@@ -1,0 +1,57 @@
+{
+	"status": {
+		"failed": "失敗",
+		"cancelled": "キャンセル済み",
+		"completed": "完了",
+		"ready": "準備完了",
+		"autoExecute": "自動実行中",
+		"paused": "一時停止中",
+		"queued": "自動実行のキュー待ち"
+	},
+	"actions": {
+		"cancel": "キャンセル",
+		"expand": "展開",
+		"collapse": "折りたたむ",
+		"openInSidebar": "サイドバーで開く",
+		"closeInSidebar": "サイドバーを閉じる",
+		"openInline": "インラインで開く"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} 他 {{count}} 件",
+		"labelOpen": "実行済みツール ({{count}})",
+		"summaryCompleted": "{{count}} 件完了",
+		"summaryError": "{{count}} 件失敗",
+		"summaryCancelled": "{{count}} 件キャンセル",
+		"summaryPaused": "{{count}} 件一時停止"
+	},
+	"form": {
+		"result": "結果",
+		"schemaLoadFailed": "ツールスキーマの読み込みに失敗しました",
+		"schemaLoadFailedDescription": "ツールの設定を取得できませんでした。後でもう一度お試しください。",
+		"schemaLoading": "ツールスキーマを読み込んでいます...",
+		"noParameters": "パラメーターは不要です",
+		"showParameters": "パラメーターを表示 ({{count}})",
+		"hideParameters": "パラメーターを非表示 ({{count}})",
+		"showOptionalFields": "任意フィールドを表示 ({{count}})",
+		"hideOptionalFields": "任意フィールドを非表示 ({{count}})",
+		"execute": "ツールを実行",
+		"executing": "実行中..."
+	},
+	"playwright": {
+		"details": "Playwright スクリプトの詳細",
+		"projectId": "プロジェクト ID",
+		"recordedFile": "記録済みファイル"
+	},
+	"extension": {
+		"required": "ブラウザー拡張機能が必要です",
+		"notResponding": "ブラウザー拡張機能が応答していません。Playwright スクリプトを実行するには、SEMOSS Chrome 拡張機能がインストールされており、サイドパネルが開いていることを確認してください。",
+		"stepsTitle": "拡張機能を開く手順:",
+		"step1": "ブラウザーのツールバーで SEMOSS 拡張機能のアイコン（パズルのピースのアイコン）を探してください",
+		"step2": "拡張機能のアイコンをクリックしてサイドパネルを開いてください",
+		"step3": "パネルが完全に読み込まれるまでお待ちください",
+		"step4": "続行するには、下の「再試行」をクリックしてください",
+		"cancel": "キャンセル",
+		"retry": "再試行",
+		"checking": "確認中..."
+	}
+}
