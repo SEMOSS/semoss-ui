@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { AppSettings } from "@/components/app";
@@ -9,6 +9,7 @@ import {
 	UpdateSMSS,
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { Role } from "@/types";
 
 type VIEW = "CURRENT" | "PENDING" | "APP";

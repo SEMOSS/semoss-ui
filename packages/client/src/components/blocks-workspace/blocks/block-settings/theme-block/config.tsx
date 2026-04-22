@@ -1,12 +1,13 @@
 import { Copy, ExternalLink, X } from "lucide-react";
 import { type CSSProperties, useState } from "react";
-import { darkTheme, lightTheme } from "@semoss/ui";
 import {
 	Button,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	darkTheme,
+	lightTheme,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -17,7 +18,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import {
 	BaseSettingSection,
 	ColorSettings,

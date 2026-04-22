@@ -1,4 +1,4 @@
-import { BlurLinear } from "@mui/icons-material";
+import { SlidersHorizontal } from "lucide-react";
 import {
 	InputSettings,
 	SelectInputSettings,
@@ -12,7 +12,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_CHART,
-	icon: BlurLinear,
+	icon: SlidersHorizontal,
 	contentMenu: [
 		{
 			name: "General",
