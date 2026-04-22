@@ -1,4 +1,4 @@
-import { FileDropzone } from "@semoss/ui";
+import { FileDropzone } from "@semoss/ui/next";
 
 /**
  * @deprecated

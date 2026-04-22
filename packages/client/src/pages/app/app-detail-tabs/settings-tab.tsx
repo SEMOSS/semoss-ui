@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FileDropzone } from "@semoss/ui";
 import {
 	Avatar,
 	AvatarFallback,
@@ -17,6 +16,7 @@ import {
 	CardHeader,
 	CardTitle,
 	Field,
+	FileDropzone,
 	H3,
 	H4,
 	Input,

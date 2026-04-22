@@ -11,7 +11,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { Input, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 /**

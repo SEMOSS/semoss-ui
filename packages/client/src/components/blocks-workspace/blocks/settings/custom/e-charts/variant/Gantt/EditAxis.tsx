@@ -7,7 +7,7 @@ import type {
 	PathValue,
 } from "@semoss/renderer";
 import { Button, Input, Slider, Switch } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 const INITIAL_AXIS_STATE = {
 	axistitle: "",

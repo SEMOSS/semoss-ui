@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
 import { Button } from "@semoss/ui/next";
+import { useNavigate } from "@/hooks/useNavigate";
 
 interface ResourceNotFoundProps {
 	catalogPath: string;

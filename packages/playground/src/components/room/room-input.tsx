@@ -324,7 +324,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					throw new Error("Error processing chat");
 				}
 			} catch (e) {
-				toast.error(getGracefulErrorMessage(e));
+				toast.error(getGracefulErrorMessage(e as Error));
 			}
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);

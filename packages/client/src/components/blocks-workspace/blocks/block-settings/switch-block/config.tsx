@@ -1,4 +1,4 @@
-import { ToggleOn } from "@mui/icons-material";
+import { ToggleRight } from "lucide-react";
 import type { CSSProperties } from "react";
 import {
 	InputSettings,
@@ -21,7 +21,7 @@ export const DefaultStyles: CSSProperties = {
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: ToggleOn,
+	icon: ToggleRight,
 	contentMenu: [
 		{
 			name: "General",
