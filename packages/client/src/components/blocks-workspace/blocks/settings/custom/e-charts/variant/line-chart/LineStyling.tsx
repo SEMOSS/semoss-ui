@@ -15,7 +15,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { Line_Curve_Type, Line_Type } from "../../Visualization.constants";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {

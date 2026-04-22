@@ -23,7 +23,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import { AppDeleteModal } from "@/components/app";
+import { AppDeleteModal } from "@/components/app/app-delete-modal";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import { formatToDataTestId } from "@/utility";
 import type { AppMetadata } from "./app.types";

@@ -1,10 +1,20 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
-import { BlocksWorkspace } from "@/components/blocks-workspace";
-import { CodeWorkspace } from "@/components/code-workspace";
 import { WorkspaceContext } from "@/contexts";
+
+const BlocksWorkspace = lazy(() =>
+	import("@/components/blocks-workspace").then((m) => ({
+		default: m.BlocksWorkspace,
+	})),
+);
+const CodeWorkspace = lazy(() =>
+	import("@/components/code-workspace").then((m) => ({
+		default: m.CodeWorkspace,
+	})),
+);
+
 import { useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 
@@ -34,7 +44,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 			.then((loadedWorkspace) => {
 				setWorkspace(loadedWorkspace);
 			})
-			.catch((e) => {
+			.catch((_e) => {
 				toast.error("Failed to load app, returning to home page.");
 
 				navigate("/");
@@ -88,8 +98,16 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 				workspace: workspace,
 			}}
 		>
-			{workspace.type === "CODE" && <CodeWorkspace />}
-			{workspace.type === "BLOCKS" && <BlocksWorkspace />}
+			<Suspense
+				fallback={
+					<div className="flex h-full w-full items-center justify-center">
+						<Spinner />
+					</div>
+				}
+			>
+				{workspace.type === "CODE" && <CodeWorkspace />}
+				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
+			</Suspense>
 		</WorkspaceContext.Provider>
 	);
 };

@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { getValueByPath } from "@semoss/renderer";
 import { Switch } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface LegendDendrogramProps {
 	id: string;

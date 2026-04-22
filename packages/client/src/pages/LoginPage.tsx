@@ -20,7 +20,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import GIF from "@/assets/img/login-gif.gif";
+import LOGIN_HERO from "@/assets/img/login-hero.jpeg";
 import { useRootStore } from "@/hooks";
 
 interface TypeUserLogin {
@@ -56,6 +56,7 @@ export const LoginPage = observer(() => {
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [loginHeroImage, setLoginHeroImage] = useState(LOGIN_HERO);
 
 	const {
 		control,
@@ -139,6 +140,20 @@ export const LoginPage = observer(() => {
 			setLoginType("linotp");
 		}
 	}, [isNative, isLdap, isLinOTP]);
+
+	useEffect(() => {
+		const timeoutId = window.setTimeout(() => {
+			import("@/assets/img/login-gif.gif")
+				.then((module) => {
+					setLoginHeroImage(module.default);
+				})
+				.catch(() => undefined);
+		}, 1200);
+
+		return () => {
+			window.clearTimeout(timeoutId);
+		};
+	}, []);
 
 	const login = handleSubmit(
 		async (data: TypeUserLogin): Promise<TypeUserLogin> => {
@@ -1132,7 +1147,13 @@ export const LoginPage = observer(() => {
 					</div>
 					<div className="z-10 h-full w-[336px] shrink-0 bg-gradient-to-r from-background to-transparent" />
 					<div className="absolute inset-y-0 right-0 z-0 overflow-hidden">
-						<img src={GIF} alt="" className="h-full object-cover" />
+						<img
+							src={loginHeroImage}
+							alt=""
+							className="h-full object-cover"
+							loading="lazy"
+							decoding="async"
+						/>
 					</div>
 				</div>
 				{isLoading && (

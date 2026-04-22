@@ -9,7 +9,7 @@ import type {
 	PathValue,
 } from "@semoss/renderer";
 import { Button, Input } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerSettingsNew } from "../../../../settings/shared/ColorPickerSettingsNew";
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {

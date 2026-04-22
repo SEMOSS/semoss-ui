@@ -1,5 +1,5 @@
-import { ActionMessages } from "@semoss/renderer";
-import QUERY from "@/assets/img/query.jpeg";
+import QUERY from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 export const AskCSVTemplate: Template = {
@@ -175,7 +175,7 @@ export const AskCSVTemplate: Template = {
 								payload: {
 									queryId: "ask-model",
 								},
-								message: ActionMessages.RUN_QUERY,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_QUERY,
 							},
 						],
 					},
