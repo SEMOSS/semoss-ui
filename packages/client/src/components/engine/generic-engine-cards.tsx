@@ -523,7 +523,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				>
 					<div className="flex min-w-0 flex-1 items-start gap-2.5">
 						{/* Engine icon — always visible */}
-						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-muted/30 p-1">
+						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-transparent p-1">
 							{customIcon ? (
 								<div className="flex h-full w-full items-center justify-center">
 									{customIcon}
