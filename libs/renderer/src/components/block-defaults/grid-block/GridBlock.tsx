@@ -1,6 +1,5 @@
-import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useBlock, useBlocks, useFrame, useFrameHeaders } from "../../../hooks";
 import {
 	ActionMessages,
@@ -11,6 +10,27 @@ import { CustomToolbar } from "./CustomToolbar";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
 import { GridFooter } from "./GridFooter";
 import type { GridBlockColumn } from "./grid-block.types";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Button,
+} from "@semoss/ui/next";
+import {
+	ArrowUpDown,
+	ArrowUp,
+	ArrowDown,
+	ChevronLeft,
+	ChevronRight,
+} from "lucide-react";
 
 // Type for query import cell parameters
 interface QueryImportCellParams {
@@ -122,7 +142,6 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 export const GridBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData } = useBlock<GridBlockDef>(id);
 	const { state } = useBlocks();
-	const apiRef = useGridApiRef();
 	const [paginationModel, setPaginationModel] = useState({
 		page: 0,
 		pageSize: 50,
@@ -139,6 +158,11 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		mouseY: number;
 		column: GridBlockColumn;
 		value: unknown;
+	} | null>(null);
+
+	const [sortConfig, setSortConfig] = useState<{
+		field: string;
+		direction: "asc" | "desc";
 	} | null>(null);
 
 	// Find the source QueryImportCell or DataImportCell that created this frame
@@ -411,113 +435,32 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		}
 	}
 
-	const columns = columnsToDisplay.map((col) => ({
-		field: col.name,
-		headerName: col.name,
-		sortable: true,
-		filterable: true,
-		renderHeader: () => (
-			<div
-				style={{
-					// Apply style if the column is selected
-					backgroundColor: headerSettings.selectedColumn.includes(
-						col.name,
-					)
-						? headerSettings.backgroundColor
-						: "inherit",
-					color: headerSettings.selectedColumn.includes(col.name)
-						? headerSettings.fontColor
-						: "inherit",
-					fontSize: headerSettings.selectedColumn.includes(col.name)
-						? `${headerSettings.fontSize}px`
-						: "inherit",
-					padding: "8px",
-					width: "100%",
-					whiteSpace:
-						wrapTextSettings.textWrap &&
-						wrapTextSettings.selectedColumn.includes(col.name)
-							? "normal"
-							: "nowrap",
-					wordBreak:
-						wrapTextSettings.textWrap &&
-						wrapTextSettings.selectedColumn.includes(col.name)
-							? "break-word"
-							: "normal",
-				}}
-			>
-				{col.name}
-			</div>
-		),
+	const headerSettings = {
+		fontSize: "16",
+		fontColor: "#000000",
+		selectedColumn: [] as string[],
+		backgroundColor: "white",
+		...data.option?.headerBackgroundSettings,
+	};
 
-		renderCell: (params) => {
-			const isWrapEnabled =
-				wrapTextSettings.textWrap &&
-				wrapTextSettings.selectedColumn.includes(col.name);
+	const cellSettings = {
+		fontSize: "16",
+		fontColor: "#000000",
+		selectedColumn: [] as string[],
+		backgroundColor: "white",
+		...data.option?.cellBackgroundSettings,
+	};
 
-			const origionalStyle: React.CSSProperties = {
-				// Apply style if the column is selected
-				backgroundColor: cellSettings.selectedColumn.includes(col.name)
-					? cellSettings.backgroundColor
-					: "inherit",
-				color: cellSettings.selectedColumn.includes(col.name)
-					? cellSettings.fontColor
-					: "inherit",
-				fontSize: cellSettings.selectedColumn.includes(col.name)
-					? `${cellSettings.fontSize}px`
-					: "inherit",
-				padding: "8px",
-				width: "100%",
-				lineHeight: isWrapEnabled ? "1.5" : "normal",
-				whiteSpace:
-					wrapTextSettings.textWrap &&
-					wrapTextSettings.selectedColumn.includes(col.name)
-						? "normal"
-						: "nowrap",
-				wordBreak:
-					wrapTextSettings.textWrap &&
-					wrapTextSettings.selectedColumn.includes(col.name)
-						? "break-word"
-						: "normal",
-			};
+	const wrapTextSettings = {
+		selectedColumn: [] as string[],
+		textWrap: false,
+		...data.option?.wrapTextSettings,
+	};
 
-			const matchingRowRules = colorRules.filter((rule) => {
-				return evaluate(
-					params.row[rule.column],
-					rule.comparator,
-					rule.value,
-				);
-			});
+	const colorRules: ColorRule[] = data.option?.colorByValue || [];
 
-			const style = { ...origionalStyle };
-			for (const rule of matchingRowRules) {
-				if (rule.colorEntireRow) {
-					style.backgroundColor = rule.color;
-					style.color = "#fff";
-					break;
-				}
-
-				if (rule.valueColumn === col.name) {
-					style.backgroundColor = rule.color;
-					style.color = "#fff";
-					break;
-				}
-			}
-
-			return (
-				// biome-ignore lint/a11y/noStaticElementInteractions: context menu on DataGrid cell — keyboard handled by DataGrid
-				<div
-					onContextMenu={(e) =>
-						handleTableCellOnContextMenu(e, col, params.value)
-					}
-					style={{
-						...style,
-					}}
-				>
-					{params.value}
-				</div>
-			);
-		},
-	}));
+	const showVerticalBorders = !!data.option?.rowSpanning;
+	const rowHeight = data.option?.rowSpanning ? 50 : undefined;
 
 	// When batching is enabled, use accumulated data; otherwise use frame data directly
 	const dataToDisplay = isBatchingEnabled
@@ -535,71 +478,64 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	const rows = dataToDisplay.map((r, rIdx) => {
 		const obj: Record<string, unknown> = { id: rIdx };
-		columns.forEach((col) => {
-			// Use the column field name to find the correct index in the data array
-			const dataIndex = columnIndexMap.get(col.field);
+		columnsToDisplay.forEach((col, colIdx) => {
+			const dataIndex = columnIndexMap.get(col.name);
 			if (dataIndex !== undefined) {
-				obj[col.field] = r[dataIndex];
+				obj[col.name] = r[dataIndex];
 			} else {
-				// Fallback: if no mapping found, the data might be in the same order as columns
-				const fallbackIndex = columns.findIndex(
-					(c) => c.field === col.field,
-				);
-				obj[col.field] = r[fallbackIndex];
+				obj[col.name] = r[colIdx];
 			}
 		});
 		return obj;
 	});
 
-	const handlePaginationModalChange = (newmodel) => {
-		// if the page size has changed reset the page
+	// Client-side sorting on the current page
+	const sortedRows = useMemo(() => {
+		if (!sortConfig) return rows;
+		return [...rows].sort((a, b) => {
+			const aVal = a[sortConfig.field];
+			const bVal = b[sortConfig.field];
+			if (aVal == null && bVal == null) return 0;
+			if (aVal == null) return 1;
+			if (bVal == null) return -1;
+			if (typeof aVal === "number" && typeof bVal === "number") {
+				return sortConfig.direction === "asc"
+					? aVal - bVal
+					: bVal - aVal;
+			}
+			const aStr = String(aVal);
+			const bStr = String(bVal);
+			const cmp = aStr.localeCompare(bStr);
+			return sortConfig.direction === "asc" ? cmp : -cmp;
+		});
+	}, [rows, sortConfig]);
+
+	const handleSort = (field: string) => {
+		setSortConfig((prev) => {
+			if (prev?.field === field) {
+				if (prev.direction === "asc") {
+					return { field, direction: "desc" };
+				}
+				// If already desc, clear sort
+				return null;
+			}
+			return { field, direction: "asc" };
+		});
+	};
+
+	const handlePaginationModalChange = (newmodel: {
+		page: number;
+		pageSize: number;
+	}) => {
 		if (newmodel.pageSize !== paginationModel.pageSize) {
-			setPaginationModel({
-				page: 0,
-				pageSize: newmodel.pageSize,
-			});
+			setPaginationModel({ page: 0, pageSize: newmodel.pageSize });
 		} else {
 			setPaginationModel(newmodel);
 		}
 	};
 
-	const headerSettings = {
-		fontSize: "16",
-		fontColor: "#000000",
-		selectedColumn: [],
-		backgroundColor: "white",
-		...data.option?.headerBackgroundSettings,
-	};
-
-	const cellSettings = {
-		fontSize: "16",
-		fontColor: "#000000",
-		selectedColumn: [],
-		backgroundColor: "white",
-		...data.option?.cellBackgroundSettings,
-	};
-
-	const wrapTextSettings = {
-		selectedColumn: [],
-		textWrap: false,
-		...data.option?.wrapTextSettings,
-	};
-
-	const colorRules: ColorRule[] = data.option?.colorByValue || [];
-
-	const getRowHeight = () => {
-		if (data.option?.rowSpanning) {
-			return 50;
-		}
-		return "auto";
-	};
-
 	// Disable Load More button if:
-	// 1. Currently loading more data
-	// 2. Source cell is currently running
-	// 3. Last batch returned fewer rows than batchSize (no more data available)
-	// 4. Last batch returned 0 rows (no data in grid)
-	// Disable Load More if currently loading, or if last batch was partial (less than batchSize rows)
+	// Currently loading, or last batch was partial (less than batchSize rows)
 	const lastBatchWasPartial =
 		frame.data.values.length > 0 && frame.data.values.length < batchSize;
 	const hasNoRows = rows.length === 0;
@@ -608,6 +544,54 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		sourceCell?.isLoading ||
 		lastBatchWasPartial ||
 		hasNoRows;
+
+	// Pagination display values
+	const totalRows = frame.count ?? 0;
+	const startRow =
+		totalRows > 0 ? paginationModel.page * paginationModel.pageSize + 1 : 0;
+	const endRow = Math.min(
+		(paginationModel.page + 1) * paginationModel.pageSize,
+		totalRows,
+	);
+	const totalPages = Math.max(
+		1,
+		Math.ceil(totalRows / paginationModel.pageSize),
+	);
+
+	/**
+	 * Export rows to CSV (used by CustomToolbar)
+	 */
+	const handleExportCsv = () => {
+		const headers = columnsToDisplay.map((c) => c.name);
+		const csvRows = [
+			headers.join(","),
+			...sortedRows.map((row) =>
+				headers
+					.map((h) => {
+						const val = row[h];
+						if (val == null) return "";
+						const str = String(val);
+						// Escape double-quotes and wrap in quotes if it contains comma/newline/quote
+						if (
+							str.includes(",") ||
+							str.includes("\n") ||
+							str.includes('"')
+						) {
+							return `"${str.replace(/"/g, '""')}"`;
+						}
+						return str;
+					})
+					.join(","),
+			),
+		];
+		const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `${data.frame?.name || "grid-export"}.csv`;
+		a.click();
+		URL.revokeObjectURL(url);
+	};
 
 	return (
 		<div
@@ -620,65 +604,299 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			}}
 			{...attrs}
 		>
-			<div style={{ flex: 1, width: "100%", height: "100%" }}>
-				<DataGrid
-					apiRef={apiRef}
-					rows={rows}
-					columns={columns}
-					pagination
-					density="compact"
-					paginationMode="server"
-					rowCount={frame.count}
-					paginationModel={paginationModel}
-					onPaginationModelChange={handlePaginationModalChange}
-					pageSizeOptions={[10, 50, 100]}
-					getRowHeight={getRowHeight}
-					columnHeaderHeight={50}
-					disableColumnMenu={!data.option?.enableExport}
-					disableColumnSorting={!data.option?.enableExport}
-					disableRowSelectionOnClick
-					slots={{
-						toolbar: data.option?.enableExport
-							? () => (
-									<CustomToolbar
-										apiRef={apiRef}
-										frameName={data.frame?.name}
-										isBatchingEnabled={isBatchingEnabled}
-									/>
-								)
-							: undefined,
-						footer: isBatchingEnabled
-							? () => (
-									<GridFooter
-										isBatchingEnabled={isBatchingEnabled}
-										loadingMore={loadingMore}
-										shouldDisableLoadMore={
-											shouldDisableLoadMore
-										}
-										onLoadMore={handleLoadMore}
-									/>
-								)
-							: undefined,
-					}}
-					showCellVerticalBorder={!!data.option?.rowSpanning}
-					showColumnVerticalBorder={!!data.option?.rowSpanning}
-					unstable_rowSpanning={data.option?.rowSpanning}
-					sx={{
-						borderRadius: "0",
-						"& .MuiDataGrid-columnHeaderTitleContainer": {
-							fontWeight: "bold",
-						},
-						"& .MuiDataGrid-columnHeader": {
-							padding: "0px",
-						},
-						"& .MuiDataGrid-columnHeaderTitleContainerContent": {
-							width: "100%",
-						},
-						"& .MuiDataGrid-cell": {
-							padding: "0px",
-						},
-					}}
-				/>
+			<div
+				className="flex flex-col border"
+				style={{ flex: 1, width: "100%", height: "100%" }}
+			>
+				{/* Toolbar */}
+				{data.option?.enableExport && (
+					<CustomToolbar
+						frameName={data.frame?.name}
+						isBatchingEnabled={isBatchingEnabled}
+						onExportCsv={handleExportCsv}
+					/>
+				)}
+
+				{/* Table */}
+				<div className="flex-1 overflow-auto">
+					<Table>
+						<TableHeader>
+							<TableRow className="hover:bg-transparent">
+								{columnsToDisplay.map((col) => {
+									const isSelected =
+										headerSettings.selectedColumn.includes(
+											col.name,
+										);
+									const isWrap =
+										wrapTextSettings.textWrap &&
+										wrapTextSettings.selectedColumn.includes(
+											col.name,
+										);
+									return (
+										<TableHead
+											key={col.name}
+											className="cursor-pointer select-none"
+											style={{
+												height: 50,
+												padding: 0,
+												...(showVerticalBorders
+													? {
+															borderRight:
+																"1px solid var(--border)",
+														}
+													: {}),
+											}}
+											onClick={() =>
+												handleSort(col.name)
+											}
+										>
+											<div
+												className="flex items-center gap-1"
+												style={{
+													backgroundColor: isSelected
+														? headerSettings.backgroundColor
+														: "inherit",
+													color: isSelected
+														? headerSettings.fontColor
+														: "inherit",
+													fontSize: isSelected
+														? `${headerSettings.fontSize}px`
+														: "inherit",
+													padding: "8px",
+													width: "100%",
+													fontWeight: "bold",
+													whiteSpace: isWrap
+														? "normal"
+														: "nowrap",
+													wordBreak: isWrap
+														? "break-word"
+														: "normal",
+												}}
+											>
+												{col.name}
+												{sortConfig?.field ===
+												col.name ? (
+													sortConfig.direction ===
+													"asc" ? (
+														<ArrowUp className="size-3.5 shrink-0" />
+													) : (
+														<ArrowDown className="size-3.5 shrink-0" />
+													)
+												) : (
+													<ArrowUpDown className="size-3.5 shrink-0 opacity-30" />
+												)}
+											</div>
+										</TableHead>
+									);
+								})}
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{sortedRows.length === 0 ? (
+								<TableRow>
+									<TableCell
+										colSpan={columnsToDisplay.length}
+										className="h-24 text-center text-muted-foreground"
+									>
+										No rows
+									</TableCell>
+								</TableRow>
+							) : (
+								sortedRows.map((row) => (
+									<TableRow key={row.id as number}>
+										{columnsToDisplay.map((col) => {
+											const cellValue = row[col.name];
+											const isWrap =
+												wrapTextSettings.textWrap &&
+												wrapTextSettings.selectedColumn.includes(
+													col.name,
+												);
+
+											const baseStyle: React.CSSProperties =
+												{
+													backgroundColor:
+														cellSettings.selectedColumn.includes(
+															col.name,
+														)
+															? cellSettings.backgroundColor
+															: "inherit",
+													color: cellSettings.selectedColumn.includes(
+														col.name,
+													)
+														? cellSettings.fontColor
+														: "inherit",
+													fontSize:
+														cellSettings.selectedColumn.includes(
+															col.name,
+														)
+															? `${cellSettings.fontSize}px`
+															: "inherit",
+													padding: "8px",
+													width: "100%",
+													lineHeight: isWrap
+														? "1.5"
+														: "normal",
+													whiteSpace: isWrap
+														? "normal"
+														: "nowrap",
+													wordBreak: isWrap
+														? "break-word"
+														: "normal",
+												};
+
+											// Apply color-by-value rules
+											const matchingRowRules =
+												colorRules.filter((rule) =>
+													evaluate(
+														String(
+															row[rule.column] ??
+																"",
+														),
+														rule.comparator,
+														rule.value,
+													),
+												);
+
+											const style = { ...baseStyle };
+											for (const rule of matchingRowRules) {
+												if (rule.colorEntireRow) {
+													style.backgroundColor =
+														rule.color;
+													style.color = "#fff";
+													break;
+												}
+												if (
+													rule.valueColumn ===
+													col.name
+												) {
+													style.backgroundColor =
+														rule.color;
+													style.color = "#fff";
+													break;
+												}
+											}
+
+											return (
+												<TableCell
+													key={col.name}
+													className="p-0"
+													style={{
+														...(rowHeight
+															? {
+																	height: rowHeight,
+																}
+															: {}),
+														...(showVerticalBorders
+															? {
+																	borderRight:
+																		"1px solid var(--border)",
+																}
+															: {}),
+													}}
+												>
+													{/* biome-ignore lint/a11y/noStaticElementInteractions: context menu on grid cell */}
+													<div
+														onContextMenu={(e) =>
+															handleTableCellOnContextMenu(
+																e,
+																col,
+																cellValue,
+															)
+														}
+														style={style}
+													>
+														{cellValue != null
+															? String(cellValue)
+															: ""}
+													</div>
+												</TableCell>
+											);
+										})}
+									</TableRow>
+								))
+							)}
+						</TableBody>
+					</Table>
+				</div>
+
+				{/* Footer — batch loading */}
+				{isBatchingEnabled && (
+					<GridFooter
+						isBatchingEnabled={isBatchingEnabled}
+						loadingMore={loadingMore}
+						shouldDisableLoadMore={shouldDisableLoadMore}
+						onLoadMore={handleLoadMore}
+					/>
+				)}
+
+				{/* Pagination — server-side */}
+				{!isBatchingEnabled && (
+					<div className="flex items-center justify-between border-t px-3 py-1.5 text-sm">
+						<div className="flex items-center gap-2">
+							<span className="text-muted-foreground">
+								Rows per page:
+							</span>
+							<Select
+								value={String(paginationModel.pageSize)}
+								onValueChange={(val) =>
+									handlePaginationModalChange({
+										page: 0,
+										pageSize: Number(val),
+									})
+								}
+							>
+								<SelectTrigger size="sm" className="w-16">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{[10, 50, 100].map((size) => (
+										<SelectItem
+											key={size}
+											value={String(size)}
+										>
+											{size}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+						<span className="text-muted-foreground">
+							{startRow}–{endRow} of {totalRows}
+						</span>
+						<div className="flex items-center gap-1">
+							<Button
+								variant="ghost"
+								size="icon"
+								className="size-8"
+								disabled={paginationModel.page === 0}
+								onClick={() =>
+									handlePaginationModalChange({
+										page: paginationModel.page - 1,
+										pageSize: paginationModel.pageSize,
+									})
+								}
+							>
+								<ChevronLeft className="size-4" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="icon"
+								className="size-8"
+								disabled={
+									paginationModel.page >= totalPages - 1
+								}
+								onClick={() =>
+									handlePaginationModalChange({
+										page: paginationModel.page + 1,
+										pageSize: paginationModel.pageSize,
+									})
+								}
+							>
+								<ChevronRight className="size-4" />
+							</Button>
+						</div>
+					</div>
+				)}
 			</div>
 			<GridBlockContextMenu
 				id={id}
