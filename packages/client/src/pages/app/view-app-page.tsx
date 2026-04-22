@@ -80,7 +80,7 @@ export const ViewAppPage = observer(() => {
 	// hide the screen while it loads
 	if (!workspace) {
 		return (
-			<div className="flex h-screen w-screen items-center justify-center">
+			<div className="absolute inset-0 flex items-center justify-center">
 				<Spinner />
 			</div>
 		);
