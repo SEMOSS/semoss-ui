@@ -16,7 +16,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BAR_CHART_DATA, LINE_CHART_DATA } from "../../Visualization.constants";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {

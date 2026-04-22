@@ -1,6 +1,5 @@
 import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	InputGroup,
@@ -19,6 +18,7 @@ import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { ENGINE_TYPES } from "@/types";
 
 export interface DBMember {
@@ -548,6 +548,7 @@ export const EngineSettingsIndexPage = (
 									db.engine_display_name || db.engine_name;
 								const rowType = db.engine_type || type;
 								const rowSubtype = db.engine_subtype;
+								const detailHref = `#/settings/${type.toLowerCase()}/${db.engine_id}`;
 
 								return (
 									<div key={`${db.engine_id}`}>
@@ -564,6 +565,7 @@ export const EngineSettingsIndexPage = (
 											votes={db.upvotes}
 											views={db.views}
 											trending={db.trending}
+											href={detailHref}
 											isGlobal={db.engine_global}
 											isUpvoted={db.hasUpvoted}
 											isFavorite={isFavorited(db)}

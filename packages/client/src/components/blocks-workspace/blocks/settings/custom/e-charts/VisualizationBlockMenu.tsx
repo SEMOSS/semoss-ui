@@ -3,7 +3,7 @@ import type {
 	BlockComponent,
 	EchartVisualizationBlockDef,
 } from "@semoss/renderer";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { AIGenerationSettings, JsonSettings } from "../../shared";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
 import {

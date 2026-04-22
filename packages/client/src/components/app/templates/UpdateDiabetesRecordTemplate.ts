@@ -1,5 +1,5 @@
-import { ActionMessages } from "@semoss/renderer";
-import CHATAI from "@/assets/img/query.jpeg";
+import CHATAI from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 // TODO:
@@ -233,7 +233,7 @@ export const UpdateDiabetesRecordTemplate: Template = {
 								payload: {
 									queryId: "update-diabetes-record",
 								},
-								message: ActionMessages.RUN_QUERY,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_QUERY,
 							},
 						],
 					},
@@ -723,7 +723,7 @@ export const UpdateDiabetesRecordTemplate: Template = {
 								payload: {
 									queryId: "on-page-load",
 								},
-								message: ActionMessages.RUN_QUERY,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_QUERY,
 							},
 						],
 					},

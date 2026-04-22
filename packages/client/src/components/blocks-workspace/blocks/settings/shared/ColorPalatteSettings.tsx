@@ -12,7 +12,7 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import { Button, Input, Muted } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
 	/**

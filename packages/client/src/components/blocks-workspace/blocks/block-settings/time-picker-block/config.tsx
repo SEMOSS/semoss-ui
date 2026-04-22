@@ -1,4 +1,4 @@
-import { AccessTime } from "@mui/icons-material";
+import { Clock } from "lucide-react";
 import type { CSSProperties } from "react";
 import { InputSettings, SelectInputSettings } from "../../settings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
@@ -13,7 +13,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 export const DefaultStyles: CSSProperties = {};
 
 // Helper function to generate multi-select options for views
-const getViewsOptions = () => {
+const _getViewsOptions = () => {
 	const views = [
 		{ label: "Hours", value: "hours" },
 		{ label: "Minutes", value: "minutes" },
@@ -26,7 +26,7 @@ const getViewsOptions = () => {
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: AccessTime,
+	icon: Clock,
 	contentMenu: [
 		{
 			name: "General",

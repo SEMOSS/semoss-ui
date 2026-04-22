@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import ErrorSvg from "@/assets/img/Error.svg";
+import { useNavigate } from "@/hooks/useNavigate";
 
 /**
  * Component to be rendered in the ErrorBoundary on the NavigatorLayout

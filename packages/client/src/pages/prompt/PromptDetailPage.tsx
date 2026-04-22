@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
 	Alert,
 	AlertDescription,
@@ -38,6 +38,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { Prompt } from "../../components/prompt/prompt.types";
 import { PromptDeleteModal } from "../../components/prompt/prompt-delete-modal";
 import { PromptModal } from "./PromptModal";

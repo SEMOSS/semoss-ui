@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type { EchartVisualizationBlockDef } from "@semoss/renderer";
 import { Switch } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface ToggleDataZoomProps {
 	id: string;

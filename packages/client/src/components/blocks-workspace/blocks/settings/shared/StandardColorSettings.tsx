@@ -11,7 +11,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { Muted } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface StandardColorSettingProps<D extends BlockDef = BlockDef> {
 	id: string;

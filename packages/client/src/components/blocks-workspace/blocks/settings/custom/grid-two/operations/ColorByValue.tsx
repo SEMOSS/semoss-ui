@@ -17,7 +17,7 @@ import {
 	SelectValue,
 	Switch,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerWithSwatch } from "../../../../settings/shared/ColorPickerWithSwatch";
 
 export interface ColorByValueProps {
