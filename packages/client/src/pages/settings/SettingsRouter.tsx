@@ -1,16 +1,18 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { JobsPage } from "../jobs/JobsPage";
+import { AddNewJob } from "../jobs/add-new-job";
+import { JobsPage } from "../jobs/jobs-page";
 import { AdminQueryPage } from "./admin-query-page";
 import { AdminThemePage } from "./admin-theme-page";
 import { AppSettingsDetailsPage } from "./app-settings-details-page";
-import { ConfigurationsPage } from "./ConfigurationsPage";
+import { ConfigurationsPage } from "./configurations-page";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
 import { InsightSettingsDetailPage } from "./InsightSettingsDetailPage";
 import { InsightSettingsPage } from "./insight-settings-page";
+import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./MemberSettingsPage";
-import { MyProfilePage } from "./MyProfilePage";
+import { MyProfilePage } from "./my-profile-page";
 import { ProjectSettingsPage } from "./project-settings-page";
 import { RDFMapPage } from "./rdf-map-page";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -32,9 +34,12 @@ const SETTINGS_COMPONETS = {
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
+	"jobs/add-new-job": AddNewJob,
+	"jobs/edit-job/:id": AddNewJob,
 	"team-permissions": TeamsSettingsPage,
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
+	"llm-feedback": LLMFeedbackPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

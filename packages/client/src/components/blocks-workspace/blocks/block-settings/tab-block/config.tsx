@@ -1,4 +1,4 @@
-import { Tab } from "@mui/icons-material";
+import { PanelTop } from "lucide-react";
 import {
 	InputSettings,
 	SelectInputSettings,
@@ -11,7 +11,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: Tab,
+	icon: PanelTop,
 	contentMenu: [
 		{
 			name: "General",

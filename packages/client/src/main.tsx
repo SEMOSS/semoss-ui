@@ -1,7 +1,6 @@
-import React from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import { ErrorBoundary } from "./components/common";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
 
 const container = document.getElementById("root");
 const root = createRoot(container);

@@ -1,41 +1,34 @@
-import {
-	CalendarToday,
-	FontDownload,
-	Schedule,
-	Tag,
-} from "@mui/icons-material";
+import { Calendar, Clock, Hash, Type } from "lucide-react";
 import type React from "react";
 
 interface DatabaseColumnIconProps {
 	type: string;
-	fontSize?: "small" | "medium" | "large";
-	sx?: object;
+	className?: string;
 }
 
 export const DatabaseColumnIcon: React.FC<DatabaseColumnIconProps> = ({
 	type,
-	fontSize = "small",
-	sx = { color: "#666666" },
+	className = "size-4",
 }) => {
 	const getColumnIcon = (columnType: string) => {
 		switch (columnType?.toUpperCase()) {
 			case "STRING":
 			case "VARCHAR":
 			case "TEXT":
-				return <FontDownload fontSize={fontSize} sx={sx} />;
+				return <Type className={className} />;
 			case "DATE":
-				return <CalendarToday fontSize={fontSize} sx={sx} />;
+				return <Calendar className={className} />;
 			case "TIMESTAMP":
 			case "DATETIME":
-				return <Schedule fontSize={fontSize} sx={sx} />;
+				return <Clock className={className} />;
 			case "NUMBER":
 			case "INT":
 			case "INTEGER":
 			case "DOUBLE":
 			case "FLOAT":
-				return <Tag fontSize={fontSize} sx={sx} />;
+				return <Hash className={className} />;
 			default:
-				return <FontDownload fontSize={fontSize} sx={sx} />;
+				return <Type className={className} />;
 		}
 	};
 

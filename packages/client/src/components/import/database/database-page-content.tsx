@@ -1,7 +1,7 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
-import { FileUploadOutlined } from "@mui/icons-material";
+
 import { GitCompare, Search, Upload } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -329,7 +329,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
@@ -414,7 +414,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								data-testid="database-upload-file-button"
 								className="h-10 w-full rounded-lg leading-[0.75] sm:w-auto"
 							>
-								<FileUploadOutlined fontSize="medium" />
+								<Upload className="size-5" />
 							</Button>
 						</div>
 

@@ -1,15 +1,23 @@
 import {
+	ComputerIcon,
+	ExternalLinkIcon,
 	MessageSquareMoreIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
+
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
+	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -23,11 +31,9 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
-	RoomContextChart,
 	RoomInput,
 	RoomInputMenuFileExplorer,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
 import { AskUserTool } from "@/components/mcp/ask-user-tool";
@@ -196,7 +202,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
-	 * Handle tool selection
+	 * Handle tool selection (toggle for plus menu)
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
@@ -212,6 +218,31 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		if (Object.hasOwn(tools, tool.id)) {
 			delete tools[tool.id];
 		} else {
+			tools[tool.id] = tool;
+		}
+
+		room.setOptions({
+			...room.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
+	 * @param tool - selected tool
+	 */
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
+		const tools = room.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, typeof tool>,
+		);
+
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -436,7 +467,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
+						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -482,7 +513,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -538,7 +569,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				{showAskUserOverlay ? (
 					<AskUserTool
 						room={room}
@@ -592,39 +623,44 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</div>
 						)}
 						<RoomInput
+							predefinedPrompts={room.options.predefinedPrompts}
 							className="max-h-56 min-h-24"
 							isLoading={showLoadingState}
 							hidePauseButton={!room.numberOfTools}
 							model={room.model}
+							room={room}
 							setModel={(model) => {
 								room.setModel(model);
 								chat.setSelectedModel(model);
 							}}
+							options={room.options}
+							onMcpSelect={handleToolAdd}
 							MenuComponent={observer(
-								({ addToken, onOpenChange, fileRef }) => (
+								({ onOpenChange, fileRef, editorRef }) => (
 									<>
 										<RoomInputMenuUpload
 											fileRef={fileRef}
 											onSelect={() => onOpenChange(false)}
 										/>
+										<DropdownMenuSeparator />
+										<RoomInputMenuMCP
+											type="KNOWLEDGE"
+											options={room.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() => onOpenChange(false)}
+										/>
+										<RoomInputMenuMCP
+											type="TOOLBOX"
+											options={room.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
 										<RoomInputMenuFileExplorer
 											room={room}
 											onSelect={() => onOpenChange(false)}
-										/>
-										<DropdownMenuSeparator />
-										<RoomInputMenuKnowledge
-											options={room.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
-										<RoomInputMenuToolbox
-											options={room.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
 										/>
 										<DropdownMenuItem
 											onSelect={(e) => {
@@ -653,6 +689,57 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									</>
 								),
 							)}
+							footer={
+								room.options.workspace?.workspace_id ? (
+									room.theme.showPlatformLinks !== false ? (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Badge variant="secondary" asChild>
+														<a
+															target="_blank"
+															href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
+														>
+															<ComputerIcon data-icon="inline-start" />
+															<div className="w-18 truncate">
+																{room.options.workspace
+																	.name ||
+																	room.options
+																		.workspace
+																		.workspace_id}
+															</div>
+															<ExternalLinkIcon data-icon="inline-end" />
+														</a>
+													</Badge>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												Click to view agent details
+											</TooltipContent>
+										</Tooltip>
+									) : (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Badge variant="secondary">
+														<ComputerIcon data-icon="inline-start" />
+														<div className="w-18 truncate">
+															{room.options.workspace
+																.name ||
+																room.options.workspace
+																	.workspace_id}
+														</div>
+													</Badge>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												{room.options.workspace.name ||
+													room.options.workspace.workspace_id}
+											</TooltipContent>
+										</Tooltip>
+									)
+								) : null
+							}
 							onPrompt={handlePrompt}
 							hasOutstandingTools={
 								askUserDismissed &&
@@ -665,12 +752,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							toggleToolsPaused={
 								room.latestResponseMessage.toggleIsPaused
 							}
-							footer={
-								<RoomContextChart
-									tokensUsed={room.tokensUsed}
-									tokensMax={chat.models.contextWindow}
-								/>
-							}
+							tokensUsed={room.tokensUsed}
+							tokensMax={chat.models.contextWindow}
 						/>
 					</>
 				)}

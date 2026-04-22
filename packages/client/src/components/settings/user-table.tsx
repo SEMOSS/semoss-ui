@@ -161,6 +161,7 @@ export const UserTable = (props: UserTableProps) => {
 		setPaginationTotalUsers(nextActiveTotal);
 	}, [getUsers.status, getUsers.data, cachedTotalUsers, hasSearch]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on search change
 	useEffect(() => {
 		resetPage();
 	}, [debouncedSearch, resetPage]);
@@ -493,6 +494,10 @@ export const UserTable = (props: UserTableProps) => {
 																{displayName}
 															</span>
 															<span className="text-muted-foreground text-xs">
+																id: {user.id}
+															</span>
+															<span className="text-muted-foreground text-xs">
+																email:{" "}
 																{user.email ||
 																	"No email"}
 															</span>

@@ -1,4 +1,4 @@
-import { ArrowDownward, ArrowForward, Schema } from "@mui/icons-material";
+import { ArrowDown, ArrowRight, Network } from "lucide-react";
 import {
 	ButtonGroupSettings,
 	QueryInputSettings,
@@ -16,7 +16,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: Schema,
+	icon: Network,
 	contentMenu: [
 		{
 			name: "General",
@@ -73,13 +73,13 @@ export const config: BlockSettingsConfig = {
 							options={[
 								{
 									value: "top",
-									icon: ArrowDownward,
+									icon: ArrowDown,
 									title: "Top",
 									isDefault: false,
 								},
 								{
 									value: "left",
-									icon: ArrowForward,
+									icon: ArrowRight,
 									title: "Left",
 									isDefault: true,
 								},

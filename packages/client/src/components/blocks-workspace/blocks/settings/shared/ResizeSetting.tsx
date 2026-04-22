@@ -10,18 +10,14 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { styled, TextField, ToggleButton, ToggleButtonGroup } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Input, ToggleGroup, ToggleGroupItem } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 /**
  * Used for any style settings that utilize a size number, ex width and height
  * Supports % and px units for size
  */
-
-const StyledBase = styled("div")(({ theme }) => ({
-	padding: "8px 16px",
-}));
 
 interface SizeSettingsProps<D extends BlockDef = BlockDef> {
 	/**
@@ -144,45 +140,38 @@ export const ResizeSetting = observer(
 		};
 
 		return (
-			<StyledBase>
+			<div className="px-4 py-2">
 				<BaseSettingSection label={label} wide>
-					<TextField
-						fullWidth
+					<Input
 						value={parsed.amount}
 						onChange={(e) => {
 							// sync the data on change
 							onChange(e.target.value, parsed.unit);
 						}}
-						size="small"
-						variant="outlined"
 						autoComplete="off"
 					/>
-					<ToggleButtonGroup
+					<ToggleGroup
+						type="single"
 						value={parsed.unit}
-						exclusive
-						size="small"
+						onValueChange={(unit) => {
+							if (unit) {
+								onChange(
+									parsed.amount,
+									unit as "%" | "px" | "em",
+								);
+							}
+						}}
 					>
 						{SIZE_VALUE_TYPES.map((unit) => {
 							return (
-								<ToggleButton
-									key={unit}
-									value={unit}
-									color={
-										parsed.unit === unit
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										onChange(parsed.amount, unit);
-									}}
-								>
+								<ToggleGroupItem key={unit} value={unit}>
 									{unit}
-								</ToggleButton>
+								</ToggleGroupItem>
 							);
 						})}
-					</ToggleButtonGroup>
+					</ToggleGroup>
 				</BaseSettingSection>
-			</StyledBase>
+			</div>
 		);
 	},
 );

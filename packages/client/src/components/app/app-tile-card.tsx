@@ -23,7 +23,7 @@ import {
 	Skeleton,
 	toast,
 } from "@semoss/ui/next";
-import { AppDeleteModal } from "@/components/app";
+import { AppDeleteModal } from "@/components/app/app-delete-modal";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import { formatToDataTestId } from "@/utility";
 import type { AppMetadata } from "./app.types";
@@ -749,11 +749,17 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				</div>
 
 				<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-					<button
+					{/* biome-ignore lint/a11y/useSemanticElements: cannot use <button> here — contains an interactive <Button> child, nested buttons are invalid HTML */}
+					<div
 						ref={leftContentRef}
-						type="button"
-						className="flex min-w-0 flex-1 items-start gap-3 text-left"
+						role="button"
+						tabIndex={0}
+						className="flex min-w-0 flex-1 cursor-pointer items-start gap-3 text-left"
 						onClick={handleCardClick}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ")
+								handleCardClick();
+						}}
 					>
 						<div
 							className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]"
@@ -817,7 +823,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 								</P>
 							) : null}
 						</div>
-					</button>
+					</div>
 
 					<div
 						ref={rightMetaRef}

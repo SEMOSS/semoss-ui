@@ -1,27 +1,85 @@
-import { CodeRounded, TerminalRounded } from "@mui/icons-material";
+import { Code, Terminal as TerminalIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
-	buildTable,
-	Stack,
-	styled,
 	Terminal,
 	type TerminalProps,
-	ToggleButton,
-	ToggleButtonGroup,
-	useNotification,
-} from "@semoss/ui";
+	ToggleGroup,
+	ToggleGroupItem,
+	toast,
+} from "@semoss/ui/next";
 import PythonLogo from "@/assets/img/PYTHON.svg";
 import RLogo from "@/assets/img/R-logo.svg";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
-const StyledImage = styled("img")({
-	height: "13px",
-	wdith: "13px",
-});
+const buildTable = (
+	table: Record<string, unknown>[] | unknown[][],
+	limit = 10,
+): string => {
+	if (table.length === 0) {
+		return `[]`;
+	}
+
+	const columns = Object.keys(table[0]);
+	const hasHeader = typeof columns[0] === "string";
+	const columnWidths: Record<string, number> = {};
+	for (const c of columns) {
+		columnWidths[c] = c.length;
+	}
+
+	for (let rowIdx = 0, rowLen = table.length; rowIdx < rowLen; rowIdx++) {
+		if (rowIdx + 1 < limit) {
+			break;
+		}
+		for (const c of columns) {
+			columnWidths[c] = Math.max(
+				columnWidths[c],
+				String((table[rowIdx] as Record<string, unknown>)[c]).length,
+			);
+		}
+	}
+
+	for (const c in columnWidths) {
+		columnWidths[c] += 2;
+	}
+
+	const generated: string[] = [];
+	generated.push(
+		`┌${columns.map((c) => "─".repeat(columnWidths[c])).join("┬")}┐`,
+	);
+
+	if (hasHeader) {
+		generated.push(
+			`│${columns.map((c) => ` ${c.padEnd(columnWidths[c] - 2)} `).join("│")}│`,
+		);
+		generated.push(
+			`├${columns.map((c) => "─".repeat(columnWidths[c])).join("┼")}┤`,
+		);
+	}
+
+	for (let rowIdx = 0, rowLen = table.length; rowIdx < rowLen; rowIdx++) {
+		if (rowIdx + 1 < limit) {
+			break;
+		}
+		const row = table[rowIdx] as Record<string, unknown>;
+		generated.push(
+			`│${columns.map((c) => ` ${String(row[c]).padEnd(columnWidths[c] - 2)} `).join("│")}│`,
+		);
+	}
+
+	generated.push(
+		`└${columns.map((c) => "─".repeat(columnWidths[c])).join("┴")}┘`,
+	);
+
+	if (limit < table.length) {
+		generated.push(`Limited to ${limit} rows`);
+	}
+
+	return generated.join("\n");
+};
 
 const LANGUAGE = {
 	PIXEL: "Pixel",
@@ -53,8 +111,6 @@ interface TaskData {
 }
 
 export const TerminalPanel: React.FC = observer(() => {
-	const notification = useNotification();
-
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
 	const [, setIsLoading] = useState<boolean>(false);
 	const { workspace } = useWorkspace();
@@ -62,7 +118,7 @@ export const TerminalPanel: React.FC = observer(() => {
 
 	const [command, setCommand] = useState<string>("");
 	const [language, setLanguage] = useState("PIXEL");
-	const suggesstionsList = useRef([]);
+	const suggesstionsList = useRef<string[]>([]);
 
 	/**
 	 * Get instructions based on the language
@@ -84,62 +140,23 @@ export const TerminalPanel: React.FC = observer(() => {
 	};
 
 	useEffect(() => {
-		const getSuggestions = async () => {
-			const suggestions = await runPixel<string[]>("META|help();");
-			const suggestionsData = await suggestions;
-			const suggestionsJson: string =
-				suggestionsData?.pixelReturn[0]?.output || "";
-			const suggesstionsArray = suggestionsJson.split("\n");
-			const suggestionsIndexBased = suggesstionsArray
-				.map((item, index) => (item.indexOf(":") > -1 ? index : -1))
-				.filter((item) => item > -1);
-			// const suggesstionsArraySplitCount = (suggestionsIndexBased.length - 2  > 0) ? (suggestionsIndexBased.length - 2) * 2 : 2;
-			const suggesstionsSection = [];
-			const suggesstionsData = {} as {
-				GeneralReactors: string[];
-				TinkerFrameReactors: string[];
-				PythonFrameReactors: string[];
-				RFrameReactors: string[];
-			};
-			for (let i = 0; i < suggestionsIndexBased.length - 1; i++) {
-				suggesstionsSection.push([
-					suggestionsIndexBased[i],
-					suggestionsIndexBased?.[i + 1] || -1,
-				]);
-				suggesstionsData[
-					suggesstionsArray[suggestionsIndexBased[i]]
-						.toString()
-						.trim()
-						.replaceAll(" ", "")
-						.replaceAll(":", "")
-				] = suggestionsIndexBased?.[i + 1]
-					? suggesstionsArray.slice(
-							suggestionsIndexBased[i] + 1,
-							suggestionsIndexBased?.[i + 1],
-						)
-					: suggesstionsArray.slice(suggestionsIndexBased[i] + 1);
-			}
-			Object.keys(suggesstionsData).forEach((key) => {
-				suggesstionsData[key] = suggesstionsData[key].flatMap((item) =>
-					item.split(" ").filter((innerItem) => innerItem.length > 0),
-				);
-			});
-			//returning GeneralReactors for testing suggesstions
-			return suggesstionsData;
-		};
-
-		getSuggestions()
-			.then((data) => {
+		runPixel("META | HelpJson();")
+			.then((response) => {
+				const data =
+					(response?.pixelReturn[0]?.output as Record<
+						string,
+						string[]
+					>) ?? {};
 				if (language === "PIXEL") {
-					suggesstionsList.current = data?.GeneralReactors || [];
+					suggesstionsList.current = data?.General ?? [];
 				} else if (language === "SHELL") {
-					suggesstionsList.current = data?.TinkerFrameReactors || [];
+					suggesstionsList.current = data?.Tinker ?? [];
 				} else if (language === "PYTHON") {
-					suggesstionsList.current = data?.PythonFrameReactors || [];
+					suggesstionsList.current = data?.Python ?? [];
 				} else if (language === "R") {
-					suggesstionsList.current = data?.RFrameReactors || [];
+					suggesstionsList.current = data?.R ?? [];
 				} else {
-					suggesstionsList.current = data?.GeneralReactors || [];
+					suggesstionsList.current = data?.General ?? [];
 				}
 			})
 			.catch(() => {
@@ -170,7 +187,6 @@ export const TerminalPanel: React.FC = observer(() => {
 				pixel = `Py("<encode>${cleaned}</encode>");`;
 			}
 
-			// run the pixel
 			// TODO: We need to fix workspace.store so we just call runWorkspacePixel
 			const response = await workspace.runWorkspacePixel(pixel);
 
@@ -236,17 +252,13 @@ export const TerminalPanel: React.FC = observer(() => {
 						.download(insightId, formatted as string)
 						.then(() => {
 							if (output && response.errors.length === 0) {
-								notification.add({
-									color: "success",
-									message: `file downloaded successfully`,
-								});
+								toast.success("file downloaded successfully");
 							}
 						})
 						.catch(() => {
-							notification.add({
-								color: "error",
-								message: `Error occurred while trying to download`,
-							});
+							toast.error(
+								"Error occurred while trying to download",
+							);
 						});
 				}
 
@@ -268,10 +280,7 @@ export const TerminalPanel: React.FC = observer(() => {
 			// update the history
 			setHistory(updatedHistory);
 		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e,
-			});
+			toast.error(e);
 
 			console.error(e);
 		} finally {
@@ -284,20 +293,16 @@ export const TerminalPanel: React.FC = observer(() => {
 				/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g,
 				(match) => {
 					if (/:$/.test(match)) {
-						// key (yellow: 33m), (blue: 34m)
 						return `\x1b[34m${match}\x1b[0m`;
 					} else {
-						// string value (green)
 						return `\x1b[32m${match}\x1b[0m`;
 					}
 				},
 			)
 			.replace(/\b(true|false|null)\b/g, (match) => {
-				// boolean/null (magenta)
 				return `\x1b[35m${match}\x1b[0m`;
 			})
 			.replace(/:\s*"([^"]+)"/, (match) => {
-				// number (cyan)
 				return `\x1b[36m${match}\x1b[0m`;
 			});
 	};
@@ -306,43 +311,53 @@ export const TerminalPanel: React.FC = observer(() => {
 		<Panel
 			footer={
 				<>
-					<ToggleButtonGroup value={language} exclusive size="small">
+					<ToggleGroup
+						type="single"
+						value={language}
+						onValueChange={(val) => {
+							if (val) {
+								setCommand("");
+								setLanguage(val);
+							}
+						}}
+						variant="outline"
+						spacing={0}
+					>
 						{Object.entries(LANGUAGE).map(([value, name]) => {
 							return (
-								<ToggleButton
+								<ToggleGroupItem
 									key={value}
 									value={value}
 									title={`Switch to ${name}`}
-									color={
-										language === value
-											? "primary"
-											: undefined
-									}
-									onClick={() => {
-										setCommand("");
-										setLanguage(value);
-									}}
+									className="h-7 px-2"
 								>
 									{value === "PIXEL" && (
-										<CodeRounded fontSize="inherit" />
+										<Code className="size-3.5" />
 									)}
 									{value === "PYTHON" && (
-										<StyledImage src={PythonLogo} />
+										<img
+											src={PythonLogo}
+											className="h-[13px] w-[13px]"
+											alt="Python"
+										/>
 									)}
 									{value === "R" && (
-										<StyledImage src={RLogo} />
+										<img
+											src={RLogo}
+											className="h-[13px] w-[13px]"
+											alt="R"
+										/>
 									)}
 									{value === "SHELL" && (
-										<TerminalRounded fontSize="inherit" />
+										<TerminalIcon className="size-3.5" />
 									)}
-								</ToggleButton>
+								</ToggleGroupItem>
 							);
 						})}
-					</ToggleButtonGroup>
-					<Stack flex={1}>&nbsp;</Stack>
+					</ToggleGroup>
+					<div className="flex-1">&nbsp;</div>
 					<Button
-						variant="contained"
-						size={"small"}
+						size="sm"
 						onClick={() => runCommand()}
 						disabled={command?.trim() === ""}
 					>
@@ -351,7 +366,7 @@ export const TerminalPanel: React.FC = observer(() => {
 				</>
 			}
 		>
-			<Terminal //removing loading option from terminal as per request from ticket 1960
+			<Terminal
 				history={history}
 				instructions={getInstructions(language, "Running ")}
 				suggestions={suggesstionsList.current}
