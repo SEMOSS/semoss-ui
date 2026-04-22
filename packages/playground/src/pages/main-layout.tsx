@@ -182,25 +182,39 @@ export const MainLayout = observer(() => {
 
 													return (
 														<React.Fragment
-															key={crumb.path}
+															key={`${index}-${crumb.path}`}
 														>
 															<BreadcrumbItem>
-																<BreadcrumbLink
-																	className={
-																		isLast
-																			? "text-foreground"
-																			: ""
-																	}
-																	asChild
-																>
-																	<Link
-																		to={`${crumb.path}`}
+																{crumb.path ? (
+																	<BreadcrumbLink
+																		className={
+																			isLast
+																				? "text-foreground"
+																				: ""
+																		}
+																		asChild
+																	>
+																		<Link
+																			to={`${crumb.path}`}
+																		>
+																			{
+																				crumb.name
+																			}
+																		</Link>
+																	</BreadcrumbLink>
+																) : (
+																	<span
+																		className={
+																			isLast
+																				? "text-foreground"
+																				: "text-muted-foreground"
+																		}
 																	>
 																		{
 																			crumb.name
 																		}
-																	</Link>
-																</BreadcrumbLink>
+																	</span>
+																)}
 															</BreadcrumbItem>
 															{!isLast && (
 																<BreadcrumbSeparator />

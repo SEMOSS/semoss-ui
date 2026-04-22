@@ -596,6 +596,12 @@ export class RoomStore {
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
 
+				// Populate the workspace name on options so the UI (e.g. breadcrumbs)
+				// can show a human-readable label instead of the workspace_id
+				if (workspaceOutput?.name && newOptions.workspace) {
+					newOptions.workspace.name = workspaceOutput.name;
+				}
+
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
 					workspaceOutput?.mcp &&
