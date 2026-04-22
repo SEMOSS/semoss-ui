@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -24,6 +24,7 @@ import {
 	Textarea,
 } from "@semoss/ui/next";
 import { useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	DaysOfWeek,
 	FrequencyOptions,

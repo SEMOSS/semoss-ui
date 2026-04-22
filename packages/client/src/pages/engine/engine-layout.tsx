@@ -3,7 +3,6 @@ import {
 	matchPath,
 	Outlet,
 	useLocation,
-	useNavigate,
 	useParams,
 	useResolvedPath,
 } from "react-router-dom";
@@ -13,6 +12,7 @@ import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { Role } from "@/types";
 import type { ENGINE_ROUTES } from "./engine.constants";
 

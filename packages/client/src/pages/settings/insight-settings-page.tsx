@@ -1,12 +1,12 @@
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Env, post } from "@semoss/sdk/react";
 import { Input, Spinner, toast } from "@semoss/ui/next";
 import { SEMOSS } from "@/assets/img/SEMOSS";
 import { EngineLandscapeCard } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export interface InsightInterface {
 	project_id?: string;

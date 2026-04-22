@@ -15,6 +15,9 @@ export class TerminalSpinner {
 	/** Set the interval */
 	private interval: ReturnType<typeof setInterval> | null = null;
 
+	/** Track if spinner is currently visible */
+	private isRunning = false;
+
 	constructor(terminal: XTerm) {
 		this.terminal = terminal;
 	}
@@ -26,18 +29,28 @@ export class TerminalSpinner {
 		}
 		this.interval = null;
 
-		// create a new line
-		this.terminal.write("\r\n");
+		if (!this.isRunning) {
+			// create a new line for spinner output
+			this.terminal.write("\r\n");
+		}
+		this.isRunning = true;
 
 		// start a new one
 		this.startTime = Date.now();
+		this.idx = 0;
 
 		// tick
 		this.interval = setInterval(() => this.tick(), 100);
 	}
 
 	stop() {
+		if (!this.isRunning) {
+			return;
+		}
+
 		this.destroy();
+		this.terminal.write("\r\x1b[2K\r");
+		this.isRunning = false;
 	}
 
 	private tick() {
