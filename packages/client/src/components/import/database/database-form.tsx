@@ -1,9 +1,10 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy form layout relies on non-interactive wrappers with delegated events */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy form layout relies on delegated keyboard handling */
+
 import { ChevronDown, ChevronUp, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { console as getPixelConsole } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -32,11 +33,15 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import DataSelection from "./data-selection";
 import ExcelDataSelection from "./excel-data-selection";
 import { MetaModelConnections } from "./meta-model-connections";
 import { MetaModelType } from "./meta-model-type";
 import TableViewSelector from "./table-view-model";
+
+const hasParameterizedValue = (str: string) => /<([^>]+)>/.test(str);
+const CONSOLE_POLL_INTERVAL_MS = 1000;
 
 export interface ParsedResult {
 	headers: string[];
@@ -127,6 +132,9 @@ export const DatabaseForm = ({
 	const advancedFields = advanced;
 	const categoryDescriptions = categoryDescription;
 	const [loading, setLoading] = useState(false);
+	const [loadingMessage, setLoadingMessage] = useState("Loading...");
+	const [loadingLogMessages, setLoadingLogMessages] = useState<string[]>([]);
+	const [openLoadingLog, setOpenLoadingLog] = useState(false);
 	const databaseType = watch("DATABASE_TYPE");
 
 	useEffect(() => {
@@ -168,6 +176,7 @@ export const DatabaseForm = ({
 
 	const onFormSubmit = async (formData) => {
 		setLoading(true);
+		setLoadingMessage("Loading...");
 		setFormValues(formData);
 		if (selectedTab === "Connections") {
 			setFormData(formData);
@@ -266,7 +275,10 @@ export const DatabaseForm = ({
 				setFilePath(filePathFromExpression);
 				parsedResults.push(output);
 				if (title === "ZIP") {
-					navigate(`/engine/database/${output.database_id}`);
+					// engine_id is the current key; database_id is the legacy fallback
+					navigate(
+						`/engine/database/${output.engine_id || output.database_id}`,
+					);
 				}
 			}
 			const tableName = fileNames.map((name) =>
@@ -280,6 +292,63 @@ export const DatabaseForm = ({
 			toast.error("An error occurred during upload.");
 		} finally {
 			setLoading(false);
+		}
+	};
+
+	const runPixelWithConsole = async <O extends unknown[] | []>(
+		pixel: string,
+	) => {
+		const insightId = configStore.store.insightID;
+		if (!insightId) {
+			throw new Error("Missing insight ID for database import request.");
+		}
+
+		let stopPolling = false;
+		const pollConsole = async () => {
+			while (!stopPolling) {
+				try {
+					const { message } = await getPixelConsole(insightId);
+
+					if (Array.isArray(message) && message.length > 0) {
+						let latestConsoleMessage = "";
+						const cleanedMessages = message
+							.map((entry) => String(entry ?? "").trim())
+							.filter(Boolean);
+
+						if (cleanedMessages.length > 0) {
+							latestConsoleMessage =
+								cleanedMessages[cleanedMessages.length - 1];
+							setLoadingLogMessages((prev) => {
+								const next = [...prev];
+								for (const entry of cleanedMessages) {
+									if (next[next.length - 1] !== entry) {
+										next.push(entry);
+									}
+								}
+								return next;
+							});
+						}
+
+						if (latestConsoleMessage) {
+							setLoadingMessage(latestConsoleMessage);
+						}
+					}
+				} catch {
+					// Ignore console polling failures; main query result decides success/failure.
+				}
+
+				await new Promise((resolve) =>
+					setTimeout(resolve, CONSOLE_POLL_INTERVAL_MS),
+				);
+			}
+		};
+
+		const pollPromise = pollConsole();
+		try {
+			return await monolithStore.runQuery<O>(pixel, insightId);
+		} finally {
+			stopPolling = true;
+			await pollPromise;
 		}
 	};
 
@@ -379,11 +448,13 @@ export const DatabaseForm = ({
 				return;
 			}
 
-			const databaseId = response.pixelReturn[0].output.database_id;
+			const engineOutput = response.pixelReturn[0].output;
+			// engine_id is the current key; database_id is the legacy fallback
+			const engineId = engineOutput.engine_id || engineOutput.database_id;
 
 			toast.success("Successfully created database");
 
-			navigate(`/engine/database/${databaseId}`);
+			navigate(`/engine/database/${engineId}`);
 		} catch {
 			toast.error("An error occurred while submitting the metamodel.");
 		} finally {
@@ -393,9 +464,12 @@ export const DatabaseForm = ({
 
 	const submitExcelTablePixel = async (payloadArray, formValues) => {
 		setLoading(true);
+		setLoadingMessage("Starting database synchronization...");
+		setLoadingLogMessages(["Starting database synchronization..."]);
+		setOpenLoadingLog(false);
 		let pixelStatements = payloadArray
 			.map((payloadObject) => {
-				return `RdbmsUploadExcelData(database=["${formValues.DATABASE_NAME}"],filePath=${JSON.stringify(payloadObject.filePath)},dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],additionalDataTypes=[${JSON.stringify(payloadObject.additionalDataTypes)}],descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],existing=[${payloadObject.existing}],tables=[${JSON.stringify(payloadObject.tables)}]);`;
+				return `newDbInfo=RdbmsUploadExcelData(database=["${formValues.DATABASE_NAME}"],filePath=${JSON.stringify(payloadObject.filePath)},dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],additionalDataTypes=[${JSON.stringify(payloadObject.additionalDataTypes)}],descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],existing=[${payloadObject.existing}],tables=[${JSON.stringify(payloadObject.tables)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
 			})
 			.join("");
 		const meta = {
@@ -408,33 +482,35 @@ export const DatabaseForm = ({
 		};
 		pixelStatements += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
 		try {
-			const response = await monolithStore.runQuery(pixelStatements);
+			const response = await runPixelWithConsole(pixelStatements);
 			const { output } = response.pixelReturn[0];
-			const hasError = response.pixelReturn.some((res) =>
-				res.operationType.includes("ERROR"),
-			);
-			if (hasError) {
-				response.pixelReturn.forEach((res) => {
-					if (res.operationType.includes("ERROR")) {
-						toast.error(res.output);
-					}
-				});
-			} else {
-				toast.success("Successfully Created Database");
+			if (response.errors?.length > 0) {
+				toast.error(response.errors.join(""));
+				return;
 			}
-			navigate(`/engine/database/${output.database_id}`);
+			toast.success("Successfully Created Database");
+			// engine_id is the current key; database_id is the legacy fallback
+			navigate(
+				`/engine/database/${output.engine_id || output.database_id}`,
+			);
 		} catch {
 			toast.error("An error occurred while processing the request.");
 		} finally {
 			setLoading(false);
+			setLoadingMessage("Loading...");
+			setLoadingLogMessages([]);
+			setOpenLoadingLog(false);
 		}
 	};
 
 	const submitTablePixel = async (payloadObject, formValues) => {
 		setLoading(true);
+		setLoadingMessage("Starting database synchronization...");
+		setLoadingLogMessages(["Starting database synchronization..."]);
+		setOpenLoadingLog(false);
 		let pixel = payloadObject
 			.map((pixel) => {
-				return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
+				return `newDbInfo=RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
 			})
 			.join("");
 		const meta = {
@@ -448,20 +524,26 @@ export const DatabaseForm = ({
 		pixel += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
 
 		try {
-			const response = await monolithStore.runQuery(pixel);
-			const { output, operationType } = response.pixelReturn[0];
-			if (operationType.includes("ERROR")) {
-				toast.error(output);
+			const response = await runPixelWithConsole(pixel);
+			const { output } = response.pixelReturn[0];
+			if (response.errors?.length > 0) {
+				toast.error(response.errors.join(""));
 				return;
 			}
 
 			toast.success("Successfully created database");
 
-			navigate(`/engine/database/${output.database_id}`);
+			// engine_id is the current key; database_id is the legacy fallback
+			navigate(
+				`/engine/database/${output.engine_id || output.database_id}`,
+			);
 		} catch {
 			toast.error("An error occurred while processing the request.");
 		} finally {
 			setLoading(false);
+			setLoadingMessage("Loading...");
+			setLoadingLogMessages([]);
+			setOpenLoadingLog(false);
 		}
 	};
 
@@ -469,16 +551,16 @@ export const DatabaseForm = ({
 		setStep("fileupload");
 	};
 
-	const submitConnections = async (
-		payload: ParsedResult | ParsedResult[],
-		formValues,
-	) => {
+	const submitExternalConnectionUpload = async (formValues) => {
 		const newFormValues = Object.fromEntries(
 			Object.entries(formValues).filter(
 				([key]) =>
 					key !== "NAME" &&
 					key !== "DATABASE_DESCRIPTION" &&
-					key !== "DATABASE_TAGS",
+					key !== "DATABASE_TAGS" &&
+					key !== "relationships" &&
+					key !== "tables" &&
+					key !== "positions",
 			),
 		);
 		const meta = {
@@ -489,37 +571,124 @@ export const DatabaseForm = ({
 				tag: formValues.DATABASE_TAG,
 			}),
 		};
-		const relation = Array.isArray(payload)
-			? payload[0].relation
-			: payload.relation;
-		const positions = Array.isArray(payload)
-			? payload[0].positions
-			: payload.positions;
-		const tables = Object.entries(payload[0]?.nodeProp).reduce(
+		setLoading(true);
+		setLoadingMessage("Starting database synchronization...");
+		setLoadingLogMessages(["Starting database synchronization..."]);
+		setOpenLoadingLog(false);
+		const pixel = `newDbInfo=RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues.NAME}"], metamodel=[{"relationships":${JSON.stringify(formValues.relationships)},"tables":${JSON.stringify(formValues.tables)}}]);SetDatabaseMetadata(database=[newDbInfo],meta=[${JSON.stringify(meta)}]);SaveOwlPositions(database=[newDbInfo],positionMap=[${JSON.stringify(formValues.positions)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
+		try {
+			const response = await runPixelWithConsole(pixel);
+			const { output } = response.pixelReturn[0];
+			if (response.errors?.length > 0) {
+				toast.error(response.errors.join(""));
+				return;
+			}
+			toast.success("Successfully created database.");
+			// engine_id is the current key; database_id is the legacy fallback
+			navigate(
+				`/engine/database/${output.engine_id || output.database_id}`,
+			);
+		} catch {
+			toast.error("An error occurred while processing the request.");
+		} finally {
+			setLoading(false);
+			setLoadingMessage("Loading...");
+			setLoadingLogMessages([]);
+			setOpenLoadingLog(false);
+		}
+	};
+
+	const submitConnections = async (
+		payload: ParsedResult | ParsedResult[],
+		formValues,
+	) => {
+		const normalizedPayload = Array.isArray(payload) ? payload[0] : payload;
+		const tables = Object.entries(normalizedPayload?.nodeProp ?? {}).reduce(
 			(acc, [key, value]) => {
 				const firstKey = value[0];
+				if (!firstKey) {
+					return acc;
+				}
 				acc[`${key}.${firstKey}`] = value;
 				return acc;
 			},
 			{},
 		);
-		setLoading(true);
-		const pixel = `databaseVar = RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues.NAME}"], metamodel=[{"relationships":${JSON.stringify(relation)},"tables":${JSON.stringify(tables)}}]);SetDatabaseMetadata(database=[databaseVar],meta=[${JSON.stringify(meta)}]);SaveOwlPositions(database=[databaseVar],positionMap=[${JSON.stringify(positions)}]);`;
-		try {
-			const response = await monolithStore.runQuery(pixel);
-			const { output, operationType } = response.pixelReturn[0];
+
+		await submitExternalConnectionUpload({
+			...formValues,
+			relationships: normalizedPayload?.relation ?? [],
+			tables: tables,
+			positions: normalizedPayload?.positions ?? {},
+		});
+	};
+
+	const submitEmptyConnections = async (formValues) => {
+		await submitExternalConnectionUpload({
+			...formValues,
+			relationships: [],
+			tables: {},
+			positions: {},
+		});
+	};
+	const fieldsToWatch = useMemo(() => {
+		const f2w = fields.reduce((acc, f) => {
+			if (f.pixel) {
+				const matches = f.pixel.match(/<([^>]+)>/g);
+				if (matches) {
+					acc.push(...matches.map((m) => m.replace(/[<>]/g, "")));
+				}
+			}
+			if (f.options?.pixel) {
+				const matches = f.options.pixel.match(/<([^>]+)>/g);
+				if (matches) {
+					acc.push(...matches.map((m) => m.replace(/[<>]/g, "")));
+				}
+			}
+			return acc;
+		}, []);
+		return Array.from(new Set(f2w));
+	}, [fields]);
+
+	const executeWatchedFieldPixel = useCallback(
+		async (key: string, pixelStr: string, type: "value" | "options") => {
+			const response = await monolithStore.runQuery(pixelStr);
+			const output = response.pixelReturn[0].output;
+			const operationType = response.pixelReturn[0].operationType;
+
 			if (operationType.includes("ERROR")) {
 				toast.error(output);
 				return;
 			}
-			toast.success("Successfully created database.");
-			navigate(`/engine/database/${output.database_id}`);
-		} catch {
-			toast.error("An error occurred while processing the request.");
-		} finally {
-			setLoading(false);
-		}
-	};
+
+			if (type === "value") {
+				setValue(key, output);
+				return;
+			}
+
+			if (type === "options") {
+				setResolvedFields((prev) =>
+					prev.map((f) =>
+						f.key === key
+							? {
+									...f,
+									options: {
+										...f.options,
+										options: output.map((opt) => ({
+											display:
+												opt[f.options.optionDisplay],
+											value: opt[f.options.optionValue],
+										})),
+									},
+								}
+							: f,
+					),
+				);
+			}
+		},
+		[monolithStore, setValue],
+	);
+
 	useEffect(() => {
 		resolvedFields.forEach((f) => {
 			let pixel = f.pixel;
@@ -541,63 +710,7 @@ export const DatabaseForm = ({
 				executeWatchedFieldPixel(f.key, optionsPixel, "options");
 			}
 		});
-	}, []);
-
-	const fieldsToWatch = useMemo(() => {
-		const f2w = fields.reduce((acc, f) => {
-			if (f.pixel) {
-				const matches = f.pixel.match(/<([^>]+)>/g);
-				if (matches) {
-					acc.push(...matches.map((m) => m.replace(/[<>]/g, "")));
-				}
-			}
-			if (f.options?.pixel) {
-				const matches = f.options.pixel.match(/<([^>]+)>/g);
-				if (matches) {
-					acc.push(...matches.map((m) => m.replace(/[<>]/g, "")));
-				}
-			}
-			return acc;
-		}, []);
-		return Array.from(new Set(f2w));
-	}, [fields]);
-
-	const hasParameterizedValue = (str) => /<([^>]+)>/.test(str);
-
-	const executeWatchedFieldPixel = async (key, pixelStr, type) => {
-		const response = await monolithStore.runQuery(pixelStr);
-		const output = response.pixelReturn[0].output;
-		const operationType = response.pixelReturn[0].operationType;
-
-		if (operationType.includes("ERROR")) {
-			toast.error(output);
-			return;
-		}
-
-		if (type === "value") {
-			setValue(key, output);
-			return;
-		}
-
-		if (type === "options") {
-			setResolvedFields((prev) =>
-				prev.map((f) =>
-					f.key === key
-						? {
-								...f,
-								options: {
-									...f.options,
-									options: output.map((opt) => ({
-										display: opt[f.options.optionDisplay],
-										value: opt[f.options.optionValue],
-									})),
-								},
-							}
-						: f,
-				),
-			);
-		}
-	};
+	}, [resolvedFields, fieldsToWatch, watch, executeWatchedFieldPixel]);
 
 	const validateFormField = async (field, userInput) => {
 		if (!field.rules?.custom?.value) return true;
@@ -749,19 +862,22 @@ export const DatabaseForm = ({
 									autoComplete="off"
 									data-testid={`database-form-input-${val.key}`}
 									onChange={(e) => {
-									field.onChange(e);
-									if (val.rules?.custom) {
-										if (
-											debounceTimeoutsRef.current[val.key]
-										) {
-											clearTimeout(
+										field.onChange(e);
+										if (val.rules?.custom) {
+											if (
 												debounceTimeoutsRef.current[
 													val.key
-												],
-											);
-										}
-										debounceTimeoutsRef.current[val.key] =
-											setTimeout(async () => {
+												]
+											) {
+												clearTimeout(
+													debounceTimeoutsRef.current[
+														val.key
+													],
+												);
+											}
+											debounceTimeoutsRef.current[
+												val.key
+											] = setTimeout(async () => {
 												const value = e.target.value;
 												if (
 													!val.rules.pattern.value.test(
@@ -786,8 +902,8 @@ export const DatabaseForm = ({
 													clearErrors(val.key);
 												}
 											}, 300);
-									}
-								}}
+										}
+									}}
 								/>
 								{error && (
 									<FieldDescription className="text-destructive">
@@ -940,7 +1056,7 @@ export const DatabaseForm = ({
 								<RadioGroup
 									value={field.value || ""}
 									onValueChange={field.onChange}
-									className="flex flex-row gap-4"
+									className="flex flex-wrap gap-4"
 									data-testid={`database-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
@@ -1155,7 +1271,15 @@ export const DatabaseForm = ({
 												e.currentTarget.value.trim();
 											if (value) {
 												const currentTags =
-													field.value || [];
+													Array.isArray(field.value)
+														? field.value
+														: [];
+												if (
+													currentTags.includes(value)
+												) {
+													e.currentTarget.value = "";
+													return;
+												}
 												field.onChange([
 													...currentTags,
 													value,
@@ -1167,9 +1291,9 @@ export const DatabaseForm = ({
 								/>
 								{field.value && field.value?.length > 0 && (
 									<div className="flex flex-wrap gap-2">
-										{field.value.map((tag, index) => (
+										{field.value.map((tag) => (
 											<span
-												key={index}
+												key={tag}
 												className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-sm"
 											>
 												{tag}
@@ -1178,8 +1302,9 @@ export const DatabaseForm = ({
 													onClick={() => {
 														const newTags =
 															field.value.filter(
-																(_, i) =>
-																	i !== index,
+																(existingTag) =>
+																	existingTag !==
+																	tag,
 															);
 														field.onChange(newTags);
 													}}
@@ -1222,9 +1347,72 @@ export const DatabaseForm = ({
 	if (loading) {
 		return (
 			<div className="flex h-screen items-center justify-center">
-				<div className="flex flex-col items-center gap-4">
-					<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-					<P>Loading...</P>
+				<div className="w-full max-w-2xl px-4">
+					<div className="flex flex-col items-center gap-5 rounded-md border border-border bg-card p-6">
+						<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+						<div className="flex flex-col items-center gap-1">
+							<H4 className="text-center font-semibold text-lg tracking-tight">
+								Syncing Database
+							</H4>
+							<Muted className="text-center text-sm leading-6">
+								We are applying your database changes.
+							</Muted>
+						</div>
+						<div className="flex w-full max-w-xl flex-col items-center gap-1">
+							<Muted className="text-xs uppercase tracking-wide">
+								Latest Status
+							</Muted>
+							<P className="text-center text-base leading-6">
+								{loadingMessage}
+							</P>
+						</div>
+
+						<Collapsible
+							open={openLoadingLog}
+							onOpenChange={setOpenLoadingLog}
+						>
+							<div className="flex w-full justify-center">
+								<CollapsibleTrigger asChild>
+									<Button
+										variant="outline"
+										size="sm"
+										className="gap-2 font-medium"
+									>
+										{openLoadingLog ? (
+											<ChevronUp className="size-4" />
+										) : (
+											<ChevronDown className="size-4" />
+										)}
+										{openLoadingLog ? "Hide" : "Show"}{" "}
+										Execution Log (
+										{loadingLogMessages.length})
+									</Button>
+								</CollapsibleTrigger>
+							</div>
+							<CollapsibleContent>
+								<div className="mt-3 max-h-64 overflow-auto rounded-md border border-border bg-background p-3">
+									{loadingLogMessages.length > 0 ? (
+										<div className="space-y-1.5">
+											{loadingLogMessages.map(
+												(entry, index) => (
+													<P
+														key={`${index}-${entry}`}
+														className="break-words text-muted-foreground text-sm leading-6"
+													>
+														{entry}
+													</P>
+												),
+											)}
+										</div>
+									) : (
+										<P className="text-center text-muted-foreground text-sm">
+											No console messages received yet.
+										</P>
+									)}
+								</div>
+							</CollapsibleContent>
+						</Collapsible>
+					</div>
 				</div>
 			</div>
 		);
@@ -1271,10 +1459,27 @@ export const DatabaseForm = ({
 	const filteredTables =
 		(connectionValues as { tables?: unknown[] } | null)?.tables ?? [];
 	const filteredViews = connectionValues?.views;
+	const normalizedTables = filteredTables as string[];
+	const normalizedViews = (filteredViews as string[] | undefined) ?? [];
+	const hasTableOptions = normalizedTables.length > 0;
+	const hasViewOptions = normalizedViews.length > 0;
+	const hasBothOptions = hasTableOptions && hasViewOptions;
+	const hasSingleOptionType = hasTableOptions !== hasViewOptions;
+	const connectionDialogClassName = hasBothOptions
+		? "h-[92dvh] max-h-[980px] w-[96vw] max-w-[1500px] overflow-hidden p-0"
+		: hasSingleOptionType
+			? "h-[90dvh] max-h-[920px] w-[96vw] max-w-[980px] overflow-hidden p-0"
+			: "max-h-[520px] w-[96vw] max-w-[640px] overflow-hidden p-0";
 
 	const handleApply = async (output) => {
 		setConnectionViewModel(false);
 		const filter = [...output.tables, ...output.views];
+
+		if (filter.length === 0) {
+			await submitEmptyConnections(formData);
+			return;
+		}
+
 		setLoading(true);
 		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(formData)}], filters=${JSON.stringify(filter)})`;
 
@@ -1319,14 +1524,17 @@ export const DatabaseForm = ({
 							key={category}
 							className="mb-4 flex flex-col gap-4"
 						>
-							<div className="flex items-start gap-4">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testid="database-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testid="database-importForm-category-title"
+									>
 										{category}
 									</H4>
 									<Muted
+										className="text-muted-foreground text-sm leading-6"
 										data-testid="database-importForm-category-description"
-										className="text-base"
 									>
 										{categoryDescriptions[category] ??
 											"No description available."}
@@ -1348,7 +1556,7 @@ export const DatabaseForm = ({
 								open={openAdvanced}
 								onOpenChange={setOpenAdvanced}
 							>
-								<div className="flex flex-row items-center justify-between">
+								<div className="flex flex-row items-center justify-between gap-2">
 									<H4 data-testid="database-advanced-settings-title">
 										Advanced Settings
 									</H4>
@@ -1368,7 +1576,7 @@ export const DatabaseForm = ({
 								</div>
 								<CollapsibleContent>
 									<div className="mb-4 flex flex-col gap-4">
-										<div className="flex items-start gap-4">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 											<div className="flex flex-1 flex-col gap-1">
 												<Muted
 													data-testid="database-advanced-settings-description"
@@ -1390,10 +1598,11 @@ export const DatabaseForm = ({
 						</div>
 					)}
 
-					<div className="mt-4 flex justify-end">
+					<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
 						<Button
 							data-testid="database-form-connect-button"
 							type="submit"
+							className="w-full sm:w-auto"
 							disabled={
 								loading ||
 								!formState.isValid ||
@@ -1460,12 +1669,13 @@ export const DatabaseForm = ({
 				onOpenChange={setConnectionViewModel}
 			>
 				<DialogContent
-					className="max-w-7xl"
+					className={connectionDialogClassName}
+					showCloseButton={false}
 					data-testid="model-zip-upload-modal"
 				>
 					<TableViewSelector
-						tables={filteredTables as string[]}
-						views={filteredViews as string[] | undefined}
+						tables={normalizedTables}
+						views={normalizedViews}
 						onApply={handleApply}
 						onClose={() => setConnectionViewModel(false)}
 					/>

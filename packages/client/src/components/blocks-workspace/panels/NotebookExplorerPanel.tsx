@@ -1,19 +1,11 @@
-import { Add, Search } from "@mui/icons-material";
+import { Plus, Search } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import {
-	IconButton,
-	InputAdornment,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+import { Button, Input, toast } from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
-import { DeleteNotebookOverlay, NewQueryOverlay } from "@/components/notebook";
+import { NewQueryOverlay } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { NotebookExplorerItem } from "./NotebookExplorerPanelItem";
@@ -23,60 +15,6 @@ interface NotebookExplorerPanelProps {
 	/** Current layoutobject */
 	layout: FlexLayout.Layout;
 }
-const StyledTitle = styled("div")(({ theme }) => ({
-	borderRadius: "16px",
-	background: " #EBF4FE",
-	width: "fit-content",
-	marginTop: "4px",
-	paddingRight: theme.spacing(2),
-	paddingLeft: theme.spacing(2),
-	marginBottom: "8px",
-	backgroundColor: theme.palette.primary.selected,
-	color: theme.palette.info.dark,
-}));
-
-const StyledTitleSpan = styled("span")(() => ({
-	color: "var(--Primary-Dark, #1260DD)",
-	fontFamily: "Inter",
-	fontFeatureSettings: "'liga' off, 'clig' off",
-	fontStyle: "normal",
-	fontSize: "13px",
-	lineHeight: "18px",
-	fontWeight: 400,
-	marginTop: "8px",
-	letterSpacing: "0.16px",
-	marginBottom: "8px",
-}));
-
-const StyledStack = styled(Stack)(() => ({
-	backgroundColor: "#FFF",
-	width: "100%",
-	padding: "0px",
-}));
-
-const StyledNotebookListStack = styled(Stack)(() => ({
-	backgroundColor: "#FFF",
-}));
-
-const StyledIconsButton = styled(IconButton)(() => ({
-	justifyContent: "flex-end",
-}));
-
-const StyledNotebookStack = styled(Stack)(() => ({
-	backgroundColor: "#FFF",
-	paddingLeft: "16px",
-	paddingRight: "16px",
-	paddingTop: "16px",
-	paddingBottom: "8px",
-}));
-
-const StyledTextField = styled(TextField)(() => ({
-	paddingRight: "16px",
-	marginTop: "8px",
-	paddingLeft: "16px",
-	borderRadius: "8px",
-	width: "100%",
-}));
 
 export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 	observer((props) => {
@@ -84,8 +22,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 		const { workspace } = useWorkspace();
 		const { state, notebook } = useBlocks();
-
-		const notification = useNotification();
 
 		// files to add
 		const [selected, setSelected] = useState<string>("");
@@ -100,7 +36,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		 * Refresh the notebooks
 		 */
 		const refreshNotebooks = () => {
-			// increment the counter
 			setCounter(counter + 1);
 		};
 
@@ -112,14 +47,9 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 				<NewQueryOverlay
 					onClose={(newQueryId?: string) => {
 						if (newQueryId) {
-							// create the panel
 							createPanel(newQueryId);
-
-							// refresh the content
 							refreshNotebooks();
 						}
-
-						// close the overlay
 						workspace.closeOverlay();
 					}}
 				/>
@@ -128,28 +58,20 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 		/**
 		 * Select a panel and create one if it doesn't exist
-		 *
-		 * id - id of the notebook
 		 */
 		const handleOnSelect = (id: string) => {
-			// try to select a panel, if it doesn't exist create it. Save the path
 			const IsSelected = selectPanel(id);
 			if (!IsSelected) {
 				createPanel(id);
 			}
-
-			// set the path
 			setSelected(id);
 		};
 
 		/**
 		 * Filter the notebooks based on the filter word
-		 * This is done by filtering the queries in the notebook
 		 */
 		const filteredNotebooks = useMemo(() => {
-			// get the queries
 			const queries = notebook.queriesList;
-			// filter the queries
 			return queries.filter((query) => {
 				return query.id
 					.toLowerCase()
@@ -158,100 +80,76 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		}, [notebook.queriesList, filterWord]);
 
 		/**
-		 * Open the delete modal
+		 * Delete a notebook and remove its panel
 		 */
 		const handleOnTrashClick = (deletedNotebookId: string) => {
-			workspace.openOverlay(() => (
-				<DeleteNotebookOverlay
-					deletedNotebookId={deletedNotebookId}
-					onClose={(success) => {
-						if (success) {
-							// trigger the delete file callback if successful
-							removePanel(deletedNotebookId);
-
-							// refresh the content
-							refreshNotebooks();
-						}
-
-						workspace.closeOverlay();
-					}}
-				/>
-			));
+			try {
+				state.dispatch({
+					message: ActionMessages.DELETE_QUERY,
+					payload: {
+						queryId: deletedNotebookId,
+					},
+				});
+				removePanel(deletedNotebookId);
+				refreshNotebooks();
+			} catch (e) {
+				console.error(e);
+			}
 		};
 
 		/**
-		 * Open the delete modal
+		 * Copy a notebook
 		 */
-		const handleOnCopyClick = (id: string) => {
+		const handleOnCopyClick = (id: string, newName: string) => {
 			try {
-				// get the notebook
-				const notebook = state.getQuery(id);
-				if (!notebook) {
-					notification.add({
-						color: "error",
-						message: `Cannot find notebook ${id}`,
-					});
+				const nb = state.getQuery(id);
+				if (!nb) {
+					toast.error(`Cannot find notebook ${id}`);
+					return;
 				}
 
-				// get the json
-				const json = notebook.toJSON();
+				const json = nb.toJSON();
 
-				// get a new id
-				let newQueryId = id;
-				let newQueryCount = 1;
-				while (state.getQuery(newQueryId)) {
-					newQueryId = `${id} (${newQueryCount})`;
-					newQueryCount++;
+				let finalId = newName;
+				let count = 1;
+				while (state.getQuery(finalId)) {
+					finalId = `${newName} (${count})`;
+					count++;
 				}
 
-				// dispatch it
 				state.dispatch({
 					message: ActionMessages.NEW_QUERY,
 					payload: {
-						queryId: newQueryId,
+						queryId: finalId,
 						config: {
 							cells: json.cells,
 						},
 					},
 				});
 
-				// select the panel in the layout
-				selectPanel(newQueryId);
+				selectPanel(finalId);
 			} catch (e) {
-				// log it
 				console.error(e);
-
-				// notify the user
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 			}
 		};
 
 		/**
 		 * Handle dragging of an item
-		 *
-		 * event - drag event
-		 * path - id of the notebook
 		 */
 		const handleOnDragStart = (event: React.MouseEvent, id: string) => {
 			try {
-				// get the model
 				const model = workspace.model;
 				if (!model) {
 					throw new Error("Missing model");
 				}
 
-				// TODO: altKey key needs to be down for now. event.altKey=false is reserved for panel-to-panel interactions
 				if (!event.altKey) {
 					return;
 				}
 
-				// get the name
 				const name = id.split("/").pop();
 
-				// add to layout
 				layout.addTabWithDragAndDrop(event as unknown as DragEvent, {
 					type: "tab",
 					name: name,
@@ -262,18 +160,12 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 					enableClose: true,
 				});
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
+				toast.error(e.message ?? e);
 			}
 		};
 
-		/** Helpers */
 		/**
 		 * Create a new panel and highlight it
-		 *
-		 * id - id of the notebook
 		 */
 		const createPanel = (id: string): boolean => {
 			try {
@@ -281,27 +173,21 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 					return false;
 				}
 
-				// get the model
 				const model = workspace.model;
 				if (!model) {
 					throw new Error("Missing model");
 				}
 
-				// get the name
-				const name = id;
-
-				// where to add the node
 				const addId =
 					model.getActiveTabset()?.getId() ||
 					model.getRoot().getChildren()[0]?.getId() ||
 					"";
 
-				// create and select the panel
 				model.doAction(
 					FlexLayout.Actions.addNode(
 						{
 							type: "tab",
-							name: name,
+							name: id,
 							component: "notebook-viewer",
 							config: {
 								id: id,
@@ -315,11 +201,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 					),
 				);
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
-
+				toast.error(e.message ?? e);
 				return false;
 			}
 
@@ -327,9 +209,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		};
 
 		/**
-		 * Select a panel if it is there. Return false if not selected.
-		 *
-		 * id - id of the notebook
+		 * Select a panel if it exists
 		 */
 		const selectPanel = (id: string): boolean => {
 			try {
@@ -339,23 +219,18 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 				let selectedNode: FlexLayout.TabNode | null = null;
 
-				// get the model
 				const model = workspace.model;
 				if (!model) {
 					throw new Error("Missing model");
 				}
 
-				// visit the notes, and see if it exists
 				model.visitNodes((node) => {
-					// check if it is a tabNode
 					if (node instanceof FlexLayout.TabNode) {
-						// it needs to be a notebook-viewer
 						const component = node.getComponent();
 						if (component !== "notebook-viewer") {
 							return;
 						}
 
-						// path and space need to match
 						const config = node.getConfig();
 						if (config.id !== id) {
 							return;
@@ -365,7 +240,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 					}
 				});
 
-				// create a new panel if there is no node
 				if (!selectedNode) {
 					return false;
 				}
@@ -373,11 +247,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 				const selectedNodeId = selectedNode.getId();
 				model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
-
+				toast.error(e.message ?? e);
 				return false;
 			}
 
@@ -386,8 +256,6 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 		/**
 		 * Remove a panel
-		 *
-		 * id - id of the notebook
 		 */
 		const removePanel = (id: string): boolean => {
 			try {
@@ -397,23 +265,18 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 
 				const nodesToBeRemoved: FlexLayout.TabNode[] = [];
 
-				// get the model
 				const model = workspace.model;
 				if (!model) {
 					throw new Error("Missing model");
 				}
 
-				// visit the notes, and see if it exists
 				model.visitNodes((node) => {
-					// check if it is a tabNode
 					if (node instanceof FlexLayout.TabNode) {
-						// it needs to be a notebook-viewer
 						const component = node.getComponent();
 						if (component !== "notebook-viewer") {
 							return;
 						}
 
-						// path and space need to match
 						const config = node.getConfig();
 						if (config.id !== id) {
 							return;
@@ -423,17 +286,12 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 					}
 				});
 
-				// delete the tabs
 				for (const n of nodesToBeRemoved) {
-					const id = n.getId();
-					model.doAction(FlexLayout.Actions.deleteTab(id));
+					const nodeId = n.getId();
+					model.doAction(FlexLayout.Actions.deleteTab(nodeId));
 				}
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
-
+				toast.error(e.message ?? e);
 				return false;
 			}
 
@@ -443,51 +301,41 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		return (
 			<Panel
 				actions={
-					<StyledStack direction="column" spacing={0}>
-						<StyledTitle>
-							<StyledTitleSpan>{title}</StyledTitleSpan>
-						</StyledTitle>
-						<StyledTextField
-							placeholder="Search"
-							size="small"
-							fullWidth
-							value={filterWord}
-							onChange={(e) => setFilterWord(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<Search />
-									</InputAdornment>
-								),
-							}}
-						/>
-						<StyledNotebookStack
-							direction="row"
-							alignItems={"center"}
-							justifyContent={"space-between"}
-						>
-							<Typography align="left" variant="body1">
-								Notebook
-							</Typography>
-							<StyledIconsButton
-								title={`Create new notebook`}
-								size={"small"}
+					<div className="flex w-full flex-col bg-white p-0">
+						<div className="mx-4 mt-1 mb-2 w-fit rounded-2xl bg-blue-50 px-4 py-0.5">
+							<span className="font-normal text-[13px] text-blue-700 leading-[18px] tracking-[0.16px]">
+								{title}
+							</span>
+						</div>
+						<div className="relative mx-4 mt-2">
+							<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+							<Input
+								placeholder="Search"
+								value={filterWord}
+								onChange={(e) => setFilterWord(e.target.value)}
+								className="pl-9"
+							/>
+						</div>
+						<div className="flex items-center justify-between bg-white px-4 pt-4 pb-2">
+							<span className="text-sm">Notebook</span>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								title="Create new notebook"
 								onClick={(e) => {
 									e.stopPropagation();
 									handleOpenCreateNotebook();
 								}}
 							>
-								<Add fontSize="inherit" />
-							</StyledIconsButton>
-						</StyledNotebookStack>
-					</StyledStack>
+								<Plus className="size-4" />
+							</Button>
+						</div>
+					</div>
 				}
 			>
-				<StyledNotebookListStack
+				<div
 					key={counter}
-					direction="column"
-					height={"100%"}
-					overflow={"auto"}
+					className="flex h-full flex-col overflow-auto bg-white"
 				>
 					{filteredNotebooks.map((q) => {
 						return (
@@ -499,14 +347,14 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 								onTrashClick={() => {
 									handleOnTrashClick(q.id);
 								}}
-								onCopyClick={() => {
-									handleOnCopyClick(q.id);
+								onCopyClick={(newName) => {
+									handleOnCopyClick(q.id, newName);
 								}}
 								onDragStart={(e) => handleOnDragStart(e, q.id)}
 							/>
 						);
 					})}
-				</StyledNotebookListStack>
+				</div>
 			</Panel>
 		);
 	});

@@ -29,8 +29,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import {
 	RoomInput,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 	RoomInputMenuWorkspace,
 } from "@/components";
@@ -38,7 +37,7 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
-import type { MCPConfig, Workspace } from "@/types";
+import type { MCPConfig, Prompt, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -64,6 +63,7 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const initialPrompt = searchParams.get("prompt") ?? "";
 
 	const workspaceIdSearchParams = searchParams.get("workspaceId");
 	const knowledgeId = searchParams.get("knowledgeId");
@@ -81,27 +81,44 @@ export const NewRoomPage = observer(() => {
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
+
+	const previewPrompts = useMemo(
+		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
+		[tempRoomStore.options.predefinedPrompts],
+	);
 
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
 			? `GetWorkspace("${selectedWorkspaceId}");`
-			: null,
+			: "",
 		{
 			data: null,
 		},
 	);
 
 	// Fetch knowledge vector engine if knowledgeId is provided
-	const getKnowledge = usePixel<{
-		app_id: string;
-		app_name: string;
-	} | null>(
+	const getKnowledge = usePixel<
+		| {
+				engine_id: string;
+				engine_name: string;
+		  }[]
+		| null
+	>(
 		knowledgeId
 			? `MyEngines( engine=["${knowledgeId}"], engineTypes=['VECTOR'],  metaFilters=[{}], userT = [true], limit=[15], offset=[0]);`
-			: null,
+			: "",
 		{ data: null },
 	);
 
+	const getPrompts = usePixel<Prompt[]>(
+		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
+			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
+			: "",
+		{
+			data: [],
+		},
+	);
 	// On initial load, set the default options from the theme using the temporary RoomStore
 	useEffect(() => {
 		tempRoomStore.setOptions({
@@ -111,7 +128,8 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
-			workspace: null,
+			workspace: undefined,
+			predefinedPrompts: [],
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -119,11 +137,11 @@ export const NewRoomPage = observer(() => {
 	 * Functions
 	 */
 	/**
-	 * Handle tool selection
+	 * Handle tool selection (toggle for plus menu)
 	 * @param tool - selected tool
 	 */
 	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options using the temporary RoomStore
+		// Toggle tool in options
 		const tools = tempRoomStore.options.mcp.reduce(
 			(acc, curr) => {
 				acc[curr.id] = curr;
@@ -135,6 +153,31 @@ export const NewRoomPage = observer(() => {
 		if (Object.hasOwn(tools, tool.id)) {
 			delete tools[tool.id];
 		} else {
+			tools[tool.id] = tool;
+		}
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			mcp: Object.values(tools),
+		});
+	};
+
+	/**
+	 * Handle tool add (add-only for slash menu)
+	 * @param tool - selected tool
+	 */
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
+		const tools = tempRoomStore.options.mcp.reduce(
+			(acc, curr) => {
+				acc[curr.id] = curr;
+				return acc;
+			},
+			{} as Record<string, MCPConfig>,
+		);
+
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -165,10 +208,11 @@ export const NewRoomPage = observer(() => {
 				mcp: tempRoomStore.options.mcp,
 			};
 
-			// add workspace id
+			// add workspace id and name
 			if (mode === "workspace") {
 				options.workspace = {
 					workspace_id: getWorkspace.data?.workspace_id || "",
+					name: getWorkspace.data?.name,
 				};
 			}
 
@@ -183,10 +227,11 @@ export const NewRoomPage = observer(() => {
 
 			// go to the new room
 			navigate(`/room/${room.roomId}`);
-		} catch (error) {
+		} catch (error: unknown) {
+			const sdkError = error as { message: string; code?: number };
 			if (
-				error.code !== undefined &&
-				(error.code === 403 || error.code === 302)
+				sdkError.code !== undefined &&
+				(sdkError.code === 403 || sdkError.code === 302)
 			) {
 				// User is unauthorized, likely due to expired session. Prompt them to log in again.
 				toast.error(t("chat:gracefulErrors.inactivity"));
@@ -194,7 +239,7 @@ export const NewRoomPage = observer(() => {
 			}
 
 			toast.error(
-				t("room:errors.createRoom", { message: error.message }),
+				t("room:errors.createRoom", { message: sdkError.message }),
 			);
 		} finally {
 			setIsLoading(false);
@@ -245,6 +290,13 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
+		setPrompts(
+			Array.isArray(getWorkspace.data.prompts)
+				? getWorkspace.data.prompts.map((p) =>
+						typeof p === "string" ? p : (p as { id: string }).id,
+					)
+				: [],
+		);
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
 			instructions:
@@ -256,7 +308,11 @@ export const NewRoomPage = observer(() => {
 
 	// Handle knowledge vector engine from URL parameter
 	useEffect(() => {
-		if (getKnowledge.status !== "SUCCESS" || !getKnowledge.data?.[0]) {
+		if (
+			!knowledgeId ||
+			getKnowledge.status !== "SUCCESS" ||
+			!getKnowledge.data?.[0]
+		) {
 			return;
 		}
 
@@ -275,7 +331,7 @@ export const NewRoomPage = observer(() => {
 		const knowledgeMcp = {
 			id: knowledgeId,
 			type: "VECTOR" as const,
-			name: getKnowledge.data[0].app_name || knowledgeId,
+			name: getKnowledge.data[0].engine_name || knowledgeId,
 		};
 
 		tempRoomStore.setOptions({
@@ -284,14 +340,40 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
 
+	// Handle prompts from URL parameter
+	useEffect(() => {
+		if (getPrompts.status !== "SUCCESS" || !getPrompts.data?.length) {
+			return;
+		}
+
+		const prompts: Prompt[] = getPrompts.data.map((p) => ({
+			id: p.id,
+			title: p.title,
+			context: p.context,
+			tags: p.tags,
+			version: p.version,
+			intent: p.intent,
+			// TODO: figure out why this is done this way
+			createdBy: (p as unknown as { created_by: string }).created_by,
+			dateCreated: (p as unknown as { date_created: string })
+				.date_created,
+			global: false, // TODO: figure out if this is needed
+		}));
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			predefinedPrompts: prompts,
+		});
+	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
+
 	// Clear instructions and workspace MCPs when switching away from workspace mode
 	useEffect(() => {
 		if (mode !== "workspace") {
 			tempRoomStore.setOptions({
 				...tempRoomStore.options,
 				instructions: "",
-				temperature: root.theme.defaultRoomSettings.temperature,
-				tokenLength: root.theme.defaultRoomSettings.tokenLength,
+				temperature: root.theme.defaultRoomSettings?.temperature,
+				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}
@@ -317,13 +399,22 @@ export const NewRoomPage = observer(() => {
 								className="mx-auto flex max-w-xl"
 								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 								dangerouslySetInnerHTML={{
-									__html: root.theme.landing,
+									__html:
+										root.theme?.altLandingKey &&
+										searchParams.has(
+											root.theme.altLandingKey,
+										) &&
+										root.theme.altLanding
+											? root.theme.altLanding
+											: root.theme.landing,
 								}}
 							/>
 						) : (
 							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									{t("room:welcome")}
+									{t("room:welcome", {
+										name: chat.user.name,
+									})}
 								</div>
 								{root.theme.description ? (
 									<div className="text-center text-muted-foreground text-sm leading-normal">
@@ -334,68 +425,95 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							predefinedPrompts={
+								tempRoomStore.options.predefinedPrompts
+							}
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
+							initialValue={initialPrompt}
 							model={chat.models.selected}
+							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
+							options={tempRoomStore.options}
+							onMcpSelect={handleToolAdd}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
 								return true;
 							}}
+							hidePauseButton
 							MenuComponent={observer(
-								({ addToken, onOpenChange, fileRef }) => (
+								({ onOpenChange, fileRef, editorRef }) => (
 									<>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("chat");
-												onOpenChange(false);
-											}}
-										>
-											<MessageCircleIcon />
-											<span className="flex-1">
-												{t("room:modes.ask")}
-											</span>
-											{mode === "chat" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onSelect={() => {
-												setMode("plan");
-												onOpenChange(false);
-											}}
-										>
-											<ListTodoIcon />
-											<span className="flex-1">
-												{t("room:modes.plan")}
-											</span>
+										<RoomInputMenuUpload
+											fileRef={fileRef}
+											onSelect={() => onOpenChange(false)}
+										/>
+										<DropdownMenuSeparator />
+										{root.theme.featureFlags
+											?.enablePlan && (
+											<>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("chat");
+														onOpenChange(false);
+													}}
+												>
+													<MessageCircleIcon />
+													<span className="flex-1">
+														{t("room:modes.ask")}
+													</span>
+													{mode === "chat" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+												<DropdownMenuItem
+													onSelect={() => {
+														setMode("plan");
+														onOpenChange(false);
+													}}
+												>
+													<ListTodoIcon />
+													<span className="flex-1">
+														{t("room:modes.plan")}
+													</span>
 
-											{mode === "plan" ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
+													{mode === "plan" ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+											</>
+										)}
 										<RoomInputMenuWorkspace
 											workspace={
 												mode === "workspace" &&
-												getWorkspace.status === "SUCCESS"
+												getWorkspace.status ===
+													"SUCCESS"
 													? getWorkspace.data
 													: null
 											}
 											onSelect={(workspace) => {
 												if (workspace) {
-													if (mode === "workspace" && selectedWorkspaceId === workspace.workspace_id) {
+													if (
+														mode === "workspace" &&
+														selectedWorkspaceId ===
+															workspace.workspace_id
+													) {
 														setMode("chat");
-														setSelectedWorkspaceId("");
+														setSelectedWorkspaceId(
+															"",
+														);
 													} else {
 														setMode("workspace");
-														setSelectedWorkspaceId(workspace.workspace_id);
+														setSelectedWorkspaceId(
+															workspace.workspace_id,
+														);
 													}
 												} else {
 													setMode("chat");
@@ -404,25 +522,25 @@ export const NewRoomPage = observer(() => {
 											}}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuUpload
-											fileRef={fileRef}
-											onSelect={() => onOpenChange(false)}
+										<RoomInputMenuMCP
+											type="KNOWLEDGE"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
+										/>
+										<RoomInputMenuMCP
+											type="TOOLBOX"
+											options={tempRoomStore.options}
+											onSelect={handleToolSelect}
+											editorRef={editorRef}
+											onOverlayClose={() =>
+												onOpenChange(false)
+											}
 										/>
 										<DropdownMenuSeparator />
-										<RoomInputMenuKnowledge
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
-										<RoomInputMenuToolbox
-											options={tempRoomStore.options}
-											onSelect={(tool) => {
-												handleToolSelect(tool);
-												addToken(`<${tool.name}>`);
-											}}
-										/>
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();
@@ -455,13 +573,13 @@ export const NewRoomPage = observer(() => {
 													>
 														<a
 															target="_blank"
-															href={`${PLATFORM_URL}/#/app/${getWorkspace.data.workspace_id}`}
+															href={`${PLATFORM_URL}/#/app/${getWorkspace.data?.workspace_id}`}
 														>
 															<ComputerIcon data-icon="inline-start" />
 															<div className="w-18 truncate">
 																{getWorkspace
 																	.data
-																	.name ||
+																	?.name ||
 																	t(
 																		"room:menuWorkspace.selectAgent",
 																	)}
@@ -483,7 +601,7 @@ export const NewRoomPage = observer(() => {
 														<ComputerIcon data-icon="inline-start" />
 														<div className="w-18 truncate">
 															{getWorkspace.data
-																.name ||
+																?.name ||
 																t(
 																	"room:menuWorkspace.selectAgent",
 																)}
@@ -492,7 +610,7 @@ export const NewRoomPage = observer(() => {
 												</span>
 											</TooltipTrigger>
 											<TooltipContent>
-												{getWorkspace.data.name ||
+												{getWorkspace.data?.name ||
 													t(
 														"room:menuWorkspace.selectAgent",
 													)}
@@ -502,6 +620,30 @@ export const NewRoomPage = observer(() => {
 								) : null
 							}
 						/>
+						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
+							<div className="mx-auto flex w-full flex-col items-center gap-3">
+								<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
+									{previewPrompts.map((prompt) => {
+										return (
+											<Button
+												key={prompt.id}
+												variant="outline"
+												className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
+												disabled={isLoading}
+												onClick={() =>
+													createRoom(
+														prompt.context,
+														[],
+													)
+												}
+											>
+												{prompt.title}
+											</Button>
+										);
+									})}
+								</div>
+							</div>
+						) : null}
 					</div>
 				</ResizablePanel>
 				{isConfigurationOpen && (

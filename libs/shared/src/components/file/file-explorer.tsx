@@ -4,7 +4,13 @@ import {
 	RefreshCwIcon,
 	SearchIcon,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import {
+	type CSSProperties,
+	type MouseEvent as ReactMouseEvent,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -17,6 +23,7 @@ import {
 	InputGroupInput,
 	Muted,
 	ScrollArea,
+	ScrollBar,
 	Separator,
 	Spinner,
 	ToggleGroup,
@@ -115,6 +122,11 @@ interface FileExplorerProps {
 	 * Override for the file item component
 	 */
 	ItemComponent?: typeof FileExplorerItem;
+
+	/**
+	 * Initial directory path to open to (defaults to "/")
+	 */
+	initialPath?: string;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -122,16 +134,57 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	headerActions = null,
 	onItemSelect = () => null,
 	ItemComponent = FileExplorerItem,
+	initialPath,
 }) => {
 	const insight = useInsight();
 
-	const [path, setPath] = useState<string>("/");
+	const [path, setPath] = useState<string>(
+		initialPath ? initialPath.replace(/\/$/, "") || "/" : "/",
+	);
 	const [search, setSearch] = useState("");
 	const [isSearchActive, setIsSearchActive] = useState(false);
 	const [searchType, setSearchType] = useState<string>("all");
 
 	const [isDragging, setIsDragging] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
+
+	const [dateColWidth, setDateColWidth] = useState(100);
+	const dividerDragRef = useRef<{
+		startX: number;
+		startWidth: number;
+	} | null>(null);
+
+	const handleDividerMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		dividerDragRef.current = {
+			startX: e.clientX,
+			startWidth: dateColWidth,
+		};
+		document.body.style.cursor = "col-resize";
+		document.body.style.userSelect = "none";
+
+		const onMouseMove = (ev: globalThis.MouseEvent) => {
+			if (!dividerDragRef.current) return;
+			const delta = ev.clientX - dividerDragRef.current.startX;
+			setDateColWidth(
+				Math.max(
+					100,
+					Math.min(280, dividerDragRef.current.startWidth - delta),
+				),
+			);
+		};
+
+		const onMouseUp = () => {
+			dividerDragRef.current = null;
+			document.body.style.cursor = "";
+			document.body.style.userSelect = "";
+			document.removeEventListener("mousemove", onMouseMove);
+			document.removeEventListener("mouseup", onMouseUp);
+		};
+
+		document.addEventListener("mousemove", onMouseMove);
+		document.addEventListener("mouseup", onMouseUp);
+	};
 
 	const [isNewFile, setIsNewFile] = useState(false);
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
@@ -231,6 +284,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		// biome-ignore lint/a11y/noStaticElementInteractions: TODO: Fix accessibility issues
 		<div
 			className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1"
+			style={{ "--date-col-width": `${dateColWidth}px` } as CSSProperties}
 			onDrop={(e) => {
 				e.preventDefault();
 				if (!canMutateFiles) {
@@ -369,7 +423,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						{headerActions}
 					</div>
 				</div>
-				{showSearch && mode.type !== "STORAGE" && (
+				{showSearch && (
 					<div className="flex w-full flex-row items-center justify-between gap-1">
 						<ToggleGroup
 							type="single"
@@ -399,61 +453,102 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			<Separator className="my-1" />
 
-			<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full min-w-0 flex-1">
-				{(getFiles.status === "LOADING" || isUploading) && (
-					<div className="flex items-center justify-center py-16">
-						<Spinner />
-					</div>
-				)}
-
-				{getFiles.status === "ERROR" && (
-					<div className="flex items-center justify-center py-4">
-						<Muted className="text-destructive">
-							{getFiles.error?.message || "Failed to load files"}
-						</Muted>
-					</div>
-				)}
-
-				{getFiles.status === "SUCCESS" && !isUploading && (
-					<TreeView<FileItem>
-						className="w-full"
-						expanded={expandedPaths}
-						onExpandChange={(e) => {
-							setExpandedPaths(e);
-						}}
-						onItemSelect={(item) => {
-							if (item.type === "directory") {
-								setExpandedPaths((prev) => {
-									const pathPrefix = `${item.path}/`;
-									return prev.filter(
-										(p) =>
-											p === item.path ||
-											p.startsWith(pathPrefix),
-									);
-								});
-								setPath(item.path);
-								setSearch("");
-								return;
+			<div className="relative flex min-h-0 flex-1 flex-col">
+				<div className="flex select-none items-center border-b px-2 pb-0.5 text-[11px] text-muted-foreground">
+					<span className="min-w-[80px] flex-1 overflow-hidden truncate font-medium">
+						Name
+					</span>
+					<div
+						role="slider"
+						aria-orientation="vertical"
+						aria-label="Resize date column"
+						aria-valuemin={100}
+						aria-valuemax={280}
+						aria-valuenow={dateColWidth}
+						tabIndex={0}
+						className="group flex cursor-col-resize items-center self-stretch px-2 focus:outline-none"
+						onMouseDown={handleDividerMouseDown}
+						onKeyDown={(e) => {
+							if (e.key === "ArrowLeft") {
+								setDateColWidth((w) => Math.min(280, w + 8));
+							} else if (e.key === "ArrowRight") {
+								setDateColWidth((w) => Math.max(100, w - 8));
 							}
-
-							// select if an item
-							onItemSelect(item);
 						}}
 					>
-						{files.map((i) => {
-							return (
-								<ItemComponent
-									key={i.path}
-									mode={mode}
-									item={i}
-									refresh={() => getFiles.refresh()}
-									ItemComponent={ItemComponent}
-								/>
-							);
-						})}
-					</TreeView>
-				)}
-			</ScrollArea>
+						<div className="h-full w-px bg-border transition-colors group-hover:bg-primary/70" />
+					</div>
+					<span
+						style={{ width: dateColWidth }}
+						className="overflow-hidden truncate px-2 font-medium"
+					>
+						Date Modified
+					</span>
+					<div className="flex items-center self-stretch px-1">
+						<div className="h-full w-px bg-border" />
+					</div>
+					<span style={{ width: 36 }} />
+				</div>
+
+				<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full flex-1">
+					{(getFiles.status === "LOADING" || isUploading) && (
+						<div className="flex items-center justify-center py-16">
+							<Spinner />
+						</div>
+					)}
+
+					{getFiles.status === "ERROR" && (
+						<div className="flex items-center justify-center py-4">
+							<Muted className="text-destructive">
+								{getFiles.error?.message ||
+									"Failed to load files"}
+							</Muted>
+						</div>
+					)}
+
+					{getFiles.status === "SUCCESS" && !isUploading && (
+						<TreeView<FileItem>
+							className="w-full"
+							expanded={expandedPaths}
+							onExpandChange={(e) => {
+								setExpandedPaths(e);
+							}}
+							onItemSelect={(item) => {
+								if (item.type === "directory") {
+									setExpandedPaths((prev) => {
+										const pathPrefix = `${item.path}/`;
+										return prev.filter(
+											(p) =>
+												p === item.path ||
+												p.startsWith(pathPrefix),
+										);
+									});
+									setPath(item.path);
+									setSearch("");
+									return;
+								}
+
+								// select if an item
+								onItemSelect(item);
+							}}
+						>
+							{files.map((i) => {
+								return (
+									<ItemComponent
+										key={i.path}
+										mode={mode}
+										item={i}
+										refresh={() => getFiles.refresh()}
+										ItemComponent={ItemComponent}
+										dateColWidth={dateColWidth}
+									/>
+								);
+							})}
+						</TreeView>
+					)}
+					<ScrollBar orientation="horizontal" />
+				</ScrollArea>
+			</div>
 
 			{canMutateFiles && isDragging && (
 				<div className="absolute inset-0 flex items-center justify-center bg-accent/50 p-4 text-accent-foreground">

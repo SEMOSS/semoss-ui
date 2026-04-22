@@ -1,11 +1,11 @@
 {
-	"welcome": "Bienvenido",
+	"welcome": "Bienvenido, {{name}}",
 	"settings": {
 		"title": "Configuración de la sala",
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
-		"open": "Abrir Configuración",
-		"close": "Cerrar",
-		"edit": "Editar configuración"
+		"open": "Abrir Configuración de la Sala",
+		"close": "Cerrar Configuración de la Sala",
+		"edit": "Editar Configuración de la Sala"
 	},
 	"form": {
 		"modelLabel": "Modelo",
@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "Ingresa texto",
 		"thinking": "Pensando...",
-		"menuPrompt": "/ para abrir menú",
-		"openSettings": "Abrir configuración",
+		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
+		"openSettings": "Agregar archivos, agentes y más",
 		"recordLabel": "Grabar al modelo",
 		"stopRecording": "Detener grabación",
 		"record": "Grabar",
@@ -47,7 +47,9 @@
 		"enterQuestion": "Por favor, ingresa una pregunta",
 		"completeTool": "Por favor, completa las herramientas para continuar",
 		"ask": "Preguntar",
-		"errorProcessing": "Error al procesar el chat"
+		"errorProcessing": "Error al procesar el chat",
+		"pauseTools": "Pausar herramientas",
+		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
@@ -66,15 +68,10 @@
 		"copyFailed": "Error al copiar al portapapeles"
 	},
 	"menuToolbox": {
-		"addToolbox": "Agregar caja de herramientas",
-		"searchPlaceholder": "Buscar cajas de herramientas",
-		"notFound": "No encontrado",
-		"allTools": "Todas las herramientas"
+		"addToolbox": "Agregar cajas de herramientas"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Agregar conocimiento",
-		"searchPlaceholder": "Buscar conocimiento",
-		"notFound": "No encontrado"
+		"addKnowledge": "Agregar conocimiento"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Seleccionar agente",
@@ -82,7 +79,7 @@
 		"notFound": "No encontrado"
 	},
 	"menuUpload": {
-		"attachDocument": "Adjuntar Documento"
+		"attachDocument": "Agregar Documentos"
 	},
 	"menuFileExplorer": {
 		"name": "Explorador de Archivos",
@@ -91,5 +88,18 @@
 	},
 	"errors": {
 		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",
+		"descriptionMedium": "Esta conversación se está alargando. Si continúa, el modelo comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat pronto.",
+		"descriptionHigh": "Esta conversación está casi llena. El modelo pronto comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat.",
+		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores al generar respuestas. Inicia un nuevo chat para obtener mejores resultados.",
+		"memoryUsedTitle": "Memoria usada:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
+		"noResults": "No se encontraron elementos coincidentes",
+		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
 	}
 }

@@ -1,10 +1,4 @@
-import {
-	Block,
-	Create,
-	DisplaySettings,
-	Input,
-	Preview,
-} from "@mui/icons-material";
+import { Eye, FileText, ShieldCheck, Sliders, Variable } from "lucide-react";
 
 // use contants for steps so it's easy to reorder/add new ones
 export const PROMPT_BUILDER_CONTEXT_STEP = 1;
@@ -34,7 +28,7 @@ export const INPUT_TYPES = [
 ];
 export const INPUT_TYPE_DISPLAY = {
 	[INPUT_TYPE_TEXT]: "User Text",
-	[INPUT_TYPE_SELECT]: "User Drop-Down List",
+	[INPUT_TYPE_SELECT]: "Drop-Down List",
 	[INPUT_TYPE_VECTOR]: "Perform RAG Search",
 	[INPUT_TYPE_CUSTOM_QUERY]: "Use a Parameter in API",
 	[INPUT_TYPE_DATABASE]: "Execute as Query",
@@ -44,27 +38,29 @@ export const INPUT_TYPE_HELP_TEXT = {
 		"This input will be used as a search term for the selected knowledge repository. The search results can be modified to fit your needs and will be used to support your prompt.",
 	[INPUT_TYPE_DATABASE]:
 		"This input will be used to query the selected database. The query results generated can be modified to fit your needs and will be used to support your prompt.",
+	[INPUT_TYPE_SELECT]:
+		"Define the dropdown options that users can select from. You can add multiple options separated by commas, or add them one at a time. Press Enter to add the options.",
 };
 
 export const SUMMARY_STEPS = [
 	{
 		title: "Create Prompt",
-		icon: Create,
+		icon: FileText,
 	},
 	{
 		title: "Set Inputs",
-		icon: Input,
+		icon: Variable,
 	},
 	{
 		title: "Define Input Types",
-		icon: DisplaySettings,
+		icon: Sliders,
 	},
 	{
 		title: "Set Constraints",
-		icon: Block,
+		icon: ShieldCheck,
 	},
 	{
 		title: "Preview Prompt",
-		icon: Preview,
+		icon: Eye,
 	},
 ];

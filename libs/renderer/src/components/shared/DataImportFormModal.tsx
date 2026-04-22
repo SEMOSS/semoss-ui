@@ -1,34 +1,44 @@
 import {
-	AddBox,
-	CalendarViewMonth,
-	ControlPointDuplicateRounded,
-	FilterListRounded,
-	JoinFull,
-	JoinInner,
-	JoinLeft,
-	JoinRight,
-	Warning,
-} from "@mui/icons-material";
-import { Checkbox, TableContainer } from "@mui/material";
+	AlertTriangle,
+	ArrowLeftFromLine,
+	ArrowRightFromLine,
+	CalendarDays,
+	CopyPlus,
+	Filter,
+	Merge,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	IconButton,
-	Menu,
-	type MenuProps,
-	Modal,
+	Checkbox,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Input,
 	Select,
-	Stack,
-	styled,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Table,
-	TextField,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
 	Tooltip,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipTrigger,
+	toast,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../hooks";
 import {
 	ActionMessages,
@@ -40,212 +50,14 @@ import { DefaultCells } from "../cell-defaults";
 import { CodeCellConfig } from "../cell-defaults/code-cell";
 import { DataImportCellConfig } from "../cell-defaults/data-import-cell";
 
-// import { usePixel, useRootStore } from "hooks";
+const JOIN_ICONS = {
+	inner: <Merge className="size-4" />,
+	"right.outer": <ArrowRightFromLine className="size-4" />,
+	"left.outer": <ArrowLeftFromLine className="size-4" />,
+	outer: <Merge className="size-4" />,
+};
 
-// import { DefaultCells } from '@/components/cell-defaults';
-// import { DataImportCellConfig } from '../cell-defaults/data-import-cell';
-// import { CodeCellConfig } from '../cell-defaults/code-cell';
-// import { LoadingScreen } from '@/components/ui';
-
-const StyledDivSecondaryKeyLabel = styled("div")(() => ({
-	backgroundColor: "#EBEBEB",
-	padding: "3px, 4px, 3px, 4px",
-	width: "37px",
-	height: "24px",
-	borderRadius: "3px",
-	display: "inline-block",
-	marginLeft: "7px",
-	paddingTop: "3px",
-	textAlign: "center",
-}));
-
-const StyledDivPrimaryKeyLabel = styled("div")(() => ({
-	backgroundColor: "#F1E9FB",
-	padding: "3px, 4px, 3px, 4px",
-	width: "37px",
-	height: "24px",
-	borderRadius: "3px",
-	display: "inline-block",
-	marginLeft: "7px",
-	paddingTop: "3px",
-	textAlign: "center",
-}));
-
-const StyledDivFitContent = styled("div")(() => ({
-	width: "fit-content",
-	blockSize: "fit-content",
-	display: "flex",
-}));
-
-const StyledIconButtonMargins = styled(IconButton)(() => ({
-	marginLeft: "7.5px",
-	marginRight: "7.5px",
-}));
-
-const StyledSelectMinWidth = styled(Select)(() => ({
-	minWidth: "220px",
-}));
-
-const StyledButtonEditColumns = styled(Button)(() => ({
-	marginRight: "15px",
-}));
-
-const StyledDivCenterFlex = styled("div")(() => ({
-	alignItems: "center",
-	display: "flex",
-}));
-
-const StyledTypographyMarginRight = styled(Typography)(() => ({
-	marginBottom: "-1.5px",
-	marginRight: "15px",
-}));
-
-const StyledModalActionsUnpadded = styled(Modal.Actions)(() => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	padding: "0px",
-}));
-
-const StyledMarginModalActions = styled(Modal.Actions)(() => ({
-	display: "flex",
-	justifyContent: "flex-start",
-	marginBottom: "15px",
-	marginTop: "15px",
-	padding: "0px",
-}));
-
-const StyledPaddedStack = styled(Stack)(() => ({
-	backgroundColor: "#FAFAFA",
-	padding: "16px 16px 16px 16px",
-	marginBottom: "15px",
-}));
-
-const StyledModalTitle = styled(Typography)(() => ({
-	alignContent: "center",
-	marginRight: "15px",
-}));
-
-const StyledModalTitleWrapper = styled(Modal.Title)(() => ({
-	justifyContent: "space-between",
-	alignContent: "center",
-	display: "flex",
-	padding: "0px",
-	marginBottom: "15px",
-	marginTop: "25px",
-}));
-
-const StyledModalTitleUnpaddedWrapper = styled(Modal.Title)(() => ({
-	justifyContent: "space-between",
-	alignContent: "center",
-	display: "flex",
-	padding: "0px",
-}));
-
-const ScrollTableSetContainer = styled(TableContainer)(() => ({
-	maxHeight: "350px",
-	overflowY: "scroll",
-}));
-
-const StyledTableSetWrapper = styled("div")(() => ({
-	backgroundColor: "#fff",
-	marginBottom: "20px",
-}));
-
-const StyledTableTitle = styled(Typography)(() => ({
-	marginTop: "15px",
-	marginLeft: "15px",
-	marginBottom: "20px",
-}));
-
-const FlexWrapper = styled("div")(() => ({
-	marginTop: "15px",
-	display: "flex",
-	padding: "0px",
-}));
-
-const FlexTableCell = styled("div")(() => ({
-	alignItems: "center",
-	display: "flex",
-}));
-
-const StyledTableTitleBlueBubble = styled(Typography)(({ theme }) => ({
-	backgroundColor: theme.palette.primary.selected,
-	padding: "7.5px 17.5px",
-	borderRadius: "10px",
-	width: "fit-content",
-	display: "flex",
-	marginTop: "0px",
-	marginLeft: "0px",
-	marginBottom: "15px",
-	alignItems: "center",
-}));
-
-const SingleTableWrapper = styled("div")(() => ({
-	marginRight: "12.5px",
-	marginBottom: "60px",
-	marginLeft: "12.5px",
-}));
-
-// const CheckAllIconButton = styled(IconButton)(() => ({
-//     marginLeft: "-10px",
-// }));
-
-const AliasWarningIcon = styled(Tooltip)(() => ({
-	marginLeft: "10px",
-	color: "goldenrod",
-}));
-
-const TableIconButton = styled(Tooltip)(({ theme }) => ({
-	color: theme.palette.primary.main,
-	marginLeft: "-3px",
-	marginRight: "7px",
-}));
-
-const ColumnNameText = styled(Typography)(() => ({
-	fontWeight: "bold",
-}));
-
-const StyledMenu = styled((props: MenuProps) => (
-	<Menu
-		anchorOrigin={{
-			horizontal: "left",
-			vertical: "bottom",
-		}}
-		transformOrigin={{
-			horizontal: "left",
-			vertical: "top",
-		}}
-		{...props}
-	/>
-))(({ theme }) => ({
-	"& .MuiPaper-root": {
-		marginTop: theme.spacing(1),
-	},
-	".MuiList-root": {
-		padding: 0,
-	},
-}));
-
-const StyledMenuItem = styled(Menu.Item)(() => ({
-	textTransform: "capitalize",
-}));
-
-const StyledJoinDiv = styled("div")(({ theme }) => ({
-	borderRadius: "12px",
-	padding: "4px 12px",
-	fontSize: "14px",
-	color: "black",
-	border: "none",
-	cursor: "default",
-	backgroundColor: theme.palette.primary.selected,
-}));
-
-const StyledJoinTypography = styled(Typography)(({ theme }) => ({
-	cursor: "default",
-	marginLeft: "12.5px",
-	marginRight: "12.5px",
-	color: theme.palette.secondary.dark,
-}));
+const SQL_COLUMN_TYPES = ["DATE", "NUMBER", "STRING", "TIMESTAMP"];
 
 type JoinElement = {
 	leftTable: string;
@@ -281,21 +93,6 @@ type FormValues = {
 	tables: TableInterface[];
 };
 
-const IMPORT_MODAL_WIDTHS = {
-	small: "600px",
-	medium: "1150px",
-	large: "1150px",
-};
-
-const SQL_COLUMN_TYPES = ["DATE", "NUMBER", "STRING", "TIMESTAMP"];
-
-const JOIN_ICONS = {
-	inner: <JoinInner />,
-	"right.outer": <JoinRight />,
-	"left.outer": <JoinLeft />,
-	outer: <JoinFull />,
-};
-
 export const DataImportFormModal = observer(
 	(props: {
 		query?: QueryState;
@@ -312,7 +109,6 @@ export const DataImportFormModal = observer(
 			cell,
 		} = props;
 
-		const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 		const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
 		const { state, notebook } = useBlocks();
 
@@ -327,13 +123,11 @@ export const DataImportFormModal = observer(
 		const watchedTables = dataImportwatch("tables");
 		const watchedJoins = dataImportwatch("joins");
 		const [userDatabases, setUserDatabases] = useState(null);
-		const [importModalPixelWidth, setImportModalPixelWidth] =
-			useState<string>(IMPORT_MODAL_WIDTHS.small);
 		const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
 		const [selectedDatabaseId, setSelectedDatabaseId] = useState(
 			cell ? cell.parameters.databaseId : null,
 		);
-		const getDatabases = usePixel("META | GetDatabaseList ( ) ;"); // making repeat network calls, move to load data modal open
+		const getDatabases = usePixel("META | GetDatabaseList ( ) ;");
 		const [databaseTableRows, setDatabaseTableRows] = useState([]);
 		const [tableNames, setTableNames] = useState<string[]>([]);
 		const [isDatabaseLoading, setIsDatabaseLoading] =
@@ -342,13 +136,12 @@ export const DataImportFormModal = observer(
 		const [showEditColumns, setShowEditColumns] = useState<boolean>(true);
 		const [tableEdgesObject, setTableEdgesObject] = useState(null);
 		const [aliasesCountObj, setAliasesCountObj] = useState({});
-		// const { monolithStore } = useRootStore();
 		const aliasesCountObjRef = useRef({});
-		const [tableEdges, setTableEdges] = useState({}); //
+		const [tableEdges, setTableEdges] = useState({});
 		const [rootTable, setRootTable] = useState(
 			cell ? cell.parameters.rootTable : null,
 		);
-		const [dataLimit, setDataLimit] = useState(
+		const [dataLimit, _setDataLimit] = useState(
 			cell ? cell.parameters.dataLimit : -1,
 		);
 
@@ -361,7 +154,7 @@ export const DataImportFormModal = observer(
 		const [isInitLoadComplete, setIsInitLoadComplete] = useState(false);
 		const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
 		const [initEditPrepopulateComplete, setInitEditPrepopulateComplete] =
-			useState(editMode ? false : true);
+			useState(!editMode);
 
 		const { fields: newTableFields } = useFieldArray({
 			control: formControl,
@@ -377,7 +170,6 @@ export const DataImportFormModal = observer(
 			name: "joins",
 		});
 
-		const notification = useNotification();
 		/** Select all the rows from a Table */
 		const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
 		useEffect(() => {
@@ -393,8 +185,8 @@ export const DataImportFormModal = observer(
 		useEffect(() => {
 			if (
 				editMode &&
-				checkedColumnsCount == 0 &&
-				cell.parameters.databaseId == selectedDatabaseId &&
+				checkedColumnsCount === 0 &&
+				cell.parameters.databaseId === selectedDatabaseId &&
 				newTableFields.length &&
 				!initEditPrepopulateComplete
 			) {
@@ -486,7 +278,6 @@ export const DataImportFormModal = observer(
 						selectedColumns: getSelectedColumnNames(),
 						columnAliases: getColumnAliases(),
 						rootTable: rootTable,
-						// filters: filters,
 					};
 				}
 
@@ -532,15 +323,10 @@ export const DataImportFormModal = observer(
 
 		/**
 		 * Handles the event when a user clicks the "Select All" button in the Data Import Form Modal.
-		 * If the user clicks the button when all columns are already selected, it unselects all columns.
-		 * If the user clicks the button when no columns are selected, it selects all columns.
-		 * @param {number} tableIndex The index of the table in the watchedTables array.
 		 */
 		const addAllTableColumnsHandler = (tableIndex: number) => {
 			setShownTables(new Set(tableNames));
 			setRootTable(watchedTables[tableIndex].name);
-			// Check if all columns are currently selected. If they are, set allChecked to false.
-			// If not, set allChecked to true.
 			const allChecked = !isAllSelected;
 			const updatedColumns = watchedTables[tableIndex].columns.map(
 				(column) => ({
@@ -552,7 +338,6 @@ export const DataImportFormModal = observer(
 			const freshAliasCountObj = {};
 			updatedColumns.forEach((column) => {
 				if (allChecked) {
-					// If all columns are being selected, increment the alias count for this column's alias.
 					const alias = column.userAlias;
 					if (alias in freshAliasCountObj) {
 						freshAliasCountObj[alias] += 1;
@@ -562,11 +347,9 @@ export const DataImportFormModal = observer(
 				}
 			});
 
-			// Update the aliasesCountObj state variable with the new alias count object.
 			setAliasesCountObj(freshAliasCountObj);
 			aliasesCountObjRef.current = { ...freshAliasCountObj };
 
-			// Update the form value for the columns of the table at the given index with the updated columns array.
 			formSetValue(`tables.${tableIndex}.columns`, updatedColumns, {
 				shouldDirty: true,
 				shouldValidate: true,
@@ -663,7 +446,7 @@ export const DataImportFormModal = observer(
 			});
 		};
 
-		/** New Submit for Import Data --- empty */
+		/** New Submit for Import Data */
 		const onImportDataSubmit = (data: NewFormData) => {
 			console.log("submitted data", data);
 			if (editMode) {
@@ -690,7 +473,6 @@ export const DataImportFormModal = observer(
 			const pixelString = `META|GetDatabaseTableStructure(database=[ "${databaseId}" ]);META|GetDatabaseMetamodel( database=[ "${databaseId}" ], options=["dataTypes","positions"]);`;
 
 			runPixel(pixelString).then((pixelResponse) => {
-				// TODO: FIX TYPES
 				const responseTableStructure = pixelResponse.pixelReturn[0]
 					.output as string[][];
 				const isResponseTableStructureGood =
@@ -716,7 +498,6 @@ export const DataImportFormModal = observer(
 				let newTableNames = [];
 
 				if (isResponseTableStructureGood) {
-					// Extract unique table names without using a Set
 					newTableNames = responseTableStructure.reduce(
 						(acc, ele) => {
 							if (!acc.includes(ele[0])) {
@@ -779,10 +560,7 @@ export const DataImportFormModal = observer(
 					});
 				} else {
 					console.error("Error retrieving database tables");
-					notification.add({
-						color: "error",
-						message: `Error retrieving database tables`,
-					});
+					toast.error("Error retrieving database tables");
 				}
 
 				if (isResponseTableEdgesStructureGood) {
@@ -826,10 +604,7 @@ export const DataImportFormModal = observer(
 					setTableEdgesObject(newEdgesDict);
 				} else {
 					console.error("Error retrieving database edges");
-					notification.add({
-						color: "error",
-						message: `Error retrieving database tables`,
-					});
+					toast.error("Error retrieving database tables");
 				}
 
 				const o = pixelResponse.pixelReturn[1].output as {
@@ -862,10 +637,8 @@ export const DataImportFormModal = observer(
 				});
 				setTableEdges(newTableEdges);
 				setIsDatabaseLoading(false);
-				setImportModalPixelWidth(IMPORT_MODAL_WIDTHS.large);
 
 				setTableNames(newTableNames);
-				// shown tables filtered only on init load of edit mode
 				if (editMode && !isInitLoadComplete) {
 					const newEdges = [
 						rootTable,
@@ -947,16 +720,13 @@ export const DataImportFormModal = observer(
 				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
 
 				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = pixelStringPart1 + ";";
+				pixelPartialRef.current = `${pixelStringPart1};`;
 			} catch {
 				setIsDatabaseLoading(false);
 				setShowTablePreview(false);
 				setShowEditColumns(true);
 
-				notification.add({
-					color: "error",
-					message: `Error updating Data Import`,
-				});
+				toast.error("Error updating Data Import");
 			}
 		};
 
@@ -1077,7 +847,7 @@ export const DataImportFormModal = observer(
 				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
 
 				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = pixelStringPart1 + ";";
+				pixelPartialRef.current = `${pixelStringPart1};`;
 
 				runPixel(reactorPixel).then((response) => {
 					const type = response.pixelReturn[0]?.operationType;
@@ -1091,12 +861,9 @@ export const DataImportFormModal = observer(
 					const tableHeadersData = o.data?.headers;
 					const tableRowsData = o.data?.values;
 
-					if (type.indexOf("ERROR") != -1) {
+					if (type.indexOf("ERROR") !== -1) {
 						console.error("Error retrieving database tables");
-						notification.add({
-							color: "error",
-							message: `Error retrieving database tables`,
-						});
+						toast.error("Error retrieving database tables");
 						setIsDatabaseLoading(false);
 						setShowTablePreview(false);
 						setShowEditColumns(true);
@@ -1112,14 +879,11 @@ export const DataImportFormModal = observer(
 				setShowTablePreview(false);
 				setShowEditColumns(true);
 
-				notification.add({
-					color: "error",
-					message: `Error retrieving database tables`,
-				});
+				toast.error("Error retrieving database tables");
 			}
 		};
 
-		/** Helper Function Update Alias Tracker Object*/
+		/** Helper Function Update Alias Tracker Object */
 		const updateAliasCountObj = (
 			isBeingAdded,
 			newAlias,
@@ -1161,7 +925,7 @@ export const DataImportFormModal = observer(
 			setAliasesCountObj(newAliasesCountObj);
 			aliasesCountObjRef.current = { ...newAliasesCountObj };
 
-			updatePixelRef(); // may be unnecessary
+			updatePixelRef();
 		};
 
 		/** Find Joinable Tables */
@@ -1178,20 +942,19 @@ export const DataImportFormModal = observer(
 			const columnObject = watchedTables[tableIndex].columns[columnIndex];
 			updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
 			if (columnObject?.checked) {
-				if (checkedColumnsCount == 0) {
+				if (checkedColumnsCount === 0) {
 					findAllJoinableTables(watchedTables[tableIndex].name);
 					setRootTable(watchedTables[tableIndex].name);
 				}
 				setCheckedColumnsCount(checkedColumnsCount + 1);
-			} else if (columnObject?.checked == false) {
-				if (checkedColumnsCount == 1) {
+			} else if (columnObject?.checked === false) {
+				if (checkedColumnsCount === 1) {
 					setShownTables(new Set(tableNames));
 					setRootTable(null);
 				}
 				setCheckedColumnsCount(checkedColumnsCount - 1);
 			}
 			setJoinsStackHandler();
-			// After unselecting a row, check if all are selected or not
 			const tables = dataImportwatch("tables");
 			const totalColumns = tables[tableIndex].columns.length;
 			const selectedCount = tables[tableIndex].columns.filter(
@@ -1203,7 +966,7 @@ export const DataImportFormModal = observer(
 			}
 		};
 
-		/** Pre-Populate form For Edit  */
+		/** Pre-Populate form For Edit */
 		const prepoulateFormForEdit = (cell) => {
 			const tablesWithCheckedBoxes = new Set();
 			const checkedColumns = new Set();
@@ -1235,7 +998,6 @@ export const DataImportFormModal = observer(
 					if (tablesWithCheckedBoxes.has(newTableObj.name)) {
 						const watchedTableColumns =
 							watchedTables[tableIdx].columns;
-						// Count total columns in this table
 						totalColumnsToCheck += watchedTableColumns.length;
 
 						watchedTableColumns?.forEach(
@@ -1257,12 +1019,6 @@ export const DataImportFormModal = observer(
 							},
 						);
 					}
-					// If all columns in the table are checked, set isAllSelected to true.
-					// Otherwise, set isAllSelected to false.
-					// We do this by comparing the total number of columns in the table
-					// (totalColumnsToCheck) to the total number of columns that are checked
-					// (totalCheckedColumns). If the two values are equal, then all columns
-					// are checked. If not, then some columns are not checked.
 					if (
 						totalCheckedColumns === totalColumnsToCheck &&
 						totalColumnsToCheck > 0
@@ -1293,11 +1049,11 @@ export const DataImportFormModal = observer(
 		const checkTableForSelectedColumns = (tableName) => {
 			for (let i = 0; i < watchedTables.length; i++) {
 				const currTable = watchedTables[i];
-				if (currTable.name == tableName) {
+				if (currTable.name === tableName) {
 					const currTableColumns = currTable.columns;
 					for (let j = 0; j < currTableColumns.length; j++) {
 						const currColumn = currTableColumns[j];
-						if (currColumn.checked == true) return true;
+						if (currColumn.checked === true) return true;
 					}
 				}
 			}
@@ -1318,8 +1074,8 @@ export const DataImportFormModal = observer(
 				rightTables?.forEach((entry, joinIdx) => {
 					console.log(joinIdx);
 					const rightTable = entry[0];
-					const leftKey = entry[1]["sourceColumn"];
-					const rightKey = entry[1]["targetColumn"];
+					const leftKey = entry[1].sourceColumn;
+					const rightKey = entry[1].targetColumn;
 
 					const leftTableContainsCheckedColumns =
 						checkTableForSelectedColumns(leftTable);
@@ -1332,7 +1088,7 @@ export const DataImportFormModal = observer(
 					if (
 						leftTableContainsCheckedColumns &&
 						rightTableContainsCheckedColumns &&
-						joinsSet.has(joinsSetString) == false
+						joinsSet.has(joinsSetString) === false
 					) {
 						appendJoinElement({
 							leftTable: leftTable,
@@ -1343,18 +1099,18 @@ export const DataImportFormModal = observer(
 						});
 						addToJoinsSetHelper(joinsSetString);
 					} else if (
-						leftTableContainsCheckedColumns == false ||
-						(rightTableContainsCheckedColumns == false &&
+						leftTableContainsCheckedColumns === false ||
+						(rightTableContainsCheckedColumns === false &&
 							joinsSet.has(joinsSetString))
 					) {
 						joinsSet.delete(joinsSetString);
 						joinElements.some((ele, idx) => {
 							if (
-								leftTable == ele.leftTable &&
-								rightTable == ele.rightTable &&
-								defaultJoinType == ele.joinType &&
-								leftKey == ele.leftKey &&
-								rightKey == ele.rightKey
+								leftTable === ele.leftTable &&
+								rightTable === ele.rightTable &&
+								defaultJoinType === ele.joinType &&
+								leftKey === ele.leftKey &&
+								rightKey === ele.rightKey
 							) {
 								removeJoinElement(idx);
 								return true;
@@ -1374,87 +1130,96 @@ export const DataImportFormModal = observer(
 			joinsSetCopy.add(newJoinSet);
 			setJoinsSet(joinsSetCopy);
 		};
+
 		return (
-			<Modal open={true} maxWidth="lg">
-				<Modal.Content sx={{ width: importModalPixelWidth }}>
+			<Dialog
+				open={true}
+				onOpenChange={(open) => {
+					if (!open) closeImportModalHandler();
+				}}
+			>
+				<DialogContent
+					style={{ maxWidth: "70vw", width: "70vw" }}
+					className="max-h-[90vh] overflow-y-auto"
+				>
+					<DialogHeader>
+						<DialogTitle>Import Data</DialogTitle>
+					</DialogHeader>
 					<form onSubmit={formHandleSubmit(onImportDataSubmit)}>
-						<StyledModalTitleWrapper>
-							<StyledDivFitContent>
-								<StyledModalTitle variant="h6">
+						{/* Database selector */}
+						<div className="mt-6 mb-4 flex items-center justify-between gap-3">
+							<div className="flex items-center gap-3">
+								<span className="font-semibold text-base">
 									Import Data from
-								</StyledModalTitle>
+								</span>
 								<Controller
 									name={"databaseSelect"}
 									control={formControl}
 									render={({ field }) => (
-										<StyledSelectMinWidth
-											onChange={(e) => {
-												field.onChange(e.target.value);
-												setSelectedDatabaseId(
-													e.target.value,
-												);
+										<Select
+											disabled={editMode}
+											value={field.value || ""}
+											onValueChange={(value) => {
+												field.onChange(value);
+												setSelectedDatabaseId(value);
 												retrieveDatabaseTablesAndEdges(
-													e.target.value,
+													value,
 												);
 												setShowEditColumns(true);
 												setShowTablePreview(false);
-												setImportModalPixelWidth(
-													IMPORT_MODAL_WIDTHS.medium,
-												);
 											}}
-											label={"Select Database"}
-											value={field.value || ""}
-											size={"small"}
-											disabled={editMode}
 										>
-											{userDatabases?.map(
-												(ele, dbIndex) => (
-													<Menu.Item
-														value={ele.database_id}
-														key={dbIndex}
-													>
-														{ele.app_name}
-													</Menu.Item>
-												),
-											)}
-										</StyledSelectMinWidth>
+											<SelectTrigger className="min-w-[220px]">
+												<SelectValue placeholder="Select Database" />
+											</SelectTrigger>
+											<SelectContent>
+												{userDatabases?.map(
+													(ele, dbIndex) => (
+														<SelectItem
+															value={
+																ele.database_id
+															}
+															// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+															key={dbIndex}
+														>
+															{ele.app_name}
+														</SelectItem>
+													),
+												)}
+											</SelectContent>
+										</Select>
 									)}
 								/>
-							</StyledDivFitContent>
-							{/* <IconButton disabled={true}>
-                                <KeyboardArrowDown />
-                            </IconButton> */}
-						</StyledModalTitleWrapper>
+							</div>
+						</div>
 
 						{isDatabaseLoading && (
-							// <LoadingScreen.Trigger description="Awaiting database response..." />
-							<>LOADING....</>
+							<div className="py-4 text-muted-foreground text-sm">
+								LOADING....
+							</div>
 						)}
 
 						{!selectedDatabaseId && (
-							<StyledPaddedStack spacing={1} direction="column">
-								<Typography
-									variant="subtitle2"
-									color="secondary"
-								>
+							<div className="mb-4 rounded-md bg-muted p-4">
+								<p className="font-medium text-muted-foreground text-sm">
 									Select a Database for Import
-								</Typography>
-							</StyledPaddedStack>
+								</p>
+							</div>
 						)}
 
 						{selectedDatabaseId && !isDatabaseLoading && (
-							<StyledPaddedStack spacing={1} direction="column">
-								<StyledModalTitleUnpaddedWrapper>
-									<StyledDivCenterFlex>
-										<StyledTypographyMarginRight variant="h6">
+							<div className="mb-4 flex flex-col gap-3 rounded-md bg-[#FAFAFA] p-4">
+								<div className="flex items-center justify-between">
+									<div className="flex items-center">
+										<h6 className="mr-4 font-semibold text-base">
 											Data
-										</StyledTypographyMarginRight>
-									</StyledDivCenterFlex>
-									<div>
-										<StyledButtonEditColumns
-											variant="text"
-											color="primary"
-											size="medium"
+										</h6>
+									</div>
+									<div className="flex items-center gap-2">
+										<Button
+											variant="ghost"
+											type="button"
+											className="mr-4"
 											onClick={() => {
 												if (!showEditColumns) {
 													setShowEditColumns(true);
@@ -1463,11 +1228,10 @@ export const DataImportFormModal = observer(
 											}}
 										>
 											Edit Columns
-										</StyledButtonEditColumns>
+										</Button>
 										<Button
-											variant="outlined"
-											color="primary"
-											size="medium"
+											variant="outline"
+											type="button"
 											disabled={
 												!checkedColumnsCount ||
 												Object.values(
@@ -1484,14 +1248,14 @@ export const DataImportFormModal = observer(
 											Preview
 										</Button>
 									</div>
-								</StyledModalTitleUnpaddedWrapper>
+								</div>
 
 								{showEditColumns && (
-									<StyledTableSetWrapper>
-										<StyledTableTitle variant="h6">
+									<div className="mb-5 bg-white">
+										<h6 className="mt-4 mb-5 ml-4 font-semibold text-base">
 											Available Tables / Columns
-										</StyledTableTitle>
-										<ScrollTableSetContainer>
+										</h6>
+										<div className="max-h-[350px] overflow-y-scroll">
 											{newTableFields.map(
 												(table, tableIndex) => (
 													<div
@@ -1500,76 +1264,71 @@ export const DataImportFormModal = observer(
 														{shownTables.has(
 															table.name,
 														) && (
-															<SingleTableWrapper
+															<div
 																key={`${table.name}-${tableIndex}`}
+																className="mr-3 mb-[60px] ml-3"
 															>
-																<FlexWrapper>
-																	<StyledTableTitleBlueBubble variant="body1">
-																		<TableIconButton
-																			title={
-																				"Table"
-																			}
-																			placement="top"
-																		>
-																			<CalendarViewMonth />
-																		</TableIconButton>
-																		{
-																			table.name
-																		}
-																	</StyledTableTitleBlueBubble>
-																</FlexWrapper>
-																<Table size="small">
-																	<Table.Body>
-																		<Table.Row>
-																			<Table.Cell>
+																<div className="mt-4 flex p-0">
+																	<div className="mb-4 flex w-fit items-center rounded-[10px] bg-primary/10 px-[17.5px] py-[7.5px]">
+																		<Tooltip>
+																			<TooltipTrigger
+																				asChild
+																			>
+																				<span className="flex cursor-default items-center gap-1.5">
+																					<CalendarDays className="-ml-0.5 mr-1.5 size-4 text-primary/60" />
+																					{
+																						table.name
+																					}
+																				</span>
+																			</TooltipTrigger>
+																			<TooltipContent>
+																				Table
+																			</TooltipContent>
+																		</Tooltip>
+																	</div>
+																</div>
+																<Table className="text-sm">
+																	<TableBody>
+																		<TableRow>
+																			<TableCell>
 																				<Checkbox
 																					checked={
 																						isAllSelected
-																					} // Checked if all rows are selected
-																					indeterminate={
-																						checkedColumnsCount >
-																							0 &&
-																						checkedColumnsCount <
-																							watchedTables[
-																								tableIndex
-																							]
-																								.columns
-																								.length
 																					}
-																					onChange={() =>
+																					onCheckedChange={() =>
 																						addAllTableColumnsHandler(
 																							tableIndex,
 																						)
-																					} // Handle the toggle of "select all"
+																					}
 																				/>
-																			</Table.Cell>
-																			<Table.Cell>
-																				<ColumnNameText variant="body1">
+																			</TableCell>
+																			<TableCell>
+																				<span className="font-bold">
 																					Fields
-																				</ColumnNameText>
-																			</Table.Cell>
-																			<Table.Cell>
-																				<ColumnNameText variant="body1">
+																				</span>
+																			</TableCell>
+																			<TableCell>
+																				<span className="font-bold">
 																					Alias
-																				</ColumnNameText>
-																			</Table.Cell>
-																			<Table.Cell>
-																				<ColumnNameText variant="body1">
+																				</span>
+																			</TableCell>
+																			<TableCell>
+																				<span className="font-bold">
 																					Field
 																					Type
-																				</ColumnNameText>
-																			</Table.Cell>
-																		</Table.Row>
+																				</span>
+																			</TableCell>
+																		</TableRow>
 
 																		{table.columns.map(
 																			(
 																				column,
 																				columnIndex,
 																			) => (
-																				<Table.Row
+																				<TableRow
 																					key={`${column.columnName}-${columnIndex}`}
 																				>
-																					<Table.Cell>
+																					<TableCell>
 																						<Controller
 																							name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
 																							control={
@@ -1583,11 +1342,11 @@ export const DataImportFormModal = observer(
 																										field.value
 																									}
 																									id={`checkbox-${column.columnName}-${columnIndex}`}
-																									onChange={(
-																										e,
+																									onCheckedChange={(
+																										checked,
 																									) => {
 																										field.onChange(
-																											e,
+																											checked,
 																										);
 																										checkBoxHandler(
 																											tableIndex,
@@ -1597,27 +1356,27 @@ export const DataImportFormModal = observer(
 																								/>
 																							)}
 																						/>
-																					</Table.Cell>
-																					<Table.Cell>
+																					</TableCell>
+																					<TableCell>
 																						{
 																							column.columnName
 																						}
-																						{column.columnName ==
+																						{column.columnName ===
 																							"ID" && (
-																							<StyledDivPrimaryKeyLabel>
+																							<span className="ml-[7px] inline-block h-6 w-[37px] rounded-[3px] bg-[#F1E9FB] pt-[3px] text-center text-xs">
 																								PK
-																							</StyledDivPrimaryKeyLabel>
+																							</span>
 																						)}
 																						{column.columnName.includes(
 																							"_ID",
 																						) && (
-																							<StyledDivSecondaryKeyLabel>
+																							<span className="ml-[7px] inline-block h-6 w-[37px] rounded-[3px] bg-[#EBEBEB] pt-[3px] text-center text-xs">
 																								FK
-																							</StyledDivSecondaryKeyLabel>
+																							</span>
 																						)}
-																					</Table.Cell>
-																					<Table.Cell>
-																						<FlexTableCell>
+																					</TableCell>
+																					<TableCell>
+																						<div className="flex items-center">
 																							<Controller
 																								name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
 																								control={
@@ -1626,10 +1385,9 @@ export const DataImportFormModal = observer(
 																								render={({
 																									field,
 																								}) => (
-																									<TextField
+																									<Input
 																										type="text"
-																										variant="outlined"
-																										size="small"
+																										className="h-8"
 																										value={
 																											field.value
 																										}
@@ -1679,14 +1437,23 @@ export const DataImportFormModal = observer(
 																										.userAlias
 																								] >
 																									1 && (
-																									<AliasWarningIcon title="Duplicate Alias Name">
-																										<Warning />
-																									</AliasWarningIcon>
+																									<Tooltip>
+																										<TooltipTrigger
+																											asChild
+																										>
+																											<AlertTriangle className="ml-2.5 size-4 text-yellow-600" />
+																										</TooltipTrigger>
+																										<TooltipContent>
+																											Duplicate
+																											Alias
+																											Name
+																										</TooltipContent>
+																									</Tooltip>
 																								)}
-																						</FlexTableCell>
-																					</Table.Cell>
+																						</div>
+																					</TableCell>
 
-																					<Table.Cell>
+																					<TableCell>
 																						<Controller
 																							name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
 																							control={
@@ -1695,86 +1462,89 @@ export const DataImportFormModal = observer(
 																							render={({
 																								field,
 																							}) => (
-																								<StyledSelectMinWidth
-																									onChange={(
-																										e,
-																									) => {
-																										field.onChange(
-																											e
-																												.target
-																												.value,
-																										);
-																									}}
+																								<Select
+																									disabled
 																									value={
 																										field.value ||
 																										""
 																									}
-																									size={
-																										"small"
-																									}
-																									disabled // TODO enable after adding to form and cell config
+																									onValueChange={(
+																										value,
+																									) => {
+																										field.onChange(
+																											value,
+																										);
+																									}}
 																								>
-																									{SQL_COLUMN_TYPES.map(
-																										(
-																											ele,
-																											eleIdx,
-																										) => (
-																											<Menu.Item
-																												value={
-																													ele
-																												}
-																												key={
-																													eleIdx
-																												}
-																											>
-																												{
-																													ele
-																												}
-																											</Menu.Item>
-																										),
-																									)}
-																								</StyledSelectMinWidth>
+																									<SelectTrigger className="h-8 min-w-[220px]">
+																										<SelectValue />
+																									</SelectTrigger>
+																									<SelectContent>
+																										{SQL_COLUMN_TYPES.map(
+																											(
+																												ele,
+																												eleIdx,
+																											) => (
+																												<SelectItem
+																													value={
+																														ele
+																													}
+																													key={
+																														// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+																														eleIdx
+																													}
+																												>
+																													{
+																														ele
+																													}
+																												</SelectItem>
+																											),
+																										)}
+																									</SelectContent>
+																								</Select>
 																							)}
 																						/>
-																					</Table.Cell>
-																				</Table.Row>
+																					</TableCell>
+																				</TableRow>
 																			),
 																		)}
-																	</Table.Body>
+																	</TableBody>
 																</Table>
-															</SingleTableWrapper>
+															</div>
 														)}
 													</div>
 												),
 											)}
-										</ScrollTableSetContainer>
-									</StyledTableSetWrapper>
+										</div>
+									</div>
 								)}
 
 								{showPreview && (
-									<StyledTableSetWrapper>
-										<StyledTableTitle variant="h6">
+									<div className="mb-5 bg-white">
+										<h6 className="mt-4 mb-5 ml-4 font-semibold text-base">
 											Preview
-										</StyledTableTitle>
-										<ScrollTableSetContainer>
-											<Table stickyHeader size={"small"}>
-												<Table.Body>
-													<Table.Row>
+										</h6>
+										<div className="max-h-[350px] overflow-y-scroll">
+											<Table>
+												<TableHeader>
+													<TableRow>
 														{databaseTableHeaders.map(
 															(h, hIdx) => (
-																<Table.Cell
+																<TableHead
+																	// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 																	key={hIdx}
 																>
-																	<strong>
-																		{h}
-																	</strong>
-																</Table.Cell>
+																	{h}
+																</TableHead>
 															),
 														)}
-													</Table.Row>
+													</TableRow>
+												</TableHeader>
+												<TableBody>
 													{databaseTableRows.map(
 														(r, rIdx) => (
-															<Table.Row
+															<TableRow
+																// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 																key={rIdx}
 															>
 																{r.map(
@@ -1782,52 +1552,66 @@ export const DataImportFormModal = observer(
 																		v,
 																		vIdx,
 																	) => (
-																		<Table.Cell
+																		<TableCell
+																			// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 																			key={`${rIdx}-${vIdx}`}
 																		>
 																			{v}
-																		</Table.Cell>
+																		</TableCell>
 																	),
 																)}
-															</Table.Row>
+															</TableRow>
 														),
 													)}
-												</Table.Body>
+												</TableBody>
 											</Table>
-										</ScrollTableSetContainer>
-									</StyledTableSetWrapper>
+										</div>
+									</div>
 								)}
-							</StyledPaddedStack>
+							</div>
 						)}
 
 						{joinElements.map((join, joinIndex) => (
-							<StyledPaddedStack
-								spacing={1}
-								direction="column"
+							<div
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 								key={joinIndex}
+								className="mb-4 flex flex-col gap-3 rounded-md bg-[#FAFAFA] p-4"
 							>
-								<StyledModalTitleUnpaddedWrapper>
-									<StyledDivCenterFlex>
-										<StyledTypographyMarginRight variant="h6">
-											Join
-										</StyledTypographyMarginRight>
+								<div className="flex items-center">
+									<h6 className="mr-3 font-semibold text-base">
+										Join
+									</h6>
 
-										<Tooltip title="Left Table">
-											<StyledJoinDiv>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="cursor-default rounded-[12px] border-none bg-primary/10 px-3 py-1 text-black text-sm">
 												{join.leftTable}
-											</StyledJoinDiv>
-										</Tooltip>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>
+											Left Table
+										</TooltipContent>
+									</Tooltip>
 
-										<Tooltip
-											title={`${"Select Join Type"}`}
-										>
-											<StyledIconButtonMargins
-												size="small"
-												color="secondary"
-												onClick={(e) => {
-													setAnchorEl(
-														e.currentTarget,
-													);
+									<DropdownMenu
+										open={
+											isJoinSelectOpen &&
+											joinTypeSelectIndex === joinIndex
+										}
+										onOpenChange={(open) => {
+											if (!open) {
+												setIsJoinSelectOpen(false);
+												setJoinTypeSelectIndex(-1);
+											}
+										}}
+									>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												type="button"
+												className="mx-[7.5px]"
+												onClick={() => {
 													setJoinTypeSelectIndex(
 														joinIndex,
 													);
@@ -1836,134 +1620,122 @@ export const DataImportFormModal = observer(
 											>
 												{
 													JOIN_ICONS[
-														watchedJoins[joinIndex]
-															.joinType
+														watchedJoins?.[
+															joinIndex
+														]?.joinType
 													]
 												}
-											</StyledIconButtonMargins>
-										</Tooltip>
-
-										{/* Join Select Menu */}
-										<StyledMenu
-											anchorEl={anchorEl}
-											open={isJoinSelectOpen}
-											onClose={() => {
-												setAnchorEl(null);
-												setIsJoinSelectOpen(false);
-												setJoinTypeSelectIndex(-1);
-											}}
-										>
-											<StyledMenuItem
-												value={"Inner Join"}
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent>
+											<DropdownMenuItem
 												onClick={() => {
 													setIsJoinSelectOpen(false);
 													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
+														`joins.${joinIndex}.joinType`,
 														"inner",
 													);
 												}}
 											>
 												Inner Join
-											</StyledMenuItem>
-											<StyledMenuItem
-												value={"Left Join"}
+											</DropdownMenuItem>
+											<DropdownMenuItem
 												onClick={() => {
 													setIsJoinSelectOpen(false);
 													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
+														`joins.${joinIndex}.joinType`,
 														"left.outer",
 													);
 												}}
 											>
 												Left Join
-											</StyledMenuItem>
-											<StyledMenuItem
-												value={"Right Join"}
+											</DropdownMenuItem>
+											<DropdownMenuItem
 												onClick={() => {
 													setIsJoinSelectOpen(false);
 													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
+														`joins.${joinIndex}.joinType`,
 														"right.outer",
 													);
 												}}
 											>
 												Right Join
-											</StyledMenuItem>
-											<StyledMenuItem
-												value={"Outer Join"}
+											</DropdownMenuItem>
+											<DropdownMenuItem
 												onClick={() => {
 													setIsJoinSelectOpen(false);
 													formSetValue(
-														`joins.${joinTypeSelectIndex}.joinType`,
+														`joins.${joinIndex}.joinType`,
 														"outer",
 													);
 												}}
 											>
 												Outer Join
-											</StyledMenuItem>
-										</StyledMenu>
+											</DropdownMenuItem>
+										</DropdownMenuContent>
+									</DropdownMenu>
 
-										<Tooltip title="Right Table">
-											<StyledJoinDiv>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="cursor-default rounded-[12px] bg-[#DEF4F3] px-3 py-1 text-black text-sm">
 												{join.rightTable}
-											</StyledJoinDiv>
-										</Tooltip>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>
+											Right Table
+										</TooltipContent>
+									</Tooltip>
 
-										<StyledJoinTypography variant="body1">
-											where
-										</StyledJoinTypography>
+									<span className="mx-3 cursor-default text-secondary-foreground text-sm">
+										where
+									</span>
 
-										<Tooltip title="Left Key">
-											<StyledJoinDiv>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="cursor-default rounded-[12px] bg-primary/10 px-3 py-1 text-black text-sm">
 												{join.leftKey}
-											</StyledJoinDiv>
-										</Tooltip>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>
+											Left Key
+										</TooltipContent>
+									</Tooltip>
 
-										<StyledJoinTypography variant="body1">
-											=
-										</StyledJoinTypography>
+									<span className="mx-3 cursor-default text-secondary-foreground text-sm">
+										=
+									</span>
 
-										<Tooltip title="Right Key">
-											<StyledJoinDiv>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<div className="cursor-default rounded-[12px] bg-[#DEF4F3] px-3 py-1 text-black text-sm">
 												{join.rightKey}
-											</StyledJoinDiv>
-										</Tooltip>
-									</StyledDivCenterFlex>
-								</StyledModalTitleUnpaddedWrapper>
-							</StyledPaddedStack>
+											</div>
+										</TooltipTrigger>
+										<TooltipContent>
+											Right Key
+										</TooltipContent>
+									</Tooltip>
+								</div>
+							</div>
 						))}
 
-						<StyledMarginModalActions>
-							<Button
-								variant="outlined"
-								color="primary"
-								size="medium"
-								disabled
-								startIcon={<FilterListRounded />}
-								onClick={() => {
-									// create addFilterHandler
-								}}
-							>
+						{/* Action buttons row */}
+						<div className="mt-4 mb-4 flex justify-start gap-2">
+							<Button variant="outline" type="button" disabled>
+								<Filter className="mr-1 size-4" />
 								Add Filter
 							</Button>
-							<Button
-								variant="outlined"
-								color="primary"
-								size="medium"
-								disabled
-								startIcon={<ControlPointDuplicateRounded />}
-								onClick={() => {
-									// create addSummaryHandler
-								}}
-							>
+							<Button variant="outline" type="button" disabled>
+								<CopyPlus className="mr-1 size-4" />
 								Add Summary
 							</Button>
-						</StyledMarginModalActions>
+						</div>
 
-						<StyledModalActionsUnpadded>
+						{/* Footer actions */}
+						<div className="mt-2 flex justify-end gap-2">
 							<Button
-								variant="text"
-								color="secondary"
+								variant="ghost"
+								type="button"
 								onClick={() => {
 									closeImportModalHandler();
 								}}
@@ -1972,8 +1744,6 @@ export const DataImportFormModal = observer(
 							</Button>
 							<Button
 								type="submit"
-								variant="contained"
-								color="primary"
 								disabled={
 									!checkedColumnsCount ||
 									Object.values(aliasesCountObj).some(
@@ -1984,10 +1754,10 @@ export const DataImportFormModal = observer(
 							>
 								{editMode ? "Update Cell" : "Import"}
 							</Button>
-						</StyledModalActionsUnpadded>
+						</div>
 					</form>
-				</Modal.Content>
-			</Modal>
+				</DialogContent>
+			</Dialog>
 		);
 	},
 );

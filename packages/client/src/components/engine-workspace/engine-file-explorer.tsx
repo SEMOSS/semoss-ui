@@ -1,5 +1,7 @@
 import { HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { download, runPixel, useInsight } from "@semoss/sdk/react";
 import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
@@ -19,10 +21,62 @@ interface EngineFileExplorerProps {
 export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 	({ layout, node, engine }) => {
 		const insight = useInsight();
+		const [searchParams, setSearchParams] = useSearchParams();
+		const [refreshKey, setRefreshKey] = useState(0);
 		const config: {
 			explorerMode?: "ENGINE" | "STORAGE";
 		} = node.getConfig();
 		const isStorageViewer = config.explorerMode === "STORAGE";
+
+		/**
+		 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
+		 * @param deletedPath the path of the deleted file or directory
+		 * @param isDirectory whether the deleted path is a directory
+		 */
+		const removeDeletedTabs = useCallback(
+			(deletedPath: string, isDirectory: boolean) => {
+				const model = node.getModel();
+				const deletedPathWithSlash =
+					isDirectory && !deletedPath.endsWith("/")
+						? `${deletedPath}/`
+						: deletedPath;
+				const tabsToRemove: string[] = [];
+
+				model.visitNodes((currentNode) => {
+					console.log(
+						"VISITING NODE >>>",
+						currentNode.getId(),
+						" >> ",
+						!(currentNode instanceof FlexLayout.TabNode),
+					);
+					if (!(currentNode instanceof FlexLayout.TabNode)) {
+						return;
+					}
+
+					const config = currentNode.getConfig() as
+						| { path?: string }
+						| undefined;
+					const path = config?.path;
+					if (!path) {
+						return;
+					}
+					console.log("TESTING >>>", deletedPath, path, isDirectory);
+					if (
+						isDirectory
+							? path === deletedPath ||
+								path.startsWith(deletedPathWithSlash)
+							: path === deletedPath
+					) {
+						tabsToRemove.push(currentNode.getId());
+					}
+				});
+
+				tabsToRemove.forEach((tabId) => {
+					model.doAction(FlexLayout.Actions.deleteTab(tabId));
+				});
+			},
+			[node],
+		);
 
 		/**
 		 * Add a node to the layout
@@ -30,47 +84,73 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 		 * @param options
 		 * @returns
 		 */
-		const addNode = (
-			nodeId: string,
-			options: {
-				[key: string]: unknown;
-			},
-		) => {
-			const model = node.getModel();
 
-			// select the node if there
-			const selectedNode = model.getNodeById(nodeId);
-			if (selectedNode) {
+		const addNode = useCallback(
+			(
+				nodeId: string,
+				options: {
+					[key: string]: unknown;
+				},
+			) => {
+				const model = node.getModel();
+
+				// select the node if there
+				const selectedNode = model.getNodeById(nodeId);
+				if (selectedNode) {
+					model.doAction(
+						FlexLayout.Actions.selectTab(selectedNode.getId()),
+					);
+					return;
+				}
+
+				// create the node if it is not there
+				// where to add the node
+				const addId =
+					model.getActiveTabset()?.getId() ||
+					model.getRoot().getChildren()[0]?.getId() ||
+					"";
+
+				// create and select the panel
 				model.doAction(
-					FlexLayout.Actions.selectTab(selectedNode.getId()),
+					FlexLayout.Actions.addNode(
+						{
+							...options,
+							id: nodeId,
+						},
+						addId,
+						FlexLayout.DockLocation.CENTER,
+						-1,
+						true,
+					),
 				);
-				return;
-			}
+			},
+			[node],
+		);
 
-			// create the node if it is not there
-			// where to add the node
-			const addId =
-				model.getActiveTabset()?.getId() ||
-				model.getRoot().getChildren()[0]?.getId() ||
-				"";
-
-			// create and select the panel
-			model.doAction(
-				FlexLayout.Actions.addNode(
-					{
-						...options,
-						id: nodeId,
+		useEffect(() => {
+			const mcpParam = searchParams.get("mcp");
+			if (mcpParam === "Generate") {
+				const mcpFilePath = "/mcp/pixel_mcp.json";
+				addNode(`ENGINE_MCP_EDITOR--${mcpFilePath}`, {
+					type: "tab",
+					name: `Toolbox Editor - pixel_mcp.json`,
+					component: "engine-mcp-editor",
+					config: {
+						name: "pixel_mcp.json",
+						path: mcpFilePath,
 					},
-					addId,
-					FlexLayout.DockLocation.CENTER,
-					-1,
-					true,
-				),
-			);
-		};
+					enableClose: true,
+				});
+				toast.success("MCP generated");
+				setRefreshKey((prev) => prev + 1);
+				searchParams.delete("mcp");
+				setSearchParams(searchParams);
+			}
+		}, [searchParams, addNode, setSearchParams]);
 
 		return (
 			<FileExplorer
+				key={refreshKey}
 				mode={
 					isStorageViewer
 						? {
@@ -148,7 +228,6 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					const isDriverFile =
 						item.type !== "directory" &&
 						MCP.DRIVER_PATHS.some((f) => item.path === f);
-
 					const actions = [];
 					if (!isStorageViewer) {
 						if (isDriverFile) {
@@ -164,24 +243,24 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 
 										// refresh the explorer
 										refresh();
-
-										// open the editor for the created file
-										addNode(
-											`ENGINE_MCP_EDITOR--/mcp/py_mcp.json`,
-											{
-												type: "tab",
-												name: `Toolbox Editor - py_mcp.json`,
-												component: "engine-mcp-editor",
-												config: {
-													name: "py_mcp.json",
-													path: "/mcp/py_mcp.json",
-												},
-												enableClose: true,
-											},
-										);
 									} catch (e) {
 										toast.error(`Error: ${e}`);
 									}
+
+									// open the editor for the created file (always, even if MakePythonMCP fails)
+									addNode(
+										`ENGINE_MCP_EDITOR--/mcp/py_mcp.json`,
+										{
+											type: "tab",
+											name: `Toolbox Editor - py_mcp.json`,
+											component: "engine-mcp-editor",
+											config: {
+												name: "py_mcp.json",
+												path: "/mcp/py_mcp.json",
+											},
+											enableClose: true,
+										},
+									);
 								},
 							});
 						}
@@ -271,7 +350,10 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								await insight.actions.run(
 									`DeleteEngineAssets(engine=["${engine}"], filePath=["${item.path}"]);`,
 								);
-
+								removeDeletedTabs(
+									item.path,
+									item.type === "directory",
+								);
 								refresh();
 							},
 						});
@@ -308,6 +390,19 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 										enableClose: true,
 									},
 								);
+							}}
+							onAfterRename={(oldPath, newPath) => {
+								const newName =
+									newPath.split("/").filter(Boolean).pop() ??
+									newPath;
+								removeDeletedTabs(oldPath, false);
+								addNode(`ENGINE_FILE--${newPath}`, {
+									type: "tab",
+									name: newName,
+									component: "engine-file-editor",
+									config: { name: newName, path: newPath },
+									enableClose: true,
+								});
 							}}
 							{...otherProps}
 							actions={actions}
