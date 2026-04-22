@@ -680,6 +680,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										"min-h-0 flex-1",
 										isScrollable && "mr-1",
 									)}
+									onClick={() => editorRef.current?.focus()}
 								>
 									<ContentEditable
 										ref={contentEditableRef}
@@ -747,7 +748,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						/>
 
 						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
-						<div className="flex items-center justify-between gap-2 bg-background p-2" data-tour="tour-input-menu">
+						<div
+							className="flex items-center justify-between gap-2 bg-background p-2"
+							data-tour="tour-input-menu"
+							role="none"
+							onClick={(e) => {
+								const target = e.target as HTMLElement;
+								if (
+									!target.closest("button") &&
+									!target.closest('[role="button"]') &&
+									!target.closest('[role="combobox"]')
+								) {
+									editorRef.current?.focus();
+								}
+							}}
+							onKeyDown={() => editorRef.current?.focus()}
+						>
 							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
 								{!(
@@ -799,7 +815,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							</div>
 							<div className="flex items-center gap-2">
 								<div data-tour="tour-model">
-									{root.theme.featureFlags?.enableModelSelect && (
+									{root.theme.featureFlags
+										?.enableModelSelect && (
 										<EngineSelect
 											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
 											disabled={isLoading}
