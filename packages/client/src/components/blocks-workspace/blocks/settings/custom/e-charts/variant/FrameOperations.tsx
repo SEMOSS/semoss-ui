@@ -11,7 +11,7 @@ import {
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import NumberIcon from "../../../../../../../assets/block-settings/img/NumberIcon.svg";
 import { buildListener } from "../../../../block-settings/block-defaults.shared";
 import { BAR_CHART_DATA } from "../Visualization.constants";

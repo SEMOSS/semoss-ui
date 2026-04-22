@@ -1,64 +1,23 @@
-import { AutoAwesome, ContentCopyOutlined } from "@mui/icons-material/";
+import { Copy, Sparkles } from "lucide-react";
 import { useState } from "react";
 import {
 	Button,
-	Menu,
-	Modal,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Label,
 	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Skeleton,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { toast } from "@semoss/ui/next";
+	Textarea,
+	toast,
+} from "@semoss/ui/next";
 import { useLLM, useRootStore } from "@/hooks";
-
-const StyledGenerateButton = styled(Button, {
-	shouldForwardProp: (prop) => prop !== "full",
-})<{
-	/** Track if the button should be full width */
-	full: boolean;
-}>(({ theme, full }) => {
-	return {
-		backgroundColor: theme.palette.purple["400"],
-		color: theme.palette.background.paper,
-		gap: theme.spacing(1),
-		width: full ? "100%" : "",
-		"&:hover": {
-			backgroundColor: theme.palette.purple["200"],
-		},
-	};
-});
-
-const StyledExpandCode = styled("div")(({ theme }) => ({
-	width: "100%",
-	height: "100%",
-	display: "flex",
-	justifyContent: "space-between",
-	padding: theme.spacing(1),
-	background: theme.palette.secondary.main,
-	borderRadius: `${theme.shape.borderRadius}px ${theme.shape.borderRadius}px 0px 0px`,
-}));
-
-const StyledCodeBlock = styled("pre")(({ theme }) => ({
-	display: "flex",
-	alignItems: "flex-start",
-	gap: "40px",
-	background: theme.palette.secondary.light,
-	borderRadius: `0px 0px ${theme.shape.borderRadius}px ${theme.shape.borderRadius}px`,
-	padding: theme.spacing(2),
-	margin: "0px",
-	overflowX: "scroll",
-}));
-
-const StyledCodeContent = styled("code")(() => ({
-	flex: 1,
-}));
-
-const StyledSkeletonContainer = styled("div")(() => ({
-	height: "200px",
-}));
 
 export const TextEditorCodeGeneration = () => {
 	const { modelId, modelOptions, setModel: setModelId } = useLLM();
@@ -68,10 +27,6 @@ export const TextEditorCodeGeneration = () => {
 	const [code, setCode] = useState("");
 	const [prompt, setPrompt] = useState("");
 
-	/**
-	 * Assitant for adding code
-	 *
-	 */
 	const generateCode = async () => {
 		try {
 			if (!modelId) {
@@ -82,7 +37,6 @@ export const TextEditorCodeGeneration = () => {
 				throw new Error("Prompt is required");
 			}
 
-			// turn on loading
 			setIsLoading(true);
 
 			const response = await monolithStore.runQuery(
@@ -94,35 +48,24 @@ export const TextEditorCodeGeneration = () => {
 				throw new Error(output);
 			}
 
-			// Regex anything between the 3 backticks
 			const codeMatch = output.response.replace(/^```|```$/g, "");
 
-			// TODO: Figure out if there is a particular LLM that will have a consistent response structure
 			if (!codeMatch) {
 				throw new Error("Unable to parse generated code");
 			}
 
-			// // Will this be multiple indexes
-			// if (codeMatch.length > 1) {
 			setCode(codeMatch);
-			// }
 		} catch (e) {
 			console.log(e);
 			toast.error(e.message);
 		} finally {
-			// turn off loading
 			setIsLoading(false);
 		}
 	};
 
-	/**
-	 * Copy text and add it to the clipboard
-	 * @param text - text to copy
-	 */
 	const copy = async (text: string) => {
 		try {
 			await navigator.clipboard.writeText(text);
-
 			toast.success("Successfully copied code");
 		} catch (_e) {
 			toast.error("Unable to copy code");
@@ -131,106 +74,95 @@ export const TextEditorCodeGeneration = () => {
 
 	return (
 		<>
-			<StyledGenerateButton
-				full={true}
-				startIcon={<AutoAwesome />}
-				variant="contained"
-				color="secondary"
-				onClick={() => {
-					setIsOpen(true);
-				}}
+			<Button
+				className="w-full gap-1 bg-purple-400 text-white hover:bg-purple-300"
+				onClick={() => setIsOpen(true)}
 			>
+				<Sparkles className="size-4" />
 				Generate Code
-			</StyledGenerateButton>
-			{/* Generate Code Modal */}
-			<Modal open={isOpen} maxWidth="xl">
-				<Modal.Title>
-					<Typography variant="h5">Generate Code</Typography>
-				</Modal.Title>
-				<Modal.Content>
-					<Stack direction="column">
-						<Select
-							fullWidth={true}
-							label={"Model"}
-							value={modelId}
-							onChange={(e) => setModelId(e.target.value)}
-						>
-							{modelOptions.map((m) => (
-								<Menu.Item key={m.app_id} value={m.app_id}>
-									{m.app_name}
-								</Menu.Item>
-							))}
-						</Select>
-						<TextField
-							fullWidth={true}
-							label="Prompt"
-							helperText={
-								'Example prompt: "Write me an HTML form that takes in patient information"'
-							}
-							onKeyDown={(e) => {
-								if (e.code === "Enter") {
-									generateCode();
-								}
-							}}
-							onChange={(e) => {
-								setPrompt(e.target.value);
-							}}
-							rows={3}
-						></TextField>
-						{isLoading ? (
-							<StyledSkeletonContainer>
-								<Skeleton
-									variant={"rectangular"}
-									width={"100%"}
-									height={"100%"}
-								/>
-							</StyledSkeletonContainer>
-						) : null}
-						{!isLoading && code ? (
-							<div>
-								<StyledExpandCode>
-									&nbsp;
+			</Button>
+
+			<Dialog open={isOpen} onOpenChange={setIsOpen}>
+				<DialogContent className="sm:max-w-2xl" showCloseButton={false}>
+					<DialogHeader>
+						<DialogTitle>Generate Code</DialogTitle>
+					</DialogHeader>
+
+					<div className="flex flex-col gap-3 py-2">
+						<div className="flex flex-col gap-1.5">
+							<Label>Model</Label>
+							<Select
+								value={modelId}
+								onValueChange={(val) => setModelId(val)}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select a model" />
+								</SelectTrigger>
+								<SelectContent>
+									{modelOptions.map((m) => (
+										<SelectItem
+											key={m.app_id}
+											value={m.app_id}
+										>
+											{m.app_name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</div>
+
+						<div className="flex flex-col gap-1.5">
+							<Label>Prompt</Label>
+							<Textarea
+								placeholder='Example: "Write me an HTML form that takes in patient information"'
+								rows={3}
+								onKeyDown={(e) => {
+									if (e.code === "Enter") generateCode();
+								}}
+								onChange={(e) => setPrompt(e.target.value)}
+							/>
+						</div>
+
+						{isLoading && <Skeleton className="h-[200px] w-full" />}
+
+						{!isLoading && code && (
+							<div className="overflow-hidden rounded-md border">
+								<div className="flex items-center justify-between bg-secondary px-3 py-2">
+									<span className="text-muted-foreground text-xs">
+										Generated code
+									</span>
 									<Button
-										size={"medium"}
-										variant="outlined"
-										color="secondary"
-										startIcon={
-											<ContentCopyOutlined
-												color={"inherit"}
-											/>
-										}
+										size="sm"
+										variant="outline"
 										onClick={() => copy(code)}
 									>
+										<Copy className="size-3.5" />
 										Copy
 									</Button>
-								</StyledExpandCode>
-								<StyledCodeBlock>
-									<StyledCodeContent>
-										{code}
-									</StyledCodeContent>
-								</StyledCodeBlock>
+								</div>
+								<pre className="overflow-x-auto bg-secondary/50 p-4 text-sm">
+									<code>{code}</code>
+								</pre>
 							</div>
-						) : null}
-					</Stack>
-				</Modal.Content>
-				<Modal.Actions>
-					<Button
-						onClick={() => {
-							setIsOpen(false);
-						}}
-					>
-						Cancel
-					</Button>
-					<StyledGenerateButton
-						full={false}
-						onClick={() => {
-							generateCode();
-						}}
-					>
-						Generate
-					</StyledGenerateButton>
-				</Modal.Actions>
-			</Modal>
+						)}
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant="ghost"
+							onClick={() => setIsOpen(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							className="gap-1 bg-purple-400 text-white hover:bg-purple-300"
+							onClick={generateCode}
+						>
+							Generate
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 };

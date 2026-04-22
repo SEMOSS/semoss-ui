@@ -36,7 +36,6 @@ export const AppDetailsStep = (props: {
 			<Controller
 				name={ADD_APP_FORM_FIELD_DESCRIPTION}
 				control={control}
-				rules={{ required: true }}
 				render={({ field }) => (
 					<div className="flex flex-col gap-1.5">
 						<Label htmlFor={descId}>Description</Label>
