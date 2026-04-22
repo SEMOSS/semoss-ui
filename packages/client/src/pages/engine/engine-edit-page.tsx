@@ -18,7 +18,6 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Badge,
 	Breadcrumb,
@@ -42,6 +41,7 @@ import {
 import { MarkdownEditor } from "@/components/common/MarkdownEditor";
 import { GenerateWithAIModal } from "@/components/engine/generate-with-ai-modal";
 import { useEngine, usePixel, useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 
 // ─── UnsavedChangesDialog ─────────────────────────────────────────────────────

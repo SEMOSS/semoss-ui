@@ -1,8 +1,9 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { Bookmark, Pencil, Settings, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
 	Button,
 	Dialog,
@@ -15,6 +16,7 @@ import {
 } from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
 import { ShareOverlay } from "@/components/ui";
+import { useNavigate } from "@/hooks/useNavigate";
 
 const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),

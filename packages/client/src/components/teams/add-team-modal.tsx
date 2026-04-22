@@ -1,7 +1,6 @@
 import { Users, X } from "lucide-react";
 import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Dialog,
@@ -40,6 +39,7 @@ import Siteminder from "@/assets/loginProviders/siteminder.png";
 import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 const TypeImageObject = {
 	native: AMAZON_S3,

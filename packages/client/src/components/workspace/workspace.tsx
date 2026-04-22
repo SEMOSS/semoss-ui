@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
 import { WorkspaceContext } from "@/contexts";
+import { useNavigate } from "@/hooks/useNavigate";
 
 const BlocksWorkspace = lazy(() =>
 	import("@/components/blocks-workspace").then((m) => ({

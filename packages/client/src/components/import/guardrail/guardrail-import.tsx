@@ -5,7 +5,6 @@
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -29,6 +28,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { GUARDRAIL_CONNECTION } from "./guardrail-import.constants";
 import { GuardrailForm } from "./guardrail-import-form";
 import { GuardrailTitleCard } from "./guardrail-title-card";

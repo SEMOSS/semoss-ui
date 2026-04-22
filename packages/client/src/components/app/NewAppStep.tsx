@@ -1,5 +1,5 @@
 import type React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@/hooks/useNavigate";
 
 interface NewAppStepProps {
 	children: React.ReactNode;

@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy form layout relies on non-interactive wrappers with delegated events */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy form layout relies on delegated keyboard handling */
+
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { console as getPixelConsole } from "@semoss/sdk/react";
 import {
 	Button,
@@ -33,6 +33,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import DataSelection from "./data-selection";
 import ExcelDataSelection from "./excel-data-selection";
 import { MetaModelConnections } from "./meta-model-connections";
