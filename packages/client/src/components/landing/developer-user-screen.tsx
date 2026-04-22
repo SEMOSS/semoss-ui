@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
@@ -9,6 +9,7 @@ import DevBanner from "@/assets/img/DevBanner.png";
 import { NewAppModal } from "@/components/app";
 import { BannerSection } from "@/components/landing/banner-section";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
 	BASE_APP_VARIABLES,

@@ -1,11 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
 import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
 import { Spinner, toast } from "@semoss/ui/next";
 import type { AppMetadata, AppType } from "@/components/app";
 import { PlatformMessages } from "@/components/shared";
+import { useNavigate } from "@/hooks/useNavigate";
 
 const Renderer = lazy(() =>
 	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),

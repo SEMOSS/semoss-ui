@@ -5,7 +5,7 @@ import {
 	UploadIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import {
@@ -34,6 +34,7 @@ import { AddAppModal, NewAppModal, TEMPLATES } from "@/components/app";
 import { LandingHeader } from "@/components/landing";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
 	BASE_APP_VARIABLES,

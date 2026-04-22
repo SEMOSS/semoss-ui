@@ -1,4 +1,4 @@
-import { ExternalLink, Eye, Pencil, Tag } from "lucide-react";
+import { ExternalLink, Eye, Pencil } from "lucide-react";
 import type React from "react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import type { Control } from "react-hook-form";
@@ -6,8 +6,7 @@ import { toast } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { AppAccessStep } from "./AppAccessStep";
-import { AppDetailsStep } from "./AppDetailsStep";
-import { AppTagsStep } from "./AppTagsStep";
+import { AppDetailsAndTagsStep } from "./AppDetailsAndTagsStep";
 import { AppUploadStep } from "./AppUploadStep";
 import { SaveAppModal } from "./SaveAppModal";
 import {
@@ -96,14 +95,7 @@ export const AddAppModal = (props: AddAppProps) => {
 			name: "Details",
 			icon: <Pencil className="size-4" />,
 			title: "Details",
-			component: AppDetailsStep,
-			requiredFields: [ADD_APP_FORM_FIELD_DESCRIPTION],
-		},
-		{
-			name: "Tags",
-			icon: <Tag className="size-4" />,
-			title: "Tags",
-			component: AppTagsStep,
+			component: AppDetailsAndTagsStep,
 			requiredFields: [],
 		},
 		{

@@ -5,7 +5,6 @@
 import { Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -26,6 +25,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { STORAGE_CONNECTIONS, type Storage } from "./storage-import.constants";
 import { StorageForm } from "./storage-import-form";
 import { StorageTitleCard } from "./storage-title-card";
