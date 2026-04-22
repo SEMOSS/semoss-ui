@@ -376,21 +376,44 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</>
 					)}
 					{onCompact && (
-						<Button
-							size="sm"
-							variant="outline"
-							className="mt-2 w-full text-foreground"
-							onClick={(e) => {
-								e.stopPropagation();
-								onCompact();
-							}}
-						>
-							{t("settings.compact")}
-						</Button>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="mt-2 w-full">
+									<Button
+										size="sm"
+										variant="outline"
+										className="w-full text-foreground"
+										disabled={
+											isLoading || hasOutstandingTools
+										}
+										onClick={(e) => {
+											e.stopPropagation();
+											onCompact();
+										}}
+									>
+										{t("settings.compact")}
+									</Button>
+								</span>
+							</TooltipTrigger>
+							{(isLoading || hasOutstandingTools) && (
+								<TooltipContent>
+									{isLoading
+										? t("input.thinkingTooltip")
+										: t("input.completeTool")}
+								</TooltipContent>
+							)}
+						</Tooltip>
 					)}
 				</div>
 			);
-		}, [tokensUsed, tokensMax, onCompact, t]);
+		}, [
+			tokensUsed,
+			tokensMax,
+			onCompact,
+			t,
+			isLoading,
+			hasOutstandingTools,
+		]);
 
 		// ========================================================================
 		// Speech Recognition Setup

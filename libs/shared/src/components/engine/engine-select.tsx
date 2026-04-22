@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDown } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -15,9 +15,6 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -95,6 +92,25 @@ export const EngineSelect = ({
 
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [contextOpen, setContextOpen] = useState(false);
+	const contextCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(
+		null,
+	);
+	const isHoveringContext = useRef(false);
+
+	const openContext = () => {
+		isHoveringContext.current = true;
+		if (contextCloseTimer.current) clearTimeout(contextCloseTimer.current);
+		setContextOpen(true);
+	};
+
+	const scheduleContextClose = () => {
+		isHoveringContext.current = false;
+		contextCloseTimer.current = setTimeout(
+			() => setContextOpen(false),
+			150,
+		);
+	};
 
 	// Debounce search to avoid excessive queries while typing
 	const debouncedSearch = useDebouncedValue(search);
@@ -215,10 +231,22 @@ export const EngineSelect = ({
 				>
 					<div className="flex min-w-0 items-center gap-2 overflow-hidden">
 						{showContextIndicator && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<div className="flex shrink-0 cursor-help items-center">
-										{/** biome-ignore lint/a11y/noSvgWithoutTitle: hover status is applied to provide description for interactive svg */}
+							<Popover
+								open={contextOpen}
+								onOpenChange={(o) => {
+									if (!o && isHoveringContext.current) return;
+									setContextOpen(o);
+								}}
+							>
+								<PopoverTrigger asChild>
+									<button
+										type="button"
+										className="flex shrink-0 cursor-pointer items-center"
+										onClick={(e) => e.stopPropagation()}
+										onMouseEnter={openContext}
+										onMouseLeave={scheduleContextClose}
+									>
+										{/** biome-ignore lint/a11y/noSvgWithoutTitle: click interaction is provided by the parent button */}
 										<svg
 											width={18}
 											height={18}
@@ -263,18 +291,21 @@ export const EngineSelect = ({
 												/>
 											)}
 										</svg>
-									</div>
-								</TooltipTrigger>
+									</button>
+								</PopoverTrigger>
 								{contextTooltipContent && (
-									<TooltipContent
+									<PopoverContent
 										side="top"
-										align="center"
-										className="w-80 max-w-xs text-wrap"
+										align="start"
+										className="w-80 text-wrap text-sm"
+										onMouseEnter={openContext}
+										onMouseLeave={scheduleContextClose}
+										onClick={(e) => e.stopPropagation()}
 									>
 										{contextTooltipContent}
-									</TooltipContent>
+									</PopoverContent>
 								)}
-							</Tooltip>
+							</Popover>
 						)}
 						<span className="min-w-0 truncate">
 							{name || "Select"}
