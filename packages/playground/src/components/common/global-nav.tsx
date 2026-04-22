@@ -1,8 +1,8 @@
 import dayjs from "dayjs";
 import {
-	MapIcon,
 	ComputerIcon,
 	HelpCircle,
+	MapIcon,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -768,9 +768,9 @@ export const GlobalNav = observer(() => {
 						</div>
 					</SidebarMenu>
 				)}
-				{root.theme.tour?.show !== false && (
-					<SidebarMenu className="gap-2 px-2 pb-1 group-data-[collapsible=icon]:hidden">
-						<SidebarMenuItem>
+				<SidebarMenu className="gap-2 p-2">
+					{root.theme.tour?.show !== false && (
+						<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
 							<SidebarMenuButton
 								onClick={handleStartTour}
 								data-tour="tour-take-tour"
@@ -779,9 +779,7 @@ export const GlobalNav = observer(() => {
 								Take a tour
 							</SidebarMenuButton>
 						</SidebarMenuItem>
-					</SidebarMenu>
-				)}
-				<SidebarMenu className="gap-2 p-2">
+					)}
 					<SidebarMenuItem>
 						<NavUser />
 					</SidebarMenuItem>
