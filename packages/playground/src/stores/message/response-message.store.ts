@@ -548,6 +548,7 @@ paramValues=[${JSON.stringify({
 					`RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 					false,
 					false,
+					true,
 				);
 
 				const rawOutput = response.pixelReturn[0].output;

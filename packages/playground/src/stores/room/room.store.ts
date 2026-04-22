@@ -1094,6 +1094,7 @@ export class RoomStore {
 		pixel: string,
 		showLoading: boolean = true,
 		setErrorOnFail: boolean = true,
+		tempInsight: boolean = false,
 	): Promise<{
 		errors: string[];
 		insightId: string;
@@ -1112,11 +1113,24 @@ export class RoomStore {
 				this.setIsLoading(true);
 			}
 
-			// get the response
-			const response = await runPixel<O>(pixel, this._store.insightId);
+			let response: Awaited<ReturnType<typeof runPixel<O>>>;
 
-			if (response.errors.length > 0) {
-				throw new Error(response.errors.join(""));
+			if (tempInsight) {
+				// If using a temp insight, SetRoomForInsight, pass "new" insightId, and strip the first response
+				response = await runPixel<O>(
+					`SetRoomForInsight(${JSON.stringify(
+						this._store.roomId,
+					)}); ${pixel}`,
+					"new",
+				);
+				response.pixelReturn.shift();
+			} else {
+				// get the response
+				response = await runPixel<O>(pixel, this._store.insightId);
+
+				if (response.errors.length > 0) {
+					throw new Error(response.errors.join(""));
+				}
 			}
 
 			// store the new insight id

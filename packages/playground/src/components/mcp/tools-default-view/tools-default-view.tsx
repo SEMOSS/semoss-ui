@@ -262,6 +262,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
 						false,
 						false,
+						true,
 					);
 					const rawOutput = response.pixelReturn[0].output;
 					output =
