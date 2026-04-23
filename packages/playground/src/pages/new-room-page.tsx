@@ -100,7 +100,6 @@ export const NewRoomPage = observer(() => {
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
-
 	const previewPrompts = useMemo(
 		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
 		[tempRoomStore.options.predefinedPrompts],
@@ -466,6 +465,7 @@ export const NewRoomPage = observer(() => {
 								}}
 								options={tempRoomStore.options}
 								onMcpSelect={handleToolAdd}
+								onMcpToggle={handleToolSelect}
 								onPrompt={async (prompt, files) => {
 									await createRoom(prompt, files);
 
@@ -473,7 +473,14 @@ export const NewRoomPage = observer(() => {
 								}}
 								hidePauseButton
 								MenuComponent={observer(
-									({ onOpenChange, fileRef, editorRef }) => (
+									({
+										onOpenChange,
+										fileRef,
+										knowledgeOverlayOpen,
+										onKnowledgeOverlayChange,
+										toolboxOverlayOpen,
+										onToolboxOverlayChange,
+									}) => (
 										<>
 											<RoomInputMenuUpload
 												fileRef={fileRef}
@@ -564,19 +571,17 @@ export const NewRoomPage = observer(() => {
 											<RoomInputMenuMCP
 												type="KNOWLEDGE"
 												options={tempRoomStore.options}
-												onSelect={handleToolSelect}
-												editorRef={editorRef}
-												onOverlayClose={() =>
-													onOpenChange(false)
+												open={knowledgeOverlayOpen}
+												onOpenChange={
+													onKnowledgeOverlayChange
 												}
 											/>
 											<RoomInputMenuMCP
 												type="TOOLBOX"
 												options={tempRoomStore.options}
-												onSelect={handleToolSelect}
-												editorRef={editorRef}
-												onOverlayClose={() =>
-													onOpenChange(false)
+												open={toolboxOverlayOpen}
+												onOpenChange={
+													onToolboxOverlayChange
 												}
 											/>
 											<DropdownMenuSeparator />
