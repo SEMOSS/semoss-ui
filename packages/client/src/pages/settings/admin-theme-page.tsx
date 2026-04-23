@@ -191,6 +191,7 @@ export const AdminThemePage: React.FC = () => {
 			const emptyTheme: ThemeMap = {
 				playground: {
 					name: newThemeName,
+					banner: "",
 					description: "",
 					variables: {
 						backgroundColor: "",

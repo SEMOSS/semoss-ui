@@ -36,6 +36,8 @@ export interface ThemeMap {
 		/** Name of the app */
 		name: string;
 
+		banner: string;
+
 		/** Description of the app */
 		description: string;
 

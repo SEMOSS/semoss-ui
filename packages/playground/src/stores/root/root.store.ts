@@ -52,6 +52,7 @@ export class RootStore {
 		navbarActions: null,
 		theme: {
 			name: "",
+			banner: "",
 			description: "",
 			variables: {
 				backgroundColor: "",
@@ -210,6 +211,7 @@ export class RootStore {
 		this._store.theme = {
 			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
+			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
 			variables: {
 				...this._store.theme.variables,
