@@ -50,7 +50,11 @@ export const MCPSelector = observer(
 		const searchContainerRef = useRef<HTMLDivElement>(null);
 
 		const focusSearch = () => {
-			searchContainerRef.current?.querySelector("input")?.focus();
+			const input = searchContainerRef.current?.querySelector("input");
+			if (!input) return;
+			input.focus();
+			// Restore cursor to end — some browsers select-all on programmatic focus
+			input.setSelectionRange(input.value.length, input.value.length);
 		};
 
 		const debouncedSearch = useDebouncedValue(search);
@@ -134,7 +138,7 @@ export const MCPSelector = observer(
 								autoFocus
 								placeholder={t("selector.search")}
 								value={search}
-								disabled={disabled || getMCP.isLoading}
+								disabled={disabled}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
 							<InputGroupAddon>

@@ -55,6 +55,7 @@ import {
 import {
 	EnterPlugin,
 	FocusPlugin,
+	MCPOverlay,
 	MentionPlugin,
 	PromptLibraryDialog,
 	type PromptLibraryItem,
@@ -65,6 +66,21 @@ import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+
+function applyMCPDiff(
+	items: MCPConfig[],
+	updated: MCPConfig[],
+	onSelect: (mcp: MCPConfig) => void,
+) {
+	const oldIds = new Set(items.map((m) => m.id));
+	const newIds = new Set(updated.map((m) => m.id));
+	for (const mcp of updated) {
+		if (!oldIds.has(mcp.id)) onSelect(mcp);
+	}
+	for (const mcp of items) {
+		if (!newIds.has(mcp.id)) onSelect(mcp);
+	}
+}
 
 let isIframed = false;
 try {
@@ -180,8 +196,14 @@ interface RoomInputProps {
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
-		editorRef?: React.RefObject<LexicalEditor>;
+		knowledgeOverlayOpen: boolean;
+		onKnowledgeOverlayChange: (open: boolean) => void;
+		toolboxOverlayOpen: boolean;
+		onToolboxOverlayChange: (open: boolean) => void;
 	}>;
+
+	/** Callback when an MCP is toggled via the plus menu */
+	onMcpToggle?: (mcp: MCPConfig) => void;
 
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
@@ -247,6 +269,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		options,
 		onPrompt = () => null,
 		onMcpSelect,
+		onMcpToggle,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
@@ -271,6 +294,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
+
+		// MCP overlay state — managed here so overlays render outside the DropdownMenu's React subtree
+		const [knowledgeOverlayOpen, setKnowledgeOverlayOpen] = useState(false);
+		const [toolboxOverlayOpen, setToolboxOverlayOpen] = useState(false);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -826,7 +853,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												isOpen={menuOpen}
 												onOpenChange={setMenuOpen}
 												fileRef={fileRef}
-												editorRef={editorRef}
+												knowledgeOverlayOpen={
+													knowledgeOverlayOpen
+												}
+												onKnowledgeOverlayChange={
+													setKnowledgeOverlayOpen
+												}
+												toolboxOverlayOpen={
+													toolboxOverlayOpen
+												}
+												onToolboxOverlayChange={
+													setToolboxOverlayOpen
+												}
 											/>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -1084,6 +1122,46 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}
 					/>
 				</LexicalComposer>
+				{onMcpToggle && (
+					<>
+						<MCPOverlay
+							type="KNOWLEDGE"
+							open={knowledgeOverlayOpen}
+							values={options.mcp.filter(
+								(m) => m.type === "VECTOR",
+							)}
+							onClose={(updated) => {
+								setKnowledgeOverlayOpen(false);
+								if (updated)
+									applyMCPDiff(
+										options.mcp.filter(
+											(m) => m.type === "VECTOR",
+										),
+										updated,
+										onMcpToggle,
+									);
+							}}
+						/>
+						<MCPOverlay
+							type="TOOLBOX"
+							open={toolboxOverlayOpen}
+							values={options.mcp.filter(
+								(m) => m.type !== "VECTOR",
+							)}
+							onClose={(updated) => {
+								setToolboxOverlayOpen(false);
+								if (updated)
+									applyMCPDiff(
+										options.mcp.filter(
+											(m) => m.type !== "VECTOR",
+										),
+										updated,
+										onMcpToggle,
+									);
+							}}
+						/>
+					</>
+				)}
 			</div>
 		);
 	},
