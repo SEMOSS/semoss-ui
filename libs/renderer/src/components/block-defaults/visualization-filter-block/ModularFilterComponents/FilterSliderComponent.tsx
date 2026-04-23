@@ -1,7 +1,6 @@
-import { Slider } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { Box, Button, Typography } from "@semoss/ui";
+import { Button, Slider } from "@semoss/ui/next";
 import type { FilterComponentProps } from "../filter";
 import FilterIconComponent from "./FilterIconComponent";
 
@@ -13,12 +12,10 @@ const FilterSliderComponent: React.FC<FilterComponentProps> = ({
 	onApply,
 	onReset,
 	sliderSensitivity = 0,
-	color = "primary",
-	size = "medium",
 }) => {
 	const sortedOptions = listOptions
 		.map((opt) => parseInt(opt, 10))
-		.filter((n) => !isNaN(n))
+		.filter((n) => !Number.isNaN(n))
 		.sort((a, b) => a - b);
 
 	const sliderMin = sortedOptions.length > 0 ? sortedOptions[0] : 0;
@@ -29,7 +26,7 @@ const FilterSliderComponent: React.FC<FilterComponentProps> = ({
 
 	const defaultCheckedNums = checkedValues
 		.map((v) => parseInt(v, 10))
-		.filter((v) => !isNaN(v));
+		.filter((v) => !Number.isNaN(v));
 
 	const defaultRange =
 		mode === "slider" && defaultCheckedNums.length > 0
@@ -38,10 +35,11 @@ const FilterSliderComponent: React.FC<FilterComponentProps> = ({
 
 	const [range, setRange] = useState<number[]>(defaultRange);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		const checkedNums = checkedValues
 			.map((v) => parseInt(v, 10))
-			.filter((v) => !isNaN(v));
+			.filter((v) => !Number.isNaN(v));
 		setRange(
 			checkedNums.length > 0
 				? [Math.min(...checkedNums), Math.max(...checkedNums)]
@@ -49,85 +47,48 @@ const FilterSliderComponent: React.FC<FilterComponentProps> = ({
 		);
 	}, [resetKey, mode, JSON.stringify(checkedValues)]);
 
-	const handleSliderChange = (event: Event, newValue: number | number[]) => {
-		setRange(newValue as number[]);
-	};
-
 	const handleApply = () => {
-		let selected: string[] = [];
-
 		const [min, max] = range;
 		const step = sliderSensitivity > 0 ? sliderSensitivity : 1;
-
-		selected = listOptions.filter((opt) => {
+		const selected = listOptions.filter((opt) => {
 			const num = parseInt(opt, 10);
 			return (
-				!isNaN(num) &&
+				!Number.isNaN(num) &&
 				num >= min &&
 				num <= max &&
 				(num - min) % step === 0
 			);
 		});
-
-		onApply(selected, mode);
+		onApply(selected, mode ?? "slider");
 	};
+
 	const handleReset = () => {
 		setRange([sliderMin, sliderMax]);
-
-		if (onReset) {
-			onReset();
-		}
+		if (onReset) onReset();
 	};
 
 	return (
-		<Box
-			sx={{
-				width: "100%",
-				height: "100%",
-				border: "1px solid #ccc",
-				borderRadius: 1,
-				p: 2,
-				display: "flex",
-				flexDirection: "column",
-				gap: 2,
-			}}
-		>
-			<Box sx={{ px: 2 }}>
-				<Typography variant="body2" gutterBottom>
+		<div className="flex h-full w-full flex-col gap-4 rounded-md border border-border p-4">
+			<div className="px-2">
+				<span className="mb-2 block text-muted-foreground text-sm">
 					{range[0]} - {range[1]}
-				</Typography>
-				<Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+				</span>
+				<div className="flex items-center gap-2">
 					<FilterIconComponent handleReset={handleReset} />
 					<Slider
 						value={range}
-						onChange={handleSliderChange}
-						valueLabelDisplay="auto"
+						onValueChange={(val) => setRange(val)}
 						min={sliderMin}
 						max={sliderMax}
 						step={sliderSensitivity > 0 ? sliderSensitivity : 1}
+						className="flex-1"
 					/>
-				</Box>
-			</Box>
-			<Box
-				sx={{
-					display: "flex",
-					justifyContent: "flex-end",
-					mt: 2,
-					alignItems: "center",
-					borderTop: "1px solid #ddd",
-					pt: 2,
-				}}
-			>
-				<Button
-					variant="contained"
-					onClick={handleApply}
-					color={color}
-					size={size}
-				>
-					Apply
-				</Button>
-			</Box>
-		</Box>
+				</div>
+			</div>
+			<div className="mt-4 flex items-center justify-end border-border border-t pt-4">
+				<Button onClick={handleApply}>Apply</Button>
+			</div>
+		</div>
 	);
 };
 

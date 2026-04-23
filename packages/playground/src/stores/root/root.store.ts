@@ -7,8 +7,14 @@ configure({
 	enforceActions: "always",
 });
 
-const NAME = import.meta.env.VITE_NAME ? import.meta.env.VITE_NAME : "";
-const THEME = import.meta.env.VITE_THEME ? import.meta.env.VITE_THEME : "{}";
+const NAME = import.meta.env.VITE_NAME || "";
+const THEME = import.meta.env.VITE_THEME || "{}";
+const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT;
+const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT;
+const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
+const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
+const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
+const ENABLE_PROMPT_OPTIMIZER = import.meta.env.VITE_ENABLE_PROMPT_OPTIMIZER;
 
 interface RootStoreInterface {
 	/**
@@ -45,6 +51,7 @@ export class RootStore {
 		navbarActions: null,
 		theme: {
 			name: "",
+			banner: "",
 			description: "",
 			variables: {
 				backgroundColor: "",
@@ -64,8 +71,10 @@ export class RootStore {
 			},
 			footer: "",
 			landing: "",
+			altLandingKey: "",
+			altLanding: "",
 			sidebar: {
-				//workspaceAlias: "Workspace",
+				expandedByDefault: false,
 				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],
@@ -81,6 +90,14 @@ export class RootStore {
 			defaultTools: [],
 			gracefulErrors: [],
 			showPlatformLinks: true,
+			featureFlags: {
+				enableModelSelect: ENABLE_MODEL_SELECT === "true",
+				enableAgent: ENABLE_AGENT === "true",
+				enableSuggestions: ENABLE_SUGGESTIONS === "true",
+				enablePlan: ENABLE_PLAN === "true",
+				enableRewrite: ENABLE_REWRITE === "true",
+				enablePromptOptimizer: ENABLE_PROMPT_OPTIMIZER === "true",
+			},
 		},
 	};
 
@@ -92,7 +109,11 @@ export class RootStore {
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(THEME) as Partial<ThemeMap["playground"]>;
+			const parsed = JSON.parse(THEME);
+			// Support both wrapped ({ playground: {...} }) and flat formats
+			const theme = (parsed?.playground || parsed) as Partial<
+				ThemeMap["playground"]
+			>;
 
 			// update the theme
 			this.updateTheme(theme);
@@ -188,6 +209,7 @@ export class RootStore {
 		this._store.theme = {
 			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
+			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
 			variables: {
 				...this._store.theme.variables,
@@ -203,13 +225,32 @@ export class RootStore {
 			},
 			footer: theme?.footer || this._store.theme.footer,
 			landing: theme?.landing || this._store.theme.landing,
+			altLandingKey:
+				theme?.altLandingKey || this._store.theme.altLandingKey,
+			altLanding: theme?.altLanding || this._store.theme.altLanding,
+			hideToolsInIframe:
+				theme?.hideToolsInIframe ||
+				this._store.theme?.hideToolsInIframe ||
+				false,
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
+				expandedByDefault:
+					theme?.sidebar?.expandedByDefault !== undefined
+						? theme.sidebar.expandedByDefault
+						: this._store.theme.sidebar.expandedByDefault,
 				chatHistoryDate:
 					theme?.sidebar?.chatHistoryDate !== undefined
 						? theme.sidebar.chatHistoryDate
 						: this._store.theme.sidebar.chatHistoryDate,
+				headerItems: [
+					...this._store.theme.sidebar.headerItems,
+					...(theme?.sidebar?.headerItems || []),
+				],
+				footerItems: [
+					...this._store.theme.sidebar.footerItems,
+					...(theme?.sidebar?.footerItems || []),
+				],
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {
@@ -245,10 +286,23 @@ export class RootStore {
 				theme?.showPlatformLinks !== undefined
 					? theme.showPlatformLinks
 					: this._store.theme.showPlatformLinks,
+			showKnowledgeMenu:
+				theme?.showKnowledgeMenu !== undefined
+					? theme.showKnowledgeMenu
+					: this._store.theme.showKnowledgeMenu,
+			showToolboxMenu:
+				theme?.showToolboxMenu !== undefined
+					? theme.showToolboxMenu
+					: this._store.theme.showToolboxMenu,
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),
 			],
+			tour: theme?.tour || this._store.theme.tour,
+			featureFlags: {
+				...this._store.theme.featureFlags,
+				...(theme?.featureFlags || {}),
+			},
 		};
 
 		// apply the theme to document root

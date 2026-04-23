@@ -1,9 +1,9 @@
 import {
-	AspectRatio,
-	FitScreen,
-	ImageAspectRatio,
-	PanoramaOutlined,
-} from "@mui/icons-material";
+	Maximize as FitScreen,
+	Ratio as ImageAspectRatio,
+	Maximize2,
+	Image as PanoramaOutlined,
+} from "lucide-react";
 import { ButtonGroupSettings, SelectInputSettings } from "../../settings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import {
@@ -56,7 +56,7 @@ export const config: BlockSettingsConfig = {
 								},
 								{
 									value: "cover",
-									icon: AspectRatio,
+									icon: Maximize2,
 									title: "cover",
 									isDefault: false,
 								},

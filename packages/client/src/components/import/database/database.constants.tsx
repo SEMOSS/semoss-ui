@@ -1,7 +1,7 @@
 import ASTER from "@/assets/img/ASTER.png";
 import ATHENA from "@/assets/img/ATHENA.png";
 import BIGQUERY from "@/assets/img/BIGQUERY.png";
-import CASSANDRA from "@/assets/img/CASSANDRA.png";
+import CASSANDRA from "@/assets/img/CASSANDRA.svg";
 import CLICKHOUSE from "@/assets/img/CLICKHOUSE.png";
 import CSV from "@/assets/img/CSV.svg";
 import DATABRICKS from "@/assets/img/DATABRICKS.png";
@@ -15,18 +15,18 @@ import H2_DB from "@/assets/img/H2_DB.png";
 import HIVE from "@/assets/img/HIVE.jpg";
 import IMPALA from "@/assets/img/IMPALA.png";
 import MARIA_DB from "@/assets/img/MARIA_DB.png";
-import MYSQL from "@/assets/img/MYSQL.png";
+import MYSQL from "@/assets/img/MYSQL.svg";
 import NEO4J from "@/assets/img/NEO4J.png";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
-import ORACLE from "@/assets/img/ORACLE.png";
+import ORACLE from "@/assets/img/ORACLE.svg";
 import PHOENIX from "@/assets/img/PHOENIX.png";
-import POSTGRES from "@/assets/img/POSTGRES.png";
+import POSTGRES from "@/assets/img/POSTGRES.svg";
 import REDSHIFT from "@/assets/img/REDSHIFT.png";
 import SAP_HANA from "@/assets/img/SAP_HANA.png";
 import SEMOSS from "@/assets/img/SEMOSS_BLUE_LOGO.svg";
 import SNOWFLAKE from "@/assets/img/SNOWFLAKE.png";
 import SQL_SERVER from "@/assets/img/SQL_SERVER.png";
-import SQLITE from "@/assets/img/SQLITE.png";
+import SQLITE from "@/assets/img/SQLITE.svg";
 import TERADATA from "@/assets/img/TERADATA.png";
 import TIBCO from "@/assets/img/TIBCO.png";
 import TINKER from "@/assets/img/TINKER.png";
@@ -1239,7 +1239,7 @@ export const DATABASE_CONNECTION = {
 			],
 		},
 		{
-			name: "DATABRICKS",
+			name: "Databricks",
 			disable: false,
 			icon: DATABRICKS,
 			fields: [
@@ -4916,38 +4916,6 @@ export const CATEGORY_DESCRIPTIONS = {
 export const ENGINE_IMAGES = {
 	DATABASE: [
 		{
-			name: "ZIP",
-			icon: ZIP,
-		},
-		{
-			name: "CSV",
-			icon: CSV,
-		},
-		{
-			name: "EXCEL",
-			icon: EXCEL,
-		},
-		{
-			name: "TSV",
-			icon: TSV,
-		},
-		{
-			name: "SQLITE",
-			icon: SQLITE,
-		},
-		{
-			name: "H2_DB",
-			icon: H2_DB,
-		},
-		{
-			name: "NEO4J",
-			icon: NEO4J,
-		},
-		{
-			name: "TINKER",
-			icon: TINKER,
-		},
-		{
 			name: "ASTER_DB",
 			icon: ASTER,
 		},
@@ -4966,6 +4934,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "CLICKHOUSE",
 			icon: CLICKHOUSE,
+		},
+		{
+			name: "CSV",
+			icon: CSV,
 		},
 		{
 			name: "DATABRICKS",
@@ -4988,7 +4960,15 @@ export const ENGINE_IMAGES = {
 			icon: ELASTIC_SEARCH,
 		},
 		{
+			name: "EXCEL",
+			icon: EXCEL,
+		},
+		{
 			name: "H2",
+			icon: H2_DB,
+		},
+		{
+			name: "H2_DB",
 			icon: H2_DB,
 		},
 		{
@@ -5006,6 +4986,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "MYSQL",
 			icon: MYSQL,
+		},
+		{
+			name: "NEO4J",
+			icon: NEO4J,
 		},
 		{
 			name: "OPEN_SEARCH",
@@ -5048,6 +5032,10 @@ export const ENGINE_IMAGES = {
 			icon: SQLITE,
 		},
 		{
+			name: "SQLITE",
+			icon: SQLITE,
+		},
+		{
 			name: "TERADATA",
 			icon: TERADATA,
 		},
@@ -5056,8 +5044,20 @@ export const ENGINE_IMAGES = {
 			icon: TIBCO,
 		},
 		{
+			name: "TINKER",
+			icon: TINKER,
+		},
+		{
 			name: "TRINO",
 			icon: TRINO,
+		},
+		{
+			name: "TSV",
+			icon: TSV,
+		},
+		{
+			name: "ZIP",
+			icon: ZIP,
 		},
 	],
 };

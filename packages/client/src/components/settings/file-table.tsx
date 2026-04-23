@@ -1,5 +1,15 @@
-import { FileUploadOutlined } from "@mui/icons-material";
-import { Download, Plus, Search, Trash2 } from "lucide-react";
+import {
+	AlertCircle,
+	CheckCircle2,
+	ChevronDown,
+	ChevronUp,
+	Download,
+	Plus,
+	Search,
+	Trash2,
+	Upload,
+	X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -41,30 +51,66 @@ interface FileExplorerProps {
 	lastModified: string;
 }
 
+interface EmbeddingFileResult {
+	fileName: string;
+	status: "SUCCESS" | "FAILED";
+	insertedRecords: number;
+	failedRecords: number;
+	totalRecords: number;
+	error?: {
+		errorMessage: string;
+		techErrorMessage: string;
+	};
+}
+
+type PixelReturnLike = {
+	output?: string | unknown;
+	operationType?: string[];
+	additionalOutput?: Array<{
+		output?: EmbeddingFileResult[] | string | unknown;
+		operationType?: string[];
+	}>;
+};
+
+/**
+ * FileTable component manages files within a Vector Database.
+ * Supports file upload, embedding, deletion, download, search, and pagination.
+ * Files are embedded into the vector database for semantic search capabilities.
+ */
 export const FileTable = (props: FileTableProps) => {
 	const NUM_RESULTS_PER_PAGE = 5;
-	// embed modal
-	const [open, setOpen] = useState<boolean>(false);
 
-	//delete one file
+	const [open, setOpen] = useState<boolean>(false);
 	const [deleteFileModal, setDeleteFileModal] = useState<boolean>(false);
 	const [fileToDelete, setFileToDelete] = useState<FileExplorerProps | null>(
 		null,
 	);
-	//deleting multiple files modal
 	const [deleteFilesModal, setDeleteFilesModal] = useState<boolean>(false);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [selectedFiles, setSelectedFiles] = useState<FileExplorerProps[]>([]);
 	const [filePage, setFilePage] = useState<number>(1);
-	const [fileCount, setFileCount] = useState<number>(0);
 	const [filteredFileCount, setFilteredFileCount] = useState<number>(0);
 	const fileSearchRef = useRef<HTMLInputElement>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const didMount = useRef<boolean>(false);
 	const { monolithStore, configStore } = useRootStore();
-
-	//download multiple files modal
 	const [exportLoading, setExportLoading] = useState(false);
+
+	// newly added state
+	const [embeddingResults, setEmbeddingResults] = useState<
+		EmbeddingFileResult[]
+	>([]);
+	const [showEmbeddingResults, setShowEmbeddingResults] =
+		useState<boolean>(false);
+	const [isEmbeddingResultsCollapsed, setIsEmbeddingResultsCollapsed] =
+		useState<boolean>(false);
+	const [expandedErrors, setExpandedErrors] = useState<Set<string>>(
+		new Set(),
+	);
+	const [uploadedFileSizes, setUploadedFileSizes] = useState<
+		Record<string, number>
+	>({});
+	const [uploadProgress, setUploadProgress] = useState<number>(0);
 
 	const [order, setOrder] = useState<"asc" | "desc">("asc");
 	const [orderBy, setOrderBy] = useState<string>("name");
@@ -89,27 +135,44 @@ export const FileTable = (props: FileTableProps) => {
 		},
 	];
 
-	//grabbing ID out of props
 	const { id } = props;
 
-	//for the pagination of the files page
-	const paginationOptions = {
-		filePageCounts: [NUM_RESULTS_PER_PAGE],
+	/**
+	 * Helper function to format file names for Pixel query syntax.
+	 * Converts array of files into comma-separated quoted strings.
+	 * Example: ['file1.pdf', 'file2.txt'] -> '"file1.pdf", "file2.txt"'
+	 */
+	const buildFileArrayString = (files: FileExplorerProps[]): string => {
+		return files
+			.map((file, index) =>
+				index + 1 === files.length
+					? `"${file.fileName}"`
+					: `"${file.fileName}", `,
+			)
+			.join("");
 	};
 
-	//adjusting for instance where there are more than 10 files
-	fileCount > 9 && paginationOptions.filePageCounts.push(10);
+	/**
+	 * Format raw byte count into a human-readable size string.
+	 * Supports B, KB, MB, GB, TB.
+	 */
+	const formatFileSize = (bytes: number): string => {
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		if (bytes < 1024 * 1024 * 1024)
+			return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+		if (bytes < 1024 * 1024 * 1024 * 1024)
+			return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+		return `${(bytes / (1024 * 1024 * 1024 * 1024)).toFixed(1)} TB`;
+	};
 
-	//For filtering files
 	const { control, watch, setValue, handleSubmit } = useForm<{
 		FILES: FileExplorerProps[];
 		PROJECT_UPLOAD: File[];
 		SEARCH_FILTER: string;
 	}>({
 		defaultValues: {
-			// Files Table
 			FILES: [],
-			// Filters for Files table
 			SEARCH_FILTER: "",
 			PROJECT_UPLOAD: [],
 		},
@@ -118,28 +181,22 @@ export const FileTable = (props: FileTableProps) => {
 	const searchFilter = watch("SEARCH_FILTER");
 	const verifiedFiles = watch("FILES");
 
-	//Grabbing list of files in a Vector Database
+	// Fetch all files from the vector database
 	const getFileDetails = usePixel<FileExplorerProps[]>(`
         ListDocumentsInVectorDatabase(engine="${id}")
     `);
-	//updating the file details list
+
 	/**
-	 * @name useEffect
-	 * @desc - sets files in react hook form
+	 * Effect to filter and sort files based on search term.
+	 * Runs whenever files are fetched or search filter changes.
+	 * Focuses search input after rendering for better UX.
 	 */
 	useEffect(() => {
 		if (getFileDetails.status !== "SUCCESS" || !getFileDetails.data) {
 			return;
 		}
 
-		const files = [];
-		// push files into file array
-		getFileDetails.data.forEach((file) => {
-			files.push(file);
-		});
-
-		//filter using search term
-		const filteredFiles = files.filter((file) =>
+		const filteredFiles = getFileDetails.data.filter((file) =>
 			file.fileName.toLowerCase().includes(searchFilter.toLowerCase()),
 		);
 
@@ -151,31 +208,52 @@ export const FileTable = (props: FileTableProps) => {
 
 		setValue("FILES", filteredFiles);
 
+		// Track initial mount to prevent unnecessary state updates
 		if (!didMount.current) {
-			// set total members
-			setFileCount(getFileDetails.data.length);
 			didMount.current = true;
 		}
-		// Needed for total pages on pagination
-		setFilteredFileCount(filteredFiles.length);
 
+		// Update pagination based on filtered results
+		setFilteredFileCount(filteredFiles.length);
 		fileSearchRef.current?.focus();
-		return () => {
-			console.log("Cleaning files table");
-			setValue("FILES", []);
-			setSelectedFiles([]);
-		};
 	}, [getFileDetails.status, getFileDetails.data, searchFilter, setValue]);
 
-	// File upload handlers
-	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+	/**
+	 * Simulates incremental progress on the upload progress bar while isLoading
+	 * is active. Advances in random steps up to 90%, then resets when done.
+	 */
+	useEffect(() => {
+		if (!isLoading) {
+			setUploadProgress(0);
+			return;
+		}
+		setUploadProgress(10);
+		const interval = setInterval(() => {
+			setUploadProgress((prev) => {
+				if (prev >= 90) {
+					clearInterval(interval);
+					return 90;
+				}
+				return Math.min(90, prev + Math.random() * 12);
+			});
+		}, 500);
+		return () => clearInterval(interval);
+	}, [isLoading]);
+
+	const handleDragOver = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
 	};
 
-	const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+	/**
+	 * Handle drag and drop file upload.
+	 * Validates file types to ensure only supported formats are accepted.
+	 * Supported formats: PDF, CSV, TXT, DOC/X, PPT/X, JSON, XML, EML, MSG
+	 */
+	const handleDrop = (e: React.DragEvent<HTMLElement>) => {
 		e.preventDefault();
 		e.stopPropagation();
+		if (isLoading) return;
 		const droppedFiles = Array.from(e.dataTransfer.files);
 		const validFiles = droppedFiles.filter((file) => {
 			const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
@@ -187,65 +265,170 @@ export const FileTable = (props: FileTableProps) => {
 				".ppt",
 				".docx",
 				".pptx",
+				".json",
+				".xml",
+				".eml",
+				".msg",
 			].includes(extension);
 		});
 		setValue("PROJECT_UPLOAD", validFiles);
 	};
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (isLoading) return;
 		if (e.target.files) {
 			setValue("PROJECT_UPLOAD", Array.from(e.target.files));
 		}
 	};
 
-	//Method that is called for embedding a file
+	// newly added helpers
+	const normalizePixelReturn = async (
+		query: string,
+	): Promise<PixelReturnLike> => {
+		try {
+			const response = await monolithStore.runQuery(query);
+			return response?.pixelReturn?.[0] ?? {};
+		} catch (queryError: unknown) {
+			const error = queryError as Record<string, unknown>;
+			const pixelReturn = error?.pixelReturn;
+
+			if (
+				Array.isArray(pixelReturn) &&
+				pixelReturn.length > 0 &&
+				pixelReturn[0]
+			) {
+				return pixelReturn[0] as PixelReturnLike;
+			}
+
+			if (
+				error?.additionalOutput !== undefined ||
+				error?.output !== undefined ||
+				error?.operationType !== undefined
+			) {
+				return error as PixelReturnLike;
+			}
+
+			throw queryError;
+		}
+	};
+
+	const refreshFilesSafely = () => {
+		setTimeout(() => {
+			getFileDetails.refresh();
+		}, 50);
+	};
+
+	const runEmbeddingQuery = async (filePaths: string[]) => {
+		return normalizePixelReturn(`
+      CreateEmbeddingsFromDocuments(
+        engine="${id}",
+        filePaths=[${filePaths.map((path) => `"${path}"`).join(", ")}]
+      )
+    `);
+	};
+
+	const getEmbeddingResults = (pixelReturn: PixelReturnLike) => {
+		const results = pixelReturn.additionalOutput?.[0]?.output;
+		return Array.isArray(results)
+			? (results as EmbeddingFileResult[])
+			: null;
+	};
+
+	const showEmbeddingToast = (results: EmbeddingFileResult[]) => {
+		const successCount = results.filter(
+			(r) => r.status === "SUCCESS",
+		).length;
+		const failCount = results.length - successCount;
+
+		if (failCount === 0) {
+			toast.success(`Successfully embedded ${successCount} document(s)`);
+		} else if (successCount === 0) {
+			toast.error(
+				`All ${failCount} document(s) failed to embed — see details below`,
+			);
+		} else {
+			toast.warning(
+				`${successCount} embedded successfully, ${failCount} failed — see details below`,
+			);
+		}
+	};
+
+	const applyEmbeddingResults = (results: EmbeddingFileResult[]) => {
+		setEmbeddingResults((prev) => [...prev, ...results]);
+		setShowEmbeddingResults(true);
+		setIsEmbeddingResultsCollapsed(false);
+		setExpandedErrors(new Set());
+		showEmbeddingToast(results);
+	};
+
+	const handleEmbeddingResponse = (
+		pixelReturn: PixelReturnLike,
+		fallbackSuccessMessage: string,
+	) => {
+		const results = getEmbeddingResults(pixelReturn);
+
+		if (results) {
+			applyEmbeddingResults(results);
+			return;
+		}
+
+		const { output, operationType } = pixelReturn;
+		if (operationType?.indexOf("ERROR") === -1) {
+			toast.success(fallbackSuccessMessage);
+		} else {
+			toast.error(String(output));
+		}
+	};
+
+	const toggleErrorExpand = (fileName: string) => {
+		setExpandedErrors((prev) => {
+			const next = new Set(prev);
+			next.has(fileName) ? next.delete(fileName) : next.add(fileName);
+			return next;
+		});
+	};
+
+	/**
+	 * Upload and embed files into the vector database.
+	 * Steps: 1) Upload files to server, 2) Create embeddings from uploaded documents
+	 * This enables semantic search across the file contents.
+	 */
 	const embedFile = handleSubmit(async (data: FileUploadForm) => {
 		setIsLoading(true);
 
-		//string that will become the filePaths
-		let fileLocations = "";
+		// Capture file sizes from the File objects before they are cleared
+		const sizeMap: Record<string, number> = {};
+		data.PROJECT_UPLOAD.forEach((file) => {
+			sizeMap[file.name] = file.size;
+		});
+		setUploadedFileSizes((prev) => ({ ...prev, ...sizeMap }));
 
 		try {
-			//upload the file
+			// Upload files to the server first
 			const upload = await uploadFile(
 				data.PROJECT_UPLOAD,
 				configStore.store.insightID,
 			);
 
-			upload.forEach((file, index) => {
-				const { fileLocation } = file;
-				if (index + 1 === upload.length) {
-					//last member
-					fileLocations = fileLocations += `"${fileLocation}"`;
-				} else {
-					//all other members
-					fileLocations = fileLocations += `"${fileLocation}", `;
-				}
-			});
+			const pixelReturn = await runEmbeddingQuery(
+				upload.map((file) => file.fileLocation),
+			);
 
-			// Embedding the File
-			const response = await monolithStore.runQuery(`
-                CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
-            `);
-
-			const { output, operationType } = response.pixelReturn[0];
-
-			if (operationType.indexOf("ERROR") === -1) {
-				toast.success("Successfully added document");
-			} else {
-				toast.error(String(output));
-			}
-		} catch (e) {
-			toast.error(String(e));
-		} finally {
-			//turn off loading
-			getFileDetails.refresh();
-			setIsLoading(false);
+			handleEmbeddingResponse(pixelReturn, "Successfully added document");
 			setValue("PROJECT_UPLOAD", []);
 			setOpen(false);
+			setIsLoading(false);
+			refreshFilesSafely();
+		} catch (e) {
+			toast.error(String(e));
+			setIsLoading(false);
 		}
 	});
 
+	/**
+	 * Delete a single file from the vector database.
+	 * This removes both the file metadata and its embeddings.
+	 */
 	const deleteFile = async (file: FileExplorerProps) => {
 		const { fileName } = file;
 		setIsLoading(true);
@@ -270,20 +453,13 @@ export const FileTable = (props: FileTableProps) => {
 		}
 	};
 
+	/**
+	 * Delete multiple selected files from the vector database.
+	 * Batch operation for efficiency when removing multiple files.
+	 */
 	const deleteSelectedFiles = async (files: FileExplorerProps[]) => {
-		// construct the string of files
 		setIsLoading(true);
-		let fileArray = "";
-		files.forEach((file, index) => {
-			const { fileName } = file;
-			if (index + 1 === files.length) {
-				//structuring the last element
-				fileArray = `${fileArray}"${fileName}"`;
-			} else {
-				// all but the last element
-				fileArray = `${fileArray}"${fileName}", `;
-			}
-		});
+		const fileArray = buildFileArrayString(files);
 
 		try {
 			const response = await monolithStore.runQuery(`
@@ -300,7 +476,6 @@ export const FileTable = (props: FileTableProps) => {
 		} catch (e) {
 			toast.warning(String(e));
 		} finally {
-			//refresh files list, null the file to Delete, and close modal
 			getFileDetails.refresh();
 			setIsLoading(false);
 			setFileToDelete(null);
@@ -308,32 +483,30 @@ export const FileTable = (props: FileTableProps) => {
 		}
 	};
 
+	/**
+	 * Download selected files from the vector database.
+	 * Initiates a download of the original files (not embeddings).
+	 */
 	const downloadSelectedFiles = async (files: FileExplorerProps[]) => {
-		// construct the string of files
 		setExportLoading(true);
-		let fileArray = "";
-		files.forEach((file, index) => {
-			const { fileName } = file;
-			if (index + 1 === files.length) {
-				//structuring the last element
-				fileArray = `${fileArray}"${fileName}"`;
-			} else {
-				// all but the last element
-				fileArray = `${fileArray}"${fileName}", `;
-			}
-		});
-
+		const fileArray = buildFileArrayString(files);
 		const pixel = `META | VectorFileDownload(engine = "${id}", fileNames=[${fileArray}]);`;
 
-		monolithStore.runQuery(pixel).then((response) => {
-			const output = response.pixelReturn[0].output,
-				insightId = response.insightId;
-
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const { output } = response.pixelReturn[0];
+			const { insightId } = response;
 			monolithStore.download(insightId, String(output));
-		});
-		setExportLoading(false);
+		} finally {
+			setExportLoading(false);
+		}
 	};
 
+	/**
+	 * Create sort handler for table columns.
+	 * Toggles between ascending and descending order.
+	 * Supports sorting by name, size, and date.
+	 */
 	const createSortHandler = (property: string) => () => {
 		const isAsc = order === "asc";
 		const newOrder = isAsc ? "desc" : "asc";
@@ -363,9 +536,227 @@ export const FileTable = (props: FileTableProps) => {
 		setValue("FILES", sortedFiles);
 	};
 
+	const renderLoadingRows = () => {
+		return (
+			<TableRow>
+				<TableCell colSpan={5} className="h-[200px]">
+					<div className="flex flex-col items-center justify-center gap-2">
+						<Spinner className="size-8 text-muted-foreground" />
+						<P className="text-muted-foreground text-sm">
+							Loading documents...
+						</P>
+					</div>
+				</TableCell>
+			</TableRow>
+		);
+	};
+
+	/**
+	 * Render empty state when no files match the current filter.
+	 */
+	const renderEmptyState = () => {
+		const isFiltered = searchFilter.length > 0;
+		return (
+			<TableRow>
+				<TableCell colSpan={5} className="h-[200px]">
+					<div className="flex flex-col items-center justify-center gap-2 text-center">
+						<Upload className="h-12 w-12 text-muted-foreground" />
+						<P className="font-medium text-foreground">
+							{isFiltered
+								? "No files match your search"
+								: "No files uploaded yet"}
+						</P>
+						<P className="text-muted-foreground text-sm">
+							{isFiltered
+								? "Try adjusting your search terms"
+								: "Upload your first document to get started"}
+						</P>
+						{!isFiltered && (
+							<Button
+								onClick={() => setOpen(true)}
+								size="sm"
+								className="mt-2"
+							>
+								<Plus className="size-4" />
+								Embed New Document
+							</Button>
+						)}
+					</div>
+				</TableCell>
+			</TableRow>
+		);
+	};
+
+	const successResults = embeddingResults.filter(
+		(r) => r.status === "SUCCESS",
+	);
+	const failedResults = embeddingResults.filter((r) => r.status === "FAILED");
+
 	return (
-		<div className="flex w-full shrink-0 flex-col items-start justify-between gap-[25px]">
-			<div className="w-full rounded-xl shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
+		<div className="flex w-full shrink-0 flex-col items-start justify-between gap-6">
+			{showEmbeddingResults && embeddingResults.length > 0 && (
+				<div
+					className="w-full rounded-xl border border-border bg-background shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]"
+					data-testid="embedding-results-panel"
+				>
+					<div className="flex items-center justify-between border-border border-b px-4 py-3">
+						<div className="flex min-w-0 flex-1 items-center gap-3">
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() =>
+									setIsEmbeddingResultsCollapsed(
+										(prev) => !prev,
+									)
+								}
+								className="h-8 gap-2 px-2 text-foreground"
+								data-testid="embedding-results-toggle"
+							>
+								{isEmbeddingResultsCollapsed ? (
+									<ChevronDown className="size-4" />
+								) : (
+									<ChevronUp className="size-4" />
+								)}
+								<H4>Embedding Results</H4>
+							</Button>
+
+							{successResults.length > 0 && (
+								<span
+									className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-0.5 font-medium text-foreground text-xs"
+									data-testid="embedding-results-success-badge"
+								>
+									<CheckCircle2 className="size-3 text-success" />
+									{successResults.length} Succeeded
+								</span>
+							)}
+
+							{failedResults.length > 0 && (
+								<span
+									className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-0.5 font-medium text-foreground text-xs"
+									data-testid="embedding-results-failed-badge"
+								>
+									<AlertCircle className="size-3 text-destructive" />
+									{failedResults.length} Failed
+								</span>
+							)}
+						</div>
+
+						<div className="flex items-center gap-2">
+							<Button
+								variant="ghost"
+								size="icon"
+								onClick={() => setShowEmbeddingResults(false)}
+								className="size-8 shrink-0"
+								aria-label="Dismiss embedding results"
+								data-testid="embedding-results-close"
+							>
+								<X className="size-4" />
+							</Button>
+						</div>
+					</div>
+
+					{!isEmbeddingResultsCollapsed && (
+						<div className="max-h-60 divide-y divide-border overflow-y-auto">
+							{embeddingResults.map((result) => {
+								const isFailed = result.status === "FAILED";
+								const isExpanded = expandedErrors.has(
+									result.fileName,
+								);
+								return (
+									<div
+										key={result.fileName}
+										className="px-4 py-3"
+										data-testid={`embedding-result-row-${result.fileName}`}
+									>
+										<div className="flex items-center justify-between gap-3">
+											<div className="flex min-w-0 flex-1 items-center gap-2.5">
+												{isFailed ? (
+													<AlertCircle className="size-4 shrink-0 text-destructive" />
+												) : (
+													<CheckCircle2 className="size-4 shrink-0 text-success" />
+												)}
+												<span
+													className="truncate font-medium text-foreground text-sm"
+													title={result.fileName}
+												>
+													{result.fileName}
+												</span>
+											</div>
+
+											<div className="flex shrink-0 items-center gap-2">
+												{uploadedFileSizes[
+													result.fileName
+												] !== undefined && (
+													<span className="text-muted-foreground text-xs">
+														{formatFileSize(
+															uploadedFileSizes[
+																result.fileName
+															],
+														)}
+													</span>
+												)}
+												{!isFailed ? (
+													<span className="text-muted-foreground text-xs">
+														{result.insertedRecords}{" "}
+														{result.insertedRecords ===
+														1
+															? "record"
+															: "records"}{" "}
+														inserted
+													</span>
+												) : (
+													<Button
+														variant="ghost"
+														size="sm"
+														onClick={() =>
+															toggleErrorExpand(
+																result.fileName,
+															)
+														}
+														className="h-7 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+														data-testid={`embedding-result-details-${result.fileName}`}
+													>
+														Details
+														{isExpanded ? (
+															<ChevronUp className="size-3" />
+														) : (
+															<ChevronDown className="size-3" />
+														)}
+													</Button>
+												)}
+											</div>
+										</div>
+
+										{isFailed &&
+											isExpanded &&
+											result.error && (
+												<div
+													className="mt-2.5 ml-[26px] rounded-md border border-border bg-secondary p-3"
+													data-testid={`embedding-result-error-${result.fileName}`}
+												>
+													<P className="mb-1.5 font-semibold text-destructive text-xs">
+														{
+															result.error
+																.errorMessage
+														}
+													</P>
+													<P className="break-all font-mono text-muted-foreground text-xs leading-relaxed">
+														{
+															result.error
+																.techErrorMessage
+														}
+													</P>
+												</div>
+											)}
+									</div>
+								);
+							})}
+						</div>
+					)}
+				</div>
+			)}
+
+			<div className="w-full rounded-xl bg-background shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
 				<div className="flex flex-wrap items-center justify-between gap-y-2 self-stretch bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
 					<div className="flex items-center gap-2.5 px-4 py-3">
 						<H4>Files</H4>
@@ -452,153 +843,129 @@ export const FileTable = (props: FileTableProps) => {
 										data-testid="files-checkbox"
 									/>
 								</TableHead>
-								<TableHead>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={createSortHandler(
-											headCell[0].id,
-										)}
-										className="h-8 gap-1"
-									>
-										Name
-										{orderBy === headCell[0].id &&
-											(order === "asc" ? " ↑" : " ↓")}
-									</Button>
-								</TableHead>
-								<TableHead>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={createSortHandler(
-											headCell[1].id,
-										)}
-										className="h-8 gap-1"
-									>
-										Date Uploaded
-										{orderBy === headCell[1].id &&
-											(order === "asc" ? " ↑" : " ↓")}
-									</Button>
-								</TableHead>
-								<TableHead>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={createSortHandler(
-											headCell[2].id,
-										)}
-										className="h-8 gap-1"
-									>
-										Size
-										{orderBy === headCell[2].id &&
-											(order === "asc" ? " ↑" : " ↓")}
-									</Button>
-								</TableHead>
+
+								{headCell.map((cell) => (
+									<TableHead key={cell.id}>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={createSortHandler(cell.id)}
+											className="h-8 gap-1"
+											data-testid={`sort-${cell.id}`}
+										>
+											{cell.label}
+											{orderBy === cell.id &&
+												(order === "asc" ? " ↑" : " ↓")}
+										</Button>
+									</TableHead>
+								))}
+
 								<TableHead>Action</TableHead>
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{verifiedFiles.map((_x, i) => {
-								if (
-									i >=
-										filePage * NUM_RESULTS_PER_PAGE -
-											NUM_RESULTS_PER_PAGE &&
-									i < filePage * NUM_RESULTS_PER_PAGE
-								) {
-									const file = verifiedFiles[i];
+							{getFileDetails.status === "LOADING" ||
+							getFileDetails.status === "INITIAL"
+								? renderLoadingRows()
+								: verifiedFiles.length === 0
+									? renderEmptyState()
+									: verifiedFiles.map((_x, i) => {
+											if (
+												i >=
+													filePage *
+														NUM_RESULTS_PER_PAGE -
+														NUM_RESULTS_PER_PAGE &&
+												i <
+													filePage *
+														NUM_RESULTS_PER_PAGE
+											) {
+												const file = verifiedFiles[i];
+												if (!file) return null;
 
-									let isSelected = false;
+												const isSelected =
+													selectedFiles.some(
+														(v) =>
+															v.fileName ===
+															file.fileName,
+													);
 
-									if (file) {
-										isSelected = selectedFiles.some(
-											(value) => {
 												return (
-													value.fileName ===
-													file.fileName
-												);
-											},
-										);
-									}
-									if (file) {
-										return (
-											<TableRow
-												key={`${file.fileName}-${i}`}
-											>
-												<TableCell>
-													<Checkbox
-														checked={isSelected}
-														onCheckedChange={() => {
-															if (isSelected) {
-																const selFiles =
-																	[];
-																selectedFiles.forEach(
-																	(u) => {
-																		if (
-																			u.fileName !==
-																			file.fileName
-																		) {
-																			selFiles.push(
-																				u,
-																			);
-																		}
-																	},
-																);
-																setSelectedFiles(
-																	selFiles,
-																);
-															} else {
-																setSelectedFiles(
-																	[
-																		...selectedFiles,
-																		file,
-																	],
-																);
-															}
-														}}
-														data-testid={`file-checkbox-${file.fileName}`}
-													/>
-												</TableCell>
-												<TableCell>
-													{file.fileName}
-												</TableCell>
-												<TableCell>
-													{file.lastModified}
-												</TableCell>
-												<TableCell>
-													{Math.round(
-														file.fileSize * 10,
-													) / 10}{" "}
-													KB
-												</TableCell>
-												<TableCell>
-													<Button
-														variant="ghost"
-														size="icon"
-														onClick={() => {
-															setDeleteFileModal(
-																true,
-															);
-															setFileToDelete(
-																file,
-															);
-														}}
+													<TableRow
+														key={`${file.fileName}-${i}`}
 													>
-														<Trash2 className="size-4" />
-													</Button>
-												</TableCell>
-											</TableRow>
-										);
-									}
-								}
-
-								return null;
-							})}
+														<TableCell>
+															<Checkbox
+																checked={
+																	isSelected
+																}
+																onCheckedChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		setSelectedFiles(
+																			selectedFiles.filter(
+																				(
+																					u,
+																				) =>
+																					u.fileName !==
+																					file.fileName,
+																			),
+																		);
+																	} else {
+																		setSelectedFiles(
+																			[
+																				...selectedFiles,
+																				file,
+																			],
+																		);
+																	}
+																}}
+																data-testid={`file-checkbox-${file.fileName}`}
+															/>
+														</TableCell>
+														<TableCell>
+															{file.fileName}
+														</TableCell>
+														<TableCell>
+															{file.lastModified}
+														</TableCell>
+														<TableCell>
+															{formatFileSize(
+																file.fileSize *
+																	1024,
+															)}
+														</TableCell>
+														<TableCell>
+															<Button
+																variant="ghost"
+																size="icon"
+																onClick={() => {
+																	setDeleteFileModal(
+																		true,
+																	);
+																	setFileToDelete(
+																		file,
+																	);
+																}}
+																data-testid={`delete-file-${file.fileName}`}
+															>
+																<Trash2 className="size-4" />
+															</Button>
+														</TableCell>
+													</TableRow>
+												);
+											}
+											return null;
+										})}
 						</TableBody>
 						<TableFooter>
 							<TableRow>
 								<TableCell colSpan={5}>
 									<div className="flex items-center justify-end gap-4 px-2">
-										<div className="text-sm">
+										<div
+											className="text-muted-foreground text-sm"
+											data-testid="pagination-summary"
+										>
 											{(filePage - 1) *
 												NUM_RESULTS_PER_PAGE +
 												1}
@@ -615,6 +982,7 @@ export const FileTable = (props: FileTableProps) => {
 												size="icon-sm"
 												onClick={() => setFilePage(1)}
 												disabled={filePage === 1}
+												data-testid="pagination-first"
 											>
 												{"<<"}
 											</Button>
@@ -630,6 +998,7 @@ export const FileTable = (props: FileTableProps) => {
 													)
 												}
 												disabled={filePage === 1}
+												data-testid="pagination-prev"
 											>
 												{"<"}
 											</Button>
@@ -654,6 +1023,7 @@ export const FileTable = (props: FileTableProps) => {
 															NUM_RESULTS_PER_PAGE,
 													)
 												}
+												data-testid="pagination-next"
 											>
 												{">"}
 											</Button>
@@ -675,6 +1045,7 @@ export const FileTable = (props: FileTableProps) => {
 															NUM_RESULTS_PER_PAGE,
 													)
 												}
+												data-testid="pagination-last"
 											>
 												{">>"}
 											</Button>
@@ -687,10 +1058,14 @@ export const FileTable = (props: FileTableProps) => {
 				</div>
 			</div>
 
-			{/* Upload Files Modal */}
-			<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog
+				open={open}
+				onOpenChange={(value) => {
+					if (!isLoading) setOpen(value);
+				}}
+			>
 				<DialogContent
-					className="w-full max-w-[600px]"
+					className="w-full max-w-[600px] border-border bg-background"
 					data-testid="file-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
@@ -703,24 +1078,27 @@ export const FileTable = (props: FileTableProps) => {
 								return (
 									<button
 										type="button"
-										className="flex min-h-[200px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+										disabled={isLoading}
+										className="flex min-h-[220px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary px-6 py-8 text-center transition-colors hover:border-primary hover:bg-accent"
 										onClick={() =>
 											fileInputRef.current?.click()
 										}
 										onDragOver={handleDragOver}
 										onDrop={handleDrop}
+										data-testid="upload-dropzone"
 									>
 										<input
 											ref={fileInputRef}
 											type="file"
-											accept=".pdf,.csv,.txt,.doc,.ppt,.docx,.pptx"
+											accept=".pdf,.csv,.txt,.doc,.ppt,.docx,.pptx,.json,.xml,.eml,.msg"
 											className="hidden"
 											onChange={handleFileChange}
 											multiple={true}
 										/>
 										{field.value &&
 										field.value.length > 0 ? (
-											<div className="text-center">
+											<div className="flex w-full max-w-[420px] flex-col items-center justify-center gap-2">
+												<Upload className="h-12 w-12 text-muted-foreground" />
 												<P className="font-medium text-foreground">
 													{field.value.length} file
 													{field.value.length > 1
@@ -728,26 +1106,31 @@ export const FileTable = (props: FileTableProps) => {
 														: ""}{" "}
 													selected
 												</P>
-												<P className="text-muted-foreground text-sm">
+												<P className="break-words text-center text-muted-foreground text-sm">
 													{field.value
 														.map((f) => f.name)
 														.join(", ")}
 												</P>
-												<P className="mt-2 text-muted-foreground text-sm">
+												<P className="mt-1 text-muted-foreground text-sm">
 													Click or drag to replace
 												</P>
 											</div>
 										) : (
-											<div className="text-center">
-												<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
-												<P className="font-medium text-foreground">
-													Drop your files here or
-													click to browse
-												</P>
-												<P className="text-muted-foreground text-sm">
-													Supports PDF, CSV, TXT, DOC,
-													PPT, DOCX, PPTX
-												</P>
+											<div className="flex w-full max-w-[420px] flex-col items-center justify-center gap-3">
+												<div className="flex h-14 w-14 items-center justify-center rounded-full bg-background">
+													<Upload className="h-8 w-8 text-muted-foreground" />
+												</div>
+												<div className="flex flex-col items-center gap-1 text-center">
+													<P className="font-medium text-foreground">
+														Drop your files here or
+														click to browse
+													</P>
+													<P className="text-muted-foreground text-sm">
+														Supports PDF, CSV, TXT,
+														DOC, PPT, DOCX, PPTX,
+														JSON, XML, EML, MSG
+													</P>
+												</div>
 											</div>
 										)}
 									</button>
@@ -760,6 +1143,7 @@ export const FileTable = (props: FileTableProps) => {
 								variant="ghost"
 								disabled={isLoading}
 								onClick={() => setOpen(false)}
+								data-testid="upload-modal-close-btn"
 							>
 								Close
 							</Button>
@@ -771,14 +1155,15 @@ export const FileTable = (props: FileTableProps) => {
 									watch("PROJECT_UPLOAD").length === 0
 								}
 								onClick={embedFile}
+								data-testid="upload-modal-embed-btn"
 							>
 								{isLoading && <Spinner className="size-4" />}
 								Embed
 							</Button>
 						</div>
 						{isLoading && (
-							<div className="mt-2">
-								<Progress />
+							<div className="mt-2" data-testid="upload-progress">
+								<Progress value={uploadProgress} />
 							</div>
 						)}
 					</div>
@@ -787,7 +1172,7 @@ export const FileTable = (props: FileTableProps) => {
 
 			{/* Delete Single File Modal */}
 			<Dialog open={deleteFileModal} onOpenChange={setDeleteFileModal}>
-				<DialogContent className="max-w-md">
+				<DialogContent className="max-w-md border-border bg-background">
 					<div className="flex flex-col gap-4">
 						<H4>Are you sure?</H4>
 						{fileToDelete && (
@@ -799,6 +1184,7 @@ export const FileTable = (props: FileTableProps) => {
 							<Button
 								variant="ghost"
 								onClick={() => setDeleteFileModal(false)}
+								data-testid="delete-file-close-btn"
 							>
 								Close
 							</Button>
@@ -812,6 +1198,7 @@ export const FileTable = (props: FileTableProps) => {
 									deleteFile(fileToDelete);
 								}}
 								disabled={isLoading}
+								data-testid="delete-file-confirm-btn"
 							>
 								{isLoading && <Spinner className="size-4" />}
 								Confirm
@@ -823,7 +1210,7 @@ export const FileTable = (props: FileTableProps) => {
 
 			{/* Delete Multiple Files Modal */}
 			<Dialog open={deleteFilesModal} onOpenChange={setDeleteFilesModal}>
-				<DialogContent className="max-w-md">
+				<DialogContent className="max-w-md border-border bg-background">
 					<div className="flex flex-col gap-4">
 						<H4>Are you sure?</H4>
 						<P>Would you like to delete all selected files?</P>
@@ -831,15 +1218,17 @@ export const FileTable = (props: FileTableProps) => {
 							<Button
 								variant="ghost"
 								onClick={() => setDeleteFilesModal(false)}
+								data-testid="delete-files-close-btn"
 							>
 								Close
 							</Button>
 							<Button
 								variant="destructive"
 								disabled={isLoading}
-								onClick={() => {
-									deleteSelectedFiles(selectedFiles);
-								}}
+								onClick={() =>
+									deleteSelectedFiles(selectedFiles)
+								}
+								data-testid="delete-files-confirm-btn"
 							>
 								{isLoading && <Spinner className="size-4" />}
 								Confirm

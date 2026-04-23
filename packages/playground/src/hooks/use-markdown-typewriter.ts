@@ -8,6 +8,48 @@ const DEBOUNCE_MS = 8; // Batch updates when content streams too fast (125fps th
 const MAX_BACKTRACK = 40; // Maximum characters to walk back for syntax safety
 
 // ============================================
+// CODE FENCE SKIP
+// ============================================
+/**
+ * If targetIndex lands inside a fenced code block (``` ... ```), jump to the
+ * index just past the closing fence so the block is revealed atomically.
+ *
+ * Code blocks must not be animated character-by-character because:
+ *  - It looks wrong (partial syntax)
+ *  - HtmlPreviewBlock needs its full content before it can run scripts /
+ *    render charts, and it only receives whatever the typewriter has revealed.
+ *
+ * Inline backticks are NOT affected — only triple-backtick fences.
+ */
+function skipPastCodeFence(fullText: string, targetIndex: number): number {
+	let i = 0;
+	while (i < targetIndex) {
+		// Detect a triple-backtick opening fence
+		if (
+			fullText[i] === "`" &&
+			fullText[i + 1] === "`" &&
+			fullText[i + 2] === "`"
+		) {
+			const closingIdx = fullText.indexOf("```", i + 3);
+			if (closingIdx === -1) {
+				// No closing fence yet — unclosed block, leave target as-is
+				break;
+			}
+			const blockEnd = closingIdx + 3;
+			if (targetIndex < blockEnd) {
+				// targetIndex is inside this fence → jump to end of block
+				return blockEnd;
+			}
+			// This fence is entirely before targetIndex — skip past it and continue
+			i = blockEnd;
+		} else {
+			i++;
+		}
+	}
+	return targetIndex;
+}
+
+// ============================================
 // SYNTAX-AWARE SAFE INDEX FINDER
 // ============================================
 const INCOMPLETE_MARKDOWN_PATTERNS: RegExp[] = [
@@ -126,8 +168,13 @@ export function useMarkdownTypewriter(
 					return fullText.length; // Caught up
 				}
 
+				// Jump past any enclosing code fence so blocks appear atomically.
+				// This ensures HtmlPreviewBlock receives its full content immediately
+				// rather than waiting for the typewriter to crawl through the HTML.
+				const skipped = skipPastCodeFence(fullText, target);
+
 				// Find syntax-safe index
-				const safeIndex = findSafeIndex(fullText, target);
+				const safeIndex = findSafeIndex(fullText, skipped);
 
 				// Always progress at least 1 character
 				return Math.max(prev + 1, safeIndex);

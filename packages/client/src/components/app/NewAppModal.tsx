@@ -1,27 +1,24 @@
-import { useMemo, useState } from "react";
+import { X } from "lucide-react";
+import { useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import type { SerializedState } from "@semoss/renderer";
 import {
-	Autocomplete,
+	Badge,
 	Button,
-	LinearProgress,
-	Modal,
-	Stack,
-	styled,
-	TextArea,
-	TextField,
-	useNotification,
-} from "@semoss/ui";
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
+	Progress,
+	Textarea,
+	toast,
+} from "@semoss/ui/next";
 import { uploadImage } from "@/api";
 import { useRootStore } from "@/hooks";
 import type { AppMetadata } from "./app.types";
-
-const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	paddingTop: `${theme.spacing(1)}!important`,
-}));
 
 type NewAppForm = {
 	APP_NAME: string;
@@ -31,23 +28,20 @@ type NewAppForm = {
 };
 
 interface NewAppModalProps {
-	/** Track if the model is open */
 	open: boolean;
-
-	/** Options to load the modal with */
 	options: { type: "blocks"; state: SerializedState } | { type: "code" };
-
-	/** Callback that is triggered onClose */
 	onClose: (appId?: string) => void;
 }
 
 export const NewAppModal = (props: NewAppModalProps) => {
 	const { open, options, onClose = () => null } = props;
-
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
-
 	const [isLoading, setIsLoading] = useState(false);
+	const [tagInput, setTagInput] = useState("");
+	const nameId = useId();
+	const descId = useId();
+	const tagsId = useId();
+	const imgId = useId();
 
 	const { getValues, handleSubmit, control, watch } = useForm<NewAppForm>({
 		defaultValues: {
@@ -59,29 +53,20 @@ export const NewAppModal = (props: NewAppModalProps) => {
 	});
 
 	const watchAll = watch();
+	// biome-ignore lint/correctness/useExhaustiveDependencies: watchAll triggers re-evaluation on any field change
+	const isFormValid = useMemo(() => !!getValues("APP_NAME"), [watchAll]);
 
-	const isFormValid = useMemo(() => {
-		return !!getValues("APP_NAME");
-	}, [watchAll]);
-
-	/**
-	 * Method that is called to create the app
-	 */
 	const onSubmit = handleSubmit(async (data: NewAppForm) => {
 		let appId = "";
 		try {
-			// start the loading screen
 			setIsLoading(true);
-
 			const { type } = options;
+
 			if (type === "blocks") {
 				const { state } = options;
+				if (!state)
+					throw new Error("State is missing from the blocks app");
 
-				// create the pixel
-				if (!state) {
-					throw new Error(`State is missing from the blocks app`);
-				}
-				// create the project
 				const { errors, pixelReturn } = await monolithStore.runQuery<
 					[AppMetadata]
 				>(
@@ -90,13 +75,10 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					}" ] , json =[${JSON.stringify(state)}]  ) ;`,
 				);
 
-				if (errors.length > 0) {
-					throw new Error(errors.join(","));
-				}
+				if (errors.length > 0) throw new Error(errors.join(","));
 
 				appId = pixelReturn[0].output.project_id;
 
-				// upload the image
 				if (data.APP_IMG && appId) {
 					await uploadImage(
 						data.APP_IMG,
@@ -104,7 +86,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						configStore.store.insightID,
 					);
 				}
-				// after the project is created check for metadata. If true, run SetProjectMeta
+
 				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
@@ -123,29 +105,19 @@ export const NewAppModal = (props: NewAppModalProps) => {
 							.operationType[0];
 
 					if (operationType.indexOf("ERROR") > -1) {
-						notification.add({
-							color: "error",
-							message: output,
-						});
-
+						toast.error(output);
 						return;
 					}
 				}
 			} else if (type === "code") {
-				// create the pixel
 				const pixel = `CreateProject(project=["${data.APP_NAME}"], portal=[true], projectType=["CODE"]);`;
-
-				// create the project
 				const { errors, pixelReturn } =
 					await monolithStore.runQuery<[AppMetadata]>(pixel);
 
-				if (errors.length > 0) {
-					throw new Error(errors.join(","));
-				}
+				if (errors.length > 0) throw new Error(errors.join(","));
 
 				appId = pixelReturn[0].output.project_id;
 
-				// upload the image
 				if (data.APP_IMG && appId) {
 					await uploadImage(
 						data.APP_IMG,
@@ -154,14 +126,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					);
 				}
 
-				// after the project is created run a pixel to create a new portals/index.html file
-				// use the returned projectId
-
 				const newIndexFilePath = "version/assets/portals/index.html";
 				const newIndexFileContent = `<html><style>html {font-family: sans-serif; padding: 30px;}</style><h1>${data.APP_NAME}</h1><p>This is placeholder text for your new Application.</p><p>You can add new files and edit this text using the Code Editor.</p></html>`;
 
 				const saveIndexFilePixel = `
-                    SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]); 
+                    SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]);
                     CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])
                 `;
 
@@ -172,10 +141,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				let operationType = response.pixelReturn[0].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
+					toast.error(output);
 					return false;
 				}
 
@@ -183,13 +149,9 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				operationType = response.pixelReturn[1].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message: output,
-					});
+					toast.error(output);
 				}
 
-				// after the project is created check for metadata. If true, run SetProjectMeta
 				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
@@ -206,129 +168,144 @@ export const NewAppModal = (props: NewAppModalProps) => {
 						setProjectMetadataResponse.pixelReturn[0].operationType;
 
 					if (operationType.indexOf("ERROR") > -1) {
-						notification.add({
-							color: "error",
-							message: output,
-						});
+						toast.error(output);
 					}
 				}
 			} else {
 				return;
 			}
 
-			if (!appId) {
-				throw new Error("Error creating app");
-			}
-
+			if (!appId) throw new Error("Error creating app");
 			onClose(appId);
 		} catch (e) {
 			console.error(e);
-
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		} finally {
-			// stop the loading screen
 			setIsLoading(false);
 		}
 	});
 
 	return (
-		<Modal open={open} fullWidth>
-			<Modal.Title>New App</Modal.Title>
-			<form onSubmit={onSubmit}>
-				<StyledModalContent>
-					<Stack direction="column" spacing={1}>
+		<Dialog open={open} onOpenChange={() => !isLoading && onClose()}>
+			<DialogContent className="sm:max-w-md">
+				<DialogHeader>
+					<DialogTitle>New App</DialogTitle>
+				</DialogHeader>
+				<form onSubmit={onSubmit}>
+					<div className="flex flex-col gap-3 py-2">
 						<Controller
-							name={"APP_NAME"}
+							name="APP_NAME"
 							control={control}
 							rules={{ required: true }}
-							render={({ field }) => {
-								return (
-									<TextField
-										label="Name"
-										value={field.value ? field.value : ""}
+							render={({ field }) => (
+								<div className="flex flex-col gap-1.5">
+									<Label htmlFor={nameId}>Name</Label>
+									<Input
+										id={nameId}
+										value={field.value ?? ""}
 										disabled={isLoading}
-										onChange={(value) =>
-											field.onChange(value)
+										onChange={(e) =>
+											field.onChange(e.target.value)
 										}
-										fullWidth={true}
-										inputProps={{
-											"data-testid":
-												"newAppModal-textField-name",
-										}}
+										data-testid="newAppModal-textField-name"
 									/>
-								);
-							}}
+								</div>
+							)}
 						/>
 						<Controller
-							name={"APP_DESCRIPTION"}
+							name="APP_DESCRIPTION"
 							control={control}
 							rules={{ required: false }}
-							render={({ field }) => {
-								return (
-									<TextArea
-										label="Description"
-										variant="outlined"
-										value={field.value ? field.value : ""}
-										onChange={(value) =>
-											field.onChange(value)
+							render={({ field }) => (
+								<div className="flex flex-col gap-1.5">
+									<Label htmlFor={descId}>Description</Label>
+									<Textarea
+										id={descId}
+										value={field.value ?? ""}
+										onChange={(e) =>
+											field.onChange(e.target.value)
 										}
 										rows={3}
-										data-testid={
-											"newAppModal-description-txt"
-										}
+										data-testid="newAppModal-description-txt"
 									/>
-								);
-							}}
+								</div>
+							)}
 						/>
 						<Controller
-							name={"APP_TAGS"}
+							name="APP_TAGS"
 							control={control}
 							rules={{}}
 							render={({ field }) => {
+								const tags: string[] = field.value || [];
+								const addTag = () => {
+									const trimmed = tagInput.trim();
+									if (trimmed && !tags.includes(trimmed)) {
+										field.onChange([...tags, trimmed]);
+									}
+									setTagInput("");
+								};
 								return (
-									<Autocomplete
-										value={(field.value as string[]) || []}
-										fullWidth
-										multiple
-										onChange={(_, newValue) => {
-											field.onChange(newValue);
-										}}
-										options={[]}
-										freeSolo
-										renderInput={(params) => (
-											<TextField
-												{...params}
-												variant="outlined"
-												placeholder='Press "Enter" to add tag'
-												data-testid={
-													"newAppModal-tag-txt"
+									<div className="flex flex-col gap-1.5">
+										<Label htmlFor={tagsId}>Tags</Label>
+										<Input
+											id={tagsId}
+											value={tagInput}
+											placeholder='Press "Enter" to add tag'
+											onChange={(e) =>
+												setTagInput(e.target.value)
+											}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") {
+													e.preventDefault();
+													addTag();
 												}
-											/>
+											}}
+											data-testid="newAppModal-tag-txt"
+										/>
+										{tags.length > 0 && (
+											<div className="flex flex-wrap gap-1">
+												{tags.map((tag) => (
+													<Badge
+														key={tag}
+														variant="secondary"
+														className="gap-1"
+													>
+														{tag}
+														<button
+															type="button"
+															onClick={() =>
+																field.onChange(
+																	tags.filter(
+																		(t) =>
+																			t !==
+																			tag,
+																	),
+																)
+															}
+															className="hover:text-destructive"
+														>
+															<X className="size-3" />
+														</button>
+													</Badge>
+												))}
+											</div>
 										)}
-									/>
+									</div>
 								);
 							}}
 						/>
 						<Controller
-							name={"APP_IMG"}
+							name="APP_IMG"
 							control={control}
 							rules={{}}
-							render={({ field }) => {
-								return (
-									<TextField
-										label="Image"
-										variant="outlined"
-										disabled={isLoading}
+							render={({ field }) => (
+								<div className="flex flex-col gap-1.5">
+									<Label htmlFor={imgId}>Image</Label>
+									<Input
+										id={imgId}
 										type="file"
-										inputProps={{
-											accept: "image/*",
-										}}
-										InputLabelProps={{
-											shrink: true,
-										}}
+										accept="image/*"
+										disabled={isLoading}
 										onChange={(e) => {
 											const value = (
 												e.target as HTMLInputElement
@@ -337,40 +314,33 @@ export const NewAppModal = (props: NewAppModalProps) => {
 												field.onChange(value[0]);
 											}
 										}}
-										data-testid={"newAppModal-file-txt"}
+										data-testid="newAppModal-file-txt"
 									/>
-								);
-							}}
+								</div>
+							)}
 						/>
-					</Stack>
-				</StyledModalContent>
-				<Modal.Actions>
-					<Stack
-						direction="row"
-						spacing={1}
-						paddingX={2}
-						paddingBottom={2}
-					>
+					</div>
+					<DialogFooter className="pt-2">
 						<Button
 							type="button"
+							variant="ghost"
 							disabled={isLoading}
 							onClick={() => onClose()}
-							data-testid={"newAppModal-cancel-btn"}
+							data-testid="newAppModal-cancel-btn"
 						>
 							Cancel
 						</Button>
 						<Button
 							type="submit"
-							variant={"contained"}
 							disabled={isLoading || !isFormValid}
-							data-testid={"newAppModal-create-btn"}
+							data-testid="newAppModal-create-btn"
 						>
 							Create
 						</Button>
-					</Stack>
-				</Modal.Actions>
-			</form>
-			{isLoading && <LinearProgress />}
-		</Modal>
+					</DialogFooter>
+				</form>
+				{isLoading && <Progress className="h-1" />}
+			</DialogContent>
+		</Dialog>
 	);
 };

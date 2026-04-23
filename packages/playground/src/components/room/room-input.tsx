@@ -13,19 +13,29 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
-	FileAudio2Icon,
+	BookOpenIcon,
+	FileArchiveIcon,
+	FileAudioIcon,
+	FileBadgeIcon,
+	FileChartPieIcon,
+	FileCodeIcon,
 	FileIcon,
-	FileType2Icon,
-	FileVideoCameraIcon,
+	FileJsonIcon,
+	FileSpreadsheetIcon,
+	FileTerminalIcon,
+	FileTextIcon,
+	FileTypeIcon,
+	FileVideoIcon,
 	MicIcon,
+	PlusIcon,
 	SendIcon,
-	SlidersHorizontalIcon,
 	SparklesIcon,
+	Square,
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -34,16 +44,123 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuTrigger,
+	ScrollArea,
+	ScrollBar,
 	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+import {
+	EnterPlugin,
+	FocusPlugin,
+	MentionPlugin,
+	PromptLibraryDialog,
+	type PromptLibraryItem,
+} from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
-import { useGracefulErrors } from "@/hooks";
-import type { Engine } from "@/types";
+import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
+import { useGracefulErrors, useRoot } from "@/hooks";
+import type { RoomStore } from "@/stores";
+import type { Engine, MCPConfig } from "@/types";
+import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+
+let isIframed = false;
+try {
+	isIframed = window.self !== window.top;
+} catch {
+	isIframed = true;
+}
+
+// ============================================================================
+// Constants & Helper Functions
+// ============================================================================
+
+/** Supported image file extensions for preview */
+const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
+
+/** Check if a file is an image based on its extension */
+const isImageFile = (file: File): boolean => {
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	return IMAGE_EXTENSIONS.includes(ext);
+};
+
+/** Shared icon styling for file type icons */
+const ICON_CLASS = "size-8 shrink-0 text-muted-foreground";
+
+/**
+ * Map file extensions to appropriate Lucide icon components
+ * Returns a generic FileIcon for unknown extensions
+ */
+const getIconForExt = (ext: string) => {
+	if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheetIcon;
+	if (
+		[
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		].includes(ext)
+	)
+		return FileCodeIcon;
+	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
+		return FileTerminalIcon;
+	if (ext === "json") return FileJsonIcon;
+	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return FileArchiveIcon;
+	if (["ppt", "pptx"].includes(ext)) return FileChartPieIcon;
+	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
+		return FileAudioIcon;
+	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
+		return FileVideoIcon;
+	if (["html", "xml", "md", "mdx", "rtf"].includes(ext)) return FileTypeIcon;
+	if (ext === "pdf") return FileBadgeIcon;
+	if (["doc", "docx", "msg", "txt"].includes(ext)) return FileTextIcon;
+	return FileIcon;
+};
+
+/**
+ * Render a file type icon with extension label
+ * For images, this will be replaced with an actual preview
+ */
+const getFileIcon = (file: File): React.ReactNode => {
+	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+	const Icon = getIconForExt(ext);
+
+	return (
+		<div className="flex flex-col items-center gap-1">
+			<Icon className={ICON_CLASS} strokeWidth={1.25} />
+			<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
+				{ext}
+			</span>
+		</div>
+	);
+};
+
+/**
+ * Format token counts for display
+ * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
+ */
+const formatTokens = (tokens: number | undefined) => {
+	if (tokens === undefined) return "0";
+	if (tokens >= 1000000) {
+		return `${(tokens / 1000000).toFixed(1)}M`;
+	}
+	if (tokens >= 1000) {
+		return `${(tokens / 1000).toFixed(1)}k`;
+	}
+	return tokens.toString();
+};
+
+// ============================================================================
+// TypeScript Interfaces
+// ============================================================================
 
 interface RoomInputProps {
 	/** Classes to override */
@@ -56,15 +173,21 @@ interface RoomInputProps {
 	model: Engine | null;
 
 	/** Update options on change */
-	setModel: (model: Engine | null) => void;
+	setModel: (model: Engine) => void;
 
-	/** Menu component */
+	/** Menu component for + button dropdown */
 	MenuComponent: React.ComponentType<{
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
-		addToken: (token: string) => void;
+		editorRef?: React.RefObject<LexicalEditor>;
 	}>;
+
+	/** Room options containing MCP configurations for slash menu */
+	options: RoomStore["options"];
+
+	/** Callback when an MCP is selected/deselected from slash menu */
+	onMcpSelect?: (mcp: MCPConfig) => void;
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
@@ -72,10 +195,48 @@ interface RoomInputProps {
 	/** Has outstanding tools */
 	hasOutstandingTools?: boolean;
 
+	/** Whether the pause-on-next-tool flag is armed */
+	hasToolsPaused?: boolean;
+
+	/** Toggle the pause-on-next-tool flag */
+	toggleToolsPaused?: () => void;
+
+	/** Hide the pause-on-next-tool button */
+	hidePauseButton?: boolean;
+
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
+
+	/** Predefined prompts shown in prompt library */
+	predefinedPrompts?: PromptLibraryItem[];
+
+	/** Initial value from prompt library */
+	initialValue?: string;
+	/** Current token usage for context window indicator */
+	tokensUsed?: number;
+
+	/** Maximum token capacity for context window */
+	tokensMax?: number;
+
+	/** Room store for prompt optimizer */
+	room: RoomStore;
 }
 
+// ============================================================================
+// Main Component
+// ============================================================================
+
+/**
+ * RoomInput - A rich text input component for chat/AI interactions
+ *
+ * Features:
+ * - Lexical editor with mention support (/ commands)
+ * - File upload via drag/drop, paste, or file picker
+ * - Speech-to-text input
+ * - Image file previews
+ * - Model selection
+ * - Tool pause/resume controls
+ */
 export const RoomInput: React.FC<RoomInputProps> = observer(
 	({
 		className,
@@ -83,30 +244,136 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		model,
 		setModel,
 		MenuComponent,
+		options,
 		onPrompt = () => null,
+		onMcpSelect,
 		hasOutstandingTools = false,
+		hasToolsPaused = false,
+		toggleToolsPaused,
 		footer = null,
+		hidePauseButton = false,
+		predefinedPrompts = [],
+		initialValue,
+		tokensUsed,
+		tokensMax,
+		room,
 	}) => {
+		// ========================================================================
+		// Hooks & State
+		// ========================================================================
+
 		const { t } = useTranslation("room");
 		const { getGracefulErrorMessage } = useGracefulErrors();
+
+		// Editor state
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
+		const [isScrollable, setIsScrollable] = useState(false);
+		const [inputText, setInputText] = useState("");
+		const { root } = useRoot();
 
+		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
 		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
+		const scrollViewportRef = useRef<HTMLElement | null>(null);
 
+		// Bridge setInput() (PromptOptimizer) -> Lexical editor content
+		const setInputFromOptimizer: React.Dispatch<
+			React.SetStateAction<string>
+		> = (nextValue) => {
+			setInputText((prev) => {
+				const next =
+					typeof nextValue === "function"
+						? (nextValue as (p: string) => string)(prev)
+						: nextValue;
+
+				editorRef.current?.update(() => {
+					const root = $getRoot();
+					root.clear();
+
+					const paragraphNode = $createParagraphNode();
+					if (next?.length) {
+						paragraphNode.append($createTextNode(next));
+					}
+					root.append(paragraphNode);
+				});
+				editorRef.current?.focus();
+				return next;
+			});
+		};
+
+		// File handling
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
 
+		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
+		const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
+		const runPredefinedPrompt = async (prompt: string) => {
+			if (isLoading || hasOutstandingTools) {
+				return;
+			}
+
+			try {
+				const success = await onPrompt(prompt, []);
+				if (!success) {
+					throw new Error("Error processing chat");
+				}
+			} catch (e) {
+				toast.error(getGracefulErrorMessage(e as Error));
+			}
+		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
+		// ========================================================================
+		// Context Window Tooltip
+		// ========================================================================
+
+		const contextTooltipContent = useMemo(() => {
+			const contextUsedPercent =
+				tokensMax && tokensUsed !== undefined
+					? (tokensUsed / tokensMax) * 100
+					: undefined;
+
+			if (contextUsedPercent === undefined) return null;
+
+			// Pick the appropriate description based on usage tier
+			const descriptionKey =
+				contextUsedPercent >= 100
+					? "contextWindow.descriptionExceeded"
+					: contextUsedPercent < 50
+						? "contextWindow.descriptionLow"
+						: contextUsedPercent < 75
+							? "contextWindow.descriptionMedium"
+							: "contextWindow.descriptionHigh";
+
+			return (
+				<div className="w-full space-y-1">
+					<p className="w-full">{t(descriptionKey)}</p>
+					<p className="flex w-full items-baseline justify-between gap-3">
+						<span>{t("contextWindow.memoryUsedTitle")}</span>
+						<span className="whitespace-nowrap text-right tabular-nums">
+							{t("contextWindow.memoryUsedValue", {
+								used: formatTokens(tokensUsed),
+								total: formatTokens(tokensMax),
+								percent: contextUsedPercent.toFixed(1),
+							})}
+						</span>
+					</p>
+				</div>
+			);
+		}, [tokensUsed, tokensMax, t]);
+
+		// ========================================================================
+		// Speech Recognition Setup
+		// ========================================================================
+
 		useEffect(() => {
-			// Check if Speech Recognition is supported
+			// Check browser support for Web Speech API
 			const SpeechRecognition =
 				window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -114,8 +381,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setCanListen(true);
 
 				const recognition = new SpeechRecognition();
-				recognition.continuous = true;
-				recognition.interimResults = true;
+				recognition.continuous = true; // Keep listening until stopped
+				recognition.interimResults = true; // Get real-time results
 				recognition.lang = "en-US";
 
 				recognition.onstart = () => {
@@ -125,7 +392,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				recognition.onresult = (event) => {
 					let transcript = "";
 
-					// get the final ones
+					// Collect only finalized transcription results
 					for (
 						let i = event.resultIndex;
 						i < event.results.length;
@@ -136,17 +403,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}
 					}
 
-					// trim to manually handle spaces
 					transcript = transcript.trim();
 					if (transcript) {
+						// Update Lexical editor with appended transcribed text
 						editorRef.current?.update(() => {
 							const root = $getRoot();
 							const currentText = root.getTextContent();
 
-							// clear existing content
 							root.clear();
 
-							// create new paragraph with combined text
+							// Append new transcript to existing text
 							const paragraphNode = $createParagraphNode();
 							const textNode = $createTextNode(
 								currentText
@@ -161,14 +427,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 				recognition.onerror = (event) => {
 					console.error(event);
-
-					// turn off and focus on element
 					setIsListening(false);
 					editorRef.current?.focus();
 				};
 
 				recognition.onend = () => {
-					// turn off and focus on element
 					setIsListening(false);
 					editorRef.current?.focus();
 				};
@@ -178,65 +441,89 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				setCanListen(false);
 			}
 
+			// Cleanup: stop recognition when component unmounts
 			return () => {
 				recognitionRef.current?.stop();
 			};
 		}, []);
 
-		// update editable
+		// Disable editor during loading to prevent user input
 		useEffect(() => {
 			editorRef.current?.setEditable(!isLoading);
 		}, [isLoading]);
 
+		useEffect(() => {
+			if (!initialValue) return;
+			editorRef.current?.update(() => {
+				const root = $getRoot();
+				root.clear();
+				const paragraph = $createParagraphNode();
+				paragraph.append($createTextNode(initialValue));
+				root.append(paragraph);
+			});
+		}, [initialValue]);
+		// Find and cache the ScrollArea viewport element
+		useEffect(() => {
+			if (contentEditableRef.current) {
+				const viewport = contentEditableRef.current.closest(
+					"[data-radix-scroll-area-viewport]",
+				);
+				scrollViewportRef.current = viewport as HTMLElement | null;
+			}
+		}, []);
+
+		// ========================================================================
+		// Core Functions
+		// ========================================================================
+
 		/**
-		 * Prompt the model
+		 * Submit the current prompt to the AI model
 		 *
-		 * @param - input
+		 * Behavior:
+		 * - Extracts text from editor and captures files
+		 * - Clears editor optimistically before sending
+		 * - On success: clears files
+		 * - On failure: restores editor content and files for retry
 		 */
 		const promptModel = async () => {
-			let success = false;
-
-			// store old options
-
+			// Extract current text from Lexical editor
 			let userInput = "";
 			editorRef.current?.getEditorState().read(() => {
 				const root = $getRoot();
 				userInput = root.getTextContent();
 			});
 
+			// Capture files before clearing (for potential restore on error)
 			const userFiles = [...files];
 
-			// skip if there is no input, if loading, or if there are outstanding tools
+			// Guard: prevent submission if empty, loading, or waiting for tool response
 			if (!userInput || isLoading || hasOutstandingTools) {
 				return;
 			}
 
 			try {
-				// clear the view
+				// Optimistically clear editor and files before sending
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
-
 					const paragraphNode = $createParagraphNode();
 					root.append(paragraphNode);
 				});
+				setFiles([]);
 
-				// clear out the input components
-				success = await onPrompt(userInput, userFiles);
-				if (!success) {
+				// Submit to parent handler
+				const result = Boolean(await onPrompt(userInput, userFiles));
+				if (result === null || result === false) {
 					throw new Error(`Error processing chat`);
 				}
-
-				// clear the files
-				setFiles([]);
 			} catch (e) {
-				// throw the error
-				toast.error(getGracefulErrorMessage(e));
+				// Show error to user
+				toast.error(getGracefulErrorMessage(e as Error as Error));
 
-				// keep the files
+				// Restore files for retry
 				setFiles(userFiles);
 
-				// keep the view
+				// Restore original text in editor for editing/retry
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
@@ -249,75 +536,157 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 		};
 
-		/**
-		 * Get an image for the file
-		 */
-		const getFileImage = (file: File): React.ReactNode => {
-			if (file.type.startsWith("image/")) {
-				const imageUrl = URL.createObjectURL(file);
-				return (
-					<img
-						className="width-100"
-						src={imageUrl}
-						alt={file.name}
-						onLoad={() => URL.revokeObjectURL(imageUrl)}
-					/>
-				);
-			} else if (
-				file.type.includes("text") ||
-				file.type.includes("document")
-			) {
-				return (
-					<FileType2Icon className="size-6 text-muted-foreground" />
-				);
-			} else if (file.type.includes("audio")) {
-				return (
-					<FileAudio2Icon className="size-6 text-muted-foreground" />
-				);
-			} else if (file.type.includes("video")) {
-				return (
-					<FileVideoCameraIcon className="size-6 text-muted-foreground" />
-				);
-			}
+		// ========================================================================
+		// File Preview Management
+		// ========================================================================
 
-			return <FileIcon className="size-6 text-muted-foreground" />;
-		};
+		/**
+		 * Generate blob URLs for image file previews
+		 * Memoized to avoid recreating URLs on every render
+		 */
+		const imagePreviewUrls = useMemo(() => {
+			const urls = new Map<string, string>();
+			for (const f of files) {
+				if (isImageFile(f)) {
+					// Use unique key to identify same file across renders
+					const key = `${f.name}-${f.size}-${f.lastModified}`;
+					urls.set(key, URL.createObjectURL(f));
+				}
+			}
+			return urls;
+		}, [files]);
+
+		/**
+		 * Cleanup blob URLs to prevent memory leaks
+		 * Important: blob URLs persist until explicitly revoked
+		 */
+		useEffect(() => {
+			return () => {
+				for (const url of imagePreviewUrls.values()) {
+					URL.revokeObjectURL(url);
+				}
+			};
+		}, [imagePreviewUrls]);
+
+		// ========================================================================
+		// Render
+		// ========================================================================
 
 		return (
-			<>
-				<div className="relative w-full" ref={ref}>
-					<input
-						ref={fileRef}
-						type="file"
-						multiple={true}
-						hidden
-						onChange={(e) => {
-							// set the new files
-							const updated = Array.from(e.target.files);
+			<div className="relative w-full" ref={ref} data-tour="tour-input">
+				<input
+					ref={fileRef}
+					type="file"
+					multiple={true}
+					hidden
+					onChange={(e) => {
+						// set the new files
+						if (e.target.files) {
+							const updated = Array.from(e.target.files ?? []);
 							setFiles((prev) => [...prev, ...updated]);
-						}}
-					/>
-					<LexicalComposer
-						initialConfig={{
-							namespace: "RoomInput",
-							theme: {},
-							nodes: [],
-							onError: (error) => {
-								console.error(error);
-							},
-						}}
+						}
+					}}
+				/>
+				<LexicalComposer
+					initialConfig={{
+						namespace: "RoomInput",
+						theme: {},
+						nodes: [],
+						onError: (error) => {
+							console.error(error);
+						},
+					}}
+				>
+					<div
+						className={cn(
+							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
+							isDragging
+								? "border-primary border-dashed"
+								: "hover:border-primary",
+							className,
+						)}
 					>
+						{/* File attachments preview strip */}
+						{files.length > 0 && (
+							<ScrollArea type="always">
+								<div className="flex w-max gap-2 p-2 pb-3">
+									{files.map((file, idx) => {
+										const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
+										const previewUrl =
+											imagePreviewUrls.get(key);
+
+										return (
+											<Tooltip key={key}>
+												<TooltipTrigger asChild>
+													<div className="group relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
+														{previewUrl ? (
+															<img
+																src={previewUrl}
+																alt={file.name}
+																className="size-full object-cover"
+															/>
+														) : (
+															getFileIcon(file)
+														)}
+														<Button
+															variant="destructive"
+															size="icon"
+															className="absolute top-1 right-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
+															onClick={() => {
+																setFiles(
+																	(prev) =>
+																		prev.filter(
+																			(
+																				_,
+																				i,
+																			) =>
+																				i !==
+																				idx,
+																		),
+																);
+															}}
+														>
+															<XIcon className="size-3" />
+														</Button>
+													</div>
+												</TooltipTrigger>
+												<TooltipContent>
+													<p className="max-w-48 truncate text-xs">
+														{file.name}
+													</p>
+													<p className="text-muted-foreground text-xs">
+														{(
+															file.size / 1024
+														).toFixed(1)}{" "}
+														KB
+													</p>
+												</TooltipContent>
+											</Tooltip>
+										);
+									})}
+								</div>
+								<ScrollBar
+									orientation="horizontal"
+									className="ml-2"
+								/>
+							</ScrollArea>
+						)}
+
 						<PlainTextPlugin
 							contentEditable={
-								<div className="relative">
+								<ScrollArea
+									type="always"
+									className={cn(
+										"min-h-0 flex-1",
+										isScrollable && "mr-1",
+									)}
+									onClick={() => editorRef.current?.focus()}
+								>
 									<ContentEditable
 										ref={contentEditableRef}
 										className={cn(
-											`h-auto w-full overflow-y-auto rounded-md border border-input bg-transparent p-4 pb-14 text-sm shadow-lg outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:bg-input/30 dark:aria-invalid:ring-destructive/40`,
-											isDragging
-												? "border-primary border-dashed"
-												: "hover:border-primary",
-											className,
+											"px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+											files.length > 0 ? "pt-0" : "pt-4",
 										)}
 										aria-placeholder={t(
 											"input.ariaPlaceholder",
@@ -325,7 +694,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										aria-disabled={isLoading}
 										disabled={isLoading}
 										placeholder={
-											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 p-4 text-muted-foreground text-sm">
+											<div
+												className={cn(
+													"pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pb-4 text-muted-foreground text-sm",
+													files.length > 0
+														? "pt-0"
+														: "pt-4",
+												)}
+											>
 												<SparklesIcon className="size-4" />
 												{isLoading
 													? t("input.thinking")
@@ -334,8 +710,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										}
 										onDrop={(e) => {
 											e.preventDefault();
-
-											// set the new files
 											const updated = Array.from(
 												e.dataTransfer.files,
 											);
@@ -343,20 +717,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												...prev,
 												...updated,
 											]);
-
-											// turn off dragging
 											setIsDragging(false);
 										}}
 										onDragOver={(e) => {
 											e.preventDefault();
-
-											// turn on dragging
 											setIsDragging(true);
 										}}
 										onDragLeave={(e) => {
 											e.preventDefault();
-
-											// turn off dragging
 											setIsDragging(false);
 										}}
 										onPaste={(e) => {
@@ -394,37 +762,277 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											}
 										}}
 									/>
-									<div
-										aria-hidden="true"
-										className="pointer-events-none absolute inset-x-px bottom-px z-10 h-12 rounded-b-md bg-background"
-									/>
-								</div>
+								</ScrollArea>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
-						<OnChangePlugin
-							onChange={(editorState) => {
-								editorState.read(() => {
-									// get the root
-									const root = $getRoot();
 
-									// set empty state
-									setIsEmpty(
-										root.getTextContent().trim().length ===
-											0,
-									);
-								});
+						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
+						<div
+							className="flex items-center justify-between gap-2 bg-background p-2"
+							data-tour="tour-input-menu"
+							role="none"
+							onClick={(e) => {
+								const target = e.target as HTMLElement;
+								if (
+									!target.closest("button") &&
+									!target.closest('[role="button"]') &&
+									!target.closest('[role="combobox"]')
+								) {
+									editorRef.current?.focus();
+								}
 							}}
-						/>
-						<HistoryPlugin />
-						<AutoFocusPlugin />
-						<FocusPlugin />
-						<EditorRefPlugin editorRef={editorRef} />
-						<EnterPlugin onEnter={() => promptModel()} />
-						<AutoScrollOnPastePlugin
-							scrollContainerRef={contentEditableRef}
-						/>
-						{!isLoading && (
+							onKeyDown={() => editorRef.current?.focus()}
+						>
+							{/* Left side: settings + footer */}
+							<div className="flex items-center gap-2">
+								{!(
+									root.theme.hideToolsInIframe && isIframed
+								) && (
+									<DropdownMenu
+										open={menuOpen}
+										onOpenChange={(open) => {
+											setMenuOpen(open);
+										}}
+									>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														disabled={isLoading}
+														aria-label={t(
+															"input.openSettings",
+														)}
+													>
+														<PlusIcon />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("input.openSettings")}
+											</TooltipContent>
+										</Tooltip>
+										<DropdownMenuContent
+											align="start"
+											className="w-72"
+											onCloseAutoFocus={(e) => {
+												// Prevent dropdown from restoring focus to trigger button
+												e.preventDefault();
+											}}
+										>
+											<MenuComponent
+												isOpen={menuOpen}
+												onOpenChange={setMenuOpen}
+												fileRef={fileRef}
+												editorRef={editorRef}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
+								{footer}
+							</div>
+							<div className="flex items-center gap-2">
+								<div data-tour="tour-model">
+									{root.theme.featureFlags
+										?.enableModelSelect && (
+										<EngineSelect
+											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+											disabled={isLoading}
+											name={
+												model?.engine_display_name ||
+												model?.app_name ||
+												""
+											}
+											value={model?.app_id || ""}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											onChange={(v) => {
+												setModel(v);
+											}}
+											popoverContentProps={{
+												align: "start",
+											}}
+											tokensUsed={tokensUsed}
+											tokensMax={tokensMax}
+											contextTooltipContent={
+												contextTooltipContent
+											}
+										/>
+									)}
+								</div>
+								{predefinedPrompts.length > 0 ? (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												className="bg-background"
+												variant="ghost"
+												size="icon-sm"
+												disabled={isLoading}
+												aria-label="Open prompt library"
+												onClick={() =>
+													setIsPromptLibraryOpen(true)
+												}
+											>
+												<BookOpenIcon />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											Prompt Library
+										</TooltipContent>
+									</Tooltip>
+								) : null}
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											data-tour="tour-record"
+											variant="ghost"
+											aria-label={t("input.recordLabel")}
+											size="icon-sm"
+											disabled={!canListen || isLoading}
+											onClick={() => {
+												if (isListening) {
+													recognitionRef.current?.stop();
+													editorRef.current?.focus();
+												} else {
+													recognitionRef.current?.start();
+												}
+											}}
+											// -ml-1 to make spacing between engine select and mic look more like spacing between mic and send
+											// this is because engine select and mic are ghost
+											className="-ml-1"
+										>
+											<MicIcon
+												className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+											/>
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{isListening
+											? t("input.stopRecording")
+											: t("input.record")}
+									</TooltipContent>
+								</Tooltip>
+
+								{root.theme.featureFlags
+									?.enablePromptOptimizer && (
+									<PromptOptimizer
+										input={inputText}
+										setInput={setInputFromOptimizer}
+										disabled={Boolean(
+											isLoading || hasOutstandingTools,
+										)}
+										modelId={model?.engine_id || undefined}
+										room={room}
+									/>
+								)}
+
+								{/* Primary action button - dual purpose:
+                                         - When idle: Send prompt
+                                         - When loading: Pause tool execution */}
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span data-tour="tour-send">
+											<Button
+												variant="default"
+												size="icon-sm"
+												aria-label={
+													isLoading
+														? t(
+																"input.pauseToolsTooltip",
+															)
+														: t("input.askLabel")
+												}
+												disabled={
+													isLoading
+														? hasToolsPaused ||
+															hidePauseButton
+														: isEmpty ||
+															hasOutstandingTools
+												}
+												onClick={() => {
+													if (isLoading) {
+														toggleToolsPaused?.();
+													} else {
+														promptModel();
+													}
+												}}
+											>
+												{isLoading ? (
+													hasToolsPaused ||
+													hidePauseButton ? (
+														<Spinner />
+													) : (
+														<Square
+															className="size-3"
+															fill="currentColor"
+														/>
+													)
+												) : (
+													<SendIcon />
+												)}
+											</Button>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{(() => {
+											if (isLoading) {
+												return hasToolsPaused ||
+													hidePauseButton
+													? t("input.thinkingTooltip")
+													: t(
+															"input.pauseToolsTooltip",
+														);
+											} else if (isEmpty) {
+												return t("input.enterQuestion");
+											} else if (hasOutstandingTools) {
+												return t("input.completeTool");
+											}
+											return t("input.ask");
+										})()}
+									</TooltipContent>
+								</Tooltip>
+							</div>
+						</div>
+					</div>
+					<OnChangePlugin
+						onChange={(editorState) => {
+							editorState.read(() => {
+								const root = $getRoot();
+
+								// Track empty state to disable send button
+								const text = root.getTextContent();
+								setIsEmpty(text.trim().length === 0);
+								setInputText(text);
+
+								// Check if content is scrollable
+								setTimeout(() => {
+									const viewport = scrollViewportRef.current;
+									if (viewport) {
+										// Check if content is scrollable
+										setIsScrollable(
+											viewport.scrollHeight >
+												viewport.clientHeight,
+										);
+									}
+								}, 0);
+							});
+						}}
+					/>
+					<HistoryPlugin />
+					<AutoFocusPlugin />
+					<FocusPlugin />
+					<EditorRefPlugin editorRef={editorRef} />
+					<EnterPlugin onEnter={() => promptModel()} />
+					<AutoScrollOnPastePlugin
+						scrollContainerRef={scrollViewportRef}
+					/>
+					{/* Slash command menu - searchable knowledge & toolbox only */}
+					{!isLoading &&
+						!(root.theme.hideToolsInIframe && isIframed) && (
 							<MentionPlugin
 								trigger="/"
 								MenuComponent={({
@@ -432,198 +1040,51 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									onOpenChange,
 									menuPosition,
 									addToken,
+									onRequestClose,
 								}) => (
 									<DropdownMenu
 										open={isOpen}
 										onOpenChange={onOpenChange}
 									>
-										{/* Invisible trigger positioned at the cursor */}
+										{/* Invisible trigger positioned at cursor for menu placement */}
 										<DropdownMenuTrigger
 											style={{
 												position: "fixed",
-												top: menuPosition.top,
-												left: menuPosition.left,
+												top: menuPosition?.top ?? 0,
+												left: menuPosition?.left ?? 0,
 												width: 0,
 												height: 0,
 											}}
 										/>
 										<DropdownMenuContent
 											align="start"
-											className="w-72"
+											className="max-h-96 w-72 overflow-y-auto"
 										>
-											<MenuComponent
-												isOpen={isOpen}
-												onOpenChange={onOpenChange}
-												fileRef={fileRef}
-												addToken={addToken}
+											<RoomInputMenuSlash
+												options={options}
+												onRequestClose={onRequestClose}
+												onSelect={(tool) => {
+													onMcpSelect?.(tool);
+													addToken(`<${tool.name}>`);
+													onOpenChange(false);
+												}}
 											/>
 										</DropdownMenuContent>
 									</DropdownMenu>
 								)}
 							/>
 						)}
-					</LexicalComposer>
-					{!isLoading && (
-						<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center gap-2">
-							<DropdownMenu
-								open={menuOpen}
-								onOpenChange={setMenuOpen}
-							>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<DropdownMenuTrigger asChild>
-											<Button
-												className="bg-background"
-												variant="ghost"
-												size="icon-sm"
-												disabled={isLoading}
-												aria-label={t(
-													"input.openSettings",
-												)}
-											>
-												<SlidersHorizontalIcon />
-											</Button>
-										</DropdownMenuTrigger>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("input.openSettings")}
-									</TooltipContent>
-								</Tooltip>
-								<DropdownMenuContent
-									align="start"
-									className="w-72"
-								>
-									<MenuComponent
-										isOpen={menuOpen}
-										onOpenChange={setMenuOpen}
-										fileRef={fileRef}
-										addToken={() => null}
-									/>
-								</DropdownMenuContent>
-							</DropdownMenu>
-							{footer}
-						</div>
-					)}
-					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
-						<div className="flex flex-row items-center gap-1">
-							<EngineSelect
-								className="h-8 w-48 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-								disabled={isLoading}
-								name={
-									model?.engine_display_name ||
-									model?.app_name ||
-									""
-								}
-								value={model?.app_id || ""}
-								engineTypes={["MODEL"]}
-								metaFilters={[{ tag: "text-generation" }]}
-								onChange={(v) => {
-									setModel(v);
-								}}
-								popoverContentProps={{
-									align: "start",
-								}}
-							/>
-
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										className="bg-background"
-										variant={"ghost"}
-										aria-label={t("input.recordLabel")}
-										size="icon-sm"
-										disabled={!canListen || isLoading}
-										onClick={() => {
-											if (isListening) {
-												recognitionRef.current?.stop();
-												editorRef.current?.focus();
-											} else {
-												recognitionRef.current?.start();
-											}
-										}}
-									>
-										<MicIcon
-											className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-										/>
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									{isListening
-										? t("input.stopRecording")
-										: t("input.record")}
-								</TooltipContent>
-							</Tooltip>
-						</div>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span>
-									<Button
-										variant="default"
-										aria-label={t("input.askLabel")}
-										disabled={
-											isLoading ||
-											isEmpty ||
-											hasOutstandingTools
-										}
-										onClick={() => {
-											promptModel();
-										}}
-									>
-										{isLoading ? <Spinner /> : <SendIcon />}
-									</Button>
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								{(() => {
-									if (isLoading) {
-										return t("input.thinkingTooltip");
-									} else if (isEmpty) {
-										return t("input.enterQuestion");
-									} else if (hasOutstandingTools) {
-										return t("input.completeTool");
-									}
-									return t("input.ask");
-								})()}
-							</TooltipContent>
-						</Tooltip>
-					</div>
-				</div>
-				{files.length > 0 ? (
-					<div className="flex flex-row items-center gap-2 pt-4">
-						{files.map((f, fIdx) => {
-							const fileKey = `${f.name}-${f.size}-${f.lastModified}`;
-							return (
-								<Tooltip key={fileKey}>
-									<TooltipTrigger asChild>
-										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
-											{getFileImage(f)}
-											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
-												<Button
-													variant="ghost"
-													size={"icon-sm"}
-													onClick={() => {
-														const updated = [
-															...files,
-														];
-
-														// remove it
-														updated.splice(fIdx, 1);
-
-														setFiles(updated);
-													}}
-												>
-													<XIcon />
-												</Button>
-											</div>
-										</div>
-									</TooltipTrigger>
-									<TooltipContent>{f.name}</TooltipContent>
-								</Tooltip>
-							);
-						})}
-					</div>
-				) : null}
-			</>
+					<PromptLibraryDialog
+						open={isPromptLibraryOpen}
+						onOpenChange={setIsPromptLibraryOpen}
+						prompts={predefinedPrompts}
+						isLoading={isLoading}
+						onSelectPrompt={(prompt) =>
+							runPredefinedPrompt(prompt.context)
+						}
+					/>
+				</LexicalComposer>
+			</div>
 		);
 	},
 );

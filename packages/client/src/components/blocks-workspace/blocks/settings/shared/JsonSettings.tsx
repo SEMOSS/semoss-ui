@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
 	BLOCK_TYPE_INPUT,
 	type Block,
@@ -13,17 +13,8 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { MonacoEditor } from "@semoss/shared";
-import { Button, Stack, styled, Typography } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
-
-const StyledErrorContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "space-between",
-	alignItems: "flex-start",
-	width: "100%",
-	color: theme.palette.error.main,
-}));
+import { Button, Small } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	/**
@@ -90,6 +81,7 @@ export const JsonSettings = observer(
 		}, [data, path]).get();
 
 		// update the value whenever the computed one changes
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
@@ -114,14 +106,14 @@ export const JsonSettings = observer(
 								path,
 								specJson as PathValue<D["data"], typeof path>,
 							);
-						} catch (e) {
+						} catch (_e) {
 							setData(
 								path,
 								value as PathValue<D["data"], typeof path>,
 							);
 						}
 
-						callback && callback();
+						callback?.();
 					} catch (e) {
 						console.log(e);
 					}
@@ -137,7 +129,7 @@ export const JsonSettings = observer(
 			setValue(value);
 		};
 
-		const handleMount = (editor, monaco) => {
+		const handleMount = (_editor, monaco) => {
 			const exposedQueryParameterDescription = (
 				exposedParameter: string,
 				queryId: string,
@@ -259,8 +251,8 @@ export const JsonSettings = observer(
 					const replaceRangeEndBuffer =
 						followingTwoCharacters === "}}"
 							? 2
-							: followingTwoCharacters == "} " ||
-									followingTwoCharacters == "}"
+							: followingTwoCharacters === "} " ||
+									followingTwoCharacters === "}"
 								? 1
 								: 0;
 
@@ -282,6 +274,7 @@ export const JsonSettings = observer(
 		const handleEditorValidation = (markers) => {
 			// model markers
 			const errorSet = [];
+			// biome-ignore lint/suspicious/useIterableCallbackReturn: echart callback
 			markers.forEach((marker) => errorSet.push(marker.message));
 			setErrors(errorSet);
 			setValidJson(!markers?.length);
@@ -289,13 +282,7 @@ export const JsonSettings = observer(
 
 		return (
 			<Suspense fallback={<>...</>}>
-				<Stack
-					flex={1}
-					direction="column"
-					justifyContent="end"
-					alignItems="flex-end"
-					spacing={1}
-				>
+				<div className="flex flex-1 flex-col items-end justify-end gap-1">
 					<MonacoEditor
 						height={height}
 						width={width}
@@ -318,26 +305,23 @@ export const JsonSettings = observer(
 						onValidate={handleEditorValidation}
 					/>
 					{!!errors.length && (
-						<StyledErrorContainer>
+						<div className="flex w-full flex-col items-start justify-between text-destructive">
 							{errors.map((error, id) => (
-								<Typography
-									key={id}
-									variant="caption"
-									color="error"
-								>
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<Small key={id} className="text-destructive">
 									{error}
-								</Typography>
+								</Small>
 							))}
-						</StyledErrorContainer>
+						</div>
 					)}
 					<Button
 						disabled={!validJson}
-						variant="text"
+						variant="ghost"
 						onClick={handleJsonSave}
 					>
 						Save
 					</Button>
-				</Stack>
+				</div>
 			</Suspense>
 		);
 	},

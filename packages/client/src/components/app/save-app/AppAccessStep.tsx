@@ -1,62 +1,9 @@
 import { type Control, Controller } from "react-hook-form";
-import { Box, Stack, Switch, styled, Typography } from "@semoss/ui";
+import { Switch } from "@semoss/ui/next";
 import { ADD_APP_FORM_FIELD_IS_GLOBAL } from "./save-app.constants";
 
-const StyledBox = styled(Box)(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "start",
-	"&:not(:last-child)": {
-		marginBottom: theme.spacing(2),
-	},
-}));
-
-const StyledSwitch = styled(Switch)(({ theme }) => ({
-	width: "42px!important",
-	height: "26px!important",
-	padding: "0px!important",
-	"& .MuiSwitch-switchBase": {
-		padding: 0,
-		margin: 2,
-		transitionDuration: "300ms",
-		"&.Mui-checked": {
-			transform: "translateX(16px)",
-			color: "#fff",
-			"& + .MuiSwitch-track": {
-				backgroundColor: theme.palette.primary.main,
-				opacity: 1,
-				border: 0,
-			},
-			"&.Mui-disabled + .MuiSwitch-track": {
-				opacity: 0.5,
-			},
-		},
-		"&.Mui-disabled .MuiSwitch-thumb": {
-			color:
-				theme.palette.mode === "light"
-					? theme.palette.grey[100]
-					: theme.palette.grey[600],
-		},
-		"&.Mui-disabled + .MuiSwitch-track": {
-			opacity: theme.palette.mode === "light" ? 0.7 : 0.3,
-		},
-	},
-	"& .MuiSwitch-thumb": {
-		boxSizing: "border-box",
-		width: 22,
-		height: 22,
-	},
-	"& .MuiSwitch-track": {
-		borderRadius: 26 / 2,
-		backgroundColor: theme.palette.mode === "light" ? "#E9E9EA" : "#39393D",
-		opacity: 1,
-		transition: theme.transitions.create(["background-color"], {
-			duration: 500,
-		}),
-	},
-}));
-
 export const AppAccessStep = (props: {
+	// biome-ignore lint/suspicious/noExplicitAny: react-hook-form generic
 	control: Control<any, any>;
 	disabled: boolean;
 }) => {
@@ -67,24 +14,25 @@ export const AppAccessStep = (props: {
 			rules={{}}
 			render={({ field }) => {
 				return (
-					<StyledBox>
-						<StyledSwitch
+					<div className="mb-2 flex items-center justify-start">
+						<Switch
 							disabled={props.disabled}
-							disableRipple
 							checked={field.value}
-							onChange={(newValue) => {
-								field.onChange(newValue);
+							onCheckedChange={(checked) => {
+								field.onChange(checked);
 							}}
 						/>
-						<Stack direction="column" ml="12px">
-							<Typography variant="body1">Make Public</Typography>
-							<Typography variant="body2">
+						<div className="ml-3 flex flex-col">
+							<span className="font-medium text-sm">
+								Make Public
+							</span>
+							<span className="text-muted-foreground text-sm">
 								Show app to all users and automatically give
 								them read-only access. Users can request
 								elevated access.
-							</Typography>
-						</Stack>
-					</StyledBox>
+							</span>
+						</div>
+					</div>
 				);
 			}}
 		/>

@@ -236,7 +236,7 @@ export const updateProjectDetails = async (
 	const res = await monolithStore.runQuery(
 		`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 			meta,
-		)}], jsonCleanup=[true])`,
+		)}])`,
 	);
 
 	const type = res.pixelReturn[0].operationType;

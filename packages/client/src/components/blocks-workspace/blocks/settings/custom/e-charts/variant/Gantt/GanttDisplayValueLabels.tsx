@@ -1,24 +1,15 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import { Switch, styled } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
-//main container with default padding and border
-const StyledMainContainer = styled("div")(({}) => ({
-	padding: "0.5rem",
-	borderBottom: "1px solid #E6E6E6",
-}));
-//label with default padding towards left
-const StyledLabel = styled("label")(({}) => ({
-	paddingLeft: "10px",
-}));
 export const GanttDisplayValueLabels = observer(
 	<D extends BlockDef = BlockDef>({ id, path }) => {
 		const { data, setData } =
@@ -26,6 +17,7 @@ export const GanttDisplayValueLabels = observer(
 		const [displayValueLabelsData, setDisplayValueLabelsData] =
 			useState(false); //display value labels state
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref for setting data
+		const displayValueLabelsId = useId();
 		//get the computed value of the block data
 		const computedValue = useMemo(() => {
 			return computed(() => {
@@ -40,35 +32,30 @@ export const GanttDisplayValueLabels = observer(
 				}
 				return JSON.stringify(v, null, 2);
 			});
-		}, [data, "option"]).get();
+		}, [data]).get();
 		// retain the values of the display value labels
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 		useEffect(() => {
 			const parsedJson = JSON.parse(computedValue);
-			if (
-				parsedJson["customSettings"]?.["gantttools"]?.[
-					"showDisplayValueLabels"
-				]
-			) {
-				setDisplayValueLabelsData((prevDisplayValueLabelsData) => {
-					return parsedJson["customSettings"]["gantttools"][
-						"showDisplayValueLabels"
-					];
-				});
+			if (parsedJson.customSettings?.gantttools?.showDisplayValueLabels) {
+				setDisplayValueLabelsData(
+					() =>
+						parsedJson.customSettings.gantttools
+							.showDisplayValueLabels,
+				);
 			}
 		}, []);
 		//update fields when display value labels is changed
-		function updateFields(e) {
-			setDisplayValueLabelsData(
-				(prevDisplayValueLabelsData) => e.target.checked,
-			);
+		function updateFields(checked: boolean) {
+			setDisplayValueLabelsData(checked);
 			let option = JSON.parse(computedValue);
 			option = {
 				...option,
-				["customSettings"]: {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["showDisplayValueLabels"]: e.target.checked,
+				customSettings: {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						showDisplayValueLabels: checked,
 					},
 				},
 			};
@@ -92,17 +79,16 @@ export const GanttDisplayValueLabels = observer(
 			}, 300);
 		}
 		return (
-			<>
-				<StyledMainContainer>
-					<Switch
-						checked={displayValueLabelsData}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields(e)
-						}
-					/>
-					<StyledLabel>Show Display Value Labels</StyledLabel>
-				</StyledMainContainer>
-			</>
+			<div className="border-[#E6E6E6] border-b p-2">
+				<Switch
+					id={displayValueLabelsId}
+					checked={displayValueLabelsData}
+					onCheckedChange={(checked) => updateFields(checked)}
+				/>
+				<label htmlFor={displayValueLabelsId} className="pl-2.5">
+					Show Display Value Labels
+				</label>
+			</div>
 		);
 	},
 );

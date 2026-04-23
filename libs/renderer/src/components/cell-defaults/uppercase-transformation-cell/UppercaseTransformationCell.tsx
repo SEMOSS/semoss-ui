@@ -1,7 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
-import { Stack, Typography } from "@semoss/ui";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -32,14 +31,7 @@ export interface UppercaseTransformationCellDef
 	extends TransformationCellDef<"uppercase-transformation"> {
 	widget: "uppercase-transformation";
 	parameters: {
-		/**
-		 * Routine type
-		 */
 		transformation: Transformation<UppercaseTransformationDef>;
-
-		/**
-		 * ID of the query cell that defines the frame we want to transform
-		 */
 		targetCell: TransformationTargetCell;
 	};
 }
@@ -49,11 +41,8 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
-		/**
-		 * Cell that Transformation will be made to
-		 */
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c;
+			let c: CellState<QueryImportCellDef> | undefined;
 			Object.values(state.queries).forEach((query) => {
 				if (query.cells[cell.parameters.targetCell.id]) {
 					c = query.cells[
@@ -61,45 +50,33 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 					] as CellState<QueryImportCellDef>;
 				}
 			});
-
 			return c;
 		}).get();
 
-		/**
-		 * Type of Transformation
-		 */
 		const cellTransformation: Transformation<UppercaseTransformationDef> =
 			computed(() => {
 				return cell.parameters
 					.transformation as Transformation<UppercaseTransformationDef>;
 			}).get();
 
-		/**
-		 * Determines if Target Cell is a frame and is executed
-		 */
 		const doesFrameExist: boolean = computed(() => {
 			return (
 				!!targetCell && (targetCell.isExecuted || !!targetCell.output)
 			);
 		}).get();
 
-		/**
-		 * A list of cells that are query imports,
-		 * Added here in case we want to show particular frames whether Grid, Py, R, etc
-		 * TODO: Do we want to reference other queries
-		 */
 		const frames = useMemo(() => {
 			const frameList = [];
-
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
-					if (cell.widget === "query-import") {
+					if (
+						cell.widget === "query-import" ||
+						cell.widget === "data-import"
+					)
 						frameList.push(cell);
-					}
 				});
 			});
-
 			return frameList;
 		}, []);
 
@@ -117,16 +94,11 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 					isExpanded={isExpanded}
 					display={Transformations[cellTransformation.key].display}
 					Icon={Transformations[cellTransformation.key].icon}
-					frame={{
-						cell: cell,
-						options: frames,
-					}}
+					frame={{ cell, options: frames }}
 				>
-					<Stack width="100%" paddingY={0.75}>
-						<Typography variant="caption">
-							<em>{helpText}</em>
-						</Typography>
-					</Stack>
+					<div className="w-full py-1.5">
+						<span className="text-xs italic">{helpText}</span>
+					</div>
 				</TransformationCellInput>
 			);
 		}
@@ -136,19 +108,16 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 				isExpanded={isExpanded}
 				display={Transformations[cellTransformation.key].display}
 				Icon={Transformations[cellTransformation.key].icon}
-				frame={{
-					cell: cell,
-					options: frames,
-				}}
+				frame={{ cell, options: frames }}
 			>
-				<Stack spacing={2}>
-					<Typography variant="caption">
+				<div className="flex flex-col gap-4">
+					<span className="text-xs">
 						{!doesFrameExist ? (
 							<em>{helpText}</em>
 						) : (
 							"Change the values of the selected columns to uppercase"
 						)}
-					</Typography>
+					</span>
 					<ColumnTransformationField
 						disabled={!doesFrameExist}
 						cell={cell}
@@ -169,7 +138,7 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 							});
 						}}
 					/>
-				</Stack>
+				</div>
 			</TransformationCellInput>
 		);
 	});
