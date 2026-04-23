@@ -28,6 +28,7 @@ import {
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
 import {
+	FileDragOverlay,
 	RoomInput,
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
@@ -35,6 +36,7 @@ import {
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
@@ -412,193 +414,234 @@ export const NewRoomPage = observer(() => {
 			) : null}
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
-					<img
-						src={root.theme.images.landing || landingImage}
-						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover"
-					/>
-					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-						{root.theme.landing ? (
-							<div
-								className="mx-auto flex max-w-xl"
-								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-								dangerouslySetInnerHTML={{
-									__html:
-										root.theme?.altLandingKey &&
-										searchParams.has(
-											root.theme.altLandingKey,
-										) &&
-										root.theme.altLanding
-											? root.theme.altLanding
-											: root.theme.landing,
-								}}
-							/>
-						) : (
-							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									{t("room:welcome", {
-										name: chat.user.name,
-									})}
-								</div>
-								{root.theme.description ? (
-									<div className="text-center text-muted-foreground text-sm leading-normal">
-										{root.theme.description}
+					<FileDragProvider>
+						<FileDragOverlay />
+						<img
+							src={root.theme.images.landing || landingImage}
+							alt="Background"
+							className="absolute inset-0 h-full w-full select-none object-cover"
+						/>
+						<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
+							{root.theme.landing ? (
+								<div
+									className="mx-auto flex max-w-xl"
+									// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+									dangerouslySetInnerHTML={{
+										__html:
+											root.theme?.altLandingKey &&
+											searchParams.has(
+												root.theme.altLandingKey,
+											) &&
+											root.theme.altLanding
+												? root.theme.altLanding
+												: root.theme.landing,
+									}}
+								/>
+							) : (
+								<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+									<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+										{t("room:welcome", {
+											name: chat.user.name,
+										})}
 									</div>
-								) : null}
-							</div>
-						)}
+									{root.theme.description ? (
+										<div className="text-center text-muted-foreground text-sm leading-normal">
+											{root.theme.description}
+										</div>
+									) : null}
+								</div>
+							)}
 
-						<RoomInput
-							predefinedPrompts={
-								tempRoomStore.options.predefinedPrompts
-							}
-							className="max-h-64 min-h-48 bg-background"
-							isLoading={isLoading}
-							initialValue={initialPrompt}
-							model={chat.models.selected}
-							room={tempRoomStore}
-							setModel={(m) => {
-								chat.setSelectedModel(m);
-							}}
-							options={tempRoomStore.options}
-							onMcpSelect={handleToolAdd}
-							onPrompt={async (prompt, files) => {
-								await createRoom(prompt, files);
+							<RoomInput
+								predefinedPrompts={
+									tempRoomStore.options.predefinedPrompts
+								}
+								className="max-h-64 min-h-48 bg-background"
+								isLoading={isLoading}
+								initialValue={initialPrompt}
+								model={chat.models.selected}
+								room={tempRoomStore}
+								setModel={(m) => {
+									chat.setSelectedModel(m);
+								}}
+								options={tempRoomStore.options}
+								onMcpSelect={handleToolAdd}
+								onPrompt={async (prompt, files) => {
+									await createRoom(prompt, files);
 
-								return true;
-							}}
-							hidePauseButton
-							MenuComponent={observer(
-								({ onOpenChange, fileRef, editorRef }) => (
-									<>
-										<RoomInputMenuUpload
-											fileRef={fileRef}
-											onSelect={() => onOpenChange(false)}
-										/>
-										<DropdownMenuSeparator />
-										{root.theme.featureFlags
-											?.enablePlan && (
-											<>
-												<DropdownMenuItem
-													onSelect={() => {
-														setMode("chat");
-														onOpenChange(false);
-													}}
-												>
-													<MessageCircleIcon />
-													<span className="flex-1">
-														{t("room:modes.ask")}
-													</span>
-													{mode === "chat" ? (
-														<div className="px-1">
-															<CheckIcon />
-														</div>
-													) : null}
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onSelect={() => {
-														setMode("plan");
-														onOpenChange(false);
-													}}
-												>
-													<ListTodoIcon />
-													<span className="flex-1">
-														{t("room:modes.plan")}
-													</span>
+									return true;
+								}}
+								hidePauseButton
+								MenuComponent={observer(
+									({ onOpenChange, fileRef, editorRef }) => (
+										<>
+											<RoomInputMenuUpload
+												fileRef={fileRef}
+												onSelect={() =>
+													onOpenChange(false)
+												}
+											/>
+											<DropdownMenuSeparator />
+											{root.theme.featureFlags
+												?.enablePlan && (
+												<>
+													<DropdownMenuItem
+														onSelect={() => {
+															setMode("chat");
+															onOpenChange(false);
+														}}
+													>
+														<MessageCircleIcon />
+														<span className="flex-1">
+															{t(
+																"room:modes.ask",
+															)}
+														</span>
+														{mode === "chat" ? (
+															<div className="px-1">
+																<CheckIcon />
+															</div>
+														) : null}
+													</DropdownMenuItem>
+													<DropdownMenuItem
+														onSelect={() => {
+															setMode("plan");
+															onOpenChange(false);
+														}}
+													>
+														<ListTodoIcon />
+														<span className="flex-1">
+															{t(
+																"room:modes.plan",
+															)}
+														</span>
 
-													{mode === "plan" ? (
-														<div className="px-1">
-															<CheckIcon />
-														</div>
-													) : null}
-												</DropdownMenuItem>
-											</>
-										)}
-										<RoomInputMenuWorkspace
-											workspace={
-												mode === "workspace" &&
-												getWorkspace.status ===
-													"SUCCESS"
-													? getWorkspace.data
-													: null
-											}
-											onSelect={(workspace) => {
-												if (workspace) {
-													if (
-														mode === "workspace" &&
-														selectedWorkspaceId ===
-															workspace.workspace_id
-													) {
+														{mode === "plan" ? (
+															<div className="px-1">
+																<CheckIcon />
+															</div>
+														) : null}
+													</DropdownMenuItem>
+												</>
+											)}
+											<RoomInputMenuWorkspace
+												workspace={
+													mode === "workspace" &&
+													getWorkspace.status ===
+														"SUCCESS"
+														? getWorkspace.data
+														: null
+												}
+												onSelect={(workspace) => {
+													if (workspace) {
+														if (
+															mode ===
+																"workspace" &&
+															selectedWorkspaceId ===
+																workspace.workspace_id
+														) {
+															setMode("chat");
+															setSelectedWorkspaceId(
+																"",
+															);
+														} else {
+															setMode(
+																"workspace",
+															);
+															setSelectedWorkspaceId(
+																workspace.workspace_id,
+															);
+														}
+													} else {
 														setMode("chat");
 														setSelectedWorkspaceId(
 															"",
 														);
-													} else {
-														setMode("workspace");
-														setSelectedWorkspaceId(
-															workspace.workspace_id,
-														);
 													}
-												} else {
-													setMode("chat");
-													setSelectedWorkspaceId("");
+												}}
+											/>
+											<DropdownMenuSeparator />
+											<RoomInputMenuMCP
+												type="KNOWLEDGE"
+												options={tempRoomStore.options}
+												onSelect={handleToolSelect}
+												editorRef={editorRef}
+												onOverlayClose={() =>
+													onOpenChange(false)
 												}
-											}}
-										/>
-										<DropdownMenuSeparator />
-										<RoomInputMenuMCP
-											type="KNOWLEDGE"
-											options={tempRoomStore.options}
-											onSelect={handleToolSelect}
-											editorRef={editorRef}
-											onOverlayClose={() =>
-												onOpenChange(false)
-											}
-										/>
-										<RoomInputMenuMCP
-											type="TOOLBOX"
-											options={tempRoomStore.options}
-											onSelect={handleToolSelect}
-											editorRef={editorRef}
-											onOverlayClose={() =>
-												onOpenChange(false)
-											}
-										/>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onSelect={(e) => {
-												e.preventDefault();
+											/>
+											<RoomInputMenuMCP
+												type="TOOLBOX"
+												options={tempRoomStore.options}
+												onSelect={handleToolSelect}
+												editorRef={editorRef}
+												onOverlayClose={() =>
+													onOpenChange(false)
+												}
+											/>
+											<DropdownMenuSeparator />
+											<DropdownMenuItem
+												onSelect={(e) => {
+													e.preventDefault();
 
-												setIsConfgurationOpen(
-													!isConfigurationOpen,
-												);
-											}}
-										>
-											<Settings2Icon />
-											<span className="flex-1">
-												{isConfigurationOpen
-													? t("room:settings.close")
-													: t("room:settings.open")}
-											</span>
-										</DropdownMenuItem>
-									</>
-								),
-							)}
-							footer={
-								mode === "workspace" &&
-								getWorkspace.status === "SUCCESS" ? (
-									root.theme.showPlatformLinks !== false ? (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span>
-													<Badge
-														variant="secondary"
-														asChild
-													>
-														<a
-															target="_blank"
-															href={`${PLATFORM_URL}/#/app/${getWorkspace.data?.workspace_id}`}
+													setIsConfgurationOpen(
+														!isConfigurationOpen,
+													);
+												}}
+											>
+												<Settings2Icon />
+												<span className="flex-1">
+													{isConfigurationOpen
+														? t(
+																"room:settings.close",
+															)
+														: t(
+																"room:settings.open",
+															)}
+												</span>
+											</DropdownMenuItem>
+										</>
+									),
+								)}
+								footer={
+									mode === "workspace" &&
+									getWorkspace.status === "SUCCESS" ? (
+										root.theme.showPlatformLinks !==
+										false ? (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span>
+														<Badge
+															variant="secondary"
+															asChild
 														>
+															<a
+																target="_blank"
+																href={`${PLATFORM_URL}/#/app/${getWorkspace.data?.workspace_id}`}
+															>
+																<ComputerIcon data-icon="inline-start" />
+																<div className="w-18 truncate">
+																	{getWorkspace
+																		.data
+																		?.name ||
+																		t(
+																			"room:menuWorkspace.selectAgent",
+																		)}
+																</div>
+																<ExternalLinkIcon data-icon="inline-end" />
+															</a>
+														</Badge>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent>
+													Click to view agent details
+												</TooltipContent>
+											</Tooltip>
+										) : (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span>
+														<Badge variant="secondary">
 															<ComputerIcon data-icon="inline-start" />
 															<div className="w-18 truncate">
 																{getWorkspace
@@ -608,67 +651,47 @@ export const NewRoomPage = observer(() => {
 																		"room:menuWorkspace.selectAgent",
 																	)}
 															</div>
-															<ExternalLinkIcon data-icon="inline-end" />
-														</a>
-													</Badge>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												Click to view agent details
-											</TooltipContent>
-										</Tooltip>
-									) : (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span>
-													<Badge variant="secondary">
-														<ComputerIcon data-icon="inline-start" />
-														<div className="w-18 truncate">
-															{getWorkspace.data
-																?.name ||
-																t(
-																	"room:menuWorkspace.selectAgent",
-																)}
-														</div>
-													</Badge>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												{getWorkspace.data?.name ||
-													t(
-														"room:menuWorkspace.selectAgent",
-													)}
-											</TooltipContent>
-										</Tooltip>
-									)
-								) : null
-							}
-						/>
-						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
-							<div className="mx-auto flex w-full flex-col items-center gap-3">
-								<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
-									{previewPrompts.map((prompt) => {
-										return (
-											<Button
-												key={prompt.id}
-												variant="outline"
-												className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
-												disabled={isLoading}
-												onClick={() =>
-													createRoom(
-														prompt.context,
-														[],
-													)
-												}
-											>
-												{prompt.title}
-											</Button>
-										);
-									})}
+														</Badge>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent>
+													{getWorkspace.data?.name ||
+														t(
+															"room:menuWorkspace.selectAgent",
+														)}
+												</TooltipContent>
+											</Tooltip>
+										)
+									) : null
+								}
+							/>
+							{tempRoomStore.options.predefinedPrompts.length >
+							0 ? (
+								<div className="mx-auto flex w-full flex-col items-center gap-3">
+									<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
+										{previewPrompts.map((prompt) => {
+											return (
+												<Button
+													key={prompt.id}
+													variant="outline"
+													className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
+													disabled={isLoading}
+													onClick={() =>
+														createRoom(
+															prompt.context,
+															[],
+														)
+													}
+												>
+													{prompt.title}
+												</Button>
+											);
+										})}
+									</div>
 								</div>
-							</div>
-						) : null}
-					</div>
+							) : null}
+						</div>
+					</FileDragProvider>
 				</ResizablePanel>
 				{isConfigurationOpen && (
 					<>

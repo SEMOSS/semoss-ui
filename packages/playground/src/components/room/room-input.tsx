@@ -61,6 +61,7 @@ import {
 } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
+import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
@@ -305,8 +306,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 
 		// File handling
-		const [isDragging, setIsDragging] = useState(false);
+		const { isDragging, droppedFiles, clearDroppedFiles } = useFileDrag();
 		const [files, setFiles] = useState<File[]>([]);
+
+		useEffect(() => {
+			if (droppedFiles.length === 0) return;
+			setFiles((prev) => [...prev, ...droppedFiles]);
+			clearDroppedFiles();
+		}, [droppedFiles, clearDroppedFiles]);
 
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
@@ -708,25 +715,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													: t("input.menuPrompt")}
 											</div>
 										}
-										onDrop={(e) => {
-											e.preventDefault();
-											const updated = Array.from(
-												e.dataTransfer.files,
-											);
-											setFiles((prev) => [
-												...prev,
-												...updated,
-											]);
-											setIsDragging(false);
-										}}
-										onDragOver={(e) => {
-											e.preventDefault();
-											setIsDragging(true);
-										}}
-										onDragLeave={(e) => {
-											e.preventDefault();
-											setIsDragging(false);
-										}}
 										onPaste={(e) => {
 											const clipboardFiles = Array.from(
 												e.clipboardData.files,
