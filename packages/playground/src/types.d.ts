@@ -279,7 +279,8 @@ export interface MCPTool {
 	};
 	title?: string;
 	original_name: string;
-	_type?: string;
+	description?: string;
+	title?: string;
 	_meta: {
 		generated_on: string;
 		SMSS_MCP_EXECUTION?: "auto" | "ask" | "disabled";
