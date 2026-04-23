@@ -1,3 +1,5 @@
+@reference "@semoss/ui/globals.css";
+
 /**
  * SMSS Theme for FlexLayout
  */
@@ -297,14 +299,14 @@
     --color-background: transparent;
     --color-tabset-background: transparent;
     --color-tabset-background-selected: transparent;
-    --font-family: "Inter", sans-serif;
+    --font-family: 'Inter', sans-serif;
     --font-size: 0.875rem;
     --smss-tab-border-radius: 4px;
 }
 
 /** Tabs **/
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer {
-    padding: 0.5rem;
+    @apply p-2;
     min-height: 51px;
 }
 
@@ -313,46 +315,28 @@
 }
 
 .flexlayout__theme_smss .flexlayout__tab_button {
-    display: flex;
-    height: 2rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md, 0.375rem);
-    background: var(--background);
-    padding: 0.75rem 0.5rem;
+    @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
 }
 
 .flexlayout__theme_smss .flexlayout__tab_button--selected {
-    border: 1px solid var(--input);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+    @apply dark:bg-input/30 shadow-xs border border-input;
 }
 
 .flexlayout__theme_smss .flexlayout__tab_button_content {
-    overflow: hidden;
-    color: var(--foreground);
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.5;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    @apply truncate text-foreground text-xs leading-normal font-medium;
 }
 
 .flexlayout__theme_smss .flexlayout__tab_button--selected .flexlayout__tab_button_leading {
-    color: var(--primary);
+    @apply text-primary;
 }
 
 .flexlayout__theme_smss .flexlayout__tabset_tab_divider {
-    width: 0.5rem;
+    @apply w-2;
 }
 
 /** Popover **/
 .flexlayout__theme_smss .flexlayout__popup_menu_container {
-    border: 1px solid var(--input);
-    border-radius: var(--radius-md, 0.375rem);
-    background: var(--popover);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    color: var(--popover-foreground);
+    @apply border border-input rounded-md bg-popover text-popover-foreground shadow-lg;
     min-width: min(22rem, calc(100vw - 2rem));
     max-width: min(34rem, calc(100vw - 2rem));
     max-height: min(24rem, calc(100vh - 6rem));
@@ -374,83 +358,52 @@
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
+    @apply flex flex-col gap-0.5;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item {
-    display: flex;
-    min-height: 2rem;
-    align-items: center;
-    border-radius: var(--radius-sm, 0.25rem);
-    padding: 0.375rem 0.5rem;
+    @apply flex min-h-8 items-center rounded-sm px-2 py-1.5;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_stamp {
-    display: flex;
-    width: 100%;
-    min-width: 0;
-    gap: 0.5rem;
+    @apply flex w-full min-w-0 gap-2;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_content {
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.5;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    @apply min-w-0 flex-1 truncate text-xs leading-normal font-medium;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_leading {
-    flex-shrink: 0;
+    @apply shrink-0;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item--selected {
-    background: var(--secondary);
-    color: var(--foreground);
+    @apply bg-secondary text-foreground;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item:hover {
-    background: var(--secondary);
+    @apply bg-secondary;
 }
 
 /** Rename textbox **/
 .flexlayout__theme_smss .flexlayout__tab_button_textbox {
-    border: 1px solid var(--primary);
-    border-radius: var(--radius-sm, 0.25rem);
-    background: var(--background);
-    font-size: 0.75rem;
-    font-weight: 500;
-    outline: none;
-    padding: 0 0.25rem;
+    @apply bg-background border border-primary rounded px-1 text-xs font-medium outline-none;
     min-width: 4rem;
 }
 
 /** Borders **/
 .flexlayout__theme_smss .flexlayout__border {
-    padding: 0.5rem;
+    @apply p-2;
 }
 
 .flexlayout__theme_smss .flexlayout__border_button {
-    display: flex;
-    height: 2rem;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border-radius: var(--radius-md, 0.375rem);
-    background: var(--background);
-    padding: 0.75rem 0.5rem;
+    @apply flex h-8 px-2 py-3 justify-center items-center gap-2 rounded-md bg-background;
 }
 
 .flexlayout__theme_smss .flexlayout__border_button--selected {
-    border: 1px solid var(--input);
-    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+    @apply dark:bg-input/30 shadow-xs border border-input;
 }
 
 .flexlayout__theme_smss .flexlayout__border_button--selected .flexlayout__border_button_leading {
-    color: var(--primary);
+    @apply text-primary;
 }

@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import {
 	ComputerIcon,
 	HelpCircle,
+	MapIcon,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -48,7 +49,7 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
+import { useChat, useRoot, useTour } from "@/hooks";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
@@ -84,6 +85,7 @@ export const GlobalNav = observer(() => {
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
+	const { startTour } = useTour();
 	const { open } = useSidebar();
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
@@ -107,6 +109,10 @@ export const GlobalNav = observer(() => {
 
 	const navigate = useNavigate();
 
+	const handleStartTour = () => {
+		navigate("/new");
+		startTour();
+	};
 	const getPinnedRooms = useIteratorPixel<
 		{
 			ROOM_ID: string;
@@ -123,7 +129,7 @@ export const GlobalNav = observer(() => {
 			PINNED?: boolean;
 		}
 	>(
-		(limit, offset) =>
+		(_limit, offset) =>
 			open
 				? `GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"]);`
 				: "",
@@ -362,7 +368,10 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 
 				<SidebarMenu className="gap-2 p-2">
-					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden">
+					<InputGroup
+						className="bg-background group-data-[collapsible=icon]:hidden"
+						data-tour="tour-search"
+					>
 						<InputGroupInput
 							placeholder={t("search")}
 							value={search}
@@ -374,7 +383,7 @@ export const GlobalNav = observer(() => {
 					</InputGroup>
 					{root.theme.hideToolsInIframe && isIframed ? null : (
 						<>
-							<SidebarMenuItem>
+							<SidebarMenuItem data-tour="tour-new-chat">
 								<SidebarMenuButton
 									asChild
 									isActive={!!matchPath("/new", pathname)}
@@ -431,6 +440,7 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
+				data-tour="tour-chat-history"
 				className="transition-all duration-200 ease-in-out"
 				ref={(ele) => {
 					// Store reference for scroll position management
@@ -715,11 +725,11 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
-				{root.theme.sidebar.footerItems.length > 0 && (
-					<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
-						{/* biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons */}
+				<SidebarMenu className="gap-2 p-2">
+					{root.theme.sidebar.footerItems.length > 0 && (
+						// biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons
 						<div
-							className="relative"
+							className="relative group-data-[collapsible=icon]:hidden"
 							role="button"
 							tabIndex={0}
 							onMouseEnter={() => setHelpOpen(true)}
@@ -727,8 +737,6 @@ export const GlobalNav = observer(() => {
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {
 									e.preventDefault();
-									// Add your click handler here
-									// handleClick();
 								}
 							}}
 							onClick={() => setHelpOpen((prev) => !prev)}
@@ -758,9 +766,18 @@ export const GlobalNav = observer(() => {
 								</div>
 							)}
 						</div>
-					</SidebarMenu>
-				)}
-				<SidebarMenu className="gap-2 p-2">
+					)}
+					{root.theme.tour?.show !== false && (
+						<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+							<SidebarMenuButton
+								onClick={handleStartTour}
+								data-tour="tour-take-tour"
+							>
+								<MapIcon />
+								{t("takeTour")}
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					)}
 					<SidebarMenuItem>
 						<NavUser />
 					</SidebarMenuItem>
