@@ -524,7 +524,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								>
 									<ContentEditable
 										ref={contentEditableRef}
-										className="px-4 pt-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
+										className={cn(
+											"px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+											files.length > 0 ? "pt-1" : "pt-4",
+										)}
 										aria-placeholder={t(
 											"input.ariaPlaceholder",
 										)}

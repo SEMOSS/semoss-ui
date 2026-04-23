@@ -66,8 +66,8 @@
 		"logoAlt": "ロゴ"
 	},
 	"fileDrag": {
-		"title": "ファイルをドロップしてチャットに追加",
-		"modalTitle": "添付ファイル",
+		"title": "メッセージに添付するファイルをここにドロップ",
+		"modalTitle": "ドキュメントを追加",
 		"emptyState": "まだファイルが添付されていません",
 		"addMore": "ファイルを追加",
 		"done": "完了"
