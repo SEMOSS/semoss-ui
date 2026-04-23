@@ -177,7 +177,7 @@ export const WorkspaceToolsTab = ({
 					<ScrollArea className="flex-1">
 						<div className="py-2">
 							{groupedEngines.map(({ type, engines, config }) => {
-								const { label } = config;
+								const { label, Icon } = config;
 								const isCollapsed = collapsedTypes.has(type);
 								return (
 									<div key={type}>
@@ -194,7 +194,8 @@ export const WorkspaceToolsTab = ({
 											}
 											className="flex w-full items-center gap-2 px-3 py-1.5 hover:bg-accent"
 										>
-											<span className="flex-1 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide">
+											<Icon className="size-3.5 shrink-0 text-muted-foreground" />
+											<span className="flex-1 text-left font-medium text-muted-foreground text-sm uppercase tracking-wide">
 												{label}
 											</span>
 											<Badge
