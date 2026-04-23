@@ -415,7 +415,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				</div>
 
 				{message.id !== STREAMING_PLACEHOLDER_ID && (
-					<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
+					<div className="flex flex-row items-center gap-0.5 pt-2">
 						{inputMessage?.siblings.length &&
 							inputMessage?.siblings.length > 1 && (
 								<div className="flex flex-row items-center gap-0.5">
