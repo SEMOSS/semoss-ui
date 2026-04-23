@@ -1,34 +1,24 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import { Switch, styled } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
-interface GanttLegendProps {
-	id: string;
-}
-//styled main container with padding and border
-const StyledMainContainer = styled("div")(({}) => ({
-	padding: "0.5rem",
-	borderBottom: "1px solid #E6E6E6",
-}));
-// styled label with padding left
-const StyledLabel = styled("label")(({}) => ({
-	paddingLeft: "10px",
-}));
 export const GanttLegend = observer(
 	<D extends BlockDef = BlockDef>({ id, path }) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id); //block data
 		const [legendData, setLegendData] = useState(false); //legend component data
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref for setting data
+		const legendId = useId();
 		//get the computed value of the block data
+		// biome-ignore lint/correctness/useExhaustiveDependencies: "option" is a literal string dependency
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -42,29 +32,28 @@ export const GanttLegend = observer(
 				}
 				return JSON.stringify(v, null, 2);
 			});
-		}, [data, "option"]).get();
+		}, [data]).get();
 		//to retain the values from state
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 		useEffect(() => {
 			const parsedJson = JSON.parse(computedValue);
-			if (parsedJson["customSettings"]?.["gantttools"]?.["showLegend"]) {
-				setLegendData((prevLegendData) => {
-					return parsedJson["customSettings"]["gantttools"][
-						"showLegend"
-					];
-				});
+			if (parsedJson.customSettings?.gantttools?.showLegend) {
+				setLegendData(
+					() => parsedJson.customSettings.gantttools.showLegend,
+				);
 			}
 		}, []);
 		//update the fields and also the state when legend fields are changed
-		function updateFields(e) {
-			setLegendData((prevLegendData) => e.target.checked);
+		function updateFields(checked: boolean) {
+			setLegendData(checked);
 			let option = JSON.parse(computedValue);
 			option = {
 				...option,
-				["customSettings"]: {
-					...option["customSettings"],
-					["gantttools"]: {
-						...option["customSettings"]["gantttools"],
-						["showLegend"]: e.target.checked,
+				customSettings: {
+					...option.customSettings,
+					gantttools: {
+						...option.customSettings.gantttools,
+						showLegend: checked,
 					},
 				},
 			};
@@ -88,17 +77,16 @@ export const GanttLegend = observer(
 			}, 300);
 		}
 		return (
-			<>
-				<StyledMainContainer>
-					<Switch
-						checked={legendData}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields(e)
-						}
-					/>
-					<StyledLabel>Show Legend</StyledLabel>
-				</StyledMainContainer>
-			</>
+			<div className="border-[#E6E6E6] border-b p-2">
+				<Switch
+					id={legendId}
+					checked={legendData}
+					onCheckedChange={(checked) => updateFields(checked)}
+				/>
+				<label htmlFor={legendId} className="pl-2.5">
+					Show Legend
+				</label>
+			</div>
 		);
 	},
 );

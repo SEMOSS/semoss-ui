@@ -1,46 +1,8 @@
-import {
-	Box,
-	CircularProgress,
-	LinearProgress,
-	styled,
-	Typography,
-} from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
+import { Progress, Spinner } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledCircularBox = styled(Box)(() => ({
-	position: "relative",
-	display: "inline-flex",
-}));
-
-const StyledLinearBox = styled(Box)(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledCircularProgressBox = styled(Box)(() => ({
-	top: 0,
-	left: 0,
-	bottom: 0,
-	right: 0,
-	position: "absolute",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-}));
-
-const StyledLinearProgressBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "includeLabel",
-})<{ includeLabel: boolean }>(({ theme, includeLabel }) => ({
-	width: "100%",
-	marginRight: theme.spacing(includeLabel ? 1 : 0),
-}));
-
-const StyledLabelBox = styled(Box)(({ theme }) => ({
-	minWidth: theme.spacing(4.5),
-}));
 
 export interface ProgressBlockDef extends BlockDef<"progress"> {
 	widget: "progress";
@@ -63,6 +25,7 @@ export interface ProgressBlockDef extends BlockDef<"progress"> {
 export const ProgressBlock: BlockComponent = observer(({ id }) => {
 	const { data, attrs, listeners } = useBlock<ProgressBlockDef>(id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -71,43 +34,39 @@ export const ProgressBlock: BlockComponent = observer(({ id }) => {
 
 	if (data.type === "circular") {
 		return (
-			<StyledCircularBox {...attrs}>
-				<CircularProgress
-					variant="determinate"
-					value={data.value ?? 0}
-					size={data.size ?? null}
+			<div {...attrs} className="relative inline-flex">
+				<Spinner
+					className="text-primary"
+					style={{
+						width: data.size ?? undefined,
+						height: data.size ?? undefined,
+					}}
 				/>
 				{data.includeLabel && (
-					<StyledCircularProgressBox>
-						<Typography
-							variant="caption"
-							component="div"
-							color="text.secondary"
-						>
+					<div className="absolute inset-0 flex items-center justify-center">
+						<span className="text-muted-foreground text-xs">
 							{`${Math.round(data.value)}%`}
-						</Typography>
-					</StyledCircularProgressBox>
+						</span>
+					</div>
 				)}
-			</StyledCircularBox>
+			</div>
 		);
 	} else {
 		return (
-			<StyledLinearBox sx={{ width: data.size }} {...attrs}>
-				<StyledLinearProgressBox includeLabel={data.includeLabel}>
-					<LinearProgress
-						variant="determinate"
-						value={data.value ?? 0}
-					/>
-				</StyledLinearProgressBox>
+			<div
+				{...attrs}
+				className="flex items-center gap-2"
+				style={{ width: data.size ?? undefined }}
+			>
+				<div className="w-full">
+					<Progress value={data.value ?? 0} />
+				</div>
 				{data.includeLabel && (
-					<StyledLabelBox sx={{ minWidth: 35 }}>
-						<Typography
-							variant="body2"
-							color="text.secondary"
-						>{`${Math.round(data.value)}%`}</Typography>
-					</StyledLabelBox>
+					<span className="min-w-[35px] text-muted-foreground text-sm">
+						{`${Math.round(data.value)}%`}
+					</span>
 				)}
-			</StyledLinearBox>
+			</div>
 		);
 	}
 });

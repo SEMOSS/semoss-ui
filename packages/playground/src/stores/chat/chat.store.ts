@@ -41,6 +41,16 @@ interface ChatStoreInterface {
 	};
 
 	/**
+	 * Preloaded embedded paths
+	 * path -> url
+	 */
+	embeddedPageMap: Record<
+		string,
+		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
+		| ThemeMap["playground"]["sidebar"]["footerItems"][number]
+	>;
+
+	/**
 	 * Current user info
 	 */
 	user: {
@@ -72,6 +82,7 @@ export class ChatStore {
 			id: "",
 			name: "",
 		},
+		embeddedPageMap: {},
 	};
 
 	constructor(
@@ -87,6 +98,22 @@ export class ChatStore {
 		if (user) {
 			this._store.user = user;
 		}
+		this._store.embeddedPageMap = [
+			...theme.sidebar.headerItems,
+			...theme.sidebar.footerItems,
+		]
+			.filter((item) => item.embed && item.url)
+			.reduce(
+				(acc, item) => {
+					acc[item.path] = item;
+					return acc;
+				},
+				{} as Record<
+					string,
+					| ThemeMap["playground"]["sidebar"]["headerItems"][number]
+					| ThemeMap["playground"]["sidebar"]["footerItems"][number]
+				>,
+			);
 
 		// make it observable
 		makeAutoObservable(this);
@@ -121,6 +148,13 @@ export class ChatStore {
 	 */
 	get user() {
 		return this._store.user;
+	}
+
+	/**
+	 * Get the map of preloaded embed paths
+	 */
+	get embeddedPageMap() {
+		return this._store.embeddedPageMap;
 	}
 
 	/**
@@ -320,14 +354,17 @@ export class ChatStore {
 	 * Add a new workspace
 	 */
 	addWorkspace = async (
-		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+		data: Pick<
+			Workspace,
+			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			return pixelReturn[0].output;
@@ -341,14 +378,17 @@ export class ChatStore {
 	 */
 	editWorkspace = async (
 		workspaceId: string,
-		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+		data: Pick<
+			Workspace,
+			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors

@@ -1,15 +1,8 @@
-import { Divider, styled } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Separator } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: "4px",
-	display: "flex",
-	flexDirection: "column",
-	gap: "8px",
-}));
 
 export interface DividerBlockDef extends BlockDef<"divider"> {
 	widget: "divider";
@@ -34,47 +27,43 @@ export interface DividerBlockDef extends BlockDef<"divider"> {
 }
 
 export const DividerBlock: BlockComponent = observer(({ id }) => {
+	const { attrs, data, listeners } = useBlock<DividerBlockDef>(id);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
+	useEffect(() => {
+		if (listeners.preProcess) {
+			listeners.preProcess();
+		}
+	}, []);
+
 	try {
-		const { attrs, data, listeners } = useBlock<DividerBlockDef>(id);
-
-		useEffect(() => {
-			if (listeners.preProcess) {
-				listeners.preProcess();
-			}
-		}, []);
-
-		// Determine if we should show text
 		const hasText = data.showText && data.text?.trim().length > 0;
+		const isVertical = data.orientation === "vertical";
 
 		return (
-			<StyledContainer
+			<div
 				{...attrs}
 				style={data.style}
-				sx={{
-					minHeight:
-						data.orientation === "vertical" ? "50px" : "auto",
-				}}
+				className={`flex flex-col gap-2 p-1${isVertical ? "min-h-[50px]" : ""}`}
 			>
 				{hasText ? (
-					<Divider
-						variant={data.variant}
-						orientation={data.orientation}
-						textAlign={data.textAlign}
-						flexItem={data.flexItem}
-						light={data.light}
-					>
-						{data.text}
-					</Divider>
+					<div className="flex items-center gap-2">
+						<Separator
+							orientation={data.orientation}
+							className={isVertical ? "h-full" : ""}
+						/>
+						<span className="whitespace-nowrap text-muted-foreground text-sm">
+							{data.text}
+						</span>
+						<Separator
+							orientation={data.orientation}
+							className={isVertical ? "h-full" : ""}
+						/>
+					</div>
 				) : (
-					<Divider
-						variant={data.variant}
-						orientation={data.orientation}
-						textAlign={data.textAlign}
-						flexItem={data.flexItem}
-						light={data.light}
-					/>
+					<Separator orientation={data.orientation} />
 				)}
-			</StyledContainer>
+			</div>
 		);
 	} catch (error) {
 		console.error("Error in DividerBlock:", error);

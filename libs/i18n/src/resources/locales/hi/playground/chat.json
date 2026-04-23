@@ -18,7 +18,10 @@
 		"copyResponse": "जवाब कॉपी करें",
 		"copyCode": "कोड कॉपी करें",
 		"fastForwardToEnd": "अंत तक तेजी से आगे बढ़ें",
-		"completeTools": "कृपया आगे बढ़ने के लिए टूल पूरा करें।"
+		"completeToolsAsk_one": "कृपया आगे बढ़ने के लिए टूल पूरा करें।",
+		"completeToolsAsk_other": "कृपया आगे बढ़ने के लिए सभी टूल पूरे करें।",
+		"completeToolsAuto_one": "कृपया टूल के पूरा होने तक प्रतीक्षा करें।",
+		"completeToolsAuto_other": "कृपया सभी टूल के पूरा होने तक प्रतीक्षा करें।"
 	},
 	"input": {
 		"copyMessage": "संदेश कॉपी करें"
@@ -30,23 +33,6 @@
 		"delete": "हटाएं",
 		"addTask": "कार्य जोड़ें",
 		"confirmPlan": "योजना की पुष्टि करें"
-	},
-	"tool": {
-		"failed": "टूल निष्पादित करने में विफल",
-		"cancelled": "टूल निष्पादन रद्द किया गया",
-		"completed": "पूर्ण",
-		"ready": "तैयार",
-		"autoExecute": "यह टूल ऑटो-एक्ज़िक्यूट करने के लिए सेट है",
-		"queued": "ऑटो-एक्ज़िक्यूट की प्रतीक्षा में",
-		"cancel": "रद्द करें",
-		"paused": "रोका गया",
-		"expand": "विस्तार करें",
-		"openInSidebar": "साइडबार में खोलें",
-		"closeInSidebar": "साइडबार बंद करें",
-		"collapse": "संकुचित करें",
-		"openInline": "इनलाइन खोलें",
-		"groupLabel": "निष्पादित",
-		"groupSuffix": "टूल"
 	},
 	"notifications": {
 		"feedbackSuccess": "प्रतिक्रिया के लिए धन्यवाद!",

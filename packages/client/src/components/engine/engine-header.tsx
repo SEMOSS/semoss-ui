@@ -1,7 +1,7 @@
 import { ChevronRight, Copy, Download, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
 	Badge,
 	Breadcrumb,
@@ -25,6 +25,7 @@ import {
 } from "@semoss/ui/next";
 import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { ENGINE_IMAGES } from "@/pages/import";
 import { formatToDataTestId } from "@/utility";
 import { EngineAccessButton } from ".";
@@ -158,7 +159,7 @@ export const EngineHeader: React.FC = () => {
 
 			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 				{/* Image placeholder - space for engine/database icon */}
-				<div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-muted/30 p-2">
+				<div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-transparent p-2">
 					<img
 						src={findDBImage(
 							type,
@@ -309,8 +310,8 @@ export const EngineHeader: React.FC = () => {
 					</p>
 
 					<div className="flex flex-row flex-wrap gap-2">
-						{active.metadata.tag &&
-							(active.metadata.tag as string[]).map((tag) => {
+						{active.metadata?.tag &&
+							(active.metadata?.tag as string[]).map((tag) => {
 								if (tag === "") return null;
 								return (
 									<Badge

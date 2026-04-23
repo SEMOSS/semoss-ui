@@ -6,7 +6,8 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox"
+		"toolboxLabel": "Toolbox",
+		"promptsLabel": "Prompt Library"
 	},
 	"actions": {
 		"create": "Create",
@@ -52,14 +53,6 @@
 	"mcp": {
 		"noToolboxes": "No toolboxes found",
 		"noKnowledge": "No knowledge libraries found",
-		"accessRequested": "Access requested",
-		"requestAccess": "Request access",
-		"noAccess": "No access",
-		"requestAccessButton": "Request Access",
-		"noDescription": "No description available.",
-		"tooltipNoAccess": "You don't have access to this {{type}}. Please request access from the owner.",
-		"tooltipMissingDependencies": "You don't have access to all dependencies of this {{type}}, so functionality may be limited. Open in the platform for more information.",
-		"tooltipOpen": "Open this {{type}} in the platform",
 		"failedToLoad": "Failed to load workspace resources",
 		"requestedSuccess": "Requested access to {{name}}",
 		"requestedFailed": "Failed to request access"
@@ -114,5 +107,9 @@
 	"new": {
 		"title": "New Agent",
 		"subtitle": "Create a new agent to get started"
+	},
+	"prompts": {
+		"noPrompts": "No prompts found",
+		"searchPlaceholder": "Search prompts..."
 	}
 }

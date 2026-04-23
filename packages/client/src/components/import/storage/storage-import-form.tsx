@@ -1,8 +1,8 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -28,6 +28,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export const StorageForm = ({
 	title,
@@ -727,12 +728,15 @@ export const StorageForm = ({
 				<div key={category} className="mb-4 flex flex-col gap-4">
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 						<div className="flex flex-1 flex-col gap-1">
-							<H4 data-testid="storage-importForm-category-title">
+							<H4
+								className="font-semibold text-base tracking-tight"
+								data-testid="storage-importForm-category-title"
+							>
 								{category}
 							</H4>
 							<Muted
+								className="text-muted-foreground text-sm leading-6"
 								data-testid="storage-importForm-category-description"
-								className="text-base"
 							>
 								{categoryDescriptions[category] ??
 									"No description available."}

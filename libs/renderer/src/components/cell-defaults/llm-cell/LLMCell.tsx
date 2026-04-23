@@ -1,18 +1,9 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { Add } from "@mui/icons-material";
+import { Plus } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-// import { toJS } from "mobx";
-
 import { runPixel } from "@semoss/sdk/react";
-import {
-	Button,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+import { Button, toast } from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -25,38 +16,11 @@ import { LLMCellVariant } from "./LLMCellVariant";
 export interface LLMCellDef extends CellDef<"llm"> {
 	widget: "llm";
 	parameters: {
-		// what you want to ask
 		command: string;
-
-		// variants used to create responses to compare LLMs against
 		variants: { [name: string]: Variant };
 	};
 }
 
-// type ModelEngine = {
-//     name: string;
-//     databaseId: string;
-//     topP: number;
-//     temperature: number;
-//     length: number;
-// };
-
-const StyledStack = styled(Stack)({
-	width: "100%",
-});
-
-const StyledActionButtons = styled("div")(({ theme }) => ({
-	width: "100%",
-	display: "flex",
-	justifyContent: "flex-end",
-	gap: theme.spacing(1),
-}));
-
-/**
- * Utility Function shared between this and LLM Compare Block
- * @param currNames
- * @returns
- */
 export const generateVariantName = (currNames: string[]): string | null => {
 	const modelled = currNames
 		.filter((name) => name.toLowerCase() !== "default")
@@ -78,7 +42,6 @@ export const generateVariantName = (currNames: string[]): string | null => {
 
 export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 	const { state } = useBlocks();
-	const notification = useNotification();
 	const [allModels, setAllModels] = useState<{ name: string; id: string }[]>(
 		[],
 	);
@@ -91,7 +54,6 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 		fetchAllModels();
 
 		if (Object.keys(variants).length === 0) {
-			// Create a 'default variant' for the user to configure
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
@@ -126,26 +88,21 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 			engine_id: string;
 		}>;
 
-		const modelled = list.map((model) => {
-			return {
-				name: model.engine_name,
-				id: model.engine_id,
-			};
-		});
+		const modelled = list.map((model) => ({
+			name: model.engine_name,
+			id: model.engine_id,
+		}));
 		setAllModels(modelled);
 	};
 
 	const handleChange = (newValue, path) => {
-		if (cell.isLoading) {
-			return;
-		}
-
+		if (cell.isLoading) return;
 		state.dispatch({
 			message: ActionMessages.UPDATE_CELL,
 			payload: {
 				queryId: cell.query.id,
 				cellId: cell.id,
-				path: path,
+				path,
 				value: newValue,
 			},
 		});
@@ -175,30 +132,27 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 				},
 			});
 		} else {
-			notification.add({
-				color: "error",
-				message: "The maximum number of variants has been met.",
-			});
+			toast.error("The maximum number of variants has been met.");
 		}
 	};
 
 	return (
-		<StyledStack gap={3} id={`${cell.query.id} - ${cell.id}`}>
-			<TextField
+		<div
+			className="flex w-full flex-col gap-6"
+			id={`${cell.query.id} - ${cell.id}`}
+		>
+			<textarea
+				className="min-h-[96px] w-full resize-none rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
 				value={command}
-				label={"Command"}
-				multiline={true}
+				placeholder="Command"
 				rows={4}
-				fullWidth
-				onChange={(e) => {
-					handleChange(e.target.value, "parameters.command");
-				}}
+				onChange={(e) =>
+					handleChange(e.target.value, "parameters.command")
+				}
 			/>
 
-			<StyledStack gap={1} direction="column">
-				<Typography variant="subtitle1" fontWeight="bold">
-					Variants
-				</Typography>
+			<div className="flex w-full flex-col gap-2">
+				<p className="font-bold text-sm">Variants</p>
 
 				<div>
 					{Object.keys(variants || {}).map((name) => (
@@ -211,17 +165,13 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 					))}
 				</div>
 
-				<StyledActionButtons>
-					<Button
-						variant="text"
-						color="secondary"
-						onClick={handleAddVariant}
-						startIcon={<Add />}
-					>
+				<div className="flex w-full justify-end gap-2">
+					<Button variant="ghost" onClick={handleAddVariant}>
+						<Plus className="mr-1 size-4" />
 						Add Variant
 					</Button>
-				</StyledActionButtons>
-			</StyledStack>
-		</StyledStack>
+				</div>
+			</div>
+		</div>
 	);
 });

@@ -25,7 +25,8 @@
 		"updateInstructions": "Update Instructions",
 		"updateTokenLength": "Update token length",
 		"uploadFiles": "Upload Files",
-		"search": "Search..."
+		"search": "Search...",
+		"enterPromptLibraryTag": "Enter Prompt Library Tag"
 	},
 	"actions": {
 		"addKnowledge": "Add Knowledge",

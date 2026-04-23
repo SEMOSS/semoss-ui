@@ -2,8 +2,9 @@ import {
 	mdiAccountGroup,
 	// mdiTextBoxMultipleOutline,
 	mdiArchive,
-	mdiClipboardTextOutline,
 	// mdiClock,
+	mdiChatProcessingOutline,
+	mdiClipboardTextOutline,
 	mdiCog,
 	mdiDatabase,
 	mdiDatabaseSearch,
@@ -169,7 +170,7 @@ export const SETTINGS_ROUTES: {
 		path: "jobs",
 		description: "Search by job name or filter using job tags",
 		icon: mdiTabletCellphone,
-		history: ["settings/"],
+		history: ["jobs"],
 		admin: true,
 	},
 	{
@@ -238,4 +239,28 @@ export const SETTINGS_ROUTES: {
 		history: ["settings/"],
 		admin: true,
 	},
+	{
+		title: "LLM Feedback",
+		path: "llm-feedback",
+		description: "Provide feedback on LLM's performance",
+		icon: mdiChatProcessingOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
+		title: "Add Jobs",
+		path: "jobs/add-new-job",
+		description: "Fill out all the details in order to add the model to the catalog.",
+		icon: mdiClipboardTextOutline,
+		history: ["jobs", "add-new-job"],
+		admin: true,
+	},
+	{
+		title: "Edit Jobs",
+		path: "jobs/edit-job/:id",
+		description: "Fill out all the details in order to edit the model in the catalog.",
+		icon: mdiClipboardTextOutline,
+		history: ["jobs", "edit-job/:id"],
+		admin: true,
+	}
 ];

@@ -1,8 +1,8 @@
-import { Delete } from "@mui/icons-material";
+import { Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { GridBlockColumn, GridBlockDef } from "@semoss/renderer";
-import { IconButton, List } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Button } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface GridBlockColumnSettingsItemProps {
 	/** Id of the block */
@@ -20,51 +20,39 @@ export const GridBlockColumnSettingsItem = observer(
 		const { data, setData } = useBlockSettings<GridBlockDef>(id);
 
 		return (
-			<List.Item
-				dense={true}
-				divider
-				secondaryAction={
-					<>
-						<IconButton
-							disabled={false}
-							size="small"
-							onClick={() => {
-								// get the columns except the current one
-								const columns = data.columns.filter(
-									(v, idx) => index !== idx,
-								);
+			<div className="flex items-center justify-between border-b px-3 py-2">
+				<div className="flex min-w-0 flex-1 flex-col">
+					<span
+						className="truncate font-medium text-sm"
+						title={column.name}
+					>
+						{column.name}
+					</span>
+					<span
+						className="truncate text-muted-foreground text-xs"
+						title={column.selector}
+					>
+						{column.selector}
+					</span>
+				</div>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					disabled={false}
+					onClick={() => {
+						// get the columns except the current one
+						const columns = data.columns.filter(
+							(_v, idx) => index !== idx,
+						);
 
-								// update the data
-								setData("columns", columns);
-							}}
-							onPointerDown={(e) => e.stopPropagation()}
-						>
-							<Delete />
-						</IconButton>
-					</>
-				}
-			>
-				<List.ItemText
-					primary={column.name}
-					secondary={column.selector}
-					primaryTypographyProps={{
-						title: column.name,
-						style: {
-							whiteSpace: "nowrap",
-							overflow: "hidden",
-							textOverflow: "ellipsis",
-						},
+						// update the data
+						setData("columns", columns);
 					}}
-					secondaryTypographyProps={{
-						title: column.selector,
-						style: {
-							whiteSpace: "nowrap",
-							overflow: "hidden",
-							textOverflow: "ellipsis",
-						},
-					}}
-				/>
-			</List.Item>
+					onPointerDown={(e) => e.stopPropagation()}
+				>
+					<Trash2 className="size-4" />
+				</Button>
+			</div>
 		);
 	},
 );
