@@ -341,6 +341,7 @@ export const GlobalNav = observer(() => {
 
 			// Refetch rooms after renaming
 			getRooms.reset();
+			getPinnedRooms.reset();
 		} catch {
 			toast.error(t("toasts.failedToRename"));
 		}
@@ -676,6 +677,7 @@ export const GlobalNav = observer(() => {
 
 																			// Refetch rooms after deletion
 																			getRooms.reset();
+																			getPinnedRooms.reset();
 																		} catch (e) {
 																			if (
 																				e instanceof
