@@ -12,6 +12,7 @@
         "test:coverage": "vitest --coverage --watch=false"
     },
     "dependencies": {
+        "@codesandbox/sandpack-react": "^2.20.0",
         "@lexical/react": "^0.39.0",
         "@semoss/i18n": "workspace:*",
         "@semoss/sdk": "workspace:*",

@@ -71,7 +71,7 @@ interface ResponseMessageToolGroupProps {
 
 export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 	observer(({ message, tools }) => {
-		const { t } = useTranslation("chat");
+		const { t } = useTranslation("tool");
 		const [isOpen, setIsOpen] = useState(false);
 
 		const { status, counts, loadingOptions } = analyzeTools(tools);
@@ -83,13 +83,13 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 		const summaryParts = [
 			counts.SUCCESS > 0 &&
 				counts.SUCCESS < tools.length &&
-				t("tool.groupSummaryCompleted", { count: counts.SUCCESS }),
+				t("group.summaryCompleted", { count: counts.SUCCESS }),
 			counts.ERROR > 0 &&
-				t("tool.groupSummaryError", { count: counts.ERROR }),
+				t("group.summaryError", { count: counts.ERROR }),
 			counts.CANCELLED > 0 &&
-				t("tool.groupSummaryCancelled", { count: counts.CANCELLED }),
+				t("group.summaryCancelled", { count: counts.CANCELLED }),
 			counts.PAUSED > 0 &&
-				t("tool.groupSummaryPaused", { count: counts.PAUSED }),
+				t("group.summaryPaused", { count: counts.PAUSED }),
 		].filter((s): s is string => Boolean(s));
 
 		return (
@@ -109,8 +109,8 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					</div>
 					<span className="-ml-1.5 truncate text-muted-foreground text-sm">
 						{isOpen
-							? t("tool.groupLabelOpen", { count: tools.length })
-							: t("tool.groupLabelClosed", {
+							? t("group.labelOpen", { count: tools.length })
+							: t("group.labelClosed", {
 									toolName: tools[0].json.title,
 									count: tools.length - 1,
 								})}

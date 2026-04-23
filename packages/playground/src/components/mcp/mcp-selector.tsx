@@ -1,6 +1,6 @@
 import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -47,11 +47,6 @@ export const MCPSelector = observer(
 		const [search, setSearch] = useState<string>("");
 		const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] =
 			useState(false);
-		const searchContainerRef = useRef<HTMLDivElement>(null);
-
-		const focusSearch = () => {
-			searchContainerRef.current?.querySelector("input")?.focus();
-		};
 
 		const debouncedSearch = useDebouncedValue(search);
 		const useMCPFilter =
@@ -89,12 +84,6 @@ export const MCPSelector = observer(
 			[debouncedSearch, useMCPFilter],
 		);
 
-		useEffect(() => {
-			if (!getMCP.isLoading) {
-				focusSearch();
-			}
-		}, [getMCP.isLoading]);
-
 		/**
 		 * Setup infinite scroll for the command list
 		 */
@@ -128,13 +117,13 @@ export const MCPSelector = observer(
 		return (
 			<div className="w-full overflow-hidden rounded-xl border-border bg-card shadow-sm">
 				<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
-					<div ref={searchContainerRef} className="flex-1">
+					<div className="flex-1">
 						<InputGroup className="bg-background">
 							<InputGroupInput
 								autoFocus
 								placeholder={t("selector.search")}
 								value={search}
-								disabled={disabled || getMCP.isLoading}
+								disabled={disabled}
 								onChange={(e) => setSearch(e.target.value)}
 							/>
 							<InputGroupAddon>
