@@ -66,6 +66,10 @@
 		"logoAlt": "logo"
 	},
 	"fileDrag": {
-		"title": "Suelta archivos para añadir al chat"
+		"title": "Suelta archivos para añadir al chat",
+		"modalTitle": "Archivos adjuntos",
+		"emptyState": "No hay archivos adjuntos aún",
+		"addMore": "Agregar archivos",
+		"done": "Listo"
 	}
 }

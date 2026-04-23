@@ -66,6 +66,10 @@
 		"logoAlt": "logo"
 	},
 	"fileDrag": {
-		"title": "Déposez des fichiers pour les ajouter au chat"
+		"title": "Déposez des fichiers pour les ajouter au chat",
+		"modalTitle": "Fichiers joints",
+		"emptyState": "Aucun fichier joint pour l'instant",
+		"addMore": "Ajouter des fichiers",
+		"done": "Terminé"
 	}
 }

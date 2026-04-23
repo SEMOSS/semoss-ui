@@ -14,24 +14,11 @@ import {
 } from "lexical";
 import {
 	BookOpenIcon,
-	FileArchiveIcon,
-	FileAudioIcon,
-	FileBadgeIcon,
-	FileChartPieIcon,
-	FileCodeIcon,
-	FileIcon,
-	FileJsonIcon,
-	FileSpreadsheetIcon,
-	FileTerminalIcon,
-	FileTextIcon,
-	FileTypeIcon,
-	FileVideoIcon,
 	MicIcon,
 	PlusIcon,
 	SendIcon,
 	SparklesIcon,
 	Square,
-	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
@@ -45,7 +32,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuTrigger,
 	ScrollArea,
-	ScrollBar,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -95,71 +81,6 @@ try {
 // ============================================================================
 
 /** Supported image file extensions for preview */
-const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
-
-/** Check if a file is an image based on its extension */
-const isImageFile = (file: File): boolean => {
-	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-	return IMAGE_EXTENSIONS.includes(ext);
-};
-
-/** Shared icon styling for file type icons */
-const ICON_CLASS = "size-8 shrink-0 text-muted-foreground";
-
-/**
- * Map file extensions to appropriate Lucide icon components
- * Returns a generic FileIcon for unknown extensions
- */
-const getIconForExt = (ext: string) => {
-	if (["xls", "xlsx", "csv"].includes(ext)) return FileSpreadsheetIcon;
-	if (
-		[
-			"py",
-			"js",
-			"ts",
-			"tsx",
-			"jsx",
-			"java",
-			"cpp",
-			"c",
-			"go",
-			"rs",
-		].includes(ext)
-	)
-		return FileCodeIcon;
-	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
-		return FileTerminalIcon;
-	if (ext === "json") return FileJsonIcon;
-	if (["zip", "tar", "gz", "rar", "7z"].includes(ext)) return FileArchiveIcon;
-	if (["ppt", "pptx"].includes(ext)) return FileChartPieIcon;
-	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
-		return FileAudioIcon;
-	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
-		return FileVideoIcon;
-	if (["html", "xml", "md", "mdx", "rtf"].includes(ext)) return FileTypeIcon;
-	if (ext === "pdf") return FileBadgeIcon;
-	if (["doc", "docx", "msg", "txt"].includes(ext)) return FileTextIcon;
-	return FileIcon;
-};
-
-/**
- * Render a file type icon with extension label
- * For images, this will be replaced with an actual preview
- */
-const getFileIcon = (file: File): React.ReactNode => {
-	const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-	const Icon = getIconForExt(ext);
-
-	return (
-		<div className="flex flex-col items-center gap-1">
-			<Icon className={ICON_CLASS} strokeWidth={1.25} />
-			<span className="max-w-16 truncate font-medium text-[10px] text-muted-foreground uppercase">
-				{ext}
-			</span>
-		</div>
-	);
-};
-
 /**
  * Format token counts for display
  * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
@@ -196,7 +117,6 @@ interface RoomInputProps {
 	MenuComponent: React.ComponentType<{
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
-		fileRef: React.RefObject<HTMLInputElement>;
 		knowledgeOverlayOpen: boolean;
 		onKnowledgeOverlayChange: (open: boolean) => void;
 		toolboxOverlayOpen: boolean;
@@ -303,7 +223,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
 		const editorRef = useRef<LexicalEditor>(null);
-		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
 		const scrollViewportRef = useRef<HTMLElement | null>(null);
 
@@ -333,14 +252,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 
 		// File handling
-		const { isDragging, droppedFiles, clearDroppedFiles } = useFileDrag();
-		const [files, setFiles] = useState<File[]>([]);
-
-		useEffect(() => {
-			if (droppedFiles.length === 0) return;
-			setFiles((prev) => [...prev, ...droppedFiles]);
-			clearDroppedFiles();
-		}, [droppedFiles, clearDroppedFiles]);
+		const { isDragging, files, addFiles, clearFiles, setShouldStayOpen } =
+			useFileDrag();
 
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
@@ -543,7 +456,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					const paragraphNode = $createParagraphNode();
 					root.append(paragraphNode);
 				});
-				setFiles([]);
+				clearFiles();
+				setShouldStayOpen(false);
 
 				// Submit to parent handler
 				const result = Boolean(await onPrompt(userInput, userFiles));
@@ -555,7 +469,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				toast.error(getGracefulErrorMessage(e as Error as Error));
 
 				// Restore files for retry
-				setFiles(userFiles);
+				addFiles(userFiles);
 
 				// Restore original text in editor for editing/retry
 				editorRef.current?.update(() => {
@@ -571,56 +485,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 
 		// ========================================================================
-		// File Preview Management
-		// ========================================================================
-
-		/**
-		 * Generate blob URLs for image file previews
-		 * Memoized to avoid recreating URLs on every render
-		 */
-		const imagePreviewUrls = useMemo(() => {
-			const urls = new Map<string, string>();
-			for (const f of files) {
-				if (isImageFile(f)) {
-					// Use unique key to identify same file across renders
-					const key = `${f.name}-${f.size}-${f.lastModified}`;
-					urls.set(key, URL.createObjectURL(f));
-				}
-			}
-			return urls;
-		}, [files]);
-
-		/**
-		 * Cleanup blob URLs to prevent memory leaks
-		 * Important: blob URLs persist until explicitly revoked
-		 */
-		useEffect(() => {
-			return () => {
-				for (const url of imagePreviewUrls.values()) {
-					URL.revokeObjectURL(url);
-				}
-			};
-		}, [imagePreviewUrls]);
-
-		// ========================================================================
 		// Render
 		// ========================================================================
 
 		return (
 			<div className="relative w-full" ref={ref} data-tour="tour-input">
-				<input
-					ref={fileRef}
-					type="file"
-					multiple={true}
-					hidden
-					onChange={(e) => {
-						// set the new files
-						if (e.target.files) {
-							const updated = Array.from(e.target.files ?? []);
-							setFiles((prev) => [...prev, ...updated]);
-						}
-					}}
-				/>
 				<LexicalComposer
 					initialConfig={{
 						namespace: "RoomInput",
@@ -640,72 +509,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							className,
 						)}
 					>
-						{/* File attachments preview strip */}
-						{files.length > 0 && (
-							<ScrollArea type="always">
-								<div className="flex w-max gap-2 p-2 pb-3">
-									{files.map((file, idx) => {
-										const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
-										const previewUrl =
-											imagePreviewUrls.get(key);
-
-										return (
-											<Tooltip key={key}>
-												<TooltipTrigger asChild>
-													<div className="group relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-muted">
-														{previewUrl ? (
-															<img
-																src={previewUrl}
-																alt={file.name}
-																className="size-full object-cover"
-															/>
-														) : (
-															getFileIcon(file)
-														)}
-														<Button
-															variant="destructive"
-															size="icon"
-															className="absolute top-1 right-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
-															onClick={() => {
-																setFiles(
-																	(prev) =>
-																		prev.filter(
-																			(
-																				_,
-																				i,
-																			) =>
-																				i !==
-																				idx,
-																		),
-																);
-															}}
-														>
-															<XIcon className="size-3" />
-														</Button>
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													<p className="max-w-48 truncate text-xs">
-														{file.name}
-													</p>
-													<p className="text-muted-foreground text-xs">
-														{(
-															file.size / 1024
-														).toFixed(1)}{" "}
-														KB
-													</p>
-												</TooltipContent>
-											</Tooltip>
-										);
-									})}
-								</div>
-								<ScrollBar
-									orientation="horizontal"
-									className="ml-2"
-								/>
-							</ScrollArea>
-						)}
-
 						<PlainTextPlugin
 							contentEditable={
 								<ScrollArea
@@ -718,24 +521,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								>
 									<ContentEditable
 										ref={contentEditableRef}
-										className={cn(
-											"px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-											files.length > 0 ? "pt-0" : "pt-4",
-										)}
+										className="px-4 pt-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40"
 										aria-placeholder={t(
 											"input.ariaPlaceholder",
 										)}
 										aria-disabled={isLoading}
 										disabled={isLoading}
 										placeholder={
-											<div
-												className={cn(
-													"pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pb-4 text-muted-foreground text-sm",
-													files.length > 0
-														? "pt-0"
-														: "pt-4",
-												)}
-											>
+											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pt-4 pb-4 text-muted-foreground text-sm">
 												<SparklesIcon className="size-4" />
 												{isLoading
 													? t("input.thinking")
@@ -770,10 +563,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 											if (updated.length > 0) {
 												e.preventDefault();
-												setFiles((prev) => [
-													...prev,
-													...updated,
-												]);
+												addFiles(updated);
 											}
 										}}
 									/>
@@ -840,7 +630,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											<MenuComponent
 												isOpen={menuOpen}
 												onOpenChange={setMenuOpen}
-												fileRef={fileRef}
 												knowledgeOverlayOpen={
 													knowledgeOverlayOpen
 												}

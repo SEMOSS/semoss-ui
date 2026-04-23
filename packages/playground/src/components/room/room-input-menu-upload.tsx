@@ -1,27 +1,23 @@
 import { PaperclipIcon } from "lucide-react";
-import type React from "react";
 import { useTranslation } from "@semoss/i18n";
 import { DropdownMenuItem } from "@semoss/ui/next";
+import { useFileDrag } from "@/contexts";
 
 interface RoomInputMenuUploadProps {
-	/** File input ref to trigger file upload */
-	fileRef: React.RefObject<HTMLInputElement>;
-
 	/** Callback when the item is selected */
 	onSelect?: () => void;
 }
 
 export const RoomInputMenuUpload: React.FC<RoomInputMenuUploadProps> = ({
-	fileRef,
 	onSelect = () => null,
 }) => {
 	const { t } = useTranslation("room");
+	const { setShouldStayOpen } = useFileDrag();
 
 	return (
 		<DropdownMenuItem
 			onSelect={() => {
-				fileRef.current?.click();
-
+				setShouldStayOpen(true);
 				onSelect();
 			}}
 		>

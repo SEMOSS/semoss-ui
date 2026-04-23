@@ -3,6 +3,7 @@ import { RootContext } from "./root-context";
 
 export { ChatContext, RootContext };
 export {
+	FILE_DRAG_ATTR,
 	FileDragContext,
 	FileDragProvider,
 	useFileDrag,

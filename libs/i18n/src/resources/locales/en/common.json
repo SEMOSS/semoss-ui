@@ -67,6 +67,10 @@
 		"logoAlt": "logo"
 	},
 	"fileDrag": {
-		"title": "Drop files to add to chat"
+		"title": "Drop files to add to chat",
+		"modalTitle": "Attached Files",
+		"emptyState": "No files attached yet",
+		"addMore": "Add files",
+		"done": "Done"
 	}
 }

@@ -475,7 +475,6 @@ export const NewRoomPage = observer(() => {
 								MenuComponent={observer(
 									({
 										onOpenChange,
-										fileRef,
 										knowledgeOverlayOpen,
 										onKnowledgeOverlayChange,
 										toolboxOverlayOpen,
@@ -483,7 +482,6 @@ export const NewRoomPage = observer(() => {
 									}) => (
 										<>
 											<RoomInputMenuUpload
-												fileRef={fileRef}
 												onSelect={() =>
 													onOpenChange(false)
 												}

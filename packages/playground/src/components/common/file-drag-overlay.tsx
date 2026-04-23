@@ -1,24 +1,121 @@
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, PaperclipIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import { useFileDrag } from "@/contexts";
+import {
+	Button,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from "@semoss/ui/next";
+import { FILE_DRAG_ATTR, useFileDrag } from "@/contexts";
 import { useRoot } from "@/hooks";
+import { FilePreviewGrid } from "./file-preview-grid";
 
 export const FileDragOverlay = () => {
 	const { t } = useTranslation("common");
 	const { root } = useRoot();
-	const { isDragging } = useFileDrag();
+	const {
+		isDragging,
+		setIsDragging,
+		shouldStayOpen,
+		setShouldStayOpen,
+		files,
+		addFiles,
+		removeFile,
+		fileInputRef,
+	} = useFileDrag();
 
-	if (!isDragging) return null;
+	const isOpen = isDragging || shouldStayOpen;
+
+	const close = () => {
+		setShouldStayOpen(false);
+		setIsDragging(false);
+	};
 
 	return (
-		<div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-2 bg-background/20 backdrop-blur-xs">
-			<FilePlus2 className="size-12 text-foreground" />
-			<p className="font-medium text-md">{t("fileDrag.title")}</p>
-			{root.theme.fileDragDisclaimer && (
-				<p className="max-w-sm text-center text-muted-foreground text-sm">
-					{root.theme.fileDragDisclaimer}
-				</p>
-			)}
-		</div>
+		<>
+			{/* Hidden file input shared across the drag context */}
+			<input
+				ref={fileInputRef}
+				type="file"
+				multiple
+				hidden
+				onChange={(e) => {
+					if (e.target.files) {
+						addFiles(Array.from(e.target.files));
+						setShouldStayOpen(true);
+						e.target.value = "";
+					}
+				}}
+			/>
+
+			<Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
+				<DialogContent {...{ [FILE_DRAG_ATTR]: "" }}>
+					<DialogHeader>
+						<DialogTitle>{t("fileDrag.modalTitle")}</DialogTitle>
+					</DialogHeader>
+
+					<div className="flex flex-col gap-3">
+						{files.length > 0 && (
+							<FilePreviewGrid
+								files={files}
+								onRemoveFile={removeFile}
+							/>
+						)}
+
+						{/* Drop zone — always shown; highlights when dragging.
+						    Drop handling lives on window in the context so files
+						    dropped anywhere on the page (including the backdrop)
+						    are captured. onDragOver here only drives the highlight
+						    and re-triggers isDragging when the dialog is already open. */}
+						<div
+							role="none"
+							className={`flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors ${
+								isDragging
+									? "border-primary bg-primary/5"
+									: "border-border"
+							}`}
+							onDragOver={(e) => {
+								if (!e.dataTransfer.types.includes("Files"))
+									return;
+								e.preventDefault();
+								setIsDragging(true);
+							}}
+						>
+							<FilePlus2
+								className={`size-10 transition-colors ${isDragging ? "text-primary" : "text-muted-foreground"}`}
+							/>
+							<p className="text-center text-muted-foreground text-sm">
+								{t("fileDrag.title")}
+							</p>
+						</div>
+
+						{root.theme.fileDragDisclaimer && (
+							<p className="text-muted-foreground text-sm">
+								{root.theme.fileDragDisclaimer}
+							</p>
+						)}
+
+						<div className="flex justify-between">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => fileInputRef.current?.click()}
+							>
+								<PaperclipIcon />
+								{t("fileDrag.addMore")}
+							</Button>
+							<Button
+								size="sm"
+								disabled={files.length === 0}
+								onClick={close}
+							>
+								{t("fileDrag.done")}
+							</Button>
+						</div>
+					</div>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 };
