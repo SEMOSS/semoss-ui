@@ -41,6 +41,12 @@ export interface ThemeMap {
 		/** Description of the app */
 		description: string;
 
+		/**
+		 * Optional disclaimer shown in the file drag overlay.
+		 * Falls back to the default i18n string when omitted.
+		 */
+		fileDragDisclaimer?: string;
+
 		/** Styles of the app */
 		variables: {
 			backgroundColor: string;
