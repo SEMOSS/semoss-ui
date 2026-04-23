@@ -5,7 +5,7 @@ import { Help } from "@/components/help";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
-import { AuditLogsDashboard } from "../AuditLogsDashboard";
+import { AuditLogsDashboard } from "../audit-logs-dashboard";
 import { ImportPage } from "../import";
 import { ENGINE_ROUTES } from "./engine.constants";
 import { EngineEditPage } from "./engine-edit-page";

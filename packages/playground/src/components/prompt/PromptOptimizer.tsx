@@ -1,4 +1,4 @@
-import { UndoIcon, ZapIcon } from "lucide-react";
+import { UndoIcon, WandSparklesIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
@@ -173,7 +173,7 @@ export const PromptOptimizer: React.FC<PromptOptimizerProps> = observer(
 						) : showRevert ? (
 							<UndoIcon />
 						) : (
-							<ZapIcon />
+							<WandSparklesIcon />
 						)}
 					</Button>
 				</TooltipTrigger>

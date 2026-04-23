@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import type { GridBlockDef, PathValue } from "@semoss/renderer";
 import { Button, Checkbox } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { CellStyling } from "./operations/CellStyling";
 import { ChartTitle } from "./operations/ChartTitle";
 import { ColorByValue } from "./operations/ColorByValue";
@@ -174,8 +174,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 					{selectedList === "export" && (
 						<div className="block w-full px-4 py-2">
 							<div className="flex items-center gap-2 pl-3">
-								{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-								// biome-ignore
 								{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 								<Checkbox
 									id="enable-export"

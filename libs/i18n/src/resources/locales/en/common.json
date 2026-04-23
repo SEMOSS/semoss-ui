@@ -28,7 +28,8 @@
 		"updateTokenLength": "Update token length",
 		"updateImageSeed": "Update image seed",
 		"uploadFiles": "Upload Files",
-		"search": "Search..."
+		"search": "Search...",
+		"enterPromptLibraryTag": "Enter Prompt Library Tag"
 	},
 	"actions": {
 		"addKnowledge": "Add Knowledge",

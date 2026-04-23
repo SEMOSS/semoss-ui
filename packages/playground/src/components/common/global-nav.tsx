@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import {
 	ComputerIcon,
 	HelpCircle,
+	MapIcon,
 	MoreVertical,
 	PencilIcon,
 	Search,
@@ -48,10 +49,17 @@ import {
 	useInfiniteScroll,
 	useSidebar,
 } from "@semoss/ui/next";
-import { useChat, useRoot } from "@/hooks";
+import { useChat, useRoot, useTour } from "@/hooks";
 import { AppLogo } from "./app-logo";
 import { GlobalNavItem } from "./global-nav-item";
 import { NavUser } from "./nav-user";
+
+let isIframed = false;
+try {
+	isIframed = window.self !== window.top;
+} catch {
+	isIframed = true;
+}
 
 /**
  * Renders a sidebar allowing users to navigate between pages
@@ -77,6 +85,7 @@ export const GlobalNav = observer(() => {
 	const [search, setSearch] = useState("");
 	const [helpOpen, setHelpOpen] = useState(false);
 	const { chat } = useChat();
+	const { startTour } = useTour();
 	const { open } = useSidebar();
 	const { pathname } = useLocation();
 	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
@@ -99,6 +108,36 @@ export const GlobalNav = observer(() => {
 	const systemDate = dayjs(system.config.systemDate);
 
 	const navigate = useNavigate();
+
+	const handleStartTour = () => {
+		navigate("/new");
+		startTour();
+	};
+	const getPinnedRooms = useIteratorPixel<
+		{
+			ROOM_ID: string;
+			ROOM_NAME: string;
+			DATE_CREATED: string;
+			WORKSPACE_ID?: string;
+			PINNED?: boolean;
+		}[],
+		{
+			ROOM_ID: string;
+			ROOM_NAME: string;
+			DATE_CREATED: string;
+			WORKSPACE_ID?: string;
+			PINNED?: boolean;
+		}
+	>(
+		(_limit, offset) =>
+			open
+				? `GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"]);`
+				: "",
+		() => -1,
+		(response) => response,
+		{},
+		[],
+	);
 
 	const getRooms = useIteratorPixel<
 		{
@@ -181,7 +220,12 @@ export const GlobalNav = observer(() => {
 		// keep this counter
 		chat.keys.roomCounter;
 		getRooms.reset();
-	}, [getRooms.reset, chat.keys.roomCounter]);
+		getPinnedRooms.reset();
+		if (scrollElementRef.current) {
+			scrollElementRef.current.scrollTop = 0;
+			setSavedScrollPosition(0);
+		}
+	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
 
 	/**
 	 * Save and restore scroll position when sidebar opens/closes
@@ -205,17 +249,15 @@ export const GlobalNav = observer(() => {
 	/**
 	 * Bucket the rooms by date
 	 */
+	const pinnedRoomIds = new Set(getPinnedRooms.data.map((r) => r.ROOM_ID));
+
 	const bucketedRooms = getRooms.data.reduce(
 		(acc, val) => {
+			// Skip rooms handled by the dedicated pinned query
+			if (val.PINNED || pinnedRoomIds.has(val.ROOM_ID)) return acc;
+
 			const d = dayjs(`${val.DATE_CREATED}Z`);
 
-			// Pinned rooms only go in Favorites bucket
-			if (val.PINNED) {
-				acc[t("buckets.favorites")].push(val);
-				return acc; // Don't add to date buckets
-			}
-
-			// Non-pinned rooms go in date-based buckets
 			if (systemDate.isSame(d, "day")) {
 				acc[t("buckets.today")].push(val);
 			} else if (systemDate.subtract(1, "day").isSame(d, "day")) {
@@ -235,7 +277,7 @@ export const GlobalNav = observer(() => {
 			return acc;
 		},
 		{
-			[t("buckets.favorites")]: [],
+			[t("buckets.favorites")]: [...getPinnedRooms.data],
 			[t("buckets.today")]: [],
 			[t("buckets.yesterday")]: [],
 			[t("buckets.fewDaysAgo")]: [],
@@ -260,6 +302,7 @@ export const GlobalNav = observer(() => {
 
 			// Refetch rooms after toggling favorite
 			getRooms.reset();
+			getPinnedRooms.reset();
 		} catch {
 			toast.error(
 				isFavorite
@@ -298,6 +341,7 @@ export const GlobalNav = observer(() => {
 
 			// Refetch rooms after renaming
 			getRooms.reset();
+			getPinnedRooms.reset();
 		} catch {
 			toast.error(t("toasts.failedToRename"));
 		}
@@ -325,7 +369,10 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 
 				<SidebarMenu className="gap-2 p-2">
-					<InputGroup className="bg-background group-data-[collapsible=icon]:hidden">
+					<InputGroup
+						className="bg-background group-data-[collapsible=icon]:hidden"
+						data-tour="tour-search"
+					>
 						<InputGroupInput
 							placeholder={t("search")}
 							value={search}
@@ -335,54 +382,66 @@ export const GlobalNav = observer(() => {
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
+					{root.theme.hideToolsInIframe && isIframed ? null : (
+						<>
+							<SidebarMenuItem data-tour="tour-new-chat">
+								<SidebarMenuButton
+									asChild
+									isActive={!!matchPath("/new", pathname)}
+									tooltip={{
+										children:
+											"New Chat - Start a fresh conversation anytime.",
+										hidden: false,
+									}}
+								>
+									<Link to={"/new"} aria-label={"New Chat"}>
+										<SquarePenIcon />
+										{t("new")}
+									</Link>
+								</SidebarMenuButton>
+							</SidebarMenuItem>
 
-					<SidebarMenuItem>
-						<SidebarMenuButton
-							asChild
-							isActive={!!matchPath("/new", pathname)}
-							tooltip={{
-								children:
-									"New Chat - Start a fresh conversation anytime.",
-								hidden: false,
-							}}
-						>
-							<Link to={"/new"} aria-label={"New Chat"}>
-								<SquarePenIcon />
-								{t("new")}
-							</Link>
-						</SidebarMenuButton>
-					</SidebarMenuItem>
+							{root.theme.featureFlags?.enableAgent && (
+								<SidebarMenuItem>
+									<SidebarMenuButton
+										asChild
+										isActive={
+											!!matchPath("/agent", pathname)
+										}
+										tooltip={{
+											children: "Agents",
+											hidden: false,
+										}}
+									>
+										<Link
+											to={"/agent"}
+											aria-label={"agent"}
+										>
+											<ComputerIcon />
+											{t("agents")}
+										</Link>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							)}
 
-					{root.theme.featureFlags?.enableAgent && (
-						<SidebarMenuItem>
-							<SidebarMenuButton
-								asChild
-								isActive={!!matchPath("/agent", pathname)}
-								tooltip={{
-									children: "Agents",
-									hidden: false,
-								}}
-							>
-								<Link to={"/agent"} aria-label={"agent"}>
-									<ComputerIcon />
-									{t("agents")}
-								</Link>
-							</SidebarMenuButton>
-						</SidebarMenuItem>
+							{root.theme.sidebar.headerItems.map(
+								(item, index) => (
+									<GlobalNavItem
+										key={`header-${item.name}-${index}`}
+										name={item.name}
+										icon={item.icon}
+										path={item.path}
+										url={item.url}
+										embed={item.embed}
+									/>
+								),
+							)}
+						</>
 					)}
-					{root.theme.sidebar.headerItems.map((item, index) => (
-						<GlobalNavItem
-							key={`header-${item.name}-${index}`}
-							name={item.name}
-							icon={item.icon}
-							path={item.path}
-							url={item.url}
-							embed={item.embed}
-						/>
-					))}
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
+				data-tour="tour-chat-history"
 				className="transition-all duration-200 ease-in-out"
 				ref={(ele) => {
 					// Store reference for scroll position management
@@ -618,6 +677,7 @@ export const GlobalNav = observer(() => {
 
 																			// Refetch rooms after deletion
 																			getRooms.reset();
+																			getPinnedRooms.reset();
 																		} catch (e) {
 																			if (
 																				e instanceof
@@ -667,11 +727,11 @@ export const GlobalNav = observer(() => {
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />
-				{root.theme.sidebar.footerItems.length > 0 && (
-					<SidebarMenu className="gap-2 px-2 pt-2 group-data-[collapsible=icon]:hidden">
-						{/* biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons */}
+				<SidebarMenu className="gap-2 p-2">
+					{root.theme.sidebar.footerItems.length > 0 && (
+						// biome-ignore lint/a11y/useSemanticElements: keeping div for layout reasons
 						<div
-							className="relative"
+							className="relative group-data-[collapsible=icon]:hidden"
 							role="button"
 							tabIndex={0}
 							onMouseEnter={() => setHelpOpen(true)}
@@ -679,8 +739,6 @@ export const GlobalNav = observer(() => {
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {
 									e.preventDefault();
-									// Add your click handler here
-									// handleClick();
 								}
 							}}
 							onClick={() => setHelpOpen((prev) => !prev)}
@@ -710,9 +768,18 @@ export const GlobalNav = observer(() => {
 								</div>
 							)}
 						</div>
-					</SidebarMenu>
-				)}
-				<SidebarMenu className="gap-2 p-2">
+					)}
+					{root.theme.tour?.show !== false && (
+						<SidebarMenuItem className="group-data-[collapsible=icon]:hidden">
+							<SidebarMenuButton
+								onClick={handleStartTour}
+								data-tour="tour-take-tour"
+							>
+								<MapIcon />
+								{t("takeTour")}
+							</SidebarMenuButton>
+						</SidebarMenuItem>
+					)}
 					<SidebarMenuItem>
 						<NavUser />
 					</SidebarMenuItem>

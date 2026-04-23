@@ -33,6 +33,7 @@ import type {
 	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
+	Prompt,
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
@@ -150,6 +151,11 @@ interface RoomStoreInterface {
 			workspace_id: string;
 			name?: string;
 		};
+
+		/**
+		 * Predefined prompts that can be used in the room
+		 */
+		predefinedPrompts: Prompt[];
 	};
 
 	/**
@@ -189,6 +195,7 @@ export class RoomStore {
 		root: null as unknown as ResponseMessageStore | PlanMessageStore,
 		tools: {},
 		options: {
+			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,
@@ -623,6 +630,11 @@ export class RoomStore {
 
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
+
+				// Store workspace name for display
+				if (workspaceOutput?.name && newOptions.workspace) {
+					newOptions.workspace.name = workspaceOutput.name;
+				}
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (

@@ -1,3 +1,3 @@
-export { PromptHoverToken } from "./PromptHoverToken";
-export { PromptReadonlyInputToken } from "./PromptReadonlyInputToken";
-export { PromptSetToken } from "./PromptSetToken";
+export { PromptHoverToken } from "./prompt-hover-token";
+export { PromptReadonlyInputToken } from "./prompt-readonly-input-token";
+export { PromptSetToken } from "./prompt-set-token";

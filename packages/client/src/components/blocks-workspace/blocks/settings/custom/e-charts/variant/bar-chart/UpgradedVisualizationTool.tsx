@@ -2,7 +2,7 @@ import { Image, Info } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import type { EchartVisualizationBlockDef } from "@semoss/renderer";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { getShowFieldOptions } from "../../../../../block-settings/block-defaults.shared";
 import { SelectInputSettings } from "../../../../../settings";
 import { ResizeSetting } from "../../../../shared";
