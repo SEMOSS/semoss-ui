@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import type { GridBlockDef, PathValue } from "@semoss/renderer";
 import { Button, Checkbox } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { CellStyling } from "./operations/CellStyling";
 import { ChartTitle } from "./operations/ChartTitle";
 import { ColorByValue } from "./operations/ColorByValue";

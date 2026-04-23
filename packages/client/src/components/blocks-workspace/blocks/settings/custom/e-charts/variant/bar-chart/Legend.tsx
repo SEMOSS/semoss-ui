@@ -8,7 +8,7 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import { Switch } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 //Legend component
 export const Legend = observer(

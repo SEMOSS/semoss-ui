@@ -8,7 +8,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
@@ -77,6 +77,22 @@ export const NewRoomPage = observer(() => {
 		() => new RoomStore(root.theme, "temp"),
 		[root.theme],
 	);
+	const bannerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!bannerRef.current) return;
+		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
+		const urls =
+			(root.theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+		bannerRef.current
+			.querySelectorAll("a")
+			.forEach((a: HTMLAnchorElement, i: number) => {
+				a.target = "_blank";
+				a.rel = "noopener noreferrer";
+				if (urls[i]) a.setAttribute("href", urls[i]);
+			});
+	}, [root.theme.banner]);
+
 	const [isLoading, setIsLoading] = useState(false);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
@@ -114,7 +130,7 @@ export const NewRoomPage = observer(() => {
 	const getPrompts = usePixel<Prompt[]>(
 		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
 			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
-			: null,
+			: "",
 		{
 			data: [],
 		},
@@ -208,10 +224,11 @@ export const NewRoomPage = observer(() => {
 				mcp: tempRoomStore.options.mcp,
 			};
 
-			// add workspace id
+			// add workspace id and name
 			if (mode === "workspace") {
 				options.workspace = {
 					workspace_id: getWorkspace.data?.workspace_id || "",
+					name: getWorkspace.data?.name,
 				};
 			}
 
@@ -292,7 +309,7 @@ export const NewRoomPage = observer(() => {
 		setPrompts(
 			Array.isArray(getWorkspace.data.prompts)
 				? getWorkspace.data.prompts.map((p) =>
-						typeof p === "string" ? p : p.id,
+						typeof p === "string" ? p : (p as { id: string }).id,
 					)
 				: [],
 		);
@@ -352,8 +369,11 @@ export const NewRoomPage = observer(() => {
 			tags: p.tags,
 			version: p.version,
 			intent: p.intent,
-			createdBy: p.created_by,
-			dateCreated: p.date_created,
+			// TODO: figure out why this is done this way
+			createdBy: (p as unknown as { created_by: string }).created_by,
+			dateCreated: (p as unknown as { date_created: string })
+				.date_created,
+			global: false, // TODO: figure out if this is needed
 		}));
 
 		tempRoomStore.setOptions({
@@ -381,8 +401,16 @@ export const NewRoomPage = observer(() => {
 	]);
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<ResizablePanelGroup direction="horizontal">
+		<div className="flex h-full w-full flex-col overflow-hidden">
+			{root.theme.banner ? (
+				<div
+					ref={bannerRef}
+					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
+				/>
+			) : null}
+			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
 						src={root.theme.images.landing || landingImage}

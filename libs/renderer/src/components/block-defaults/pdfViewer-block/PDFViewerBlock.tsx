@@ -2,9 +2,9 @@ import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Env, runPixel } from "@semoss/sdk/react";
+import { runPixel } from "@semoss/sdk/react";
 import { Button, Spinner } from "@semoss/ui/next";
-import { useBlock } from "../../../hooks";
+import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
@@ -31,6 +31,8 @@ export const PDF_FILE_PREFIX = "data:application/pdf;base64,";
 
 export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<PDFViewerBlockDef>(id);
+	const { state } = useBlocks();
+	const isDesignMode = state.mode !== "interactive";
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [pdfContent, setPdfContent] = useState<string | null>(null);
@@ -61,38 +63,15 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 								base64Content.replace(/^data:.*?;base64,/, "");
 				} else {
 					const response = await runPixel<[string]>(
-						`DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
+						`GetAppAssetsBase64(filePath=["${path}"], project=["${appId}"]);`,
 					);
-					const fileKey = response?.pixelReturn[0]?.output;
-					const savedInsightId = response?.insightId;
-					if (!fileKey) throw new Error("Failed to get file key");
-					const url = `${Env.MODULE}/api/engine/downloadFile?insightId=${savedInsightId}&fileKey=${encodeURIComponent(fileKey as string)}`;
-					const fileResponse = await fetch(url, {
-						method: "GET",
-						headers: new Headers({
-							"Content-Type": "application/pdf",
-						}),
-					});
-					const blob = await fileResponse.blob();
-					return new Promise((resolve, reject) => {
-						const reader = new FileReader();
-						reader.onloadend = () => {
-							const base64data = reader.result as string;
-							if (!base64data.startsWith(PDF_FILE_PREFIX)) {
-								resolve(
-									PDF_FILE_PREFIX +
-										base64data.replace(
-											/^data:.*?;base64,/,
-											"",
-										),
-								);
-							} else {
-								resolve(base64data);
-							}
-						};
-						reader.onerror = reject;
-						reader.readAsDataURL(blob);
-					});
+					const base64Content = response?.pixelReturn[0]?.output;
+					if (!base64Content)
+						throw new Error("Failed to get base64 PDF");
+					return base64Content.startsWith(PDF_FILE_PREFIX)
+						? base64Content
+						: PDF_FILE_PREFIX +
+								base64Content.replace(/^data:.*?;base64,/, "");
 				}
 			} catch {
 				setError("Failed to load PDF");
@@ -143,20 +122,23 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	return (
 		<div
 			{...attrs}
-			className="relative h-full rounded-md border bg-card p-2 shadow-sm"
+			style={data.style}
+			className="relative flex h-full flex-col rounded-md border bg-card p-2 shadow-sm"
 		>
-			<div className="mb-0 flex items-center justify-between">
+			<div className="flex shrink-0 items-center justify-between">
 				<span className="flex-1 truncate font-semibold text-base">
 					{fileName}
 				</span>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					onClick={handleClear}
-					aria-label="clear pdf"
-				>
-					<X className="size-4" />
-				</Button>
+				{isDesignMode && (
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={handleClear}
+						aria-label="clear pdf"
+					>
+						<X className="size-4" />
+					</Button>
+				)}
 			</div>
 
 			{loading && (
@@ -168,17 +150,16 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 			{error && <p className="p-2.5 text-destructive text-sm">{error}</p>}
 
 			{pdfContent && !loading && !error && (
-				<div className="h-[92%] flex-1 overflow-hidden rounded-md border">
+				<div className="relative mt-1 min-h-0 flex-1 overflow-hidden rounded-md border">
 					<object
 						data={pdfContent}
 						type="application/pdf"
-						className="h-full w-full"
+						className="absolute inset-0 h-full w-full"
 					>
 						<iframe
 							src={pdfContent}
 							title={fileName}
-							className="h-full min-h-[340px] w-full border-none"
-							style={{ height: "calc(100% - 35px)" }}
+							className="absolute inset-0 h-full w-full border-none"
 						/>
 					</object>
 				</div>

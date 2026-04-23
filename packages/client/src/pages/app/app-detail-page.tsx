@@ -50,7 +50,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
-import { ResourceNotFound } from "@/components/common";
+import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { UpdateSMSS } from "@/components/settings";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
@@ -59,6 +59,7 @@ import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { AccessControl } from "./app-detail-tabs/access-control";
+import { CommitsTab } from "./app-detail-tabs/commits-tab";
 import { Dependencies } from "./app-detail-tabs/dependencies-tab";
 import { Overview } from "./app-detail-tabs/overview-tab";
 import { SettingsTab } from "./app-detail-tabs/settings-tab";
@@ -546,6 +547,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"Overview",
 			"Dependencies",
 			"MCP Usage",
+			"Commits",
 			"Settings",
 			"Access Control",
 			"Files",
@@ -555,6 +557,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"Overview",
 			"Dependencies",
 			"MCP Usage",
+			"Commits",
 			"Access Control",
 			"Files",
 		],
@@ -840,6 +843,11 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											MCP Usage
 										</TabsTrigger>
 									)}
+									{visibleTabs.includes("Commits") && (
+										<TabsTrigger value="Commits">
+											Commits
+										</TabsTrigger>
+									)}
 									{visibleTabs.includes("Settings") && (
 										<TabsTrigger value="Settings">
 											Settings
@@ -1075,6 +1083,9 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									/>
 								</div>
 							</SettingsContext.Provider>
+						)}
+						{selectedTab === "Commits" && (
+							<CommitsTab appId={appId} />
 						)}
 						{selectedTab === "Settings" && (
 							<SettingsContext.Provider

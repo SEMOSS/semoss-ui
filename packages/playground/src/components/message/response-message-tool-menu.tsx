@@ -22,6 +22,7 @@ export interface ResponseMessageToolMenuProps {
 	message: ResponseMessageStore;
 	tool: ToolStore;
 	isFullButton?: boolean;
+	label?: string;
 	showCancelInMenu: boolean;
 }
 
@@ -29,9 +30,10 @@ export const ResponseMessageToolMenu = ({
 	message,
 	tool,
 	isFullButton,
+	label,
 	showCancelInMenu,
 }: ResponseMessageToolMenuProps) => {
-	const { t } = useTranslation("chat");
+	const { t } = useTranslation("tool");
 
 	return (
 		<DropdownMenu>
@@ -39,19 +41,29 @@ export const ResponseMessageToolMenu = ({
 				{!isFullButton ? (
 					<Button
 						type="button"
-						size="icon"
+						size={label ? "sm" : "icon"}
 						variant="ghost"
-						className="mr-2 shrink-0"
+						className="mr-2 shrink-0 gap-1.5"
 						onClick={(e) => e.stopPropagation()}
 					>
+						{label && (
+							<span className="pr-1 font-normal text-muted-foreground text-sm">
+								{label}
+							</span>
+						)}
 						<MoreHorizontalIcon className="size-4" />
 					</Button>
 				) : (
 					<button
 						type="button"
-						className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 hover:bg-accent"
+						className="flex shrink-0 cursor-pointer items-center gap-2 self-stretch rounded-r-lg px-4.5 hover:bg-accent"
 						onClick={(e) => e.stopPropagation()}
 					>
+						{label && (
+							<span className="text-muted-foreground text-sm">
+								{label}
+							</span>
+						)}
 						<MoreHorizontalIcon className="size-4 text-muted-foreground" />
 					</button>
 				)}
@@ -72,8 +84,8 @@ export const ResponseMessageToolMenu = ({
 						<ChevronsLeftRightIcon />
 					)}
 					{tool.isOpen && tool.display === "inline"
-						? t("tool.collapse")
-						: t("tool.openInline")}
+						? t("actions.collapse")
+						: t("actions.openInline")}
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => {
@@ -82,7 +94,7 @@ export const ResponseMessageToolMenu = ({
 					}}
 				>
 					<TvMinimalIcon />
-					{t("tool.expand")}
+					{t("actions.expand")}
 				</DropdownMenuItem>
 				<DropdownMenuItem
 					onClick={() => {
@@ -99,8 +111,8 @@ export const ResponseMessageToolMenu = ({
 						<PanelRightCloseIcon />
 					)}
 					{tool.isOpen && tool.display === "sidebar"
-						? t("tool.closeInSidebar")
-						: t("tool.openInSidebar")}
+						? t("actions.closeInSidebar")
+						: t("actions.openInSidebar")}
 				</DropdownMenuItem>
 				{showCancelInMenu && (
 					<>
@@ -118,7 +130,7 @@ export const ResponseMessageToolMenu = ({
 							}}
 						>
 							<XCircleIcon />
-							{t("tool.cancel")}
+							{t("actions.cancel")}
 						</DropdownMenuItem>
 					</>
 				)}

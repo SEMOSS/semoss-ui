@@ -54,6 +54,7 @@
         "@vitest/coverage-v8": "^4.0.0",
         "@vitest/ui": "^4.0.0",
         "html2canvas": "^1.4.1",
+        "rollup-plugin-visualizer": "^7.0.1",
         "typescript": "~5.5.2",
         "vite": "^7.0.0",
         "vite-plugin-svgr": "^4.5.0",
