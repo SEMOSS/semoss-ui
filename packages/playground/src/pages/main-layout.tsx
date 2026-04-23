@@ -30,7 +30,7 @@ import { ChatStore } from "@/stores";
 import { setFavicon } from "@/utility/utils";
 
 export const MainLayout = observer(() => {
-	const { actions, system } = useInsight();
+	const { actions } = useInsight();
 	const { root } = useRoot();
 	const theme = root.theme;
 	const [navbarActions, setNavbarActions] = useState<ReactNode | null>(null);
@@ -45,17 +45,13 @@ export const MainLayout = observer(() => {
 
 	// set up the chat store
 	const chatStore = useMemo(() => {
-		const store = new ChatStore(
-			root.theme,
-			actions,
-			Object.values(system.config.loginDetails ?? {})?.[0],
-		);
+		const store = new ChatStore(root.theme, actions);
 
 		// initialize it
 		store.initialize();
 
 		return store;
-	}, [root.theme, actions, system.config.loginDetails]);
+	}, [root.theme, actions]);
 
 	// Refs for embed iframe sync
 	const iframeRefs = useRef<Record<string, HTMLIFrameElement | null>>({});
