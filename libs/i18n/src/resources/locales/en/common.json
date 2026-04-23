@@ -69,7 +69,6 @@
 	"fileDrag": {
 		"title": "Drop files here to attach to message",
 		"modalTitle": "Add Documents",
-		"emptyState": "No files attached yet",
 		"addMore": "Add files",
 		"done": "Done"
 	}
