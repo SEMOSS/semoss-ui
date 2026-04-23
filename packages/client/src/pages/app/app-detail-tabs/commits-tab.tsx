@@ -176,27 +176,29 @@ function DiffView({ diff }: { diff: string }) {
 
 	return (
 		<div className="overflow-x-auto rounded-md border border-border bg-muted/30 font-mono text-xs">
-			{lines.map((line, i) => {
-				let lineClass = "px-3 py-0.5 whitespace-pre";
+			<div className="w-max min-w-full">
+				{lines.map((line, i) => {
+					let lineClass = "px-3 py-0.5 whitespace-pre";
 
-				if (line.startsWith("@@")) {
-					lineClass +=
-						" bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300";
-				} else if (line.startsWith("+")) {
-					lineClass +=
-						" bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300";
-				} else if (line.startsWith("-")) {
-					lineClass +=
-						" bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300";
-				}
+					if (line.startsWith("@@")) {
+						lineClass +=
+							" bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300";
+					} else if (line.startsWith("+")) {
+						lineClass +=
+							" bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300";
+					} else if (line.startsWith("-")) {
+						lineClass +=
+							" bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-300";
+					}
 
-				return (
-					// biome-ignore lint/suspicious/noArrayIndexKey: diff lines have no stable key
-					<div key={`diff-line-${i}`} className={lineClass}>
-						{line}
-					</div>
-				);
-			})}
+					return (
+						// biome-ignore lint/suspicious/noArrayIndexKey: diff lines have no stable key
+						<div key={`diff-line-${i}`} className={lineClass}>
+							{line}
+						</div>
+					);
+				})}
+			</div>
 		</div>
 	);
 }
