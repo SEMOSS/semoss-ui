@@ -279,10 +279,10 @@ export interface MCPTool {
 	};
 	title?: string;
 	original_name: string;
-	description?: string;
-	title?: string;
+	_type?: string;
 	_meta: {
 		generated_on: string;
+		SMSS_MCP_EXECUTION?: "auto" | "ask" | "disabled";
 		SMSS_MCP_UI?: {
 			loadingMessage?: string;
 			resourceURI?: string;
