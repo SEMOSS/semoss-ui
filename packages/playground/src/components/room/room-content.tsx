@@ -35,7 +35,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors, useRoot } from "@/hooks";
+import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
@@ -55,10 +55,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
-	const { root } = useRoot();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
-
 	const [contentHeight, setContentHeight] = useState(0);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
@@ -463,8 +461,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}}
 					options={room.options}
 					onMcpSelect={handleToolAdd}
+					onMcpToggle={handleToolSelect}
 					MenuComponent={observer(
-						({ onOpenChange, fileRef, editorRef }) => (
+						({
+							onOpenChange,
+							fileRef,
+							knowledgeOverlayOpen,
+							onKnowledgeOverlayChange,
+							toolboxOverlayOpen,
+							onToolboxOverlayChange,
+						}) => (
 							<>
 								<RoomInputMenuUpload
 									fileRef={fileRef}
@@ -474,16 +480,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<RoomInputMenuMCP
 									type="KNOWLEDGE"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									open={knowledgeOverlayOpen}
+									onOpenChange={onKnowledgeOverlayChange}
 								/>
 								<RoomInputMenuMCP
 									type="TOOLBOX"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									open={toolboxOverlayOpen}
+									onOpenChange={onToolboxOverlayChange}
 								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
