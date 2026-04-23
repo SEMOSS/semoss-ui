@@ -328,6 +328,7 @@ export const GlobalNav = observer(() => {
 
 			// Refetch rooms after renaming
 			getRooms.reset();
+			getPinnedRooms.reset();
 		} catch {
 			toast.error(t("toasts.failedToRename"));
 		}
