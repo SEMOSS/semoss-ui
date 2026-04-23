@@ -1271,6 +1271,8 @@ export class RoomStore {
 		type ToolPruneResponse = {
 			type: "TOOL_PRUNE";
 			success: boolean;
+			inputMessage: InputPixelMessage;
+			responseMessage: ResponsePixelMessage;
 			error?: string;
 		};
 
@@ -1304,7 +1306,10 @@ export class RoomStore {
 					return;
 				}
 				success = true;
-				if (compactionMethod.type === "SUMMARY") {
+				if (
+					compactionMethod.type === "SUMMARY" ||
+					compactionMethod.type === "TOOL_PRUNE"
+				) {
 					const { inputMessage, responseMessage } = compactionMethod;
 					const inputStore = new InputMessageStore(
 						this,
@@ -1316,8 +1321,6 @@ export class RoomStore {
 					);
 					inputStore.addChild(responseStore);
 					curResponse.addChild(inputStore);
-				} else if (compactionMethod.type === "TOOL_PRUNE") {
-					// setting conversationCompactedAbove to true is enough for the UI
 				}
 			});
 

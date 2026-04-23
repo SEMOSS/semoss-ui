@@ -212,7 +212,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
-					acc.push(part.mediaInfo.fileLocation);
+					acc.push(part.mediaInfo.fileLocation as string);
 				}
 
 				return acc;
