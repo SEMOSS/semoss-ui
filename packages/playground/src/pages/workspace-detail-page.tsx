@@ -226,13 +226,13 @@ export const WorkspaceDetailPage = observer(() => {
 								<HammerIcon />
 								{t("workspace:detail.tabs.toolbox")}
 							</TabsTrigger>
-							<TabsTrigger value="members">
-								<UsersRound />
-								{t("workspace:detail.tabs.members")}
-							</TabsTrigger>
 							<TabsTrigger value="tools">
 								<ZapIcon />
 								{t("workspace:detail.tabs.tools")}
+							</TabsTrigger>
+							<TabsTrigger value="members">
+								<UsersRound />
+								{t("workspace:detail.tabs.members")}
 							</TabsTrigger>
 						</TabsList>
 						<Button
