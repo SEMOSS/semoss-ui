@@ -3,30 +3,10 @@ import EChartsReact from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { ChartContextMenu } from "./ChartContextMenu";
-
-//Main Container for displaying Bar chart
-const StyledMainContainer = styled("div")(({ theme }) => ({
-	height: "100%",
-	width: "100%",
-}));
-//container for displaying invalid or no data
-const StyledNoDataContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
-	height: "inherit",
-	width: "inherit",
-	maxHeight: "30vh",
-	maxWidth: "80vh",
-	display: "flex",
-	flexWrap: "wrap",
-	alignContent: "flex-start",
-	color: error ? theme.palette.error.main : "unset",
-}));
 //echart field structure
 export interface EChartColumns {
 	name: string;
@@ -36,6 +16,7 @@ export interface EChartColumns {
 //bar component properties
 interface BarProps {
 	id: string;
+	// biome-ignore lint/suspicious/noExplicitAny: echart data/path types are untyped
 	updateJson: (data: any, path: any) => void;
 }
 
@@ -93,6 +74,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		chartInstance: { setOption: null },
 	});
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on data only
 	const computedValue = useMemo(() => {
 		return computed(() => {
 			if (!data) {
@@ -114,11 +96,12 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 			: computedValue;
 	}, [computedValue]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frameData.data.values only
 	useEffect(() => {
 		const toolsUpdated =
 			Object.hasOwn(parsedOption, "customSettings") &&
-			Object.hasOwn(parsedOption["customSettings"], "toolsUpdated")
-				? parsedOption["customSettings"]["toolsUpdated"]
+			Object.hasOwn(parsedOption.customSettings, "toolsUpdated")
+				? parsedOption.customSettings.toolsUpdated
 				: false;
 		if (
 			data.frame.name &&
@@ -131,62 +114,64 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 	}, [frameData.data.values]);
 
 	//update frame values to the series data when frame values are changed
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frameData.data.values only
 	const receiveValueswithCorrections = useCallback(
 		(resultData: unknown) => {
 			let frameDataIndex = 0;
 
 			// Check if xAxis name exists
-			if (!resultData["xAxis"]["name"] || resultData["xAxis"]["name"].length === 0) {
+			if (!resultData.xAxis.name || resultData.xAxis.name.length === 0) {
 				// If xAxis name is not present, clear xAxis data
-				resultData["xAxis"]["data"] = [];
+				resultData.xAxis.data = [];
 				return resultData;
 			}
-			
-			//setting xaxis data
-			resultData["xAxis"]["data"] = frameData.data?.values?.map(
-				(item) => {
-					const value = item[frameDataIndex];
-					return typeof value === "number" && !isNaN(value)
-						? parseFloat(value.toFixed(2)) // Round to 2 decimal places
-						: null; // Replace NaN with null
-				},
-			);
 
-			if (resultData["xAxis"]["name"]?.length > 0) {
+			//setting xaxis data
+			resultData.xAxis.data = frameData.data?.values?.map((item) => {
+				const value = item[frameDataIndex];
+				return typeof value === "number" && !Number.isNaN(value)
+					? parseFloat(value.toFixed(2)) // Round to 2 decimal places
+					: null; // Replace NaN with null
+			});
+
+			if (resultData.xAxis.name?.length > 0) {
 				const optionSeriesLength = frameData.data.headers.length;
 				frameDataIndex++;
 				//setting all values to all existing series to null, to restore the chart to initial state so new values will be updated
 				for (
 					let seriesIdx = 0;
-					seriesIdx < resultData["series"].length;
+					seriesIdx < resultData.series.length;
 					seriesIdx++
 				) {
 					if (
-						resultData["series"][seriesIdx] &&
-						Object.hasOwn(resultData["series"][seriesIdx], "data") &&
-						!Object.hasOwn(resultData["series"][seriesIdx], "toggleTrendLineObject")
+						resultData.series[seriesIdx] &&
+						Object.hasOwn(resultData.series[seriesIdx], "data") &&
+						!Object.hasOwn(
+							resultData.series[seriesIdx],
+							"toggleTrendLineObject",
+						)
 					) {
-						resultData["series"][seriesIdx]["data"] =
-							frameData.data?.values?.map((item) => null); // Set to null directly
+						resultData.series[seriesIdx].data =
+							frameData.data?.values?.map((_item) => null); // Set to null directly
 					}
 				}
 
 				// Setting new values to series
-				let i;
+				let i: number;
 				for (i = frameDataIndex; i < optionSeriesLength; i++) {
 					if (
-						resultData["series"][i - 1] !== undefined &&
-						Object.hasOwn(resultData["series"][i - 1], "data") &&
+						resultData.series[i - 1] !== undefined &&
+						Object.hasOwn(resultData.series[i - 1], "data") &&
 						!Object.hasOwn(
-							resultData["series"][i - 1],
+							resultData.series[i - 1],
 							"toggleTrendLineObject",
 						)
 					) {
-						resultData["series"][i - 1]["data"] =
+						resultData.series[i - 1].data =
 							frameData.data?.values?.map((item) => {
 								const value = item[i];
 								return typeof value === "number" &&
-									!isNaN(value)
+									!Number.isNaN(value)
 									? parseFloat(value.toFixed(2)) // Round to 2 decimal places
 									: null; // Replace NaN with null
 							});
@@ -194,24 +179,24 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 				}
 
 				// Filter series based on yAxis.name array
-				const yAxisNames = resultData["yAxis"]["name"];
+				const yAxisNames = resultData.yAxis.name;
 
-				resultData["series"] = resultData["series"].filter(
+				resultData.series = resultData.series.filter(
 					(seriesItem) =>
 						yAxisNames.includes(seriesItem.name) ||
 						seriesItem.toggleTrendLineObject === true,
 				);
 
 				// Ensure the series array length matches the yAxisNames length
-				if (resultData["series"].length > yAxisNames.length) {
+				if (resultData.series.length > yAxisNames.length) {
 					// Separate series with toggleTrendLineObject === true
-					const trendLineSeries = resultData["series"].filter(
+					const trendLineSeries = resultData.series.filter(
 						(seriesItem) =>
 							seriesItem.toggleTrendLineObject === true,
 					);
 
 					// Slice only the remaining series to match yAxisNames length
-					const otherSeries = resultData["series"]
+					const otherSeries = resultData.series
 						.filter(
 							(seriesItem) =>
 								seriesItem.toggleTrendLineObject !== true,
@@ -219,7 +204,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 						.slice(0, yAxisNames.length);
 
 					// Combine the sliced series with the trend line series
-					resultData["series"] = [...otherSeries, ...trendLineSeries];
+					resultData.series = [...otherSeries, ...trendLineSeries];
 				}
 			}
 
@@ -233,18 +218,16 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		//when contextmenu event is raised, default context menu made hidden, and custom component is shown
 		contextmenu: (params) => {
 			if (params.data) {
-				const xAxisName = data.option["xAxis"]["pixelvalue"][0];
+				const xAxisName = data.option.xAxis.pixelvalue[0];
 				const xAxisValue =
-					typeof data.option["xAxis"]["data"][params.dataIndex] ==
+					typeof data.option.xAxis.data[params.dataIndex] ===
 						"object" &&
 					Object.hasOwn(
-						data.option["xAxis"]["data"][params.dataIndex],
+						data.option.xAxis.data[params.dataIndex],
 						"value",
 					)
-						? data.option["xAxis"]["data"][params.dataIndex][
-								"value"
-							]
-						: data.option["xAxis"]["data"][params.dataIndex];
+						? data.option.xAxis.data[params.dataIndex].value
+						: data.option.xAxis.data[params.dataIndex];
 				setContextMenu(
 					contextMenu === null
 						? {
@@ -267,12 +250,12 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		},
 		//After brushing in bar chart, this event will be triggered to filter the selected data
 		brushend: (params) => {
-			const batch = params.batch;
-			const xAxisName = data.option["xAxis"]["pixelvalue"][0];
+			const _batch = params.batch;
+			const xAxisName = data.option.xAxis.pixelvalue[0];
 			const xAxisValue = chartOperationData.current.brushSelected.map(
 				(item) =>
 					typeof item === "object" && Object.hasOwn(item, "value")
-						? item["value"]
+						? item.value
 						: item,
 			);
 			frameData.filter(
@@ -286,8 +269,8 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 				const firstBatch = batch[0];
 				const selectedData = firstBatch.selected;
 				const firstSelectedData = selectedData[0] || [];
-				const xAxisData = data.option["xAxis"]["data"].filter(
-					(item, index) =>
+				const xAxisData = data.option.xAxis.data.filter(
+					(_item, index) =>
 						firstSelectedData.dataIndex.includes(index),
 				);
 				chartOperationData.current.brushSelected = xAxisData;
@@ -300,15 +283,15 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 		try {
 			const options = JSON.parse(data.option);
 			return (
-				<StyledMainContainer id={id}>
+				<div id={id} className="h-full w-full">
 					<EChartsReact option={options} />
-				</StyledMainContainer>
+				</div>
 			);
-		} catch (e) {
+		} catch (_e) {
 			return (
-				<StyledNoDataContainer>
+				<div className="flex h-[inherit] max-h-[30vh] w-[inherit] max-w-[80vh] flex-wrap content-start">
 					There is an issue parsing your JSON.
-				</StyledNoDataContainer>
+				</div>
 			);
 		}
 	} else {
@@ -320,7 +303,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 				? receiveValueswithCorrections(parsedOption)
 				: parsedOption;
 		return (
-			<StyledMainContainer id={id}>
+			<div id={id} className="h-full w-full">
 				<EChartsReact
 					key={JSON.stringify(resultData)} //to re render the chart when data is changed
 					option={resultData as EChartsOption}
@@ -343,7 +326,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
 						setContextMenu(null);
 					}}
 				/>
-			</StyledMainContainer>
+			</div>
 		);
 	}
 });

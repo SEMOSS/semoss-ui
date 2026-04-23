@@ -25,6 +25,7 @@ import {
 	SelectValue,
 	Sheet,
 	SheetContent,
+	SheetTitle,
 	Table,
 	TableBody,
 	TableCell,
@@ -800,6 +801,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					side="right"
 					className="min-w-[500px] transition-all duration-400 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:translate-x-full data-[state=open]:translate-x-0 data-[state=closed]:opacity-0 data-[state=open]:opacity-100"
 				>
+					<SheetTitle className="sr-only">Audit Details</SheetTitle>
 					<AuditLogsDetailDrawer
 						logDetails={selectedEvent}
 						handleDrawerClose={handleDrawerClose}

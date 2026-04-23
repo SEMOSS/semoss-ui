@@ -14,6 +14,7 @@ const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT;
 const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
 const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
 const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
+const ENABLE_PROMPT_OPTIMIZER = import.meta.env.VITE_ENABLE_PROMPT_OPTIMIZER;
 
 interface RootStoreInterface {
 	/**
@@ -70,8 +71,9 @@ export class RootStore {
 			},
 			footer: "",
 			landing: "",
+			altLandingKey: "",
+			altLanding: "",
 			sidebar: {
-				//workspaceAlias: "Workspace",
 				expandedByDefault: false,
 				chatHistoryDate: false,
 				headerItems: [],
@@ -94,6 +96,7 @@ export class RootStore {
 				enableSuggestions: ENABLE_SUGGESTIONS === "true",
 				enablePlan: ENABLE_PLAN === "true",
 				enableRewrite: ENABLE_REWRITE === "true",
+				enablePromptOptimizer: ENABLE_PROMPT_OPTIMIZER === "true",
 			},
 		},
 	};
@@ -106,7 +109,11 @@ export class RootStore {
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(THEME) as Partial<ThemeMap["playground"]>;
+			const parsed = JSON.parse(THEME);
+			// Support both wrapped ({ playground: {...} }) and flat formats
+			const theme = (parsed?.playground || parsed) as Partial<
+				ThemeMap["playground"]
+			>;
 
 			// update the theme
 			this.updateTheme(theme);
@@ -218,6 +225,13 @@ export class RootStore {
 			},
 			footer: theme?.footer || this._store.theme.footer,
 			landing: theme?.landing || this._store.theme.landing,
+			altLandingKey:
+				theme?.altLandingKey || this._store.theme.altLandingKey,
+			altLanding: theme?.altLanding || this._store.theme.altLanding,
+			hideToolsInIframe:
+				theme?.hideToolsInIframe ||
+				this._store.theme?.hideToolsInIframe ||
+				false,
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
@@ -272,10 +286,19 @@ export class RootStore {
 				theme?.showPlatformLinks !== undefined
 					? theme.showPlatformLinks
 					: this._store.theme.showPlatformLinks,
+			showKnowledgeMenu:
+				theme?.showKnowledgeMenu !== undefined
+					? theme.showKnowledgeMenu
+					: this._store.theme.showKnowledgeMenu,
+			showToolboxMenu:
+				theme?.showToolboxMenu !== undefined
+					? theme.showToolboxMenu
+					: this._store.theme.showToolboxMenu,
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),
 			],
+			tour: theme?.tour || this._store.theme.tour,
 			featureFlags: {
 				...this._store.theme.featureFlags,
 				...(theme?.featureFlags || {}),

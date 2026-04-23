@@ -46,7 +46,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 
 	if (embed) {
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
 					isActive={
@@ -55,9 +55,12 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 							pathname,
 						)
 					}
-          tooltip={{ children: returnToolTip(name), hidden: false }}
+					tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
-					<Link to={`/embed/${path}`} aria-label={name}>
+					<Link
+						to={`/embed/${path}`}
+						aria-label={name}
+					>
 						{icon ? (
 							<img
 								className="size-4 select-none"
@@ -76,13 +79,16 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	if (url?.startsWith("#/")) {
 		const internalPath = url.slice(1); // "#/knowledge" → "/knowledge"
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
 					tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
-					<Link to={internalPath} aria-label={name}>
+					<Link
+						to={internalPath}
+						aria-label={name}
+					>
 						{icon ? (
 							<img
 								className="size-4 select-none"
@@ -98,7 +104,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	}
 
 	return (
-		<SidebarMenuItem>
+		<SidebarMenuItem data-tour={`nav-${path}`}>
 			<SidebarMenuButton
 				asChild
 				tooltip={{ children: returnToolTip(name), hidden: false }}

@@ -13,6 +13,7 @@ import {
 	type LexicalEditor,
 } from "lexical";
 import {
+	BookOpenIcon,
 	FileArchiveIcon,
 	FileAudioIcon,
 	FileBadgeIcon,
@@ -51,12 +52,26 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { EnterPlugin, FocusPlugin, MentionPlugin } from "@/components";
+import {
+	EnterPlugin,
+	FocusPlugin,
+	MentionPlugin,
+	PromptLibraryDialog,
+	type PromptLibraryItem,
+} from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
+import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+
+let isIframed = false;
+try {
+	isIframed = window.self !== window.top;
+} catch {
+	isIframed = true;
+}
 
 // ============================================================================
 // Constants & Helper Functions
@@ -192,6 +207,9 @@ interface RoomInputProps {
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 
+	/** Predefined prompts shown in prompt library */
+	predefinedPrompts?: PromptLibraryItem[];
+
 	/** Initial value from prompt library */
 	initialValue?: string;
 	/** Current token usage for context window indicator */
@@ -199,6 +217,9 @@ interface RoomInputProps {
 
 	/** Maximum token capacity for context window */
 	tokensMax?: number;
+
+	/** Room store for prompt optimizer */
+	room: RoomStore;
 }
 
 // ============================================================================
@@ -231,9 +252,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		toggleToolsPaused,
 		footer = null,
 		hidePauseButton = false,
+		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
 		tokensMax,
+		room,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -246,6 +269,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isEmpty, setIsEmpty] = useState(true);
 		const [menuOpen, setMenuOpen] = useState(false);
 		const [isScrollable, setIsScrollable] = useState(false);
+		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
 
 		// Refs for DOM elements and Lexical editor
@@ -255,6 +279,31 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const contentEditableRef = useRef<HTMLDivElement>(null);
 		const scrollViewportRef = useRef<HTMLElement | null>(null);
 
+		// Bridge setInput() (PromptOptimizer) -> Lexical editor content
+		const setInputFromOptimizer: React.Dispatch<
+			React.SetStateAction<string>
+		> = (nextValue) => {
+			setInputText((prev) => {
+				const next =
+					typeof nextValue === "function"
+						? (nextValue as (p: string) => string)(prev)
+						: nextValue;
+
+				editorRef.current?.update(() => {
+					const root = $getRoot();
+					root.clear();
+
+					const paragraphNode = $createParagraphNode();
+					if (next?.length) {
+						paragraphNode.append($createTextNode(next));
+					}
+					root.append(paragraphNode);
+				});
+				editorRef.current?.focus();
+				return next;
+			});
+		};
+
 		// File handling
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
@@ -262,6 +311,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);
 		const [isListening, setIsListening] = useState(false);
+		const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+
+		const runPredefinedPrompt = async (prompt: string) => {
+			if (isLoading || hasOutstandingTools) {
+				return;
+			}
+
+			try {
+				const success = await onPrompt(prompt, []);
+				if (!success) {
+					throw new Error("Error processing chat");
+				}
+			} catch (e) {
+				toast.error(getGracefulErrorMessage(e as Error));
+			}
+		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
 
 		// ========================================================================
@@ -437,22 +502,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			}
 
 			try {
-				// Optimistically clear editor before sending
+				// Optimistically clear editor and files before sending
 				editorRef.current?.update(() => {
 					const root = $getRoot();
 					root.clear();
 					const paragraphNode = $createParagraphNode();
 					root.append(paragraphNode);
 				});
+				setFiles([]);
 
 				// Submit to parent handler
 				const result = Boolean(await onPrompt(userInput, userFiles));
 				if (result === null || result === false) {
 					throw new Error(`Error processing chat`);
 				}
-
-				// Success: clear attached files
-				setFiles([]);
 			} catch (e) {
 				// Show error to user
 				toast.error(getGracefulErrorMessage(e as Error as Error));
@@ -510,7 +573,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// ========================================================================
 
 		return (
-			<div ref={ref}>
+			<div className="relative w-full" ref={ref} data-tour="tour-input">
 				<input
 					ref={fileRef}
 					type="file"
@@ -617,6 +680,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										"min-h-0 flex-1",
 										isScrollable && "mr-1",
 									)}
+									onClick={() => editorRef.current?.focus()}
 								>
 									<ContentEditable
 										ref={contentEditableRef}
@@ -684,86 +748,127 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						/>
 
 						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
-						<div className="flex items-center justify-between gap-2 bg-background p-2">
+						<div
+							className="flex items-center justify-between gap-2 bg-background p-2"
+							data-tour="tour-input-menu"
+							role="none"
+							onClick={(e) => {
+								const target = e.target as HTMLElement;
+								if (
+									!target.closest("button") &&
+									!target.closest('[role="button"]') &&
+									!target.closest('[role="combobox"]')
+								) {
+									editorRef.current?.focus();
+								}
+							}}
+							onKeyDown={() => editorRef.current?.focus()}
+						>
 							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
-								<DropdownMenu
-									open={menuOpen}
-									onOpenChange={(open) => {
-										setMenuOpen(open);
-									}}
-								>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													disabled={isLoading}
-													aria-label={t(
-														"input.openSettings",
-													)}
-												>
-													<PlusIcon />
-												</Button>
-											</DropdownMenuTrigger>
-										</TooltipTrigger>
-										<TooltipContent>
-											{t("input.openSettings")}
-										</TooltipContent>
-									</Tooltip>
-									<DropdownMenuContent
-										align="start"
-										className="w-72"
-										onCloseAutoFocus={(e) => {
-											// Prevent dropdown from restoring focus to trigger button
-											e.preventDefault();
+								{!(
+									root.theme.hideToolsInIframe && isIframed
+								) && (
+									<DropdownMenu
+										open={menuOpen}
+										onOpenChange={(open) => {
+											setMenuOpen(open);
 										}}
 									>
-										<MenuComponent
-											isOpen={menuOpen}
-											onOpenChange={setMenuOpen}
-											fileRef={fileRef}
-											editorRef={editorRef}
-										/>
-									</DropdownMenuContent>
-								</DropdownMenu>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<DropdownMenuTrigger asChild>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														disabled={isLoading}
+														aria-label={t(
+															"input.openSettings",
+														)}
+													>
+														<PlusIcon />
+													</Button>
+												</DropdownMenuTrigger>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("input.openSettings")}
+											</TooltipContent>
+										</Tooltip>
+										<DropdownMenuContent
+											align="start"
+											className="w-72"
+											onCloseAutoFocus={(e) => {
+												// Prevent dropdown from restoring focus to trigger button
+												e.preventDefault();
+											}}
+										>
+											<MenuComponent
+												isOpen={menuOpen}
+												onOpenChange={setMenuOpen}
+												fileRef={fileRef}
+												editorRef={editorRef}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
 								{footer}
 							</div>
-
-							{/* Right side: model selector, mic, send */}
 							<div className="flex items-center gap-2">
-								{root.theme.featureFlags?.enableModelSelect && (
-									<EngineSelect
-										className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-										disabled={isLoading}
-										name={
-											model?.engine_display_name ||
-											model?.app_name ||
-											""
-										}
-										value={model?.app_id || ""}
-										engineTypes={["MODEL"]}
-										metaFilters={[
-											{ tag: "text-generation" },
-										]}
-										onChange={(v) => {
-											setModel(v);
-										}}
-										popoverContentProps={{
-											align: "start",
-										}}
-										tokensUsed={tokensUsed}
-										tokensMax={tokensMax}
-										contextTooltipContent={
-											contextTooltipContent
-										}
-									/>
-								)}
-
+								<div data-tour="tour-model">
+									{root.theme.featureFlags
+										?.enableModelSelect && (
+										<EngineSelect
+											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+											disabled={isLoading}
+											name={
+												model?.engine_display_name ||
+												model?.app_name ||
+												""
+											}
+											value={model?.app_id || ""}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											onChange={(v) => {
+												setModel(v);
+											}}
+											popoverContentProps={{
+												align: "start",
+											}}
+											tokensUsed={tokensUsed}
+											tokensMax={tokensMax}
+											contextTooltipContent={
+												contextTooltipContent
+											}
+										/>
+									)}
+								</div>
+								{predefinedPrompts.length > 0 ? (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												className="bg-background"
+												variant="ghost"
+												size="icon-sm"
+												disabled={isLoading}
+												aria-label="Open prompt library"
+												onClick={() =>
+													setIsPromptLibraryOpen(true)
+												}
+											>
+												<BookOpenIcon />
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											Prompt Library
+										</TooltipContent>
+									</Tooltip>
+								) : null}
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
+											data-tour="tour-record"
 											variant="ghost"
 											aria-label={t("input.recordLabel")}
 											size="icon-sm"
@@ -792,12 +897,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									</TooltipContent>
 								</Tooltip>
 
+								{root.theme.featureFlags
+									?.enablePromptOptimizer && (
+									<PromptOptimizer
+										input={inputText}
+										setInput={setInputFromOptimizer}
+										disabled={Boolean(
+											isLoading || hasOutstandingTools,
+										)}
+										modelId={model?.engine_id || undefined}
+										room={room}
+									/>
+								)}
+
 								{/* Primary action button - dual purpose:
-									     - When idle: Send prompt
-									     - When loading: Pause tool execution */}
+                                         - When idle: Send prompt
+                                         - When loading: Pause tool execution */}
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span>
+										<span data-tour="tour-send">
 											<Button
 												variant="default"
 												size="icon-sm"
@@ -866,9 +984,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								const root = $getRoot();
 
 								// Track empty state to disable send button
-								setIsEmpty(
-									root.getTextContent().trim().length === 0,
-								);
+								const text = root.getTextContent();
+								setIsEmpty(text.trim().length === 0);
+								setInputText(text);
 
 								// Check if content is scrollable
 								setTimeout(() => {
@@ -893,48 +1011,58 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						scrollContainerRef={scrollViewportRef}
 					/>
 					{/* Slash command menu - searchable knowledge & toolbox only */}
-					{!isLoading && (
-						<MentionPlugin
-							trigger="/"
-							MenuComponent={({
-								isOpen,
-								onOpenChange,
-								menuPosition,
-								addToken,
-								onRequestClose,
-							}) => (
-								<DropdownMenu
-									open={isOpen}
-									onOpenChange={onOpenChange}
-								>
-									{/* Invisible trigger positioned at cursor for menu placement */}
-									<DropdownMenuTrigger
-										style={{
-											position: "fixed",
-											top: menuPosition?.top ?? 0,
-											left: menuPosition?.left ?? 0,
-											width: 0,
-											height: 0,
-										}}
-									/>
-									<DropdownMenuContent
-										align="start"
-										className="max-h-96 w-72 overflow-y-auto"
+					{!isLoading &&
+						!(root.theme.hideToolsInIframe && isIframed) && (
+							<MentionPlugin
+								trigger="/"
+								MenuComponent={({
+									isOpen,
+									onOpenChange,
+									menuPosition,
+									addToken,
+									onRequestClose,
+								}) => (
+									<DropdownMenu
+										open={isOpen}
+										onOpenChange={onOpenChange}
 									>
-										<RoomInputMenuSlash
-											options={options}
-											onRequestClose={onRequestClose}
-											onSelect={(tool) => {
-												onMcpSelect?.(tool);
-												addToken(`<${tool.name}>`);
-												onOpenChange(false);
+										{/* Invisible trigger positioned at cursor for menu placement */}
+										<DropdownMenuTrigger
+											style={{
+												position: "fixed",
+												top: menuPosition?.top ?? 0,
+												left: menuPosition?.left ?? 0,
+												width: 0,
+												height: 0,
 											}}
 										/>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							)}
-						/>
-					)}
+										<DropdownMenuContent
+											align="start"
+											className="max-h-96 w-72 overflow-y-auto"
+										>
+											<RoomInputMenuSlash
+												options={options}
+												onRequestClose={onRequestClose}
+												onSelect={(tool) => {
+													onMcpSelect?.(tool);
+													addToken(`<${tool.name}>`);
+													onOpenChange(false);
+												}}
+											/>
+										</DropdownMenuContent>
+									</DropdownMenu>
+								)}
+							/>
+						)}
+					<PromptLibraryDialog
+						open={isPromptLibraryOpen}
+						onOpenChange={setIsPromptLibraryOpen}
+						prompts={predefinedPrompts}
+						isLoading={isLoading}
+						onSelectPrompt={(prompt) =>
+							runPredefinedPrompt(prompt.context)
+						}
+					/>
 				</LexicalComposer>
 			</div>
 		);

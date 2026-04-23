@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared";
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@semoss/shared/api";
 import { registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
@@ -29,6 +29,8 @@ interface ConfigStoreInterface {
 		email: string;
 		admin: boolean;
 		meta: unknown;
+		lastLogin?: string;
+		groupInfo?: { groups: string[] };
 	};
 	/** Native mode */
 	isNative: boolean;
@@ -169,6 +171,8 @@ export class ConfigStore {
 			email: "",
 			admin: false,
 			meta: {},
+			lastLogin: undefined,
+			groupInfo: undefined,
 		},
 		config: {
 			databaseMetaKeys: [],
@@ -518,6 +522,10 @@ export class ConfigStore {
 				this._store.user.name = user.name || "";
 				this._store.user.email = user.email || "";
 				this._store.userEpoch = user.userEpoch;
+				this._store.user.lastLogin = (user as Record<string, unknown>)
+					.lastLogin as string | undefined;
+				this._store.user.groupInfo = (user as Record<string, unknown>)
+					.groupInfo as { groups: string[] } | undefined;
 
 				// sync meta into insight store
 				this._root.insightStore.setUserDefaultModel(

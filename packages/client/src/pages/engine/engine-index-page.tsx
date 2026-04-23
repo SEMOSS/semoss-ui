@@ -1,7 +1,6 @@
 import { ArrowDown, ArrowUp, SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -28,6 +27,7 @@ import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { Filterbox } from "@/components/ui";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
@@ -514,6 +514,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 														db.engine_display_name ||
 														db.engine_name
 													}
+													href={`#/engine/${route.path}/${db.engine_id}`}
 													desktopInlineMeta={true}
 													type={db.engine_type}
 													id={db.engine_id}
@@ -560,6 +561,25 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 													onClick={() => {
 														navigate(
 															`${db.engine_id}`,
+															{
+																state: {
+																	fromDiscoverable:
+																		isDiscoverable,
+																	engineName:
+																		db.engine_display_name ||
+																		db.engine_name,
+																	engineDescription:
+																		db.description,
+																	engineSubtype:
+																		db.engine_subtype,
+																	engineCreatedBy:
+																		db.engine_created_by,
+																	engineDateCreated:
+																		db.engine_date_created,
+																	engineTags:
+																		db.tag,
+																},
+															},
 														);
 													}}
 													favorite={() => {
@@ -612,6 +632,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 														db.engine_display_name ||
 														db.engine_name
 													}
+													href={`#/engine/${route.path}/${db.engine_id}`}
 													desktopInlineMeta={true}
 													type={db.engine_type}
 													id={db.engine_id}
@@ -658,6 +679,25 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 													onClick={() => {
 														navigate(
 															`${db.engine_id}`,
+															{
+																state: {
+																	fromDiscoverable:
+																		isDiscoverable,
+																	engineName:
+																		db.engine_display_name ||
+																		db.engine_name,
+																	engineDescription:
+																		db.description,
+																	engineSubtype:
+																		db.engine_subtype,
+																	engineCreatedBy:
+																		db.engine_created_by,
+																	engineDateCreated:
+																		db.engine_date_created,
+																	engineTags:
+																		db.tag,
+																},
+															},
 														);
 													}}
 													favorite={() => {

@@ -37,7 +37,7 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
-import type { MCPConfig, Workspace } from "@/types";
+import type { MCPConfig, Prompt, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -97,6 +97,12 @@ export const NewRoomPage = observer(() => {
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
+
+	const previewPrompts = useMemo(
+		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
+		[tempRoomStore.options.predefinedPrompts],
+	);
 
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
@@ -121,6 +127,14 @@ export const NewRoomPage = observer(() => {
 		{ data: null },
 	);
 
+	const getPrompts = usePixel<Prompt[]>(
+		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
+			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
+			: "",
+		{
+			data: [],
+		},
+	);
 	// On initial load, set the default options from the theme using the temporary RoomStore
 	useEffect(() => {
 		tempRoomStore.setOptions({
@@ -131,6 +145,7 @@ export const NewRoomPage = observer(() => {
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: undefined,
+			predefinedPrompts: [],
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -209,10 +224,11 @@ export const NewRoomPage = observer(() => {
 				mcp: tempRoomStore.options.mcp,
 			};
 
-			// add workspace id
+			// add workspace id and name
 			if (mode === "workspace") {
 				options.workspace = {
 					workspace_id: getWorkspace.data?.workspace_id || "",
+					name: getWorkspace.data?.name,
 				};
 			}
 
@@ -290,6 +306,13 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
+		setPrompts(
+			Array.isArray(getWorkspace.data.prompts)
+				? getWorkspace.data.prompts.map((p) =>
+						typeof p === "string" ? p : (p as { id: string }).id,
+					)
+				: [],
+		);
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
 			instructions:
@@ -333,6 +356,32 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
 
+	// Handle prompts from URL parameter
+	useEffect(() => {
+		if (getPrompts.status !== "SUCCESS" || !getPrompts.data?.length) {
+			return;
+		}
+
+		const prompts: Prompt[] = getPrompts.data.map((p) => ({
+			id: p.id,
+			title: p.title,
+			context: p.context,
+			tags: p.tags,
+			version: p.version,
+			intent: p.intent,
+			// TODO: figure out why this is done this way
+			createdBy: (p as unknown as { created_by: string }).created_by,
+			dateCreated: (p as unknown as { date_created: string })
+				.date_created,
+			global: false, // TODO: figure out if this is needed
+		}));
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			predefinedPrompts: prompts,
+		});
+	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
+
 	// Clear instructions and workspace MCPs when switching away from workspace mode
 	useEffect(() => {
 		if (mode !== "workspace") {
@@ -374,7 +423,14 @@ export const NewRoomPage = observer(() => {
 								className="mx-auto flex max-w-xl"
 								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 								dangerouslySetInnerHTML={{
-									__html: root.theme.landing,
+									__html:
+										root.theme?.altLandingKey &&
+										searchParams.has(
+											root.theme.altLandingKey,
+										) &&
+										root.theme.altLanding
+											? root.theme.altLanding
+											: root.theme.landing,
 								}}
 							/>
 						) : (
@@ -393,10 +449,14 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							predefinedPrompts={
+								tempRoomStore.options.predefinedPrompts
+							}
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
 							initialValue={initialPrompt}
 							model={chat.models.selected}
+							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
@@ -584,6 +644,30 @@ export const NewRoomPage = observer(() => {
 								) : null
 							}
 						/>
+						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
+							<div className="mx-auto flex w-full flex-col items-center gap-3">
+								<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
+									{previewPrompts.map((prompt) => {
+										return (
+											<Button
+												key={prompt.id}
+												variant="outline"
+												className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
+												disabled={isLoading}
+												onClick={() =>
+													createRoom(
+														prompt.context,
+														[],
+													)
+												}
+											>
+												{prompt.title}
+											</Button>
+										);
+									})}
+								</div>
+							</div>
+						) : null}
 					</div>
 				</ResizablePanel>
 				{isConfigurationOpen && (

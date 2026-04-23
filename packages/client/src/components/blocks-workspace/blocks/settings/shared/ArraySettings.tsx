@@ -1,15 +1,8 @@
-import { Add, Delete } from "@mui/icons-material";
+import { Plus, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import {
-	Box,
-	Button,
-	IconButton,
-	Stack,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Button, Input, Muted, Small } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface ArraySettingsProps {
 	/**
@@ -145,67 +138,53 @@ export const ArraySettings = observer(
 		};
 
 		return (
-			<Box>
-				<Typography variant="body2" color="text.secondary" gutterBottom>
-					{label}
-				</Typography>
+			<div>
+				<Muted>{label}</Muted>
 				{description && (
-					<Typography
-						variant="caption"
-						color="text.secondary"
-						gutterBottom
-					>
+					<Small className="text-muted-foreground">
 						{description}
-					</Typography>
+					</Small>
 				)}
-				<Stack spacing={2} sx={{ mt: 1 }}>
+				<div className="mt-1 flex flex-col gap-2">
 					{items.map((item, index) => (
-						<Box
-							key={index}
-							sx={{
-								display: "flex",
-								alignItems: "center",
-								gap: 1,
-							}}
-						>
-							<TextField
-								fullWidth
-								size="small"
+						// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+						<div key={index} className="flex items-center gap-1">
+							<Input
+								className="flex-1"
 								value={item}
 								onChange={(e) =>
 									updateItem(index, e.target.value)
 								}
 								placeholder={placeholder}
-								variant="outlined"
 							/>
-							<IconButton
-								size="small"
+							<button
+								type="button"
 								onClick={() => removeItem(index)}
-								color="error"
 								disabled={items.length <= minItems}
 								title="Remove item"
+								className="rounded p-1 text-destructive hover:bg-destructive/10 disabled:opacity-40"
 							>
-								<Delete />
-							</IconButton>
-						</Box>
+								<Trash2 className="size-4" />
+							</button>
+						</div>
 					))}
 					<Button
-						startIcon={<Add />}
+						variant="outline"
+						size="sm"
 						onClick={addItem}
-						variant="outlined"
-						size="small"
 						disabled={items.length >= maxItems}
-						fullWidth
+						className="flex w-full items-center gap-1"
 					>
+						<Plus className="size-4" />
 						Add Item
 					</Button>
 					{items.length >= maxItems && (
-						<Typography variant="caption" color="warning.main">
+						<Small className="text-yellow-600">
 							Maximum {maxItems} items reached
-						</Typography>
+						</Small>
 					)}
-				</Stack>
-			</Box>
+				</div>
+			</div>
 		);
 	},
 );

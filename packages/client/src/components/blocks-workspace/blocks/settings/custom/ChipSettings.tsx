@@ -1,4 +1,4 @@
-import { Face } from "@mui/icons-material";
+import { Smile } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -11,8 +11,16 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Autocomplete, Avatar, Chip, Stack, TextField } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import {
+	Badge,
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 import { IconSelectSettings, inputOptions } from "./IconSelectSettings";
 
@@ -35,19 +43,11 @@ export const ChipSettings = observer(
 		const { data, setData } = useBlockSettings(id);
 		const { state } = useBlocks();
 
-		const [autocompleteOptions, setAutocompleteOptions] = useState<
-			Array<string>
-		>([]);
-
-		useEffect(() => {
-			setAutocompleteOptions(options.map((option) => option.value));
-		}, [options]);
-
 		// track the value
 		const [value, setValue] = useState("");
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -107,89 +107,74 @@ export const ChipSettings = observer(
 		const [ChipValue, setChipValue] = useState("");
 		const [selectedChipType, setSelectedChipType] = useState("");
 
-		const handleChipChange = (chip, e) => {
+		const handleChipChange = (
+			chip: string,
+			e: React.ChangeEvent<HTMLInputElement>,
+		) => {
 			setChipValue(e.target.value);
 			setData(chip.toLowerCase(), e.target.value);
 		};
 
 		return (
-			<Stack width="100%">
+			<div className="w-full">
 				<BaseSettingSection label={label}>
-					<Stack flexDirection="column" width="100%">
-						<Autocomplete
-							fullWidth
-							size="small"
-							multiple={false}
+					<div className="flex w-full flex-col">
+						<Select
 							value={value}
-							onChange={(_, newValue) => {
+							onValueChange={(newValue) => {
 								onChange(newValue);
 								setSelectedChipType(newValue);
 							}}
-							options={options.map((option) => option.value)}
-							renderOption={(props, option) => (
-								<li {...props}>
-									<Stack
-										style={{
-											display: "flex",
-											alignItems: "center",
-											gap: "8px",
-										}}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select type" />
+							</SelectTrigger>
+							<SelectContent>
+								{(options ?? []).map((option) => (
+									<SelectItem
+										key={option.value}
+										value={option.value}
 									>
-										{(() => {
-											switch (option) {
-												case "Chip":
-													return (
-														<Chip label={option} />
-													);
-												case "Icon":
-													return (
-														<Chip
-															label={option}
-															icon={<Face />}
-														/>
-													);
-												case "Avatar":
-													return (
-														<Chip
-															label={option}
-															avatar={
-																<Avatar>
-																	A
-																</Avatar>
-															}
-														/>
-													);
-												case "Link":
-													return (
-														<Chip label={option} />
-													);
-												default:
-													return (
-														<Chip label={option} />
-													);
-											}
-										})()}
-									</Stack>
-								</li>
-							)}
-							renderInput={(params) => <TextField {...params} />}
-							disablePortal
-							disableClearable
-						/>
+										<div className="flex items-center gap-2">
+											{option.value === "Chip" && (
+												<Badge>{option.value}</Badge>
+											)}
+											{option.value === "Icon" && (
+												<Badge>
+													<Smile className="mr-1 size-3" />
+													{option.value}
+												</Badge>
+											)}
+											{option.value === "Avatar" && (
+												<Badge>{option.value}</Badge>
+											)}
+											{option.value === "Link" && (
+												<Badge>{option.value}</Badge>
+											)}
+											{![
+												"Chip",
+												"Icon",
+												"Avatar",
+												"Link",
+											].includes(option.value) && (
+												<Badge>{option.value}</Badge>
+											)}
+										</div>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 						{selectedChipType &&
 							(selectedChipType === "Avatar" ||
 								selectedChipType === "Link") && (
-								<TextField
-									fullWidth
+								<Input
 									value={ChipValue}
 									onChange={(e) =>
 										handleChipChange(selectedChipType, e)
 									}
-									size="small"
-									variant="outlined"
 									autoComplete="off"
 									placeholder={`${selectedChipType} value`}
-									sx={{ mt: 1 }}
+									className="mt-1 w-full"
 								/>
 							)}
 						{selectedChipType && selectedChipType === "Icon" && (
@@ -202,9 +187,9 @@ export const ChipSettings = observer(
 								/>
 							</div>
 						)}
-					</Stack>
+					</div>
 				</BaseSettingSection>
-			</Stack>
+			</div>
 		);
 	},
 );

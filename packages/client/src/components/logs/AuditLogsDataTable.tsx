@@ -1,207 +1,29 @@
-import {
-	Cancel,
-	CheckCircle as CheckCircleIcon,
-	Clear as ClearIcon,
-	FilterList as FilterListIcon,
-	Search as SearchIcon,
-} from "@mui/icons-material";
+import { CircleCheck, ListFilter, Search, X, XCircle } from "lucide-react";
 import type React from "react";
 import { useCallback, useMemo, useState } from "react";
 import {
-	Badge,
-	Box,
 	Button,
 	Checkbox,
-	Drawer,
-	IconButton,
-	InputAdornment,
-	List,
-	Paper,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
 	Popover,
-	Stack,
-	styled,
+	PopoverContent,
+	PopoverTrigger,
+	Sheet,
+	SheetContent,
+	SheetTitle,
 	Table,
-	TextField,
-	Typography,
-	useTheme,
-} from "@semoss/ui";
-import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
+import { TimeDateFormatter } from "@/pages/audit-logs-dashboard";
 import type { EventData } from "@/types";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
-
-// Styled Components
-const Container = styled(Paper)(({ theme }) => ({
-	padding: 0,
-	backgroundColor: theme.palette.common.white,
-	borderRadius: 8,
-	border: `1px solid ${theme.palette.divider}`,
-	marginTop: 16,
-}));
-
-const Header = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: 16,
-});
-
-const StyledTitle = styled(Typography)(({ theme }) => ({
-	fontWeight: 600,
-	color: theme.palette.text.primary,
-	fontSize: "18px",
-}));
-
-const SearchSection = styled(Box)(({ theme }) => ({
-	padding: "16px",
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	display: "flex",
-	alignItems: "center",
-	gap: "16px",
-	flexWrap: "wrap",
-}));
-
-const SearchField = styled(TextField)(({ theme }) => ({
-	minWidth: "400px",
-	"& .MuiOutlinedInput-root": {
-		backgroundColor: theme.palette.common.white,
-		height: "40px",
-	},
-}));
-
-const ResultsInfo = styled(Box)(({ theme }) => ({
-	padding: "8px 16px",
-	backgroundColor: theme.palette.primary.hover,
-	borderBottom: `1px solid ${theme.palette.divider}`,
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-}));
-
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
-	backgroundColor: theme.palette.common.white,
-	padding: "16px",
-	"& .MuiTable-root": {
-		borderCollapse: "separate",
-		borderSpacing: 0,
-	},
-}));
-
-const StyledTableHead = styled(Table.Head)(({ theme }) => ({
-	"& .MuiTableCell-head": {
-		backgroundColor: theme.palette.primary.hover,
-		fontWeight: 600,
-		color: theme.palette.primary.main,
-		padding: "6px 16px",
-		borderBottom: `1px solid ${theme.palette.divider}`,
-		zIndex: 0,
-	},
-}));
-
-const StyledTableRow = styled(Table.Row)(({ theme }) => ({
-	cursor: "pointer",
-	transition: "background-color 0.15s ease",
-	"&:hover": {
-		backgroundColor: theme.palette.primary.hover,
-	},
-	"& .MuiTableCell-root": {
-		borderBottom: `1px solid ${theme.palette.divider}`,
-		padding: "12px 16px",
-	},
-}));
-
-const StyledTableCell = styled(Table.Cell)(({ theme }) => ({
-	padding: "12px 16px",
-	fontSize: "14px",
-	color: theme.palette.text.primary,
-	verticalAlign: "middle",
-	width: "fit-content",
-	maxWidth: "fit-content",
-	"&:nth-of-type(3), &:nth-of-type(4)": {
-		width: "15%",
-		maxWidth: "15%",
-	},
-}));
-
-const HeaderCellContent = styled(Box)({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	width: "100%",
-	gap: "8px",
-});
-
-const FilterPopover = styled(Popover)({
-	"& .MuiPaper-root": {
-		padding: 0,
-		boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-		borderRadius: "8px",
-		border: "1px solid #e0e0e0",
-		minWidth: "250px",
-		maxWidth: "350px",
-	},
-});
-
-const FilterPopoverContent = styled(Box)({
-	maxHeight: "300px",
-	overflowY: "auto",
-});
-
-const FilterOptionsList = styled(List)({
-	padding: 0,
-	margin: 0,
-});
-
-const FilterListItem = styled(List.Item)({
-	padding: 0,
-	margin: 0,
-});
-
-const StyledListItemButton = styled(List.ItemButton)({
-	padding: "8px 16px",
-	borderRadius: 0,
-	margin: 0,
-	display: "flex",
-	alignItems: "center",
-	"&:hover": {
-		backgroundColor: "#f5f5f5",
-	},
-	"& .MuiListItemText-primary": {
-		fontSize: "14px",
-		color: "#333",
-		fontWeight: 400,
-	},
-});
-
-const StyledCheckbox = styled(Checkbox)({
-	"& .MuiSvgIcon-root": {
-		fontSize: "20px",
-	},
-});
-
-const FilterActions = styled(Box)({
-	padding: "12px 16px",
-	borderTop: "1px solid #e0e0e0",
-	backgroundColor: "#fafafa",
-	display: "flex",
-	justifyContent: "space-between",
-	gap: "12px",
-});
-
-const FilterActionButton = styled(Button)({
-	flex: 1,
-	height: "32px",
-	fontSize: "14px",
-	fontWeight: 500,
-	textTransform: "none",
-});
-
-const PaginationContainer = styled(Box)(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-end",
-	alignItems: "center",
-	borderTop: `1px solid ${theme.palette.divider}`,
-	backgroundColor: theme.palette.common.white,
-}));
 
 // Types
 interface FilterState {
@@ -210,11 +32,6 @@ interface FilterState {
 	status: string[];
 	latencyRange: string[];
 	tokenRange: string[];
-}
-
-interface PopoverState {
-	anchorEl: HTMLElement | null;
-	column: keyof FilterState | null;
 }
 
 interface AuditLogsDataTableProps {
@@ -245,8 +62,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	rowsPerPage,
 	onPaginationChange,
 }) => {
-	const theme = useTheme();
-
 	// State Management
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
 	const [drawerOpen, setDrawerOpen] = useState(false);
@@ -265,10 +80,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		latencyRange: [],
 		tokenRange: [],
 	});
-	const [popoverState, setPopoverState] = useState<PopoverState>({
-		anchorEl: null,
-		column: null,
-	});
+	const [openColumn, setOpenColumn] = useState<keyof FilterState | null>(
+		null,
+	);
 
 	// Generate Filter Options
 	const filterOptions = useMemo(() => {
@@ -299,7 +113,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			const minLatency = latencies[0];
 			const maxLatency = latencies[latencies.length - 1];
 
-			// If all values are the same
 			if (minLatency === maxLatency) {
 				return [
 					{
@@ -309,12 +122,10 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				];
 			}
 
-			// Get unique latency values to determine bucket boundaries
 			const uniqueLatencies = [...new Set(latencies)].sort(
 				(a, b) => a - b,
 			);
 
-			// If there are only 2 unique values
 			if (uniqueLatencies.length === 2) {
 				return [
 					{
@@ -328,7 +139,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				];
 			}
 
-			// If there are only 3 unique values
 			if (uniqueLatencies.length === 3) {
 				return [
 					{
@@ -346,9 +156,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				];
 			}
 
-			// For more than 3 unique values, use percentile-based bucketing
 			if (maxLatency < 1000) {
-				// Calculate percentile-based buckets
 				const p33Index = Math.floor(uniqueLatencies.length * 0.33);
 				const p66Index = Math.floor(uniqueLatencies.length * 0.66);
 
@@ -359,9 +167,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				const bucket3Start =
 					uniqueLatencies[p66Index + 1] || bucket2End + 1;
 
-				// Ensure no overlapping ranges
 				if (bucket1End >= bucket2Start || bucket2End >= bucket3Start) {
-					// Fall back to equal distribution
 					const range = maxLatency - minLatency;
 					const step = Math.ceil(range / 3);
 
@@ -397,7 +203,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 				];
 			}
 
-			// For larger latencies (≥ 1000ms), use second-based ranges
 			const range = maxLatency - minLatency;
 			const bucketSize = Math.ceil(range / 3);
 
@@ -484,7 +289,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	const filteredLogs = useMemo(() => {
 		let filtered = [...logs];
 
-		// Apply search query
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase().trim();
 			filtered = filtered.filter(
@@ -500,28 +304,24 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			);
 		}
 
-		// Apply engine type filter
 		if (appliedFilters.engineType.length > 0) {
 			filtered = filtered.filter((log) =>
 				appliedFilters.engineType.includes(log.engineType),
 			);
 		}
 
-		// Apply engine name filter
 		if (appliedFilters.engineName.length > 0) {
 			filtered = filtered.filter((log) =>
 				appliedFilters.engineName.includes(log.engineName),
 			);
 		}
 
-		// Apply status filter
 		if (appliedFilters.status.length > 0) {
 			filtered = filtered.filter((log) =>
 				appliedFilters.status.includes(String(log.status)),
 			);
 		}
 
-		// Apply latency range filter
 		if (appliedFilters.latencyRange.length > 0) {
 			filtered = filtered.filter((log) => {
 				const logLatency = Number(log.latency);
@@ -534,7 +334,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 			});
 		}
 
-		// Apply token range filter
 		if (appliedFilters.tokenRange.length > 0) {
 			filtered = filtered.filter((log) => {
 				const logTokens = parseInt(log.tokens, 10);
@@ -551,39 +350,32 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	}, [logs, searchQuery, appliedFilters]);
 
 	// Event Handlers
-	const handleFilterClick = useCallback(
-		(event: React.MouseEvent<HTMLElement>, column: keyof FilterState) => {
-			event.stopPropagation();
+	const handleOpenColumn = useCallback(
+		(column: keyof FilterState) => {
 			setTempFilters({ ...appliedFilters });
-			setPopoverState({
-				anchorEl: event.currentTarget,
-				column,
-			});
+			setOpenColumn(column);
 		},
 		[appliedFilters],
 	);
 
-	const handlePopoverClose = useCallback(() => {
-		setPopoverState({
-			anchorEl: null,
-			column: null,
-		});
+	const handleCloseColumn = useCallback(() => {
+		setOpenColumn(null);
 		setTempFilters({ ...appliedFilters });
 	}, [appliedFilters]);
 
 	const handleApplyFilters = useCallback(() => {
 		setAppliedFilters({ ...tempFilters });
-		handlePopoverClose();
-	}, [tempFilters, handlePopoverClose]);
+		setOpenColumn(null);
+	}, [tempFilters]);
 
 	const handleClearFilterPopover = useCallback(() => {
-		if (popoverState.column) {
+		if (openColumn) {
 			setTempFilters((prev) => ({
 				...prev,
-				[popoverState.column as string]: [],
+				[openColumn]: [],
 			}));
 		}
-	}, [popoverState.column]);
+	}, [openColumn]);
 
 	const handleMultiSelectFilter = useCallback(
 		(filterType: keyof FilterState, value: string) => {
@@ -644,7 +436,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	);
 
 	const handleChangeRowsPerPage = useCallback(
-		(event: React.ChangeEvent<HTMLInputElement>) => {
+		(event: React.ChangeEvent<HTMLSelectElement>) => {
 			const newRowsPerPage = parseInt(event.target.value, 10);
 			onPaginationChange(0, newRowsPerPage);
 		},
@@ -670,75 +462,82 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 	const totalActiveFilters = getActiveFiltersCount() + (searchQuery ? 1 : 0);
 
-	// Render Filter Popover Content
-	const renderFilterPopover = useCallback(() => {
-		const { column } = popoverState;
-		if (!column) return null;
+	// Render filter popover content for a column
+	const renderFilterContent = useCallback(
+		(column: keyof FilterState) => {
+			const options = filterOptions[column];
+			const optionValues =
+				column === "latencyRange" || column === "tokenRange"
+					? (options as FilterOption[]).map((opt) => opt.value)
+					: (options as string[]);
 
-		const options = filterOptions[column];
-		const optionValues =
-			column === "latencyRange" || column === "tokenRange"
-				? (options as FilterOption[]).map((opt) => opt.value)
-				: (options as string[]);
+			const allSelected =
+				tempFilters[column].length === optionValues.length;
 
-		const allSelected = tempFilters[column].length === optionValues.length;
-
-		return (
-			<>
-				<FilterPopoverContent>
-					<FilterOptionsList>
-						<FilterListItem>
-							<StyledListItemButton
-								onClick={() =>
+			return (
+				<>
+					<div className="max-h-[300px] overflow-y-auto">
+						{/* biome-ignore lint/a11y/useKeyWithClickEvents: filter option list items use click to toggle */}
+						{/* biome-ignore lint/a11y/noStaticElementInteractions: filter list uses click handlers */}
+						<div
+							className="flex cursor-pointer items-center gap-2 px-4 py-2 hover:bg-accent"
+							onClick={() =>
+								handleSelectAll(column, optionValues)
+							}
+						>
+							<Checkbox
+								checked={
+									allSelected
+										? true
+										: tempFilters[column].length > 0
+											? "indeterminate"
+											: false
+								}
+								onCheckedChange={() =>
 									handleSelectAll(column, optionValues)
 								}
-							>
-								<StyledCheckbox
-									checked={allSelected}
-									checkboxProps={{
-										indeterminate:
-											tempFilters[column].length > 0 &&
-											!allSelected,
-									}}
-								/>
-								<List.ItemText
-									primary="Select All"
-									primaryTypographyProps={{
-										fontSize: "14px",
-										fontWeight: 500,
-									}}
-								/>
-							</StyledListItemButton>
-						</FilterListItem>
+							/>
+							<span className="font-medium text-sm">
+								Select All
+							</span>
+						</div>
 						{column === "latencyRange" || column === "tokenRange"
 							? (options as FilterOption[]).map((option) => (
-									<FilterListItem key={option.value}>
-										<StyledListItemButton
-											onClick={() =>
+									// biome-ignore lint/a11y/useKeyWithClickEvents: filter option list items use click to toggle
+									// biome-ignore lint/a11y/noStaticElementInteractions: filter list uses click handlers
+									<div
+										key={option.value}
+										className="flex cursor-pointer items-center gap-2 px-4 py-2 hover:bg-accent"
+										onClick={() =>
+											handleMultiSelectFilter(
+												column,
+												option.value,
+											)
+										}
+									>
+										<Checkbox
+											checked={tempFilters[
+												column
+											].includes(option.value)}
+											onCheckedChange={() =>
 												handleMultiSelectFilter(
 													column,
 													option.value,
 												)
 											}
+										/>
+										<span
+											className={`text-sm ${
+												tempFilters[column].includes(
+													option.value,
+												)
+													? "font-medium"
+													: "font-normal"
+											}`}
 										>
-											<StyledCheckbox
-												checked={tempFilters[
-													column
-												].includes(option.value)}
-											/>
-											<List.ItemText
-												primary={option.label}
-												primaryTypographyProps={{
-													fontSize: "14px",
-													fontWeight: tempFilters[
-														column
-													].includes(option.value)
-														? 500
-														: 400,
-												}}
-											/>
-										</StyledListItemButton>
-									</FilterListItem>
+											{option.label}
+										</span>
+									</div>
 								))
 							: (options as string[]).map((value) => {
 									const displayValue =
@@ -749,470 +548,382 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											: value;
 
 									return (
-										<FilterListItem key={value}>
-											<StyledListItemButton
-												onClick={() =>
+										// biome-ignore lint/a11y/useKeyWithClickEvents: filter option list items use click to toggle
+										// biome-ignore lint/a11y/noStaticElementInteractions: filter list uses click handlers
+										<div
+											key={value}
+											className="flex cursor-pointer items-center gap-2 px-4 py-2 hover:bg-accent"
+											onClick={() =>
+												handleMultiSelectFilter(
+													column,
+													value,
+												)
+											}
+										>
+											<Checkbox
+												checked={tempFilters[
+													column
+												].includes(value)}
+												onCheckedChange={() =>
 													handleMultiSelectFilter(
 														column,
 														value,
 													)
 												}
-											>
-												<StyledCheckbox
-													checked={tempFilters[
+											/>
+											<span
+												className={`text-sm ${
+													tempFilters[
 														column
-													].includes(value)}
-												/>
-												<List.ItemText
-													primary={displayValue}
-													primaryTypographyProps={{
-														fontSize: "14px",
-														fontWeight: tempFilters[
-															column
-														].includes(value)
-															? 500
-															: 400,
-													}}
-												/>
-											</StyledListItemButton>
-										</FilterListItem>
+													].includes(value)
+														? "font-medium"
+														: "font-normal"
+												}`}
+											>
+												{displayValue}
+											</span>
+										</div>
 									);
 								})}
-					</FilterOptionsList>
-				</FilterPopoverContent>
-				<FilterActions>
-					<FilterActionButton
-						variant="text"
-						onClick={handleClearFilterPopover}
-						color="inherit"
+					</div>
+					<div className="flex justify-between gap-3 border-t bg-[#fafafa] p-3">
+						<Button
+							variant="ghost"
+							className="h-8 flex-1 text-sm"
+							onClick={handleClearFilterPopover}
+						>
+							Clear
+						</Button>
+						<Button
+							className="h-8 flex-1 text-sm"
+							onClick={handleApplyFilters}
+						>
+							Apply
+						</Button>
+					</div>
+				</>
+			);
+		},
+		[
+			filterOptions,
+			tempFilters,
+			handleSelectAll,
+			handleMultiSelectFilter,
+			handleClearFilterPopover,
+			handleApplyFilters,
+		],
+	);
+
+	// Filter column header helper
+	// biome-ignore lint/correctness/noNestedComponentDefinitions: collocated helper component
+	const FilterColumnHeader = ({
+		column,
+		label,
+	}: {
+		column: keyof FilterState;
+		label: string;
+	}) => {
+		const count = getActiveFiltersCount(column);
+		return (
+			<div className="flex items-center gap-1">
+				<span>{label}</span>
+				<Popover
+					open={openColumn === column}
+					onOpenChange={(o) => {
+						if (o) handleOpenColumn(column);
+						else handleCloseColumn();
+					}}
+				>
+					<PopoverTrigger asChild>
+						<button
+							type="button"
+							className="relative inline-flex items-center justify-center rounded p-1 hover:bg-accent"
+						>
+							<ListFilter className="size-3.5" />
+							{count > 0 && (
+								<span className="-top-1 -right-1 absolute flex size-3.5 items-center justify-center rounded-full bg-primary font-medium text-[9px] text-primary-foreground">
+									{count}
+								</span>
+							)}
+						</button>
+					</PopoverTrigger>
+					<PopoverContent
+						className="w-[250px] max-w-[350px] p-0"
+						align="start"
 					>
-						Clear
-					</FilterActionButton>
-					<FilterActionButton
-						variant="contained"
-						onClick={handleApplyFilters}
-						color="primary"
-					>
-						Apply
-					</FilterActionButton>
-				</FilterActions>
-			</>
+						{renderFilterContent(column)}
+					</PopoverContent>
+				</Popover>
+			</div>
 		);
-	}, [
-		popoverState,
-		filterOptions,
-		tempFilters,
-		handleSelectAll,
-		handleMultiSelectFilter,
-		handleClearFilterPopover,
-		handleApplyFilters,
-	]);
+	};
 
 	// Empty State
 	if (!logs || logs.length === 0) {
 		return (
-			<Container elevation={1}>
-				<Header>
-					<StyledTitle variant="h6">
-						Prompt & Response Timeline
-					</StyledTitle>
-				</Header>
-				<SearchSection sx={{ justifyContent: "center" }}>
-					<Typography variant="body2" color="textSecondary">
+			<div className="mt-4 rounded-lg border border-border bg-white">
+				<div className="flex items-center justify-between p-4">
+					<span className="font-semibold text-foreground text-lg">
+						Prompt &amp; Response Timeline
+					</span>
+				</div>
+				<div className="flex items-center justify-center px-4 py-4">
+					<p className="text-muted-foreground text-sm">
 						No logs available.
-					</Typography>
-				</SearchSection>
-			</Container>
+					</p>
+				</div>
+			</div>
 		);
 	}
 
 	return (
 		<>
-			<Container elevation={1}>
-				<Header>
-					<StyledTitle variant="h6">
-						Prompt & Response Timeline
-					</StyledTitle>
-					<Box display="flex" alignItems="center" gap={2}>
+			<div className="mt-4 rounded-lg border border-border bg-white">
+				<div className="flex items-center justify-between p-4">
+					<span className="font-semibold text-foreground text-lg">
+						Prompt &amp; Response Timeline
+					</span>
+					<div className="flex items-center gap-2">
 						{totalActiveFilters > 0 && (
 							<Button
-								variant="outlined"
-								// size="small"
+								variant="outline"
 								onClick={handleClearAllFilters}
-								startIcon={<ClearIcon />}
 							>
+								<X className="size-4" />
 								Clear Filters
 							</Button>
 						)}
-						<SearchField
-							placeholder="Search logs..."
-							value={searchQuery}
-							onChange={(e) => setSearchQuery(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<SearchIcon
-											sx={{
-												color: theme.palette.text
-													.secondary,
-											}}
-										/>
-									</InputAdornment>
-								),
-								endAdornment: searchQuery && (
-									<InputAdornment position="end">
-										<IconButton
-											size="small"
-											onClick={() => setSearchQuery("")}
-										>
-											<ClearIcon fontSize="small" />
-										</IconButton>
-									</InputAdornment>
-								),
-							}}
-						/>
-					</Box>
-				</Header>
-				<StyledTableContainer>
-					<Table stickyHeader>
-						<StyledTableHead>
-							<Table.Row>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											User Id
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Session Id
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Request
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Response
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
-										>
-											<Typography variant="subtitle2">
-												Engine Type
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"engineType",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"engineType",
-													)}
-												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
-										>
-											<Typography variant="subtitle2">
-												Engine Name
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"engineName",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"engineName",
-													)}
-												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
-										>
-											<Typography variant="subtitle2">
-												Latency
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"latencyRange",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"latencyRange",
-													)}
-												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
-										>
-											<Typography variant="subtitle2">
-												Tokens
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"tokenRange",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"tokenRange",
-													)}
-												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Typography variant="subtitle2">
-											Timestamp
-										</Typography>
-									</HeaderCellContent>
-								</Table.Cell>
-								<Table.Cell>
-									<HeaderCellContent>
-										<Stack
-											direction="row"
-											alignItems="center"
-											gap={1}
-										>
-											<Typography variant="subtitle2">
-												Status
-											</Typography>
-											<IconButton
-												size="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"status",
-													)
-												}
-											>
-												<Badge
-													color="primary"
-													badgeContent={getActiveFiltersCount(
-														"status",
-													)}
-												>
-													<FilterListIcon fontSize="small" />
-												</Badge>
-											</IconButton>
-										</Stack>
-									</HeaderCellContent>
-								</Table.Cell>
-							</Table.Row>
-						</StyledTableHead>
-						<Table.Body>
+						<InputGroup className="min-w-[400px]">
+							<InputGroupAddon align="inline-start">
+								<Search className="size-4" />
+							</InputGroupAddon>
+							<InputGroupInput
+								placeholder="Search logs..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+							/>
+							{searchQuery && (
+								<InputGroupAddon align="inline-end">
+									<InputGroupButton
+										size="icon-sm"
+										onClick={() => setSearchQuery("")}
+									>
+										<X className="size-3.5" />
+									</InputGroupButton>
+								</InputGroupAddon>
+							)}
+						</InputGroup>
+					</div>
+				</div>
+				<div className="overflow-auto p-4">
+					<Table>
+						<TableHeader>
+							<TableRow className="bg-primary/5">
+								<TableHead className="font-semibold text-primary">
+									User Id
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									Session Id
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									Request
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									Response
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									<FilterColumnHeader
+										column="engineType"
+										label="Engine Type"
+									/>
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									<FilterColumnHeader
+										column="engineName"
+										label="Engine Name"
+									/>
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									<FilterColumnHeader
+										column="latencyRange"
+										label="Latency"
+									/>
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									<FilterColumnHeader
+										column="tokenRange"
+										label="Tokens"
+									/>
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									Timestamp
+								</TableHead>
+								<TableHead className="font-semibold text-primary">
+									<FilterColumnHeader
+										column="status"
+										label="Status"
+									/>
+								</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
 							{filteredLogs.map((event, index) => (
-								<StyledTableRow
+								<TableRow
 									key={`Log-${event.endTime}-${index}`}
 									data-testid={`log-row-${index}`}
+									className="cursor-pointer hover:bg-primary/5"
 									onClick={() => handleRowClick(event)}
 								>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
+									<TableCell>
+										<span
+											className="text-sm"
 											title={event.userId}
 										>
 											{ellipsed(event.userId, 23)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
+										</span>
+									</TableCell>
+									<TableCell>
+										<span
+											className="text-sm"
 											title={event.sessionId}
 										>
 											{ellipsed(event.sessionId, 23)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
+										</span>
+									</TableCell>
+									<TableCell>
+										<span
+											className="text-sm"
 											title={event.request}
 										>
 											{ellipsed(event.request)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography
-											variant="body2"
+										</span>
+									</TableCell>
+									<TableCell>
+										<span
+											className="text-sm"
 											title={event.response}
 										>
 											{ellipsed(event.response)}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
+										</span>
+									</TableCell>
+									<TableCell>
+										<span className="text-sm">
 											{event.engineType}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
+										</span>
+									</TableCell>
+									<TableCell>
+										<span className="text-sm">
 											{event.engineName}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
+										</span>
+									</TableCell>
+									<TableCell>
+										<span className="text-sm">
 											{event.latency}ms
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="body2">
+										</span>
+									</TableCell>
+									<TableCell>
+										<span className="text-sm">
 											{event.tokens}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell>
-										<Typography variant="caption">
+										</span>
+									</TableCell>
+									<TableCell>
+										<span className="text-xs">
 											{`${TimeDateFormatter(event.startTime).time} - ${
 												TimeDateFormatter(event.endTime)
 													.time
 											}`}
-										</Typography>
-									</StyledTableCell>
-									<StyledTableCell align="center">
+										</span>
+									</TableCell>
+									<TableCell className="text-center">
 										{event.status ? (
-											<CheckCircleIcon color="success" />
+											<CircleCheck className="size-4 text-green-500" />
 										) : (
-											<Cancel color="error" />
+											<XCircle className="size-4 text-destructive" />
 										)}
-									</StyledTableCell>
-								</StyledTableRow>
+									</TableCell>
+								</TableRow>
 							))}
-						</Table.Body>
+						</TableBody>
 					</Table>
-				</StyledTableContainer>
+				</div>
 
-				<PaginationContainer>
-					<Table.Pagination
-						count={totalCount}
-						page={page}
-						onPageChange={handleChangePage}
-						rowsPerPage={rowsPerPage}
-						onRowsPerPageChange={handleChangeRowsPerPage}
-						rowsPerPageOptions={[5, 10, 25, 50]}
-						disabled={totalActiveFilters > 0}
-					/>
-				</PaginationContainer>
-			</Container>
+				<div className="flex items-center justify-end gap-4 border-t bg-white px-4 py-2">
+					<div className="flex items-center gap-2 text-muted-foreground text-sm">
+						<span>Rows per page:</span>
+						<select
+							value={rowsPerPage}
+							onChange={handleChangeRowsPerPage}
+							disabled={totalActiveFilters > 0}
+							className="rounded border border-border px-1.5 py-1 text-sm"
+						>
+							{[5, 10, 25, 50].map((n) => (
+								<option key={n} value={n}>
+									{n}
+								</option>
+							))}
+						</select>
+					</div>
+					<span className="text-muted-foreground text-sm">
+						{page * rowsPerPage + 1}–
+						{Math.min((page + 1) * rowsPerPage, totalCount)} of{" "}
+						{totalCount}
+					</span>
+					<div className="flex gap-1">
+						<button
+							type="button"
+							disabled={page === 0 || totalActiveFilters > 0}
+							onClick={(e) => handleChangePage(e, page - 1)}
+							className="rounded border border-border px-2 py-1 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							Previous
+						</button>
+						<button
+							type="button"
+							disabled={
+								(page + 1) * rowsPerPage >= totalCount ||
+								totalActiveFilters > 0
+							}
+							onClick={(e) => handleChangePage(e, page + 1)}
+							className="rounded border border-border px-2 py-1 text-sm hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							Next
+						</button>
+					</div>
+				</div>
+			</div>
 
-			<ResultsInfo>
-				<Typography variant="body2" color="textSecondary">
+			<div className="flex items-center justify-between border-b bg-primary/5 px-4 py-2">
+				<p className="text-muted-foreground text-sm">
 					Showing {filteredLogs.length} of {totalCount} results
 					{totalActiveFilters > 0 &&
 						` (${totalActiveFilters} filter${
 							totalActiveFilters > 1 ? "s" : ""
 						} applied)`}
-				</Typography>
+				</p>
 				{filteredLogs.length === 0 && logs.length > 0 && (
-					<Typography variant="body2" color="error">
+					<p className="text-destructive text-sm">
 						No results found. Try adjusting your filters.
-					</Typography>
+					</p>
 				)}
-			</ResultsInfo>
+			</div>
 
-			<FilterPopover
-				id={"filter-popover"}
-				open={Boolean(popoverState.anchorEl)}
-				anchorEl={popoverState.anchorEl}
-				onClose={handlePopoverClose}
-				anchorOrigin={{
-					vertical: "bottom",
-					horizontal: "left",
-				}}
-				transformOrigin={{
-					vertical: "top",
-					horizontal: "left",
-				}}
-			>
-				{renderFilterPopover()}
-			</FilterPopover>
-
-			<Drawer
-				anchor="right"
+			<Sheet
 				open={drawerOpen}
-				onClose={handleDrawerClose}
-				PaperProps={{
-					sx: {
-						borderRadius: "8px",
-					},
-				}}
-				transitionDuration={{
-					enter: 300,
-					exit: 150,
+				onOpenChange={(o) => {
+					if (!o) handleDrawerClose();
 				}}
 			>
-				<AuditLogsDetailDrawer
-					logDetails={selectedEvent}
-					handleDrawerClose={handleDrawerClose}
-				/>
-			</Drawer>
+				<SheetContent
+					side="right"
+					className="w-auto max-w-none p-0 sm:max-w-none [&>button:last-child]:hidden"
+				>
+					<SheetTitle className="sr-only">Audit Details</SheetTitle>
+					<AuditLogsDetailDrawer
+						logDetails={selectedEvent}
+						handleDrawerClose={handleDrawerClose}
+					/>
+				</SheetContent>
+			</Sheet>
 		</>
 	);
 };

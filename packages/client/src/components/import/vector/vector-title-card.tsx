@@ -76,7 +76,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 			)}
 			onClick={handleCardClick}
 			onKeyDown={handleCardKeyDown}
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`importPageContent-connect-to-${vector.name}-img`,
 			)}
 			role="button"

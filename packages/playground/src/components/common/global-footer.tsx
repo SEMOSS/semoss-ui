@@ -11,7 +11,7 @@ export const GlobalFooter: React.FC = observer(() => {
 
 	return (
 		<footer
-			className="flex h-10 w-full shrink-0 overflow-hidden"
+			className="flex min-h-10 w-full shrink-0 flex-wrap"
 			// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 			dangerouslySetInnerHTML={{
 				__html: root.theme.footer,

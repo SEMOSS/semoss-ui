@@ -1,6 +1,5 @@
 import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	InputGroup,
@@ -18,6 +17,7 @@ import {
 import { EngineLandscapeCard } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 const initialState = {
 	projects: [],
@@ -451,6 +451,8 @@ export const ProjectSettingsPage = () => {
 									return null;
 								}
 
+								const detailHref = `#/settings/app/${projectId}`;
+
 								return (
 									<div key={projectId}>
 										<EngineLandscapeCard
@@ -467,6 +469,7 @@ export const ProjectSettingsPage = () => {
 											description={getProjectDescription(
 												project,
 											)}
+											href={detailHref}
 											isGlobal={projectIsGlobal}
 											isDiscoverable={true}
 											hideFavorite={true}

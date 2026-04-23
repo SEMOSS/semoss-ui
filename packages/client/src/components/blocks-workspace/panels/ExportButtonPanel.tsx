@@ -1,4 +1,4 @@
-import { Sync } from "@mui/icons-material";
+import { RefreshCw, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
 import type { BlockJSON, ListenerActions } from "@semoss/renderer";
@@ -8,19 +8,7 @@ import {
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
-import {
-	Autocomplete,
-	Box,
-	Button,
-	Chip,
-	IconButton,
-	Stack,
-	Switch,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+import { Badge, Button, Input, Switch, toast } from "@semoss/ui/next";
 import { Panel } from "@/components/workspace";
 import { useDesigner } from "@/hooks";
 
@@ -30,58 +18,8 @@ export interface GridBlockColumn {
 	selector: string;
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	padding: theme.spacing(2),
-	height: "100%",
-	overflowY: "auto",
-}));
-
-const StyledFieldWrapper = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "center",
-	paddingTop: "5px",
-	paddingBottom: "5px",
-	gap: "8px",
-}));
-
-const StyledChipsContainer = styled(Box)(({ theme }) => ({
-	display: "flex",
-	flexWrap: "wrap",
-	gap: theme.spacing(1),
-	maxHeight: "20vh",
-	overflowY: "auto",
-	paddingRight: theme.spacing(1),
-	"&::-webkit-scrollbar": {
-		width: "8px",
-	},
-	"&::-webkit-scrollbar-track": {
-		background: "transparent",
-	},
-	"&::-webkit-scrollbar-thumb": {
-		background: theme.palette.mode === "dark" ? "#555" : "#ccc",
-		borderRadius: "4px",
-	},
-	"&::-webkit-scrollbar-thumb:hover": {
-		background: theme.palette.mode === "dark" ? "#777" : "#aaa",
-	},
-}));
-
-const StyledSectionTitle = styled(Typography)(({ theme }) => ({
-	fontSize: "12px",
-	fontWeight: 600,
-	color: theme.palette.text.secondary,
-	textTransform: "uppercase",
-	letterSpacing: "0.5px",
-	marginTop: theme.spacing(1),
-}));
-
 export const ExportButtonPanel = observer(() => {
 	const frameSelectId = useId();
-	const notification = useNotification();
 	const { designer } = useDesigner();
 	const { state } = useBlocks();
 
@@ -145,10 +83,7 @@ export const ExportButtonPanel = observer(() => {
 	 */
 	const handleRefreshFrames = () => {
 		getFrames.refresh();
-		notification.add({
-			color: "success",
-			message: "Frames refreshed",
-		});
+		toast.success("Frames refreshed");
 	};
 
 	/**
@@ -211,20 +146,15 @@ export const ExportButtonPanel = observer(() => {
 
 			// Validate delimiter for text format
 			if (downloadType === "text" && !delimiter.trim()) {
-				notification.add({
-					color: "warning",
-					message:
-						"Delimiter is not defined. Please enter a delimiter for the file.",
-				});
+				toast.warning(
+					"Delimiter is not defined. Please enter a delimiter for the file.",
+				);
 				return;
 			}
 
 			// Validate that we have the required data
 			if (!selectedFrame || selectedColumns.length === 0) {
-				notification.add({
-					color: "error",
-					message: "Please select a frame and at least one column",
-				});
+				toast.error("Please select a frame and at least one column");
 				return;
 			}
 
@@ -315,12 +245,11 @@ export const ExportButtonPanel = observer(() => {
 					},
 				});
 
-				notification.add({
-					color: "success",
-					message: isNewNotebook
+				toast.success(
+					isNewNotebook
 						? `Exporting data from ${selectedFrame}...`
 						: `Exporting data from existing query...`,
-				});
+				);
 			} else {
 				// Button mode: create a button block that triggers the export
 				// Create the button block JSON structure
@@ -359,19 +288,15 @@ export const ExportButtonPanel = observer(() => {
 					},
 				});
 
-				notification.add({
-					color: "success",
-					message: isNewNotebook
+				toast.success(
+					isNewNotebook
 						? `Export button "${buttonLabel}" created and added to layer`
 						: `Export button "${buttonLabel}" created (using existing query)`,
-				});
+				);
 			}
 		} catch (error) {
 			console.error("Error creating export button:", error);
-			notification.add({
-				color: "error",
-				message: "Failed to create export button",
-			});
+			toast.error("Failed to create export button");
 		} finally {
 			setIsLoading(false);
 		}
@@ -379,86 +304,81 @@ export const ExportButtonPanel = observer(() => {
 
 	return (
 		<Panel>
-			<StyledContainer>
+			<div className="flex h-full flex-col gap-4 overflow-y-auto p-4">
 				<div>
-					<Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+					<h6 className="mb-4 font-semibold text-base">
 						Export Data
-					</Typography>
+					</h6>
+
 					{/* Frame Selection */}
-					<StyledSectionTitle variant="body2">
+					<p className="mt-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.5px]">
 						Frame
-					</StyledSectionTitle>
-					<StyledFieldWrapper>
-						<Stack direction="row" spacing={1}>
-							<Autocomplete
-								fullWidth
+					</p>
+					<div className="flex flex-col justify-center gap-2 py-1">
+						<div className="flex flex-row items-center gap-2">
+							<select
 								id={`export-frame-select-${frameSelectId}`}
-								multiple={false}
 								disabled={getFrames.status !== "SUCCESS"}
 								value={selectedFrame}
-								options={availableFrameNames}
-								getOptionLabel={(option) => option}
-								onChange={(_, value) => {
-									setSelectedFrame(value || "");
-								}}
-								freeSolo={false}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										placeholder="Select frame"
-										size="small"
-										variant="outlined"
-									/>
-								)}
-							/>
-							<IconButton
-								size="small"
+								onChange={(e) =>
+									setSelectedFrame(e.target.value)
+								}
+								className="w-full flex-1 rounded border border-gray-300 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+							>
+								<option value="">Select frame</option>
+								{availableFrameNames.map((name) => (
+									<option key={name} value={name}>
+										{name}
+									</option>
+								))}
+							</select>
+							<Button
+								variant="ghost"
+								size="icon-sm"
 								onClick={handleRefreshFrames}
 								title="Refresh frames"
-								sx={{ mt: 0.5 }}
 							>
-								<Sync fontSize="medium" />
-							</IconButton>
-						</Stack>
-					</StyledFieldWrapper>
+								<RefreshCw className="size-4" />
+							</Button>
+						</div>
+					</div>
+
 					{/* Column Selection */}
 					{selectedFrame && (
 						<>
-							<StyledSectionTitle variant="body2">
+							<p className="mt-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.5px]">
 								Columns ({selectedColumns?.length || 0})
-							</StyledSectionTitle>
-							<StyledFieldWrapper>
-								<StyledChipsContainer>
+							</p>
+							<div className="flex flex-col justify-center gap-2 py-1">
+								<div className="flex max-h-[20vh] flex-wrap gap-2 overflow-y-auto pr-1">
 									{selectedColumns?.map((col) => (
-										<Chip
+										<Badge
 											key={col.name}
-											label={col.name}
-											size="small"
-											variant="outlined"
-											onDelete={() =>
-												handleRemoveColumn(col.name)
-											}
-										/>
+											variant="outline"
+											className="flex items-center gap-1 text-xs"
+										>
+											{col.name}
+											<button
+												type="button"
+												className="ml-1 hover:text-destructive"
+												onClick={() =>
+													handleRemoveColumn(col.name)
+												}
+											>
+												<X className="size-3" />
+											</button>
+										</Badge>
 									))}
 									{!selectedColumns?.length && (
-										<Typography
-											variant="body2"
-											color="secondary"
-										>
+										<p className="text-muted-foreground text-sm">
 											No columns selected
-										</Typography>
+										</p>
 									)}
-								</StyledChipsContainer>
-								<Stack
-									display="flex"
-									flexDirection="row"
-									gap={1}
-									justifyContent="flex-end"
-								>
+								</div>
+								<div className="flex flex-row justify-end gap-2">
 									<Button
-										size="small"
-										color="primary"
-										variant="outlined"
+										size="sm"
+										variant="outline"
 										onClick={handleReset}
 										disabled={
 											selectedColumns.length ===
@@ -467,115 +387,86 @@ export const ExportButtonPanel = observer(() => {
 									>
 										Reset
 									</Button>
-								</Stack>
-							</StyledFieldWrapper>
+								</div>
+							</div>
 						</>
 					)}
+
 					{/* Download Type Selection */}
 					{selectedFrame && (
-						<StyledFieldWrapper>
-							<Autocomplete
-								fullWidth
-								multiple={false}
+						<div className="flex flex-col justify-center gap-2 py-1">
+							<select
 								value={downloadType}
-								options={["", "csv", "tsv", "text", "excel"]}
-								onChange={(_, value) =>
+								onChange={(e) =>
 									setDownloadType(
-										(value || "csv") as
+										(e.target.value || "csv") as
 											| "csv"
 											| "tsv"
 											| "text"
 											| "excel",
 									)
 								}
-								getOptionLabel={(option) =>
-									option === "csv"
-										? "CSV"
-										: option === "tsv"
-											? "TSV"
-											: option === "text"
-												? "Text"
-												: option === "excel"
-													? "Excel"
-													: ""
-								}
-								renderInput={(params) => (
-									<TextField
-										{...params}
-										label="Download Type"
-										size="small"
-									/>
-								)}
-							/>
+								className="w-full rounded border border-gray-300 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+							>
+								<option value="csv">CSV</option>
+								<option value="tsv">TSV</option>
+								<option value="text">Text</option>
+								<option value="excel">Excel</option>
+							</select>
 
 							{downloadType === "text" && (
-								<TextField
-									size="small"
-									label="Delimiter"
-									value={delimiter}
-									onChange={(e) =>
-										setDelimiter(e.target.value)
-									}
-									placeholder=","
-									fullWidth
-									helperText='Enter the delimiter (e.g., "," or "|")'
-								/>
+								<div className="flex flex-col gap-1">
+									<Input
+										placeholder=","
+										value={delimiter}
+										onChange={(e) =>
+											setDelimiter(e.target.value)
+										}
+										className="w-full"
+									/>
+									<p className="text-muted-foreground text-xs">
+										Enter the delimiter (e.g., "," or "|")
+									</p>
+								</div>
 							)}
-						</StyledFieldWrapper>
+						</div>
 					)}
+
 					{/* Export Mode Toggle */}
 					{selectedFrame && (
-						<StyledFieldWrapper>
-							<Stack
-								direction="row"
-								alignItems="center"
-								spacing={1}
-							>
-								<StyledSectionTitle variant="body2">
+						<div className="flex flex-col justify-center gap-2 py-1">
+							<div className="flex flex-row items-center gap-2">
+								<p className="mt-2 font-semibold text-muted-foreground text-xs uppercase tracking-[0.5px]">
 									Direct Export
-								</StyledSectionTitle>
-								<Stack
-									direction="row"
-									alignItems="center"
-									spacing={0.5}
-								>
-									<Switch
-										size="small"
-										checked={exportMode === "direct"}
-										onChange={(
-											e: React.ChangeEvent<HTMLInputElement>,
-										) =>
-											setExportMode(
-												e.target.checked
-													? "direct"
-													: "button",
-											)
-										}
-									/>
-								</Stack>
-							</Stack>
-						</StyledFieldWrapper>
+								</p>
+								<Switch
+									checked={exportMode === "direct"}
+									onCheckedChange={(checked) =>
+										setExportMode(
+											checked ? "direct" : "button",
+										)
+									}
+								/>
+							</div>
+						</div>
 					)}
+
 					{/* Button Label - Only show for button mode */}
 					{selectedFrame && exportMode === "button" && (
-						<StyledFieldWrapper>
-							<TextField
-								size="small"
-								label="Button Label"
+						<div className="flex flex-col justify-center gap-2 py-1">
+							<Input
+								placeholder="Export Data"
 								value={buttonLabel}
 								onChange={(e) => setButtonLabel(e.target.value)}
-								placeholder="Export Data"
-								fullWidth
+								className="w-full"
 							/>
-						</StyledFieldWrapper>
+						</div>
 					)}
+
 					{/* Create Button or Export Button - conditionally rendered */}
 					{selectedFrame && (
-						<StyledFieldWrapper sx={{ mt: 2 }}>
+						<div className="mt-2 flex flex-col justify-center gap-2 py-1">
 							<Button
-								size="medium"
-								color="primary"
-								variant="contained"
 								onClick={handleCreateExportButton}
 								disabled={
 									selectedColumns.length === 0 ||
@@ -583,7 +474,7 @@ export const ExportButtonPanel = observer(() => {
 									(exportMode === "button" &&
 										!buttonLabel.trim())
 								}
-								fullWidth
+								className="w-full"
 							>
 								{isLoading
 									? "Processing..."
@@ -591,25 +482,19 @@ export const ExportButtonPanel = observer(() => {
 										? "Create Export Button"
 										: "Export Data"}
 							</Button>
-						</StyledFieldWrapper>
-					)}{" "}
+						</div>
+					)}
+
 					{availableFrameNames.length === 0 && (
-						<Box
-							sx={{
-								mt: 2,
-								p: 2,
-								bgcolor: "warning.lighter",
-								borderRadius: 1,
-							}}
-						>
-							<Typography variant="body2" color="warning">
+						<div className="mt-4 rounded bg-yellow-50 p-4">
+							<p className="text-sm text-yellow-700">
 								No frames found. Create a frame or refresh
 								frames to get started.
-							</Typography>
-						</Box>
+							</p>
+						</div>
 					)}
 				</div>
-			</StyledContainer>
+			</div>
 		</Panel>
 	);
 });

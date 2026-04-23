@@ -1,14 +1,22 @@
 import {
+	ComputerIcon,
+	ExternalLinkIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
+
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
+	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -27,7 +35,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat, useGracefulErrors } from "@/hooks";
+import { useChat, useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
@@ -47,6 +55,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
 	const { getGracefulErrorMessage } = useGracefulErrors();
+	const { root } = useRoot();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
 
@@ -338,7 +347,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
+						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -384,7 +393,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -440,12 +449,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto flex w-full max-w-4xl shrink-0 flex-col p-4">
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				<RoomInput
+					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
 					hidePauseButton={!room.numberOfTools}
 					model={room.model}
+					room={room}
 					setModel={(model) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);
@@ -505,6 +516,57 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</>
 						),
 					)}
+					footer={
+						room.options.workspace?.workspace_id ? (
+							room.theme.showPlatformLinks !== false ? (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary" asChild>
+												<a
+													target="_blank"
+													href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
+												>
+													<ComputerIcon data-icon="inline-start" />
+													<div className="w-18 truncate">
+														{room.options.workspace
+															.name ||
+															room.options
+																.workspace
+																.workspace_id}
+													</div>
+													<ExternalLinkIcon data-icon="inline-end" />
+												</a>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										Click to view agent details
+									</TooltipContent>
+								</Tooltip>
+							) : (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary">
+												<ComputerIcon data-icon="inline-start" />
+												<div className="w-18 truncate">
+													{room.options.workspace
+														.name ||
+														room.options.workspace
+															.workspace_id}
+												</div>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{room.options.workspace.name ||
+											room.options.workspace.workspace_id}
+									</TooltipContent>
+								</Tooltip>
+							)
+						) : null
+					}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools
