@@ -67,11 +67,11 @@ import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
-function applyMCPDiff(
+const applyMCPDiff = (
 	items: MCPConfig[],
 	updated: MCPConfig[],
 	onSelect: (mcp: MCPConfig) => void,
-) {
+) => {
 	const oldIds = new Set(items.map((m) => m.id));
 	const newIds = new Set(updated.map((m) => m.id));
 	for (const mcp of updated) {
@@ -80,7 +80,7 @@ function applyMCPDiff(
 	for (const mcp of items) {
 		if (!newIds.has(mcp.id)) onSelect(mcp);
 	}
-}
+};
 
 let isIframed = false;
 try {
