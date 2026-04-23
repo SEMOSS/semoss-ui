@@ -46,6 +46,7 @@ import {
 	PromptLibraryDialog,
 	type PromptLibraryItem,
 } from "@/components";
+import { FilePreviewGrid } from "@/components/common/file-preview-grid";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useFileDrag } from "@/contexts";
@@ -80,7 +81,6 @@ try {
 // Constants & Helper Functions
 // ============================================================================
 
-/** Supported image file extensions for preview */
 /**
  * Format token counts for display
  * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
@@ -252,7 +252,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		};
 
 		// File handling
-		const { isDragging, files, addFiles, clearFiles, setShouldStayOpen } =
+		const { files, addFiles, removeFile, clearFiles, setShouldStayOpen } =
 			useFileDrag();
 
 		// Speech-to-text
@@ -502,13 +502,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				>
 					<div
 						className={cn(
-							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
-							isDragging
-								? "border-primary border-dashed"
-								: "hover:border-primary",
+							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 hover:border-primary dark:bg-input/30",
 							className,
 						)}
 					>
+						{files.length > 0 && (
+							<FilePreviewGrid
+								files={files}
+								onRemoveFile={removeFile}
+							/>
+						)}
 						<PlainTextPlugin
 							contentEditable={
 								<ScrollArea
