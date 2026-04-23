@@ -728,10 +728,30 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											setIsDragging(false);
 										}}
 										onPaste={(e) => {
-											// Support pasting files (e.g., screenshots)
-											const updated = Array.from(
+											const clipboardFiles = Array.from(
 												e.clipboardData.files,
 											);
+
+											// Microsoft apps (Word, Outlook, etc.) include an image
+											// representation alongside text in the clipboard. If text
+											// content is present, filter out those images so the text
+											// is pasted normally instead of attaching a screenshot.
+											const hasText =
+												e.clipboardData.types.includes(
+													"text/plain",
+												) ||
+												e.clipboardData.types.includes(
+													"text/html",
+												);
+
+											const updated = hasText
+												? clipboardFiles.filter(
+														(f) =>
+															!f.type.startsWith(
+																"image/",
+															),
+													)
+												: clipboardFiles;
 
 											if (updated.length > 0) {
 												e.preventDefault();
