@@ -50,11 +50,7 @@ export const MCPSelector = observer(
 		const searchContainerRef = useRef<HTMLDivElement>(null);
 
 		const focusSearch = () => {
-			const input = searchContainerRef.current?.querySelector("input");
-			if (!input) return;
-			input.focus();
-			// Restore cursor to end — some browsers select-all on programmatic focus
-			input.setSelectionRange(input.value.length, input.value.length);
+			searchContainerRef.current?.querySelector("input")?.focus();
 		};
 
 		const debouncedSearch = useDebouncedValue(search);
