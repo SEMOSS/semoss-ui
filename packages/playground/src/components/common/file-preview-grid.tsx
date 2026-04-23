@@ -110,7 +110,7 @@ export const FilePreviewGrid = ({
 
 	return (
 		<ScrollArea type="always">
-			<div className="flex w-max gap-2 p-2">
+			<div className="flex w-max gap-2 p-2 pb-3">
 				{files.map((file, idx) => {
 					const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
 					const previewUrl = imagePreviewUrls.get(

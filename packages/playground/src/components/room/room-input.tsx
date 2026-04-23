@@ -534,7 +534,14 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										aria-disabled={isLoading}
 										disabled={isLoading}
 										placeholder={
-											<div className="pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pt-4 pb-4 text-muted-foreground text-sm">
+											<div
+												className={cn(
+													"pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pb-4 text-muted-foreground text-sm",
+													files.length > 0
+														? "pt-1"
+														: "pt-4",
+												)}
+											>
 												<SparklesIcon className="size-4" />
 												{isLoading
 													? t("input.thinking")

@@ -55,12 +55,12 @@ export const FileDragOverlay = () => {
 						<DialogTitle>{t("fileDrag.modalTitle")}</DialogTitle>
 					</DialogHeader>
 
-					<div className="-mt-2 flex flex-col gap-4">
+					<div className="-mt-2 flex min-w-0 flex-col gap-4">
 						{/* Fixed-height area: file strip collapses/expands; drop zone fills the rest */}
 						<div className="flex h-64 flex-col gap-2">
 							<div
 								className={`overflow-hidden transition-all duration-200 ${
-									files.length > 0 ? "h-20" : "h-0"
+									files.length > 0 ? "h-21" : "h-0"
 								}`}
 							>
 								<FilePreviewGrid
