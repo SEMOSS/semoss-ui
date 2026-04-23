@@ -10,9 +10,9 @@ export const RootLayout = ({ children }) => {
 
 	// set up the store
 	const rootStore = useMemo(() => {
-		if (system.config.theme) {
-			const store = new RootStore();
+		const store = new RootStore();
 
+		if (system.config.theme) {
 			// parse the theme
 			let theme: Partial<ThemeMap["playground"]> = {};
 			try {
@@ -22,9 +22,9 @@ export const RootLayout = ({ children }) => {
 			} catch (_e) {}
 
 			store.initialize(theme);
-
 			return store;
 		}
+
 		return null;
 	}, [system.config.theme]);
 

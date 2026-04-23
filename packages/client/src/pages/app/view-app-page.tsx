@@ -1,9 +1,9 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { Bookmark, Pencil, Settings, Share2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Renderer } from "@semoss/renderer";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
 	Button,
 	Dialog,
@@ -15,8 +15,18 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
-import { CodeRenderer } from "@/components/code-workspace";
 import { ShareOverlay } from "@/components/ui";
+import { useNavigate } from "@/hooks/useNavigate";
+
+const Renderer = lazy(() =>
+	import("@semoss/renderer").then((m) => ({ default: m.Renderer })),
+);
+const CodeRenderer = lazy(() =>
+	import("@/components/code-workspace").then((m) => ({
+		default: m.CodeRenderer,
+	})),
+);
+
 import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
@@ -72,7 +82,7 @@ export const ViewAppPage = observer(() => {
 	// hide the screen while it loads
 	if (!workspace) {
 		return (
-			<div className="flex h-screen w-screen items-center justify-center">
+			<div className="absolute inset-0 flex items-center justify-center">
 				<Spinner />
 			</div>
 		);
@@ -155,12 +165,23 @@ export const ViewAppPage = observer(() => {
 				</Button>
 			</NavbarRight>
 			<div className="absolute inset-0">
-				{workspace.type === "BLOCKS" ? (
-					<Renderer appId={appId} insightId={workspace.insightId} />
-				) : null}
-				{workspace.type === "CODE" ? (
-					<CodeRenderer appId={appId} />
-				) : null}
+				<Suspense
+					fallback={
+						<div className="flex h-full w-full items-center justify-center">
+							<Spinner />
+						</div>
+					}
+				>
+					{workspace.type === "BLOCKS" ? (
+						<Renderer
+							appId={appId}
+							insightId={workspace.insightId}
+						/>
+					) : null}
+					{workspace.type === "CODE" ? (
+						<CodeRenderer appId={appId} />
+					) : null}
+				</Suspense>
 			</div>
 
 			<Dialog

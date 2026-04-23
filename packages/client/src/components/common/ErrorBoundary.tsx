@@ -1,25 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { Alert, styled, Typography } from "@semoss/ui";
-import Error from "@/assets/img/Error.svg";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	position: "absolute",
-	inset: "0",
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-	alignItems: "center",
-	justifyContent: "center",
-}));
-
-const StyledImg = styled("img")(() => ({
-	height: "25%",
-	maxHeight: "200px",
-}));
-
-const StyledAlert = styled(Alert)(({ theme }) => ({
-	marginTop: theme.spacing(2),
-}));
+import ErrorImage from "@/assets/img/Error.svg";
 
 interface ErrorBoundaryProps {
 	/**
@@ -79,23 +59,29 @@ export class ErrorBoundary extends Component<
 			}
 
 			return (
-				<StyledContainer>
-					<StyledImg src={Error} />
+				<div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+					<img
+						src={ErrorImage}
+						alt=""
+						className="h-1/4 max-h-[200px]"
+					/>
 					{this.props.title ? (
-						<Typography variant="h6">{this.props.title}</Typography>
+						<h6 className="font-semibold text-base">
+							{this.props.title}
+						</h6>
 					) : null}
 
 					{this.props.description ? (
-						<Typography variant="body2">
+						<p className="text-muted-foreground text-sm">
 							{this.props.description}
-						</Typography>
+						</p>
 					) : null}
 					{this.state.error ? (
-						<StyledAlert severity="error" variant={"filled"}>
+						<div className="mt-2 flex items-center gap-2 rounded-md bg-destructive px-4 py-3 text-destructive-foreground text-sm">
 							{this.state.error.message}
-						</StyledAlert>
+						</div>
 					) : null}
-				</StyledContainer>
+				</div>
 			);
 		}
 

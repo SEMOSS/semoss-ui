@@ -8,7 +8,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { InputSettings, QueryInputSettings } from "../../settings";
 import { BaseSettingSection } from "../../settings/BaseSettingSection";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";

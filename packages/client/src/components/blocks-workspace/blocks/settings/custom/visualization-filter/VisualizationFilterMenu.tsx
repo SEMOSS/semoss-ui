@@ -27,7 +27,7 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { SizeSettings } from "../../shared";
 
 const DATA = {

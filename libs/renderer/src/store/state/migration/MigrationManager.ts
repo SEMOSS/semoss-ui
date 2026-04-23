@@ -1,3 +1,4 @@
+import { STATE_VERSION as LATEST_STATE_VERSION } from "../../../version";
 import migrate__1_0_0_alpha_to_1_0_0_alpha_1 from "./migrate__1_0_0_alpha__to__1_0_0_alpha_1";
 import migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 from "./migrate__1_0_0_alpha_1__to__1_0_0_alpha_2";
 import migrate__1_0_0_alpha_2_to_1_0_0_alpha_3 from "./migrate__1_0_0_alpha_2__to___1_0_0_alpha_3";
@@ -22,13 +23,13 @@ import type { Migration, MigrationState } from "./migration.types";
 // 1. Update Template Apps
 // 2. Update Agent Builder
 
-export const STATE_VERSION = "1.0.0-alpha.17";
+export const STATE_VERSION = LATEST_STATE_VERSION;
 
 export class MigrationManager {
 	/**
 	 * Latest version of the the state
 	 */
-	private latestVersion: string = STATE_VERSION;
+	private latestVersion: string = LATEST_STATE_VERSION;
 
 	/**
 	 * Current record of all available migrations
@@ -89,7 +90,7 @@ export class MigrationManager {
 		// notifiy developers
 		if (newState.version !== this.latestVersion) {
 			console.warn(
-				`Migrating version ${state.version} to ${STATE_VERSION}`,
+				`Migrating version ${state.version} to ${LATEST_STATE_VERSION}`,
 			);
 		}
 

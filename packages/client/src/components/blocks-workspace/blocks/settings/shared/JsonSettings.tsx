@@ -14,7 +14,7 @@ import {
 } from "@semoss/renderer";
 // import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, Small } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	/**

@@ -16,7 +16,7 @@ import {
 } from "@semoss/renderer";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface CodeEditorSettingsProps<D extends BlockDef = BlockDef> {
 	/**

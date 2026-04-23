@@ -324,7 +324,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					throw new Error("Error processing chat");
 				}
 			} catch (e) {
-				toast.error(getGracefulErrorMessage(e));
+				toast.error(getGracefulErrorMessage(e as Error));
 			}
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -573,7 +573,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// ========================================================================
 
 		return (
-			<div ref={ref}>
+			<div className="relative w-full" ref={ref} data-tour="tour-input">
 				<input
 					ref={fileRef}
 					type="file"
@@ -680,6 +680,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										"min-h-0 flex-1",
 										isScrollable && "mr-1",
 									)}
+									onClick={() => editorRef.current?.focus()}
 								>
 									<ContentEditable
 										ref={contentEditableRef}
@@ -746,7 +747,24 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
 
-						<div className="flex items-center justify-between gap-2 bg-background p-2">
+						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
+						<div
+							className="flex items-center justify-between gap-2 bg-background p-2"
+							data-tour="tour-input-menu"
+							role="none"
+							onClick={(e) => {
+								const target = e.target as HTMLElement;
+								if (
+									!target.closest("button") &&
+									!target.closest('[role="button"]') &&
+									!target.closest('[role="combobox"]')
+								) {
+									editorRef.current?.focus();
+								}
+							}}
+							onKeyDown={() => editorRef.current?.focus()}
+						>
+							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
 								{!(
 									root.theme.hideToolsInIframe && isIframed
@@ -796,33 +814,36 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								{footer}
 							</div>
 							<div className="flex items-center gap-2">
-								{root.theme.featureFlags?.enableModelSelect && (
-									<EngineSelect
-										className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-										disabled={isLoading}
-										name={
-											model?.engine_display_name ||
-											model?.app_name ||
-											""
-										}
-										value={model?.app_id || ""}
-										engineTypes={["MODEL"]}
-										metaFilters={[
-											{ tag: "text-generation" },
-										]}
-										onChange={(v) => {
-											setModel(v);
-										}}
-										popoverContentProps={{
-											align: "start",
-										}}
-										tokensUsed={tokensUsed}
-										tokensMax={tokensMax}
-										contextTooltipContent={
-											contextTooltipContent
-										}
-									/>
-								)}
+								<div data-tour="tour-model">
+									{root.theme.featureFlags
+										?.enableModelSelect && (
+										<EngineSelect
+											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+											disabled={isLoading}
+											name={
+												model?.engine_display_name ||
+												model?.app_name ||
+												""
+											}
+											value={model?.app_id || ""}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											onChange={(v) => {
+												setModel(v);
+											}}
+											popoverContentProps={{
+												align: "start",
+											}}
+											tokensUsed={tokensUsed}
+											tokensMax={tokensMax}
+											contextTooltipContent={
+												contextTooltipContent
+											}
+										/>
+									)}
+								</div>
 								{predefinedPrompts.length > 0 ? (
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -847,6 +868,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
+											data-tour="tour-record"
 											variant="ghost"
 											aria-label={t("input.recordLabel")}
 											size="icon-sm"
@@ -893,7 +915,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
                                          - When loading: Pause tool execution */}
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span>
+										<span data-tour="tour-send">
 											<Button
 												variant="default"
 												size="icon-sm"
