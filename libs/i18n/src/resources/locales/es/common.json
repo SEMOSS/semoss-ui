@@ -64,5 +64,9 @@
 	},
 	"images": {
 		"logoAlt": "logo"
+	},
+	"fileDrag": {
+		"title": "Suelta archivos para añadir al chat",
+		"disclaimer": "Asegúrese de contar con las aprobaciones adecuadas para utilizar materiales de terceros con tecnologías de IA."
 	}
 }

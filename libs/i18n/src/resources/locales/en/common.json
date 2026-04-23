@@ -65,5 +65,9 @@
 	},
 	"images": {
 		"logoAlt": "logo"
+	},
+	"fileDrag": {
+		"title": "Drop files to add to chat",
+		"disclaimer": "Please ensure you have the appropriate approvals for using any 3rd party materials with AI technologies."
 	}
 }

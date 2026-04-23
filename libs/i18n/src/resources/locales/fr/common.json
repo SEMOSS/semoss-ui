@@ -64,5 +64,9 @@
 	},
 	"images": {
 		"logoAlt": "logo"
+	},
+	"fileDrag": {
+		"title": "Déposez des fichiers pour les ajouter au chat",
+		"disclaimer": "Veuillez vous assurer d'avoir les autorisations appropriées pour utiliser des documents tiers avec des technologies d'IA."
 	}
 }
