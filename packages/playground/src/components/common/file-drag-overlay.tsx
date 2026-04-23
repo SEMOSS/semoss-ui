@@ -4,6 +4,7 @@ import {
 	Button,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@semoss/ui/next";
@@ -53,6 +54,11 @@ export const FileDragOverlay = () => {
 				<DialogContent {...{ [FILE_DRAG_ATTR]: "" }}>
 					<DialogHeader>
 						<DialogTitle>{t("fileDrag.modalTitle")}</DialogTitle>
+						{root.theme.fileDragDisclaimer && (
+							<DialogDescription>
+								{root.theme.fileDragDisclaimer}
+							</DialogDescription>
+						)}
 					</DialogHeader>
 
 					<div className="-mt-2 flex min-w-0 flex-col gap-4">
@@ -74,13 +80,19 @@ export const FileDragOverlay = () => {
 							    dropped anywhere on the page (including the backdrop)
 							    are captured. onDragOver here only drives the highlight
 							    and re-triggers isDragging when the dialog is already open. */}
-							<div
-								role="none"
-								className={`flex flex-1 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed transition-colors ${
+							<button
+								type="button"
+								tabIndex={0}
+								className={`flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed transition-colors ${
 									isDragging
 										? "border-primary bg-primary/5"
-										: "border-border"
+										: "border-border hover:border-primary hover:bg-primary/5"
 								}`}
+								onClick={() => fileInputRef.current?.click()}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" || e.key === " ")
+										fileInputRef.current?.click();
+								}}
 								onDragOver={(e) => {
 									if (!e.dataTransfer.types.includes("Files"))
 										return;
@@ -94,14 +106,8 @@ export const FileDragOverlay = () => {
 								<p className="text-center text-muted-foreground text-sm">
 									{t("fileDrag.title")}
 								</p>
-							</div>
+							</button>
 						</div>
-
-						{root.theme.fileDragDisclaimer && (
-							<p className="text-muted-foreground text-sm">
-								{root.theme.fileDragDisclaimer}
-							</p>
-						)}
 
 						<div className="flex justify-between">
 							<Button
