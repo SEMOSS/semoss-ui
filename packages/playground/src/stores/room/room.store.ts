@@ -1280,7 +1280,7 @@ export class RoomStore {
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]
 			>(
-				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}, autoDetect=${JSON.stringify(true)});`,
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
 				true,
 			);
 
