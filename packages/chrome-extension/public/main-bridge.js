@@ -42,14 +42,9 @@
 			window.postMessage({ type: "EXTENSION_READY" }, "*");
 		}
 
-		// Forward completion/error messages from isolated script to portal
-		if (
-			event.data?.type === "PLAYWRIGHT_SCRIPT_COMPLETED" ||
-			event.data?.type === "PLAYWRIGHT_SCRIPT_ERROR"
-		) {
-			console.log("[MAIN-BRIDGE] 📨 Forwarding result to portal:", event.data.type);
-			window.postMessage(event.data, "*");
-		}
+		// Note: Completion messages (PLAYWRIGHT_SCRIPT_COMPLETED/ERROR) are sent directly
+		// from content script to portal via window.postMessage, not through bridge
+		// to avoid infinite loop (bridge would re-trigger its own listener)
 	});
 
 	console.log("[MAIN-BRIDGE] ✅ Event listeners registered");

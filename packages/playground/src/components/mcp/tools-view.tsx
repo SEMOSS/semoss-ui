@@ -37,7 +37,7 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 		 */
 		const iframeRef = useRef<HTMLIFrameElement>(null);
 		const [isLoading, setIsLoading] = useState<boolean>(true);
-		const [url, setUrl] = useState("");
+		const [url, setUrl] = useState<string | null>("");
 
 		/**
 		 * Library Hooks
@@ -103,6 +103,68 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 		 * Effects
 		 */
 
+		// Forward completion/error messages from extension to iframe
+		useEffect(() => {
+			const handleMessage = (event: MessageEvent) => {
+				if (event.origin !== window.location.origin) return;
+
+				// Handle tool execution start - reset status for re-execution
+				if (event.data?.type === "SMSS_START_TOOL_EXECUTION") {
+					console.log(
+						"[PLAYGROUND] Resetting tool status for re-execution",
+					);
+					const toolStore = room.getTool(tool.id);
+					if (toolStore) {
+						toolStore.status = "LOADING";
+						console.log(
+							"[PLAYGROUND] Tool status reset to LOADING",
+						);
+					}
+				}
+
+				// Forward completion/error messages to iframe (portal)
+				if (
+					event.data?.type === "PLAYWRIGHT_SCRIPT_COMPLETED" ||
+					event.data?.type === "PLAYWRIGHT_SCRIPT_ERROR"
+				) {
+					console.log(
+						"[PLAYGROUND] Forwarding to iframe:",
+						event.data.type,
+						event.data,
+					);
+					iframeRef.current?.contentWindow?.postMessage(
+						event.data,
+						"*",
+					);
+				}
+
+				// Handle tool execution save from portal
+				if (event.data?.type === "SMSS_SAVE_TOOL_EXECUTION") {
+					console.log(
+						"[PLAYGROUND] Saving tool execution via processTool",
+					);
+					console.log(
+						"[PLAYGROUND] Tool response:",
+						event.data.toolResponse,
+					);
+					console.log(
+						"[PLAYGROUND] Tool status:",
+						event.data.toolStatus,
+					);
+					room.processTool(
+						message,
+						tool.id,
+						event.data.toolResponse,
+						event.data.toolStatus,
+						event.data.executedParameters,
+					);
+				}
+			};
+
+			window.addEventListener("message", handleMessage);
+			return () => window.removeEventListener("message", handleMessage);
+		}, [room, message, tool.id]);
+
 		useEffect(() => {
 			const chooseUrl = async () => {
 				// Finish loading
@@ -139,10 +201,10 @@ export const ToolsView: React.FC<ToolsViewProps> = observer(
 						//FixMe: Always returns a 200 so currently checking against default text returned
 						foundApp =
 							response.status === 200 &&
-							text &&
+							!!text &&
 							text !==
-							"Publish is not enabled on this project or there was an error publishing this project";
-					} catch (_e) { }
+								"Publish is not enabled on this project or there was an error publishing this project";
+					} catch (_e) {}
 
 					// Portals view else use default view off tool JSON
 					setUrl(

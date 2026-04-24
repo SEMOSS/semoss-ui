@@ -1,16 +1,10 @@
-import { AlertCircle, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	Label,
 	Textarea,
 } from "@semoss/ui/next";
@@ -97,37 +91,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		const [properties, setProperties] = useState<
 			Record<string, FieldSchema>
 		>({});
-		const [response, setResponse] = useState<string>(toolResponse);
-		const [showExtensionDialog, setShowExtensionDialog] =
-			useState<boolean>(false);
-		const [extensionCheckRetrying, setExtensionCheckRetrying] =
-			useState<boolean>(false);
-		const extensionIsOpen = useRef<boolean>(false);
-
-		const scriptForBrowserAutomation =
-			typeof data.recordedFile === "string" ? data.recordedFile : "";
-
-		useEffect(() => {
-			const handleMessage = (event: MessageEvent) => {
-				if (event.origin !== window.location.origin) {
-					return;
-				}
-
-				if (event.data?.type === "SMSS_EXTENSION_OPENED") {
-					extensionIsOpen.current = true;
-				}
-
-				if (event.data?.type === "SMSS_EXTENSION_CLOSED") {
-					extensionIsOpen.current = false;
-				}
-			};
-
-			window.addEventListener("message", handleMessage);
-
-			return () => {
-				window.removeEventListener("message", handleMessage);
-			};
-		}, []);
+		const [response, setResponse] = useState<string | undefined>(toolResponse);
 
 		/*
 		 * Constants
@@ -148,130 +112,29 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			setData((prev) => ({ ...prev, [field]: value }));
 		};
 
-		/**
-		 * Check if extension panel is open by actively pinging it
-		 */
-		const checkExtensionAvailable = async (): Promise<boolean> => {
-			if (!scriptForBrowserAutomation) {
-				return true;
-			}
-
-			// Active ping/pong validation with timeout
-			return new Promise<boolean>((resolve) => {
-				let timeoutId: ReturnType<typeof setTimeout> | null = null;
-				let resolved = false;
-
-				// Set up one-time listener for pong response
-				const handlePong = (event: MessageEvent) => {
-					if (event.origin !== window.location.origin) {
-						return;
-					}
-
-					if (event.data?.type === "SMSS_EXTENSION_PONG") {
-						if (!resolved) {
-							resolved = true;
-							if (timeoutId) clearTimeout(timeoutId);
-							window.removeEventListener("message", handlePong);
-							resolve(true);
-						}
-					}
-				};
-
-				// Add listener
-				window.addEventListener("message", handlePong);
-
-				// Set timeout for 2 seconds
-				timeoutId = setTimeout(() => {
-					if (!resolved) {
-						resolved = true;
-						window.removeEventListener("message", handlePong);
-						resolve(false);
-					}
-				}, 2000);
-
-				// Send ping
-				window.postMessage(
-					{
-						type: "SMSS_EXTENSION_PING",
-						timestamp: Date.now(),
-					},
-					"*",
-				);
-			});
-		};
-
 		// Tool Execution
 		const handleSubmit = async () => {
-			// Check if extension is available for Playwright scripts BEFORE setting isSubmitting
-			if (scriptForBrowserAutomation) {
-				const extensionAvailable = await checkExtensionAvailable();
-
-				if (!extensionAvailable) {
-					setShowExtensionDialog(true);
-					return; // Stop execution until user opens extension
-				}
-			}
-
 			setIsSubmitting(true);
 			let success = false;
 			let output = "";
 			try {
-				// Check if this is a Playwright script execution
-				if (scriptForBrowserAutomation) {
-					// Get session ID first
-					const sessionIdResponse = await room.runRoomPixel<[string]>(
-						"Session();",
-						false,
-						false,
-					);
-					const sessionId = sessionIdResponse.pixelReturn[0].output;
-
-					// Fetch the complete Playwright script
-					const scriptResponse = await room.runRoomPixel<[unknown]>(
-						`GetAllSteps(project=["${app}"], sessionId=["${sessionId}"], fileName=["${scriptForBrowserAutomation}"]);`,
-						false,
-						false,
-					);
-					const scriptJson = scriptResponse.pixelReturn[0].output;
-
-					// Log the fetched script to console
-
-					// Send script to browser extension
-					window.postMessage(
-						{
-							type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
-							script: {
-								projectId: app,
-								name: scriptForBrowserAutomation,
-								autoExecute: false,
-								scriptContent: scriptJson,
-							},
-						},
-						"*",
-					);
-
-					output = `Successfully fetched Playwright script: ${scriptForBrowserAutomation}`;
-					success = true;
-				} else {
-					// Normal MCP tool execution for non-Playwright tools
-					const response = await room.runRoomPixel<[unknown]>(
-						`RunMCPTool(project = [ "${app}" ], function=[ "${
-							tool.name
-						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-						false,
-						false,
-					);
-					const rawOutput = response.pixelReturn[0].output;
-					output =
-						typeof rawOutput === "string"
-							? rawOutput
-							: JSON.stringify(rawOutput);
-					success = true;
-				}
+				const response = await room.runRoomPixel<[unknown]>(
+					`RunMCPTool(project = [ "${app}" ], function=[ "${tool.name
+					}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+					false,
+					false,
+				);
+				const rawOutput = response.pixelReturn[0].output;
+				output =
+					typeof rawOutput === "string"
+						? rawOutput
+						: JSON.stringify(rawOutput);
+				success = true;
 			} catch (error) {
-				output = error.toString();
+				output = error instanceof Error ? error.message : String(error);
 				success = false;
 			}
+
 			const m = room.getMessage(message);
 			if (!m || m instanceof ResponseMessageStore !== true) {
 			} else {
@@ -389,35 +252,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									{/* Required fields */}
 									{renderFields(requiredFields, true)}
 
-									{/* Playwright Script Details */}
-									{scriptForBrowserAutomation && (
-										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
-											<h3 className="font-semibold text-base">
-												Playwright Script Details
-											</h3>
-											<div className="space-y-2 text-sm">
-												<div>
-													<span className="font-medium">
-														Project ID:
-													</span>
-													<span className="ml-2 text-muted-foreground">
-														{app}
-													</span>
-												</div>
-												<div>
-													<span className="font-medium">
-														Recorded File:
-													</span>
-													<span className="ml-2 text-muted-foreground">
-														{
-															scriptForBrowserAutomation
-														}
-													</span>
-												</div>
-											</div>
-										</div>
-									)}
-
 									{/* Optional fields toggle */}
 									{optionalFields.length > 0 && (
 										<>
@@ -477,82 +311,6 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						</Button>
 					</div>
 				)}
-
-				{/* Extension Not Available Dialog */}
-				<Dialog
-					open={showExtensionDialog}
-					onOpenChange={setShowExtensionDialog}
-				>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle className="flex items-center gap-2">
-								<AlertCircle className="h-5 w-5 text-warning" />
-								Browser Extension Required
-							</DialogTitle>
-							<DialogDescription>
-								The browser extension is not responding. To
-								execute Playwright scripts, please ensure the
-								SEMOSS Chrome Extension is installed and the
-								side panel is open.
-							</DialogDescription>
-						</DialogHeader>
-						<div className="space-y-3 py-4">
-							<p className="font-medium text-sm">
-								Steps to open the extension:
-							</p>
-							{/* biome-ignore lint/nursery/useSortedClasses: order is correct */}
-							<ol className="ml-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
-								<li>
-									Look for the SEMOSS extension icon in your
-									browser toolbar (puzzle piece icon)
-								</li>
-								<li>
-									Click the extension icon to open the side
-									panel
-								</li>
-								<li>Wait for the panel to load completely</li>
-								<li>Click "Retry" below to continue</li>
-							</ol>
-						</div>
-						<DialogFooter className="gap-2">
-							<Button
-								variant="outline"
-								onClick={() => setShowExtensionDialog(false)}
-							>
-								Cancel
-							</Button>
-							<Button
-								onClick={async () => {
-									setExtensionCheckRetrying(true);
-									const available =
-										await checkExtensionAvailable();
-									setExtensionCheckRetrying(false);
-
-									if (available) {
-										setShowExtensionDialog(false);
-										// Retry the execution
-										handleSubmit();
-									} else {
-										// Still not available - user needs to open it
-										console.warn(
-											"[PLAYGROUND] ⚠️ Extension still not available after retry",
-										);
-									}
-								}}
-								disabled={extensionCheckRetrying}
-							>
-								{extensionCheckRetrying ? (
-									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Checking...
-									</>
-								) : (
-									"Retry"
-								)}
-							</Button>
-						</DialogFooter>
-					</DialogContent>
-				</Dialog>
 			</div>
 		);
 	},

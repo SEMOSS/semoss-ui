@@ -6,6 +6,12 @@ initializeRPC();
 let annotatedElements: HTMLElement[] = [];
 const elementIdToUniqueId: Map<number, string> = new Map();
 
+// Track panel state to only respond to PING when panel is actually open
+let isPanelOpen = false;
+
+// Track portal iframe for sending completion messages back
+let portalIframeSource: Window | null = null;
+
 // Inject MAIN world bridge script
 const script = document.createElement("script");
 script.src = chrome.runtime.getURL("main-bridge.js");
@@ -17,10 +23,50 @@ script.onload = () => {
 
 // Listen for messages from MAIN bridge
 window.addEventListener("message", (event) => {
-	// Only accept messages from the same window
-	if (event.source !== window) return;
+	// Accept messages from same origin (allows iframe messages from portal)
+	// Check origin instead of window source to support iframe communication
+	if (event.origin !== window.location.origin) {
+		// Silently ignore messages from other origins
+		return;
+	}
+
+	// Debug logging for key messages
+	if (event.data?.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
+		console.log("[CONTENT] 🔍 Received EXECUTE_PLAYWRIGHT_SCRIPT from:", event.origin);
+		console.log("[CONTENT] 🔍 Has scriptContent:", !!event.data?.payload?.scriptContent);
+	}
+
+	// Handle PING from portal iframe - respond with PONG back to iframe
+	if (event.data?.type === "SMSS_EXTENSION_PING") {
+		console.log("[CONTENT] 🏓 Received PING from portal iframe");
+		console.log("[CONTENT] Cached isPanelOpen:", isPanelOpen);
+
+		// Always verify with background script for real-time state (don't trust cache)
+		console.log("[CONTENT] 🔍 Querying background for real-time panel state...");
+		chrome.runtime.sendMessage({ type: "CHECK_PANEL_STATE" }, (response) => {
+			const actualPanelState = response?.isPanelOpen || false;
+			console.log("[CONTENT] Background confirms panel state:", actualPanelState);
+
+			// Update cached state
+			isPanelOpen = actualPanelState;
+
+			if (actualPanelState) {
+				// Send PONG since panel is actually open
+				console.log("[CONTENT] ✅ Sending PONG to portal");
+				if (event.source && event.source !== window) {
+					(event.source as Window).postMessage(
+						{ type: "SMSS_EXTENSION_PONG", timestamp: Date.now() },
+						event.origin
+					);
+				}
+			} else {
+				console.log("[CONTENT] ❌ Panel is closed, not sending PONG");
+			}
+		});
+	}
 
 	// Bridge relays PING from portal
+
 	if (event.data?.type === "EXTENSION_PING_BRIDGE") {
 		console.log("[CONTENT] 🏓 Received PING from bridge, responding");
 		window.postMessage({ type: "EXTENSION_READY_BRIDGE" }, "*");
@@ -47,6 +93,35 @@ window.addEventListener("message", (event) => {
 			},
 		}).catch((error) => {
 			console.error("[CONTENT] ❌ Failed to forward:", error);
+		});
+	}
+
+	// Direct portal message (new format)
+	if (event.data?.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
+		if (!isExtensionContextValid()) {
+			alert("Chrome Extension was reloaded. Please refresh this page.");
+			return;
+		}
+
+		// Store the iframe source to send completion back later
+		if (event.source && event.source !== window) {
+			portalIframeSource = event.source as Window;
+			console.log("[CONTENT] 📍 Stored portal iframe for completion messages");
+		}
+
+		console.log("[CONTENT] 📤 Received EXECUTE_PLAYWRIGHT_SCRIPT from portal, forwarding to extension");
+
+		const payload = event.data.payload;
+		chrome.runtime.sendMessage({
+			type: "EXECUTE_PLAYWRIGHT_SCRIPT",
+			payload: {
+				fileName: payload.fileName,
+				projectID: payload.projectID,
+				title: payload.title,
+				scriptContent: payload.scriptContent // Forward scriptContent if present
+			},
+		}).catch((error) => {
+			console.error("[CONTENT] ❌ Failed to forward portal message:", error);
 		});
 	}
 });
@@ -130,13 +205,31 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 	// Forward completion messages back to portal via bridge
 	if (message.type === "SCRIPT_EXECUTION_COMPLETE") {
 		console.log("[CONTENT] ✅ Execution complete, forwarding to portal");
-		window.postMessage(
-			{
-				type: "PLAYWRIGHT_SCRIPT_COMPLETED",
-				fileName: message.fileName,
-			},
-			"*"
-		);
+		console.log("[CONTENT] Success:", message.success, "Message:", message.message);
+
+		const completionMessage = message.success ? {
+			type: "PLAYWRIGHT_SCRIPT_COMPLETED",
+			success: true,
+			message: message.message || "Script executed successfully",
+			fileName: message.fileName,
+		} : {
+			type: "PLAYWRIGHT_SCRIPT_ERROR",
+			error: message.message || "Script execution failed",
+			fileName: message.fileName,
+		};
+
+		// Send to portal iframe if available, otherwise to window
+		if (portalIframeSource) {
+			console.log("[CONTENT] 📤 Sending completion to portal iframe");
+			portalIframeSource.postMessage(completionMessage, window.location.origin);
+			portalIframeSource = null; // Clear after use
+		} else {
+			console.log("[CONTENT] 📤 Sending completion to window (no iframe stored)");
+			window.postMessage(completionMessage, "*");
+		}
+
+		sendResponse({ success: true });
+		return true;
 	}
 
 	// Forward error messages back to portal via bridge
@@ -149,6 +242,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			},
 			"*"
 		);
+		sendResponse({ success: true });
+		return true;
 	}
 
 	switch (message.type) {
@@ -247,23 +342,29 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			break;
 
 		case "SMSS_EXTENSION_PANEL_OPENED":
-			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
-				detail: {
+			console.log("[CONTENT] 📢 Panel opened - notifying portal via window.postMessage");
+			isPanelOpen = true;
+			window.postMessage(
+				{
 					type: "SMSS_EXTENSION_OPENED",
 					timestamp: Date.now(),
-				}
-			}));
+				},
+				"*"
+			);
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_CLOSED":
-			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
-				detail: {
+			console.log("[CONTENT] 📢 Panel closed - notifying portal via window.postMessage");
+			isPanelOpen = false;
+			window.postMessage(
+				{
 					type: "SMSS_EXTENSION_CLOSED",
 					timestamp: Date.now(),
-				}
-			}));
+				},
+				"*"
+			);
 
 			sendResponse({ success: true });
 			break;

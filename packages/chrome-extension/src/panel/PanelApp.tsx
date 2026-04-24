@@ -24,6 +24,14 @@ const PanelApp: React.FC = () => {
 
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
 
+	// Ref to track isRunning without causing useEffect re-runs
+	const isRunningRef = useRef<boolean>(false);
+	// Ref to track userInputCallback without causing useEffect re-runs
+	const userInputCallbackRef = useRef(userInputCallback);
+	// Ref to track execution tab for cleanup detection
+	const executionTabIdRef = useRef<number | null>(null);
+	const tabRemovalListenerRef = useRef<((tabId: number) => void) | null>(null);
+
 	// Real-time input mirroring state
 	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
 	const [currentTabId, setCurrentTabId] = useState<number | null>(null);
@@ -78,6 +86,13 @@ const PanelApp: React.FC = () => {
 		) => {
 			console.log("[PANEL] 📨 Received message:", message.type, message);
 
+			// Respond to panel ping checks from background
+			if (message.type === "PANEL_PING_CHECK") {
+				console.log("[PANEL] 📨 Received ping check, responding...");
+				sendResponse({ alive: true });
+				return true;
+			}
+
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
 			if (sender.tab && message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
@@ -85,80 +100,82 @@ const PanelApp: React.FC = () => {
 				return;
 			}
 
-			// CRITICAL: Block script execution if already running
-			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" && isRunning) {
+			// CRITICAL: Block script execution if already running (use ref to avoid stale closure)
+			if ((message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" || message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") && isRunningRef.current) {
 				console.log("[PANEL] ⏸️ Already running, ignoring duplicate execution");
 				return;
 			}
 
-			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-				// Handle Playwright script execution request from Playground
-				const script = message.script;
+			// Handle portal message format
+			if (message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
+				const { fileName, projectID, title, scriptContent } = message.payload || {};
+
+				if (!fileName || !projectID) {
+					console.error("[PANEL] ❌ Missing fileName or projectID in portal message");
+					return;
+				}
+
+				console.log("[PANEL] 📨 Portal execution request:", { fileName, projectID, title });
+
+				// Set ref IMMEDIATELY to block duplicate messages
+				isRunningRef.current = true;
+				setIsRunning(true);
 
 				setActionHistory([
-					`🎬 Received script from Playground: ${script.name}`,
+					`🎬 Received script from Portal: ${title || fileName}`,
 				]);
 				setMode("script");
 
-				// Check if script content was provided
-				if (script.scriptContent) {
-					let content = script.scriptContent;
+				// Check if script content is provided (new format)
+				if (scriptContent) {
+					console.log("[PANEL] ✅ Script content received, executing directly");
 
-					// If scriptContent is a string, parse it first
+					// Parse and set the script
+					let content = scriptContent;
+
+					// Parse if it's a string
 					if (typeof content === "string") {
 						try {
 							content = JSON.parse(content);
 						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse scriptContent string:",
-								e,
-							);
+							console.error("[PANEL] ❌ Failed to parse script:", e);
 						}
 					}
 
-					// If steps is a string, parse it too (handle nested stringification)
+					// Parse nested steps if needed
 					if (content && typeof content.steps === "string") {
 						try {
 							content.steps = JSON.parse(content.steps);
 						} catch (e) {
-							console.error(
-								"[PANEL] ❌ Failed to parse steps string:",
-								e,
-							);
+							console.error("[PANEL] ❌ Failed to parse steps:", e);
 						}
 					}
 
-					// Use the provided script content directly
-					const scriptContent = JSON.stringify(content, null, 2);
-					setScriptJson(scriptContent);
+					const finalScriptContent = JSON.stringify(content, null, 2);
+					setScriptJson(finalScriptContent);
 					setJsonFormat("playwright");
+
 					setActionHistory((prev) => [
 						...prev,
-						`✅ Script loaded: ${script.name}`,
+						`✅ Script loaded: ${fileName}`,
+						`▶️ Executing script in new tab...`,
 					]);
 
-					// Auto-execute the script in a new tab
-					setActionHistory((prev) => [
-						...prev,
-						`▶️ Preparing to execute script in new tab...`,
-					]);
-
-					// Execute immediately - executeScriptWithContent handles new tab creation
-					setTimeout(async () => {
+					// Execute immediately
+					executeScriptWithContent(finalScriptContent, "playwright").catch((error) => {
+						console.error('[PANEL] ❌ Error executing script:', error);
 						setActionHistory((prev) => [
 							...prev,
-							`▶️ Executing script...`,
+							`❌ Failed to execute script: ${error instanceof Error ? error.message : String(error)}`,
 						]);
-						await executeScriptWithContent(
-							scriptContent,
-							"playwright",
-						);
-					}, 500);
-				} else if (script.autoExecute && script.fileName && script.projectId) {
-					// Script from portal - need to fetch content from SEMOSS backend
+					});
+				} else {
+					// Fallback: fetch script content from backend (for backwards compatibility)
+					console.log("[PANEL] ⚠️ No script content in payload, fetching from backend");
+
 					setActionHistory((prev) => [
 						...prev,
-						`🔄 Fetching script from backend: ${script.fileName}`,
+						`🔄 Fetching script from backend: ${fileName}`,
 					]);
 
 					// Use async IIFE to handle async operations
@@ -195,7 +212,7 @@ const PanelApp: React.FC = () => {
 								headers: { 'Content-Type': 'application/json' },
 								credentials: 'include',
 								body: JSON.stringify({
-									expression: `GetAllSteps(project=["${script.projectId}"], sessionId=["${sessionId}"], fileName=["${script.fileName}"]);`,
+									expression: `GetAllSteps(project=["${projectID}"], sessionId=["${sessionId}"], fileName=["${fileName}"]);`,
 								}),
 							});
 
@@ -236,7 +253,7 @@ const PanelApp: React.FC = () => {
 
 							setActionHistory((prev) => [
 								...prev,
-								`✅ Script loaded: ${script.fileName}`,
+								`✅ Script loaded: ${fileName}`,
 								`▶️ Executing script in new tab...`,
 							]);
 
@@ -254,14 +271,132 @@ const PanelApp: React.FC = () => {
 				}
 			}
 
+			if (message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
+				// Handle Playwright script execution request from Playground
+				const script = message.script;
+
+				if (!script.fileName || !script.projectId) {
+					console.error("[PANEL] ❌ Missing fileName or projectId in playground message");
+					return;
+				}
+
+				console.log("[PANEL] 📨 Playground execution request:", script);
+
+				setActionHistory([
+					`🎬 Received script from Playground: ${script.fileName}`,
+				]);
+				setMode("script");
+
+				// Set ref IMMEDIATELY to block duplicate messages
+				isRunningRef.current = true;
+				setIsRunning(true);
+
+				// Always fetch script content from backend (no longer accepting scriptContent)
+				setActionHistory((prev) => [
+					...prev,
+					`🔄 Fetching script from backend: ${script.fileName}`,
+				]);
+
+				// Use async IIFE to handle async operations
+				(async () => {
+					try {
+						// Get the SEMOSS module path (usually /Monolith)
+						const MODULE = '/Monolith';
+						const SEMOSS_URL = window.location.origin + MODULE;
+
+						// First get a session ID
+						const sessionResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							credentials: 'include',
+							body: JSON.stringify({ expression: 'Session();' }),
+						});
+
+						if (!sessionResponse.ok) {
+							throw new Error('Failed to get session ID');
+						}
+
+						const sessionData = await sessionResponse.json();
+						const sessionId = sessionData.pixelReturn?.[0]?.output;
+
+						if (!sessionId) {
+							throw new Error('No session ID returned');
+						}
+
+						console.log('[PANEL] 📋 Session ID:', sessionId);
+
+						// Now fetch the script using GetAllSteps
+						const scriptResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							credentials: 'include',
+							body: JSON.stringify({
+								expression: `GetAllSteps(project=["${script.projectId}"], sessionId=["${sessionId}"], fileName=["${script.fileName}"]);`,
+							}),
+						});
+
+						if (!scriptResponse.ok) {
+							throw new Error('Failed to fetch script content');
+						}
+
+						const scriptData = await scriptResponse.json();
+						const scriptContent = scriptData.pixelReturn?.[0]?.output;
+
+						if (!scriptContent) {
+							throw new Error('No script content returned');
+						}
+
+						console.log('[PANEL] ✅ Script fetched successfully');
+
+						// Parse and set the script
+						let content = scriptContent;
+						if (typeof content === "string") {
+							try {
+								content = JSON.parse(content);
+							} catch (e) {
+								console.error("[PANEL] ❌ Failed to parse script:", e);
+							}
+						}
+
+						if (content && typeof content.steps === "string") {
+							try {
+								content.steps = JSON.parse(content.steps);
+							} catch (e) {
+								console.error("[PANEL] ❌ Failed to parse steps:", e);
+							}
+						}
+
+						const finalScriptContent = JSON.stringify(content, null, 2);
+						setScriptJson(finalScriptContent);
+						setJsonFormat("playwright");
+
+						setActionHistory((prev) => [
+							...prev,
+							`✅ Script loaded: ${script.fileName}`,
+							`▶️ Executing script in new tab...`,
+						]);
+
+						// Execute immediately
+						await executeScriptWithContent(finalScriptContent, "playwright");
+
+					} catch (error) {
+						console.error('[PANEL] ❌ Error fetching/executing script:', error);
+						setActionHistory((prev) => [
+							...prev,
+							`❌ Failed to fetch script: ${error instanceof Error ? error.message : String(error)}`,
+						]);
+					}
+				})();
+			}
+
 			// Handle field input detected from webpage
 			if (message.type === "FIELD_INPUT_DETECTED") {
 				// If we're waiting for user input, auto-submit with the detected value
-				if (waitingForUserInput && userInputCallback) {
+				if (waitingForUserInput && userInputCallbackRef.current) {
 					const valueToUse = message.isPassword
 						? "••••••••"
 						: message.value || "";
-					userInputCallback(valueToUse);
+					userInputCallbackRef.current(valueToUse);
 				}
 			}
 		};
@@ -272,8 +407,17 @@ const PanelApp: React.FC = () => {
 		return () => {
 			console.log("[PANEL] 🔇 Removing message listener");
 		};
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [isRunning, waitingForUserInput, userInputCallback]);
+	}, []); // No dependencies - listener stays stable throughout component lifecycle
+
+	// Sync isRunning state with ref to avoid stale closures in message listener
+	useEffect(() => {
+		isRunningRef.current = isRunning;
+	}, [isRunning]);
+
+	// Sync userInputCallback with ref to avoid stale closures in message listener
+	useEffect(() => {
+		userInputCallbackRef.current = userInputCallback;
+	}, [userInputCallback]);
 
 	// Close dropdown when clicking outside
 
@@ -367,6 +511,37 @@ const PanelApp: React.FC = () => {
 				addToHistory(`✓ New tab created`);
 				targetTab = newTab;
 				createdNewTab = true; // Mark that we created a tab - prevents additional tabs later
+
+				// Track execution tab for cleanup detection
+				executionTabIdRef.current = newTab.id;
+
+				// Listen for tab closure during execution
+				const handleTabRemoved = (tabId: number) => {
+					if (tabId === executionTabIdRef.current && isRunningRef.current) {
+						console.log("[PANEL] ⚠️ Execution tab closed abruptly");
+						// Send cancellation message
+						chrome.runtime.sendMessage({
+							type: "SCRIPT_EXECUTION_COMPLETE",
+							success: false,
+							message: "Script execution cancelled: Tab was closed",
+						}).catch((err) => {
+							console.error("[PANEL] ❌ Failed to send cancellation:", err);
+						});
+						// Reset state
+						setIsRunning(false);
+						isRunningRef.current = false;
+						executionTabIdRef.current = null;
+						addToHistory("❌ Execution cancelled: Tab closed");
+						// Remove listener
+						if (tabRemovalListenerRef.current) {
+							chrome.tabs.onRemoved.removeListener(tabRemovalListenerRef.current);
+							tabRemovalListenerRef.current = null;
+						}
+					}
+				};
+
+				tabRemovalListenerRef.current = handleTabRemoved;
+				chrome.tabs.onRemoved.addListener(handleTabRemoved);
 
 				// Wait for tab to be ready and page to load
 				let loadTimeout = 15;
@@ -729,6 +904,14 @@ const PanelApp: React.FC = () => {
 			}
 		} finally {
 			setIsRunning(false);
+			isRunningRef.current = false;
+
+			// Clean up tab closure listener
+			if (tabRemovalListenerRef.current) {
+				chrome.tabs.onRemoved.removeListener(tabRemovalListenerRef.current);
+				tabRemovalListenerRef.current = null;
+			}
+			executionTabIdRef.current = null;
 		}
 	};
 

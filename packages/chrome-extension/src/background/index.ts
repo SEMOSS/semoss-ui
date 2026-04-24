@@ -4,6 +4,12 @@ import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 // Track which tabs have debuggers attached
 const attachedDebuggers = new Set<number>();
 
+// Track the tab that initiated script execution (to send completion back to it)
+let executionSourceTabId: number | null = null;
+
+// Track panel state for content script queries
+let isPanelOpen = false;
+
 // Handle extension icon click to open side panel
 chrome.action.onClicked.addListener((tab) => {
 	if (tab.id) {
@@ -22,16 +28,31 @@ chrome.debugger.onDetach.addListener((source, reason) => {
 
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	// Forward playground messages from content scripts to all extension pages (panel, popup, etc.)
-	// Only forward if message came from a tab (content script), not from extension itself
+	// Debug: Log all messages to see sender info
+	console.log("[BACKGROUND] 📨 Received:", message.type, "hasTab:", !!sender.tab);
+
+	// Store source tab for execution messages (needed for completion routing)
+	// Content script's sendMessage already broadcasts to all extension contexts, no need to re-broadcast
 	if (
 		sender.tab &&
+		sender.tab.id &&
 		(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
-			message.type === "SMSS_EXEC_GOOGLE_RECORDER_SCRIPT" ||
+			message.type === "EXECUTE_PLAYWRIGHT_SCRIPT")
+	) {
+		executionSourceTabId = sender.tab.id;
+		console.log("[BACKGROUND] 📍 Stored execution source tab:", executionSourceTabId);
+		sendResponse({ success: true });
+		return true;
+	}
+
+	// Forward other playground messages if needed (these may require broadcasting)
+	if (
+		sender.tab &&
+		(message.type === "SMSS_EXEC_GOOGLE_RECORDER_SCRIPT" ||
 			message.type === "PLAYGROUND_CHAT_RESPONSE" ||
 			message.type === "PLAYGROUND_CHAT_SUBMIT")
 	) {
-		// Broadcast to all extension contexts (this won't trigger this listener again since sender.tab will be undefined)
+		// Broadcast to all extension contexts
 		chrome.runtime
 			.sendMessage(message)
 			.then(() => {
@@ -44,24 +65,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true;
 	}
 
-	// Forward script execution completion from extension (panel) back to all tabs (content scripts)
-	// This allows the playground to receive execution status
+	// Forward script execution completion from extension (panel) back to the originating tab ONLY
+	// This prevents infinite loops caused by sending to all tabs (including newly opened ones)
 	if (!sender.tab && message.type === "SCRIPT_EXECUTION_COMPLETE") {
-		// Send to all tabs
-		chrome.tabs.query({}, (tabs) => {
-			tabs.forEach((tab) => {
-				if (tab.id) {
-					chrome.tabs
-						.sendMessage(tab.id, message)
-						.then(() => {
-							// Sent completion to tab
-						})
-						.catch(() => {
-							// Ignore errors (tab might not have content script)
-						});
-				}
-			});
-		});
+		// Send ONLY to the tab that initiated execution, not all tabs
+		if (executionSourceTabId) {
+			console.log("[BACKGROUND] 📤 Sending completion to source tab:", executionSourceTabId);
+			chrome.tabs
+				.sendMessage(executionSourceTabId, message)
+				.then(() => {
+					console.log("[BACKGROUND] ✅ Sent completion to source tab:", executionSourceTabId);
+					executionSourceTabId = null; // Clear after sending
+				})
+				.catch((error) => {
+					console.error("[BACKGROUND] ❌ Failed to send completion:", error);
+					executionSourceTabId = null;
+				});
+		} else {
+			console.warn("[BACKGROUND] ⚠️ No source tab stored, cannot send completion");
+		}
 
 		sendResponse({ success: true });
 		return true;
@@ -73,6 +95,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		(message.type === "SMSS_EXTENSION_PANEL_OPENED" ||
 			message.type === "SMSS_EXTENSION_PANEL_CLOSED")
 	) {
+		// Track panel state
+		if (message.type === "SMSS_EXTENSION_PANEL_OPENED") {
+			isPanelOpen = true;
+			console.log("[BACKGROUND] 📢 Panel opened, state updated");
+		} else {
+			isPanelOpen = false;
+			console.log("[BACKGROUND] 📢 Panel closed, state updated");
+		}
+
 		chrome.tabs.query({}, (tabs) => {
 			tabs.forEach((tab) => {
 				if (tab.id) {
@@ -90,6 +121,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 		sendResponse({ success: true });
 		return true;
+	}
+
+	// Handle panel state check from content script
+	// Ping the panel directly to verify it's actually alive
+	if (message.type === "CHECK_PANEL_STATE") {
+		console.log("[BACKGROUND] 🔍 Panel state check requested, pinging panel...");
+
+		// Try to send a message to the panel to see if it responds
+		chrome.runtime.sendMessage({ type: "PANEL_PING_CHECK" }, (response) => {
+			const actuallyOpen = !!response && response.alive === true;
+			console.log("[BACKGROUND] Panel ping response:", actuallyOpen ? "Panel is alive" : "Panel not responding");
+
+			// Update cached state based on actual response
+			isPanelOpen = actuallyOpen;
+
+			sendResponse({ isPanelOpen: actuallyOpen });
+		});
+
+		return true; // Async response
 	}
 
 	// Forward field monitoring messages from panel to specific tab
