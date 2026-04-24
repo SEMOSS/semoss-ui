@@ -1,21 +1,21 @@
 import {
-	AlignHorizontalCenter,
-	AlignHorizontalLeft,
-	AlignHorizontalRight,
-	ArrowDownward,
-	ArrowForward,
-	FormatAlignCenter,
-	FormatAlignJustify,
-	FormatAlignLeft,
-	FormatAlignRight,
-	FormatBold,
-	FormatItalic,
-	FormatUnderlined,
-	RestartAlt,
-	VerticalAlignBottom,
-	VerticalAlignCenter,
-	VerticalAlignTop,
-} from "@mui/icons-material";
+	AlignCenter,
+	AlignHorizontalJustifyCenter,
+	AlignHorizontalJustifyEnd,
+	AlignHorizontalJustifyStart,
+	AlignJustify,
+	AlignLeft,
+	AlignRight,
+	AlignVerticalDistributeCenter,
+	AlignVerticalJustifyEnd,
+	AlignVerticalJustifyStart,
+	ArrowDown,
+	ArrowRight,
+	Bold,
+	Italic,
+	RotateCcw,
+	Underline,
+} from "lucide-react";
 import { type BlockDef, useBlocks } from "@semoss/renderer";
 import { ListenerSettings, QueryInputSettings } from "../settings";
 import { BorderSettings } from "../settings/custom/BorderSettings";
@@ -50,19 +50,19 @@ export const buildLayoutSection = () => ({
 					options={[
 						{
 							value: "start",
-							icon: VerticalAlignTop,
+							icon: AlignVerticalJustifyStart,
 							title: "Top",
 							isDefault: true,
 						},
 						{
 							value: "center",
-							icon: VerticalAlignCenter,
+							icon: AlignVerticalDistributeCenter,
 							title: "Center",
 							isDefault: false,
 						},
 						{
 							value: "end",
-							icon: VerticalAlignBottom,
+							icon: AlignVerticalJustifyEnd,
 							title: "Bottom",
 							isDefault: false,
 						},
@@ -80,19 +80,19 @@ export const buildLayoutSection = () => ({
 					options={[
 						{
 							value: "left",
-							icon: AlignHorizontalLeft,
+							icon: AlignHorizontalJustifyStart,
 							title: "Top",
 							isDefault: true,
 						},
 						{
 							value: "center",
-							icon: AlignHorizontalCenter,
+							icon: AlignHorizontalJustifyCenter,
 							title: "Center",
 							isDefault: false,
 						},
 						{
 							value: "right",
-							icon: AlignHorizontalRight,
+							icon: AlignHorizontalJustifyEnd,
 							title: "Right",
 							isDefault: false,
 						},
@@ -110,13 +110,13 @@ export const buildLayoutSection = () => ({
 					options={[
 						{
 							value: "column",
-							icon: ArrowDownward,
+							icon: ArrowDown,
 							title: "Column",
 							isDefault: true,
 						},
 						{
 							value: "row",
-							icon: ArrowForward,
+							icon: ArrowRight,
 							title: "Row",
 							isDefault: false,
 						},
@@ -146,25 +146,25 @@ export const buildTextAlignSection = () => ({
 					options={[
 						{
 							value: "left",
-							icon: FormatAlignLeft,
+							icon: AlignLeft,
 							title: "Left",
 							isDefault: true,
 						},
 						{
 							value: "right",
-							icon: FormatAlignRight,
+							icon: AlignRight,
 							title: "Right",
 							isDefault: false,
 						},
 						{
 							value: "center",
-							icon: FormatAlignCenter,
+							icon: AlignCenter,
 							title: "Center",
 							isDefault: false,
 						},
 						{
 							value: "justify",
-							icon: FormatAlignJustify,
+							icon: AlignJustify,
 							title: "Justify",
 							isDefault: false,
 						},
@@ -270,7 +270,7 @@ export const buildColorSection = () => ({
 					options={[
 						{
 							value: "#FFFFFF00",
-							icon: RestartAlt,
+							icon: RotateCcw,
 							title: "Reset",
 							isDefault: true,
 						},
@@ -369,19 +369,19 @@ export const buildPositionSection = () => ({
 					options={[
 						{
 							value: "flex-start",
-							icon: AlignHorizontalLeft,
+							icon: AlignHorizontalJustifyStart,
 							title: "Start",
 							isDefault: false,
 						},
 						{
 							value: "center",
-							icon: AlignHorizontalCenter,
+							icon: AlignHorizontalJustifyCenter,
 							title: "Center",
 							isDefault: false,
 						},
 						{
 							value: "flex-end",
-							icon: AlignHorizontalRight,
+							icon: AlignHorizontalJustifyEnd,
 							title: "End",
 							isDefault: false,
 						},
@@ -424,21 +424,21 @@ export const buildTypographySection = () => ({
 					options={[
 						{
 							value: "bold",
-							icon: FormatBold,
+							icon: Bold,
 							path: "style.fontWeight",
 							title: "Bold",
 							isDefault: false,
 						},
 						{
 							value: "italic",
-							icon: FormatItalic,
+							icon: Italic,
 							path: "style.fontStyle",
 							title: "Italic",
 							isDefault: false,
 						},
 						{
 							value: "underline",
-							icon: FormatUnderlined,
+							icon: Underline,
 							path: "style.textDecoration",
 							title: "Underlined",
 							isDefault: false,
@@ -506,7 +506,7 @@ export const buildListener = <D extends BlockDef = BlockDef>(
 /**
  * get show field optionslist which will contain static true false, dynamic variables list when the block is selected
  */
-export function getShowFieldOptions(id: string) {
+export function getShowFieldOptions(_id: string) {
 	const { state } = useBlocks();
 	const stateVariableList = Object.keys(state.variables).reduce(
 		(acc, queryKey) => {
@@ -544,7 +544,7 @@ export function getShowFieldOptions(id: string) {
 /**
  * Show field for the block which contains both static true & false, with other variables and send the field
  */
-export const buildShowField = <D extends BlockDef = BlockDef>() => [
+export const buildShowField = <_D extends BlockDef = BlockDef>() => [
 	{
 		description: "Show Block",
 		render: ({ id }) => (

@@ -1,6 +1,6 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { ChevronDownIcon } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
 	Button,
@@ -366,12 +366,13 @@ export const AuditLogFilter = (props) => {
 						{/* Add dropdown items here */}
 						<DropdownMenuRadioGroup>
 							{DashboardDurations.map((duration) => (
-								<>
+								<React.Fragment
+									key={`duration-${duration.value}`}
+								>
 									{duration.renderWithSeparator && (
 										<DropdownMenuSeparator />
 									)}
 									<DropdownMenuCheckboxItem
-										key={`duration-${duration.value}`}
 										checked={
 											duration.value === dashboardDuration
 										}
@@ -389,7 +390,7 @@ export const AuditLogFilter = (props) => {
 									>
 										{duration.label}
 									</DropdownMenuCheckboxItem>
-								</>
+								</React.Fragment>
 							))}
 						</DropdownMenuRadioGroup>
 					</DropdownMenuContent>

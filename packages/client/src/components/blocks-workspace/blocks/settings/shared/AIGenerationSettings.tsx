@@ -1,4 +1,4 @@
-import { AutoAwesome } from "@mui/icons-material";
+import { Sparkles } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -9,14 +9,8 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { runPixel, usePixel } from "@semoss/sdk/react";
-import {
-	Autocomplete,
-	Button,
-	Stack,
-	TextField,
-	useNotification,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Button, toast } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 type CfgLibraryEngineState = {
 	loading: boolean;
@@ -65,8 +59,6 @@ export const AIGenerationSettings = observer(
 	}: AIGenerationSettingsProps<D>) => {
 		const { setData } = useBlockSettings<D>(id);
 		const { state } = useBlocks();
-		const notification = useNotification();
-
 		const [prompt, setPrompt] = useState("");
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
 
@@ -162,7 +154,9 @@ export const AIGenerationSettings = observer(
 				flattenedPrompt = flattenedPrompt.replace(/"/g, "'");
 				const pixel = `LLM(engine = "${modelIdRef.current}", command = "${flattenedPrompt}", paramValues = [ {} ] );`;
 				const res = await runPixel(pixel);
-				const LLMResponse = res.pixelReturn[0].output.response;
+				const LLMResponse = (
+					res.pixelReturn[0].output as { response: string }
+				).response;
 
 				let trimmedStarterCode = LLMResponse;
 				trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
@@ -175,103 +169,58 @@ export const AIGenerationSettings = observer(
 					path,
 					trimmedStarterCode as PathValue<D["data"], typeof path>,
 				);
-
-				// below is the previos LLM prompting code - not sure if we want or need any of this
-				// const flattenedPrompt = state.flattenVariable(prompt);
-				// const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
-				//     {
-				//         max_new_tokens: 4000,
-				//     },
-				// )}]);`;
-				// const { errors, pixelReturn } = await monolithStore.runQuery(
-				//     pixel,
-				// );
-				// let valueToSet = pixelReturn[0]?.output?.response;
-				// if (errors.length > 0 || typeof valueToSet !== 'string') {
-				//     throw new Error(errors.join(''));
-				// }
-				// if (valueAsObject) {
-				//     valueToSet = !!pixelReturn[0].output?.response
-				//         ? JSON.parse(
-				//               pixelReturn[0].output?.response
-				//                   .replaceAll('\\"', '"')
-				//                   .replaceAll('\\n', ''),
-				//           )
-				//         : undefined;
-				//     if (valueToSet === undefined) {
-				//         notification.add({
-				//             color: 'error',
-				//             message:
-				//                 'There was an issue parsing the JSON in your response.',
-				//         });
-				//     }
-				// }
-				// setData(path, "valueToSet" as PathValue<D['data'], typeof path>);
 			} catch (e) {
 				console.error(e);
 
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 			} finally {
 				setResponseLoading(false);
 			}
 		};
 
 		return (
-			<Stack spacing={1} width="100%">
-				<TextField
+			<div className="flex w-full flex-col gap-1">
+				<textarea
 					disabled={!cfgLibraryModels.ids.length || responseLoading}
-					fullWidth
-					multiline
 					rows={5}
 					value={prompt}
 					onChange={(e) => {
 						// sync the data on change
 						setPrompt(e.target.value);
 					}}
-					size="small"
-					variant="outlined"
 					autoComplete="off"
 					placeholder={placeholder}
-					label="AI Generator"
-					InputLabelProps={{
-						shrink: true,
-					}}
+					className="w-full resize-none rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
 				/>
-				<Autocomplete
+				<select
 					disabled={!cfgLibraryModels.ids.length || responseLoading}
-					disableClearable
-					fullWidth
-					multiple={false}
-					id={"model-autocomplete"}
-					loading={cfgLibraryModels.loading}
-					options={cfgLibraryModels.ids}
 					value={selectedModel}
-					size="small"
-					getOptionLabel={(modelId: string) =>
-						cfgLibraryModels.display[modelId] ?? ""
-					}
-					onChange={(_, newModelId) => {
-						setSelectedModel(newModelId);
-					}}
-					renderInput={(params) => (
-						<TextField {...params} variant="outlined" />
-					)}
-				/>
+					onChange={(e) => setSelectedModel(e.target.value)}
+					className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+				>
+					{cfgLibraryModels.ids.map((id) => (
+						<option key={id} value={id}>
+							{(
+								cfgLibraryModels.display as Record<
+									string,
+									string
+								>
+							)[id] ?? id}
+						</option>
+					))}
+				</select>
 				<Button
 					disabled={
 						!cfgLibraryModels.ids.length || cfgLibraryModels.loading
 					}
-					loading={responseLoading}
-					variant="outlined"
-					endIcon={<AutoAwesome />}
+					variant="outline"
 					onClick={generateAIResponse}
+					className="flex items-center gap-1"
 				>
-					Generate
+					{responseLoading ? "Generating..." : "Generate"}
+					<Sparkles className="size-4" />
 				</Button>
-			</Stack>
+			</div>
 		);
 	},
 );

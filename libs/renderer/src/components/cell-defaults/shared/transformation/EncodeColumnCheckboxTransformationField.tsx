@@ -1,13 +1,7 @@
-import {
-	Checkbox,
-	FormControl,
-	FormControlLabel,
-	FormGroup,
-} from "@mui/material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import React from "react";
-import { styled, TextField } from "@semoss/ui";
+import { Checkbox, Input } from "@semoss/ui/next";
 import { useBlocksPixel } from "../../../../hooks";
 import type { CellState } from "../../../../store";
 import type {
@@ -15,14 +9,6 @@ import type {
 	TransformationTargetCell,
 } from "./transformation.types";
 
-const StyledContainer = styled("div")({
-	height: "210px",
-	maxHeigh: "210px",
-	overflowY: "scroll",
-	border: "1px solid rgba(0, 0, 0, 0.23)",
-	borderRadius: "8px",
-	padding: 0,
-});
 interface FrameHeaderInfo {
 	headers: {
 		alias: string;
@@ -49,31 +35,22 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
 		const [columnState, setColumnState] = React.useState([]);
 		const [selectAll, setSelectAll] = React.useState(false);
 
-		//for individual checkboxes
 		const handleChange = (
-			event: React.ChangeEvent<HTMLInputElement>,
+			checked: boolean,
+			name: string,
 			index: number,
 		) => {
-			if (selectAll) {
-				setSelectAll(false);
-			}
-			columnState[index][event.target.name] = event.target.checked;
+			if (selectAll) setSelectAll(false);
+			columnState[index][name] = checked;
 			setColumnState([...columnState]);
 		};
 
-		//for selecting or deselecting all columns
 		const handleSelectAll = () => {
-			setSelectAll(!selectAll);
-			if (!selectAll) {
-				for (const key of columnState) {
-					const firstKey = Object.keys(key)[0];
-					key[firstKey] = true;
-				}
-			} else {
-				for (const key of columnState) {
-					const firstKey = Object.keys(key)[0];
-					key[firstKey] = false;
-				}
+			const newSelectAll = !selectAll;
+			setSelectAll(newSelectAll);
+			for (const key of columnState) {
+				const firstKey = Object.keys(key)[0];
+				key[firstKey] = newSelectAll;
 			}
 			setColumnState([...columnState]);
 		};
@@ -92,82 +69,50 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
 		const [frameHeaders, setFrameHeaders] = React.useState<{
 			loading: boolean;
 			columns: ColumnInfo[];
-		}>({
-			loading: true,
-			columns: [],
-		});
+		}>({ loading: true, columns: [] });
 
 		const frameHeaderPixelReturn = useBlocksPixel<{
 			headerInfo: FrameHeaderInfo;
 		}>(`META | ${frameVariableName} | FrameHeaders ();`);
 
 		React.useEffect(() => {
-			if (frameHeaderPixelReturn.status !== "SUCCESS") {
-				return;
-			}
-
+			if (frameHeaderPixelReturn.status !== "SUCCESS") return;
 			const columns = frameHeaderPixelReturn.data.headerInfo.headers.map(
-				(header) => ({
-					name: header.alias,
-					dataType: header.dataType,
-				}),
+				(h) => ({ name: h.alias, dataType: h.dataType }),
 			);
+			setFrameHeaders({ loading: false, columns });
 
-			setFrameHeaders({
-				loading: false,
-				columns: columns,
-			});
-
-			//setting state obj for tracking column checked states
-			const obj = [];
-			for (let i = 0, colLength = columns.length; i < colLength; i++) {
-				obj.push({ [columns[i].name]: false, column: columns[i] });
-			}
-
+			const obj = columns.map((col) => ({
+				[col.name]: false,
+				column: col,
+			}));
 			setColumnState(obj);
 		}, [frameHeaderPixelReturn.status, frameHeaderPixelReturn.data]);
 
 		React.useEffect(() => {
-			if (targetCell && targetCell.output) {
+			if (targetCell?.output) {
 				frameHeaderPixelReturn.refresh();
 			}
 		}, [targetCell ? targetCell.output : null]);
 
 		React.useEffect(() => {
-			if (targetCell && targetCell.output) {
-				frameHeaderPixelReturn.refresh();
-			}
-		}, [targetCell ? targetCell.output : null]);
-
-		//upon running pixel, ensure that selectAll is reset to it's default state
-		React.useEffect(() => {
-			const arr = [];
 			if (columnState.length) {
-				for (const key of columnState) {
+				const allFalse = columnState.every((key) => {
 					const firstKey = Object.keys(key)[0];
-					if (key[firstKey] === false) {
-						arr.push(key);
-					}
-				}
-			}
-
-			if (arr.length === columnState.length) {
-				setSelectAll(false);
+					return key[firstKey] === false;
+				});
+				if (allFalse) setSelectAll(false);
 			}
 		}, [columnState]);
 
-		// columns that are returned when using search input
-		const filteredResults =
-			frameHeaders.columns &&
-			React.useMemo(() => {
-				return frameHeaders?.columns.filter((val) =>
-					val.name.toLowerCase().includes(search.toLowerCase()),
-				);
-			}, [search, frameHeaders.columns]);
+		const filteredResults = React.useMemo(() => {
+			return frameHeaders.columns.filter((val) =>
+				val.name.toLowerCase().includes(search.toLowerCase()),
+			);
+		}, [search, frameHeaders.columns]);
 
-		// function to update which items should be passed into the payload value array
 		const assignColumns = () => {
-			const arr = [];
+			const arr: ColumnInfo[] = [];
 			columnState.forEach((column: ColumnStateType<boolean>) => {
 				if (Object.values(column)[0] === true) {
 					arr.push(column.column);
@@ -178,72 +123,55 @@ export const EncodeColumnCheckboxTransformationField: ColumnCheckboxTransformati
 
 		return (
 			<React.Fragment>
-				<TextField
-					size="small"
+				<Input
 					disabled={disabled}
-					label="Search"
 					placeholder="Search for column name"
 					value={search}
-					fullWidth
-					onChange={(e) => {
-						setSearch(e.target.value);
-					}}
+					onChange={(e) => setSearch(e.target.value)}
+					className="mb-2"
 				/>
-				<StyledContainer>
+				<div className="h-[210px] max-h-[210px] overflow-y-auto rounded-lg border border-input p-0">
 					{filteredResults && (
-						<FormControl
-							sx={{ ml: 3 }}
-							component="fieldset"
-							variant="standard"
-						>
-							<FormGroup>
-								<FormControlLabel
-									control={
-										<Checkbox
-											checked={selectAll}
-											onChange={() => {
-												handleSelectAll();
-												assignColumns();
-											}}
-											name={
-												selectAll
-													? "deselect all"
-													: "select all"
-											}
-										/>
-									}
-									label={
-										selectAll
-											? "deselect all"
-											: "select all"
-									}
+						<div className="ml-3 flex flex-col">
+							{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
+							<label className="flex cursor-pointer items-center gap-2 py-1">
+								<Checkbox
+									checked={selectAll}
+									onCheckedChange={() => {
+										handleSelectAll();
+										assignColumns();
+									}}
 								/>
-								{filteredResults.map((col, idx) => {
-									return (
-										<FormControlLabel
-											key={idx}
-											control={
-												<Checkbox
-													checked={
-														columnState[idx][
-															col.name
-														]
-													}
-													onChange={(e) => {
-														handleChange(e, idx);
-														assignColumns();
-													}}
-													name={col.name}
-												/>
-											}
-											label={col.name}
-										/>
-									);
-								})}
-							</FormGroup>
-						</FormControl>
+								<span className="text-sm">
+									{selectAll ? "deselect all" : "select all"}
+								</span>
+							</label>
+							{filteredResults.map((col, idx) => (
+								// biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input
+								<label
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									key={idx}
+									className="flex cursor-pointer items-center gap-2 py-1"
+								>
+									<Checkbox
+										checked={Boolean(
+											columnState[idx]?.[col.name],
+										)}
+										onCheckedChange={(checked) => {
+											handleChange(
+												Boolean(checked),
+												col.name,
+												idx,
+											);
+											assignColumns();
+										}}
+									/>
+									<span className="text-sm">{col.name}</span>
+								</label>
+							))}
+						</div>
 					)}
-				</StyledContainer>
+				</div>
 			</React.Fragment>
 		);
 	});

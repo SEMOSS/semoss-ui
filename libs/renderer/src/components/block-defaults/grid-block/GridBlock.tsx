@@ -1,4 +1,3 @@
-import { styled } from "@mui/material";
 import { DataGrid, useGridApiRef } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
@@ -31,19 +30,6 @@ interface DataImportCellParams {
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
-
-const StyledBlock = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	minHeight: DEFAULT_HEIGHT,
-	width: DEFAULT_WIDTH,
-}));
-
-const StyledDataGridContainer = styled("div")(() => ({
-	flex: 1,
-	width: "100%",
-	height: "100%",
-}));
 
 export interface HeaderBackgroundSettings {
 	backgroundColor: string;
@@ -218,6 +204,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	 * Anytime our Frame Headers change, we need to sync our column block data with our source of truth
 	 * This ensures all columns are present, especially important for batching scenarios
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync only on header list change
 	useEffect(() => {
 		if (!frameHeaders.isLoading && frameHeaders.data.list.length > 0) {
 			// Only sync if columns are empty (initial load)
@@ -232,6 +219,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	 * Handle data accumulation when batching is enabled
 	 * Also handles filter detection - when filters change, frame key changes and offset resets to 0
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — deps use .length to avoid stale closure on full array
 	useEffect(() => {
 		if (!isBatchingEnabled) {
 			if (accumulatedDataRef.current.length > 0) {
@@ -516,7 +504,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			}
 
 			return (
-				<td
+				// biome-ignore lint/a11y/noStaticElementInteractions: context menu on DataGrid cell — keyboard handled by DataGrid
+				<div
 					onContextMenu={(e) =>
 						handleTableCellOnContextMenu(e, col, params.value)
 					}
@@ -525,7 +514,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					}}
 				>
 					{params.value}
-				</td>
+				</div>
 			);
 		},
 	}));
@@ -621,8 +610,17 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		hasNoRows;
 
 	return (
-		<StyledBlock sx={data.style} {...attrs}>
-			<StyledDataGridContainer>
+		<div
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				minHeight: DEFAULT_HEIGHT,
+				width: DEFAULT_WIDTH,
+				...data.style,
+			}}
+			{...attrs}
+		>
+			<div style={{ flex: 1, width: "100%", height: "100%" }}>
 				<DataGrid
 					apiRef={apiRef}
 					rows={rows}
@@ -662,12 +660,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 								)
 							: undefined,
 					}}
-					showCellVerticalBorder={
-						data.option?.rowSpanning ? true : false
-					}
-					showColumnVerticalBorder={
-						data.option?.rowSpanning ? true : false
-					}
+					showCellVerticalBorder={!!data.option?.rowSpanning}
+					showColumnVerticalBorder={!!data.option?.rowSpanning}
 					unstable_rowSpanning={data.option?.rowSpanning}
 					sx={{
 						borderRadius: "0",
@@ -685,13 +679,13 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 						},
 					}}
 				/>
-			</StyledDataGridContainer>
+			</div>
 			<GridBlockContextMenu
 				id={id}
 				frame={frame}
 				contextMenu={contextMenu}
 				onClose={() => setContextMenu(null)}
 			/>
-		</StyledBlock>
+		</div>
 	);
 });

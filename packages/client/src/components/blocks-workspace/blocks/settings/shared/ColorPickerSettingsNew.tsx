@@ -1,7 +1,7 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type MouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -10,14 +10,12 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import {
-	IconButton,
-	InputAdornment,
-	OutlinedInput,
+	Input,
 	Popover,
-	styled,
-	TextField,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+	PopoverContent,
+	PopoverTrigger,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
 	/**
@@ -34,38 +32,26 @@ interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
 	onChange: (color: string) => void;
 }
 
-const StyledMainContainer = styled("div")({});
-const StyledSpanSection = styled("span")(({ color }) => ({
-	backgroundColor: color,
-	width: "23px",
-	height: "23px",
-	borderRadius: "20%",
-	display: "block",
-	border: "1px solid #000",
-	marginRight: "12px",
-}));
 export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 	<D extends BlockDef = BlockDef>({
 		id,
 		path,
 		colorValue = "#000000",
-
 		onChange,
 	}) => {
-		const [showPopover, setShowPopover] =
-			useState<HTMLButtonElement | null>(null); //show and hide the color picker
-		const [_color, setColor] = useState(colorValue); //default color and state to maintain color value
+		const [showPopover, setShowPopover] = useState(false);
+		const [_color, setColor] = useState(colorValue);
 		// biome-ignore lint/suspicious/noExplicitAny: TODO
-		const { data, setData } = useBlockSettings<any>(id); //data to update the color of the chart
-		const [value, setValue] = useState<string | null>(null); //local state to store a copy of main state
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to delay update of state
+		const { data, setData } = useBlockSettings<any>(id);
+		const [value, setValue] = useState<string | null>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const optiontimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const [colorPickerState, setColorPickerState] = useState<
 			"initial" | "updated"
 		>("initial");
 		const optionPathVal = "option";
 		const [_optionValue, setOptionValue] = useState(data.option);
-		//get the latest value of state and store it in computedValue
+
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -82,6 +68,7 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+
 		const optionComputedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -96,14 +83,11 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, optionPathVal]).get();
+
 		useEffect(() => {
 			setOptionValue(optionComputedValue);
 		}, [optionComputedValue]);
-		//close the color picker when color picker is visible
-		function handleClose() {
-			setShowPopover(null);
-		}
-		//update the local state value, when computed value is changed
+
 		useEffect(() => {
 			setValue(computedValue);
 			if (colorPickerState === "updated") {
@@ -129,7 +113,7 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 				}
 			}, 300);
 		}
-		//update run state update, when color value is changed
+
 		function runStateUpdateCustom(option) {
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
@@ -143,69 +127,51 @@ export const ColorPickerSettingsNew = observer<ColorPickerSettingProps>(
 				}
 			}, 300);
 		}
-		//detect the current state of popover and update to open variable
-		const open = Boolean(showPopover);
+
 		return (
-			<StyledMainContainer>
-				{/* biome-ignore lint/correctness/useUniqueElementIds: TODO */}
-				<OutlinedInput
-					size="small"
-					id="outlined-adornment-password"
+			<div className="relative w-full">
+				<Input
 					placeholder="Select Colour"
 					aria-label="Select Colour"
-					type={"text"}
-					value={value}
-					style={{ width: "100%" }}
+					type="text"
+					value={value ?? ""}
+					className="w-full pr-14"
 					onChange={(e) => {
 						setColor(e.target.value);
 						runStateUpdateCustom(e.target.value);
 						setColorPickerState("updated");
 					}}
-					endAdornment={
-						<InputAdornment position="end">
-							<IconButton
-								aria-label={"select colour"}
-								onClick={(e: MouseEvent<HTMLButtonElement>) => {
-									if (showPopover) setShowPopover(null);
-									else setShowPopover(e.currentTarget);
-								}}
-								edge="end"
-							>
-								<StyledSpanSection
-									color={value}
-								></StyledSpanSection>
-							</IconButton>
-						</InputAdornment>
-					}
-					// label="Select Colour"
 				/>
-				<Popover
-					id={id}
-					open={open}
-					anchorEl={showPopover}
-					onClose={handleClose}
-					anchorOrigin={{
-						vertical: "bottom",
-						horizontal: "left",
-					}}
-				>
-					<TextField
-						fullWidth
-						type="color"
-						value={value}
-						onChange={(newColor) => {
-							setColor(newColor.target.value);
-							runStateUpdateCustom(newColor.target.value);
-							onChange(newColor.target.value);
-							setColorPickerState("updated");
-						}}
-						size="small"
-						variant="outlined"
-						autoComplete="off"
-						data-testid={`color-picker-settings-new-${id}-txt`}
-					/>
+				<Popover open={showPopover} onOpenChange={setShowPopover}>
+					<PopoverTrigger asChild>
+						<button
+							type="button"
+							aria-label="select colour"
+							className="-translate-y-1/2 absolute top-1/2 right-2 cursor-pointer border-none bg-transparent p-0"
+						>
+							<span
+								className="mr-3 block h-[23px] w-[23px] rounded-[20%] border border-black"
+								style={{ backgroundColor: value ?? "#000000" }}
+							/>
+						</button>
+					</PopoverTrigger>
+					<PopoverContent className="w-auto p-2">
+						<Input
+							className="h-8 w-full p-0.5"
+							type="color"
+							value={value ?? "#000000"}
+							onChange={(newColor) => {
+								setColor(newColor.target.value);
+								runStateUpdateCustom(newColor.target.value);
+								onChange(newColor.target.value);
+								setColorPickerState("updated");
+							}}
+							autoComplete="off"
+							data-testid={`color-picker-settings-new-${id}-txt`}
+						/>
+					</PopoverContent>
 				</Popover>
-			</StyledMainContainer>
+			</div>
 		);
 	},
 );

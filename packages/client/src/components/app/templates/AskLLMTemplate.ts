@@ -1,5 +1,5 @@
-import { ActionMessages } from "@semoss/renderer";
-import CHATAI from "@/assets/img/query.jpeg";
+import CHATAI from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 export const AskLLMTemplate: Template = {
@@ -135,7 +135,7 @@ export const AskLLMTemplate: Template = {
 								payload: {
 									queryId: "ask-llm",
 								},
-								message: ActionMessages.RUN_QUERY,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_QUERY,
 							},
 						],
 					},

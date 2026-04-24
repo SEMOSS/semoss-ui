@@ -11,7 +11,7 @@ import {
 	StateStore,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
-import { LoadingScreen, useNotification } from "@semoss/ui";
+import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
 import type { FlexLayout } from "@/components/flex-layout";
@@ -22,8 +22,8 @@ import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
 import { GraphPanel } from "../workspace/panels/GraphPanel";
-import { BlocksWorkspaceActions } from "./BlocksWorkspaceActions";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
+import { BlocksWorkspaceActions } from "./blocks-workspace-actions";
 import { DEFAULT_MENU } from "./menus/default-menu";
 import {
 	BlocksMenuPanel,
@@ -196,7 +196,6 @@ const ACTIVE = "page-1";
  */
 export const BlocksWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
-	const notification = useNotification();
 	const [state, setState] = useState<StateStore>();
 
 	//to throw a warning when the user tried to reload the page
@@ -215,6 +214,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		}
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
 		// start the loading screen
 		workspace.setLoading(true);
@@ -253,10 +253,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 				setState(s);
 			})
 			.catch((e) => {
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 				console.error(e);
 			})
 			.finally(() => {
@@ -313,7 +310,11 @@ export const BlocksWorkspace: React.FC = observer(() => {
 	}, [workspace.model, designer]);
 
 	if (!state) {
-		return <LoadingScreen.Trigger />;
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (

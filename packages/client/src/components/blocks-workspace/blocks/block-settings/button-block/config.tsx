@@ -1,4 +1,4 @@
-import { SmartButton } from "@mui/icons-material";
+import { Square } from "lucide-react";
 import type { CSSProperties } from "react";
 import {
 	InputSettings,
@@ -18,7 +18,7 @@ export const DefaultStyles: CSSProperties = {};
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_ACTION,
-	icon: SmartButton,
+	icon: Square,
 	contentMenu: [
 		{
 			name: "General",

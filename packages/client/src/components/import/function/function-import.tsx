@@ -1,11 +1,10 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { FileUploadOutlined } from "@mui/icons-material";
+
 import { SearchIcon, UploadIcon } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -30,6 +29,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { FUNCTION_CONNECTIONS } from "./function-import.constants";
 import { FunctionForm } from "./function-import-form";
 import { FunctionTitleCard } from "./function-title-card";
@@ -71,7 +71,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	const hasMultipleTabs = tabLabels.length > 1;
 
 	const DatabasesForTab = useMemo(() => {
-		const selectedIndex = Number.parseInt(selectedTab);
+		const selectedIndex = Number.parseInt(selectedTab, 10);
 		return FunctionOptions[tabLabels[selectedIndex]] || [];
 	}, [selectedTab, tabLabels, FunctionOptions]);
 
@@ -252,7 +252,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<UploadIcon className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>

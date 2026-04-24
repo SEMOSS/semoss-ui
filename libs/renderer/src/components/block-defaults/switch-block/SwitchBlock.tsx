@@ -1,27 +1,8 @@
-import {
-	FormControlLabel,
-	FormGroup,
-	FormHelperText,
-	Switch,
-	styled,
-	Typography,
-} from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Switch } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: theme.spacing(0.5),
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(0.5),
-}));
-
-const StyledLabel = styled(Typography)(({ theme }) => ({
-	fontSize: theme.typography.subtitle2.fontSize,
-	fontWeight: theme.typography.subtitle2.fontWeight,
-}));
 
 export interface SwitchBlockDef extends BlockDef<"switch"> {
 	widget: "switch";
@@ -58,58 +39,52 @@ export interface SwitchBlockDef extends BlockDef<"switch"> {
 export const SwitchBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<SwitchBlockDef>(id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
 		}
 	}, []);
 
-	const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setData("value", event.target.checked);
-
+	const handleChange = (checked: boolean) => {
+		setData("value", checked);
 		listeners.onChange();
 	};
 
 	const showLabel = data.label && data.label.trim() !== "";
 	const showHelperText = data.helperText && data.helperText.trim() !== "";
+	const isLabelBefore =
+		data.labelPlacement === "start" || data.labelPlacement === "top";
+	const isColumn =
+		data.labelPlacement === "top" || data.labelPlacement === "bottom";
 
 	return (
-		<StyledContainer {...attrs} style={data.style}>
-			<FormGroup>
-				{showLabel && !data.labelPlacement && (
-					<StyledLabel>{data.label}</StyledLabel>
+		<div
+			{...attrs}
+			style={data.style}
+			className="flex flex-col gap-0.5 p-0.5"
+		>
+			<div
+				className={`flex items-center gap-2${isColumn ? "flex-col" : ""}`}
+			>
+				{showLabel && isLabelBefore && (
+					<span className="font-medium text-sm">{data.label}</span>
 				)}
-
-				{showLabel && data.labelPlacement ? (
-					<FormControlLabel
-						control={
-							<Switch
-								checked={data.value}
-								onChange={handleChange}
-								disabled={data.disabled}
-								color={data.color}
-								size={data.size}
-								required={data.required}
-							/>
-						}
-						label={data.label}
-						labelPlacement={data.labelPlacement}
-					/>
-				) : (
-					<Switch
-						checked={data.value}
-						onChange={handleChange}
-						disabled={data.disabled}
-						color={data.color}
-						size={data.size}
-						required={data.required}
-					/>
+				<Switch
+					checked={data.value}
+					onCheckedChange={handleChange}
+					disabled={data.disabled}
+					required={data.required}
+				/>
+				{showLabel && !isLabelBefore && (
+					<span className="font-medium text-sm">{data.label}</span>
 				)}
-
-				{showHelperText && (
-					<FormHelperText>{data.helperText}</FormHelperText>
-				)}
-			</FormGroup>
-		</StyledContainer>
+			</div>
+			{showHelperText && (
+				<span className="text-muted-foreground text-xs">
+					{data.helperText}
+				</span>
+			)}
+		</div>
 	);
 });
