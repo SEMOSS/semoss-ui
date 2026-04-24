@@ -104,3 +104,69 @@ export async function performLogin(opts: {
 		await browser.close();
 	}
 }
+
+const SUCCESS_URL_REGEX = /#\/(new|agent|room)/;
+const DEFAULT_MANUAL_TIMEOUT_MS = 5 * 60_000;
+
+function resolveManualTimeout(explicit?: number): number {
+	if (typeof explicit === "number" && explicit > 0) return explicit;
+	const raw = process.env.PLAYGROUND_LOGIN_TIMEOUT_MS;
+	if (raw) {
+		const parsed = Number(raw);
+		if (Number.isFinite(parsed) && parsed > 0) return parsed;
+	}
+	return DEFAULT_MANUAL_TIMEOUT_MS;
+}
+
+/**
+ * Opens a real browser window and waits for the user to log in by hand.
+ * Used when SSO, MFA, or other flows can't be scripted. Always headful.
+ */
+export async function performManualLogin(opts: {
+	baseURL: string;
+	timeoutMs?: number;
+}): Promise<void> {
+	const timeout = resolveManualTimeout(opts.timeoutMs);
+
+	fs.mkdirSync(path.dirname(AUTH_STATE_PATH), { recursive: true });
+
+	const browser = await chromium.launch({ headless: false });
+	const context = await browser.newContext();
+	const page = await context.newPage();
+
+	try {
+		await page.goto(opts.baseURL, { waitUntil: "domcontentloaded" });
+
+		if (!SUCCESS_URL_REGEX.test(page.url())) {
+			const success = Promise.all([
+				page.waitForURL(SUCCESS_URL_REGEX, { timeout }),
+				page.getByText(/Welcome,/i).waitFor({ timeout }),
+			]);
+
+			const closed = new Promise<never>((_, reject) => {
+				page.on("close", () =>
+					reject(
+						new Error("login window was closed before completion"),
+					),
+				);
+				browser.on("disconnected", () =>
+					reject(
+						new Error("login window was closed before completion"),
+					),
+				);
+			});
+
+			await Promise.race([success, closed]);
+		}
+
+		// swallow: some tenants never hit networkidle due to background polling
+		await page
+			.waitForLoadState("networkidle", { timeout: 2000 })
+			.catch(() => {});
+
+		await context.storageState({ path: AUTH_STATE_PATH });
+	} finally {
+		await context.close();
+		await browser.close();
+	}
+}

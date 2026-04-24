@@ -20,8 +20,8 @@ test.describe("agent: create, edit, delete", { tag: ["@agents"] }, () => {
 		});
 		await agentEditor.submit();
 
-		// Playground redirects to /#/agent/:id after creation
-		await expect(page).toHaveURL(/#\/agent\/[a-f0-9-]+/i);
+		// Playground redirects to /#/agent/:id after creation; the create pixel can take >10s on cold start
+		await page.waitForURL(/#\/agent\/[a-f0-9-]+$/, { timeout: 20_000 });
 
 		// --- READ (list view) ---
 		await agents.goto();

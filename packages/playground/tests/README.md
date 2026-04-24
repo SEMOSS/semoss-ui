@@ -63,12 +63,17 @@ pnpm report                 # open the last HTML report
 
 ### First-run authentication
 
-If `tests/.auth/user.json` does not exist, `global-setup.ts` prompts for a
-username and password, logs in headlessly, and saves the browser storage
-state. Subsequent runs reuse that state until the session expires — at which
-point the next run will prompt again.
+If `tests/.auth/user.json` does not exist, `global-setup.ts` runs a **scripted**
+login — it either reads `PLAYGROUND_USER` / `PLAYGROUND_PASS` env vars or
+prompts at the terminal, logs in headlessly, and saves the browser storage
+state. This path is CI-friendly and matches the native username+password form.
+Subsequent runs reuse the saved state until the session expires.
 
-Non-interactive environments (CI) can skip the prompt by exporting:
+For local development — especially if your tenant is behind SSO/MFA — it's
+usually easier to refresh the session by hand using the standalone login
+script (see below).
+
+Non-interactive environments (CI) should export:
 
 ```bash
 export PLAYGROUND_USER=...
@@ -77,11 +82,23 @@ export PLAYGROUND_PASS=...
 
 To force a fresh login without running any tests:
 
+> Always use `pnpm run login` — `pnpm login` without `run` hits pnpm's built-in
+> npm-registry login and will send you to npmjs.com. Same for `pnpm logout`.
+
 ```bash
-pnpm login            # prompts, saves session
-pnpm login --headed   # same, but opens a real browser so you can watch
-pnpm logout           # deletes the saved session
+pnpm run login                           # default: opens a real browser, log in by hand (SSO/MFA)
+pnpm run login -- --scripted             # prompts for user/pass (or uses env vars), headless
+pnpm run login -- --scripted --headed    # scripted but headful, so you can watch Playwright type the creds
+pnpm run logout                          # deletes the saved session
 ```
+
+Flags go after `--` so pnpm doesn't swallow them.
+
+Env var overrides:
+
+- `PLAYGROUND_BASE_URL` — point at a different playground (e.g. Vite dev server on `:5174`). Applies to every mode.
+- `PLAYGROUND_USER` / `PLAYGROUND_PASS` — only read by `--scripted` mode and `global-setup.ts`. Ignored in the default (manual) mode.
+- `PLAYGROUND_LOGIN_TIMEOUT_MS` — override the default 5-minute timeout in manual mode.
 
 ## Conventions
 
