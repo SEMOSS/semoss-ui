@@ -505,6 +505,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 hover:border-primary dark:bg-input/30",
 							className,
 						)}
+						onDrop={(e) => {
+							e.preventDefault();
+							const updated = Array.from(e.dataTransfer.files);
+							setFiles((prev) => [...prev, ...updated]);
+							setIsDragging(false);
+						}}
+						onDragOver={(e) => {
+							e.preventDefault();
+							setIsDragging(true);
+						}}
+						onDragLeave={(e) => {
+							if (
+								!e.currentTarget.contains(
+									e.relatedTarget as Node,
+								)
+							) {
+								setIsDragging(false);
+							}
+						}}
+						role="none"
 					>
 						{files.length > 0 && (
 							<FilePreviewGrid
