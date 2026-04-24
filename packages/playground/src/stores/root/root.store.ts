@@ -51,6 +51,7 @@ export class RootStore {
 		navbarActions: null,
 		theme: {
 			name: "",
+			banner: "",
 			description: "",
 			variables: {
 				backgroundColor: "",
@@ -73,7 +74,6 @@ export class RootStore {
 			altLandingKey: "",
 			altLanding: "",
 			sidebar: {
-				//workspaceAlias: "Workspace",
 				expandedByDefault: false,
 				chatHistoryDate: false,
 				headerItems: [],
@@ -109,7 +109,11 @@ export class RootStore {
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(THEME) as Partial<ThemeMap["playground"]>;
+			const parsed = JSON.parse(THEME);
+			// Support both wrapped ({ playground: {...} }) and flat formats
+			const theme = (parsed?.playground || parsed) as Partial<
+				ThemeMap["playground"]
+			>;
 
 			// update the theme
 			this.updateTheme(theme);
@@ -205,6 +209,7 @@ export class RootStore {
 		this._store.theme = {
 			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
+			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
 			variables: {
 				...this._store.theme.variables,
@@ -281,10 +286,19 @@ export class RootStore {
 				theme?.showPlatformLinks !== undefined
 					? theme.showPlatformLinks
 					: this._store.theme.showPlatformLinks,
+			showKnowledgeMenu:
+				theme?.showKnowledgeMenu !== undefined
+					? theme.showKnowledgeMenu
+					: this._store.theme.showKnowledgeMenu,
+			showToolboxMenu:
+				theme?.showToolboxMenu !== undefined
+					? theme.showToolboxMenu
+					: this._store.theme.showToolboxMenu,
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),
 			],
+			tour: theme?.tour || this._store.theme.tour,
 			featureFlags: {
 				...this._store.theme.featureFlags,
 				...(theme?.featureFlags || {}),

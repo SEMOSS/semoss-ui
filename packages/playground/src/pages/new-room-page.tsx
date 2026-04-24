@@ -8,7 +8,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
@@ -77,12 +77,27 @@ export const NewRoomPage = observer(() => {
 		() => new RoomStore(root.theme, "temp"),
 		[root.theme],
 	);
+	const bannerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!bannerRef.current) return;
+		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
+		const urls =
+			(root.theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+		bannerRef.current
+			.querySelectorAll("a")
+			.forEach((a: HTMLAnchorElement, i: number) => {
+				a.target = "_blank";
+				a.rel = "noopener noreferrer";
+				if (urls[i]) a.setAttribute("href", urls[i]);
+			});
+	}, [root.theme.banner]);
+
 	const [isLoading, setIsLoading] = useState(false);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
-
 	const previewPrompts = useMemo(
 		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
 		[tempRoomStore.options.predefinedPrompts],
@@ -385,8 +400,16 @@ export const NewRoomPage = observer(() => {
 	]);
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<ResizablePanelGroup direction="horizontal">
+		<div className="flex h-full w-full flex-col overflow-hidden">
+			{root.theme.banner ? (
+				<div
+					ref={bannerRef}
+					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
+				/>
+			) : null}
+			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
 						src={root.theme.images.landing || landingImage}
@@ -438,6 +461,7 @@ export const NewRoomPage = observer(() => {
 							}}
 							options={tempRoomStore.options}
 							onMcpSelect={handleToolAdd}
+							onMcpToggle={handleToolSelect}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
@@ -445,7 +469,14 @@ export const NewRoomPage = observer(() => {
 							}}
 							hidePauseButton
 							MenuComponent={observer(
-								({ onOpenChange, fileRef, editorRef }) => (
+								({
+									onOpenChange,
+									fileRef,
+									knowledgeOverlayOpen,
+									onKnowledgeOverlayChange,
+									toolboxOverlayOpen,
+									onToolboxOverlayChange,
+								}) => (
 									<>
 										<RoomInputMenuUpload
 											fileRef={fileRef}
@@ -525,19 +556,17 @@ export const NewRoomPage = observer(() => {
 										<RoomInputMenuMCP
 											type="KNOWLEDGE"
 											options={tempRoomStore.options}
-											onSelect={handleToolSelect}
-											editorRef={editorRef}
-											onOverlayClose={() =>
-												onOpenChange(false)
+											open={knowledgeOverlayOpen}
+											onOpenChange={
+												onKnowledgeOverlayChange
 											}
 										/>
 										<RoomInputMenuMCP
 											type="TOOLBOX"
 											options={tempRoomStore.options}
-											onSelect={handleToolSelect}
-											editorRef={editorRef}
-											onOverlayClose={() =>
-												onOpenChange(false)
+											open={toolboxOverlayOpen}
+											onOpenChange={
+												onToolboxOverlayChange
 											}
 										/>
 										<DropdownMenuSeparator />
