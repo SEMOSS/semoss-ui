@@ -68,7 +68,7 @@
 	"fileDrag": {
 		"title": "Déposez des fichiers ici pour les joindre au message",
 		"modalTitle": "Ajouter des documents",
-		"addMore": "Ajouter des fichiers",
+		"browse": "Parcourir",
 		"done": "Terminé"
 	}
 }

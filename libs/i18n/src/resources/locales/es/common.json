@@ -68,7 +68,7 @@
 	"fileDrag": {
 		"title": "Suelta archivos aquí para adjuntar al mensaje",
 		"modalTitle": "Agregar documentos",
-		"addMore": "Agregar archivos",
+		"browse": "Explorar",
 		"done": "Listo"
 	}
 }

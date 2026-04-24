@@ -116,7 +116,7 @@ export const FileDragOverlay = () => {
 								onClick={() => fileInputRef.current?.click()}
 							>
 								<PaperclipIcon />
-								{t("fileDrag.addMore")}
+								{t("fileDrag.browse")}
 							</Button>
 							<Button
 								size="sm"
