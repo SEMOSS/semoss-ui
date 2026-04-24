@@ -626,7 +626,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				>
 					<div
 						className={cn(
-							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
+							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 							isDragging
 								? "border-primary border-dashed"
 								: "hover:border-primary",
@@ -724,7 +724,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<ScrollArea
 									type="always"
 									className={cn(
-										"min-h-0 flex-1",
+										"min-h-0 flex-1 bg-card",
 										isScrollable && "mr-1",
 									)}
 									onClick={() => editorRef.current?.focus()}
@@ -797,7 +797,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
 						<div
-							className="flex items-center justify-between gap-2 bg-background p-2"
+							className="flex items-center justify-between gap-2 bg-background bg-card p-2"
 							data-tour="tour-input-menu"
 							role="none"
 							onClick={(e) => {

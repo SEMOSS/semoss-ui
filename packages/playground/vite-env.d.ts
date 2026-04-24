@@ -12,6 +12,7 @@ interface ImportMetaEnv {
 	readonly VITE_ENABLE_WORKSPACE: string;
 	readonly VITE_ENABLE_SUGGESTIONS: string;
 	readonly VITE_ENABLE_PLAN: string;
+	readonly VITE_ENABLE_DARK_MODE: string;
 	readonly VITE_ENABLE_REWRITE: string;
 }
 
