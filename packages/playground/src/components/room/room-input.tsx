@@ -632,6 +632,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								: "hover:border-primary",
 							className,
 						)}
+						onDrop={(e) => {
+							e.preventDefault();
+							const updated = Array.from(e.dataTransfer.files);
+							setFiles((prev) => [...prev, ...updated]);
+							setIsDragging(false);
+						}}
+						onDragOver={(e) => {
+							e.preventDefault();
+							setIsDragging(true);
+						}}
+						onDragLeave={(e) => {
+							if (
+								!e.currentTarget.contains(
+									e.relatedTarget as Node,
+								)
+							) {
+								setIsDragging(false);
+							}
+						}}
+						role="none"
 					>
 						{/* File attachments preview strip */}
 						{files.length > 0 && (
@@ -735,25 +755,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													: t("input.menuPrompt")}
 											</div>
 										}
-										onDrop={(e) => {
-											e.preventDefault();
-											const updated = Array.from(
-												e.dataTransfer.files,
-											);
-											setFiles((prev) => [
-												...prev,
-												...updated,
-											]);
-											setIsDragging(false);
-										}}
-										onDragOver={(e) => {
-											e.preventDefault();
-											setIsDragging(true);
-										}}
-										onDragLeave={(e) => {
-											e.preventDefault();
-											setIsDragging(false);
-										}}
 										onPaste={(e) => {
 											const clipboardFiles = Array.from(
 												e.clipboardData.files,
