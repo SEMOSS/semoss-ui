@@ -5,6 +5,7 @@ export type AppFormStep = {
 	icon: React.ReactElement;
 	title: string;
 	component: React.FunctionComponent<{
+		// biome-ignore lint/suspicious/noExplicitAny: react-hook-form generic
 		control: Control<any, any>;
 		disabled: boolean;
 	}>;

@@ -1,8 +1,8 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -28,6 +28,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export const StorageForm = ({
 	title,

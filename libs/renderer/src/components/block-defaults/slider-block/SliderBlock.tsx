@@ -1,19 +1,9 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
 import { debounced } from "@semoss/sdk/react";
-import { Box, Slider, styled } from "@semoss/ui";
+import { Slider } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledSliderBox = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "sliderColor",
-})<{ sliderColor: string }>(({ theme, sliderColor }) => ({
-	display: "flex",
-	alignItems: "center",
-	"&.MuiSlider-root": {
-		color: sliderColor,
-	},
-}));
 
 export interface SliderBlockDef extends BlockDef<"slider"> {
 	widget: "slider";
@@ -42,6 +32,7 @@ export interface SliderBlockDef extends BlockDef<"slider"> {
 export const SliderBlock: BlockComponent = observer(({ id }) => {
 	const { data, attrs, setData, listeners } = useBlock<SliderBlockDef>(id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -52,36 +43,23 @@ export const SliderBlock: BlockComponent = observer(({ id }) => {
 		listeners.onChange();
 	}, 200);
 
-	const formatMarks = (marks: Array<{ display: string; value: number }>) => {
-		return marks.map(({ display, value }) => ({
-			label: display,
-			value: Number(value) || value,
-		}));
-	};
-
-	const hasMarks = data.type === "discrete" && data.marks.length > 0;
-	const marksValue = hasMarks ? formatMarks(data.marks) : true;
-
 	return (
-		<StyledSliderBox
-			sx={{ width: data.size }}
+		<div
 			{...attrs}
-			sliderColor={data.style.color}
+			className="flex items-center"
+			style={{ width: data.size, color: data.style.color }}
 		>
 			<Slider
-				sx={{ ...data.style }}
-				value={Number(data.value) ?? 0}
-				marks={data.type === "continuous" ? false : marksValue}
+				style={data.style}
+				value={[Number(data.value) ?? 0]}
 				step={Number(data.steps) > 0 ? Number(data.steps) : 1}
 				min={Number(data.min)}
 				max={Number(data.max)}
-				onChange={(e) => {
-					// update the value
-					setData("value", e.target.value);
+				onValueChange={(v) => {
+					setData("value", v[0]);
 					debouncedCallback();
 				}}
-				valueLabelDisplay="auto"
 			/>
-		</StyledSliderBox>
+		</div>
 	);
 });

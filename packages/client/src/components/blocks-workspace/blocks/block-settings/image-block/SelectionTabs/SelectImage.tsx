@@ -1,9 +1,14 @@
-import { Select } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { BaseSettingSection } from "../../../settings";
 
 const SelectImage = ({ data, imageFiles, setData }) => {
-	const onImageChange = (e) => {
-		const selectedName = e.target.value;
+	const onImageChange = (selectedName: string) => {
 		const selectedFile = imageFiles.find((f) => f.name === selectedName);
 		if (selectedFile) {
 			setData("src", {
@@ -17,18 +22,19 @@ const SelectImage = ({ data, imageFiles, setData }) => {
 	return (
 		<BaseSettingSection label="">
 			<Select
-				label="Select Image"
-				size="small"
-				fullWidth
 				value={(data.src?.fileName ?? "") as string}
-				onChange={onImageChange}
-				data-testid="select-image"
+				onValueChange={onImageChange}
 			>
-				{imageFiles?.map((file) => (
-					<Select.Item key={file.name} value={file.name}>
-						{file.name}
-					</Select.Item>
-				))}
+				<SelectTrigger className="w-full" data-testid="select-image">
+					<SelectValue placeholder="Select Image" />
+				</SelectTrigger>
+				<SelectContent>
+					{imageFiles?.map((file) => (
+						<SelectItem key={file.name} value={file.name}>
+							{file.name}
+						</SelectItem>
+					))}
+				</SelectContent>
 			</Select>
 		</BaseSettingSection>
 	);

@@ -8,36 +8,20 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Menu, Select, styled, TextField, Typography } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import {
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-}));
 
 export const ScatterPlotSymbol = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -60,10 +44,11 @@ export const ScatterPlotSymbol = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
@@ -76,30 +61,22 @@ export const ScatterPlotSymbol = observer(
 		 */
 		const reinitializeFeatures = (options) => {
 			if (Object.hasOwn(options, "series")) {
-				// Check if the symbol type exists
 				if (Object.hasOwn(options.series[0], "symbol")) {
-					// Update the symbol shape
-					setSymbolShape(options["series"][0]["symbol"]);
+					setSymbolShape(options.series[0].symbol);
 				}
-				// Check if the symbol size exists
 				if (Object.hasOwn(options.series[0], "symbolSize")) {
-					// Update the symbol size
-					setSymbolSize(options["series"][0]["symbolSize"]);
+					setSymbolSize(options.series[0].symbolSize);
 				}
 			}
 		};
 		/**
 		 * Handles the change event of the symbol shape select box.
-		 * @param e The event that triggered this function.
+		 * @param val The new value.
 		 */
-		const handleSymbolShape = (e) => {
-			// Update the symbol shape to the selected value
-			setSymbolShape(e.target.value);
-			// Parse the value of the input to a JSON object
+		const handleSymbolShape = (val: string) => {
+			setSymbolShape(val);
 			const option = JSON.parse(value);
-			// Update the symbol shape in the JSON object
-			option["series"][0]["symbol"] = e.target.value;
-			// Set the JSON object back to the input field
+			option.series[0].symbol = val;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		/**
@@ -107,48 +84,50 @@ export const ScatterPlotSymbol = observer(
 		 * @param e The event that triggered this function.
 		 */
 		const handleChangeSymbolSize = (e) => {
-			// Parse the current value to a JSON object
 			const option = JSON.parse(value);
-			// Update the symbol size to the selected value
 			setSymbolSize(e.target.value);
-			// Set the symbol size in the JSON object
-			option["series"][0]["symbolSize"] = e.target.value;
-			// Update the data with the new symbol size option
+			option.series[0].symbolSize = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxis>
-				<StyledAxisColDiv display="flex" justifyContent="space-around">
-					<Typography variant="body2" color="secondary">
+			<div className="flex flex-col">
+				<div className="flex flex-col gap-2 px-4 py-2">
+					<span className="text-muted-foreground text-sm">
 						Symbol Shape
-					</Typography>
+					</span>
 					<Select
-						name="Symbol Shape"
 						value={symbolShape}
-						onChange={handleSymbolShape}
-						size="small"
+						onValueChange={handleSymbolShape}
 					>
-						<Menu.Item value="circle">Circle</Menu.Item>
-						<Menu.Item value="rect">Rectangle</Menu.Item>
-						<Menu.Item value="roundRect">Round Rectangle</Menu.Item>
-						<Menu.Item value="triangle">traingle</Menu.Item>
-						<Menu.Item value="arrow">Arrow</Menu.Item>
-						<Menu.Item value="pin">Pin</Menu.Item>
-						<Menu.Item value="diamond">Diamond</Menu.Item>
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Select" />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="circle">Circle</SelectItem>
+							<SelectItem value="rect">Rectangle</SelectItem>
+							<SelectItem value="roundRect">
+								Round Rectangle
+							</SelectItem>
+							<SelectItem value="triangle">traingle</SelectItem>
+							<SelectItem value="arrow">Arrow</SelectItem>
+							<SelectItem value="pin">Pin</SelectItem>
+							<SelectItem value="diamond">Diamond</SelectItem>
+						</SelectContent>
 					</Select>
-				</StyledAxisColDiv>
-				<StyledAxisColDiv display="flex" justifyContent="space-around">
-					<Typography variant="body2" color="secondary">
+				</div>
+				<div className="flex flex-col gap-2 px-4 py-2">
+					<span className="text-muted-foreground text-sm">
 						Symbol Size
-					</Typography>
-					<TextField
+					</span>
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+					<Input
 						id="Symbol Size"
-						size="small"
 						value={symbolSize}
 						onChange={handleChangeSymbolSize}
 					/>
-				</StyledAxisColDiv>
-			</StyledAxis>
+				</div>
+			</div>
 		);
 	},
 );

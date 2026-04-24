@@ -1,5 +1,4 @@
-import { CSSProperties } from "react";
-import { Avatar } from "@semoss/ui";
+import { Avatar, AvatarFallback } from "@semoss/ui/next";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import { ChipBlock, type ChipBlockDef } from "./ChipBlock";
@@ -12,7 +11,11 @@ export const config: BlockConfig<ChipBlockDef> = {
 			color: "grey",
 		},
 		size: "small",
-		avatar: <Avatar>A</Avatar>,
+		avatar: (
+			<Avatar>
+				<AvatarFallback>A</AvatarFallback>
+			</Avatar>
+		),
 		type: "Chip",
 		variant: "filled",
 		label: "",

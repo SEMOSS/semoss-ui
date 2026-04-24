@@ -12,9 +12,13 @@ const mockState = {
 	}),
 };
 
-vi.mock("@semoss/ui", async () => ({
-	...(await vi.importActual("@semoss/ui")),
-	useNotification: () => ({ add: vi.fn() }),
+vi.mock("@semoss/ui/next", async () => ({
+	...(await vi.importActual("@semoss/ui/next")),
+	toast: {
+		error: vi.fn(),
+		warning: vi.fn(),
+		success: vi.fn(),
+	},
 }));
 
 vi.mock("../../../hooks", () => ({

@@ -146,7 +146,7 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 				searchParams.delete("mcp");
 				setSearchParams(searchParams);
 			}
-		}, [searchParams, layout]);
+		}, [searchParams, addNode, setSearchParams]);
 
 		return (
 			<FileExplorer
@@ -390,6 +390,19 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 										enableClose: true,
 									},
 								);
+							}}
+							onAfterRename={(oldPath, newPath) => {
+								const newName =
+									newPath.split("/").filter(Boolean).pop() ??
+									newPath;
+								removeDeletedTabs(oldPath, false);
+								addNode(`ENGINE_FILE--${newPath}`, {
+									type: "tab",
+									name: newName,
+									component: "engine-file-editor",
+									config: { name: newName, path: newPath },
+									enableClose: true,
+								});
 							}}
 							{...otherProps}
 							actions={actions}
