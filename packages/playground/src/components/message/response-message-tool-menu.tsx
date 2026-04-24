@@ -100,23 +100,23 @@ export const ResponseMessageToolMenu = ({
 				</DropdownMenuItem>
 				{(!isMobile || (tool.isOpen && tool.display === "sidebar")) && (
 					<DropdownMenuItem
-					onClick={() => {
-						if (tool.isOpen && tool.display === "sidebar") {
-							tool.closeTool();
-						} else {
-							tool.openTool("sidebar");
-						}
-					}}
-				>
-					{tool.isOpen && tool.display === "sidebar" ? (
-						<PanelRightOpenIcon />
-					) : (
-						<PanelRightCloseIcon />
-					)}
-					{tool.isOpen && tool.display === "sidebar"
-						? t("actions.closeInSidebar")
-						: t("actions.openInSidebar")}
-				</DropdownMenuItem>
+						onClick={() => {
+							if (tool.isOpen && tool.display === "sidebar") {
+								tool.closeTool();
+							} else {
+								tool.openTool("sidebar");
+							}
+						}}
+					>
+						{tool.isOpen && tool.display === "sidebar" ? (
+							<PanelRightOpenIcon />
+						) : (
+							<PanelRightCloseIcon />
+						)}
+						{tool.isOpen && tool.display === "sidebar"
+							? t("actions.closeInSidebar")
+							: t("actions.openInSidebar")}
+					</DropdownMenuItem>
 				)}
 
 				{showCancelInMenu && (
