@@ -1,5 +1,6 @@
 import { CheckIcon, ComputerIcon, ExternalLinkIcon } from "lucide-react";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
@@ -54,7 +55,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 	const [isOpen, setIsOpen] = useState(false);
 	const { t } = useTranslation("room");
 	const { root } = useRoot();
-	const [search, setSearch] = React.useState("");
+	const [search, setSearch] = useState("");
 	const isMobile = useIsMobile();
 
 	const debouncedSearch = useDebouncedValue(search);
@@ -104,7 +105,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 				placeholder={t("menuWorkspace.searchPlaceholder")}
 				value={search}
 				onValueChange={setSearch}
-				autoFocus
+				autoFocus={!isMobile}
 			/>
 			<CommandList
 				className="max-h-[200px]"
