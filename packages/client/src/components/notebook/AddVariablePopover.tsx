@@ -1,5 +1,15 @@
-import { Close, MoreSharp, WarningRounded } from "@mui/icons-material";
 import { JsonViewer } from "@textea/json-viewer";
+import {
+	AlertTriangle,
+	Archive,
+	Bolt,
+	Bot,
+	Database,
+	type LucideIcon,
+	MoreHorizontal,
+	Sigma,
+	X,
+} from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -19,18 +29,22 @@ import {
 import { MonacoEditor } from "@semoss/shared";
 import {
 	Alert,
-	Box,
+	AlertDescription,
+	AlertTitle,
 	Button,
-	Icon,
-	IconButton,
-	Popover,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	Input,
+	Label,
 	Select,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	toast,
+} from "@semoss/ui/next";
 import PreviewButton from "../../assets/img/PreviewRounded.png";
 // TODO: MOVE TO SDK/UTILITY LIB
 import {
@@ -39,142 +53,13 @@ import {
 	splitAtPeriod,
 } from "../../utility";
 
-const StyledPlaceholder = styled("div")(() => ({
-	height: "10vh",
-	width: "100%",
-}));
-
-const StyledStack = styled(Stack)(() => ({
-	width: "444px",
-	"& .MuiStack-root": {
-		marginTop: "0px",
-		gap: "0px",
-	},
-}));
-
-const StyledPopover = styled(Popover)(({ theme }) => ({
-	padding: theme.spacing(2),
-	marginLeft: theme.spacing(2),
-	"& .MuiPopover-paper": {
-		maxWidth: "none",
-		borderRadius: "12px",
-		maxHeight: "none",
-	},
-	width: "444px",
-	height: "396px",
-	left: "10px",
-	position: "absolute",
-}));
-
-const QueryPreviewContainer = styled(Stack)(() => ({
-	maxHeight: "275px",
-	width: "100%",
-	overflow: "auto",
-}));
-
-const _StyledImg = styled("img")(({ theme }) => ({
-	maxWidth: theme.spacing(5),
-}));
-
-const StyledTypography = styled(Typography)(() => ({
-	color: "#212121",
-	fontSize: "20px",
-	fontWeight: "500",
-	lineHeight: "160%",
-}));
-
-const StyledStackVariable = styled(Stack)(() => ({
-	padding: "8px 16px",
-	gap: "8px",
-	"& .MuiStack-root": {
-		marginTop: "0px",
-	},
-}));
-
-const StyledTypographyVariable = styled(Typography)(() => ({
-	color: "#666",
-	fontSize: "14px",
-	fontWeight: "400",
-	lineHeight: "143%",
-}));
-
-const StyledButtonPreview = styled(Button)(() => ({
-	color: "#0471F0",
-	fontSize: "14px",
-	fontWeight: "500",
-	lineHeight: "24px",
-	letterSpacing: "0.4px",
-	bottom: "8px",
-	minWidth: "auto",
-	display: "flex",
-	gap: "6px",
-	alignItems: "center",
-	justifyContent: "flex-start",
-	whiteSpace: "nowrap",
-	svg: {
-		display: "inline-block",
-		verticalAlign: "middle",
-	},
-	span: {
-		display: "inline-block",
-	},
-	width: "100%",
-	"& .MuiButton-startIcon, & .MuiButton-label, & > span": {
-		display: "inline-flex !important",
-		alignItems: "center",
-		gap: "8px !important",
-	},
-	top: "1px",
-}));
-
-const StyledStackFooter = styled(Stack)(() => ({
-	padding: "8px 16px",
-}));
-
-const StyledTypographyName = styled(Typography)(() => ({
-	color: "#212121",
-	fontSize: "16px",
-	fontWeight: "400",
-	lineHeight: "24px",
-	letterSpacing: "0.15px",
-}));
-
-const StyledTypographyId = styled(Typography)(() => ({
-	color: "#666",
-	fontSize: "14px",
-	fontWeight: "400",
-	lineHeight: "21px",
-	letterSpacing: "0.17px",
-}));
-
-const StyledStackModel = styled(Stack)(() => ({
-	position: "relative",
-	left: "6px",
-}));
-
-const StyledSpan = styled("span")(() => ({
-	color: "#999",
-}));
-
-const StyledPreviewSpan = styled("span")(() => ({
-	position: "relative",
-	top: "1px",
-}));
-
-const StyledCancelButton = styled(Button)(() => ({
-	color: "#212121",
-	fontFamily: "Inter",
-	fontSize: "14px",
-	fontWeight: "500",
-	lineHeight: "24px",
-	letterSpacing: "0.4px",
-}));
-
-const StyledLabelBox = styled(Box)(() => ({
-	"& .MuiFormLabel-root.MuiInputLabel-root": {
-		top: "6px",
-	},
-}));
+const ENGINE_ICONS: Record<string, LucideIcon> = {
+	model: Bot,
+	database: Database,
+	vector: Bolt,
+	storage: Archive,
+	function: Sigma,
+};
 
 interface AddVariablePopoverProps {
 	/**
@@ -188,9 +73,10 @@ interface AddVariablePopoverProps {
 	onClose: () => void;
 
 	/**
-	 * El the popover is tied to
+	 * El the popover is tied to (kept for API compat, unused)
 	 */
-	anchorEl: Element;
+	// biome-ignore lint/suspicious/noExplicitAny: anchorEl kept for API compatibility
+	anchorEl: any;
 
 	/**
 	 * Do we want edit variable
@@ -202,50 +88,49 @@ interface AddVariablePopoverProps {
 	 */
 	engines: {
 		models: {
-			app_id: string;
-			app_name: string;
-			app_type: string;
-			app_subtype: string;
+			engine_id: string;
+			engine_name: string;
+			engine_type: string;
+			engine_subtype: string;
 		}[];
 		databases: {
-			app_id: string;
-			app_name: string;
-			app_type: string;
-			app_subtype: string;
+			engine_id: string;
+			engine_name: string;
+			engine_type: string;
+			engine_subtype: string;
 		}[];
 		storages: {
-			app_id: string;
-			app_name: string;
-			app_type: string;
-			app_subtype: string;
+			engine_id: string;
+			engine_name: string;
+			engine_type: string;
+			engine_subtype: string;
 		}[];
 		functions: {
-			app_id: string;
-			app_name: string;
-			app_type: string;
-			app_subtype: string;
+			engine_id: string;
+			engine_name: string;
+			engine_type: string;
+			engine_subtype: string;
 		}[];
 		vectors: {
-			app_id: string;
-			app_name: string;
-			app_type: string;
-			app_subtype: string;
+			engine_id: string;
+			engine_name: string;
+			engine_type: string;
+			engine_subtype: string;
 		}[];
 	};
 }
 export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
-	const { open, anchorEl, onClose, variable, engines } = props;
+	const { open, onClose, variable, engines } = props;
 	const { state } = useBlocks();
-	const notification = useNotification();
 
 	const [variableName, setVariableName] = useState("");
 	const [variableType, setVariableType] = useState<VariableType | "">("");
 	const [variablePointer, setVariablePointer] = useState("");
 	const [engine, setEngine] = useState<{
-		app_id: string;
-		app_name: string;
-		app_type: string;
-		app_subtype;
+		engine_id: string;
+		engine_name: string;
+		engine_type: string;
+		engine_subtype;
 	} | null>(null);
 	const [showPreview, setShowPreview] = useState<boolean>(false);
 
@@ -306,125 +191,98 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	}).get();
 
 	/**
-	 * Select Box on different constants to tie to
+	 * Select options depending on variable type
 	 */
-	const values = useMemo(() => {
+	// biome-ignore lint/correctness/useExhaustiveDependencies: comparisonBlocks intentionally omitted
+	const selectOptions = useMemo((): {
+		value: string;
+		label: string;
+		subtitle?: string;
+	}[] => {
 		if (variableType === "block") {
-			return inputBlocks.map((block) => {
-				return (
-					<Select.Item key={block.id} value={block.id}>
-						<Typography variant="caption">{block.id}</Typography>
-					</Select.Item>
-				);
-			});
+			return inputBlocks.map((block) => ({
+				value: block.id,
+				label: block.id,
+			}));
 		} else if (variableType === "query") {
-			return queries.map((q) => {
-				return (
-					<Select.Item key={q.id} value={q.id}>
-						<Typography variant="caption">{q.id}</Typography>
-					</Select.Item>
-				);
-			});
+			return queries.map((q) => ({ value: q.id, label: q.id }));
 		} else if (variableType === "LLM Comparison") {
-			return comparisonBlocks.map((block) => {
-				return (
-					<Select.Item key={block.id} value={block.id}>
-						<Typography variant="caption">{block.id}</Typography>
-					</Select.Item>
-				);
-			});
+			return comparisonBlocks.map((block) => ({
+				value: block.id,
+				label: block.id,
+			}));
 		} else if (variableType === "cell") {
-			return cells.map((cell) => {
-				return (
-					<Select.Item
-						key={cell.id}
-						value={`${cell.query.id}.${cell.id}`}
-					>
-						<Typography variant="caption">
-							{cell.query.id} - {cell.id}
-						</Typography>
-					</Select.Item>
-				);
-			});
+			return cells.map((cell) => ({
+				value: `${cell.query.id}.${cell.id}`,
+				label: `${cell.query.id} - ${cell.id}`,
+			}));
 		} else if (variableType === "model") {
-			return engines.models.map((model) => {
-				return (
-					<Select.Item key={model.app_id} value={model}>
-						<Typography variant="caption">
-							{model.app_name}
-						</Typography>
-					</Select.Item>
-				);
-			});
+			return engines.models.map((m) => ({
+				value: m.engine_id,
+				label: m.engine_name,
+				subtitle: m.engine_id,
+			}));
 		} else if (variableType === "database") {
-			return engines.databases.map((model) => {
-				return (
-					<Select.Item key={model.app_id} value={model}>
-						<Typography variant="caption">
-							{model.app_name}
-						</Typography>
-					</Select.Item>
-				);
-			});
+			return engines.databases.map((m) => ({
+				value: m.engine_id,
+				label: m.engine_name,
+				subtitle: m.engine_id,
+			}));
 		} else if (variableType === "storage") {
-			return engines.storages.map((model) => {
-				return (
-					<Select.Item key={model.app_id} value={model}>
-						<Typography variant="caption">
-							{model.app_name}
-						</Typography>
-					</Select.Item>
-				);
-			});
+			return engines.storages.map((m) => ({
+				value: m.engine_id,
+				label: m.engine_name,
+				subtitle: m.engine_id,
+			}));
 		} else if (variableType === "function") {
-			return engines.functions.map((model) => {
-				return (
-					<Select.Item key={model.app_id} value={model}>
-						<Typography variant="caption">
-							{model.app_name}
-						</Typography>
-					</Select.Item>
-				);
-			});
+			return engines.functions.map((m) => ({
+				value: m.engine_id,
+				label: m.engine_name,
+				subtitle: m.engine_id,
+			}));
 		} else if (variableType === "vector") {
-			return engines.vectors.map((model) => {
-				return (
-					<Select.Item key={model.app_id} value={model}>
-						<Typography variant="caption">
-							{model.app_name}
-						</Typography>
-					</Select.Item>
-				);
-			});
-		} else {
-			return <Select.Item value="">No options</Select.Item>;
+			return engines.vectors.map((m) => ({
+				value: m.engine_id,
+				label: m.engine_name,
+				subtitle: m.engine_id,
+			}));
 		}
-	}, [variableType]);
+		return [];
+	}, [variableType, inputBlocks, queries, cells, engines]);
 
+	const isEngineType = (type: string) =>
+		["model", "database", "storage", "function", "vector"].includes(type);
+	const isPointerType = (type: string) =>
+		["block", "query", "cell", "LLM Comparison"].includes(type);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: isPointerType/isEngineType are stable
+	const selectValue = useMemo(() => {
+		if (isPointerType(variableType)) return variablePointer;
+		if (isEngineType(variableType)) return engine?.engine_id ?? "";
+		return "";
+	}, [variableType, variablePointer, engine]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: complex memo with stable callbacks
 	const input = useMemo(() => {
 		if (variableType === "string") {
 			return (
-				<TextField
-					placeholder={"Add Value"}
-					variant="outlined"
-					size="small"
+				<Input
+					placeholder="Add Value"
 					onChange={(e) =>
 						setVariableInputValue(e.target.value.toString())
 					}
-					value={variableInputValue}
+					value={variableInputValue ?? ""}
 				/>
 			);
 		} else if (variableType === "number") {
 			return (
-				<TextField
-					variant="outlined"
+				<Input
 					type="number"
-					size="small"
 					placeholder="Add Value"
 					onChange={(e) => {
-						setVariableInputValue(parseInt(e.target.value));
+						setVariableInputValue(parseInt(e.target.value, 10));
 					}}
-					value={variableInputValue}
+					value={variableInputValue ?? ""}
 				/>
 			);
 		} else if (variableType === "JSON" || variableType === "array") {
@@ -447,76 +305,101 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			);
 		} else if (variableType === "date") {
 			return (
-				<TextField
+				<Input
 					type="date"
-					variant="outlined"
-					size="small"
 					placeholder="Add Value"
 					onChange={(e) =>
 						setVariableInputValue(e.target.value.toString())
 					}
-					value={variableInputValue}
+					value={variableInputValue ?? ""}
 				/>
 			);
-		} else {
+		} else if (variableType) {
 			return (
 				<Select
-					disabled={!variableType}
-					size="small"
-					value={
-						variableType === "cell" ||
-						variableType === "query" ||
-						variableType === "block" ||
-						variableType === "LLM Comparison"
-							? variablePointer
-							: (engine ?? "")
-					}
-					SelectProps={{
-						displayEmpty: true,
-						renderValue: (value) => {
-							if (!value || value === "") {
-								return <StyledSpan>Add Value</StyledSpan>;
-							}
-							if (
-								variableType === "cell" ||
-								variableType === "query" ||
-								variableType === "block" ||
-								variableType === "LLM Comparison"
-							) {
-								return String(value);
-							}
-							const eng =
-								(value as { app_name?: string }) || engine;
-							return eng?.app_name ?? String(eng);
-						},
-					}}
-					onChange={(e) => {
-						const val = e.target.value as unknown;
-						if (
-							variableType === "cell" ||
-							variableType === "query" ||
-							variableType === "block" ||
-							variableType === "LLM Comparison"
-						) {
-							setVariablePointer(val as string);
-						} else {
-							setEngine(
-								val as {
-									app_id: string;
-									app_name: string;
-									app_type: string;
-									app_subtype: string;
-								},
-							);
+					disabled={!variableType || selectOptions.length === 0}
+					value={selectValue}
+					onValueChange={(val) => {
+						if (isPointerType(variableType)) {
+							setVariablePointer(val);
+						} else if (isEngineType(variableType)) {
+							const engineType =
+								`${variableType}s` as keyof typeof engines;
+							const found = (
+								engines[engineType] as {
+									engine_id: string;
+									engine_name: string;
+									engine_type: string;
+									engine_subtype: string;
+								}[]
+							)?.find((e) => e.engine_id === val);
+							if (found) setEngine(found);
 						}
 					}}
 				>
-					{values}
+					<SelectTrigger className="h-auto min-h-10 py-2">
+						{isEngineType(variableType) && engine ? (
+							<div className="flex items-center gap-2 text-left">
+								{(() => {
+									const Icon = ENGINE_ICONS[variableType];
+									return Icon ? (
+										<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+									) : null;
+								})()}
+								<div className="flex flex-col items-start gap-0.5">
+									<span className="font-medium text-sm leading-tight">
+										{engine.engine_name}
+									</span>
+									<span className="text-muted-foreground text-xs leading-tight">
+										{engine.engine_id}
+									</span>
+								</div>
+							</div>
+						) : (
+							<SelectValue placeholder="Add Value" />
+						)}
+					</SelectTrigger>
+					<SelectContent>
+						{selectOptions.map((opt) =>
+							opt.subtitle ? (
+								<SelectItem key={opt.value} value={opt.value}>
+									<div className="flex items-center gap-2">
+										{(() => {
+											const Icon =
+												ENGINE_ICONS[variableType];
+											return Icon ? (
+												<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+											) : null;
+										})()}
+										<div className="flex flex-col items-start gap-0.5">
+											<span className="font-medium text-sm leading-tight">
+												{opt.label}
+											</span>
+											<span className="text-muted-foreground text-xs leading-tight">
+												{opt.subtitle}
+											</span>
+										</div>
+									</div>
+								</SelectItem>
+							) : (
+								<SelectItem key={opt.value} value={opt.value}>
+									{opt.label}
+								</SelectItem>
+							),
+						)}
+						{selectOptions.length === 0 && (
+							<SelectItem value="" disabled>
+								No options
+							</SelectItem>
+						)}
+					</SelectContent>
 				</Select>
 			);
 		}
-	}, [variableType, variableInputValue, variablePointer, engine]);
+		return null;
+	}, [variableType, variableInputValue, selectOptions, selectValue]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dep subset
 	const preview = useMemo(() => {
 		try {
 			if (
@@ -570,29 +453,31 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					};
 
 					return (
-						<StyledLabelBox>
+						<div className="w-full">
 							<Renderer state={s} />
-						</StyledLabelBox>
+						</div>
 					);
 				} else if (variableType === "query") {
 					const query = state.getQuery(variablePointer);
 
 					if (query.output) {
 						return (
-							<QueryPreviewContainer>
-								<Typography variant={"body2"}>
+							<div className="max-h-[275px] w-full overflow-auto">
+								<span className="text-sm">
 									{JSON.stringify(query.output)}
-								</Typography>
-							</QueryPreviewContainer>
+								</span>
+							</div>
 						);
 					} else {
 						return (
-							<Alert severity="warning" icon={<WarningRounded />}>
-								<Alert.Title>
+							<Alert>
+								<AlertTriangle className="size-4 text-yellow-600" />
+								<AlertTitle>Not yet executed</AlertTitle>
+								<AlertDescription>
 									Sheet {variablePointer} has not been
 									executed. Click &apos;Run All&apos; in order
 									to preview output.
-								</Alert.Title>
+								</AlertDescription>
 							</Alert>
 						);
 					}
@@ -612,21 +497,23 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 								splitAtPeriod(variablePointer, "right"),
 							).output;
 						return (
-							<QueryPreviewContainer>
-								<Typography variant={"body2"}>
+							<div className="max-h-[275px] w-full overflow-auto">
+								<span className="text-sm">
 									{JSON.stringify(rawOutput)}
-								</Typography>
-							</QueryPreviewContainer>
+								</span>
+							</div>
 						);
 					} else {
 						return (
-							<Alert severity="warning" icon={<WarningRounded />}>
-								<Alert.Title>
+							<Alert>
+								<AlertTriangle className="size-4 text-yellow-600" />
+								<AlertTitle>Not yet executed</AlertTitle>
+								<AlertDescription>
 									Cell{" "}
 									{splitAtPeriod(variablePointer, "right")}{" "}
 									has not been executed. Click &apos;Run
 									All&apos; in order to preview output.
-								</Alert.Title>
+								</AlertDescription>
 							</Alert>
 						);
 					}
@@ -644,34 +531,26 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					);
 				} else {
 					return (
-						<StyledStackModel direction="row" alignItems="center">
-							<Icon>
-								<MoreSharp />
-							</Icon>
-							<Stack direction="column">
-								<StyledTypographyName variant="body2">
-									{engine.app_name}
-								</StyledTypographyName>
-								<StyledTypographyId variant="body2">
-									{engine.app_id}
-								</StyledTypographyId>
-							</Stack>
-						</StyledStackModel>
+						<div className="relative left-1.5 flex flex-row items-center gap-2">
+							<MoreHorizontal className="size-4 text-muted-foreground" />
+							<div className="flex flex-col">
+								<span className="text-sm">
+									{engine?.engine_name}
+								</span>
+								<span className="text-muted-foreground text-xs">
+									{engine?.engine_id}
+								</span>
+							</div>
+						</div>
 					);
 				}
-			} else if (
-				variableType &&
-				(engine || variablePointer || variableInputValue)
-			) {
-				return <StyledPlaceholder />;
 			}
 		} catch (_e) {
-			return (
-				<Typography variant={"body2"}>Value is undefined</Typography>
-			);
+			return <span className="text-sm">Value is undefined</span>;
 		}
 	}, [variableType, variablePointer, engine, variableInputValue]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dep subset
 	const addVariableDisabled = useMemo(() => {
 		const hasRequiredFields = Boolean(
 			variableType.length > 0 && variableName.length > 0,
@@ -715,6 +594,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		alreadyAliased,
 	]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only re-sync on variable change
 	useEffect(() => {
 		if (variable?.id) {
 			setVariableName(variable.id);
@@ -738,7 +618,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				} else {
 					const variableEngine = engines[`${variable.type}s`]
 						? engines[`${variable.type}s`].find(
-								(engineValue) => engineValue.app_id === val,
+								(engineValue) => engineValue.engine_id === val,
 							)
 						: null;
 					if (variableEngine) {
@@ -755,172 +635,120 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		}
 	}, [variable]);
 
-	return (
-		<StyledPopover
-			marginThreshold={60}
-			id={"variable-popover"}
-			open={open}
-			onClose={() => {
-				setVariablePointer("");
-				setVariableName("");
-				setEngine(null);
-				setVariableType("");
+	const handleClose = () => {
+		setVariablePointer("");
+		setVariableName("");
+		setEngine(null);
+		setVariableType("");
+		onClose();
+	};
 
-				onClose();
-			}}
-			anchorOrigin={{
-				vertical: "center",
-				horizontal: "right",
-			}}
-			transformOrigin={{
-				vertical: "bottom",
-				horizontal: "left",
-			}}
-			anchorEl={anchorEl}
-		>
-			<StyledStack
-				direction={"column"}
-				className="add-variable-popover__content max-h-[90vh] overflow-hidden"
+	return (
+		<Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+			<DialogContent
+				className="w-[444px] max-w-[444px]"
+				showCloseButton={false}
 			>
-				<StyledStackVariable
-					direction="row"
-					justifyContent={"space-between"}
-					alignItems={"center"}
-				>
-					<StyledTypography variant={"h6"}>
+				<DialogHeader className="flex flex-row items-center justify-between pr-0">
+					<DialogTitle className="font-medium text-xl">
 						{variable ? "Edit" : "Create"} Variable
-					</StyledTypography>
-					<IconButton
-						size="small"
-						onClick={() => {
-							onClose();
-						}}
+					</DialogTitle>
+					<button
+						type="button"
+						className="rounded-sm opacity-70 hover:opacity-100"
+						onClick={handleClose}
 					>
-						<Close />
-					</IconButton>
-				</StyledStackVariable>
+						<X className="size-4" />
+						<span className="sr-only">Close</span>
+					</button>
+				</DialogHeader>
+
 				<div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pr-1">
 					{variable && (
-						<Alert icon={<WarningRounded />} severity={"warning"}>
-							<Alert.Title>
+						<Alert>
+							<AlertTriangle className="size-4 text-yellow-600" />
+							<AlertTitle>Warning</AlertTitle>
+							<AlertDescription>
 								If this variable is actively being used, editing
 								it may result in errors throughout your sheets.
-							</Alert.Title>
+							</AlertDescription>
 						</Alert>
 					)}
-					<Stack direction="column" mt={1} gap={1}>
-						<StyledStackVariable direction="column">
-							<StyledTypographyVariable variant={"body2"}>
+					<div className="flex flex-col gap-3 pt-1">
+						<div className="flex flex-col gap-1.5 px-4">
+							<Label className="text-muted-foreground text-sm">
 								Variable Name
-							</StyledTypographyVariable>
-							<TextField
-								placeholder={"Name"}
+							</Label>
+							<Input
+								placeholder="Name"
 								value={variableName}
-								error={alreadyAliased}
+								aria-invalid={alreadyAliased}
 								onChange={(e) => {
 									setVariableName(e.target.value);
 								}}
-								size="small"
-								helperText={
-									alreadyAliased ? (
-										<Typography
-											variant={"caption"}
-											color={"error"}
-										>
-											This is not a unique alias
-										</Typography>
-									) : (
-										""
-									)
-								}
 							/>
-						</StyledStackVariable>
-						<StyledStackVariable direction="column">
-							<StyledTypographyVariable variant={"body2"}>
+							{alreadyAliased && (
+								<span className="text-destructive text-xs">
+									This is not a unique alias
+								</span>
+							)}
+						</div>
+						<div className="flex flex-col gap-1.5 px-4">
+							<Label className="text-muted-foreground text-sm">
 								Type
-							</StyledTypographyVariable>
+							</Label>
 							<Select
 								value={variableType}
-								onChange={(e) => {
-									const val = e.target.value as VariableType;
+								onValueChange={(val) => {
 									setEngine(null);
 									setVariableInputValue(null);
 									setVariablePointer("");
-									setVariableType(val);
+									setVariableType(val as VariableType);
 								}}
-								SelectProps={{
-									displayEmpty: true,
-									renderValue: (value) => {
-										console.log(value, "value");
-										if (!value || value === "") {
-											return (
-												<StyledSpan>
-													Select Type
-												</StyledSpan>
-											);
-										}
-										return capitalizeFirstLetter(
-											value as string,
-										);
-									},
-								}}
-								size="small"
 							>
-								{VARIABLE_TYPES.map((val) => {
-									return (
-										<Select.Item key={val} value={val}>
+								<SelectTrigger>
+									<SelectValue placeholder="Select Type" />
+								</SelectTrigger>
+								<SelectContent>
+									{VARIABLE_TYPES.map((val) => (
+										<SelectItem key={val} value={val}>
 											{capitalizeFirstLetter(val)}
-										</Select.Item>
-									);
-								})}
+										</SelectItem>
+									))}
+								</SelectContent>
 							</Select>
-						</StyledStackVariable>
-						<StyledStackVariable direction="column">
-							<StyledTypographyVariable variant={"body2"}>
+						</div>
+						<div className="flex flex-col gap-1.5 px-4">
+							<Label className="text-muted-foreground text-sm">
 								Value
-							</StyledTypographyVariable>
+							</Label>
 							{input}
-						</StyledStackVariable>
-						<StyledStackVariable
-							direction="column"
-							sx={{
-								background: showPreview ? "#F5F9FE" : "none",
-							}}
+						</div>
+						<div
+							className={`flex flex-col gap-1.5 px-4 ${showPreview ? "bg-[#F5F9FE]" : ""}`}
 						>
-							<StyledButtonPreview
+							<button
+								type="button"
+								className="flex items-center gap-1.5 font-medium text-[#0471F0] text-sm"
 								onClick={() => setShowPreview(!showPreview)}
 							>
 								<img
 									src={PreviewButton}
 									alt="Expand/Collapse"
-									style={{
-										width: 20,
-										height: 20,
-									}}
+									className="h-5 w-5"
 								/>
-								<StyledPreviewSpan>Preview</StyledPreviewSpan>
-							</StyledButtonPreview>
-						</StyledStackVariable>
-						<StyledStackVariable>
-							{showPreview && preview}
-						</StyledStackVariable>
-					</Stack>
+								<span>Preview</span>
+							</button>
+						</div>
+						{showPreview && <div className="px-4">{preview}</div>}
+					</div>
 				</div>
-				<StyledStackFooter
-					direction={"row"}
-					justifyContent={"flex-end"}
-				>
-					<StyledCancelButton
-						variant={"text"}
-						onClick={() => {
-							onClose();
-						}}
-					>
+
+				<div className="flex justify-end gap-2 pt-2">
+					<Button variant="outline" onClick={handleClose}>
 						Cancel
-					</StyledCancelButton>
+					</Button>
 					<Button
-						color="primary"
-						variant={"contained"}
 						disabled={addVariableDisabled}
 						onClick={async () => {
 							// Refactor this
@@ -948,7 +776,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 															to: variablePointer,
 															type: variableType,
 															value: engine
-																? engine.app_id
+																? engine.engine_id
 																: variableType ===
 																			"array" ||
 																		variableType ===
@@ -961,42 +789,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 										},
 									});
 
-									// else {
-									//     const id = await state.dispatch({
-									//         message:
-									//             ActionMessages.ADD_DEPENDENCY,
-									//         payload: {
-									//             id: engine
-									//                 ? engine.app_id
-									//                 : variableType ===
-									//                       'array' ||
-									//                   variableType === 'JSON'
-									//                 ? JSON.parse(
-									//                       variableInputValue,
-									//                   )
-									//                 : variableInputValue,
-									//             type: variableType,
-									//         },
-									//     });
-
-									//     state.dispatch({
-									//         message:
-									//             ActionMessages.EDIT_VARIABLE,
-									//         payload: {
-									//             id: variableName,
-									//             from: variable,
-									//             to: {
-									//                 to: id,
-									//                 type: variableType,
-									//             },
-									//         },
-									//     });
-									// }
-
-									notification.add({
-										color: "success",
-										message: `Successfully editted ${variable.id}, remember to save your app.`,
-									});
+									toast.success(
+										`Successfully editted ${variable.id}, remember to save your app.`,
+									);
 									onClose();
 								} else {
 									console.warn(
@@ -1024,7 +819,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 														to: variablePointer,
 														type: variableType,
 														value: engine
-															? engine.app_id
+															? engine.engine_id
 															: variableType ===
 																		"array" ||
 																	variableType ===
@@ -1035,52 +830,16 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 																: variableInputValue,
 													},
 									});
-									// else {
-									//     // Add dependency to reference
-									//     const id = await state.dispatch({
-									//         message:
-									//             ActionMessages.ADD_DEPENDENCY,
-									//         payload: {
-									//             id: engine
-									//                 ? engine.app_id
-									//                 : variableType ===
-									//                       'array' ||
-									//                   variableType === 'JSON'
-									//                 ? JSON.parse(
-									//                       variableInputValue,
-									//                   )
-									//                 : variableInputValue,
-									//             type: variableType,
-									//         },
-									//     });
 
-									//     success = state.dispatch({
-									//         message:
-									//             ActionMessages.ADD_VARIABLE,
-									//         payload: {
-									//             id: variableName,
-									//             to: id,
-									//             type: variableType,
-									//         },
-									//     });
-
-									//     if (!success) {
-									//         state.dispatch({
-									//             message:
-									//                 ActionMessages.REMOVE_DEPENDENCY,
-									//             payload: {
-									//                 id: id,
-									//             },
-									//         });
-									//     }
-									// }
-
-									notification.add({
-										color: success ? "success" : "error",
-										message: success
-											? `Successfully added ${variableName}, remember to save your app.`
-											: `Unable to create ${variableName}`,
-									});
+									if (success) {
+										toast.success(
+											`Successfully added ${variableName}, remember to save your app.`,
+										);
+									} else {
+										toast.error(
+											`Unable to create ${variableName}`,
+										);
+									}
 									onClose();
 								}
 							}
@@ -1088,8 +847,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					>
 						{variable ? "Save" : "Add"}
 					</Button>
-				</StyledStackFooter>
-			</StyledStack>
-		</StyledPopover>
+				</div>
+			</DialogContent>
+		</Dialog>
 	);
 });

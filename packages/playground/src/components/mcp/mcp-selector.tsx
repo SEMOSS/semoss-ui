@@ -115,19 +115,22 @@ export const MCPSelector = observer(
 		};
 
 		return (
-			<div className="w-full overflow-hidden rounded-xl border-border bg-card shadow-sm">
-				<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
-					<InputGroup className="bg-background">
-						<InputGroupInput
-							placeholder={t("selector.search")}
-							value={search}
-							disabled={disabled || getMCP.isLoading}
-							onChange={(e) => setSearch(e.target.value)}
-						/>
-						<InputGroupAddon>
-							<SearchIcon />
-						</InputGroupAddon>
-					</InputGroup>
+			<div className="w-full overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+				<div className="flex w-full flex-row gap-2 border-border border-b bg-muted p-4">
+					<div className="flex-1">
+						<InputGroup className="bg-background">
+							<InputGroupInput
+								autoFocus
+								placeholder={t("selector.search")}
+								value={search}
+								disabled={disabled}
+								onChange={(e) => setSearch(e.target.value)}
+							/>
+							<InputGroupAddon>
+								<SearchIcon />
+							</InputGroupAddon>
+						</InputGroup>
+					</div>
 					{type === "KNOWLEDGE" && (
 						<Tooltip>
 							<TooltipTrigger asChild>

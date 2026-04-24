@@ -1,20 +1,26 @@
-import {
-	Autocomplete,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@mui/material";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { debounced } from "@semoss/sdk/react";
-import { CircularProgress, InputAdornment } from "@semoss/ui";
+import {
+	Button,
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Spinner,
+} from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledLoading = styled(CircularProgress)(({ theme }) => ({
-	color: theme.palette.divider,
-}));
 
 export interface SelectBlockDef extends BlockDef<"select"> {
 	widget: "select";
@@ -49,14 +55,12 @@ export interface SelectBlockDef extends BlockDef<"select"> {
 	};
 }
 
-/**
- * Calling this a "select" block because it's better semantically to explain what the block does
- * But using an autocomplete because it offers better UX when there are many options
- */
 export const SelectBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<SelectBlockDef>(id);
 	const [dropdownLoading, setDropdownLoading] = useState(false);
+	const [open, setOpen] = useState(false);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -64,164 +68,228 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 	}, []);
 
 	const stringifiedOptions: string[] = useMemo(() => {
-		let arr = [];
-		if (!data.options) {
-			// NOOP
-			return [];
-		} else if (!Array.isArray(data?.options)) {
+		if (!data.options) return [];
+		if (!Array.isArray(data.options)) {
 			if (typeof data.options === "string") {
-				let opts: string = (data.options as string).trim();
-				// If Python-style array, convert to valid JSON
+				let opts = (data.options as string).trim();
 				if (opts.startsWith("[") && opts.endsWith("]")) {
-					// Replace single quotes with double quotes
-					opts = opts.replace(/'/g, '"');
-					// Remove spaces after commas
-					opts = opts.replace(/,\s+/g, ",");
+					opts = opts.replace(/'/g, '"').replace(/,\s+/g, ",");
 					try {
-						arr = JSON.parse(opts);
-					} catch (e) {
-						// fallback: try to split manually
-						arr = opts
+						return JSON.parse(opts).map((o: unknown) =>
+							typeof o !== "string" ? JSON.stringify(o) : o,
+						);
+					} catch {
+						return opts
 							.slice(1, -1)
 							.split(",")
 							.map((s) => s.trim().replace(/^"|"$/g, ""));
 					}
 				}
 			}
-		} else {
-			arr = data.options;
+			return [];
 		}
-		return arr.map((option) => {
-			if (typeof option !== "string") {
-				return JSON.stringify(option);
-			} else {
-				return option;
-			}
-		});
+		return data.options.map((o) =>
+			typeof o !== "string" ? JSON.stringify(o) : o,
+		);
 	}, [data.options]);
+
+	const getOptionLabel = (option: string): string => {
+		try {
+			const parsed = JSON.parse(option);
+			if (data.optionLabel && parsed[data.optionLabel]) {
+				return parsed[data.optionLabel];
+			}
+		} catch {
+			/* not JSON */
+		}
+		return option;
+	};
+
+	const getOptionSublabel = (option: string): string | null => {
+		try {
+			const parsed = JSON.parse(option);
+			if (data.optionSublabel && parsed[data.optionSublabel]) {
+				return parsed[data.optionSublabel];
+			}
+		} catch {
+			/* not JSON */
+		}
+		return null;
+	};
 
 	const debouncedCallback = debounced(() => {
 		listeners.onChange();
 	}, 500);
 
-	// Ensure that value is always an array when multiple is true
-	const value = useMemo(() => {
-		if (data.multiple) {
-			return Array.isArray(data.value) ? data.value : [];
-		}
-		return data.value || null;
-	}, [data.multiple, data.value]);
-
 	const handleOpen = () => {
 		if (listeners?.onOpen) {
 			setDropdownLoading(true);
-
-			const result = listeners.onOpen();
-
-			// Handle both sync and async versions safely
-			Promise.resolve(result)
-				.catch((e) => {
-					console.error("onOpen error:", e);
-				})
-				.finally(() => {
-					setDropdownLoading(false);
-				});
+			Promise.resolve(listeners.onOpen())
+				.catch((e) => console.error("onOpen error:", e))
+				.finally(() => setDropdownLoading(false));
 		}
 	};
 
-	return (
-		<Autocomplete
-			fullWidth
-			multiple={data.multiple}
-			disableClearable
-			options={stringifiedOptions}
-			value={value}
-			disabled={data?.disabled || data?.loading}
-			onOpen={handleOpen}
-			loading={dropdownLoading}
-			loadingText={"Loading options..."}
-			renderOption={(props, option: string) => {
-				try {
-					// Parse the option string into an object
-					const parsedOption = JSON.parse(option);
+	// Multi-select via Popover + Command
+	if (data.multiple) {
+		const selectedValues = Array.isArray(data.value) ? data.value : [];
 
-					// Extract optionLabel and optionSublabel from the parsed object
-					const optionLabel = parsedOption[data?.optionLabel];
-					const optionSublabel = parsedOption[data?.optionSublabel];
+		const toggleValue = (option: string) => {
+			const label = getOptionLabel(option);
+			const next = selectedValues.includes(label)
+				? selectedValues.filter((v) => v !== label)
+				: [...selectedValues, label];
+			setData("value", next);
+			debouncedCallback();
+		};
 
-					if (optionLabel && optionSublabel) {
-						// Both labels are present, render them in a structured format
-						return (
-							<li {...props} style={{ whiteSpace: "pre-wrap" }}>
-								<Stack direction={"column"}>
-									<>{optionLabel}</>
-									<Typography variant="caption">
-										{optionSublabel}
-									</Typography>
-								</Stack>
-							</li>
-						);
-					} else {
-						// If one or both labels are missing, fall back to the whole option or a default message
-						return <li {...props}>{optionLabel || option}</li>;
-					}
-				} catch (error) {
-					return <li {...props}>{option}</li>;
-				}
-			}}
-			getOptionLabel={(option: string) => {
-				try {
-					// More error handling and testing
-					const isObj = JSON.parse(option)[data.optionLabel];
-
-					if (isObj) {
-						return isObj;
-					}
-
-					return option;
-				} catch {
-					return option;
-				}
-			}}
-			onChange={(_, value) => {
-				let parsedVal: string | string[];
-				if (Array.isArray(value)) {
-					parsedVal = value.flatMap((item) =>
-						typeof item === "string" ? item : item,
-					);
-				} else {
-					parsedVal = value;
-				}
-				setData("value", parsedVal);
-				debouncedCallback();
-			}}
-			sx={{
-				...data.style,
-			}}
-			renderInput={(params) => (
-				<TextField
-					{...params}
-					size="small"
-					label={data.label}
-					variant="outlined"
-					required={data.required}
-					disabled={data?.disabled || data?.loading}
-					InputProps={{
-						...params.InputProps,
-						startAdornment: (
-							<InputAdornment position="end">
-								{data?.loading ? (
-									<StyledLoading size={20} />
-								) : (
-									<></>
-								)}
-							</InputAdornment>
-						),
+		return (
+			<div
+				{...attrs}
+				style={data.style}
+				className="flex flex-col gap-1.5"
+			>
+				{data.label && (
+					// biome-ignore lint/a11y/noLabelWithoutControl: label is associated via context
+					<label className="font-medium text-sm">
+						{data.label}
+						{data.required && (
+							<span className="ml-0.5 text-destructive">*</span>
+						)}
+					</label>
+				)}
+				<Popover
+					open={open}
+					onOpenChange={(o) => {
+						setOpen(o);
+						if (o) handleOpen();
 					}}
-					helperText={data?.hint}
-				/>
+				>
+					<PopoverTrigger asChild>
+						<Button
+							variant="outline"
+							role="combobox"
+							aria-expanded={open}
+							disabled={data.disabled || data.loading}
+							className="w-full justify-between"
+						>
+							<span className="truncate">
+								{selectedValues.length > 0
+									? selectedValues.join(", ")
+									: "Select..."}
+							</span>
+							{data.loading || dropdownLoading ? (
+								<Spinner className="ml-2 size-4 shrink-0" />
+							) : (
+								<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+							)}
+						</Button>
+					</PopoverTrigger>
+					<PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+						<Command>
+							<CommandInput placeholder="Search..." />
+							<CommandEmpty>No options found.</CommandEmpty>
+							<CommandGroup>
+								{stringifiedOptions.map((option) => {
+									const label = getOptionLabel(option);
+									const sublabel = getOptionSublabel(option);
+									const isSelected =
+										selectedValues.includes(label);
+									return (
+										<CommandItem
+											key={option}
+											value={label}
+											onSelect={() => toggleValue(option)}
+										>
+											<Check
+												className={`mr-2 size-4 ${isSelected ? "opacity-100" : "opacity-0"}`}
+											/>
+											<div className="flex flex-col">
+												<span>{label}</span>
+												{sublabel && (
+													<span className="text-muted-foreground text-xs">
+														{sublabel}
+													</span>
+												)}
+											</div>
+										</CommandItem>
+									);
+								})}
+							</CommandGroup>
+						</Command>
+					</PopoverContent>
+				</Popover>
+				{data.hint && (
+					<span className="text-muted-foreground text-xs">
+						{data.hint}
+					</span>
+				)}
+			</div>
+		);
+	}
+
+	// Single select
+	const singleValue =
+		typeof data.value === "string" ? data.value : (data.value?.[0] ?? "");
+
+	return (
+		<div {...attrs} style={data.style} className="flex flex-col gap-1.5">
+			{data.label && (
+				// biome-ignore lint/a11y/noLabelWithoutControl: label is associated via context
+				<label className="font-medium text-sm">
+					{data.label}
+					{data.required && (
+						<span className="ml-0.5 text-destructive">*</span>
+					)}
+				</label>
 			)}
-			{...attrs}
-		/>
+			<div className="relative">
+				{(data.loading || dropdownLoading) && (
+					<Spinner className="-translate-y-1/2 absolute top-1/2 left-3 z-10 size-4" />
+				)}
+				<Select
+					value={singleValue}
+					disabled={data.disabled || data.loading}
+					onOpenChange={(o) => {
+						if (o) handleOpen();
+					}}
+					onValueChange={(val) => {
+						setData("value", val);
+						debouncedCallback();
+					}}
+				>
+					<SelectTrigger
+						className={
+							data.loading || dropdownLoading ? "pl-9" : ""
+						}
+					>
+						<SelectValue placeholder="Select..." />
+					</SelectTrigger>
+					<SelectContent>
+						{stringifiedOptions.map((option) => {
+							const label = getOptionLabel(option);
+							const sublabel = getOptionSublabel(option);
+							return (
+								<SelectItem key={option} value={label}>
+									<div className="flex flex-col">
+										<span>{label}</span>
+										{sublabel && (
+											<span className="text-muted-foreground text-xs">
+												{sublabel}
+											</span>
+										)}
+									</div>
+								</SelectItem>
+							);
+						})}
+					</SelectContent>
+				</Select>
+			</div>
+			{data.hint && (
+				<span className="text-muted-foreground text-xs">
+					{data.hint}
+				</span>
+			)}
+		</div>
 	);
 });

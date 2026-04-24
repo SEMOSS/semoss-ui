@@ -76,7 +76,7 @@ export const FunctionTitleCard = ({
 			)}
 			onClick={handleCardClick}
 			onKeyDown={handleCardKeyDown}
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`importPageContent-connect-to-${selectedFunction.name}-img`,
 			)}
 			role="button"

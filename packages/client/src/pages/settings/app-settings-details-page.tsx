@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { AppSettings } from "@/components/app";
 import {
-	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
 	UpdateSMSS,
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { Role } from "@/types";
 
 type VIEW = "CURRENT" | "PENDING" | "APP";
@@ -80,11 +81,7 @@ const AppSettingsUserDetailPage = () => {
 					</TabsList>
 				</Tabs>
 				{view === "CURRENT" && (
-					<MembersTable
-						id={id}
-						type={"PROJECT"}
-						onChange={() => getUserEnginePermission.refresh()}
-					/>
+					<MembersTable id={id} type={"PROJECT"} />
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />
@@ -128,8 +125,8 @@ const AppSettingsAdminDetailPage = () => {
 						<TabsTrigger value={"APP"}>Data Apps</TabsTrigger>
 					</TabsList>
 				</Tabs>
-				{view === "CURRENT" && (
-					<MembersTable id={id} type={"PROJECT"} />
+				{view === "CURRENT" && id && (
+					<MembersTable id={id} type={"PROJECT"} adminMode />
 				)}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"PROJECT"} />

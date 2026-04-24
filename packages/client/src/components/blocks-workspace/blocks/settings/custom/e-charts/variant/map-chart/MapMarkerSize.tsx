@@ -8,43 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import {
-	Menu,
-	Select,
-	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Input } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "0.5rem",
-}));
 
 export const MapMarkerSize = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -62,60 +32,50 @@ export const MapMarkerSize = observer(
 				} else if (typeof v === "string") {
 					return v;
 				}
-
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
 			}
 		}, [id]);
-
-		/**
-		 * Reinitializes the features of the scatter plot based on the provided options.
-		 * @param options The options to reinitialize the features with.
-		 */
-		const reinitializeFeatures = (options) => {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const reinitializeFeatures = (options: any) => {
 			if (Object.hasOwn(options, "series")) {
-				// Check if the symbol size exists
 				if (Object.hasOwn(options.series[0], "symbolSize")) {
-					// Update the symbol size
-					setMarkerSize(options["series"][0]["symbolSize"]);
+					setMarkerSize(options.series[0].symbolSize);
 				}
 			}
 		};
-		/**
-		 * Handles the change event for the symbol size input.
-		 * @param e The event that triggered this function.
-		 */
-		const handleChangeSymbolSize = (e) => {
-			// Parse the current value to a JSON object
+
+		const handleChangeSymbolSize = (
+			e: React.ChangeEvent<HTMLInputElement>,
+		) => {
 			const option = JSON.parse(value);
-			// Update the symbol size to the selected value
-			setMarkerSize(e.target.value);
-			// Set the symbol size in the JSON object
-			option["series"][0]["symbolSize"] = e.target.value;
-			option["symbolSize"] = e.target.value;
-			// Update the data with the new symbol size option
+			setMarkerSize(Number(e.target.value));
+			option.series[0].symbolSize = e.target.value;
+			option.symbolSize = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
+
 		return (
-			<StyledAxisDiv>
-				<StyledAxisColDiv display="flex" justifyContent="space-around">
-					<Typography variant="body2">Marker Size</Typography>
-					<TextField
-						id="Symbol Size"
-						size="small"
-						value={markerSize}
-						onChange={handleChangeSymbolSize}
-					/>
-				</StyledAxisColDiv>
-			</StyledAxisDiv>
+			<div className="flex flex-col gap-2 p-2">
+				<span className="text-muted-foreground text-sm">
+					Marker Size
+				</span>
+				{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+				<Input
+					id="Symbol Size"
+					value={markerSize}
+					onChange={handleChangeSymbolSize}
+				/>
+			</div>
 		);
 	},
 );

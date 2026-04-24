@@ -1,10 +1,15 @@
-import { JoinFull, JoinInner, JoinLeft, JoinRight } from "@mui/icons-material";
-import { Autocomplete, Box } from "@mui/material";
+import { ArrowLeftFromLine, ArrowRightFromLine, Merge } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useMemo } from "react";
-import { Stack, styled, TextField, Typography } from "@semoss/ui";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -41,37 +46,18 @@ export interface JoinTransformationCellDef
 	extends TransformationMultiCellDef<"join-transformation"> {
 	widget: "join-transformation";
 	parameters: {
-		/**
-		 * Routine type
-		 */
 		transformation: Transformation<JoinTransformationDef>;
-
-		/**
-		 * ID of the query cell that defines the frame we want to transform
-		 */
 		fromTargetCell: TransformationTargetCell;
-
-		/**
-		 * ID of the query cell that defines the frame we want to transform
-		 */
 		toTargetCell: TransformationTargetCell;
 	};
 }
 
 const iconMapping: { [key: string]: React.ReactNode } = {
-	"Full Join": <JoinFull />,
-	"Inner Join": <JoinInner />,
-	"Left Join": <JoinLeft />,
-	"Right Join": <JoinRight />,
+	"Full Join": <Merge className="size-4" />,
+	"Inner Join": <Merge className="size-4" />,
+	"Left Join": <ArrowLeftFromLine className="size-4" />,
+	"Right Join": <ArrowRightFromLine className="size-4" />,
 };
-
-const StyledTypography = styled(Typography)(() => ({
-	marginLeft: "8px",
-}));
-
-const StyledTitleTypography = styled(Typography)(() => ({
-	fontWeight: 500,
-}));
 
 export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 	observer((props) => {
@@ -84,45 +70,40 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 					.transformation as Transformation<JoinTransformationDef>;
 			}).get();
 
-		/**
-		 * A list of cells that are query imports,
-		 * Added here in case we want to show particular frames whether Grid, Py, R, etc
-		 * TODO: Do we want to reference other queries
-		 */
 		const frames = useMemo(() => {
 			const frameList = [];
-
 			Object.keys(state.queries).forEach((queryKey) => {
 				const query = state.queries[queryKey];
 				Object.values(query.cells).forEach((cell) => {
-					if (cell.widget === "query-import") {
+					if (
+						cell.widget === "query-import" ||
+						cell.widget === "data-import"
+					)
 						frameList.push(cell);
-					}
 				});
 			});
-
 			return frameList;
 		}, []);
 
 		const targetCells: CellState<QueryImportCellDef>[] = computed(() => {
 			return frames.filter(
-				(item) => item.widget === "query-import",
+				(item) =>
+					item.widget === "query-import" ||
+					item.widget === "data-import",
 			) as CellState<QueryImportCellDef>[];
 		}).get();
 
 		const doFramesExist: boolean = computed(() => {
 			let count = 0;
 			for (const item of targetCells) {
-				if (!!item && (item.isExecuted || !!item.output)) {
-					count++;
-				}
+				if (!!item && (item.isExecuted || !!item.output)) count++;
 			}
 			return count >= 2;
 		}).get();
 
 		const helpText =
 			frames.length < 2
-				? `Run at least two Query import Cells to define the target frame variables before applying a transformation.`
+				? "Run at least two Query import Cells to define the target frame variables before applying a transformation."
 				: "At least two Python / R target frame variables must be defined in order to apply the join transformation.";
 
 		if (!doFramesExist && cellTransformation.parameters.fromNameColumn) {
@@ -131,45 +112,39 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 					isExpanded={isExpanded}
 					display={Transformations[cellTransformation.key].display}
 					Icon={Transformations[cellTransformation.key].icon}
-					frame={{
-						cell: cell,
-						options: frames,
-					}}
+					frame={{ cell, options: frames }}
 				>
-					<Stack width="100%" paddingY={0.75}>
-						<Typography variant="caption">
-							<em>{helpText}</em>
-						</Typography>
-					</Stack>
+					<div className="w-full py-1.5">
+						<span className="text-xs italic">{helpText}</span>
+					</div>
 				</TransformationMultiCellInput>
 			);
 		}
+
+		const currentJoinType = cellTransformation.parameters.joinType;
+		const currentJoinName = currentJoinType?.name ?? "";
 
 		return (
 			<TransformationMultiCellInput
 				isExpanded={isExpanded}
 				display={Transformations[cellTransformation.key].display}
 				Icon={Transformations[cellTransformation.key].icon}
-				frame={{
-					cell: cell,
-					options: frames,
-				}}
+				frame={{ cell, options: frames }}
 			>
-				<Stack spacing={2}>
-					<Typography variant="caption">
+				<div className="flex flex-col gap-4">
+					<span className="text-xs">
 						{!doFramesExist ? (
 							<em>{helpText}</em>
 						) : (
 							"Select columns from each table. Specify how you want to join the columns."
 						)}
-					</Typography>
+					</span>
 
-					<Stack direction="column" spacing={2} width="100%">
-						<StyledTitleTypography variant={"body2"}>
-							{" "}
-							From:
-							{` ${cell.parameters.fromTargetCell.frameVariableName}`}
-						</StyledTitleTypography>
+					<div className="flex w-full flex-col gap-4">
+						<p className="font-medium text-sm">
+							From:{" "}
+							{cell.parameters.fromTargetCell.frameVariableName}
+						</p>
 						<MultiCellColumnTransformationField
 							disabled={!doFramesExist}
 							cell={cell}
@@ -194,11 +169,9 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 							}}
 							label="Name of Columns"
 						/>
-						<StyledTitleTypography variant={"body2"}>
-							{" "}
-							To:
-							{` ${cell.parameters.toTargetCell.frameVariableName}`}
-						</StyledTitleTypography>
+						<p className="font-medium text-sm">
+							To: {cell.parameters.toTargetCell.frameVariableName}
+						</p>
 						<MultiCellColumnTransformationField
 							disabled={!doFramesExist}
 							cell={cell}
@@ -222,77 +195,74 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 							}}
 							label="Name of Columns"
 						/>
-						<StyledTitleTypography variant={"body2"}>
-							{" "}
-							Type of Join:{" "}
-						</StyledTitleTypography>
-						<Autocomplete
+						<p className="font-medium text-sm">Type of Join:</p>
+						<Select
 							disabled={!doFramesExist}
-							size="small"
-							value={cellTransformation.parameters.joinType}
-							fullWidth
-							onChange={(_, newOperation: joinType) => {
+							value={currentJoinName}
+							onValueChange={(val) => {
+								const found = joinTypes.find(
+									(j) => j.name === val,
+								);
 								state.dispatch({
 									message: ActionMessages.UPDATE_CELL,
 									payload: {
 										queryId: cell.query.id,
 										cellId: cell.id,
 										path: "parameters.transformation.parameters.joinType",
-										value: newOperation,
+										value: found,
 									},
 								});
 							}}
-							options={joinTypes}
-							getOptionLabel={(option) => option.name}
-							renderOption={(props, option) => (
-								<Box component="li" {...props}>
-									{iconMapping[option.name]}
-									<StyledTypography variant={"body1"}>
-										{option.name}
-									</StyledTypography>
-								</Box>
-							)}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									variant="outlined"
-									label="Join Type"
-								/>
-							)}
-						/>
-						<StyledTitleTypography variant={"body2"}>
-							{" "}
-							Comparator:{" "}
-						</StyledTitleTypography>
-						<Autocomplete
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Join Type" />
+							</SelectTrigger>
+							<SelectContent>
+								{joinTypes.map((jt) => (
+									<SelectItem key={jt.name} value={jt.name}>
+										<div className="flex items-center gap-2">
+											{iconMapping[jt.name]}
+											<span>{jt.name}</span>
+										</div>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<p className="font-medium text-sm">Comparator:</p>
+						<Select
 							disabled={!doFramesExist}
-							size="small"
 							value={
-								cellTransformation.parameters.compareOperation
+								cellTransformation.parameters
+									.compareOperation as string
 							}
-							fullWidth
-							onChange={(_, newOperation: string) => {
+							onValueChange={(val) => {
 								state.dispatch({
 									message: ActionMessages.UPDATE_CELL,
 									payload: {
 										queryId: cell.query.id,
 										cellId: cell.id,
 										path: "parameters.transformation.parameters.compareOperation",
-										value: newOperation,
+										value: val,
 									},
 								});
 							}}
-							options={comparators}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									variant="outlined"
-									label="Operation"
-								/>
-							)}
-						/>
-					</Stack>
-				</Stack>
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="Operation" />
+							</SelectTrigger>
+							<SelectContent>
+								{comparators.map((c) => (
+									<SelectItem
+										key={String(c)}
+										value={String(c)}
+									>
+										{String(c)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				</div>
 			</TransformationMultiCellInput>
 		);
 	});

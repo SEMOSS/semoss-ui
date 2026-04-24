@@ -1,18 +1,19 @@
 import { useMemo } from "react";
 import {
 	matchPath,
-	Navigate,
 	Outlet,
 	useLocation,
-	useNavigate,
 	useParams,
 	useResolvedPath,
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
+import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import type { Role } from "@/types";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 interface EngineLayoutProps {
@@ -27,7 +28,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	const { engineId } = useParams();
 	const { configStore } = useRootStore();
 	const resolvedPath = useResolvedPath("");
-	const { pathname } = useLocation();
+	const { pathname, state: locationStateRaw } = useLocation();
 	const navigate = useNavigate();
 
 	// filter metakeys to the ones we want
@@ -86,6 +87,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	);
 
 	// convert the data into an object
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pre-existing dep array uses JSON.stringify for stability
 	const values = useMemo(() => {
 		if (getEngineMetadata.status !== "SUCCESS") {
 			return {};
@@ -120,16 +122,45 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		JSON.stringify(metaKeys),
 	]);
 
+	// read navigation state set by the engine catalog when opening a discoverable engine
+	const locationState = locationStateRaw as {
+		fromDiscoverable?: boolean;
+		engineName?: string;
+		engineDescription?: string;
+		engineSubtype?: string;
+		engineCreatedBy?: string;
+		engineDateCreated?: string;
+		engineTags?: string[];
+	} | null;
+
 	// get the user's role
 	const getUserEnginePermission = useAPI(
 		engineId ? ["getUserEnginePermission", engineId] : null,
 	);
 
+	// resolve discoverable status from either the permission API or the navigation context
+	const permissionFromApi = getUserEnginePermission.data?.permission;
+	const isDiscoverableAccess =
+		permissionFromApi === "DISCOVERABLE" ||
+		(getUserEnginePermission.status === "ERROR" &&
+			locationState?.fromDiscoverable === true);
+
+	// resolved role used in the context: fall back to DISCOVERABLE when the API errored but we came from the discoverable catalog
+	const resolvedRole: Role = isDiscoverableAccess
+		? "DISCOVERABLE"
+		: (permissionFromApi ?? "READ_ONLY");
+
 	// get the tabs based on permission and database type
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pre-existing dep array shape
 	const tabs = useMemo(() => {
 		// must be valid
 		if (!route) {
 			return [];
+		}
+
+		// for discoverable users only show unrestricted tabs (Overview)
+		if (isDiscoverableAccess) {
+			return route.specific.filter((t) => !t.restrict);
 		}
 
 		if (
@@ -162,6 +193,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		return filteredTabs;
 	}, [
 		route,
+		isDiscoverableAccess,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data
 			? getUserEnginePermission.data.permission
@@ -197,13 +229,31 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		matchPath(`${resolvedPath.pathname}/edit`, pathname),
 	);
 
-	// if the engine isn't found, navigate to the Home Page
-	if (!engineId || getUserEnginePermission.status === "ERROR") {
-		return <Navigate to={`${route.path}`} replace />;
+	// if the engine ID is missing, navigate to the list
+	if (!engineId) {
+		return (
+			<ResourceNotFound
+				catalogPath={route.path}
+				catalogLabel={`${route.name} Catalog`}
+			/>
+		);
 	}
 
-	// show a loading screen when it is pending
-	if (getUserEnginePermission.status !== "SUCCESS") {
+	// for non-discoverable users show not-found when access is denied
+	if (!isDiscoverableAccess && getUserEnginePermission.status === "ERROR") {
+		return (
+			<ResourceNotFound
+				catalogPath={route.path}
+				catalogLabel={`${route.name} Catalog`}
+			/>
+		);
+	}
+
+	// show a loading screen while checking access (not yet settled and not a known error)
+	if (
+		getUserEnginePermission.status !== "SUCCESS" &&
+		getUserEnginePermission.status !== "ERROR"
+	) {
 		return (
 			<div>
 				<Spinner className="size-8" />
@@ -212,8 +262,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		);
 	}
 
-	// show a loading screen when it is pending
-	if (getEngineMetadata.status !== "SUCCESS") {
+	// for non-discoverable users wait for metadata to load
+	// for discoverable users we proceed even when metadata errors (limited view)
+	if (!isDiscoverableAccess && getEngineMetadata.status !== "SUCCESS") {
 		return (
 			<div>
 				<Spinner className="size-8" />
@@ -222,8 +273,26 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		);
 	}
 
-	// show a loading screen when checking database category for DATABASE engines
-	if (route.type === "DATABASE" && getDatabaseCategory.status !== "SUCCESS") {
+	// for discoverable users still wait while metadata is initially loading
+	if (
+		isDiscoverableAccess &&
+		(getEngineMetadata.status === "LOADING" ||
+			getEngineMetadata.status === "INITIAL")
+	) {
+		return (
+			<div>
+				<Spinner className="size-8" />
+				<p className="text-muted-foreground">Opening Engine</p>
+			</div>
+		);
+	}
+
+	// show a loading screen when checking database category for DATABASE engines (non-discoverable only)
+	if (
+		!isDiscoverableAccess &&
+		route.type === "DATABASE" &&
+		getDatabaseCategory.status !== "SUCCESS"
+	) {
 		return (
 			<div>
 				<Spinner className="size-8" />
@@ -240,18 +309,31 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				name: route.name,
 				active: {
 					id: engineId,
-					role: getUserEnginePermission.data.permission,
+					role: resolvedRole,
 					name:
 						(getEngineMetadata.data
 							?.engine_display_name as string) ||
 						(getEngineMetadata.data?.engine_name as string) ||
+						locationState?.engineName ||
 						"",
-					metadata: values,
-					engine_subtype: getEngineMetadata.data?.engine_subtype,
+					metadata: {
+						...values,
+						description:
+							(values as Record<string, unknown>).description ??
+							locationState?.engineDescription,
+						tag:
+							(values as Record<string, unknown>).tag ??
+							locationState?.engineTags,
+					},
+					engine_subtype:
+						getEngineMetadata.data?.engine_subtype ||
+						locationState?.engineSubtype,
 					engine_created_by:
-						getEngineMetadata.data?.engine_created_by,
+						getEngineMetadata.data?.engine_created_by ||
+						locationState?.engineCreatedBy,
 					engine_date_created:
-						getEngineMetadata.data?.engine_date_created,
+						getEngineMetadata.data?.engine_date_created ||
+						locationState?.engineDateCreated,
 					last_updated: getEngineMetadata.data?.last_updated,
 					refresh: getEngineMetadata.refresh,
 				},

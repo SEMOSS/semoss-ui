@@ -1,4 +1,11 @@
-import { Select, TextField } from "@semoss/ui";
+import {
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { BaseSettingSection, InputSettings } from "../../../settings";
 import SelectedItem from "./SelectedItem";
 
@@ -9,15 +16,12 @@ const ExternalTab = ({ id, data, setData }) => (
 		) : (
 			<>
 				<BaseSettingSection label={"Image URL"}>
-					<TextField
-						fullWidth
+					<Input
 						value={data.src ?? ""}
 						onChange={(e) => {
 							setData("src", e.target.value);
 						}}
 						type={"text"}
-						size="small"
-						variant="outlined"
 						autoComplete="off"
 						data-testid="image-url"
 					/>
@@ -30,22 +34,25 @@ const ExternalTab = ({ id, data, setData }) => (
 				/>
 				<BaseSettingSection label="If Image is Unavailable">
 					<Select
-						fullWidth
 						value={data.unavailable ?? ""}
-						onChange={(e) => {
-							const value = e.target.value as string;
+						onValueChange={(value) => {
 							setData("unavailable", value);
 						}}
-						size="small"
-						variant="outlined"
-						data-testid="image-unavailable"
 					>
-						<Select.Item value="placeholder">
-							Add placeholder text
-						</Select.Item>
-						<Select.Item value="default">
-							Use system default image
-						</Select.Item>
+						<SelectTrigger
+							className="w-full"
+							data-testid="image-unavailable"
+						>
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="placeholder">
+								Add placeholder text
+							</SelectItem>
+							<SelectItem value="default">
+								Use system default image
+							</SelectItem>
+						</SelectContent>
 					</Select>
 				</BaseSettingSection>
 			</>

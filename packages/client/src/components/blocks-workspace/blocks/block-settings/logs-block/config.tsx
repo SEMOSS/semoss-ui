@@ -1,4 +1,4 @@
-import { HighlightAlt } from "@mui/icons-material";
+import { MousePointerClick } from "lucide-react";
 import { QueryNameDropdownSettings } from "../../settings/custom/QueryNameDropdownSettings";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
@@ -6,7 +6,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: HighlightAlt,
+	icon: MousePointerClick,
 	contentMenu: [
 		{
 			name: "General",

@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,52 +8,13 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Slider, Switch, styled, Typography } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Slider, Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-	marginLeft: "4px",
-}));
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "0.5rem",
-	position: "relative",
-	left: "3px",
-}));
-
-const StyledTypography = styled(Typography)({
-	paddingLeft: "10px",
-});
 
 export const StackChartBarStyle = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
@@ -77,10 +38,12 @@ export const StackChartBarStyle = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reinitializeFeatures(data.option);
@@ -91,74 +54,63 @@ export const StackChartBarStyle = observer(
 		 * Reinitializes the features of the tooltip based on the provided options.
 		 * @param options The options to reinitialize the features with.
 		 */
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 		const reinitializeFeatures = (options: any) => {
 			if (Object.hasOwn(options, "barWidth")) {
-				setBarWidth(options["barWidth"]);
+				setBarWidth(options.barWidth);
 			}
 			if (Object.hasOwn(options, "flipAxis")) {
-				setFlipAxis(options["flipAxis"]);
+				setFlipAxis(options.flipAxis);
 			}
 		};
 		// this function is used to set the barWidth of the stack chart
-		const stackbarWidth = (e) => {
+		const stackbarWidth = (newValue: number[]) => {
 			const option = JSON.parse(value);
-			setBarWidth(e.target.value);
-			option["barWidth"] = e.target.value;
+			setBarWidth(newValue[0]);
+			option.barWidth = newValue[0];
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		// this function is used to flip the axis of the stack chart
-		const flipAxisStack = (e: ChangeEvent<HTMLInputElement>) => {
+		const flipAxisStack = (checked: boolean) => {
 			const option = JSON.parse(value);
-			setFlipAxis(e.target.checked);
-			option["flipAxis"] = e.target.checked;
-			if (e.target.checked === true) {
-				option["xAxis"]["name"] = option["yAxis"]["flipAxisName"];
-				option["yAxis"]["name"] = option["xAxis"]["flipAxisName"];
-				option["xAxis"]["pixelName"] = option["yAxis"]["axisName"];
-				option["yAxis"]["pixelName"] = option["xAxis"]["axisName"];
-				option["xAxis"]["type"] = "value";
-				option["yAxis"]["type"] = "category";
+			setFlipAxis(checked);
+			option.flipAxis = checked;
+			if (checked === true) {
+				option.xAxis.name = option.yAxis.flipAxisName;
+				option.yAxis.name = option.xAxis.flipAxisName;
+				option.xAxis.pixelName = option.yAxis.axisName;
+				option.yAxis.pixelName = option.xAxis.axisName;
+				option.xAxis.type = "value";
+				option.yAxis.type = "category";
 			} else {
-				option["xAxis"]["name"] = option["xAxis"]["flipAxisName"];
-				option["yAxis"]["name"] = option["yAxis"]["flipAxisName"];
-				option["xAxis"]["pixelName"] = option["xAxis"]["axisName"];
-				option["yAxis"]["pixelName"] = option["yAxis"]["axisName"];
-				option["xAxis"]["type"] = "category";
-				option["yAxis"]["type"] = "value";
+				option.xAxis.name = option.xAxis.flipAxisName;
+				option.yAxis.name = option.yAxis.flipAxisName;
+				option.xAxis.pixelName = option.xAxis.axisName;
+				option.yAxis.pixelName = option.yAxis.axisName;
+				option.xAxis.type = "category";
+				option.yAxis.type = "value";
 			}
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxis>
-				<StyledAxisColDiv display="flex" justifyContent="space-around">
-					<Typography variant="body2">Bar Width</Typography>
+			<div className="flex flex-col p-2">
+				<div className="flex flex-col gap-2 p-2">
+					<span className="text-sm">Bar Width</span>
 					<Slider
-						size="small"
 						min={0}
 						max={40}
-						value={barWidth}
-						valueLabelDisplay="auto"
-						marks={[
-							{ value: 0, label: "0" },
-							{ value: 40, label: "40" },
-						]}
-						onChange={(e) => stackbarWidth(e)}
+						value={[barWidth]}
+						onValueChange={stackbarWidth}
 					/>
-				</StyledAxisColDiv>
-				<StyledAxisDiv display="flex" justifyContent="flex-start">
+				</div>
+				<div className="ml-1 flex flex-row items-center p-2">
 					<Switch
 						checked={flipAxis}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							flipAxisStack(e)
-						}
-						title="Show Tooltip"
-						size="small"
+						onCheckedChange={flipAxisStack}
 					/>
-					<StyledTypography variant="body1">
-						Flip Axis
-					</StyledTypography>
-				</StyledAxisDiv>
-			</StyledAxis>
+					<span className="pl-2.5 text-sm">Flip Axis</span>
+				</div>
+			</div>
 		);
 	},
 );

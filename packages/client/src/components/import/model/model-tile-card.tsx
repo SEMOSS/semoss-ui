@@ -160,7 +160,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 			)}
 			onClick={handleCardClick}
 			onKeyDown={handleCardKeyDown}
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`importPageContent-connect-to-${model.name}-img`,
 			)}
 			role="button"
@@ -190,7 +190,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						{!model.disable && model.embedding && (
 							<Badge
 								variant="default"
-								data-testId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`importPageContent-${model.name}-embeddings-tag`,
 								)}
 							>
@@ -200,7 +200,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						{!model.disable && model.image && (
 							<Badge
 								className="rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
-								data-testId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`importPageContent-${model.name}-image-tag`,
 								)}
 							>
@@ -210,7 +210,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						{!model.disable && model.audio && (
 							<Badge
 								className="rounded-2xl border-none bg-primary/10 px-2.5 font-semibold text-[13px] text-primary"
-								data-testId={formatToDataTestId(
+								data-testid={formatToDataTestId(
 									`importPageContent-${model.name}-audio-tag`,
 								)}
 							>
