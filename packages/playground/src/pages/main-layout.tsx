@@ -151,7 +151,7 @@ export const MainLayout = observer(() => {
 			.split("; ")
 			.find((c) => c.startsWith("hasSeenTour="));
 		if (!hasSeen) {
-			// biome-ignore lint/suspicious/noDocumentCookie: TODO: why not local storage?
+			// biome-ignore lint/suspicious/noDocumentCookie: TODO: why not use localStorage?
 			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
 			if (root.theme.dialog) {
 				setPendingTour(true);
@@ -228,25 +228,39 @@ export const MainLayout = observer(() => {
 
 														return (
 															<React.Fragment
-																key={crumb.path}
+																key={`${index}-${crumb.path}`}
 															>
 																<BreadcrumbItem>
-																	<BreadcrumbLink
-																		className={
-																			isLast
-																				? "text-foreground"
-																				: ""
-																		}
-																		asChild
-																	>
-																		<Link
-																			to={`${crumb.path}`}
+																	{crumb.path ? (
+																		<BreadcrumbLink
+																			className={
+																				isLast
+																					? "text-foreground"
+																					: ""
+																			}
+																			asChild
+																		>
+																			<Link
+																				to={`${crumb.path}`}
+																			>
+																				{
+																					crumb.name
+																				}
+																			</Link>
+																		</BreadcrumbLink>
+																	) : (
+																		<span
+																			className={
+																				isLast
+																					? "text-foreground"
+																					: "text-muted-foreground"
+																			}
 																		>
 																			{
 																				crumb.name
 																			}
-																		</Link>
-																	</BreadcrumbLink>
+																		</span>
+																	)}
 																</BreadcrumbItem>
 																{!isLast && (
 																	<BreadcrumbSeparator />
