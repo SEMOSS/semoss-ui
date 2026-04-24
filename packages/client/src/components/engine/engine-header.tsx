@@ -159,7 +159,7 @@ export const EngineHeader: React.FC = () => {
 
 			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 				{/* Image placeholder - space for engine/database icon */}
-				<div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-muted/30 p-2">
+				<div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-transparent p-2">
 					<img
 						src={findDBImage(
 							type,

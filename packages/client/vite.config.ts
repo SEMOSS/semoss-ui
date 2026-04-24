@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
 	return {
 		base: "./",
 		plugins: [
-			tailwindcss({ optimize: false }),
+			tailwindcss(),
 			svgr(),
 			react({ include: /\.(js|jsx|ts|tsx)$/ }),
 			// visualizer({ open: true, filename: "dist/stats.html", gzipSize: true }),

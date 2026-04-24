@@ -2,6 +2,7 @@ import { Boxes, Braces, Coins } from "lucide-react";
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
+import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
 import { EngineFilePage } from "./engine-file-page";
 import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
@@ -82,6 +83,12 @@ export const ENGINE_ROUTES: {
 				name: "Files",
 				path: "files",
 				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Commits",
+				path: "commits",
+				component: EngineCommitsPage,
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
