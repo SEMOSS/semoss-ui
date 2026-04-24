@@ -151,6 +151,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		};
 
+		const [downloadScope, setDownloadScope] = useState<"current" | "whole">(
+			"current",
+		);
 		/**
 		 * Download the response in specified format
 		 * @param format - format to download (word, pdf)
@@ -158,7 +161,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const downloadResponse = async (format: string) => {
 			setDownloadingFormat(format);
 			try {
-				await message.downloadResponse(format as "word" | "pdf");
+				await message.downloadResponse(
+					format as "word" | "pdf" | "whole",
+				);
 				toast.success(
 					`Response downloaded successfully as ${format.toUpperCase()}`,
 				);
@@ -171,10 +176,22 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		};
 
-		const downloadFormats = [
-			{ value: "word", label: "Word Document", extension: ".docx" },
-			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
-		];
+		// Update the downloadFormats array to be dynamic based on scope
+		const downloadFormats =
+			downloadScope === "current"
+				? [
+						{
+							value: "word",
+							label: "Word Document",
+							extension: ".docx",
+						},
+						{
+							value: "pdf",
+							label: "PDF Document",
+							extension: ".pdf",
+						},
+					]
+				: [{ value: "whole", label: "Whole Chat", extension: ".docx" }];
 
 		// Pre-compute completed tools for grouping; track the first TOOL_CALL
 		// part index (regardless of completion) so the group always renders at
@@ -647,9 +664,36 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						<DialogHeader>
 							<DialogTitle>Download Response</DialogTitle>
 							<DialogDescription>
-								Choose the format for your download:
+								Choose the scope and format for your download:
 							</DialogDescription>
 						</DialogHeader>
+
+						{/* Toggle for Current/Whole */}
+						<div className="flex gap-2 rounded-lg bg-muted p-1">
+							<Button
+								variant={
+									downloadScope === "current"
+										? "default"
+										: "ghost"
+								}
+								className="flex-1"
+								onClick={() => setDownloadScope("current")}
+							>
+								Current Response
+							</Button>
+							<Button
+								variant={
+									downloadScope === "whole"
+										? "default"
+										: "ghost"
+								}
+								className="flex-1"
+								onClick={() => setDownloadScope("whole")}
+							>
+								Whole Response
+							</Button>
+						</div>
+
 						<div className="grid grid-cols-2 gap-3 py-4">
 							{downloadFormats.map((format) => (
 								<Button

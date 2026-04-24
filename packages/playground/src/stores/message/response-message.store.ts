@@ -15,7 +15,11 @@ import {
 	TOOL_PAUSE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
-import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
+import type {
+	InputPixelMessage,
+	PixelMessageTextPart,
+	ResponsePixelMessage,
+} from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
@@ -367,7 +371,7 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Download the response as a Word or PDF document
 	 */
-	downloadResponse = async (format: "word" | "pdf") => {
+	downloadResponse = async (format: "word" | "pdf" | "whole") => {
 		// Extract text from all TEXT parts
 		const text = this.parts
 			.filter((part) => part.type === "TEXT")
@@ -382,6 +386,38 @@ paramValues=[${JSON.stringify({
 			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
 		} else if (format === "pdf") {
 			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+		} else if (format === "whole") {
+			// get the response
+			const messages = this.room.history
+				.map((message) => {
+					if (message instanceof InputMessageStore) {
+						const text = message.parts
+							.filter(
+								(p): p is PixelMessageTextPart =>
+									p?.type === "TEXT",
+							)
+							.map((p) => p.text)
+							.join("");
+						return `**You:** ${text}`;
+					}
+
+					if (message instanceof ResponseMessageStore) {
+						const text = message.parts
+							.filter(
+								(p): p is PixelMessageTextPart =>
+									p?.type === "TEXT",
+							)
+							.map((p) => p.text)
+							.join("");
+						return `**Assistant:**\n\n${text}`;
+					}
+
+					return null;
+				})
+				.filter(Boolean)
+				.join("\n\n---\n\n");
+
+			pixelCommand = `ToDocx(markdown=["<encode>${messages}</encode>"], fileName="${this.room.roomId}");`;
 		} else {
 			throw new Error(`Unsupported format: ${format}`);
 		}
