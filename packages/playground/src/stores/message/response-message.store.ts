@@ -205,20 +205,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 				return acc;
 			}, [] as string[]);
-			const paramValues: Record<string, unknown> = isImageModel
-				? {
-						taskType: "TEXT_IMAGE",
-						negativeText: "blurry, low quality",
-						numberOfImages: room.options.numOfImages,
-						height: room.options.imageHeight,
-						width: room.options.imageWidth,
-						cfgScale: room.options.cfgScale,
-						seed: room.options.seed,
-					}
-				: {
-						max_new_tokens: room.options.tokenLength,
-						temperature: room.options.temperature,
-					};
 
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
@@ -235,8 +221,7 @@ roomId=["${room.roomId}"],
 command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
-${this.id ? `parentMessageId=["${this.id}"],` : ""}
-paramValues=[${JSON.stringify(paramValues)}]
+${this.id ? `parentMessageId=["${this.id}"]` : ""}
 );`,
 				(chunk) => {
 					runInAction(() => {
