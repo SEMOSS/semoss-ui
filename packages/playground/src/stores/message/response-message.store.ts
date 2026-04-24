@@ -371,23 +371,27 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Download the response as a Word or PDF document
 	 */
-	downloadResponse = async (format: "word" | "pdf" | "whole") => {
-		// Extract text from all TEXT parts
-		const text = this.parts
-			.filter((part) => part.type === "TEXT")
-			.map((part) => part.text)
-			.join("");
-
-		if (!text) throw new Error("No content to download");
-
+	downloadResponse = async (
+		format: "word" | "pdf" | "whole-word" | "whole-pdf",
+	) => {
 		let pixelCommand: string;
 
-		if (format === "word") {
-			pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
-		} else if (format === "pdf") {
-			pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
-		} else if (format === "whole") {
-			// get the response
+		if (format === "word" || format === "pdf") {
+			// Extract text from current response only
+			const text = this.parts
+				.filter((part) => part.type === "TEXT")
+				.map((part) => part.text)
+				.join("");
+
+			if (!text) throw new Error("No content to download");
+
+			if (format === "word") {
+				pixelCommand = `ToDocx(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			} else {
+				pixelCommand = `ToPdf(markdown=["<encode>${text}</encode>"], fileName="${this.room.roomId}");`;
+			}
+		} else if (format === "whole-word" || format === "whole-pdf") {
+			// Get the whole conversation
 			const messages = this.room.history
 				.map((message) => {
 					if (message instanceof InputMessageStore) {
@@ -417,7 +421,14 @@ paramValues=[${JSON.stringify({
 				.filter(Boolean)
 				.join("\n\n---\n\n");
 
-			pixelCommand = `ToDocx(markdown=["<encode>${messages}</encode>"], fileName="${this.room.roomId}");`;
+			if (!messages)
+				throw new Error("No conversation content to download");
+
+			if (format === "whole-word") {
+				pixelCommand = `ToDocx(markdown=["<encode>${messages}</encode>"], fileName="${this.room.roomId}");`;
+			} else {
+				pixelCommand = `ToPdf(markdown=["<encode>${messages}</encode>"], fileName="${this.room.roomId}");`;
+			}
 		} else {
 			throw new Error(`Unsupported format: ${format}`);
 		}

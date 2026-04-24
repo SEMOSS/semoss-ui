@@ -162,10 +162,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			setDownloadingFormat(format);
 			try {
 				await message.downloadResponse(
-					format as "word" | "pdf" | "whole",
+					format as "word" | "pdf" | "whole-word" | "whole-pdf",
 				);
+				const formatLabel = format.includes("whole")
+					? "whole conversation"
+					: "response";
+				const fileType = format.includes("pdf") ? "PDF" : "Word";
 				toast.success(
-					`Response downloaded successfully as ${format.toUpperCase()}`,
+					`${formatLabel.charAt(0).toUpperCase() + formatLabel.slice(1)} downloaded successfully as ${fileType}`,
 				);
 				setIsDownloadDialogOpen(false);
 			} catch (e: unknown) {
@@ -191,7 +195,18 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							extension: ".pdf",
 						},
 					]
-				: [{ value: "whole", label: "Whole Chat", extension: ".docx" }];
+				: [
+						{
+							value: "whole-word",
+							label: "Word Document",
+							extension: ".docx",
+						},
+						{
+							value: "whole-pdf",
+							label: "PDF Document",
+							extension: ".pdf",
+						},
+					];
 
 		// Pre-compute completed tools for grouping; track the first TOOL_CALL
 		// part index (regardless of completion) so the group always renders at
@@ -690,7 +705,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								className="flex-1"
 								onClick={() => setDownloadScope("whole")}
 							>
-								Whole Response
+								Full Conversation
 							</Button>
 						</div>
 
