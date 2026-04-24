@@ -1,3 +1,17 @@
+/**
+ * Auth helpers for the playground E2E suite.
+ *
+ * Two login modes are supported:
+ *   - Scripted (`performLogin`): reads credentials from env vars or a TTY
+ *     prompt and types them into the native login form headlessly. Used by
+ *     `global-setup.ts` and by the standalone login script under `--scripted`.
+ *   - Manual  (`performManualLogin`): opens a real Chromium window and waits
+ *     for the user to finish logging in by hand — necessary for SSO/MFA.
+ *     This is the default mode of the standalone login script.
+ *
+ * Both modes persist the browser session to `AUTH_STATE_PATH` on success so
+ * subsequent Playwright runs can skip login entirely.
+ */
 import { chromium } from "@playwright/test";
 import prompts from "prompts";
 import fs from "node:fs";
@@ -9,6 +23,11 @@ export interface Credentials {
 	password: string;
 }
 
+/**
+ * Returns playground credentials for the scripted login path. Prefers
+ * `PLAYGROUND_USER` / `PLAYGROUND_PASS` env vars (for CI). Falls back to an
+ * interactive terminal prompt. Throws if neither source is available.
+ */
 export async function getCredentials(): Promise<Credentials> {
 	if (process.env.PLAYGROUND_USER && process.env.PLAYGROUND_PASS) {
 		return {
@@ -20,7 +39,7 @@ export async function getCredentials(): Promise<Credentials> {
 	if (!process.stdin.isTTY) {
 		throw new Error(
 			"No credentials available and no TTY for interactive prompt. " +
-				"Set PLAYGROUND_USER and PLAYGROUND_PASS env vars, or run `pnpm login` from an interactive shell first.",
+				"Set PLAYGROUND_USER and PLAYGROUND_PASS env vars, or run `pnpm run login -- --scripted` from an interactive shell first.",
 		);
 	}
 
@@ -67,11 +86,20 @@ export function clearAuthState(): void {
 }
 
 /**
- * Launches a headful-by-default browser, logs in with the provided credentials,
- * and writes a storage state file that subsequent tests can reuse.
+ * Scripted login: launches Chromium (headless by default), navigates to
+ * `#/login`, types the given or resolved credentials into the native
+ * username/password form, waits for the app to load, and writes the storage
+ * state to `AUTH_STATE_PATH`.
  *
- * Called from global-setup when no valid state file exists, and from the
- * standalone `pnpm login` script.
+ * Pass `headless: false` to watch the flow in a real window. Pass explicit
+ * `credentials` to skip env-var / TTY resolution entirely (used in tests).
+ *
+ * Callers:
+ *   - `global-setup.ts` — triggers this when no saved session exists.
+ *   - `scripts/login.ts` — when the user passes `--scripted`.
+ *
+ * Only works against native username+password login forms. For SSO / MFA,
+ * use `performManualLogin` instead.
  */
 export async function performLogin(opts: {
 	baseURL: string;
@@ -119,8 +147,28 @@ function resolveManualTimeout(explicit?: number): number {
 }
 
 /**
- * Opens a real browser window and waits for the user to log in by hand.
- * Used when SSO, MFA, or other flows can't be scripted. Always headful.
+ * Manual login: opens a real (always headful) Chromium window against
+ * `baseURL`, then waits for the human to sign in by hand — which makes SSO,
+ * MFA, and tenant-specific flows possible without scripting them.
+ *
+ * Behavior:
+ *   - If `baseURL` already lands on a signed-in route (URL matches
+ *     `#/(new|agent|room)`), skips the wait and writes state immediately —
+ *     i.e. a still-valid session refreshes instantly.
+ *   - Otherwise races three outcomes:
+ *       1. Success: URL matches `#/(new|agent|room)` AND a `Welcome,` text
+ *          node is visible (both must hold).
+ *       2. The user closes the tab → rejects "login window was closed".
+ *       3. The browser disconnects → same rejection.
+ *   - After success, waits up to 2s for network idle so any post-login token
+ *     refresh can settle before `storageState` is captured. The wait is
+ *     best-effort; tenants with long-poll endpoints never reach networkidle
+ *     and the timeout is swallowed.
+ *
+ * Timeout: defaults to 5 minutes. Override per-call via `timeoutMs`, or
+ * globally via the `PLAYGROUND_LOGIN_TIMEOUT_MS` env var (milliseconds).
+ *
+ * This is the default mode for `scripts/login.ts` (`pnpm run login`).
  */
 export async function performManualLogin(opts: {
 	baseURL: string;
