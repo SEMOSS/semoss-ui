@@ -617,11 +617,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
-					onCompact={
-						room.theme.featureFlags?.enableCompaction
-							? handleCompactMessages
-							: undefined
-					}
+					onCompact={handleCompactMessages}
 				/>
 			</div>
 		</div>
