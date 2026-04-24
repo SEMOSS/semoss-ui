@@ -15,10 +15,10 @@ export const IMAGE_SIZE_PRESETS: Record<
 	{ height: number; width: number }
 > = {
 	"small-square": { height: 320, width: 320 },
-	"small-portrait": { height: 384, width: 320 },
+	"small-portrait": { height: 448, width: 320 },
 	"small-landscape": { height: 320, width: 448 },
 	"medium-square": { height: 448, width: 448 },
-	"medium-portrait": { height: 512, width: 384 },
+	"medium-portrait": { height: 768, width: 512 },
 	"medium-landscape": { height: 384, width: 512 },
 	"large-square": { height: 1024, width: 1024 },
 	"large-portrait": { height: 1024, width: 960 },

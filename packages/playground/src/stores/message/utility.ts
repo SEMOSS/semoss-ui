@@ -6,7 +6,7 @@ import { ResponseMessageStore } from "./response-message.store";
 
 /**
  * Detects whether an engine model is an image-generation model by inspecting
- * its tag and tags CHECK THIS
+ * its tag or tags
  */
 export const isImageGenerationModel = (
 	model:

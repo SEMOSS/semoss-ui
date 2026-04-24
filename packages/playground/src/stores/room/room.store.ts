@@ -20,7 +20,6 @@ import {
 	type AbstractMessageStore,
 	createMessageStore,
 	InputMessageStore,
-	isImageGenerationModel,
 	PlanMessageStore,
 	ResponseMessageStore,
 	ToolStore,
@@ -766,24 +765,8 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			const isImageModel = isImageGenerationModel(
-				this._store.model as Parameters<
-					typeof isImageGenerationModel
-				>[0],
-			);
-
-			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
-			const {
-				numOfImages: _numOfImages,
-				imageHeight: _imageHeight,
-				imageWidth: _imageWidth,
-				cfgScale: _cfgScale,
-				seed: _seed,
-				...baseOptions
-			} = options;
-
 			const optionsToSave = {
-				...(isImageModel ? options : baseOptions),
+				...options,
 				modelId: this._store.model.engine_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
