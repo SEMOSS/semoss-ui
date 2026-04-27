@@ -86,16 +86,12 @@ export const FileExplorerContextMenu: React.FC<
 
 	const { item, targetPath, x, y } = state;
 	const isOnItem = item !== null;
-	const isDirectory = item?.type === "directory";
 	const bulkItems =
 		item &&
 		selectedItems.some((selectedItem) => selectedItem.path === item.path)
 			? selectedItems
 			: [];
 	const isBulkAction = bulkItems.length > 1;
-	const bulkHasDirectory = bulkItems.some(
-		(selectedItem) => selectedItem.type === "directory",
-	);
 	const secondaryActions = state.secondaryActions || [];
 	const getSecondaryAction = (name: string) =>
 		secondaryActions.find(
@@ -191,12 +187,11 @@ export const FileExplorerContextMenu: React.FC<
 		});
 	}
 
-	if (isOnItem && (!isDirectory || isBulkAction)) {
+	if (isOnItem) {
 		entries.push({
 			key: "download",
 			label: "Download",
 			icon: <DownloadIcon className="size-4 shrink-0" />,
-			disabled: isBulkAction && bulkHasDirectory,
 			action: async () => {
 				onClose();
 				if (isBulkAction) {
@@ -204,7 +199,7 @@ export const FileExplorerContextMenu: React.FC<
 				} else {
 					if (!item) return;
 					const secondaryDownload = getSecondaryAction("Download");
-					if (secondaryDownload) {
+					if (secondaryDownload && item.type !== "directory") {
 						await secondaryDownload.action(item);
 					} else {
 						await onDownload(item);

@@ -532,13 +532,20 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	};
 
 	const getDownloadFileKey = async (item: FileItem) => {
-		if (item.type === "directory") return "";
-
 		const pixel = buildDownloadPixel(item.path);
 		if (!pixel) return "";
 
 		const { pixelReturn } = await insight.actions.run<[string]>(pixel);
 		return pixelReturn?.[0]?.output || "";
+	};
+
+	const getDownloadFileName = (item: FileItem) => {
+		if (item.type !== "directory") {
+			return item.name;
+		}
+
+		const directoryName = getItemName(item).replace(/\.zip$/i, "");
+		return `${directoryName}.zip`;
 	};
 
 	const downloadFileKeyAsBlob = async (fileKey: string, fileName: string) => {
@@ -562,7 +569,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const handleDownload = async (item: FileItem) => {
 		try {
 			const fileKey = await getDownloadFileKey(item);
-			if (fileKey) {
+			if (!fileKey) {
+				return;
+			}
+
+			if (item.type === "directory") {
+				await downloadFileKeyAsBlob(fileKey, getDownloadFileName(item));
+			} else {
 				await download(insight.insightId, fileKey);
 			}
 		} catch (e) {
@@ -577,7 +590,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			try {
 				const fileKey = await getDownloadFileKey(item);
 				if (fileKey) {
-					await downloadFileKeyAsBlob(fileKey, item.name);
+					await downloadFileKeyAsBlob(
+						fileKey,
+						getDownloadFileName(item),
+					);
 				}
 			} catch (e) {
 				failedItems.push(item.name);
