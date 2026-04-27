@@ -90,13 +90,13 @@ export class RootStore {
 			gracefulErrors: [],
 			showPlatformLinks: true,
 			featureFlags: {
-				enableModelSelect: true,
-				enableAgent: true,
+				enableModelSelect: false,
+				enableAgent: false,
 				enableSuggestions: false,
 				enablePlan: false,
-				enableRewrite: true,
-				enablePromptOptimizer: true,
-				enableDarkMode: true,
+				enableRewrite: false,
+				enablePromptOptimizer: false,
+				enableDarkMode: false,
 			},
 		},
 	};
