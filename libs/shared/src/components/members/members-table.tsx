@@ -368,6 +368,12 @@ export const MembersTable = ({
 													<SelectItem value="MONTH">
 														Monthly
 													</SelectItem>
+													<SelectItem value="YEAR">
+														Yearly
+													</SelectItem>
+													<SelectItem value="ALL_TIME">
+														All time
+													</SelectItem>
 												</SelectContent>
 											</Select>
 										</div>
