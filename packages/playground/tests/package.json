@@ -1,0 +1,30 @@
+{
+    "name": "@semoss/playground-e2e",
+    "private": true,
+    "version": "0.0.0",
+    "description": "Playwright E2E workflows for the @semoss/playground app",
+    "scripts": {
+        "test": "playwright test",
+        "test:ui": "playwright test --ui",
+        "test:headed": "playwright test --headed",
+        "test:debug": "playwright test --debug",
+        "test:smoke": "playwright test --grep @smoke",
+        "test:auth": "playwright test --grep @auth",
+        "test:rooms": "playwright test --grep @rooms",
+        "test:agents": "playwright test --grep @agents",
+        "login": "tsx scripts/login.ts",
+        "logout": "rm -f .auth/user.json",
+        "record": "[ -f .auth/user.json ] || tsx scripts/login.ts && playwright codegen --load-storage=.auth/user.json --output=workflows/recorded-$(date +%s).spec.ts ${PLAYGROUND_BASE_URL:-http://localhost:9090/SemossWeb/packages/playground/dist/}",
+        "record:new": "[ -f .auth/user.json ] || tsx scripts/login.ts && playwright codegen --load-storage=.auth/user.json ${PLAYGROUND_BASE_URL:-http://localhost:9090/SemossWeb/packages/playground/dist/}",
+        "report": "playwright show-report",
+        "install-browsers": "playwright install chromium"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.49.1",
+        "@types/node": "^22.9.0",
+        "@types/prompts": "^2.4.9",
+        "prompts": "^2.4.2",
+        "tsx": "^4.19.2",
+        "typescript": "~5.5.2"
+    }
+}

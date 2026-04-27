@@ -2,3 +2,4 @@ packages:
     - 'packages/*'
     - 'libs/*'
     - 'packages/vscode-extension/src/webviews/*'
+    - 'packages/playground/tests'
