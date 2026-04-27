@@ -216,10 +216,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						try {
 							const uploadedFile = uploadedFiles[i];
 							// Normalize path to use forward slashes
-							const uploadedPath = uploadedFile.fileLocation.replace(
-								/\\/g,
-								"/",
-							);
+							const uploadedPath =
+								uploadedFile.fileLocation.replace(/\\/g, "/");
 
 							let unzipPixel = "";
 							if (mode.type === "APP") {

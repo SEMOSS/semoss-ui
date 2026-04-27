@@ -50,7 +50,7 @@ export const WorkspaceCard = observer(
 		return (
 			<>
 				<Card
-					className="cursor-pointer gap-0 bg-background p-0"
+					className="cursor-pointer gap-0 bg-card p-0"
 					onClick={() => {
 						navigate(`/agent/${workspace.workspace_id}`);
 					}}
@@ -59,7 +59,7 @@ export const WorkspaceCard = observer(
 						<div className="flex justify-between">
 							<div className="text-4xl">
 								<img
-									className="flex h-10 select-none flex-row items-center"
+									className="flex h-10 select-none flex-row items-center dark:brightness-0 dark:invert"
 									alt="logo"
 									src={root.theme?.images.logo || logoImage}
 								/>
@@ -117,7 +117,7 @@ export const WorkspaceCard = observer(
 						}}
 					/>
 
-					<CardContent className="px-6 py-4">
+					<CardContent className="rounded-b-xl px-6 py-4 dark:bg-secondary">
 						<Button
 							size="sm"
 							onClick={(e) => {

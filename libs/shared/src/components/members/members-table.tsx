@@ -1,6 +1,7 @@
 import { Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Env, get, post, runPixel } from "@semoss/sdk";
+import { Env, get, post } from "@semoss/sdk";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Avatar,
 	Button,
@@ -67,21 +68,21 @@ export const MembersTable = ({
 	const debouncedValue = useDebouncedValue(searchKey, 300);
 
 	// Self-fetch current user's ID and permission
+	const { actions } = useInsight();
 	const [myUserId, setMyUserId] = useState<string>("");
 	const [myPermission, setMyPermission] = useState<string>("");
 	const effectiveIsOwner = isOwner || myPermission === "OWNER";
 	const effectiveCurrentUserId = currentUserId ?? myUserId;
 
 	useEffect(() => {
-		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
-			"GetUserInfo();",
-		)
-			.then(({ pixelReturn }) => {
-				const output = pixelReturn[0]?.output ?? {};
-				const providerData =
-					output.SAML ??
-					output.NATIVE ??
-					output[Object.keys(output)[0]];
+		actions
+			.run<[Record<string, { id: string; name: string; email: string }>]>(
+				"META | GetUserInfo()",
+			)
+			.then((result) => {
+				if (!result) return;
+				const output = result.pixelReturn[0]?.output ?? {};
+				const providerData = output[Object.keys(output)[0]];
 				if (providerData?.id) setMyUserId(providerData.id);
 			})
 			.catch(() => undefined);
