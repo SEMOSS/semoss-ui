@@ -243,7 +243,7 @@ export const WorkspaceDetailPage = observer(() => {
 						)}
 					>
 						{tab === "members" ? null : (
-							<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
+							<div className="flex w-full flex-row gap-2 border-border border-b bg-secondary p-4">
 								<InputGroup className="bg-background">
 									<InputGroupInput
 										placeholder={t("common:buttons.search")}
