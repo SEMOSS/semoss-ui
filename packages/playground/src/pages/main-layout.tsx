@@ -19,6 +19,7 @@ import {
 	SidebarProvider,
 	SidebarTrigger,
 	useCacheState,
+	useTheme,
 } from "@semoss/ui/next";
 import { GlobalFooter, GlobalNav } from "@/components";
 import { GlobalDialog } from "@/components/common/global-dialog";
@@ -37,6 +38,13 @@ export const MainLayout = observer(() => {
 	const { pathname } = useLocation();
 	const [isTourOpen, setIsTourOpen] = useState(false);
 	const [pendingTour, setPendingTour] = useState(false);
+
+	const { theme: colorMode } = useTheme();
+
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
 
 	const [isSidebarOpen, setIsSidebarOpen] = useCacheState(
 		theme.sidebar.expandedByDefault,
@@ -143,6 +151,7 @@ export const MainLayout = observer(() => {
 			.split("; ")
 			.find((c) => c.startsWith("hasSeenTour="));
 		if (!hasSeen) {
+			// biome-ignore lint/suspicious/noDocumentCookie: TODO: why not use localStorage?
 			document.cookie = "hasSeenTour=true; path=/; max-age=31536000"; // 1 year
 			if (root.theme.dialog) {
 				setPendingTour(true);
@@ -180,7 +189,7 @@ export const MainLayout = observer(() => {
 						}
 					>
 						<GlobalNav />
-						<SidebarInset className="m-0! shadow-none">
+						<SidebarInset className="m-0! rounded-none! shadow-none">
 							<GlobalDialog
 								onAcknowledge={() => {
 									if (pendingTour) {
@@ -191,10 +200,12 @@ export const MainLayout = observer(() => {
 							/>
 							<div
 								data-testid="main-layout"
-								className="flex h-screen w-full flex-col overflow-hidden"
+								className="flex h-screen w-full flex-col overflow-hidden bg-background"
 								style={{
-									background:
-										"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
+									...(!isDark && {
+										background:
+											"linear-gradient(180deg, #FCFCFC 58.78%, #F6F7FF 81.97%, #F1F8FF 94.04%), var(--base-secondary-background, #FFF)",
+									}),
 									...root.theme.overrides["main-layout"],
 								}}
 							>
@@ -217,25 +228,39 @@ export const MainLayout = observer(() => {
 
 														return (
 															<React.Fragment
-																key={crumb.path}
+																key={`${index}-${crumb.path}`}
 															>
 																<BreadcrumbItem>
-																	<BreadcrumbLink
-																		className={
-																			isLast
-																				? "text-foreground"
-																				: ""
-																		}
-																		asChild
-																	>
-																		<Link
-																			to={`${crumb.path}`}
+																	{crumb.path ? (
+																		<BreadcrumbLink
+																			className={
+																				isLast
+																					? "text-foreground"
+																					: ""
+																			}
+																			asChild
+																		>
+																			<Link
+																				to={`${crumb.path}`}
+																			>
+																				{
+																					crumb.name
+																				}
+																			</Link>
+																		</BreadcrumbLink>
+																	) : (
+																		<span
+																			className={
+																				isLast
+																					? "text-foreground"
+																					: "text-muted-foreground"
+																			}
 																		>
 																			{
 																				crumb.name
 																			}
-																		</Link>
-																	</BreadcrumbLink>
+																		</span>
+																	)}
 																</BreadcrumbItem>
 																{!isLast && (
 																	<BreadcrumbSeparator />

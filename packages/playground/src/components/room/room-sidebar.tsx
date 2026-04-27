@@ -26,10 +26,11 @@ const getFileTabIcon = (fileName: string) => {
 	if (
 		["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "img"].includes(ext)
 	)
-		return <ImageIcon className="size-4" />;
-	if (ext === "pdf") return <FileBadgeIcon className="size-4" />;
+		return <ImageIcon className="size-4 text-foreground" />;
+	if (ext === "pdf")
+		return <FileBadgeIcon className="size-4 text-foreground" />;
 	if (["xls", "xlsx", "csv"].includes(ext))
-		return <FileSpreadsheetIcon className="size-4" />;
+		return <FileSpreadsheetIcon className="size-4 text-foreground" />;
 	if (
 		[
 			"py",
@@ -44,23 +45,24 @@ const getFileTabIcon = (fileName: string) => {
 			"rs",
 		].includes(ext)
 	)
-		return <FileCodeIcon className="size-4" />;
+		return <FileCodeIcon className="size-4 text-foreground" />;
 	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
-		return <FileTerminalIcon className="size-4" />;
-	if (ext === "json") return <FileJsonIcon className="size-4" />;
+		return <FileTerminalIcon className="size-4 text-foreground" />;
+	if (ext === "json")
+		return <FileJsonIcon className="size-4 text-foreground" />;
 	if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
-		return <FileArchiveIcon className="size-4" />;
+		return <FileArchiveIcon className="size-4 text-foreground" />;
 	if (["ppt", "pptx"].includes(ext))
-		return <FileChartPieIcon className="size-4" />;
+		return <FileChartPieIcon className="size-4 text-foreground" />;
 	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
-		return <FileAudioIcon className="size-4" />;
+		return <FileAudioIcon className="size-4 text-foreground" />;
 	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
-		return <FileVideoIcon className="size-4" />;
+		return <FileVideoIcon className="size-4 text-foreground" />;
 	if (["html", "xml", "md", "mdx", "rtf"].includes(ext))
-		return <FileTypeIcon className="size-4" />;
+		return <FileTypeIcon className="size-4 text-foreground" />;
 	if (["doc", "docx", "msg", "txt"].includes(ext))
-		return <FileTextIcon className="size-4" />;
-	return <FileIcon className="size-4" />;
+		return <FileTextIcon className="size-4 text-foreground" />;
+	return <FileIcon className="size-4 text-foreground" />;
 };
 
 import { observer } from "mobx-react-lite";
@@ -270,7 +272,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 				}`}
 			/>
 			<div
-				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-secondary-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
+				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
 				<div
 					ref={controlsRef}
@@ -368,15 +370,15 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								const component = node.getComponent();
 								if (component === "room-tool") {
 									renderValues.leading = (
-										<HammerIcon className="size-4" />
+										<HammerIcon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-configuration") {
 									renderValues.leading = (
-										<Settings2Icon className="size-4" />
+										<Settings2Icon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-file-explorer") {
 									renderValues.leading = (
-										<FolderTreeIcon className="size-4" />
+										<FolderTreeIcon className="size-4 text-foreground" />
 									);
 								} else if (component === "room-file-editor") {
 									renderValues.leading = getFileTabIcon(
@@ -443,7 +445,9 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 								return null;
 							}}
 							icons={{
-								close: <XIcon className="size-4" />,
+								close: (
+									<XIcon className="size-4 text-foreground" />
+								),
 							}}
 						/>
 					</div>

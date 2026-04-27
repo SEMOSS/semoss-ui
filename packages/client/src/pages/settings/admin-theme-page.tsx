@@ -225,6 +225,7 @@ export const AdminThemePage: React.FC = () => {
 						enablePlan: true,
 						enableSuggestions: false,
 						enableRewrite: true,
+						enableDarkMode: true,
 					},
 				},
 			};

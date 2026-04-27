@@ -72,6 +72,8 @@ const formatValue = (input?: string) => {
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
+		YEAR: "Yearly",
+		ALL_TIME: "All time",
 	};
 	return mappings[input.toUpperCase()] ?? input;
 };
