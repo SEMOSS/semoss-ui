@@ -232,6 +232,12 @@ export const AdminThemePage: React.FC = () => {
 						enableRewrite: true,
 						enableDarkMode: true,
 						enablePromptOptimizer: true,
+						hideToolsInIframe: false,
+						enableKnowledgeMCP: true,
+						allowEmbeddingOptions: true,
+						showKnowledgeMenu: true,
+						showToolboxMenu: true,
+						showPlatformLinks: true,
 					},
 				},
 			};

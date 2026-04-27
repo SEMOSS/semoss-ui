@@ -50,7 +50,7 @@ export const MCPSelector = observer(
 
 		const debouncedSearch = useDebouncedValue(search);
 		const useMCPFilter =
-			type === "TOOLBOX" || root.theme.enableKnowledgeMCP !== false;
+			type === "TOOLBOX" || root.theme.featureFlags?.enableKnowledgeMCP;
 
 		// track the selected one
 		const selected = values.reduce(

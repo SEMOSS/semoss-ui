@@ -88,7 +88,6 @@ export class RootStore {
 			allowedFileTypes: [],
 			defaultTools: [],
 			gracefulErrors: [],
-			showPlatformLinks: true,
 			featureFlags: {
 				enableModelSelect: false,
 				enableAgent: false,
@@ -97,6 +96,12 @@ export class RootStore {
 				enableRewrite: false,
 				enablePromptOptimizer: false,
 				enableDarkMode: false,
+				hideToolsInIframe: false,
+				enableKnowledgeMCP: true,
+				allowEmbeddingOptions: true,
+				showKnowledgeMenu: true,
+				showToolboxMenu: true,
+				showPlatformLinks: true,
 			},
 		},
 	};
@@ -205,6 +210,43 @@ export class RootStore {
 	 * @param theme Theme
 	 */
 	private updateTheme = (theme: Partial<ThemeMap["playground"]>) => {
+		// Resolve featureFlags before building the merged theme. Several flags
+		// were historically stored as top-level keys on the theme object; new
+		// themes should put them inside featureFlags instead. Top-level values
+		// are treated as migration fallbacks so old stored themes continue to
+		// work — explicit featureFlags always wins over the promoted top-level value.
+		//
+		// The cast to `legacy` suppresses @deprecated hints: reading these fields
+		// here is intentional — it's the one place responsible for the migration.
+		const legacy = theme as Record<string, unknown>;
+		const resolvedFeatureFlags = {
+			...this._store.theme.featureFlags,
+			// Migrate top-level booleans for old stored themes
+			...(legacy.hideToolsInIframe !== undefined
+				? { hideToolsInIframe: legacy.hideToolsInIframe as boolean }
+				: {}),
+			...(legacy.enableKnowledgeMCP !== undefined
+				? { enableKnowledgeMCP: legacy.enableKnowledgeMCP as boolean }
+				: {}),
+			...(legacy.allowEmbeddingOptions !== undefined
+				? {
+						allowEmbeddingOptions:
+							legacy.allowEmbeddingOptions as boolean,
+					}
+				: {}),
+			...(legacy.showKnowledgeMenu !== undefined
+				? { showKnowledgeMenu: legacy.showKnowledgeMenu as boolean }
+				: {}),
+			...(legacy.showToolboxMenu !== undefined
+				? { showToolboxMenu: legacy.showToolboxMenu as boolean }
+				: {}),
+			...(legacy.showPlatformLinks !== undefined
+				? { showPlatformLinks: legacy.showPlatformLinks as boolean }
+				: {}),
+			// Explicit featureFlags take precedence over everything above
+			...(theme?.featureFlags || {}),
+		};
+
 		// deep merge from the environment
 		this._store.theme = {
 			...this._store.theme,
@@ -228,10 +270,6 @@ export class RootStore {
 			altLandingKey:
 				theme?.altLandingKey || this._store.theme.altLandingKey,
 			altLanding: theme?.altLanding || this._store.theme.altLanding,
-			hideToolsInIframe:
-				theme?.hideToolsInIframe ||
-				this._store.theme?.hideToolsInIframe ||
-				false,
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
@@ -264,16 +302,8 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
-			enableKnowledgeMCP:
-				theme?.enableKnowledgeMCP !== undefined
-					? theme.enableKnowledgeMCP
-					: this._store.theme.enableKnowledgeMCP,
 			defaultEmbedderId:
 				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
-			allowEmbeddingOptions:
-				theme?.allowEmbeddingOptions !== undefined
-					? theme.allowEmbeddingOptions
-					: this._store.theme.allowEmbeddingOptions,
 			defaultTools: [
 				...new Map(
 					[
@@ -282,27 +312,12 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
-			showPlatformLinks:
-				theme?.showPlatformLinks !== undefined
-					? theme.showPlatformLinks
-					: this._store.theme.showPlatformLinks,
-			showKnowledgeMenu:
-				theme?.showKnowledgeMenu !== undefined
-					? theme.showKnowledgeMenu
-					: this._store.theme.showKnowledgeMenu,
-			showToolboxMenu:
-				theme?.showToolboxMenu !== undefined
-					? theme.showToolboxMenu
-					: this._store.theme.showToolboxMenu,
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,
 				...(theme?.gracefulErrors || []),
 			],
 			tour: theme?.tour || this._store.theme.tour,
-			featureFlags: {
-				...this._store.theme.featureFlags,
-				...(theme?.featureFlags || {}),
-			},
+			featureFlags: resolvedFeatureFlags,
 		};
 
 		// apply the theme to document root

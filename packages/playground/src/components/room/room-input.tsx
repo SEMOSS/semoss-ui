@@ -815,7 +815,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
 								{!(
-									root.theme.hideToolsInIframe && isIframed
+									root.theme.featureFlags
+										?.hideToolsInIframe && isIframed
 								) && (
 									<DropdownMenu
 										open={menuOpen}
@@ -1071,7 +1072,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					/>
 					{/* Slash command menu - searchable knowledge & toolbox only */}
 					{!isLoading &&
-						!(root.theme.hideToolsInIframe && isIframed) && (
+						!(
+							root.theme.featureFlags?.hideToolsInIframe &&
+							isIframed
+						) && (
 							<MentionPlugin
 								trigger="/"
 								MenuComponent={({
