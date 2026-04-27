@@ -51,7 +51,7 @@ export const RoomCompactionIndicator: React.FC<RoomCompactionIndicatorProps> =
 										className="absolute inset-0 opacity-[0.18]"
 										style={STRIPE_STYLE}
 									/>
-									<div className="relative z-10 flex items-center gap-1.5 rounded bg-secondary-background px-2 text-muted-foreground text-xs leading-normal">
+									<div className="relative z-10 flex items-center gap-1.5 rounded bg-background px-2 text-muted-foreground text-xs leading-normal">
 										<ArchiveIcon className="h-3 w-3" />
 										<span>
 											{t("settings.compactedAbove")}
@@ -69,7 +69,7 @@ export const RoomCompactionIndicator: React.FC<RoomCompactionIndicatorProps> =
 								className="absolute inset-0 opacity-[0.18]"
 								style={STRIPE_STYLE}
 							/>
-							<div className="relative z-10 flex items-center gap-1.5 rounded bg-secondary-background px-2 text-muted-foreground text-xs leading-normal">
+							<div className="relative z-10 flex items-center gap-1.5 rounded bg-background px-2 text-muted-foreground text-xs leading-normal">
 								<ArchiveIcon className="h-3 w-3 animate-pulse" />
 								<span>{loadingMessage}</span>
 							</div>
