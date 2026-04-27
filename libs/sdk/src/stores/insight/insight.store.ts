@@ -439,7 +439,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// default if there is no command to preload
 		if (!pixel) {
-			pixel = "1+1;";
+			pixel = "META | init";
 		}
 
 		// create the new insight
