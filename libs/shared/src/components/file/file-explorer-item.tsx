@@ -1,5 +1,4 @@
 import {
-	Ellipsis,
 	FileArchiveIcon,
 	FileAudioIcon,
 	FileBadgeIcon,
@@ -20,11 +19,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	Muted,
 	Tooltip,
 	TooltipContent,
@@ -34,15 +28,20 @@ import {
 	useTreeView,
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
-import { FileExplorerMenuItem } from "./file-explorer-menu-item";
 
 const ACTIONS_COL_WIDTH = 36;
+type FileExplorerSecondaryAction = {
+	name: string;
+	action: (item: FileItem) => Promise<void>;
+};
 
-// Worst-case string widths at text-[11px] (~7px/char) + 16px column padding (px-2):
-//   numeric:       "12/31/26"                      =  8 chars → ~72px  → threshold  80px
-//   numeric+time:  "12/31/26, 10:55 PM"            = 18 chars → ~142px → threshold 150px
-//   short+time:    "Sep 30, 2026 at 10:55 PM"      = 24 chars → ~184px → threshold 195px
-//   long+time:     "September 30, 2026 at 10:55 PM"= 30 chars → ~226px → threshold 235px
+/**
+ * Worst-case string widths at text-11px (~7px/char + 16px column padding px-2):
+ *   numeric          "1/23/26"           8  chars  72px   → threshold  80px
+ *   numeric+time     "1/23/26, 10:55 PM" 18 chars 142px   → threshold 150px
+ *   short+time       "Sep 30, 2026 at 10:55 PM" 24 chars 184px → threshold 195px
+ *   long+time        "September 30, 2026 at 10:55 PM" 30 chars 226px → threshold 235px
+ */
 const formatMacDate = (raw: string | undefined, width = 170): string | null => {
 	if (!raw) return null;
 	const date = new Date(raw);
@@ -64,7 +63,7 @@ const formatMacDate = (raw: string | undefined, width = 170): string | null => {
 		hour12: true,
 	});
 
-	// Today — show relative elapsed time ("2h ago", "5 min ago", "Just now")
+	// Today: show relative elapsed time (2h ago, 5 min ago, Just now)
 	if (diffDays === 0) {
 		const diffMs = now.getTime() - date.getTime();
 		const diffMins = Math.floor(diffMs / 60000);
@@ -81,7 +80,7 @@ const formatMacDate = (raw: string | undefined, width = 170): string | null => {
 		return width < 150 ? day : `${day} at ${time}`;
 	}
 
-	// Absolute — thresholds guarantee worst-case fits without truncation
+	// Absolute thresholds — guarantee worst-case fits without truncation
 	if (width < 150)
 		return date.toLocaleDateString("en-US", {
 			month: "numeric",
@@ -198,14 +197,8 @@ interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	} | null)[];
 
 	/** Secondary Actions */
-	secondaryActions?: ({
-		name: string;
-		action: (item: FileItem) => Promise<void>;
-	} | null)[];
-
-	/**
-	 * Override for the file item component
-	 */
+	secondaryActions?: (FileExplorerSecondaryAction | null)[];
+	/** Override for the file item component */
 	ItemComponent?: typeof FileExplorerItem;
 
 	/** Width of the date column in px — drives adaptive date formatting */
@@ -215,6 +208,25 @@ interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	 * Called after a successful rename with the old and new paths
 	 */
 	onAfterRename?: (oldPath: string, newPath: string) => void;
+	/** Whether this item is the active right-click context target */
+	isContextActive?: boolean;
+	/** Whether this item is currently part of a bulk selection */
+	isBulkSelected?: boolean;
+	/** Callback to open the context menu for this item */
+	onContextMenuOpen?: (
+		e: React.MouseEvent,
+		item: FileItem,
+		targetPath: string,
+		secondaryActions?: FileExplorerSecondaryAction[],
+	) => void;
+	/** Propagated down to children: checks if a given path is the context target */
+	isItemContextActive?: (path: string) => boolean;
+	/** Propagated down to children: checks if a given path is bulk-selected */
+	isItemBulkSelected?: (path: string) => boolean;
+	/** Track visible rendered items so keyboard bulk select can include expanded rows */
+	onItemRegister?: (item: FileItem, isVisible: boolean) => void;
+	/** Toggle this item in the bulk selection */
+	onBulkSelectionToggle?: (item: FileItem) => void;
 }
 
 export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
@@ -226,6 +238,13 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	ItemComponent = FileExplorerItem,
 	dateColWidth = 130,
 	onAfterRename,
+	isContextActive = false,
+	isBulkSelected = false,
+	onContextMenuOpen,
+	isItemContextActive,
+	isItemBulkSelected,
+	onItemRegister,
+	onBulkSelectionToggle,
 	...otherProps
 }) => {
 	const treeView = useTreeView<FileItem>();
@@ -237,7 +256,9 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const [renameValue, setRenameValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const canRename = mode.type !== "STORAGE";
-	const renameFromMenuRef = useRef(false);
+	const visibleSecondaryActions = secondaryActions.filter(
+		(action): action is FileExplorerSecondaryAction => action !== null,
+	);
 
 	useEffect(() => {
 		if (!isRenaming) return;
@@ -245,6 +266,30 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			inputRef.current?.focus();
 		});
 	}, [isRenaming]);
+
+	useEffect(() => {
+		onItemRegister?.(item, true);
+		return () => onItemRegister?.(item, false);
+	}, [item, onItemRegister]);
+
+	// Listen for the rename CustomEvent dispatched by the context menu
+	useEffect(() => {
+		const handleRenameEvent = (event: Event) => {
+			const customEvent = event as CustomEvent<{ path: string }>;
+			if (customEvent.detail?.path === item.path) {
+				setRenameValue(item.name);
+				setIsRenaming(true);
+			}
+		};
+
+		window.addEventListener("file-explorer:rename", handleRenameEvent);
+		return () => {
+			window.removeEventListener(
+				"file-explorer:rename",
+				handleRenameEvent,
+			);
+		};
+	}, [item.path, item.name]);
 
 	const handleRename = async () => {
 		const newName = renameValue.trim();
@@ -385,17 +430,56 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		return <FileIcon className="size-4 shrink-0 text-muted-foreground" />;
 	};
 
+	// Resolve context-active state: propagated checker takes priority over direct prop
+	const effectiveIsContextActive = isItemContextActive
+		? isItemContextActive(item.path)
+		: isContextActive;
+	const effectiveIsBulkSelected = isItemBulkSelected
+		? isItemBulkSelected(item.path)
+		: isBulkSelected;
+
 	return (
 		<TreeViewItem
 			id={item.path}
 			item={item}
 			loading={getChildren.status === "LOADING"}
+			onClickCapture={(e) => {
+				if (!(e.ctrlKey || e.metaKey)) return;
+				if (!(e.target instanceof Element)) return;
+				const nearestTreeItem = e.target.closest('[role="treeitem"]');
+				if (nearestTreeItem !== e.currentTarget) return;
+				e.preventDefault();
+				e.stopPropagation();
+				onBulkSelectionToggle?.(item);
+			}}
+			onContextMenu={(e) => {
+				if (!onContextMenuOpen) return;
+				e.preventDefault();
+				e.stopPropagation();
+				const targetPath = isDirectory
+					? item.path.endsWith("/")
+						? item.path
+						: `${item.path}/`
+					: item.path.substring(0, item.path.lastIndexOf("/") + 1) ||
+						"/";
+				onContextMenuOpen(e, item, targetPath, visibleSecondaryActions);
+			}}
 			label={
 				<div
-					className="group flex min-w-full flex-row items-center"
-					title={`Path: ${item.path} Last Modified: ${item.lastModified}`}
+					className={[
+						"group flex min-h-7 min-w-full flex-row items-center rounded-md px-2 transition-colors",
+						effectiveIsContextActive
+							? "bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset"
+							: "",
+						effectiveIsBulkSelected
+							? "bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset"
+							: "",
+					]
+						.filter(Boolean)
+						.join(" ")}
+					title={`Path: ${item.path}${item.lastModified ? `\nLast Modified: ${item.lastModified}` : ""}`}
 				>
-					{/* Column 1: Name */}
+					{/* Column 1 — Name */}
 					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pr-2">
 						{renderIcon()}
 						{isRenaming ? (
@@ -443,90 +527,43 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 
 					{/* Column 2: Date */}
 					<div
-						className="shrink-0 overflow-hidden truncate px-2 text-[11px] text-muted-foreground"
+						className="shrink-0 overflow-hidden truncate px-2 text-right text-[11px] text-muted-foreground"
 						style={{ width: "var(--date-col-width, 170px)" }}
 					>
 						{macDate ?? ""}
 					</div>
 
 					{/* Column 3: Actions */}
-					<div
-						className="flex shrink-0 items-center justify-end"
-						style={{ width: ACTIONS_COL_WIDTH }}
-					>
-						{actions.map((a) => {
-							if (!a) return null;
-							return (
-								<Tooltip key={a.name}>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
-											onClick={(e) => {
-												e.stopPropagation();
-												a.action(item);
-											}}
-										>
-											{a.icon}
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>{a.tooltip}</TooltipContent>
-								</Tooltip>
-							);
-						})}
-						{(canRename || secondaryActions.length > 0) && (
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										onClick={(e) => e.stopPropagation()}
-									>
-										<Ellipsis className="size-4" />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									align="end"
-									onCloseAutoFocus={(e) => {
-										if (renameFromMenuRef.current) {
-											e.preventDefault();
-											renameFromMenuRef.current = false;
-										}
-									}}
-								>
-									<DropdownMenuGroup>
-										{canRename && (
-											<DropdownMenuItem
-												className="text-xs"
-												onSelect={() => {
-													renameFromMenuRef.current = true;
-													setRenameValue(item.name);
-													setIsRenaming(true);
+					{actions.some(Boolean) && (
+						<div
+							className="flex shrink-0 items-center justify-end"
+							style={{ width: ACTIONS_COL_WIDTH }}
+						>
+							{actions.map((a) => {
+								if (!a) return null;
+								return (
+									<Tooltip key={a.name}>
+										<TooltipTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+												onClick={(e) => {
+													e.stopPropagation();
+													a.action(item);
 												}}
-												onClick={(e) =>
-													e.stopPropagation()
-												}
 											>
-												Rename
-											</DropdownMenuItem>
-										)}
-										{secondaryActions.map((a) => {
-											if (!a) return null;
-											return (
-												<FileExplorerMenuItem
-													key={a.name}
-													item={item}
-													name={a.name}
-													action={a.action}
-												/>
-											);
-										})}
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						)}
-					</div>
+												{a.icon}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{a.tooltip}
+										</TooltipContent>
+									</Tooltip>
+								);
+							})}
+						</div>
+					)}
 				</div>
 			}
 			{...otherProps}
@@ -543,6 +580,12 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								actions={actions}
 								secondaryActions={secondaryActions}
 								dateColWidth={dateColWidth}
+								onAfterRename={onAfterRename}
+								isItemBulkSelected={isItemBulkSelected}
+								isItemContextActive={isItemContextActive}
+								onItemRegister={onItemRegister}
+								onBulkSelectionToggle={onBulkSelectionToggle}
+								onContextMenuOpen={onContextMenuOpen}
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&

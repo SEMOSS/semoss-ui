@@ -1,17 +1,21 @@
 import {
 	ChevronDownIcon,
+	CircleHelpIcon,
 	FilePlus2Icon,
 	RefreshCwIcon,
 	SearchIcon,
 } from "lucide-react";
 import {
 	type CSSProperties,
+	type KeyboardEvent as ReactKeyboardEvent,
 	type MouseEvent as ReactMouseEvent,
+	useCallback,
 	useMemo,
 	useRef,
 	useState,
 } from "react";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { Env } from "@semoss/sdk";
+import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	DropdownMenu,
@@ -36,8 +40,9 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
+import { FileExplorerContextMenu } from "./file-explorer-context-menu";
 import { FileExplorerItem } from "./file-explorer-item";
-import { NewFileOverlay } from "./new-file-overlay";
+import { type NewFileAction, NewFileOverlay } from "./new-file-overlay";
 
 interface StoragePathEntry {
 	Name?: string;
@@ -104,6 +109,24 @@ const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
 	}, []);
 };
 
+interface ClipboardState {
+	items: FileItem[];
+	action: "copy" | "cut";
+}
+
+interface ContextMenuState {
+	x: number;
+	y: number;
+	item: FileItem | null;
+	targetPath: string;
+	secondaryActions?: FileExplorerSecondaryAction[];
+}
+
+type FileExplorerSecondaryAction = {
+	name: string;
+	action: (item: FileItem) => Promise<void>;
+};
+
 interface FileExplorerProps {
 	/** Mode of file editor */
 	mode: FileMode;
@@ -164,13 +187,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		document.body.style.userSelect = "none";
 
 		const onMouseMove = (ev: globalThis.MouseEvent) => {
-			if (!dividerDragRef.current) return;
-			const delta = ev.clientX - dividerDragRef.current.startX;
-			setDateColWidth(
-				Math.max(
-					100,
-					Math.min(280, dividerDragRef.current.startWidth - delta),
-				),
+			const currentDrag = dividerDragRef.current;
+			if (!currentDrag) return;
+			const delta = ev.clientX - currentDrag.startX;
+			setDateColWidth((_) =>
+				Math.max(100, Math.min(280, currentDrag.startWidth - delta)),
 			);
 		};
 
@@ -187,7 +208,21 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	};
 
 	const [isNewFile, setIsNewFile] = useState(false);
+	const [newFilePath, setNewFilePath] = useState<string>(path);
+	const [newFileAction, setNewFileAction] = useState<NewFileAction>("upload");
+	const [newFileOverlayKey, setNewFileOverlayKey] = useState(0);
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
+	const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(
+		null,
+	);
+	const [contextTargetPath, setContextTargetPath] = useState<string | null>(
+		null,
+	);
+	const [clipboard, setClipboard] = useState<ClipboardState | null>(null);
+	const [selectedItems, setSelectedItems] = useState<Map<string, FileItem>>(
+		() => new Map(),
+	);
+	const visibleItemsRef = useRef<Map<string, FileItem>>(new Map());
 
 	const debouncedSearch = useDebouncedValue(search);
 	const canMutateFiles = mode.type !== "STORAGE";
@@ -278,7 +313,293 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	// track if we should show search
 	const showSearch =
-		mode.type !== "STORAGE" && (isSearchActive || debouncedSearch);
+		mode.type !== "STORAGE" && (isSearchActive || Boolean(debouncedSearch));
+
+	const clearContextState = () => {
+		setContextMenu(null);
+		setContextTargetPath(null);
+	};
+
+	const clearSelectedItems = () => {
+		setSelectedItems(new Map());
+	};
+
+	const handleExplorerKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+		if (e.key !== "Escape") return;
+		clearContextState();
+		clearSelectedItems();
+	};
+
+	const handleItemRegister = useCallback(
+		(item: FileItem, isVisible: boolean) => {
+			if (isVisible) {
+				visibleItemsRef.current.set(item.path, item);
+			} else {
+				visibleItemsRef.current.delete(item.path);
+			}
+		},
+		[],
+	);
+
+	const handleBulkSelectionToggle = (item: FileItem) => {
+		setSelectedItems((prev) => {
+			const next = new Map(prev);
+			if (next.has(item.path)) {
+				next.delete(item.path);
+			} else {
+				next.set(item.path, item);
+			}
+			return next;
+		});
+		clearContextState();
+	};
+
+	const handleSelectAllVisible = () => {
+		setSelectedItems(new Map(visibleItemsRef.current));
+		clearContextState();
+	};
+
+	const buildRenamePixel = (oldPath: string, newPath: string): string => {
+		if (mode.type === "APP") {
+			return `RenameAppAsset(project=["${mode.app}"], filePath=["${oldPath}"], newValue=["${newPath}"]);`;
+		}
+		if (mode.type === "ENGINE") {
+			return `RenameEngineAsset(engine=["${mode.engine}"], filePath=["${oldPath}"], newValue=["${newPath}"]);`;
+		}
+		if (mode.type === "INSIGHT") {
+			return `RenameInsightAsset(filePath=["${oldPath}"], newValue=["${newPath}"]);`;
+		}
+		return "";
+	};
+
+	const normalizeAssetPath = (assetPath: string) =>
+		assetPath.replace(/\/+$/, "") || "/";
+
+	const buildDeletePixel = (itemPath: string): string => {
+		if (mode.type === "APP") {
+			return `DeleteAppAssets(project=["${mode.app}"], filePath=["${itemPath}"]);`;
+		}
+		if (mode.type === "ENGINE") {
+			return `DeleteEngineAssets(engine=["${mode.engine}"], filePath=["${itemPath}"]);`;
+		}
+		if (mode.type === "INSIGHT") {
+			return `DeleteInsightAssets(filePath=["${itemPath}"]);`;
+		}
+		return "";
+	};
+
+	const handleContextMenuOpen = (
+		e: React.MouseEvent,
+		item: FileItem | null,
+		targetPath: string,
+		secondaryActions: FileExplorerSecondaryAction[] = [],
+	) => {
+		e.preventDefault();
+		e.stopPropagation();
+		if (item && !selectedItems.has(item.path)) {
+			clearSelectedItems();
+		}
+		setContextTargetPath(item?.path ?? null);
+		setContextMenu({
+			x: e.clientX,
+			y: e.clientY,
+			item,
+			targetPath,
+			secondaryActions,
+		});
+	};
+
+	const openNewFileOverlay = (
+		targetPath: string,
+		initialAction: NewFileAction = "upload",
+	) => {
+		setNewFilePath(
+			targetPath.endsWith("/") ? targetPath : `${targetPath}/`,
+		);
+		setNewFileAction(initialAction);
+		setNewFileOverlayKey((key) => key + 1);
+		setIsNewFile(true);
+	};
+
+	const handlePaste = async (targetDirectory: string) => {
+		if (!clipboard) return;
+
+		if (clipboard.action === "copy") {
+			toast.info(
+				"Copy endpoint is not available yet. Use Cut + Paste to move files.",
+			);
+			return;
+		}
+
+		try {
+			const normalizedTarget = targetDirectory.endsWith("/")
+				? targetDirectory
+				: `${targetDirectory}/`;
+			for (const item of clipboard.items) {
+				const name =
+					item.path.split("/").filter(Boolean).pop() || item.name;
+				const newPath = `${normalizedTarget}${name}`;
+				const normalizedItemPath = normalizeAssetPath(item.path);
+				const normalizedNewPath = normalizeAssetPath(newPath);
+				const normalizedTargetPath =
+					normalizeAssetPath(normalizedTarget);
+
+				if (normalizedItemPath === normalizedNewPath) {
+					continue;
+				}
+
+				if (
+					item.type === "directory" &&
+					(normalizedTargetPath === normalizedItemPath ||
+						normalizedTargetPath.startsWith(
+							`${normalizedItemPath}/`,
+						))
+				) {
+					continue;
+				}
+
+				const pixel = buildRenamePixel(item.path, newPath);
+
+				if (pixel) {
+					await insight.actions.run(pixel);
+				}
+			}
+			setClipboard(null);
+			clearSelectedItems();
+			clearContextState();
+			getFiles.refresh();
+		} catch (e) {
+			toast.error("Failed to paste item");
+			console.error(e);
+		}
+	};
+
+	const handleDeleteItems = async (items: FileItem[]) => {
+		try {
+			for (const item of items) {
+				const pixel = buildDeletePixel(item.path);
+				if (pixel) {
+					await insight.actions.run(pixel);
+				}
+			}
+			clearSelectedItems();
+			clearContextState();
+			getFiles.refresh();
+		} catch (e) {
+			toast.error("Failed to delete item");
+			console.error(e);
+		}
+	};
+
+	const handleDelete = async (item: FileItem) => {
+		await handleDeleteItems([item]);
+	};
+
+	const copyTextToClipboard = async (value: string) => {
+		if (navigator.clipboard?.writeText) {
+			await navigator.clipboard.writeText(value);
+			return;
+		}
+
+		const textArea = document.createElement("textarea");
+		textArea.value = value;
+		textArea.style.position = "fixed";
+		textArea.style.opacity = "0";
+		document.body.appendChild(textArea);
+		textArea.select();
+		document.execCommand("copy");
+		document.body.removeChild(textArea);
+	};
+
+	const handleCopyPath = async (item: FileItem) => {
+		try {
+			await copyTextToClipboard(item.path);
+			toast.success("Copied path");
+		} catch (e) {
+			toast.error("Failed to copy path");
+			console.error(e);
+		}
+	};
+
+	const buildDownloadPixel = (itemPath: string): string => {
+		if (mode.type === "APP") {
+			return `DownloadAppAsset(project=["${mode.app}"], filePath=["${itemPath}"]);`;
+		}
+		if (mode.type === "ENGINE") {
+			return `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${itemPath}"]);`;
+		}
+		if (mode.type === "INSIGHT") {
+			return `DownloadInsightAsset(filePath=["${itemPath}"]);`;
+		}
+		return "";
+	};
+
+	const getDownloadFileKey = async (item: FileItem) => {
+		if (item.type === "directory") return "";
+
+		const pixel = buildDownloadPixel(item.path);
+		if (!pixel) return "";
+
+		const { pixelReturn } = await insight.actions.run<[string]>(pixel);
+		return pixelReturn?.[0]?.output || "";
+	};
+
+	const downloadFileKeyAsBlob = async (fileKey: string, fileName: string) => {
+		const url = `${Env.MODULE}/api/engine/downloadFile?insightId=${insight.insightId}&fileKey=${encodeURIComponent(fileKey)}`;
+		const response = await fetch(url, { credentials: "include" });
+		if (!response.ok) {
+			throw new Error(`Failed to download ${fileName}`);
+		}
+
+		const blob = await response.blob();
+		const objectUrl = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.href = objectUrl;
+		link.download = fileName;
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+		URL.revokeObjectURL(objectUrl);
+	};
+
+	const handleDownload = async (item: FileItem) => {
+		try {
+			const fileKey = await getDownloadFileKey(item);
+			if (fileKey) {
+				await download(insight.insightId, fileKey);
+			}
+		} catch (e) {
+			toast.error("Failed to download item");
+			console.error(e);
+		}
+	};
+
+	const handleDownloadItems = async (items: FileItem[]) => {
+		const failedItems: string[] = [];
+		for (const item of items) {
+			try {
+				const fileKey = await getDownloadFileKey(item);
+				if (fileKey) {
+					await downloadFileKeyAsBlob(fileKey, item.name);
+				}
+			} catch (e) {
+				failedItems.push(item.name);
+				console.error(e);
+			}
+		}
+
+		if (failedItems.length > 0) {
+			toast.error(`Failed to download: ${failedItems.join(", ")}`);
+		}
+	};
+
+	const triggerRename = (item: FileItem) => {
+		window.dispatchEvent(
+			new CustomEvent("file-explorer:rename", {
+				detail: { path: item.path },
+			}),
+		);
+	};
 
 	return (
 		// biome-ignore lint/a11y/noStaticElementInteractions: TODO: Fix accessibility issues
@@ -315,6 +636,19 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 				// turn off dragging
 				setIsDragging(false);
+			}}
+			onClick={() => {
+				clearContextState();
+				clearSelectedItems();
+			}}
+			onKeyDown={handleExplorerKeyDown}
+			onContextMenu={(e) => {
+				if (!canMutateFiles) return;
+				handleContextMenuOpen(
+					e,
+					null,
+					path.endsWith("/") ? path : `${path}/`,
+				);
 			}}
 		>
 			<div className="flex w-full flex-col gap-1.5 px-2">
@@ -408,9 +742,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									<Button
 										variant="ghost"
 										size="icon-sm"
-										onClick={() => {
-											setIsNewFile(true);
-										}}
+										onClick={() =>
+											openNewFileOverlay(
+												path.endsWith("/")
+													? path
+													: `${path}/`,
+											)
+										}
 									>
 										<FilePlus2Icon className="size-3" />
 									</Button>
@@ -444,7 +782,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 								aria-label="Search only current directory"
 								title={`Search only in ${path}`}
 							>
-								Only "{crumbs[0]}"
+								Only &quot;{crumbs[0]}&quot;
 							</ToggleGroupItem>
 						</ToggleGroup>
 					</div>
@@ -455,9 +793,27 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			<div className="relative flex min-h-0 flex-1 flex-col">
 				<div className="flex select-none items-center border-b px-2 pb-0.5 text-[11px] text-muted-foreground">
-					<span className="min-w-[80px] flex-1 overflow-hidden truncate font-medium">
-						Name
-					</span>
+					<div className="flex min-w-[80px] flex-1 items-center gap-1 overflow-hidden">
+						<span className="overflow-hidden truncate font-medium">
+							Name
+						</span>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									aria-label="Bulk selection shortcuts"
+									className="shrink-0"
+								>
+									<CircleHelpIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								Ctrl/Cmd+click selects multiple items.
+								Ctrl/Cmd+A selects all visible items.
+							</TooltipContent>
+						</Tooltip>
+					</div>
 					<div
 						role="slider"
 						aria-orientation="vertical"
@@ -480,14 +836,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					</div>
 					<span
 						style={{ width: dateColWidth }}
-						className="overflow-hidden truncate px-2 font-medium"
+						className="overflow-hidden truncate px-2 text-right font-medium"
 					>
 						Date Modified
 					</span>
-					<div className="flex items-center self-stretch px-1">
-						<div className="h-full w-px bg-border" />
-					</div>
-					<span style={{ width: 36 }} />
 				</div>
 
 				<ScrollArea className="[&>div>div]:block! h-full min-h-0 w-full flex-1">
@@ -510,10 +862,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						<TreeView<FileItem>
 							className="w-full"
 							expanded={expandedPaths}
-							onExpandChange={(e) => {
-								setExpandedPaths(e);
+							onExpandChange={(e) => setExpandedPaths(e)}
+							onKeyDown={(e) => {
+								if (
+									(e.ctrlKey || e.metaKey) &&
+									e.key.toLowerCase() === "a"
+								) {
+									e.preventDefault();
+									handleSelectAllVisible();
+								}
 							}}
 							onItemSelect={(item) => {
+								clearSelectedItems();
 								if (item.type === "directory") {
 									setExpandedPaths((prev) => {
 										const pathPrefix = `${item.path}/`;
@@ -532,18 +892,43 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 								onItemSelect(item);
 							}}
 						>
-							{files.map((i) => {
-								return (
-									<ItemComponent
-										key={i.path}
-										mode={mode}
-										item={i}
-										refresh={() => getFiles.refresh()}
-										ItemComponent={ItemComponent}
-										dateColWidth={dateColWidth}
-									/>
-								);
-							})}
+							{files.map((i) => (
+								<ItemComponent
+									key={i.path}
+									mode={mode}
+									item={i}
+									refresh={() => getFiles.refresh()}
+									ItemComponent={ItemComponent}
+									dateColWidth={dateColWidth}
+									isBulkSelected={selectedItems.has(i.path)}
+									isContextActive={
+										contextTargetPath === i.path
+									}
+									isItemBulkSelected={(itemPath) =>
+										selectedItems.has(itemPath)
+									}
+									isItemContextActive={(itemPath) =>
+										contextTargetPath === itemPath
+									}
+									onItemRegister={handleItemRegister}
+									onBulkSelectionToggle={
+										handleBulkSelectionToggle
+									}
+									onContextMenuOpen={(
+										e,
+										item,
+										targetPath,
+										secondaryActions,
+									) =>
+										handleContextMenuOpen(
+											e,
+											item,
+											targetPath,
+											secondaryActions,
+										)
+									}
+								/>
+							))}
 						</TreeView>
 					)}
 					<ScrollBar orientation="horizontal" />
@@ -558,9 +943,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			{canMutateFiles && (
 				<NewFileOverlay
+					key={newFileOverlayKey}
 					mode={mode}
-					path={path}
+					path={newFilePath}
 					open={isNewFile}
+					initialAction={newFileAction}
 					onClose={(success) => {
 						if (success) {
 							getFiles.refresh();
@@ -568,6 +955,30 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 						setIsNewFile(false);
 					}}
+				/>
+			)}
+
+			{contextMenu && (
+				<FileExplorerContextMenu
+					state={contextMenu}
+					clipboard={clipboard}
+					selectedItems={Array.from(selectedItems.values())}
+					canMutateFiles={canMutateFiles}
+					onClose={clearContextState}
+					onCut={(item) =>
+						setClipboard({ items: [item], action: "cut" })
+					}
+					onCopyPath={handleCopyPath}
+					onCutItems={(items) =>
+						setClipboard({ items, action: "cut" })
+					}
+					onPaste={handlePaste}
+					onRename={triggerRename}
+					onDelete={handleDelete}
+					onDeleteItems={handleDeleteItems}
+					onDownload={handleDownload}
+					onDownloadItems={handleDownloadItems}
+					onNew={openNewFileOverlay}
 				/>
 			)}
 		</div>
