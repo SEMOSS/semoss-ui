@@ -9,13 +9,6 @@ configure({
 
 const NAME = import.meta.env.VITE_NAME || "";
 const THEME = import.meta.env.VITE_THEME || "{}";
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT;
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT;
-const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
-const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
-const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
-const ENABLE_PROMPT_OPTIMIZER = import.meta.env.VITE_ENABLE_PROMPT_OPTIMIZER;
-const ENABLE_DARK_MODE = import.meta.env.VITE_ENABLE_DARK_MODE;
 
 interface RootStoreInterface {
 	/**
@@ -97,13 +90,13 @@ export class RootStore {
 			gracefulErrors: [],
 			showPlatformLinks: true,
 			featureFlags: {
-				enableModelSelect: ENABLE_MODEL_SELECT === "true",
-				enableAgent: ENABLE_AGENT === "true",
-				enableSuggestions: ENABLE_SUGGESTIONS === "true",
-				enablePlan: ENABLE_PLAN === "true",
-				enableRewrite: ENABLE_REWRITE === "true",
-				enablePromptOptimizer: ENABLE_PROMPT_OPTIMIZER === "true",
-				enableDarkMode: ENABLE_DARK_MODE === "true",
+				enableModelSelect: true,
+				enableAgent: true,
+				enableSuggestions: false,
+				enablePlan: false,
+				enableRewrite: true,
+				enablePromptOptimizer: true,
+				enableDarkMode: true,
 			},
 		},
 	};
