@@ -28,6 +28,14 @@ import {
 	useTreeView,
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
+import {
+	canMoveItemToDirectory,
+	FILE_EXPLORER_DRAG_DATA_TYPE,
+	getItemTargetDirectory,
+	isPointerOutsideElement,
+	mapStorageEntriesToFileItems,
+	parseExplorerDragItems,
+} from "./file-explorer.utils";
 
 const ACTIONS_COL_WIDTH = 36;
 type FileExplorerSecondaryAction = {
@@ -111,71 +119,6 @@ const formatMacDate = (raw: string | undefined, width = 170): string | null => {
 	return `${d} at ${time}`;
 };
 
-interface StoragePathEntry {
-	Name?: string;
-	name?: string;
-	Path?: string;
-	path?: string;
-	IsDir?: boolean;
-	isDir?: boolean;
-	ModTime?: string;
-	lastModified?: string;
-	last_modified?: string;
-}
-
-const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
-	if (!Array.isArray(entries)) {
-		return [];
-	}
-
-	return entries.reduce<FileItem[]>((acc, entry) => {
-		if (typeof entry === "string") {
-			if (!entry) {
-				return acc;
-			}
-
-			const normalizedEntry = entry.replace(/\/+$/, "");
-			const name =
-				normalizedEntry.split("/").filter(Boolean).pop() ||
-				normalizedEntry;
-			const isDirectory = entry.endsWith("/");
-
-			acc.push({
-				name: name,
-				path: entry,
-				type: isDirectory ? "directory" : undefined,
-			});
-
-			return acc;
-		}
-
-		if (!entry || typeof entry !== "object") {
-			return acc;
-		}
-
-		const details = entry as StoragePathEntry;
-		const name = details.Name || details.name || "";
-		const path = details.Path || details.path || "";
-		if (!path) {
-			return acc;
-		}
-		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
-		const isDirectory = details.IsDir || details.isDir;
-
-		acc.push({
-			name: name || fallbackName,
-			path: path,
-			type: isDirectory ? "directory" : undefined,
-			lastModified:
-				details.ModTime ||
-				details.lastModified ||
-				details.last_modified,
-		});
-
-		return acc;
-	}, []);
-};
-
 interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	/** Mode of file editor */
 	mode: FileMode;
@@ -225,8 +168,29 @@ interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
 	isItemBulkSelected?: (path: string) => boolean;
 	/** Track visible rendered items so keyboard bulk select can include expanded rows */
 	onItemRegister?: (item: FileItem, isVisible: boolean) => void;
+	/** Register expanded directory refresh callbacks for targeted parent updates */
+	onDirectoryRefreshRegister?: (
+		directoryPath: string,
+		refresh: () => void,
+		isRegistered: boolean,
+	) => void;
 	/** Toggle this item in the bulk selection */
 	onBulkSelectionToggle?: (item: FileItem) => void;
+	/** Resolve the items that should be moved when this row starts a drag */
+	getDragItems?: (item: FileItem) => FileItem[];
+	/** Move dragged items into a target directory */
+	onMoveItems?: (
+		items: FileItem[],
+		targetDirectory: string,
+	) => Promise<unknown>;
+	/** Items currently being dragged inside this explorer */
+	activeDragItems?: FileItem[];
+	/** The one folder row currently selected as the active drop target */
+	activeDropTargetPath?: string | null;
+	/** Notify the explorer when an internal drag starts, ends, or targets a row */
+	onExplorerDragStateChange?: (itemCount: number, items?: FileItem[]) => void;
+	/** Notify the explorer which folder row is the active drop target */
+	onExplorerDropTargetChange?: (path: string | null) => void;
 }
 
 export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
@@ -244,7 +208,20 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	isItemContextActive,
 	isItemBulkSelected,
 	onItemRegister,
+	onDirectoryRefreshRegister,
 	onBulkSelectionToggle,
+	getDragItems,
+	onMoveItems,
+	activeDragItems = [],
+	activeDropTargetPath = null,
+	onExplorerDragStateChange,
+	onExplorerDropTargetChange,
+	draggable,
+	onDragStart,
+	onDragOver,
+	onDragLeave,
+	onDrop,
+	onDragEnd,
 	...otherProps
 }) => {
 	const treeView = useTreeView<FileItem>();
@@ -253,6 +230,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const isExpanded = treeView.expanded.includes(item.path);
 
 	const [isRenaming, setIsRenaming] = useState(false);
+	const [isDraggingSource, setIsDraggingSource] = useState(false);
+	const [draggedItemCount, setDraggedItemCount] = useState(0);
 	const [renameValue, setRenameValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const canRename = mode.type !== "STORAGE";
@@ -351,6 +330,20 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		return getChildren.data as FileItem[];
 	}, [mode.type, getChildren.data]);
 
+	useEffect(() => {
+		if (!isDirectory) return;
+
+		onDirectoryRefreshRegister?.(item.path, getChildren.refresh, true);
+		return () => {
+			onDirectoryRefreshRegister?.(item.path, getChildren.refresh, false);
+		};
+	}, [
+		getChildren.refresh,
+		isDirectory,
+		item.path,
+		onDirectoryRefreshRegister,
+	]);
+
 	const macDate = formatMacDate(item.lastModified, dateColWidth);
 
 	const renderIcon = () => {
@@ -437,12 +430,132 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const effectiveIsBulkSelected = isItemBulkSelected
 		? isItemBulkSelected(item.path)
 		: isBulkSelected;
+	const isFileMoveEnabled = Boolean(getDragItems && onMoveItems);
+	const isActiveDropTarget = activeDropTargetPath === item.path;
+
+	const canDropDraggedItems = (draggedItems: FileItem[]) => {
+		if (!isDirectory || draggedItems.length === 0) return false;
+
+		const targetDirectory = getItemTargetDirectory(item);
+		return draggedItems.some((draggedItem) =>
+			canMoveItemToDirectory(draggedItem, targetDirectory),
+		);
+	};
+
+	const getCurrentDragItems = (dataTransfer: DataTransfer) =>
+		activeDragItems.length > 0
+			? activeDragItems
+			: parseExplorerDragItems(dataTransfer);
+
+	const setDragPreview = (
+		dataTransfer: DataTransfer,
+		dragItems: FileItem[],
+	) => {
+		const preview = document.createElement("div");
+		const count = dragItems.length;
+		preview.textContent =
+			count > 1 ? `Move ${count} items` : `Move ${dragItems[0]?.name}`;
+		preview.className =
+			"fixed -top-96 left-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
+		document.body.appendChild(preview);
+		dataTransfer.setDragImage(preview, 12, 12);
+		window.setTimeout(() => preview.remove(), 0);
+	};
 
 	return (
 		<TreeViewItem
 			id={item.path}
 			item={item}
 			loading={getChildren.status === "LOADING"}
+			draggable={isFileMoveEnabled ? true : draggable}
+			onDragStart={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragStart?.(e);
+					return;
+				}
+
+				e.stopPropagation();
+				const dragItems = getDragItems?.(item) ?? [item];
+				setIsDraggingSource(true);
+				setDraggedItemCount(dragItems.length);
+				onExplorerDragStateChange?.(dragItems.length, dragItems);
+				e.dataTransfer.effectAllowed = "move";
+				e.dataTransfer.setData(
+					FILE_EXPLORER_DRAG_DATA_TYPE,
+					JSON.stringify(dragItems),
+				);
+				e.dataTransfer.setData(
+					"text/plain",
+					dragItems.map((dragItem) => dragItem.path).join("\n"),
+				);
+				setDragPreview(e.dataTransfer, dragItems);
+			}}
+			onDragOver={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragOver?.(e);
+					return;
+				}
+
+				const draggedItems = getCurrentDragItems(e.dataTransfer);
+				if (!canDropDraggedItems(draggedItems)) return;
+
+				e.preventDefault();
+				e.stopPropagation();
+				e.dataTransfer.dropEffect = "move";
+				onExplorerDropTargetChange?.(item.path);
+				onExplorerDragStateChange?.(0, draggedItems);
+			}}
+			onDragLeave={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragLeave?.(e);
+					return;
+				}
+
+				e.stopPropagation();
+				if (
+					!isPointerOutsideElement(
+						e.currentTarget,
+						e.clientX,
+						e.clientY,
+					)
+				) {
+					return;
+				}
+				if (isActiveDropTarget) {
+					onExplorerDropTargetChange?.(null);
+				}
+				onExplorerDragStateChange?.(
+					activeDragItems.length,
+					activeDragItems,
+				);
+			}}
+			onDrop={(e) => {
+				if (!isFileMoveEnabled) {
+					onDrop?.(e);
+					return;
+				}
+
+				const draggedItems = getCurrentDragItems(e.dataTransfer);
+				if (!canDropDraggedItems(draggedItems)) return;
+
+				e.preventDefault();
+				e.stopPropagation();
+				onExplorerDropTargetChange?.(null);
+				onExplorerDragStateChange?.(0, []);
+				onMoveItems?.(draggedItems, getItemTargetDirectory(item));
+			}}
+			onDragEnd={(e) => {
+				if (!isFileMoveEnabled) {
+					onDragEnd?.(e);
+					return;
+				}
+
+				e.stopPropagation();
+				onExplorerDropTargetChange?.(null);
+				setIsDraggingSource(false);
+				setDraggedItemCount(0);
+				onExplorerDragStateChange?.(0, []);
+			}}
 			onClickCapture={(e) => {
 				if (!(e.ctrlKey || e.metaKey)) return;
 				if (!(e.target instanceof Element)) return;
@@ -456,13 +569,12 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				if (!onContextMenuOpen) return;
 				e.preventDefault();
 				e.stopPropagation();
-				const targetPath = isDirectory
-					? item.path.endsWith("/")
-						? item.path
-						: `${item.path}/`
-					: item.path.substring(0, item.path.lastIndexOf("/") + 1) ||
-						"/";
-				onContextMenuOpen(e, item, targetPath, visibleSecondaryActions);
+				onContextMenuOpen(
+					e,
+					item,
+					getItemTargetDirectory(item),
+					visibleSecondaryActions,
+				);
 			}}
 			label={
 				<div
@@ -473,6 +585,15 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							: "",
 						effectiveIsBulkSelected
 							? "bg-primary/10 text-accent-foreground ring-1 ring-primary/40 ring-inset"
+							: "",
+						isActiveDropTarget
+							? "bg-primary/15 ring-1 ring-primary/50 ring-inset"
+							: "",
+						isDraggingSource
+							? "opacity-60 ring-1 ring-primary/30 ring-inset"
+							: "",
+						isFileMoveEnabled
+							? "cursor-grab active:cursor-grabbing"
 							: "",
 					]
 						.filter(Boolean)
@@ -523,6 +644,19 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							</button>
 						)}
 						<div className="flex-1" />
+						{isDraggingSource && (
+							<span className="shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+								Moving{" "}
+								{draggedItemCount > 1
+									? `${draggedItemCount} items`
+									: "1 item"}
+							</span>
+						)}
+						{isActiveDropTarget && (
+							<span className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+								Move here
+							</span>
+						)}
 					</div>
 
 					{/* Column 2: Date */}
@@ -576,7 +710,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								key={child.path}
 								mode={mode}
 								item={child}
-								refresh={refresh}
+								refresh={getChildren.refresh}
 								actions={actions}
 								secondaryActions={secondaryActions}
 								dateColWidth={dateColWidth}
@@ -584,8 +718,21 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								isItemBulkSelected={isItemBulkSelected}
 								isItemContextActive={isItemContextActive}
 								onItemRegister={onItemRegister}
+								onDirectoryRefreshRegister={
+									onDirectoryRefreshRegister
+								}
 								onBulkSelectionToggle={onBulkSelectionToggle}
 								onContextMenuOpen={onContextMenuOpen}
+								getDragItems={getDragItems}
+								onMoveItems={onMoveItems}
+								activeDragItems={activeDragItems}
+								activeDropTargetPath={activeDropTargetPath}
+								onExplorerDragStateChange={
+									onExplorerDragStateChange
+								}
+								onExplorerDropTargetChange={
+									onExplorerDropTargetChange
+								}
 							/>
 						))}
 					{getChildren.status === "SUCCESS" &&

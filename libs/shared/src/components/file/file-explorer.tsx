@@ -40,74 +40,20 @@ import {
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { FileItem, FileMode } from "./file.types";
+import {
+	canMoveItemToDirectory,
+	ensureDirectoryPath,
+	getItemName,
+	getParentPath,
+	isExplorerDrag,
+	isPointerOutsideElement,
+	mapStorageEntriesToFileItems,
+	normalizeAssetPath,
+	parseExplorerDragItems,
+} from "./file-explorer.utils";
 import { FileExplorerContextMenu } from "./file-explorer-context-menu";
 import { FileExplorerItem } from "./file-explorer-item";
 import { type NewFileAction, NewFileOverlay } from "./new-file-overlay";
-
-interface StoragePathEntry {
-	Name?: string;
-	name?: string;
-	Path?: string;
-	path?: string;
-	IsDir?: boolean;
-	isDir?: boolean;
-	ModTime?: string;
-	lastModified?: string;
-	last_modified?: string;
-}
-
-const mapStorageEntriesToFileItems = (entries: unknown): FileItem[] => {
-	if (!Array.isArray(entries)) {
-		return [];
-	}
-
-	return entries.reduce<FileItem[]>((acc, entry) => {
-		if (typeof entry === "string") {
-			if (!entry) {
-				return acc;
-			}
-
-			const normalizedEntry = entry.replace(/\/+$/, "");
-			const name =
-				normalizedEntry.split("/").filter(Boolean).pop() ||
-				normalizedEntry;
-			const isDirectory = entry.endsWith("/");
-
-			acc.push({
-				name: name,
-				path: entry,
-				type: isDirectory ? "directory" : undefined,
-			});
-
-			return acc;
-		}
-
-		if (!entry || typeof entry !== "object") {
-			return acc;
-		}
-
-		const details = entry as StoragePathEntry;
-		const name = details.Name || details.name || "";
-		const path = details.Path || details.path || "";
-		if (!path) {
-			return acc;
-		}
-		const fallbackName = path.split("/").filter(Boolean).pop() || "/";
-		const isDirectory = details.IsDir || details.isDir;
-
-		acc.push({
-			name: name || fallbackName,
-			path: path,
-			type: isDirectory ? "directory" : undefined,
-			lastModified:
-				details.ModTime ||
-				details.lastModified ||
-				details.last_modified,
-		});
-
-		return acc;
-	}, []);
-};
 
 interface ClipboardState {
 	items: FileItem[];
@@ -169,7 +115,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const [searchType, setSearchType] = useState<string>("all");
 
 	const [isDragging, setIsDragging] = useState(false);
+	const [moveDropCount, setMoveDropCount] = useState(0);
 	const [isUploading, setIsUploading] = useState(false);
+	const [activeDragItems, setActiveDragItems] = useState<FileItem[]>([]);
+	const [activeDropTargetPath, setActiveDropTargetPath] = useState<
+		string | null
+	>(null);
 
 	const [dateColWidth, setDateColWidth] = useState(100);
 	const dividerDragRef = useRef<{
@@ -223,6 +174,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		() => new Map(),
 	);
 	const visibleItemsRef = useRef<Map<string, FileItem>>(new Map());
+	const directoryRefreshRef = useRef<Map<string, () => void>>(new Map());
 
 	const debouncedSearch = useDebouncedValue(search);
 	const canMutateFiles = mode.type !== "STORAGE";
@@ -341,6 +293,41 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		[],
 	);
 
+	const handleDirectoryRefreshRegister = useCallback(
+		(directoryPath: string, refresh: () => void, isRegistered: boolean) => {
+			const normalizedPath = normalizeAssetPath(directoryPath);
+			if (isRegistered) {
+				directoryRefreshRef.current.set(normalizedPath, refresh);
+			} else {
+				directoryRefreshRef.current.delete(normalizedPath);
+			}
+		},
+		[],
+	);
+
+	const refreshDirectories = (directoryPaths: string[]) => {
+		if (debouncedSearch) {
+			getFiles.refresh();
+			return;
+		}
+
+		const currentPath = normalizeAssetPath(path);
+		const pathsToRefresh = new Set(
+			directoryPaths.map((directoryPath) =>
+				normalizeAssetPath(directoryPath),
+			),
+		);
+
+		pathsToRefresh.forEach((directoryPath) => {
+			if (directoryPath === currentPath) {
+				getFiles.refresh();
+				return;
+			}
+
+			directoryRefreshRef.current.get(directoryPath)?.();
+		});
+	};
+
 	const handleBulkSelectionToggle = (item: FileItem) => {
 		setSelectedItems((prev) => {
 			const next = new Map(prev);
@@ -359,6 +346,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		clearContextState();
 	};
 
+	const handleExplorerDragStateChange = (
+		itemCount: number,
+		items: FileItem[] = activeDragItems,
+	) => {
+		setMoveDropCount(itemCount);
+		setActiveDragItems(items);
+	};
+
+	const getDragItems = (item: FileItem) => {
+		if (selectedItems.has(item.path)) {
+			return Array.from(selectedItems.values());
+		}
+
+		return [item];
+	};
+
 	const buildRenamePixel = (oldPath: string, newPath: string): string => {
 		if (mode.type === "APP") {
 			return `RenameAppAsset(project=["${mode.app}"], filePath=["${oldPath}"], newValue=["${newPath}"]);`;
@@ -371,9 +374,6 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 		return "";
 	};
-
-	const normalizeAssetPath = (assetPath: string) =>
-		assetPath.replace(/\/+$/, "") || "/";
 
 	const buildDeletePixel = (itemPath: string): string => {
 		if (mode.type === "APP") {
@@ -413,12 +413,44 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		targetPath: string,
 		initialAction: NewFileAction = "upload",
 	) => {
-		setNewFilePath(
-			targetPath.endsWith("/") ? targetPath : `${targetPath}/`,
-		);
+		setNewFilePath(ensureDirectoryPath(targetPath));
 		setNewFileAction(initialAction);
 		setNewFileOverlayKey((key) => key + 1);
 		setIsNewFile(true);
+	};
+
+	const handleMoveItems = async (
+		items: FileItem[],
+		targetDirectory: string,
+	): Promise<boolean> => {
+		try {
+			const normalizedTarget = ensureDirectoryPath(targetDirectory);
+			const affectedDirectories = new Set<string>([normalizedTarget]);
+
+			for (const item of items) {
+				const name = getItemName(item);
+				const newPath = `${normalizedTarget}${name}`;
+				affectedDirectories.add(getParentPath(item.path));
+
+				if (!canMoveItemToDirectory(item, normalizedTarget)) {
+					continue;
+				}
+
+				const pixel = buildRenamePixel(item.path, newPath);
+
+				if (pixel) {
+					await insight.actions.run(pixel);
+				}
+			}
+			clearSelectedItems();
+			clearContextState();
+			refreshDirectories(Array.from(affectedDirectories));
+			return true;
+		} catch (e) {
+			toast.error("Failed to move item");
+			console.error(e);
+			return false;
+		}
 	};
 
 	const handlePaste = async (targetDirectory: string) => {
@@ -431,60 +463,25 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			return;
 		}
 
-		try {
-			const normalizedTarget = targetDirectory.endsWith("/")
-				? targetDirectory
-				: `${targetDirectory}/`;
-			for (const item of clipboard.items) {
-				const name =
-					item.path.split("/").filter(Boolean).pop() || item.name;
-				const newPath = `${normalizedTarget}${name}`;
-				const normalizedItemPath = normalizeAssetPath(item.path);
-				const normalizedNewPath = normalizeAssetPath(newPath);
-				const normalizedTargetPath =
-					normalizeAssetPath(normalizedTarget);
-
-				if (normalizedItemPath === normalizedNewPath) {
-					continue;
-				}
-
-				if (
-					item.type === "directory" &&
-					(normalizedTargetPath === normalizedItemPath ||
-						normalizedTargetPath.startsWith(
-							`${normalizedItemPath}/`,
-						))
-				) {
-					continue;
-				}
-
-				const pixel = buildRenamePixel(item.path, newPath);
-
-				if (pixel) {
-					await insight.actions.run(pixel);
-				}
-			}
+		const success = await handleMoveItems(clipboard.items, targetDirectory);
+		if (success) {
 			setClipboard(null);
-			clearSelectedItems();
-			clearContextState();
-			getFiles.refresh();
-		} catch (e) {
-			toast.error("Failed to paste item");
-			console.error(e);
 		}
 	};
 
 	const handleDeleteItems = async (items: FileItem[]) => {
 		try {
+			const affectedDirectories = new Set<string>();
 			for (const item of items) {
 				const pixel = buildDeletePixel(item.path);
 				if (pixel) {
 					await insight.actions.run(pixel);
+					affectedDirectories.add(getParentPath(item.path));
 				}
 			}
 			clearSelectedItems();
 			clearContextState();
-			getFiles.refresh();
+			refreshDirectories(Array.from(affectedDirectories));
 		} catch (e) {
 			toast.error("Failed to delete item");
 			console.error(e);
@@ -601,12 +598,33 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		);
 	};
 
+	const moveDropLabel =
+		moveDropCount > 1 ? `${moveDropCount} items` : "1 item";
+
 	return (
 		// biome-ignore lint/a11y/noStaticElementInteractions: TODO: Fix accessibility issues
 		<div
 			className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1"
 			style={{ "--date-col-width": `${dateColWidth}px` } as CSSProperties}
 			onDrop={(e) => {
+				if (isExplorerDrag(e.dataTransfer)) {
+					e.preventDefault();
+					e.stopPropagation();
+					setIsDragging(false);
+					setMoveDropCount(0);
+					setActiveDragItems([]);
+					setActiveDropTargetPath(null);
+					if (canMutateFiles) {
+						handleMoveItems(
+							activeDragItems.length > 0
+								? activeDragItems
+								: parseExplorerDragItems(e.dataTransfer),
+							ensureDirectoryPath(path),
+						);
+					}
+					return;
+				}
+
 				e.preventDefault();
 				if (!canMutateFiles) {
 					return;
@@ -620,6 +638,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				setIsDragging(false);
 			}}
 			onDragOver={(e) => {
+				if (isExplorerDrag(e.dataTransfer)) {
+					e.preventDefault();
+					e.stopPropagation();
+					setActiveDropTargetPath(null);
+					const dragItems =
+						activeDragItems.length > 0
+							? activeDragItems
+							: parseExplorerDragItems(e.dataTransfer);
+					if (canMutateFiles) {
+						e.dataTransfer.dropEffect = "move";
+						setMoveDropCount(dragItems.length);
+					}
+					setIsDragging(false);
+					return;
+				}
+
 				e.preventDefault();
 				if (!canMutateFiles) {
 					return;
@@ -629,6 +663,26 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				setIsDragging(true);
 			}}
 			onDragLeave={(e) => {
+				if (
+					!isPointerOutsideElement(
+						e.currentTarget,
+						e.clientX,
+						e.clientY,
+					)
+				) {
+					return;
+				}
+
+				if (isExplorerDrag(e.dataTransfer)) {
+					e.preventDefault();
+					e.stopPropagation();
+					setIsDragging(false);
+					setMoveDropCount(0);
+					setActiveDragItems([]);
+					setActiveDropTargetPath(null);
+					return;
+				}
+
 				e.preventDefault();
 				if (!canMutateFiles) {
 					return;
@@ -644,11 +698,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			onKeyDown={handleExplorerKeyDown}
 			onContextMenu={(e) => {
 				if (!canMutateFiles) return;
-				handleContextMenuOpen(
-					e,
-					null,
-					path.endsWith("/") ? path : `${path}/`,
-				);
+				handleContextMenuOpen(e, null, ensureDirectoryPath(path));
 			}}
 		>
 			<div className="flex w-full flex-col gap-1.5 px-2">
@@ -792,6 +842,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			<Separator className="my-1" />
 
 			<div className="relative flex min-h-0 flex-1 flex-col">
+				{moveDropCount > 0 && (
+					<div className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-foreground text-xs shadow-md">
+						Drop to move {moveDropLabel} into {path}
+					</div>
+				)}
 				<div className="flex select-none items-center border-b px-2 pb-0.5 text-[11px] text-muted-foreground">
 					<div className="flex min-w-[80px] flex-1 items-center gap-1 overflow-hidden">
 						<span className="overflow-hidden truncate font-medium">
@@ -911,6 +966,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 										contextTargetPath === itemPath
 									}
 									onItemRegister={handleItemRegister}
+									onDirectoryRefreshRegister={
+										handleDirectoryRefreshRegister
+									}
 									onBulkSelectionToggle={
 										handleBulkSelectionToggle
 									}
@@ -926,6 +984,28 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 											targetPath,
 											secondaryActions,
 										)
+									}
+									getDragItems={
+										canMutateFiles
+											? getDragItems
+											: undefined
+									}
+									onMoveItems={
+										canMutateFiles
+											? handleMoveItems
+											: undefined
+									}
+									activeDragItems={activeDragItems}
+									activeDropTargetPath={activeDropTargetPath}
+									onExplorerDragStateChange={
+										canMutateFiles
+											? handleExplorerDragStateChange
+											: undefined
+									}
+									onExplorerDropTargetChange={
+										canMutateFiles
+											? setActiveDropTargetPath
+											: undefined
 									}
 								/>
 							))}
@@ -950,7 +1030,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					initialAction={newFileAction}
 					onClose={(success) => {
 						if (success) {
-							getFiles.refresh();
+							refreshDirectories([newFilePath]);
 						}
 
 						setIsNewFile(false);
