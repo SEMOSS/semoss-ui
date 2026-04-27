@@ -36,6 +36,8 @@ export interface ThemeMap {
 		/** Name of the app */
 		name: string;
 
+		banner: string;
+
 		/** Description of the app */
 		description: string;
 
@@ -54,6 +56,11 @@ export interface ThemeMap {
 			landing: string;
 			tabIcon: string;
 			workspace: string;
+			loginDark: string;
+			landingDark: string;
+			workspaceDark: string;
+			error: string;
+			errorDark: string;
 		};
 
 		/**
@@ -281,6 +288,7 @@ export interface ThemeMap {
 			enableSuggestions?: boolean;
 			enablePlan?: boolean;
 			enableRewrite?: boolean;
+			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;
 		};
 	};

@@ -34,28 +34,6 @@
 		"addTask": "إضافة مهمة",
 		"confirmPlan": "تأكيد الخطة"
 	},
-	"tool": {
-		"failed": "فشل تنفيذ الأداة",
-		"cancelled": "تم إلغاء تنفيذ الأداة",
-		"completed": "مكتمل",
-		"ready": "جاهز",
-		"autoExecute": "هذه الأداة مضبوطة على التنفيذ التلقائي",
-		"paused": "متوقف مؤقتاً",
-		"queued": "في قائمة الانتظار للتنفيذ التلقائي",
-		"cancel": "إلغاء",
-		"expand": "توسيع",
-		"openInSidebar": "فتح في الشريط الجانبي",
-		"closeInSidebar": "إغلاق الشريط الجانبي",
-		"collapse": "طي",
-		"openInline": "فتح في السطر",
-		"groupLabelClosed_one": "{{toolName}} + {{count}} آخر",
-		"groupLabelClosed_other": "{{toolName}} + {{count}} أخرى",
-		"groupLabelOpen": "الأدوات المنفذة ({{count}})",
-		"groupSummaryCompleted": "اكتمل {{count}}",
-		"groupSummaryError": "{{count}} فشل",
-		"groupSummaryCancelled": "ألغي {{count}}",
-		"groupSummaryPaused": "توقف {{count}}"
-	},
 	"notifications": {
 		"feedbackSuccess": "شكراً على الملاحظات!",
 		"rewriteSuccess": "تمت إعادة كتابة الرسالة بنجاح",
