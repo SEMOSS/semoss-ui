@@ -4,6 +4,7 @@ import { AuditLogsTimeline } from "./AuditLogsTimeline";
 import { dateFormat } from "./common";
 import {
 	buildSearchPayload,
+	type FetchCategoryOptionsFn,
 	type SearchCategory,
 	type SearchPayload,
 	type SearchToken,
@@ -35,6 +36,7 @@ export {
 	FilterRow,
 	TokenizedSearchBar,
 	buildSearchPayload,
+	type FetchCategoryOptionsFn,
 	type SearchCategory,
 	type SearchPayload,
 	type SearchToken,

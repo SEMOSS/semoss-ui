@@ -1,4 +1,4 @@
-import { Search, Space, X } from "lucide-react";
+import { Loader2, Search, Space, X } from "lucide-react";
 import {
 	type KeyboardEvent,
 	useCallback,
@@ -119,6 +119,13 @@ export const buildSearchPayload = (
 	return result;
 };
 
+export type FetchCategoryOptionsFn = (
+	category: SearchCategory,
+	offset: number,
+	limit: number,
+	searchText?: string,
+) => Promise<string[]>;
+
 export interface TokenizedSearchBarProps {
 	tokens: SearchToken[];
 	freeText: string;
@@ -126,6 +133,8 @@ export interface TokenizedSearchBarProps {
 	onFreeTextChange: (text: string) => void;
 	onSearch?: (tokens: SearchToken[], freeText: string) => void;
 	placeholder?: string;
+	categoryOptions?: Partial<Record<SearchCategory, string[]>>;
+	onFetchCategoryOptions?: FetchCategoryOptionsFn;
 }
 
 export const TokenizedSearchBar = ({
@@ -135,11 +144,18 @@ export const TokenizedSearchBar = ({
 	onFreeTextChange,
 	onSearch,
 	placeholder = "Search method, requestMessage, engine… or pick a category",
+	categoryOptions = {},
+	onFetchCategoryOptions,
 }: TokenizedSearchBarProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [pendingCategory, setPendingCategory] =
 		useState<SearchCategory | null>(null);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [fetchedOptions, setFetchedOptions] = useState<string[]>([]);
+	const [optionsLoading, setOptionsLoading] = useState(false);
+	const [hasMoreOptions, setHasMoreOptions] = useState(true);
+	const optionsOffsetRef = useRef(0);
+	const CATEGORY_OPTIONS_LIMIT = 10;
 
 	const addToken = useCallback(
 		(category: SearchCategory, value: string) => {
@@ -201,15 +217,88 @@ export const TokenizedSearchBar = ({
 	const selectCategory = useCallback(
 		(cat: SearchCategory) => {
 			setPendingCategory(cat);
-			setDropdownOpen(false);
 			if (freeText.trim()) {
 				addToken(cat, freeText);
+				setDropdownOpen(false);
 			} else {
+				setDropdownOpen(true);
 				setTimeout(() => inputRef.current?.focus(), 0);
 			}
 		},
 		[freeText, addToken],
 	);
+
+	const loadCategoryOptions = useCallback(
+		async (
+			category: SearchCategory,
+			offset: number,
+			append: boolean,
+			searchText?: string,
+		) => {
+			if (!onFetchCategoryOptions) return;
+			setOptionsLoading(true);
+			try {
+				const results = await onFetchCategoryOptions(
+					category,
+					offset,
+					CATEGORY_OPTIONS_LIMIT,
+					searchText,
+				);
+				if (append) {
+					setFetchedOptions((prev) => [...prev, ...results]);
+				} else {
+					setFetchedOptions(results);
+				}
+				setHasMoreOptions(results.length >= CATEGORY_OPTIONS_LIMIT);
+				optionsOffsetRef.current = offset + results.length;
+			} catch {
+				setHasMoreOptions(false);
+			} finally {
+				setOptionsLoading(false);
+			}
+		},
+		[onFetchCategoryOptions],
+	);
+
+	useEffect(() => {
+		if (!pendingCategory || !onFetchCategoryOptions) {
+			setFetchedOptions([]);
+			return;
+		}
+
+		if ((categoryOptions[pendingCategory]?.length ?? 0) > 0) {
+			return;
+		}
+
+		const timer = setTimeout(() => {
+			optionsOffsetRef.current = 0;
+			setFetchedOptions([]);
+			setHasMoreOptions(true);
+			loadCategoryOptions(pendingCategory, 0, false, freeText);
+		}, 300);
+
+		return () => clearTimeout(timer);
+	}, [
+		pendingCategory,
+		freeText,
+		onFetchCategoryOptions,
+		loadCategoryOptions,
+		categoryOptions,
+	]);
+
+	const staticOpts = pendingCategory
+		? categoryOptions[pendingCategory]
+		: undefined;
+
+	const filteredOptions = pendingCategory
+		? staticOpts && staticOpts.length > 0
+			? staticOpts.filter((opt) =>
+					opt.toLowerCase().includes(freeText.toLowerCase()),
+				)
+			: onFetchCategoryOptions
+				? fetchedOptions
+				: []
+		: [];
 
 	const handleKeyDown = useCallback(
 		(e: KeyboardEvent<HTMLInputElement>) => {
@@ -349,39 +438,118 @@ export const TokenizedSearchBar = ({
 							className="w-56 p-1"
 							onOpenAutoFocus={(e) => e.preventDefault()}
 						>
-							<div className="px-2 py-1.5">
-								<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-									Filter by category
-								</span>
-							</div>
-							{CATEGORIES?.map((cat) => {
-								const meta = CATEGORY_META[cat];
-								return (
-									<button
-										type="button"
-										key={cat}
-										onClick={() => selectCategory(cat)}
-										className="flex w-full cursor-pointer items-center gap-2 rounded-sm border-none bg-transparent px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+							{pendingCategory ? (
+								<>
+									<div className="px-2 py-1.5">
+										<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+											{
+												CATEGORY_META[pendingCategory]
+													.label
+											}{" "}
+											options
+										</span>
+									</div>
+									<div
+										className="max-h-48 overflow-y-auto [scrollbar-width:thin]"
+										onScroll={(e) => {
+											if (
+												!pendingCategory ||
+												optionsLoading ||
+												!hasMoreOptions ||
+												!onFetchCategoryOptions
+											)
+												return;
+											const el = e.currentTarget;
+											if (
+												el.scrollTop +
+													el.clientHeight >=
+												el.scrollHeight - 10
+											) {
+												loadCategoryOptions(
+													pendingCategory,
+													optionsOffsetRef.current,
+													true,
+													freeText,
+												);
+											}
+										}}
 									>
-										<span
-											className={`flex h-5 w-5 items-center justify-center rounded font-bold text-[10px] ${meta.bgColor} ${meta.color}`}
-										>
-											{meta.label[0]}
+										{filteredOptions.length > 0
+											? filteredOptions.map((opt) => (
+													<button
+														type="button"
+														key={opt}
+														onClick={() => {
+															addToken(
+																pendingCategory,
+																opt,
+															);
+															setDropdownOpen(
+																false,
+															);
+														}}
+														className="flex w-full cursor-pointer items-center gap-2 rounded-sm border-none bg-transparent px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent hover:text-accent-foreground"
+														title={opt}
+													>
+														<span className="w-52 truncate">
+															{opt}
+														</span>
+													</button>
+												))
+											: !optionsLoading && (
+													<div className="px-2 py-3 text-center text-muted-foreground text-xs">
+														No records found
+													</div>
+												)}
+										{optionsLoading && (
+											<div className="flex items-center justify-center py-2">
+												<Loader2
+													size={12}
+													className="animate-spin text-muted-foreground"
+												/>
+											</div>
+										)}
+									</div>
+								</>
+							) : (
+								<>
+									<div className="px-2 py-1.5">
+										<span className="font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+											Filter by category
 										</span>
-										<span className="text-xs">
-											{meta.label}
+									</div>
+									{CATEGORIES?.map((cat) => {
+										const meta = CATEGORY_META[cat];
+										return (
+											<button
+												type="button"
+												key={cat}
+												onClick={() =>
+													selectCategory(cat)
+												}
+												className="flex w-full cursor-pointer items-center gap-2 rounded-sm border-none bg-transparent px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+											>
+												<span
+													className={`flex h-5 w-5 items-center justify-center rounded font-bold text-[10px] ${meta.bgColor} ${meta.color}`}
+												>
+													{meta.label[0]}
+												</span>
+												<span className="text-xs">
+													{meta.label}
+												</span>
+												<span className="ml-auto font-mono text-[9px] text-muted-foreground">
+													{cat}
+												</span>
+											</button>
+										);
+									})}
+									<div className="mt-1 border-border border-t px-2 py-1.5">
+										<span className="text-[9px] text-muted-foreground">
+											Or type to search across all fields
 										</span>
-										<span className="ml-auto font-mono text-[9px] text-muted-foreground">
-											{cat}
-										</span>
-									</button>
-								);
-							})}
-							<div className="mt-1 border-border border-t px-2 py-1.5">
-								<span className="text-[9px] text-muted-foreground">
-									Or type to search across all fields
-								</span>
-							</div>
+									</div>
+								</>
+							)}
 						</PopoverContent>
 					</Popover>
 				</div>

@@ -7,7 +7,12 @@ import {
 	XCircle,
 } from "lucide-react";
 import { Button } from "@semoss/ui/next";
-import { type SearchToken, TokenizedSearchBar } from "./events-search-bar";
+import {
+	type FetchCategoryOptionsFn,
+	type SearchCategory,
+	type SearchToken,
+	TokenizedSearchBar,
+} from "./events-search-bar";
 import {
 	type AuditLog,
 	latencyBg,
@@ -37,6 +42,8 @@ export interface EventHistoryProps {
 	onFreeTextChange: (text: string) => void;
 	onSearch: (tokens: SearchToken[], freeText: string) => void;
 	onPageChange: (updater: number | ((prev: number) => number)) => void;
+	categoryOptions?: Partial<Record<SearchCategory, string[]>>;
+	onFetchCategoryOptions?: FetchCategoryOptionsFn;
 }
 
 const ROWS_PER_PAGE = 10;
@@ -59,6 +66,8 @@ export const EventHistory = ({
 	onFreeTextChange,
 	onSearch,
 	onPageChange,
+	categoryOptions,
+	onFetchCategoryOptions,
 }: EventHistoryProps) => {
 	return (
 		<div className="flex h-[600px] flex-col rounded-lg border border-border bg-card">
@@ -83,6 +92,8 @@ export const EventHistory = ({
 					onTokensChange={onTokensChange}
 					onFreeTextChange={onFreeTextChange}
 					onSearch={onSearch}
+					categoryOptions={categoryOptions}
+					onFetchCategoryOptions={onFetchCategoryOptions}
 				/>
 			</div>
 

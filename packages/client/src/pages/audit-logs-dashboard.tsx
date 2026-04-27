@@ -7,6 +7,7 @@ import {
 	EventHistory,
 	FilterRow,
 	getUserProjectPermission,
+	type SearchCategory,
 	type SearchToken,
 } from "@semoss/shared";
 import {
@@ -22,6 +23,16 @@ import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 
 const ROWS_PER_PAGE = 10;
+
+const ENGINE_TYPES = [
+	"APP",
+	"MODEL",
+	"DATABASE",
+	"VECTOR",
+	"FUNCTION",
+	"STORAGE",
+	"GUARDRAIL",
+];
 
 const DASHBOARD_DURATIONS = [
 	{ label: "Today", value: "today", dateRangeType: "DAY", dateRangeValue: 1 },
@@ -287,6 +298,111 @@ export const AuditLogsDashboard = ({
 		[monolithStore],
 	);
 
+	const fetchCategoryOptions = useCallback(
+		async (
+			category: SearchCategory,
+			offset: number,
+			limit: number,
+			searchText?: string,
+		): Promise<string[]> => {
+			try {
+				const { selectedUser: sUser } = filteredData.current;
+				const tokens = searchRef.current.tokens;
+
+				const params: Record<string, string> = {
+					filterUserId: sUser,
+					engineId: catalogId || "",
+					limit: String(limit),
+					offset: String(offset),
+				};
+
+				for (const token of tokens) {
+					if (
+						token.category === "methodName" &&
+						category !== "methodName"
+					) {
+						params.methodName = token.values.join(",");
+					} else if (
+						token.category === "requestMessage" &&
+						category !== "requestMessage"
+					) {
+						params.request = token.values.join(",");
+					} else if (
+						token.category === "engineType" &&
+						category !== "engineType"
+					) {
+						params.engineType = token.values
+							.map((v) => (v === "APP" ? "PROJECT" : v))
+							.join(",");
+					}
+				}
+
+				if (searchText) {
+					const categoryFieldMap: Record<string, string> = {
+						methodName: "methodName",
+						requestMessage: "request",
+						engineType: "engineType",
+						roomId: "roomId",
+					};
+					const field = categoryFieldMap[category];
+					if (field) {
+						params[field] = searchText;
+					}
+				}
+
+				const paramStr = Object.entries(params)
+					.map(([k, v]) => `"${k}":"${v}"`)
+					.join(",");
+
+				const pixel = `GetAuditLogReportFilterOptionList(paramValues=[{${paramStr}}]);`;
+				const response = await monolithStore.runQuery(pixel);
+				const data = response.pixelReturn[0].output;
+
+				if (Array.isArray(data)) {
+					const fieldMap: Record<string, string> = {
+						methodName: "methodName",
+						requestMessage: "request",
+						engineType: "engineType",
+						roomId: "roomId",
+					};
+					const field = fieldMap[category];
+					const values = data
+						.map((item: Record<string, string>) => {
+							const raw = field ? item[field] : item;
+							if (
+								typeof raw === "string" &&
+								category === "requestMessage"
+							) {
+								try {
+									const parsed = JSON.parse(raw);
+									if (
+										parsed &&
+										typeof parsed === "object" &&
+										"arg0" in parsed
+									) {
+										return String(parsed.arg0);
+									}
+								} catch {
+									// not JSON, return raw
+								}
+							}
+							return raw;
+						})
+						.filter(
+							(v: unknown): v is string =>
+								typeof v === "string" && v.length > 0,
+						);
+					return [...new Set(values)];
+				}
+				return [];
+			} catch (err) {
+				console.error("Error fetching category options:", err);
+				return [];
+			}
+		},
+		[catalogId, monolithStore],
+	);
+
 	const handleUserChange = (uid: string) => {
 		setSelectedUser(uid);
 		setChartPage(0);
@@ -497,6 +613,10 @@ export const AuditLogsDashboard = ({
 									fetchLogs(ROWS_PER_PAGE, 0);
 								}}
 								onPageChange={setPage}
+								categoryOptions={{
+									engineType: ENGINE_TYPES,
+								}}
+								onFetchCategoryOptions={fetchCategoryOptions}
 							/>
 						</div>
 					</div>
