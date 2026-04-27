@@ -2,7 +2,7 @@ import { configure, makeAutoObservable } from "mobx";
 import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
 import {
-	CFG_SCALE,
+	DETAIL_LEVEL,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	NUM_OF_IMAGES,
@@ -103,7 +103,7 @@ export class RootStore {
 				numOfImages: NUM_OF_IMAGES,
 				imageHeight: IMAGE_HEIGHT,
 				imageWidth: IMAGE_WIDTH,
-				cfgScale: CFG_SCALE,
+				detailLevel: DETAIL_LEVEL,
 				seed: SEED,
 			},
 			allowedFileTypes: [],

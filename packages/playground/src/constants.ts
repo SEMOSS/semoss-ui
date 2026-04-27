@@ -6,7 +6,7 @@ export const TEMPERATURE = 0.3;
 export const NUM_OF_IMAGES = 1;
 export const IMAGE_HEIGHT = 1024;
 export const IMAGE_WIDTH = 1024;
-export const CFG_SCALE = 8.0;
+export const DETAIL_LEVEL = 8.0;
 export const SEED = 42;
 
 export const IMAGE_SIZE_PRESETS: Record<

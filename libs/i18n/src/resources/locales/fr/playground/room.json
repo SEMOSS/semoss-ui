@@ -19,7 +19,7 @@
 		"imageSizeLabel": "Taille de l'image",
 		"imageOrientationLabel": "Orientation de l'image",
 		"imageSeedLabel": "Graine",
-		"cfgScaleLabel": "Niveau de détail",
+		"detailLevelLabel": "Niveau de détail",
 		"taskTypeLabel": "Type de tâche",
 		"imageSizeSmallLabel": "Petit",
 		"imageSizeMediumLabel": "Moyen",

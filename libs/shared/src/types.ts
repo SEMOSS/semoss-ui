@@ -136,7 +136,7 @@ export interface ThemeMap {
 			numOfImages?: number;
 			imageHeight?: number;
 			imageWidth?: number;
-			cfgScale?: number;
+			detailLevel?: number;
 			seed?: number;
 		};
 

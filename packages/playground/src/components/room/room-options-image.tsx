@@ -222,17 +222,17 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 					<Field>
 						<FieldLabel>
 							{" "}
-							{t("room:form.cfgScaleLabel")} (
-							{options.cfgScale?.toFixed(2)})
+							{t("room:form.detailLevelLabel")} (
+							{options.detailLevel?.toFixed(2)})
 						</FieldLabel>
 						<Slider
 							min={1.1}
 							max={9.9}
 							step={0.01}
-							value={[options.cfgScale]}
+							value={[options.detailLevel]}
 							onValueChange={(value) =>
 								onOptionsChange({
-									cfgScale: value[0],
+									detailLevel: value[0],
 								})
 							}
 						/>

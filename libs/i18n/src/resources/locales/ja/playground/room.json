@@ -19,7 +19,7 @@
 		"imageSizeLabel": "画像サイズ",
 		"imageOrientationLabel": "画像の向き",
 		"imageSeedLabel": "シード",
-		"cfgScaleLabel": "詳細レベル",
+		"detailLevelLabel": "詳細レベル",
 		"taskTypeLabel": "タスクタイプ",
 		"imageSizeSmallLabel": "小",
 		"imageSizeMediumLabel": "中",

@@ -19,7 +19,7 @@
 		"imageSizeLabel": "Image Size",
 		"imageOrientationLabel": "Image Orientation",
 		"imageSeedLabel": "Seed",
-		"cfgScaleLabel": "Detail Level",
+		"detailLevelLabel": "Detail Level",
 		"taskTypeLabel": "Task Type",
 		"imageSizeSmallLabel": "Small",
 		"imageSizeMediumLabel": "Medium",

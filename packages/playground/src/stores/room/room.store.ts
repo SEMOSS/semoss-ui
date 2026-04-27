@@ -8,7 +8,7 @@ import {
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import {
-	CFG_SCALE,
+	DETAIL_LEVEL,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	NUM_OF_IMAGES,
@@ -134,9 +134,9 @@ interface RoomStoreInterface {
 		imageWidth: number;
 
 		/*
-		 * CFG scale for image generation
+		 * Detail level for image generation
 		 */
-		cfgScale: number;
+		detailLevel: number;
 
 		/*
 		 * Seed for image generation
@@ -202,7 +202,7 @@ export class RoomStore {
 			numOfImages: NUM_OF_IMAGES,
 			imageHeight: IMAGE_HEIGHT,
 			imageWidth: IMAGE_WIDTH,
-			cfgScale: CFG_SCALE,
+			detailLevel: DETAIL_LEVEL,
 			seed: undefined,
 		},
 		sidebar: {
