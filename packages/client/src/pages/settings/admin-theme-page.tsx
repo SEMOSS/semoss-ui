@@ -217,6 +217,15 @@ export const AdminThemePage: React.FC = () => {
 						chatHistoryDate: false,
 					},
 					toolAutoExecutionLimit: undefined,
+					defaultRoomSettings: {
+						temperature: undefined,
+						tokenLength: undefined,
+						numOfImages: undefined,
+						imageHeight: undefined,
+						imageWidth: undefined,
+						detailLevel: undefined,
+						seed: undefined,
+					},
 					defaultTools: [],
 					gracefulErrors: [],
 					featureFlags: {
