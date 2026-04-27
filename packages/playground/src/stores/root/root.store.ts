@@ -15,6 +15,7 @@ const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS;
 const ENABLE_PLAN = import.meta.env.VITE_ENABLE_PLAN;
 const ENABLE_REWRITE = import.meta.env.VITE_ENABLE_REWRITE;
 const ENABLE_PROMPT_OPTIMIZER = import.meta.env.VITE_ENABLE_PROMPT_OPTIMIZER;
+const ENABLE_DARK_MODE = import.meta.env.VITE_ENABLE_DARK_MODE;
 
 interface RootStoreInterface {
 	/**
@@ -51,6 +52,7 @@ export class RootStore {
 		navbarActions: null,
 		theme: {
 			name: "",
+			banner: "",
 			description: "",
 			variables: {
 				backgroundColor: "",
@@ -64,6 +66,11 @@ export class RootStore {
 				landing: "",
 				tabIcon: "",
 				workspace: "",
+				loginDark: "",
+				landingDark: "",
+				workspaceDark: "",
+				error: "",
+				errorDark: "",
 			},
 			overrides: {
 				"main-layout": {},
@@ -96,6 +103,7 @@ export class RootStore {
 				enablePlan: ENABLE_PLAN === "true",
 				enableRewrite: ENABLE_REWRITE === "true",
 				enablePromptOptimizer: ENABLE_PROMPT_OPTIMIZER === "true",
+				enableDarkMode: ENABLE_DARK_MODE === "true",
 			},
 		},
 	};
@@ -208,6 +216,7 @@ export class RootStore {
 		this._store.theme = {
 			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
+			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
 			variables: {
 				...this._store.theme.variables,
