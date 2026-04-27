@@ -14,6 +14,8 @@
         "test:agents": "playwright test --grep @agents",
         "login": "tsx scripts/login.ts",
         "logout": "rm -f .auth/user.json",
+        "record": "[ -f .auth/user.json ] || tsx scripts/login.ts && playwright codegen --load-storage=.auth/user.json --output=workflows/recorded-$(date +%s).spec.ts ${PLAYGROUND_BASE_URL:-http://localhost:9090/SemossWeb/packages/playground/dist/}",
+        "record:new": "[ -f .auth/user.json ] || tsx scripts/login.ts && playwright codegen --load-storage=.auth/user.json ${PLAYGROUND_BASE_URL:-http://localhost:9090/SemossWeb/packages/playground/dist/}",
         "report": "playwright show-report",
         "install-browsers": "playwright install chromium"
     },

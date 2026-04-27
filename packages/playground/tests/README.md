@@ -117,6 +117,44 @@ Env var overrides:
   for elements, and `page.waitForFunction` when you need a DOM predicate.
   Avoid `page.waitForTimeout` — it's flaky and slow.
 
+## Recording a workflow
+
+Playwright's `codegen` opens a browser with an inspector pane that writes test
+code as you click. Use it to bootstrap a new spec, then clean it up before
+committing.
+
+```bash
+pnpm run record       # writes workflows/recorded-<timestamp>.spec.ts as you click
+pnpm run record:new   # opens codegen with no output file — copy snippets ad-hoc
+```
+
+Both commands load `.auth/user.json` so you start logged in. Run
+`pnpm run login` first if you don't have a saved session. Override the target
+URL with `PLAYGROUND_BASE_URL` (e.g. point at the Vite dev server on `:5174`).
+
+### Cleanup checklist
+
+Codegen produces a runnable but verbose spec. Treat it as a first draft.
+Before committing:
+
+- [ ] **Rename the file.** `recorded-1714247000.spec.ts` → `NN-short-name.spec.ts`
+      matching the existing numbering.
+- [ ] **Tighten selectors.** Replace `nth=0` and brittle `getByText(...)` with
+      role / test-id selectors. Move shared selectors onto the relevant page
+      object in `fixtures/` so churn is centralized.
+- [ ] **Swap hardcoded data for random helpers.** Literal `"my agent"` →
+      `randomAgentName()` so reruns don't collide.
+- [ ] **Add `expect()` assertions.** Codegen records actions, not assertions —
+      at minimum assert the end state (visible toast, URL change, list entry).
+- [ ] **Wrap in `test.describe(...)` and tag the title.** Add `@smoke` /
+      `@rooms` / `@agents` so the tag-filtered scripts pick it up.
+- [ ] **Add cleanup.** If the recording created persistent state (agent, room),
+      delete it in the same test or an `afterEach`. See *Conventions* above.
+- [ ] **Switch the import.** `from "@playwright/test"` → `from "../fixtures"` so
+      the spec uses the shared fixtures.
+- [ ] **Run it.** `pnpm test workflows/your-spec.spec.ts` headless and headed
+      at least once before pushing.
+
 ## Adding a new workflow
 
 1. If you need new interactions, add them to a page object in `fixtures/`.
