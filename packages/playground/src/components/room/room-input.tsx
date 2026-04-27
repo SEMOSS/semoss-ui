@@ -797,7 +797,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
 						<div
-							className="flex items-center justify-between gap-2 bg-background bg-card p-2"
+							className="flex items-center justify-between gap-2 bg-card p-2"
 							data-tour="tour-input-menu"
 							role="none"
 							onClick={(e) => {
