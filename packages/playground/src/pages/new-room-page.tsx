@@ -25,8 +25,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
+import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
 	RoomInput,
 	RoomInputMenuMCP,
@@ -59,6 +61,16 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 export const NewRoomPage = observer(() => {
 	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
 	const { root } = useRoot();
+	const { theme: colorMode } = useTheme();
+
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+	const landingSrc = isDark
+		? root.theme.images.landingDark || landingDarkImage
+		: root.theme.images.landing || landingImage;
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
@@ -136,7 +148,7 @@ export const NewRoomPage = observer(() => {
 
 	const getPrompts = usePixel<Prompt[]>(
 		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
-			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
+			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
 			: "",
 		{
 			data: [],
@@ -428,7 +440,7 @@ export const NewRoomPage = observer(() => {
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={root.theme.images.landing || landingImage}
+						src={landingSrc}
 						alt="Background"
 						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
@@ -699,7 +711,7 @@ export const NewRoomPage = observer(() => {
 							defaultSize={25}
 						>
 							<div
-								className={`relative h-full w-full overflow-hidden rounded-lg border border-input shadow-xs dark:bg-input/30`}
+								className={`relative h-full w-full overflow-hidden rounded-lg border border-input bg-background shadow-xs`}
 							>
 								<Tooltip>
 									<TooltipTrigger asChild>

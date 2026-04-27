@@ -680,7 +680,7 @@ export class RoomStore {
 					...(isImageGenEnabled ? ["image-generation"] : []),
 				];
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : ${JSON.stringify(tags)} }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
+					`META | MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : ${JSON.stringify(tags)} }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
 				);
 
 				runInAction(() => {

@@ -89,7 +89,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		};
 
 		return (
-			<form className="p-4">
+			<form className="p-4 text-foreground">
 				<FieldGroup>
 					<FieldSet>
 						<FieldLegend className="flex w-full flex-1 items-center justify-between gap-2">
@@ -194,7 +194,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											return (
 												<div
 													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
@@ -249,7 +249,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									) : (
 										<button
 											type="button"
-											className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
 											onClick={() =>
 												setMCPOverlay({
 													type: "KNOWLEDGE",
@@ -313,7 +313,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											return (
 												<div
 													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
@@ -367,7 +367,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									) : (
 										<button
 											type="button"
-											className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
 											onClick={() =>
 												setMCPOverlay({
 													type: "TOOLBOX",
