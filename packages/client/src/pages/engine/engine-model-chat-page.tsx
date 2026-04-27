@@ -110,23 +110,7 @@ export const EngineModelChatPage = () => {
 					output.response ||
 					output ||
 					"An error occurred while processing your request";
-				if (
-					errorMessage.toLowerCase().includes("token limit") ||
-					errorMessage.toLowerCase().includes("context length")
-				) {
-					throw new Error(
-						"Prompt is larger than the token limit, please shorten/break it into multiple prompts",
-					);
-				} else if (
-					errorMessage.toLowerCase().includes("permission") ||
-					errorMessage.toLowerCase().includes("access")
-				) {
-					throw new Error(
-						"You do not have permission to use this model",
-					);
-				} else {
-					throw new Error(errorMessage);
-				}
+				throw new Error(errorMessage);
 			}
 			const assistantMessage: Message = {
 				id: output.messageId,
