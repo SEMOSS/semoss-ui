@@ -17,6 +17,9 @@ interface GlobalNavItemProps {
 
 	/** Whether to embed the item */
 	embed: boolean;
+
+	/** Tooltip text from theme configuration */
+	tooltip?: string;
 }
 
 // Maps the well-known English item names that ship in default themes to
@@ -40,11 +43,14 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	path,
 	url,
 	embed,
+	tooltip,
 }) => {
 	const { pathname } = useLocation();
 	const { t } = useTranslation("sidebar");
+
+	// Priority: 1) tooltip prop from theme, 2) i18n translation, 3) fallback to name
 	const tooltipKey = KNOWN_TOOLTIP_KEYS[name];
-	const tooltip = tooltipKey ? t(tooltipKey) : name;
+	const tooltipText = tooltip || (tooltipKey ? t(tooltipKey) : name);
 
 	if (embed) {
 		return (
@@ -57,7 +63,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 							pathname,
 						)
 					}
-					tooltip={{ children: tooltip, hidden: false }}
+					tooltip={{ children: tooltipText, hidden: false }}
 				>
 					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
@@ -82,7 +88,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
-					tooltip={{ children: tooltip, hidden: false }}
+					tooltip={{ children: tooltipText, hidden: false }}
 				>
 					<Link to={internalPath} aria-label={name}>
 						{icon ? (
@@ -103,7 +109,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 		<SidebarMenuItem data-tour={`nav-${path}`}>
 			<SidebarMenuButton
 				asChild
-				tooltip={{ children: tooltip, hidden: false }}
+				tooltip={{ children: tooltipText, hidden: false }}
 			>
 				<a
 					href={url}

@@ -108,6 +108,7 @@ export interface ThemeMap {
 				path: string;
 				url: string;
 				embed: boolean;
+				tooltip?: string;
 			}[];
 			footerItems: {
 				name: string;
@@ -115,6 +116,7 @@ export interface ThemeMap {
 				path: string;
 				url: string;
 				embed: boolean;
+				tooltip?: string;
 			}[];
 		};
 

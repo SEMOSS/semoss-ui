@@ -482,6 +482,7 @@ export const GlobalNav = observer(() => {
 										path={item.path}
 										url={item.url}
 										embed={item.embed}
+										tooltip={item.tooltip}
 									/>
 								),
 							)}
@@ -844,6 +845,7 @@ export const GlobalNav = observer(() => {
 													path={item.path}
 													url={item.url}
 													embed={item.embed}
+													tooltip={item.tooltip} // Just pass it directly!
 												/>
 											),
 										)}
