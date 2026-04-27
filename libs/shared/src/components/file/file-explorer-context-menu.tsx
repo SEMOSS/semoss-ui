@@ -14,6 +14,7 @@ import {
 import type React from "react";
 import { useEffect, useRef } from "react";
 import type { FileItem } from "./file.types";
+import { getFileExplorerTestIdSegment } from "./file-explorer.utils";
 import type { NewFileAction } from "./new-file-overlay";
 
 interface ClipboardState {
@@ -344,6 +345,7 @@ export const FileExplorerContextMenu: React.FC<
 
 	return (
 		<div
+			data-testid="file-explorer-context-menu"
 			ref={menuRef}
 			role="menu"
 			aria-label="File actions"
@@ -361,6 +363,7 @@ export const FileExplorerContextMenu: React.FC<
 						<hr className="my-1 h-px border-0 bg-border" />
 					)}
 					<button
+						data-testid={`file-explorer-context-menu-${getFileExplorerTestIdSegment(entry.key)}-button`}
 						type="button"
 						role="menuitem"
 						disabled={entry.disabled}

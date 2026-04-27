@@ -31,6 +31,7 @@ import type { FileItem, FileMode } from "./file.types";
 import {
 	canMoveItemToDirectory,
 	FILE_EXPLORER_DRAG_DATA_TYPE,
+	getFileExplorerTestIdSegment,
 	getItemTargetDirectory,
 	isPointerOutsideElement,
 	mapStorageEntriesToFileItems,
@@ -228,6 +229,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const insight = useInsight();
 	const isDirectory = item.type === "directory";
 	const isExpanded = treeView.expanded.includes(item.path);
+	const itemTestId = `file-explorer-item-${getFileExplorerTestIdSegment(item.path)}`;
 
 	const [isRenaming, setIsRenaming] = useState(false);
 	const [isDraggingSource, setIsDraggingSource] = useState(false);
@@ -464,6 +466,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 
 	return (
 		<TreeViewItem
+			data-testid={itemTestId}
 			id={item.path}
 			item={item}
 			loading={getChildren.status === "LOADING"}
@@ -578,6 +581,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			}}
 			label={
 				<div
+					data-testid={`${itemTestId}-row`}
 					className={[
 						"group flex min-h-7 min-w-full flex-row items-center rounded-md px-2 transition-colors",
 						effectiveIsContextActive
@@ -605,6 +609,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						{renderIcon()}
 						{isRenaming ? (
 							<input
+								data-testid={`${itemTestId}-rename-input`}
 								ref={inputRef}
 								className="w-full rounded border border-primary bg-background px-1 text-sm outline-none"
 								value={renameValue}
@@ -631,6 +636,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							/>
 						) : (
 							<button
+								data-testid={`${itemTestId}-name-button`}
 								type="button"
 								className="min-w-0 truncate bg-transparent p-0 text-left text-sm"
 								onDoubleClick={(e) => {
@@ -645,7 +651,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						)}
 						<div className="flex-1" />
 						{isDraggingSource && (
-							<span className="shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+							<span
+								data-testid={`${itemTestId}-drag-source-indicator`}
+								className="shrink-0 rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
+							>
 								Moving{" "}
 								{draggedItemCount > 1
 									? `${draggedItemCount} items`
@@ -653,7 +662,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							</span>
 						)}
 						{isActiveDropTarget && (
-							<span className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary">
+							<span
+								data-testid={`${itemTestId}-drop-target-indicator`}
+								className="shrink-0 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] text-primary"
+							>
 								Move here
 							</span>
 						)}
@@ -661,6 +673,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 
 					{/* Column 2: Date */}
 					<div
+						data-testid={`${itemTestId}-date`}
 						className="shrink-0 overflow-hidden truncate px-2 text-right text-[11px] text-muted-foreground"
 						style={{ width: "var(--date-col-width, 170px)" }}
 					>
@@ -679,6 +692,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 									<Tooltip key={a.name}>
 										<TooltipTrigger asChild>
 											<Button
+												data-testid={`${itemTestId}-action-${getFileExplorerTestIdSegment(a.name)}`}
 												variant="ghost"
 												size="icon-sm"
 												className="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
@@ -708,6 +722,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						children.map((child) => (
 							<ItemComponent
 								key={child.path}
+								data-testid={`file-explorer-item-${getFileExplorerTestIdSegment(child.path)}`}
 								mode={mode}
 								item={child}
 								refresh={getChildren.refresh}
@@ -737,7 +752,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						))}
 					{getChildren.status === "SUCCESS" &&
 						children.length === 0 && (
-							<Muted className="flex items-center justify-center py-2 text-xs">
+							<Muted
+								data-testid={`${itemTestId}-empty-folder`}
+								className="flex items-center justify-center py-2 text-xs"
+							>
 								Empty folder
 							</Muted>
 						)}

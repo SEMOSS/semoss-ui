@@ -43,6 +43,7 @@ import type { FileItem, FileMode } from "./file.types";
 import {
 	canMoveItemToDirectory,
 	ensureDirectoryPath,
+	getFileExplorerTestIdSegment,
 	getItemName,
 	getParentPath,
 	isExplorerDrag,
@@ -620,6 +621,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	return (
 		// biome-ignore lint/a11y/noStaticElementInteractions: TODO: Fix accessibility issues
 		<div
+			data-testid="file-explorer"
 			className="relative flex h-full w-full flex-col gap-1.5 overflow-hidden bg-background py-1"
 			style={{ "--date-col-width": `${dateColWidth}px` } as CSSProperties}
 			onDrop={(e) => {
@@ -725,6 +727,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
+									data-testid="file-explorer-refresh-button"
 									variant="ghost"
 									size="icon-sm"
 									onClick={() => getFiles.refresh()}
@@ -736,6 +739,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						</Tooltip>
 						<DropdownMenu>
 							<DropdownMenuTrigger
+								data-testid="file-explorer-path-dropdown-trigger"
 								className="flex flex-1 items-center gap-1.5"
 								aria-label="Toggle menu"
 								disabled={crumbs.length <= 1}
@@ -758,6 +762,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 										<DropdownMenuItem
 											// biome-ignore lint/suspicious/noArrayIndexKey: Each item in a path may not be unique, only the last one
 											key={index}
+											data-testid={`file-explorer-path-dropdown-item-${index}`}
 											onSelect={() => {
 												// update the path
 												const newPath = crumbs
@@ -783,6 +788,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							className={`${showSearch ? "flex-1" : "w-32"} transition-all duration-300 ease-in-out`}
 						>
 							<InputGroupInput
+								data-testid="file-explorer-search-input"
 								type="search"
 								placeholder="Search"
 								value={search}
@@ -806,6 +812,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
+										data-testid="file-explorer-new-button"
 										variant="ghost"
 										size="icon-sm"
 										onClick={() =>
@@ -837,6 +844,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							onValueChange={setSearchType}
 						>
 							<ToggleGroupItem
+								data-testid="file-explorer-search-all-toggle"
 								value="all"
 								aria-label="Search all"
 								title="Search all"
@@ -844,6 +852,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 								All
 							</ToggleGroupItem>
 							<ToggleGroupItem
+								data-testid="file-explorer-search-current-toggle"
 								value="current"
 								aria-label="Search only current directory"
 								title={`Search only in ${path}`}
@@ -859,7 +868,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			<div className="relative flex min-h-0 flex-1 flex-col">
 				{moveDropCount > 0 && (
-					<div className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-foreground text-xs shadow-md">
+					<div
+						data-testid="file-explorer-root-drop-indicator"
+						className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-foreground text-xs shadow-md"
+					>
 						Drop to move {moveDropLabel} into {path}
 					</div>
 				)}
@@ -871,6 +883,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
+									data-testid="file-explorer-bulk-shortcuts-button"
 									variant="ghost"
 									size="icon-sm"
 									aria-label="Bulk selection shortcuts"
@@ -886,6 +899,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						</Tooltip>
 					</div>
 					<div
+						data-testid="file-explorer-date-column-resizer"
 						role="slider"
 						aria-orientation="vertical"
 						aria-label="Resize date column"
@@ -931,6 +945,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 					{getFiles.status === "SUCCESS" && !isUploading && (
 						<TreeView<FileItem>
+							data-testid="file-explorer-tree"
 							className="w-full"
 							expanded={expandedPaths}
 							onExpandChange={(e) => setExpandedPaths(e)}
@@ -966,6 +981,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							{files.map((i) => (
 								<ItemComponent
 									key={i.path}
+									data-testid={`file-explorer-item-${getFileExplorerTestIdSegment(i.path)}`}
 									mode={mode}
 									item={i}
 									refresh={() => getFiles.refresh()}
@@ -1032,7 +1048,10 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			</div>
 
 			{canMutateFiles && isDragging && (
-				<div className="absolute inset-0 flex items-center justify-center bg-accent/50 p-4 text-accent-foreground">
+				<div
+					data-testid="file-explorer-upload-drop-zone"
+					className="absolute inset-0 flex items-center justify-center bg-accent/50 p-4 text-accent-foreground"
+				>
 					<Muted>Release to upload files to {path}</Muted>
 				</div>
 			)}

@@ -78,6 +78,13 @@ export const ensureDirectoryPath = (assetPath: string) =>
 export const getItemName = (item: FileItem) =>
 	item.path.split("/").filter(Boolean).pop() || item.name;
 
+export const getFileExplorerTestIdSegment = (value: string) =>
+	(value || "root")
+		.replace(/^\//, "root-")
+		.replace(/[^a-zA-Z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "")
+		.toLowerCase() || "root";
+
 export const getParentPath = (assetPath: string) => {
 	const normalizedPath = normalizeAssetPath(assetPath);
 	const slashIndex = normalizedPath.lastIndexOf("/");
