@@ -60,7 +60,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 	 */
 	const getPrompts = useIteratorPixel<Prompt[], Prompt>(
 		(limit, offset) =>
-			`ListPrompt(${debouncedSearch ? `filters=[Filter( (PROMPT__TITLE ?like "${debouncedSearch}") )], ` : ""}limit=[${limit}], offset=[${offset}]);`,
+			`META | ListPrompt(${debouncedSearch ? `filters=[Filter( (PROMPT__TITLE ?like "${debouncedSearch}") )], ` : ""}limit=[${limit}], offset=[${offset}])`,
 		(response) => {
 			if (response.length < 25) {
 				return -1;
