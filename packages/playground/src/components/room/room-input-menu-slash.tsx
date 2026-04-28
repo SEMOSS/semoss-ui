@@ -46,7 +46,7 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 	const [search, setSearch] = useState("");
 
 	const debouncedSearch = useDebouncedValue(search);
-	const enableKnowledgeMCP = root.theme.enableKnowledgeMCP !== false;
+	const enableKnowledgeMCP = root.theme.featureFlags?.enableKnowledgeMCP;
 
 	/**
 	 * Get all MCPs (both knowledge and tools) with lazy loading
