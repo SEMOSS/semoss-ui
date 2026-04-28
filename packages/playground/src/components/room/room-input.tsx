@@ -508,7 +508,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					>
 						{files.length > 0 && (
 							// Need pb-1 for scroll bar
-							<div className="p-4 pb-1">
+							<div className="bg-card p-4 pb-1">
 								<FilePreviewGrid
 									files={files}
 									onRemoveFile={removeFile}

@@ -121,7 +121,7 @@ export const FilePreviewGrid = ({
 	if (files.length === 0) return null;
 
 	return (
-		<ScrollArea type="always" className="bg-card">
+		<ScrollArea type="always">
 			{/* pb-3 is for scroll bar, it's up to the caller to make this look decent */}
 			<div className="flex w-max gap-2 pb-3">
 				{files.map((file, idx) => {
