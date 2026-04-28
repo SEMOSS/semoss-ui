@@ -12,13 +12,16 @@ export const RootLayout = ({ children }: PropsWithChildren) => {
 	const rootStore = useMemo(() => {
 		const store = new RootStore();
 
-		if (system.config.theme) {
+		if (system?.config?.theme) {
 			// parse the theme
 			let theme: Partial<ThemeMap["playground"]> = {};
+
+			const rawTheme = system.config.theme.THEME_MAP || null || "{}";
 			try {
-				theme =
-					JSON.parse(String(system?.config?.theme?.THEME_MAP) || "{}")
-						?.playground ?? {};
+				if (rawTheme) {
+					const parsedTheme = JSON.parse(String(rawTheme));
+					theme = parsedTheme?.playground || {};
+				}
 			} catch (_e) {}
 
 			store.initialize(theme);
