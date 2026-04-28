@@ -210,7 +210,7 @@ export class RootStore {
 	 * Update the theme
 	 * @param theme Theme
 	 */
-	private updateTheme = (theme: Partial<ThemeMap["playground"]>) => {
+	private updateTheme = (theme: Partial<ThemeMap["playground"]> = {}) => {
 		// Resolve featureFlags before building the merged theme. Several flags
 		// were historically stored as top-level keys on the theme object; new
 		// themes should put them inside featureFlags instead. Top-level values
@@ -219,7 +219,7 @@ export class RootStore {
 		//
 		// The cast to `legacy` suppresses @deprecated hints: reading these fields
 		// here is intentional — it's the one place responsible for the migration.
-		const legacy = theme as Record<string, unknown>;
+		const legacy = (theme ?? {}) as Record<string, unknown>;
 		const resolvedFeatureFlags = {
 			...this._store.theme.featureFlags,
 			// Migrate top-level booleans for old stored themes
