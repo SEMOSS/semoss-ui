@@ -160,3 +160,93 @@ export const isPointerOutsideElement = (
 		clientY >= rect.bottom
 	);
 };
+
+const truncateErrorDetail = (message: string) => {
+	const normalizedMessage = message.trim();
+	if (normalizedMessage.length <= 300) {
+		return normalizedMessage;
+	}
+
+	return `${normalizedMessage.slice(0, 297)}...`;
+};
+
+const getStringDetail = (value: unknown): string | null => {
+	if (typeof value === "string" && value.trim()) {
+		return value;
+	}
+
+	if (value instanceof Error && value.message.trim()) {
+		return value.message;
+	}
+
+	return null;
+};
+
+export const getFileErrorDetail = (error: unknown): string | null => {
+	const stringDetail = getStringDetail(error);
+	if (stringDetail) {
+		return truncateErrorDetail(stringDetail);
+	}
+
+	if (!error || typeof error !== "object") {
+		return null;
+	}
+
+	const errorRecord = error as Record<string, unknown>;
+	const directDetail =
+		getStringDetail(errorRecord.message) ||
+		getStringDetail(errorRecord.error) ||
+		getStringDetail(errorRecord.output);
+	if (directDetail) {
+		return truncateErrorDetail(directDetail);
+	}
+
+	const errors = errorRecord.errors;
+	if (Array.isArray(errors)) {
+		const errorDetails = errors
+			.map((entry) => getStringDetail(entry))
+			.filter((entry): entry is string => Boolean(entry));
+		if (errorDetails.length > 0) {
+			return truncateErrorDetail(errorDetails.join(", "));
+		}
+	}
+
+	const pixelReturn = errorRecord.pixelReturn;
+	if (Array.isArray(pixelReturn)) {
+		const pixelErrorDetails = pixelReturn
+			.map((entry) => {
+				if (!entry || typeof entry !== "object") {
+					return null;
+				}
+
+				const pixelEntry = entry as Record<string, unknown>;
+				const operationType = pixelEntry.operationType;
+				const hasErrorOperation =
+					Array.isArray(operationType) &&
+					operationType.some((type) => type === "ERROR");
+
+				return hasErrorOperation
+					? getStringDetail(pixelEntry.output)
+					: null;
+			})
+			.filter((entry): entry is string => Boolean(entry));
+
+		if (pixelErrorDetails.length > 0) {
+			return truncateErrorDetail(pixelErrorDetails.join(", "));
+		}
+	}
+
+	return null;
+};
+
+export const getFileOperationErrorMessage = (
+	fallbackMessage: string,
+	error: unknown,
+) => {
+	const detail = getFileErrorDetail(error);
+	if (!detail) {
+		return fallbackMessage;
+	}
+
+	return `${fallbackMessage}: ${detail}`;
+};

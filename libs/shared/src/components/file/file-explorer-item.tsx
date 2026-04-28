@@ -32,6 +32,7 @@ import {
 	canMoveItemToDirectory,
 	FILE_EXPLORER_DRAG_DATA_TYPE,
 	getFileExplorerTestIdSegment,
+	getFileOperationErrorMessage,
 	getItemTargetDirectory,
 	isPointerOutsideElement,
 	mapStorageEntriesToFileItems,
@@ -293,9 +294,10 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				await insight.actions.run(pixel);
 				onAfterRename?.(item.path, newPath);
 				refresh();
+				toast.success("Successfully renamed");
 			}
 		} catch (e) {
-			toast.error("Failed to rename");
+			toast.error(getFileOperationErrorMessage("Failed to rename", e));
 			console.error(e);
 		} finally {
 			setIsRenaming(false);

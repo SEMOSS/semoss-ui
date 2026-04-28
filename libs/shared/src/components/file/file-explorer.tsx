@@ -44,6 +44,7 @@ import {
 	canMoveItemToDirectory,
 	ensureDirectoryPath,
 	getFileExplorerTestIdSegment,
+	getFileOperationErrorMessage,
 	getItemName,
 	getParentPath,
 	isExplorerDrag,
@@ -59,6 +60,12 @@ import { type NewFileAction, NewFileOverlay } from "./new-file-overlay";
 interface ClipboardState {
 	items: FileItem[];
 	action: "copy" | "cut";
+}
+
+export interface FileExplorerMovedItem {
+	item: FileItem;
+	oldPath: string;
+	newPath: string;
 }
 
 interface ContextMenuState {
@@ -97,6 +104,16 @@ interface FileExplorerProps {
 	 * Initial directory path to open to (defaults to "/")
 	 */
 	initialPath?: string;
+
+	/**
+	 * Callback after items are moved so consumers can update open path refs
+	 */
+	onItemsMoved?: (items: FileExplorerMovedItem[]) => void;
+
+	/**
+	 * Callback after items are deleted so consumers can close stale path refs
+	 */
+	onItemsDeleted?: (items: FileItem[]) => void;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -105,6 +122,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	onItemSelect = () => null,
 	ItemComponent = FileExplorerItem,
 	initialPath,
+	onItemsMoved,
+	onItemsDeleted,
 }) => {
 	const insight = useInsight();
 
@@ -249,8 +268,15 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			// refresh the files
 			getFiles.refresh();
+			toast.success(
+				files.length > 1
+					? "Successfully uploaded files"
+					: "Successfully uploaded file",
+			);
 		} catch (e) {
-			toast.error("Failed to upload file");
+			toast.error(
+				getFileOperationErrorMessage("Failed to upload file", e),
+			);
 			console.error(e);
 		} finally {
 			setIsUploading(false);
@@ -427,6 +453,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		try {
 			const normalizedTarget = ensureDirectoryPath(targetDirectory);
 			const affectedDirectories = new Set<string>([normalizedTarget]);
+			const movedItems: FileExplorerMovedItem[] = [];
 
 			for (const item of items) {
 				const name = getItemName(item);
@@ -441,14 +468,27 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 				if (pixel) {
 					await insight.actions.run(pixel);
+					movedItems.push({
+						item,
+						oldPath: item.path,
+						newPath,
+					});
 				}
 			}
 			clearSelectedItems();
 			clearContextState();
+			if (movedItems.length > 0) {
+				onItemsMoved?.(movedItems);
+				toast.success(
+					movedItems.length > 1
+						? "Successfully moved items"
+						: "Successfully moved item",
+				);
+			}
 			refreshDirectories(Array.from(affectedDirectories));
 			return true;
 		} catch (e) {
-			toast.error("Failed to move item");
+			toast.error(getFileOperationErrorMessage("Failed to move item", e));
 			console.error(e);
 			return false;
 		}
@@ -473,18 +513,60 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const handleDeleteItems = async (items: FileItem[]) => {
 		try {
 			const affectedDirectories = new Set<string>();
-			for (const item of items) {
-				const pixel = buildDeletePixel(item.path);
-				if (pixel) {
+			const deletedItems: FileItem[] = [];
+			const failedItems: string[] = [];
+			const dedupedItems = items.filter(
+				(item, index, allItems) =>
+					allItems.findIndex(
+						(candidate) => candidate.path === item.path,
+					) === index,
+			);
+			const sortedItems = dedupedItems.sort((a, b) => {
+				if (a.type === "directory" && b.type !== "directory") {
+					return 1;
+				}
+				if (a.type !== "directory" && b.type === "directory") {
+					return -1;
+				}
+				return b.path.length - a.path.length;
+			});
+
+			for (const item of sortedItems) {
+				try {
+					const pixel = buildDeletePixel(item.path);
+					if (!pixel) {
+						continue;
+					}
+
 					await insight.actions.run(pixel);
 					affectedDirectories.add(getParentPath(item.path));
+					deletedItems.push(item);
+				} catch (e) {
+					failedItems.push(
+						getFileOperationErrorMessage(item.name, e),
+					);
+					console.error(e);
 				}
 			}
 			clearSelectedItems();
 			clearContextState();
+			if (deletedItems.length > 0) {
+				onItemsDeleted?.(deletedItems);
+				toast.success(
+					deletedItems.length > 1
+						? "Successfully deleted items"
+						: "Successfully deleted item",
+				);
+			}
 			refreshDirectories(Array.from(affectedDirectories));
+
+			if (failedItems.length > 0) {
+				toast.error(`Failed to delete: ${failedItems.join(", ")}`);
+			}
 		} catch (e) {
-			toast.error("Failed to delete item");
+			toast.error(
+				getFileOperationErrorMessage("Failed to delete item", e),
+			);
 			console.error(e);
 		}
 	};
@@ -514,7 +596,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			await copyTextToClipboard(item.path);
 			toast.success("Copied path");
 		} catch (e) {
-			toast.error("Failed to copy path");
+			toast.error(getFileOperationErrorMessage("Failed to copy path", e));
 			console.error(e);
 		}
 	};
@@ -579,14 +661,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			} else {
 				await download(insight.insightId, fileKey);
 			}
+			toast.success("Successfully downloaded item");
 		} catch (e) {
-			toast.error("Failed to download item");
+			toast.error(
+				getFileOperationErrorMessage("Failed to download item", e),
+			);
 			console.error(e);
 		}
 	};
 
 	const handleDownloadItems = async (items: FileItem[]) => {
 		const failedItems: string[] = [];
+		let downloadedCount = 0;
 		for (const item of items) {
 			try {
 				const fileKey = await getDownloadFileKey(item);
@@ -595,11 +681,20 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						fileKey,
 						getDownloadFileName(item),
 					);
+					downloadedCount += 1;
 				}
 			} catch (e) {
-				failedItems.push(item.name);
+				failedItems.push(getFileOperationErrorMessage(item.name, e));
 				console.error(e);
 			}
+		}
+
+		if (downloadedCount > 0) {
+			toast.success(
+				downloadedCount > 1
+					? "Successfully downloaded items"
+					: "Successfully downloaded item",
+			);
 		}
 
 		if (failedItems.length > 0) {
