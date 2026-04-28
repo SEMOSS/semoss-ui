@@ -1,8 +1,14 @@
-import { RotateCcw } from "lucide-react";
+import {
+	type LucideIcon,
+	NotebookTabs,
+	PanelsTopLeft,
+	RotateCcw,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { getFileIconComponent } from "@semoss/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ClosePage } from "@/assets/img/ClosePage";
 import { FlexLayout } from "@/components/flex-layout";
@@ -13,6 +19,31 @@ import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
+
+const TAB_ICON_CLASS_NAME = "size-4";
+
+const WORKSPACE_TAB_ICON_BY_COMPONENT: Record<string, LucideIcon> = {
+	designer: PanelsTopLeft,
+	"notebook-viewer": NotebookTabs,
+};
+
+const renderTabIcon = (Icon: LucideIcon) => (
+	<Icon className={TAB_ICON_CLASS_NAME} />
+);
+
+const getFileTabIcon = (fileName: string) => {
+	const Icon = getFileIconComponent(fileName);
+	return renderTabIcon(Icon);
+};
+
+const getWorkspaceTabIcon = (component: string, name: string) => {
+	if (component === "app-file-editor") {
+		return getFileTabIcon(name);
+	}
+
+	const Icon = WORKSPACE_TAB_ICON_BY_COMPONENT[component];
+	return Icon ? renderTabIcon(Icon) : null;
+};
 
 type WorkspaceManagerProps = {
 	/** Actions to render in the navbar */
@@ -370,6 +401,16 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											tabNode,
 											renderValues,
 										) => {
+											const tabIcon =
+												getWorkspaceTabIcon(
+													tabNode.getComponent(),
+													tabNode.getName(),
+												);
+
+											if (tabIcon) {
+												renderValues.leading = tabIcon;
+											}
+
 											const isSettingsTab =
 												tabNode.getName() ===
 												"Settings";

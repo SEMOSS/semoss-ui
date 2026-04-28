@@ -1,19 +1,6 @@
 import {
-	FileArchiveIcon,
-	FileAudioIcon,
-	FileBadgeIcon,
-	FileChartPieIcon,
-	FileCodeIcon,
-	FileIcon,
-	FileJsonIcon,
-	FileSpreadsheetIcon,
-	FileTerminalIcon,
-	FileTextIcon,
-	FileTypeIcon,
-	FileVideoIcon,
 	FolderIcon,
 	FolderOpenIcon,
-	ImageIcon,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
@@ -32,6 +19,7 @@ import {
 	canMoveItemToDirectory,
 	FILE_EXPLORER_DRAG_DATA_TYPE,
 	getFileExplorerTestIdSegment,
+	getFileIconComponent,
 	getFileOperationErrorMessage,
 	getItemTargetDirectory,
 	isPointerOutsideElement,
@@ -358,73 +346,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				<FolderIcon className="size-4 shrink-0 text-muted-foreground" />
 			);
 		}
-		const ext = item.name.split(".").pop()?.toLowerCase() ?? "";
-		if (
-			["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "img"].includes(
-				ext,
-			)
-		)
-			return (
-				<ImageIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (ext === "pdf")
-			return (
-				<FileBadgeIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["xls", "xlsx", "csv"].includes(ext))
-			return (
-				<FileSpreadsheetIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (
-			[
-				"py",
-				"js",
-				"ts",
-				"tsx",
-				"jsx",
-				"java",
-				"cpp",
-				"c",
-				"go",
-				"rs",
-			].includes(ext)
-		)
-			return (
-				<FileCodeIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
-			return (
-				<FileTerminalIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (ext === "json")
-			return (
-				<FileJsonIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
-			return (
-				<FileArchiveIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["ppt", "pptx"].includes(ext))
-			return (
-				<FileChartPieIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
-			return (
-				<FileAudioIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
-			return (
-				<FileVideoIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["html", "xml", "md", "mdx", "rtf"].includes(ext))
-			return (
-				<FileTypeIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		if (["doc", "docx", "msg", "txt"].includes(ext))
-			return (
-				<FileTextIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		return <FileIcon className="size-4 shrink-0 text-muted-foreground" />;
+		const Icon = getFileIconComponent(item.name);
+		return <Icon className="size-4 shrink-0 text-muted-foreground" />;
 	};
 
 	// Resolve context-active state: propagated checker takes priority over direct prop

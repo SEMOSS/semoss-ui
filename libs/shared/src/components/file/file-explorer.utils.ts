@@ -1,7 +1,67 @@
+import {
+	FileArchiveIcon,
+	FileAudioIcon,
+	FileBadgeIcon,
+	FileChartPieIcon,
+	FileCodeIcon,
+	FileIcon,
+	FileJsonIcon,
+	FileSpreadsheetIcon,
+	FileTerminalIcon,
+	FileTextIcon,
+	FileTypeIcon,
+	FileVideoIcon,
+	ImageIcon,
+	type LucideIcon,
+} from "lucide-react";
 import type { FileItem } from "./file.types";
 
 export const FILE_EXPLORER_DRAG_DATA_TYPE =
 	"application/x-semoss-file-explorer-items";
+
+const FILE_ICON_RULES: {
+	extensions: readonly string[];
+	Icon: LucideIcon;
+}[] = [
+	{
+		extensions: ["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "img"],
+		Icon: ImageIcon,
+	},
+	{ extensions: ["pdf"], Icon: FileBadgeIcon },
+	{ extensions: ["xls", "xlsx", "csv"], Icon: FileSpreadsheetIcon },
+	{
+		extensions: [
+			"py",
+			"js",
+			"ts",
+			"tsx",
+			"jsx",
+			"java",
+			"cpp",
+			"c",
+			"go",
+			"rs",
+		],
+		Icon: FileCodeIcon,
+	},
+	{ extensions: ["sh", "bash", "zsh", "bat", "ps1"], Icon: FileTerminalIcon },
+	{ extensions: ["json"], Icon: FileJsonIcon },
+	{ extensions: ["zip", "tar", "gz", "rar", "7z"], Icon: FileArchiveIcon },
+	{ extensions: ["ppt", "pptx"], Icon: FileChartPieIcon },
+	{ extensions: ["mp3", "wav", "ogg", "flac", "aac"], Icon: FileAudioIcon },
+	{ extensions: ["mp4", "mov", "avi", "mkv", "webm"], Icon: FileVideoIcon },
+	{ extensions: ["html", "xml", "md", "mdx", "rtf"], Icon: FileTypeIcon },
+	{ extensions: ["doc", "docx", "msg", "txt"], Icon: FileTextIcon },
+];
+
+export const getFileIconComponent = (fileName: string): LucideIcon => {
+	const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
+
+	return (
+		FILE_ICON_RULES.find(({ extensions }) => extensions.includes(extension))
+			?.Icon ?? FileIcon
+	);
+};
 
 interface StoragePathEntry {
 	Name?: string;
