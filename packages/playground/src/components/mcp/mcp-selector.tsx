@@ -18,6 +18,7 @@ import {
 	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
+	useIsMobile,
 } from "@semoss/ui/next";
 import { engineProjectToMCP, MCPCard, NewKnowledgeOverlay } from "@/components";
 import { useRoot } from "@/hooks";
@@ -44,6 +45,7 @@ export const MCPSelector = observer(
 	({ type, values, disabled, onChange }: MCPSelectorProps) => {
 		const { t } = useTranslation("mcp");
 		const { root } = useRoot();
+		const isMobile = useIsMobile();
 		const [search, setSearch] = useState<string>("");
 		const [isKnowledgeOverlayOpen, setIsKnowledgeOverlayOpen] =
 			useState(false);
@@ -187,7 +189,35 @@ export const MCPSelector = observer(
 						</div>
 					)}
 				</ScrollArea>
-				{values.length > 0 && (
+				{values.length > 0 && isMobile && (
+					<div className="flex flex-wrap gap-2 p-4">
+						{values.map((t) => (
+							<Badge
+								key={t.id}
+								variant="secondary"
+								className="text-sm"
+								title={t.name}
+							>
+								<div className="max-w-32 truncate">
+									{t.name}
+								</div>
+								<Button
+									className="ml-1"
+									type="button"
+									variant="ghost"
+									size="icon-sm"
+									disabled={disabled || t.fromWorkspace}
+									onClick={() => {
+										onSelect(t);
+									}}
+								>
+									<XIcon />
+								</Button>
+							</Badge>
+						))}
+					</div>
+				)}
+				{values.length > 0 && !isMobile && (
 					<ScrollArea className="w-full whitespace-nowrap">
 						<ScrollBar orientation="horizontal"></ScrollBar>
 						<div className="flex space-x-2 p-4">
