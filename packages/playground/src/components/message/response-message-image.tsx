@@ -1,21 +1,39 @@
-import { observer } from "mobx-react-lite";
-import type { ResponseMessageStore } from "@/stores";
-import type { PixelMessageMediaPart } from "@/types";
+import { useState } from "react";
 
 interface ResponseMessageImageProps {
-	message: ResponseMessageStore;
-	part: PixelMessageMediaPart;
+	src: string;
+	alt: string;
+	onClick: () => void;
 }
 
-export const ResponseMessageImage: React.FC<ResponseMessageImageProps> =
-	observer(({ message: _message, part }) => {
-		return (
-			<div className="inline-block">
-				<img
-					src={`data:${part.mediaInfo.mimeType || "image/png"};base64,${part.mediaInfo.base64Data}`}
-					alt={part.mediaInfo.fileName}
-					className="max-h-[512px] max-w-full rounded-lg border border-border object-contain shadow-sm"
-				/>
-			</div>
-		);
-	});
+export const ResponseMessageImage: React.FC<ResponseMessageImageProps> = ({
+	src,
+	alt,
+	onClick,
+}) => {
+	const [dimensions, setDimensions] = useState<string>("");
+
+	return (
+		<button
+			type="button"
+			className="relative w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
+			onClick={onClick}
+			aria-label={`View ${alt}`}
+		>
+			<img
+				className="max-h-[480px] max-w-full object-contain"
+				src={src}
+				alt={alt}
+				onLoad={(e) => {
+					const img = e.currentTarget;
+					setDimensions(`${img.naturalWidth}×${img.naturalHeight}`);
+				}}
+			/>
+			{dimensions && (
+				<span className="absolute right-2 bottom-2 hidden rounded bg-background/80 px-1.5 py-0.5 text-foreground text-xs shadow-sm backdrop-blur-sm group-hover:inline">
+					{dimensions}
+				</span>
+			)}
+		</button>
+	);
+};

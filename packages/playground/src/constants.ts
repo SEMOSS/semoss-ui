@@ -19,17 +19,17 @@ export const IMAGE_SIZE_PRESETS: Record<
 > = {
 	small: {
 		square: { height: 320, width: 320 },
-		portrait: { height: 448, width: 320 },
+		portrait: { height: 448, width: 336 },
 		landscape: { height: 320, width: 448 },
 	},
 	medium: {
 		square: { height: 448, width: 448 },
-		portrait: { height: 768, width: 512 },
+		portrait: { height: 640, width: 480 },
 		landscape: { height: 384, width: 512 },
 	},
 	large: {
 		square: { height: 1024, width: 1024 },
-		portrait: { height: 1024, width: 960 },
+		portrait: { height: 1024, width: 768 },
 		landscape: { height: 448, width: 768 },
 	},
 };

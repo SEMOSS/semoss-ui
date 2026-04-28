@@ -45,6 +45,7 @@ import {
 	type RoomStore,
 	type ToolStore,
 } from "@/stores";
+import { ResponseMessageImage } from "./response-message-image";
 import { ResponseMessageText } from "./response-message-text";
 import { ResponseMessageThinking } from "./response-message-thinking";
 import { ResponseMessageTool } from "./response-message-tool";
@@ -337,18 +338,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							return isImage && !!p.mediaInfo.base64Data ? (
 								<Tooltip key={`${message.id}-part-${pIdx}`}>
 									<TooltipTrigger asChild>
-										<button
-											type="button"
-											className="w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
+										<ResponseMessageImage
+											src={imgSrc}
+											alt={p.mediaInfo.fileName}
 											onClick={handleClick}
-											aria-label={`View ${p.mediaInfo.fileName}`}
-										>
-											<img
-												className="max-h-[480px] max-w-full object-contain"
-												src={imgSrc}
-												alt={p.mediaInfo.fileName}
-											/>
-										</button>
+										/>
 									</TooltipTrigger>
 									<TooltipContent>
 										<p className="max-w-48 truncate text-xs">
