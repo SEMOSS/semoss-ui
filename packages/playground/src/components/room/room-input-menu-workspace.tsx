@@ -135,7 +135,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 								<div className="w-full flex-1 truncate">
 									{w.project_display_name || w.project_name}
 								</div>
-								{root.theme.showPlatformLinks !== false && (
+								{root.theme.featureFlags?.showPlatformLinks && (
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div className="flex flex-row items-center justify-center">

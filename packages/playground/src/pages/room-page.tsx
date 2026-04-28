@@ -33,7 +33,7 @@ export const RoomPage = observer(() => {
 	const { root } = useRoot();
 	const navigate = useNavigate();
 
-	const platformLinksDisabled = root.theme.showPlatformLinks === false;
+	const platformLinksDisabled = !root.theme.featureFlags?.showPlatformLinks;
 
 	/**
 	 * State

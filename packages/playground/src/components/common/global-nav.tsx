@@ -384,7 +384,8 @@ export const GlobalNav = observer(() => {
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
-					{root.theme.hideToolsInIframe && isIframed ? null : (
+					{root.theme.featureFlags?.hideToolsInIframe &&
+					isIframed ? null : (
 						<>
 							<SidebarMenuItem data-tour="tour-new-chat">
 								<SidebarMenuButton

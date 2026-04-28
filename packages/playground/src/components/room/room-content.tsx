@@ -520,7 +520,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					)}
 					footer={
 						room.options.workspace?.workspace_id ? (
-							room.theme.showPlatformLinks !== false ? (
+							room.theme.featureFlags?.showPlatformLinks ? (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span>

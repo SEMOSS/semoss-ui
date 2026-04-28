@@ -630,7 +630,8 @@ export const NewRoomPage = observer(() => {
 									footer={
 										mode === "workspace" &&
 										getWorkspace.status === "SUCCESS" ? (
-											root.theme.showPlatformLinks !==
+											root.theme.featureFlags
+												?.showPlatformLinks !==
 											false ? (
 												<Tooltip>
 													<TooltipTrigger asChild>
