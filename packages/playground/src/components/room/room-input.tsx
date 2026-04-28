@@ -507,10 +507,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						)}
 					>
 						{files.length > 0 && (
-							<FilePreviewGrid
-								files={files}
-								onRemoveFile={removeFile}
-							/>
+							// Need pb-1 for scroll bar
+							<div className="p-4 pb-1">
+								<FilePreviewGrid
+									files={files}
+									onRemoveFile={removeFile}
+								/>
+							</div>
 						)}
 						<PlainTextPlugin
 							contentEditable={
@@ -526,7 +529,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										ref={contentEditableRef}
 										className={cn(
 											"px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-											files.length > 0 ? "pt-1" : "pt-4",
+											!files.length && "pt-4",
 										)}
 										aria-placeholder={t(
 											"input.ariaPlaceholder",
@@ -537,9 +540,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											<div
 												className={cn(
 													"pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pb-4 text-muted-foreground text-sm",
-													files.length > 0
-														? "pt-1"
-														: "pt-4",
+													!files.length && "pt-4",
 												)}
 											>
 												<SparklesIcon className="size-4" />

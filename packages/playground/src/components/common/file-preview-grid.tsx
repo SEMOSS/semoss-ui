@@ -122,7 +122,8 @@ export const FilePreviewGrid = ({
 
 	return (
 		<ScrollArea type="always" className="bg-card">
-			<div className="flex w-max gap-2 p-2 pb-3">
+			{/* pb-3 is for scroll bar, it's up to the caller to make this look decent */}
+			<div className="flex w-max gap-2 pb-3">
 				{files.map((file, idx) => {
 					const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
 					const previewUrl = urlCacheRef.current.get(
@@ -164,7 +165,7 @@ export const FilePreviewGrid = ({
 					);
 				})}
 			</div>
-			<ScrollBar orientation="horizontal" className="ml-2" />
+			<ScrollBar orientation="horizontal" className="-mr-2" />
 		</ScrollArea>
 	);
 };

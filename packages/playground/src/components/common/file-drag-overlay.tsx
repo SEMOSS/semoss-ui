@@ -2,6 +2,7 @@ import { FilePlus2, PaperclipIcon } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -64,13 +65,13 @@ export const FileDragOverlay = () => {
 					<div className="-mt-2 flex min-w-0 flex-col gap-4">
 						{/* Fixed-height area: file strip collapses/expands; drop zone fills the rest */}
 						<div className="flex h-64 flex-col gap-2">
-							<div
-								className={`overflow-hidden transition-all duration-200`}
-							>
-								<FilePreviewGrid
-									files={files}
-									onRemoveFile={removeFile}
-								/>
+							<div className="overflow-hidden transition-all duration-200">
+								<div className={cn(files.length && "pt-2")}>
+									<FilePreviewGrid
+										files={files}
+										onRemoveFile={removeFile}
+									/>
+								</div>
 							</div>
 
 							{/* Drop zone — always shown; highlights when dragging.
@@ -107,7 +108,7 @@ export const FileDragOverlay = () => {
 							</button>
 						</div>
 
-						<div className="flex justify-between">
+						<div className="flex justify-between pt-1">
 							<Button
 								variant="outline"
 								size="sm"
