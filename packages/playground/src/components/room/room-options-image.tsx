@@ -14,6 +14,7 @@ import {
 	Slider,
 } from "@semoss/ui/next";
 import { RoomOptionsImageSelect } from "@/components/room/room-options-image-select";
+import type { ImageSize, ImageType } from "@/constants";
 import { IMAGE_SIZE_PRESETS } from "@/constants";
 import type { RoomStore } from "@/stores";
 
@@ -28,42 +29,36 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 }) => {
 	const { t } = useTranslation(["room", "common"]);
 
-	const deriveImagePreset = () => {
-		const match = Object.entries(IMAGE_SIZE_PRESETS).find(
-			([, v]) =>
-				v.height === options.imageHeight &&
-				v.width === options.imageWidth,
-		);
-		const [size = "large", type = "square"] = match
-			? (match[0].split("-") as [
-					"small" | "medium" | "large",
-					"square" | "portrait" | "landscape",
-				])
-			: [];
-		return { size, type } as {
-			size: "small" | "medium" | "large";
-			type: "square" | "portrait" | "landscape";
-		};
+	const deriveImagePreset = (): { size: ImageSize; type: ImageType } => {
+		for (const [size, types] of Object.entries(IMAGE_SIZE_PRESETS)) {
+			for (const [type, dims] of Object.entries(types)) {
+				if (
+					dims.height === options.imageHeight &&
+					dims.width === options.imageWidth
+				) {
+					return {
+						size: size as ImageSize,
+						type: type as ImageType,
+					};
+				}
+			}
+		}
+		return { size: "large", type: "square" };
 	};
 
-	const [imageSize, setImageSize] = useState<"small" | "medium" | "large">(
+	const [imageSize, setImageSize] = useState<ImageSize>(
 		() => deriveImagePreset().size,
 	);
-	const [imageType, setImageType] = useState<
-		"square" | "portrait" | "landscape"
-	>(() => deriveImagePreset().type);
+	const [imageType, setImageType] = useState<ImageType>(
+		() => deriveImagePreset().type,
+	);
 
-	const handleImagePresetChange = (
-		size: typeof imageSize,
-		type: typeof imageType,
-	) => {
-		const preset = IMAGE_SIZE_PRESETS[`${size}-${type}`];
-		if (preset) {
-			onOptionsChange({
-				imageHeight: preset.height,
-				imageWidth: preset.width,
-			});
-		}
+	const handleImagePresetChange = (size: ImageSize, type: ImageType) => {
+		const preset = IMAGE_SIZE_PRESETS[size][type];
+		onOptionsChange({
+			imageHeight: preset.height,
+			imageWidth: preset.width,
+		});
 	};
 
 	return (

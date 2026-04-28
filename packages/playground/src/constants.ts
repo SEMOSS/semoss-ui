@@ -9,20 +9,29 @@ export const IMAGE_WIDTH = 1024;
 export const DETAIL_LEVEL = 8.0;
 export const SEED = 42;
 
+export type ImageSize = "small" | "medium" | "large";
+export type ImageType = "square" | "portrait" | "landscape";
+
+// Updates the image_height and image_width (height, width parameters in param map)
 export const IMAGE_SIZE_PRESETS: Record<
-	// Updates the image_height and image_width (height, width parameters in param map)
-	string,
-	{ height: number; width: number }
+	ImageSize,
+	Record<ImageType, { height: number; width: number }>
 > = {
-	"small-square": { height: 320, width: 320 },
-	"small-portrait": { height: 448, width: 320 },
-	"small-landscape": { height: 320, width: 448 },
-	"medium-square": { height: 448, width: 448 },
-	"medium-portrait": { height: 768, width: 512 },
-	"medium-landscape": { height: 384, width: 512 },
-	"large-square": { height: 1024, width: 1024 },
-	"large-portrait": { height: 1024, width: 960 },
-	"large-landscape": { height: 448, width: 768 },
+	small: {
+		square: { height: 320, width: 320 },
+		portrait: { height: 448, width: 320 },
+		landscape: { height: 320, width: 448 },
+	},
+	medium: {
+		square: { height: 448, width: 448 },
+		portrait: { height: 768, width: 512 },
+		landscape: { height: 384, width: 512 },
+	},
+	large: {
+		square: { height: 1024, width: 1024 },
+		portrait: { height: 1024, width: 960 },
+		landscape: { height: 448, width: 768 },
+	},
 };
 
 export const MCP_EXECUTION_AUTO = "auto";
