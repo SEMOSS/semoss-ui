@@ -79,6 +79,7 @@ interface TreeViewItemProps<T = unknown>
 	label: ReactNode;
 	item: T;
 	loading?: boolean;
+	leadingIcon?: ReactNode;
 }
 
 const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
@@ -89,6 +90,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		className,
 		item,
 		loading,
+		leadingIcon,
 		...otherProps
 	}: TreeViewItemProps<T>,
 	ref: React.ForwardedRef<HTMLLIElement>,
@@ -141,7 +143,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 				{hasChildren ? (
 					<button
 						type="button"
-						className="mr-1 flex size-4 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-accent"
+						className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-accent"
 						onClick={handleItemToggle}
 						onKeyDown={(e) => {
 							if (e.key === "Enter" || e.key === " ") {
@@ -159,8 +161,12 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 							<ChevronRightIcon className="size-4" />
 						)}
 					</button>
+				) : leadingIcon ? (
+					<div className="flex size-4 shrink-0 items-center justify-center">
+						{leadingIcon}
+					</div>
 				) : (
-					<div className="mr-1 flex size-4 shrink-0" />
+					<div className="flex size-4 shrink-0" />
 				)}
 
 				{/* biome-ignore lint/a11y/useSemanticElements: this is valid */}

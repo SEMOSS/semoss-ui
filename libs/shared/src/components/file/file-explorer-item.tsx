@@ -1,4 +1,4 @@
-import { FolderIcon, FolderOpenIcon } from "lucide-react";
+import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
@@ -335,17 +335,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 
 	const macDate = formatMacDate(item.lastModified, dateColWidth);
 
-	const renderIcon = () => {
-		if (isDirectory) {
-			return isExpanded ? (
-				<FolderOpenIcon className="size-4 shrink-0 text-muted-foreground" />
-			) : (
-				<FolderIcon className="size-4 shrink-0 text-muted-foreground" />
-			);
-		}
-		const Icon = getFileIconComponent(item.name);
-		return <Icon className="size-4 shrink-0 text-muted-foreground" />;
-	};
+	const FileIcon = isDirectory ? null : getFileIconComponent(item.name);
 
 	// Resolve context-active state: propagated checker takes priority over direct prop
 	const effectiveIsContextActive = isItemContextActive
@@ -392,6 +382,9 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			id={item.path}
 			item={item}
 			loading={getChildren.status === "LOADING"}
+			leadingIcon={
+				FileIcon ? <FileIcon className="size-4 shrink-0" /> : undefined
+			}
 			draggable={isFileMoveEnabled ? true : draggable}
 			onDragStart={(e) => {
 				if (!isFileMoveEnabled) {
@@ -505,7 +498,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				<div
 					data-testid={`${itemTestId}-row`}
 					className={[
-						"group flex min-h-7 min-w-full flex-row items-center rounded-md px-2 transition-colors",
+						"group flex min-h-7 min-w-full flex-row items-center rounded-md pr-2 transition-colors",
 						effectiveIsContextActive
 							? "bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset"
 							: "",
@@ -528,7 +521,6 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				>
 					{/* Column 1 — Name */}
 					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pr-2">
-						{renderIcon()}
 						{isRenaming ? (
 							<input
 								data-testid={`${itemTestId}-rename-input`}
