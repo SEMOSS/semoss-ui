@@ -48,8 +48,11 @@ interface InsightStoreInterface {
 			 * Theme of the app
 			 */
 			theme: {
-				playground: Record<string, unknown>;
 				[key: string]: unknown;
+				THEME_MAP?: string;
+				THEME_NAME?: string;
+				ID?: string;
+				IS_ACTIVE?: boolean;
 			};
 			/**
 			 * System Date
