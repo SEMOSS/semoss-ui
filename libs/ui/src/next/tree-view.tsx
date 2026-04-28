@@ -1,5 +1,13 @@
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
-import React, { createContext, type ReactNode, useContext } from "react";
+import React, {
+	createContext,
+	type ReactNode,
+	useContext,
+	useRef,
+} from "react";
+
+const DOUBLE_CLICK_MS = 250;
+
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
@@ -7,6 +15,7 @@ interface TreeViewContextProps<T = unknown> {
 	expanded: string[];
 	onExpandChange?: (expanded: string[]) => void;
 	onItemSelect?: (item: T) => void;
+	onItemDoubleClick?: (item: T) => void;
 }
 
 const TreeViewContext = createContext<TreeViewContextProps | null>(null);
@@ -27,6 +36,7 @@ function useTreeView<T>() {
 interface TreeViewProps<T = unknown>
 	extends React.HTMLAttributes<HTMLDivElement> {
 	onItemSelect?: (item: T) => void;
+	onItemDoubleClick?: (item: T) => void;
 	expanded: string[];
 	onExpandChange: (expanded: string[]) => void;
 }
@@ -35,6 +45,7 @@ function TreeView<T>({
 	children,
 	className,
 	onItemSelect = () => null,
+	onItemDoubleClick,
 	expanded,
 	onExpandChange,
 	...otherProps
@@ -44,6 +55,9 @@ function TreeView<T>({
 			value={{
 				expanded: expanded,
 				onItemSelect: onItemSelect as (item: unknown) => void,
+				onItemDoubleClick: onItemDoubleClick as
+					| ((item: unknown) => void)
+					| undefined,
 				onExpandChange: onExpandChange,
 			}}
 		>
@@ -81,6 +95,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 ) {
 	const treeView = useTreeView<T>();
 	const depth = useContext(DepthContext);
+	const lastClickRef = useRef<number>(0);
 
 	const isExpanded = treeView.expanded.includes(id);
 	const hasChildren = React.Children.count(children) > 0;
@@ -96,8 +111,14 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		}
 	};
 
-	const handleItemSelect = (event: React.SyntheticEvent) => {
+	const handleItemClick = (event: React.MouseEvent) => {
 		event.stopPropagation();
+		const now = Date.now();
+		const isDoubleClick = now - lastClickRef.current < DOUBLE_CLICK_MS;
+		lastClickRef.current = isDoubleClick ? 0 : now;
+		if (isDoubleClick) {
+			treeView.onItemDoubleClick?.(item);
+		}
 		treeView.onItemSelect?.(item);
 	};
 
@@ -147,10 +168,10 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 					role="button"
 					tabIndex={0}
 					className="w-full overflow-hidden"
-					onClick={handleItemSelect}
+					onClick={handleItemClick}
 					onKeyDown={(e) => {
 						if (e.key === "Enter" || e.key === " ") {
-							handleItemSelect(e);
+							treeView.onItemSelect?.(item);
 						}
 					}}
 				>
