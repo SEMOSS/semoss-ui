@@ -117,7 +117,6 @@ export const AuditLogPage = () => {
 		tokens: [],
 		freeText: "",
 	});
-
 	const toggleDark = () => setDark((d) => !d);
 
 	const fetchLogs = useCallback(
@@ -361,6 +360,10 @@ export const AuditLogPage = () => {
 					offset: String(offset),
 				};
 
+				if (category !== "engineType") {
+					params.filterName = category;
+				}
+
 				for (const token of tokens) {
 					if (
 						token.category === "methodName" &&
@@ -404,34 +407,44 @@ export const AuditLogPage = () => {
 				const data = response.pixelReturn[0].output;
 
 				if (Array.isArray(data)) {
-					const fieldMap: Record<string, string> = {
-						methodName: "methodName",
-						requestMessage: "request",
-						engineType: "engineType",
-						roomId: "roomId",
-					};
-					const field = fieldMap[category];
 					const values = data
-						.map((item: Record<string, string>) => {
-							const raw = field ? item[field] : item;
-							if (
-								typeof raw === "string" &&
-								category === "requestMessage"
-							) {
-								try {
-									const parsed = JSON.parse(raw);
-									if (
-										parsed &&
-										typeof parsed === "object" &&
-										"arg0" in parsed
-									) {
-										return String(parsed.arg0);
+						.map((item: unknown) => {
+							// filterName response: [["callTool"], ["{\"arg0\":\"AskPlayground\"}"], ...]
+							if (Array.isArray(item)) {
+								const raw = item[0];
+								// requestMessage: parse JSON string to extract arg0
+								if (
+									category === "requestMessage" &&
+									typeof raw === "string"
+								) {
+									try {
+										const parsed = JSON.parse(raw);
+										if (
+											parsed &&
+											typeof parsed === "object" &&
+											"arg0" in parsed
+										) {
+											return String(parsed.arg0);
+										}
+									} catch {
+										// not JSON, return raw
 									}
-								} catch {
-									// not JSON, return raw
 								}
+								return raw;
 							}
-							return raw;
+							// legacy object response for engineType
+							if (item && typeof item === "object") {
+								const fieldMap: Record<string, string> = {
+									methodName: "methodName",
+									engineType: "engineType",
+									roomId: "roomId",
+								};
+								const field = fieldMap[category];
+								return field
+									? (item as Record<string, string>)[field]
+									: item;
+							}
+							return item;
 						})
 						.filter(
 							(v: unknown): v is string =>
