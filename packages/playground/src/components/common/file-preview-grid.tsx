@@ -121,7 +121,7 @@ export const FilePreviewGrid = ({
 	if (files.length === 0) return null;
 
 	return (
-		<ScrollArea type="always">
+		<ScrollArea type="always" className="bg-card">
 			<div className="flex w-max gap-2 p-2 pb-3">
 				{files.map((file, idx) => {
 					const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
