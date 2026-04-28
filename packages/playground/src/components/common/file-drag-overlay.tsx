@@ -65,9 +65,7 @@ export const FileDragOverlay = () => {
 						{/* Fixed-height area: file strip collapses/expands; drop zone fills the rest */}
 						<div className="flex h-64 flex-col gap-2">
 							<div
-								className={`overflow-hidden transition-all duration-200 ${
-									files.length > 0 ? "h-21" : "h-0"
-								}`}
+								className={`overflow-hidden transition-all duration-200`}
 							>
 								<FilePreviewGrid
 									files={files}

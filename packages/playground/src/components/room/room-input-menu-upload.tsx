@@ -8,9 +8,9 @@ interface RoomInputMenuUploadProps {
 	onSelect?: () => void;
 }
 
-export const RoomInputMenuUpload: React.FC<RoomInputMenuUploadProps> = ({
+export const RoomInputMenuUpload = ({
 	onSelect = () => null,
-}) => {
+}: RoomInputMenuUploadProps) => {
 	const { t } = useTranslation("room");
 	const { setShouldStayOpen } = useFileDrag();
 

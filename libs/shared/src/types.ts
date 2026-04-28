@@ -43,7 +43,7 @@ export interface ThemeMap {
 
 		/**
 		 * Optional disclaimer shown in the file drag overlay.
-		 * Falls back to the default i18n string when omitted.
+		 * When omitted, the description is hidden entirely.
 		 */
 		fileDragDisclaimer?: string;
 
