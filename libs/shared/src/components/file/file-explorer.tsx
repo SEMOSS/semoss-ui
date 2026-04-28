@@ -1126,6 +1126,19 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							onItemSelect={(item) => {
 								clearSelectedItems();
 								if (item.type === "directory") {
+									setExpandedPaths((prev) =>
+										prev.includes(item.path)
+											? prev.filter(
+													(p) => p !== item.path,
+												)
+											: [...prev, item.path],
+									);
+									return;
+								}
+								onItemSelect(item);
+							}}
+							onItemDoubleClick={(item) => {
+								if (item.type === "directory") {
 									setExpandedPaths((prev) => {
 										const pathPrefix = `${item.path}/`;
 										return prev.filter(
@@ -1136,11 +1149,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									});
 									setPath(item.path);
 									setSearch("");
-									return;
 								}
-
-								// select if an item
-								onItemSelect(item);
 							}}
 						>
 							{files.map((i) => (

@@ -12,7 +12,7 @@ import { getFileIconComponent } from "@semoss/shared";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ClosePage } from "@/assets/img/ClosePage";
 import { FlexLayout } from "@/components/flex-layout";
-import { useWorkspace } from "@/hooks";
+import { useTabBarScroll, useWorkspace } from "@/hooks";
 import { SIDEBAR_MENU } from "@/pages/import/import.constants";
 import type { WorkspaceOptions } from "@/stores";
 import { formatToDataTestId } from "@/utility";
@@ -57,40 +57,19 @@ type WorkspaceManagerProps = {
 		node: FlexLayout.TabNode,
 		layout: FlexLayout.Layout,
 	) => React.ReactNode;
+
+	/** Optional action handler — return the action to let FlexLayout process it, return undefined to consume it */
+	onAction?: (action: FlexLayout.Action) => FlexLayout.Action | undefined;
 };
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
-	({ navbarActions, options, factory = () => null }) => {
+	({ navbarActions, options, factory = () => null, onAction }) => {
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
 		const model = workspace.model;
 
-		useEffect(() => {
-			const container = containerRef.current;
-			if (!container) return;
-			const onWheel = (e: WheelEvent) => {
-				if (!(e.target instanceof Element)) return;
-				const tabBar = e.target.closest(
-					".flexlayout__tabset_tabbar_inner",
-				) as HTMLElement | null;
-				if (!tabBar || !container.contains(tabBar)) return;
-				if (tabBar.scrollWidth <= tabBar.clientWidth) return;
-				const delta =
-					Math.abs(e.deltaX) > Math.abs(e.deltaY)
-						? e.deltaX
-						: e.deltaY;
-				if (delta === 0) return;
-				tabBar.scrollLeft += delta;
-				e.preventDefault();
-				e.stopPropagation();
-			};
-			container.addEventListener("wheel", onWheel, {
-				capture: true,
-				passive: false,
-			});
-			return () => container.removeEventListener("wheel", onWheel, true);
-		}, []);
+		useTabBarScroll(containerRef);
 
 		// build the model from the layout
 		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only event registration
@@ -394,18 +373,23 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											workspace.saveToCache();
 										}}
 										onAction={(action) => {
+											const external = onAction?.(action);
+											if (external === undefined) {
+												return undefined;
+											}
 											const handled = updateModel(action);
-											return !handled ? action : false;
+											return !handled
+												? action
+												: undefined;
 										}}
 										onRenderTab={(
 											tabNode,
 											renderValues,
 										) => {
-											const tabIcon =
-												getWorkspaceTabIcon(
-													tabNode.getComponent(),
-													tabNode.getName(),
-												);
+											const tabIcon = getWorkspaceTabIcon(
+												tabNode.getComponent(),
+												tabNode.getName(),
+											);
 
 											if (tabIcon) {
 												renderValues.leading = tabIcon;

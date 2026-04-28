@@ -1,7 +1,4 @@
-import {
-	FolderIcon,
-	FolderOpenIcon,
-} from "lucide-react";
+import { FolderIcon, FolderOpenIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
@@ -565,7 +562,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 								type="button"
 								className="min-w-0 truncate bg-transparent p-0 text-left text-sm"
 								onDoubleClick={(e) => {
-									if (!canRename) return;
+									if (!canRename || isDirectory) return;
 									e.stopPropagation();
 									setRenameValue(item.name);
 									setIsRenaming(true);

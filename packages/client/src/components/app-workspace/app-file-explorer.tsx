@@ -387,6 +387,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 							path: item.path,
 						},
 						enableClose: true,
+						enableRename: true,
 					});
 				}}
 				onItemsMoved={migrateMovedTabs}
@@ -422,6 +423,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 											path: item.path,
 										},
 										enableClose: true,
+										enableRename: true,
 									},
 								);
 							}}
@@ -446,6 +448,7 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 									component: "app-file-editor",
 									config: { name: newName, path: newPath },
 									enableClose: true,
+									enableRename: true,
 								});
 							}}
 							{...otherProps}
