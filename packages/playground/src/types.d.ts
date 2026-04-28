@@ -13,6 +13,8 @@ export interface Engine {
 	engine_cost?: string;
 	low_engine_name?: string;
 	description?: string;
+	tag?: string | string[];
+	tags?: string | string[];
 
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
