@@ -111,7 +111,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 
 	return (
 		<div className="w-full overflow-hidden rounded-xl border-border bg-card shadow-sm">
-			<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
+			<div className="flex w-full flex-row gap-2 border-border bg-muted p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
 						placeholder={t("prompts.searchPlaceholder")}
