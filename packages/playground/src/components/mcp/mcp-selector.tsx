@@ -190,7 +190,7 @@ export const MCPSelector = observer(
 					)}
 				</ScrollArea>
 				{values.length > 0 && isMobile && (
-					<div className="flex flex-wrap gap-2 p-4">
+					<div className="flex max-h-20 flex-wrap gap-2 overflow-y-auto p-4">
 						{values.map((t) => (
 							<Badge
 								key={t.id}
