@@ -41,6 +41,8 @@ interface FileExplorerContextMenuProps {
 	selectedItems?: FileItem[];
 	canMutateFiles: boolean;
 	onClose: () => void;
+	onCopy: (item: FileItem) => void;
+	onCopyItems: (items: FileItem[]) => void;
 	onCut: (item: FileItem) => void;
 	onCopyPath: (item: FileItem) => void;
 	onCutItems: (items: FileItem[]) => void;
@@ -71,6 +73,8 @@ export const FileExplorerContextMenu: React.FC<
 	selectedItems = [],
 	canMutateFiles,
 	onClose,
+	onCopy,
+	onCopyItems,
 	onCut,
 	onCopyPath,
 	onCutItems,
@@ -137,6 +141,21 @@ export const FileExplorerContextMenu: React.FC<
 					await secondaryCopyPath.action(item);
 				} else {
 					onCopyPath(item);
+				}
+				onClose();
+			},
+		});
+
+		entries.push({
+			key: "copy",
+			label: "Copy",
+			icon: <CopyIcon className="size-4 shrink-0" />,
+			action: () => {
+				if (isBulkAction) {
+					onCopyItems(bulkItems);
+				} else {
+					if (!item) return;
+					onCopy(item);
 				}
 				onClose();
 			},

@@ -402,6 +402,19 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		return "";
 	};
 
+	const buildCopyPixel = (oldPath: string, newPath: string): string => {
+		if (mode.type === "APP") {
+			return `CopyAppAsset(project="${mode.app}", filePath="${oldPath}", newValue="${newPath}");`;
+		}
+		if (mode.type === "ENGINE") {
+			return `CopyEngineAsset(engine="${mode.engine}", filePath="${oldPath}", newValue="${newPath}");`;
+		}
+		if (mode.type === "INSIGHT") {
+			return `CopyInsightAsset(filePath="${oldPath}", newValue="${newPath}");`;
+		}
+		return "";
+	};
+
 	const buildDeletePixel = (itemPath: string): string => {
 		if (mode.type === "APP") {
 			return `DeleteAppAssets(project=["${mode.app}"], filePath=["${itemPath}"]);`;
@@ -494,13 +507,70 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 	};
 
+	const handleCopyItems = async (
+		items: FileItem[],
+		targetDirectory: string,
+	): Promise<boolean> => {
+		try {
+			const normalizedTarget = ensureDirectoryPath(targetDirectory);
+			const affectedDirectories = new Set<string>([normalizedTarget]);
+			const copiedItems: FileItem[] = [];
+			const failedItems: string[] = [];
+
+			for (const item of items) {
+				try {
+					const name = getItemName(item);
+					const newPath = `${normalizedTarget}${name}`;
+					const pixel = buildCopyPixel(item.path, newPath);
+					if (!pixel) {
+						continue;
+					}
+
+					await insight.actions.run(pixel);
+					copiedItems.push(item);
+				} catch (e) {
+					failedItems.push(
+						getFileOperationErrorMessage(item.name, e),
+					);
+					console.error(e);
+				}
+			}
+
+			clearSelectedItems();
+			clearContextState();
+			refreshDirectories(Array.from(affectedDirectories));
+
+			if (copiedItems.length > 0) {
+				toast.success(
+					copiedItems.length > 1
+						? "Successfully copied items"
+						: "Successfully copied item",
+				);
+			}
+
+			if (failedItems.length > 0) {
+				toast.error(`Failed to copy: ${failedItems.join(", ")}`);
+			}
+
+			return copiedItems.length > 0;
+		} catch (e) {
+			toast.error(getFileOperationErrorMessage("Failed to copy item", e));
+			console.error(e);
+			return false;
+		}
+	};
+
 	const handlePaste = async (targetDirectory: string) => {
 		if (!clipboard) return;
 
 		if (clipboard.action === "copy") {
-			toast.info(
-				"Copy endpoint is not available yet. Use Cut + Paste to move files.",
+			const success = await handleCopyItems(
+				clipboard.items,
+				targetDirectory,
 			);
+			if (success) {
+				setClipboard(null);
+			}
 			return;
 		}
 
@@ -1175,10 +1245,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					selectedItems={Array.from(selectedItems.values())}
 					canMutateFiles={canMutateFiles}
 					onClose={clearContextState}
+					onCopy={(item) =>
+						setClipboard({ items: [item], action: "copy" })
+					}
 					onCut={(item) =>
 						setClipboard({ items: [item], action: "cut" })
 					}
 					onCopyPath={handleCopyPath}
+					onCopyItems={(items) =>
+						setClipboard({ items, action: "copy" })
+					}
 					onCutItems={(items) =>
 						setClipboard({ items, action: "cut" })
 					}
