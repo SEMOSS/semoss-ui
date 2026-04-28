@@ -6,7 +6,6 @@ import {
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	NUM_OF_IMAGES,
-	SEED,
 	TEMPERATURE,
 	TOKEN_LENGTH,
 } from "@/constants";
@@ -104,7 +103,7 @@ export class RootStore {
 				imageHeight: IMAGE_HEIGHT,
 				imageWidth: IMAGE_WIDTH,
 				detailLevel: DETAIL_LEVEL,
-				seed: SEED,
+				seed: undefined,
 			},
 			allowedFileTypes: [],
 			defaultTools: [],

@@ -41,7 +41,6 @@ import {
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	NUM_OF_IMAGES,
-	SEED,
 	TEMPERATURE,
 	TOKEN_LENGTH,
 } from "@/constants";
@@ -171,7 +170,7 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.imageWidth || IMAGE_WIDTH,
 			detailLevel:
 				root.theme.defaultRoomSettings?.detailLevel || DETAIL_LEVEL,
-			seed: root.theme.defaultRoomSettings?.seed || SEED,
+			seed: root.theme.defaultRoomSettings?.seed ?? undefined,
 			workspace: undefined,
 			predefinedPrompts: [],
 		});
