@@ -162,9 +162,9 @@ export const MembersTable = ({
 	return (
 		<div className="w-full">
 			{/* Header Section */}
-			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-[#f4f4f4] p-4 align-start">
+			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-muted p-4 align-start">
 				<div className="flex h-[36px] w-full flex-column gap-2">
-					<InputGroup className="flex h-auto gap-1 self-stretch bg-[#FFF] px-2 py-1 align-center">
+					<InputGroup className="flex h-auto gap-1 self-stretch bg-background px-2 py-1 align-center">
 						<InputGroupInput
 							placeholder="Search"
 							value={searchKey}
