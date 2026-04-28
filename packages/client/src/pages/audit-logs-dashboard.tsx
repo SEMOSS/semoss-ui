@@ -190,6 +190,13 @@ export const AuditLogsDashboard = ({
 					searchRef.current.freeText,
 				);
 
+				if (searchPayload?.search?.engineType) {
+					searchPayload.search.engineType =
+						searchPayload.search.engineType.map((v) =>
+							v === "APP" ? "PROJECT" : v,
+						);
+				}
+
 				let searchPart = "";
 				if (searchPayload) {
 					if (searchPayload.search) {
@@ -308,13 +315,19 @@ export const AuditLogsDashboard = ({
 			try {
 				const { selectedUser: sUser } = filteredData.current;
 				const tokens = searchRef.current.tokens;
+				const isApp = catalogName === "Apps";
 
 				const params: Record<string, string> = {
 					filterUserId: sUser,
-					engineId: catalogId || "",
+					projectId: isApp ? catalogId || "" : "",
+					engineId: isApp ? "" : catalogId || "",
 					limit: String(limit),
 					offset: String(offset),
 				};
+
+				if (category !== "engineType") {
+					params.filterName = category;
+				}
 
 				for (const token of tokens) {
 					if (
@@ -346,7 +359,10 @@ export const AuditLogsDashboard = ({
 					};
 					const field = categoryFieldMap[category];
 					if (field) {
-						params[field] = searchText;
+						params[field] =
+							category === "engineType" && searchText === "APP"
+								? "PROJECT"
+								: searchText;
 					}
 				}
 
@@ -359,34 +375,44 @@ export const AuditLogsDashboard = ({
 				const data = response.pixelReturn[0].output;
 
 				if (Array.isArray(data)) {
-					const fieldMap: Record<string, string> = {
-						methodName: "methodName",
-						requestMessage: "request",
-						engineType: "engineType",
-						roomId: "roomId",
-					};
-					const field = fieldMap[category];
 					const values = data
-						.map((item: Record<string, string>) => {
-							const raw = field ? item[field] : item;
-							if (
-								typeof raw === "string" &&
-								category === "requestMessage"
-							) {
-								try {
-									const parsed = JSON.parse(raw);
-									if (
-										parsed &&
-										typeof parsed === "object" &&
-										"arg0" in parsed
-									) {
-										return String(parsed.arg0);
+						.map((item: unknown) => {
+							// filterName response: [["callTool"], ["{\"arg0\":\"AskPlayground\"}"], ...]
+							if (Array.isArray(item)) {
+								const raw = item[0];
+								// requestMessage: parse JSON string to extract arg0
+								if (
+									category === "requestMessage" &&
+									typeof raw === "string"
+								) {
+									try {
+										const parsed = JSON.parse(raw);
+										if (
+											parsed &&
+											typeof parsed === "object" &&
+											"arg0" in parsed
+										) {
+											return String(parsed.arg0);
+										}
+									} catch {
+										// not JSON, return raw
 									}
-								} catch {
-									// not JSON, return raw
 								}
+								return raw;
 							}
-							return raw;
+							// legacy object response for engineType
+							if (item && typeof item === "object") {
+								const fieldMap: Record<string, string> = {
+									methodName: "methodName",
+									engineType: "engineType",
+									roomId: "roomId",
+								};
+								const field = fieldMap[category];
+								return field
+									? (item as Record<string, string>)[field]
+									: item;
+							}
+							return item;
 						})
 						.filter(
 							(v: unknown): v is string =>

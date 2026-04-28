@@ -348,14 +348,18 @@ export const AuditLogPage = () => {
 		): Promise<string[]> => {
 			if (!insightId) return [];
 			try {
-				const { engineId: eId, selectedUser: sUser } =
-					filteredData.current;
+				const {
+					engineType: eType,
+					engineId: eId,
+					selectedUser: sUser,
+				} = filteredData.current;
 
 				const tokens = searchRef.current.tokens;
 
 				const params: Record<string, string> = {
 					filterUserId: sUser,
-					engineId: eId,
+					projectId: eType === "APP" ? eId : "",
+					engineId: eType === "APP" ? "" : eId,
 					limit: String(limit),
 					offset: String(offset),
 				};
@@ -394,7 +398,10 @@ export const AuditLogPage = () => {
 					};
 					const field = categoryFieldMap[category];
 					if (field) {
-						params[field] = searchText;
+						params[field] =
+							category === "engineType" && searchText === "APP"
+								? "PROJECT"
+								: searchText;
 					}
 				}
 
