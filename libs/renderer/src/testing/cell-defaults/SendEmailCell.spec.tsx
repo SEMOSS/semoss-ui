@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
@@ -37,7 +38,9 @@ describe("Send Email Cell", () => {
 			insightId: "new",
 			state: {
 				executionOrder: [],
-				queries: {},
+				queries: {
+					[query.mcp_driver.id]: query.mcp_driver,
+				},
 				variables: {},
 				version: "",
 				blocks: {},
@@ -64,30 +67,16 @@ describe("Send Email Cell", () => {
 			<SendEmailCell cell={cell as never} isExpanded={true} />,
 		);
 
-		expect(
-			screen.getByRole("textbox", { name: "smtpHost" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("textbox", { name: "smtpPort" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("textbox", { name: "username" }),
-		).toBeInTheDocument();
-		expect(screen.getByLabelText("password")).toBeInTheDocument();
-		expect(
-			screen.getByRole("textbox", { name: "from" }),
-		).toBeInTheDocument();
-		expect(screen.getByRole("textbox", { name: "to" })).toBeInTheDocument();
-		expect(screen.getByRole("textbox", { name: "cc" })).toBeInTheDocument();
-		expect(
-			screen.getByRole("textbox", { name: "bcc" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("textbox", { name: "subject" }),
-		).toBeInTheDocument();
-		expect(
-			screen.getByRole("textbox", { name: "message" }),
-		).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("smtpHost")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("smtpPort")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("username")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("password")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("from")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("to")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("cc")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("bcc")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("subject")).toBeInTheDocument();
+		expect(screen.getByPlaceholderText("message")).toBeInTheDocument();
 	});
 
 	test("displays correct input values in textboxes", async () => {
@@ -104,28 +93,26 @@ describe("Send Email Cell", () => {
 			<SendEmailCell cell={cell as never} isExpanded={true} />,
 		);
 
-		const smtpHostInput = screen.getByRole("textbox", {
-			name: "smtpHost",
-		}) as HTMLInputElement;
-		const smtpPortInput = screen.getByRole("textbox", {
-			name: "smtpPort",
-		}) as HTMLInputElement;
-		const usernameInput = screen.getByRole("textbox", {
-			name: "username",
-		}) as HTMLInputElement;
-		const fromInput = screen.getByRole("textbox", {
-			name: "from",
-		}) as HTMLInputElement;
-		const toInput = screen.getByRole("textbox", {
-			name: "to",
-		}) as HTMLInputElement;
-		const subjectInput = screen.getByRole("textbox", {
-			name: "subject",
-		}) as HTMLInputElement;
-		const messageInput = screen.getByRole("textbox", {
-			name: "message",
-		}) as HTMLInputElement;
-		const passwordInput = screen.getByLabelText(
+		const smtpHostInput = screen.getByPlaceholderText(
+			"smtpHost",
+		) as HTMLInputElement;
+		const smtpPortInput = screen.getByPlaceholderText(
+			"smtpPort",
+		) as HTMLInputElement;
+		const usernameInput = screen.getByPlaceholderText(
+			"username",
+		) as HTMLInputElement;
+		const fromInput = screen.getByPlaceholderText(
+			"from",
+		) as HTMLInputElement;
+		const toInput = screen.getByPlaceholderText("to") as HTMLInputElement;
+		const subjectInput = screen.getByPlaceholderText(
+			"subject",
+		) as HTMLInputElement;
+		const messageInput = screen.getByPlaceholderText(
+			"message",
+		) as HTMLTextAreaElement;
+		const passwordInput = screen.getByPlaceholderText(
 			"password",
 		) as HTMLInputElement;
 
