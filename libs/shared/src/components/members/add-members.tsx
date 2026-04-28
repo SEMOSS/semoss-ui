@@ -283,7 +283,7 @@ export const AddMembersOverlay = ({
 				{/* Search input */}
 				<input
 					ref={inputRef}
-					className="h-10 w-full rounded border bg-white px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
+					className="h-10 w-full rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
 					placeholder="Search by name or email..."
 					value={searchKey}
 					autoComplete="off"
@@ -423,6 +423,12 @@ export const AddMembersOverlay = ({
 										</SelectItem>
 										<SelectItem value="MONTH">
 											Monthly
+										</SelectItem>
+										<SelectItem value="YEAR">
+											Yearly
+										</SelectItem>
+										<SelectItem value="ALL_TIME">
+											All time
 										</SelectItem>
 									</SelectContent>
 								</Select>

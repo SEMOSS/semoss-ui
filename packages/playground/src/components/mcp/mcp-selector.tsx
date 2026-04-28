@@ -66,7 +66,7 @@ export const MCPSelector = observer(
 		 */
 		const getMCP = useIteratorPixel<(Engine | App)[], MCP>(
 			(limit, offset) =>
-				`MyEngineProject (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}type=${type === "TOOLBOX" ? `["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+				`META | MyEngineProject (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}type=${type === "TOOLBOX" ? `["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 			(response) => {
 				// if its less than the limit, we know its the end
 				if (response.length < 25) {
@@ -115,8 +115,8 @@ export const MCPSelector = observer(
 		};
 
 		return (
-			<div className="w-full overflow-hidden rounded-xl border-border bg-card shadow-sm">
-				<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
+			<div className="w-full overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+				<div className="flex w-full flex-row gap-2 border-border border-b bg-muted p-4">
 					<div className="flex-1">
 						<InputGroup className="bg-background">
 							<InputGroupInput
