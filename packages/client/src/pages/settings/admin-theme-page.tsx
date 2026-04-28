@@ -240,6 +240,7 @@ export const AdminThemePage: React.FC = () => {
 						enableSuggestions: false,
 						enableRewrite: true,
 						enableDarkMode: true,
+						enableImageGeneration: true,
 						enablePromptOptimizer: true,
 						hideToolsInIframe: false,
 						enableKnowledgeMCP: true,

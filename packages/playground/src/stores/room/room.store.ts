@@ -673,11 +673,11 @@ export class RoomStore {
 
 			// set the model based on the history
 			if (activeModelId) {
-				const isImageGenEnabled =
-					import.meta.env.VITE_ENABLE_IMAGE_GEN === "true";
 				const tags = [
 					"text-generation",
-					...(isImageGenEnabled ? ["image-generation"] : []),
+					...(this._theme.featureFlags?.enableImageGeneration
+						? ["image-generation"]
+						: []),
 				];
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
 					`META | MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : ${JSON.stringify(tags)} }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,

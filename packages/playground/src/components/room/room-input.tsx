@@ -93,8 +93,6 @@ try {
 // Constants & Helper Functions
 // ============================================================================
 
-const isImageGenEnabled = import.meta.env.VITE_ENABLE_IMAGE_GEN === "true";
-
 /** Supported image file extensions for preview */
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "img"];
 
@@ -891,7 +889,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											engineTypes={["MODEL"]}
 											metaFilters={[
 												{
-													tag: isImageGenEnabled
+													tag: root.theme.featureFlags
+														?.enableImageGeneration
 														? [
 																"text-generation",
 																"image-generation",

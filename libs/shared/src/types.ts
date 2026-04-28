@@ -259,6 +259,7 @@ export interface ThemeMap {
 			enablePlan?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
+			enableImageGeneration?: boolean;
 			enablePromptOptimizer?: boolean;
 			/** Whether to hide tools when the app is rendered inside an iframe. */
 			hideToolsInIframe?: boolean;

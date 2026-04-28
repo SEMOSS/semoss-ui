@@ -27,8 +27,6 @@ import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 
-const isImageGenEnabled = import.meta.env.VITE_ENABLE_IMAGE_GEN === "true";
-
 interface RoomOptionsFormProps {
 	/** Model of the room */
 	model: RoomStore["model"];
@@ -116,7 +114,8 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											{
 												tag: [
 													"text-generation",
-													...(isImageGenEnabled
+													...(root.theme.featureFlags
+														?.enableImageGeneration
 														? ["image-generation"]
 														: []),
 												],
@@ -463,7 +462,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 						</FieldGroup>
 					</FieldSet>
-					{isImageGenEnabled && (
+					{root.theme.featureFlags?.enableImageGeneration && (
 						<RoomOptionsImage
 							options={options}
 							onOptionsChange={onOptionsChange}

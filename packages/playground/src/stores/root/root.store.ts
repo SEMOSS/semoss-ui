@@ -108,6 +108,7 @@ export class RootStore {
 				enableSuggestions: false,
 				enablePlan: false,
 				enableRewrite: true,
+				enableImageGeneration: true,
 				enablePromptOptimizer: true,
 				enableDarkMode: true,
 				hideToolsInIframe: false,
