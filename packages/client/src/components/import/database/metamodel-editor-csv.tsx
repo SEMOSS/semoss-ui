@@ -64,7 +64,7 @@ import {
 import { PortalModal } from "./portal";
 
 export const MetaModelType = observer(
-	({ parsedData, onImport, onCancel }: MetaModelTypeProps) => {
+	({ parsedData, onImport, onCancel, isRdf = false }: MetaModelTypeProps) => {
 		// State
 		const [selectedDataIndex, setSelectedDataIndex] = useState<number>(0);
 		const [flowStates, setFlowStates] = useState<Record<number, FlowData>>(
@@ -814,6 +814,7 @@ export const MetaModelType = observer(
 							)}
 							onEditConnection={handleEditConnection}
 							onDeleteConnection={handleDeleteConnection}
+							isRdf={isRdf}
 						/>
 					</div>
 				</div>

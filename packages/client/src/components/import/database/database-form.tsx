@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { console as getPixelConsole } from "@semoss/sdk/react";
+import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
@@ -32,7 +33,6 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
-import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import DataSelection from "./flat-table-column-editor";
@@ -139,7 +139,8 @@ export const DatabaseForm = ({
 		const isPropFile = metamodelType === "fromPropFile";
 		setResolvedFields((prev) =>
 			prev.map((f) => {
-				if (f.key === "FILE_UPLOAD") return { ...f, hidden: isPropFile };
+				if (f.key === "FILE_UPLOAD")
+					return { ...f, hidden: isPropFile };
 				if (f.key === "PROP_FILE_UPLOAD") return { ...f, hidden: true };
 				return f;
 			}),
@@ -314,11 +315,15 @@ export const DatabaseForm = ({
 			const uploadedFilesResponse =
 				formData.METAMODEL_TYPE === "fromPropFile"
 					? []
-					: await uploadFile(formData.FILE_UPLOAD, configStore.store.insightID);
+					: await uploadFile(
+							formData.FILE_UPLOAD,
+							configStore.store.insightID,
+						);
 
 			if (
 				formData.METAMODEL_TYPE !== "fromPropFile" &&
-				(!uploadedFilesResponse || !Array.isArray(uploadedFilesResponse))
+				(!uploadedFilesResponse ||
+					!Array.isArray(uploadedFilesResponse))
 			) {
 				toast.error("Upload failed or returned invalid response.");
 				setValue("DATABASE_TYPE", formData.DATABASE_TYPE);
@@ -393,13 +398,21 @@ export const DatabaseForm = ({
 
 					for (const pair of validPairs) {
 						const [csvUpload, propUpload] = await Promise.all([
-							uploadFile([pair.dataFile as File], configStore.store.insightID),
+							uploadFile(
+								[pair.dataFile as File],
+								configStore.store.insightID,
+							),
 							pair.propFile
-								? uploadFile([pair.propFile as File], configStore.store.insightID)
+								? uploadFile(
+										[pair.propFile as File],
+										configStore.store.insightID,
+									)
 								: Promise.resolve(null),
 						]);
 						if (!csvUpload?.length) {
-							toast.error(`Failed to upload ${(pair.dataFile as File).name}.`);
+							toast.error(
+								`Failed to upload ${(pair.dataFile as File).name}.`,
+							);
 							setLoading(false);
 							return;
 						}
@@ -416,7 +429,9 @@ export const DatabaseForm = ({
 							setLoading(false);
 							return;
 						}
-						parsedResults.push(response?.pixelReturn?.[0]?.output as ParsedResult);
+						parsedResults.push(
+							response?.pixelReturn?.[0]?.output as ParsedResult,
+						);
 						const name = csvPath.split(/[/\\]/).pop() || "";
 						names.push(name);
 					}
@@ -427,7 +442,9 @@ export const DatabaseForm = ({
 					setParsedData(parsedResults);
 					setStep("metaModel");
 				} catch {
-					toast.error("An error occurred while processing the files.");
+					toast.error(
+						"An error occurred while processing the files.",
+					);
 				} finally {
 					setLoading(false);
 				}
@@ -1301,7 +1318,7 @@ export const DatabaseForm = ({
 					case "zip-upload":
 						return (
 							<div
-								className={`flex flex-col gap-2${val.hidden ? " hidden" : ""}`}
+								className={`flex flex-col gap-2${val.hidden ? "hidden" : ""}`}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<P>
@@ -1647,7 +1664,13 @@ export const DatabaseForm = ({
 			dataTypes: Record<string, string>;
 			physicalTypes: Record<string, string>;
 			cleanHeaders: string[];
-			relation: { relName: string; fromTable: string; fromCol?: string; toTable: string; toCol?: string; }[];
+			relation: {
+				relName: string;
+				fromTable: string;
+				fromCol?: string;
+				toTable: string;
+				toCol?: string;
+			}[];
 			nodeProp: Record<string, string[]>;
 			positions: Record<string, { left: number; top: number }>;
 		} = {
@@ -1786,7 +1809,17 @@ export const DatabaseForm = ({
 													{
 														key: "dataFile",
 														label: "Data File",
-														extensions: resolvedFields.find((f: { key: string }) => f.key === "FILE_UPLOAD")?.options?.extensions ?? [".csv"],
+														extensions:
+															resolvedFields.find(
+																(f: {
+																	key: string;
+																}) =>
+																	f.key ===
+																	"FILE_UPLOAD",
+															)?.options
+																?.extensions ?? [
+																".csv",
+															],
 														required: true,
 													},
 													{
@@ -1901,6 +1934,10 @@ export const DatabaseForm = ({
 						submitMetamodelPixel(payload, formValues)
 					}
 					onCancel={handleCancel}
+					isRdf={
+						(formValues as { DATABASE_TYPE?: string })
+							.DATABASE_TYPE === "rdf"
+					}
 				/>
 			)}
 
