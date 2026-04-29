@@ -259,8 +259,8 @@ paramValues=[${JSON.stringify({
 
 			return response;
 		} catch (e) {
-			// remove as a child
-			this.removeChild(responseMessage);
+			// remove message if we failed
+			this.removeChild(inputMessage);
 
 			throw e;
 		} finally {
