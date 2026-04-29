@@ -39,9 +39,15 @@ const PREVIEW_SCROLL_SYNC_SCRIPT =
 	"function clamp(v,min,max){return Math.max(min,Math.min(max,v));}" +
 	"function isAtBottom(el){return el.scrollHeight-el.clientHeight-el.scrollTop<=threshold;}" +
 	"function readState(){try{var raw=sessionStorage.getItem(key);return raw?JSON.parse(raw):null;}catch(_err){return null;}}" +
-	"function writeState(el){try{sessionStorage.setItem(key,JSON.stringify({scrollTop:el.scrollTop,scrollHeight:el.scrollHeight,atBottom:isAtBottom(el)}));}catch(_err){}}" +
-	"function restoreState(el){var state=readState();if(!state){el.scrollTop=el.scrollHeight;writeState(el);return;}if(state.atBottom){el.scrollTop=el.scrollHeight;writeState(el);return;}var max=Math.max(0,el.scrollHeight-el.clientHeight);var top=typeof state.scrollTop==='number'?state.scrollTop:0;el.scrollTop=clamp(top,0,max);writeState(el);}" +
-	"function init(){var el=getScroller();restoreState(el);window.addEventListener('scroll',function(){writeState(el);},{passive:true});window.addEventListener('pagehide',function(){writeState(el);});setTimeout(function(){writeState(el);},120);}" +
+	"var restoring=false;" +
+	"function writeState(el){if(restoring)return;try{sessionStorage.setItem(key,JSON.stringify({scrollTop:el.scrollTop,scrollHeight:el.scrollHeight,atBottom:isAtBottom(el)}));}catch(_err){}}" +
+	"function restoreState(el){restoring=true;var prev=el.style.scrollBehavior;el.style.scrollBehavior='auto';document.documentElement.style.scrollBehavior='auto';var state=readState();if(!state){el.scrollTop=el.scrollHeight;}else if(state.atBottom){el.scrollTop=el.scrollHeight;}else{var max=Math.max(0,el.scrollHeight-el.clientHeight);var top=typeof state.scrollTop==='number'?state.scrollTop:0;el.scrollTop=clamp(top,0,max);}el.style.scrollBehavior=prev;document.documentElement.style.scrollBehavior='';writeState(el);restoring=false;}" +
+	"document.documentElement.style.opacity='0';" +
+	"document.documentElement.style.transition='opacity 0.1s';" +
+	"setTimeout(function(){document.documentElement.style.opacity='1';},500);" +
+	"function init(){var el=getScroller();restoreState(el);requestAnimationFrame(function(){document.documentElement.style.opacity='1';});" +
+	"window.addEventListener('scroll',function(){writeState(el);try{window.parent.postMessage({type:'PREVIEW_SCROLL',channel:channel},'*');}catch(_e){}},{passive:true});" +
+	"window.addEventListener('pagehide',function(){writeState(el);});setTimeout(function(){writeState(el);},120);}" +
 	"if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',init,{once:true});}else{init();}" +
 	"})();" +
 	"</script>";
@@ -95,10 +101,48 @@ export const HtmlPreviewBlock = ({
 	const latestSafeHtmlRef = useRef(streamedHtml);
 	const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isLoadingRef = useRef(!!isLoading);
+	const isScrollingRef = useRef(false);
+	const scrollStopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+		null,
+	);
+	const pendingScrollHtmlRef = useRef<string | null>(null);
 
 	useEffect(() => {
 		isLoadingRef.current = !!isLoading;
 	}, [isLoading]);
+
+	useEffect(() => {
+		const channel = previewChannelRef.current;
+		const handleMessage = (event: MessageEvent) => {
+			const data = event.data;
+			if (
+				!data ||
+				typeof data !== "object" ||
+				data.type !== "PREVIEW_SCROLL" ||
+				data.channel !== channel
+			) {
+				return;
+			}
+			isScrollingRef.current = true;
+			if (scrollStopTimerRef.current) {
+				clearTimeout(scrollStopTimerRef.current);
+			}
+			scrollStopTimerRef.current = setTimeout(() => {
+				isScrollingRef.current = false;
+				if (pendingScrollHtmlRef.current !== null) {
+					setStreamedHtml(pendingScrollHtmlRef.current);
+					pendingScrollHtmlRef.current = null;
+				}
+			}, 150);
+		};
+		window.addEventListener("message", handleMessage);
+		return () => {
+			window.removeEventListener("message", handleMessage);
+			if (scrollStopTimerRef.current)
+				clearTimeout(scrollStopTimerRef.current);
+			if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+		};
+	}, []);
 
 	useEffect(() => {
 		if (!isLoading) {
@@ -126,18 +170,14 @@ export const HtmlPreviewBlock = ({
 			flushTimerRef.current = setTimeout(() => {
 				flushTimerRef.current = null;
 				if (!isLoadingRef.current) return;
-				setStreamedHtml(latestSafeHtmlRef.current);
+				if (isScrollingRef.current) {
+					pendingScrollHtmlRef.current = latestSafeHtmlRef.current;
+				} else {
+					setStreamedHtml(latestSafeHtmlRef.current);
+				}
 			}, HTML_PREVIEW_STREAM_THROTTLE_MS);
 		}
 	}, [html, isLoading, streamedHtml]);
-
-	useEffect(() => {
-		return () => {
-			if (flushTimerRef.current) {
-				clearTimeout(flushTimerRef.current);
-			}
-		};
-	}, []);
 
 	const previewHtml = isLoading ? streamedHtml : html;
 	const sandpackHtml = useMemo(() => {
@@ -191,7 +231,7 @@ export const HtmlPreviewBlock = ({
 						className="-my-1 h-6 px-2 text-muted-foreground text-xs hover:text-foreground"
 						variant="ghost"
 						size="sm"
-						disabled={isLoading}
+						disabled={!html}
 						onClick={() => setIsFullViewOpen(true)}
 					>
 						Full View
@@ -272,6 +312,14 @@ export const HtmlPreviewBlock = ({
 							style={{ height: "100%", minHeight: 0 }}
 							forceFullHeight
 						/>
+						{isLoading && (
+							<div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+								<div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/75 px-3 py-1 font-medium text-[11px] text-muted-foreground uppercase tracking-[0.08em] shadow-sm">
+									<Loader2 className="size-3 animate-spin" />
+									Loading Preview...
+								</div>
+							</div>
+						)}
 					</div>
 				</DialogContent>
 			</Dialog>

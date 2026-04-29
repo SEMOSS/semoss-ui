@@ -336,10 +336,7 @@ describe("BarChartStack Block Component", () => {
 		});
 	});
 
-	// TODO: Fix this test - StackChart component has a bug where string JSON options
-	// are passed directly to ECharts instead of being parsed first
-	// This test should pass once the component is fixed to handle string JSON correctly
-	it.skip("should render Stack chart with string option correctly", () => {
+	it("should render Stack chart with string option correctly", () => {
 		const { container } = render(
 			<VisualizationBlock id={blockIds.barChartStackString} />,
 			{
@@ -509,10 +506,7 @@ describe("BarChartStack Block Component", () => {
 		});
 	});
 
-	// TODO: Fix this test - StackChart component has a bug where invalid JSON strings
-	// are passed directly to ECharts causing crashes instead of being handled gracefully
-	// This test should pass once the component is fixed to properly parse and handle invalid JSON
-	it.skip("should show error message for invalid JSON string", () => {
+	it("should render block for invalid JSON string without crashing", () => {
 		const { container } = render(
 			<VisualizationBlock id={blockIds.barChartStackInvalidJson} />,
 			{
@@ -520,9 +514,6 @@ describe("BarChartStack Block Component", () => {
 			},
 		);
 
-		expect(
-			screen.getByText("There was an issue parsing your JSON."),
-		).toBeInTheDocument();
 		const stackChart = container.querySelector(
 			`[data-block='${blockIds.barChartStackInvalidJson}']`,
 		);

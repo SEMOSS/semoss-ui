@@ -1,5 +1,6 @@
 import { useQueryResults } from "./use-database-query-results";
 import { usePixel } from "./use-pixel";
+import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useAPI } from "./useAPI";
 import { useCacheState } from "./useCacheState";
 import { useQueryEditor } from "./useDatabaseQueryEditor";
@@ -37,5 +38,6 @@ export {
 	useServerPagination,
 	useSettings,
 	useStepper,
+	useTabBarScroll,
 	useWorkspace,
 };

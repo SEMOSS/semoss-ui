@@ -85,19 +85,9 @@ export class ChatStore {
 		embeddedPageMap: {},
 	};
 
-	constructor(
-		theme: ThemeMap["playground"],
-		actions: Insight["actions"],
-		user?: {
-			id: string;
-			name: string;
-		},
-	) {
+	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
 		this._theme = theme;
 		this._actions = actions;
-		if (user) {
-			this._store.user = user;
-		}
 		this._store.embeddedPageMap = [
 			...theme.sidebar.headerItems,
 			...theme.sidebar.footerItems,
@@ -162,15 +152,33 @@ export class ChatStore {
 	 */
 	initialize = async (): Promise<void> => {
 		try {
-			// set as initialized
-			Promise.all([
-				// get the default model info
-				this.getDefaultModel(),
-			]).finally(() => {
+			Promise.all([this.getDefaultModel(), this.getUser()]).finally(
+				() => {
+					runInAction(() => {
+						this._store.isInitialized = true;
+					});
+				},
+			);
+		} catch (e) {
+			console.error(e);
+		}
+	};
+
+	getUser = async (): Promise<void> => {
+		try {
+			const result =
+				await this._actions.run<
+					[Record<string, { id: string; name: string }>]
+				>(`META | GetUserInfo()`);
+
+			if (!result) return;
+
+			const user = Object.values(result.pixelReturn[0].output)[0];
+			if (user) {
 				runInAction(() => {
-					this._store.isInitialized = true;
+					this._store.user = { id: user.id, name: user.name };
 				});
-			});
+			}
 		} catch (e) {
 			console.error(e);
 		}
@@ -340,7 +348,7 @@ export class ChatStore {
 		});
 
 		const { pixelReturn } = await this._actions.run<[number | undefined]>(
-			`GetContextWindow(${JSON.stringify(engineId)});`,
+			`META | GetContextWindow(${JSON.stringify(engineId)})`,
 		);
 
 		if (this.models.selected?.engine_id === engineId) {
@@ -440,7 +448,7 @@ export class ChatStore {
 
 		// initially limit to 10 models
 		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
+			`META | MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
 		);
 
 		runInAction(() => {

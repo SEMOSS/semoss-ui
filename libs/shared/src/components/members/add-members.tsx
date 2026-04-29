@@ -226,26 +226,23 @@ export const AddMembersOverlay = ({
 	function tryAddFromText(text: string) {
 		const trimmed = text.trim().toLowerCase();
 		if (!trimmed) return;
-		const match = searchedResults.find(
-			(r) =>
-				r.email.toLowerCase() === trimmed ||
-				r.name.toLowerCase() === trimmed,
-		);
+		const match =
+			searchedResults.length === 1
+				? searchedResults[0]
+				: searchedResults.find(
+						(r) =>
+							r.email.toLowerCase() === trimmed ||
+							r.name.toLowerCase() === trimmed,
+					);
 		if (match) toggleUserSelected(match);
 	}
 
 	function handleSearchChange(e: ChangeEvent<HTMLInputElement>) {
-		const val = e.target.value;
-		if (val.includes(",")) {
-			const parts = val.split(",");
-			for (const part of parts.slice(0, -1)) tryAddFromText(part);
-			setSearchKey(parts[parts.length - 1]);
-		} else {
-			setSearchKey(val);
-		}
+		setSearchKey(e.target.value);
 	}
 
 	function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+		// Press Enter to add: exact name/email match, or auto-select if only one result remains
 		if (e.key === "Enter" && searchKey.trim()) {
 			e.preventDefault();
 			tryAddFromText(searchKey);
@@ -283,7 +280,7 @@ export const AddMembersOverlay = ({
 				{/* Search input */}
 				<input
 					ref={inputRef}
-					className="h-10 w-full rounded border bg-white px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
+					className="h-10 w-full rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
 					placeholder="Search by name or email..."
 					value={searchKey}
 					autoComplete="off"
@@ -423,6 +420,12 @@ export const AddMembersOverlay = ({
 										</SelectItem>
 										<SelectItem value="MONTH">
 											Monthly
+										</SelectItem>
+										<SelectItem value="YEAR">
+											Yearly
+										</SelectItem>
+										<SelectItem value="ALL_TIME">
+											All time
 										</SelectItem>
 									</SelectContent>
 								</Select>
