@@ -103,6 +103,7 @@ export const AuditLogsDashboard = ({
 }: {
 	catalogName: string;
 }) => {
+	console.log("Rendering AuditLogsDashboard for catalog:", catalogName);
 	const { monolithStore } = useRootStore();
 	const location = useLocation();
 	const params = useParams<{ appId?: string; engineId?: string }>();
@@ -114,7 +115,6 @@ export const AuditLogsDashboard = ({
 	const [searchTokens, setSearchTokens] = useState<SearchToken[]>([]);
 	const [searchFreeText, setSearchFreeText] = useState("");
 	const [selected, setSelected] = useState<AuditLog | null>(null);
-	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
 	const [logs, setLogs] = useState<AuditLog[]>([]);
 	const [page, setPage] = useState(0);
@@ -426,35 +426,41 @@ export const AuditLogsDashboard = ({
 				return [];
 			}
 		},
-		[catalogId, monolithStore],
+		[catalogId, catalogName, monolithStore],
 	);
 
-	const handleUserChange = (uid: string) => {
-		setSelectedUser(uid);
-		setChartPage(0);
-		filteredData.current.selectedUser = uid;
-		setPage(0);
-		fetchLogs(ROWS_PER_PAGE, 0);
-	};
+	const handleUserChange = useCallback(
+		(uid: string) => {
+			setSelectedUser(uid);
+			setChartPage(0);
+			filteredData.current.selectedUser = uid;
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
 
-	const handleDateChange = (from: string, to: string, preset?: string) => {
-		setDateFrom(from);
-		setDateTo(to);
-		setChartPage(0);
-		const duration =
-			DASHBOARD_DURATIONS.find((d) => d.value === preset) ??
-			DASHBOARD_DURATIONS[0];
-		setDurationValue(duration.value);
-		filteredData.current.customDateRange = {
-			from: from ? new Date(from) : new Date(),
-			to: to ? new Date(to) : new Date(),
-		};
-		filteredData.current.SelectedDuration = duration;
-		setPage(0);
-		fetchLogs(ROWS_PER_PAGE, 0);
-	};
+	const handleDateChange = useCallback(
+		(from: string, to: string, preset?: string) => {
+			setDateFrom(from);
+			setDateTo(to);
+			setChartPage(0);
+			const duration =
+				DASHBOARD_DURATIONS.find((d) => d.value === preset) ??
+				DASHBOARD_DURATIONS[0];
+			setDurationValue(duration.value);
+			filteredData.current.customDateRange = {
+				from: from ? new Date(from) : new Date(),
+				to: to ? new Date(to) : new Date(),
+			};
+			filteredData.current.SelectedDuration = duration;
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
 
-	const handleRefresh = () => {
+	const handleRefresh = useCallback(() => {
 		setDateFrom(todayStr);
 		setDateTo(todayStr);
 		setDurationValue("today");
@@ -473,7 +479,24 @@ export const AuditLogsDashboard = ({
 		searchRef.current = { tokens: [], freeText: "" };
 		setPage(0);
 		fetchLogs(ROWS_PER_PAGE, 0);
-	};
+	}, [todayStr, fetchLogs]);
+
+	const handleSearch = useCallback(
+		(tokens: SearchToken[], freeText: string) => {
+			setSearchTokens(tokens);
+			setSearchFreeText(freeText);
+			searchRef.current = { tokens, freeText };
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
+
+	// Stable noop callbacks so FilterRow memo is not broken
+	const noopEngineTypeChange = useCallback(() => {}, []);
+	const noopEngineChange = useCallback(() => {}, []);
+
+	const categoryOptions = useMemo(() => ({ engineType: ENGINE_TYPES }), []);
 
 	useEffect(() => {
 		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
@@ -506,15 +529,20 @@ export const AuditLogsDashboard = ({
 		}
 	}, [catalogId, catalogName, fetchUserList]);
 
-	const avgLat =
-		Array.isArray(logs) && logs.length > 0
-			? (logs.reduce((s, l) => s + l.latency, 0) / logs.length).toFixed(1)
-			: "0";
-	const successCount = logs.filter((l) => l.status).length;
-	const failCount = logs.length - successCount;
-	const successPct = logs.length
-		? Math.round((successCount / logs.length) * 100)
-		: 0;
+	const { avgLat, successPct, failCount } = useMemo(() => {
+		const successCount = logs.filter((l) => l.status).length;
+		const errors = logs.length - successCount;
+		const avg =
+			Array.isArray(logs) && logs.length > 0
+				? (
+						logs.reduce((s, l) => s + l.latency, 0) / logs.length
+					).toFixed(1)
+				: "0";
+		const pct = logs.length
+			? Math.round((successCount / logs.length) * 100)
+			: 0;
+		return { avgLat: avg, successPct: pct, failCount: errors };
+	}, [logs]);
 
 	const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
 
@@ -532,9 +560,18 @@ export const AuditLogsDashboard = ({
 
 	const catalogDisplayName = routeDisplayName || catalogId || "";
 
-	const engineNames = catalogId
-		? [{ value: catalogId, label: catalogDisplayName || catalogName }]
-		: [];
+	const engineNames = useMemo(
+		() =>
+			catalogId
+				? [
+						{
+							value: catalogId,
+							label: catalogDisplayName || catalogName,
+						},
+					]
+				: [],
+		[catalogId, catalogDisplayName, catalogName],
+	);
 
 	const backPath =
 		catalogName === "Apps"
@@ -594,8 +631,8 @@ export const AuditLogsDashboard = ({
 						selectedUser={selectedUser}
 						showUserFilter={isOwner}
 						showEngineFilter={false}
-						onEngineTypeChange={() => {}}
-						onEngineChange={() => {}}
+						onEngineTypeChange={noopEngineTypeChange}
+						onEngineChange={noopEngineChange}
 						onDateChange={handleDateChange}
 						onUserChange={handleUserChange}
 						onRefresh={handleRefresh}
@@ -623,25 +660,15 @@ export const AuditLogsDashboard = ({
 								totalCount={totalCount}
 								totalPages={totalPages}
 								selected={selected}
-								hoveredIdx={hoveredIdx}
 								searchTokens={searchTokens}
 								searchFreeText={searchFreeText}
 								page={page}
 								onSelectLog={setSelected}
-								onHoverLog={setHoveredIdx}
 								onTokensChange={setSearchTokens}
 								onFreeTextChange={setSearchFreeText}
-								onSearch={(tokens, freeText) => {
-									setSearchTokens(tokens);
-									setSearchFreeText(freeText);
-									searchRef.current = { tokens, freeText };
-									setPage(0);
-									fetchLogs(ROWS_PER_PAGE, 0);
-								}}
+								onSearch={handleSearch}
 								onPageChange={setPage}
-								categoryOptions={{
-									engineType: ENGINE_TYPES,
-								}}
+								categoryOptions={categoryOptions}
 								onFetchCategoryOptions={fetchCategoryOptions}
 							/>
 						</div>

@@ -69,6 +69,7 @@ const DASHBOARD_DURATIONS = [
 type DurationValue = (typeof DASHBOARD_DURATIONS)[number]["value"];
 
 export const AuditLogPage = () => {
+	console.log("Rendering AuditLogPage");
 	const { insightId } = useInsight();
 	const rootStore = useUserRootStore(insightId);
 	const userId = rootStore?.user?.id ?? "";
@@ -79,7 +80,6 @@ export const AuditLogPage = () => {
 	const [searchTokens, setSearchTokens] = useState<SearchToken[]>([]);
 	const [searchFreeText, setSearchFreeText] = useState("");
 	const [selected, setSelected] = useState<AuditLog | null>(null);
-	const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
 	const [logs, setLogs] = useState<AuditLog[]>([]);
 	const [totalCount, setTotalCount] = useState(0);
@@ -117,7 +117,8 @@ export const AuditLogPage = () => {
 		tokens: [],
 		freeText: "",
 	});
-	const toggleDark = () => setDark((d) => !d);
+
+	const toggleDark = useCallback(() => setDark((d) => !d), []);
 
 	const fetchLogs = useCallback(
 		async (limit: number, offset: number) => {
@@ -325,19 +326,22 @@ export const AuditLogPage = () => {
 		[insightId],
 	);
 
-	const handleEngineTypeChange = (type: string) => {
-		setEngType(type);
-		setEngId("");
-		setSelectedUser("");
-		setUserOptions([]);
-		setChartPage(0);
-		filteredData.current.engineType = type;
-		filteredData.current.engineId = "";
-		filteredData.current.selectedUser = "";
-		if (type) fetchEngineDetails(type);
-		setPage(0);
-		fetchLogs(ROWS_PER_PAGE, 0);
-	};
+	const handleEngineTypeChange = useCallback(
+		(type: string) => {
+			setEngType(type);
+			setEngId("");
+			setSelectedUser("");
+			setUserOptions([]);
+			setChartPage(0);
+			filteredData.current.engineType = type;
+			filteredData.current.engineId = "";
+			filteredData.current.selectedUser = "";
+			if (type) fetchEngineDetails(type);
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchEngineDetails, fetchLogs],
+	);
 
 	const fetchCategoryOptions = useCallback(
 		async (
@@ -468,43 +472,52 @@ export const AuditLogPage = () => {
 		[insightId],
 	);
 
-	const handleEngineChange = (id: string) => {
-		setEngId(id);
-		setChartPage(0);
-		setSelectedUser("");
-		filteredData.current.engineId = id;
-		filteredData.current.selectedUser = "";
-		setPage(0);
-		fetchLogs(ROWS_PER_PAGE, 0);
-		fetchUserList(id, filteredData.current.engineType);
-	};
+	const handleEngineChange = useCallback(
+		(id: string) => {
+			setEngId(id);
+			setChartPage(0);
+			setSelectedUser("");
+			filteredData.current.engineId = id;
+			filteredData.current.selectedUser = "";
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+			fetchUserList(id, filteredData.current.engineType);
+		},
+		[fetchLogs, fetchUserList],
+	);
 
-	const handleDateChange = (from: string, to: string, preset?: string) => {
-		setDateFrom(from);
-		setDateTo(to);
-		setChartPage(0);
-		const duration =
-			DASHBOARD_DURATIONS.find((d) => d.value === preset) ??
-			DASHBOARD_DURATIONS[0];
-		setDurationValue(duration.value);
-		filteredData.current.customDateRange = {
-			from: from ? new Date(from) : new Date(),
-			to: to ? new Date(to) : new Date(),
-		};
-		filteredData.current.SelectedDuration = duration;
-		setPage(0);
-		fetchLogs(ROWS_PER_PAGE, 0);
-	};
+	const handleDateChange = useCallback(
+		(from: string, to: string, preset?: string) => {
+			setDateFrom(from);
+			setDateTo(to);
+			setChartPage(0);
+			const duration =
+				DASHBOARD_DURATIONS.find((d) => d.value === preset) ??
+				DASHBOARD_DURATIONS[0];
+			setDurationValue(duration.value);
+			filteredData.current.customDateRange = {
+				from: from ? new Date(from) : new Date(),
+				to: to ? new Date(to) : new Date(),
+			};
+			filteredData.current.SelectedDuration = duration;
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
 
-	const handleUserChange = (uid: string) => {
-		setSelectedUser(uid);
-		setChartPage(0);
-		filteredData.current.selectedUser = uid;
-		setPage(0);
-		fetchLogs(ROWS_PER_PAGE, 0);
-	};
+	const handleUserChange = useCallback(
+		(uid: string) => {
+			setSelectedUser(uid);
+			setChartPage(0);
+			filteredData.current.selectedUser = uid;
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
 
-	const handleRefresh = () => {
+	const handleRefresh = useCallback(() => {
 		setEngType("");
 		setEngId("");
 		setSelectedUser("");
@@ -527,7 +540,20 @@ export const AuditLogPage = () => {
 		searchRef.current = { tokens: [], freeText: "" };
 		setPage(0);
 		fetchLogs(ROWS_PER_PAGE, 0);
-	};
+	}, [todayStr, fetchLogs]);
+
+	const handleSearch = useCallback(
+		(tokens: SearchToken[], freeText: string) => {
+			setSearchTokens(tokens);
+			setSearchFreeText(freeText);
+			searchRef.current = { tokens, freeText };
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
+
+	const categoryOptions = useMemo(() => ({ engineType: ENGINE_TYPES }), []);
 
 	useEffect(() => {
 		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
@@ -653,25 +679,15 @@ export const AuditLogPage = () => {
 							totalCount={totalCount}
 							totalPages={totalPages}
 							selected={selected}
-							hoveredIdx={hoveredIdx}
 							searchTokens={searchTokens}
 							searchFreeText={searchFreeText}
 							page={page}
 							onSelectLog={setSelected}
-							onHoverLog={setHoveredIdx}
 							onTokensChange={setSearchTokens}
 							onFreeTextChange={setSearchFreeText}
-							onSearch={(tokens, freeText) => {
-								setSearchTokens(tokens);
-								setSearchFreeText(freeText);
-								searchRef.current = { tokens, freeText };
-								setPage(0);
-								fetchLogs(ROWS_PER_PAGE, 0);
-							}}
+							onSearch={handleSearch}
 							onPageChange={setPage}
-							categoryOptions={{
-								engineType: ENGINE_TYPES,
-							}}
+							categoryOptions={categoryOptions}
 							onFetchCategoryOptions={fetchCategoryOptions}
 						/>
 					</div>
