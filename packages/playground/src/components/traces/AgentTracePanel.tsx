@@ -1,6 +1,6 @@
 import { Activity, ChevronDown, ChevronRight, RefreshCcw } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -30,6 +30,8 @@ export const AgentTracePanel: React.FC<AgentTracePanelProps> = ({
 	const [traces, setTraces] = useState<AgentTrace[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	// Prevent re-fetching on every render cycle when results are empty
+	const hasFetchedRef = useRef(false);
 
 	const fetchTraces = useCallback(async () => {
 		setLoading(true);
@@ -50,12 +52,15 @@ export const AgentTracePanel: React.FC<AgentTracePanelProps> = ({
 		}
 	}, [roomId, insightId]);
 
-	// Fetch whenever the panel opens for the first time
+	// Fetch once when the panel first opens; use hasFetchedRef to avoid
+	// re-triggering when results are empty (prevents an infinite loop where
+	// traces.length === 0 && !loading keeps re-firing the effect).
 	useEffect(() => {
-		if (open && traces.length === 0 && !loading) {
+		if (open && !hasFetchedRef.current) {
+			hasFetchedRef.current = true;
 			fetchTraces();
 		}
-	}, [open, traces.length, loading, fetchTraces]);
+	}, [open, fetchTraces]);
 
 	return (
 		<Collapsible open={open} onOpenChange={setOpen} className="w-full">
