@@ -1642,9 +1642,18 @@ export const DatabaseForm = ({
 	}
 
 	function transformStructure(dbObject) {
-		const result = {
+		const result: {
+			headers: string[];
+			dataTypes: Record<string, string>;
+			physicalTypes: Record<string, string>;
+			cleanHeaders: string[];
+			relation: { relName: string; fromTable: string; fromCol?: string; toTable: string; toCol?: string; }[];
+			nodeProp: Record<string, string[]>;
+			positions: Record<string, { left: number; top: number }>;
+		} = {
 			headers: [],
 			dataTypes: {},
+			physicalTypes: {},
 			cleanHeaders: [],
 			relation: [],
 			nodeProp: {},
@@ -1653,8 +1662,10 @@ export const DatabaseForm = ({
 
 		dbObject.tables.forEach((table) => {
 			table.columns.forEach((col, i) => {
-				result.dataTypes[col] =
-					table.type[i]?.toLowerCase() || "string";
+				result.dataTypes[col] = table.type[i] || "";
+				if (table.raw_type?.[i]) {
+					result.physicalTypes[col] = table.raw_type[i];
+				}
 			});
 
 			result.nodeProp[table.table] = table.columns;
@@ -1663,6 +1674,7 @@ export const DatabaseForm = ({
 
 		if (dbObject.relationships && dbObject.relationships?.length > 0) {
 			result.relation = dbObject.relationships.map((r) => ({
+				relName: `${r.fromCol ?? r.fromTable}.${r.toCol ?? r.toTable}`,
 				fromTable: r.fromTable,
 				fromCol: r.fromCol,
 				toTable: r.toTable,

@@ -37,6 +37,8 @@ export interface ParsedResult {
 	descriptionMap?: Record<string, string>;
 	fileName?: string;
 	fileLocation?: string;
+	raw_type?: string[];
+	physicalTypes?: Record<string, string>;
 }
 
 export interface Property {
@@ -47,6 +49,7 @@ export interface Property {
 	logicalNames?: string[];
 	isPrimary?: boolean;
 	label?: string;
+	rawType?: string;
 }
 export interface MetaModelTypeProps {
 	parsedData?: ParsedResult[];
