@@ -1,14 +1,22 @@
 import {
+	ComputerIcon,
+	ExternalLinkIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
+
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
+	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -49,7 +57,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
-
 	const [contentHeight, setContentHeight] = useState(0);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
@@ -325,7 +332,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		isAutoExecutingTools;
 
 	return (
-		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
+		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full overflow-hidden"
@@ -338,7 +345,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-2 px-4 py-6">
+						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -384,7 +391,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
@@ -440,20 +447,30 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto flex w-full max-w-4xl shrink-0 flex-col p-4">
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				<RoomInput
+					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
 					isLoading={showLoadingState}
 					hidePauseButton={!room.numberOfTools}
 					model={room.model}
+					room={room}
 					setModel={(model) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);
 					}}
 					options={room.options}
 					onMcpSelect={handleToolAdd}
+					onMcpToggle={handleToolSelect}
 					MenuComponent={observer(
-						({ onOpenChange, fileRef, editorRef }) => (
+						({
+							onOpenChange,
+							fileRef,
+							knowledgeOverlayOpen,
+							onKnowledgeOverlayChange,
+							toolboxOverlayOpen,
+							onToolboxOverlayChange,
+						}) => (
 							<>
 								<RoomInputMenuUpload
 									fileRef={fileRef}
@@ -463,16 +480,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<RoomInputMenuMCP
 									type="KNOWLEDGE"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									open={knowledgeOverlayOpen}
+									onOpenChange={onKnowledgeOverlayChange}
 								/>
 								<RoomInputMenuMCP
 									type="TOOLBOX"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									open={toolboxOverlayOpen}
+									onOpenChange={onToolboxOverlayChange}
 								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
@@ -505,6 +520,57 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</>
 						),
 					)}
+					footer={
+						room.options.workspace?.workspace_id ? (
+							room.theme.featureFlags?.showPlatformLinks ? (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary" asChild>
+												<a
+													target="_blank"
+													href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
+												>
+													<ComputerIcon data-icon="inline-start" />
+													<div className="w-18 truncate">
+														{room.options.workspace
+															.name ||
+															room.options
+																.workspace
+																.workspace_id}
+													</div>
+													<ExternalLinkIcon data-icon="inline-end" />
+												</a>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										Click to view agent details
+									</TooltipContent>
+								</Tooltip>
+							) : (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary">
+												<ComputerIcon data-icon="inline-start" />
+												<div className="w-18 truncate">
+													{room.options.workspace
+														.name ||
+														room.options.workspace
+															.workspace_id}
+												</div>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{room.options.workspace.name ||
+											room.options.workspace.workspace_id}
+									</TooltipContent>
+								</Tooltip>
+							)
+						) : null
+					}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools

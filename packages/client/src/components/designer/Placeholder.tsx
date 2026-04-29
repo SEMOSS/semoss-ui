@@ -1,22 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { styled } from "@semoss/ui";
 import { useDesigner } from "@/hooks";
 import type { DesignerStoreInterface } from "@/stores";
 
-const StyledPlaceholder = styled("div")(({ theme }) => ({
-	position: "absolute",
-	zIndex: "20",
-	pointerEvents: "none",
-	userSelect: "none",
-	backgroundColor: theme.palette.primary.main,
-}));
-
-/**
- * Calculate the size of the place holder
- * @param placeholderAction - action to track
- * @param placeholderSize - size of the tracked widget
- * @returns bounding box of the placeholder
- */
 function getPlaceholderStyle(
 	placeholderAction: DesignerStoreInterface["drag"]["placeholderAction"],
 	placeholderSize: DesignerStoreInterface["drag"]["placeholderSize"],
@@ -31,7 +16,6 @@ function getPlaceholderStyle(
 
 	const { type } = placeholderAction;
 
-	// calculate the relative size
 	if (type === "before") {
 		return {
 			top: `${placeholderSize.top - spacer / 2}px`,
@@ -42,9 +26,7 @@ function getPlaceholderStyle(
 		};
 	} else if (type === "after") {
 		return {
-			top: `${
-				placeholderSize.top + placeholderSize.height - spacer / 2
-			}px`,
+			top: `${placeholderSize.top + placeholderSize.height - spacer / 2}px`,
 			left: `${placeholderSize.left}px`,
 			height: `${spacer}px`,
 			width: `${placeholderSize.width}px`,
@@ -63,26 +45,22 @@ function getPlaceholderStyle(
 	return {};
 }
 
-/**
- * Rendered Placeholder for the view
- */
 export const Placeholder = observer(() => {
-	// get the store
 	const { designer } = useDesigner();
 
-	// get the placeholder information
 	if (!designer.drag.placeholderAction || !designer.drag.placeholderSize) {
-		return <></>;
+		return null;
 	}
 
 	return (
-		<StyledPlaceholder
+		<div
+			className="pointer-events-none absolute z-20 select-none bg-primary"
 			style={{
 				...getPlaceholderStyle(
 					designer.drag.placeholderAction,
 					designer.drag.placeholderSize,
 				),
 			}}
-		></StyledPlaceholder>
+		/>
 	);
 });

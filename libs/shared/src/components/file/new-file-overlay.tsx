@@ -28,6 +28,40 @@ import {
 } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 
+export type NewFileAction = "upload" | "add_file" | "add_directory";
+type NewFileData =
+	| {
+			action: "upload";
+			files: File[];
+	  }
+	| {
+			action: "add_file";
+			name: string;
+	  }
+	| {
+			action: "add_directory";
+			name: string;
+	  };
+
+const getInitialData = (action: NewFileAction): NewFileData => {
+	if (action === "add_file") {
+		return {
+			action: "add_file",
+			name: "",
+		};
+	}
+	if (action === "add_directory") {
+		return {
+			action: "add_directory",
+			name: "",
+		};
+	}
+	return {
+		action: "upload",
+		files: [],
+	};
+};
+
 interface NewFileOverlayProps {
 	/** Mode of file editor */
 	mode: FileMode;
@@ -38,6 +72,9 @@ interface NewFileOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
+	/** Initial action selected when the overlay opens */
+	initialAction?: NewFileAction;
+
 	/** Callback triggered when the dialog is closed */
 	onClose: (success: boolean) => void;
 }
@@ -46,30 +83,46 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 	mode,
 	path,
 	open,
+	initialAction = "upload",
 	onClose = () => null,
 }) => {
 	const insight = useInsight();
 	const fileInputId = useId();
-	const [data, setData] = useState<
-		| {
-				action: "upload";
-				files: File[];
-		  }
-		| {
-				action: "add_file";
-				name: string;
-		  }
-		| {
-				action: "add_directory";
-				name: string;
-		  }
-	>({
-		action: "upload",
-		files: [],
-	});
+	const [data, setData] = useState<NewFileData>(() =>
+		getInitialData(initialAction),
+	);
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [isDragging, setIsDragging] = useState(false);
+	const [filesToUnzip, setFilesToUnzip] = useState<Map<string, boolean>>(
+		new Map(),
+	);
+
+	/**
+	 * Check if a file is a ZIP file based on extension and MIME type
+	 */
+	const isZipFile = (file: File): boolean => {
+		const hasZipExtension = file.name.toLowerCase().endsWith(".zip");
+		const hasZipMimeType =
+			file.type === "application/zip" ||
+			file.type === "application/x-zip-compressed";
+		return hasZipExtension && hasZipMimeType;
+	};
+
+	/**
+	 * Toggle unzip selection for a specific file
+	 */
+	const toggleUnzip = (fileKey: string) => {
+		setFilesToUnzip((prev) => {
+			const newMap = new Map(prev);
+			if (newMap.has(fileKey)) {
+				newMap.set(fileKey, !newMap.get(fileKey));
+			} else {
+				newMap.set(fileKey, true);
+			}
+			return newMap;
+		});
+	};
 
 	const isDisabled =
 		isLoading ||
@@ -123,6 +176,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 			files: [],
 		});
 		setIsDragging(false);
+		setFilesToUnzip(new Map());
 		onClose(false);
 	};
 
@@ -141,21 +195,90 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 				}
 
 				// upload the files
+				let uploadResponse: {
+					response: Response;
+					data: {
+						fileName: string;
+						fileLocation: string;
+					}[];
+				} | null = null;
+
 				if (mode.type === "APP") {
-					await insight.actions.uploadApp(mode.app, path, data.files);
+					uploadResponse = await insight.actions.uploadApp(
+						mode.app,
+						path,
+						data.files,
+					);
 				} else if (mode.type === "ENGINE") {
-					await insight.actions.uploadEngine(
+					uploadResponse = await insight.actions.uploadEngine(
 						mode.engine,
 						path,
 						data.files,
 					);
 				} else if (mode.type === "INSIGHT") {
-					await insight.actions.uploadInsight(path, data.files);
+					uploadResponse = await insight.actions.uploadInsight(
+						path,
+						data.files,
+					);
 				} else {
 					throw new Error("Unknown mode type");
 				}
 
-				toast.success("Successfully uploaded file(s)");
+				const uploadedFiles = uploadResponse?.data || [];
+
+				// Handle unzip for selected files
+				let extractedCount = 0;
+				const extractionErrors: string[] = [];
+
+				for (let i = 0; i < data.files.length; i++) {
+					const file = data.files[i];
+					const fileKey = `${file.name}-${file.size}`;
+					const shouldExtract =
+						isZipFile(file) && (filesToUnzip.get(fileKey) || false);
+
+					if (shouldExtract && uploadedFiles[i]) {
+						try {
+							const uploadedFile = uploadedFiles[i];
+							// Normalize path to use forward slashes
+							const uploadedPath =
+								uploadedFile.fileLocation.replace(/\\/g, "/");
+
+							let unzipPixel = "";
+							if (mode.type === "APP") {
+								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.app}"])`;
+							} else if (mode.type === "ENGINE") {
+								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.engine}"])`;
+							} else if (mode.type === "INSIGHT") {
+								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"])`;
+							}
+
+							await insight.actions.run(unzipPixel);
+							extractedCount++;
+						} catch (error) {
+							extractionErrors.push(
+								`${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
+							);
+						}
+					}
+				}
+
+				// Show success message with extraction summary
+				if (extractedCount > 0 || extractionErrors.length === 0) {
+					if (extractedCount > 0) {
+						toast.success(
+							`Successfully uploaded ${data.files.length} file(s)${extractedCount > 0 ? `, extracted ${extractedCount} ZIP(s)` : ""}`,
+						);
+					} else {
+						toast.success("Successfully uploaded file(s)");
+					}
+				}
+
+				// Show errors if any extractions failed
+				if (extractionErrors.length > 0) {
+					toast.error(
+						`${extractionErrors.length} extraction(s) failed: ${extractionErrors.join("; ")}`,
+					);
+				}
 			} else if (data.action === "add_file") {
 				if (!data.name.trim()) {
 					toast.error("Please enter a name for the file");
@@ -201,7 +324,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 			onClose(true);
 		} catch (e) {
-			toast.error(e.message);
+			toast.error(e instanceof Error ? e.message : "An error occurred");
 			console.error(e);
 		} finally {
 			setIsLoading(false);
@@ -348,22 +471,60 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 												selected:
 											</Muted>
 											<div className="max-h-24 space-y-1 overflow-y-auto">
-												{data.files.map((file) => (
-													<div
-														key={`${file.name}-${file.size}`}
-														className="flex items-center justify-between rounded bg-muted px-2 py-1 text-xs"
-													>
-														<span className="truncate">
-															{file.name}
-														</span>
-														<span className="ml-2 text-muted-foreground">
-															{(
-																file.size / 1024
-															).toFixed(1)}{" "}
-															KB
-														</span>
-													</div>
-												))}
+												{data.files.map((file) => {
+													const fileKey = `${file.name}-${file.size}`;
+													const fileIsZip =
+														isZipFile(file);
+													const shouldUnzip =
+														fileIsZip &&
+														(filesToUnzip.get(
+															fileKey,
+														) ||
+															false);
+
+													return (
+														<div
+															key={fileKey}
+															className="flex items-center justify-between rounded bg-muted px-2 py-1 text-xs"
+														>
+															<div className="flex flex-1 items-center gap-2 truncate">
+																<span className="truncate">
+																	{file.name}
+																</span>
+																<span className="whitespace-nowrap text-muted-foreground">
+																	(
+																	{(
+																		file.size /
+																		1024
+																	).toFixed(
+																		1,
+																	)}{" "}
+																	KB)
+																</span>
+															</div>
+															{fileIsZip && (
+																<label className="ml-auto flex items-center gap-2 whitespace-nowrap pl-2">
+																	<input
+																		type="checkbox"
+																		checked={
+																			shouldUnzip
+																		}
+																		onChange={() =>
+																			toggleUnzip(
+																				fileKey,
+																			)
+																		}
+																		title="Extract this ZIP after upload"
+																		className="cursor-pointer"
+																	/>
+																	<span className="text-muted-foreground text-xs hover:text-foreground">
+																		Unzip
+																	</span>
+																</label>
+															)}
+														</div>
+													);
+												})}
 											</div>
 										</div>
 									)}

@@ -1,6 +1,4 @@
-import DownloadIcon from "@mui/icons-material/Download";
-import MicIcon from "@mui/icons-material/Mic";
-import MicOffIcon from "@mui/icons-material/MicOff";
+import { Download, Mic, MicOff } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -11,8 +9,8 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Box, Button, IconButton, TextField } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Button, Input } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 interface InputAudioSettingsProps<D extends BlockDef = BlockDef> {
@@ -40,6 +38,7 @@ interface InputAudioSettingsProps<D extends BlockDef = BlockDef> {
 export const InputAudioSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
+		// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 		label = "",
 		path,
 		placeholder = "",
@@ -47,7 +46,9 @@ export const InputAudioSettings = observer(
 		const { data, setData } = useBlockSettings<D>(id);
 
 		// track the value
-		const [value, setValue] = useState(data.value ?? "");
+		const [value, setValue] = useState<string>(
+			(data.value as string) ?? "",
+		);
 
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -56,7 +57,7 @@ export const InputAudioSettings = observer(
 		const [transcript, setTranscript] = useState(
 			data.value?.toString() ?? "",
 		);
-		const [interimTranscript, setInterimTranscript] = useState("");
+		const [_interimTranscript, setInterimTranscript] = useState("");
 		const [mediaRecorder, setMediaRecorder] =
 			useState<MediaRecorder | null>(null);
 		const recognitionRef = useRef(null);
@@ -64,9 +65,9 @@ export const InputAudioSettings = observer(
 
 		useEffect(() => {
 			if (data.mode === "transcribe") {
-				const recognition = new (
-					window as any
-				).webkitSpeechRecognition();
+				const recognition =
+					new // biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+					(window as any).webkitSpeechRecognition();
 				recognition.continuous = true;
 				recognition.interimResults = true;
 				recognition.lang = "en-US";
@@ -134,8 +135,8 @@ export const InputAudioSettings = observer(
 			setValue(computedValue);
 		}, [computedValue]);
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			// setData('value', transcript, true);
 			if (data.mode === "transcribe") {
 				onChange(transcript);
 			}
@@ -188,6 +189,7 @@ export const InputAudioSettings = observer(
 								// Stop and cleanup tracks
 								stream
 									.getTracks()
+									// biome-ignore lint/suspicious/useIterableCallbackReturn: echart callback
 									.forEach((track) => track.stop());
 							};
 
@@ -201,12 +203,14 @@ export const InputAudioSettings = observer(
 				}
 			}
 		};
+
 		// Cleanup effect
 		useEffect(() => {
 			return () => {
 				if (mediaRecorder && mediaRecorder.state !== "inactive") {
 					mediaRecorder.stop();
 					const tracks = mediaRecorder.stream.getTracks();
+					// biome-ignore lint/suspicious/useIterableCallbackReturn: echart callback
 					tracks.forEach((track) => track.stop());
 				}
 			};
@@ -250,62 +254,48 @@ export const InputAudioSettings = observer(
 		};
 
 		return (
-			<>
-				<BaseSettingSection
-					label={
-						data.mode === "transcribe" ? "Transcript" : "Recording"
-					}
+			<BaseSettingSection
+				label={data.mode === "transcribe" ? "Transcript" : "Recording"}
+			>
+				<div className="flex flex-1 flex-col gap-1.5">
+					<Input
+						placeholder={placeholder}
+						value={value}
+						onChange={
+							data.mode === "transcribe"
+								? (e) => onChange(e.target.value)
+								: undefined
+						}
+						disabled={data.mode === "record"}
+						type={
+							Object.hasOwn(data, "type") && path === "value"
+								? (data.type as string)
+								: undefined
+						}
+						autoComplete="off"
+					/>
+					{data.mode === "record" &&
+						(data.value as string)?.startsWith("data:audio/") && (
+							<Button
+								size="sm"
+								onClick={handleDownload}
+								variant="outline"
+								className="flex items-center gap-1"
+							>
+								<Download className="size-4" />
+								Download Recording
+							</Button>
+						)}
+				</div>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					onClick={() => handleRecording()}
+					className={recording ? "text-destructive" : "text-primary"}
 				>
-					<Box
-						sx={{
-							flex: 1,
-							display: "flex",
-							flexDirection: "column",
-							gap: 1.5,
-						}}
-					>
-						<TextField
-							fullWidth
-							placeholder={placeholder}
-							value={value}
-							onChange={
-								data.mode === "transcribe"
-									? (e) => onChange(e.target.value)
-									: undefined
-							}
-							disabled={data.mode === "record"}
-							type={
-								Object.hasOwn(data, "type") && path === "value"
-									? (data.type as string)
-									: undefined
-							}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-						/>
-						{data.mode === "record" &&
-							(data.value as string)?.startsWith(
-								"data:audio/",
-							) && (
-								<Button
-									size="small"
-									onClick={handleDownload}
-									variant="outlined"
-									startIcon={<DownloadIcon />}
-								>
-									Download Recording
-								</Button>
-							)}
-					</Box>
-					<IconButton
-						size="small"
-						onClick={() => handleRecording()}
-						color={recording ? "error" : "primary"}
-					>
-						{recording ? <MicOffIcon /> : <MicIcon />}
-					</IconButton>
-				</BaseSettingSection>
-			</>
+					{recording ? <MicOff /> : <Mic />}
+				</Button>
+			</BaseSettingSection>
 		);
 	},
 );

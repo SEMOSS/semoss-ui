@@ -1,3 +1,3 @@
-export * from "./BlocksWorkspace";
+export * from "./blocks-workspace";
 export * from "./modals";
 export * from "./panels";

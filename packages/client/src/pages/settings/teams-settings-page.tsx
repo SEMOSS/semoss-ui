@@ -1,12 +1,20 @@
-import { Plus, Users } from "lucide-react";
+import { Plus, Search, Users } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Search, styled } from "@semoss/ui";
-import { Badge, Button, Card, CardContent, H3, H4, P } from "@semoss/ui/next";
+import {
+	Badge,
+	Button,
+	Card,
+	CardContent,
+	H3,
+	H4,
+	Input,
+	P,
+} from "@semoss/ui/next";
 import { getTeams, getTeamsCount } from "@/api";
 import { AddTeamModal } from "@/components/teams/add-team-modal";
 import { TeamTileCard } from "@/components/teams/team-tile-card";
+import { useNavigate } from "@/hooks/useNavigate";
 import { useSettings } from "@/hooks/useSettings";
 
 export interface DBMember {
@@ -50,17 +58,6 @@ const reducer = (state, action) => {
 	}
 	return state;
 };
-
-const StyledSearchbarContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "flex-start",
-	gap: theme.spacing(3),
-}));
-
-const StyledSearch = styled(Search)({
-	width: "100%",
-});
 
 const PAGE_SIZE = 50;
 
@@ -300,18 +297,17 @@ export const TeamsSettingsPage = observer(() => {
 				</div>
 			</div>
 
-			<StyledSearchbarContainer>
-				<StyledSearch
-					size="small"
-					inputRef={searchbarRef}
+			<div className="relative w-full">
+				<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+				<Input
+					ref={searchbarRef}
 					value={search}
-					onChange={(e) => {
-						setSearch(e.target.value);
-					}}
+					onChange={(e) => setSearch(e.target.value)}
 					placeholder="Search teams by name"
 					aria-label="Search teams"
+					className="pl-9"
 				/>
-			</StyledSearchbarContainer>
+			</div>
 
 			<div className="min-h-[220px]">
 				{visibleTeams === 0 && !isLoading ? (

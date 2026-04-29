@@ -191,6 +191,7 @@ export const AdminThemePage: React.FC = () => {
 			const emptyTheme: ThemeMap = {
 				playground: {
 					name: newThemeName,
+					banner: "",
 					description: "",
 					variables: {
 						backgroundColor: "",
@@ -204,6 +205,11 @@ export const AdminThemePage: React.FC = () => {
 						landing: "",
 						workspace: "",
 						tabIcon: "",
+						loginDark: "",
+						landingDark: "",
+						workspaceDark: "",
+						error: "",
+						errorDark: "",
 					},
 					overrides: {
 						"main-layout": {},
@@ -221,9 +227,17 @@ export const AdminThemePage: React.FC = () => {
 					featureFlags: {
 						enableAgent: true,
 						enableModelSelect: true,
-						enablePlan: true,
+						enablePlan: false,
 						enableSuggestions: false,
 						enableRewrite: true,
+						enableDarkMode: true,
+						enablePromptOptimizer: true,
+						hideToolsInIframe: false,
+						enableKnowledgeMCP: true,
+						allowEmbeddingOptions: true,
+						showKnowledgeMenu: true,
+						showToolboxMenu: true,
+						showPlatformLinks: true,
 					},
 				},
 			};

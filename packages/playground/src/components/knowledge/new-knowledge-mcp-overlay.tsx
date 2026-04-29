@@ -47,9 +47,10 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 			"common",
 		]);
 
-		const showEmbeddingOptions = root.theme.allowEmbeddingOptions !== false;
+		const showEmbeddingOptions =
+			root.theme.featureFlags?.allowEmbeddingOptions;
 		const defaultEmbedderId = root.theme.defaultEmbedderId ?? "";
-		const runMCP = root.theme.enableKnowledgeMCP !== false;
+		const runMCP = root.theme.featureFlags?.enableKnowledgeMCP;
 
 		const [isLoading, setIsLoading] = useState(false);
 		const [name, setName] = useState("");

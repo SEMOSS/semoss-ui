@@ -1,4 +1,10 @@
-import { Pencil, Plus, Search as SearchIcon, Trash2 } from "lucide-react";
+import {
+	Pencil,
+	Plus,
+	Search as SearchIcon,
+	Trash2,
+	Upload,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
@@ -39,6 +45,7 @@ import {
 } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
+import { BatchUploadPermissionsOverlay } from "./batch-upload-permissions-overlay";
 import { MembersAddOverlay } from "./members-add-overlay";
 import { MembersDeleteOverlay } from "./members-delete-overlay";
 import type {
@@ -55,6 +62,8 @@ const formatValue = (input: string) => {
 			DAY: "Daily",
 			WEEK: "Weekly",
 			MONTH: "Monthly",
+			YEAR: "Yearly",
+			ALL_TIME: "All time",
 			NULL: "None",
 		};
 		return mappings[input.toUpperCase()] || input;
@@ -159,6 +168,9 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [pendingDeletedMembers, setPendingDeletedMembers] = useState<
 		SETTINGS_PROVISIONED_USER[]
 	>([]);
+
+	/** Batch Upload State */
+	const [batchUploadModal, setBatchUploadModal] = useState<boolean>(false);
 
 	/** Add Member State */
 	const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
@@ -586,6 +598,24 @@ export const MembersTable = (props: MembersTableProps) => {
 											Delete Selected
 										</Button>
 									)}
+								</div>
+								<div className="flex flex-col items-center justify-center gap-2.5 px-2 py-2.5">
+									<Button
+										variant="outline"
+										disabled={
+											isLoading ||
+											userPermission === "Read-Only"
+										}
+										data-testid="membersTables-batchUpload-btn"
+										onClick={() => {
+											setBatchUploadModal(true);
+										}}
+									>
+										<div className="flex items-center gap-2">
+											<Upload className="size-4" />
+											Batch Upload
+										</div>
+									</Button>
 								</div>
 								<div className="flex flex-col items-center justify-center gap-2.5 px-2 px-6 py-2.5 py-2.5">
 									<Button
@@ -1182,6 +1212,20 @@ export const MembersTable = (props: MembersTableProps) => {
 					)}
 				</div>
 			</div>
+			<BatchUploadPermissionsOverlay
+				open={batchUploadModal}
+				onClose={(success) => {
+					setBatchUploadModal(false);
+					if (success) {
+						onChange();
+						getMembers.refresh();
+						allAuthorsResponse.refresh();
+						userDetails.refresh();
+					}
+				}}
+				id={id}
+				type={type}
+			/>
 			<MembersDeleteOverlay
 				type={type}
 				id={id}

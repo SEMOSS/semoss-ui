@@ -25,6 +25,7 @@ import {
 	SidebarHeader as ShadcnSidebarHeader,
 	Sheet,
 	SheetContent,
+	SheetTitle,
 	SidebarGroup,
 	SidebarGroupLabel,
 	SidebarMenu,
@@ -379,6 +380,7 @@ export const Sidebar: React.FC = observer(() => {
 				side="left"
 				className="w-72 max-w-none gap-0 bg-sidebar p-0 [&>button]:hidden"
 			>
+				<SheetTitle className="sr-only">Navigation</SheetTitle>
 				{sidebarContent}
 			</SheetContent>
 		</Sheet>

@@ -56,9 +56,10 @@ const JSONTreeView = ({
 	}
 
 	const isArray = Array.isArray(data);
+	const isEmpty = Object.keys(data as object).length === 0;
 
 	return (
-		<div style={{ marginLeft: isChild ? 3 : 0 }}>
+		<div className={isChild ? "ml-[3px]" : "ml-0"}>
 			<div className="flex items-center">
 				{isChild && (
 					// biome-ignore lint/a11y/noStaticElementInteractions: <need events to be handled>
@@ -74,27 +75,23 @@ const JSONTreeView = ({
 						)}
 					</div>
 				)}
-				{isChild && (
-					<>
-						{isArray ? (
-							""
-						) : (
-							<span style={{ color: "#0471F0" }}>"</span>
-						)}
-						<span
-							style={{
-								color: "#0471F0",
-							}}
-						>
-							{isArray ? "[" : "{"}
-						</span>
-					</>
+				<span style={{ color: "#0471F0" }}>{isArray ? "[" : "{"}</span>
+				{!isExpanded && (
+					<span style={{ color: "#0471F0" }}>
+						{isEmpty
+							? isArray
+								? "]"
+								: "}"
+							: isArray
+								? "...]"
+								: "...}"}
+					</span>
 				)}
 			</div>
 			{isExpanded && (
-				<div style={isChild ? null : { padding: "20px" }}>
+				<div>
 					{Object.entries(data).map(([key, value]) => (
-						<div key={key} style={{ marginLeft: isChild ? 16 : 0 }}>
+						<div key={key} className="ml-4">
 							{!isArray && (
 								<>
 									<span style={{ color: "#0471F0" }}>
@@ -112,16 +109,8 @@ const JSONTreeView = ({
 					))}
 				</div>
 			)}
-			{isExpanded && isChild && (
-				<div style={{ marginLeft: isChild ? 0 : 16 }}>
-					<span
-						style={{
-							color: "#0471F0",
-						}}
-					>
-						{isArray ? "]" : "}"}
-					</span>
-				</div>
+			{isExpanded && (
+				<span style={{ color: "#0471F0" }}>{isArray ? "]" : "}"}</span>
 			)}
 		</div>
 	);
@@ -267,10 +256,7 @@ export const AuditLogsDetailDrawer = (props) => {
 						<span className="mb-4 font-semibold text-black text-sm leading-[1.57] tracking-normal">
 							Event Summary
 						</span>
-						<div
-							className="mt-4 flex items-center justify-between"
-							style={{ marginBottom: "8px" }}
-						>
+						<div className="mt-3 mb-1.5 flex items-center justify-between">
 							<span className="flex items-center gap-2 font-semibold text-gray-900">
 								Request
 							</span>
@@ -290,13 +276,11 @@ export const AuditLogsDetailDrawer = (props) => {
 						{/*
 						//theme.palette.background.paper2
 						*/}
-						<div
-							className={`mt-4 rounded-md border border-gray-300`}
-						>
+						<div className="mb-3 rounded-md border border-gray-300">
 							{(() => {
 								if (promptData) {
 									return (
-										<div className="overflow-x-auto rounded p-[16px] font-[inter] text-gray-900 text-sm leading-[1.4]">
+										<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
 											<JSONTreeView
 												data={promptData}
 												expandAll={promptExpandAll}
@@ -311,7 +295,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								);
 							})()}
 						</div>
-						<div className="mt-4 flex items-center justify-between">
+						<div className="mt-0 mb-1.5 flex items-center justify-between">
 							<span className="flex items-center gap-2 font-semibold text-gray-900">
 								Response
 							</span>
@@ -331,11 +315,11 @@ export const AuditLogsDetailDrawer = (props) => {
 								</Button>
 							)}
 						</div>
-						<div className="mt-4 rounded-[6px] border border-gray-300 bg-[#FAFAFA] p-1">
+						<div className="rounded-md border border-gray-300 bg-[#FAFAFA]">
 							{(() => {
 								if (responseData) {
 									return (
-										<div className="overflow-x-auto rounded p-3 font-[inter] text-gray-900 text-sm leading-[1.4]">
+										<div className="overflow-x-auto rounded p-2 font-[inter] text-gray-900 text-sm leading-[1.4]">
 											<JSONTreeView
 												data={responseData}
 												expandAll={responseExpandAll}

@@ -1,9 +1,9 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Button, Modal, Stack, TextField } from "@semoss/ui";
+import { Button, Input, Label } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 
 type NewQueryForm = {
@@ -27,6 +27,7 @@ export const NewQueryOverlay = observer(
 
 		const { state } = useBlocks();
 		const { configStore } = useRootStore();
+		const fieldId = useId();
 
 		// create a new form
 		const {
@@ -115,54 +116,49 @@ export const NewQueryOverlay = observer(
 
 		return (
 			<>
-				<Modal.Title>New Query</Modal.Title>
-				<Modal.Content>
-					<Stack marginTop={1}>
+				<div className="px-6 pt-6 pb-2">
+					<h2 className="font-semibold text-lg">New Query</h2>
+				</div>
+				<div className="px-6 py-2">
+					<div className="mt-1 flex flex-col gap-1.5">
 						<Controller
 							name={"ID"}
 							control={control}
 							render={({ field }) => {
 								return (
-									<TextField
-										error={!!errors?.ID?.message}
-										label="Id"
-										value={field.value ? field.value : ""}
-										onChange={(value) => {
-											clearErrors();
-											field.onChange(value);
-										}}
-										helperText={errors?.ID?.message}
-									/>
+									<div className="flex flex-col gap-1">
+										<Label htmlFor={fieldId}>Id</Label>
+										<Input
+											id={fieldId}
+											value={field.value ?? ""}
+											onChange={(e) => {
+												clearErrors();
+												field.onChange(e);
+											}}
+											aria-invalid={!!errors?.ID?.message}
+										/>
+										{errors?.ID?.message && (
+											<span className="text-destructive text-xs">
+												{errors.ID.message}
+											</span>
+										)}
+									</div>
 								);
 							}}
 						/>
-					</Stack>
-				</Modal.Content>
-				<Modal.Actions>
-					<Stack
-						direction="row"
-						spacing={1}
-						paddingX={2}
-						paddingBottom={2}
-						justifyContent="end"
+					</div>
+				</div>
+				<div className="flex justify-end gap-2 px-6 pt-2 pb-6">
+					<Button variant="outline" onClick={() => onClose()}>
+						Cancel
+					</Button>
+					<Button
+						disabled={!!errors?.ID?.message || !isFormValid}
+						onClick={() => onSubmit()}
 					>
-						<Button
-							variant="text"
-							color="primary"
-							onClick={() => onClose()}
-						>
-							Cancel
-						</Button>
-						<Button
-							variant="contained"
-							color="primary"
-							disabled={!!errors?.ID?.message || !isFormValid}
-							onClick={() => onSubmit()}
-						>
-							Submit
-						</Button>
-					</Stack>
-				</Modal.Actions>
+						Submit
+					</Button>
+				</div>
 			</>
 		);
 	},

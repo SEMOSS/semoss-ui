@@ -10,8 +10,8 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import { upload } from "@semoss/sdk/react";
-import { TextField } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Input } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 interface UploadSettingsProps<D extends BlockDef = BlockDef> {
@@ -47,11 +47,11 @@ export const UploadSettings = observer(
 		const { data, setData } = useBlockSettings<D>(id);
 		const { state } = useBlocks();
 
-		// track the value
-		const [value, setValue] = useState("");
+		// track the value (kept to stay in sync with block data, not rendered)
+		const [_value, setValue] = useState("");
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -127,18 +127,15 @@ export const UploadSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<TextField
-					fullWidth
+				<Input
 					onChange={(e) => {
 						const files = (e.target as HTMLInputElement).files;
-
-						// upload the new file on change
-						onChange(files[0]);
+						if (files?.[0]) {
+							onChange(files[0]);
+						}
 					}}
 					type={"file"}
-					inputProps={{ accept: data[restrictPath] }}
-					size="small"
-					variant="outlined"
+					accept={data[restrictPath] as string}
 					autoComplete="off"
 				/>
 			</BaseSettingSection>

@@ -1,4 +1,3 @@
-import { screen } from "@testing-library/react";
 import { describe, expect } from "vitest";
 import { ChipBlock } from "../../components/block-defaults/chip-block/ChipBlock";
 import { render } from "../utils/index";
@@ -73,11 +72,18 @@ describe("chip block", () => {
 	});
 
 	it("should show correct variant", async () => {
-		render(<ChipBlock id={blocks["icon-chip"].id} />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<ChipBlock id={blocks["icon-chip"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
-		const icon = screen.getByTestId("FaceIcon");
+		const chip = container.querySelector(
+			"[data-block='icon-chip']",
+		) as HTMLElement;
+		const icon = chip.querySelector("svg");
+		expect(chip).toBeInTheDocument();
 		expect(icon).toBeInTheDocument();
 	});
 
@@ -89,7 +95,11 @@ describe("chip block", () => {
 			},
 		);
 
-		const chip = container.querySelector("[data-block='appearance-chip']");
-		expect(chip.querySelector(".MuiChip-outlined")).toBeInTheDocument();
+		const chip = container.querySelector(
+			"[data-block='appearance-chip']",
+		) as HTMLElement;
+		const span = chip.querySelector("span");
+		expect(span).toBeInTheDocument();
+		expect(span).toHaveClass("bg-transparent");
 	});
 });

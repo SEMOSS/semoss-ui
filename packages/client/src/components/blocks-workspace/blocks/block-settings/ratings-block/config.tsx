@@ -1,4 +1,4 @@
-import { Star } from "@mui/icons-material";
+import { Star } from "lucide-react";
 import { InputSettings, SelectInputSettings } from "../../settings";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";

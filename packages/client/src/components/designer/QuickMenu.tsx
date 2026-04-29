@@ -1,5 +1,10 @@
 import type React from "react";
-import { Icon, Menu, Stack, styled, Typography } from "@semoss/ui";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@semoss/ui/next";
 
 interface QuickMenuProps {
 	parentId: string;
@@ -19,50 +24,47 @@ interface QuickMenuProps {
 	iconSize?: "small" | "medium" | "large";
 }
 
-const StyledQuickMenu = styled(Menu)(() => ({
-	"& .MuiMenu-paper": {
-		borderRadius: "4px",
-		background: "#FFF",
-		boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-	},
-}));
-
-const StyledIcon = styled(Icon)(() => ({
-	color: "#757575",
-}));
-
 export const QuickMenu: React.FC<QuickMenuProps> = ({
 	parentId,
 	anchorEl,
 	quickMenu,
 	onClose,
 	onSelect,
-	color = "#757575",
-	iconSize = "small",
 }) => {
-	const handleOnSelect = (item) => {
-		onSelect(item);
-	};
+	const rect = anchorEl?.getBoundingClientRect();
+
 	return (
-		<StyledQuickMenu
-			anchorEl={anchorEl}
+		<DropdownMenu
 			open={Boolean(anchorEl)}
-			onClose={onClose}
+			onOpenChange={(open) => !open && onClose()}
 		>
-			{quickMenu.map((item) => (
-				<Menu.Item
-					key={`${parentId}-${item.value}`}
-					value={item.value}
-					onClick={() => handleOnSelect(item)}
-				>
-					<Stack direction="row" alignItems="center">
-						<StyledIcon sx={{ color }} fontSize={iconSize}>
+			<DropdownMenuTrigger asChild>
+				<span
+					style={{
+						position: "fixed",
+						top: rect?.bottom ?? 0,
+						left: rect?.left ?? 0,
+						width: 0,
+						height: 0,
+					}}
+				/>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent>
+				{quickMenu.map((item) => (
+					<DropdownMenuItem
+						key={`${parentId}-${item.value}`}
+						onClick={() => {
+							onSelect(item);
+							onClose();
+						}}
+					>
+						<div className="flex items-center gap-2">
 							{item.icon}
-						</StyledIcon>
-						<Typography variant="body2">{item.name}</Typography>
-					</Stack>
-				</Menu.Item>
-			))}
-		</StyledQuickMenu>
+							<span className="text-sm">{item.name}</span>
+						</div>
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 };

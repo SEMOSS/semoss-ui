@@ -1,5 +1,5 @@
-import { ActionMessages } from "@semoss/renderer";
-import CHATAI from "@/assets/img/query.jpeg";
+import CHATAI from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 // TODO: Designs
@@ -71,14 +71,14 @@ export const NLPToGridTemplate: Template = {
 									cellId: "1",
 									queryId: "nlp-query",
 								},
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 							},
 							{
 								payload: {
 									cellId: "2",
 									queryId: "nlp-query",
 								},
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 							},
 						],
 					},

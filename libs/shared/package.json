@@ -1,6 +1,7 @@
 {
   "name": "@semoss/shared",
   "version": "1.0.0-beta.1",
+  "sideEffects": ["**/*.css"],
   "exports": {
     "./globals.css": "./src/styles/globals.css",
     ".": "./src/index.ts",
@@ -8,6 +9,8 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@iconify-icons/vscode-icons": "^1.1.18",
+    "@iconify/react": "^5.2.0",
     "@monaco-editor/react": "^4.5.1",
     "@mui/icons-material": "6.0.0",
     "@semoss/sdk": "workspace:*",
