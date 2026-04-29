@@ -241,6 +241,12 @@ importers:
 
   libs/shared:
     dependencies:
+      '@iconify-icons/vscode-icons':
+        specifier: ^1.1.18
+        version: 1.2.29
+      '@iconify/react':
+        specifier: ^5.2.0
+        version: 5.2.1(react@18.3.1)
       '@monaco-editor/react':
         specifier: ^4.5.1
         version: 4.7.0(monaco-editor@0.45.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -585,7 +591,7 @@ importers:
         version: 7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)
       vite-plugin-svgr:
         specifier: ^4.5.0
-        version: 4.5.0(rollup@4.59.0)(typescript@5.5.4)(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
+        version: 4.5.0(rollup@4.59.0)(typescript@5.9.3)(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1))
 
   packages/chrome-extension:
     dependencies:
@@ -1900,6 +1906,14 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@iconify-icons/vscode-icons@1.2.29':
+    resolution: {integrity: sha512-RlFypCiWBpfh0QWo37KpG65iehgzRRvEkIjVnyL8FLPowcadWfUgmqrCfgcI1YoAce3Rg/ARW1c6JNSYBjWSZw==}
+
+  '@iconify/react@5.2.1':
+    resolution: {integrity: sha512-37GDR3fYDZmnmUn9RagyaX+zca24jfVOMY8E1IXTqJuE8pxNtN51KWPQe3VODOWvuUurq7q9uUu3CFrpqj5Iqg==}
+    peerDependencies:
+      react: '>=16'
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -10047,6 +10061,15 @@ snapshots:
 
   '@humanwhocodes/retry@0.4.3': {}
 
+  '@iconify-icons/vscode-icons@1.2.29':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify/react@5.2.1(react@18.3.1)':
+    dependencies:
+      '@iconify/types': 2.0.0
+      react: 18.3.1
+
   '@iconify/types@2.0.0': {}
 
   '@iconify/utils@3.1.0':
@@ -11936,6 +11959,17 @@ snapshots:
       - supports-color
       - typescript
 
+  '@svgr/core@8.1.0(typescript@5.9.3)':
+    dependencies:
+      '@babel/core': 7.21.8
+      '@svgr/babel-preset': 8.1.0(@babel/core@7.21.8)
+      camelcase: 6.3.0
+      cosmiconfig: 8.3.6(typescript@5.9.3)
+      snake-case: 3.0.4
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+
   '@svgr/hast-util-to-babel-ast@8.0.0':
     dependencies:
       '@babel/types': 7.28.5
@@ -11946,6 +11980,16 @@ snapshots:
       '@babel/core': 7.21.8
       '@svgr/babel-preset': 8.1.0(@babel/core@7.21.8)
       '@svgr/core': 8.1.0(typescript@5.5.4)
+      '@svgr/hast-util-to-babel-ast': 8.0.0
+      svg-parser: 2.0.4
+    transitivePeerDependencies:
+      - supports-color
+
+  '@svgr/plugin-jsx@8.1.0(@svgr/core@8.1.0(typescript@5.9.3))':
+    dependencies:
+      '@babel/core': 7.21.8
+      '@svgr/babel-preset': 8.1.0(@babel/core@7.21.8)
+      '@svgr/core': 8.1.0(typescript@5.9.3)
       '@svgr/hast-util-to-babel-ast': 8.0.0
       svg-parser: 2.0.4
     transitivePeerDependencies:
@@ -13219,6 +13263,15 @@ snapshots:
       path-type: 4.0.0
     optionalDependencies:
       typescript: 5.5.4
+
+  cosmiconfig@8.3.6(typescript@5.9.3):
+    dependencies:
+      import-fresh: 3.3.1
+      js-yaml: 4.1.1
+      parse-json: 5.2.0
+      path-type: 4.0.0
+    optionalDependencies:
+      typescript: 5.9.3
 
   cosmiconfig@9.0.0(typescript@5.5.4):
     dependencies:
@@ -18155,6 +18208,17 @@ snapshots:
       '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
       '@svgr/core': 8.1.0(typescript@5.5.4)
       '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@5.5.4))
+      vite: 7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)
+    transitivePeerDependencies:
+      - rollup
+      - supports-color
+      - typescript
+
+  vite-plugin-svgr@4.5.0(rollup@4.59.0)(typescript@5.9.3)(vite@7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)):
+    dependencies:
+      '@rollup/pluginutils': 5.3.0(rollup@4.59.0)
+      '@svgr/core': 8.1.0(typescript@5.9.3)
+      '@svgr/plugin-jsx': 8.1.0(@svgr/core@8.1.0(typescript@5.9.3))
       vite: 7.2.4(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.1)
     transitivePeerDependencies:
       - rollup

@@ -188,7 +188,7 @@ describe("CumulativeSumTransformationCell", () => {
 	it("renders collapsed state as a chip when not expanded", () => {
 		const { container } = renderCumulativeSumCell({}, false);
 
-		const chip = container.querySelector(".MuiChip-root");
+		const chip = container.querySelector("span.rounded-full");
 		expect(chip).toBeInTheDocument();
 		expect(screen.getByText("Cumulative Sum")).toBeInTheDocument();
 	});
@@ -216,12 +216,14 @@ describe("CumulativeSumTransformationCell", () => {
 				"Add a new column for the cumulative sum of another column's values",
 			),
 		).toBeInTheDocument();
-		expect(screen.getByLabelText("Column Name")).toBeInTheDocument();
-		expect(screen.getByLabelText("Column Name")).toHaveValue(
-			"running_total",
-		);
-		expect(screen.getByLabelText("Aggregate Value")).toBeInTheDocument();
-		expect(screen.getByLabelText("Sort by Column(s)")).toBeInTheDocument();
-		expect(screen.getByLabelText("Group by Column(s)")).toBeInTheDocument();
+		expect(screen.getByText("Column Name")).toBeInTheDocument();
+		const columnNameInput = screen
+			.getByText("Column Name")
+			.closest("div")
+			?.querySelector("input") as HTMLInputElement;
+		expect(columnNameInput.value).toBe("running_total");
+		expect(screen.getByText("Aggregate Value")).toBeInTheDocument();
+		expect(screen.getByText("Sort by Column(s)")).toBeInTheDocument();
+		expect(screen.getByText("Group by Column(s)")).toBeInTheDocument();
 	});
 });
