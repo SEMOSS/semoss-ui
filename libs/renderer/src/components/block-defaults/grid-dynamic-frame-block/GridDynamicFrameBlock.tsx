@@ -1,31 +1,33 @@
 // biome-ignore-all lint/a11y/noStaticElementInteractions: table cell context menu — keyboard events not applicable
+
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	ChevronLeft,
+	ChevronRight,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
-import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
-import type { BlockComponent, BlockDef } from "../../../store";
-import { GridBlockContextMenu } from "../grid-block/GridBlockContextMenu";
-import type { GridBlockColumn } from "../grid-block/grid-block.types";
 import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Table,
 	TableBody,
 	TableCell,
 	TableHead,
 	TableHeader,
 	TableRow,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Button,
 } from "@semoss/ui/next";
-import {
-	ArrowUpDown,
-	ArrowUp,
-	ArrowDown,
-	ChevronLeft,
-	ChevronRight,
-} from "lucide-react";
+import { getContextMenuPosition } from "@/components/shared/common";
+import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
+import type { BlockComponent, BlockDef } from "../../../store";
+import { GridBlockContextMenu } from "../grid-block/GridBlockContextMenu";
+import type { GridBlockColumn } from "../grid-block/grid-block.types";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
@@ -104,7 +106,6 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 		limit: paginationModel.pageSize,
 		enableCount: true,
 	});
-
 	// When headers come from user upload
 	const frameHeaders = useFrameHeaders(data.frame.name);
 
@@ -119,7 +120,7 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 				syncBlockDataColumns(frameHeaders);
 			}
 		}
-	}, [frameHeaders.data.list]);
+	}, [frameHeaders?.data?.list]);
 
 	/**
 	 * Updates data.columns
@@ -150,13 +151,16 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 	) => {
 		// prevent the default interaction
 		event.preventDefault();
-
+		const { finalMouseX, finalMouseY } = getContextMenuPosition(
+			event.clientX + 2,
+			event.clientY - 6,
+		);
 		// open the menu and save the data
 		setContextMenu(
 			contextMenu === null
 				? {
-						mouseX: event.clientX + 2,
-						mouseY: event.clientY - 6,
+						mouseX: finalMouseX,
+						mouseY: finalMouseY,
 						column: column,
 						value: value,
 					}
@@ -252,14 +256,14 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 				style={{ flex: 1, width: "100%", height: "100%" }}
 			>
 				{/* Table */}
-				<div className="flex-1 overflow-auto">
-					<Table>
+				<div className="relative flex-1 overflow-auto">
+					<Table className="min-w-full">
 						<TableHeader>
 							<TableRow className="hover:bg-transparent">
 								{data.columns.map((col) => (
 									<TableHead
 										key={col.name}
-										className="cursor-pointer select-none"
+										className="sticky top-0 z-10 cursor-pointer select-none bg-background"
 										style={{ height: 50, padding: 0 }}
 										onClick={() => handleSort(col.name)}
 									>
@@ -288,16 +292,7 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{sortedRows.length === 0 ? (
-								<TableRow>
-									<TableCell
-										colSpan={data.columns.length}
-										className="h-24 text-center text-muted-foreground"
-									>
-										No rows
-									</TableCell>
-								</TableRow>
-							) : (
+							{sortedRows.length > 0 &&
 								sortedRows.map((row) => (
 									<TableRow key={row.id as number}>
 										{data.columns.map((col) => {
@@ -327,10 +322,16 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 											);
 										})}
 									</TableRow>
-								))
-							)}
+								))}
 						</TableBody>
 					</Table>
+					{sortedRows.length === 0 && (
+						<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+							<span className="text-lg text-muted-foreground">
+								No rows
+							</span>
+						</div>
+					)}
 				</div>
 
 				{/* Pagination */}
@@ -353,10 +354,7 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 							</SelectTrigger>
 							<SelectContent>
 								{[10, 50, 100].map((size) => (
-									<SelectItem
-										key={size}
-										value={String(size)}
-									>
+									<SelectItem key={size} value={String(size)}>
 										{size}
 									</SelectItem>
 								))}
@@ -397,13 +395,15 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 						</Button>
 					</div>
 				</div>
+				<div style={{ display: "inline" }}>
+					<GridBlockContextMenu
+						id={id}
+						frame={frame}
+						contextMenu={contextMenu}
+						onClose={() => setContextMenu(null)}
+					/>
+				</div>
 			</div>
-			<GridBlockContextMenu
-				id={id}
-				frame={frame}
-				contextMenu={contextMenu}
-				onClose={() => setContextMenu(null)}
-			/>
 		</div>
 	);
 });

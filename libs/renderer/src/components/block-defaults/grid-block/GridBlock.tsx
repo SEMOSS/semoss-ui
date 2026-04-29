@@ -1,5 +1,27 @@
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	ChevronLeft,
+	ChevronRight,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
+import { getContextMenuPosition } from "@/components/shared/common";
 import { useBlock, useBlocks, useFrame, useFrameHeaders } from "../../../hooks";
 import {
 	ActionMessages,
@@ -10,27 +32,6 @@ import { CustomToolbar } from "./CustomToolbar";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
 import { GridFooter } from "./GridFooter";
 import type { GridBlockColumn } from "./grid-block.types";
-import {
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Button,
-} from "@semoss/ui/next";
-import {
-	ArrowUpDown,
-	ArrowUp,
-	ArrowDown,
-	ChevronLeft,
-	ChevronRight,
-} from "lucide-react";
 
 // Type for query import cell parameters
 interface QueryImportCellParams {
@@ -392,13 +393,16 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	) => {
 		// prevent the default interaction
 		event.preventDefault();
-
+		const { finalMouseX, finalMouseY } = getContextMenuPosition(
+			event.clientX + 2,
+			event.clientY - 6,
+		);
 		// open the menu and save the data
 		setContextMenu(
 			contextMenu === null
 				? {
-						mouseX: event.clientX + 2,
-						mouseY: event.clientY - 6,
+						mouseX: finalMouseX,
+						mouseY: finalMouseY,
 						column: column,
 						value: value,
 					}
@@ -618,8 +622,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 				)}
 
 				{/* Table */}
-				<div className="flex-1 overflow-auto">
-					<Table>
+				<div className="relative flex-1 overflow-auto">
+					<Table className="min-w-full">
 						<TableHeader>
 							<TableRow className="hover:bg-transparent">
 								{columnsToDisplay.map((col) => {
@@ -635,7 +639,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 									return (
 										<TableHead
 											key={col.name}
-											className="cursor-pointer select-none"
+											className="sticky top-0 z-10 cursor-pointer select-none bg-background"
 											style={{
 												height: 50,
 												padding: 0,
@@ -646,9 +650,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 														}
 													: {}),
 											}}
-											onClick={() =>
-												handleSort(col.name)
-											}
+											onClick={() => handleSort(col.name)}
 										>
 											<div
 												className="flex items-center gap-1"
@@ -692,16 +694,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{sortedRows.length === 0 ? (
-								<TableRow>
-									<TableCell
-										colSpan={columnsToDisplay.length}
-										className="h-24 text-center text-muted-foreground"
-									>
-										No rows
-									</TableCell>
-								</TableRow>
-							) : (
+							{sortedRows.length > 0 &&
 								sortedRows.map((row) => (
 									<TableRow key={row.id as number}>
 										{columnsToDisplay.map((col) => {
@@ -813,10 +806,16 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 											);
 										})}
 									</TableRow>
-								))
-							)}
+								))}
 						</TableBody>
 					</Table>
+					{sortedRows.length === 0 && (
+						<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+							<span className="text-lg text-muted-foreground">
+								No rows
+							</span>
+						</div>
+					)}
 				</div>
 
 				{/* Footer — batch loading */}
