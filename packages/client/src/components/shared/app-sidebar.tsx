@@ -1,4 +1,5 @@
 import {
+	Activity,
 	Archive,
 	Bolt,
 	Bot,
@@ -231,6 +232,39 @@ export const Sidebar: React.FC = observer(() => {
 					) : null}
 
 					<SidebarSeparator className="mx-0" />
+
+					{configStore.store.user.admin && (
+						<>
+							<SidebarGroup className="p-0">
+								<SidebarMenu className="gap-0">
+									<SidebarMenuItem className="py-0.5">
+										<SidebarMenuButton
+											asChild
+											isActive={
+												!!matchPath("/agents", pathname)
+											}
+											className={NAV_BUTTON_CLASS}
+											data-testid="sidebar-agents-btn"
+										>
+											<Link
+												to={"/agents"}
+												aria-label={"Agent Traces"}
+												className="text-inherit no-underline"
+											>
+												<span className="flex w-7 min-w-0 shrink-0 items-center">
+													<Activity className="size-4" />
+												</span>
+												<span className="flex-1 truncate text-left">
+													Agent Traces
+												</span>
+											</Link>
+										</SidebarMenuButton>
+									</SidebarMenuItem>
+								</SidebarMenu>
+							</SidebarGroup>
+							<SidebarSeparator className="mx-0" />
+						</>
+					)}
 
 					{/* Settings */}
 					<SidebarGroup className="flex-1 p-0">

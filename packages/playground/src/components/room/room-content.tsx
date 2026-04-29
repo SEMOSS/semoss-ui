@@ -35,6 +35,7 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
+import { AgentTracePanel } from "@/components/traces";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
@@ -447,6 +448,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
+			{!room.isLoading && room.history.length > 0 && (
+				<div className="mx-auto w-full max-w-[1120px] shrink-0 px-4 pb-1 sm:px-8 lg:px-16">
+					<AgentTracePanel
+						roomId={room.roomId}
+						insightId={room.insightId}
+					/>
+				</div>
+			)}
 			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				<RoomInput
 					predefinedPrompts={room.options.predefinedPrompts}

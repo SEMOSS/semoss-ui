@@ -65,6 +65,9 @@ const SharePage = lazy(() =>
 const LoginPage = lazy(() =>
 	import("./LoginPage").then((m) => ({ default: m.LoginPage })),
 );
+const AgentsPage = lazy(() =>
+	import("./agents/AgentsPage").then((m) => ({ default: m.AgentsPage })),
+);
 
 const PageSpinner = () => (
 	<div className="flex h-screen w-screen items-center justify-center">
@@ -115,6 +118,9 @@ export const Router = observer(() => {
 						<Route path="engine/*" element={<EngineRouter />} />
 						<Route path="prompt/*" element={<PromptRouter />} />
 						<Route path="settings/*" element={<SettingsRouter />} />
+						{configStore.store.user.admin && (
+							<Route path="agents" element={<AgentsPage />} />
+						)}
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
 				</Route>

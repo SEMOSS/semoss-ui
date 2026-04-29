@@ -5,4 +5,5 @@ export * from "./message";
 export * from "./plan";
 export * from "./prompts";
 export * from "./room";
+export * from "./traces";
 export * from "./workspace";
