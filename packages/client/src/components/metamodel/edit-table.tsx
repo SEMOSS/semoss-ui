@@ -17,7 +17,7 @@ import {
 	TabsTrigger,
 	Textarea,
 } from "@semoss/ui/next";
-import type { ColumnOption } from "../import/database/MetamodelTypes";
+import type { ColumnOption } from "../import/database/metamodel-types";
 
 interface NodeShape {
 	id: string;

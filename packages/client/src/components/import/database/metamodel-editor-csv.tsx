@@ -42,7 +42,7 @@ import type {
 	FlowNode,
 	MetaModelTypeProps,
 	MetamodelNode,
-} from "./MetamodelTypes";
+} from "./metamodel-types";
 import {
 	attachConnectionsToNodes,
 	createEdge,
@@ -60,7 +60,7 @@ import {
 	rebuildNodesFromParsed,
 	removeEdgesForNode,
 	transformMetaToParsed,
-} from "./MetamodelUtils";
+} from "./metamodel-utils";
 import { PortalModal } from "./portal";
 
 export const MetaModelType = observer(
