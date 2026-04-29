@@ -13,6 +13,8 @@ export interface Engine {
 	engine_cost?: string;
 	low_engine_name?: string;
 	description?: string;
+	tag?: string | string[];
+	tags?: string | string[];
 
 	/** @deprecated legacy keys from MyEngines */
 	app_id?: string;
@@ -128,10 +130,11 @@ export interface ThemeMap {
 			model?: Engine;
 			temperature?: number;
 			tokenLength?: number;
-			numOfImages?: number;
 			imageHeight?: number;
 			imageWidth?: number;
 			seed?: number;
+			"text-generation"?: boolean;
+			"image-generation"?: boolean;
 		};
 
 		/**

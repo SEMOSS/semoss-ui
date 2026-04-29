@@ -2,10 +2,11 @@ import { configure, makeAutoObservable } from "mobx";
 import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
 import {
+	IMAGE_GENERATION_FLAG,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
-	NUM_OF_IMAGES,
 	TEMPERATURE,
+	TEXT_GENERATION_FLAG,
 	TOKEN_LENGTH,
 } from "@/constants";
 
@@ -87,14 +88,14 @@ export class RootStore {
 			dialog: undefined,
 			toolAutoExecutionLimit: null,
 			defaultRoomSettings: {
-				// update for image models as well
 				model: undefined,
 				temperature: TEMPERATURE,
 				tokenLength: TOKEN_LENGTH,
-				numOfImages: NUM_OF_IMAGES,
 				imageHeight: IMAGE_HEIGHT,
 				imageWidth: IMAGE_WIDTH,
 				seed: undefined,
+				"text-generation": TEXT_GENERATION_FLAG,
+				"image-generation": IMAGE_GENERATION_FLAG,
 			},
 			allowedFileTypes: [],
 			defaultTools: [],

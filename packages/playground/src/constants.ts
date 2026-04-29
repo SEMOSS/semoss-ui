@@ -3,10 +3,10 @@ export const MODEL_KEY = "SMSS-SELECTED-MODEL-V3";
 export const TOKEN_LENGTH: number = undefined as unknown as number; // token length is determined at runtime based on the model, so we initialize it as undefined and set it later
 export const TEMPERATURE = 0.3;
 
-export const NUM_OF_IMAGES = 1;
 export const IMAGE_HEIGHT = 1024;
 export const IMAGE_WIDTH = 1024;
-export const SEED = 42;
+export const TEXT_GENERATION_FLAG = false;
+export const IMAGE_GENERATION_FLAG = false; // perhaps remove since dynamically updated
 
 export type ImageSize = "small" | "medium" | "large";
 export type ImageType = "square" | "portrait" | "landscape";

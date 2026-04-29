@@ -39,7 +39,6 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import {
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
-	NUM_OF_IMAGES,
 	TEMPERATURE,
 	TOKEN_LENGTH,
 } from "@/constants";
@@ -161,8 +160,6 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
-			numOfImages:
-				root.theme.defaultRoomSettings?.numOfImages || NUM_OF_IMAGES,
 			imageHeight:
 				root.theme.defaultRoomSettings?.imageHeight || IMAGE_HEIGHT,
 			imageWidth:
@@ -423,6 +420,10 @@ export const NewRoomPage = observer(() => {
 		root.theme.defaultRoomSettings,
 		tempRoomStore,
 	]);
+
+	useEffect(() => {
+		tempRoomStore.setModel(chat.models.selected);
+	}, [chat.models.selected, tempRoomStore.setModel]);
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">

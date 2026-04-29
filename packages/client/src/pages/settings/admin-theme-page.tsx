@@ -225,10 +225,11 @@ export const AdminThemePage: React.FC = () => {
 					defaultRoomSettings: {
 						temperature: undefined,
 						tokenLength: undefined,
-						numOfImages: undefined,
 						imageHeight: undefined,
 						imageWidth: undefined,
 						seed: undefined,
+						"text-generation": undefined,
+						"image-generation": undefined,
 					},
 					defaultTools: [],
 					gracefulErrors: [],

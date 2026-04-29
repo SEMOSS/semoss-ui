@@ -8,16 +8,18 @@ import {
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import {
+	IMAGE_GENERATION_FLAG,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
-	NUM_OF_IMAGES,
 	STREAMING_PLACEHOLDER_ID,
 	TEMPERATURE,
+	TEXT_GENERATION_FLAG,
 	TOKEN_LENGTH,
 } from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
+	getEngineTags,
 	InputMessageStore,
 	PlanMessageStore,
 	ResponseMessageStore,
@@ -118,11 +120,6 @@ interface RoomStoreInterface {
 		temperature: number;
 
 		/*
-		 * Number of images to generate
-		 */
-		numOfImages: number;
-
-		/*
 		 * Height of generated images
 		 */
 		imageHeight: number;
@@ -136,6 +133,16 @@ interface RoomStoreInterface {
 		 * Seed for image generation
 		 */
 		seed: number | undefined;
+
+		/*
+		 *
+		 */
+		"text-generation": boolean;
+
+		/*
+		 *
+		 */
+		"image-generation": boolean;
 
 		/*
 		 * Workspace associated with the room
@@ -193,10 +200,11 @@ export class RoomStore {
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
-			numOfImages: NUM_OF_IMAGES,
 			imageHeight: IMAGE_HEIGHT,
 			imageWidth: IMAGE_WIDTH,
 			seed: undefined,
+			"text-generation": TEXT_GENERATION_FLAG,
+			"image-generation": IMAGE_GENERATION_FLAG,
 		},
 		sidebar: {
 			isOpen: false,
@@ -471,6 +479,11 @@ export class RoomStore {
 	 */
 	setModel = (model: Engine) => {
 		this._store.model = model;
+		const tags = getEngineTags(model);
+		this.setOptions({
+			"text-generation": tags.includes("text-generation"),
+			"image-generation": tags.includes("image-generation"),
+		});
 	};
 
 	/**
