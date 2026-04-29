@@ -228,7 +228,6 @@ export const AdminThemePage: React.FC = () => {
 						numOfImages: undefined,
 						imageHeight: undefined,
 						imageWidth: undefined,
-						detailLevel: undefined,
 						seed: undefined,
 					},
 					defaultTools: [],

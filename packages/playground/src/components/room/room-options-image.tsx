@@ -11,7 +11,6 @@ import {
 	FieldSeparator,
 	FieldSet,
 	Input,
-	Slider,
 } from "@semoss/ui/next";
 import { RoomOptionsImageSelect } from "@/components/room/room-options-image-select";
 import type { ImageSize, ImageType } from "@/constants";
@@ -212,24 +211,6 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 									),
 								},
 							]}
-						/>
-					</Field>
-					<Field>
-						<FieldLabel>
-							{" "}
-							{t("room:form.detailLevelLabel")} (
-							{options.detailLevel?.toFixed(2)})
-						</FieldLabel>
-						<Slider
-							min={1.1}
-							max={9.9}
-							step={0.01}
-							value={[options.detailLevel]}
-							onValueChange={(value) =>
-								onOptionsChange({
-									detailLevel: value[0],
-								})
-							}
 						/>
 					</Field>
 					<Field>

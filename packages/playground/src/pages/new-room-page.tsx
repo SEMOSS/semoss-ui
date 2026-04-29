@@ -37,7 +37,6 @@ import {
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import {
-	DETAIL_LEVEL,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	NUM_OF_IMAGES,
@@ -168,8 +167,6 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.imageHeight || IMAGE_HEIGHT,
 			imageWidth:
 				root.theme.defaultRoomSettings?.imageWidth || IMAGE_WIDTH,
-			detailLevel:
-				root.theme.defaultRoomSettings?.detailLevel || DETAIL_LEVEL,
 			seed: root.theme.defaultRoomSettings?.seed ?? undefined,
 			workspace: undefined,
 			predefinedPrompts: [],
