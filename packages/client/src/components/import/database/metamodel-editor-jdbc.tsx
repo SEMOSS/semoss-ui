@@ -32,11 +32,11 @@ import type {
 	MetaModelTypeProps,
 	MetamodelNode,
 	ParsedResult,
-} from "./MetamodelTypes";
+} from "./metamodel-types";
 import {
 	createPayloadsFromFlowStates,
 	transformMetaToParsed,
-} from "./MetamodelUtils";
+} from "./metamodel-utils";
 import { PortalModal } from "./portal";
 
 export const MetaModelConnections = observer(

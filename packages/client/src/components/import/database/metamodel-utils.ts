@@ -10,7 +10,7 @@ import type {
 	ParsedResult,
 	Property,
 	RelationItem,
-} from "./MetamodelTypes";
+} from "./metamodel-types";
 
 /**
  * Attaches connection information to nodes based on edges
