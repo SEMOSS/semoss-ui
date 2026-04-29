@@ -8,7 +8,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
@@ -25,8 +25,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
+import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
 	RoomInput,
 	RoomInputMenuMCP,
@@ -37,7 +39,7 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
-import type { MCPConfig, Workspace } from "@/types";
+import type { MCPConfig, Prompt, Workspace } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -51,6 +53,16 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 export const NewRoomPage = observer(() => {
 	const { t } = useTranslation(["room", "workspace", "common", "chat"]);
 	const { root } = useRoot();
+	const { theme: colorMode } = useTheme();
+
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+	const landingSrc = isDark
+		? root.theme.images.landingDark || landingDarkImage
+		: root.theme.images.landing || landingImage;
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
@@ -77,10 +89,31 @@ export const NewRoomPage = observer(() => {
 		() => new RoomStore(root.theme, "temp"),
 		[root.theme],
 	);
+	const bannerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (!bannerRef.current) return;
+		// The url stripping here is primarily due to a BE theme bug where single quote apostrophes get serial added when saving
+		const urls =
+			(root.theme.banner ?? "").match(/https?:\/\/[^\s'"<>]+/g) ?? [];
+		bannerRef.current
+			.querySelectorAll("a")
+			.forEach((a: HTMLAnchorElement, i: number) => {
+				a.target = "_blank";
+				a.rel = "noopener noreferrer";
+				if (urls[i]) a.setAttribute("href", urls[i]);
+			});
+	}, [root.theme.banner]);
+
 	const [isLoading, setIsLoading] = useState(false);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
+	const previewPrompts = useMemo(
+		() => tempRoomStore.options.predefinedPrompts.slice(0, 5),
+		[tempRoomStore.options.predefinedPrompts],
+	);
 
 	const getWorkspace = usePixel<Workspace | null>(
 		mode === "workspace" && selectedWorkspaceId
@@ -105,6 +138,14 @@ export const NewRoomPage = observer(() => {
 		{ data: null },
 	);
 
+	const getPrompts = usePixel<Prompt[]>(
+		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
+			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
+			: "",
+		{
+			data: [],
+		},
+	);
 	// On initial load, set the default options from the theme using the temporary RoomStore
 	useEffect(() => {
 		tempRoomStore.setOptions({
@@ -115,6 +156,7 @@ export const NewRoomPage = observer(() => {
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			workspace: undefined,
+			predefinedPrompts: [],
 		});
 	}, [tempRoomStore, root.theme]);
 
@@ -193,10 +235,11 @@ export const NewRoomPage = observer(() => {
 				mcp: tempRoomStore.options.mcp,
 			};
 
-			// add workspace id
+			// add workspace id and name
 			if (mode === "workspace") {
 				options.workspace = {
 					workspace_id: getWorkspace.data?.workspace_id || "",
+					name: getWorkspace.data?.name,
 				};
 			}
 
@@ -274,6 +317,13 @@ export const NewRoomPage = observer(() => {
 			}
 		}
 
+		setPrompts(
+			Array.isArray(getWorkspace.data.prompts)
+				? getWorkspace.data.prompts.map((p) =>
+						typeof p === "string" ? p : (p as { id: string }).id,
+					)
+				: [],
+		);
 		tempRoomStore.setOptions({
 			...tempRoomStore.options,
 			instructions:
@@ -317,6 +367,32 @@ export const NewRoomPage = observer(() => {
 		});
 	}, [knowledgeId, getKnowledge.status, getKnowledge.data, tempRoomStore]);
 
+	// Handle prompts from URL parameter
+	useEffect(() => {
+		if (getPrompts.status !== "SUCCESS" || !getPrompts.data?.length) {
+			return;
+		}
+
+		const prompts: Prompt[] = getPrompts.data.map((p) => ({
+			id: p.id,
+			title: p.title,
+			context: p.context,
+			tags: p.tags,
+			version: p.version,
+			intent: p.intent,
+			// TODO: figure out why this is done this way
+			createdBy: (p as unknown as { created_by: string }).created_by,
+			dateCreated: (p as unknown as { date_created: string })
+				.date_created,
+			global: false, // TODO: figure out if this is needed
+		}));
+
+		tempRoomStore.setOptions({
+			...tempRoomStore.options,
+			predefinedPrompts: prompts,
+		});
+	}, [getPrompts.status, getPrompts.data, tempRoomStore]);
+
 	// Clear instructions and workspace MCPs when switching away from workspace mode
 	useEffect(() => {
 		if (mode !== "workspace") {
@@ -336,11 +412,19 @@ export const NewRoomPage = observer(() => {
 	]);
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<ResizablePanelGroup direction="horizontal">
+		<div className="flex h-full w-full flex-col overflow-hidden">
+			{root.theme.banner ? (
+				<div
+					ref={bannerRef}
+					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80"
+					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
+				/>
+			) : null}
+			<ResizablePanelGroup direction="horizontal" className="flex-1">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
-						src={root.theme.images.landing || landingImage}
+						src={landingSrc}
 						alt="Background"
 						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
@@ -350,7 +434,14 @@ export const NewRoomPage = observer(() => {
 								className="mx-auto flex max-w-xl"
 								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 								dangerouslySetInnerHTML={{
-									__html: root.theme.landing,
+									__html:
+										root.theme?.altLandingKey &&
+										searchParams.has(
+											root.theme.altLandingKey,
+										) &&
+										root.theme.altLanding
+											? root.theme.altLanding
+											: root.theme.landing,
 								}}
 							/>
 						) : (
@@ -369,15 +460,20 @@ export const NewRoomPage = observer(() => {
 						)}
 
 						<RoomInput
+							predefinedPrompts={
+								tempRoomStore.options.predefinedPrompts
+							}
 							className="max-h-64 min-h-48 bg-background"
 							isLoading={isLoading}
 							initialValue={initialPrompt}
 							model={chat.models.selected}
+							room={tempRoomStore}
 							setModel={(m) => {
 								chat.setSelectedModel(m);
 							}}
 							options={tempRoomStore.options}
 							onMcpSelect={handleToolAdd}
+							onMcpToggle={handleToolSelect}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
@@ -385,7 +481,14 @@ export const NewRoomPage = observer(() => {
 							}}
 							hidePauseButton
 							MenuComponent={observer(
-								({ onOpenChange, fileRef, editorRef }) => (
+								({
+									onOpenChange,
+									fileRef,
+									knowledgeOverlayOpen,
+									onKnowledgeOverlayChange,
+									toolboxOverlayOpen,
+									onToolboxOverlayChange,
+								}) => (
 									<>
 										<RoomInputMenuUpload
 											fileRef={fileRef}
@@ -465,19 +568,17 @@ export const NewRoomPage = observer(() => {
 										<RoomInputMenuMCP
 											type="KNOWLEDGE"
 											options={tempRoomStore.options}
-											onSelect={handleToolSelect}
-											editorRef={editorRef}
-											onOverlayClose={() =>
-												onOpenChange(false)
+											open={knowledgeOverlayOpen}
+											onOpenChange={
+												onKnowledgeOverlayChange
 											}
 										/>
 										<RoomInputMenuMCP
 											type="TOOLBOX"
 											options={tempRoomStore.options}
-											onSelect={handleToolSelect}
-											editorRef={editorRef}
-											onOverlayClose={() =>
-												onOpenChange(false)
+											open={toolboxOverlayOpen}
+											onOpenChange={
+												onToolboxOverlayChange
 											}
 										/>
 										<DropdownMenuSeparator />
@@ -503,7 +604,8 @@ export const NewRoomPage = observer(() => {
 							footer={
 								mode === "workspace" &&
 								getWorkspace.status === "SUCCESS" ? (
-									root.theme.showPlatformLinks !== false ? (
+									root.theme.featureFlags
+										?.showPlatformLinks ? (
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<span>
@@ -560,6 +662,30 @@ export const NewRoomPage = observer(() => {
 								) : null
 							}
 						/>
+						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
+							<div className="mx-auto flex w-full flex-col items-center gap-3">
+								<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
+									{previewPrompts.map((prompt) => {
+										return (
+											<Button
+												key={prompt.id}
+												variant="outline"
+												className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
+												disabled={isLoading}
+												onClick={() =>
+													createRoom(
+														prompt.context,
+														[],
+													)
+												}
+											>
+												{prompt.title}
+											</Button>
+										);
+									})}
+								</div>
+							</div>
+						) : null}
 					</div>
 				</ResizablePanel>
 				{isConfigurationOpen && (
@@ -570,7 +696,7 @@ export const NewRoomPage = observer(() => {
 							defaultSize={25}
 						>
 							<div
-								className={`relative h-full w-full overflow-hidden rounded-lg border border-input shadow-xs dark:bg-input/30`}
+								className={`relative h-full w-full overflow-hidden rounded-lg border border-input bg-background shadow-xs`}
 							>
 								<Tooltip>
 									<TooltipTrigger asChild>

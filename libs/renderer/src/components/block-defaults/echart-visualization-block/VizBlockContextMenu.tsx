@@ -1,5 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { Menu } from "@semoss/ui";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+} from "@semoss/ui/next";
 import { useBlock, type useFrame } from "../../../hooks";
 import type { EchartVisualizationBlockDef } from "./VisualizationBlock";
 
@@ -14,7 +18,7 @@ export interface VizBlockContextMenuProps {
 	contextMenu: {
 		mouseX: number;
 		mouseY: number;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		// biome-ignore lint/suspicious/noExplicitAny: echart event value type is untyped
 		value: any;
 	} | null;
 
@@ -25,71 +29,70 @@ export interface VizBlockContextMenuProps {
 export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
 	({ id = "", frame = null, contextMenu = null, onClose = () => null }) => {
 		const { data } = useBlock<EchartVisualizationBlockDef>(id);
+		const isOpen = contextMenu !== null;
+
 		return (
-			<Menu
-				open={contextMenu !== null}
-				onClose={() => onClose()}
-				anchorReference="anchorPosition"
-				anchorPosition={
-					contextMenu !== null
-						? {
-								top: contextMenu.mouseY,
-								left: contextMenu.mouseX,
-							}
-						: undefined
-				}
+			<DropdownMenu
+				open={isOpen}
+				onOpenChange={(open) => !open && onClose()}
 			>
-				{contextMenu && !data.contextMenu?.hideUnfilter ? (
-					<Menu.Item
-						dense={true}
-						value={"unfilter"}
-						onClick={() => {
-							frame.unfilter();
-							onClose();
-						}}
-					>
-						Unfilter
-					</Menu.Item>
-				) : null}
-				{contextMenu && !data.contextMenu?.hideFilter ? (
-					<Menu.Item
-						dense={true}
-						value={"filter"}
-						onClick={() => {
-							frame.filter(
-								`SetFrameFilter(${
-									contextMenu.value.label
-								}==${JSON.stringify(contextMenu.value.value)})`,
-							);
-							onClose();
-						}}
-					>
-						Filter {contextMenu.value.label} ==
-						{typeof contextMenu.value.value === "string"
-							? contextMenu.value.value
-							: JSON.stringify(contextMenu.value.value)}
-					</Menu.Item>
-				) : null}
-				{contextMenu && !data.contextMenu?.hideExclude ? (
-					<Menu.Item
-						dense={true}
-						value={"filter"}
-						onClick={() => {
-							frame.filter(
-								`SetFrameFilter(${
-									contextMenu.value.label
-								}!=${JSON.stringify(contextMenu.value.value)})`,
-							);
-							onClose();
-						}}
-					>
-						Exclude {contextMenu.value.label} !=
-						{typeof contextMenu.value.value === "string"
-							? contextMenu.value.value
-							: JSON.stringify(contextMenu.value.value)}
-					</Menu.Item>
-				) : null}
-			</Menu>
+				<DropdownMenuContent
+					style={
+						contextMenu
+							? {
+									position: "fixed",
+									top: contextMenu.mouseY,
+									left: contextMenu.mouseX,
+								}
+							: {}
+					}
+				>
+					{contextMenu && !data.contextMenu?.hideUnfilter ? (
+						<DropdownMenuItem
+							onClick={() => {
+								frame.unfilter();
+								onClose();
+							}}
+						>
+							Unfilter
+						</DropdownMenuItem>
+					) : null}
+					{contextMenu && !data.contextMenu?.hideFilter ? (
+						<DropdownMenuItem
+							onClick={() => {
+								frame.filter(
+									`SetFrameFilter(${
+										contextMenu.value.label
+									}==${JSON.stringify(contextMenu.value.value)})`,
+								);
+								onClose();
+							}}
+						>
+							Filter {contextMenu.value.label} ==
+							{typeof contextMenu.value.value === "string"
+								? contextMenu.value.value
+								: JSON.stringify(contextMenu.value.value)}
+						</DropdownMenuItem>
+					) : null}
+					{contextMenu && !data.contextMenu?.hideExclude ? (
+						<DropdownMenuItem
+							onClick={() => {
+								frame.filter(
+									`SetFrameFilter(${
+										contextMenu.value.label
+									}!=${JSON.stringify(contextMenu.value.value)})`,
+								);
+								onClose();
+							}}
+						>
+							Exclude {contextMenu.value.label} !=
+							{typeof contextMenu.value.value === "string"
+								? contextMenu.value.value
+								: JSON.stringify(contextMenu.value.value)}
+						</DropdownMenuItem>
+					) : null}
+				</DropdownMenuContent>
+			</DropdownMenu>
 		);
 	},
 );

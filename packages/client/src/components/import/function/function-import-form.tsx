@@ -1,10 +1,10 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -33,6 +33,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export interface ParsedResult {
 	headers: string[];
@@ -857,13 +858,13 @@ export const FunctionForm = ({
 								<div className="flex flex-1 flex-col gap-1">
 									<H4
 										className="font-semibold text-base tracking-tight"
-										data-testId="function-importForm-category-title"
+										data-testid="function-importForm-category-title"
 									>
 										{category}
 									</H4>
 									<Muted
 										className="text-muted-foreground text-sm leading-6"
-										data-testId="model-importForm-category-description"
+										data-testid="model-importForm-category-description"
 									>
 										{categoryDescriptions[category] ??
 											"No description available."}

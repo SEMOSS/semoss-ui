@@ -1,22 +1,10 @@
-import { Alert, styled } from "@mui/material";
 import mermaid from "mermaid";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { Alert, AlertDescription } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
 
-// Container for Mermaid Diagram
-const MermaidContainer = styled("div")(() => ({
-	width: "fit-content",
-	height: "fit-content",
-}));
-
-// Styled Alert for Error Display
-const ErrorAlert = styled(Alert)(({ theme }) => ({
-	borderRadius: theme.shape.borderRadiusSm,
-}));
-
-// Interface for Mermaid Block Definition
 export interface MermaidBlockDef extends BlockDef<"mermaid"> {
 	widget: "mermaid";
 	data: {
@@ -25,25 +13,19 @@ export interface MermaidBlockDef extends BlockDef<"mermaid"> {
 	slots: never;
 }
 
-// MermaidBlock Component
 export const MermaidBlock: BlockComponent = observer(({ id }) => {
 	const { data, attrs } = useBlock<MermaidBlockDef>(id);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-	// Initialize Mermaid (without renderError in config)
-	mermaid.initialize({
-		startOnLoad: false,
-	});
+	mermaid.initialize({ startOnLoad: false });
 
-	// Helper Function: Global Error Handler
-	const handleMermaidError = (id: string, error: Error) => {
-		const element = document.getElementById(id);
+	const handleMermaidError = (elemId: string, error: Error) => {
+		const element = document.getElementById(elemId);
 		if (element) {
 			element.innerHTML = `<div style="color: red; font-weight: bold;">Mermaid Error: ${error.message}</div>`;
 		}
 	};
 
-	// Helper Function: Validate Mermaid Syntax
 	const isMermaidSyntaxValid = async (text: string): Promise<boolean> => {
 		try {
 			await mermaid.parse(text);
@@ -53,49 +35,42 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 		}
 	};
 
-	// Helper Function: Initialize Mermaid Diagram
-	const initializeMermaid = (id: string, text: string) => {
-		const element = document.getElementById(id);
+	const initializeMermaid = (elemId: string, text: string) => {
+		const element = document.getElementById(elemId);
 		if (element) {
 			try {
 				element.removeAttribute("data-processed");
-				element.innerHTML = text; // Set the Mermaid diagram text
-				mermaid.init(undefined, element); // Initialize the Mermaid rendering
+				element.innerHTML = text;
+				mermaid.init(undefined, element);
 			} catch (error) {
-				handleMermaidError(id, error as Error); // Handle rendering errors
+				handleMermaidError(elemId, error as Error);
 			}
 		}
 	};
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		const renderMermaid = async () => {
 			if (!data.text) {
 				setErrorMessage(null);
 				return;
 			}
-
-			// Validate Mermaid syntax
-			if ((await isMermaidSyntaxValid(data.text)) === false) {
+			if (!(await isMermaidSyntaxValid(data.text))) {
 				setErrorMessage("Invalid Mermaid syntax");
 				return;
 			}
-
-			// Clear error message and render Mermaid
 			setErrorMessage(null);
 			initializeMermaid(id, data.text);
 		};
-
 		renderMermaid();
 	}, [id, data.text]);
 
-	// Render Block
 	return (
 		<div {...attrs}>
-			<MermaidContainer
-				className="mermaid-container"
+			<div
+				className="mermaid-container h-fit w-fit"
 				id={`mermaid-container-${id}`}
 			>
-				{/* Mermaid Diagram */}
 				<pre
 					className="mermaid"
 					id={id}
@@ -105,21 +80,13 @@ export const MermaidBlock: BlockComponent = observer(({ id }) => {
 				>
 					{data.text}
 				</pre>
-			</MermaidContainer>
-			{/* Error UI */}
+			</div>
 			{errorMessage && (
-				<div className="mermaid-error-ui">
-					<ErrorAlert
-						severity="error"
-						sx={{ backgroundColor: "#fdeded" }}
-					>
-						{errorMessage}
-					</ErrorAlert>
-				</div>
+				<Alert variant="destructive">
+					<AlertDescription>{errorMessage}</AlertDescription>
+				</Alert>
 			)}
-
-			{/* Suggestion: Warning Alert for undefined can be added instead of not shwowing */}
-			{!data.text && <div></div>}
+			{!data.text && <div />}
 		</div>
 	);
 });

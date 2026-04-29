@@ -6,7 +6,6 @@ import {
 	Outlet,
 	Link as RouterLink,
 	useLocation,
-	useNavigate,
 	useParams,
 } from "react-router-dom";
 import {
@@ -33,6 +32,7 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPrefer
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
@@ -233,6 +233,17 @@ export const SettingsLayout = observer(() => {
 										</BreadcrumbItem>
 										{matchedRoute.history.map(
 											(link, idx) => {
+												const linkRoute =
+													SETTINGS_ROUTES.find(
+														(r) =>
+															r.path === link ||
+															r.path ===
+																link.replace(
+																	"/<id>",
+																	"/:id",
+																),
+													);
+
 												const isLastItem =
 													matchedRoute.history
 														.length -
@@ -242,7 +253,11 @@ export const SettingsLayout = observer(() => {
 													"<id>",
 												)
 													? id
-													: matchedRoute.title;
+													: isLastItem
+														? matchedRoute.title
+														: linkRoute?.title ||
+															link;
+
 												const to = link.replace(
 													"<id>",
 													id ?? "",
@@ -262,9 +277,15 @@ export const SettingsLayout = observer(() => {
 																>
 																	<RouterLink
 																		to={to}
-																		state={{
-																			...state,
-																		}}
+																		state={
+																			state &&
+																			typeof state ===
+																				"object"
+																				? {
+																						...state,
+																					}
+																				: undefined
+																		}
 																	>
 																		{label}
 																	</RouterLink>
@@ -299,8 +320,11 @@ export const SettingsLayout = observer(() => {
 									<h1 className="font-semibold text-2xl leading-normal">
 										{matchedRoute.history.length < 2
 											? matchedRoute.title
-											: state
-												? state.name
+											: state &&
+													typeof state === "object" &&
+													"name" in state
+												? (state as { name?: string })
+														.name
 												: matchedRoute.title}
 									</h1>
 								)}

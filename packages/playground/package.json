@@ -12,6 +12,7 @@
         "test:coverage": "vitest --coverage --watch=false"
     },
     "dependencies": {
+        "@codesandbox/sandpack-react": "^2.20.0",
         "@lexical/react": "^0.39.0",
         "@semoss/i18n": "workspace:*",
         "@semoss/sdk": "workspace:*",
@@ -24,10 +25,8 @@
         "mermaid": "^11.13.0",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
-        "re-resizable": "^6.11.2",
         "react": "18.3.1",
         "react-dom": "18.3.1",
-        "react-hook-form": "^7.34.2",
         "react-router-dom": "6.30.3",
         "tailwindcss": "^4.1.14"
     },

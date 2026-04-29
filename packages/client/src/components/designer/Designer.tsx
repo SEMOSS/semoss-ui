@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { RendererEngine } from "@semoss/renderer";
-import { ErrorBoundary } from "@/components/common";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { useDesigner } from "@/hooks";
 import { Screen } from "./Screen";
 

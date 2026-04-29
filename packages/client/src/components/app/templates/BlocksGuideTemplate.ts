@@ -1,5 +1,5 @@
-import { ActionMessages } from "@semoss/renderer";
-import LANDINGPAGE from "@/assets/img/query.jpeg";
+import LANDINGPAGE from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 export const BlocksGuideTemplate: Template = {
@@ -485,19 +485,19 @@ export const BlocksGuideTemplate: Template = {
 								payload: {
 									queryId: "python_code",
 								},
-								message: ActionMessages.RUN_QUERY,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_QUERY,
 							},
 							{
 								payload: {
 									queryId: "py-code",
 								},
-								message: ActionMessages.RUN_QUERY,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_QUERY,
 							},
 							{
 								payload: {
 									queryId: "default",
 								},
-								message: ActionMessages.RUN_QUERY,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_QUERY,
 							},
 						],
 					},
