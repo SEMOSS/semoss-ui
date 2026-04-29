@@ -1,4 +1,4 @@
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, ChevronRight, X } from "lucide-react";
 import {
 	type ChangeEvent,
 	type KeyboardEvent,
@@ -41,6 +41,10 @@ interface AddPopupSearchResult {
 	username: string;
 }
 
+interface UserSelected extends AddPopupSearchResult {
+	permission: string;
+}
+
 interface AddMembersOverlayProps {
 	id: string;
 	type:
@@ -78,11 +82,7 @@ export const AddMembersOverlay = ({
 }: AddMembersOverlayProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [searchKey, setSearchKey] = useState<string>("");
-	const [selectedUsers, setSelectedUsers] = useState<AddPopupSearchResult[]>(
-		[],
-	);
-	const [selectedPermission, setSelectedPermission] =
-		useState<string>("Viewer");
+	const [selectedUsers, setSelectedUsers] = useState<UserSelected[]>([]);
 	const [searchedResults, setSearchedResults] = useState<
 		AddPopupSearchResult[]
 	>([]);
@@ -96,6 +96,7 @@ export const AddMembersOverlay = ({
 	const [maxTime, setMaxTime] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
+	const [restrictionsOpen, setRestrictionsOpen] = useState<boolean>(true);
 	const isProject = type === "PROJECT" || type === "WORKSPACE";
 	const isOwner = adminMode || userPermission === "OWNER";
 
@@ -122,7 +123,13 @@ export const AddMembersOverlay = ({
 			const idKey = isProject ? "projectId" : "engineId";
 			const response = await apiGet(
 				`${authBase}/${isProject ? "project" : "engine"}/${endpoint}?${idKey}=${id}&searchTerm=${searchKey}&limit=${PAGE_SIZE}&offset=${offset}`,
-			).catch(() => undefined);
+			).catch((error: Error) => {
+				isFetchingRef.current = false;
+				if (fetchVersionRef.current !== version) return undefined;
+				setIsSearching(false);
+				toast.error(error?.message || "Failed to load users.");
+				return undefined;
+			});
 			isFetchingRef.current = false;
 			if (fetchVersionRef.current !== version) return;
 			setIsSearching(false);
@@ -158,7 +165,7 @@ export const AddMembersOverlay = ({
 		const userpermissions = selectedUsers.map((m) => {
 			const base = {
 				userid: m.id,
-				permission: returnAccessType(selectedPermission, true),
+				permission: returnAccessType(m.permission, true),
 				email: m.email,
 				name: m.name,
 				type: m.type,
@@ -204,7 +211,6 @@ export const AddMembersOverlay = ({
 	function resetState() {
 		setSelectedUsers([]);
 		setSearchKey("");
-		setSelectedPermission("Viewer");
 		setRestriction("null");
 		setMaxTokens("");
 		setMaxTime("");
@@ -219,7 +225,7 @@ export const AddMembersOverlay = ({
 		setSelectedUsers((prev) =>
 			prev.find((u) => u.email === user.email)
 				? prev.filter((u) => u.email !== user.email)
-				: [...prev, user],
+				: [...prev, { ...user, permission: "Viewer" }],
 		);
 	}
 
@@ -303,7 +309,7 @@ export const AddMembersOverlay = ({
 							);
 							return (
 								<button
-									key={item.id}
+									key={`${item.type}-${item.id}`}
 									type="button"
 									className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
 									onClick={() => toggleUserSelected(item)}
@@ -341,99 +347,6 @@ export const AddMembersOverlay = ({
 					)}
 				</div>
 
-				{/* MODEL restriction fields */}
-				{type === "MODEL" && (
-					<div className="flex flex-col gap-3 rounded border border-border p-3">
-						<span className="font-medium text-sm">
-							Model Limit Restrictions
-						</span>
-						<div className="flex flex-col gap-1.5">
-							<Label>Usage Limit Type</Label>
-							<Select
-								value={restriction}
-								onValueChange={(val) => {
-									setRestriction(val);
-									setMaxTokens("");
-									setMaxTime("");
-								}}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="null">None</SelectItem>
-									<SelectItem value="token">Token</SelectItem>
-									<SelectItem value="compute">
-										Compute time
-									</SelectItem>
-								</SelectContent>
-							</Select>
-						</div>
-						{restriction === "token" && (
-							<div className="flex flex-col gap-1.5">
-								<Label>Max Tokens</Label>
-								<Input
-									type="text"
-									inputMode="numeric"
-									value={formatNum(maxTokens)}
-									onChange={(e) =>
-										setMaxTokens(parseNum(e.target.value))
-									}
-								/>
-							</div>
-						)}
-						{restriction === "compute" && (
-							<div className="flex gap-3">
-								<div className="flex flex-1 flex-col gap-1.5">
-									<Label>Max Response Time</Label>
-									<Input
-										type="text"
-										inputMode="numeric"
-										value={formatNum(maxTime)}
-										onChange={(e) =>
-											setMaxTime(parseNum(e.target.value))
-										}
-									/>
-								</div>
-								<div className="flex w-36 flex-col gap-1.5">
-									<Label>Unit</Label>
-									<Input value="milliseconds" readOnly />
-								</div>
-							</div>
-						)}
-						{restriction !== "null" && (
-							<div className="flex flex-col gap-1.5">
-								<Label>Frequency</Label>
-								<Select
-									value={frequency}
-									onValueChange={setFrequency}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="DAY">
-											Daily
-										</SelectItem>
-										<SelectItem value="WEEK">
-											Weekly
-										</SelectItem>
-										<SelectItem value="MONTH">
-											Monthly
-										</SelectItem>
-										<SelectItem value="YEAR">
-											Yearly
-										</SelectItem>
-										<SelectItem value="ALL_TIME">
-											All time
-										</SelectItem>
-									</SelectContent>
-								</Select>
-							</div>
-						)}
-					</div>
-				)}
-
 				{/* Selected users — always shown, scrollable cards */}
 				<div className="flex flex-col gap-2">
 					<span className="font-medium text-muted-foreground text-sm">
@@ -441,9 +354,9 @@ export const AddMembersOverlay = ({
 						{selectedUsers.length !== 1 ? "s" : ""} selected
 					</span>
 					<div className="flex max-h-44 flex-col gap-1.5 overflow-y-auto">
-						{selectedUsers.map((u) => (
+						{selectedUsers.map((u, i) => (
 							<div
-								key={u.email}
+								key={`${u.type}-${u.id}`}
 								className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2"
 							>
 								<span className="flex items-center gap-2">
@@ -462,62 +375,224 @@ export const AddMembersOverlay = ({
 										</span>
 									</span>
 								</span>
-								<button
-									type="button"
-									className="text-muted-foreground hover:text-destructive"
-									onClick={() => toggleUserSelected(u)}
-								>
-									<X className="h-4 w-4" />
-								</button>
+								<div className="flex flex-col items-end gap-1.5">
+									<button
+										type="button"
+										className="text-muted-foreground hover:text-destructive"
+										onClick={() => toggleUserSelected(u)}
+									>
+										<X className="h-4 w-4" />
+									</button>
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="outline"
+												className="shrink-0"
+											>
+												{u.permission}
+												<ChevronDown className="ml-1 h-4 w-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent>
+											<DropdownMenuCheckboxItem
+												checked={
+													u.permission === "Viewer"
+												}
+												onCheckedChange={() =>
+													setSelectedUsers((prev) =>
+														prev.map((s, idx) =>
+															idx === i
+																? {
+																		...s,
+																		permission:
+																			"Viewer",
+																	}
+																: s,
+														),
+													)
+												}
+											>
+												Viewer
+											</DropdownMenuCheckboxItem>
+											<DropdownMenuCheckboxItem
+												checked={
+													u.permission === "Editor"
+												}
+												onCheckedChange={() =>
+													setSelectedUsers((prev) =>
+														prev.map((s, idx) =>
+															idx === i
+																? {
+																		...s,
+																		permission:
+																			"Editor",
+																	}
+																: s,
+														),
+													)
+												}
+											>
+												Editor
+											</DropdownMenuCheckboxItem>
+											{isOwner && (
+												<DropdownMenuCheckboxItem
+													checked={
+														u.permission === "Owner"
+													}
+													onCheckedChange={() =>
+														setSelectedUsers(
+															(prev) =>
+																prev.map(
+																	(s, idx) =>
+																		idx ===
+																		i
+																			? {
+																					...s,
+																					permission:
+																						"Owner",
+																				}
+																			: s,
+																),
+														)
+													}
+												>
+													Owner
+												</DropdownMenuCheckboxItem>
+											)}
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</div>
 							</div>
 						))}
 					</div>
 				</div>
 
+				{/* MODEL restriction fields */}
+				{type === "MODEL" && (
+					<div className="flex flex-col gap-3 rounded border border-border p-3">
+						<button
+							type="button"
+							className="flex items-center gap-1.5 text-left font-medium text-sm"
+							onClick={() => setRestrictionsOpen((prev) => !prev)}
+						>
+							{restrictionsOpen ? (
+								<ChevronDown className="h-4 w-4 shrink-0" />
+							) : (
+								<ChevronRight className="h-4 w-4 shrink-0" />
+							)}
+							Model Limit Restrictions (for all selected users)
+						</button>
+						{restrictionsOpen && (
+							<div className="flex flex-col gap-3">
+								<div className="flex flex-col gap-1.5">
+									<Label>Usage Limit Type</Label>
+									<Select
+										value={restriction}
+										onValueChange={(val) => {
+											setRestriction(val);
+											setMaxTokens("");
+											setMaxTime("");
+										}}
+									>
+										<SelectTrigger className="w-full">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="null">
+												None
+											</SelectItem>
+											<SelectItem value="token">
+												Token
+											</SelectItem>
+											<SelectItem value="compute">
+												Compute time
+											</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+								{restriction === "token" && (
+									<div className="flex flex-col gap-1.5">
+										<Label>Max Tokens</Label>
+										<Input
+											type="text"
+											inputMode="numeric"
+											value={formatNum(maxTokens)}
+											onChange={(e) =>
+												setMaxTokens(
+													parseNum(e.target.value),
+												)
+											}
+										/>
+									</div>
+								)}
+								{restriction === "compute" && (
+									<div className="flex gap-3">
+										<div className="flex flex-1 flex-col gap-1.5">
+											<Label>Max Response Time</Label>
+											<Input
+												type="text"
+												inputMode="numeric"
+												value={formatNum(maxTime)}
+												onChange={(e) =>
+													setMaxTime(
+														parseNum(
+															e.target.value,
+														),
+													)
+												}
+											/>
+										</div>
+										<div className="flex w-36 flex-col gap-1.5">
+											<Label>Unit</Label>
+											<Input
+												value="milliseconds"
+												readOnly
+											/>
+										</div>
+									</div>
+								)}
+								{restriction !== "null" && (
+									<div className="flex flex-col gap-1.5">
+										<Label>Frequency</Label>
+										<Select
+											value={frequency}
+											onValueChange={setFrequency}
+										>
+											<SelectTrigger className="w-full">
+												<SelectValue />
+											</SelectTrigger>
+											<SelectContent>
+												<SelectItem value="DAY">
+													Daily
+												</SelectItem>
+												<SelectItem value="WEEK">
+													Weekly
+												</SelectItem>
+												<SelectItem value="MONTH">
+													Monthly
+												</SelectItem>
+												<SelectItem value="YEAR">
+													Yearly
+												</SelectItem>
+												<SelectItem value="ALL_TIME">
+													All time
+												</SelectItem>
+											</SelectContent>
+										</Select>
+									</div>
+								)}
+							</div>
+						)}
+					</div>
+				)}
+
 				{/* Footer: permission selector + invite */}
 				<div className="flex items-center justify-between border-t pt-3">
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button variant="outline" className="shrink-0">
-								{selectedPermission}
-								<ChevronDown className="ml-1 h-4 w-4" />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent>
-							<DropdownMenuCheckboxItem
-								checked={selectedPermission === "Viewer"}
-								onCheckedChange={() =>
-									setSelectedPermission("Viewer")
-								}
-							>
-								Viewer
-							</DropdownMenuCheckboxItem>
-							<DropdownMenuCheckboxItem
-								checked={selectedPermission === "Editor"}
-								onCheckedChange={() =>
-									setSelectedPermission("Editor")
-								}
-							>
-								Editor
-							</DropdownMenuCheckboxItem>
-							{isOwner && (
-								<DropdownMenuCheckboxItem
-									checked={selectedPermission === "Owner"}
-									onCheckedChange={() =>
-										setSelectedPermission("Owner")
-									}
-								>
-									Owner
-								</DropdownMenuCheckboxItem>
-							)}
-						</DropdownMenuContent>
-					</DropdownMenu>
-
 					<Button
 						onClick={addNewMembers}
 						disabled={selectedUsers.length === 0}
 					>
-						Invite{" "}
+						Add{" "}
 						{selectedUsers.length > 0
 							? `(${selectedUsers.length})`
 							: ""}
