@@ -1,29 +1,31 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { JobsPage } from "../jobs/JobsPage";
-import { AdminQueryPage } from "./AdminQueryPage";
-import { AppSettingsDetailPage } from "./AppSettingsDetailPage";
+import { AddNewJob } from "../jobs/add-new-job";
+import { JobsPage } from "../jobs/jobs-page";
+import { AdminQueryPage } from "./admin-query-page";
 import { AdminThemePage } from "./admin-theme-page";
-import { ConfigurationsPage } from "./ConfigurationsPage";
-import { EngineSettingsDetailPage } from "./EngineSettingsDetailPage";
-import { EngineSettingsIndexPage } from "./EngineSettingsIndexPage";
+import { AppSettingsDetailsPage } from "./app-settings-details-page";
+import { ConfigurationsPage } from "./configurations-page";
+import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
+import { EngineSettingsIndexPage } from "./engine-settings-index-page";
 import { InsightSettingsDetailPage } from "./InsightSettingsDetailPage";
-import { InsightSettingsPage } from "./InsightSettingsPage";
+import { InsightSettingsPage } from "./insight-settings-page";
+import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./MemberSettingsPage";
-import { MyProfilePage } from "./MyProfilePage";
-import { ProjectSettingsPage } from "./ProjectSettingsPage";
-import { RDFMapPage } from "./RDFMapPage";
-import { SettingsIndexPage } from "./SettingsIndexPage";
-import { SettingsLayout } from "./SettingsLayout";
+import { MyProfilePage } from "./my-profile-page";
+import { ProjectSettingsPage } from "./project-settings-page";
+import { RDFMapPage } from "./rdf-map-page";
 import { SETTINGS_ROUTES } from "./settings.constants";
-import { TeamSettingsDetailPage } from "./TeamSettingsDetailPage";
-import { TeamsSettingsPage } from "./TeamsSettingsPage";
+import { SettingsIndexPage } from "./settings-index-page";
+import { SettingsLayout } from "./settings-layout";
+import { TeamSettingsDetailPage } from "./team-settings-detail-page";
+import { TeamsSettingsPage } from "./teams-settings-page";
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
 	"": SettingsIndexPage,
 	app: ProjectSettingsPage,
-	"app/:id": AppSettingsDetailPage,
+	"app/:id": AppSettingsDetailsPage,
 	insight: InsightSettingsPage,
 	"insight/:id/:projectId": InsightSettingsDetailPage,
 	members: MemberSettingsPage,
@@ -32,9 +34,12 @@ const SETTINGS_COMPONETS = {
 	"admin-theme": AdminThemePage,
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
+	"jobs/add-new-job": AddNewJob,
+	"jobs/edit-job/:id": AddNewJob,
 	"team-permissions": TeamsSettingsPage,
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
+	"llm-feedback": LLMFeedbackPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

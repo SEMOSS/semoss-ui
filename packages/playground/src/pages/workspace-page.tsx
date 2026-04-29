@@ -2,6 +2,7 @@ import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -14,8 +15,10 @@ import {
 	toast,
 	useDebouncedValue,
 	useInfiniteScroll,
+	useTheme,
 } from "@semoss/ui/next";
 import workspaceImage from "@/assets/img/workspace.png";
+import workspaceImageDark from "@/assets/img/workspace-darkmode.png";
 import { WorkspaceCard } from "@/components";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { App } from "@/types";
@@ -26,19 +29,23 @@ import type { App } from "@/types";
  * @component
  */
 export const WorkspacePage = observer(() => {
-	const { root } = useRoot();
+	const { t } = useTranslation(["workspace", "notifications", "common"]);
 	const navigate = useNavigate();
+	const { root } = useRoot();
+	const { theme: colorMode } = useTheme();
 	// set the breadcrumbs
-	useGlobalBreadcrumbs([
-		{
-			name: "Home",
-			path: "/",
-		},
-		{
-			name: "Workspace",
-			path: "/workspace",
-		},
-	]);
+	useGlobalBreadcrumbs({
+		breadcrumbs: [
+			{
+				name: t("workspace:breadcrumbs.home"),
+				path: "/",
+			},
+			{
+				name: t("workspace:breadcrumbs.agent"),
+				path: "/agent",
+			},
+		],
+	});
 
 	const [search, setSearch] = useState("");
 	const debouncedSearch = useDebouncedValue(search);
@@ -49,7 +56,7 @@ export const WorkspacePage = observer(() => {
 	 */
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
-			`MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`,
+			`META | MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}])`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 25) {
@@ -77,31 +84,39 @@ export const WorkspacePage = observer(() => {
 		},
 	});
 
+	// theme == dark or system matches
+	const isDark =
+		colorMode === "dark" ||
+		(colorMode === "system" &&
+			window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+	const src = isDark
+		? root.theme.images.workspaceDark || workspaceImageDark
+		: root.theme.images.workspace || workspaceImage;
+
 	return (
 		<div className="relative h-full w-full overflow-hidden">
 			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-primary/10">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
-						<div className="font-medium text-primary text-xl leading-normal">
-							Welcome to Workspace Manager
+						<div className="font-medium text-primary text-xl leading-normal dark:text-white">
+							{t("workspace:welcomeTitle")}
 						</div>
-						<div className="font-normal text-base text-primary leading-normal">
-							Explore custom AI workspaces designed to meet your
-							unique needs and integrate seamlessly into your
-							processes.
+						<div className="font-normal text-base text-primary leading-normal dark:text-white">
+							{t("workspace:welcomeDescription")}
 						</div>
 						<Button
-							onClick={() => navigate("/workspace/new")}
+							onClick={() => navigate("/agent/new")}
 							className="w-auto"
 						>
-							Create a Workspace
+							{t("workspace:actions.createAgent")}
 						</Button>
 					</div>
 					{/* Image appears only on large screens and above */}
 					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
 						<img
-							src={root.theme.images.workspace || workspaceImage}
-							alt="Workspace illustration"
+							src={src}
+							alt={t("workspace:images.agentIllustration")}
 							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full select-none object-cover"
 						/>
 					</div>
@@ -110,7 +125,7 @@ export const WorkspacePage = observer(() => {
 				<div className="flex flex-col gap-4 overflow-auto">
 					<InputGroup className="bg-background">
 						<InputGroupInput
-							placeholder="Search"
+							placeholder={t("common:buttons.search")}
 							value={search}
 							onChange={(e) => setSearch(e.target.value)}
 						/>
@@ -125,7 +140,9 @@ export const WorkspacePage = observer(() => {
 					>
 						{getWorkspaces.data.length === 0 ? (
 							<div className="flex items-center justify-center py-12">
-								<Muted>No results found</Muted>
+								<Muted>
+									{t("workspace:messages.noResults")}
+								</Muted>
 							</div>
 						) : (
 							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
@@ -134,7 +151,9 @@ export const WorkspacePage = observer(() => {
 										key={w.project_id}
 										workspace={{
 											workspace_id: w.project_id,
-											name: w.project_name,
+											name:
+												w.project_display_name ||
+												w.project_name,
 											description: w.description,
 										}}
 										onDeleteClick={async () => {
@@ -148,7 +167,9 @@ export const WorkspacePage = observer(() => {
 												toast.error(
 													e instanceof Error
 														? e.message
-														: "Failed to delete workspace",
+														: t(
+																"notifications:workspace.deleteError",
+															),
 												);
 											}
 										}}

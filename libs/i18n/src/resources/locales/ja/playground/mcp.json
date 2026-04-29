@@ -1,0 +1,55 @@
+{
+	"embedDocuments": {
+		"title": "既存ソースにドキュメントを埋め込む",
+		"description": "ナレッジソースを選択し、埋め込むドキュメントをアップロードします。",
+		"knowledgeSource": "ナレッジソース",
+		"documents": "ドキュメント",
+		"selectFiles": "クリックしてファイルを選択するか、ドラッグ＆ドロップ",
+		"embedButton": "ドキュメントを埋め込む",
+		"embedding": "埋め込み中...",
+		"removeFile": "ファイルを削除",
+		"selectPlaceholder": "ナレッジソースを選択"
+	},
+	"selector": {
+		"search": "検索",
+		"createKnowledgeSource": "ナレッジソースを作成",
+		"viewDetails": "詳細を表示",
+		"noToolboxesFound": "ツールボックスが見つかりません",
+		"noKnowledgeFound": "ナレッジが見つかりません"
+	},
+	"overlay": {
+		"editToolbox": "ツールボックスを構成",
+		"editKnowledge": "ナレッジを構成",
+		"toolboxDescription": "このチャットにより多くの機能を与えるためにツールを追加します",
+		"knowledgeDescription": "モデルにより多くのコンテキストを与えるためにナレッジソースを追加します"
+	},
+	"tools": {
+		"enterValues": "カンマ区切りの値を入力",
+		"selectField": "{{field}}を選択",
+		"enterField": "{{field}}を入力"
+	},
+	"messages": {
+		"selectKnowledgeSource": "ナレッジソースを選択してください",
+		"selectDocument": "少なくとも1つのドキュメントを選択してください",
+		"embedSuccess": "ドキュメントを正常に埋め込みました",
+		"embedFailed": "ドキュメントの埋め込みに失敗しました",
+		"loadFailed": "ナレッジソースの読み込みに失敗しました。",
+		"noSources": "ナレッジソースが見つかりません。"
+	},
+	"buttons": {
+		"cancel": "キャンセル",
+		"embed": "埋め込む",
+		"save": "保存",
+		"close": "閉じる"
+	},
+	"permission": {
+		"accessRequested": "アクセスをリクエスト済み",
+		"requestAccess": "アクセスをリクエスト",
+		"noAccess": "アクセス権なし",
+		"requestAccessButton": "アクセスをリクエスト",
+		"noDescription": "説明がありません。",
+		"tooltipNoAccess": "この{{type}}へのアクセス権がありません。オーナーにアクセスをリクエストしてください。",
+		"tooltipMissingDependencies": "この{{type}}のすべての依存関係にアクセスできないため、機能が制限される場合があります。詳細については、プラットフォームで開いてください。",
+		"tooltipOpen": "プラットフォームでこの{{type}}を開く"
+	}
+}

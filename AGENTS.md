@@ -102,5 +102,6 @@ pnpm test           # Verify tests pass
 
 ## Nested AGENTS.md Files
 
+- [libs/i18n/AGENTS.md](./libs/i18n/AGENTS.md) - Internationalization library specifics
 - [libs/ui/AGENTS.md](./libs/ui/AGENTS.md) - Component library specifics
 - [packages/playground/AGENTS.md](./packages/playground/AGENTS.md) - Playground app specifics

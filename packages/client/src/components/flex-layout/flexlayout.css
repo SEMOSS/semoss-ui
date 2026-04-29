@@ -8,6 +8,9 @@
     --font-family: 'Inter', sans-serif;
     --font-size: 0.875rem;
     --smss-tab-border-radius: 4px;
+    --smss-workspace-tabbar-height: 51px;
+    --smss-workspace-tabbar-padding: 8px;
+    --smss-workspace-tab-height: 32px;
 }
 .flexlayout__theme_smss--legacy .flexlayout__border_left {
     width: 46px;
@@ -77,14 +80,14 @@
     padding-left: 34px;
 }
 
-.flexlayout__theme_smss--legacy .workspace_layout .flexlayout__border_bottom {
+.flexlayout__theme_smss--legacy .flexlayout__border_bottom {
     padding-left: 0;
     position: absolute;
     bottom: 0;
     min-width: 90px;
 }
 
-.flexlayout__theme_smss--legacy .workspace_layout .flexlayout__border_bottom .flexlayout__border_button_bottom {
+.flexlayout__theme_smss--legacy .flexlayout__border_bottom .flexlayout__border_button_bottom {
    background: transparent;
 }
 
@@ -94,6 +97,16 @@ Main Content tabs
 
 .flexlayout__theme_smss--legacy .flexlayout__tabset_tabbar_inner_tab_container_top {
     border: none;
+}
+
+.flexlayout__theme_smss--legacy .flexlayout__tabset_tabbar_outer {
+    min-height: var(--smss-workspace-tabbar-height);
+    padding: var(--smss-workspace-tabbar-padding);
+    background: var(--Background-Paper1, #fff);
+}
+
+.flexlayout__theme_smss--legacy .flexlayout__tabset_tabbar_outer_top {
+    border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.12));
 }
 
 .flexlayout__theme_smss--legacy .flexlayout__tabset_tab_divider {
@@ -117,16 +130,13 @@ Main Content tabs
     box-shadow: 0px 1px 2px rgba(212, 12, 12, 0.76);
 }
 
-.flexlayout__theme_smss--legacy .flexlayout__tabset_tabbar_outer_top {
-    border: none;
-}
-
 .flexlayout__theme_smss--legacy .flexlayout__tabset_tabbar_inner_tab_container {
     display: flex;
     align-items: center;
     gap: 4px;
     flex: 1 0 0;
 }
+
 .flexlayout__theme_smss--legacy .flexlayout__tabset_container{
     border-radius: var(--Shape-borderRadiusLg, 12px);
     background: var(--Background-Paper1, #fff);
@@ -135,7 +145,7 @@ Main Content tabs
     background-color: transparent;
 }
 .flexlayout__theme_smss--legacy .flexlayout__tabset {
-    margin-top: 8px;
+    margin-top: 0;
     margin-left: 4px;
 }
 .flexlayout__theme_smss--legacy .flexlayout__tab.flexlayout__tab_border.flexlayout__tab_border_left {
@@ -148,14 +158,19 @@ Main Content tabs
 .flexlayout__theme_smss--legacy .flexlayout__tab_button {
     display: flex;
     align-items: center;
-    border-radius: 16px;
-    background: var(--Secondary-Selected, #ebebeb);
+    justify-content: center;
+    gap: 8px;
+    height: var(--smss-workspace-tab-height);
+    padding: 12px 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: var(--background, #fff);
+    color: var(--foreground, #000);
     font-size: 13px;
     line-height: 18px; /* 138.462% */
 }
 
 .flexlayout__theme_smss--legacy .flexlayout__tab_button:hover {
-    background-color: rgba(0, 0, 0, 0.04);
     background-color: var(--Secondary-Selected, #ebf4fe);
 }
 
@@ -166,6 +181,22 @@ Main Content tabs
 }
 
 .flexlayout__theme_smss--legacy .flexlayout__tab_button--selected {
+    border-color: var(--input, rgba(0, 0, 0, 0.12));
+    background-color: var(--background, #fff);
+    color: var(--foreground, #000);
+    box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.08);
+}
+
+.flexlayout__theme_smss--legacy .flexlayout__tab_button_content {
+    overflow: hidden;
+    color: var(--foreground, #000);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 18px;
+}
+
+.flexlayout__theme_smss--legacy .flexlayout__tab_button--selected .flexlayout__tab_button_leading {
     color: var(--Primary-Dark, #1260dd);
-    background-color: #ebf4fe;
 }

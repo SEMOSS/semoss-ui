@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	ButtonGroup,
@@ -42,6 +43,7 @@ interface PlanMessageProps {
 
 export const PlanMessage: React.FC<PlanMessageProps> = observer(
 	({ message, isLast }) => {
+		const { t } = useTranslation("chat");
 		const [editStep, setEditStep] = useState<PlanStep | null>(null);
 		const [isAddStepOpen, setIsAddStepOpen] = useState(false);
 
@@ -65,7 +67,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 				message.removeStep(step_number);
 
 				toast.success(
-					`Successfully removed step ${step_number} from plan`,
+					t("notifications.planStepRemoved", {
+						stepNumber: step_number,
+					}),
 				);
 			} catch (e) {
 				toast.error(e.message);
@@ -93,8 +97,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 					</span>
 				</div>
 				<p className="normal mt-2 mb-3 text-base text-foreground leading-normal">
-					Here is the plan that I have created. Feel free to modify it
-					as needed.
+					{t("plan.heading")}
 				</p>
 				{message.plan.steps.length > 0 && (
 					<div className="flex flex-col">
@@ -151,7 +154,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 																</Button>
 															</TooltipTrigger>
 															<TooltipContent>
-																Fix Step
+																{t(
+																	"plan.fixStep",
+																)}
 															</TooltipContent>
 														</Tooltip>
 													)}
@@ -160,7 +165,6 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 															asChild
 														>
 															<Button
-																className=""
 																size="icon-sm"
 																variant="ghost"
 																onClick={(e) =>
@@ -182,7 +186,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 																		);
 																	}}
 																>
-																	Edit
+																	{t(
+																		"plan.edit",
+																	)}
 																</DropdownMenuItem>
 																<DropdownMenuItem
 																	onClick={(
@@ -194,7 +200,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 																		);
 																	}}
 																>
-																	Delete
+																	{t(
+																		"plan.delete",
+																	)}
 																</DropdownMenuItem>
 															</DropdownMenuGroup>
 														</DropdownMenuContent>
@@ -224,7 +232,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 														}}
 													>
 														<ShieldXIcon />
-														Fix Step
+														{t("plan.fixStep")}
 													</Button>
 												</div>
 											)}
@@ -259,7 +267,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 									className="flex-1 truncate text-left font-medium text-muted-foreground text-sm leading-normal"
 									title={"Add a new step to the plan"}
 								>
-									Add Task
+									{t("plan.addTask")}
 								</div>
 							</button>
 						)}
@@ -275,7 +283,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 								acceptPlan();
 							}}
 						>
-							Confirm Plan
+							{t("plan.confirmPlan")}
 						</Button>
 					</div>
 				)}

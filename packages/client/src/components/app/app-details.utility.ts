@@ -16,8 +16,12 @@ export interface appDependency {
 	engine_subtype: string;
 	engine_type: string;
 	permission_name: string;
-	description: string;
-	access_permission: number;
+	description?: string;
+	access_permission?: number; // the permission that the user has requested
+	can_view_dependencies?: boolean;
+	tags?: string;
+	engine_date_created?: string;
+	dependencies?: string[]; // Array of dependency engine IDs
 }
 
 export interface modelledDependency {
@@ -29,6 +33,7 @@ export interface modelledDependency {
 	isDiscoverable: boolean;
 	description: string;
 	access_permission: number;
+	can_view_dependencies?: boolean;
 }
 
 export interface engine {
@@ -184,22 +189,32 @@ export const fetchDependencies = async (
 			output: string;
 	  }
 > => {
-	const res = await configStore.runPixel<(appDependency[] | string)[]>(
-		`GetProjectDependencies(project="${appId}")`,
-	);
+	const res = await configStore.runPixel<
+		[
+			{
+				engines: appDependency[];
+				dependencies: string[]; // Top-level dependency IDs
+			},
+		]
+	>(`GetProjectDependencies(project="${appId}")`);
 
 	const type = res.pixelReturn[0].operationType;
 	const output = res.pixelReturn[0].output;
 
 	if (type.indexOf("ERROR") === -1) {
+		// Filter engines to return only top-level dependencies
+		const topLevelDeps =
+			output.engines?.filter((engine) =>
+				output.dependencies?.includes(engine.engine_id),
+			) || [];
 		return {
 			type: "success",
-			output: output as appDependency[],
+			output: topLevelDeps,
 		};
 	} else {
 		return {
 			type: "error",
-			output: output as string,
+			output: output as unknown as string,
 		};
 	}
 };
@@ -221,7 +236,7 @@ export const updateProjectDetails = async (
 	const res = await monolithStore.runQuery(
 		`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 			meta,
-		)}], jsonCleanup=[true])`,
+		)}])`,
 	);
 
 	const type = res.pixelReturn[0].operationType;

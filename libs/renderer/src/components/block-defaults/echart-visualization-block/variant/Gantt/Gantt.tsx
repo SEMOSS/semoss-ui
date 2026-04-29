@@ -2,7 +2,14 @@ import ReactECharts from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { styled, Table } from "@semoss/ui";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockDef } from "../../../../../store";
 import { getValueByPath } from "../../../../../utility";
@@ -10,29 +17,6 @@ import { GANTT_CHART } from "../../Visualization.constants";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 
-//Main container where gantt chart will render
-const StyledMainContainer = styled("div")(({ theme }) => ({
-	width: "100%",
-	height: "100%",
-}));
-//sub styled container to manage fiscal axis with chart
-const StyledContainer = styled("div")(() => ({
-	display: "flex",
-	justifyContent: "flex-start",
-	width: "100%",
-	height: "20%",
-	maxHeight: "25%",
-	overflow: "auto",
-}));
-//styled span to render series name
-const StyledDataSpan = styled("span")(({}) => ({}));
-//styled table cell to have background color
-const StyledTableCell = styled(Table.Cell)<{ backgroundColor?: string }>(
-	({ backgroundColor }) => ({
-		backgroundColor: backgroundColor ?? "#fff",
-		border: "1px solid #e6e6e6",
-	}),
-);
 //Gantt chart props
 interface GanttProps {
 	id: string;
@@ -40,10 +24,11 @@ interface GanttProps {
 }
 //Gantt chart main component
 export const Gantt = observer(
-	<D extends BlockDef = BlockDef>({ id, updateChart }: GanttProps) => {
+	<_D extends BlockDef = BlockDef>({ id, updateChart }: GanttProps) => {
 		const { data } = useBlock<EchartVisualizationBlockDef>(id);
 
 		//computed value to hold the most recent data
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on data only
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -109,18 +94,19 @@ export const Gantt = observer(
 			selector: selector,
 		});
 		// custom variable to hold the chart data to render
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data.values
 		const dataOption = useMemo(() => {
 			let option = JSON.parse(computedValue);
 			let resourceRows = []; // Stores resource related details
 			let seriesData = []; // series data to be used for rendering chart
-			let yAxisName = "";
-			const toolTipSelected = [];
+			let _yAxisName = "";
+			const _toolTipSelected = [];
 			let toolTipSelectedIndex = [];
-			const mileStoneIndex = "";
+			const _mileStoneIndex = "";
 			let milestoneData = [];
 			//detect task progress column is selected or not
 			const taskProgressSelected = Object.keys(
-				option["customSettings"]["columnDetails"],
+				option.customSettings.columnDetails,
 			).some((item) => item === "taskprogress");
 			//default properties for milestone display
 			const mileStoneProperties = {
@@ -137,30 +123,30 @@ export const Gantt = observer(
 			//show group view or not
 			let groupViewShow = false;
 			//column details selected in the data section
-			const columnIndexDetails =
-				option["customSettings"]["columnIndexDetails"];
+			const columnIndexDetails = option.customSettings.columnIndexDetails;
 			//frame data values
 			if (frame.data.values.length) {
-				frame.data.values.forEach((item, index) => {
-					const itemIndex = parseInt(columnIndexDetails["milestone"]);
+				frame.data.values.forEach((item, _index) => {
+					const itemIndex = parseInt(
+						columnIndexDetails.milestone,
+						10,
+					);
 					const mileStoneDate = new Date(
 						item[itemIndex] as Date,
 					).getTime();
 
 					const ganttToolsLength =
-						option["customSettings"]?.["gantttools"]?.[
-							"customizeSymbol"
-						]?.length;
+						option.customSettings?.gantttools?.customizeSymbol
+							?.length;
 					const ganttToolsSelected =
 						ganttToolsLength > -1
-							? option["customSettings"]?.["gantttools"]?.[
-									"customizeSymbol"
-								]?.[ganttToolsLength - 1]
+							? option.customSettings?.gantttools
+									?.customizeSymbol?.[ganttToolsLength - 1]
 							: {};
 
 					const ganttToolsDimensionValues =
 						ganttToolsSelected?.dimensionValues?.map(
-							(item, index) => new Date(item).getTime(),
+							(item, _index) => new Date(item).getTime(),
 						) || [];
 
 					if (
@@ -181,14 +167,12 @@ export const Gantt = observer(
 				// Step 1: Group tasks by resource
 				const groupedData = {};
 				const dataGrouped = Object.keys(
-					option["customSettings"]["columnDetails"],
+					option.customSettings.columnDetails,
 				).some((item) => item === "taskgroup");
 				const taskGroupIndex =
-					option["customSettings"]["columnIndexDetails"][
-						"taskgroup"
-					] || -1;
-				const toolTipData = Object.keys(
-					option["customSettings"]["columnDetails"],
+					option.customSettings.columnIndexDetails.taskgroup || -1;
+				const _toolTipData = Object.keys(
+					option.customSettings.columnDetails,
 				).filter((item) => item === "tooltip");
 				// toolTipData.forEach((item, index) => {
 				//     option["customSettings"]["columnDetails"][item].forEach(
@@ -198,24 +182,18 @@ export const Gantt = observer(
 				//     );
 				// });
 				legendShow =
-					option["customSettings"]?.["gantttools"]?.["showLegend"] ||
-					false;
+					option.customSettings?.gantttools?.showLegend || false;
 				groupViewShow =
-					option["customSettings"]?.["gantttools"]?.[
-						"showGroupView"
-					] || false;
+					option.customSettings?.gantttools?.showGroupView || false;
 				toolTipSelectedIndex =
-					option["customSettings"]["columnIndexDetails"]["tooltip"] ||
-					[];
+					option.customSettings.columnIndexDetails.tooltip || [];
 
 				if (dataGrouped && groupViewShow) {
-					yAxisName =
+					_yAxisName =
 						taskGroupIndex > -1
-							? option["customSettings"]["columnDetails"][
-									"taskgroup"
-								]["name"]
+							? option.customSettings.columnDetails.taskgroup.name
 							: "";
-					frame.data.values.forEach((d: string[], index) => {
+					frame.data.values.forEach((d: string[], _index) => {
 						if (!groupedData[d[taskGroupIndex]])
 							groupedData[d[taskGroupIndex]] = [];
 						groupedData[d[taskGroupIndex]].push(d);
@@ -224,7 +202,7 @@ export const Gantt = observer(
 					Object.keys(groupedData).forEach((resource) => {
 						const tasks = groupedData[resource];
 						tasks.sort(
-							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							// biome-ignore lint/suspicious/noExplicitAny: echart type is untyped
 							(a: any, b: any) =>
 								new Date(a[1]).getTime() -
 								new Date(b[1]).getTime(),
@@ -250,7 +228,7 @@ export const Gantt = observer(
 								name: task[0],
 								resource: resource,
 								taskprogress:
-									task[columnIndexDetails["taskprogress"]],
+									task[columnIndexDetails.taskprogress],
 								value: [
 									taskStart,
 									resourceRows.length - 1,
@@ -263,53 +241,50 @@ export const Gantt = observer(
 						});
 					});
 				} else {
-					yAxisName =
-						option["customSettings"]["columnDetails"]["task"][
-							"name"
-						];
+					_yAxisName = option.customSettings.columnDetails.task.name;
 					// Convert data to proper format
 					seriesData = frame.data.values.map(
 						(d: string[], index) => ({
-							name: d[columnIndexDetails["task"]],
-							taskprogress: d[columnIndexDetails["taskprogress"]],
+							name: d[columnIndexDetails.task],
+							taskprogress: d[columnIndexDetails.taskprogress],
 							value: [
 								new Date(
-									d[columnIndexDetails["startdate"]],
+									d[columnIndexDetails.startdate],
 								).getTime(),
 								index,
 								new Date(
-									d[columnIndexDetails["enddate"]],
+									d[columnIndexDetails.enddate],
 								).getTime(),
 								...toolTipSelectedIndex.map((item) => d[item]),
 							],
 						}),
 					);
-					resourceRows = frame.data.values.map((d, index) => d[0]);
+					resourceRows = frame.data.values.map((d, _index) => d[0]);
 				}
 				if (
 					Object.hasOwn(columnIndexDetails, "milestone") &&
-					columnIndexDetails["milestone"]
+					columnIndexDetails.milestone
 				) {
-					const gantttools = option["customSettings"]["gantttools"];
+					const _gantttools = option.customSettings.gantttools;
 					milestoneData = frame.data.values.map(
 						(d: string[], index) => {
-							const mileStoneSymbol = mileStoneProperties.symbol;
+							const _mileStoneSymbol = mileStoneProperties.symbol;
 							const symbolSize = mileStoneProperties.symbolSize;
 							const mileStoneDate = new Date(
-								d[columnIndexDetails["milestone"]],
+								d[columnIndexDetails.milestone],
 							).getTime();
 							const endDate = new Date(
-								d[columnIndexDetails["enddate"]],
+								d[columnIndexDetails.enddate],
 							).getTime();
 							return {
 								name: `MileStone ${index + 1}`,
 								value: [
 									mileStoneDate,
-									d[columnIndexDetails["task"]],
+									d[columnIndexDetails.task],
 									endDate,
 								],
 								mileStoneOriginalDate:
-									d[columnIndexDetails["milestone"]],
+									d[columnIndexDetails.milestone],
 								symbol: symbolValue[index],
 								symbolSize: symbolSize[index],
 								itemStyle: {
@@ -323,21 +298,18 @@ export const Gantt = observer(
 
 			let lineData = [];
 			const showDisplayValueLabels =
-				option["customSettings"]?.["gantttools"]?.[
-					"showDisplayValueLabels"
-				] || false;
+				option.customSettings?.gantttools?.showDisplayValueLabels ||
+				false;
 			const mainSeriesName =
-				option["customSettings"]?.["columnDetails"]?.["task"]?.["name"];
+				option.customSettings?.columnDetails?.task?.name;
 			const mainSeriesFrameName =
-				option["customSettings"]?.["columnDetails"]?.["task"]?.[
-					"selector"
-				];
+				option.customSettings?.columnDetails?.task?.selector;
 			if (
-				option["series"].some(
+				option.series.some(
 					(series) => series.name === "targetDateSegment",
 				)
 			) {
-				const targetDateSegment = option["series"].filter(
+				const targetDateSegment = option.series.filter(
 					(item) => item.name === "targetDateSegment",
 				);
 				targetDateSegment[0] = {
@@ -349,23 +321,19 @@ export const Gantt = observer(
 					renderItem: (params, api) => {
 						const x = api.coord([api.value(0), 0])[0];
 						const targetText =
-							option["customSettings"]?.["gantttools"]?.[
-								"targetLineName"
-							] || "";
+							option.customSettings?.gantttools?.targetLineName ||
+							"";
 						const targetColor =
-							option["customSettings"]?.["gantttools"]?.[
-								"targetLineColor"
-							] || "#FF0000";
+							option.customSettings?.gantttools
+								?.targetLineColor || "#FF0000";
 						// Convert date to x-axis position
-						const height = params.coordSys.height; // Full chart height return
+						const _height = params.coordSys.height; // Full chart height return
 						const yBottom =
 							params.coordSys.y + params.coordSys.height;
 						const yTop = params.coordSys.y;
 						//if targetdate is not empty then show the target date line
 						if (
-							option["customSettings"]?.["gantttools"]?.[
-								"targetDate"
-							] != ""
+							option.customSettings?.gantttools?.targetDate !== ""
 						) {
 							return {
 								type: "group",
@@ -403,10 +371,7 @@ export const Gantt = observer(
 					},
 				};
 				//line data setting if target date is not empty
-				if (
-					option["customSettings"]?.["gantttools"]?.["targetDate"] !=
-					""
-				) {
+				if (option.customSettings?.gantttools?.targetDate !== "") {
 					lineData = targetDateSegment;
 				} else {
 					lineData = [];
@@ -420,7 +385,7 @@ export const Gantt = observer(
 				...option,
 				tooltip: {
 					trigger: "item",
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					// biome-ignore lint/suspicious/noExplicitAny: echart type is untyped
 					formatter: (params: any) =>
 						chartFormatter(
 							params,
@@ -586,7 +551,7 @@ export const Gantt = observer(
 						name: milestoneData.length ? "Milestones" : "",
 						milestonerendered: true,
 						label: {
-							show: showDisplayValueLabels ? true : false,
+							show: !!showDisplayValueLabels,
 							position: "top",
 							formatter: "{b}",
 						},
@@ -618,42 +583,42 @@ export const Gantt = observer(
 			const quarterObject = {};
 			//create quarter object
 			[1, 2, 3, 4].forEach((item) => {
-				quarterObject["Q" + item] = [];
+				quarterObject[`Q${item}`] = [];
 				const countsPerQuarter = 3;
 				for (let i = 0; i < countsPerQuarter; i++) {
-					if (startIndexTemp == month.length) {
+					if (startIndexTemp === month.length) {
 						startIndexTemp = month.length % 12;
 					}
-					quarterObject["Q" + item][i] = month[startIndexTemp];
+					quarterObject[`Q${item}`][i] = month[startIndexTemp];
 					startIndexTemp++;
 				}
 			});
 			//month based on quarter from Jan to Dec based on fiscal year start
 			let monthBasedQuarter = [];
 			let lastMonthInQuarter = "";
-			month.forEach((item, index) => {
+			month.forEach((item, _index) => {
 				let monthExistsInQuarter = "";
 				for (let i = 0; i < 4; i++) {
 					if (
-						quarterObject["Q" + (i + 1)].some(
+						quarterObject[`Q${i + 1}`].some(
 							(qoItem) => item === qoItem,
 						)
 					) {
-						monthExistsInQuarter = "Q" + (i + 1);
+						monthExistsInQuarter = `Q${i + 1}`;
 					}
 				}
 				const quarterExistsInArray = monthBasedQuarter
 					.reverse()
 					.findIndex(
-						(mbitem, mbindex) =>
+						(mbitem, _mbindex) =>
 							monthExistsInQuarter === mbitem.name,
 					);
 				if (
 					quarterExistsInArray >= 0 &&
-					lastMonthInQuarter == monthExistsInQuarter
+					lastMonthInQuarter === monthExistsInQuarter
 				) {
-					monthBasedQuarter[quarterExistsInArray]["month"] = [
-						...monthBasedQuarter[quarterExistsInArray]["month"],
+					monthBasedQuarter[quarterExistsInArray].month = [
+						...monthBasedQuarter[quarterExistsInArray].month,
 						item,
 					];
 				} else {
@@ -671,14 +636,15 @@ export const Gantt = observer(
 			//set initial fiscal year based on current month selection, if month data is not available, then first record of seriesdata is selected
 			const FYYear =
 				parseInt(
-					dataOption["customSettings"]?.["gantttools"]?.[
-						"fiscalYearValue"
-					]?.substring(2),
+					dataOption.customSettings?.gantttools?.fiscalYearValue?.substring(
+						2,
+					),
+					10,
 				) + 1;
-			monthBasedQuarter = monthBasedQuarter.map((item, index) => {
+			monthBasedQuarter = monthBasedQuarter.map((item, _index) => {
 				return {
 					...item,
-					["colSpan"]: item.month.length,
+					colSpan: item.month.length,
 				};
 			});
 			//sorting records based on date
@@ -686,30 +652,27 @@ export const Gantt = observer(
 				(item, item1) => item.order - item1.order,
 			);
 			const monthSelected =
-				dataOption["customSettings"]?.["gantttools"]?.[
-					"fiscalYearStart"
-				];
+				dataOption.customSettings?.gantttools?.fiscalYearStart;
 			const yearQuarterIndex = monthBasedQuarter.findIndex((item) =>
 				item.month.includes(monthSelected),
 			);
 			monthBasedQuarter = monthBasedQuarter.map((item, index) => {
 				return {
 					...item,
-					["fiscalYear"]: isNaN(FYYear)
+					fiscalYear: Number.isNaN(FYYear)
 						? ""
 						: index < yearQuarterIndex
-							? "FY" + (FYYear - 1)
-							: "FY" + FYYear,
+							? `FY${FYYear - 1}`
+							: `FY${FYYear}`,
 				};
 			});
 			return monthBasedQuarter;
 		}
 		//enable or disable fiscal axis
 		const enableFiscalAxis =
-			dataOption["customSettings"]?.["gantttools"]?.[
-				"enableFiscalAxis"
-			] || false;
+			dataOption.customSettings?.gantttools?.enableFiscalAxis || false;
 		//update chart data when frame values are changed
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only or frame-triggered effect
 		useEffect(() => {
 			if (!frame.isLoading && frame.data.values.length > 0) {
 				updateChart(dataOption, "option");
@@ -723,6 +686,7 @@ export const Gantt = observer(
 			}
 		}, [dataOption]);
 		//update height series name section based on table height
+		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only or frame-triggered effect
 		useEffect(() => {
 			const table = tableRef.current;
 
@@ -754,7 +718,7 @@ export const Gantt = observer(
 			let chartToolTip = `<b>${params.name}</b><br>
             Start: ${new Date(params.value[0]).toLocaleDateString()}<br>
             End: ${new Date(params.value[2]).toLocaleDateString()}<br>`;
-			tooltipData.forEach((item, index) => {
+			tooltipData.forEach((item, _index) => {
 				chartToolTip += `${frameHeaders[item]}: ${
 					frameValues[params.dataIndex][item]
 				}<br>`;
@@ -763,19 +727,16 @@ export const Gantt = observer(
 		}
 		//fiscal start month
 		const fiscalStartMonth =
-			dataOption["customSettings"]?.["gantttools"]?.["fiscalYearStart"] ||
-			"Jan";
+			dataOption.customSettings?.gantttools?.fiscalYearStart || "Jan";
 		//fiscal axis background color
 		const fiscalAxisBackgroundColor =
-			dataOption["customSettings"]?.["gantttools"]?.[
-				"fiscalAxisBackgroundColor"
-			] || "#0471f0";
+			dataOption.customSettings?.gantttools?.fiscalAxisBackgroundColor ||
+			"#0471f0";
 		//getquarter and month list with fiscal year
 		const quarterAndMonth = getQuarterAndMonthList(fiscalStartMonth);
 		//get the series name for chart side heading
 		const seriesName =
-			dataOption["customSettings"]?.["columnDetails"]?.["task"]?.name ||
-			"";
+			dataOption.customSettings?.columnDetails?.task?.name || "";
 		const onClickChart = {
 			//when contextmenu event is raised, default context menu made hidden, and custom component is shown
 			contextmenu: (params) => {
@@ -783,7 +744,7 @@ export const Gantt = observer(
 					const taskColumn = params.data.name;
 					const parsedJson = JSON.parse(computedValue);
 					const taskName =
-						parsedJson["series"][params.seriesIndex]["frameName"];
+						parsedJson.series[params.seriesIndex].frameName;
 					setContextMenu(
 						contextMenu === null
 							? {
@@ -806,10 +767,10 @@ export const Gantt = observer(
 			},
 		};
 		return (
-			<StyledMainContainer id={id}>
+			<div id={id} className="h-full w-full">
 				{enableFiscalAxis && (
-					<StyledContainer>
-						<StyledDataSpan
+					<div className="flex h-[20%] max-h-[25%] w-full justify-start overflow-auto">
+						<span
 							style={{
 								backgroundColor: fiscalAxisBackgroundColor,
 								height: `${seriesNameCol}px`,
@@ -824,65 +785,65 @@ export const Gantt = observer(
 							}}
 						>
 							{seriesName}
-						</StyledDataSpan>
+						</span>
 						<Table
 							aria-label="simple table"
 							ref={(e) => {
 								tableRef.current = e;
 							}}
 						>
-							<Table.Head>
-								<Table.Row>
+							<TableHeader>
+								<TableRow>
 									{quarterAndMonth.length &&
 										quarterAndMonth.map((item, i) => (
-											<StyledTableCell
+											<TableHead
+												// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 												key={i}
-												backgroundColor={
-													fiscalAxisBackgroundColor
-												}
-												size="small"
 												colSpan={item?.colSpan}
-												align="center"
+												className="p-1 text-center text-xs"
+												style={{
+													backgroundColor:
+														fiscalAxisBackgroundColor,
+													border: "1px solid #e6e6e6",
+												}}
 											>
 												{item.name}{" "}
 												{Object.hasOwn(
 													item,
 													"fiscalYear",
-												) && item["fiscalYear"] !== ""
-													? `(${item["fiscalYear"]})`
+												) && item.fiscalYear !== ""
+													? `(${item.fiscalYear})`
 													: ""}
-											</StyledTableCell>
+											</TableHead>
 										))}
-								</Table.Row>
-							</Table.Head>
-							<Table.Body>
-								<Table.Row
-									sx={{
-										"&:last-child td, &:last-child th": {
-											border: "1px solid grey",
-										},
-									}}
-								>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								<TableRow>
 									{quarterAndMonth.length &&
 										quarterAndMonth.map((item, i) =>
-											item["month"].map((monthItem) => (
-												<StyledTableCell
+											item.month.map((monthItem) => (
+												<TableCell
+													// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 													key={i}
-													component={"td"}
-													scope="row"
-													size="small"
+													className="p-1 text-xs"
+													style={{
+														backgroundColor: "#fff",
+														border: "1px solid #e6e6e6",
+													}}
 												>
 													{monthItem}
-												</StyledTableCell>
+												</TableCell>
 											)),
 										)}
-								</Table.Row>
-							</Table.Body>
+								</TableRow>
+							</TableBody>
 						</Table>
-					</StyledContainer>
+					</div>
 				)}
 
 				<ReactECharts
+					key={JSON.stringify(dataOption)}
 					option={dataOption}
 					onEvents={onClickChart}
 					ref={(e) => {
@@ -900,7 +861,7 @@ export const Gantt = observer(
 					contextMenu={contextMenu}
 					onClose={() => setContextMenu(null)}
 				/>
-			</StyledMainContainer>
+			</div>
 		);
 	},
 );

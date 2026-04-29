@@ -5,23 +5,10 @@ import ReactECharts from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import type { EchartVisualizationBlockDef } from "../..";
 import { CustomContextMenu } from "../../CustomContextMenu";
-
-const StyledChartContainer = styled("div")(() => ({
-	height: "100%",
-}));
-
-const StyledNoDataContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
-	height: "30vh",
-	width: "80vh",
-	color: error ? theme.palette.error.main : "unset",
-}));
 
 interface PieProps {
 	/**
@@ -85,6 +72,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	/**
 	 * @description Trying out different approach for TrendLine, work in progress
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	const computedValue = useMemo(() => {
 		return computed(() => {
 			if (!data) {
@@ -112,6 +100,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	/**
 	 * @description
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (
 			data?.frame?.name &&
@@ -125,6 +114,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	/**
 	 * @description format the frame option data for echart
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	const formatDataPoints = useCallback(
 		(resultData: unknown) => {
 			if (frame.data.values.length > 0) {
@@ -138,13 +128,13 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 					header.replace("Average_", ""),
 				);
 				//format the data points to match the echart specification
-				resultData["series"][0]["data"] = valuesDataSet.map(
+				resultData.series[0].data = valuesDataSet.map(
 					([name, value]) => ({ name, value }),
 				);
 				valuesDataSet.map((x) => x.shift());
 				headersDataSet.shift();
 			} else {
-				delete resultData["tooltip"]["formatter"];
+				delete resultData.tooltip.formatter;
 			}
 			return resultData;
 		},
@@ -158,7 +148,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 		contextmenu: (params) => {
 			//  let currentOption = chart.getOption();
 			if (params.data) {
-				const labelName = data.option["_state"]["fields"]["Label"][0];
+				const labelName = data.option._state.fields.Label[0];
 				setContextMenu(
 					contextMenu === null
 						? {
@@ -187,18 +177,18 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 		try {
 			const lineOptions = JSON.parse(data.option);
 			return (
-				<StyledChartContainer>
+				<div className="h-full">
 					<ReactECharts
 						option={lineOptions}
 						onEvents={onClickChart}
 					/>
-				</StyledChartContainer>
+				</div>
 			);
 		} catch {
 			return (
-				<StyledNoDataContainer error>
+				<div className="h-[30vh] w-[80vh] text-destructive">
 					There was an issue parsing your JSON.
-				</StyledNoDataContainer>
+				</div>
 			);
 		}
 	} else {
@@ -209,8 +199,9 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 				? formatDataPoints(parsedOption)
 				: parsedOption;
 		return (
-			<StyledChartContainer>
+			<div className="h-full">
 				<ReactECharts
+					key={JSON.stringify(resultData)}
 					option={resultData as EChartsOption}
 					onEvents={onClickChart}
 					style={{
@@ -224,7 +215,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 					contextMenu={contextMenu}
 					onClose={() => setContextMenu(null)}
 				/>
-			</StyledChartContainer>
+			</div>
 		);
 	}
 });

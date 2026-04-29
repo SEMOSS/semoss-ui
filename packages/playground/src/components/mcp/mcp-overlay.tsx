@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -29,6 +30,7 @@ interface MCPOverlayProps {
 
 export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
 	const { open, type, values, onClose } = props;
+	const { t } = useTranslation("mcp");
 
 	const [updated, setUpdated] = useState<MCPConfig[]>(values);
 
@@ -42,17 +44,23 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
 			<DialogContent
 				className="w-full sm:max-w-4xl"
 				aria-describedby={
-					type === "TOOLBOX" ? "Edit Toolbox" : "Edit Knowledge"
+					type === "TOOLBOX"
+						? t("overlay.editToolbox")
+						: t("overlay.editKnowledge")
 				}
+				onOpenAutoFocus={(e) => e.preventDefault()}
+				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
 				<DialogHeader>
 					<DialogTitle>
-						{type === "TOOLBOX" ? "Edit Toolbox" : "Edit Knowledge"}
+						{type === "TOOLBOX"
+							? t("overlay.editToolbox")
+							: t("overlay.editKnowledge")}
 					</DialogTitle>
 					<DialogDescription>
 						{type === "TOOLBOX"
-							? "Add capabilities to your agent and extend what it can do"
-							: "Edit the knowledge sources your agent can access"}
+							? t("overlay.toolboxDescription")
+							: t("overlay.knowledgeDescription")}
 					</DialogDescription>
 				</DialogHeader>
 
@@ -67,7 +75,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
 				</form>
 				<DialogFooter>
 					<Button variant="ghost" onClick={() => onClose()}>
-						Cancel
+						{t("buttons.cancel")}
 					</Button>
 					<Button
 						variant="default"
@@ -75,7 +83,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
 							onClose(updated);
 						}}
 					>
-						Save
+						{t("buttons.save")}
 					</Button>
 				</DialogFooter>
 			</DialogContent>

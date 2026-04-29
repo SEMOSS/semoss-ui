@@ -21,12 +21,15 @@ interface MarkdownProps extends React.HTMLAttributes<HTMLDivElement> {
 	children: string | null | undefined;
 	/** Custom components to override default rendering */
 	components?: Partial<Components>;
+	/** Override URL transformation (e.g. to allow custom protocols through sanitization) */
+	urlTransform?: (url: string) => string | null | undefined;
 }
 
 function Markdown({
 	children,
 	components,
 	className,
+	urlTransform,
 	...props
 }: MarkdownProps) {
 	const defaultComponents: Components = React.useMemo(
@@ -144,7 +147,7 @@ function Markdown({
 		<div
 			data-slot="markdown"
 			className={cn(
-				"prose prose-slate dark:prose-invert max-w-none",
+				"prose prose-slate dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
 				className,
 			)}
 			{...props}
@@ -153,6 +156,7 @@ function Markdown({
 				remarkPlugins={[remarkGfm]}
 				rehypePlugins={[rehypeRaw]}
 				components={mergedComponents}
+				urlTransform={urlTransform}
 			>
 				{children}
 			</ReactMarkdown>

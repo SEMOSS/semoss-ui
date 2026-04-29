@@ -7,29 +7,9 @@ import {
 	useBlocks,
 	type Variable,
 } from "@semoss/renderer";
-import { Box, Divider, Stack, styled, Typography } from "@semoss/ui";
-import { isOutputJSON } from "@/utility";
-
-const StyledStack = styled(Stack)(({ theme }) => ({
-	border: `${theme.spacing(0.25)} solid ${theme.palette.primary.main}`,
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	paddingLeft: theme.spacing(2),
-	paddingRight: theme.spacing(2),
-	paddingTop: theme.spacing(1),
-	paddingBottom: theme.spacing(1),
-}));
-
-const StyledPreviewBox = styled(Box)(({ theme }) => ({
-	padding: theme.spacing(2),
-	backgroundColor: theme.palette.background.default,
-	width: "100%",
-}));
-
-const StyledBlocksBox = styled(Box)(({ theme }) => ({
-	width: "350px",
-}));
+import { Separator } from "@semoss/ui/next";
+import { capitalizeFirstLetter, isOutputJSON } from "@/utility";
+import PreviewButton from "../../assets/img/PreviewRounded.png";
 
 interface VariablePreviewProps {
 	/**
@@ -109,19 +89,15 @@ export const VariablePreview = observer(
 				const config = getStateWithBlock(variable.to);
 				if (config) {
 					return (
-						<StyledBlocksBox>
+						<div className="w-[350px]">
 							<Renderer state={config} preview={true} />
-						</StyledBlocksBox>
+						</div>
 					);
 				} else {
 					return (
-						<Typography
-							variant="body2"
-							fontWeight="bold"
-							color="error"
-						>
+						<span className="font-bold text-destructive text-sm">
 							Block is no longer available
-						</Typography>
+						</span>
 					);
 				}
 			} else {
@@ -137,16 +113,16 @@ export const VariablePreview = observer(
 					);
 				} else {
 					return (
-						<Typography variant="body2" fontWeight="bold">
+						<span className="text-muted-foreground text-sm">
 							{found as string}
-						</Typography>
+						</span>
 					);
 				}
 			}
 		}, [variable, id]);
 
 		const previewValue = useMemo(() => {
-			let val;
+			let val: string;
 
 			if (variable.type === "block") {
 				try {
@@ -165,36 +141,51 @@ export const VariablePreview = observer(
 			}
 			return (
 				<>
-					<Stack direction="row">
-						<Typography variant="body2" fontWeight="bold">
-							Type:{" "}
-						</Typography>
-						<Typography variant="body2">{variable.type}</Typography>
-					</Stack>
-					<Stack direction="row">
-						<Typography variant="body2" fontWeight="bold">
-							Value:{" "}
-						</Typography>
-						<Typography variant="body2">{val}</Typography>
-					</Stack>
+					<div className="flex w-full gap-2 px-4 py-1 pl-12">
+						<span className="font-medium text-sm">Name:</span>
+						<span className="break-all text-muted-foreground text-sm">
+							{id}
+						</span>
+					</div>
+					<div className="flex w-full gap-2 px-4 py-1 pl-12">
+						<span className="font-medium text-sm">Type:</span>
+						<span className="break-all text-muted-foreground text-sm">
+							{capitalizeFirstLetter(variable.type)}
+						</span>
+					</div>
+					<div className="flex w-full gap-2 px-4 py-1 pl-12">
+						<span className="font-medium text-sm">Value:</span>
+						<span className="break-all text-muted-foreground text-sm">
+							{val}
+						</span>
+					</div>
 				</>
 			);
 		}, [variable, id]);
 
 		return (
-			<StyledStack spacing={0}>
-				<StyledBox>
-					<Typography variant={"body2"} fontWeight="medium">
-						Preview
-					</Typography>
-				</StyledBox>
-				<Divider />
-				<StyledPreviewBox>{preview}</StyledPreviewBox>
-				<Divider />
-				<StyledBox>
-					<Stack direction={"column"}>{previewValue}</Stack>
-				</StyledBox>
-			</StyledStack>
+			<div className="flex h-auto max-h-[80vh] w-[424px] flex-col items-start rounded-xl bg-background shadow-lg">
+				<div className="flex items-start gap-2.5 px-4 py-1">
+					<div className="flex items-center gap-2 rounded-full px-2 py-1.5">
+						<img
+							src={PreviewButton}
+							alt="Expand/Collapse"
+							className="h-5 w-5"
+						/>
+						<span className="font-medium text-[#0471F0] text-sm">
+							Preview
+						</span>
+					</div>
+				</div>
+				<Separator />
+				<div className="flex max-h-[200px] w-full flex-col items-start gap-2 overflow-y-auto px-4 py-4 pl-12">
+					{preview}
+				</div>
+				<Separator />
+				<div className="flex max-h-[200px] w-full flex-col items-start overflow-y-auto">
+					{previewValue}
+				</div>
+			</div>
 		);
 	},
 );

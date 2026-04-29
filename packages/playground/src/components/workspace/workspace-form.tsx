@@ -1,5 +1,5 @@
-import { PlusIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Field,
@@ -8,12 +8,9 @@ import {
 	FieldSeparator,
 	Input,
 	Textarea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { MCPSelector, NewKnowledgeOverlay } from "@/components";
+import { MCPSelector, NewKnowledgeOverlay, PromptSelector } from "@/components";
 import { useChat } from "@/hooks";
 import type { MCPConfig, Workspace } from "@/types";
 
@@ -35,18 +32,22 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	values,
 	onClose,
 }) => {
+	const { t } = useTranslation(["workspace", "common", "notifications"]);
+
 	/**
 	 * IDs
 	 */
 	const nameId = useId();
 	const descriptionId = useId();
 	const instructionId = useId();
+	const promptsId = useId();
 
 	/**
 	 * State
 	 */
 	const [name, setName] = useState<string>("");
 	const [description, setDescription] = useState<string>("");
+	const [prompts, setPrompts] = useState<string[]>([]);
 	const [instructions, setInstructions] = useState<string>("");
 	const [toolbox, setToolbox] = useState<MCPConfig[]>([]);
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>([]);
@@ -63,6 +64,11 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	useEffect(() => {
 		setName(values?.name || "");
 		setDescription(values?.description || "");
+		setPrompts(
+			Array.isArray(values?.prompts)
+				? values.prompts.map((p) => (typeof p === "string" ? p : p.id))
+				: [],
+		);
 		setInstructions(values?.system_prompt || "");
 		setKnowledge(values?.mcp.filter((mcp) => mcp.type === "VECTOR") || []);
 		setToolbox(values?.mcp.filter((mcp) => mcp.type !== "VECTOR") || []);
@@ -82,6 +88,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 				name: name,
 				system_prompt: instructions,
 				description: description,
+				prompts: prompts,
 				mcp: [...toolbox, ...knowledge],
 			};
 
@@ -98,7 +105,9 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			console.error(e);
 
 			toast.error(
-				e instanceof Error ? e.message : "Failed to save workspace",
+				e instanceof Error
+					? e.message
+					: t("notifications:workspace.saveError"),
 			);
 		} finally {
 			// stop the loading screen
@@ -110,10 +119,12 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 		<form onSubmit={onSubmit} className="flex w-full flex-col gap-6">
 			<FieldGroup>
 				<Field>
-					<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+					<FieldLabel htmlFor={nameId}>
+						{t("workspace:form.nameLabel")}
+					</FieldLabel>
 					<Input
 						id={nameId}
-						placeholder="Enter Name"
+						placeholder={t("common:placeholders.enterName")}
 						value={name}
 						disabled={isLoading}
 						onChange={(e) => setName(e.target.value)}
@@ -121,14 +132,26 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					/>
 				</Field>
 				<Field>
-					<FieldLabel htmlFor={descriptionId}>Description</FieldLabel>
+					<FieldLabel htmlFor={descriptionId}>
+						{t("workspace:form.descriptionLabel")}
+					</FieldLabel>
 					<Input
 						id={descriptionId}
-						placeholder="Enter Description"
+						placeholder={t("common:placeholders.enterDescription")}
 						value={description}
 						disabled={isLoading}
 						onChange={(e) => setDescription(e.target.value)}
 						data-testid="workspaceForm-description-txt"
+					/>
+				</Field>
+				<Field>
+					<FieldLabel htmlFor={promptsId}>
+						{t("workspace:form.promptsLabel")}
+					</FieldLabel>
+					<PromptSelector
+						values={prompts}
+						disabled={isLoading}
+						onChange={(values) => setPrompts(values)}
 					/>
 				</Field>
 			</FieldGroup>
@@ -136,12 +159,12 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			<FieldGroup>
 				<Field>
 					<FieldLabel htmlFor={instructionId}>
-						Instructions
+						{t("workspace:form.instructionsLabel")}
 					</FieldLabel>
 					<Textarea
 						id={instructionId}
-						placeholder="Enter Instructions"
-						value={instructions}
+						placeholder={t("common:placeholders.enterInstructions")}
+						value={instructions.replace(/\\n/g, "\n")}
 						onChange={(e) => setInstructions(e.target.value)}
 						rows={4}
 						data-testid="workspaceForm-system_prompt-txt"
@@ -156,26 +179,9 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 							setIsKnowledgeOverlayOpen(true);
 						}}
 					>
-						<div className="flex-1">Knowledge</div>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={(event) => {
-										event.preventDefault();
-										event.stopPropagation();
-
-										setIsKnowledgeOverlayOpen(true);
-									}}
-								>
-									<PlusIcon />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								Create Knowledge Source
-							</TooltipContent>
-						</Tooltip>
+						<div className="flex-1">
+							{t("workspace:form.knowledgeLabel")}
+						</div>
 					</FieldLabel>
 
 					<MCPSelector
@@ -198,7 +204,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 					/>
 				</Field>
 				<Field>
-					<FieldLabel>Toolbox</FieldLabel>
+					<FieldLabel>{t("workspace:form.toolboxLabel")}</FieldLabel>
 					<MCPSelector
 						type="TOOLBOX"
 						values={toolbox}
@@ -209,14 +215,16 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 			</FieldGroup>
 			<div className="flex items-center justify-between">
 				<Button variant="ghost" onClick={() => onClose()}>
-					Back
+					{t("common:buttons.back")}
 				</Button>
 				<Button
 					disabled={isLoading || !name}
 					data-testid="workspaceForm-submit-btn"
 					type="submit"
 				>
-					{isNew ? "Create" : "Save"}
+					{isNew
+						? t("workspace:actions.create")
+						: t("workspace:actions.save")}
 				</Button>
 			</div>
 		</form>

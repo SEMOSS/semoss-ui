@@ -1,5 +1,7 @@
 import { PackagePlus } from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Dialog,
@@ -26,129 +28,151 @@ interface SaveWorkspaceDialogProps {
 	mcps: MCPConfig[];
 }
 
-export const SaveWorkspaceDialog = (props: SaveWorkspaceDialogProps) => {
-	const { systemPrompt, mcps } = props;
+export const SaveWorkspaceDialog = observer(
+	(props: SaveWorkspaceDialogProps) => {
+		const { systemPrompt, mcps } = props;
 
-	/**
-	 * Library hooks
-	 */
-	const { chat } = useChat();
-	const nameId = useId();
-	const descriptionId = useId();
+		/**
+		 * Library hooks
+		 */
+		const { chat } = useChat();
+		const { t } = useTranslation("room");
+		const nameId = useId();
+		const descriptionId = useId();
 
-	/**
-	 * State
-	 */
-	const [isOpen, setIsOpen] = useState(false);
-	const [name, setName] = useState("");
-	const [description, setDescription] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
+		/**
+		 * State
+		 */
+		const [isOpen, setIsOpen] = useState(false);
+		const [name, setName] = useState("");
+		const [description, setDescription] = useState("");
+		const [isLoading, setIsLoading] = useState(false);
 
-	/**
-	 * Handlers
-	 */
-	const handleSave = async () => {
-		if (!name.trim()) {
-			toast.error("Workspace name is required");
-			return;
-		}
+		/**
+		 * Handlers
+		 */
+		const handleSave = async () => {
+			if (!name.trim()) {
+				toast.error(t("workspace.nameRequired"));
+				return;
+			}
 
-		setIsLoading(true);
+			setIsLoading(true);
 
-		try {
-			await chat.addWorkspace({
-				name,
-				description,
-				system_prompt: systemPrompt,
-				mcp: mcps,
-			});
+			try {
+				await chat.addWorkspace({
+					name,
+					description,
+					system_prompt: systemPrompt,
+					mcp: mcps,
+					prompts: [],
+				});
 
-			toast.success("Workspace created successfully");
+				toast.success(t("workspace.publishSuccess"));
 
-			// Reset and close
+				// Reset and close
+				setIsOpen(false);
+				setName("");
+				setDescription("");
+			} catch (error) {
+				toast.error(
+					t("workspace.publishError", {
+						error:
+							error instanceof Error
+								? error.message
+								: "Unknown error",
+					}),
+				);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		const handleCancel = () => {
 			setIsOpen(false);
 			setName("");
 			setDescription("");
-		} catch (error) {
-			toast.error(
-				`Failed to create workspace: ${error instanceof Error ? error.message : "Unknown error"}`,
-			);
-		} finally {
-			setIsLoading(false);
-		}
-	};
+		};
 
-	const handleCancel = () => {
-		setIsOpen(false);
-		setName("");
-		setDescription("");
-	};
-
-	return (
-		<>
-			<Tooltip>
-				<TooltipTrigger>
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={(event) => {
-							event.preventDefault();
-							event.stopPropagation();
-							setIsOpen(true);
-						}}
-					>
-						<PackagePlus />
-					</Button>
-				</TooltipTrigger>
-				<TooltipContent>Save as Workspace</TooltipContent>
-			</Tooltip>
-
-			<Dialog open={isOpen} onOpenChange={setIsOpen}>
-				<DialogContent>
-					<DialogHeader>
-						<DialogTitle>Create Workspace</DialogTitle>
-						<DialogDescription>
-							Create a new workspace with the current room
-							configuration, including instructions and MCPs.
-						</DialogDescription>
-					</DialogHeader>
-					<div className="space-y-4 py-4">
-						<div className="space-y-2">
-							<Label htmlFor={nameId}>Name *</Label>
-							<Input
-								id={nameId}
-								placeholder="Enter workspace name"
-								value={name}
-								onChange={(e) => setName(e.target.value)}
-								disabled={isLoading}
-							/>
-						</div>
-						<div className="space-y-2">
-							<Label htmlFor={descriptionId}>Description</Label>
-							<Textarea
-								id={descriptionId}
-								placeholder="Enter workspace description"
-								value={description}
-								onChange={(e) => setDescription(e.target.value)}
-								disabled={isLoading}
-								rows={3}
-							/>
-						</div>
-					</div>
-					<DialogFooter>
+		return (
+			<>
+				<Tooltip>
+					<TooltipTrigger asChild>
 						<Button
 							variant="outline"
-							onClick={handleCancel}
-							disabled={isLoading}
+							size="sm"
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								setIsOpen(true);
+							}}
 						>
-							Cancel
+							<PackagePlus />
 						</Button>
-						<Button onClick={handleSave} disabled={isLoading}>
-							{isLoading ? "Creating..." : "Create Workspace"}
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
-		</>
-	);
-};
+					</TooltipTrigger>
+					<TooltipContent>
+						{t("workspace.publishTooltip")}
+					</TooltipContent>
+				</Tooltip>
+
+				<Dialog open={isOpen} onOpenChange={setIsOpen}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>
+								{t("workspace.publishTitle")}
+							</DialogTitle>
+							<DialogDescription>
+								{t("workspace.publishDescription")}
+							</DialogDescription>
+						</DialogHeader>
+						<div className="space-y-4 py-4">
+							<div className="space-y-2">
+								<Label htmlFor={nameId}>
+									{t("workspace.nameLabel")}
+								</Label>
+								<Input
+									id={nameId}
+									placeholder={t("workspace.namePlaceholder")}
+									value={name}
+									onChange={(e) => setName(e.target.value)}
+									disabled={isLoading}
+								/>
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor={descriptionId}>
+									{t("workspace.descriptionLabel")}
+								</Label>
+								<Textarea
+									id={descriptionId}
+									placeholder={t(
+										"workspace.descriptionPlaceholder",
+									)}
+									value={description}
+									onChange={(e) =>
+										setDescription(e.target.value)
+									}
+									disabled={isLoading}
+									rows={3}
+								/>
+							</div>
+						</div>
+						<DialogFooter>
+							<Button
+								variant="outline"
+								onClick={handleCancel}
+								disabled={isLoading}
+							>
+								{t("workspace.cancelButton")}
+							</Button>
+							<Button onClick={handleSave} disabled={isLoading}>
+								{isLoading
+									? t("workspace.publishingButton")
+									: t("workspace.publishButton")}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			</>
+		);
+	},
+);

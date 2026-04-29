@@ -29,7 +29,7 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Track if it is an root, input, or response message
 	 */
-	abstract type: "ROOT" | "PLAN" | "INPUT" | "RESPONSE" | "TOOL_EXECUTION";
+	abstract type: "ROOT" | "PLAN" | "INPUT" | "OUTPUT";
 
 	/**
 	 * Parent of the message
@@ -52,13 +52,41 @@ export abstract class AbstractMessageStore {
 	activeChildPosition: number = -1;
 
 	/**
-	 * Active Child Position
+	 * Track if it is an root, input, or response message
+	 */
+	abstract parts: AbstractPixelMessage["parts"];
+
+	/**
+	 * Tokens used in the message, used for cost calculation
 	 */
 	tokens: number = 0;
 
 	/**
-	 * Set the message
-	 * @param id
+	 * Model Id used for the message
+	 */
+	modelId: string;
+
+	/**
+	 * Model Type used for the message
+	 */
+	modelType: string;
+
+	/**
+	 * Ornaments for the message, used for extra properties that are not essential
+	 */
+	ornaments: {
+		modelName?: string;
+	};
+
+	/**
+	 * Date the message was created
+	 */
+	dateCreated: Date;
+
+	/**
+	 *
+	 * @param room
+	 * @param message
 	 */
 	constructor(room: RoomStore, message: AbstractPixelMessage) {
 		this.room = room;
@@ -69,6 +97,11 @@ export abstract class AbstractMessageStore {
 		this.id = message.messageId;
 		this.visible = message.visible;
 		this.tokens = message.tokens;
+		this.modelId = message.modelId;
+		this.modelType = message.modelType;
+		this.ornaments = {
+			modelName: message.ornaments?.modelName,
+		};
 
 		makeObservable(this, {
 			room: observable,
@@ -77,6 +110,10 @@ export abstract class AbstractMessageStore {
 			position: observable,
 			children: observable,
 			activeChildPosition: observable,
+			tokens: observable,
+			modelId: observable,
+			modelType: observable,
+			ornaments: observable,
 			siblings: computed,
 			previousSibling: computed,
 			nextSibling: computed,
@@ -85,7 +122,7 @@ export abstract class AbstractMessageStore {
 			addChild: action,
 			removeChild: action,
 			activateMessage: action,
-			tokens: observable,
+			sync: action,
 		});
 	}
 
@@ -135,7 +172,15 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	abstract sync: (message: PixelMessage) => void;
+	sync(message: PixelMessage) {
+		this.dateCreated = (() => {
+			const raw = message.dateCreated;
+			const normalized = /Z|[+-]\d{2}:?\d{2}$/.test(raw)
+				? raw
+				: `${raw.replace(" ", "T")}Z`;
+			return new Date(normalized);
+		})();
+	}
 
 	/**
 	 * Connect the parent and store the position

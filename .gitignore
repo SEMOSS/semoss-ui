@@ -26,5 +26,11 @@ yarn-error.log
 .vscode/.ropeproject
 .idea/
 
+# Personal dev files (local overrides, not for repo)
+packages/playground/theme.local.json
+
 # Ignore legacy
 packages/legacy
+
+# Claude
+CLAUDE.md

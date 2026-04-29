@@ -7,6 +7,7 @@ export * from "../lib";
 // export the hooks
 
 export * from "../hooks";
+export { darkTheme, lightTheme } from "../theme";
 // Re-export all components (only export what exists)
 export * from "./accordion";
 export * from "./alert";
@@ -25,12 +26,15 @@ export * from "./dialog";
 export * from "./drawer";
 export * from "./dropdown-menu";
 export * from "./field";
+export * from "./file-dropzone";
 export * from "./hover-card";
 export * from "./input";
 export * from "./input-group";
 export * from "./item";
 export * from "./label";
+export * from "./loading-screen";
 export * from "./markdown";
+export * from "./pagination";
 export * from "./popover";
 export * from "./progress";
 export * from "./radio-group";
@@ -48,6 +52,7 @@ export * from "./stepper";
 export * from "./switch";
 export * from "./table";
 export * from "./tabs";
+export * from "./terminal";
 export * from "./textarea";
 export * from "./theme-provider";
 export * from "./toggle";

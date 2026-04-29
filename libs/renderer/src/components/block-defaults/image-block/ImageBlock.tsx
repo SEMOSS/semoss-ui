@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
-import { Stack, styled, Tooltip, Typography } from "@semoss/ui";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import ImageSkeleton from "../../../assets/img/Image-placeholder.svg";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
@@ -49,35 +49,21 @@ function getMimeType(fileName: string) {
 	}
 }
 
-const StyledImage = styled("img")(() => ({
-	width: 50,
-	height: 50,
-	objectFit: "contain",
-}));
-
-const AddImageText = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-	cursor: "pointer",
-}));
-
-const StyledPlaceholder = styled(Stack)(({ theme }) => ({
-	height: "100%",
-	width: "100%",
-	alignItems: "center",
-	justifyContent: "center",
-	gap: theme.spacing(1),
-	flexDirection: "column",
-}));
-
 const LoadingIndicator = () => (
-	<Typography variant="body2">Loading...</Typography>
+	<p className="text-muted-foreground text-sm">Loading...</p>
 );
 
 const Placeholder = ({ title }: { title?: string }) => (
-	<StyledPlaceholder>
-		<StyledImage src={ImageSkeleton as string} alt={title || "Image"} />
-		<AddImageText variant="body2">Add image</AddImageText>
-	</StyledPlaceholder>
+	<div className="flex h-full w-full flex-col items-center justify-center gap-2">
+		<img
+			src={ImageSkeleton as string}
+			alt={title || "Image"}
+			className="h-[50px] w-[50px] object-contain"
+		/>
+		<span className="cursor-pointer text-secondary-foreground text-sm">
+			Add image
+		</span>
+	</div>
 );
 
 const ErrorDisplay = ({
@@ -90,11 +76,15 @@ const ErrorDisplay = ({
 	title?: string;
 }) =>
 	unavailable === "default" ? (
-		<StyledImage src={ImageSkeleton as string} alt={title || "Image"} />
+		<img
+			src={ImageSkeleton as string}
+			alt={title || "Image"}
+			className="h-[50px] w-[50px] object-contain"
+		/>
 	) : (
-		<Typography variant="body2">
+		<p className="text-muted-foreground text-sm">
 			{placeholderText || "Image not available"}
-		</Typography>
+		</p>
 	);
 
 export const ImageBlock: BlockComponent = observer(({ id }) => {
@@ -115,6 +105,7 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
 	);
 
 	// Handle image loading and error
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		// Reset to initial state before processing
 		setStatus({ isLoading: false, hasError: false });
@@ -174,6 +165,7 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [getImage.status, isObjSrc ? src.fileName : src]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		listeners.preProcess?.();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,20 +178,23 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
 	const { isLoading, hasError } = status;
 
 	return (
-		<Tooltip title={title}>
-			<div style={style} {...attrs}>
-				{isLoading && <LoadingIndicator />}
-				{!style.backgroundImage && !src && (
-					<Placeholder title={title} />
-				)}
-				{src && hasError && (
-					<ErrorDisplay
-						unavailable={unavailable}
-						placeholderText={placeholderText}
-						title={title}
-					/>
-				)}
-			</div>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<div style={style} {...attrs}>
+					{isLoading && <LoadingIndicator />}
+					{!style.backgroundImage && !src && (
+						<Placeholder title={title} />
+					)}
+					{src && hasError && (
+						<ErrorDisplay
+							unavailable={unavailable}
+							placeholderText={placeholderText}
+							title={title}
+						/>
+					)}
+				</div>
+			</TooltipTrigger>
+			{title && <TooltipContent>{title}</TooltipContent>}
 		</Tooltip>
 	);
 });

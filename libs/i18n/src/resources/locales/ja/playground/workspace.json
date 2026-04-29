@@ -1,0 +1,110 @@
+{
+	"welcomeTitle": "エージェントマネージャーへようこそ",
+	"welcomeDescription": "お客様固有のニーズに合わせて設計され、プロセスにシームレスに統合されるカスタムAIエージェントをご覧ください。",
+	"form": {
+		"nameLabel": "名前",
+		"descriptionLabel": "説明",
+		"instructionsLabel": "指示",
+		"knowledgeLabel": "ナレッジ",
+		"toolboxLabel": "ツールボックス"
+	},
+	"actions": {
+		"create": "作成",
+		"save": "保存",
+		"createAgent": "エージェントを作成",
+		"edit": "編集",
+		"delete": "削除",
+		"newChat": "新しいチャット"
+	},
+	"card": {
+		"noDescription": "説明がありません",
+		"deleteConfirmTitle": "本当によろしいですか？",
+		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。"
+	},
+	"sharing": {
+		"title": "メンバーを追加",
+		"description": "このエージェントにアクセスして共同作業するメンバーを招待します。",
+		"searchPlaceholder": "ユーザーを検索...",
+		"searchUsers": "ユーザーを検索...",
+		"noUsersFound": "ユーザーが見つかりません",
+		"hasAccess": "アクセス権あり",
+		"pendingInvite": "招待保留中",
+		"membersToAdd": "追加するメンバー",
+		"emptyState": "このワークスペースを共有するユーザーを追加",
+		"buttonAdding": "追加中...",
+		"buttonAdd": "メンバーを追加"
+	},
+	"members": {
+		"heading": "アクセス権を持つユーザー",
+		"you": "(あなた)",
+		"owner": "オーナー",
+		"editor": "編集者",
+		"readOnly": "読み取り専用",
+		"removeAccess": "アクセス権を削除",
+		"removeSelfTitle": "エージェントから自分を削除",
+		"removeSelfDescription": "このエージェントへのアクセス権を削除しようとしています。アクセス権を再取得するには、再度招待される必要があります。この操作は元に戻せません。",
+		"removeUserTitle": "エージェントのアクセス権を削除",
+		"removeUserDescription": "{{name}}のこのエージェントへのアクセス権を本当に削除しますか？この操作は元に戻せません。",
+		"changePermissionTitle": "権限を変更",
+		"changePermissionDescription": "自分の権限を{{oldPermission}}から{{newPermission}}に変更しようとしています。これはこのエージェントで実行できるアクションに影響します。",
+		"changePermissionButton": "権限を変更"
+	},
+	"mcp": {
+		"noToolboxes": "ツールボックスが見つかりません",
+		"noKnowledge": "ナレッジライブラリが見つかりません",
+		"failedToLoad": "ワークスペースリソースの読み込みに失敗しました",
+		"requestedSuccess": "{{name}}へのアクセスをリクエストしました",
+		"requestedFailed": "アクセスのリクエストに失敗しました"
+	},
+	"chat": {
+		"noChats": "チャットが見つかりません",
+		"error": "エラー:",
+		"selectRoom": "ルームを選択"
+	},
+	"images": {
+		"agentIllustration": "エージェントのイラスト"
+	},
+	"messages": {
+		"noResults": "結果が見つかりません",
+		"userAlreadyAdded": "ユーザーは既に追加されています",
+		"fetchUsersFailed": "ユーザーの取得に失敗しました",
+		"addAtLeastOne": "少なくとも1人のユーザーを追加してください",
+		"addMembersSuccess": "{{count}}人のメンバーを正常に追加しました",
+		"addMembersSuccess_plural": "{{count}}人のメンバーを正常に追加しました",
+		"addMembersFailed": "メンバーの追加に失敗しました",
+		"permissionUpdated": "権限を正常に更新しました",
+		"permissionUpdateFailed": "権限の更新に失敗しました",
+		"userRemoved": "ユーザーを正常に削除しました",
+		"userRemoveFailed": "ユーザーの削除に失敗しました",
+		"fetchPermissionsFailed": "ユーザー権限の取得に失敗しました"
+	},
+	"breadcrumbs": {
+		"home": "ホーム",
+		"agent": "エージェント",
+		"loading": "読み込み中",
+		"edit": "編集",
+		"new": "新規",
+		"room": "ルーム"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "マイチャット",
+			"knowledge": "ナレッジ",
+			"toolbox": "ツールボックス",
+			"members": "メンバー"
+		},
+		"failedToDelete": "エージェントの削除に失敗しました",
+		"failedToLoad": "エージェントの読み込みに失敗しました: {{error}}"
+	},
+	"edit": {
+		"title": "エージェントを編集",
+		"subtitle": "エージェントの詳細を更新",
+		"errorTitle": "エージェントの読み込みエラー",
+		"errorDescription": "エージェントの詳細の読み込みに失敗しました",
+		"failedToLoad": "ワークスペースの読み込みに失敗しました: {{error}}"
+	},
+	"new": {
+		"title": "新しいエージェント",
+		"subtitle": "新しいエージェントを作成して始めましょう"
+	}
+}

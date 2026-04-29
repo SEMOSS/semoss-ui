@@ -1,0 +1,39 @@
+{
+	"search": "Search",
+	"new": "New",
+	"agents": "Agents",
+	"takeTour": "Take a Tour",
+	"buckets": {
+		"favorites": "Favorites",
+		"today": "Today",
+		"yesterday": "Yesterday",
+		"fewDaysAgo": "Few Days Ago",
+		"lastWeek": "Last Week",
+		"thisMonth": "This Month",
+		"lastMonth": "Last Month",
+		"older": "Older"
+	},
+	"messages": {
+		"errorLoadingRooms": "Error loading rooms",
+		"noRoomsFound": "No rooms found",
+		"untitled": "Untitled"
+	},
+	"actions": {
+		"favorite": "Favorite",
+		"unfavorite": "Unfavorite",
+		"rename": "Rename",
+		"delete": "Delete",
+		"openInline": "Open in-line",
+		"minimize": "Minimize",
+		"maximize": "Maximize",
+		"close": "Close"
+	},
+	"toasts": {
+		"failedToPin": "Failed to pin room",
+		"failedToUnpin": "Failed to unpin room",
+		"roomNameEmpty": "Room name cannot be empty",
+		"roomRenamedSuccess": "Room renamed successfully",
+		"failedToRename": "Failed to rename room",
+		"roomDeletedSuccess": "Room deleted successfully"
+	}
+}

@@ -1,73 +1,17 @@
 import { observer } from "mobx-react-lite";
 import { useLayoutEffect, useState } from "react";
 import { useBlocks } from "@semoss/renderer";
-import { styled, Typography } from "@semoss/ui";
 import { useDesigner } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
-
-interface StyledContainerProps {
-	top: number;
-	left: number;
-	height: number;
-	width: number;
-	hideHoveredMask: boolean;
-}
-
-const StyledContainer = styled("div", {
-	shouldForwardProp: (prop) =>
-		!["top", "left", "height", "width", "hideHoveredMask"].includes(
-			prop as string,
-		),
-})<StyledContainerProps>(
-	({ theme, top, left, height, width, hideHoveredMask }) => ({
-		position: "absolute",
-		top: `${top}px`,
-		left: `${left}px`,
-		height: `${height}px`,
-		width: `${width}px`,
-		zIndex: "20",
-		opacity: hideHoveredMask ? 0 : 1,
-		pointerEvents: "none",
-		// outlineWidth: '2px',
-		// outlineStyle: 'solid',
-		// outlineColor: theme.palette.primary.light,
-		// outlineWidth: '2px',
-		// outlineStyle: 'solid',
-		outlineWidth: "3px",
-		outlineStyle: "dotted",
-		outlineColor: theme.palette.primary.dark,
-	}),
-);
-
-const StyledTitle = styled("div")(({ theme }) => ({
-	display: "inline-flex",
-	alignItems: "center",
-	position: "absolute",
-	top: theme.spacing(-3),
-	left: `-1px`,
-	height: theme.spacing(3),
-	paddingLeft: theme.spacing(1),
-	paddingRight: theme.spacing(1),
-	//added to match figma
-	borderRadius: "4px",
-	// backgroundColor: theme.palette.primary.light,
-	backgroundColor: theme.palette.primary.dark,
-	color: theme.palette.common.white,
-	whiteSpace: "nowrap",
-}));
 
 interface HoveredMaskProps {
 	/** Element to bind the mask to */
 	screenEle: HTMLDivElement;
 }
 
-/**
- * Show the information of a hovered block
- */
 export const HoveredMask = observer((props: HoveredMaskProps) => {
 	const { screenEle } = props;
 
-	// create the state
 	const [size, setSize] = useState<{
 		top: number;
 		left: number;
@@ -75,23 +19,17 @@ export const HoveredMask = observer((props: HoveredMaskProps) => {
 		width: number;
 	} | null>(null);
 
-	// get the store
 	const { designer } = useDesigner();
 	const { state } = useBlocks();
 	const variableName = state.getAlias(designer.hovered);
 
-	// get the root, watch changes, and reposition the mask
+	// biome-ignore lint/correctness/useExhaustiveDependencies: repositionMask depends on screenEle and designer.hovered
 	useLayoutEffect(() => {
-		// reposition the mask
 		const repositionMask = () => {
-			// get the block element
 			const blockEle = getBlockElement(designer.hovered);
-
 			if (!blockEle) {
 				return;
 			}
-
-			// calculate and set the side
 			const updated = getRelativeSize(blockEle, screenEle);
 			setSize(updated);
 		};
@@ -105,31 +43,64 @@ export const HoveredMask = observer((props: HoveredMaskProps) => {
 			childList: true,
 		});
 
-		// reposition it
 		repositionMask();
 
 		return () => observer.disconnect();
 	}, [designer.hovered]);
 
 	if (!size) {
-		return <></>;
+		return null;
 	}
 
+	const handleRename = (id: string): string => {
+		const block = state.getBlock(id);
+		if (block?.data?.id) {
+			return block.data.id as string;
+		}
+		return id;
+	};
+
+	const hideHoveredMask =
+		designer.hovered === designer.selected || designer.drag.active;
+
 	return (
-		<StyledContainer
-			top={size.top}
-			left={size.left}
-			height={size.height}
-			width={size.width}
-			hideHoveredMask={
-				designer.hovered === designer.selected || designer.drag.active
-			}
+		<div
+			style={{
+				position: "absolute",
+				top: `${size.top}px`,
+				left: `${size.left}px`,
+				height: `${size.height}px`,
+				width: `${size.width}px`,
+				zIndex: 20,
+				opacity: hideHoveredMask ? 0 : 1,
+				pointerEvents: "none",
+				outlineWidth: "3px",
+				outlineStyle: "dotted",
+				outlineColor: "var(--primary)",
+			}}
 		>
-			<StyledTitle>
-				<Typography variant={"body2"}>
-					{variableName ? variableName : designer.hovered}
-				</Typography>
-			</StyledTitle>
-		</StyledContainer>
+			<div
+				style={{
+					display: "inline-flex",
+					alignItems: "center",
+					position: "absolute",
+					top: "-24px",
+					left: "-1px",
+					height: "24px",
+					paddingLeft: "8px",
+					paddingRight: "8px",
+					borderRadius: "4px",
+					backgroundColor: "var(--primary)",
+					color: "white",
+					whiteSpace: "nowrap",
+				}}
+			>
+				<span className="text-sm">
+					{variableName
+						? variableName
+						: handleRename(designer.hovered)}
+				</span>
+			</div>
+		</div>
 	);
 });

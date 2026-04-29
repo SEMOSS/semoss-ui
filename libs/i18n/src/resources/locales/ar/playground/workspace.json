@@ -1,0 +1,110 @@
+{
+	"welcomeTitle": "مرحباً بك في مدير الوكلاء",
+	"welcomeDescription": "استكشف وكلاء الذكاء الاصطناعي المخصصين المصممين لتلبية احتياجاتك الفريدة والتكامل بسلاسة في عملياتك.",
+	"form": {
+		"nameLabel": "الاسم",
+		"descriptionLabel": "الوصف",
+		"instructionsLabel": "التعليمات",
+		"knowledgeLabel": "المعرفة",
+		"toolboxLabel": "صندوق الأدوات"
+	},
+	"actions": {
+		"create": "إنشاء",
+		"save": "حفظ",
+		"createAgent": "إنشاء وكيل",
+		"edit": "تعديل",
+		"delete": "حذف",
+		"newChat": "دردشة جديدة"
+	},
+	"card": {
+		"noDescription": "لا يوجد وصف متاح",
+		"deleteConfirmTitle": "هل أنت متأكد؟",
+		"deleteConfirmDescription": "هذا الإجراء لا رجعة فيه. سيؤدي ذلك إلى حذف مساحة العمل {{name}} نهائياً."
+	},
+	"sharing": {
+		"title": "إضافة أعضاء",
+		"description": "دعوة الأعضاء للوصول والتعاون على هذا الوكيل.",
+		"searchPlaceholder": "البحث عن مستخدم...",
+		"searchUsers": "البحث عن مستخدمين...",
+		"noUsersFound": "لم يتم العثور على مستخدمين",
+		"hasAccess": "لديه وصول",
+		"pendingInvite": "دعوة معلقة",
+		"membersToAdd": "الأعضاء المراد إضافتهم",
+		"emptyState": "إضافة مستخدمين لمشاركة مساحة العمل هذه",
+		"buttonAdding": "جارٍ الإضافة...",
+		"buttonAdd": "إضافة أعضاء"
+	},
+	"members": {
+		"heading": "من لديه الوصول",
+		"you": "(أنت)",
+		"owner": "المالك",
+		"editor": "المحرر",
+		"readOnly": "قراءة فقط",
+		"removeAccess": "إزالة الوصول",
+		"removeSelfTitle": "إزالة نفسك من الوكيل",
+		"removeSelfDescription": "أنت على وشك إزالة وصولك إلى هذا الوكيل. ستحتاج إلى إعادة الدعوة لاستعادة الوصول. لا يمكن التراجع عن هذا الإجراء.",
+		"removeUserTitle": "إزالة وصول الوكيل",
+		"removeUserDescription": "هل أنت متأكد من أنك تريد إزالة وصول {{name}} إلى هذا الوكيل؟ لا يمكن التراجع عن هذا الإجراء.",
+		"changePermissionTitle": "تغيير إذنك",
+		"changePermissionDescription": "أنت على وشك تغيير إذنك من {{oldPermission}} إلى {{newPermission}}. سيؤثر ذلك على الإجراءات التي يمكنك تنفيذها في هذا الوكيل.",
+		"changePermissionButton": "تغيير الإذن"
+	},
+	"mcp": {
+		"noToolboxes": "لم يتم العثور على صناديق أدوات",
+		"noKnowledge": "لم يتم العثور على مكتبات معرفة",
+		"failedToLoad": "فشل تحميل موارد مساحة العمل",
+		"requestedSuccess": "تم طلب الوصول إلى {{name}}",
+		"requestedFailed": "فشل طلب الوصول"
+	},
+	"chat": {
+		"noChats": "لم يتم العثور على دردشات",
+		"error": "خطأ:",
+		"selectRoom": "اختر غرفة"
+	},
+	"images": {
+		"agentIllustration": "توضيح الوكيل"
+	},
+	"messages": {
+		"noResults": "لم يتم العثور على نتائج",
+		"userAlreadyAdded": "تمت إضافة المستخدم بالفعل",
+		"fetchUsersFailed": "فشل جلب المستخدمين",
+		"addAtLeastOne": "الرجاء إضافة مستخدم واحد على الأقل",
+		"addMembersSuccess": "تمت إضافة {{count}} عضو بنجاح",
+		"addMembersSuccess_plural": "تمت إضافة {{count}} أعضاء بنجاح",
+		"addMembersFailed": "فشل إضافة الأعضاء",
+		"permissionUpdated": "تم تحديث الإذن بنجاح",
+		"permissionUpdateFailed": "فشل تحديث الإذن",
+		"userRemoved": "تمت إزالة المستخدم بنجاح",
+		"userRemoveFailed": "فشل إزالة المستخدم",
+		"fetchPermissionsFailed": "فشل جلب أذونات المستخدم"
+	},
+	"breadcrumbs": {
+		"home": "الرئيسية",
+		"agent": "الوكيل",
+		"loading": "جارٍ التحميل",
+		"edit": "تعديل",
+		"new": "جديد",
+		"room": "الغرفة"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "محادثاتي",
+			"knowledge": "المعرفة",
+			"toolbox": "صندوق الأدوات",
+			"members": "الأعضاء"
+		},
+		"failedToDelete": "فشل حذف الوكيل",
+		"failedToLoad": "فشل تحميل الوكيل: {{error}}"
+	},
+	"edit": {
+		"title": "تعديل الوكيل",
+		"subtitle": "تحديث تفاصيل الوكيل الخاص بك",
+		"errorTitle": "خطأ في تحميل الوكيل",
+		"errorDescription": "فشل تحميل تفاصيل الوكيل",
+		"failedToLoad": "فشل تحميل مساحة العمل: {{error}}"
+	},
+	"new": {
+		"title": "وكيل جديد",
+		"subtitle": "إنشاء وكيل جديد للبدء"
+	}
+}

@@ -1,56 +1,40 @@
-import { Delete, Edit } from "@mui/icons-material";
+import { Pencil, Trash2 } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-	Block,
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
-	Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Button, Select, Stack, styled, Table, TextField } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import {
+	Button,
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import {
 	BAR_CHART_DATA,
 	ECHART_BAR_COLOUR,
 } from "../../Visualization.constants";
 
-// styled main section with custom styling
-const StyledMainSection = styled("div")(() => ({
-	display: "inline-flex",
-	width: "100%",
-	gap: "8px",
-}));
-//select field with custom styling design to show two select fields in a row
-const StyledSelect = styled(Select)(() => ({
-	width: "48%",
-}));
-//custom text field with reduced width
-const StyledTextField = styled(TextField)<{
-	width?: string;
-}>(({ width }) => ({
-	width: width ?? "48%",
-}));
-//styled span section
-const StyledSpan = styled("span")(() => ({
-	display: "flex",
-	justifyContent: "space-around",
-}));
-
-//Color by value props
 export interface ColourByValueProps {
 	id: string;
+	// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 	updateChart: (option: any) => void;
 }
-//initial new rules for managing the state and for restoring
+
 const INITIAL_NEW_RULES = {
 	column: "",
 	columnColour: "#000000",
 	columnToColour: "",
 	columnComparision: "",
-	valuesToColour: [],
+	valuesToColour: [] as string[],
 	filterValue: 0,
 	filterMinValue: 0,
 	filterMaxValue: 0,
@@ -58,24 +42,28 @@ const INITIAL_NEW_RULES = {
 };
 
 const ColourByValue = observer(
-	<D extends BlockDef = BlockDef>({ id, updateChart, path }) => {
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
+	<_D extends BlockDef = BlockDef>({ id, updateChart, path }) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
 
 		const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const [valuesToColour, setValuesToColour] = useState<any[]>([]);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const [value, setValue] = useState<any>({});
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const [appliedRules, setAppliedRules] = useState<any[]>([]);
+		const [_valuesColourMapping, setValuesColourMapping] = useState<
+			Record<string, string>
+		>({});
 
-		const [valuesToColour, setValuesToColour] = useState([]);
-		const [value, setValue] = useState({});
-		const [appliedRules, setAppliedRules] = useState([]);
-		const [valuesColourMapping, setValuesColourMapping] = useState({});
-		//custom reference variable to handle color value applying
 		const functionCallReference = useRef({
 			valuesResetCheck: false,
 			assignedRules: [],
 			applyRulesToChart: false,
 		});
-		const columnData = data.columns || [];
-		// get the value of the input (wrapped in usememo because of path prop)
+
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -90,7 +78,8 @@ const ColourByValue = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
-		//initial setting of state data based on the json value
+
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			functionCallReference.current.applyRulesToChart = false;
 			const option =
@@ -99,34 +88,32 @@ const ColourByValue = observer(
 					: computedValue;
 			if (
 				Object.hasOwn(option, "customSettings") &&
-				Object.hasOwn(option["customSettings"], "appliedColourByValue")
+				Object.hasOwn(option.customSettings, "appliedColourByValue")
 			) {
-				const appliedRules =
-					option["customSettings"]["appliedColourByValue"];
-				setAppliedRules(appliedRules);
+				setAppliedRules(option.customSettings.appliedColourByValue);
 			}
 		}, []);
-		//whenever a computed value is changed, then respective change for colour by value component is
+
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue]);
+
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (functionCallReference.current.applyRulesToChart) {
 				const option =
 					typeof value === "string" ? JSON.parse(value) : value;
-				let colourObj = {};
+				let colourObj: Record<number, string> = {};
 				let optionUpdated = option;
-				appliedRules.forEach((appliedItem, index) => {
+				appliedRules.forEach((appliedItem) => {
 					const xAxisPosition = getXAxisPositions(appliedItem);
-					//take all the series indexes to update the data
 					const filteredSeriesIndex = getFilteredSeriesIndex();
 					if (xAxisPosition.length) {
-						filteredSeriesIndex.forEach((item, index) => {
-							const seriesIndexData = item;
+						filteredSeriesIndex.forEach((seriesIndexData) => {
 							if (seriesIndexData > -1) {
-								const data =
-									option["series"][seriesIndexData]["data"];
-								data.forEach((item, dataindex) => {
+								const seriesData =
+									option.series[seriesIndexData].data;
+								seriesData.forEach((_, dataindex) => {
 									colourObj = {
 										...colourObj,
 										[dataindex]: xAxisPosition.includes(
@@ -141,42 +128,28 @@ const ColourByValue = observer(
 												: ECHART_BAR_COLOUR,
 									};
 								});
-								setValuesColourMapping((prevColour) => {
-									return {
-										...prevColour,
-										...colourObj,
-									};
-								});
+								setValuesColourMapping((prev) => ({
+									...prev,
+									...colourObj,
+								}));
 								if (
 									Object.hasOwn(
-										option["series"][seriesIndexData],
+										option.series[seriesIndexData],
 										"itemStyle",
 									)
 								) {
-									option["series"][seriesIndexData][
-										"itemStyle"
-									] = {
-										...option["series"][seriesIndexData][
-											"itemStyle"
-										],
-										["color"]: (seriesData) =>
-											updateColorData(
-												seriesData,
-												colourObj,
-											),
+									option.series[seriesIndexData].itemStyle = {
+										...option.series[seriesIndexData]
+											.itemStyle,
+										color: (sd) =>
+											updateColorData(sd, colourObj),
 									};
 								} else {
-									option["series"][seriesIndexData] = {
-										...option["series"][seriesIndexData],
-										["itemStyle"]: {
-											...option["series"][
-												seriesIndexData
-											]["itemStyle"],
-											["color"]: (seriesData) =>
-												updateColorData(
-													seriesData,
-													colourObj,
-												),
+									option.series[seriesIndexData] = {
+										...option.series[seriesIndexData],
+										itemStyle: {
+											color: (sd) =>
+												updateColorData(sd, colourObj),
 										},
 									};
 								}
@@ -184,11 +157,10 @@ const ColourByValue = observer(
 						});
 					}
 				});
-
-				option["customSettings"] = {
-					...option["customSettings"],
-					["appliedColourByValue"]: appliedRules,
-					["toolsUpdated"]: true,
+				option.customSettings = {
+					...option.customSettings,
+					appliedColourByValue: appliedRules,
+					toolsUpdated: true,
 				};
 				optionUpdated = option;
 				runStateUpdateCustom(optionUpdated);
@@ -196,25 +168,27 @@ const ColourByValue = observer(
 			}
 		}, [appliedRules]);
 
-		//function to check and retrieve the indexes for bar chart type
 		function getFilteredSeriesIndex() {
-			const index = [];
-			const seriesAvailable: any[] = data.option["series"].filter(
-				(item) => BAR_CHART_DATA.JSONVALUE.includes(item.type),
+			const index: number[] = [];
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			const seriesAvailable: any[] = data.option.series.filter((item) =>
+				BAR_CHART_DATA.JSONVALUE.includes(item.type),
 			);
-			seriesAvailable.forEach((item, seriesIndex) => {
+			seriesAvailable.forEach((_, seriesIndex) => {
 				index.push(seriesIndex);
 			});
 			return index;
 		}
 
 		function runStateUpdateCustom(
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 			updatedOption: PathValue<any, typeof path>,
 		) {
 			setTimeout(() => {
 				try {
 					setData(
 						"option",
+						// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 						updatedOption as PathValue<any, typeof path>,
 					);
 				} catch (e) {
@@ -222,218 +196,180 @@ const ColourByValue = observer(
 				}
 			}, 300);
 		}
-		//data array conversion function
-		function convertSeriesDataToValue(item) {
-			if (typeof item === "object" && Object.hasOwn(item, "value")) {
+
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function convertSeriesDataToValue(item: any) {
+			if (typeof item === "object" && Object.hasOwn(item, "value"))
 				return item.value;
-			}
 			if (typeof item === "number") return item;
-			if (isNaN(item)) return 0;
+			if (Number.isNaN(item)) return 0;
 		}
 
-		//when fields are updated, new rules are updated
-		function updateFields(column, event) {
-			setNewRules((prevRules) => {
-				return {
-					...prevRules,
-					[column]: event.target.value,
-				};
-			});
-			//if column updated is columnToColour then values to be selected if fetched from series and added to valuestocolor state
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function updateField(column: string, val: any) {
+			setNewRules((prev) => ({ ...prev, [column]: val }));
 			if (column === "columnToColour") {
 				const option = data.option;
 				const jsonPropName = data.columns.find(
-					(item) => item.selector === event.target.value,
+					(item) => item.selector === val,
 				);
-				if (Object.hasOwn(jsonPropName, "name")) {
-					setNewRules((prevValues) => {
-						return {
-							...prevValues,
-							["columnName"]: jsonPropName["name"],
-							["columnNameToColour"]: jsonPropName["name"],
-						};
-					});
-					if (option["xAxis"]["pixelname"] === jsonPropName["name"]) {
+				if (jsonPropName && Object.hasOwn(jsonPropName, "name")) {
+					setNewRules((prev) => ({
+						...prev,
+						columnName: jsonPropName.name,
+						columnNameToColour: jsonPropName.name,
+					}));
+					if (option.xAxis.pixelname === jsonPropName.name) {
 						setValuesToColour(
-							option["xAxis"]["data"].map((item) => {
-								return Object.hasOwn(item, "value")
+							option.xAxis.data.map((item) =>
+								Object.hasOwn(item, "value")
 									? item.value
-									: item;
-							}),
+									: item,
+							),
 						);
-						const dataArray = option["xAxis"]["data"].map(
+						const dataArray = option.xAxis.data.map(
 							convertSeriesDataToValue,
 						);
-						setNewRules((prevValues) => {
-							return {
-								...prevValues,
-								["filterMinValue"]: Math.min(...dataArray),
-								["filterMaxValue"]: Math.max(...dataArray),
-							};
-						});
+						setNewRules((prev) => ({
+							...prev,
+							filterMinValue: Math.min(...dataArray),
+							filterMaxValue: Math.max(...dataArray),
+						}));
 					}
-					if (option["yAxis"]["pixelname"] === jsonPropName["name"]) {
-						const seriesIndex = option["series"].findIndex(
-							(series) => series.name === jsonPropName["name"],
+					if (option.yAxis.pixelname === jsonPropName.name) {
+						const seriesIndex = option.series.findIndex(
+							(series) => series.name === jsonPropName.name,
 						);
 						if (
 							seriesIndex > -1 &&
-							Object.hasOwn(option["series"][seriesIndex], "data")
+							Object.hasOwn(option.series[seriesIndex], "data")
 						) {
-							setValuesToColour(
-								option["series"][seriesIndex]["data"],
-							);
-							const dataArray = option["series"][seriesIndex][
-								"data"
-							].map(convertSeriesDataToValue);
-							setNewRules((prevValues) => {
-								return {
-									...prevValues,
-									["filterMinValue"]: Math.min(...dataArray),
-									["filterMaxValue"]: Math.max(...dataArray),
-								};
-							});
+							setValuesToColour(option.series[seriesIndex].data);
+							const dataArray = option.series[
+								seriesIndex
+							].data.map(convertSeriesDataToValue);
+							setNewRules((prev) => ({
+								...prev,
+								filterMinValue: Math.min(...dataArray),
+								filterMaxValue: Math.max(...dataArray),
+							}));
 						}
 					}
 				}
 			}
 		}
-		//get the xaxis positons to be updated with the colour selected
+
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 		function getXAxisPositions(sourceObject: any = {}) {
 			const option =
 				typeof value === "string" ? JSON.parse(value) : value;
-			let positions = [];
-			if (Object.keys(sourceObject).length === 0) {
-				sourceObject = newRules;
-			}
+			const positions: number[] = [];
+			if (Object.keys(sourceObject).length === 0) sourceObject = newRules;
+
 			if (sourceObject.columnComparision === "==") {
 				sourceObject.valuesToColour.forEach((item) => {
-					const xAxisPosition = [];
-					option["xAxis"]["data"].forEach((itemAvailable, index) => {
+					option.xAxis.data.forEach((itemAvailable, index) => {
 						if (
 							item === itemAvailable ||
 							(Object.hasOwn(itemAvailable, "value") &&
 								itemAvailable.value === item)
 						) {
-							xAxisPosition.push(index);
+							positions.push(index);
 						}
 					});
-					positions = [...xAxisPosition, ...positions];
 				});
 			}
 			if (sourceObject.columnComparision === "!=") {
-				const dataVerify = option["xAxis"]["data"];
-				//finding the similar values as like == condition, and then reversing the process for more optimal results
+				const matchedPositions: number[] = [];
 				sourceObject.valuesToColour.forEach((item) => {
-					const xAxisPosition = [];
-					option["xAxis"]["data"].forEach((itemAvailable, index) => {
+					option.xAxis.data.forEach((itemAvailable, index) => {
 						if (
 							item === itemAvailable ||
 							(Object.hasOwn(itemAvailable, "value") &&
 								itemAvailable.value === item)
 						) {
-							xAxisPosition.push(index);
+							matchedPositions.push(index);
 						}
 					});
-					positions = [...xAxisPosition, ...positions];
 				});
-				//reversing the positions to get the positions to be excluded
-				const xAxisReversedPositions = [];
-				option["xAxis"]["data"].forEach((itemAvailable, index) => {
-					if (!positions.includes(index)) {
-						xAxisReversedPositions.push(index);
-					}
+				option.xAxis.data.forEach((_, index) => {
+					if (!matchedPositions.includes(index))
+						positions.push(index);
 				});
-				positions = xAxisReversedPositions;
 			}
 			if (sourceObject.columnComparision === "<") {
-				//less than comparision
-				const dataVerify = option["xAxis"]["data"];
-				dataVerify.forEach((item, index) => {
+				option.xAxis.data.forEach((item, index) => {
 					if (
 						(Object.hasOwn(item, "value") &&
 							item.value < sourceObject.filterValue) ||
-						parseInt(item) < sourceObject.filterValue
+						parseInt(item, 10) < sourceObject.filterValue
 					) {
 						positions.push(index);
 					}
 				});
 			}
 			if (sourceObject.columnComparision === ">") {
-				//greater than comparision
-				const dataVerify = option["xAxis"]["data"];
-				dataVerify.forEach((item, index) => {
+				option.xAxis.data.forEach((item, index) => {
 					if (
 						(Object.hasOwn(item, "value") &&
 							item.value > sourceObject.filterValue) ||
-						parseInt(item) > sourceObject.filterValue
+						parseInt(item, 10) > sourceObject.filterValue
 					) {
 						positions.push(index);
 					}
 				});
 			}
 			if (sourceObject.columnComparision === "<=") {
-				//less than or equal to comparision
-				const dataVerify = option["xAxis"]["data"];
-				dataVerify.forEach((item, index) => {
+				option.xAxis.data.forEach((item, index) => {
 					if (
 						(Object.hasOwn(item, "value") &&
 							item.value <= sourceObject.filterValue) ||
-						parseInt(item) <= sourceObject.filterValue
+						parseInt(item, 10) <= sourceObject.filterValue
 					) {
 						positions.push(index);
 					}
 				});
 			}
 			if (sourceObject.columnComparision === ">=") {
-				//greater than or equal to comparision
-				const dataVerify = option["xAxis"]["data"];
-				dataVerify.forEach((item, index) => {
+				option.xAxis.data.forEach((item, index) => {
 					if (
 						(Object.hasOwn(item, "value") &&
 							item.value >= sourceObject.filterValue) ||
-						parseInt(item) >= sourceObject.filterValue
+						parseInt(item, 10) >= sourceObject.filterValue
 					) {
 						positions.push(index);
 					}
 				});
 			}
-
 			return positions;
 		}
-		//THE COLOR data function return the colour data for the rules
-		function updateColorData(seriesData, colourObj) {
+
+		function updateColorData(
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			seriesData: any,
+			colourObj: Record<number, string>,
+		) {
 			if (Object.hasOwn(colourObj, seriesData.dataIndex)) {
 				return colourObj[seriesData.dataIndex];
 			}
 			return ECHART_BAR_COLOUR;
 		}
-		//when the condition is met, values from newRules will be added to applied rules, then it will applied to chart
+
 		function updateData() {
-			if (
-				newRules.column !== "" &&
-				newRules.columnComparision !== "" &&
-				newRules.columnComparision !== ""
-			) {
+			if (newRules.column !== "" && newRules.columnComparision !== "") {
 				if (newRules.index === -1) {
-					const appliedRulesLength = appliedRules.length;
 					const appliedRulesUpdated = [
 						...appliedRules,
-						{ ...newRules, ["index"]: appliedRulesLength },
+						{ ...newRules, index: appliedRules.length },
 					];
 					functionCallReference.current.applyRulesToChart = true;
 					setAppliedRules(appliedRulesUpdated);
 				} else {
 					const index = newRules.index;
-					const assignedRules = appliedRules;
 					const updatedRules = [
-						...assignedRules.filter(
-							(item, itemIndex) => itemIndex < index,
-						),
+						...appliedRules.filter((_, i) => i < index),
 						newRules,
-						...assignedRules.filter(
-							(item, itemIndex) => itemIndex > index,
-						),
+						...appliedRules.filter((_, i) => i > index),
 					];
 					functionCallReference.current.applyRulesToChart = true;
 					setAppliedRules(updatedRules);
@@ -441,247 +377,241 @@ const ColourByValue = observer(
 			}
 			setNewRules(INITIAL_NEW_RULES);
 		}
-		//column comparision object
-		const columnComparision = [
-			{
-				name: "is Equal To",
-				value: "==",
-			},
-			{
-				name: "is Not Equal To",
-				value: "!=",
-			},
-			{
-				name: "is Less than",
-				value: "<",
-			},
-			{
-				name: "is greater than",
-				value: ">",
-			},
-			{
-				name: "is Lesser than or Equal to",
-				value: "<=",
-			},
-			{
-				name: "is greater than or Equal to",
-				value: ">=",
-			},
-		];
-		//condition to show a text field, when the comparision is not '=='
-		const conditionForShowingField =
-			newRules.columnComparision == "<" ||
-			newRules.columnComparision == ">" ||
-			newRules.columnComparision == "<=" ||
-			newRules.columnComparision == ">=";
 
-		const accordionDetails = (
-			<Stack width={"100%"} style={{ padding: "0.95rem" }}>
-				<StyledMainSection>
-					<h3>Applied Rules</h3>
-				</StyledMainSection>
-				<StyledMainSection>
-					<table>
+		const columnComparision = [
+			{ name: "is Equal To", value: "==" },
+			{ name: "is Not Equal To", value: "!=" },
+			{ name: "is Less than", value: "<" },
+			{ name: "is greater than", value: ">" },
+			{ name: "is Lesser than or Equal to", value: "<=" },
+			{ name: "is greater than or Equal to", value: ">=" },
+		];
+
+		const conditionForShowingField =
+			newRules.columnComparision === "<" ||
+			newRules.columnComparision === ">" ||
+			newRules.columnComparision === "<=" ||
+			newRules.columnComparision === ">=";
+
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function deleteAssignedRule(_rule: any, index: number) {
+			let assignedRules = appliedRules.filter((_, i) => i !== index);
+			assignedRules = assignedRules.map((item, i) => ({
+				...item,
+				index: i,
+			}));
+			functionCallReference.current.applyRulesToChart = true;
+			setAppliedRules(assignedRules);
+		}
+
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function editAssignedRule(rule: any, _index: number) {
+			setNewRules(rule);
+		}
+
+		return (
+			<div className="flex w-full flex-col gap-4 p-4">
+				<h3 className="font-medium text-sm">Applied Rules</h3>
+				<div className="overflow-x-auto">
+					<table className="w-full border-collapse text-sm">
 						<thead>
-							<tr>
-								<td>Column</td>
-								<td>Applied Rule</td>
-								<td>Action</td>
+							<tr className="border-b">
+								<th className="py-1 pr-2 text-left">Column</th>
+								<th className="py-1 pr-2 text-left">
+									Applied Rule
+								</th>
+								<th className="py-1 text-left">Action</th>
 							</tr>
 						</thead>
 						<tbody>
 							{appliedRules.length === 0 && (
 								<tr>
-									<td colSpan={3}>No Records Found</td>
+									<td
+										colSpan={3}
+										className="py-2 text-muted-foreground"
+									>
+										No Records Found
+									</td>
 								</tr>
 							)}
-							{appliedRules.length > 0 &&
-								appliedRules.map((rule, index) => {
-									return (
-										<tr>
-											<td>
-												{rule.column}{" "}
-												{rule.columnToColour}
-											</td>
-											<td>{`${rule.column} ${
-												rule.columnComparision
-											} ${
-												rule.columnComparision ===
-													"==" ||
-												rule.columnComparision === "!="
-													? rule.valuesToColour.join(
-															",",
-														)
-													: rule.filterValue
-											}`}</td>
-											<td>
-												<StyledSpan>
-													<span
-														onClick={() =>
-															deleteAssignedRule(
-																rule,
-																index,
-															)
-														}
-													>
-														<Delete />
-													</span>
-													<span
-														onClick={() =>
-															editAssignedRule(
-																rule,
-																index,
-															)
-														}
-													>
-														<Edit />
-													</span>
-												</StyledSpan>
-											</td>
-										</tr>
-									);
-								})}
+							{appliedRules.map((rule, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<tr key={index} className="border-b">
+									<td className="py-1 pr-2">
+										{rule.column} {rule.columnToColour}
+									</td>
+									<td className="py-1 pr-2">{`${rule.column} ${
+										rule.columnComparision
+									} ${
+										rule.columnComparision === "==" ||
+										rule.columnComparision === "!="
+											? rule.valuesToColour.join(",")
+											: rule.filterValue
+									}`}</td>
+									<td className="py-1">
+										<div className="flex gap-2">
+											{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+											// biome-ignore caller
+											{/* biome-ignore lint/a11y/useButtonType: handled by parent */}
+											<button
+												className="text-muted-foreground hover:text-foreground"
+												onClick={() =>
+													deleteAssignedRule(
+														rule,
+														index,
+													)
+												}
+											>
+												<Trash2 className="h-4 w-4" />
+											</button>
+											{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+											// biome-ignore caller
+											{/* biome-ignore lint/a11y/useButtonType: handled by parent */}
+											<button
+												className="text-muted-foreground hover:text-foreground"
+												onClick={() =>
+													editAssignedRule(
+														rule,
+														index,
+													)
+												}
+											>
+												<Pencil className="h-4 w-4" />
+											</button>
+										</div>
+									</td>
+								</tr>
+							))}
 						</tbody>
 					</table>
-				</StyledMainSection>
-				<StyledMainSection>
-					<h3>New Rule</h3>
-				</StyledMainSection>
-				<StyledMainSection>
-					<StyledSelect
-						label="Select Column"
-						name="column"
-						value={newRules.column}
-						onChange={(e) => updateFields("column", e)}
-					>
-						{data.columns?.map((cols, index) => {
-							return (
-								<Select.Item value={cols.selector} key={index}>
-									{cols.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-					<StyledTextField
-						label="Enter Colour"
-						name="columnColour"
-						type="color"
-						value={newRules.columnColour}
-						onChange={(e) => updateFields("columnColour", e)}
-					></StyledTextField>
-				</StyledMainSection>
-				<StyledMainSection>
-					<StyledSelect
-						label="Select Column"
-						name="columnToColour"
-						value={newRules.columnToColour}
-						onChange={(e) => updateFields("columnToColour", e)}
-					>
-						{data.columns?.map((cols, index) => {
-							return (
-								<Select.Item value={cols.selector} key={index}>
-									{cols.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-					<StyledSelect
-						label="Select Comparision"
-						name="columnComparision"
-						value={newRules.columnComparision}
-						onChange={(e) => updateFields("columnComparision", e)}
-					>
-						{columnComparision.map((cols, index) => {
-							return (
-								<Select.Item value={cols.value} key={index}>
-									{cols.name}
-								</Select.Item>
-							);
-						})}
-					</StyledSelect>
-				</StyledMainSection>
-				{(newRules.columnComparision == "==" ||
-					newRules.columnComparision == "!=") && (
-					<StyledMainSection>
-						<StyledSelect
-							label="Select Values"
-							name="valuesToColour"
-							SelectProps={{
-								multiple: true,
-							}}
-							value={newRules?.valuesToColour || []}
-							onChange={(e) => updateFields("valuesToColour", e)}
+				</div>
+				<h3 className="font-medium text-sm">New Rule</h3>
+				<div className="flex flex-row gap-2">
+					<div className="flex-1">
+						<Select
+							value={newRules.column}
+							onValueChange={(val) => updateField("column", val)}
 						>
-							{(valuesToColour === undefined ||
-								valuesToColour.length === 0) && (
-								<Select.Item value="">
-									No Values to display
-								</Select.Item>
-							)}
-							{valuesToColour !== undefined &&
-								valuesToColour?.length > 0 && (
-									<Select.Item value="">
-										Select Values
-									</Select.Item>
-								)}
-							{valuesToColour !== undefined &&
-								valuesToColour?.length > 0 &&
-								valuesToColour?.map((cols, index) => {
-									return (
-										<Select.Item value={cols} key={index}>
-											{cols}
-										</Select.Item>
-									);
-								})}
-						</StyledSelect>
-					</StyledMainSection>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select Column" />
+							</SelectTrigger>
+							<SelectContent>
+								{data.columns?.map((cols, index) => (
+									<SelectItem
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										key={index}
+										value={cols.selector}
+									>
+										{cols.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="flex-1">
+						<Input
+							name="columnColour"
+							type="color"
+							value={newRules.columnColour}
+							onChange={(e) =>
+								updateField("columnColour", e.target.value)
+							}
+						/>
+					</div>
+				</div>
+				<div className="flex flex-row gap-2">
+					<div className="flex-1">
+						<Select
+							value={newRules.columnToColour}
+							onValueChange={(val) =>
+								updateField("columnToColour", val)
+							}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select Column" />
+							</SelectTrigger>
+							<SelectContent>
+								{data.columns?.map((cols, index) => (
+									<SelectItem
+										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+										key={index}
+										value={cols.selector}
+									>
+										{cols.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div className="flex-1">
+						<Select
+							value={newRules.columnComparision}
+							onValueChange={(val) =>
+								updateField("columnComparision", val)
+							}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select Comparison" />
+							</SelectTrigger>
+							<SelectContent>
+								{columnComparision.map((cols, index) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									<SelectItem key={index} value={cols.value}>
+										{cols.name}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				</div>
+				{(newRules.columnComparision === "==" ||
+					newRules.columnComparision === "!=") && (
+					<select
+						multiple
+						className="min-h-[80px] w-full rounded border px-2 py-1 text-sm"
+						value={newRules.valuesToColour}
+						onChange={(e) => {
+							const selected = Array.from(
+								e.target.selectedOptions,
+							).map((o) => o.value);
+							updateField("valuesToColour", selected);
+						}}
+					>
+						{valuesToColour.length === 0 && (
+							<option value="" disabled>
+								No Values to display
+							</option>
+						)}
+						{valuesToColour.map((col, index) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+							<option key={index} value={col}>
+								{col}
+							</option>
+						))}
+					</select>
 				)}
-				{
-					<StyledMainSection>
-						{conditionForShowingField && (
-							<StyledMainSection>
-								<label>Min: {newRules.filterMinValue}</label>
-								<br />
-								<label>Max: {newRules.filterMaxValue}</label>
-								<br />
-							</StyledMainSection>
-						)}
-						{conditionForShowingField && (
-							<StyledTextField
-								label="Select Value"
-								name="filterValue"
-								value={newRules.filterValue}
-								onChange={(e) => updateFields("filterValue", e)}
-							></StyledTextField>
-						)}
-					</StyledMainSection>
-				}
-				<StyledMainSection>
+				{conditionForShowingField && (
+					<div className="flex flex-col gap-1">
+						<span className="text-muted-foreground text-xs">
+							Min: {newRules.filterMinValue} | Max:{" "}
+							{newRules.filterMaxValue}
+						</span>
+						<Input
+							name="filterValue"
+							type="number"
+							value={newRules.filterValue}
+							onChange={(e) =>
+								updateField("filterValue", e.target.value)
+							}
+							placeholder="Select Value"
+						/>
+					</div>
+				)}
+				<div className="flex justify-start">
 					<Button onClick={updateData}>Execute</Button>
-				</StyledMainSection>
-			</Stack>
+				</div>
+			</div>
 		);
-
-		function deleteAssignedRule(rule, index) {
-			let assignedRules = appliedRules;
-			assignedRules = assignedRules.filter(
-				(item, itemindex) => index !== itemindex,
-			);
-			functionCallReference.current.applyRulesToChart = true;
-			assignedRules = assignedRules.map((item, index) => {
-				return {
-					...item,
-					["index"]: index,
-				};
-			});
-			setAppliedRules(assignedRules);
-		}
-		function editAssignedRule(rule, index) {
-			const assignedRules = rule;
-			setNewRules(assignedRules);
-		}
-
-		return <>{accordionDetails}</>;
 	},
 );
 export default ColourByValue;

@@ -1,0 +1,52 @@
+{
+	"messages": {
+		"placeholder": "メッセージを入力...",
+		"sending": "送信中...",
+		"error": "メッセージの送信に失敗しました"
+	},
+	"attachments": {
+		"addFile": "ファイルを追加",
+		"removeFile": "ファイルを削除"
+	},
+	"response": {
+		"agent": "エージェント",
+		"previousMessage": "前のメッセージ",
+		"nextMessage": "次のメッセージ",
+		"rewriteMessage": "メッセージを書き直す",
+		"goodResponse": "良い回答",
+		"poorResponse": "悪い回答",
+		"copyResponse": "回答をコピー",
+		"copyCode": "コードをコピー",
+		"fastForwardToEnd": "最後まで早送り",
+		"completeToolsAsk_one": "続行するにはツールを完了してください。",
+		"completeToolsAsk_other": "続行するにはすべてのツールを完了してください。",
+		"completeToolsAuto_one": "ツールが完了するまでお待ちください。",
+		"completeToolsAuto_other": "すべてのツールが完了するまでお待ちください。"
+	},
+	"input": {
+		"copyMessage": "メッセージをコピー"
+	},
+	"plan": {
+		"heading": "以下のプランを作成しました。必要に応じて変更してください。",
+		"fixStep": "ステップを修正",
+		"edit": "編集",
+		"delete": "削除",
+		"addTask": "タスクを追加",
+		"confirmPlan": "プランを確認"
+	},
+	"notifications": {
+		"feedbackSuccess": "フィードバックをありがとうございます!",
+		"rewriteSuccess": "メッセージを正常に書き直しました",
+		"copySuccess": "クリップボードに正常にコピーしました",
+		"noCopyContent": "コピーするコンテンツがありません",
+		"planStepRemoved": "プランからステップ{{stepNumber}}を正常に削除しました"
+	},
+	"gracefulErrors": {
+		"errorDefault": "リクエストを処理できません。接続を確認し、メッセージをコピーしてから更新してください。",
+		"tokenLimit": "チャットが長すぎて処理できませんでした。短いプロンプトを使用するか、ドキュメントコンテンツを少なくアップロードして、新しいチャットを開始してください。",
+		"overloaded": "このモデルは現在利用できません。別のモデルをお試しください。",
+		"resourceExhausted": "このモデルは現在高負荷を経験しています。別のモデルをお試しください。",
+		"inactivity": "非アクティブのためセッションが期限切れになりました。チャットを続けるにはページを更新してください。",
+		"modelNoLongerAvailable": "このモデルは利用できなくなりました。必要に応じて、現在の会話を新しいチャットにコピー&ペーストして続けてください。"
+	}
+}

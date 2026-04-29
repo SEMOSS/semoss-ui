@@ -1,0 +1,52 @@
+{
+	"messages": {
+		"placeholder": "Type a message...",
+		"sending": "Sending...",
+		"error": "Failed to send message"
+	},
+	"attachments": {
+		"addFile": "Add File",
+		"removeFile": "Remove File"
+	},
+	"response": {
+		"agent": "Agent",
+		"previousMessage": "Previous Message",
+		"nextMessage": "Next Message",
+		"rewriteMessage": "Rewrite Message",
+		"goodResponse": "Good response",
+		"poorResponse": "Poor response",
+		"copyResponse": "Copy Response",
+		"copyCode": "Copy Code",
+		"fastForwardToEnd": "Fast Forward to End",
+		"completeToolsAsk_one": "Please complete the tool to proceed.",
+		"completeToolsAsk_other": "Please complete the tools to proceed.",
+		"completeToolsAuto_one": "Please wait for the tool to complete.",
+		"completeToolsAuto_other": "Please wait for the tools to complete."
+	},
+	"input": {
+		"copyMessage": "Copy Message"
+	},
+	"plan": {
+		"heading": "Here is the plan that I have created. Feel free to modify it as needed.",
+		"fixStep": "Fix Step",
+		"edit": "Edit",
+		"delete": "Delete",
+		"addTask": "Add Task",
+		"confirmPlan": "Confirm Plan"
+	},
+	"notifications": {
+		"feedbackSuccess": "Thank you for the feedback!",
+		"rewriteSuccess": "Successfully rewrote message",
+		"copySuccess": "Successfully copied to clipboard",
+		"noCopyContent": "No content to copy",
+		"planStepRemoved": "Successfully removed step {{stepNumber}} from plan"
+	},
+	"gracefulErrors": {
+		"errorDefault": "Unable to process request. Please check your connection, copy your message, and refresh.",
+		"tokenLimit": "Your chat was too long to handle. Please start a new chat using a shorter prompt or upload less document content.",
+		"overloaded": "This model is unavailable right now. Please try a different model.",
+		"resourceExhausted": "This model is experiencing high load right now. Please try a different model.",
+		"inactivity": "Your session has expired due to inactivity. Please refresh the page to continue using the chat.",
+		"modelNoLongerAvailable": "This model is no longer available. If necessary, copy/paste the current conversation into a new chat to continue."
+	}
+}

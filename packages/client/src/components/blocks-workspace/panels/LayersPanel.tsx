@@ -14,17 +14,16 @@ import {
 import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import {
-	Add,
-	ChevronRight,
-	ContentCopy,
-	Delete,
-	ExpandMore,
-	HomeOutlined,
-	LibraryAdd,
-	MoreVert,
+	BookmarkPlus,
+	CircleCheck,
+	Copy,
+	Home,
+	MoreVertical,
+	Pencil,
+	Plus,
 	Search,
-} from "@mui/icons-material/";
-import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+	Trash2,
+} from "lucide-react";
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useRef, useState } from "react";
@@ -35,19 +34,21 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	Divider,
-	Grid,
-	Icon,
-	IconButton,
-	InputAdornment,
-	Menu,
-	Stack,
-	styled,
-	TextField,
+	Button,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+	Input,
+	Separator,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
 	TreeView,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
+	TreeViewItem,
+	toast,
+} from "@semoss/ui/next";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
@@ -61,176 +62,6 @@ const customCollisionDetection = (args) => {
 	// Filter out collisions that are the same as the active item
 	return collisions.filter((collision) => collision.id !== args.active.id);
 };
-
-const StyledMenu = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "auto",
-	maxHeight: "100%",
-	width: "100%",
-	paddingTop: theme.spacing(1),
-}));
-
-const StyledMenuHeader = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "center",
-	lineHeight: theme.spacing(5),
-	width: "100%",
-	paddingTop: theme.spacing(1.5),
-	paddingRight: theme.spacing(2),
-	paddingBottom: theme.spacing(1.5),
-	paddingLeft: theme.spacing(2),
-	gap: theme.spacing(1),
-}));
-
-const StyledMenuScroll = styled("div")(({ theme }) => ({
-	flex: "1",
-	height: "100%",
-	width: "100%",
-	paddingBottom: theme.spacing(1),
-	overflowX: "hidden",
-	overflowY: "auto",
-}));
-
-const StyledLabelContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "search",
-})<{
-	/** Track if it is a search term */
-	search: boolean;
-}>(({ search, theme }) => ({
-	flex: 1,
-	color: search ? theme.palette.primary.main : "",
-	overflow: "hidden",
-}));
-
-const StyledLabelTitle = styled("div")(({ theme }) => ({
-	...theme.typography.body2,
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-}));
-
-const StyledLabelSubtitleText = styled("div")(({ theme }) => ({
-	...theme.typography.caption,
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-	whiteSpace: "nowrap",
-}));
-
-const StyledTreeItemIcon = styled(Icon)(() => ({
-	color: "#757575",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	height: "100%",
-}));
-
-const StyledRouteText = styled(Typography)(() => ({
-	lineHeight: "normal",
-}));
-
-const StyledTreeItemIconButton = styled(IconButton)(() => ({
-	"&[data-onhover]": {
-		display: "none",
-	},
-}));
-
-const StyledTreeItemLabel = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "row",
-	alignItems: "center",
-	padding: theme.spacing(1),
-	gap: theme.spacing(1),
-	transition: "background-color 0.2s",
-	"&:hover [data-onhover]": {
-		display: "block",
-	},
-}));
-
-const StyledTreeItemMessage = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "100%",
-	alignItems: "center",
-	justifyContent: "center",
-}));
-
-const StyledPageItem = styled("div", {
-	shouldForwardProp: (prop) => prop !== "search",
-})<{
-	/** Track if it is a search term */
-	search: boolean;
-	isselected: string;
-}>(({ isselected, search, theme }) => ({
-	display: "flex",
-	flexDirection: "row",
-	height: "auto",
-	width: "100%",
-	alignItems: "center",
-	justifyContent: "space-between",
-	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
-	color: search ? theme.palette.primary.main : "",
-	backgroundColor: isselected === "true" ? "#EBF4FE" : "",
-}));
-
-const StyledTitle = styled("div")(({ theme }) => ({
-	borderRadius: "16px",
-	background: " #EBF4FE",
-	width: "fit-content",
-	marginTop: "8px",
-	paddingRight: theme.spacing(2),
-	paddingLeft: theme.spacing(2),
-	marginBottom: "8px",
-	backgroundColor: theme.palette.primary.selected,
-	color: theme.palette.info.dark,
-}));
-
-const StyledTitleSpan = styled("span")(() => ({
-	color: "var(--Primary-Dark, #1260DD)",
-	fontFeatureSettings: "'liga' off, 'clig' off",
-	fontSize: "13px",
-	fontFamily: "Inter",
-	fontWeight: 400,
-	fontStyle: "normal",
-	letterSpacing: "0.16px",
-	lineHeight: "18px",
-}));
-
-const StyledStack = styled(Stack)(() => ({
-	marginLeft: "16px",
-	marginTop: "8px",
-}));
-
-const StyledTextFiled = styled(TextField)(() => ({
-	marginRight: "8px",
-	width: "95%",
-	borderRadius: "8px",
-}));
-
-const StyledTypography = styled(Typography)(() => ({
-	color: "var(--Text-Primary, #212121)",
-	fontFeatureSettings: '"liga" off, "clig" off',
-	fontFamily: "Inter, sans-serif",
-	fontStyle: "normal",
-	fontSize: "16px",
-	lineHeight: "150%",
-	fontWeight: 500,
-	letterSpacing: "0.15px",
-}));
-
-const StyledHomePageDiv = styled("div")(() => ({
-	display: "flex",
-	alignItems: "center",
-}));
-
-const StyledHomePageChildDiv = styled("div")(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	width: "24px",
-}));
 
 export const PAGE_BLOCK: BlockJSON = {
 	widget: "page",
@@ -273,6 +104,7 @@ const findNode = (
 	}[] = [{ node: root, parent: null, slot: null }];
 
 	while (stack.length) {
+		// biome-ignore lint/style/noNonNullAssertion: stack.length guard above ensures non-null
 		const { node, parent, slot } = stack.pop()!;
 		if (node.id === id) return { node, parent, slot };
 
@@ -316,12 +148,11 @@ export const LayersPanel = observer(
 		// get the store
 		const { state } = useBlocks();
 		const { designer } = useDesigner();
-		const notification = useNotification();
 		const { workspace } = useWorkspace();
 		const [expanded, setExpanded] = useState<string[]>([]);
-		const [selectedLayers, setSelectedLayers] = useState<string[]>([]);
+		const [_selectedLayers, setSelectedLayers] = useState<string[]>([]);
 		const [selectedPages, setSelectedPages] = useState<string>("page-1");
-		const [selectedLayer, setSelectedLayer] = useState([]);
+		const [selectedLayer, setSelectedLayer] = useState<string[]>([]);
 		const [pageHovered, setPageHovered] = useState<string>("");
 		const [search, setSearch] = useState<string>("");
 		const [variableModal, setVariableModal] = useState("");
@@ -332,6 +163,13 @@ export const LayersPanel = observer(
 		const accordionRefs = useRef({});
 
 		const [_activeNode, setActiveNode] = useState<TreeNode | null>(null);
+		const [editingBlockId, setEditingBlockId] = useState<string | null>(
+			null,
+		);
+		const [editBlockId, setEditBlockId] = useState<string | null>(null);
+		const [rename, setRename] = useState(true);
+		const editableAreaRef = useRef<HTMLDivElement | null>(null);
+		const inputRef = useRef<HTMLInputElement>(null);
 
 		const sensors = useSensors(
 			useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -355,6 +193,7 @@ export const LayersPanel = observer(
 			});
 		};
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const parents = state.getAllParents(designer.selected);
 			if (parents.length) {
@@ -381,11 +220,96 @@ export const LayersPanel = observer(
 		}, [designer.selected]);
 
 		useEffect(() => {
+			const handleClickOutside = (event: MouseEvent) => {
+				if (
+					editableAreaRef.current &&
+					!editableAreaRef.current.contains(event.target as Node)
+				) {
+					const target = event.target as HTMLElement;
+
+					if (target.closest(".MuiOutlinedInput-root")) {
+						return;
+					}
+
+					setEditingBlockId(null);
+				}
+			};
+
+			document.addEventListener("mousedown", handleClickOutside);
+
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+			};
+		}, []);
+
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
+		useEffect(() => {
 			const block = state.blocks[selectedPages];
 			if (block) {
 				handlePageSelection(block);
 			}
 		}, []);
+
+		// When searching, auto-expand ancestors and scroll to the first matching layer
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
+		useEffect(() => {
+			if (!search) return;
+
+			const lower = search.toLowerCase();
+
+			const collectDescendants = (rootId: string): string[] => {
+				const out: string[] = [];
+				const visit = (id: string) => {
+					const blk = state.blocks[id];
+					if (!blk) return;
+					out.push(id);
+					for (const s in blk.slots) {
+						// biome-ignore lint/suspicious/useIterableCallbackReturn: void side-effect, no return needed
+						blk.slots[s]?.children?.forEach((cid: string) =>
+							visit(cid),
+						);
+					}
+				};
+				visit(rootId);
+				return out;
+			};
+
+			const allIds = collectDescendants(selectedPages);
+			const matchId = allIds.find((id) => {
+				const blk = state.blocks[id];
+				if (!blk) return false;
+				const label = `${blk.widget}${blk.id}`.toLowerCase();
+				return label.indexOf(lower) > -1;
+			});
+
+			if (matchId) {
+				// Expand all ancestors so the node will render
+				const parents = state.getAllParents(matchId);
+				if (parents?.length) {
+					setExpanded((prev) => [...new Set([...prev, ...parents])]);
+				}
+				// After expansion renders, scroll the matched item into view
+				setTimeout(() => {
+					const el = accordionRefs.current[
+						matchId
+					] as HTMLElement | null;
+					if (el) {
+						scrollIntoView(el, { block: "center" });
+					}
+				}, 120);
+			}
+		}, [search, selectedPages]);
+
+		const handleRename = (id: string) => {
+			state.dispatch({
+				message: ActionMessages.SET_BLOCK_DATA,
+				payload: {
+					id: id,
+					path: "id",
+					value: editBlockId.trim(),
+				},
+			});
+		};
 
 		const handleDragStart = (event: DragStartEvent) => {
 			const { active } = event;
@@ -526,7 +450,7 @@ export const LayersPanel = observer(
 		const DroppableTreeItem = ({
 			node,
 			children,
-			onDropPositionChange,
+			onDropPositionChange: _onDropPositionChange,
 		}: {
 			node;
 			children;
@@ -643,20 +567,6 @@ export const LayersPanel = observer(
 			);
 		};
 
-		const handleAccordionToggle = (
-			event: React.MouseEvent<SVGSVGElement, MouseEvent>,
-		) => {
-			event.stopPropagation();
-			const id = event.currentTarget.getAttribute("data-expand-id");
-			if (!id) return;
-			const action = event.currentTarget.getAttribute("name");
-			setExpanded((prev) => {
-				if (action === "expand") {
-					return [...prev, id];
-				}
-				return prev.filter((nodeId) => nodeId !== id);
-			});
-		};
 		const TreeViewComponent = ({
 			block,
 			variableName,
@@ -668,20 +578,7 @@ export const LayersPanel = observer(
 			WidgetIcon;
 			canVariabilize: boolean;
 		}) => {
-			const [menuAnchorEl, setMenuAnchorEl] =
-				React.useState<null | HTMLElement>(null);
-			const handleMenuOpen = (
-				event: React.MouseEvent<HTMLElement>,
-				_id: string,
-			) => {
-				event.preventDefault();
-				event.stopPropagation();
-				setMenuAnchorEl(event.currentTarget);
-			};
-
-			const handleMenuClose = () => {
-				setMenuAnchorEl(null);
-			};
+			const [menuOpen, setMenuOpen] = React.useState(false);
 
 			const handleDelete = (deletedId: string) => {
 				const parentBlock = state.getBlock(block.parent.id);
@@ -713,7 +610,7 @@ export const LayersPanel = observer(
 					const block = state.blocks[selectedPages];
 					handlePageSelection(block);
 				}, 0);
-				handleMenuClose();
+				setMenuOpen(false);
 			};
 
 			const handleDuplicate = async (
@@ -727,11 +624,16 @@ export const LayersPanel = observer(
 
 					const blockJson = {
 						widget: toJS(block.widget),
-						data: toJS(block.data),
+						data: (() => {
+							const data = toJS(block.data);
+							if (data.id) {
+								delete data.id; // Remove the id property if it exists
+							}
+							return data;
+						})(),
 						listeners: toJS(block.listeners),
 						slots: {},
 					};
-
 					// generate the slots
 					for (const slot in block.slots) {
 						if (block.slots[slot]) {
@@ -749,10 +651,9 @@ export const LayersPanel = observer(
 
 				const parentBlock = state.getBlock(block.parent.id);
 				if (parentBlock.widget === "iteration") {
-					notification.add({
-						color: "error",
-						message: `Unable to duplicate ${block.widget} within an Iterator Block`,
-					});
+					toast.error(
+						`Unable to duplicate ${block.widget} within an Iterator Block`,
+					);
 					return;
 				}
 
@@ -783,121 +684,238 @@ export const LayersPanel = observer(
 				setSelectedLayers([newId]);
 				// Render and scroll to the new block (if your system supports it)
 				renderBlock(newId);
-				handleMenuClose();
+				setMenuOpen(false);
+			};
+
+			const handleRenameBlock = (id: string) => {
+				setEditingBlockId(id);
+				const block = state.blocks[id];
+				setEditBlockId(
+					(block?.data?.id as string)
+						? (block?.data?.id as string)
+						: (block?.id as string),
+				);
+			};
+
+			const handleValidation = (id: string) => {
+				if (!id) {
+					setRename(true);
+					return;
+				}
+
+				const blocks = Object.values(state.blocks);
+
+				const exists = blocks.some(
+					(block: any) => block.id === id || block?.data?.id === id,
+				);
+
+				setRename(exists);
 			};
 
 			return (
-				<>
-					<StyledTreeItemLabel>
-						<StyledTreeItemIcon>
-							<WidgetIcon />
-						</StyledTreeItemIcon>
-						<StyledLabelContainer
-							search={
-								search
-									? [block.widget, block.id]
-											.join("")
-											.toLowerCase()
-											.indexOf(search.toLowerCase()) > -1
-									: false
-							}
-						>
-							<StyledLabelTitle>
-								{block.widget.charAt(0).toUpperCase() +
-									block.widget.slice(1)}
-							</StyledLabelTitle>
-							<StyledLabelSubtitleText>
-								{variableName || block.id}
-							</StyledLabelSubtitleText>
-						</StyledLabelContainer>
-						{variableName ? (
-							<StyledTreeItemIconButton
-								aria-label="copy"
-								title={`Copy variable`}
-								color="default"
-								size="small"
-								onClick={async (e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									await copy(`{{${variableName}}}`);
-								}}
-								data-onhover
-							>
-								<ContentCopy fontSize="small" />
-							</StyledTreeItemIconButton>
-						) : canVariabilize ? (
-							<StyledTreeItemIconButton
-								aria-label="add"
-								title={`Add variable`}
-								size="small"
-								color="primary"
-								onClick={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									setVariableModal(block.id);
-								}}
-								data-onhover
-							>
-								<LibraryAdd fontSize="small" />
-							</StyledTreeItemIconButton>
-						) : null}
-
-						{/* 3-dot menu button */}
-						<IconButton
-							size="small"
-							aria-label="more"
-							onClick={(e) => handleMenuOpen(e, block.id)}
-						>
-							<MoreVert fontSize="small" />
-						</IconButton>
-					</StyledTreeItemLabel>
-					<Menu
-						anchorEl={menuAnchorEl}
-						open={Boolean(menuAnchorEl)}
-						onClose={handleMenuClose}
-						anchorOrigin={{
-							vertical: "bottom",
-							horizontal: "right",
-						}}
-						transformOrigin={{
-							vertical: "top",
-							horizontal: "right",
-						}}
-						sx={{
-							".MuiPopover-paper": {
-								borderRadius: "4px",
-								padding: "8px 0px",
-								boxShadow:
-									"0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-							},
-						}}
+				<div className="flex flex-row items-center gap-2 p-2 transition-colors duration-200 hover:[&_[data-onhover]]:block">
+					<span className="flex h-full items-center justify-center text-[#757575]">
+						<WidgetIcon className="size-4" />
+					</span>
+					<div
+						className={`flex-1 overflow-hidden ${
+							search &&
+							[block.widget, block.id, block.data.id]
+								.join("")
+								.toLowerCase()
+								.indexOf(search.toLowerCase()) > -1
+								? "text-primary"
+								: ""
+						}`}
 					>
-						<Menu.Item
-							value="duplicate"
-							sx={{ display: "flex" }}
-							onClick={(e: React.MouseEvent<HTMLElement>) =>
-								handleDuplicate(e, block.id)
-							}
+						<span className="block overflow-hidden text-ellipsis whitespace-nowrap font-medium text-[#111827] text-[0.8125rem]">
+							{block.widget.charAt(0).toUpperCase() +
+								block.widget.slice(1)}
+						</span>
+						<div ref={editableAreaRef}>
+							{editingBlockId === block.id ? (
+								<div className="flex flex-row items-center gap-1">
+									<div className="flex flex-row items-center gap-1">
+										<Input
+											ref={inputRef}
+											className="h-5 w-full max-w-xs rounded border border-primary px-1 font-normal font-sans text-muted-foreground text-sm tracking-normal shadow-none focus-visible:border-primary focus-visible:outline-none focus-visible:ring-0"
+											value={editBlockId}
+											onChange={(e) => {
+												const newVal = e.target.value;
+												setEditBlockId(newVal);
+												handleValidation(newVal);
+												const cursorPosition =
+													e.target.selectionStart;
+												if (
+													inputRef.current &&
+													cursorPosition !== null
+												) {
+													requestAnimationFrame(
+														() => {
+															if (
+																inputRef.current
+															) {
+																inputRef.current.setSelectionRange(
+																	cursorPosition,
+																	cursorPosition,
+																);
+															}
+														},
+													);
+												}
+											}}
+											onClick={(e) => e.stopPropagation()}
+											onMouseDown={(e) => {
+												e.stopPropagation();
+											}}
+											autoFocus
+										/>
+									</div>
+									<TooltipProvider>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Button
+														disabled={rename}
+														size="icon"
+														onMouseDown={(e) =>
+															e.stopPropagation()
+														}
+														className="h-6 w-6 bg-transparent p-0"
+														onClick={(e) => {
+															e.stopPropagation();
+															handleRename(
+																block.id,
+															);
+															setRename(true);
+															setEditingBlockId(
+																null,
+															);
+														}}
+														variant="secondary"
+													>
+														<CircleCheck
+															className={`h-4 w-4 ${
+																rename
+																	? "text-muted-foreground"
+																	: "text-primary"
+															}`}
+														/>
+													</Button>
+												</span>
+											</TooltipTrigger>
+											{rename && (
+												<TooltipContent side="top">
+													Block name already exists
+												</TooltipContent>
+											)}
+										</Tooltip>
+									</TooltipProvider>
+								</div>
+							) : (
+								<span className="block overflow-hidden text-ellipsis whitespace-nowrap text-[#6b7280] text-xs">
+									{variableName || block.data.id || block.id}
+								</span>
+							)}
+						</div>
+					</div>
+					{variableName ? (
+						<Button
+							aria-label="copy"
+							title="Copy variable"
+							variant="ghost"
+							size="icon-sm"
+							className="hidden"
+							data-onhover
+							onClick={async (e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								await copy(`{{${variableName}}}`);
+							}}
 						>
-							<img
-								src={DuplicateIcon}
-								alt="Duplicate Icon"
-								style={{ marginRight: "8px" }}
-							/>{" "}
-							Duplicate
-						</Menu.Item>
-						<Menu.Item
-							value="delete"
-							sx={{ display: "flex" }}
-							onClick={() => handleDelete(block.id)}
+							<Copy className="size-4" />
+						</Button>
+					) : canVariabilize ? (
+						<Button
+							aria-label="add"
+							title="Add variable"
+							variant="ghost"
+							size="icon-sm"
+							className="hidden text-primary"
+							data-onhover
+							onClick={(e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								setVariableModal(block.id);
+							}}
 						>
-							<DeleteOutlineOutlinedIcon
-								style={{ color: "#757575", marginRight: "6px" }}
-							/>{" "}
-							Delete
-						</Menu.Item>
-					</Menu>
-				</>
+							<BookmarkPlus className="size-4" />
+						</Button>
+					) : null}
+
+					{/* 3-dot menu button */}
+					<DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+						<DropdownMenuTrigger asChild>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								aria-label="more"
+								onClick={(e) => {
+									e.preventDefault();
+									e.stopPropagation();
+									setMenuOpen(true);
+								}}
+							>
+								<MoreVertical className="size-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent
+							align="end"
+							side="bottom"
+							className="rounded-md border bg-popover p-1 shadow-md"
+						>
+							{!INPUT_BLOCK_TYPES.includes(block.widget) && (
+								<DropdownMenuItem
+									onClick={(e) => {
+										e.stopPropagation();
+										handleRenameBlock(block.id);
+										setMenuOpen(false);
+									}}
+									className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+								>
+									<Pencil className="relative left-1 mr-3 size-4" />
+									Rename
+								</DropdownMenuItem>
+							)}
+							<DropdownMenuItem
+								onClick={(e: React.MouseEvent<HTMLElement>) => {
+									e.stopPropagation();
+									handleDuplicate(e, block.id);
+									setMenuOpen(false);
+								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+							>
+								<img
+									src={DuplicateIcon}
+									alt="Duplicate Icon"
+									className="mr-2"
+								/>
+								Duplicate
+							</DropdownMenuItem>
+							<DropdownMenuItem
+								onClick={() => {
+									handleDelete(block.id);
+									setMenuOpen(false);
+								}}
+								className="flex cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-outline text-sm outline-hidden focus:bg-accent focus:text-accent-foreground"
+							>
+								<Trash2 className="mr-1.5 size-4" />
+								Delete
+							</DropdownMenuItem>
+						</DropdownMenuContent>
+					</DropdownMenu>
+				</div>
 			);
 		};
+
 		const renderBlock = (id: string) => {
 			const block = state.blocks[id];
 			if (!block) {
@@ -918,31 +936,14 @@ export const LayersPanel = observer(
 					onDropPositionChange={setGlobalDropPositions}
 				>
 					<DraggableTreeItem key={block.id} node={block}>
-						<TreeView.Item
+						<TreeViewItem
 							key={block.id}
-							nodeId={block.id}
+							id={block.id}
+							item={block}
 							ref={(node) => {
 								accordionRefs.current[block.id] =
 									node instanceof HTMLElement ? node : null;
 							}}
-							expandIcon={
-								<StyledTreeItemIcon>
-									<ChevronRight
-										name="expand"
-										data-expand-id={block.id}
-										onClick={handleAccordionToggle}
-									/>
-								</StyledTreeItemIcon>
-							}
-							collapseIcon={
-								<StyledTreeItemIcon>
-									<ExpandMore
-										name="collapse"
-										data-expand-id={block.id}
-										onClick={handleAccordionToggle}
-									/>
-								</StyledTreeItemIcon>
-							}
 							label={
 								<TreeViewComponent
 									block={block}
@@ -951,11 +952,6 @@ export const LayersPanel = observer(
 									canVariabilize={canVariabilize}
 								/>
 							}
-							onClick={(e: React.SyntheticEvent) => {
-								e.stopPropagation();
-								designer.setSelected(block.id);
-								handleOnSelect(block);
-							}}
 							onMouseOver={(e: React.SyntheticEvent) => {
 								e.stopPropagation();
 								designer.setHovered(block.id);
@@ -964,14 +960,11 @@ export const LayersPanel = observer(
 								e.stopPropagation();
 								designer.setHovered("");
 							}}
-							sx={{
-								minWidth: 0,
-							}}
 						>
 							{children.map((c) => {
 								return renderBlock(c);
 							})}
-						</TreeView.Item>
+						</TreeViewItem>
 					</DraggableTreeItem>
 				</DroppableTreeItem>
 			);
@@ -979,50 +972,54 @@ export const LayersPanel = observer(
 
 		const renderPage = (id: string) => {
 			const block = state.blocks[id];
+			const isSelected = selectedPages === block.id;
+			const isSearchMatch = search
+				? [block.widget, block.id]
+						.join("")
+						.toLowerCase()
+						.indexOf(search.toLowerCase()) > -1
+				: false;
 			return (
-				<StyledPageItem
+				// biome-ignore lint/a11y/useKeyWithClickEvents: layer item
+				// biome-ignore lint/a11y/noStaticElementInteractions: layer item
+				// biome-ignore lint/a11y/useKeyWithMouseEvents: layer item
+				<div
 					key={block.id}
+					className={`flex h-auto w-full cursor-pointer flex-row items-center justify-between px-4 py-2 ${
+						isSelected ? "bg-[#EBF4FE]" : ""
+					} ${isSearchMatch ? "text-primary" : ""}`}
 					onClick={(_e) => {
 						handlePageSelection(block);
 					}}
-					isselected={(selectedPages === block.id).toString()}
-					search={
-						search
-							? [block.widget, block.id]
-									.join("")
-									.toLowerCase()
-									.indexOf(search.toLowerCase()) > -1
-							: false
-					}
 					onMouseOver={(_e) => setPageHovered(block.id)}
 					onMouseLeave={(_e) => setPageHovered("")}
 				>
-					<StyledHomePageDiv>
-						<StyledHomePageChildDiv>
+					<div className="flex items-center">
+						<div className="flex w-6 items-center justify-center">
 							{id === "page-1" && (
-								<StyledTreeItemIcon>
-									<HomeOutlined />
-								</StyledTreeItemIcon>
+								<span className="flex h-full items-center justify-center text-[#757575]">
+									<Home className="size-4" />
+								</span>
 							)}
-						</StyledHomePageChildDiv>
-						<StyledRouteText variant="subtitle1">
+						</div>
+						<span className="text-[#374151] text-[0.875rem] leading-normal">
 							{id === "page-1"
 								? "/page-1"
 								: `/${block.data.route as string}`}
-						</StyledRouteText>
-					</StyledHomePageDiv>
+						</span>
+					</div>
 					{id !== "page-1" && pageHovered === block.id && (
-						<StyledTreeItemIcon>
-							<Delete
+						<span className="flex h-full items-center justify-center text-[#757575]">
+							<Trash2
+								className="size-4 cursor-pointer"
 								onClick={(e) => {
 									e.stopPropagation();
 									handlePageDeletion(block);
 								}}
-								style={{ cursor: "pointer" }}
 							/>
-						</StyledTreeItemIcon>
+						</span>
 					)}
-				</StyledPageItem>
+				</div>
 			);
 		};
 
@@ -1051,6 +1048,7 @@ export const LayersPanel = observer(
 			}
 			removePanel(block.id);
 		};
+
 		/** Helpers */
 		/**
 		 * Create a new panel and highlight it
@@ -1098,11 +1096,7 @@ export const LayersPanel = observer(
 				);
 				// designer.setRendered(id);
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
-
+				toast.error(String(e));
 				return false;
 			}
 
@@ -1116,16 +1110,9 @@ export const LayersPanel = observer(
 		const copy = async (text: string) => {
 			try {
 				await navigator.clipboard.writeText(text);
-
-				notification.add({
-					color: "success",
-					message: "Successfully copied ID",
-				});
+				toast.success("Successfully copied ID");
 			} catch (_e) {
-				notification.add({
-					color: "error",
-					message: "Unable to copy ID",
-				});
+				toast.error("Unable to copy ID");
 			}
 		};
 
@@ -1193,11 +1180,7 @@ export const LayersPanel = observer(
 				const selectedNodeId = selectedNode.getId();
 				model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
-
+				toast.error(String(e));
 				return false;
 			}
 
@@ -1258,11 +1241,7 @@ export const LayersPanel = observer(
 				const selectedNodeId = selectedNode.getId();
 				model.doAction(FlexLayout.Actions.deleteTab(selectedNodeId));
 			} catch (e) {
-				notification.add({
-					color: "error",
-					message: e,
-				});
-
+				toast.error(String(e));
 				return false;
 			}
 
@@ -1289,161 +1268,128 @@ export const LayersPanel = observer(
 				}
 			} catch (error) {
 				console.error("Error adding new page:", error);
-				notification.add({
-					color: "error",
-					message: "Failed to add new page",
-				});
+				toast.error("Failed to add new page");
 			}
 		};
 
 		return (
-			<Panel>
-				<Stack spacing={undefined}>
-					<StyledTitle>
-						<StyledTitleSpan>{title}</StyledTitleSpan>
-					</StyledTitle>
-					<StyledStack>
-						<StyledTextFiled
-							placeholder="Search"
-							size="small"
-							fullWidth
-							value={search}
-							onChange={(e) => setSearch(e.target.value)}
-							InputProps={{
-								startAdornment: (
-									<InputAdornment position="start">
-										<Search />
-									</InputAdornment>
-								),
-							}}
-						/>
-					</StyledStack>
-				</Stack>
-				<Grid
-					container
-					direction="column"
-					sx={{
-						width: "100%",
-						height: "100%",
-					}}
-				>
-					<Grid item xs={12} width={"100%"} height={"100%"}>
-						<Grid item xs={12}>
-							<StyledMenu>
-								<StyledMenuHeader>
-									<Stack
-										spacing={2}
-										paddingBottom={1}
-										width={"100%"}
+			<Panel
+				actions={
+					<div className="flex w-full flex-col">
+						<div className="mt-2 mb-2 w-fit rounded-2xl bg-[#EBF4FE] px-4">
+							<span className="font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
+								{title}
+							</span>
+						</div>
+						<div className="mt-2 ml-4">
+							<div className="relative mr-2 w-[95%]">
+								<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+								<Input
+									placeholder="Search"
+									className="w-full rounded-lg pl-9"
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+								/>
+							</div>
+						</div>
+					</div>
+				}
+			>
+				<div className="flex h-full w-full flex-col">
+					<div
+						className="flex flex-col"
+						style={{
+							flex: "0 0 140px",
+							minHeight: "80px",
+							maxHeight: "230px",
+							overflow: "hidden",
+						}}
+					>
+						<div className="flex h-full max-h-full w-full flex-col pt-1">
+							<div className="flex w-full flex-col items-center gap-2 px-4 pt-4 pb-4">
+								<div className="flex w-full flex-row items-center justify-between pb-2">
+									<p className="m-0 font-semibold text-[#212121] text-sm leading-6 tracking-[0.01em]">
+										Pages
+									</p>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										className="layers-menu__add-layer-button"
+										onClick={async (_e) => {
+											await handlePageAdd();
+										}}
 									>
-										<Stack
-											direction="row"
-											justifyContent="space-between"
-											alignItems={"center"}
-										>
-											<StyledTypography variant="h6">
-												Pages
-											</StyledTypography>
-											<IconButton
-												className="layers-menu__add-layer-button"
-												onClick={async (_e) => {
-													await handlePageAdd();
-												}}
-											>
-												<Add />
-											</IconButton>
-										</Stack>
-									</Stack>
-								</StyledMenuHeader>
-								<StyledMenuScroll>
-									{allPages?.length ? (
-										allPages.map((page) =>
-											renderPage(page.id),
-										)
-									) : (
-										<StyledTreeItemMessage>
-											<Typography variant="caption">
-												No Pages
-											</Typography>
-										</StyledTreeItemMessage>
-									)}
-								</StyledMenuScroll>
-							</StyledMenu>
-						</Grid>
-						<Grid item xs={12} height={"1%"}>
-							<Divider />
-						</Grid>
-						<Grid item xs={12} height={"69%"}>
-							<DndContext
-								sensors={sensors}
-								collisionDetection={customCollisionDetection}
-								onDragStart={handleDragStart}
-								onDragEnd={handleDragEnd}
-								modifiers={[restrictToFirstScrollableAncestor]}
-							>
-								<StyledMenu>
-									<StyledMenuHeader>
-										<Stack
-											spacing={2}
-											paddingBottom={1}
-											width={"100%"}
-										>
-											<Stack
-												direction="row"
-												justifyContent="space-between"
-												alignItems={"center"}
-											>
-												<StyledTypography variant="h6">
-													Layers
-												</StyledTypography>
-											</Stack>
-										</Stack>
-									</StyledMenuHeader>
-
-									<StyledMenuScroll>
-										<TreeView
-											selected={selectedLayers}
-											expanded={expanded}
-											onNodeSelect={(
-												e: React.SyntheticEvent,
-												nodeIds: string[],
-											) => {
-												e.stopPropagation();
-												if (
-													!expanded.includes(
-														nodeIds[0],
-													)
-												) {
-													setSelectedLayers(nodeIds);
-												}
-											}}
-										>
-											{selectedLayer?.length ? (
-												selectedLayer.map((c) =>
-													renderBlock(c),
-												)
-											) : (
-												<StyledTreeItemMessage>
-													<Typography variant="caption">
-														No Layers
-													</Typography>
-												</StyledTreeItemMessage>
-											)}
-										</TreeView>
-									</StyledMenuScroll>
-									{variableModal ? (
-										<AddVariableModal
-											open={true}
-											to={variableModal}
-											type={"block"}
-											onClose={() => setVariableModal("")}
-										/>
-									) : null}
-								</StyledMenu>
-							</DndContext>
-						</Grid>
-					</Grid>
-				</Grid>
+										<Plus className="size-4" />
+									</Button>
+								</div>
+							</div>
+							<div className="w-full flex-1 overflow-auto pb-2">
+								{allPages?.length ? (
+									allPages.map((page) => renderPage(page.id))
+								) : (
+									<div className="flex h-full w-full flex-col items-center justify-center">
+										<p className="text-muted-foreground text-xs">
+											No Pages
+										</p>
+									</div>
+								)}
+							</div>
+						</div>
+					</div>
+					<Separator />
+					<div
+						className="flex flex-col"
+						style={{ flex: 1, minHeight: 0, overflow: "hidden" }}
+					>
+						<DndContext
+							sensors={sensors}
+							collisionDetection={customCollisionDetection}
+							onDragStart={handleDragStart}
+							onDragEnd={handleDragEnd}
+							modifiers={[restrictToFirstScrollableAncestor]}
+						>
+							<div className="flex h-full max-h-full w-full flex-col pt-1">
+								<div className="flex w-full flex-col items-center gap-2 px-4 pt-4 pb-2">
+									<div className="flex w-full flex-row items-center justify-between pb-2">
+										<p className="m-0 font-semibold text-[#212121] text-sm leading-6 tracking-[0.01em]">
+											Layers
+										</p>
+									</div>
+								</div>
+								<div className="h-full w-full flex-1 overflow-y-auto overflow-x-hidden pb-2">
+									<TreeView
+										expanded={expanded}
+										onExpandChange={setExpanded}
+										onItemSelect={(block: any) => {
+											designer.setSelected(block.id);
+											handleOnSelect(block);
+										}}
+									>
+										{selectedLayer?.length ? (
+											selectedLayer.map((c) =>
+												renderBlock(c),
+											)
+										) : (
+											<div className="flex h-full w-full flex-col items-center justify-center">
+												<p className="text-muted-foreground text-xs">
+													No Layers
+												</p>
+											</div>
+										)}
+									</TreeView>
+								</div>
+								{variableModal ? (
+									<AddVariableModal
+										open={true}
+										to={variableModal}
+										type={"block"}
+										onClose={() => setVariableModal("")}
+									/>
+								) : null}
+							</div>
+						</DndContext>
+					</div>
+				</div>
 			</Panel>
 		);
 	},

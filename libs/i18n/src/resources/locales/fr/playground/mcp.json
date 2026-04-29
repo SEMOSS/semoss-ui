@@ -1,0 +1,55 @@
+{
+	"embedDocuments": {
+		"title": "Intégrer des documents dans une source existante",
+		"description": "Sélectionnez une source de connaissances et téléversez des documents à intégrer.",
+		"knowledgeSource": "Source de connaissances",
+		"documents": "Documents",
+		"selectFiles": "Cliquez pour sélectionner des fichiers ou glissez-déposez",
+		"embedButton": "Intégrer les documents",
+		"embedding": "Intégration...",
+		"removeFile": "Supprimer le fichier",
+		"selectPlaceholder": "Sélectionnez une source de connaissances"
+	},
+	"selector": {
+		"search": "Rechercher",
+		"createKnowledgeSource": "Créer une source de connaissances",
+		"viewDetails": "Voir les détails",
+		"noToolboxesFound": "Aucune boîte à outils trouvée",
+		"noKnowledgeFound": "Aucune connaissance trouvée"
+	},
+	"overlay": {
+		"editToolbox": "Configurer les boîtes à outils",
+		"editKnowledge": "Configurer les connaissances",
+		"toolboxDescription": "Ajoutez des outils pour donner plus de capacités à ce chat",
+		"knowledgeDescription": "Ajoutez des sources de connaissances pour donner plus de contexte au modèle"
+	},
+	"tools": {
+		"enterValues": "Entrez des valeurs séparées par des virgules",
+		"selectField": "Sélectionner {{field}}",
+		"enterField": "Entrer {{field}}"
+	},
+	"messages": {
+		"selectKnowledgeSource": "Veuillez sélectionner une source de connaissances",
+		"selectDocument": "Veuillez sélectionner au moins un document",
+		"embedSuccess": "Documents intégrés avec succès",
+		"embedFailed": "Échec de l'intégration des documents",
+		"loadFailed": "Échec du chargement des sources de connaissances.",
+		"noSources": "Aucune source de connaissances trouvée."
+	},
+	"buttons": {
+		"cancel": "Annuler",
+		"embed": "Intégrer",
+		"save": "Enregistrer",
+		"close": "Fermer"
+	},
+	"permission": {
+		"accessRequested": "Accès demandé",
+		"requestAccess": "Demander l'accès",
+		"noAccess": "Aucun accès",
+		"requestAccessButton": "Demander l'Accès",
+		"noDescription": "Aucune description disponible.",
+		"tooltipNoAccess": "Vous n'avez pas accès à ce {{type}}. Veuillez demander l'accès au propriétaire.",
+		"tooltipMissingDependencies": "Vous n'avez pas accès à toutes les dépendances de ce {{type}}, la fonctionnalité peut donc être limitée. Ouvrez dans la plateforme pour plus d'informations.",
+		"tooltipOpen": "Ouvrir ce {{type}} dans la plateforme"
+	}
+}

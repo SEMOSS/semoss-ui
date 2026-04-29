@@ -1,20 +1,19 @@
-import {
-	Inventory2Outlined,
-	SwitchAccessShortcutOutlined,
-	TokenOutlined,
-} from "@mui/icons-material";
+import { Boxes, Braces, Coins } from "lucide-react";
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
-import { EngineFilePage } from "./EngineFilePage";
-import { EngineQAPage } from "./EngineQAPage";
-import { EngineSettingsPage } from "./EngineSettingsPage";
-import { EngineSmssPage } from "./EngineSmssPage";
+import { EngineCommitsPage } from "./engine-commits-page";
 import { EngineFileManagerPage } from "./engine-file-manager-page";
+import { EngineFilePage } from "./engine-file-page";
+import { EngineMcpUsagePage } from "./engine-mcp-usage-page";
 import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
+import { EngineQAPage } from "./engine-qa-page";
 import { EngineQueryDataPage } from "./engine-query-data-page";
+import { EngineSettingsPage } from "./engine-settingsPage";
+import { EngineSmssPage } from "./engine-smss-page";
+import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
 export const ENGINE_ROUTES: {
@@ -54,7 +53,7 @@ export const ENGINE_ROUTES: {
 		type: "FUNCTION",
 		description:
 			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
-		icon: SwitchAccessShortcutOutlined,
+		icon: Braces,
 		specific: [
 			{
 				name: "Overview",
@@ -66,7 +65,13 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "MCP Usage",
+				path: "mcp-usage",
+				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -75,16 +80,22 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Commits",
+				path: "commits",
+				component: EngineCommitsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
 		],
 	},
@@ -103,16 +114,22 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-				name: "Chat",
-				path: "chat",
-				component: EngineModelChatPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
-			},
-			{
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "MCP Usage",
+				path: "mcp-usage",
+				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Chat",
+				path: "chat",
+				component: EngineModelChatPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -121,16 +138,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT", "READ_ONLY"],
 			},
 		],
 	},
@@ -149,22 +166,28 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-				name: "Metadata",
-				path: "metadata",
-				component: EngineMetadataPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
-			},
-			{
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "MCP Usage",
+				path: "mcp-usage",
+				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Metadata",
+				path: "metadata",
+				component: EngineMetadataPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Query",
 				path: "query",
 				component: EngineQueryDataPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -173,16 +196,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
@@ -192,7 +215,7 @@ export const ENGINE_ROUTES: {
 		type: "VECTOR",
 		description:
 			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
-		icon: TokenOutlined,
+		icon: Coins,
 		specific: [
 			{
 				name: "Overview",
@@ -204,19 +227,25 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "MCP Usage",
+				path: "mcp-usage",
+				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Documents",
 				path: "documents",
 				component: EngineFilePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Q&A",
 				path: "qa",
 				component: EngineQAPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -225,16 +254,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
@@ -244,7 +273,7 @@ export const ENGINE_ROUTES: {
 		type: "STORAGE",
 		description:
 			"Tapping into unstructured data (e.g., audio, video, images, code) is critical when training and using AI solutions. Our storage catalog enables integration with many industry-leading cloud storage solutions to effortlessly access a project's unstructured data.",
-		icon: Inventory2Outlined,
+		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",
@@ -256,7 +285,19 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "MCP Usage",
+				path: "mcp-usage",
+				component: EngineMcpUsagePage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Storage Viewer",
+				path: "storage-viewer",
+				component: EngineStorageViewerPage,
+				restrict: false,
 			},
 			{
 				name: "Access Control",
@@ -265,16 +306,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},
@@ -284,7 +325,7 @@ export const ENGINE_ROUTES: {
 		type: "GUARDRAIL",
 		description:
 			"Guardrail Catalog is a centralized hub for managing and deploying guardrails that ensure safety, compliance, and reliability across the platform. It provides ready-to-use options like Gliner and Detoxify, and supports custom guardrail uploads via ZIP files, enabling consistent, secure, and scalable interactions.",
-		icon: Inventory2Outlined,
+		icon: Boxes,
 		specific: [
 			{
 				name: "Overview",
@@ -296,7 +337,7 @@ export const ENGINE_ROUTES: {
 				name: "Usage",
 				path: "usage",
 				component: EngineUsagePage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
 				name: "Access Control",
@@ -305,16 +346,16 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Files",
+				path: "files",
+				component: EngineFileManagerPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "SMSS",
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
-			},
-			{
-				name: "Files",
-				path: "files",
-				component: EngineFileManagerPage,
-				restrict: ["OWNER", "EDIT"],
 			},
 		],
 	},

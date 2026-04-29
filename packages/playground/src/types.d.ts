@@ -1,16 +1,35 @@
 export interface Engine {
-	app_id: string;
-	app_name: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_display_name?: string;
+	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_subtype?: string;
+	engine_favorite?: number;
+	engine_global?: boolean;
+	engine_discoverable?: boolean;
+	engine_user_permission?: number;
+	engine_group_permission?: number;
+	engine_date_created?: string;
+	engine_cost?: string;
+	low_engine_name?: string;
 	description?: string;
+
+	/** @deprecated legacy keys from MyEngines */
+	app_id?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_name?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 }
 
 export interface App {
 	project_id: string;
 	project_name: string;
+	project_display_name?: string;
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	user_permission: number;
 }
 
 export interface Workspace {
@@ -20,6 +39,7 @@ export interface Workspace {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	prompts: string[];
 }
 
 /**
@@ -47,10 +67,12 @@ export interface MCP {
 	name: string;
 
 	/** Description of the mcp */
-	description: string;
+	description?: string;
 
 	/** Tags of the mcp */
 	tags: string[];
+
+	permission: "READ_ONLY" | "EDIT" | "OWNER";
 }
 
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
@@ -62,91 +84,65 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
  * Item from the prompt library
  */
 export interface Prompt {
-	ID: string;
-	CREATED_BY: string;
-	DATE_CREATED: string;
-	VERSION: number;
-	INTENT: string;
-	TITLE: string;
-	CONTEXT: string;
+	id: string;
+	createdBy: string;
+	dateCreated: string;
+	version: number;
+	intent: string;
+	title: string;
+	context: string;
 	tags: string[];
+	global: boolean;
 }
 
 /**
  * Messages from the backend
  */
-export type PixelMessage =
-	| InputTextPixelMessage
-	| InputMediaPixelMessage
-	| InputToolExecPixelMessage
-	| ResponseTextPixelMessage
-	| ResponseToolPixelMessage;
+export type PixelMessage = InputPixelMessage | ResponsePixelMessage;
 
 export interface AbstractPixelMessage {
-	type: string;
+	io: "INPUT" | "OUTPUT";
 	messageId: string;
 	parentMessageId?: string;
 	visible: boolean;
+	platform_generated: boolean;
+	modelId: string;
+	modelType: string;
 	dateCreated: string;
+	parts: (
+		| PixelMessageThinkingPart
+		| PixelMessageTextPart
+		| PixelMessageMediaPart
+		| PixelMessageToolCallPart
+		| PixelMessageToolResultPart
+	)[];
 	tokens: number;
-}
-
-export interface InputTextPixelMessage extends AbstractPixelMessage {
-	type: "INPUT_TEXT";
-	inputUIPrompt: string;
-	modelId: string;
-	mediaInputs: {
-		fileName: string;
-		fileLocation?: string;
-		base64Data?: string;
-		mimeType?: string;
-		imageType?: "FILE";
-	}[];
-	paramMap: {
-		max_new_tokens: number;
-		temperature: number;
-	};
-}
-
-export interface InputMediaPixelMessage extends AbstractPixelMessage {
-	type: "INPUT_MEDIA";
-	inputUIPrompt: string;
-	modelId: string;
-	mediaInputs: {
-		fileName: string;
-		fileLocation?: string;
-		base64Data?: string;
-		mimeType?: string;
-		imageType?: "FILE";
-	}[];
-	paramMap: {
-		max_new_tokens: number;
-		temperature: number;
-	};
-}
-
-export interface InputToolExecPixelMessage extends AbstractPixelMessage {
-	type: "INPUT_TOOL_EXEC";
-	visible: false;
-	tool_call_id: string;
-	tool_name: string;
-	tool_status: "error" | "cancelled" | "success";
-	modelId: string;
-	inputPrompt: string;
 	ornaments: {
 		modelName?: string;
 	};
-	tool_parameter_values?: Record<string, unknown>;
 }
 
-export interface ResponseTextPixelMessage extends AbstractPixelMessage {
-	type: "RESPONSE_TEXT";
-	content: string;
-	modelId: string;
-	thinking?: string;
+export interface InputPixelMessage extends AbstractPixelMessage {
+	io: "INPUT";
+	type: "INPUT_TEXT" | "INPUT_TOOL_EXEC";
+	parts: (
+		| PixelMessageTextPart
+		| PixelMessageMediaPart
+		| PixelMessageToolResultPart
+	)[];
+}
+
+export interface ResponsePixelMessage extends AbstractPixelMessage {
+	io: "OUTPUT";
+	parts: (
+		| PixelMessageTextPart
+		| PixelMessageThinkingPart
+		| PixelMessageMediaPart
+		| PixelMessageToolCallPart
+	)[];
 	ornaments: {
+		modelName?: string;
 		PLAYGROUND_MESSAGE_TYPE?: "COT";
-		modelName?: string;
 	};
 	feedback?: {
 		rating: boolean;
@@ -157,48 +153,64 @@ export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	};
 }
 
-export type McpExecution = "auto" | "ask" | "disabled";
+export interface PixelMessageThinkingPart {
+	type: "THINKING";
+	thinking: string;
+}
 
-export type McpDisplay = "inline" | "sidebar" | "hidden";
+export interface PixelMessageTextPart {
+	type: "TEXT";
+	text: string;
+	uiText: string;
+}
 
-interface ResponseToolPixelMessage extends AbstractPixelMessage {
-	type: "RESPONSE_TOOL";
-	thinking?: string;
-	tool_responses: {
-		/** tool execution id */
+export interface PixelMessageMediaPart {
+	type: "MEDIA";
+	mediaInfo: {
+		base64Data?: string;
+		fileFormat?: string;
+		fileName: string;
+		fileLocation?: string;
+		mediaInputType: "FILE";
+		mimeType?: string;
+	};
+}
+
+export interface PixelMessageToolCallPart {
+	type: "TOOL_CALL";
+	toolCall: {
 		id: string;
-
-		/** meta data from the tool */
+		type: string;
+		name: string;
+		arguments: Record<string, unknown>;
+		_tool_found: boolean;
+		original_name: string;
+		title: string;
+		description: string;
 		_meta: {
+			SMSS_ENGINE_NAME: string;
+			SMSS_ENGINE_ID: string;
+			SMSS_ENGINE_TYPE: string;
 			SMSS_PROJECT_NAME: string;
 			SMSS_PROJECT_ID: string;
-			SMSS_MCP_EXECUTION: McpExecution;
+			SMSS_MCP_EXECUTION: "auto" | "ask" | "disabled";
 			SMSS_MCP_UI?: {
 				loadingMessage?: string;
-				displayLocation?: McpDisplay;
+				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
 			};
 		};
+	};
+}
 
-		/**  Display of the tool **/
-		title: string;
-
-		/**  Name of function with app_id **/
-		name: string;
-
-		/**  Name of function in mcp json **/
-		original_name: string;
-
-		/** THIS IS A STRING, but ONLY in playground we parse as an app */
-		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
-		arguments: Record<string, unknown>;
-
-		/**  description of tool **/
-		description: string;
-	}[];
-	modelId: string;
-	ornaments: {
-		modelName?: string;
+export interface PixelMessageToolResultPart {
+	type: "TOOL_RESULT";
+	toolResult: {
+		toolCallId: string;
+		toolName: string;
+		output: string;
+		toolParameterValues: Record<string, unknown>;
+		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
 }
 
@@ -274,7 +286,7 @@ export interface MCPTool {
 		SMSS_MCP_UI?: {
 			loadingMessage?: string;
 			resourceURI?: string;
-			displayLocation?: McpDisplay;
+			displayLocation?: "inline" | "sidebar" | "hidden";
 		};
 	};
 }
@@ -288,4 +300,35 @@ export interface ToolStructure {
 		SMSS_ENGINE_ID: string;
 	};
 	tools: MCPTool[];
+}
+
+export interface User {
+	date_added: string;
+	name: string;
+	permission: string;
+	id: string;
+	type: string;
+	email: string;
+}
+
+export interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
+	access_permission?: number; // The permission level the user has requested, if any
+	tags?: string; // comma separated tags
+	can_view_dependencies?: boolean;
+	engine_date_created?: string;
+	dependencies?: string[]; // Array of dependency engine IDs
 }

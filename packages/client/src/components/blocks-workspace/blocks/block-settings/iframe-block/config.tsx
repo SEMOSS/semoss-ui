@@ -1,4 +1,4 @@
-import { AspectRatio } from "@mui/icons-material";
+import { Ratio } from "lucide-react";
 import { BorderSettings, InputSettings } from "../../settings";
 import { InputModalSettings } from "../../settings/shared/InputModalSettings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
@@ -14,7 +14,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
-	icon: AspectRatio,
+	icon: Ratio,
 	contentMenu: [
 		{
 			name: "General",

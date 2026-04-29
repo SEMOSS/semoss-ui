@@ -1,9 +1,9 @@
-import AMAZON_S3 from "@/assets/img/Amazon_S3.png";
-import AZURE_BLOB from "@/assets/img/AZURE_BLOB.png";
+import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
+import AZURE_BLOB from "@/assets/img/AZURE_BLOB.svg";
 import CEPH from "@/assets/img/CEPH.png";
 import DREAMHOST from "@/assets/img/DREAMHOST.png";
-import DROPBOX from "@/assets/img/dropbox.png";
-import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.png";
+import DROPBOX from "@/assets/img/DROPBOX.png";
+import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.svg";
 import GOOGLE_DRIVE from "@/assets/img/GOOGLE_DRIVE.png";
 import LOCAL_FILE_SYSTEM from "@/assets/img/LOCAL_FILE_SYSTEM.png";
 import MINIO from "@/assets/img/MINIO.png";
@@ -47,6 +47,16 @@ export interface ProviderDefinition {
 
 export interface ImportableModels {
 	providers: ProviderDefinition[];
+}
+
+export interface Storage {
+	fields: [];
+	advanced: [];
+	id: number;
+	name: string;
+	icon: string;
+	disable: boolean;
+	description?: string;
 }
 
 export const STORAGE_CONNECTIONS = {

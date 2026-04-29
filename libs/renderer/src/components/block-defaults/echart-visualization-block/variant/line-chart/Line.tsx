@@ -2,25 +2,14 @@ import ReactECharts, { type EChartsOption } from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { CustomContextMenu } from "../../CustomContextMenu";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
-const StyledChartContainer = styled("div")(() => ({
-	height: "100%",
-}));
-const StyledNoDataContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
-	height: "30vh",
-	width: "80vh",
-	color: error ? theme.palette.error.main : "unset",
-}));
 interface LineProps {
 	id: string;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: echart data/path types are untyped
 	updateJson: (data: any, path: any) => void;
 }
 export const Line = observer(({ id, updateJson }: LineProps) => {
@@ -32,22 +21,19 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 	} | null>(null);
 	let resultData: unknown = {};
 	// get the frame
-	function getVisualizationBlockSelector(id: string) {
+	function _getVisualizationBlockSelector(id: string) {
 		if (id) {
 			//get the options JSON of the selected block
 			const blockJSON = data.option;
 			//initialize the selector string
 			let selector = "Select(";
 			//if there are no fields, return null
-			if (!blockJSON["_state"]) return null;
+			if (!blockJSON._state) return null;
 			//get the fields
-			const selectorFields = blockJSON["_state"]["fields"];
+			const selectorFields = blockJSON._state.fields;
 			//  get the value and tooltip properties
 			const dynamicYAndTooltipSet = Array.from(
-				new Set([
-					...selectorFields["yAxis"],
-					...selectorFields["tooltip"],
-				]),
+				new Set([...selectorFields.yAxis, ...selectorFields.tooltip]),
 			);
 			// let dynamicYAndTooltipSet = [
 			//     ...new Set([
@@ -56,14 +42,14 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 			//     ]),
 			// ];
 			// start forming the selector string
-			selector += `${selectorFields["xAxis"][0]}`;
+			selector += `${selectorFields.xAxis[0]}`;
 			// add dynamic y axis and tooltip fields to the selector string
 			let averageCollection = "";
 			for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
 				averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
 				selector += `, Average(${dynamicYAndTooltipSet[i]})`;
 			}
-			selector += `).as([${selectorFields["xAxis"][0]}${averageCollection}])|Group(${selectorFields["xAxis"][0]})|Sort(${selectorFields["xAxis"][0]})`;
+			selector += `).as([${selectorFields.xAxis[0]}${averageCollection}])|Group(${selectorFields.xAxis[0]})|Sort(${selectorFields.xAxis[0]})`;
 			return selector;
 		}
 		return null;
@@ -76,7 +62,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 	 */
 	const buildDynamicQuery = (inputData): string => {
 		const blockJSON = data.option;
-		if (!blockJSON["_state"]) return null;
+		if (!blockJSON._state) return null;
 		const selectParts: string[] = [];
 		const aliasParts: string[] = [];
 		const groupByParts: string[] = [];
@@ -104,6 +90,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 	const frame = useFrame(data.frame.name, {
 		selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
 	});
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on data only
 	const computedValue = useMemo(() => {
 		return computed(() => {
 			if (!data) {
@@ -118,6 +105,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 			return JSON.stringify(v, null, 2);
 		});
 	}, [data, "option"]).get();
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data.values only
 	useEffect(() => {
 		if (
 			data?.frame?.name &&
@@ -128,6 +116,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		}
 	}, [frame.data.values]);
 	//format the frame option data for echart
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data.values only
 	const formatDataPoints = useCallback(
 		(resultData: unknown) => {
 			if (frame.data.values.length > 0) {
@@ -141,42 +130,71 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 					header.replace("Average_", ""),
 				);
 				//format the data points to match the echart specification
-				resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
+				resultData.xAxis.data = valuesDataSet
+					?.map((x) =>
+						x?.[0] !== undefined && !Number.isNaN(parseFloat(x[0]))
+							? parseFloat(x[0]).toFixed(2)
+							: null,
+					)
+					.filter((value) => value !== null);
 				valuesDataSet.map((x) => x.shift());
 				headersDataSet.shift();
-				const yAxisListLength =
-					resultData["_state"]?.["fields"]?.["yAxis"].length;
-				for (let index = 0; index < yAxisListLength; index++) {
-					resultData["series"][index]["data"] = valuesDataSet.map(
-						(x) => {
-							return x[index];
-						},
-					);
-					resultData["series"][index]["name"] = headersDataSet[index];
+				const yAxisListLength = resultData._state?.fields?.yAxis.length;
+				if (!resultData.series) {
+					resultData.series = [];
 				}
-				// resultData["series"].length = yAxisListLength;
-				resultData["series"].slice(0, yAxisListLength);
-				valuesDataSet.map((x) => x.splice(0, yAxisListLength));
+				for (let index = 0; index < yAxisListLength; index++) {
+					if (!resultData.series[index]) {
+						resultData.series[index] = {};
+					}
+
+					resultData.series[index].data = valuesDataSet.map((x) => {
+						const value = x[index];
+						if (
+							value === null ||
+							value === undefined ||
+							value === "NaN" ||
+							Number.isNaN(Number(value))
+						) {
+							return null; // Replace invalid values with null
+						}
+						return parseFloat(value).toFixed(2); // Round to 2 decimal places
+					});
+					resultData.series[index].name = headersDataSet[index];
+					resultData.series[index].type = "line";
+				}
+
+				const yAxisNames = resultData.yAxis.name;
+
+				resultData.series = resultData.series.filter((seriesItem) =>
+					yAxisNames.includes(seriesItem.name),
+				);
+
+				valuesDataSet.forEach((x) => {
+					x.splice(0, yAxisListLength);
+				});
 				headersDataSet.splice(0, yAxisListLength);
 				const customTooltipData = [];
-				data.option["_state"]?.["fields"]["tooltip"].map((x, index) => {
+				data.option._state?.fields.tooltip.forEach((x, index) => {
 					customTooltipData.push({
 						name: x,
-						data: valuesDataSet.map((y) => y[index]),
+						data: valuesDataSet.map(
+							(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+						),
 					});
 				});
-				if (!Object.hasOwn(resultData["tooltip"], "formatter")) {
+				if (!Object.hasOwn(resultData.tooltip, "formatter")) {
 					const customTooltipData = [];
-					data.option["_state"]?.["fields"]["tooltip"].map(
-						(x, index) => {
-							customTooltipData.push({
-								name: x,
-								data: valuesDataSet.map((y) => y[index]),
-							});
-						},
-					);
-					resultData["tooltip"] = {
-						...resultData["tooltip"],
+					data.option._state?.fields.tooltip.forEach((x, index) => {
+						customTooltipData.push({
+							name: x,
+							data: valuesDataSet.map(
+								(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+							),
+						});
+					});
+					resultData.tooltip = {
+						...resultData.tooltip,
 						formatter: ((customTooltipData) => (params) => {
 							const formatterStringArr = ["<div>"];
 							const dataIndex = params[0]?.dataIndex;
@@ -185,8 +203,11 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 							);
 							params.forEach((param) => {
 								let { value, seriesName, color } = param;
-								if (!isNaN(value) && value !== undefined) {
-									value = value.toFixed(1);
+								if (
+									!Number.isNaN(value) &&
+									value !== undefined
+								) {
+									value = parseFloat(value).toFixed(2);
 								}
 								formatterStringArr.push(
 									`<span style="color:${color}">\u25CF</span> Average of ${seriesName}:<strong> ${value}</strong><br>`,
@@ -202,7 +223,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 						})(customTooltipData),
 					};
 				} else {
-					delete resultData["tooltip"]["formatter"];
+					delete resultData.tooltip.formatter;
 				}
 			}
 			return resultData;
@@ -210,7 +231,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		[frame.data.values],
 	);
 	function debounce(fn, delay) {
-		let timer;
+		let timer: ReturnType<typeof setTimeout> | undefined;
 		return (...args) => {
 			clearTimeout(timer);
 			timer = setTimeout(() => fn(...args), delay);
@@ -280,7 +301,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		try {
 			const lineOptions = JSON.parse(data.option);
 			return (
-				<StyledChartContainer>
+				<div className="h-full">
 					<ReactECharts
 						option={lineOptions as unknown as EChartsOption}
 						onEvents={onClickChart}
@@ -288,13 +309,13 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 							echartsLoaded(chart);
 						}}
 					/>
-				</StyledChartContainer>
+				</div>
 			);
-		} catch (e) {
+		} catch (_e) {
 			return (
-				<StyledNoDataContainer error>
+				<div className="h-[30vh] w-[80vh] text-destructive">
 					There was an issue parsing your JSON.
-				</StyledNoDataContainer>
+				</div>
 			);
 		}
 	} else {
@@ -305,8 +326,9 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 				? formatDataPoints(JSON.parse(computedValue))
 				: JSON.parse(computedValue);
 		return (
-			<StyledChartContainer>
+			<div className="h-full">
 				<ReactECharts
+					key={JSON.stringify(resultData)}
 					option={resultData as EChartsOption}
 					onEvents={onClickChart}
 					onChartReady={(chart) => {
@@ -322,7 +344,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 					contextMenu={contextMenu}
 					onClose={() => setContextMenu(null)}
 				/>
-			</StyledChartContainer>
+			</div>
 		);
 	}
 });

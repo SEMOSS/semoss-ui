@@ -1,6 +1,3 @@
-// QueriesLogBlock.tsx
-
-import { Stack, Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
 import { useBlock, useBlocks } from "../../../hooks";
@@ -27,6 +24,7 @@ export const LogsBlock: BlockComponent = observer(({ id }) => {
 
 	const query = state.getQuery(data.queryId);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
@@ -51,17 +49,17 @@ export const LogsBlock: BlockComponent = observer(({ id }) => {
 	}
 
 	return (
-		<Stack
+		<div
 			style={{ display: "flex", ...data.style }}
 			{...attrs}
-			direction="column"
-			spacing={0}
+			className="flex flex-col"
 		>
 			{blockContents.map((message, index) => (
-				<Typography key={index} variant="caption">
+				// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available for log entries
+				<span key={index} className="text-xs">
 					{message}
-				</Typography>
+				</span>
 			))}
-		</Stack>
+		</div>
 	);
 });

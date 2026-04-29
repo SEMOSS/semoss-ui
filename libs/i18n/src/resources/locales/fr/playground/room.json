@@ -1,0 +1,105 @@
+{
+	"welcome": "Bienvenue, {{name}}",
+	"settings": {
+		"title": "Paramètres de la salle",
+		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",
+		"open": "Ouvrir les paramètres de la salle",
+		"close": "Fermer les paramètres de la salle",
+		"edit": "Modifier les paramètres de la salle"
+	},
+	"form": {
+		"modelLabel": "Modèle",
+		"instructionsLabel": "Instructions",
+		"knowledgeLabel": "Connaissances",
+		"toolboxLabel": "Boîte à outils",
+		"maxTokenLabel": "Jeton maximum",
+		"temperatureLabel": "Température"
+	},
+	"modes": {
+		"ask": "Demander",
+		"plan": "Planifier"
+	},
+	"workspace": {
+		"publishTooltip": "Publier en tant qu'agent",
+		"publishTitle": "Publier l'agent",
+		"publishDescription": "Publiez un nouvel agent avec la configuration actuelle de la salle, y compris les instructions et les MCPs.",
+		"nameLabel": "Nom *",
+		"namePlaceholder": "Entrez le nom de l'agent",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Entrez la description de l'agent",
+		"cancelButton": "Annuler",
+		"publishingButton": "Publication...",
+		"publishButton": "Publier l'agent",
+		"nameRequired": "Le nom de l'agent est requis",
+		"publishSuccess": "Agent créé avec succès",
+		"publishError": "Échec de la création de l'agent : {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "Entrez du texte",
+		"thinking": "Réflexion...",
+		"menuPrompt": "Comment puis-je vous aider aujourd'hui ?",
+		"openSettings": "Ajouter des fichiers, des agents et plus encore",
+		"recordLabel": "Enregistrer le modèle",
+		"stopRecording": "Arrêter l'enregistrement",
+		"record": "Enregistrer",
+		"askLabel": "Interroger l'IA",
+		"thinkingTooltip": "Réflexion",
+		"enterQuestion": "Veuillez entrer une question",
+		"completeTool": "Veuillez compléter le(s) outil(s) pour continuer",
+		"ask": "Demander",
+		"errorProcessing": "Erreur de traitement du chat",
+		"pauseTools": "Suspendre les outils",
+		"pauseToolsTooltip": "Suspendre toute l'exécution des outils jusqu'après le prochain message"
+	},
+	"content": {
+		"scrollToTop": "Défiler vers le haut",
+		"scrollToBottom": "Défiler vers le bas"
+	},
+	"inlineTool": {
+		"openInSidebar": "Ouvrir dans la barre latérale",
+		"minimize": "Réduire",
+		"maximize": "Agrandir",
+		"close": "Fermer"
+	},
+	"fileExplorer": {
+		"copyPath": "Copier le chemin",
+		"download": "Télécharger",
+		"delete": "Supprimer",
+		"copyFailed": "Échec de la copie dans le presse-papiers"
+	},
+	"menuToolbox": {
+		"addToolbox": "Ajouter des boîtes à outils"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "Ajouter des connaissances"
+	},
+	"menuWorkspace": {
+		"selectAgent": "Sélectionner un agent",
+		"searchPlaceholder": "Rechercher des agents",
+		"notFound": "Non trouvé"
+	},
+	"menuUpload": {
+		"attachDocument": "Ajouter des documents"
+	},
+	"menuFileExplorer": {
+		"name": "Explorateur de fichiers",
+		"open": "Ouvrir l'explorateur de fichiers",
+		"close": "Fermer l'explorateur de fichiers"
+	},
+	"errors": {
+		"createRoom": "Une erreur s'est produite lors de la création de la salle. Erreur : {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",
+		"descriptionMedium": "Cette conversation devient longue. Si elle continue, le modèle commencera à oublier les messages précédents. Envisagez de démarrer un nouveau chat bientôt.",
+		"descriptionHigh": "Cette conversation est presque pleine. Le modèle commencera bientôt à oublier les messages précédents. Envisagez de démarrer un nouveau chat.",
+		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents lors de la génération des réponses. Démarrez un nouveau chat pour de meilleurs résultats.",
+		"memoryUsedTitle": "Mémoire utilisée :",
+		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Rechercher des connaissances et des boîtes à outils",
+		"noResults": "Aucun élément correspondant trouvé",
+		"noItemsAvailable": "Aucune connaissance ou boîte à outils disponible"
+	}
+}

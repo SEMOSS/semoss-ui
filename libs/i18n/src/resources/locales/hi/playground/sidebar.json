@@ -1,0 +1,39 @@
+{
+	"search": "खोजें",
+	"new": "नया",
+	"agents": "एजेंट",
+	"takeTour": "दौरा लें",
+	"buckets": {
+		"favorites": "पसंदीदा",
+		"today": "आज",
+		"yesterday": "कल",
+		"fewDaysAgo": "कुछ दिन पहले",
+		"lastWeek": "पिछले सप्ताह",
+		"thisMonth": "इस महीने",
+		"lastMonth": "पिछले महीने",
+		"older": "पुराना"
+	},
+	"messages": {
+		"errorLoadingRooms": "रूम लोड करने में त्रुटि",
+		"noRoomsFound": "कोई रूम नहीं मिला",
+		"untitled": "शीर्षकहीन"
+	},
+	"actions": {
+		"favorite": "पसंदीदा",
+		"unfavorite": "पसंदीदा से हटाएं",
+		"rename": "नाम बदलें",
+		"delete": "हटाएं",
+		"openInline": "इन-लाइन खोलें",
+		"minimize": "छोटा करें",
+		"maximize": "बड़ा करें",
+		"close": "बंद करें"
+	},
+	"toasts": {
+		"failedToPin": "रूम पिन करने में विफल",
+		"failedToUnpin": "रूम अनपिन करने में विफल",
+		"roomNameEmpty": "रूम का नाम खाली नहीं हो सकता",
+		"roomRenamedSuccess": "रूम का नाम सफलतापूर्वक बदला गया",
+		"failedToRename": "नाम बदलने में विफल",
+		"roomDeletedSuccess": "रूम सफलतापूर्वक हटाया गया"
+	}
+}

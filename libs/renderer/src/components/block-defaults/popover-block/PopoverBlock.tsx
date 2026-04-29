@@ -1,7 +1,6 @@
-// TODO: Pull from component library
-import { Box, Popover, Stack, styled, Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
@@ -31,80 +30,23 @@ export interface PopoverBlockDef extends BlockDef<"popover"> {
 	};
 }
 
-// A wrapper similar to ModalWrapper for design mode
-const PopoverWrapper = styled(Box)<{ $visible: boolean }>(({ $visible }) => ({
-	visibility: $visible ? "visible" : "hidden",
-	minHeight: $visible ? "auto" : "1px",
-}));
-
-const PopoverOverlay = styled(Box)(({ theme }) => ({
-	position: "absolute",
-	top: 0,
-	left: 0,
-	right: 0,
-	bottom: 0,
-	backgroundColor: "rgba(0, 0, 0, 0.5)",
-	zIndex: 1,
-	pointerEvents: "none",
-}));
-
-const PopoverContainer = styled(Box)(({ theme }) => ({
-	position: "relative",
-	zIndex: 2,
-	width: "fit-content",
-	margin: "32px auto",
-	"& .delete-duplicate-mask": {
-		zIndex: 3,
-	},
-}));
-
-const StyledPopoverContainer = styled(Box)(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper,
-	boxShadow: theme.shadows[24],
-	borderRadius: theme.shape.borderRadius,
-	padding: theme.spacing(2),
-	maxHeight: "90vh",
-	overflow: "auto",
-	outline: "none",
-}));
-
-const StyledDropZone = styled(Box, {
-	shouldForwardProp: (prop) => prop !== "isStatic",
-})<{ isStatic: boolean }>(({ theme, isStatic }) => ({
-	borderRadius: theme.shape.borderRadius,
-	minHeight: 100,
-	position: "relative",
-	"&:empty::after": {
-		content: isStatic ? '"Drop components here"' : '""',
-		position: "absolute",
-		top: "50%",
-		left: "50%",
-		transform: "translate(-50%, -50%)",
-		color: theme.palette.text.disabled,
-		pointerEvents: "none",
-	},
-}));
-
-// A component for rendering the popover's inner content, including header and content slots
-const PopoverContent: React.FC<{
+const PopoverContentInner: React.FC<{
 	data: PopoverBlockDef["data"];
+	//biome-ignore lint/suspicious/noExplicitAny: slots's value can't be predicted
 	slots: Record<string, any>;
-	onClose?: () => void;
 	isStatic: boolean;
-}> = observer(({ data, slots, onClose, isStatic }) => {
-	return (
-		<StyledPopoverContainer
-			sx={{
-				...data.style,
-				overflow: "auto",
-			}}
+}> = observer(({ data, slots, isStatic }) => (
+	<div
+		style={data.style}
+		className="relative z-[2] max-h-[90vh] overflow-auto rounded-md bg-background p-4 shadow-2xl outline-none"
+	>
+		<div
+			className={`min-h-[100px] rounded-md relative${isStatic ? '[&:empty::after]:-translate-x-1/2 [&:empty::after]:-translate-y-1/2 [&:empty::after]:pointer-events-none [&:empty::after]:absolute [&:empty::after]:top-1/2 [&:empty::after]:left-1/2 [&:empty::after]:text-muted-foreground [&:empty::after]:content-["Drop_components_here"]' : ""}`}
 		>
-			<StyledDropZone isStatic={isStatic}>
-				<Slot slot={slots.content} />
-			</StyledDropZone>
-		</StyledPopoverContainer>
-	);
-});
+			<Slot slot={slots.content} />
+		</div>
+	</div>
+));
 
 export const PopoverBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, slots, setData, listeners } =
@@ -113,136 +55,121 @@ export const PopoverBlock: BlockComponent = observer(({ id }) => {
 	const isStatic = state.mode === "static";
 	const targetId = data.targetId || "";
 
-	// Compute the "open" state based on multiple truthy representations
 	const open = useMemo(() => {
-		let o = false;
-		if (
+		return (
 			data.open === true ||
 			data.open === "true" ||
 			data.open === 1 ||
 			data.open === "1"
-		) {
-			o = true;
-		}
-		return o;
+		);
 	}, [data.open]);
 
-	// When closing in interactive mode, update state via setData
-	const handleClose = () => {
+	const _handleClose = () => {
 		if (!isStatic) {
 			setData("open", "false");
-
 			listeners.onClose();
 		}
 	};
 
-	// Determine the anchor element based on a targetId if provided
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+	const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+
 	useEffect(() => {
 		if (targetId) {
 			const element = document.querySelector(
 				`[data-block="${targetId}"]`,
 			) as HTMLElement | null;
-
 			setAnchorEl(element);
 		} else {
 			setAnchorEl(null);
 		}
 	}, [targetId]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (!anchorEl) return;
 
 		const handleOpen = () => {
+			setAnchorRect(anchorEl.getBoundingClientRect());
 			setData("open", "true");
-
 			listeners.onOpen();
 		};
 
-		const handleClose = () => {
+		const handleCloseEvt = () => {
 			setData("open", "false");
-
 			listeners.onClose();
 		};
 
 		if (data.openTrigger === "click") {
 			anchorEl.addEventListener("click", handleOpen);
-
-			return () => {
-				anchorEl.removeEventListener("click", handleOpen);
-			};
+			return () => anchorEl.removeEventListener("click", handleOpen);
 		}
 
 		if (data.openTrigger === "hover") {
 			anchorEl.addEventListener("mouseenter", handleOpen);
-			anchorEl.addEventListener("mouseleave", handleClose);
-
+			anchorEl.addEventListener("mouseleave", handleCloseEvt);
 			return () => {
 				anchorEl.removeEventListener("mouseenter", handleOpen);
-				anchorEl.removeEventListener("mouseleave", handleClose);
+				anchorEl.removeEventListener("mouseleave", handleCloseEvt);
 			};
 		}
-	}, [anchorEl, setData, data.open]);
+	}, [anchorEl, setData, data.openTrigger]);
 
-	const handleClosePopover = () => {
-		if (!isStatic) setData("open", "false");
-	};
+	const shouldShow = isStatic ? data.designMode : Boolean(open);
 
-	// Decide whether the popover should be shown:
-	// - In static mode, show it if designMode is on
-	// - In interactive mode, show it if "open" is truthy
-	const shouldShowPopover = isStatic ? data.designMode : Boolean(open);
+	if (!shouldShow && !isStatic) return null;
 
-	if (!shouldShowPopover && !isStatic) {
-		return <></>;
-	}
-
-	// === DESIGN MODE (Static) RENDERING ===
+	// Design mode — inline overlay
 	if (isStatic) {
 		return (
-			<PopoverWrapper
+			<div
 				{...attrs}
-				$visible={shouldShowPopover}
-				sx={data.style}
+				style={{
+					visibility: shouldShow ? "visible" : "hidden",
+					minHeight: shouldShow ? "auto" : "1px",
+				}}
 			>
-				{shouldShowPopover && (
+				{shouldShow && (
 					<>
-						<PopoverOverlay />
-						<PopoverContainer>
-							<PopoverContent
+						<div className="pointer-events-none absolute inset-0 z-[1] bg-black/50" />
+						<div className="relative z-[2] mx-auto mt-8 w-fit">
+							<PopoverContentInner
 								data={data}
 								slots={slots}
 								isStatic={isStatic}
 							/>
-						</PopoverContainer>
+						</div>
 					</>
 				)}
-			</PopoverWrapper>
+			</div>
 		);
 	}
 
-	// === INTERACTIVE MODE RENDERING ===
-	return (
-		<Box {...attrs} sx={data.style}>
-			<Popover
-				open={shouldShowPopover}
-				anchorEl={anchorEl}
-				onClose={handleClose}
-				// Render the popover within the specified container instead of the document body
+	// Interactive mode — portal positioned below anchor
+	const pageEl = document.getElementById("page-1") || document.body;
 
-				container={() => document.getElementById("page-1")}
-				anchorOrigin={{
-					vertical: "bottom",
-					horizontal: "left",
-				}}
-			>
-				<PopoverContent
-					data={data}
-					slots={slots}
-					onClose={handleClose}
-					isStatic={isStatic}
-				/>
-			</Popover>
-		</Box>
+	return (
+		<div {...attrs}>
+			{createPortal(
+				<div
+					className="absolute z-[1500]"
+					style={
+						anchorRect
+							? {
+									top: anchorRect.bottom + window.scrollY,
+									left: anchorRect.left + window.scrollX,
+								}
+							: { top: 0, left: 0 }
+					}
+				>
+					<PopoverContentInner
+						data={data}
+						slots={slots}
+						isStatic={isStatic}
+					/>
+				</div>,
+				pageEl,
+			)}
+		</div>
 	);
 });

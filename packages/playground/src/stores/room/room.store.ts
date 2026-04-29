@@ -7,21 +7,29 @@ import {
 	uploadInsight,
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import {
+	STREAMING_PLACEHOLDER_ID,
+	TEMPERATURE,
+	TOKEN_LENGTH,
+} from "@/constants";
 import {
 	type AbstractMessageStore,
 	createMessageStore,
 	InputMessageStore,
 	PlanMessageStore,
 	ResponseMessageStore,
-	ToolExecutionMessageStore,
-	type ToolStore,
+	ToolStore,
 } from "@/stores";
 import type {
 	Engine,
 	MCPConfig,
 	PixelMessage,
-	ResponseTextPixelMessage,
+	PixelMessageMediaPart,
+	PixelMessageTextPart,
+	PixelMessageToolCallPart,
+	PixelMessageToolResultPart,
+	Prompt,
+	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
 
@@ -70,12 +78,17 @@ interface RoomStoreInterface {
 	/**
 	 * Root message
 	 */
-	root: ResponseMessageStore | PlanMessageStore | null;
+	root: ResponseMessageStore | PlanMessageStore;
+
+	/**
+	 * Active tools
+	 */
+	tools: Record<string, ToolStore>;
 
 	/*
 	 * Model that is being chatted against
 	 */
-	model: Engine | null;
+	model: Engine;
 
 	/*
 	 * Options that is passed to the model
@@ -108,6 +121,11 @@ interface RoomStoreInterface {
 			workspace_id: string;
 			name?: string;
 		};
+
+		/**
+		 * Predefined prompts that can be used in the room
+		 */
+		predefinedPrompts: Prompt[];
 	};
 
 	/**
@@ -143,9 +161,11 @@ export class RoomStore {
 			name: "",
 			dateCreated: "",
 		},
-		model: null,
-		root: null,
+		model: null as unknown as Engine,
+		root: null as unknown as ResponseMessageStore | PlanMessageStore,
+		tools: {},
 		options: {
+			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,
@@ -154,7 +174,10 @@ export class RoomStore {
 		sidebar: {
 			isOpen: false,
 			model: FlexLayout.Model.fromJson({
-				global: {},
+				global: {
+					borderEnableTabScrollbar: true,
+					tabSetEnableTabScrollbar: true,
+				},
 				borders: [],
 				layout: {
 					type: "row",
@@ -245,8 +268,8 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get a message by id the model
-	 * @param messageId - model to use in the room
+	 * Get a message by id
+	 * @param messageId - the message id
 	 */
 	getMessage = (messageId: string) => {
 		const queue: AbstractMessageStore[] = [this._store.root];
@@ -311,29 +334,62 @@ export class RoomStore {
 	}
 
 	/**
-	 * Indicator to check if the room is ready for the next message
+	 * Number of tools in this room
 	 */
-	get hasUnfinishedTools(): boolean {
-		if (this.tail instanceof ResponseMessageStore) {
-			for (const tool of this.tail.tools) {
-				if (tool.status === "INITIAL" || tool.status === "LOADING") {
-					return true;
-				}
-			}
-		}
-
-		return false;
+	get numberOfTools() {
+		return Object.keys(this._store.tools).length;
 	}
 
 	/**
-	 * Number of tokens used
+	 * Last response message - avoids INPUT_TOOL_EXEC and STREAMING_PLACEHOLDER_ID messages
+	 */
+	get latestResponseMessage(): ResponseMessageStore {
+		let responseMessage: AbstractMessageStore = this.tail;
+		while (responseMessage) {
+			// if it is a REAL response message, return it
+			if (
+				responseMessage instanceof ResponseMessageStore &&
+				responseMessage.id !== STREAMING_PLACEHOLDER_ID
+			) {
+				return responseMessage;
+			} else {
+				// if it is not a response message, move to the parent message
+				responseMessage = responseMessage.parent;
+			}
+		}
+		// if there are no response messages, return null
+		return null as unknown as ResponseMessageStore;
+	}
+
+	/**
+	 * Total tokens used in the current conversation.
+	 *
+	 * How token counts work across message types:
+	 * - INPUT messages have a cumulative count covering all prior exchanges.
+	 * - RESPONSE messages have only the incremental count for that turn.
+	 * - INPUT_TOOL_EXEC messages are also cumulative, but their count stays 0
+	 *   until all tool results for the preceding response have come in.
+	 *
+	 * We never create INPUT_TOOL_EXEC messages, so mid-conversation the chain can look like:
+	 *   INPUT → RESPONSE → RESPONSE(cumulative proxy) → RESPONSE(incremental) → ...
+	 * saveToolExecution() in response-message.store stamps the server's cumulative input
+	 * token count onto the parent RESPONSE so the math still works here. See that file.
+	 *
+	 * To get the total: walk back from tail and add up the two most-recent messages
+	 * with non-zero tokens — one incremental, one cumulative (INPUT or proxy RESPONSE).
 	 */
 	get tokensUsed() {
 		let currMessage = this.tail as AbstractMessageStore;
 		let tokensUsed = 0;
 		while (currMessage) {
-			tokensUsed += currMessage.tokens;
-			if (currMessage.type === "INPUT") break;
+			if (currMessage.tokens) {
+				if (tokensUsed) {
+					tokensUsed += currMessage.tokens;
+					break;
+				} else {
+					tokensUsed += currMessage.tokens;
+				}
+			}
 			currMessage = currMessage.parent;
 		}
 
@@ -440,43 +496,47 @@ export class RoomStore {
 			});
 
 			// create the root
-			let root = null;
-			if (this.mode === "chat") {
-				root = new ResponseMessageStore(this, {
-					messageId: "ROOT_PLACEHOLDER_ID",
-					type: "RESPONSE_TEXT",
-					visible: false,
-					content: "",
-					modelId: this._store.model?.app_id || "",
-					paramMap: {
-						max_new_tokens: this._store.options.tokenLength,
-						temperature: this._store.options.temperature,
-					},
-					ornaments: {
-						modelName: this._store.model?.app_name || "",
-					},
-					dateCreated: new Date().toISOString(),
-					tokens: 0,
-				} as ResponseTextPixelMessage);
-			} else if (this.mode === "planning") {
-				root = new PlanMessageStore(this, {
-					messageId: "ROOT_PLACEHOLDER_ID",
-					type: "RESPONSE_TEXT",
-					visible: false,
-					content: "",
-					modelId: this._store.model?.app_id || "",
-					paramMap: {
-						max_new_tokens: this._store.options.tokenLength,
-						temperature: this._store.options.temperature,
-					},
-					ornaments: {
-						PLAYGROUND_MESSAGE_TYPE: "COT",
-						modelName: this._store.model?.app_name || "",
-					},
-					dateCreated: new Date().toISOString(),
-					tokens: 0,
-				} as ResponseTextPixelMessage);
-			}
+			const root =
+				this.mode === "chat"
+					? new ResponseMessageStore(this, {
+							io: "OUTPUT",
+							messageId: "ROOT_PLACEHOLDER_ID",
+							visible: false,
+							platform_generated: true,
+							modelId: this._store.model?.engine_id || "",
+							dateCreated: new Date().toISOString(),
+							parts: [],
+							tokens: 0,
+							ornaments: {
+								modelName:
+									this._store.model?.engine_display_name ||
+									this._store.model?.engine_name ||
+									"",
+							},
+							modelType: "",
+						} as ResponsePixelMessage)
+					: new ResponseMessageStore(this, {
+							io: "OUTPUT",
+							messageId: "ROOT_PLACEHOLDER_ID",
+							visible: false,
+							platform_generated: true,
+							modelId: this._store.model?.engine_id || "",
+							dateCreated: new Date().toISOString(),
+							parts: [
+								{
+									type: "TEXT",
+									text: "",
+								},
+							],
+							tokens: 0,
+							ornaments: {
+								PLAYGROUND_MESSAGE_TYPE: "COT",
+								modelName:
+									this._store.model?.engine_display_name ||
+									this._store.model?.engine_name ||
+									"",
+							},
+						} as ResponsePixelMessage);
 
 			const messages: Record<
 				string,
@@ -485,20 +545,16 @@ export class RoomStore {
 					message:
 						| InputMessageStore
 						| ResponseMessageStore
-						| PlanMessageStore
-						| ToolExecutionMessageStore;
+						| PlanMessageStore;
 				}
 			> = {};
 
 			// store the last model
-			let activeModelId = this._store.model?.app_id;
+			let activeModelId = this._store.model?.engine_id;
 
 			// This is done as seperate loops because of linking
 			for (const pixelMessage of messageOutput) {
-				if (
-					pixelMessage.type === "INPUT_TEXT" ||
-					pixelMessage.type === "INPUT_MEDIA"
-				) {
+				if (pixelMessage.io === "INPUT") {
 					activeModelId = pixelMessage.modelId;
 				}
 
@@ -522,41 +578,6 @@ export class RoomStore {
 				} else {
 					root.addChild(m.message);
 				}
-
-				// if its tool execution, update the corresponding tool
-				const toolExecMessage = m.message;
-				if (toolExecMessage instanceof ToolExecutionMessageStore) {
-					// Run up the chain to find the message containing the tool
-					// (because it can go reponse_tool -> input_tool_exec -> input_tool_exec)
-					let toolExecMessageParent: AbstractMessageStore =
-						toolExecMessage.parent;
-					while (toolExecMessageParent) {
-						if (
-							toolExecMessageParent instanceof
-							ResponseMessageStore
-						) {
-							// We've found the parent response message, now find the tool
-							toolExecMessageParent.tools.forEach((tool) => {
-								if (tool.id === toolExecMessage.callId) {
-									// save the response
-									runInAction(() => {
-										tool.response =
-											toolExecMessage.response;
-										tool.status = toolExecMessage.status;
-										tool.executedParameters =
-											toolExecMessage.executedParameters;
-									});
-								}
-							});
-							// Break because we've found the right parent
-							break;
-						} else {
-							// keep going up the chain
-							toolExecMessageParent =
-								toolExecMessageParent.parent;
-						}
-					}
-				}
 			}
 
 			// options
@@ -574,6 +595,11 @@ export class RoomStore {
 
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
+
+				// Store workspace name for display
+				if (workspaceOutput?.name && newOptions.workspace) {
+					newOptions.workspace.name = workspaceOutput.name;
+				}
 
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
@@ -614,7 +640,7 @@ export class RoomStore {
 			// set the model based on the history
 			if (activeModelId) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
+					`META | MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
 				);
 
 				runInAction(() => {
@@ -631,7 +657,7 @@ export class RoomStore {
 			});
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
-			if (this.tail.type === "RESPONSE") {
+			if (this.tail.type === "OUTPUT") {
 				this.tail.continueToolExecution();
 			}
 		} catch (e) {
@@ -639,7 +665,57 @@ export class RoomStore {
 			runInAction(() => {
 				this.setIsLoading(false);
 			});
-			throw new Error(e.message || "Error initializing room");
+			throw new Error((e as Error).message || "Error initializing room");
+		}
+	};
+
+	/**
+	 * Fetch the latest room options from the backend and sync local state,
+	 * preserving any workspace MCPs that are currently loaded in memory.
+	 */
+	syncRoomOptions = async (): Promise<void> => {
+		try {
+			const response = await this.runRoomPixel<
+				[{ OPTIONS?: RoomStoreInterface["options"] }]
+			>(
+				`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
+				false,
+				false,
+			);
+
+			const fetched = response.pixelReturn[0].output as {
+				OPTIONS?: RoomStoreInterface["options"];
+			};
+
+			if (!fetched?.OPTIONS) {
+				return;
+			}
+
+			// Preserve workspace MCPs that are already in local state
+			const workspaceMCPs = this._store.options.mcp.filter(
+				(mcp) => mcp?.fromWorkspace,
+			);
+
+			const freshRoomMCPs = (fetched.OPTIONS.mcp ?? []).filter(
+				(mcp) => !mcp?.fromWorkspace,
+			);
+
+			// Deduplicate: workspace MCPs take precedence
+			const workspaceIds = new Set(workspaceMCPs.map((m) => m.id));
+			const merged = [
+				...workspaceMCPs,
+				...freshRoomMCPs.filter((m) => !workspaceIds.has(m.id)),
+			];
+
+			runInAction(() => {
+				this.setOptions({
+					...fetched.OPTIONS,
+					mcp: merged,
+				});
+			});
+		} catch (e) {
+			// non-critical — swallow errors so the chat isn't disrupted
+			console.warn("Failed to sync room options:", e);
 		}
 	};
 
@@ -652,6 +728,7 @@ export class RoomStore {
 			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
+				modelId: this._store.model.engine_id,
 				mcp: options.mcp.filter((mcp) => !mcp?.fromWorkspace),
 			};
 
@@ -663,35 +740,57 @@ export class RoomStore {
 
 			this.setOptions(options);
 		} catch (e) {
-			throw new Error(e.message || "Error updating room options");
+			throw new Error(
+				(e as Error).message || "Error updating room options",
+			);
 		}
 	};
 
 	/**
-	 * Get a tool by nodeId
-	 * @param nodeId - node id to check
+	 * Tools
 	 */
-	getTool = (nodeId: string): ToolStore => {
-		let current: AbstractMessageStore | null = this._store.root;
-
-		const queue: AbstractMessageStore[] = [current];
-		while (queue.length > 0) {
-			current = queue.shift();
-
-			if (current.type === "RESPONSE") {
-				const responseMessage = current as ResponseMessageStore;
-
-				for (const t of responseMessage.tools) {
-					if (t.nodeId === nodeId) {
-						return t;
-					}
-				}
-			}
-
-			queue.push(...current.children);
+	/**
+	 * Sync a tool based on a message and part that contains tool information. This is used for both tool calls and tool results
+	 * @param toolId - the id of the tool
+	 * @param message - the message that contains the tool information
+	 * @param part - the part of the message that contains the tool information
+	 */
+	syncTool = (
+		toolId: string,
+		message: InputMessageStore | ResponseMessageStore,
+		part: PixelMessageToolCallPart | PixelMessageToolResultPart,
+	) => {
+		let tool = this._store.tools[toolId];
+		if (!tool) {
+			tool = new ToolStore(this, toolId);
+			this._store.tools[tool.id] = tool;
 		}
 
-		return null;
+		tool.syncMessage(message, part);
+	};
+
+	/**
+	 * Get a tool
+	 * @param toolId - the id of the tool
+	 */
+	getTool = (toolId: string): ToolStore => {
+		return this._store.tools[toolId] || null;
+	};
+
+	/**
+	 * Get a tool by nodeId
+	 * @param nodeId - the id of the tool
+	 */
+	getToolByNodeId = (nodeId: string): ToolStore => {
+		if (!nodeId.startsWith("tool--")) {
+			return null as unknown as ToolStore;
+		}
+
+		// strip out the id from the nodeId
+		const toolId = nodeId.replace("tool--", "");
+
+		//get the tool based on the id
+		return this._store.tools[toolId] || null;
 	};
 
 	/**
@@ -790,7 +889,7 @@ export class RoomStore {
 
 		// if it is a delete
 		if (action.type === FlexLayout.Actions.DELETE_TAB) {
-			const tool = this.getTool(action.data.node);
+			const tool = this.getToolByNodeId(action.data.node);
 			if (tool) {
 				tool.setIsOpen(false);
 			}
@@ -835,26 +934,85 @@ export class RoomStore {
 		}
 
 		// upload the files
-		let uploaded = [];
+		let uploaded: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
+		let mediaInputs: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
+		// upload the files if there are any
 		if (files.length > 0) {
-			uploaded = (await uploadInsight(this._store.insightId, "", files))
-				.data;
+			const response = await uploadInsight(
+				this._store.insightId,
+				"",
+				files,
+			);
+
+			// set the new files
+			uploaded = response.data;
+
+			const normalizeExt = (value: string) =>
+				value.trim().toLowerCase().replace(/^\./, "");
+
+			mediaInputs = uploaded.filter((f) => {
+				const allowed = this._theme.allowedFileTypes;
+
+				// If not configured (or empty), allow all
+				if (!allowed || allowed.length === 0) return true;
+
+				const allowedSet = new Set(allowed.map(normalizeExt));
+
+				const rawExt = f.fileName.split(".").pop() ?? "";
+				const ext = normalizeExt(rawExt);
+
+				// If there's no extension, it's not allowed (when allow-list is configured)
+				if (!ext) return false;
+
+				return allowedSet.has(ext);
+			});
+		}
+
+		const parts: (PixelMessageTextPart | PixelMessageMediaPart)[] = [
+			{
+				type: "TEXT",
+				text: prompt,
+				uiText: prompt,
+			},
+		];
+		for (const file of mediaInputs) {
+			parts.push({
+				type: "MEDIA",
+				mediaInfo: {
+					base64Data: "",
+					fileFormat: "",
+					fileName: file.fileName,
+					fileLocation: file.fileLocation,
+					mediaInputType: "FILE",
+					mimeType: "",
+				},
+			});
 		}
 
 		// create the input message
 		const inputMessage = new InputMessageStore(this, {
-			messageId: "ASK_PLACEHOLDER_ID",
+			io: "INPUT",
 			type: "INPUT_TEXT",
+			messageId: "ASK_PLACEHOLDER_ID",
 			visible: true,
-			inputUIPrompt: prompt,
-			mediaInputs: uploaded,
-			modelId: this.model?.app_id,
-			paramMap: {
-				max_new_tokens: this.options.tokenLength,
-				temperature: this.options.temperature,
-			},
-			dateCreated: "",
+			platform_generated: true,
+			modelId: this.model?.engine_id,
+			modelType: this.model?.engine_type,
+			dateCreated: new Date().toISOString(),
+			parts: parts,
 			tokens: 0,
+			ornaments: {
+				modelName:
+					this.model.engine_display_name || this.model.engine_name,
+			},
 		});
 
 		// get the parent message
@@ -877,7 +1035,6 @@ export class RoomStore {
 	 * Process a tool call
 	 * @param messageId - id of the message
 	 * @param toolId - id of the tool
-	 * @param toolName - name of the tool
 	 * @param toolResponse - response from the tool
 	 * @param toolStatus - status of the tool execution
 	 * @param executedParameters - parameters used by the tool
@@ -885,9 +1042,8 @@ export class RoomStore {
 	processTool = async (
 		messageId: string,
 		toolId: string,
-		toolName: string,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
@@ -896,8 +1052,13 @@ export class RoomStore {
 				return;
 			}
 
-			const tool = message.getTool(toolId, toolName);
-			if (!tool || tool.response) {
+			const tool = this._store.tools[toolId];
+			if (
+				!tool ||
+				tool.status === "SUCCESS" ||
+				tool.status === "CANCELLED" ||
+				tool.status === "ERROR"
+			) {
 				return;
 			}
 
@@ -966,7 +1127,7 @@ export class RoomStore {
 		} catch (e) {
 			if (setErrorOnFail) {
 				runInAction(() => {
-					this._store.error = e;
+					this._store.error = e as Error;
 				});
 			}
 			throw e;
@@ -989,9 +1150,13 @@ export class RoomStore {
 				ReturnType<typeof getPixelJobStreaming>
 			>["message"][number],
 		) => void,
+		showLoading: boolean = true,
+		setErrorOnFail: boolean = true,
 	) => {
 		try {
-			this.setIsLoading(true);
+			if (showLoading) {
+				this.setIsLoading(true);
+			}
 
 			// Start async execution to get job ID
 			const { jobId } = await runPixelAsync(pixel, this._store.insightId);
@@ -1047,10 +1212,18 @@ export class RoomStore {
 		} catch (e) {
 			console.error(e);
 
-			// show the error
-			this._store.error = e;
+			if (setErrorOnFail) {
+				// show the error
+				runInAction(() => {
+					this._store.error = e as Error;
+				});
+			}
+
+			throw e;
 		} finally {
-			this.setIsLoading(false);
+			if (showLoading) {
+				this.setIsLoading(false);
+			}
 		}
 	};
 }

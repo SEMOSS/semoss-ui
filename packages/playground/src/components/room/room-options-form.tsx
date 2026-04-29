@@ -1,6 +1,8 @@
 import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import type { MouseEvent } from "react";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
 	Badge,
@@ -19,11 +21,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay, SaveWorkspaceDialog } from "@/components";
+import { MCPOverlay } from "@/components";
+import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
-
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface RoomOptionsFormProps {
 	/** Model of the room */
@@ -46,19 +47,25 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		options,
 		onOptionsChange = () => null,
 	}) => {
+		const { t } = useTranslation(["room", "common"]);
+		const { root } = useRoot();
+
 		/**
 		 * State
 		 */
 		const [mCPOverlay, setMCPOverlay] = useState<{
-			type?: "KNOWLEDGE" | "TOOLBOX";
+			type: "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
 		}>({
+			type: "KNOWLEDGE",
 			isOpen: false,
 		});
 
 		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
-		const knowledge = options.mcp.filter((mcp) => mcp.type === "VECTOR");
-		const toolbox = options.mcp.filter((mcp) => mcp.type !== "VECTOR");
+		const knowledge =
+			options?.mcp?.filter((mcp) => mcp.type === "VECTOR") || [];
+		const toolbox =
+			options?.mcp?.filter((mcp) => mcp.type !== "VECTOR") || [];
 
 		/**
 		 * Functions
@@ -79,26 +86,27 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		};
 
 		return (
-			<form className="p-4">
+			<form className="p-4 text-foreground">
 				<FieldGroup>
 					<FieldSet>
-						<FieldLegend className="flex w-full flex-1 items-center gap-2">
-							Room Settings
-							<SaveWorkspaceDialog
-								systemPrompt={options.instructions}
-								mcps={options.mcp}
-							/>
+						<FieldLegend className="flex w-full flex-1 items-center justify-between gap-2">
+							{t("room:settings.title")}
 						</FieldLegend>
 						<FieldDescription>
-							Update room settings and modify the behavior of the
-							chat
+							{t("room:settings.description")}
 						</FieldDescription>
 						<FieldGroup>
-							{ENABLE_MODEL_SELECT && (
+							{root.theme.featureFlags?.enableModelSelect && (
 								<Field>
-									<FieldLabel>Model</FieldLabel>
+									<FieldLabel>
+										{t("room:form.modelLabel")}
+									</FieldLabel>
 									<EngineSelect
-										name={model?.app_name || ""}
+										name={
+											model?.engine_display_name ||
+											model?.app_name ||
+											""
+										}
 										value={model?.app_id || ""}
 										engineTypes={["MODEL"]}
 										metaFilters={[
@@ -114,9 +122,13 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 								</Field>
 							)}
 							<Field>
-								<FieldLabel>Instructions</FieldLabel>
+								<FieldLabel>
+									{t("room:form.instructionsLabel")}
+								</FieldLabel>
 								<Textarea
-									placeholder="Update Instructions"
+									placeholder={t(
+										"common:placeholders.updateInstructions",
+									)}
 									className="h-64 resize-none overflow-y-auto"
 									value={options.instructions}
 									onChange={(e) => {
@@ -128,7 +140,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<Field>
 								<FieldLabel
-									onClick={(event) => {
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
 										event.preventDefault();
 										event.stopPropagation();
 
@@ -138,7 +152,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										});
 									}}
 								>
-									<div className="flex-1">Knowledge</div>
+									<div className="flex-1">
+										{t("room:form.knowledgeLabel")}
+									</div>
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Button
@@ -158,7 +174,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent>
-											Add Knowledge
+											{t("common:actions.addKnowledge")}
 										</TooltipContent>
 									</Tooltip>
 								</FieldLabel>
@@ -168,7 +184,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											return (
 												<div
 													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
@@ -180,7 +196,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															variant="outline"
 															className="disabled: mr-2 border border-primary text-primary text-xs"
 														>
-															From Workspace
+															{t(
+																"common:badges.fromAgent",
+															)}
 														</Badge>
 													) : (
 														<Button
@@ -198,8 +216,12 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															}
 															title={
 																mcp.fromWorkspace
-																	? "Cannot delete workspace MCPs"
-																	: "Delete MCP"
+																	? t(
+																			"common:tooltips.cannotDeleteWorkspaceMCPs",
+																		)
+																	: t(
+																			"common:actions.deleteMCP",
+																		)
 															}
 														>
 															<TrashIcon
@@ -217,7 +239,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									) : (
 										<button
 											type="button"
-											className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
 											onClick={() =>
 												setMCPOverlay({
 													type: "KNOWLEDGE",
@@ -226,7 +248,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											}
 										>
 											<span className="text-muted-foreground text-xs">
-												No Knowledge Found
+												{t(
+													"common:messages.noKnowledgeFound",
+												)}
 											</span>
 										</button>
 									)}
@@ -234,7 +258,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<Field>
 								<FieldLabel
-									onClick={(event) => {
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
 										event.preventDefault();
 										event.stopPropagation();
 
@@ -244,7 +270,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										});
 									}}
 								>
-									<div className="flex-1">Toolbox</div>
+									<div className="flex-1">
+										{t("room:form.toolboxLabel")}
+									</div>
 
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -265,7 +293,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent>
-											Add Toolbox
+											{t("common:actions.addToolbox")}
 										</TooltipContent>
 									</Tooltip>
 								</FieldLabel>
@@ -275,7 +303,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											return (
 												<div
 													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
@@ -287,7 +315,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															variant="outline"
 															className="disabled: mr-2 border border-primary text-primary text-xs"
 														>
-															From Workspace
+															{t(
+																"common:badges.fromAgent",
+															)}
 														</Badge>
 													) : (
 														<Button
@@ -304,8 +334,12 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															}
 															title={
 																mcp.fromWorkspace
-																	? "Cannot delete workspace MCPs"
-																	: "Delete MCP"
+																	? t(
+																			"common:tooltips.cannotDeleteAgentMCPs",
+																		)
+																	: t(
+																			"common:actions.deleteMCP",
+																		)
 															}
 														>
 															<TrashIcon
@@ -323,7 +357,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									) : (
 										<button
 											type="button"
-											className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
 											onClick={() =>
 												setMCPOverlay({
 													type: "TOOLBOX",
@@ -332,7 +366,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											}
 										>
 											<span className="text-muted-foreground text-xs">
-												No Toolbox Found
+												{t(
+													"common:messages.noToolboxFound",
+												)}
 											</span>
 										</button>
 									)}
@@ -360,7 +396,10 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									}
 
 									// close it
-									setMCPOverlay({ isOpen: false });
+									setMCPOverlay({
+										isOpen: false,
+										type: "KNOWLEDGE",
+									});
 								}}
 							/>
 						</FieldGroup>
@@ -369,10 +408,14 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 					<FieldSet>
 						<FieldGroup>
 							<Field>
-								<FieldLabel>Max Token</FieldLabel>
+								<FieldLabel>
+									{t("room:form.maxTokenLabel")}
+								</FieldLabel>
 								<Input
 									type="number"
-									placeholder="Update token length"
+									placeholder={t(
+										"common:placeholders.updateTokenLength",
+									)}
 									value={options.tokenLength}
 									onChange={(e) =>
 										onOptionsChange({
@@ -387,7 +430,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 
 							<Field>
 								<FieldLabel>
-									Temperature (
+									{t("room:form.temperatureLabel")} (
 									{options.temperature?.toFixed(2)})
 								</FieldLabel>
 								<Slider

@@ -1,8 +1,10 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
-import { FileDropzone } from "@semoss/ui";
 import {
 	Button,
 	Checkbox,
@@ -31,6 +33,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export interface ParsedResult {
 	headers: string[];
@@ -60,6 +63,7 @@ export const FunctionForm = ({
 	const debounceTimeoutsRef = useRef<
 		Record<string, ReturnType<typeof setTimeout>>
 	>({});
+	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
 	const {
 		control,
@@ -115,7 +119,7 @@ export const FunctionForm = ({
 				}
 				pixel = pixel.replace(
 					");",
-					`,filePaths=["${uploadedFiles[0].fileLocation}"]` + ");",
+					`,filePaths=["${uploadedFiles[0].fileLocation}"]);`,
 				);
 			} catch {
 				toast.error("Upload failed or returned invalid response.");
@@ -134,9 +138,14 @@ export const FunctionForm = ({
 			}
 			toast.success("Successfully added function database to catalog");
 
-			navigate(
-				`/engine/function/${(pixelOutput as { database_id: string }).database_id}`,
-			);
+			{
+				// engine_id is the current key; database_id is the legacy fallback
+				const o = pixelOutput as {
+					engine_id?: string;
+					database_id?: string;
+				};
+				navigate(`/engine/function/${o.engine_id || o.database_id}`);
+			}
 			setLoading(false);
 		});
 	};
@@ -261,6 +270,79 @@ export const FunctionForm = ({
 		}
 	};
 
+	// Helper functions for file upload
+	const onFileUpload = (
+		files: File | File[],
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const fileArray = Array.isArray(files) ? files : [files];
+
+		// Get current files from field value
+		const currentFiles = Array.isArray(currentValue)
+			? currentValue
+			: currentValue
+				? [currentValue]
+				: [];
+		const existingFileNames = currentFiles.map((f: File) => f.name);
+		const newFiles = fileArray.filter(
+			(f) => !existingFileNames.includes(f.name),
+		);
+		const combined = [...currentFiles, ...newFiles];
+
+		// Update form value with validation
+		fieldOnChange(combined);
+	};
+
+	const removeFile = (
+		index: number,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const currentFiles = Array.isArray(currentValue)
+			? currentValue
+			: currentValue
+				? [currentValue]
+				: [];
+		const updated = currentFiles.filter((_, i) => i !== index);
+
+		// Update form value with validation
+		fieldOnChange(updated);
+	};
+
+	const handleFileChange = (
+		e: React.ChangeEvent<HTMLInputElement>,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		const files = e.target.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange, currentValue);
+		}
+		// Reset input value to allow re-selecting the same file
+		e.target.value = "";
+	};
+
+	const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+		e.preventDefault();
+		e.stopPropagation();
+	};
+
+	const handleDrop = (
+		e: React.DragEvent<HTMLDivElement>,
+		fieldOnChange: (value: File[]) => void,
+		currentValue: File | File[],
+	) => {
+		e.preventDefault();
+		e.stopPropagation();
+		const files = e.dataTransfer.files;
+		if (files && files?.length > 0) {
+			const fileArray = Array.from(files);
+			onFileUpload(fileArray, fieldOnChange, currentValue);
+		}
+	};
+
 	const renderControllerField = (val) => (
 		<Controller
 			key={val.key}
@@ -270,7 +352,7 @@ export const FunctionForm = ({
 				required: val?.required,
 				pattern: val.rules?.pattern,
 			}}
-			render={({ field, fieldState: { error }, formState }) => {
+			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
 					case "text":
 						return (
@@ -494,7 +576,7 @@ export const FunctionForm = ({
 									onValueChange={(value) =>
 										field.onChange(value)
 									}
-									className="flex flex-row gap-4"
+									className="flex flex-wrap gap-4"
 									data-testid={`function-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
@@ -528,23 +610,129 @@ export const FunctionForm = ({
 
 					case "file-upload":
 						return (
-							<div className="flex flex-col gap-2">
-								<P data-testid="function-zip-upload-title">
+							<div
+								className="flex flex-col gap-2"
+								data-testid={`function-form-field-${val.key}`}
+							>
+								<P>
 									{val.label}
+									{val.required && (
+										<span className="text-destructive">
+											{" "}
+											*
+										</span>
+									)}
 								</P>
-								<FileDropzone
-									multiple={false}
-									value={field.value as File | File[]}
-									disabled={val.disabled}
-									extensions={val.options?.extensions || []}
-									onChange={(newValues) => {
-										const files = newValues as
-											| File
-											| File[];
-										field.onChange(files);
-									}}
-									data-testid={`function-form-input-${val.key}`}
-								/>
+								<div
+									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
+									onClick={() =>
+										fileInputRefs.current[val.key]?.click()
+									}
+									onDragOver={handleDragOver}
+									onDrop={(e) =>
+										handleDrop(
+											e,
+											field.onChange,
+											field.value,
+										)
+									}
+								>
+									<input
+										ref={(el) => {
+											fileInputRefs.current[val.key] = el;
+										}}
+										type="file"
+										accept={
+											val.options?.extensions?.join(
+												",",
+											) || "*"
+										}
+										multiple={false}
+										className="hidden"
+										onChange={(e) =>
+											handleFileChange(
+												e,
+												field.onChange,
+												field.value,
+											)
+										}
+										disabled={val.disabled}
+										data-testid={`function-form-input-${val.key}`}
+									/>
+									<div className="text-center">
+										<P className="font-medium text-foreground">
+											Drop your file here or click to
+											browse
+										</P>
+										<P className="text-muted-foreground text-sm">
+											{val.options?.extensions
+												? `Supports ${val.options.extensions.join(", ")} files`
+												: "All file types supported"}
+										</P>
+									</div>
+								</div>
+
+								{/* File List */}
+								{field.value &&
+									Array.isArray(field.value) &&
+									field.value.length > 0 && (
+										<div className="mt-2 flex flex-col gap-2">
+											<P className="font-medium text-foreground text-sm">
+												{field.value.length} file(s)
+												selected:
+											</P>
+											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
+												{field.value.map(
+													(file, index) => (
+														<div
+															key={`${file.name}-${index}`}
+															className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+															data-testid={`uploaded-file-item-${index}`}
+														>
+															<div className="flex min-w-0 flex-1 items-center gap-2">
+																<div className="min-w-0 flex-1">
+																	<P className="truncate text-foreground text-sm">
+																		{
+																			file.name
+																		}
+																	</P>
+																	<P className="text-muted-foreground text-xs">
+																		{(
+																			file.size /
+																			1024
+																		).toFixed(
+																			2,
+																		)}{" "}
+																		KB
+																	</P>
+																</div>
+															</div>
+															<Button
+																type="button"
+																variant="ghost"
+																size="icon"
+																onClick={(
+																	e,
+																) => {
+																	e.stopPropagation();
+																	removeFile(
+																		index,
+																		field.onChange,
+																		field.value,
+																	);
+																}}
+																className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+																data-testid={`remove-file-btn-${index}`}
+															>
+																<X className="size-4" />
+															</Button>
+														</div>
+													),
+												)}
+											</div>
+										</div>
+									)}
+
 								{error && (
 									<P
 										className="text-destructive text-sm"
@@ -666,17 +854,23 @@ export const FunctionForm = ({
 							key={category}
 							className="mb-4 flex flex-col gap-4"
 						>
-							<div className="flex items-start gap-4">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="function-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testid="function-importForm-category-title"
+									>
 										{category}
 									</H4>
-									<Muted data-testId="model-importForm-category-description">
+									<Muted
+										className="text-muted-foreground text-sm leading-6"
+										data-testid="model-importForm-category-description"
+									>
 										{categoryDescriptions[category] ??
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-[2] flex-col gap-2">
+								<div className="flex flex-2 flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
@@ -691,7 +885,7 @@ export const FunctionForm = ({
 								open={openAdvanced}
 								onOpenChange={setOpenAdvanced}
 							>
-								<div className="flex flex-row items-center justify-between py-2">
+								<div className="flex flex-row items-center justify-between gap-2 py-2">
 									<H4 data-testid="function-form-advanced-header">
 										ADVANCED SETTINGS
 									</H4>
@@ -711,13 +905,13 @@ export const FunctionForm = ({
 								</div>
 								<CollapsibleContent>
 									<div className="mb-4 flex flex-col gap-4">
-										<div className="flex items-start gap-4">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 											<div className="flex flex-1 flex-col gap-1">
 												<Muted>
 													Add advanced settings here
 												</Muted>
 											</div>
-											<div className="flex flex-[2] flex-col gap-2">
+											<div className="flex flex-2 flex-col gap-2">
 												{advancedFields.map((val) => (
 													<div
 														key={val.key}
@@ -738,7 +932,7 @@ export const FunctionForm = ({
 				</div>
 
 				<div
-					className="mt-8 flex justify-end gap-2"
+					className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-end"
 					data-testid="function-form-actions"
 				>
 					<Button
@@ -746,7 +940,7 @@ export const FunctionForm = ({
 						variant="default"
 						data-testid="function-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="min-w-[128px] capitalize"
+						className="w-full min-w-32 capitalize sm:w-auto"
 					>
 						Connect
 					</Button>
