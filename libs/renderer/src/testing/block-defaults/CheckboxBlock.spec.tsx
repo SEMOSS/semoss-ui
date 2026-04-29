@@ -1,6 +1,6 @@
 import { expect } from "vitest";
 import { CheckboxBlock } from "../../components/block-defaults/checkbox-block/CheckboxBlock";
-import { render } from "../utils";
+import { fireEvent, render } from "../utils";
 
 const blocks = {
 	checkbox: {
@@ -86,10 +86,12 @@ describe("Checkbox block", () => {
 				blocks: blocks,
 			},
 		);
-		const element = container.querySelector("[data-block='checkbox']");
+		const element = container.querySelector(
+			"[data-block='checkbox']",
+		) as HTMLElement;
 		expect(element).toBeInTheDocument();
-		expect(element.querySelector(".Mui-checked")).toBeNull();
-		expect(element.querySelector(".Mui-disabled")).toBeNull();
+		expect(element.querySelector("[data-state='checked']")).toBeNull();
+		expect(element.querySelector("[disabled]")).toBeNull();
 	});
 
 	it("renders checkbox checked", async () => {
@@ -100,10 +102,14 @@ describe("Checkbox block", () => {
 			},
 		);
 
-		const element = container.querySelector("[data-block='checkbox2']");
+		const element = container.querySelector(
+			"[data-block='checkbox2']",
+		) as HTMLElement;
 
 		expect(element).toBeInTheDocument();
-		expect(element.querySelector(".Mui-checked")).toBeInTheDocument();
+		expect(
+			element.querySelector("[data-state='checked']"),
+		).toBeInTheDocument();
 	});
 
 	it("renders checkbox disabled", async () => {
@@ -114,11 +120,15 @@ describe("Checkbox block", () => {
 			},
 		);
 
-		const element = container.querySelector("[data-block='checkbox3']");
+		const element = container.querySelector(
+			"[data-block='checkbox3']",
+		) as HTMLElement;
 
 		expect(element).toBeInTheDocument();
-		expect(element.querySelector(".Mui-checked")).toBeInTheDocument();
-		expect(element.querySelector(".Mui-disabled")).toBeInTheDocument();
+		expect(
+			element.querySelector("[data-state='checked']"),
+		).toBeInTheDocument();
+		expect(element.querySelector("[disabled]")).toBeInTheDocument();
 	});
 
 	it("checks checkbox when clicked", async () => {
@@ -129,13 +139,17 @@ describe("Checkbox block", () => {
 			},
 		);
 
-		const element = container.querySelector("[data-block='checkbox']");
-		// const clickElement = container.querySelector(
-		// 	"[data-block='checkbox'] input",
-		// );
+		const element = container.querySelector(
+			"[data-block='checkbox']",
+		) as HTMLElement;
+		const clickElement = container.querySelector(
+			"[data-block='checkbox'] button[data-slot='checkbox']",
+		) as HTMLElement;
 		expect(element).toBeInTheDocument();
-		// fireEvent.click(clickElement);
-		// expect(element.querySelector(".Mui-checked")).toBeInTheDocument();
-		// expect(element.querySelector(".Mui-disabled")).toBeNull();
+		fireEvent.click(clickElement);
+		expect(
+			element.querySelector("[data-state='checked']"),
+		).toBeInTheDocument();
+		expect(element.querySelector("[disabled]")).toBeNull();
 	});
 });

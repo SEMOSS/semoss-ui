@@ -29,10 +29,12 @@ describe("HTML Block", () => {
 			blocks: blocks,
 		});
 
-		const block = container.querySelector("[data-block='html']");
+		const block = container.querySelector(
+			"[data-block='html']",
+		) as HTMLElement;
 		expect(block).not.toBeNull();
 
-		const shadowRoot = block.shadowRoot;
+		const shadowRoot = block.shadowRoot as ShadowRoot;
 		expect(shadowRoot).not.toBeNull();
 		expect(shadowRoot.innerHTML).toContain("<p>Hello, World!</p>");
 	});
@@ -63,10 +65,12 @@ describe("HTML Block", () => {
 			blocks: unsafeBlocks,
 		});
 
-		const block = container.querySelector("[data-block='html']");
+		const block = container.querySelector(
+			"[data-block='html']",
+		) as HTMLElement;
 		expect(block).not.toBeNull();
 
-		const shadowRoot = block.shadowRoot;
+		const shadowRoot = block.shadowRoot as ShadowRoot;
 		expect(shadowRoot).not.toBeNull();
 		expect(shadowRoot.innerHTML).toContain(`<img src="x">`);
 		expect(shadowRoot.innerHTML).not.toContain(`onerror="alert('XSS')"`);

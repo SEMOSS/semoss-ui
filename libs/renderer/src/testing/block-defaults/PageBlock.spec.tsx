@@ -186,8 +186,8 @@ describe("PageBlock", () => {
 			blocks: blocks,
 		});
 
-		const loadingTrigger = container.querySelector(".MuiBackdrop-root");
-		expect(loadingTrigger).toBeInTheDocument();
+		const loadingOverlay = container.querySelector(".z-50");
+		expect(loadingOverlay).toBeInTheDocument();
 	});
 
 	it("shows loading screen when loading is string 'true'", () => {
@@ -196,8 +196,8 @@ describe("PageBlock", () => {
 			{ blocks },
 		);
 
-		const loadingTrigger = container.querySelector(".MuiBackdrop-root");
-		expect(loadingTrigger).toBeInTheDocument();
+		const loadingOverlay = container.querySelector(".z-50");
+		expect(loadingOverlay).toBeInTheDocument();
 	});
 
 	it("hides loading screen when loading is false (boolean)", () => {
@@ -205,11 +205,8 @@ describe("PageBlock", () => {
 			blocks: blocks,
 		});
 
-		const loadingTrigger = container.querySelector(".MuiBackdrop-root");
-		expect(loadingTrigger).toHaveStyle({
-			opacity: "0",
-			visibility: "hidden",
-		});
+		const loadingOverlay = container.querySelector(".z-50");
+		expect(loadingOverlay).toBeNull();
 	});
 
 	it("hides loading screen when loading is string 'false'", () => {
@@ -218,11 +215,8 @@ describe("PageBlock", () => {
 			{ blocks },
 		);
 
-		const loadingTrigger = container.querySelector(".MuiBackdrop-root");
-		expect(loadingTrigger).toHaveStyle({
-			opacity: "0",
-			visibility: "hidden",
-		});
+		const loadingOverlay = container.querySelector(".z-50");
+		expect(loadingOverlay).toBeNull();
 	});
 
 	it("handles case-insensitive string loading values", () => {
@@ -242,8 +236,8 @@ describe("PageBlock", () => {
 			},
 		);
 
-		const loadingTrigger = container.querySelector(".MuiBackdrop-root");
-		expect(loadingTrigger).toBeInTheDocument();
+		const loadingOverlay = container.querySelector(".z-50");
+		expect(loadingOverlay).toBeInTheDocument();
 	});
 
 	it("does not throw when onPageLoad listener is not defined", () => {

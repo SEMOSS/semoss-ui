@@ -19,8 +19,8 @@ const blocks = {
 		widget: "input",
 		slots: {},
 		listeners: {
-			// preProcess: {},
-			// onChange: {},
+			preProcess: {},
+			onChange: {},
 		},
 	},
 
@@ -118,10 +118,9 @@ describe("input block", () => {
 		);
 
 		const element = container.querySelector("input");
-		const label = screen.getByLabelText("Example Input");
+		const label = screen.getByText("Example Input");
 
 		expect(label).toBeTruthy();
-		expect(element).toHaveAttribute("rows", "1");
 		expect(element).toHaveAttribute("type", "text");
 		expect(element).toHaveAttribute("value", "Example");
 	});
@@ -162,7 +161,7 @@ describe("input block", () => {
 
 		const input = screen.getByRole("textbox");
 
-		expect(input).toHaveAttribute("rows", "1");
+		expect(input).not.toHaveAttribute("rows");
 		expect(input).toHaveValue("Example #1Example #2Example #3");
 	});
 
@@ -180,7 +179,6 @@ describe("input block", () => {
 
 		const element = screen.getByRole("spinbutton");
 
-		expect(element).toHaveAttribute("rows", "1");
 		expect(element).toHaveAttribute("type", "number");
 		expect(element).toHaveValue(1);
 	});
