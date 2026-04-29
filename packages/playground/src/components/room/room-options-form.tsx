@@ -101,25 +101,27 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									<FieldLabel>
 										{t("room:form.modelLabel")}
 									</FieldLabel>
-									<EngineSelect
-										className="w-full max-w-none"
-										name={
-											model?.engine_display_name ||
-											model?.app_name ||
-											""
-										}
-										value={model?.app_id || ""}
-										engineTypes={["MODEL"]}
-										metaFilters={[
-											{ tag: "text-generation" },
-										]}
-										onChange={(v) => {
-											onModelChange(v);
-										}}
-										popoverContentProps={{
-											align: "start",
-										}}
-									/>
+									<div className="rounded-md border border-input bg-transparent px-1 py-1 shadow-xs dark:bg-input/30">
+										<EngineSelect
+											className="w-full max-w-none"
+											name={
+												model?.engine_display_name ||
+												model?.app_name ||
+												""
+											}
+											value={model?.app_id || ""}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											onChange={(v) => {
+												onModelChange(v);
+											}}
+											popoverContentProps={{
+												align: "start",
+											}}
+										/>
+									</div>
 								</Field>
 							)}
 							<Field>
