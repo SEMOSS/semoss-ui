@@ -1,3 +1,4 @@
+// biome-ignore-all lint/suspicious/noArrayIndexKey: TODO
 import dayjs from "dayjs";
 import {
 	ComputerIcon,
@@ -32,6 +33,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	Muted,
+	ScrollArea,
 	Separator,
 	Sidebar,
 	SidebarContent,
@@ -131,7 +133,7 @@ export const GlobalNav = observer(() => {
 	>(
 		(_limit, offset) =>
 			open
-				? `GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"]);`
+				? `META | GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"])`
 				: "",
 		() => -1,
 		(response) => response,
@@ -157,7 +159,7 @@ export const GlobalNav = observer(() => {
 	>(
 		(limit, offset) =>
 			open
-				? `GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`
+				? `META | GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] )`
 				: "",
 
 		(response) => {
@@ -382,7 +384,8 @@ export const GlobalNav = observer(() => {
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
-					{root.theme.hideToolsInIframe && isIframed ? null : (
+					{root.theme.featureFlags?.hideToolsInIframe &&
+					isIframed ? null : (
 						<>
 							<SidebarMenuItem data-tour="tour-new-chat">
 								<SidebarMenuButton
@@ -441,289 +444,304 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
+				className="overflow-hidden transition-all duration-200 ease-in-out"
 				data-tour="tour-chat-history"
-				className="transition-all duration-200 ease-in-out"
-				ref={(ele) => {
-					// Store reference for scroll position management
-					if (ele) {
-						scrollElementRef.current = ele;
-						if (open) {
-							setScroll(ele);
-						}
-					}
-				}}
 			>
-				{open && getRooms.isError && (
-					<div className="px-2 py-4 text-center">
-						<Muted className="text-destructive">
-							{t("messages.errorLoadingRooms")}
-						</Muted>
-					</div>
-				)}
-				{open && !getRooms.isLoading && getRooms.data.length === 0 && (
-					<div className="px-2 py-4 text-center">
-						<Muted>{t("messages.noRoomsFound")}</Muted>
-					</div>
-				)}
-				{BUCKETS.map((bucket) => {
-					const rooms = bucketedRooms[bucket];
-					if (!open || rooms.length === 0) {
-						return null;
-					}
+				<ScrollArea
+					className="[&_[data-slot=scroll-area-viewport]>div]:block! h-full"
+					viewportRef={(ele) => {
+						// Store reference for scroll position management
+						if (ele) {
+							scrollElementRef.current = ele;
+							if (open) {
+								setScroll(ele);
+							}
+						}
+					}}
+				>
+					{open && getRooms.isError && (
+						<div className="px-2 py-4 text-center">
+							<Muted className="text-destructive">
+								{t("messages.errorLoadingRooms")}
+							</Muted>
+						</div>
+					)}
+					{open &&
+						!getRooms.isLoading &&
+						getRooms.data.length === 0 && (
+							<div className="px-2 py-4 text-center">
+								<Muted>{t("messages.noRoomsFound")}</Muted>
+							</div>
+						)}
+					{BUCKETS.map((bucket) => {
+						const rooms = bucketedRooms[bucket];
+						if (!open || rooms.length === 0) {
+							return null;
+						}
 
-					return (
-						<SidebarGroup
-							key={bucket}
-							className="pl-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden"
-						>
-							<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
-								{bucket}
-							</SidebarGroupLabel>
-							<SidebarGroupContent>
-								<SidebarMenu>
-									{rooms.map((room) => {
-										const roomId = room.ROOM_ID;
-										const name =
-											room.ROOM_NAME ||
-											t("messages.untitled");
-										const date = root.theme.sidebar
-											.chatHistoryDate
-											? new Date(
-													`${room.DATE_CREATED}Z`,
-												).toLocaleString(undefined, {
-													month: "numeric",
-													day: "numeric",
-													year: "numeric",
-													hour: "numeric",
-													minute: "2-digit",
-													hour12: true,
-												})
-											: null;
-										const isFavorite = room.PINNED || false;
-										const isEditing =
-											editingRoomId === roomId;
+						return (
+							<SidebarGroup
+								key={bucket}
+								className="pl-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden"
+							>
+								<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
+									{bucket}
+								</SidebarGroupLabel>
+								<SidebarGroupContent>
+									<SidebarMenu>
+										{rooms.map((room) => {
+											const roomId = room.ROOM_ID;
+											const name =
+												room.ROOM_NAME ||
+												t("messages.untitled");
+											const date = root.theme.sidebar
+												.chatHistoryDate
+												? new Date(
+														`${room.DATE_CREATED}Z`,
+													).toLocaleString(
+														undefined,
+														{
+															month: "numeric",
+															day: "numeric",
+															year: "numeric",
+															hour: "numeric",
+															minute: "2-digit",
+															hour12: true,
+														},
+													)
+												: null;
+											const isFavorite =
+												room.PINNED || false;
+											const isEditing =
+												editingRoomId === roomId;
 
-										// if the room is in the deleted set, don't render it
-										if (deletedSet.has(roomId)) {
-											return null;
-										}
+											// if the room is in the deleted set, don't render it
+											if (deletedSet.has(roomId)) {
+												return null;
+											}
 
-										return (
-											<SidebarMenuItem
-												key={roomId}
-												className="group relative flex"
-											>
-												{isEditing ? (
-													<Input
-														value={editingName}
-														onChange={(e) =>
-															setEditingName(
-																e.target.value,
-															)
-														}
-														onKeyDown={(e) => {
-															if (
-																e.key ===
-																"Enter"
-															) {
+											return (
+												<SidebarMenuItem
+													key={roomId}
+													className="group/room relative flex"
+												>
+													{isEditing ? (
+														<Input
+															value={editingName}
+															onChange={(e) =>
+																setEditingName(
+																	e.target
+																		.value,
+																)
+															}
+															onKeyDown={(e) => {
+																if (
+																	e.key ===
+																	"Enter"
+																) {
+																	handleSaveRename(
+																		roomId,
+																	);
+																} else if (
+																	e.key ===
+																	"Escape"
+																) {
+																	handleCancelRename();
+																}
+															}}
+															onBlur={() =>
 																handleSaveRename(
 																	roomId,
-																);
-															} else if (
-																e.key ===
-																"Escape"
-															) {
-																handleCancelRename();
+																)
 															}
-														}}
-														onBlur={() =>
-															handleSaveRename(
-																roomId,
-															)
-														}
-														autoFocus
-														className="h-8 flex-1"
-													/>
-												) : (
-													<>
-														<SidebarMenuButton
-															asChild
-															isActive={
-																activeRoomId ===
-																roomId
-															}
-														>
-															<Link
-																className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
-																to={`/room/${roomId}`}
-																aria-label={
-																	"Select room"
+															autoFocus
+															className="h-8 flex-1"
+														/>
+													) : (
+														<>
+															<SidebarMenuButton
+																asChild
+																isActive={
+																	activeRoomId ===
+																	roomId
 																}
 															>
-																<span className="truncate font-medium text-sm leading-tight">
-																	{name}
-																</span>
-																{date && (
-																	<span className="text-muted-foreground text-xs leading-none">
-																		{date}
+																<Link
+																	className={`flex h-auto flex-col items-start p-2 ${date ? "gap-1" : ""}`}
+																	to={`/room/${roomId}`}
+																	aria-label={
+																		"Select room"
+																	}
+																>
+																	<span className="truncate font-medium text-sm leading-tight">
+																		{name}
 																	</span>
-																)}
-															</Link>
-														</SidebarMenuButton>
-														<DropdownMenu
-															modal={false}
-														>
-															<DropdownMenuTrigger
-																asChild
-															>
-																<Button
-																	variant="ghost"
-																	size="icon-sm"
-																	className=""
-																	onClick={(
-																		e,
-																	) => {
-																		e.stopPropagation();
-																	}}
-																>
-																	<MoreVertical className="size-4" />
-																</Button>
-															</DropdownMenuTrigger>
-															<DropdownMenuContent
-																align="start"
-																side="right"
-																sideOffset={5}
-																className="w-40"
-															>
-																<DropdownMenuItem
-																	onClick={(
-																		e,
-																	) => {
-																		e.stopPropagation();
-																		handleToggleFavorite(
-																			roomId,
-																			isFavorite,
-																		);
-																	}}
-																>
-																	<StarIcon
-																		className={`mr-2 size-4 ${
-																			isFavorite
-																				? "fill-yellow-500 text-yellow-500"
-																				: ""
-																		}`}
-																	/>
-																	{isFavorite
-																		? t(
-																				"actions.unfavorite",
-																			)
-																		: t(
-																				"actions.favorite",
-																			)}
-																</DropdownMenuItem>
-																<DropdownMenuItem
-																	onClick={(
-																		e,
-																	) => {
-																		e.stopPropagation();
-																		handleStartRename(
-																			roomId,
-																			name,
-																		);
-																	}}
-																>
-																	<PencilIcon className="mr-2 size-4" />
-																	{t(
-																		"actions.rename",
+																	{date && (
+																		<span className="text-muted-foreground text-xs leading-none">
+																			{
+																				date
+																			}
+																		</span>
 																	)}
-																</DropdownMenuItem>
-																<DropdownMenuItem
-																	onClick={async (
-																		e,
-																	) => {
-																		e.stopPropagation();
-
-																		try {
-																			// optimistically add to deleted set to remove from UI immediately
-																			setDeletedSet(
-																				(
-																					prev,
-																				) =>
-																					new Set(
-																						[
-																							...prev,
-																							roomId,
-																						],
-																					),
-																			);
-
-																			await chat.closeRoom(
+																</Link>
+															</SidebarMenuButton>
+															<DropdownMenu
+																modal={false}
+															>
+																<DropdownMenuTrigger
+																	asChild
+																>
+																	<Button
+																		variant="ghost"
+																		size="icon-sm"
+																		className="invisible group-hover/room:visible"
+																		onClick={(
+																			e,
+																		) => {
+																			e.stopPropagation();
+																		}}
+																	>
+																		<MoreVertical className="size-4" />
+																	</Button>
+																</DropdownMenuTrigger>
+																<DropdownMenuContent
+																	align="start"
+																	side="right"
+																	sideOffset={
+																		5
+																	}
+																	className="w-40"
+																>
+																	<DropdownMenuItem
+																		onClick={(
+																			e,
+																		) => {
+																			e.stopPropagation();
+																			handleToggleFavorite(
 																				roomId,
+																				isFavorite,
 																			);
-
-																			toast.success(
-																				t(
-																					"toasts.roomDeletedSuccess",
-																				),
+																		}}
+																	>
+																		<StarIcon
+																			className={`mr-2 size-4 ${
+																				isFavorite
+																					? "fill-yellow-500 text-yellow-500"
+																					: ""
+																			}`}
+																		/>
+																		{isFavorite
+																			? t(
+																					"actions.unfavorite",
+																				)
+																			: t(
+																					"actions.favorite",
+																				)}
+																	</DropdownMenuItem>
+																	<DropdownMenuItem
+																		onClick={(
+																			e,
+																		) => {
+																			e.stopPropagation();
+																			handleStartRename(
+																				roomId,
+																				name,
 																			);
-																			if (
-																				activeRoomId ===
-																				roomId
-																			) {
-																				navigate(
-																					"/",
-																				);
-																			}
+																		}}
+																	>
+																		<PencilIcon className="mr-2 size-4" />
+																		{t(
+																			"actions.rename",
+																		)}
+																	</DropdownMenuItem>
+																	<DropdownMenuItem
+																		onClick={async (
+																			e,
+																		) => {
+																			e.stopPropagation();
 
-																			// Refetch rooms after deletion
-																			getRooms.reset();
-																			getPinnedRooms.reset();
-																		} catch (e) {
-																			if (
-																				e instanceof
-																				Error
-																			) {
-																				toast.error(
-																					e.message,
-																				);
-																			}
-																		} finally {
-																			// remove from deleted set after attempting deletion to allow re-render if deletion failed
-																			setDeletedSet(
-																				(
-																					prev,
-																				) => {
-																					const newSet =
+																			try {
+																				// optimistically add to deleted set to remove from UI immediately
+																				setDeletedSet(
+																					(
+																						prev,
+																					) =>
 																						new Set(
-																							prev,
-																						);
-																					newSet.delete(
-																						roomId,
+																							[
+																								...prev,
+																								roomId,
+																							],
+																						),
+																				);
+
+																				await chat.closeRoom(
+																					roomId,
+																				);
+
+																				toast.success(
+																					t(
+																						"toasts.roomDeletedSuccess",
+																					),
+																				);
+																				if (
+																					activeRoomId ===
+																					roomId
+																				) {
+																					navigate(
+																						"/",
 																					);
-																					return newSet;
-																				},
-																			);
-																		}
-																	}}
-																	className="text-destructive focus:text-destructive"
-																>
-																	<TrashIcon className="mr-2 size-4" />
-																	{t(
-																		"actions.delete",
-																	)}
-																</DropdownMenuItem>
-															</DropdownMenuContent>
-														</DropdownMenu>
-													</>
-												)}
-											</SidebarMenuItem>
-										);
-									})}
-								</SidebarMenu>
-							</SidebarGroupContent>
-						</SidebarGroup>
-					);
-				})}
+																				}
+
+																				// Refetch rooms after deletion
+																				getRooms.reset();
+																				getPinnedRooms.reset();
+																			} catch (e) {
+																				if (
+																					e instanceof
+																					Error
+																				) {
+																					toast.error(
+																						e.message,
+																					);
+																				}
+																			} finally {
+																				// remove from deleted set after attempting deletion to allow re-render if deletion failed
+																				setDeletedSet(
+																					(
+																						prev,
+																					) => {
+																						const newSet =
+																							new Set(
+																								prev,
+																							);
+																						newSet.delete(
+																							roomId,
+																						);
+																						return newSet;
+																					},
+																				);
+																			}
+																		}}
+																		className="text-destructive focus:text-destructive"
+																	>
+																		<TrashIcon className="mr-2 size-4" />
+																		{t(
+																			"actions.delete",
+																		)}
+																	</DropdownMenuItem>
+																</DropdownMenuContent>
+															</DropdownMenu>
+														</>
+													)}
+												</SidebarMenuItem>
+											);
+										})}
+									</SidebarMenu>
+								</SidebarGroupContent>
+							</SidebarGroup>
+						);
+					})}
+				</ScrollArea>
 			</SidebarContent>
 			<SidebarFooter>
 				<Separator className="group-data-[collapsible=icon]:hidden" />

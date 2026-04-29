@@ -2382,6 +2382,17 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			formConfig: withModelTokenLimits(undefined, 64000, 200000),
 		},
 		{
+			name: "claude-sonnet-4-6",
+			display: "Claude Sonnet 4.6",
+			icon: "/src/assets/img/CLAUDE_AI.svg",
+			modelBrand: "CLAUDE",
+			embedding: false,
+			link: "https://docs.anthropic.com/en/docs/models-overview",
+			description:
+				"Balanced Claude model combining speed and intelligence for general enterprise workloads.",
+			formConfig: withModelTokenLimits(undefined, 64000, 1000000),
+		},
+		{
 			name: "claude-opus-4-6",
 			display: "Claude Opus 4.6",
 			icon: "/src/assets/img/CLAUDE_AI.svg",
@@ -2393,15 +2404,15 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			formConfig: withModelTokenLimits(undefined, 128000, 1000000),
 		},
 		{
-			name: "claude-sonnet-4-6",
-			display: "Claude Sonnet 4.6",
+			name: "claude-opus-4-7",
+			display: "Claude Opus 4.7",
 			icon: "/src/assets/img/CLAUDE_AI.svg",
 			modelBrand: "CLAUDE",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
-				"Balanced Claude model combining speed and intelligence for general enterprise workloads.",
-			formConfig: withModelTokenLimits(undefined, 64000, 1000000),
+				"Frontier Claude Opus model with advanced software engineering, superior vision, and long-running agentic capabilities.",
+			formConfig: withModelTokenLimits(undefined, 128000, 1000000),
 		},
 		{
 			name: "other-anthropic-model",
@@ -2417,51 +2428,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 	],
 	"AWS Bedrock": [
 		{
-			name: "anthropic.claude-opus-4-6-v1",
-			display: "Claude Opus 4.6 (Bedrock)",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"Most intelligent Claude model hosted on Bedrock for complex reasoning and coding tasks.",
-			formConfig: withModelTokenLimits(
-				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
-				128000,
-				1000000,
-			),
-		},
-		{
-			name: "anthropic.claude-sonnet-4-6",
-			display: "Claude Sonnet 4.6 (Bedrock)",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"Balanced Claude model on Bedrock for strong reasoning, coding, and high-throughput production use cases.",
-			formConfig: withModelTokenLimits(
-				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
-				64000,
-				1000000,
-			),
-		},
-		{
-			name: "anthropic.claude-sonnet-4-5-20250929-v1:0",
-			display: "Claude Sonnet 4.5 (Bedrock)",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"High-capability Claude model for advanced reasoning and coding on AWS Bedrock.",
-			formConfig: withModelTokenLimits(
-				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
-				64000,
-				200000,
-			),
-		},
-		{
 			name: "anthropic.claude-haiku-4-5-20251001-v1:0",
 			display: "Claude Haiku 4.5 (Bedrock)",
 			icon: "/src/assets/img/CLAUDE_AI.svg",
@@ -2470,21 +2436,6 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
 				"Fast Claude model with near-frontier intelligence served through AWS Bedrock.",
-			formConfig: withModelTokenLimits(
-				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
-				64000,
-				200000,
-			),
-		},
-		{
-			name: "anthropic.claude-opus-4-5-20251101-v1:0",
-			display: "Claude Opus 4.5 (Bedrock)",
-			icon: "/src/assets/img/CLAUDE_AI.svg",
-			modelBrand: "CLAUDE",
-			embedding: false,
-			link: "https://docs.anthropic.com/en/docs/models-overview",
-			description:
-				"Prior Opus 4.5 generation for high-complexity reasoning and agentic tasks on Bedrock.",
 			formConfig: withModelTokenLimits(
 				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
 				64000,
@@ -2507,14 +2458,14 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			),
 		},
 		{
-			name: "anthropic.claude-opus-4-1-20250805-v1:0",
-			display: "Claude Opus 4.1 (Bedrock)",
+			name: "anthropic.claude-sonnet-4-5-20250929-v1:0",
+			display: "Claude Sonnet 4.5 (Bedrock)",
 			icon: "/src/assets/img/CLAUDE_AI.svg",
 			modelBrand: "CLAUDE",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
-				"Earlier Opus 4.1 model for advanced reasoning workloads on Bedrock.",
+				"High-capability Claude model for advanced reasoning and coding on AWS Bedrock.",
 			formConfig: withModelTokenLimits(
 				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
 				64000,
@@ -2522,18 +2473,48 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			),
 		},
 		{
-			name: "anthropic.claude-3-5-haiku-20241022-v1:0",
-			display: "Claude 3.5 Haiku (Bedrock)",
+			name: "anthropic.claude-sonnet-4-6",
+			display: "Claude Sonnet 4.6 (Bedrock)",
 			icon: "/src/assets/img/CLAUDE_AI.svg",
 			modelBrand: "CLAUDE",
 			embedding: false,
 			link: "https://docs.anthropic.com/en/docs/models-overview",
 			description:
-				"Legacy fast Claude model for cost-efficient, high-throughput Bedrock use cases.",
+				"Balanced Claude model on Bedrock for strong reasoning, coding, and high-throughput production use cases.",
 			formConfig: withModelTokenLimits(
 				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
-				8000,
-				200000,
+				64000,
+				1000000,
+			),
+		},
+		{
+			name: "anthropic.claude-opus-4-6-v1",
+			display: "Claude Opus 4.6 (Bedrock)",
+			icon: "/src/assets/img/CLAUDE_AI.svg",
+			modelBrand: "CLAUDE",
+			embedding: false,
+			link: "https://docs.anthropic.com/en/docs/models-overview",
+			description:
+				"Most intelligent Claude model hosted on Bedrock for complex reasoning and coding tasks.",
+			formConfig: withModelTokenLimits(
+				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
+				128000,
+				1000000,
+			),
+		},
+		{
+			name: "anthropic.claude-opus-4-7",
+			display: "Claude Opus 4.7 (Bedrock)",
+			icon: "/src/assets/img/CLAUDE_AI.svg",
+			modelBrand: "CLAUDE",
+			embedding: false,
+			link: "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-4-7.html",
+			description:
+				"Frontier Claude Opus model on Bedrock with advanced software engineering, superior vision, and long-running agentic capabilities.",
+			formConfig: withModelTokenLimits(
+				AWS_BEDROCK_ANTHROPIC_FORM_CONFIG,
+				128000,
+				1000000,
 			),
 		},
 		{
@@ -2903,6 +2884,21 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			),
 		},
 		{
+			name: "claude-sonnet-4-6",
+			display: "Claude Sonnet 4.6 (Vertex)",
+			icon: "/src/assets/img/CLAUDE_AI.svg",
+			modelBrand: "CLAUDE",
+			embedding: false,
+			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/claude",
+			description:
+				"Anthropic Claude model served through Vertex AI partner models for enterprise workflows on GCP.",
+			formConfig: withModelTokenLimits(
+				GOOGLE_ANTHROPIC_FORM_CONFIG,
+				64000,
+				1000000,
+			),
+		},
+		{
 			name: "claude-opus-4-6",
 			display: "Claude Opus 4.6 (Vertex)",
 			icon: "/src/assets/img/CLAUDE_AI.svg",
@@ -2918,17 +2914,17 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			),
 		},
 		{
-			name: "claude-sonnet-4-6",
-			display: "Claude Sonnet 4.6 (Vertex)",
+			name: "claude-opus-4-7",
+			display: "Claude Opus 4.7 (Vertex)",
 			icon: "/src/assets/img/CLAUDE_AI.svg",
 			modelBrand: "CLAUDE",
 			embedding: false,
-			link: "https://cloud.google.com/vertex-ai/generative-ai/docs/partner-models/claude",
+			link: "https://docs.cloud.google.com/vertex-ai/generative-ai/docs/partner-models/claude/opus-4-7",
 			description:
-				"Anthropic Claude model served through Vertex AI partner models for enterprise workflows on GCP.",
+				"Frontier Claude Opus model on Vertex AI with advanced software engineering, superior vision, and long-running agentic capabilities.",
 			formConfig: withModelTokenLimits(
 				GOOGLE_ANTHROPIC_FORM_CONFIG,
-				64000,
+				128000,
 				1000000,
 			),
 		},
@@ -3184,6 +3180,15 @@ export const MODEL_VERSIONS: ModelVersionsByProvider = {
 			description:
 				"Version of GPT-5.4 tuned for smarter and more precise responses.",
 			link: "https://platform.openai.com/docs/models/gpt-5.4-pro",
+		},
+		{
+			name: "gpt-5.5",
+			display: "GPT-5.5",
+			icon: "/src/assets/img/OPEN_AI.svg",
+			description:
+				"Next-generation GPT-5 reasoning model with a 1.05M context window and advanced reasoning token support.",
+			link: "https://developers.openai.com/api/docs/models/gpt-5.5",
+			formConfig: withModelTokenLimits(undefined, 128000, 1050000),
 		},
 		{
 			name: "gpt-audio",

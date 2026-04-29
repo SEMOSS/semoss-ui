@@ -56,6 +56,11 @@ export interface ThemeMap {
 			landing: string;
 			tabIcon: string;
 			workspace: string;
+			loginDark: string;
+			landingDark: string;
+			workspaceDark: string;
+			error: string;
+			errorDark: string;
 		};
 
 		/**
@@ -84,11 +89,6 @@ export interface ThemeMap {
 		 * URL search param key that triggers altLanding (e.g. "appt" matches ?appt in the URL)
 		 */
 		altLandingKey?: string;
-
-		/**
-		 * Whether to hide tools in iframes (e.g. when the app is embedded in another platform). Defaults to false (tools shown).
-		 */
-		hideToolsInIframe?: boolean;
 
 		/**
 		 * Content to show in the sidebar
@@ -141,33 +141,9 @@ export interface ThemeMap {
 		allowedFileTypes?: string[];
 
 		/**
-		 * Whether to run MakeEngineMCP after creating a new knowledge source.
-		 * Defaults to true when not set.
-		 */
-		enableKnowledgeMCP?: boolean;
-
-		/**
 		 * Default embedding engine UUID to use when allowEmbeddingOptions is false.
 		 */
 		defaultEmbedderId?: string;
-
-		/**
-		 * Whether to show the embedding model selector in the new knowledge form.
-		 * Defaults to true when not set.
-		 */
-		allowEmbeddingOptions?: boolean;
-
-		/**
-		 * Whether to show the Knowledge library picker in the chat input menu.
-		 * Defaults to true when not set.
-		 */
-		showKnowledgeMenu?: boolean;
-
-		/**
-		 * Whether to show the Toolbox picker in the chat input menu.
-		 * Defaults to true when not set.
-		 */
-		showToolboxMenu?: boolean;
 
 		/**
 		 * Default tools to show in the room
@@ -188,12 +164,6 @@ export interface ThemeMap {
 			/** Name of the mcp */
 			name: string;
 		}[];
-
-		/**
-		 * When false, hides external links that navigate users to the SEMOSS platform.
-		 * Defaults to true (links shown).
-		 */
-		showPlatformLinks?: boolean;
 
 		/**
 		 * Optional tour customization. When present, custom steps are appended
@@ -283,7 +253,20 @@ export interface ThemeMap {
 			enableSuggestions?: boolean;
 			enablePlan?: boolean;
 			enableRewrite?: boolean;
+			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;
+			/** Whether to hide tools when the app is rendered inside an iframe. */
+			hideToolsInIframe?: boolean;
+			/** Whether to run MakeEngineMCP after creating a new knowledge source. Defaults to true. */
+			enableKnowledgeMCP?: boolean;
+			/** Whether to show the embedding model selector in the new knowledge form. Defaults to true. */
+			allowEmbeddingOptions?: boolean;
+			/** Whether to show the Knowledge library picker in the chat input menu. Defaults to true. */
+			showKnowledgeMenu?: boolean;
+			/** Whether to show the Toolbox picker in the chat input menu. Defaults to true. */
+			showToolboxMenu?: boolean;
+			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
+			showPlatformLinks?: boolean;
 		};
 	};
 }

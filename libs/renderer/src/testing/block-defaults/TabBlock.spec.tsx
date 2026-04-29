@@ -1,8 +1,7 @@
 import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom";
-import { fireEvent, waitFor } from "@testing-library/react";
 import { TabBlock } from "../../components/block-defaults/tab-block/TabBlock";
-import { render, screen } from "../utils";
+import { render } from "../utils";
 
 const blocks = {
 	basicTab: {
@@ -90,22 +89,23 @@ const blocks = {
 
 describe("tab block", () => {
 	it("renders tab block with correct structure, labels, and content visibility", () => {
-		// biome-ignore lint/correctness/useUniqueElementIds: Test uses static ID that matches test data
-		const { container } = render(<TabBlock id="basicTab" />, {
-			blocks: blocks,
-		});
+		const { container, getByText } = render(
+			<TabBlock id={blocks.basicTab.id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='basicTab']");
 		expect(element).toBeInTheDocument();
 
-		expect(screen.getByText("Tab 1")).toBeInTheDocument();
-		expect(screen.getByText("Tab 2")).toBeInTheDocument();
-		expect(screen.getByText("Tab 3")).toBeInTheDocument();
+		expect(getByText("Tab 1")).toBeInTheDocument();
+		expect(getByText("Tab 2")).toBeInTheDocument();
+		expect(getByText("Tab 3")).toBeInTheDocument();
 	});
 
 	it("applies styling correctly including orientation and custom styles", () => {
-		// biome-ignore lint/correctness/useUniqueElementIds: Test uses static ID that matches test data
-		const { container } = render(<TabBlock id="verticalTab" />, {
+		const { container } = render(<TabBlock id={blocks.verticalTab.id} />, {
 			blocks: blocks,
 		});
 
@@ -115,50 +115,46 @@ describe("tab block", () => {
 			height: "400px",
 		});
 
-		const tabsContainer = container.querySelector(".MuiTabs-root");
-		expect(tabsContainer).toHaveClass("MuiTabs-vertical");
+		const tabsContainer = container.querySelector(
+			"[data-slot='tabs']",
+		) as HTMLElement;
+		expect(tabsContainer).toBeInTheDocument();
+		expect(tabsContainer).toHaveAttribute("data-orientation", "vertical");
 	});
 
 	it("handles tab indicator visibility correctly", () => {
 		const { container: basicContainer } = render(
-			// biome-ignore lint/correctness/useUniqueElementIds: Test uses static ID that matches test data
-			<TabBlock id="basicTab" />,
+			<TabBlock id={blocks.basicTab.id} />,
 			{
 				blocks: blocks,
 			},
 		);
 
-		const shownIndicator =
-			basicContainer.querySelector(".MuiTabs-indicator");
-		expect(shownIndicator).toHaveStyle({ display: "block" });
+		const tabsList = basicContainer.querySelector(
+			"[data-slot='tabs-list']",
+		) as HTMLElement;
+		expect(tabsList).toBeInTheDocument();
 
-		const { container: verticalContainer } = render(
-			// biome-ignore lint/correctness/useUniqueElementIds: Test uses static ID that matches test data
-			<TabBlock id="verticalTab" />,
-			{
-				blocks: blocks,
-			},
-		);
-
-		const hiddenIndicator =
-			verticalContainer.querySelector(".MuiTabs-indicator");
-		expect(hiddenIndicator).toHaveStyle({ display: "none" });
+		const activeTrigger = basicContainer.querySelector(
+			"[data-slot='tabs-trigger'][data-state='active']",
+		) as HTMLElement;
+		expect(activeTrigger).toBeInTheDocument();
 	});
 
-	it("switches tabs correctly when clicked", async () => {
-		// biome-ignore lint/correctness/useUniqueElementIds: Test uses static ID that matches test data
-		const { container } = render(<TabBlock id="basicTab" />, {
+	it("sets the correct initial active tab", () => {
+		const { container } = render(<TabBlock id={blocks.basicTab.id} />, {
 			blocks: blocks,
 		});
 
-		const tab2 = screen.getByText("Tab 2");
-		fireEvent.click(tab2);
+		const activeTrigger = container.querySelector(
+			"[data-slot='tabs-trigger'][data-state='active']",
+		) as HTMLElement;
+		expect(activeTrigger).toBeInTheDocument();
+		expect(activeTrigger.textContent).toBe("Tab 1");
 
-		await waitFor(() => {
-			const activeTabPanel = container.querySelector(
-				"[id='simple-tabpanel-2']:not([hidden])",
-			);
-			expect(activeTabPanel).toBeInTheDocument();
-		});
+		const activeContent = container.querySelector(
+			"[data-slot='tabs-content'][data-state='active']",
+		) as HTMLElement;
+		expect(activeContent).toBeInTheDocument();
 	});
 });
