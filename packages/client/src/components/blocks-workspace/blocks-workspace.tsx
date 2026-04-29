@@ -10,11 +10,11 @@ import {
 	STATE_VERSION,
 	StateStore,
 } from "@semoss/renderer";
-import { runPixel } from "@semoss/sdk/react";
+import { runPixel, useInsight } from "@semoss/sdk/react";
 import { Spinner, toast } from "@semoss/ui/next";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
 import { AppFileExplorer } from "@/components/app-workspace/app-file-explorer";
-import type { FlexLayout } from "@/components/flex-layout";
+import { FlexLayout } from "@/components/flex-layout";
 import { useWorkspace } from "@/hooks";
 import { AppDetailPage } from "@/pages/app";
 import { DesignerStore, type WorkspaceOptions } from "@/stores";
@@ -43,7 +43,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 	version: "",
 
 	layout: {
-		global: { tabEnableClose: false },
+		global: { tabEnableClose: false, tabEnableRename: false },
 		borders: [
 			{
 				type: "border",
@@ -196,7 +196,17 @@ const ACTIVE = "page-1";
  */
 export const BlocksWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
+	const insight = useInsight();
 	const [state, setState] = useState<StateStore>();
+
+	useEffect(() => {
+		if (!workspace.model) return;
+		workspace.model.doAction(
+			FlexLayout.Actions.updateModelAttributes({
+				tabEnableRename: false,
+			}),
+		);
+	}, [workspace.model]);
 
 	//to throw a warning when the user tried to reload the page
 	// this is to prevent the user from losing their work
@@ -366,6 +376,63 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		}
 		return <>{component}</>;
 	};
+
+	const handleAction = (
+		action: FlexLayout.Action,
+	): FlexLayout.Action | undefined => {
+		if (action.type !== FlexLayout.Actions.RENAME_TAB) return action;
+		const { node: id, text } = action.data as {
+			node: string;
+			text: string;
+		};
+		const model = workspace.model;
+		if (!model) return action;
+		const tabNode = model.getNodeById(id);
+		if (
+			!(tabNode instanceof FlexLayout.TabNode) ||
+			tabNode.getComponent() !== "app-file-editor"
+		)
+			return undefined;
+		const cfg = tabNode.getConfig() as { path?: string };
+		if (!cfg?.path) return action;
+		const path = cfg.path;
+		const dir = path.substring(0, path.lastIndexOf("/") + 1);
+		const newPath = `${dir}${text}`;
+		(async () => {
+			try {
+				await insight.actions.run(
+					`RenameAppAsset(project=["${workspace.appId}"], filePath=["${path}"], newValue=["${newPath}"]);`,
+				);
+				const tabsetId =
+					tabNode.getParent()?.getId() ??
+					model.getActiveTabset()?.getId() ??
+					model.getRoot().getChildren()[0]?.getId() ??
+					"";
+				model.doAction(FlexLayout.Actions.deleteTab(id));
+				model.doAction(
+					FlexLayout.Actions.addNode(
+						{
+							id: `APP_FILE--${newPath}`,
+							type: "tab",
+							name: text,
+							component: "app-file-editor",
+							config: { name: text, path: newPath },
+							enableClose: true,
+							enableRename: true,
+						},
+						tabsetId,
+						FlexLayout.DockLocation.CENTER,
+						-1,
+						true,
+					),
+				);
+			} catch (e) {
+				console.error(e);
+			}
+		})();
+		return undefined;
+	};
+
 	return (
 		<Blocks state={state} registry={DefaultBlocks}>
 			<DesignerContext.Provider
@@ -377,6 +444,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					navbarActions={<BlocksWorkspaceActions />}
 					options={DEFAULT_OPTIONS}
 					factory={FACTORY}
+					onAction={handleAction}
 				/>
 				<BlocksWorkspaceDev />
 			</DesignerContext.Provider>
