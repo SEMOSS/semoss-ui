@@ -236,7 +236,9 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 						<FieldLabel>{t("room:form.imageSeedLabel")}</FieldLabel>
 						<div className="flex gap-2">
 							<Input
-								type="number"
+								type="text"
+								inputMode="numeric"
+								pattern="[0-9]*"
 								placeholder={t(
 									"common:placeholders.updateImageSeed",
 								)}
