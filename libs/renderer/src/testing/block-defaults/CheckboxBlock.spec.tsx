@@ -24,7 +24,7 @@ const blocks = {
 			},
 		},
 		listeners: {
-			onChange: [],
+			onChange: { type: "sync", order: [] },
 		},
 	},
 	checkbox2: {
@@ -48,7 +48,7 @@ const blocks = {
 			},
 		},
 		listeners: {
-			onChange: [],
+			onChange: { type: "sync", order: [] },
 		},
 	},
 	checkbox3: {
@@ -73,7 +73,7 @@ const blocks = {
 			},
 		},
 		listeners: {
-			onChange: [],
+			onChange: { type: "sync", order: [] },
 		},
 	},
 };

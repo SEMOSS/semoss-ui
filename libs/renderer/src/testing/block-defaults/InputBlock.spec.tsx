@@ -19,8 +19,14 @@ const blocks = {
 		widget: "input",
 		slots: {},
 		listeners: {
-			preProcess: {},
-			onChange: {},
+			preProcess: {
+				type: "sync",
+				order: [],
+			},
+			onChange: {
+				type: "sync",
+				order: [],
+			},
 		},
 	},
 
