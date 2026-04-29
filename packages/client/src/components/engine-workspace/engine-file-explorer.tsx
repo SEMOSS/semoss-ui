@@ -3,7 +3,14 @@ import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { download, runPixel, useInsight } from "@semoss/sdk/react";
-import { FileExplorer, FileExplorerItem, FlexLayout } from "@semoss/shared";
+import {
+	FileExplorer,
+	FileExplorerItem,
+	type FileExplorerMovedItem,
+	FlexLayout,
+	getFileEditorPathScope,
+	notifyFileEditorPathMoved,
+} from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
 import { MCP } from "@/constants";
 
@@ -28,6 +35,114 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 		} = node.getConfig();
 		const isStorageViewer = config.explorerMode === "STORAGE";
 
+		const getMovedPath = (
+			path: string,
+			movedItem: FileExplorerMovedItem,
+		) => {
+			const oldPathWithSlash = movedItem.oldPath.endsWith("/")
+				? movedItem.oldPath
+				: `${movedItem.oldPath}/`;
+			const newPathWithSlash = movedItem.newPath.endsWith("/")
+				? movedItem.newPath
+				: `${movedItem.newPath}/`;
+
+			if (path === movedItem.oldPath) {
+				return movedItem.newPath;
+			}
+
+			if (
+				movedItem.item.type === "directory" &&
+				path.startsWith(oldPathWithSlash)
+			) {
+				return `${newPathWithSlash}${path.slice(oldPathWithSlash.length)}`;
+			}
+
+			return null;
+		};
+
+		const updateTabPath = (
+			tabNode: FlexLayout.TabNode,
+			newPath: string,
+		) => {
+			const config = tabNode.getConfig() as
+				| {
+						fileMode?: "ENGINE" | "INSIGHT";
+						insightId?: string;
+						name?: string;
+						path?: string;
+				  }
+				| undefined;
+			const newName = newPath.split("/").filter(Boolean).pop() ?? newPath;
+			const oldPath = config?.path;
+			const scope =
+				config?.fileMode === "INSIGHT"
+					? getFileEditorPathScope(
+							{
+								type: "INSIGHT",
+								insightId: config.insightId,
+							},
+							insight.insightId,
+						)
+					: getFileEditorPathScope({ type: "ENGINE", engine });
+			const tabName = tabNode.getName();
+			const displayName = tabName.endsWith("*") ? `${newName}*` : newName;
+
+			tabNode.getModel().doAction(
+				FlexLayout.Actions.updateNodeAttributes(tabNode.getId(), {
+					config: {
+						...config,
+						name: newName,
+						path: newPath,
+					},
+				}),
+			);
+			tabNode
+				.getModel()
+				.doAction(
+					FlexLayout.Actions.renameTab(tabNode.getId(), displayName),
+				);
+
+			if (oldPath) {
+				notifyFileEditorPathMoved(oldPath, newPath, scope);
+			}
+		};
+
+		const migrateMovedTabs = (movedItems: FileExplorerMovedItem[]) => {
+			const model = node.getModel();
+			let migrated = false;
+
+			model.visitNodes((currentNode) => {
+				if (!(currentNode instanceof FlexLayout.TabNode)) {
+					return;
+				}
+
+				const config = currentNode.getConfig() as
+					| { path?: string }
+					| undefined;
+				const path = config?.path;
+				if (!path) {
+					return;
+				}
+
+				const movedPath = movedItems.reduce<string | null>(
+					(currentPath, movedItem) => {
+						if (!currentPath) return currentPath;
+						return (
+							getMovedPath(currentPath, movedItem) ?? currentPath
+						);
+					},
+					path,
+				);
+
+				if (movedPath && movedPath !== path) {
+					updateTabPath(currentNode, movedPath);
+					migrated = true;
+				}
+			});
+
+			return migrated;
+		};
+
 		/**
 		 * Remove tabs that are open for a file that has been deleted. If it's a directory, remove all tabs that are open for files within that directory
 		 * @param deletedPath the path of the deleted file or directory
@@ -43,12 +158,6 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 				const tabsToRemove: string[] = [];
 
 				model.visitNodes((currentNode) => {
-					console.log(
-						"VISITING NODE >>>",
-						currentNode.getId(),
-						" >> ",
-						!(currentNode instanceof FlexLayout.TabNode),
-					);
 					if (!(currentNode instanceof FlexLayout.TabNode)) {
 						return;
 					}
@@ -60,7 +169,6 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 					if (!path) {
 						return;
 					}
-					console.log("TESTING >>>", deletedPath, path, isDirectory);
 					if (
 						isDirectory
 							? path === deletedPath ||
@@ -95,7 +203,31 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 				const model = node.getModel();
 
 				// select the node if there
-				const selectedNode = model.getNodeById(nodeId);
+				let selectedNode = model.getNodeById(nodeId);
+				const targetConfig = options.config as
+					| { path?: string }
+					| undefined;
+				const targetPath = targetConfig?.path;
+				if (!selectedNode && targetPath) {
+					model.visitNodes((currentNode) => {
+						if (
+							selectedNode ||
+							!(currentNode instanceof FlexLayout.TabNode)
+						) {
+							return;
+						}
+
+						const config = currentNode.getConfig() as
+							| { path?: string }
+							| undefined;
+						if (
+							currentNode.getComponent() === options.component &&
+							config?.path === targetPath
+						) {
+							selectedNode = currentNode;
+						}
+					});
+				}
 				if (selectedNode) {
 					model.doAction(
 						FlexLayout.Actions.selectTab(selectedNode.getId()),
@@ -222,6 +354,12 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 							path: item.path,
 						},
 						enableClose: true,
+					});
+				}}
+				onItemsMoved={migrateMovedTabs}
+				onItemsDeleted={(items) => {
+					items.forEach((item) => {
+						removeDeletedTabs(item.path, item.type === "directory");
 					});
 				}}
 				ItemComponent={({ item, refresh, ...otherProps }) => {
@@ -392,10 +530,20 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 								);
 							}}
 							onAfterRename={(oldPath, newPath) => {
+								const migrated = migrateMovedTabs([
+									{
+										item,
+										oldPath,
+										newPath,
+									},
+								]);
+								if (migrated) {
+									return;
+								}
+
 								const newName =
 									newPath.split("/").filter(Boolean).pop() ??
 									newPath;
-								removeDeletedTabs(oldPath, false);
 								addNode(`ENGINE_FILE--${newPath}`, {
 									type: "tab",
 									name: newName,

@@ -1,4 +1,3 @@
-export * from "./ColumnDataTypeIcon";
 export * from "./database-statistics";
 export * from "./database-structure-browser";
 export * from "./query-actions";

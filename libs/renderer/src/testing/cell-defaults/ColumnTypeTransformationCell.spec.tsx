@@ -171,7 +171,7 @@ describe("ColumnTypeTransformationCell", () => {
 	it("renders collapsed state as a chip when not expanded", () => {
 		const { container } = renderColumnTypeCell({}, false);
 
-		const chip = container.querySelector(".MuiChip-root");
+		const chip = container.querySelector("span.rounded-full");
 		expect(chip).toBeInTheDocument();
 		expect(screen.getByText("Change Column Type")).toBeInTheDocument();
 	});
@@ -197,7 +197,7 @@ describe("ColumnTypeTransformationCell", () => {
 		expect(
 			screen.getByText("Change the type of the selected column"),
 		).toBeInTheDocument();
-		expect(screen.getByLabelText("Column")).toBeInTheDocument();
-		expect(screen.getByLabelText("Operation")).toBeInTheDocument();
+		expect(screen.getByText("Column")).toBeInTheDocument();
+		expect(screen.getByText("STRING")).toBeInTheDocument();
 	});
 });

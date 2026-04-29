@@ -1,7 +1,6 @@
-import { screen } from "@testing-library/react";
 import { expect } from "vitest";
 import { DividerBlock } from "../../components/block-defaults/divider-block";
-import { render } from "../utils";
+import { render, screen } from "../utils";
 
 const blocks = {
 	divider: {
@@ -63,12 +62,14 @@ describe("divider block", () => {
 			blocks: blocks,
 		});
 
-		const dividerBlock = container.querySelector("[data-block='divider']");
+		const dividerBlock = container.querySelector(
+			"[data-block='divider']",
+		) as HTMLElement;
 		expect(
-			dividerBlock.querySelector(".MuiDivider-vertical"),
+			dividerBlock.querySelector("[data-orientation='vertical']"),
 		).not.toBeInTheDocument();
 		expect(
-			dividerBlock.querySelector(".MuiDivider-fullWidth"),
+			dividerBlock.querySelector("[data-orientation='horizontal']"),
 		).toBeInTheDocument();
 	});
 
@@ -77,12 +78,11 @@ describe("divider block", () => {
 			blocks: blocks,
 		});
 
-		const dividerBlock = container.querySelector("[data-block='divider2']");
+		const dividerBlock = container.querySelector(
+			"[data-block='divider2']",
+		) as HTMLElement;
 		expect(
-			dividerBlock.querySelector(".MuiDivider-vertical"),
-		).toBeInTheDocument();
-		expect(
-			dividerBlock.querySelector(".MuiDivider-inset"),
+			dividerBlock.querySelector("[data-orientation='vertical']"),
 		).toBeInTheDocument();
 	});
 });

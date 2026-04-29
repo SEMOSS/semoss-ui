@@ -56,7 +56,7 @@ export const WorkspacePage = observer(() => {
 	 */
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
-			`MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`,
+			`META | MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}])`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 25) {

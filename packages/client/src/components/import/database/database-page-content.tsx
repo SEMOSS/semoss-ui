@@ -35,7 +35,6 @@ import { DatabaseForm } from "./database-form";
 interface database {
 	fields: [];
 	advanced: [];
-	id: number;
 	name: string;
 	icon: string;
 	disable: boolean;
@@ -61,7 +60,7 @@ const DatabaseCard = ({
 
 	const cardContent = (
 		<div
-			data-testid={`database-card-${database.id}`}
+			data-testid={`database-card-${database.name}`}
 			className={`flex w-full flex-col items-start justify-start gap-2 rounded-lg border border-border bg-card p-4 transition-all sm:w-[215px] ${
 				database.disable
 					? "cursor-auto opacity-60"
@@ -90,7 +89,7 @@ const DatabaseCard = ({
 			)}
 			<p
 				ref={textRef}
-				data-testid={`database-name-${database.id}`}
+				data-testid={`database-name-${database.name}`}
 				className="m-0 overflow-hidden text-ellipsis whitespace-nowrap text-card-foreground text-sm"
 			>
 				{database.name}
@@ -180,7 +179,9 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					return;
 				}
 				toast.success("Successfully Created Database");
-				navigate(`/engine/database/${output.database_id}`);
+				navigate(
+					`/engine/database/${(output as { database_id?: string }).database_id}`,
+				);
 			}
 		} catch {
 			toast.error("Upload failed or returned invalid response.");
@@ -274,7 +275,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				v.name.toLowerCase().includes(search.toLowerCase()),
 			).map((v) => (
 				<DatabaseCard
-					key={v.id}
+					key={v.name}
 					database={v}
 					onSelect={() => setSelectedDatabase(v)}
 				/>
