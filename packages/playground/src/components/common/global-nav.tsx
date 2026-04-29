@@ -523,7 +523,7 @@ export const GlobalNav = observer(() => {
 											return (
 												<SidebarMenuItem
 													key={roomId}
-													className="group/room relative flex"
+													className="group relative flex"
 												>
 													{isEditing ? (
 														<Input
@@ -594,7 +594,7 @@ export const GlobalNav = observer(() => {
 																	<Button
 																		variant="ghost"
 																		size="icon-sm"
-																		className="invisible group-hover/room:visible"
+																		className=""
 																		onClick={(
 																			e,
 																		) => {
