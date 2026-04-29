@@ -226,26 +226,23 @@ export const AddMembersOverlay = ({
 	function tryAddFromText(text: string) {
 		const trimmed = text.trim().toLowerCase();
 		if (!trimmed) return;
-		const match = searchedResults.find(
-			(r) =>
-				r.email.toLowerCase() === trimmed ||
-				r.name.toLowerCase() === trimmed,
-		);
+		const match =
+			searchedResults.length === 1
+				? searchedResults[0]
+				: searchedResults.find(
+						(r) =>
+							r.email.toLowerCase() === trimmed ||
+							r.name.toLowerCase() === trimmed,
+					);
 		if (match) toggleUserSelected(match);
 	}
 
 	function handleSearchChange(e: ChangeEvent<HTMLInputElement>) {
-		const val = e.target.value;
-		if (val.includes(",")) {
-			const parts = val.split(",");
-			for (const part of parts.slice(0, -1)) tryAddFromText(part);
-			setSearchKey(parts[parts.length - 1]);
-		} else {
-			setSearchKey(val);
-		}
+		setSearchKey(e.target.value);
 	}
 
 	function handleSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+		// Press Enter to add: exact name/email match, or auto-select if only one result remains
 		if (e.key === "Enter" && searchKey.trim()) {
 			e.preventDefault();
 			tryAddFromText(searchKey);

@@ -3,10 +3,6 @@ import {
 	type EchartVisualizationBlockDef,
 	VisualizationBlock,
 } from "../../components/block-defaults/echart-visualization-block/VisualizationBlock";
-// import {
-// 	EditXAxisScatterPlot,
-// 	TooltipScatterPlot,
-// } from "../../components/block-defaults/echart-visualization-block/variant/scatter-plot/ScatterPlot";
 import { useBlock } from "../../hooks";
 import { render, renderHook } from "../utils";
 
@@ -230,303 +226,80 @@ describe("Scatter Plot Block", async () => {
 		});
 	});
 
-	// it("should toggle Show Tooltip", async () => {
-	// 	renderHook(() => useBlock<EchartVisualizationBlockDef>("scatter"), {
-	// 		blocks,
-	// 		renderEngineId: "scatter",
-	// 		customChildren: (
-	// 			<TooltipScatterPlot id={blocks.scatter.id} path={"option"} />
-	// 		),
-	// 	});
+	it("should have initial series data as empty", async () => {
+		const { result } = renderHook(
+			() => useBlock<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+		expect(result).toBeDefined();
+		const series = result.current.data.option.series[0].data;
+		expect(series).toEqual([]);
+	});
 
-	// 	const toggleTooltipSwitch = screen.getByRole("checkbox", {
-	// 		hidden: true,
-	// 	});
+	it("should have default width and height 400 and 500 respectively", async () => {
+		const { result } = renderHook(
+			() => useBlock<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+		expect(result.current).toBeDefined();
+		expect(result.current.data.style.width).toBe(400);
+		expect(result.current.data.style.height).toBe(500);
+	});
+	it("should verify setData function exists", async () => {
+		const { result } = renderHook(
+			() => useBlock<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+		expect(result.current).toBeDefined();
+		expect(result.current.setData).toBeDefined();
+		expect(typeof result.current.setData).toBe("function");
+	});
 
-	// 	await waitFor(() => {
-	// 		expect(toggleTooltipSwitch).toBeChecked();
-	// 		fireEvent.click(toggleTooltipSwitch);
-	// 		expect(toggleTooltipSwitch).not.toBeChecked();
-	// 	});
-	// });
+	it("should have xAxis name set to DemoX", async () => {
+		const { result } = renderHook(
+			() => useBlock<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+		expect(result.current).toBeDefined();
+		expect(result.current.data.option.xAxis.name).toContain("DemoX");
+	});
 
-	// it("should set data", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 			customChildren: (
-	// 				<TooltipScatterPlot
-	// 					id={blocks.scatter.id}
-	// 					path={"option"}
-	// 				/>
-	// 			),
-	// 		},
-	// 	);
-	// 	expect(result).toBeDefined();
-	// 	act(() => {
-	// 		result.current.setData("option", {
-	// 			series: [
-	// 				{
-	// 					data: [
-	// 						{
-	// 							value: [1, 1],
-	// 							label: {
-	// 								formatter: "Test1",
-	// 							},
-	// 						},
-	// 						{
-	// 							value: [6, 112.5],
-	// 							label: {
-	// 								formatter: "Test2",
-	// 							},
-	// 						},
-	// 						{
-	// 							value: [2, 50],
-	// 							label: {
-	// 								formatter: "Test3",
-	// 							},
-	// 						},
-	// 						{
-	// 							value: [1, 0],
-	// 							label: {
-	// 								formatter: "Test4",
-	// 							},
-	// 						},
-	// 					],
-	// 				},
-	// 			],
-	// 		});
-	// 	});
-	// 	const series = result.current.data.option.series[0].data;
-	// 	// console.log({ series });
-	// 	expect(series).toEqual([
-	// 		{
-	// 			value: [1, 1],
-	// 			label: {
-	// 				formatter: "Test1",
-	// 			},
-	// 		},
-	// 		{
-	// 			value: [6, 112.5],
-	// 			label: {
-	// 				formatter: "Test2",
-	// 			},
-	// 		},
-	// 		{
-	// 			value: [2, 50],
-	// 			label: {
-	// 				formatter: "Test3",
-	// 			},
-	// 		},
-	// 		{
-	// 			value: [1, 0],
-	// 			label: {
-	// 				formatter: "Test4",
-	// 			},
-	// 		},
-	// 	]);
-	// });
+	it("should have xAxis font size of 12", async () => {
+		const { result } = renderHook(
+			() => useBlock<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+		expect(result.current).toBeDefined();
+		expect(result.current.data.option.xAxis.nameTextStyle.fontSize).toBe(
+			12,
+		);
+	});
 
-	// it("should have default width and height 400 and 500 respectively", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 		},
-	// 	);
-	// 	expect(result.current).toBeDefined();
-	// 	expect(result.current.data.style.width).toBe(400);
-	// 	expect(result.current.data.style.height).toBe(500);
-	// });
-	// it("should set width and height", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 		},
-	// 	);
-	// 	expect(result.current).toBeDefined();
-	// 	act(() => {
-	// 		result.current.setData("style", {
-	// 			width: 800,
-	// 			height: 1000,
-	// 		});
-	// 	});
-	// 	expect(result.current.data.style.width).toBe(800);
-	// 	expect(result.current.data.style.height).toBe(1000);
-	// });
-
-	// it("should set xAxis Label", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 			customChildren: (
-	// 				<EditXAxisScatterPlot
-	// 					id={blocks.scatter.id}
-	// 					path={"option"}
-	// 				/>
-	// 			),
-	// 		},
-	// 	);
-	// 	expect(result.current).toBeDefined();
-	// 	// Assume the label for the input is "Set X Axis Title"
-	// 	// since there's no way to set test-id, use getElementById can be an alternative
-	// 	// const input = document.getElementById(
-	// 	// 	"xaxis-title",
-	// 	// ) as HTMLInputElement;
-	// 	// Update the input field's value
-	// 	// fireEvent.change(input, { target: { value: "X-Axis Label" } });
-	// 	// // const input = screen.queryAllByRole("textbox");
-	// 	// expect(result.current.data.option.xAxis.name).toBe("X-Axis Label");
-	// });
-	// it("should set xAxis font size", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 			customChildren: (
-	// 				<EditXAxisScatterPlot
-	// 					id={blocks.scatter.id}
-	// 					path={"option"}
-	// 				/>
-	// 			),
-	// 		},
-	// 	);
-	// 	expect(result.current).toBeDefined();
-	// 	expect(result.current.data.option.xAxis.nameTextStyle.fontSize).toBe(
-	// 		12,
-	// 	);
-	// 	// const input = document.getElementById(
-	// 	// 	"xaxis-edit-title-font-size",
-	// 	// ) as HTMLInputElement;
-	// 	// // Update the input field's value
-	// 	// fireEvent.change(input, { target: { value: 20 } });
-	// 	// // const input = screen.queryAllByRole("textbox");
-	// 	// const fontSize = Number(
-	// 	// 	result.current.data.option.xAxis.nameTextStyle.fontSize,
-	// 	// );
-	// 	// expect(fontSize).toBe(20);
-	// });
-	// it("should check if Show/Hide Axis toggle is true by default", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 			customChildren: (
-	// 				<EditXAxisScatterPlot
-	// 					id={blocks.scatter.id}
-	// 					path={"option"}
-	// 				/>
-	// 			),
-	// 		},
-	// 	);
-	// 	expect(result.current).toBeDefined();
-	// 	const label = screen.queryByText("Show/Hide Axis");
-	// 	// Current work around in querying checkbox/toggle with labels
-	// 	// find parent element of the label
-	// 	const parentElem = label.parentElement;
-	// 	// select toggle input
-	// 	const toggle = parentElem.querySelector('input[type="checkbox"]');
-	// 	expect(toggle).toBeChecked;
-	// 	const xAxisVisible = result.current.data.option.xAxis.show as boolean;
-	// 	expect(xAxisVisible).toBeTruthy();
-	// });
-
-	// it("should check if Show/Hide Axis toggle can be toggled off", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 			customChildren: (
-	// 				<EditXAxisScatterPlot
-	// 					id={blocks.scatter.id}
-	// 					path={"option"}
-	// 				/>
-	// 			),
-	// 		},
-	// 	);
-	// 	expect(result.current).toBeDefined();
-	// 	const label = screen.queryByText("Show/Hide Axis");
-	// 	const parentElem = label.parentElement;
-	// 	const toggle = parentElem.querySelector('input[type="checkbox"]');
-	// 	expect(toggle).toBeInTheDocument();
-	// 	const xAxisVisible = result.current.data.option.xAxis.show as boolean;
-	// 	expect(xAxisVisible).toBe(true);
-	// 	expect(toggle).toBeChecked();
-	// 	// fireEvent.click(toggle);
-	// 	// expect(toggle).not.toBeChecked();
-	// 	// // This will result in the data block 'show' property to be set to false
-	// 	// expect(result.current.data.option.xAxis.show).toBe(false);
-	// });
-
-	// it("should check if Show Axis Title toggle can be toggled", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 			customChildren: (
-	// 				<EditXAxisScatterPlot
-	// 					id={blocks.scatter.id}
-	// 					path={"option"}
-	// 				/>
-	// 			),
-	// 		},
-	// 	);
-	// 	expect(result.current).toBeDefined();
-	// 	const label = screen.queryByText("Show Axis Title");
-	// 	const parentElem = label.parentElement;
-	// 	const toggle = parentElem.querySelector('input[type="checkbox"]');
-	// 	expect(toggle).toBeInTheDocument();
-	// 	const xAxisTitle = result.current.data.option.xAxis.name;
-	// 	expect(xAxisTitle).toContain("DemoX");
-	// 	expect(toggle).toBeChecked();
-	// 	const titleInputLabel = screen.queryByText("Set X Axis Title");
-	// 	const titleInput =
-	// 		titleInputLabel.parentElement.querySelector('input[type="text"]');
-	// 	expect(titleInput).toBeInTheDocument();
-	// 	// fireEvent.click(toggle);
-	// 	// expect(titleInput).not.toBeInTheDocument();
-	// 	// expect(toggle).not.toBeChecked();
-	// 	// // expect(result.current.data.option.xAxis.name).toBe("");
-	// });
-
-	// it("should set X Axis Title", async () => {
-	// 	const { result } = renderHook(
-	// 		() => useBlock<EchartVisualizationBlockDef>("scatter"),
-	// 		{
-	// 			blocks,
-	// 			renderEngineId: "scatter",
-	// 			customChildren: (
-	// 				<EditXAxisScatterPlot
-	// 					id={blocks.scatter.id}
-	// 					path={"option"}
-	// 				/>
-	// 			),
-	// 		},
-	// 	);
-
-	// 	await waitFor(() => {
-	// 		expect(result.current).toBeDefined();
-	// 		const label = screen.getByDisplayValue("Set X Axis Title");
-	// 		const parentElem = label.parentElement;
-	// 		const titleInput = parentElem.querySelector('input[type="text"]');
-	// 		expect(titleInput).toBeInTheDocument();
-	// 		const xAxisTitle = result.current.data.option.xAxis.name;
-	// 		expect(xAxisTitle).toContain("DemoX");
-	// 	});
-	// 	// fireEvent.change(titleInput, { target: { value: ["Hello World"] } });
-	// 	// expect(result.current.data.option.xAxis.name).toContain("Hello World");
-	// });
-
-	// TODO: will need to complete other settings test
+	it("should have xAxis show true by default", async () => {
+		const { result } = renderHook(
+			() => useBlock<EchartVisualizationBlockDef>("scatter"),
+			{
+				blocks,
+				renderEngineId: "scatter",
+			},
+		);
+		expect(result.current).toBeDefined();
+		const xAxisVisible = result.current.data.option.xAxis.show as boolean;
+		expect(xAxisVisible).toBeTruthy();
+	});
 });

@@ -3,9 +3,9 @@ import { render, screen } from "@testing-library/react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Blocks } from "../../components/blocks";
 import {
-	CollapseTransformationCell,
-	type CollapseTransformationCellDef,
-} from "../../components/cell-defaults/collapse-transformation-cell/CollapseTransformationCell";
+	TimestampTransformationCell,
+	type TimestampTransformationCellDef,
+} from "../../components/cell-defaults/timestamp-transformation-cell/TimestampTransformationCell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK pixel calls in ColumnTransformationField
@@ -19,27 +19,23 @@ vi.mock("../../hooks/useBlocksPixel", () => ({
 
 /**
  * Helper to create a StateStore with a query containing
- * a query-import cell and a collapse-transformation cell.
+ * a query-import cell and a timestamp-transformation cell.
  */
 const createStoreWithCells = (overrides?: {
 	targetCellId?: string;
 	targetFrameVariableName?: string;
 	targetCellExecuted?: boolean;
 	targetCellOutput?: unknown;
-	columns?: { name: string; dataType: string }[];
-	value?: { name: string; dataType: string } | null;
-	delimiter?: string | null;
-	maintainColumns?: { name: string; dataType: string }[];
+	columnName?: string;
+	includeTime?: boolean;
 }) => {
 	const {
 		targetCellId = "1",
 		targetFrameVariableName = "testFrame",
 		targetCellExecuted = false,
 		targetCellOutput = undefined,
-		columns = [],
-		value = null,
-		delimiter = null,
-		maintainColumns = [],
+		columnName = "",
+		includeTime = false,
 	} = overrides || {};
 
 	const store = new StateStore({
@@ -66,15 +62,13 @@ const createStoreWithCells = (overrides?: {
 						},
 						{
 							id: "2",
-							widget: "collapse-transformation",
+							widget: "timestamp-transformation",
 							parameters: {
 								transformation: {
-									key: "collapse",
+									key: "timestamp",
 									parameters: {
-										columns,
-										value,
-										delimiter,
-										maintainColumns,
+										columnName,
+										includeTime,
 									},
 								},
 								targetCell: {
@@ -106,18 +100,16 @@ const createStoreWithCells = (overrides?: {
 				},
 				toPixel: () => "",
 			},
-			"collapse-transformation": {
-				name: "Collapse",
-				widget: "collapse-transformation",
+			"timestamp-transformation": {
+				name: "Timestamp",
+				widget: "timestamp-transformation",
 				view: () => null,
 				parameters: {
 					transformation: {
-						key: "collapse",
+						key: "timestamp",
 						parameters: {
-							columns: [],
-							value: null,
-							delimiter: null,
-							maintainColumns: [],
+							columnName: "",
+							includeTime: false,
 						},
 					},
 					targetCell: {
@@ -142,35 +134,35 @@ const createStoreWithCells = (overrides?: {
 		}
 	}
 
-	const collapseCell = store.queries["query-1"].cells[
+	const timestampCell = store.queries["query-1"].cells[
 		"2"
-	] as CellState<CollapseTransformationCellDef>;
+	] as CellState<TimestampTransformationCellDef>;
 
-	return { store, collapseCell };
+	return { store, timestampCell };
 };
 
 /**
- * Renders the CollapseTransformationCell within a Blocks provider.
+ * Renders the TimestampTransformationCell within a Blocks provider.
  */
-const renderCollapseCell = (
+const renderTimestampCell = (
 	overrides?: Parameters<typeof createStoreWithCells>[0],
 	isExpanded = true,
 ) => {
-	const { store, collapseCell } = createStoreWithCells(overrides);
+	const { store, timestampCell } = createStoreWithCells(overrides);
 
 	const result = render(
 		<Blocks state={store} registry={{} as Registry}>
-			<CollapseTransformationCell
-				cell={collapseCell}
+			<TimestampTransformationCell
+				cell={timestampCell}
 				isExpanded={isExpanded}
 			/>
 		</Blocks>,
 	);
 
-	return { ...result, store, collapseCell };
+	return { ...result, store, timestampCell };
 };
 
-describe("CollapseTransformationCell", () => {
+describe("TimestampTransformationCell", () => {
 	beforeAll(() => {
 		vi.stubGlobal("jest", {
 			advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
@@ -186,17 +178,17 @@ describe("CollapseTransformationCell", () => {
 	});
 
 	it("renders collapsed state as a chip when not expanded", () => {
-		const { container } = renderCollapseCell({}, false);
+		renderTimestampCell({}, false);
 
-		const chip = container.querySelector("span.rounded-full");
+		const chip = screen.getByText("Timestamp");
 		expect(chip).toBeInTheDocument();
-		expect(screen.getByText("Collapse")).toBeInTheDocument();
+		expect(chip.closest("span")).toHaveClass("rounded-full");
 	});
 
 	it("renders help text when target cell is not executed", () => {
-		renderCollapseCell({ targetCellExecuted: false });
+		renderTimestampCell({ targetCellExecuted: false });
 
-		expect(screen.getByText("Collapse")).toBeInTheDocument();
+		expect(screen.getByText("Timestamp")).toBeInTheDocument();
 		expect(
 			screen.getByText(
 				"Run Cell 1 to define the target frame variable before applying a transformation.",
@@ -205,22 +197,42 @@ describe("CollapseTransformationCell", () => {
 	});
 
 	it("renders full form when target cell is executed", () => {
-		renderCollapseCell({
+		renderTimestampCell({
 			targetCellExecuted: true,
 			targetCellOutput: { frameHeaders: [] },
-			delimiter: ", ",
+			columnName: "created_at",
 		});
 
 		expect(
 			screen.getByText(
-				"Aggregate data for a group based on the delimiter",
+				"Add a new column with today's date as the column value",
 			),
 		).toBeInTheDocument();
-		expect(screen.getByText("Group by Column(s)")).toBeInTheDocument();
-		expect(screen.getByText("Value Column")).toBeInTheDocument();
-		expect(screen.getByText("String Separator")).toBeInTheDocument();
-		expect(
-			screen.getByText("Other Column(s) to Maintain"),
-		).toBeInTheDocument();
+		expect(screen.getByText("Column Name")).toBeInTheDocument();
+		expect(screen.getByDisplayValue("created_at")).toBeInTheDocument();
+		expect(screen.getByText("Include time")).toBeInTheDocument();
+	});
+
+	it("renders include time checkbox unchecked by default", () => {
+		renderTimestampCell({
+			targetCellExecuted: true,
+			targetCellOutput: { frameHeaders: [] },
+			columnName: "date_col",
+		});
+
+		const checkbox = screen.getByRole("checkbox");
+		expect(checkbox).not.toBeChecked();
+	});
+
+	it("renders include time checkbox checked when includeTime is true", () => {
+		renderTimestampCell({
+			targetCellExecuted: true,
+			targetCellOutput: { frameHeaders: [] },
+			columnName: "date_col",
+			includeTime: true,
+		});
+
+		const checkbox = screen.getByRole("checkbox");
+		expect(checkbox).toBeChecked();
 	});
 });

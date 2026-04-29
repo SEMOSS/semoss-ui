@@ -25,7 +25,7 @@ export const InputMessageBadge: React.FC<InputMessageBadgeProps> = observer(
 			>
 				{mcp.name}
 
-				{root.theme.showPlatformLinks !== false && (
+				{root.theme.featureFlags?.showPlatformLinks && (
 					<a
 						target="_blank"
 						href={`${PLATFORM_URL}/#/${mcp.type === "PROJECT" ? "app" : "engine"}/${mcp.id}`}
