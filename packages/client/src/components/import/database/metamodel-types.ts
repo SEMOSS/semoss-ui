@@ -56,6 +56,7 @@ export interface MetaModelTypeProps {
 	onImport?: (parsed: unknown) => void | Promise<void>;
 	onCancel: () => void;
 	onImportConnections?: (connections: unknown) => void | Promise<void>;
+	isRdf?: boolean;
 }
 
 export type MetamodelNode = {
