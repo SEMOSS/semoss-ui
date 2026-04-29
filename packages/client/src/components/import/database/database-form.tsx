@@ -32,6 +32,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
+import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import DataSelection from "./flat-table-column-editor";
@@ -66,8 +67,8 @@ export const DatabaseForm = ({
 	categoryDescription,
 }) => {
 	const [step, setStep] = useState<
-		"fileupload" | "table" | "metaModel" | "connections"
-	>("fileupload");
+		"fileUpload" | "table" | "metaModel" | "connections"
+	>("fileUpload");
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [parsedData, setParsedData] = useState<ParsedResult[]>([]);
@@ -87,6 +88,7 @@ export const DatabaseForm = ({
 	const [connectionViewModel, setConnectionViewModel] =
 		useState<boolean>(false);
 	const [formData, setFormData] = useState({});
+	const [pairedFiles, setPairedFiles] = useState<PairedFileUploadRow[]>([]);
 	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
 	const updateStepBasedOnMetaModel = (METAMODEL_TYPE) => {
@@ -95,7 +97,7 @@ export const DatabaseForm = ({
 		} else if (METAMODEL_TYPE === "asSuggestedMetaModel") {
 			setStep("metaModel");
 		} else {
-			setStep("fileupload");
+			setStep("fileUpload");
 		}
 	};
 
@@ -134,49 +136,51 @@ export const DatabaseForm = ({
 	const metamodelType = watch("METAMODEL_TYPE");
 
 	useEffect(() => {
+		const isPropFile = metamodelType === "fromPropFile";
 		setResolvedFields((prev) =>
-			prev.map((f) =>
-				f.key === "PROP_FILE_UPLOAD"
-					? { ...f, hidden: metamodelType !== "frompropFile" }
-					: f,
-			),
+			prev.map((f) => {
+				if (f.key === "FILE_UPLOAD") return { ...f, hidden: isPropFile };
+				if (f.key === "PROP_FILE_UPLOAD") return { ...f, hidden: true };
+				return f;
+			}),
 		);
+		if (!isPropFile) setPairedFiles([]);
 	}, [metamodelType]);
 
 	useEffect(() => {
-		setResolvedFields((prev) =>
-			prev.map((f) => {
-				if (f.key === "METAMODEL_TYPE") {
-					const type = databaseType?.toLowerCase();
-					type MetaOpt = { display: string; value: string };
-					const originalOptions: MetaOpt[] =
-						fields.find(
-							(orig: { key: string }) =>
-								orig.key === "METAMODEL_TYPE",
-						)?.options.options ?? f.options.options;
-					let filteredOptions: MetaOpt[] = originalOptions;
-					if (type === "rdf") {
-						filteredOptions = originalOptions.filter(
-							(opt: MetaOpt) => opt.value !== "asFlatTable",
-						);
-					} else if (type) {
-						filteredOptions = originalOptions.filter(
-							(opt: MetaOpt) => opt.value === "asFlatTable",
-						);
-					}
-					const currentValue = f.value;
-					const valueStillValid = filteredOptions.some(
-						(opt: MetaOpt) => opt.value === currentValue,
-					);
-					return {
-						...f,
-						value: valueStillValid
-							? currentValue
-							: (filteredOptions[0]?.value ?? ""),
-						options: { ...f.options, options: filteredOptions },
-					};
-				}
-				return f;
+		type MetaOpt = { display: string; value: string };
+		const type = databaseType?.toLowerCase();
+		const originalOptions: MetaOpt[] =
+			fields.find(
+				(orig: { key: string }) => orig.key === "METAMODEL_TYPE",
+			)?.options?.options ?? [];
+		let filteredOptions: MetaOpt[] = originalOptions;
+		if (type === "rdf") {
+			filteredOptions = originalOptions.filter(
+				(opt: MetaOpt) => opt.value !== "asFlatTable",
+			);
+		} else if (type) {
+			filteredOptions = originalOptions.filter(
+				(opt: MetaOpt) => opt.value === "asFlatTable",
+			);
+		}
+		const currentValue = watch("METAMODEL_TYPE");
+		const valueStillValid = filteredOptions.some(
+			(opt: MetaOpt) => opt.value === currentValue,
+		);
+		if (!valueStillValid && filteredOptions[0]) {
+			setValue("METAMODEL_TYPE", filteredOptions[0].value);
+		}
+		setResolvedFields((prev: Record<string, unknown>[]) =>
+			prev.map((f: Record<string, unknown>) => {
+				if (f.key !== "METAMODEL_TYPE") return f;
+				return {
+					...f,
+					value: valueStillValid
+						? currentValue
+						: (filteredOptions[0]?.value ?? ""),
+					options: { ...f.options, options: filteredOptions },
+				};
 			}),
 		);
 	}, [databaseType, fields]);
@@ -303,15 +307,18 @@ export const DatabaseForm = ({
 			setLoading(false);
 			return;
 		}
+		if (formData.METAMODEL_TYPE === "fromPropFile") {
+			// uploads handled inside the fromPropFile branch below
+		}
 		try {
-			const uploadedFilesResponse = await uploadFile(
-				formData.FILE_UPLOAD,
-				configStore.store.insightID,
-			);
+			const uploadedFilesResponse =
+				formData.METAMODEL_TYPE === "fromPropFile"
+					? []
+					: await uploadFile(formData.FILE_UPLOAD, configStore.store.insightID);
 
 			if (
-				!uploadedFilesResponse ||
-				!Array.isArray(uploadedFilesResponse)
+				formData.METAMODEL_TYPE !== "fromPropFile" &&
+				(!uploadedFilesResponse || !Array.isArray(uploadedFilesResponse))
 			) {
 				toast.error("Upload failed or returned invalid response.");
 				setValue("DATABASE_TYPE", formData.DATABASE_TYPE);
@@ -372,63 +379,55 @@ export const DatabaseForm = ({
 					setLoading(false);
 				}
 				return;
-			} else if (formData.METAMODEL_TYPE === "frompropFile") {
-				if (!formData.PROP_FILE_UPLOAD?.length) {
-					toast.error("Please upload a prop file (.json).");
+			} else if (formData.METAMODEL_TYPE === "fromPropFile") {
+				const validPairs = pairedFiles.filter((r) => r.dataFile);
+				if (validPairs.length === 0) {
+					toast.error("Please upload at least one data file.");
 					setLoading(false);
 					return;
 				}
 				try {
-					const propFileResponse = await uploadFile(
-						formData.PROP_FILE_UPLOAD,
-						configStore.store.insightID,
-					);
-					if (
-						!propFileResponse ||
-						!Array.isArray(propFileResponse) ||
-						propFileResponse.length === 0
-					) {
-						toast.error(
-							"Prop file upload failed or returned invalid response.",
-						);
-						setLoading(false);
-						return;
+					const parsedResults: ParsedResult[] = [];
+					const names: string[] = [];
+					let firstCsvPath: string | undefined;
+
+					for (const pair of validPairs) {
+						const [csvUpload, propUpload] = await Promise.all([
+							uploadFile([pair.dataFile as File], configStore.store.insightID),
+							pair.propFile
+								? uploadFile([pair.propFile as File], configStore.store.insightID)
+								: Promise.resolve(null),
+						]);
+						if (!csvUpload?.length) {
+							toast.error(`Failed to upload ${(pair.dataFile as File).name}.`);
+							setLoading(false);
+							return;
+						}
+						const csvPath = csvUpload[0].fileLocation;
+						const propPath = propUpload?.[0]?.fileLocation;
+						if (!firstCsvPath) firstCsvPath = csvPath;
+
+						const pixel = propPath
+							? `ParseMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false], propFile=["${propPath}"])`
+							: `PredictMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false])`;
+						const response = await monolithStore.runQuery(pixel);
+						if (response.errors?.length > 0) {
+							toast.error(response.errors.join(""));
+							setLoading(false);
+							return;
+						}
+						parsedResults.push(response?.pixelReturn?.[0]?.output as ParsedResult);
+						const name = csvPath.split(/[/\\]/).pop() || "";
+						names.push(name);
 					}
-					const csvPath = uploadedFilesResponse[0].fileLocation;
-					const propPath = propFileResponse[0].fileLocation;
-					const meta = {
-						...(formData.DATABASE_DESCRIPTION && {
-							description: formData.DATABASE_DESCRIPTION,
-						}),
-						...(formData.DATABASE_TAG && {
-							tag: formData.DATABASE_TAG,
-						}),
-					};
-					const isRdf = formData.DATABASE_TYPE === "rdf";
-					const uploadReactor = isRdf
-						? "RdfCsvUpload"
-						: "RdbmsCsvUpload";
-					const customBaseURIParam = isRdf
-						? `, customBaseURI=[${JSON.stringify(formData.CUSTOM_BASE_URI || "http://semoss.org/ontologies")}]`
-						: "";
-					const pixel = `databaseVar = ${uploadReactor}(database=[${JSON.stringify(formData.DATABASE_NAME)}], filePath=["${csvPath}"], delimiter=[${JSON.stringify(formData.DELIMITER ?? ",")}], propFile=["${propPath}"]${customBaseURIParam}, existing=[false]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
-					const response = await runPixelWithConsole(pixel);
-					if (response.errors?.length > 0) {
-						toast.error(response.errors.join(""));
-						return;
-					}
-					const out = response.pixelReturn[0].output as {
-						engine_id?: string;
-						database_id?: string;
-					};
-					toast.success("Successfully created database.");
-					navigate(
-						`/engine/database/${out.engine_id || out.database_id}`,
-					);
+
+					setFilePath(firstCsvPath);
+					setTableName(names.map((n) => n.replace(/\.[^.]+$/, "")));
+					setExcelFileName(names);
+					setParsedData(parsedResults);
+					setStep("metaModel");
 				} catch {
-					toast.error(
-						"An error occurred while processing the prop file.",
-					);
+					toast.error("An error occurred while processing the files.");
 				} finally {
 					setLoading(false);
 				}
@@ -757,7 +756,7 @@ export const DatabaseForm = ({
 	};
 
 	const handleCancel = () => {
-		setStep("fileupload");
+		setStep("fileUpload");
 	};
 
 	const submitExternalConnectionUpload = async (formValues) => {
@@ -1031,13 +1030,14 @@ export const DatabaseForm = ({
 			name={val.key}
 			control={control}
 			rules={{
-				required: val?.required,
+				required: val?.required && !val?.hidden,
 				pattern: val.rules?.pattern,
 				validate:
 					val.type === "file-upload" || val.type === "zip-upload"
 						? (value) => {
 								if (
 									val.required &&
+									!val.hidden &&
 									(!value || value.length === 0)
 								) {
 									return "File upload is required";
@@ -1301,7 +1301,7 @@ export const DatabaseForm = ({
 					case "zip-upload":
 						return (
 							<div
-								className={`flex flex-col gap-2${val.hidden ? "hidden" : ""}`}
+								className={`flex flex-col gap-2${val.hidden ? " hidden" : ""}`}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<P>
@@ -1642,9 +1642,18 @@ export const DatabaseForm = ({
 	}
 
 	function transformStructure(dbObject) {
-		const result = {
+		const result: {
+			headers: string[];
+			dataTypes: Record<string, string>;
+			physicalTypes: Record<string, string>;
+			cleanHeaders: string[];
+			relation: { relName: string; fromTable: string; fromCol?: string; toTable: string; toCol?: string; }[];
+			nodeProp: Record<string, string[]>;
+			positions: Record<string, { left: number; top: number }>;
+		} = {
 			headers: [],
 			dataTypes: {},
+			physicalTypes: {},
 			cleanHeaders: [],
 			relation: [],
 			nodeProp: {},
@@ -1653,8 +1662,10 @@ export const DatabaseForm = ({
 
 		dbObject.tables.forEach((table) => {
 			table.columns.forEach((col, i) => {
-				result.dataTypes[col] =
-					table.type[i]?.toLowerCase() || "string";
+				result.dataTypes[col] = table.type[i] || "";
+				if (table.raw_type?.[i]) {
+					result.physicalTypes[col] = table.raw_type[i];
+				}
 			});
 
 			result.nodeProp[table.table] = table.columns;
@@ -1663,6 +1674,7 @@ export const DatabaseForm = ({
 
 		if (dbObject.relationships && dbObject.relationships?.length > 0) {
 			result.relation = dbObject.relationships.map((r) => ({
+				relName: `${r.fromCol ?? r.fromTable}.${r.toCol ?? r.toTable}`,
 				fromTable: r.fromTable,
 				fromCol: r.fromCol,
 				toTable: r.toTable,
@@ -1725,7 +1737,7 @@ export const DatabaseForm = ({
 
 	return (
 		<>
-			{step === "fileupload" && (
+			{step === "fileUpload" && (
 				<form
 					onSubmit={handleSubmit(onFormSubmit)}
 					data-testid="database-form"
@@ -1767,6 +1779,26 @@ export const DatabaseForm = ({
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
+									{category === "File Upload" &&
+										metamodelType === "fromPropFile" && (
+											<PairedFileUpload
+												columns={[
+													{
+														key: "dataFile",
+														label: "Data File",
+														extensions: resolvedFields.find((f: { key: string }) => f.key === "FILE_UPLOAD")?.options?.extensions ?? [".csv"],
+														required: true,
+													},
+													{
+														key: "propFile",
+														label: "Prop File",
+														extensions: [".json"],
+													},
+												]}
+												value={pairedFiles}
+												onChange={setPairedFiles}
+											/>
+										)}
 								</div>
 							</div>
 							<Separator />
