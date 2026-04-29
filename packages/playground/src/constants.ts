@@ -6,7 +6,7 @@ export const TEMPERATURE = 0.3;
 export const IMAGE_HEIGHT = 1024;
 export const IMAGE_WIDTH = 1024;
 export const TEXT_GENERATION_FLAG = false;
-export const IMAGE_GENERATION_FLAG = false; // perhaps remove since dynamically updated
+export const IMAGE_GENERATION_FLAG = false;
 
 export type ImageSize = "small" | "medium" | "large";
 export type ImageType = "square" | "portrait" | "landscape";
