@@ -83,6 +83,7 @@ export const MetaModelConnections = observer(
 								parsed.dataTypes?.[prop] ??
 								parsed.additionalDataTypes?.[prop] ??
 								"",
+							rawType: parsed.physicalTypes?.[prop],
 							isPrimary: idx === 0,
 						})),
 					},
@@ -638,7 +639,7 @@ export const MetaModelConnections = observer(
 					contentId={portalContentId}
 				/>
 				{!showFullScreenModal && (
-					<div className="mt-4 flex justify-end gap-3 border-border border-t pt-4">
+					<div className="mt-4 flex justify-end gap-3 border-border border-t pt-4 pb-6">
 						<Button variant="outline" onClick={onCancel}>
 							Cancel
 						</Button>
