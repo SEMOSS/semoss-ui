@@ -12,13 +12,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import { Button, Input } from "@semoss/ui/next";
 import { MetamodelContext } from "@/contexts";
-import type { ColumnOption, Property } from "../import/database/MetamodelTypes";
+import type {
+	ColumnOption,
+	Property,
+} from "../import/database/metamodel-types";
 import {
 	createPropertiesFromNames,
 	edgeIdsEqual,
 	nodeIdsEqual,
 	updateColumnProperties,
-} from "../import/database/MetamodelUtils";
+} from "../import/database/metamodel-utils";
 import { Editmetamodel } from "./edit-meta-model";
 import EditTable from "./edit-table";
 import { FloatingEdge } from "./floating-edge";
