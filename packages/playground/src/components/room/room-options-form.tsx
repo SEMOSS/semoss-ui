@@ -102,6 +102,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										{t("room:form.modelLabel")}
 									</FieldLabel>
 									<EngineSelect
+										className="w-full max-w-none"
 										name={
 											model?.engine_display_name ||
 											model?.app_name ||
