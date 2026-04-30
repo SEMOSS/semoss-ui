@@ -1342,7 +1342,7 @@ export const DatabaseForm = ({
 							<div
 								className={
 									val.hidden
-										? "flex hidden flex-col gap-2"
+										? "hidden"
 										: "flex flex-col gap-2"
 								}
 								data-testid={`database-form-field-${val.key}`}
