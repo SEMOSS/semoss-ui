@@ -26,7 +26,7 @@
 		"enterInstructions": "Ingrese las instrucciones",
 		"updateInstructions": "Actualizar instrucciones",
 		"updateTokenLength": "Actualizar longitud del token",
-		"updateImageSeed": "Actualizar semilla de imagen",
+		"updateImageSeed": "-1",
 		"uploadFiles": "Subir archivos",
 		"search": "Buscar..."
 	},

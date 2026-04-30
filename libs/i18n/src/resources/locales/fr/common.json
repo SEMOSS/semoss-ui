@@ -26,7 +26,7 @@
 		"enterInstructions": "Entrer les instructions",
 		"updateInstructions": "Mettre à jour les instructions",
 		"updateTokenLength": "Mettre à jour la longueur du jeton",
-		"updateImageSeed": "Mettre à jour la graine de l'image",
+		"updateImageSeed": "-1",
 		"uploadFiles": "Téléverser des fichiers",
 		"search": "Rechercher..."
 	},

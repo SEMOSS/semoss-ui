@@ -26,7 +26,7 @@
 		"enterInstructions": "Enter Instructions",
 		"updateInstructions": "Update Instructions",
 		"updateTokenLength": "Update token length",
-		"updateImageSeed": "Update image seed",
+		"updateImageSeed": "-1",
 		"uploadFiles": "Upload Files",
 		"search": "Search...",
 		"enterPromptLibraryTag": "Enter Prompt Library Tag"

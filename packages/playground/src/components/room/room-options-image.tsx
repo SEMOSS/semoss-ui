@@ -226,22 +226,24 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 								min={0}
 								max={2147483646}
 								value={options.seed ?? ""}
-								onChange={(e) =>
+								onChange={(e) => {
+									const raw = e.target.value.replace(
+										/\D/g,
+										"",
+									);
 									onOptionsChange({
 										seed:
-											e.target.value === ""
+											raw === ""
 												? undefined
 												: Math.min(
 														Math.max(
-															Number(
-																e.target.value,
-															),
+															Number(raw),
 															0,
 														),
 														2147483646,
 													),
-									})
-								}
+									});
+								}}
 								className="w-full"
 							/>
 							<Button
