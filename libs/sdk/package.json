@@ -1,6 +1,6 @@
 {
     "name": "@semoss/sdk",
-    "version": "1.0.0-beta.39",
+    "version": "1.0.0-beta.41",
     "type": "module",
     "main": "./dist/index.mjs",
     "module": "./dist/index.mjs",

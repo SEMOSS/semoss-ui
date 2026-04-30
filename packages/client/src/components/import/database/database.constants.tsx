@@ -57,7 +57,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -90,13 +90,14 @@ export const DATABASE_CONNECTION = {
 					section: "Database",
 					category: "Database",
 					type: "text",
-					disabled: false,
+					disabled: true,
+					hidden: true,
 					required: false,
 				},
 				{
 					key: "DATABASE_TYPE",
 					label: "Enter Database Type",
-					value: "",
+					value: "h2",
 					section: "Database",
 					category: "Database",
 					type: "select",
@@ -104,15 +105,24 @@ export const DATABASE_CONNECTION = {
 						options: [
 							{ display: "H2", value: "h2" },
 							{ display: "R", value: "r" },
+							{ display: "RDF", value: "rdf" },
 						],
 					},
 					disabled: false,
 					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{
+								key: "CUSTOM_BASE_URI",
+								value: ["h2", "r"],
+							},
+						],
+					},
 				},
 				{
 					key: "METAMODEL_TYPE",
 					label: "Enter Metamodel Type",
-					value: "",
+					value: "asFlatTable",
 					section: "Database",
 					type: "select",
 					category: "Database",
@@ -127,12 +137,8 @@ export const DATABASE_CONNECTION = {
 								value: "asSuggestedMetaModel",
 							},
 							{
-								display: "From Scratch",
-								value: "fromScratch",
-							},
-							{
 								display: "From Prop File",
-								value: "frompropFile",
+								value: "fromPropFile",
 							},
 						],
 					},
@@ -150,6 +156,17 @@ export const DATABASE_CONNECTION = {
 					},
 				},
 				{
+					key: "CUSTOM_BASE_URI",
+					label: "Custom URI",
+					value: "http://semoss.org/ontologies",
+					section: "Database",
+					category: "Database",
+					type: "text",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+				{
 					key: "FILE_UPLOAD",
 					label: "File Upload",
 					value: null,
@@ -161,12 +178,20 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					disabled: false,
 					required: true,
-					// rules: {
-					//   required: {
-					//     value: true,
-					//     message: "Please upload file / files.",
-					//   },
-					// },
+				},
+				{
+					key: "PROP_FILE_UPLOAD",
+					label: "Prop File (.json)",
+					value: null,
+					category: "File Upload",
+					section: "Database",
+					options: {
+						extensions: [".json"],
+					},
+					type: "file-upload",
+					disabled: false,
+					required: false,
+					hidden: true,
 				},
 			],
 		},
@@ -191,7 +216,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -220,18 +245,23 @@ export const DATABASE_CONNECTION = {
 				{
 					key: "DATABASE_TYPE",
 					label: "Enter Database Type",
-					value: "",
+					value: "h2",
 					section: "Database",
 					category: "Database",
 					type: "select",
 					options: {
 						options: [
 							{ display: "H2", value: "h2" },
-							{ display: "R", value: "r" },
+							{ display: "RDF", value: "rdf" },
 						],
 					},
 					disabled: false,
 					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{ key: "CUSTOM_BASE_URI", value: ["h2"] },
+						],
+					},
 				},
 				{
 					key: "METAMODEL_TYPE",
@@ -246,6 +276,10 @@ export const DATABASE_CONNECTION = {
 								display: "As Flat Table",
 								value: "asFlatTable",
 							},
+							{
+								display: "Excel Loader Sheet Format",
+								value: "excelLoaderSheetFormat",
+							},
 						],
 					},
 					disabled: false,
@@ -254,12 +288,23 @@ export const DATABASE_CONNECTION = {
 						conditionalOptions: [
 							{
 								whenField: "DATABASE_TYPE",
-								whenValue: "r",
-								allowedValues: ["asFlatTable"],
+								whenValue: "rdf",
+								allowedValues: ["excelLoaderSheetFormat"],
 								restrictOtherValues: true,
 							},
 						],
 					},
+				},
+				{
+					key: "CUSTOM_BASE_URI",
+					label: "Custom URI",
+					value: "http://semoss.org/ontologies",
+					section: "Database",
+					category: "Database",
+					type: "text",
+					disabled: false,
+					required: false,
+					hidden: true,
 				},
 				{
 					key: "FILE_UPLOAD",
@@ -302,7 +347,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -335,13 +380,14 @@ export const DATABASE_CONNECTION = {
 					section: "Database",
 					category: "Database",
 					type: "text",
-					disabled: false,
+					disabled: true,
+					hidden: true,
 					required: false,
 				},
 				{
 					key: "DATABASE_TYPE",
 					label: "Enter Database Type",
-					value: "",
+					value: "h2",
 					section: "Database",
 					category: "Database",
 					type: "select",
@@ -349,35 +395,34 @@ export const DATABASE_CONNECTION = {
 						options: [
 							{ display: "H2", value: "h2" },
 							{ display: "R", value: "r" },
+							{ display: "RDF", value: "rdf" },
 						],
 					},
 					disabled: false,
 					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{ key: "CUSTOM_BASE_URI", value: ["h2", "r"] },
+						],
+					},
 				},
 				{
 					key: "METAMODEL_TYPE",
 					label: "Enter Metamodel Type",
-					value: "",
+					value: "asFlatTable",
 					section: "Database",
 					category: "Database",
 					type: "select",
 					options: {
 						options: [
-							{
-								display: "As Flat Table",
-								value: "asFlatTable",
-							},
+							{ display: "As Flat Table", value: "asFlatTable" },
 							{
 								display: "As Suggested Metamodel",
 								value: "asSuggestedMetaModel",
 							},
 							{
-								display: "From Scratch",
-								value: "fromScratch",
-							},
-							{
 								display: "From Prop File",
-								value: "frompropFile",
+								value: "fromPropFile",
 							},
 						],
 					},
@@ -395,37 +440,457 @@ export const DATABASE_CONNECTION = {
 					},
 				},
 				{
+					key: "CUSTOM_BASE_URI",
+					label: "Custom URI",
+					value: "http://semoss.org/ontologies",
+					section: "Database",
+					category: "Database",
+					type: "text",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+				{
 					key: "FILE_UPLOAD",
 					label: "File Upload",
 					value: null,
 					category: "File Upload",
 					section: "Database",
-					options: {
-						extensions: [".tsv"],
-					},
+					options: { extensions: [".tsv"] },
 					type: "file-upload",
 					disabled: false,
 					required: true,
-					// rules: {
-					//   required: {
-					//     value: true,
-					//     message: "Please upload file / files.",
-					//   },
-					// },
+				},
+				{
+					key: "PROP_FILE_UPLOAD",
+					label: "Prop File (.json)",
+					value: null,
+					category: "File Upload",
+					section: "Database",
+					options: { extensions: [".json"] },
+					type: "file-upload",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+			],
+		},
+		{
+			name: "TXT",
+			disable: false,
+			icon: CSV,
+			fields: [
+				{
+					key: "DATABASE_NAME",
+					label: "Enter Database Name",
+					value: "",
+					section: "general",
+					category: "General",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "DATABASE_DESCRIPTION",
+					label: "Enter Database Description",
+					value: "",
+					section: "general",
+					category: "General",
+					type: "text",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "DATABASE_TAG",
+					label: "Enter Database Tag",
+					value: "",
+					section: "general",
+					category: "General",
+					type: "tags",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "DELIMITER",
+					label: "Enter Delimiter",
+					value: ",",
+					section: "Database",
+					category: "Database",
+					type: "text",
+					disabled: false,
+					hidden: false,
+					required: false,
+				},
+				{
+					key: "DATABASE_TYPE",
+					label: "Enter Database Type",
+					value: "h2",
+					section: "Database",
+					category: "Database",
+					type: "select",
+					options: {
+						options: [
+							{ display: "H2", value: "h2" },
+							{ display: "R", value: "r" },
+							{ display: "RDF", value: "rdf" },
+						],
+					},
+					disabled: false,
+					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{ key: "CUSTOM_BASE_URI", value: ["h2", "r"] },
+						],
+					},
+				},
+				{
+					key: "METAMODEL_TYPE",
+					label: "Enter Metamodel Type",
+					value: "asFlatTable",
+					section: "Database",
+					category: "Database",
+					type: "select",
+					options: {
+						options: [
+							{ display: "As Flat Table", value: "asFlatTable" },
+							{
+								display: "As Suggested Metamodel",
+								value: "asSuggestedMetaModel",
+							},
+							{
+								display: "From Prop File",
+								value: "fromPropFile",
+							},
+						],
+					},
+					disabled: false,
+					required: true,
+					rules: {
+						conditionalOptions: [
+							{
+								whenField: "DATABASE_TYPE",
+								whenValue: "r",
+								allowedValues: ["asFlatTable"],
+								restrictOtherValues: true,
+							},
+						],
+					},
+				},
+				{
+					key: "CUSTOM_BASE_URI",
+					label: "Custom URI",
+					value: "http://semoss.org/ontologies",
+					section: "Database",
+					category: "Database",
+					type: "text",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+				{
+					key: "FILE_UPLOAD",
+					label: "File Upload",
+					value: null,
+					category: "File Upload",
+					section: "Database",
+					options: { extensions: [".txt"] },
+					type: "file-upload",
+					disabled: false,
+					required: true,
+				},
+				{
+					key: "PROP_FILE_UPLOAD",
+					label: "Prop File (.json)",
+					value: null,
+					category: "File Upload",
+					section: "Database",
+					options: { extensions: [".json"] },
+					type: "file-upload",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+			],
+		},
+		{
+			name: "H2",
+			disable: false,
+			icon: H2_DB,
+			fields: [
+				{
+					key: "dbDriver",
+					label: "Driver Name",
+					value: "H2_DB",
+					type: "text",
+					disabled: true,
+					required: true,
+					hidden: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					category: "General",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "DATABASE_DESCRIPTION",
+					label: "Database Description",
+					value: "",
+					category: "General",
+					type: "text",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "DATABASE_TAG",
+					label: "Tags",
+					value: "",
+					category: "General",
+					type: "tags",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "UPLOAD_MODE",
+					label: "Connection Type",
+					value: "empty",
+					category: "File Upload",
+					type: "radio",
+					options: {
+						options: [
+							{
+								display: "Create Empty Database",
+								value: "empty",
+							},
+							{
+								display: "Upload Existing H2 Database",
+								value: "file",
+							},
+						],
+					},
+					disabled: false,
+					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{ key: "FILE_UPLOAD", value: ["empty"] },
+							{ key: "schema", value: ["empty"] },
+						],
+					},
+				},
+				{
+					key: "FILE_UPLOAD",
+					label: "File Upload",
+					value: null,
+					category: "File Upload",
+					options: {
+						extensions: [".mv.db"],
+					},
+					type: "file-upload",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+				{
+					key: "schema",
+					label: "Schema",
+					value: "",
+					category: "Credentials",
+					type: "text",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+				{
+					key: "USERNAME",
+					label: "Username",
+					value: "",
+					category: "Credentials",
+					type: "text",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "PASSWORD",
+					label: "Password",
+					value: "",
+					category: "Credentials",
+					type: "password",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "additional",
+					label: "Additional Parameters",
+					value: "",
+					category: "Credentials",
+					type: "text",
+					disabled: true,
+					required: false,
+					hidden: true,
 				},
 			],
 		},
 		{
 			name: "SQLite",
-			disable: true,
+			disable: false,
 			icon: SQLITE,
-			fields: [],
-		},
-		{
-			name: "H2",
-			disable: true,
-			icon: H2_DB,
-			fields: [],
+			fields: [
+				{
+					key: "dbDriver",
+					label: "Driver Name",
+					value: "SQLITE",
+					type: "text",
+					disabled: true,
+					required: true,
+					hidden: true,
+					category: "General",
+				},
+				{
+					key: "NAME",
+					label: "Catalog Name",
+					value: "",
+					category: "General",
+					type: "text",
+					disabled: false,
+					required: true,
+					rules: {
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					key: "DATABASE_DESCRIPTION",
+					label: "Database Description",
+					value: "",
+					category: "General",
+					type: "text",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "DATABASE_TAG",
+					label: "Tags",
+					value: "",
+					category: "General",
+					type: "tags",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "UPLOAD_MODE",
+					label: "Connection Type",
+					value: "empty",
+					category: "File Upload",
+					type: "radio",
+					options: {
+						options: [
+							{
+								display: "Create Empty Database",
+								value: "empty",
+							},
+							{
+								display: "Upload Existing SQLite Database",
+								value: "file",
+							},
+						],
+					},
+					disabled: false,
+					required: true,
+					displayRules: {
+						hideOtherFields: [
+							{ key: "FILE_UPLOAD", value: ["empty"] },
+							{ key: "schema", value: ["empty"] },
+						],
+					},
+				},
+				{
+					key: "FILE_UPLOAD",
+					label: "File Upload",
+					value: null,
+					category: "File Upload",
+					options: {
+						extensions: [".sqlite"],
+					},
+					type: "file-upload",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+				{
+					key: "schema",
+					label: "Schema",
+					value: "",
+					category: "Credentials",
+					type: "text",
+					disabled: false,
+					required: false,
+					hidden: true,
+				},
+				{
+					key: "USERNAME",
+					label: "Username",
+					value: "",
+					category: "Credentials",
+					type: "text",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "PASSWORD",
+					label: "Password",
+					value: "",
+					category: "Credentials",
+					type: "password",
+					disabled: false,
+					required: false,
+				},
+				{
+					key: "additional",
+					label: "Additional Parameters",
+					value: "",
+					category: "Credentials",
+					type: "text",
+					disabled: true,
+					required: false,
+					hidden: true,
+				},
+			],
 		},
 		{
 			name: "Neo4J",
@@ -471,7 +936,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -487,7 +952,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -636,7 +1101,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -652,7 +1117,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -799,7 +1264,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -815,7 +1280,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -936,7 +1401,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -952,7 +1417,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1098,7 +1563,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1114,7 +1579,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1268,7 +1733,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1284,7 +1749,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1447,7 +1912,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1463,7 +1928,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1548,7 +2013,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1564,7 +2029,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1709,7 +2174,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1725,7 +2190,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1871,7 +2336,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1887,7 +2352,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1990,7 +2455,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2006,7 +2471,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2151,7 +2616,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2167,7 +2632,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2312,7 +2777,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2328,7 +2793,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2473,7 +2938,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2489,7 +2954,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2634,7 +3099,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2650,7 +3115,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2795,7 +3260,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2811,7 +3276,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2914,7 +3379,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2930,7 +3395,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3075,7 +3540,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3091,7 +3556,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3236,7 +3701,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3252,7 +3717,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3406,7 +3871,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3422,7 +3887,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3576,7 +4041,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]" ) ;',
+							value: 'META | CheckEngineName ( "[VALUE]" ) ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3592,7 +4057,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3737,7 +4202,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3753,7 +4218,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3934,7 +4399,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3950,7 +4415,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4123,7 +4588,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4139,7 +4604,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4294,7 +4759,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4310,7 +4775,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4446,7 +4911,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4462,7 +4927,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4598,7 +5063,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4614,7 +5079,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4760,7 +5225,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4776,7 +5241,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4907,6 +5372,9 @@ export const DATABASE_CONNECTION = {
 export const CATEGORY_DESCRIPTIONS = {
 	General:
 		"Contains descriptive and organizational details about the database, such as name, description, and tags.",
+	Database:
+		"Select the database engine type and how the data should be imported.",
+	"File Upload": "Upload the file to import.",
 	Settings:
 		"Defines the technical configuration needed to connect to the database, including host, port, schema, and connection parameters.",
 	Credentials:
