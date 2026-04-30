@@ -11,6 +11,7 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { DataTypeIcon } from "@semoss/shared";
 import {
 	Button,
 	Collapsible,
@@ -25,6 +26,10 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import ColumnEditModal from "./column-edit-modal";
 
@@ -243,48 +248,17 @@ const DataSelection = ({
 
 	return (
 		<div ref={containerRef}>
+			<P className="mt-4 font-semibold text-xl">Configure Columns</P>
+			<P className="mt-2 mb-4 font-normal text-muted-foreground">
+				Review and adjust column names and data types before importing
+				your data.
+			</P>
 			{files.map((parsedData, fileIdx) => (
-				<div key={fileName[fileIdx]} className="mb-4">
-					{/* Header Section */}
-					<div className="mb-2 flex w-full items-center justify-between">
-						<div className="flex flex-row items-center gap-2">
-							<FileSpreadsheet className="size-6 text-primary" />
-							<P className="pl-1 text-foreground">
-								{fileName[fileIdx]}
-							</P>
-						</div>
-						<Button
-							variant="outline"
-							size="default"
-							data-testid="collapse-button"
-							onClick={() =>
-								setCollapseAll((prev) =>
-									prev.map((v, i) =>
-										i === fileIdx ? !v : v,
-									),
-								)
-							}
-							className="min-w-40 gap-2 rounded px-6 py-2 font-semibold capitalize"
-						>
-							{collapseAll[fileIdx] ? (
-								<>
-									<FoldVertical className="size-4" />
-									Collapse All
-								</>
-							) : (
-								<>
-									<UnfoldVertical className="size-4" />
-									Expand All
-								</>
-							)}
-						</Button>
-					</div>
-
-					{/* Body Section */}
-					<div className="mt-0 overflow-hidden rounded-md border border-border bg-card">
+				<div key={fileName[fileIdx]} className="mb-3">
+					<div className="overflow-hidden rounded-md border border-border bg-card">
 						{/* Summary Header */}
 						<div
-							className="flex cursor-pointer flex-row items-center justify-between rounded-t-md bg-secondary p-4"
+							className="flex cursor-pointer flex-row items-center justify-between bg-secondary px-3 py-2"
 							onClick={() =>
 								setCollapseAll((prev) =>
 									prev.map((v, i) =>
@@ -293,167 +267,176 @@ const DataSelection = ({
 								)
 							}
 						>
-							<P className="font-medium text-base text-foreground">
-								Sheet Name: {fileName[fileIdx]}
-							</P>
-							{collapseAll[fileIdx] ? (
-								<ChevronUp
-									className="size-5 transition-transform duration-300"
-									data-testid="expand-icon"
-								/>
-							) : (
-								<ChevronDown
-									className="size-5 transition-transform duration-300"
-									data-testid="expand-icon"
-								/>
-							)}
+							<div className="flex items-center gap-2">
+								<FileSpreadsheet className="size-4 text-primary" />
+								<P className="font-medium text-foreground text-sm">
+									{fileName[fileIdx]}
+								</P>
+							</div>
+							<div className="flex items-center gap-2">
+								<Button
+									variant="ghost"
+									size="sm"
+									data-testid="collapse-button"
+									onClick={(e) => {
+										e.stopPropagation();
+										setCollapseAll((prev) =>
+											prev.map((v, i) =>
+												i === fileIdx ? !v : v,
+											),
+										);
+									}}
+									className="h-7 gap-1.5 px-2 text-xs"
+								>
+									{collapseAll[fileIdx] ? (
+										<>
+											<FoldVertical className="size-3" />
+											Collapse
+										</>
+									) : (
+										<>
+											<UnfoldVertical className="size-3" />
+											Expand
+										</>
+									)}
+								</Button>
+								{collapseAll[fileIdx] ? (
+									<ChevronUp className="size-4 text-muted-foreground" />
+								) : (
+									<ChevronDown className="size-4 text-muted-foreground" />
+								)}
+							</div>
 						</div>
 
 						<Collapsible open={collapseAll[fileIdx]}>
 							<CollapsibleContent>
-								<div>
-									{/* Table Name Input Section */}
-									<div className="flex items-center justify-between p-4">
-										<div className="flex flex-row items-start gap-1.5">
-											<P className="relative top-3.5 whitespace-nowrap text-base text-foreground">
-												Table Name:
-											</P>
-											<Field className="flex-1">
-												<Input
-													placeholder="Enter table name"
-													value={
-														tableNames[fileIdx] ||
-														""
-													}
-													onChange={(e) =>
-														handleTableNameChange(
-															fileIdx,
-															e.target.value,
-														)
-													}
-													data-testid="table-name-input"
-													className={
-														!tableNames[
-															fileIdx
-														]?.trim()
-															? "border-destructive focus-visible:ring-destructive"
-															: ""
-													}
-												/>
-												{!tableNames[
-													fileIdx
-												]?.trim() && (
-													<FieldDescription className="mt-0.5 text-destructive">
-														Enter a valid table name
-													</FieldDescription>
-												)}
-											</Field>
-										</div>
-									</div>
+								{/* Table Name */}
+								<div className="flex items-center gap-2 border-border border-b px-3 py-2">
+									<P className="shrink-0 text-foreground text-sm">
+										Table Name:
+									</P>
+									<Field className="flex-1">
+										<Input
+											placeholder="Enter table name"
+											value={tableNames[fileIdx] || ""}
+											onChange={(e) =>
+												handleTableNameChange(
+													fileIdx,
+													e.target.value,
+												)
+											}
+											data-testid="table-name-input"
+											className={`h-7 text-sm ${!tableNames[fileIdx]?.trim() ? "border-destructive focus-visible:ring-destructive" : ""}`}
+										/>
+										{!tableNames[fileIdx]?.trim() && (
+											<FieldDescription className="mt-0.5 text-destructive text-xs">
+												Enter a valid table name
+											</FieldDescription>
+										)}
+									</Field>
+								</div>
 
-									{/* Table Section */}
-									<div className="max-h-[400px] overflow-auto">
-										<Table>
-											<TableHeader>
-												<TableRow>
-													<TableHead className="w-[66%]">
-														<P className="font-semibold text-foreground text-sm">
-															Name
-														</P>
-													</TableHead>
-													<TableHead className="w-[20%]">
-														<P className="font-semibold text-foreground text-sm">
-															Data Type
-														</P>
-													</TableHead>
-													<TableHead className="w-[7%]" />
-													<TableHead className="w-[7%]" />
-												</TableRow>
-											</TableHeader>
-
-											<TableBody>
-												{parsedData.cleanHeaders.map(
-													(column, index) => (
-														<TableRow
-															key={column}
-															data-testid={`table-row-${fileIdx}-${index}`}
+								{/* Table */}
+								<div className="max-h-[400px] overflow-auto">
+									<Table>
+										<TableHeader>
+											<TableRow>
+												<TableHead className="py-2 pl-3">
+													<P className="font-semibold text-foreground text-xs uppercase tracking-wide">
+														Name
+													</P>
+												</TableHead>
+												<TableHead className="w-px py-2 text-center">
+													<P className="font-semibold text-foreground text-xs uppercase tracking-wide">
+														Data Type
+													</P>
+												</TableHead>
+												<TableHead className="w-9 py-2" />
+											</TableRow>
+										</TableHeader>
+										<TableBody>
+											{parsedData.cleanHeaders.map(
+												(column, index) => (
+													<TableRow
+														key={column}
+														data-testid={`table-row-${fileIdx}-${index}`}
+													>
+														<TableCell
+															className="py-1.5 pr-2 pl-3"
+															data-testid={`table-cell-name-${fileIdx}-${index}`}
 														>
-															{/* Name */}
-															<TableCell
-																className="py-2 pr-6 pl-4"
-																data-testid={`table-cell-name-${fileIdx}-${index}`}
-															>
-																<Input
-																	value={
-																		columnMetadataList[
-																			fileIdx
-																		]?.[
-																			column
-																		]
-																			?.alias ??
-																		column
-																	}
-																	onChange={(
-																		e,
-																	) =>
-																		handleNameChange(
-																			fileIdx,
-																			index,
-																			e
-																				.target
-																				.value,
-																		)
-																	}
-																	disabled={
-																		!rowEditableStateList[
-																			fileIdx
-																		]?.[
-																			index
-																		]
-																	}
-																	data-testid={`column-name-input-${fileIdx}-${index}`}
-																	className={
-																		!rowEditableStateList[
-																			fileIdx
-																		]?.[
-																			index
-																		]
-																			? "border-dashed"
-																			: ""
-																	}
-																/>
-															</TableCell>
-
-															{/* Data Type */}
-															<TableCell
-																className="py-2 pr-6 pl-4"
-																data-testid={`table-cell-datatype-${fileIdx}-${index}`}
-															>
-																<P
-																	className={`text-sm ${
-																		!rowEditableStateList[
-																			fileIdx
-																		]?.[
-																			index
-																		]
-																			? "text-muted-foreground"
-																			: "text-foreground"
-																	}`}
-																	data-testid={`column-datatype-${fileIdx}-${index}`}
-																>
-																	{columnMetadataList[
+															<Input
+																value={
+																	columnMetadataList[
 																		fileIdx
 																	]?.[column]
-																		?.dataType ||
-																		"STRING"}
-																</P>
-															</TableCell>
-
-															{/* Edit */}
-															<TableCell
-																className="py-2 pr-6 pl-4"
-																data-testid={`table-cell-edit-${fileIdx}-${index}`}
-															>
+																		?.alias ??
+																	column
+																}
+																onChange={(e) =>
+																	handleNameChange(
+																		fileIdx,
+																		index,
+																		e.target
+																			.value,
+																	)
+																}
+																disabled={
+																	!rowEditableStateList[
+																		fileIdx
+																	]?.[index]
+																}
+																data-testid={`column-name-input-${fileIdx}-${index}`}
+																className={`h-7 text-sm ${!rowEditableStateList[fileIdx]?.[index] ? "border-dashed" : ""}`}
+															/>
+														</TableCell>
+														<TableCell
+															className="py-1.5 pr-1"
+															data-testid={`table-cell-datatype-${fileIdx}-${index}`}
+														>
+															<div className="flex items-center justify-center gap-1">
+																<TooltipProvider>
+																	<Tooltip>
+																		<TooltipTrigger
+																			asChild
+																		>
+																			<span
+																				className={
+																					!rowEditableStateList[
+																						fileIdx
+																					]?.[
+																						index
+																					]
+																						? "opacity-50"
+																						: ""
+																				}
+																				data-testid={`column-datatype-${fileIdx}-${index}`}
+																			>
+																				<DataTypeIcon
+																					type={
+																						columnMetadataList[
+																							fileIdx
+																						]?.[
+																							column
+																						]
+																							?.dataType ||
+																						"STRING"
+																					}
+																					className="size-3.5"
+																				/>
+																			</span>
+																		</TooltipTrigger>
+																		<TooltipContent>
+																			{columnMetadataList[
+																				fileIdx
+																			]?.[
+																				column
+																			]
+																				?.dataType ||
+																				"STRING"}
+																		</TooltipContent>
+																	</Tooltip>
+																</TooltipProvider>
 																<Button
 																	variant="ghost"
 																	size="icon"
@@ -471,50 +454,48 @@ const DataSelection = ({
 																		]
 																	}
 																	data-testid={`edit-button-${fileIdx}-${index}`}
+																	className="size-7"
 																>
-																	<Edit className="size-4" />
+																	<Edit className="size-3.5" />
 																</Button>
-															</TableCell>
-
-															{/* Toggle */}
-															<TableCell
-																className="py-2 pr-6 pl-4"
-																data-testid={`table-cell-toggle-${fileIdx}-${index}`}
+															</div>
+														</TableCell>
+														<TableCell
+															className="w-9 py-1.5 pr-2 pl-0"
+															data-testid={`table-cell-toggle-${fileIdx}-${index}`}
+														>
+															<Button
+																variant="ghost"
+																size="icon"
+																onClick={() =>
+																	toggleRowEditState(
+																		fileIdx,
+																		index,
+																	)
+																}
+																data-testid={`toggle-button-${fileIdx}-${index}`}
+																className="size-7"
 															>
-																<Button
-																	variant="ghost"
-																	size="icon"
-																	onClick={() =>
-																		toggleRowEditState(
-																			fileIdx,
-																			index,
-																		)
-																	}
-																	data-testid={`toggle-button-${fileIdx}-${index}`}
-																>
-																	{rowEditableStateList[
-																		fileIdx
-																	]?.[
-																		index
-																	] ? (
-																		<X
-																			className="size-4 text-destructive"
-																			data-testid={`toggle-icon-close-${fileIdx}-${index}`}
-																		/>
-																	) : (
-																		<Plus
-																			className="size-4 text-primary"
-																			data-testid={`toggle-icon-add-${fileIdx}-${index}`}
-																		/>
-																	)}
-																</Button>
-															</TableCell>
-														</TableRow>
-													),
-												)}
-											</TableBody>
-										</Table>
-									</div>
+																{rowEditableStateList[
+																	fileIdx
+																]?.[index] ? (
+																	<X
+																		className="size-3.5 text-destructive"
+																		data-testid={`toggle-icon-close-${fileIdx}-${index}`}
+																	/>
+																) : (
+																	<Plus
+																		className="size-3.5 text-primary"
+																		data-testid={`toggle-icon-add-${fileIdx}-${index}`}
+																	/>
+																)}
+															</Button>
+														</TableCell>
+													</TableRow>
+												),
+											)}
+										</TableBody>
+									</Table>
 								</div>
 							</CollapsibleContent>
 						</Collapsible>
@@ -523,7 +504,7 @@ const DataSelection = ({
 			))}
 
 			{/* Footer */}
-			<div className="mt-4 mb-6 flex justify-between gap-4">
+			<div className="mt-3 mb-6 flex justify-between gap-4">
 				<Button
 					variant="outline"
 					onClick={onCancel}

@@ -1,7 +1,7 @@
 import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, Spinner } from "@semoss/ui/next";
+import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { RoomInlineTool } from "../room";
@@ -118,6 +118,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool, isLarge }) => {
 		const { t } = useTranslation("tool");
 		const { room } = message;
+		const isMobile = useIsMobile();
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
 			tool.status === "LOADING",
@@ -159,11 +160,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					// Clicks when inline should close
 					tool.closeTool();
 				} else {
-					// if it's open in the sidebar, we want to move it to the front
-					tool.openTool("sidebar");
+					// if it's open in the sidebar, move to front on desktop or switch to inline on mobile
+					tool.openTool(isMobile ? "inline" : "sidebar");
 				}
 			} else {
-				tool.openTool();
+				tool.openTool(isMobile ? "inline" : undefined);
 			}
 		};
 

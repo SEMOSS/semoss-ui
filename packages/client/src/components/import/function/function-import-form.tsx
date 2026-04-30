@@ -34,6 +34,7 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
 	headers: string[];
@@ -252,24 +253,6 @@ export const FunctionForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	// Helper functions for file upload
 	const onFileUpload = (
 		files: File | File[],
@@ -356,7 +339,11 @@ export const FunctionForm = ({
 				switch (val.type) {
 					case "text":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -467,7 +454,11 @@ export const FunctionForm = ({
 
 					case "number":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -501,7 +492,11 @@ export const FunctionForm = ({
 
 					case "select":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -514,7 +509,6 @@ export const FunctionForm = ({
 									value={field.value || ""}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -562,7 +556,11 @@ export const FunctionForm = ({
 
 					case "radio":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel>
 									{val.label}
 									{val?.required && (
@@ -748,7 +746,11 @@ export const FunctionForm = ({
 					case "checkbox":
 						return (
 							<div
-								className={`flex items-center gap-2 ${val.hidden ? "hidden" : ""}`}
+								className={
+									computeVisibility(val, {})
+										? "flex items-center gap-2"
+										: "hidden"
+								}
 							>
 								<Checkbox
 									id={val.key}
@@ -782,7 +784,11 @@ export const FunctionForm = ({
 						);
 					case "tags":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (

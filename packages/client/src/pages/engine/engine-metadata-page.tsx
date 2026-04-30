@@ -23,12 +23,6 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
 	H4,
 	Input,
 	Muted,
@@ -49,6 +43,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import {
+	ColumnMetadataModal,
+	type LogicalDataType,
+} from "@semoss/shared";
 import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
@@ -64,13 +62,7 @@ type SearchMatch = {
 	columnIndex: number | null;
 };
 
-type SupportedDataType =
-	| "BOOLEAN"
-	| "INT"
-	| "DOUBLE"
-	| "STRING"
-	| "DATE"
-	| "TIMESTAMP";
+type SupportedDataType = LogicalDataType;
 
 type ColumnDetails = {
 	tableName: string;
@@ -81,39 +73,8 @@ type ColumnDetails = {
 	logicalNames: string[];
 };
 
-const normalizeSupportedDataType = (value?: string): SupportedDataType | "" => {
-	if (!value) {
-		return "";
-	}
-
-	switch (value.toUpperCase()) {
-		case "BOOLEAN":
-		case "BOOL":
-			return "BOOLEAN";
-		case "INT":
-		case "INTEGER":
-		case "BIGINT":
-		case "SMALLINT":
-			return "INT";
-		case "DOUBLE":
-		case "FLOAT":
-		case "NUMERIC":
-		case "DECIMAL":
-			return "DOUBLE";
-		case "STRING":
-		case "VARCHAR":
-		case "CHAR":
-		case "TEXT":
-			return "STRING";
-		case "DATE":
-			return "DATE";
-		case "TIMESTAMP":
-		case "DATETIME":
-			return "TIMESTAMP";
-		default:
-			return "";
-	}
-};
+const normalizeSupportedDataType = (value?: string): SupportedDataType | "" =>
+	(value || "") as SupportedDataType | "";
 
 const normalizePhysicalTypeKey = (value: string) =>
 	value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -370,7 +331,13 @@ export const EngineMetadataPage = observer(() => {
 		configStore.store.insightID,
 	);
 
+	const getDatabaseCategory = usePixel<string>(
+		active.id ? `GetDatabaseCategory(database=["${active.id}"]);` : "",
+	);
+	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
+
 	const [showSyncDatabase, setShowSyncDatabase] = useState(false);
+	const [metamodelResetKey, setMetamodelResetKey] = useState(0);
 	const [showSaveReminder, setShowSaveReminder] = useState(false);
 	const [hasSchemaChanges, setHasSchemaChanges] = useState(false);
 	const [hasPositionChanges, setHasPositionChanges] = useState(false);
@@ -1026,6 +993,54 @@ Error ${e.message || "Unknown error"}
 		}
 	};
 
+	const handleReset = useCallback(() => {
+		const data = getDatabaseMetamodel.data;
+		if (!data) return;
+
+		const { nodes: rawNodes, edges: rawEdges, positions, dataTypes, additionalDataTypes, logicalNames, descriptions, physicalTypes = {} } = data;
+
+		const n = rawNodes.map((n) => ({
+			id: n.conceptualName,
+			type: "metamodel" as const,
+			data: {
+				name: n.conceptualName,
+				properties: n.propSet.map((p) => {
+					const propertyId = `${n.conceptualName}__${p}`;
+					const normalizedDataType =
+						normalizeSupportedDataType(dataTypes[propertyId]) ||
+						normalizeSupportedDataType(additionalDataTypes[propertyId]);
+					return {
+						id: propertyId,
+						name: p,
+						type: normalizedDataType,
+						physicalType: resolvePhysicalType(physicalTypes, n.conceptualName, p, propertyId),
+						description: descriptions[propertyId] ?? "",
+						logicalNames: logicalNames[propertyId] ?? [],
+					};
+				}),
+			},
+			position: positions[n.conceptualName]
+				? { x: positions[n.conceptualName].left, y: positions[n.conceptualName].top }
+				: { x: 0, y: 0 },
+		}));
+
+		const e = rawEdges.map((e, i) => ({
+			id: `${e.relation}-${i}`,
+			type: "floating" as const,
+			source: e.source,
+			target: e.target,
+			relName: e.relation,
+		}));
+
+		setNodes(n);
+		setEdges(e);
+		setIsModified(false);
+		setHasSchemaChanges(false);
+		setHasPositionChanges(false);
+		setShowSaveReminder(false);
+		setMetamodelResetKey((k) => k + 1);
+	}, [getDatabaseMetamodel.data]);
+
 	const isPositionOnlyChange = hasPositionChanges && !hasSchemaChanges;
 	const saveReminderText = isPositionOnlyChange
 		? "Positions updated. Save to persist layout."
@@ -1062,24 +1077,44 @@ Error ${e.message || "Unknown error"}
 									</P>
 								</div>
 							)}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										size="sm"
-										disabled={!active?.id}
-										variant="outline"
-										onClick={() =>
-											setShowSyncDatabase(true)
-										}
-										data-testid="engineMetadata-refresh-btn"
-									>
-										<RefreshCwIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									Sync the metamodel with the database
-								</TooltipContent>
-							</Tooltip>
+							{isModified && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={handleReset}
+											data-testid="engineMetadata-reset-btn"
+										>
+											<RefreshCwIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Reset to last saved state
+									</TooltipContent>
+								</Tooltip>
+							)}
+
+							{isRdbms && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											size="sm"
+											disabled={!active?.id}
+											variant="outline"
+											onClick={() =>
+												setShowSyncDatabase(true)
+											}
+											data-testid="engineMetadata-sync-btn"
+										>
+											<RefreshCwIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Sync the metamodel with the database
+									</TooltipContent>
+								</Tooltip>
+							)}
 
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -1139,6 +1174,7 @@ Error ${e.message || "Unknown error"}
 						<Metamodel
 							nodes={nodes}
 							edges={edges}
+							resetKey={metamodelResetKey}
 							selectedNode={selectedNode}
 							onSelectNode={(node) => {
 								setSelectedNode(node);
@@ -1627,88 +1663,15 @@ Error ${e.message || "Unknown error"}
 				</Section>
 			)}
 
-			<Dialog
+			<ColumnMetadataModal
 				open={openColumnDetails}
-				onOpenChange={(open) => {
-					if (!open) {
-						closeColumnDetailsModal();
-					}
-				}}
-			>
-				<DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-xl">
-					<DialogHeader>
-						<DialogTitle>Column Metadata</DialogTitle>
-						<DialogDescription>
-							View logical names and description.
-						</DialogDescription>
-					</DialogHeader>
-
-					<div className="space-y-4 overflow-y-auto pr-1">
-						<div className="flex flex-wrap items-center gap-2">
-							<Badge variant="outline">
-								Table:{" "}
-								{selectedColumnDetails?.tableName ?? "N/A"}
-							</Badge>
-							<Badge variant="outline">
-								Column:{" "}
-								{selectedColumnDetails?.columnName ?? "N/A"}
-							</Badge>
-							<Badge variant="outline">
-								Physical Type:{" "}
-								{selectedColumnDetails?.physicalType || "N/A"}
-							</Badge>
-						</div>
-
-						<div className="space-y-2 rounded-md border border-border p-3">
-							<div className="space-y-1">
-								<P className="font-medium text-foreground text-sm">
-									Logical Names
-								</P>
-								<div className="flex flex-wrap gap-1">
-									{selectedColumnDetails?.logicalNames
-										?.length ? (
-										selectedColumnDetails.logicalNames.map(
-											(name) => (
-												<Badge
-													key={name}
-													variant="default"
-													className="text-xs"
-												>
-													{name}
-												</Badge>
-											),
-										)
-									) : (
-										<P className="text-muted-foreground text-sm">
-											No logical names provided.
-										</P>
-									)}
-								</div>
-							</div>
-
-							<div className="space-y-1">
-								<P className="font-medium text-foreground text-sm">
-									Description
-								</P>
-								<P className="text-muted-foreground text-sm">
-									{selectedColumnDetails?.description ||
-										"No description provided."}
-								</P>
-							</div>
-						</div>
-					</div>
-
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={closeColumnDetailsModal}
-							data-testid="column-details-close-btn"
-						>
-							Close
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+				onClose={closeColumnDetailsModal}
+				tableName={selectedColumnDetails?.tableName}
+				columnName={selectedColumnDetails?.columnName}
+				physicalType={selectedColumnDetails?.physicalType}
+				logicalNames={selectedColumnDetails?.logicalNames}
+				description={selectedColumnDetails?.description}
+			/>
 
 			{active?.id && (
 				<SyncExternalDatabaseOverlay
