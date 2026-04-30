@@ -105,6 +105,7 @@ export const DatabaseForm = ({
 		control,
 		handleSubmit,
 		watch,
+		getValues,
 		setValue,
 		setFocus,
 		formState,
@@ -135,6 +136,22 @@ export const DatabaseForm = ({
 	const databaseType = watch("DATABASE_TYPE");
 	const metamodelType = watch("METAMODEL_TYPE");
 
+	type MetaOpt = { display: string; value: string };
+	const metamodelOptions = useMemo(() => {
+		const type = databaseType?.toLowerCase();
+		const allOpts: MetaOpt[] =
+			(
+				fields.find(
+					(f: { key: string }) => f.key === "METAMODEL_TYPE",
+				) as { options?: { options?: MetaOpt[] } } | undefined
+			)?.options?.options ?? [];
+		if (type === "rdf")
+			return allOpts.filter((o) => o.value !== "asFlatTable");
+		if (type === "r" || type === "h2")
+			return allOpts.filter((o) => o.value === "asFlatTable");
+		return allOpts;
+	}, [databaseType, fields]);
+
 	useEffect(() => {
 		const isPropFile = metamodelType === "fromPropFile";
 		setResolvedFields((prev) =>
@@ -160,12 +177,12 @@ export const DatabaseForm = ({
 			filteredOptions = originalOptions.filter(
 				(opt: MetaOpt) => opt.value !== "asFlatTable",
 			);
-		} else if (type) {
+		} else if (type === "r" || type === "h2") {
 			filteredOptions = originalOptions.filter(
 				(opt: MetaOpt) => opt.value === "asFlatTable",
 			);
 		}
-		const currentValue = watch("METAMODEL_TYPE");
+		const currentValue = getValues("METAMODEL_TYPE");
 		const valueStillValid = filteredOptions.some(
 			(opt: MetaOpt) => opt.value === currentValue,
 		);
@@ -184,6 +201,7 @@ export const DatabaseForm = ({
 				};
 			}),
 		);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: getValues/setValue are stable react-hook-form refs
 	}, [databaseType, fields]);
 
 	const grouped = defaultFields.reduce((acc, f) => {
@@ -231,8 +249,8 @@ export const DatabaseForm = ({
 						...(formData.DATABASE_DESCRIPTION && {
 							description: formData.DATABASE_DESCRIPTION,
 						}),
-						...(formData.DATABASE_TAGS && {
-							tag: formData.DATABASE_TAGS,
+						...(formData.DATABASE_TAG && {
+							tag: formData.DATABASE_TAG,
 						}),
 					};
 					const pixel = `databaseVar = CreateEmptyRdbmsDatabase(database=[${JSON.stringify(formData.NAME)}], rdbmsType=[${JSON.stringify(formData.dbDriver)}], username=[${JSON.stringify(formData.USERNAME ?? "")}], password=[${JSON.stringify(formData.PASSWORD ?? "")}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
@@ -782,7 +800,7 @@ export const DatabaseForm = ({
 				([key]) =>
 					key !== "NAME" &&
 					key !== "DATABASE_DESCRIPTION" &&
-					key !== "DATABASE_TAGS" &&
+					key !== "DATABASE_TAG" &&
 					key !== "FILE_UPLOAD" &&
 					key !== "relationships" &&
 					key !== "tables" &&
@@ -1247,7 +1265,11 @@ export const DatabaseForm = ({
 										/>
 									</SelectTrigger>
 									<SelectContent>
-										{val?.options?.options?.map((opt) => (
+										{(val.key === "METAMODEL_TYPE"
+											? metamodelOptions
+											: ((val?.options?.options ??
+													[]) as MetaOpt[])
+										).map((opt: MetaOpt) => (
 											<SelectItem
 												key={opt.value}
 												value={opt.value}
@@ -1318,7 +1340,11 @@ export const DatabaseForm = ({
 					case "zip-upload":
 						return (
 							<div
-								className={`flex flex-col gap-2${val.hidden ? "hidden" : ""}`}
+								className={
+									val.hidden
+										? "hidden"
+										: "flex flex-col gap-2"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<P>

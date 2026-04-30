@@ -193,17 +193,6 @@ export const MetaModelType = observer(
 			[selectedDataIndex],
 		);
 
-		// Handlers
-		// const handleNodesMenuOpen = useCallback(
-		// 	() => setAnchorNodesMenu(true),
-		// 	[],
-		// );
-
-		// const handleNodesMenuClose = useCallback(
-		// 	() => setAnchorNodesMenu(false),
-		// 	[],
-		// );
-
 		const handleSelectAll = useCallback(
 			(isChecked: boolean) => {
 				if (isChecked) {

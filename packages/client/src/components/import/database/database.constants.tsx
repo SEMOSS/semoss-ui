@@ -154,14 +154,6 @@ export const DATABASE_CONNECTION = {
 							},
 						],
 					},
-					displayRules: {
-						hideOtherFields: [
-							{
-								key: "PROP_FILE_UPLOAD",
-								value: ["asFlatTable", "asSuggestedMetaModel"],
-							},
-						],
-					},
 				},
 				{
 					key: "CUSTOM_BASE_URI",
@@ -446,14 +438,6 @@ export const DATABASE_CONNECTION = {
 							},
 						],
 					},
-					displayRules: {
-						hideOtherFields: [
-							{
-								key: "PROP_FILE_UPLOAD",
-								value: ["asFlatTable", "asSuggestedMetaModel"],
-							},
-						],
-					},
 				},
 				{
 					key: "CUSTOM_BASE_URI",
@@ -603,14 +587,6 @@ export const DATABASE_CONNECTION = {
 							},
 						],
 					},
-					displayRules: {
-						hideOtherFields: [
-							{
-								key: "PROP_FILE_UPLOAD",
-								value: ["asFlatTable", "asSuggestedMetaModel"],
-							},
-						],
-					},
 				},
 				{
 					key: "CUSTOM_BASE_URI",
@@ -694,7 +670,7 @@ export const DATABASE_CONNECTION = {
 					required: false,
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					category: "General",
@@ -828,7 +804,7 @@ export const DATABASE_CONNECTION = {
 					required: false,
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					category: "General",
@@ -976,7 +952,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1141,7 +1117,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1304,7 +1280,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1441,7 +1417,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1603,7 +1579,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1773,7 +1749,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1952,7 +1928,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2053,7 +2029,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2214,7 +2190,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2376,7 +2352,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2495,7 +2471,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2656,7 +2632,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2817,7 +2793,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2978,7 +2954,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3139,7 +3115,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3300,7 +3276,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3419,7 +3395,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3580,7 +3556,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3741,7 +3717,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3911,7 +3887,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4081,7 +4057,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4242,7 +4218,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4439,7 +4415,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4628,7 +4604,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4799,7 +4775,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4951,7 +4927,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -5103,7 +5079,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -5265,7 +5241,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
