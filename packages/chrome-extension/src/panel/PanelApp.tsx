@@ -7,9 +7,27 @@ import {
 } from "../services/scriptExecutor";
 import { WelcomeState } from "./components/WelcomeState";
 
+interface ChromeMessage {
+	type: string;
+	timestamp?: number;
+	script?: {
+		fileName: string;
+		projectId: string;
+	};
+	payload?: {
+		fileName: string;
+		projectID: string;
+		title?: string;
+		scriptContent?: string;
+	};
+	value?: string;
+	isPassword?: boolean;
+}
+
 const PanelApp: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isRunning, setIsRunning] = useState(false);
+	const [isPaused, setIsPaused] = useState(false);
 	const [actionHistory, setActionHistory] = useState<string[]>([]);
 	const [waitingForUserInput, setWaitingForUserInput] = useState(false);
 	const [userInputPrompt, setUserInputPrompt] = useState("");
@@ -18,19 +36,26 @@ const PanelApp: React.FC = () => {
 	const [userInputCallback, setUserInputCallback] = useState<
 		((value: string) => void) | null
 	>(null);
-	const [mode, setMode] = useState<"script">("script");
-	const [scriptJson, setScriptJson] = useState("");
-	const [jsonFormat, setJsonFormat] = useState<"playwright">("playwright");
+	const [_mode, setMode] = useState<"script">("script");
+	const [_scriptJson, _setScriptJson] = useState("");
+	const [_jsonFormat, _setJsonFormat] = useState<"playwright">("playwright");
 
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
 
 	// Ref to track isRunning without causing useEffect re-runs
 	const isRunningRef = useRef<boolean>(false);
+	// Ref to track isPaused without causing useEffect re-runs
+	const isPausedRef = useRef<boolean>(false);
 	// Ref to track userInputCallback without causing useEffect re-runs
 	const userInputCallbackRef = useRef(userInputCallback);
 	// Ref to track execution tab for cleanup detection
 	const executionTabIdRef = useRef<number | null>(null);
-	const tabRemovalListenerRef = useRef<((tabId: number) => void) | null>(null);
+	const tabRemovalListenerRef = useRef<((tabId: number) => void) | null>(
+		null,
+	);
+	const tabActivatedListenerRef = useRef<
+		((activeInfo: chrome.tabs.TabActiveInfo) => void) | null
+	>(null);
 
 	// Real-time input mirroring state
 	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
@@ -76,13 +101,14 @@ const PanelApp: React.FC = () => {
 	}, []);
 
 	// Listen for playground chat events from content script
+	// biome-ignore lint/correctness/useExhaustiveDependencies: executeScriptWithContent and waitingForUserInput are intentionally excluded to prevent infinite loops
 	useEffect(() => {
 		console.log("[PANEL] 🎧 Setting up message listener");
 
 		const messageListener = (
-			message: any,
+			message: ChromeMessage,
 			sender: chrome.runtime.MessageSender,
-			sendResponse: (response?: any) => void,
+			sendResponse: (response?: { alive?: boolean }) => void,
 		) => {
 			console.log("[PANEL] 📨 Received message:", message.type, message);
 
@@ -96,26 +122,41 @@ const PanelApp: React.FC = () => {
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
 			if (sender.tab && message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT") {
-				console.log("[PANEL] ⏭️ Ignoring direct message from content script");
+				console.log(
+					"[PANEL] ⏭️ Ignoring direct message from content script",
+				);
 				return;
 			}
 
 			// CRITICAL: Block script execution if already running (use ref to avoid stale closure)
-			if ((message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" || message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") && isRunningRef.current) {
-				console.log("[PANEL] ⏸️ Already running, ignoring duplicate execution");
+			if (
+				(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
+					message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") &&
+				isRunningRef.current
+			) {
+				console.log(
+					"[PANEL] ⏸️ Already running, ignoring duplicate execution",
+				);
 				return;
 			}
 
 			// Handle portal message format
 			if (message.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
-				const { fileName, projectID, title, scriptContent } = message.payload || {};
+				const { fileName, projectID, title, scriptContent } =
+					message.payload || {};
 
 				if (!fileName || !projectID) {
-					console.error("[PANEL] ❌ Missing fileName or projectID in portal message");
+					console.error(
+						"[PANEL] ❌ Missing fileName or projectID in portal message",
+					);
 					return;
 				}
 
-				console.log("[PANEL] 📨 Portal execution request:", { fileName, projectID, title });
+				console.log("[PANEL] 📨 Portal execution request:", {
+					fileName,
+					projectID,
+					title,
+				});
 
 				// Set ref IMMEDIATELY to block duplicate messages
 				isRunningRef.current = true;
@@ -128,7 +169,9 @@ const PanelApp: React.FC = () => {
 
 				// Check if script content is provided (new format)
 				if (scriptContent) {
-					console.log("[PANEL] ✅ Script content received, executing directly");
+					console.log(
+						"[PANEL] ✅ Script content received, executing directly",
+					);
 
 					// Parse and set the script
 					let content = scriptContent;
@@ -138,32 +181,50 @@ const PanelApp: React.FC = () => {
 						try {
 							content = JSON.parse(content);
 						} catch (e) {
-							console.error("[PANEL] ❌ Failed to parse script:", e);
+							console.error(
+								"[PANEL] ❌ Failed to parse script:",
+								e,
+							);
 						}
 					}
 
 					// Parse nested steps if needed
-					if (content && typeof content.steps === "string") {
+					if (
+						content &&
+						typeof (content as unknown as { steps?: unknown })
+							.steps === "string"
+					) {
 						try {
-							content.steps = JSON.parse(content.steps);
+							(content as unknown as { steps: unknown }).steps =
+								JSON.parse(
+									(content as unknown as { steps: string })
+										.steps,
+								);
 						} catch (e) {
-							console.error("[PANEL] ❌ Failed to parse steps:", e);
+							console.error(
+								"[PANEL] ❌ Failed to parse steps:",
+								e,
+							);
 						}
 					}
 
 					const finalScriptContent = JSON.stringify(content, null, 2);
-					setScriptJson(finalScriptContent);
-					setJsonFormat("playwright");
 
 					setActionHistory((prev) => [
 						...prev,
 						`✅ Script loaded: ${fileName}`,
-						`▶️ Executing script in new tab...`,
+						"▶️ Executing script in new tab...",
 					]);
 
 					// Execute immediately
-					executeScriptWithContent(finalScriptContent, "playwright").catch((error) => {
-						console.error('[PANEL] ❌ Error executing script:', error);
+					executeScriptWithContent(
+						finalScriptContent,
+						"playwright",
+					).catch((error) => {
+						console.error(
+							"[PANEL] ❌ Error executing script:",
+							error,
+						);
 						setActionHistory((prev) => [
 							...prev,
 							`❌ Failed to execute script: ${error instanceof Error ? error.message : String(error)}`,
@@ -171,7 +232,9 @@ const PanelApp: React.FC = () => {
 					});
 				} else {
 					// Fallback: fetch script content from backend (for backwards compatibility)
-					console.log("[PANEL] ⚠️ No script content in payload, fetching from backend");
+					console.log(
+						"[PANEL] ⚠️ No script content in payload, fetching from backend",
+					);
 
 					setActionHistory((prev) => [
 						...prev,
@@ -182,52 +245,70 @@ const PanelApp: React.FC = () => {
 					(async () => {
 						try {
 							// Get the SEMOSS module path (usually /Monolith)
-							const MODULE = '/Monolith';
+							const MODULE = "/Monolith";
 							const SEMOSS_URL = window.location.origin + MODULE;
 
 							// First get a session ID
-							const sessionResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
-								method: 'POST',
-								headers: { 'Content-Type': 'application/json' },
-								credentials: 'include',
-								body: JSON.stringify({ expression: 'Session();' }),
-							});
+							const sessionResponse = await fetch(
+								`${SEMOSS_URL}/api/engine/runPixel`,
+								{
+									method: "POST",
+									headers: {
+										"Content-Type": "application/json",
+									},
+									credentials: "include",
+									body: JSON.stringify({
+										expression: "Session();",
+									}),
+								},
+							);
 
 							if (!sessionResponse.ok) {
-								throw new Error('Failed to get session ID');
+								throw new Error("Failed to get session ID");
 							}
 
 							const sessionData = await sessionResponse.json();
-							const sessionId = sessionData.pixelReturn?.[0]?.output;
+							const sessionId =
+								sessionData.pixelReturn?.[0]?.output;
 
 							if (!sessionId) {
-								throw new Error('No session ID returned');
+								throw new Error("No session ID returned");
 							}
 
-							console.log('[PANEL] 📋 Session ID:', sessionId);
+							console.log("[PANEL] 📋 Session ID:", sessionId);
 
 							// Now fetch the script using GetAllSteps
-							const scriptResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
-								method: 'POST',
-								headers: { 'Content-Type': 'application/json' },
-								credentials: 'include',
-								body: JSON.stringify({
-									expression: `GetAllSteps(project=["${projectID}"], sessionId=["${sessionId}"], fileName=["${fileName}"]);`,
-								}),
-							});
+							const scriptResponse = await fetch(
+								`${SEMOSS_URL}/api/engine/runPixel`,
+								{
+									method: "POST",
+									headers: {
+										"Content-Type": "application/json",
+									},
+									credentials: "include",
+									body: JSON.stringify({
+										expression: `GetAllSteps(project=["${projectID}"], sessionId=["${sessionId}"], fileName=["${fileName}"]);`,
+									}),
+								},
+							);
 
 							if (!scriptResponse.ok) {
-								throw new Error('Failed to fetch script content');
+								throw new Error(
+									"Failed to fetch script content",
+								);
 							}
 
 							const scriptData = await scriptResponse.json();
-							const scriptContent = scriptData.pixelReturn?.[0]?.output;
+							const scriptContent =
+								scriptData.pixelReturn?.[0]?.output;
 
 							if (!scriptContent) {
-								throw new Error('No script content returned');
+								throw new Error("No script content returned");
 							}
 
-							console.log('[PANEL] ✅ Script fetched successfully');
+							console.log(
+								"[PANEL] ✅ Script fetched successfully",
+							);
 
 							// Parse and set the script
 							let content = scriptContent;
@@ -235,7 +316,10 @@ const PanelApp: React.FC = () => {
 								try {
 									content = JSON.parse(content);
 								} catch (e) {
-									console.error("[PANEL] ❌ Failed to parse script:", e);
+									console.error(
+										"[PANEL] ❌ Failed to parse script:",
+										e,
+									);
 								}
 							}
 
@@ -243,25 +327,35 @@ const PanelApp: React.FC = () => {
 								try {
 									content.steps = JSON.parse(content.steps);
 								} catch (e) {
-									console.error("[PANEL] ❌ Failed to parse steps:", e);
+									console.error(
+										"[PANEL] ❌ Failed to parse steps:",
+										e,
+									);
 								}
 							}
 
-							const finalScriptContent = JSON.stringify(content, null, 2);
-							setScriptJson(finalScriptContent);
-							setJsonFormat("playwright");
+							const finalScriptContent = JSON.stringify(
+								content,
+								null,
+								2,
+							);
 
 							setActionHistory((prev) => [
 								...prev,
 								`✅ Script loaded: ${fileName}`,
-								`▶️ Executing script in new tab...`,
+								"▶️ Executing script in new tab...",
 							]);
 
 							// Execute immediately
-							await executeScriptWithContent(finalScriptContent, "playwright");
-
+							await executeScriptWithContent(
+								finalScriptContent,
+								"playwright",
+							);
 						} catch (error) {
-							console.error('[PANEL] ❌ Error fetching/executing script:', error);
+							console.error(
+								"[PANEL] ❌ Error fetching/executing script:",
+								error,
+							);
 							setActionHistory((prev) => [
 								...prev,
 								`❌ Failed to fetch script: ${error instanceof Error ? error.message : String(error)}`,
@@ -276,7 +370,9 @@ const PanelApp: React.FC = () => {
 				const script = message.script;
 
 				if (!script.fileName || !script.projectId) {
-					console.error("[PANEL] ❌ Missing fileName or projectId in playground message");
+					console.error(
+						"[PANEL] ❌ Missing fileName or projectId in playground message",
+					);
 					return;
 				}
 
@@ -301,52 +397,61 @@ const PanelApp: React.FC = () => {
 				(async () => {
 					try {
 						// Get the SEMOSS module path (usually /Monolith)
-						const MODULE = '/Monolith';
+						const MODULE = "/Monolith";
 						const SEMOSS_URL = window.location.origin + MODULE;
 
 						// First get a session ID
-						const sessionResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							credentials: 'include',
-							body: JSON.stringify({ expression: 'Session();' }),
-						});
+						const sessionResponse = await fetch(
+							`${SEMOSS_URL}/api/engine/runPixel`,
+							{
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								credentials: "include",
+								body: JSON.stringify({
+									expression: "Session();",
+								}),
+							},
+						);
 
 						if (!sessionResponse.ok) {
-							throw new Error('Failed to get session ID');
+							throw new Error("Failed to get session ID");
 						}
 
 						const sessionData = await sessionResponse.json();
 						const sessionId = sessionData.pixelReturn?.[0]?.output;
 
 						if (!sessionId) {
-							throw new Error('No session ID returned');
+							throw new Error("No session ID returned");
 						}
 
-						console.log('[PANEL] 📋 Session ID:', sessionId);
+						console.log("[PANEL] 📋 Session ID:", sessionId);
 
 						// Now fetch the script using GetAllSteps
-						const scriptResponse = await fetch(`${SEMOSS_URL}/api/engine/runPixel`, {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' },
-							credentials: 'include',
-							body: JSON.stringify({
-								expression: `GetAllSteps(project=["${script.projectId}"], sessionId=["${sessionId}"], fileName=["${script.fileName}"]);`,
-							}),
-						});
+						const scriptResponse = await fetch(
+							`${SEMOSS_URL}/api/engine/runPixel`,
+							{
+								method: "POST",
+								headers: { "Content-Type": "application/json" },
+								credentials: "include",
+								body: JSON.stringify({
+									expression: `GetAllSteps(project=["${script.projectId}"], sessionId=["${sessionId}"], fileName=["${script.fileName}"]);`,
+								}),
+							},
+						);
 
 						if (!scriptResponse.ok) {
-							throw new Error('Failed to fetch script content');
+							throw new Error("Failed to fetch script content");
 						}
 
 						const scriptData = await scriptResponse.json();
-						const scriptContent = scriptData.pixelReturn?.[0]?.output;
+						const scriptContent =
+							scriptData.pixelReturn?.[0]?.output;
 
 						if (!scriptContent) {
-							throw new Error('No script content returned');
+							throw new Error("No script content returned");
 						}
 
-						console.log('[PANEL] ✅ Script fetched successfully');
+						console.log("[PANEL] ✅ Script fetched successfully");
 
 						// Parse and set the script
 						let content = scriptContent;
@@ -354,33 +459,55 @@ const PanelApp: React.FC = () => {
 							try {
 								content = JSON.parse(content);
 							} catch (e) {
-								console.error("[PANEL] ❌ Failed to parse script:", e);
+								console.error(
+									"[PANEL] ❌ Failed to parse script:",
+									e,
+								);
 							}
 						}
 
-						if (content && typeof content.steps === "string") {
+						if (
+							content &&
+							typeof (content as unknown as { steps?: unknown })
+								.steps === "string"
+						) {
 							try {
-								content.steps = JSON.parse(content.steps);
+								(
+									content as unknown as { steps: unknown }
+								).steps = JSON.parse(
+									(content as unknown as { steps: string })
+										.steps,
+								);
 							} catch (e) {
-								console.error("[PANEL] ❌ Failed to parse steps:", e);
+								console.error(
+									"[PANEL] ❌ Failed to parse steps:",
+									e,
+								);
 							}
 						}
 
-						const finalScriptContent = JSON.stringify(content, null, 2);
-						setScriptJson(finalScriptContent);
-						setJsonFormat("playwright");
+						const finalScriptContent = JSON.stringify(
+							content,
+							null,
+							2,
+						);
 
 						setActionHistory((prev) => [
 							...prev,
 							`✅ Script loaded: ${script.fileName}`,
-							`▶️ Executing script in new tab...`,
+							"▶️ Executing script in new tab...",
 						]);
 
 						// Execute immediately
-						await executeScriptWithContent(finalScriptContent, "playwright");
-
+						await executeScriptWithContent(
+							finalScriptContent,
+							"playwright",
+						);
 					} catch (error) {
-						console.error('[PANEL] ❌ Error fetching/executing script:', error);
+						console.error(
+							"[PANEL] ❌ Error fetching/executing script:",
+							error,
+						);
 						setActionHistory((prev) => [
 							...prev,
 							`❌ Failed to fetch script: ${error instanceof Error ? error.message : String(error)}`,
@@ -414,12 +541,15 @@ const PanelApp: React.FC = () => {
 		isRunningRef.current = isRunning;
 	}, [isRunning]);
 
+	// Sync isPaused state with ref to avoid stale closures
+	useEffect(() => {
+		isPausedRef.current = isPaused;
+	}, [isPaused]);
+
 	// Sync userInputCallback with ref to avoid stale closures in message listener
 	useEffect(() => {
 		userInputCallbackRef.current = userInputCallback;
 	}, [userInputCallback]);
-
-	// Close dropdown when clicking outside
 
 	const executeScriptWithContent = async (
 		content: string,
@@ -438,15 +568,12 @@ const PanelApp: React.FC = () => {
 		setActionHistory([]);
 
 		try {
-			// Use provided format or fall back to state
-			const scriptFormat = format || jsonFormat;
+			// Use provided format or fall back to default
+			const scriptFormat = format || "playwright";
 
 			// Parse script based on format
-			let script: PlaywrightScript;
-			if (scriptFormat === "playwright") {
-				script = ScriptExecutor.parseScript(content);
-			}
-
+			const script: PlaywrightScript =
+				ScriptExecutor.parseScript(content);
 			// Get current tab
 			let tab: chrome.tabs.Tab | undefined;
 			if (chrome.devtools?.inspectedWindow) {
@@ -466,7 +593,7 @@ const PanelApp: React.FC = () => {
 			}
 
 			// Convert script to actions based on format
-			let actions: Array<{
+			const actions: Array<{
 				type: string;
 				url?: string;
 				selector?: string;
@@ -477,12 +604,9 @@ const PanelApp: React.FC = () => {
 				waitAfterMs?: number;
 				tabId?: string;
 				isTriggerNewTab?: { isTrue: boolean; tabId: string };
-			}>;
-			if (scriptFormat === "playwright") {
-				actions = await ScriptExecutor.convertToActions(
-					script as PlaywrightScript,
-				);
-			}
+			}> = await ScriptExecutor.convertToActions(
+				script as PlaywrightScript,
+			);
 			addToHistory(`✓ Found ${actions.length} actions to execute`);
 
 			// Find the first navigate action (might not be the very first action)
@@ -498,7 +622,7 @@ const PanelApp: React.FC = () => {
 			let targetTab: chrome.tabs.Tab;
 			let createdNewTab = false; // Track if we created a new tab
 			if (needsNewTab) {
-				addToHistory(`✓ Creating new tab for script execution...`);
+				addToHistory("✓ Creating new tab for script execution...");
 				const newTab = await chrome.tabs.create({
 					active: true, // Make it active so user can see it
 					url: initialUrl,
@@ -508,7 +632,7 @@ const PanelApp: React.FC = () => {
 					throw new Error("Failed to create new tab");
 				}
 
-				addToHistory(`✓ New tab created`);
+				addToHistory("✓ New tab created");
 				targetTab = newTab;
 				createdNewTab = true; // Mark that we created a tab - prevents additional tabs later
 
@@ -517,25 +641,44 @@ const PanelApp: React.FC = () => {
 
 				// Listen for tab closure during execution
 				const handleTabRemoved = (tabId: number) => {
-					if (tabId === executionTabIdRef.current && isRunningRef.current) {
+					if (
+						tabId === executionTabIdRef.current &&
+						isRunningRef.current
+					) {
 						console.log("[PANEL] ⚠️ Execution tab closed abruptly");
 						// Send cancellation message
-						chrome.runtime.sendMessage({
-							type: "SCRIPT_EXECUTION_COMPLETE",
-							success: false,
-							message: "Script execution cancelled: Tab was closed",
-						}).catch((err) => {
-							console.error("[PANEL] ❌ Failed to send cancellation:", err);
-						});
+						chrome.runtime
+							.sendMessage({
+								type: "SCRIPT_EXECUTION_COMPLETE",
+								success: false,
+								message:
+									"Script execution cancelled: Tab was closed",
+							})
+							.catch((err) => {
+								console.error(
+									"[PANEL] ❌ Failed to send cancellation:",
+									err,
+								);
+							});
 						// Reset state
 						setIsRunning(false);
 						isRunningRef.current = false;
+						setIsPaused(false);
+						isPausedRef.current = false;
 						executionTabIdRef.current = null;
 						addToHistory("❌ Execution cancelled: Tab closed");
-						// Remove listener
+						// Remove listeners
 						if (tabRemovalListenerRef.current) {
-							chrome.tabs.onRemoved.removeListener(tabRemovalListenerRef.current);
+							chrome.tabs.onRemoved.removeListener(
+								tabRemovalListenerRef.current,
+							);
 							tabRemovalListenerRef.current = null;
+						}
+						if (tabActivatedListenerRef.current) {
+							chrome.tabs.onActivated.removeListener(
+								tabActivatedListenerRef.current,
+							);
+							tabActivatedListenerRef.current = null;
 						}
 					}
 				};
@@ -543,33 +686,59 @@ const PanelApp: React.FC = () => {
 				tabRemovalListenerRef.current = handleTabRemoved;
 				chrome.tabs.onRemoved.addListener(handleTabRemoved);
 
-				// Wait for tab to be ready and page to load
-				let loadTimeout = 15;
-				while (loadTimeout > 0) {
-					const tabs = await chrome.tabs.query({});
-					const loadedTab = tabs.find((t) => t.id === newTab.id);
-					if (loadedTab && loadedTab.status === "complete") {
-						await new Promise((resolve) =>
-							setTimeout(resolve, 500),
-						);
-						break;
+				// Listen for tab activation changes to pause/resume execution
+				const handleTabActivated = (
+					activeInfo: chrome.tabs.TabActiveInfo,
+				) => {
+					if (!isRunningRef.current || !executionTabIdRef.current) {
+						return;
 					}
-					await new Promise((resolve) => setTimeout(resolve, 500));
-					loadTimeout--;
-				}
+
+					if (activeInfo.tabId === executionTabIdRef.current) {
+						// User returned to the execution tab
+						if (isPausedRef.current) {
+							console.log(
+								"[PANEL] ▶️ Execution resumed - returned to tab",
+							);
+							setIsPaused(false);
+							isPausedRef.current = false;
+							addToHistory(
+								"▶️ Execution resumed - returned to tab",
+							);
+						}
+					} else {
+						// User switched away from the execution tab
+						if (!isPausedRef.current) {
+							console.log(
+								"[PANEL] ⏸️ Execution paused - switched away from tab",
+							);
+							setIsPaused(true);
+							isPausedRef.current = true;
+							addToHistory(
+								"⏸️ Execution paused - switched away from tab",
+							);
+						}
+					}
+				};
+
+				tabActivatedListenerRef.current = handleTabActivated;
+				chrome.tabs.onActivated.addListener(handleTabActivated);
 			} else {
 				// Use the current tab if no navigate action at start
 				if (!tab || !tab.id) {
 					throw new Error("No active tab available");
 				}
 				targetTab = tab;
-				addToHistory(`✓ Using current tab for script execution`);
+				addToHistory("✓ Using current tab for script execution");
 			}
 
 			// Track tabs: maps tabId (tab-1, tab-2) to Chrome tab ID
 			const tabMap = new Map<string, number>();
-			tabMap.set("tab-1", targetTab.id!); // First tab is the target tab
-			let currentTabId = targetTab.id!;
+			if (!targetTab.id) {
+				throw new Error("Target tab has no ID");
+			}
+			tabMap.set("tab-1", targetTab.id); // First tab is the target tab
+			let currentTabId = targetTab.id;
 
 			// Track which navigate URL we already executed during tab creation
 			const preExecutedNavigateUrl = createdNewTab ? initialUrl : null;
@@ -578,6 +747,11 @@ const PanelApp: React.FC = () => {
 			let actionCounter = 0; // Track actual displayed action numbers
 			for (let i = 0; i < actions.length; i++) {
 				const action = actions[i];
+
+				// Wait while paused
+				while (isPausedRef.current) {
+					await new Promise((resolve) => setTimeout(resolve, 200));
+				}
 
 				// Skip navigate action if we already executed it during tab creation
 				if (
@@ -805,7 +979,7 @@ const PanelApp: React.FC = () => {
 							setUserInputValue("");
 							setIsPasswordInput(false);
 							setUserInputCallback(null);
-							addToHistory(`✓ User provided input`);
+							addToHistory("✓ User provided input");
 							resolve(value);
 						});
 					});
@@ -846,7 +1020,7 @@ const PanelApp: React.FC = () => {
 								type: "ATTACH_DEBUGGER",
 								tabId: currentTabId,
 							});
-							addToHistory(`✓ Debugger attached to new tab`);
+							addToHistory("✓ Debugger attached to new tab");
 						} catch (error) {
 							console.log("Debugger attach error:", error);
 						}
@@ -861,7 +1035,7 @@ const PanelApp: React.FC = () => {
 								await new Promise((resolve) =>
 									setTimeout(resolve, 1500),
 								);
-								addToHistory(`✓ New tab page loaded`);
+								addToHistory("✓ New tab page loaded");
 								break;
 							}
 							await new Promise((resolve) =>
@@ -905,11 +1079,21 @@ const PanelApp: React.FC = () => {
 		} finally {
 			setIsRunning(false);
 			isRunningRef.current = false;
+			setIsPaused(false);
+			isPausedRef.current = false;
 
-			// Clean up tab closure listener
+			// Clean up listeners
 			if (tabRemovalListenerRef.current) {
-				chrome.tabs.onRemoved.removeListener(tabRemovalListenerRef.current);
+				chrome.tabs.onRemoved.removeListener(
+					tabRemovalListenerRef.current,
+				);
 				tabRemovalListenerRef.current = null;
+			}
+			if (tabActivatedListenerRef.current) {
+				chrome.tabs.onActivated.removeListener(
+					tabActivatedListenerRef.current,
+				);
+				tabActivatedListenerRef.current = null;
 			}
 			executionTabIdRef.current = null;
 		}
@@ -969,6 +1153,34 @@ const PanelApp: React.FC = () => {
 		<div className="panel-container">
 			<div className="panel-header">
 				<Typography variant="h1">Browser Automation</Typography>
+				{isPaused && (
+					<Box
+						sx={{
+							ml: 2,
+							px: 2,
+							py: 0.75,
+							borderRadius: 2,
+							bgColor: "rgba(255, 152, 0, 0.15)",
+							border: "1.5px solid rgba(255, 152, 0, 0.8)",
+							color: "#ffffff",
+							display: "inline-flex",
+							alignItems: "center",
+							gap: 0.75,
+							boxShadow: "0 2px 8px rgba(255, 152, 0, 0.3)",
+						}}
+					>
+						<Typography
+							variant="body2"
+							sx={{
+								fontWeight: 700,
+								fontSize: "0.8125rem",
+								letterSpacing: "0.5px",
+							}}
+						>
+							⏸️ PAUSED
+						</Typography>
+					</Box>
+				)}
 			</div>
 
 			<div className="panel-content">
@@ -1077,8 +1289,8 @@ const PanelApp: React.FC = () => {
 																: "text.primary",
 													fontWeight:
 														isNumbered ||
-															isError ||
-															isSuccess
+														isError ||
+														isSuccess
 															? 500
 															: 400,
 													fontFamily: isNumbered
@@ -1109,11 +1321,10 @@ const PanelApp: React.FC = () => {
 							<TextField
 								type={isPasswordInput ? "password" : "text"}
 								value={userInputValue}
+								disabled={isPaused}
 								onChange={(e) => {
 									const newValue = e.target.value;
 									setUserInputValue(newValue);
-
-									// Real-time mirroring to webpage (password fields show as dots automatically)
 									if (currentSelector && currentTabId) {
 										// Clear existing debounce timer
 										if (debounceTimerRef.current) {
@@ -1168,7 +1379,9 @@ const PanelApp: React.FC = () => {
 											userInputCallback(userInputValue);
 										}
 									}}
-									disabled={!userInputValue.trim()}
+									disabled={
+										!userInputValue.trim() || isPaused
+									}
 									className="submit-btn"
 								>
 									Submit
