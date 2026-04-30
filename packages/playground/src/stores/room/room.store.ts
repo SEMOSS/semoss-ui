@@ -747,6 +747,66 @@ export class RoomStore {
 	};
 
 	/**
+	 * Generate a name for the room via a BE async LLM job.
+	 * Polls the job until it completes, then updates the local metadata.
+	 * Errors are swallowed since name generation is non-critical.
+	 */
+	generateName = async (): Promise<void> => {
+		try {
+			const { jobId } = await runPixelAsync(
+				`RenameRoom(roomId=${JSON.stringify(this._store.roomId)}, engine=${JSON.stringify(this._store.model.engine_id)});`,
+				this._store.insightId,
+			);
+
+			if (!jobId) {
+				return;
+			}
+
+			// Poll until the async job finishes
+			let isPolling = true;
+			const pollingInterval = 300;
+
+			while (isPolling) {
+				const response = await getPixelJobStreaming(jobId);
+
+				if (
+					response.status === "ProgressComplete" ||
+					response.status === "Complete"
+				) {
+					isPolling = false;
+				} else if (
+					response.status === "Error" ||
+					response.status === "UnknownJob"
+				) {
+					return;
+				}
+
+				if (isPolling) {
+					await new Promise<void>((resolve) =>
+						setTimeout(resolve, pollingInterval),
+					);
+				}
+			}
+
+			const result = await getPixelAsyncResult<[string]>(jobId);
+
+			if (result.errors.length > 0) {
+				return;
+			}
+
+			const name = result.results[0]?.output;
+
+			if (name) {
+				runInAction(() => {
+					this.setMetadata({ name });
+				});
+			}
+		} catch (e) {
+			console.error("Failed to generate room name", e);
+		}
+	};
+
+	/**
 	 * Tools
 	 */
 	/**
