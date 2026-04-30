@@ -17,6 +17,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	Input,
 	Label,
 	P,
 	Separator,
@@ -31,11 +32,11 @@ import type {
 	MetaModelTypeProps,
 	MetamodelNode,
 	ParsedResult,
-} from "./MetamodelTypes";
+} from "./metamodel-types";
 import {
 	createPayloadsFromFlowStates,
 	transformMetaToParsed,
-} from "./MetamodelUtils";
+} from "./metamodel-utils";
 import { PortalModal } from "./portal";
 
 export const MetaModelConnections = observer(
@@ -56,6 +57,7 @@ export const MetaModelConnections = observer(
 		const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 		const [anchorNodesMenu, setAnchorNodesMenu] = useState(false);
 		const [showFullScreenModal, setShowFullScreenModal] = useState(false);
+		const [metaModelSearchTerm, setMetaModelSearchTerm] = useState("");
 		const portalHostRef = useRef<HTMLDivElement | null>(null);
 		const originalParentRef = useRef<HTMLElement | null>(null);
 		const originalNextSiblingRef = useRef<Node | null>(null);
@@ -81,6 +83,7 @@ export const MetaModelConnections = observer(
 								parsed.dataTypes?.[prop] ??
 								parsed.additionalDataTypes?.[prop] ??
 								"",
+							rawType: parsed.physicalTypes?.[prop],
 							isPrimary: idx === 0,
 						})),
 					},
@@ -168,9 +171,6 @@ export const MetaModelConnections = observer(
 			}
 		}, [flow.nodes]);
 
-		// const handleNodesMenuOpen = () => setAnchorNodesMenu(true);
-		const handleNodesMenuClose = () => setAnchorNodesMenu(false);
-
 		const attachConnectionsToNodes = (
 			nodesInput: (MetamodelNode | FlowNode)[],
 			edgesInput: Edge[],
@@ -245,24 +245,7 @@ export const MetaModelConnections = observer(
 
 		const handleClearAll = () => {
 			setSelectedNodeIds([]);
-
-			const newEdges: Edge[] = [];
-
-			const prevNodes: (MetamodelNode | FlowNode)[] = Array.isArray(
-				flow.nodes,
-			)
-				? flow.nodes
-				: [];
-
-			const attached = attachConnectionsToNodes(prevNodes, newEdges);
-
-			setFlow((prev) => ({
-				...prev,
-				edges: newEdges,
-				nodes: attached,
-			}));
-
-			handleNodesMenuClose();
+			setFlow({ nodes: [], edges: [] });
 		};
 
 		const makeEdgeIdFromNodeIds = useCallback(
@@ -468,153 +451,146 @@ export const MetaModelConnections = observer(
 		return (
 			<div className="h-full w-full">
 				<P className="mt-4 font-semibold text-xl">Define Metamodel</P>
+				<P className="mt-2 mb-4 font-normal text-muted-foreground">
+					Review and adjust the suggested metamodel for your database.
+					You can rename nodes, add or remove relationships, and
+					reorganize the graph before importing.
+				</P>
 				<div ref={portalHostRef}>
 					<div
-						className={`relative m-4 flex-1 overflow-visible rounded-sm border border-white bg-card transition-all duration-200 ease-in ${
+						className={`relative flex-1 overflow-visible rounded-2xl border border-border bg-card transition-all duration-200 ease-in ${
 							showFullScreenModal ? "h-screen" : "h-auto"
 						}`}
 					>
 						<div className="relative z-0 p-4">
 							<Section>
-								<Section.Header
-									actions={
-										<div className="flex flex-row items-center gap-2">
-											{!showFullScreenModal && (
+								<div className="mb-4 flex w-full items-center gap-2">
+									<Input
+										value={metaModelSearchTerm}
+										onChange={(e) =>
+											setMetaModelSearchTerm(
+												e.target.value,
+											)
+										}
+										className="flex-1"
+										placeholder="Search table or column..."
+										data-testid="metaModelConnections-search-input"
+									/>
+									{!showFullScreenModal && (
+										<Button
+											variant="ghost"
+											size="icon"
+											onClick={() =>
+												setShowFullScreenModal(true)
+											}
+											data-testid="engineMetadata-refresh-btn"
+										>
+											<Maximize2 className="size-4" />
+										</Button>
+									)}
+									<DropdownMenu
+										open={anchorNodesMenu}
+										onOpenChange={setAnchorNodesMenu}
+									>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="ghost"
+												size="icon"
+												title="Select tables"
+												data-testid="select-tables-dropdown"
+											>
+												<TableIcon className="size-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent
+											align="end"
+											className="w-64"
+										>
+											{/* Header with Clear button */}
+											<div className="flex items-center justify-between px-4 py-2">
+												<P className="font-medium">
+													Tables
+												</P>
 												<Button
 													variant="ghost"
-													size="icon"
-													onClick={() =>
-														setShowFullScreenModal(
-															true,
+													size="sm"
+													onClick={handleClearAll}
+													className="h-auto px-2 py-1 text-xs"
+												>
+													Clear
+												</Button>
+											</div>
+
+											<Separator className="my-1" />
+
+											{/* Select All */}
+											<DropdownMenuItem
+												onSelect={(e) =>
+													e.preventDefault()
+												}
+												className="flex items-center gap-2"
+											>
+												<Checkbox
+													id="select-all-nodes"
+													checked={
+														Array.isArray(nodes) &&
+														nodes.length > 0 &&
+														selectedNodeIds.length ===
+															nodes.length
+													}
+													onCheckedChange={(
+														checked,
+													) =>
+														handleSelectAll(
+															checked as boolean,
 														)
 													}
-													data-testid="engineMetadata-refresh-btn"
+												/>
+												<Label
+													htmlFor="select-all-nodes"
+													className="cursor-pointer font-normal"
 												>
-													<Maximize2 className="size-4" />
-												</Button>
-											)}
+													Select All
+												</Label>
+											</DropdownMenuItem>
 
-											<DropdownMenu
-												open={anchorNodesMenu}
-												onOpenChange={
-													setAnchorNodesMenu
-												}
-											>
-												<DropdownMenuTrigger asChild>
-													<Button
-														variant="ghost"
-														size="icon"
-														title="Select tables"
-														data-testid="select-tables-dropdown"
-													>
-														<TableIcon className="size-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent
-													align="end"
-													className="w-64"
-												>
-													{/* Header with Clear button */}
-													<div className="flex items-center justify-between px-4 py-2">
-														<P className="font-medium">
-															Tables
-														</P>
-														<Button
-															variant="ghost"
-															size="sm"
-															onClick={
-																handleClearAll
-															}
-															className="h-auto px-2 py-1 text-xs"
-														>
-															Clear
-														</Button>
-													</div>
-
-													<Separator className="my-1" />
-
-													{/* Select All */}
+											{/* Scrollable list */}
+											<div className="max-h-[200px] overflow-auto">
+												{(nodes ?? []).map((n) => (
 													<DropdownMenuItem
+														key={n.id}
 														onSelect={(e) =>
 															e.preventDefault()
 														}
 														className="flex items-center gap-2"
 													>
 														<Checkbox
-															id="select-all-nodes"
-															checked={
-																Array.isArray(
-																	nodes,
-																) &&
-																nodes.length >
-																	0 &&
-																selectedNodeIds.length ===
-																	nodes.length
-															}
-															onCheckedChange={(
-																checked,
-															) =>
-																handleSelectAll(
-																	checked as boolean,
+															id={`node-${n.id}`}
+															checked={selectedNodeIds.includes(
+																n.id,
+															)}
+															onCheckedChange={() =>
+																handleToggleSelectNode(
+																	n.id,
 																)
 															}
 														/>
 														<Label
-															htmlFor="select-all-nodes"
+															htmlFor={`node-${n.id}`}
 															className="cursor-pointer font-normal"
 														>
-															Select All
+															{n.data.name}
 														</Label>
 													</DropdownMenuItem>
-
-													{/* Scrollable list */}
-													<div className="max-h-[200px] overflow-auto">
-														{(nodes ?? []).map(
-															(n) => (
-																<DropdownMenuItem
-																	key={n.id}
-																	onSelect={(
-																		e,
-																	) =>
-																		e.preventDefault()
-																	}
-																	className="flex items-center gap-2"
-																>
-																	<Checkbox
-																		id={`node-${n.id}`}
-																		checked={selectedNodeIds.includes(
-																			n.id,
-																		)}
-																		onCheckedChange={() =>
-																			handleToggleSelectNode(
-																				n.id,
-																			)
-																		}
-																	/>
-																	<Label
-																		htmlFor={`node-${n.id}`}
-																		className="cursor-pointer font-normal"
-																	>
-																		{
-																			n
-																				.data
-																				.name
-																		}
-																	</Label>
-																</DropdownMenuItem>
-															),
-														)}
-													</div>
-												</DropdownMenuContent>
-											</DropdownMenu>
-
-											<Separator
-												orientation="vertical"
-												className="h-6"
-											/>
-										</div>
-									}
-								/>
+												))}
+											</div>
+										</DropdownMenuContent>
+									</DropdownMenu>
+									<Separator
+										orientation="vertical"
+										className="h-6"
+									/>
+								</div>
 
 								<div className="flex flex-col gap-4">
 									<section
@@ -636,8 +612,11 @@ export const MetaModelConnections = observer(
 											onMetaModelUpdate={
 												handleMetaModelUpdate
 											}
-											showSearch={true}
-											searchInputTestId="metaModelConnections-search-input"
+											showSearch={false}
+											searchValue={metaModelSearchTerm}
+											onSearchValueChange={
+												setMetaModelSearchTerm
+											}
 										/>
 									</section>
 								</div>
@@ -660,7 +639,7 @@ export const MetaModelConnections = observer(
 					contentId={portalContentId}
 				/>
 				{!showFullScreenModal && (
-					<div className="mt-4 flex justify-end gap-3 border-border border-t pt-4">
+					<div className="mt-4 flex justify-end gap-3 border-border border-t pt-4 pb-6">
 						<Button variant="outline" onClick={onCancel}>
 							Cancel
 						</Button>
