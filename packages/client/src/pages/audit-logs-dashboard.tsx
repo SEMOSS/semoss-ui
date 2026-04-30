@@ -288,10 +288,16 @@ export const AuditLogsDashboard = ({
 				const data = resp.pixelReturn[0].output;
 				if (Array.isArray(data)) {
 					setUserOptions(
-						data.map((u: { id: string }) => ({
-							value: u.id,
-							label: u.id,
-						})),
+						data.map(
+							(u: {
+								id: string;
+								name: string;
+								type: string;
+							}) => ({
+								value: u.id,
+								label: `${u.name} [${u.id}]`,
+							}),
+						),
 					);
 				} else {
 					setUserOptions([]);

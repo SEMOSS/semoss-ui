@@ -266,10 +266,16 @@ export const AuditLogPage = () => {
 				const data = resp.pixelReturn[0].output;
 				if (Array.isArray(data)) {
 					setUserOptions(
-						data.map((u: { id: string; type: string }) => ({
-							value: u.id,
-							label: u.id,
-						})),
+						data.map(
+							(u: {
+								id: string;
+								type: string;
+								name: string;
+							}) => ({
+								value: u.id,
+								label: `${u.name} [${u.id}]`,
+							}),
+						),
 					);
 				} else {
 					setUserOptions([]);
