@@ -107,6 +107,9 @@ export const GlobalNav = observer(() => {
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
+	// Read during render so MobX observer tracks it and re-renders when the counter changes
+	const roomCounter = chat.keys.roomCounter;
+
 	const systemDate = dayjs(system.config.systemDate);
 
 	const navigate = useNavigate();
@@ -219,15 +222,13 @@ export const GlobalNav = observer(() => {
 	}, [handleScroll]);
 
 	useEffect(() => {
-		// keep this counter
-		chat.keys.roomCounter;
 		getRooms.reset();
 		getPinnedRooms.reset();
 		if (scrollElementRef.current) {
 			scrollElementRef.current.scrollTop = 0;
 			setSavedScrollPosition(0);
 		}
-	}, [getRooms.reset, getPinnedRooms.reset, chat.keys.roomCounter]);
+	}, [getRooms.reset, getPinnedRooms.reset, roomCounter]);
 
 	/**
 	 * Save and restore scroll position when sidebar opens/closes

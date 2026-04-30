@@ -249,6 +249,14 @@ export class ChatStore {
 				// increment the roomCounter to force re-render of the nav
 				this._store.keys.roomCounter++;
 			});
+
+			// The BE generates an LLM title asynchronously after the first message.
+			// Refresh the sidebar ~7s later so the generated title appears.
+			setTimeout(() => {
+				runInAction(() => {
+					this._store.keys.roomCounter++;
+				});
+			}, 7000);
 		});
 
 		// return the room
