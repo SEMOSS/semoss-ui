@@ -5374,8 +5374,7 @@ export const CATEGORY_DESCRIPTIONS = {
 		"Contains descriptive and organizational details about the database, such as name, description, and tags.",
 	Database:
 		"Select the database engine type and how the data should be imported.",
-	"File Upload":
-		"Upload the data file to import. When using a prop file, pair each data file with its corresponding prop file.",
+	"File Upload": "Upload the file to import.",
 	Settings:
 		"Defines the technical configuration needed to connect to the database, including host, port, schema, and connection parameters.",
 	Credentials:

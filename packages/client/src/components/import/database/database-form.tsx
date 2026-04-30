@@ -154,8 +154,14 @@ export const DatabaseForm = ({
 
 	useEffect(() => {
 		const isPropFile = metamodelType === "fromPropFile";
-		setResolvedFields((prev) =>
-			prev.map((f) => {
+		const formHasPropFileOption = fields.some(
+			(f: { key: string; options?: { options?: { value: string }[] } }) =>
+				f.key === "METAMODEL_TYPE" &&
+				f.options?.options?.some((o) => o.value === "fromPropFile"),
+		);
+		if (!formHasPropFileOption) return;
+		setResolvedFields((prev: Record<string, unknown>[]) =>
+			prev.map((f: Record<string, unknown>) => {
 				if (f.key === "FILE_UPLOAD")
 					return { ...f, hidden: isPropFile };
 				if (f.key === "PROP_FILE_UPLOAD") return { ...f, hidden: true };
@@ -163,7 +169,7 @@ export const DatabaseForm = ({
 			}),
 		);
 		if (!isPropFile) setPairedFiles([]);
-	}, [metamodelType]);
+	}, [metamodelType, fields]);
 
 	useEffect(() => {
 		type MetaOpt = { display: string; value: string };
