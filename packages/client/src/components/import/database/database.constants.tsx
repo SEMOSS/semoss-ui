@@ -64,9 +64,6 @@ const DELIMITED_DATABASE_TYPE_FIELD: FormField = {
 	},
 	disabled: false,
 	required: true,
-	displayRules: {
-		hideOtherFields: [{ key: "CUSTOM_BASE_URI", value: ["h2", "r"] }],
-	},
 };
 
 const DELIMITED_METAMODEL_TYPE_FIELD: FormField = {
@@ -88,16 +85,15 @@ const DELIMITED_METAMODEL_TYPE_FIELD: FormField = {
 	},
 	disabled: false,
 	required: true,
-	rules: {
-		conditionalOptions: [
-			{
-				whenField: "DATABASE_TYPE",
-				whenValue: "r",
-				allowedValues: ["asFlatTable"],
-				restrictOtherValues: true,
-			},
-		],
-	},
+	optionsWhen: [
+		{
+			field: "DATABASE_TYPE",
+			eq: "rdf",
+			restrictTo: ["asSuggestedMetaModel", "fromPropFile"],
+		},
+		{ field: "DATABASE_TYPE", eq: "r", restrictTo: ["asFlatTable"] },
+		{ field: "DATABASE_TYPE", eq: "h2", restrictTo: ["asFlatTable"] },
+	],
 };
 
 const CUSTOM_BASE_URI_FIELD: FormField = {
@@ -109,7 +105,7 @@ const CUSTOM_BASE_URI_FIELD: FormField = {
 	type: "text",
 	disabled: false,
 	required: false,
-	hidden: true,
+	showWhen: { field: "DATABASE_TYPE", oneOf: ["rdf"] },
 };
 
 const PROP_FILE_UPLOAD_FIELD: FormField = {
@@ -144,12 +140,6 @@ function uploadModeField(uploadLabel: string): FormField {
 		},
 		disabled: false,
 		required: true,
-		displayRules: {
-			hideOtherFields: [
-				{ key: "FILE_UPLOAD", value: ["empty"] },
-				{ key: "schema", value: ["empty"] },
-			],
-		},
 	};
 }
 
@@ -210,6 +200,10 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					disabled: false,
 					required: true,
+					showWhen: {
+						field: "METAMODEL_TYPE",
+						notOneOf: ["fromPropFile"],
+					},
 				},
 				PROP_FILE_UPLOAD_FIELD,
 			],
@@ -235,11 +229,6 @@ export const DATABASE_CONNECTION = {
 					},
 					disabled: false,
 					required: true,
-					displayRules: {
-						hideOtherFields: [
-							{ key: "CUSTOM_BASE_URI", value: ["h2"] },
-						],
-					},
 				},
 				{
 					key: "METAMODEL_TYPE",
@@ -259,16 +248,13 @@ export const DATABASE_CONNECTION = {
 					},
 					disabled: false,
 					required: true,
-					rules: {
-						conditionalOptions: [
-							{
-								whenField: "DATABASE_TYPE",
-								whenValue: "rdf",
-								allowedValues: ["excelLoaderSheetFormat"],
-								restrictOtherValues: true,
-							},
-						],
-					},
+					optionsWhen: [
+						{
+							field: "DATABASE_TYPE",
+							eq: "rdf",
+							restrictTo: ["excelLoaderSheetFormat"],
+						},
+					],
 				},
 				CUSTOM_BASE_URI_FIELD,
 				{
@@ -321,6 +307,10 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					disabled: false,
 					required: true,
+					showWhen: {
+						field: "METAMODEL_TYPE",
+						notOneOf: ["fromPropFile"],
+					},
 				},
 				PROP_FILE_UPLOAD_FIELD,
 			],
@@ -355,6 +345,10 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					disabled: false,
 					required: true,
+					showWhen: {
+						field: "METAMODEL_TYPE",
+						notOneOf: ["fromPropFile"],
+					},
 				},
 				PROP_FILE_UPLOAD_FIELD,
 			],
@@ -376,7 +370,7 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					disabled: false,
 					required: false,
-					hidden: true,
+					showWhen: { field: "UPLOAD_MODE", eq: "file" },
 				},
 				{
 					key: "schema",
@@ -386,7 +380,7 @@ export const DATABASE_CONNECTION = {
 					type: "text",
 					disabled: false,
 					required: false,
-					hidden: true,
+					showWhen: { field: "UPLOAD_MODE", eq: "file" },
 				},
 				{
 					key: "USERNAME",
@@ -435,7 +429,7 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					disabled: false,
 					required: false,
-					hidden: true,
+					showWhen: { field: "UPLOAD_MODE", eq: "file" },
 				},
 				{
 					key: "schema",
@@ -445,7 +439,7 @@ export const DATABASE_CONNECTION = {
 					type: "text",
 					disabled: false,
 					required: false,
-					hidden: true,
+					showWhen: { field: "UPLOAD_MODE", eq: "file" },
 				},
 				{
 					key: "USERNAME",
