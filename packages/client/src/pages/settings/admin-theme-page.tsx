@@ -224,7 +224,7 @@ export const AdminThemePage: React.FC = () => {
 					toolAutoExecutionLimit: undefined,
 					defaultRoomSettings: {
 						temperature: undefined,
-						tokenLength: undefined,
+						max_tokens: undefined,
 						imageHeight: undefined,
 						imageWidth: undefined,
 						seed: undefined,

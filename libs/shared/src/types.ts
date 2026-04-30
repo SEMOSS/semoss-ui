@@ -129,7 +129,7 @@ export interface ThemeMap {
 		defaultRoomSettings?: {
 			model?: Engine;
 			temperature?: number;
-			tokenLength?: number;
+			max_tokens?: number;
 			imageHeight?: number;
 			imageWidth?: number;
 			seed?: number;

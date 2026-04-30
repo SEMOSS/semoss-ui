@@ -5,9 +5,9 @@ import {
 	IMAGE_GENERATION_FLAG,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
+	MAX_TOKENS,
 	TEMPERATURE,
 	TEXT_GENERATION_FLAG,
-	TOKEN_LENGTH,
 } from "@/constants";
 
 configure({
@@ -90,7 +90,7 @@ export class RootStore {
 			defaultRoomSettings: {
 				model: undefined,
 				temperature: TEMPERATURE,
-				tokenLength: TOKEN_LENGTH,
+				max_tokens: MAX_TOKENS,
 				imageHeight: IMAGE_HEIGHT,
 				imageWidth: IMAGE_WIDTH,
 				seed: undefined,

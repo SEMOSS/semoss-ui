@@ -216,7 +216,7 @@ ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
-			max_new_tokens: room.options.tokenLength,
+			max_new_tokens: room.options.max_tokens,
 			temperature: room.options.temperature,
 		})}]
 );`);

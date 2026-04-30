@@ -39,8 +39,8 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import {
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
+	MAX_TOKENS,
 	TEMPERATURE,
-	TOKEN_LENGTH,
 } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
@@ -156,8 +156,8 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore.setOptions({
 			instructions: "",
 			mcp: [...(root.theme.defaultTools || [])],
-			tokenLength:
-				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
+			max_tokens:
+				root.theme.defaultRoomSettings?.max_tokens || MAX_TOKENS,
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
 			imageHeight:
@@ -410,7 +410,7 @@ export const NewRoomPage = observer(() => {
 				...tempRoomStore.options,
 				instructions: "",
 				temperature: root.theme.defaultRoomSettings?.temperature,
-				tokenLength: root.theme.defaultRoomSettings?.tokenLength,
+				max_tokens: root.theme.defaultRoomSettings?.max_tokens,
 				mcp: [...(root.theme.defaultTools || [])], // Remove workspace MCPs
 			});
 		}

@@ -25,7 +25,7 @@
 		"enterDescription": "Entrer la description",
 		"enterInstructions": "Entrer les instructions",
 		"updateInstructions": "Mettre à jour les instructions",
-		"updateTokenLength": "Mettre à jour la longueur du jeton",
+		"updateMaxToken": "Mettre à jour les jetons maximum",
 		"updateImageSeed": "-1",
 		"uploadFiles": "Téléverser des fichiers",
 		"search": "Rechercher..."

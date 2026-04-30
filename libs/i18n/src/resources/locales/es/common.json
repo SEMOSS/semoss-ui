@@ -25,7 +25,7 @@
 		"enterDescription": "Ingrese la descripción",
 		"enterInstructions": "Ingrese las instrucciones",
 		"updateInstructions": "Actualizar instrucciones",
-		"updateTokenLength": "Actualizar longitud del token",
+		"updateMaxToken": "Actualizar tokens máximos",
 		"updateImageSeed": "-1",
 		"uploadFiles": "Subir archivos",
 		"search": "Buscar..."

@@ -25,7 +25,7 @@
 		"enterDescription": "विवरण दर्ज करें",
 		"enterInstructions": "निर्देश दर्ज करें",
 		"updateInstructions": "निर्देश अपडेट करें",
-		"updateTokenLength": "टोकन लंबाई अपडेट करें",
+		"updateMaxToken": "अधिकतम टोकन अपडेट करें",
 		"updateImageSeed": "-1",
 		"uploadFiles": "फ़ाइलें अपलोड करें",
 		"search": "खोजें..."

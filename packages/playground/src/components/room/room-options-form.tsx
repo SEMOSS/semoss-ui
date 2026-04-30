@@ -427,17 +427,25 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									{t("room:form.maxTokenLabel")}
 								</FieldLabel>
 								<Input
-									type="number"
+									type="text"
+									inputMode="numeric"
+									pattern="[0-9]*"
 									placeholder={t(
-										"common:placeholders.updateTokenLength",
+										"common:placeholders.updateMaxToken",
 									)}
-									value={options.tokenLength}
-									onChange={(e) =>
+									value={options.max_tokens ?? ""}
+									onChange={(e) => {
+										const raw = e.target.value.replace(
+											/\D/g,
+											"",
+										);
 										onOptionsChange({
-											tokenLength:
-												Number(e.target.value) || 0,
-										})
-									}
+											max_tokens:
+												raw === ""
+													? undefined
+													: Number(raw),
+										});
+									}}
 									min={0}
 									className="w-full"
 								/>

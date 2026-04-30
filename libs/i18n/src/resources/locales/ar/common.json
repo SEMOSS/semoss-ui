@@ -25,7 +25,7 @@
 		"enterDescription": "أدخل الوصف",
 		"enterInstructions": "أدخل التعليمات",
 		"updateInstructions": "تحديث التعليمات",
-		"updateTokenLength": "تحديث طول الرموز",
+		"updateMaxToken": "تحديث الحد الأقصى للرموز",
 		"updateImageSeed": "-1",
 		"uploadFiles": "رفع الملفات",
 		"search": "بحث..."

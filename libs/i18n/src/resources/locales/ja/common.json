@@ -25,7 +25,7 @@
 		"enterDescription": "説明を入力",
 		"enterInstructions": "指示を入力",
 		"updateInstructions": "指示を更新",
-		"updateTokenLength": "トークン長を更新",
+		"updateMaxToken": "最大トークン数を更新",
 		"updateImageSeed": "-1",
 		"uploadFiles": "ファイルをアップロード",
 		"search": "検索..."

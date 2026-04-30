@@ -11,10 +11,10 @@ import {
 	IMAGE_GENERATION_FLAG,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
+	MAX_TOKENS,
 	STREAMING_PLACEHOLDER_ID,
 	TEMPERATURE,
 	TEXT_GENERATION_FLAG,
-	TOKEN_LENGTH,
 } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -112,7 +112,7 @@ interface RoomStoreInterface {
 		/*
 		 * Length of the token
 		 */
-		tokenLength: number;
+		max_tokens: number;
 
 		/*
 		 * Temperature of the model
@@ -198,7 +198,7 @@ export class RoomStore {
 			predefinedPrompts: [],
 			instructions: "",
 			mcp: [],
-			tokenLength: TOKEN_LENGTH,
+			max_tokens: MAX_TOKENS,
 			temperature: TEMPERATURE,
 			imageHeight: IMAGE_HEIGHT,
 			imageWidth: IMAGE_WIDTH,
