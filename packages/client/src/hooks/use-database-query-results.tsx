@@ -4,7 +4,7 @@ import {
 	hasTabularData,
 	isErrorResponse,
 	type QueryResult,
-} from "./useDatabaseQueryExecution";
+} from "./use-database-query-execution";
 
 export function useQueryResults() {
 	const renderResults = (

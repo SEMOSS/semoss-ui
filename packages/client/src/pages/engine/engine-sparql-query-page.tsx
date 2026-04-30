@@ -10,9 +10,9 @@ import {
 	useDatabaseStructure,
 	useEngine,
 	useQueryEditor,
-	useQueryExecution,
+	useSparqlQueryExecution,
 } from "@/hooks";
-import { hasTabularData } from "@/hooks/useDatabaseQueryExecution";
+import { hasTabularData } from "@/hooks/use-database-query-execution";
 
 export const EngineSparqlQueryPage = observer(() => {
 	const { active } = useEngine();
@@ -69,12 +69,10 @@ export const EngineSparqlQueryPage = observer(() => {
 		clearResults,
 		executeQuery: executeQueryInternal,
 		pixelQuery,
-	} = useQueryExecution(active.id || "", {
+	} = useSparqlQueryExecution(active.id || "", raw, {
 		onSchemaChange: () => {
 			refreshDatabaseStructure();
 		},
-		buildPixel: (engineId, sparqlQuery) =>
-			`SparqlQuery(database=["${engineId}"], query=["<encode>${sparqlQuery}</encode>"], raw=[${raw}], commit=[true]);`,
 	});
 
 	const executeQuery = async (queryOverride?: string) => {
@@ -371,7 +369,7 @@ export const EngineSparqlQueryPage = observer(() => {
 							previewLoading={previewLoading}
 							clearResults={clearResults}
 							onExpandChange={setIsQueryResultsExpanded}
-							pixelQuery={pixelQuery}
+							pixelQuery={pixelQuery ?? undefined}
 						/>
 					</div>
 				</div>

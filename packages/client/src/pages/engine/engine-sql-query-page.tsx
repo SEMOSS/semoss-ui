@@ -10,9 +10,9 @@ import {
 	useDatabaseStructure,
 	useEngine,
 	useQueryEditor,
-	useQueryExecution,
+	useSqlQueryExecution,
 } from "@/hooks";
-import { hasTabularData } from "@/hooks/useDatabaseQueryExecution";
+import { hasTabularData } from "@/hooks/use-database-query-execution";
 
 export const EngineSqlQueryPage = observer(() => {
 	const { active } = useEngine();
@@ -70,7 +70,7 @@ export const EngineSqlQueryPage = observer(() => {
 		clearResults,
 		executeQuery: executeQueryInternal,
 		pixelQuery,
-	} = useQueryExecution(active.id || "", {
+	} = useSqlQueryExecution(active.id || "", {
 		onSchemaChange: () => {
 			refreshDatabaseStructure();
 		},
@@ -404,7 +404,7 @@ export const EngineSqlQueryPage = observer(() => {
 							previewLoading={previewLoading}
 							clearResults={clearResults}
 							onExpandChange={setIsQueryResultsExpanded}
-							pixelQuery={pixelQuery}
+							pixelQuery={pixelQuery ?? undefined}
 						/>
 					</div>
 				</div>
