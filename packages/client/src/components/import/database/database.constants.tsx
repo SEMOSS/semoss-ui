@@ -35,13 +35,11 @@ import TSV from "@/assets/img/TSV.svg";
 import ZIP from "@/assets/img/ZIP.png";
 import type { FormField } from "../shared/import-form.types";
 import {
-	CHECK_ENGINE_NAME_MESSAGE,
 	COMMON_FILE_GENERAL_FIELDS,
 	COMMON_JDBC_ADVANCED,
 	COMMON_JDBC_GENERAL_FIELDS,
 	dbDriverField,
 	jdbcConnectionFields,
-	NAME_PATTERN_RULE,
 } from "./database-form.bases";
 
 // ---------------------------------------------------------------------------
@@ -142,27 +140,6 @@ function uploadModeField(uploadLabel: string): FormField {
 		required: true,
 	};
 }
-
-// ---------------------------------------------------------------------------
-// SAP Hana uses a slightly different CheckEngineName pixel expression
-// ---------------------------------------------------------------------------
-
-const SAP_HANA_NAME_FIELD: FormField = {
-	key: "NAME",
-	label: "Catalog Name",
-	value: "",
-	type: "text",
-	disabled: false,
-	required: true,
-	category: "General",
-	rules: {
-		pattern: NAME_PATTERN_RULE,
-		custom: {
-			value: 'META | CheckEngineName ( "[VALUE]" ) ;',
-			message: CHECK_ENGINE_NAME_MESSAGE,
-		},
-	},
-};
 
 // ---------------------------------------------------------------------------
 // Main export
@@ -1404,15 +1381,13 @@ export const DATABASE_CONNECTION = {
 			],
 			advanced: COMMON_JDBC_ADVANCED,
 		},
-		// SAP Hana uses a different CheckEngineName pixel expression
 		{
 			name: "SAP Hana",
 			disable: false,
 			icon: SAP_HANA,
 			fields: [
 				dbDriverField("SAP_HANA"),
-				SAP_HANA_NAME_FIELD,
-				...COMMON_JDBC_GENERAL_FIELDS.slice(1),
+				...COMMON_JDBC_GENERAL_FIELDS,
 				...jdbcConnectionFields({ portDefault: "30015" }),
 			],
 			advanced: COMMON_JDBC_ADVANCED,
