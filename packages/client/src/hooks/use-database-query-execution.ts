@@ -68,15 +68,15 @@ interface QueryExecutionOptions {
 	onSchemaChange?: () => void;
 }
 
-export function useQueryExecution(
+export function useDatabaseQueryExecution(
 	engineId: string,
+	buildPixel: (engineId: string, query: string) => string,
 	options: QueryExecutionOptions = {},
 ) {
 	const [query, setQuery] = useState("");
 	const [previewData, setPreviewData] = useState<QueryResult | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [pixelQuery, setPixelQuery] = useState<string | null>(null);
-	// const [limit, setLimit] = useState(500);
 
 	const clearQuery = () => {
 		setQuery("");
@@ -101,23 +101,19 @@ export function useQueryExecution(
 		setPreviewLoading(true);
 
 		try {
-			const pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit = [true]);`;
+			const pixel = buildPixel(engineId, queryToRun.replaceAll("`", ""));
 			setPixelQuery(pixel);
 
 			const response = await runPixel(pixel);
-			console.log("Full response:", response);
 
 			let resultToStore: QueryResult;
 			if (response?.pixelReturn && response.pixelReturn.length > 0) {
-				const firstResult = response.pixelReturn[0];
-				console.log("Setting data to:", firstResult);
 				resultToStore = {
-					...firstResult,
+					...response.pixelReturn[0],
 					queryType: "OTHER",
 					queryText: queryToRun,
 				};
 			} else {
-				console.log("No pixelReturn found, using full response");
 				resultToStore = {
 					output: response,
 					queryType: "OTHER",
@@ -137,15 +133,11 @@ export function useQueryExecution(
 				!isErrorResponse(resultToStore) &&
 				!hasTabularData(resultToStore)
 			) {
-				console.log(
-					"Non-tabular response detected. Refreshing schema.",
-				);
 				setTimeout(() => options.onSchemaChange?.(), 100);
 			}
 		} catch (error: unknown) {
 			const message =
 				error instanceof Error ? error.message : "Unknown error";
-			console.error("Query execution error:", error);
 			setPreviewData({
 				error: true,
 				output: `Error: ${message}`,
@@ -167,7 +159,5 @@ export function useQueryExecution(
 		clearResults,
 		executeQuery,
 		pixelQuery,
-		// limit,
-		// setLimit
 	};
 }
