@@ -10,7 +10,7 @@ import type {
 	ParsedResult,
 	Property,
 	RelationItem,
-} from "./MetamodelTypes";
+} from "./metamodel-types";
 
 /**
  * Attaches connection information to nodes based on edges
@@ -84,11 +84,28 @@ export const generateNodesFromParsed = (parsed: {
 	nodeProp?: Record<string, string[]>;
 	dataTypes?: Record<string, string>;
 	additionalDataTypes?: Record<string, string>;
+	raw_type?: string[];
 }): (MetamodelNode | FlowNode)[] => {
-	if (!parsed?.positions) return [];
+	if (!parsed) return [];
 
-	return Object.keys(parsed.positions).map((nodeName) => {
-		const position = parsed.positions[nodeName];
+	const nodeNames = parsed.positions
+		? Object.keys(parsed.positions)
+		: Object.keys(parsed.nodeProp ?? {});
+
+	if (nodeNames.length === 0) return [];
+
+	const autoPositions: Record<string, { left: number; top: number }> = {};
+	if (!parsed.positions) {
+		nodeNames.forEach((name, idx) => {
+			autoPositions[name] = { left: idx * 300, top: 100 };
+		});
+	}
+
+	const positions = parsed.positions ?? autoPositions;
+
+	let rawTypeIdx = 0;
+	return nodeNames.map((nodeName) => {
+		const position = positions[nodeName];
 		const isIndexNode = nodeName.toLowerCase() === "index";
 
 		const extraProps = parsed.nodeProp?.[nodeName] ?? [];
@@ -108,6 +125,7 @@ export const generateNodesFromParsed = (parsed: {
 						parsed.dataTypes?.[prop] ??
 						parsed.additionalDataTypes?.[prop] ??
 						"",
+					rawType: parsed.raw_type?.[rawTypeIdx++],
 					isPrimary: idx === 0,
 					label: prop?.replace(/_/g, " "),
 				})),
@@ -243,11 +261,17 @@ export const rebuildNodesFromParsed = (parsed: {
 	nodeProp?: Record<string, string[]>;
 	dataTypes?: Record<string, string>;
 	additionalDataTypes?: Record<string, string>;
+	raw_type?: string[];
 }): (MetamodelNode | FlowNode)[] => {
 	if (!parsed?.positions) return [];
 
-	return Object.keys(parsed.positions).map((nodeName) => {
-		const position = parsed.positions[nodeName];
+	const positions = parsed.positions as Record<
+		string,
+		{ left: number; top: number }
+	>;
+	let rawTypeIdx = 0;
+	return Object.keys(positions).map((nodeName) => {
+		const position = positions[nodeName];
 		const isIndexNode = nodeName.toLowerCase() === "index";
 		const extraProps = parsed.nodeProp?.[nodeName] ?? [];
 		const propertiesList = isIndexNode
@@ -266,6 +290,7 @@ export const rebuildNodesFromParsed = (parsed: {
 						parsed.dataTypes?.[prop] ??
 						parsed.additionalDataTypes?.[prop] ??
 						"",
+					rawType: parsed.raw_type?.[rawTypeIdx++],
 					isPrimary: idx === 0,
 					label: prop?.replace(/_/g, " "),
 				})),

@@ -66,7 +66,9 @@ describe("ModalBlock", () => {
 
 		await waitFor(() => {
 			expect(
-				document.querySelector("[role='presentation']"),
+				document.querySelector(
+					"div.absolute.inset-0[class*='bg-black']",
+				),
 			).not.toBeNull();
 		});
 	});
@@ -101,7 +103,9 @@ describe("ModalBlock", () => {
 
 		await waitFor(() => {
 			expect(
-				document.querySelectorAll("[role='presentation']"),
+				document.querySelectorAll(
+					"div.absolute.inset-0[class*='bg-black']",
+				),
 			).toHaveLength(2);
 		});
 	});
@@ -144,7 +148,9 @@ describe("ModalBlock", () => {
 		});
 
 		await waitFor(() => {
-			const titleElement = document.querySelector(".MuiTypography-h6");
+			const titleElement = document.querySelector(
+				"h2.font-semibold",
+			) as HTMLElement;
 			expect(titleElement).not.toBeNull();
 			expect(titleElement.textContent).toBe("Open Modal");
 
@@ -181,7 +187,7 @@ describe("ModalBlock", () => {
 
 		await waitFor(() => {
 			const modalContainer = document.querySelector(
-				".MuiBox-root[style*='min-width']",
+				"div[style*='min-width']",
 			) as HTMLElement;
 			expect(modalContainer).not.toBeNull();
 			expect(modalContainer.style.minWidth).toBe("444px");

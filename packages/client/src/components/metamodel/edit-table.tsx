@@ -17,7 +17,7 @@ import {
 	TabsTrigger,
 	Textarea,
 } from "@semoss/ui/next";
-import type { ColumnOption } from "../import/database/MetamodelTypes";
+import type { ColumnOption } from "../import/database/metamodel-types";
 
 interface NodeShape {
 	id: string;
@@ -83,7 +83,7 @@ const EditTable: React.FC<EditTableProps> = ({
 		setAliasVal(node?.data?.name ?? "");
 		setDescriptionVal(node?.data?.description ?? "");
 
-		if (node && node.data) {
+		if (node?.data) {
 			node.data = {
 				...node.data,
 				properties: props,

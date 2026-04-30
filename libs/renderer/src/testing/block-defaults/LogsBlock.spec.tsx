@@ -46,7 +46,9 @@ describe("logs block", () => {
 			blocks: blocks,
 		});
 
-		const element = container.querySelector("[data-block='logs']");
+		const element = container.querySelector(
+			"[data-block='logs']",
+		) as HTMLElement;
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");
@@ -59,7 +61,9 @@ describe("logs block", () => {
 			queryConfig: queries,
 		});
 
-		const element = container.querySelector("[data-block='logs']");
+		const element = container.querySelector(
+			"[data-block='logs']",
+		) as HTMLElement;
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");

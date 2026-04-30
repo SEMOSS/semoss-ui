@@ -802,7 +802,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
 						<div
-							className="flex items-center justify-between gap-2 bg-background bg-card p-2"
+							className="flex items-center justify-between gap-2 bg-card p-2"
 							data-tour="tour-input-menu"
 							role="none"
 							onClick={(e) => {
@@ -820,7 +820,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
 								{!(
-									root.theme.hideToolsInIframe && isIframed
+									root.theme.featureFlags
+										?.hideToolsInIframe && isIframed
 								) && (
 									<DropdownMenu
 										open={menuOpen}
@@ -1076,7 +1077,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					/>
 					{/* Slash command menu - searchable knowledge & toolbox only */}
 					{!isLoading &&
-						!(root.theme.hideToolsInIframe && isIframed) && (
+						!(
+							root.theme.featureFlags?.hideToolsInIframe &&
+							isIframed
+						) && (
 							<MentionPlugin
 								trigger="/"
 								MenuComponent={({

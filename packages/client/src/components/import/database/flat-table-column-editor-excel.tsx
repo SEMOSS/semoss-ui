@@ -10,6 +10,7 @@ import {
 	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DataTypeIcon } from "@semoss/shared";
 import {
 	Button,
 	Collapsible,
@@ -444,6 +445,11 @@ const ExcelDataSelection = ({
 	return (
 		<TooltipProvider>
 			<div>
+				<P className="mt-4 font-semibold text-xl">Configure Columns</P>
+				<P className="mt-2 mb-4 font-normal text-muted-foreground">
+					Review and adjust column names and data types before
+					importing your spreadsheet data.
+				</P>
 				{files.map((file, fileIndex) => (
 					<div key={fileName[fileIndex]}>
 						{/* Header Section */}
@@ -849,25 +855,46 @@ const ExcelDataSelection = ({
 																		</TableCell>
 
 																		{/* Data Type */}
-																		<TableCell className="py-2 pr-6 pl-4">
-																			<P
-																				className={`text-sm ${
-																					!state
-																						.rowEditableState[
-																						index
-																					]
-																						? "text-muted-foreground"
-																						: "text-foreground"
-																				}`}
-																				data-testid={`column-datatype-${column}-${index}`}
-																			>
-																				{state
-																					.columnMetadata[
-																					column
-																				]
-																					?.dataType ||
-																					"STRING"}
-																			</P>
+																		<TableCell className="py-2 pr-6 pl-4 text-center">
+																			<TooltipProvider>
+																				<Tooltip>
+																					<TooltipTrigger
+																						asChild
+																					>
+																						<span
+																							className={
+																								!state
+																									.rowEditableState[
+																									index
+																								]
+																									? "opacity-50"
+																									: ""
+																							}
+																							data-testid={`column-datatype-${column}-${index}`}
+																						>
+																							<DataTypeIcon
+																								type={
+																									state
+																										.columnMetadata[
+																										column
+																									]
+																										?.dataType ||
+																									"STRING"
+																								}
+																								className="size-3.5"
+																							/>
+																						</span>
+																					</TooltipTrigger>
+																					<TooltipContent>
+																						{state
+																							.columnMetadata[
+																							column
+																						]
+																							?.dataType ||
+																							"STRING"}
+																					</TooltipContent>
+																				</Tooltip>
+																			</TooltipProvider>
 																		</TableCell>
 
 																		{/* Edit */}
