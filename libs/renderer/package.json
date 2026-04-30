@@ -26,7 +26,6 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@mui/x-data-grid": "^7.28.3",
         "dayjs": "1.11.8",
         "echarts-wordcloud": "^2.1.0",
         "lucide-react": "^0.545.0",
@@ -65,9 +64,6 @@
         "vitest": "^4.0.0"
     },
     "peerDependencies": {
-        "@emotion/react": "11.11.1",
-        "@emotion/styled": "11.11.0",
-        "@mui/material": "6.0.0",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
