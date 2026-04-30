@@ -1340,7 +1340,11 @@ export const DatabaseForm = ({
 					case "zip-upload":
 						return (
 							<div
-								className={`flex flex-col gap-2${val.hidden ? "hidden" : ""}`}
+								className={
+									val.hidden
+										? "flex hidden flex-col gap-2"
+										: "flex flex-col gap-2"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<P>
