@@ -13,11 +13,7 @@ import {
 	PopoverTrigger,
 } from "@semoss/ui/next";
 
-export type SearchCategory =
-	| "methodName"
-	| "requestMessage"
-	| "engineType"
-	| "roomId";
+export type SearchCategory = "methodName" | "engineType" | "roomId";
 
 export interface SearchToken {
 	id: string;
@@ -28,7 +24,6 @@ export interface SearchToken {
 export interface SearchPayload {
 	search?: {
 		methodName?: string[];
-		requestMessage?: string[];
 		engineType?: string[];
 	};
 	others?: string;
@@ -42,12 +37,7 @@ interface CategoryMeta {
 	borderColor: string;
 }
 
-const CATEGORIES: SearchCategory[] = [
-	"methodName",
-	"requestMessage",
-	"engineType",
-	"roomId",
-];
+const CATEGORIES: SearchCategory[] = ["methodName", "engineType", "roomId"];
 
 const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 	methodName: {
@@ -55,12 +45,6 @@ const CATEGORY_META: Record<SearchCategory, CategoryMeta> = {
 		color: "text-blue-700 dark:text-blue-300",
 		bgColor: "bg-blue-100 dark:bg-blue-900/40",
 		borderColor: "border-blue-300 dark:border-blue-700",
-	},
-	requestMessage: {
-		label: "Request Message",
-		color: "text-amber-700 dark:text-amber-300",
-		bgColor: "bg-amber-100 dark:bg-amber-900/40",
-		borderColor: "border-amber-300 dark:border-amber-700",
 	},
 	engineType: {
 		label: "Engine",
@@ -143,11 +127,12 @@ export const TokenizedSearchBar = ({
 	onTokensChange,
 	onFreeTextChange,
 	onSearch,
-	placeholder = "Search method, requestMessage, engine… or pick a category",
+	placeholder = "Search method, engine… or pick a category",
 	categoryOptions = {},
 	onFetchCategoryOptions,
 }: TokenizedSearchBarProps) => {
 	const inputRef = useRef<HTMLInputElement>(null);
+	const suppressDropdownOnFocusRef = useRef(false);
 	const [pendingCategory, setPendingCategory] =
 		useState<SearchCategory | null>(null);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -220,6 +205,10 @@ export const TokenizedSearchBar = ({
 			if (freeText.trim()) {
 				addToken(cat, freeText);
 				setDropdownOpen(false);
+			} else if (cat === "roomId") {
+				suppressDropdownOnFocusRef.current = true;
+				setDropdownOpen(false);
+				setTimeout(() => inputRef.current?.focus(), 0);
 			} else {
 				setDropdownOpen(true);
 				setTimeout(() => inputRef.current?.focus(), 0);
@@ -261,7 +250,11 @@ export const TokenizedSearchBar = ({
 	);
 
 	useEffect(() => {
-		if (!pendingCategory || !onFetchCategoryOptions) {
+		if (
+			!pendingCategory ||
+			!onFetchCategoryOptions ||
+			pendingCategory === "roomId"
+		) {
 			setFetchedOptions([]);
 			return;
 		}
@@ -329,7 +322,9 @@ export const TokenizedSearchBar = ({
 
 			if (e.key === " " && e.ctrlKey) {
 				e.preventDefault();
-				setDropdownOpen(true);
+				if (pendingCategory !== "roomId") {
+					setDropdownOpen(true);
+				}
 				return;
 			}
 
@@ -402,7 +397,13 @@ export const TokenizedSearchBar = ({
 				)}
 
 				<div className="relative flex min-w-[120px] flex-1 items-center">
-					<Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+					<Popover
+						open={dropdownOpen}
+						onOpenChange={(open) => {
+							if (open && pendingCategory === "roomId") return;
+							setDropdownOpen(open);
+						}}
+					>
 						<PopoverTrigger asChild>
 							<input
 								ref={inputRef}
@@ -413,6 +414,10 @@ export const TokenizedSearchBar = ({
 								}
 								onKeyDown={handleKeyDown}
 								onFocus={() => {
+									if (suppressDropdownOnFocusRef.current) {
+										suppressDropdownOnFocusRef.current = false;
+										return;
+									}
 									if (
 										!freeText &&
 										!pendingCategory &&

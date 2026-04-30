@@ -312,6 +312,7 @@ export const AuditLogsDashboard = ({
 			limit: number,
 			searchText?: string,
 		): Promise<string[]> => {
+			if (category === "roomId") return [];
 			try {
 				const { selectedUser: sUser } = filteredData.current;
 				const tokens = searchRef.current.tokens;
@@ -336,11 +337,6 @@ export const AuditLogsDashboard = ({
 					) {
 						params.methodName = token.values.join(",");
 					} else if (
-						token.category === "requestMessage" &&
-						category !== "requestMessage"
-					) {
-						params.request = token.values.join(",");
-					} else if (
 						token.category === "engineType" &&
 						category !== "engineType"
 					) {
@@ -353,7 +349,6 @@ export const AuditLogsDashboard = ({
 				if (searchText) {
 					const categoryFieldMap: Record<string, string> = {
 						methodName: "methodName",
-						requestMessage: "request",
 						engineType: "engineType",
 						roomId: "roomId",
 					};
@@ -377,28 +372,9 @@ export const AuditLogsDashboard = ({
 				if (Array.isArray(data)) {
 					const values = data
 						.map((item: unknown) => {
-							// filterName response: [["callTool"], ["{\"arg0\":\"AskPlayground\"}"], ...]
+							// array-of-arrays response: [["askRoom"], ["callTool"], ...]
 							if (Array.isArray(item)) {
-								const raw = item[0];
-								// requestMessage: parse JSON string to extract arg0
-								if (
-									category === "requestMessage" &&
-									typeof raw === "string"
-								) {
-									try {
-										const parsed = JSON.parse(raw);
-										if (
-											parsed &&
-											typeof parsed === "object" &&
-											"arg0" in parsed
-										) {
-											return String(parsed.arg0);
-										}
-									} catch {
-										// not JSON, return raw
-									}
-								}
-								return raw;
+								return item[0];
 							}
 							// legacy object response for engineType
 							if (item && typeof item === "object") {
