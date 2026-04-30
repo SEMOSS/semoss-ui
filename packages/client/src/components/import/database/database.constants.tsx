@@ -57,7 +57,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -138,7 +138,7 @@ export const DATABASE_CONNECTION = {
 							},
 							{
 								display: "From Prop File",
-								value: "frompropFile",
+								value: "fromPropFile",
 							},
 						],
 					},
@@ -178,12 +178,6 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					disabled: false,
 					required: true,
-					// rules: {
-					//   required: {
-					//     value: true,
-					//     message: "Please upload file / files.",
-					//   },
-					// },
 				},
 				{
 					key: "PROP_FILE_UPLOAD",
@@ -222,7 +216,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -251,7 +245,7 @@ export const DATABASE_CONNECTION = {
 				{
 					key: "DATABASE_TYPE",
 					label: "Enter Database Type",
-					value: "",
+					value: "h2",
 					section: "Database",
 					category: "Database",
 					type: "select",
@@ -353,7 +347,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -428,7 +422,7 @@ export const DATABASE_CONNECTION = {
 							},
 							{
 								display: "From Prop File",
-								value: "frompropFile",
+								value: "fromPropFile",
 							},
 						],
 					},
@@ -502,7 +496,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -577,7 +571,7 @@ export const DATABASE_CONNECTION = {
 							},
 							{
 								display: "From Prop File",
-								value: "frompropFile",
+								value: "fromPropFile",
 							},
 						],
 					},
@@ -660,7 +654,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -676,7 +670,7 @@ export const DATABASE_CONNECTION = {
 					required: false,
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					category: "General",
@@ -794,7 +788,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -810,7 +804,7 @@ export const DATABASE_CONNECTION = {
 					required: false,
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					category: "General",
@@ -942,7 +936,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -958,7 +952,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1107,7 +1101,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1123,7 +1117,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1270,7 +1264,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1286,7 +1280,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1407,7 +1401,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1423,7 +1417,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1569,7 +1563,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1585,7 +1579,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1739,7 +1733,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1755,7 +1749,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -1918,7 +1912,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -1934,7 +1928,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2019,7 +2013,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2035,7 +2029,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2180,7 +2174,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2196,7 +2190,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2342,7 +2336,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2358,7 +2352,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2461,7 +2455,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2477,7 +2471,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2622,7 +2616,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2638,7 +2632,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2783,7 +2777,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2799,7 +2793,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -2944,7 +2938,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -2960,7 +2954,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3105,7 +3099,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3121,7 +3115,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3266,7 +3260,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3282,7 +3276,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3385,7 +3379,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3401,7 +3395,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3546,7 +3540,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3562,7 +3556,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3707,7 +3701,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3723,7 +3717,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -3877,7 +3871,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -3893,7 +3887,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4047,7 +4041,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]" ) ;',
+							value: 'META | CheckEngineName ( "[VALUE]" ) ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4063,7 +4057,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4208,7 +4202,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4224,7 +4218,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4405,7 +4399,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4421,7 +4415,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4594,7 +4588,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4610,7 +4604,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4765,7 +4759,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4781,7 +4775,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -4917,7 +4911,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -4933,7 +4927,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -5069,7 +5063,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -5085,7 +5079,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -5231,7 +5225,7 @@ export const DATABASE_CONNECTION = {
 								"Catalog names can only contain alphanumeric characters and dashes.",
 						},
 						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
+							value: 'META | CheckEngineName ( "[VALUE]") ;',
 							message:
 								"This Catalog name has already been used, please try another.",
 						},
@@ -5247,7 +5241,7 @@ export const DATABASE_CONNECTION = {
 					category: "General",
 				},
 				{
-					key: "DATABASE_TAGS",
+					key: "DATABASE_TAG",
 					label: "Tags",
 					value: "",
 					type: "tags",
@@ -5378,6 +5372,9 @@ export const DATABASE_CONNECTION = {
 export const CATEGORY_DESCRIPTIONS = {
 	General:
 		"Contains descriptive and organizational details about the database, such as name, description, and tags.",
+	Database:
+		"Select the database engine type and how the data should be imported.",
+	"File Upload": "Upload the file to import.",
 	Settings:
 		"Defines the technical configuration needed to connect to the database, including host, port, schema, and connection parameters.",
 	Credentials:
