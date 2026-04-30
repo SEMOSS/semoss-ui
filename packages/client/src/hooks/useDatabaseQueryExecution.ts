@@ -66,6 +66,7 @@ export const hasTabularData = (response: unknown): boolean => {
 
 interface QueryExecutionOptions {
 	onSchemaChange?: () => void;
+	buildPixel?: (engineId: string, query: string) => string;
 }
 
 export function useQueryExecution(
@@ -101,7 +102,9 @@ export function useQueryExecution(
 		setPreviewLoading(true);
 
 		try {
-			const pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit = [true]);`;
+			const pixel = options.buildPixel
+				? options.buildPixel(engineId, queryToRun.replaceAll("`", ""))
+				: `SqlQuery(database=["${engineId}"], query=["<encode>${queryToRun.replaceAll("`", "")}</encode>"], commit = [true]);`;
 			setPixelQuery(pixel);
 
 			const response = await runPixel(pixel);

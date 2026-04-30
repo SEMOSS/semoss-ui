@@ -10,9 +10,10 @@ import { EngineMetadataPage } from "./engine-metadata-page";
 import { EngineModelChatPage } from "./engine-model-chat-page";
 import { EngineOverviewPage } from "./engine-overview-page";
 import { EngineQAPage } from "./engine-qa-page";
-import { EngineQueryDataPage } from "./engine-query-data-page";
 import { EngineSettingsPage } from "./engine-settingsPage";
 import { EngineSmssPage } from "./engine-smss-page";
+import { EngineSparqlQueryPage } from "./engine-sparql-query-page";
+import { EngineSqlQueryPage } from "./engine-sql-query-page";
 import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
@@ -186,7 +187,13 @@ export const ENGINE_ROUTES: {
 			{
 				name: "Query",
 				path: "query",
-				component: EngineQueryDataPage,
+				component: EngineSqlQueryPage,
+				restrict: ["READ_ONLY", "EDIT", "OWNER"],
+			},
+			{
+				name: "Query",
+				path: "sparql-query",
+				component: EngineSparqlQueryPage,
 				restrict: ["READ_ONLY", "EDIT", "OWNER"],
 			},
 			{
