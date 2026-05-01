@@ -49,7 +49,9 @@
 		"ask": "Ask",
 		"errorProcessing": "Error processing chat",
 		"pauseTools": "Pause tools",
-		"pauseToolsTooltip": "Pause all tool execution until after the next message"
+		"pauseToolsTooltip": "Pause all tool execution until after the next message",
+		"selectModel": "Select model",
+		"selectModelDescription": "Choose the AI model to use for this conversation"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",

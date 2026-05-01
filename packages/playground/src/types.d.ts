@@ -20,6 +20,8 @@ export interface Engine {
 	app_name?: string;
 	/** @deprecated legacy keys from MyEngines */
 	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	/** Single capability tag returned by MyEngines when metaKeys includes "tag" */
+	tag?: string | string[];
 }
 
 export interface App {

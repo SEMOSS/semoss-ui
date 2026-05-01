@@ -49,7 +49,9 @@
 		"ask": "Preguntar",
 		"errorProcessing": "Error al procesar el chat",
 		"pauseTools": "Pausar herramientas",
-		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
+		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del próximo mensaje",
+		"selectModel": "Seleccionar modelo",
+		"selectModelDescription": "Elige el modelo de IA para usar en esta conversación"
 	},
 	"content": {
 		"scrollToTop": "Ir al inicio",
