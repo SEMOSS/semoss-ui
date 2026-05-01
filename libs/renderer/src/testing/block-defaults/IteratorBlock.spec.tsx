@@ -206,18 +206,17 @@ describe("Iterator block component", () => {
 	});
 
 	it("should render iterator block", async () => {
-		const id = crypto.randomUUID();
-		const { container } = render(<IterationBlock id={id} />, {
+		const { container } = render(<IterationBlock id={"iterationBlock"} />, {
 			blocks: blocks,
 		});
-		// console.log({ id });
-		const iterator = container.querySelector(`[data-block='${id}']`);
+		const iterator = container.querySelector(
+			"[data-block='iterationBlock']",
+		);
 		expect(iterator).toBeInTheDocument();
 	});
 
 	it("should render 3 buttons", async () => {
-		const id = crypto.randomUUID();
-		render(<IterationBlock id={id} />, {
+		render(<IterationBlock id={"iterationBlock"} />, {
 			blocks: blocks3,
 		});
 
@@ -227,8 +226,7 @@ describe("Iterator block component", () => {
 		expect(buttons).toHaveLength(3);
 	});
 	it("should render 5 buttons", async () => {
-		const id = crypto.randomUUID();
-		render(<IterationBlock id={id} />, {
+		render(<IterationBlock id={"iterationBlock"} />, {
 			blocks: blocks,
 		});
 
