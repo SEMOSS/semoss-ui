@@ -4,7 +4,6 @@ import { AddNewJob } from "../jobs/add-new-job";
 import { JobsPage } from "../jobs/jobs-page";
 import { AdminQueryPage } from "./admin-query-page";
 import { AdminThemePage } from "./admin-theme-page";
-import { AppSettingsDetailsPage } from "./app-settings-details-page";
 import { ConfigurationsPage } from "./configurations-page";
 import { EngineSettingsDetailPage } from "./engine-settings-detail-page";
 import { EngineSettingsIndexPage } from "./engine-settings-index-page";
@@ -13,6 +12,7 @@ import { InsightSettingsPage } from "./insight-settings-page";
 import { LLMFeedbackPage } from "./llm-feedback-page";
 import { MemberSettingsPage } from "./MemberSettingsPage";
 import { MyProfilePage } from "./my-profile-page";
+import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
 import { ProjectSettingsPage } from "./project-settings-page";
 import { RDFMapPage } from "./rdf-map-page";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -25,7 +25,7 @@ import { TeamsSettingsPage } from "./teams-settings-page";
 const SETTINGS_COMPONETS = {
 	"": SettingsIndexPage,
 	app: ProjectSettingsPage,
-	"app/:id": AppSettingsDetailsPage,
+	"app/:id": ProjectSettingsDetailsPage,
 	insight: InsightSettingsPage,
 	"insight/:id/:projectId": InsightSettingsDetailPage,
 	members: MemberSettingsPage,

@@ -1,9 +1,17 @@
-import { Code, Terminal as TerminalIcon } from "lucide-react";
+import {
+	Code,
+	RefreshCw,
+	Settings,
+	Terminal as TerminalIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
 	Terminal,
 	type TerminalProps,
 	ToggleGroup,
@@ -99,6 +107,36 @@ const HELP_KEY_BY_LANGUAGE: Record<LanguageType, string> = {
 };
 
 const PIXEL_COMMAND_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+type ShortcutPlatform = "windows" | "mac" | "linux" | "other";
+
+const getShortcutPlatform = (): ShortcutPlatform => {
+	if (typeof navigator === "undefined") {
+		return "other";
+	}
+
+	const typedNavigator = navigator as Navigator & {
+		userAgentData?: { platform?: string };
+	};
+	const userAgentDataPlatform = typedNavigator.userAgentData?.platform || "";
+	const platform = navigator.platform || "";
+	const userAgent = navigator.userAgent || "";
+	const normalized =
+		`${userAgentDataPlatform} ${platform} ${userAgent}`.toLowerCase();
+
+	if (normalized.includes("win")) {
+		return "windows";
+	}
+
+	if (normalized.includes("mac")) {
+		return "mac";
+	}
+
+	if (normalized.includes("linux") || normalized.includes("x11")) {
+		return "linux";
+	}
+
+	return "other";
+};
 
 const getInstructions = (selectedLanguage: LanguageType) => {
 	switch (selectedLanguage) {
@@ -167,6 +205,8 @@ const countStatements = (value: string): number => {
 export const TerminalPanel: React.FC = observer(() => {
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [shortcutPlatform, setShortcutPlatform] =
+		useState<ShortcutPlatform>("other");
 	const { workspace } = useWorkspace();
 	const { monolithStore } = useRootStore();
 
@@ -176,6 +216,9 @@ export const TerminalPanel: React.FC = observer(() => {
 	const [helpSuggestions, setHelpSuggestions] = useState<
 		Record<string, string[]>
 	>({});
+	const [syncedQuotedSuggestions, setSyncedQuotedSuggestions] = useState<
+		string[]
+	>([]);
 
 	useEffect(() => {
 		runPixel("META | HelpJson();")
@@ -211,10 +254,121 @@ export const TerminalPanel: React.FC = observer(() => {
 			});
 	}, []);
 
+	useEffect(() => {
+		setShortcutPlatform(getShortcutPlatform());
+	}, []);
+
 	const suggestions = useMemo(() => {
 		const helpKey = HELP_KEY_BY_LANGUAGE[language];
 		return helpSuggestions[helpKey] || [];
 	}, [helpSuggestions, language]);
+
+	const platformName = useMemo(() => {
+		if (shortcutPlatform === "windows") {
+			return "Windows";
+		}
+
+		if (shortcutPlatform === "mac") {
+			return "macOS";
+		}
+
+		if (shortcutPlatform === "linux") {
+			return "Linux";
+		}
+
+		return "Browser";
+	}, [shortcutPlatform]);
+
+	const shortcutRows = useMemo(() => {
+		const isMac = shortcutPlatform === "mac";
+		const isWindows = shortcutPlatform === "windows";
+		const commandKey = isMac ? "⌘ Cmd" : "Ctrl";
+		const controlKey = isMac ? "⌃ Ctrl" : "Ctrl";
+		const pageModifier = isWindows ? "Alt" : controlKey;
+
+		return [
+			{
+				id: "select-all",
+				keys: [commandKey, "⇧ Shift", "A"],
+				description: "Select all terminal output",
+			},
+			{
+				id: "copy",
+				keys: [commandKey, "C"],
+				description: "Copy selected text",
+			},
+			{
+				id: "paste",
+				keys: [commandKey, "V"],
+				description: "Paste clipboard at cursor",
+			},
+			{
+				id: "cancel",
+				keys: [controlKey, "C"],
+				description: "Cancel current command",
+			},
+			{
+				id: "reverse-search",
+				keys: [controlKey, "R"],
+				description: "Reverse history search",
+			},
+			{
+				id: "page-up",
+				keys: [pageModifier, "Y"],
+				description: "Page up",
+			},
+			{
+				id: "page-down",
+				keys: [pageModifier, "X"],
+				description: "Page down",
+			},
+			{
+				id: "autocomplete",
+				keys: ["⇥ Tab"],
+				description: "Accept ghost/suggestion",
+			},
+			{
+				id: "navigate",
+				keys: ["↑", "↓"],
+				description: "Navigate suggestions/history",
+			},
+			{
+				id: "enter",
+				keys: ["↵ Enter"],
+				description: "Run command (no autocomplete)",
+			},
+			{
+				id: "escape",
+				keys: ["⎋ Esc"],
+				description: "Hide suggestions",
+			},
+		];
+	}, [shortcutPlatform]);
+
+	const canShowSyncButton = workspace.fileBrowser.isOpen;
+	const canSyncFileBrowserSuggestions =
+		canShowSyncButton && workspace.fileBrowser.visiblePaths.length > 0;
+
+	const handleSyncFileBrowserSuggestions = useCallback(() => {
+		const nextSuggestions = workspace.fileBrowser.visiblePaths;
+		if (nextSuggestions.length === 0) {
+			toast.warning(
+				"No visible file paths to sync from the file browser",
+			);
+			return;
+		}
+
+		setSyncedQuotedSuggestions(nextSuggestions);
+		toast.success(
+			`Synced ${nextSuggestions.length} asset path suggestion${
+				nextSuggestions.length === 1 ? "" : "s"
+			}`,
+		);
+	}, [workspace.fileBrowser.visiblePaths]);
+
+	const getQuotedSuggestions = useCallback(() => {
+		return syncedQuotedSuggestions;
+	}, [syncedQuotedSuggestions]);
 
 	const transformSuggestionForInsert = useCallback(
 		(suggestion: string) => {
@@ -484,7 +638,7 @@ export const TerminalPanel: React.FC = observer(() => {
 									key={value}
 									value={value}
 									title={`Switch to ${name}`}
-									className="h-7 px-2"
+									className={`h-7 px-2 ${value === "SHELL" ? "rounded-r-none data-[spacing=0]:last:rounded-r-none" : ""}`}
 								>
 									{value === "PIXEL" && (
 										<Code className="size-3.5" />
@@ -510,6 +664,78 @@ export const TerminalPanel: React.FC = observer(() => {
 							);
 						})}
 					</ToggleGroup>
+					<Popover>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-7 w-7 rounded-l-none border-l-0 p-0"
+								title="Terminal Settings"
+								aria-label="Terminal Settings"
+							>
+								<Settings className="size-3.5" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent
+							side="top"
+							align="start"
+							className="w-[440px] max-w-[calc(100vw-2rem)] p-3"
+						>
+							<div className="mb-2 flex items-center justify-between gap-2">
+								<div className="font-semibold text-sm">
+									Terminal Shortcuts ({platformName})
+								</div>
+								{canShowSyncButton && (
+									<Button
+										variant="outline"
+										size="sm"
+										className="h-7 gap-1 px-2"
+										onClick={
+											handleSyncFileBrowserSuggestions
+										}
+										disabled={
+											!canSyncFileBrowserSuggestions
+										}
+										title="Sync visible file browser paths to terminal suggestions"
+									>
+										<RefreshCw className="size-3" />
+										Sync
+									</Button>
+								)}
+							</div>
+							<div className="grid grid-cols-[180px_1fr] gap-x-3 gap-y-1 text-xs">
+								{shortcutRows.map((row) => {
+									return (
+										<div key={row.id} className="contents">
+											<div className="flex flex-wrap items-center gap-1">
+												{row.keys.map(
+													(key, keyIndex) => {
+														return (
+															<span
+																key={`${row.id}-${key}-${keyIndex}`}
+																className="inline-flex items-center gap-1"
+															>
+																{keyIndex >
+																	0 && (
+																	<span className="opacity-70">
+																		+
+																	</span>
+																)}
+																<kbd className="rounded border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] leading-none">
+																	{key}
+																</kbd>
+															</span>
+														);
+													},
+												)}
+											</div>
+											<span>{row.description}</span>
+										</div>
+									);
+								})}
+							</div>
+						</PopoverContent>
+					</Popover>
 					<div className="flex-1">&nbsp;</div>
 					<Button
 						variant="outline"
@@ -535,6 +761,7 @@ export const TerminalPanel: React.FC = observer(() => {
 				loading={isLoading}
 				instructions={getInstructions(language)}
 				suggestions={suggestions}
+				getQuotedSuggestions={getQuotedSuggestions}
 				transformSuggestion={transformSuggestionForInsert}
 				onRun={runCommand}
 				onCommand={(nextCommand) => {
