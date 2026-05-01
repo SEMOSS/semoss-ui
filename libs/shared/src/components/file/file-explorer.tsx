@@ -10,6 +10,7 @@ import {
 	type KeyboardEvent as ReactKeyboardEvent,
 	type MouseEvent as ReactMouseEvent,
 	useCallback,
+	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -114,6 +115,14 @@ interface FileExplorerProps {
 	 * Callback after items are deleted so consumers can close stale path refs
 	 */
 	onItemsDeleted?: (items: FileItem[]) => void;
+
+	/**
+	 * Callback with the currently visible items rendered in the explorer tree
+	 */
+	onVisibleItemsChange?: (payload: {
+		path: string;
+		items: FileItem[];
+	}) => void;
 }
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({
@@ -124,6 +133,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	initialPath,
 	onItemsMoved,
 	onItemsDeleted,
+	onVisibleItemsChange,
 }) => {
 	const insight = useInsight();
 
@@ -316,9 +326,24 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			} else {
 				visibleItemsRef.current.delete(item.path);
 			}
+
+			onVisibleItemsChange?.({
+				path,
+				items: Array.from(visibleItemsRef.current.values()).sort(
+					(a, b) => a.path.localeCompare(b.path),
+				),
+			});
 		},
-		[],
+		[onVisibleItemsChange, path],
 	);
+
+	useEffect(() => {
+		visibleItemsRef.current = new Map();
+		onVisibleItemsChange?.({
+			path,
+			items: [],
+		});
+	}, [onVisibleItemsChange, path]);
 
 	const handleDirectoryRefreshRegister = useCallback(
 		(directoryPath: string, refresh: () => void, isRegistered: boolean) => {
