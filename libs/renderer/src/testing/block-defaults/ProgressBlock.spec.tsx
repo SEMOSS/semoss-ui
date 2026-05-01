@@ -54,7 +54,6 @@ describe("Progress Block", async () => {
 		);
 
 		const element = screen.queryByRole("progressbar");
-		// screen.debug()
 		expect(element).toBeInTheDocument();
 	});
 	it("Should not render the Progress Block", async () => {
@@ -157,7 +156,7 @@ describe("Progress Block", async () => {
 	});
 
 	it("Should check if type is circular", async () => {
-		render(
+		const { container } = render(
 			<ProgressBlock
 				data-testid="progressId"
 				id={blocks["progress-id"].id}
@@ -177,9 +176,11 @@ describe("Progress Block", async () => {
 				},
 			},
 		);
-		// expect(container.getAttribute("class")).toContain("MuiCircularProgress-root")
-		const element = screen.getByRole("progressbar");
-		expect(element).toHaveClass("MuiCircularProgress-root");
+		const spinner = container.querySelector(
+			"[role='status']",
+		) as HTMLElement;
+		expect(spinner).toBeInTheDocument();
+		expect(spinner).toHaveClass("animate-spin");
 	});
 	it("Should check if type is linear", async () => {
 		render(
@@ -204,6 +205,6 @@ describe("Progress Block", async () => {
 		);
 
 		const element = screen.getByRole("progressbar");
-		expect(element).toHaveClass("MuiLinearProgress-root");
+		expect(element).toHaveAttribute("data-slot", "progress");
 	});
 });

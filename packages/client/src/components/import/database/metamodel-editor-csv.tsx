@@ -2,6 +2,7 @@
 import {
 	Maximize2,
 	RefreshCw,
+	Search,
 	Snowflake,
 	Table as TableIcon,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
+	Input,
 	Label,
 	P,
 	Select,
@@ -40,7 +42,7 @@ import type {
 	FlowNode,
 	MetaModelTypeProps,
 	MetamodelNode,
-} from "./MetamodelTypes";
+} from "./metamodel-types";
 import {
 	attachConnectionsToNodes,
 	createEdge,
@@ -58,11 +60,11 @@ import {
 	rebuildNodesFromParsed,
 	removeEdgesForNode,
 	transformMetaToParsed,
-} from "./MetamodelUtils";
+} from "./metamodel-utils";
 import { PortalModal } from "./portal";
 
 export const MetaModelType = observer(
-	({ parsedData, onImport, onCancel }: MetaModelTypeProps) => {
+	({ parsedData, onImport, onCancel, isRdf = false }: MetaModelTypeProps) => {
 		// State
 		const [selectedDataIndex, setSelectedDataIndex] = useState<number>(0);
 		const [flowStates, setFlowStates] = useState<Record<number, FlowData>>(
@@ -80,6 +82,7 @@ export const MetaModelType = observer(
 			useState(false);
 		const [anchorNodesMenu, setAnchorNodesMenu] = useState(false);
 		const [showFullScreenModal, setShowFullScreenModal] = useState(false);
+		const [metaModelSearchTerm, setMetaModelSearchTerm] = useState("");
 
 		// Refs
 		const portalHostRef = useRef<HTMLDivElement | null>(null);
@@ -189,17 +192,6 @@ export const MetaModelType = observer(
 			},
 			[selectedDataIndex],
 		);
-
-		// Handlers
-		// const handleNodesMenuOpen = useCallback(
-		// 	() => setAnchorNodesMenu(true),
-		// 	[],
-		// );
-
-		// const handleNodesMenuClose = useCallback(
-		// 	() => setAnchorNodesMenu(false),
-		// 	[],
-		// );
 
 		const handleSelectAll = useCallback(
 			(isChecked: boolean) => {
@@ -440,7 +432,6 @@ export const MetaModelType = observer(
 
 				setSelectedDataIndex(indexNum);
 				setSelectedNode(null);
-				setColumnPage(0);
 			},
 			[selectedDataIndex, flow.nodes, flow.edges],
 		);
@@ -581,219 +572,191 @@ export const MetaModelType = observer(
 			<div className="h-full w-full">
 				<P className="mt-4 font-semibold text-xl">Define Metamodel</P>
 				<P className="mt-2 mb-4 font-normal text-muted-foreground">
-					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
-					do eiusmod tempor incididunt ut labore et dolore magna
-					aliqua. Ut enim ad minim veniam, quis nostrud exercitation
-					ullamco laboris nisi ut aliquip ex ea commodo consequat.
+					Review and adjust the suggested metamodel for your data. You
+					can rename nodes, add or remove relationships, and
+					reorganize the graph before importing.
 				</P>
+				{parsedData && parsedData.length > 0 && (
+					<div className="mb-3 flex items-center gap-2">
+						<span className="shrink-0 text-muted-foreground text-sm">
+							Viewing:
+						</span>
+						<Select
+							value={String(selectedDataIndex)}
+							onValueChange={handleDataSourceChange}
+						>
+							<SelectTrigger className="w-auto">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{parsedData.map((data, index) => (
+									<SelectItem
+										key={getDataSourceKey(data, index)}
+										value={String(index)}
+										data-testid={`engineMetadata-datasource-${index}-btn`}
+									>
+										{getDisplayName(data)}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+				)}
 				<div ref={portalHostRef}>
 					<div
-						className={`relative m-4 flex-1 overflow-visible rounded-2xl border border-white bg-card transition-all duration-200 ease-in ${
+						className={`relative flex-1 overflow-visible rounded-2xl border border-border bg-card transition-all duration-200 ease-in ${
 							showFullScreenModal ? "h-screen" : "h-auto"
 						}`}
 					>
 						<div className="relative z-0 p-4">
 							<Section>
-								<div className="flex items-center justify-between gap-2">
-									{parsedData && parsedData.length > 0 && (
-										<div className="mb-4 flex w-full items-center">
-											<Select
-												value={String(
-													selectedDataIndex,
-												)}
-												onValueChange={
-													handleDataSourceChange
+								<div className="mb-3 flex items-center gap-2">
+									<div className="relative flex-1">
+										<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+										<Input
+											placeholder="Search"
+											value={metaModelSearchTerm}
+											onChange={(e) =>
+												setMetaModelSearchTerm(
+													e.target.value,
+												)
+											}
+											className="h-9 pl-9"
+											data-testid="metaModelType-search-input"
+										/>
+									</div>
+									<div className="flex items-center gap-2">
+										{!showFullScreenModal && (
+											<Button
+												variant="ghost"
+												size="icon"
+												onClick={() =>
+													setShowFullScreenModal(true)
 												}
+												data-testid="engineMetadata-fullscreen-btn"
+												title="Full Screen"
+												className="p-0"
 											>
-												<SelectTrigger className="w-full">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{parsedData.map(
-														(data, index) => (
-															<SelectItem
-																key={getDataSourceKey(
-																	data,
-																	index,
-																)}
-																value={String(
-																	index,
-																)}
-																data-testid={`engineMetadata-datasource-${index}-btn`}
-															>
-																{getDisplayName(
-																	data,
-																)}
-															</SelectItem>
-														),
-													)}
-												</SelectContent>
-											</Select>
-										</div>
-									)}
-									<Section.Header
-										actions={
-											<div className="flex flex-row items-center gap-4">
-												{!showFullScreenModal && (
-													<Button
-														variant="ghost"
-														size="icon"
-														onClick={() =>
-															setShowFullScreenModal(
-																true,
+												<Maximize2 className="size-4" />
+											</Button>
+										)}
+										<DropdownMenu
+											open={anchorNodesMenu}
+											onOpenChange={setAnchorNodesMenu}
+										>
+											<DropdownMenuTrigger asChild>
+												<Button
+													variant="ghost"
+													size="icon"
+													title="Select tables"
+													data-testid="engineMetadata-tablelist-btn"
+													className="p-0"
+												>
+													<TableIcon className="size-4" />
+												</Button>
+											</DropdownMenuTrigger>
+											<DropdownMenuContent
+												align="end"
+												className="w-[360px]"
+											>
+												<div className="flex items-center justify-between px-4 py-2">
+													<P className="text-sm">
+														Tables
+													</P>
+												</div>
+												<Separator className="my-1" />
+												<DropdownMenuItem
+													onSelect={(e) =>
+														e.preventDefault()
+													}
+													className="flex items-center gap-2"
+												>
+													<Checkbox
+														ref={
+															selectAllCheckboxRef
+														}
+														id="select-all-nodes"
+														checked={
+															Array.isArray(
+																nodes,
+															) &&
+															nodes.length > 0 &&
+															selectedNodeIds.length ===
+																nodes.length
+														}
+														onCheckedChange={(
+															checked,
+														) =>
+															handleSelectAll(
+																checked as boolean,
 															)
 														}
-														data-testid="engineMetadata-fullscreen-btn"
-														title="Full Screen"
-														className="p-0"
+														className="[&[data-state=checked]_svg]:text-white [&_svg]:text-white"
+													/>
+													<Label
+														htmlFor="select-all-nodes"
+														className="cursor-pointer font-normal"
 													>
-														<Maximize2 className="size-4" />
-													</Button>
-												)}
-
-												<DropdownMenu
-													open={anchorNodesMenu}
-													onOpenChange={
-														setAnchorNodesMenu
-													}
-												>
-													<DropdownMenuTrigger
-														asChild
-													>
-														<Button
-															variant="ghost"
-															size="icon"
-															title="Select tables"
-															data-testid="engineMetadata-tablelist-btn"
-															className="p-0"
-														>
-															<TableIcon className="size-4" />
-														</Button>
-													</DropdownMenuTrigger>
-													<DropdownMenuContent
-														align="end"
-														className="w-[360px]"
-													>
-														{/* Header */}
-														<div className="flex items-center justify-between px-4 py-2">
-															<P className="text-sm">
-																Tables
-															</P>
-														</div>
-
-														<Separator className="my-1" />
-
-														{/* Select All */}
+														Select All
+													</Label>
+												</DropdownMenuItem>
+												<div className="max-h-[200px] overflow-auto">
+													{(nodes ?? []).map((n) => (
 														<DropdownMenuItem
+															key={n.id}
 															onSelect={(e) =>
 																e.preventDefault()
 															}
 															className="flex items-center gap-2"
+															data-testid={`engineMetadata-table-${n.id}-btn`}
 														>
 															<Checkbox
-																ref={
-																	selectAllCheckboxRef
-																}
-																id="select-all-nodes"
-																checked={
-																	Array.isArray(
-																		nodes,
-																	) &&
-																	nodes.length >
-																		0 &&
-																	selectedNodeIds.length ===
-																		nodes.length
-																}
-																onCheckedChange={(
-																	checked,
-																) =>
-																	handleSelectAll(
-																		checked as boolean,
+																id={`node-${n.id}`}
+																checked={selectedNodeIds.includes(
+																	n.id,
+																)}
+																onCheckedChange={() =>
+																	handleToggleSelectNode(
+																		n.id,
 																	)
 																}
 																className="[&[data-state=checked]_svg]:text-white [&_svg]:text-white"
 															/>
 															<Label
-																htmlFor="select-all-nodes"
+																htmlFor={`node-${n.id}`}
 																className="cursor-pointer font-normal"
 															>
-																Select All
+																{n.data.name}
 															</Label>
 														</DropdownMenuItem>
-
-														{/* Scrollable list */}
-														<div className="max-h-[200px] overflow-auto">
-															{(nodes ?? []).map(
-																(n) => (
-																	<DropdownMenuItem
-																		key={
-																			n.id
-																		}
-																		onSelect={(
-																			e,
-																		) =>
-																			e.preventDefault()
-																		}
-																		className="flex items-center gap-2"
-																		data-testid={`engineMetadata-table-${n.id}-btn`}
-																	>
-																		<Checkbox
-																			id={`node-${n.id}`}
-																			checked={selectedNodeIds.includes(
-																				n.id,
-																			)}
-																			onCheckedChange={() =>
-																				handleToggleSelectNode(
-																					n.id,
-																				)
-																			}
-																			className="[&[data-state=checked]_svg]:text-white [&_svg]:text-white"
-																		/>
-																		<Label
-																			htmlFor={`node-${n.id}`}
-																			className="cursor-pointer font-normal"
-																		>
-																			{
-																				n
-																					.data
-																					.name
-																			}
-																		</Label>
-																	</DropdownMenuItem>
-																),
-															)}
-														</div>
-													</DropdownMenuContent>
-												</DropdownMenu>
-
-												<Button
-													variant="ghost"
-													size="icon"
-													data-testid="engineMetadata-refresh-btn"
-													title="Reset"
-													onClick={
-														handleRefreshMetamodel
-													}
-													className="p-0"
-												>
-													<RefreshCw className="size-4" />
-												</Button>
-												<Button
-													variant="outline"
-													data-testid="engineMetadata-createrelationship-btn"
-													onClick={() =>
-														setopenCreateConnectionModal(
-															true,
-														)
-													}
-													className="gap-2"
-												>
-													<Snowflake className="size-4" />
-													Create Relationship
-												</Button>
-											</div>
-										}
-									/>
+													))}
+												</div>
+											</DropdownMenuContent>
+										</DropdownMenu>
+										<Button
+											variant="ghost"
+											size="icon"
+											data-testid="engineMetadata-refresh-btn"
+											title="Reset"
+											onClick={handleRefreshMetamodel}
+											className="p-0"
+										>
+											<RefreshCw className="size-4" />
+										</Button>
+										<Button
+											variant="outline"
+											data-testid="engineMetadata-createrelationship-btn"
+											onClick={() =>
+												setopenCreateConnectionModal(
+													true,
+												)
+											}
+											className="gap-2"
+										>
+											<Snowflake className="size-4" />
+											Create Relationship
+										</Button>
+									</div>
 								</div>
 								<div className="flex flex-col gap-4">
 									<section
@@ -819,8 +782,11 @@ export const MetaModelType = observer(
 											dataSourceId={selectedDataIndex}
 											resetKey={counter}
 											columnOptions={columnOptions}
-											showSearch={true}
-											searchInputTestId="metaModelType-search-input"
+											showSearch={false}
+											searchValue={metaModelSearchTerm}
+											onSearchValueChange={
+												setMetaModelSearchTerm
+											}
 										/>
 									</section>
 								</div>
@@ -837,6 +803,7 @@ export const MetaModelType = observer(
 							)}
 							onEditConnection={handleEditConnection}
 							onDeleteConnection={handleDeleteConnection}
+							isRdf={isRdf}
 						/>
 					</div>
 				</div>
@@ -846,7 +813,7 @@ export const MetaModelType = observer(
 					contentId={portalContentId}
 				/>
 				{!showFullScreenModal && (
-					<div className="mt-4 flex justify-end gap-3 border-border border-t pt-4">
+					<div className="mt-4 flex justify-end gap-3 border-border border-t pt-4 pb-6">
 						<Button
 							variant="outline"
 							onClick={onCancel}

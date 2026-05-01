@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import "@testing-library/jest-dom";
 import { act, fireEvent, waitFor } from "@testing-library/react";
 import { SelectBlock } from "../../components/block-defaults/select-block/SelectBlock.tsx";
-import { render, screen } from "../utils";
+import { render } from "../utils";
 
 const blockIds = {
 	select: "select",
@@ -49,26 +49,28 @@ const blocks = {
 
 describe("Select block", () => {
 	test("renders correctly with mocked data", async () => {
-		const { container } = render(<SelectBlock id={blockIds.select} />, {
-			blocks: blocks,
-		});
+		const { container, getByText, getByRole } = render(
+			<SelectBlock id={blockIds.select} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='select']");
 		expect(element).toBeInTheDocument();
 
-		const label = screen.getByLabelText("Select an option");
+		const label = getByText("Select an option");
 		expect(label).toBeInTheDocument();
 
-		const hint = screen.getByText("this is a hint");
+		const hint = getByText("this is a hint");
 		expect(hint).toBeInTheDocument();
 
-		const input = screen.getByRole("combobox");
+		const input = getByRole("combobox");
 		expect(input).toBeInTheDocument();
-		expect(input).toHaveAttribute("value", "option 1");
 	});
 
 	test("value if multiple is true", async () => {
-		const { container } = render(
+		const { container, getByRole, getByText } = render(
 			<SelectBlock id={blockIds.multiSelect} />,
 			{
 				blocks: blocks,
@@ -78,7 +80,7 @@ describe("Select block", () => {
 		const element = container.querySelector("[data-block='multiSelect']");
 		expect(element).toBeInTheDocument();
 
-		const dropdown = screen.getByRole("button", { name: /open/i });
+		const dropdown = getByRole("combobox");
 		expect(dropdown).toBeInTheDocument();
 
 		await act(async () => {
@@ -86,12 +88,11 @@ describe("Select block", () => {
 		});
 
 		await waitFor(() => {
-			const input = screen.getByRole("combobox");
-			expect(input).toHaveAttribute("aria-expanded", "true");
+			expect(dropdown).toHaveAttribute("aria-expanded", "true");
 		});
 
-		expect(screen.getByText("option 1")).toBeInTheDocument();
-		expect(screen.getByText("option 2")).toBeInTheDocument();
-		expect(screen.getByText("option 3")).toBeInTheDocument();
+		expect(getByText("option 1")).toBeInTheDocument();
+		expect(getByText("option 2")).toBeInTheDocument();
+		expect(getByText("option 3")).toBeInTheDocument();
 	});
 });

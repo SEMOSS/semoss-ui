@@ -4,21 +4,21 @@ import { Card, cn } from "@semoss/ui/next";
 import {
 	DatabaseStructureBrowser,
 	QueryResultsPanel,
-	SQLQueryEditor,
+	SPARQLQueryEditor,
 } from "@/components/database";
 import {
 	useDatabaseStructure,
 	useEngine,
 	useQueryEditor,
-	useQueryExecution,
+	useSparqlQueryExecution,
 } from "@/hooks";
-import { hasTabularData } from "@/hooks/useDatabaseQueryExecution";
+import { hasTabularData } from "@/hooks/use-database-query-execution";
 
-export const EngineQueryDataPage = observer(() => {
+export const EngineSparqlQueryPage = observer(() => {
 	const { active } = useEngine();
 	const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 	const [isQueryResultsExpanded, setIsQueryResultsExpanded] = useState(false);
-	const [isUserModifiedQuery, setIsUserModifiedQuery] = useState(false);
+	const [raw, setRaw] = useState(true);
 
 	// Resize states
 	const [bottomPanelHeight, setBottomPanelHeight] = useState(300); // pixels
@@ -58,7 +58,6 @@ export const EngineQueryDataPage = observer(() => {
 		activeTable,
 		toggleColumnSelection,
 		clearColumnSelection,
-		generateSelectedColumnsQuery,
 	} = useDatabaseStructure(active.id || "");
 
 	const {
@@ -70,7 +69,7 @@ export const EngineQueryDataPage = observer(() => {
 		clearResults,
 		executeQuery: executeQueryInternal,
 		pixelQuery,
-	} = useQueryExecution(active.id || "", {
+	} = useSparqlQueryExecution(active.id || "", raw, {
 		onSchemaChange: () => {
 			refreshDatabaseStructure();
 		},
@@ -90,7 +89,6 @@ export const EngineQueryDataPage = observer(() => {
 	const clearQuery = () => {
 		clearQueryInternal();
 		setValue("");
-		setIsUserModifiedQuery(false);
 	};
 
 	const setQueryProgrammatically = useCallback(
@@ -100,14 +98,6 @@ export const EngineQueryDataPage = observer(() => {
 			setValue(nextQuery);
 		},
 		[setQuery, setValue],
-	);
-
-	const setGeneratedQuery = useCallback(
-		(nextQuery: string) => {
-			setQueryProgrammatically(nextQuery);
-			setIsUserModifiedQuery(false);
-		},
-		[setQueryProgrammatically],
 	);
 
 	const appendQueryToken = useCallback(
@@ -126,17 +116,6 @@ export const EngineQueryDataPage = observer(() => {
 		},
 		[query, setQueryProgrammatically],
 	);
-
-	const generateTableQuery = (tableName: string) => {
-		if (!query.trim() || !isUserModifiedQuery) {
-			const sql = `SELECT * FROM ${tableName}`;
-			setGeneratedQuery(sql);
-			clearColumnSelection();
-			return;
-		}
-
-		appendQueryToken(tableName);
-	};
 
 	const handleToggleColumnSelection = (
 		tableName: string,
@@ -158,7 +137,6 @@ export const EngineQueryDataPage = observer(() => {
 			}
 
 			ignoreProgrammaticQueryValueRef.current = null;
-			setIsUserModifiedQuery(true);
 
 			if (
 				activeTable &&
@@ -177,15 +155,6 @@ export const EngineQueryDataPage = observer(() => {
 		},
 		[appendQueryToken],
 	);
-
-	const handleGenerateQuery = useCallback(
-		(generatedQuery: string) => {
-			setGeneratedQuery(generatedQuery);
-		},
-		[setGeneratedQuery],
-	);
-
-	const canAutoGenerateQuery = !query.trim() || !isUserModifiedQuery;
 
 	// Vertical resize handlers
 	const handleVerticalResizeStart = useCallback((e: React.MouseEvent) => {
@@ -317,7 +286,6 @@ export const EngineQueryDataPage = observer(() => {
 							error={error}
 							refreshDatabaseStructure={handleRefresh}
 							refreshMessage={refreshMessage}
-							onTableClick={generateTableQuery}
 							selectedColumns={selectedColumns}
 							activeTable={activeTable}
 							onToggleColumnSelection={
@@ -325,16 +293,11 @@ export const EngineQueryDataPage = observer(() => {
 							}
 							onClearColumnSelection={handleClearColumnSelection}
 							onColumnNameInsert={handleColumnNameInsert}
-							onGenerateQuery={handleGenerateQuery}
-							generateSelectedColumnsQuery={
-								generateSelectedColumnsQuery
-							}
-							canAutoGenerateQuery={canAutoGenerateQuery}
 						/>
 					</Card>
 				</div>
 
-				{/* Right Panel - SQL Query Editor */}
+				{/* Right Panel - SPARQL Query Editor */}
 				<div
 					className="flex flex-col transition-all duration-200"
 					style={
@@ -344,7 +307,7 @@ export const EngineQueryDataPage = observer(() => {
 					}
 				>
 					<Card className="group flex h-[calc(100%-2rem)] flex-col overflow-hidden rounded-2xl p-0">
-						<SQLQueryEditor
+						<SPARQLQueryEditor
 							query={query}
 							setQuery={setQuery}
 							clearQuery={clearQuery}
@@ -352,6 +315,8 @@ export const EngineQueryDataPage = observer(() => {
 							executeQuery={executeQuery}
 							previewLoading={previewLoading}
 							onUserQueryInput={handleUserQueryInput}
+							raw={raw}
+							onRawChange={setRaw}
 						/>
 					</Card>
 				</div>
@@ -404,7 +369,7 @@ export const EngineQueryDataPage = observer(() => {
 							previewLoading={previewLoading}
 							clearResults={clearResults}
 							onExpandChange={setIsQueryResultsExpanded}
-							pixelQuery={pixelQuery}
+							pixelQuery={pixelQuery ?? undefined}
 						/>
 					</div>
 				</div>
