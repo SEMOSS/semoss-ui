@@ -1446,24 +1446,87 @@ export const Terminal: React.FC<TerminalProps> = ({
 		terminal.open(terminalRef.current);
 		fitAddon.fit();
 
+		const handlePasteEvent = (event: ClipboardEvent) => {
+			if (isDisabledRef.current) {
+				return;
+			}
+
+			if (event.defaultPrevented) {
+				return;
+			}
+
+			const data = event.clipboardData?.getData("text/plain");
+			if (!data) {
+				return;
+			}
+
+			event.preventDefault();
+			insertTextAtCursor(data);
+		};
+
+		const pasteTarget = terminal.textarea || terminalRef.current;
+		pasteTarget?.addEventListener("paste", handlePasteEvent, true);
+
+		const handleWindowPaste = (event: ClipboardEvent) => {
+			if (document.activeElement !== terminal.textarea) {
+				return;
+			}
+
+			handlePasteEvent(event);
+		};
+		window.addEventListener("paste", handleWindowPaste, true);
+
 		terminal.attachCustomKeyEventHandler((event) => {
 			const isWindows = isWindowsPlatform();
+			const isModifierPressed = event.ctrlKey || event.metaKey;
 
-			if (
-				(event.ctrlKey || event.metaKey) &&
-				event.shiftKey &&
-				event.code === "KeyA"
-			) {
+			if (event.type !== "keydown") {
+				return true;
+			}
+
+			const handlePasteFromClipboard = () => {
+				if (isDisabledRef.current) {
+					return;
+				}
+
+				navigator.clipboard
+					.readText()
+					.then((value) => {
+						if (!value) {
+							return;
+						}
+
+						insertTextAtCursor(value);
+					})
+					.catch(() => null);
+			};
+
+			if (isModifierPressed && event.shiftKey && event.code === "KeyA") {
 				terminal.selectAll();
 				return false;
 			}
 
-			if ((event.ctrlKey || event.metaKey) && event.code === "KeyC") {
+			if (isModifierPressed && event.code === "KeyC") {
 				const selection = terminal.getSelection();
 				if (selection) {
 					navigator.clipboard.writeText(selection).catch(() => null);
 					return false;
 				}
+			}
+
+			// Let Cmd/Ctrl+V flow through native paste events, which are more reliable
+			// than clipboard API reads in some browser environments.
+			if (isModifierPressed && event.code === "KeyV") {
+				return true;
+			}
+
+			if (
+				event.shiftKey &&
+				!isModifierPressed &&
+				event.code === "Insert"
+			) {
+				handlePasteFromClipboard();
+				return false;
 			}
 
 			const shouldPageUp =
@@ -1515,6 +1578,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 		return () => {
 			resizeObserver.disconnect();
+			pasteTarget?.removeEventListener("paste", handlePasteEvent, true);
+			window.removeEventListener("paste", handleWindowPaste, true);
 			spinnerRef.current?.destroy();
 			spinnerRef.current = null;
 			xtermRef.current = null;
@@ -1523,6 +1588,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 		};
 	}, [
 		drawPrompt,
+		insertTextAtCursor,
 		renderWelcomeIfNeeded,
 		scrollTerminalByPage,
 		setBufferState,
