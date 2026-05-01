@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import "@xterm/xterm/css/xterm.css";
 import "./terminal.css";
-import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -59,10 +58,18 @@ const THEME_OPTIONS = {
 	},
 };
 
-const MAX_VISIBLE_SUGGESTIONS = 6;
+const MAX_FILTERED_SUGGESTIONS = 40;
 const PROMPT_DISPLAY = "> ";
 const PROMPT = PROMPT_DISPLAY;
 const PROMPT_LENGTH = PROMPT_DISPLAY.length;
+const TERMINAL_FONT_SIZE = 13;
+const TERMINAL_LINE_HEIGHT = 1.2;
+const GHOST_TEXT_START = "\x1b[2m";
+const GHOST_TEXT_END = "\x1b[22m";
+const SUGGESTION_ITEM_HEIGHT = 30;
+const SUGGESTION_VERTICAL_CHROME = 14;
+const SUGGESTION_PLACEMENT_BUFFER = 20;
+const PAGE_SCROLL_RATIO = 0.9;
 
 type TerminalTheme = "dark" | "light";
 
@@ -87,11 +94,149 @@ interface CursorLayout {
 	column: number;
 }
 
+interface HistorySearchState {
+	active: boolean;
+	query: string;
+	activeIndex: number;
+}
+
+interface SuggestionUsageStats {
+	count: number;
+	lastUsedAt: number;
+}
+
+type CompletionSource = "command" | "quoted";
+
+interface CompletionContext {
+	source: CompletionSource;
+	query: string;
+	start: number;
+	end: number;
+	sourceSuggestions?: string[];
+}
+
+interface QuoteContext {
+	quote: "'" | '"';
+	start: number;
+	end: number;
+}
+
+export interface QuotedSuggestionContext {
+	command: string;
+	position: number;
+	query: string;
+	quote: QuoteContext["quote"];
+	quoteStart: number;
+	quoteEnd: number;
+}
+
 const splitResponseLines = (response: string) => {
 	if (!response) {
 		return [""];
 	}
 	return response.split(/\r\n|\n|\r/g);
+};
+
+const isWordCharacter = (char: string): boolean => {
+	return /[a-zA-Z0-9_]/.test(char);
+};
+
+const getQuoteContextAtCursor = (
+	command: string,
+	position: number,
+): QuoteContext | null => {
+	const safePosition = Math.max(0, Math.min(position, command.length));
+	let inSingleQuote = false;
+	let inDoubleQuote = false;
+	let escaped = false;
+	let activeQuoteStart = -1;
+
+	for (let index = 0; index < safePosition; index += 1) {
+		const char = command[index];
+		if (escaped) {
+			escaped = false;
+			continue;
+		}
+
+		if (char === "\\") {
+			escaped = true;
+			continue;
+		}
+
+		if (char === "'" && !inDoubleQuote) {
+			if (inSingleQuote) {
+				inSingleQuote = false;
+				activeQuoteStart = -1;
+			} else {
+				inSingleQuote = true;
+				activeQuoteStart = index;
+			}
+			continue;
+		}
+
+		if (char === '"' && !inSingleQuote) {
+			if (inDoubleQuote) {
+				inDoubleQuote = false;
+				activeQuoteStart = -1;
+			} else {
+				inDoubleQuote = true;
+				activeQuoteStart = index;
+			}
+		}
+	}
+
+	if (!inSingleQuote && !inDoubleQuote) {
+		return null;
+	}
+
+	const quote: QuoteContext["quote"] = inSingleQuote ? "'" : '"';
+	if (activeQuoteStart < 0) {
+		return null;
+	}
+
+	let end = command.length;
+	let escapedForward = false;
+	for (let index = safePosition; index < command.length; index += 1) {
+		const char = command[index];
+		if (escapedForward) {
+			escapedForward = false;
+			continue;
+		}
+
+		if (char === "\\") {
+			escapedForward = true;
+			continue;
+		}
+
+		if (char === quote) {
+			end = index;
+			break;
+		}
+	}
+
+	return {
+		quote,
+		start: activeQuoteStart,
+		end,
+	};
+};
+
+const getWordStartIndex = (text: string, query: string): number => {
+	if (!query || text.length < query.length) {
+		return -1;
+	}
+
+	for (let index = 0; index <= text.length - query.length; index += 1) {
+		if (!text.startsWith(query, index)) {
+			continue;
+		}
+
+		if (index === 0 || !isWordCharacter(text[index - 1])) {
+			return index;
+		}
+	}
+
+	return -1;
 };
 
 const getInitialTheme = (): TerminalTheme => {
@@ -102,6 +247,14 @@ const getInitialTheme = (): TerminalTheme => {
 		return "dark";
 	}
 	return "light";
+};
+
+const isWindowsPlatform = (): boolean => {
+	if (typeof navigator === "undefined") {
+		return false;
+	}
+
+	return /win/i.test(navigator.platform || navigator.userAgent);
 };
 
 const isPrintableInput = (value: string): boolean => {
@@ -188,6 +341,8 @@ export interface TerminalProps {
 	onRun: (command?: string) => Promise<void>;
 	/** Suggestions to show in the terminal */
 	suggestions?: string[];
+	/** Optional callback to return suggestion candidates while typing inside quotes */
+	getQuotedSuggestions?: (context: QuotedSuggestionContext) => string[];
 	/** Transform selected suggestions before they are inserted */
 	transformSuggestion?: (suggestion: string) => string;
 	/** Optional class name for the wrapper */
@@ -204,10 +359,12 @@ export const Terminal: React.FC<TerminalProps> = ({
 	onCommand = () => null,
 	onRun = async () => null,
 	suggestions = [],
+	getQuotedSuggestions = () => [],
 	transformSuggestion = (suggestion) => suggestion,
 	className,
 }) => {
 	const terminalRef = useRef<HTMLDivElement>(null);
+	const suggestionMenuRef = useRef<HTMLDivElement>(null);
 	const xtermRef = useRef<XTerm | null>(null);
 	const spinnerRef = useRef<TerminalSpinner | null>(null);
 
@@ -215,6 +372,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 	const onCommandRef = useRef(onCommand);
 	const historyRef = useRef(history);
 	const suggestionsRef = useRef(suggestions);
+	const getQuotedSuggestionsRef = useRef(getQuotedSuggestions);
 	const instructionsRef = useRef(instructions);
 	const welcomeRef = useRef(welcome);
 	const transformSuggestionRef = useRef(transformSuggestion);
@@ -238,11 +396,21 @@ export const Terminal: React.FC<TerminalProps> = ({
 			left: 8,
 			maxHeight: 140,
 		});
+	const [historySearch, setHistorySearch] = useState<HistorySearchState>({
+		active: false,
+		query: "",
+		activeIndex: 0,
+	});
 
 	const bufferRef = useRef(buffer);
 	const renderedBufferRef = useRef(buffer);
 	const historyPositionRef = useRef(historyPosition);
 	const suggestionStateRef = useRef(suggestionState);
+	const historySearchRef = useRef(historySearch);
+	const historySearchBaseBufferRef = useRef<BufferState | null>(null);
+	const suggestionUsageRef = useRef<Map<string, SuggestionUsageStats>>(
+		new Map(),
+	);
 	const renderedHistoryCountRef = useRef(0);
 	const welcomeRenderedRef = useRef(false);
 	const isDisabledRef = useRef(loading || disabled);
@@ -267,6 +435,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 	}, [suggestions]);
 
 	useEffect(() => {
+		getQuotedSuggestionsRef.current = getQuotedSuggestions;
+	}, [getQuotedSuggestions]);
+
+	useEffect(() => {
 		instructionsRef.current = instructions;
 	}, [instructions]);
 
@@ -289,6 +461,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 	useEffect(() => {
 		suggestionStateRef.current = suggestionState;
 	}, [suggestionState]);
+
+	useEffect(() => {
+		historySearchRef.current = historySearch;
+	}, [historySearch]);
 
 	useEffect(() => {
 		isDisabledRef.current = isDisabled;
@@ -328,54 +504,337 @@ export const Terminal: React.FC<TerminalProps> = ({
 		[],
 	);
 
-	const filterSuggestions = useCallback((command: string): string[] => {
-		const query = command.trim().toLowerCase();
-		if (!query) {
-			return [];
+	const scrollTerminalToBottom = useCallback(() => {
+		const terminal = xtermRef.current;
+		if (!terminal) {
+			return;
 		}
 
-		const unique = new Set<string>();
-		const filtered: string[] = [];
-
-		for (const rawSuggestion of suggestionsRef.current) {
-			const suggestion = rawSuggestion.trim();
-			if (!suggestion) {
-				continue;
-			}
-
-			const normalized = suggestion.toLowerCase();
-			if (normalized === query || !normalized.includes(query)) {
-				continue;
-			}
-
-			if (unique.has(suggestion)) {
-				continue;
-			}
-
-			unique.add(suggestion);
-			filtered.push(suggestion);
-			if (filtered.length >= MAX_VISIBLE_SUGGESTIONS) {
-				break;
-			}
+		terminal.scrollToBottom();
+		if (typeof requestAnimationFrame === "function") {
+			requestAnimationFrame(() => {
+				xtermRef.current?.scrollToBottom();
+			});
 		}
-
-		return filtered;
+		setTimeout(() => {
+			xtermRef.current?.scrollToBottom();
+		}, 0);
 	}, []);
 
-	const visibleSuggestions = useMemo(() => {
-		if (isDisabled || suggestionState.hide) {
-			return [];
+	const scrollTerminalByPage = useCallback((direction: "up" | "down") => {
+		const terminal = xtermRef.current;
+		if (!terminal) {
+			return;
 		}
 
-		return filterSuggestions(buffer.command);
-	}, [buffer.command, filterSuggestions, isDisabled, suggestionState.hide]);
+		const pageSize = Math.max(
+			1,
+			Math.floor((terminal.rows || 24) * PAGE_SCROLL_RATIO),
+		);
+		terminal.scrollLines(direction === "up" ? -pageSize : pageSize);
+	}, []);
+
+	const normalizeSuggestionKey = useCallback((value: string): string => {
+		return value.trim().toLowerCase();
+	}, []);
+
+	const getCompletionContext = useCallback(
+		(command: string, position: number): CompletionContext | null => {
+			const safePosition = Math.max(
+				0,
+				Math.min(position, command.length),
+			);
+			if (safePosition === 0) {
+				return null;
+			}
+
+			const quoteContext = getQuoteContextAtCursor(command, safePosition);
+			if (quoteContext) {
+				const query = command.slice(
+					quoteContext.start + 1,
+					safePosition,
+				);
+				const sourceSuggestions = getQuotedSuggestionsRef
+					.current({
+						command,
+						position: safePosition,
+						query,
+						quote: quoteContext.quote,
+						quoteStart: quoteContext.start,
+						quoteEnd: quoteContext.end,
+					})
+					.map((suggestion) => suggestion.trim())
+					.filter(Boolean);
+
+				if (sourceSuggestions.length === 0) {
+					return null;
+				}
+
+				return {
+					source: "quoted",
+					query,
+					start: quoteContext.start + 1,
+					end: quoteContext.end,
+					sourceSuggestions,
+				};
+			}
+
+			let start = safePosition;
+			while (start > 0 && isWordCharacter(command[start - 1])) {
+				start -= 1;
+			}
+
+			let end = safePosition;
+			while (end < command.length && isWordCharacter(command[end])) {
+				end += 1;
+			}
+
+			const query = command.slice(start, safePosition);
+			if (!query) {
+				return null;
+			}
+
+			return {
+				source: "command",
+				query,
+				start,
+				end,
+			};
+		},
+		[],
+	);
+
+	const recordSuggestionUsage = useCallback(
+		(value: string) => {
+			const key = normalizeSuggestionKey(value);
+			if (!key) {
+				return;
+			}
+
+			const current = suggestionUsageRef.current.get(key);
+			suggestionUsageRef.current.set(key, {
+				count: (current?.count || 0) + 1,
+				lastUsedAt: Date.now(),
+			});
+		},
+		[normalizeSuggestionKey],
+	);
+
+	const recordUsageFromCommand = useCallback(
+		(command: string) => {
+			const normalizedCommand = normalizeSuggestionKey(command);
+			if (!normalizedCommand) {
+				return;
+			}
+
+			const normalizedCommandWithoutEmptyCall =
+				normalizedCommand.endsWith("()")
+					? normalizedCommand.slice(0, -2).trim()
+					: normalizedCommand;
+
+			for (const rawSuggestion of suggestionsRef.current) {
+				const suggestionKey = normalizeSuggestionKey(rawSuggestion);
+				if (
+					suggestionKey &&
+					(suggestionKey === normalizedCommand ||
+						suggestionKey === normalizedCommandWithoutEmptyCall)
+				) {
+					recordSuggestionUsage(suggestionKey);
+					return;
+				}
+			}
+		},
+		[normalizeSuggestionKey, recordSuggestionUsage],
+	);
+
+	const filterSuggestions = useCallback(
+		(command: string, position: number): string[] => {
+			const completionContext = getCompletionContext(command, position);
+			if (!completionContext) {
+				return [];
+			}
+
+			const query = completionContext.query.toLowerCase();
+			if (!query && completionContext.source !== "quoted") {
+				return [];
+			}
+
+			const sourceSuggestions =
+				completionContext.sourceSuggestions || suggestionsRef.current;
+			if (sourceSuggestions.length === 0) {
+				return [];
+			}
+
+			const candidates: {
+				suggestion: string;
+				bucket: number;
+				distance: number;
+				count: number;
+				lastUsedAt: number;
+			}[] = [];
+			const unique = new Set<string>();
+
+			for (const rawSuggestion of sourceSuggestions) {
+				const suggestion = rawSuggestion.trim();
+				if (!suggestion) {
+					continue;
+				}
+
+				const normalized = suggestion.toLowerCase();
+				if (unique.has(normalized)) {
+					continue;
+				}
+
+				let bucket = -1;
+				let distance = Number.MAX_SAFE_INTEGER;
+				if (normalized.startsWith(query)) {
+					const isExact = normalized.length === query.length;
+					bucket = isExact ? 0 : 1;
+					distance = normalized.length - query.length;
+				} else {
+					const wordStartIndex = getWordStartIndex(normalized, query);
+					if (wordStartIndex !== -1) {
+						bucket = 2;
+						distance = wordStartIndex;
+					} else {
+						const containsIndex = normalized.indexOf(query);
+						if (containsIndex !== -1) {
+							bucket = 3;
+							distance = containsIndex;
+						}
+					}
+				}
+
+				if (bucket === -1) {
+					continue;
+				}
+
+				unique.add(normalized);
+				const usage = suggestionUsageRef.current.get(normalized);
+				candidates.push({
+					suggestion,
+					bucket,
+					distance,
+					count: usage?.count || 0,
+					lastUsedAt: usage?.lastUsedAt || 0,
+				});
+			}
+
+			candidates.sort((left, right) => {
+				if (left.bucket !== right.bucket) {
+					return left.bucket - right.bucket;
+				}
+
+				if (left.distance !== right.distance) {
+					return left.distance - right.distance;
+				}
+
+				if (left.count !== right.count) {
+					return right.count - left.count;
+				}
+
+				if (left.lastUsedAt !== right.lastUsedAt) {
+					return right.lastUsedAt - left.lastUsedAt;
+				}
+
+				return left.suggestion.localeCompare(right.suggestion);
+			});
+
+			return candidates
+				.slice(0, MAX_FILTERED_SUGGESTIONS)
+				.map((candidate) => candidate.suggestion);
+		},
+		[getCompletionContext],
+	);
+
+	const visibleSuggestions = useMemo(() => {
+		if (isDisabled || suggestionState.hide || historySearch.active) {
+			return [];
+		}
+		return filterSuggestions(buffer.command, buffer.position);
+	}, [
+		buffer.command,
+		buffer.position,
+		filterSuggestions,
+		historySearch.active,
+		isDisabled,
+		suggestionState.hide,
+	]);
 
 	const getVisibleSuggestions = useCallback(() => {
-		if (isDisabledRef.current || suggestionStateRef.current.hide) {
+		if (
+			isDisabledRef.current ||
+			suggestionStateRef.current.hide ||
+			historySearchRef.current.active
+		) {
 			return [];
 		}
-		return filterSuggestions(bufferRef.current.command);
+		return filterSuggestions(
+			bufferRef.current.command,
+			bufferRef.current.position,
+		);
 	}, [filterSuggestions]);
+
+	const getGhostCompletionForBuffer = useCallback(
+		(currentBuffer: BufferState): string => {
+			if (
+				currentBuffer.position !== currentBuffer.command.length ||
+				historySearchRef.current.active ||
+				suggestionStateRef.current.hide
+			) {
+				return "";
+			}
+
+			const completionContext = getCompletionContext(
+				currentBuffer.command,
+				currentBuffer.position,
+			);
+			if (!completionContext) {
+				return "";
+			}
+
+			const normalizedQuery = normalizeSuggestionKey(
+				completionContext.query,
+			);
+			if (!normalizedQuery) {
+				return "";
+			}
+
+			const suggestionsForBuffer = filterSuggestions(
+				currentBuffer.command,
+				currentBuffer.position,
+			);
+			if (suggestionsForBuffer.length === 0) {
+				return "";
+			}
+
+			const hasExactSuggestion = suggestionsForBuffer.some(
+				(suggestion) =>
+					normalizeSuggestionKey(suggestion) === normalizedQuery,
+			);
+			if (hasExactSuggestion) {
+				return "";
+			}
+
+			const ghostSuggestion =
+				suggestionsForBuffer.find((suggestion) => {
+					const normalizedSuggestion = suggestion.toLowerCase();
+					return (
+						normalizedSuggestion.startsWith(normalizedQuery) &&
+						suggestion.length > completionContext.query.length
+					);
+				}) || "";
+			if (!ghostSuggestion) {
+				return "";
+			}
+
+			const ghostSuffix = ghostSuggestion
+				.slice(completionContext.query.length)
+				.split("\n")[0];
+			return ghostSuffix || "";
+		},
+		[filterSuggestions, getCompletionContext, normalizeSuggestionKey],
+	);
 
 	const clearCommandLine = useCallback(
 		(current: BufferState = renderedBufferRef.current) => {
@@ -449,12 +908,20 @@ export const Terminal: React.FC<TerminalProps> = ({
 				return;
 			}
 
+			const ghostCompletion = getGhostCompletionForBuffer(next);
+			const commandForCursor = ghostCompletion
+				? `${next.command}${ghostCompletion}`
+				: next.command;
+			const commandForDisplay = ghostCompletion
+				? `${next.command}${GHOST_TEXT_START}${ghostCompletion}${GHOST_TEXT_END}`
+				: next.command;
+
 			clearCommandLine(current);
-			terminal.write(`${PROMPT}${next.command}`);
-			moveCursor(next.command, next.position);
+			terminal.write(`${PROMPT}${commandForDisplay}`);
+			moveCursor(commandForCursor, next.position);
 			renderedBufferRef.current = next;
 		},
-		[clearCommandLine, moveCursor],
+		[clearCommandLine, getGhostCompletionForBuffer, moveCursor],
 	);
 
 	const drawPrompt = useCallback(
@@ -468,9 +935,17 @@ export const Terminal: React.FC<TerminalProps> = ({
 				if (!skipClear) {
 					clearPromptArea();
 				}
+				const ghostCompletion = getGhostCompletionForBuffer(next);
+				const commandForCursor = ghostCompletion
+					? `${next.command}${ghostCompletion}`
+					: next.command;
+				const commandForDisplay = ghostCompletion
+					? `${next.command}${GHOST_TEXT_START}${ghostCompletion}${GHOST_TEXT_END}`
+					: next.command;
+
 				terminal.writeln(instructionsRef.current);
-				terminal.write(`${PROMPT}${next.command}`);
-				moveCursor(next.command, next.position);
+				terminal.write(`${PROMPT}${commandForDisplay}`);
+				moveCursor(commandForCursor, next.position);
 				hasInstructionLineRef.current = true;
 				renderedBufferRef.current = next;
 				return;
@@ -478,14 +953,27 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 			hasInstructionLineRef.current = false;
 			if (skipClear) {
-				terminal.write(`${PROMPT}${next.command}`);
-				moveCursor(next.command, next.position);
+				const ghostCompletion = getGhostCompletionForBuffer(next);
+				const commandForCursor = ghostCompletion
+					? `${next.command}${ghostCompletion}`
+					: next.command;
+				const commandForDisplay = ghostCompletion
+					? `${next.command}${GHOST_TEXT_START}${ghostCompletion}${GHOST_TEXT_END}`
+					: next.command;
+
+				terminal.write(`${PROMPT}${commandForDisplay}`);
+				moveCursor(commandForCursor, next.position);
 				renderedBufferRef.current = next;
 				return;
 			}
 			drawCommandLine(next);
 		},
-		[clearPromptArea, drawCommandLine, moveCursor],
+		[
+			clearPromptArea,
+			drawCommandLine,
+			getGhostCompletionForBuffer,
+			moveCursor,
+		],
 	);
 
 	const writeHistoryEntry = useCallback(
@@ -506,8 +994,9 @@ export const Terminal: React.FC<TerminalProps> = ({
 				terminal.writeln(line);
 			}
 			terminal.write("\r\n");
+			scrollTerminalToBottom();
 		},
-		[],
+		[scrollTerminalToBottom],
 	);
 
 	const renderWelcomeIfNeeded = useCallback(() => {
@@ -519,7 +1008,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 		terminal.writeln(welcomeRef.current);
 		terminal.write("\r\n");
 		welcomeRenderedRef.current = true;
-	}, []);
+		scrollTerminalToBottom();
+	}, [scrollTerminalToBottom]);
 
 	const updateSuggestionPosition = useCallback(() => {
 		const container = terminalRef.current;
@@ -540,16 +1030,66 @@ export const Terminal: React.FC<TerminalProps> = ({
 			cols,
 		);
 		const cursorRow = terminal.buffer.active.cursorY;
+		const suggestionCount = getVisibleSuggestions().length;
+		const cursorElement = container.querySelector(
+			".xterm-cursor",
+		) as HTMLElement | null;
+		const rowTop = cursorElement
+			? Math.round(cursorElement.getBoundingClientRect().top - rect.top)
+			: Math.round(cursorRow * cellHeight);
+		const rowBottom = cursorElement
+			? Math.round(
+					cursorElement.getBoundingClientRect().bottom - rect.top,
+				)
+			: Math.round((cursorRow + 1) * cellHeight);
+		const dropdownGap = 6;
 
-		let left = Math.round(cursorColumn * cellWidth + 8);
-		let top = Math.round((cursorRow + 1) * cellHeight + 8);
+		let left = cursorElement
+			? Math.round(
+					cursorElement.getBoundingClientRect().left - rect.left + 8,
+				)
+			: Math.round(cursorColumn * cellWidth + 8);
+		let top = rowBottom + dropdownGap;
 		const maxHeight = Math.min(
-			180,
-			Math.max(96, Math.round(rect.height * 0.45)),
+			320,
+			Math.max(140, Math.round(rect.height * 0.6)),
+		);
+		const estimatedHeight =
+			suggestionCount > 0
+				? SUGGESTION_VERTICAL_CHROME +
+					suggestionCount * SUGGESTION_ITEM_HEIGHT
+				: 0;
+		const effectiveHeight = Math.min(maxHeight, estimatedHeight);
+		const measuredHeight = suggestionMenuRef.current
+			? Math.round(
+					suggestionMenuRef.current.getBoundingClientRect().height,
+				)
+			: effectiveHeight;
+		const actualHeight = Math.min(
+			maxHeight + SUGGESTION_VERTICAL_CHROME,
+			Math.max(effectiveHeight, measuredHeight),
+		);
+		const placementHeight = Math.min(
+			maxHeight + SUGGESTION_VERTICAL_CHROME,
+			actualHeight + SUGGESTION_PLACEMENT_BUFFER,
 		);
 
-		if (top + maxHeight > rect.height - 8) {
-			top = Math.max(8, top - maxHeight - cellHeight);
+		if (placementHeight > 0) {
+			const belowTop = rowBottom + dropdownGap;
+			const aboveTop = rowTop - placementHeight - dropdownGap;
+			const fitsBelow = belowTop + placementHeight <= rect.height - 8;
+			const fitsAbove = aboveTop >= 8;
+
+			if (fitsBelow) {
+				top = belowTop;
+			} else if (fitsAbove) {
+				top = rowTop - actualHeight - dropdownGap;
+			} else {
+				top = Math.max(
+					8,
+					Math.min(belowTop, rect.height - 8 - placementHeight),
+				);
+			}
 		}
 
 		left = Math.min(left, Math.max(8, Math.round(rect.width - 220)));
@@ -559,7 +1099,180 @@ export const Terminal: React.FC<TerminalProps> = ({
 			left,
 			maxHeight,
 		});
+	}, [getVisibleSuggestions]);
+
+	const getHistorySearchMatches = useCallback((query: string): string[] => {
+		const normalizedQuery = query.toLowerCase();
+		const matches: string[] = [];
+		const seen = new Set<string>();
+
+		for (
+			let index = historyRef.current.length - 1;
+			index >= 0;
+			index -= 1
+		) {
+			const command = historyRef.current[index]?.command?.trim();
+			if (!command) {
+				continue;
+			}
+
+			const normalizedCommand = command.toLowerCase();
+			if (
+				normalizedQuery &&
+				!normalizedCommand.includes(normalizedQuery)
+			) {
+				continue;
+			}
+
+			if (seen.has(normalizedCommand)) {
+				continue;
+			}
+
+			seen.add(normalizedCommand);
+			matches.push(command);
+		}
+
+		return matches;
 	}, []);
+
+	const previewHistorySearch = useCallback(
+		(nextQuery: string, requestedIndex: number) => {
+			const matches = getHistorySearchMatches(nextQuery);
+			const nextIndex =
+				matches.length > 0
+					? ((requestedIndex % matches.length) + matches.length) %
+						matches.length
+					: 0;
+			const selectedMatch = matches[nextIndex];
+
+			const currentBuffer = bufferRef.current;
+			const fallbackBuffer =
+				historySearchBaseBufferRef.current || currentBuffer;
+			const nextBuffer = selectedMatch
+				? {
+						command: selectedMatch,
+						position: selectedMatch.length,
+					}
+				: fallbackBuffer;
+
+			if (
+				nextBuffer.command !== currentBuffer.command ||
+				nextBuffer.position !== currentBuffer.position
+			) {
+				setBufferState(nextBuffer);
+				drawCommandLine(nextBuffer, currentBuffer);
+				updateSuggestionPosition();
+			}
+
+			setHistorySearch({
+				active: true,
+				query: nextQuery,
+				activeIndex: nextIndex,
+			});
+		},
+		[
+			drawCommandLine,
+			getHistorySearchMatches,
+			setBufferState,
+			updateSuggestionPosition,
+		],
+	);
+
+	const startOrCycleHistorySearch = useCallback(() => {
+		if (!historySearchRef.current.active) {
+			historySearchBaseBufferRef.current = {
+				command: bufferRef.current.command,
+				position: bufferRef.current.position,
+			};
+			setSuggestionUi({ activeIndex: -1, hide: true });
+			previewHistorySearch("", 0);
+			return;
+		}
+
+		previewHistorySearch(
+			historySearchRef.current.query,
+			historySearchRef.current.activeIndex + 1,
+		);
+	}, [previewHistorySearch, setSuggestionUi]);
+
+	const appendHistorySearchQuery = useCallback(
+		(rawText: string) => {
+			previewHistorySearch(
+				historySearchRef.current.query + normalizeInputText(rawText),
+				0,
+			);
+		},
+		[previewHistorySearch],
+	);
+
+	const removeHistorySearchQueryCharacter = useCallback(() => {
+		previewHistorySearch(historySearchRef.current.query.slice(0, -1), 0);
+	}, [previewHistorySearch]);
+
+	const finishHistorySearch = useCallback(() => {
+		setHistorySearch({
+			active: false,
+			query: "",
+			activeIndex: 0,
+		});
+		historySearchBaseBufferRef.current = null;
+		setSuggestionUi((previous) => ({
+			...previous,
+			hide: false,
+		}));
+		updateSuggestionPosition();
+	}, [setSuggestionUi, updateSuggestionPosition]);
+
+	const cancelHistorySearch = useCallback(() => {
+		const currentBuffer = bufferRef.current;
+		const baseBuffer = historySearchBaseBufferRef.current;
+
+		if (
+			baseBuffer &&
+			(baseBuffer.command !== currentBuffer.command ||
+				baseBuffer.position !== currentBuffer.position)
+		) {
+			setBufferState(baseBuffer);
+			drawCommandLine(baseBuffer, currentBuffer);
+			updateSuggestionPosition();
+		}
+
+		setHistorySearch({
+			active: false,
+			query: "",
+			activeIndex: 0,
+		});
+		historySearchBaseBufferRef.current = null;
+		setSuggestionUi((previous) => ({
+			...previous,
+			hide: false,
+		}));
+	}, [
+		drawCommandLine,
+		setBufferState,
+		setSuggestionUi,
+		updateSuggestionPosition,
+	]);
+
+	const historySearchMatches = useMemo(() => {
+		if (!historySearch.active) {
+			return [];
+		}
+
+		return getHistorySearchMatches(historySearch.query);
+	}, [getHistorySearchMatches, historySearch.active, historySearch.query]);
+
+	const historySearchMatch = useMemo(() => {
+		if (!historySearch.active || historySearchMatches.length === 0) {
+			return "";
+		}
+
+		const index =
+			((historySearch.activeIndex % historySearchMatches.length) +
+				historySearchMatches.length) %
+			historySearchMatches.length;
+		return historySearchMatches[index] || "";
+	}, [historySearch.active, historySearch.activeIndex, historySearchMatches]);
 
 	const rebuildTerminalFromHistory = useCallback(
 		(next: BufferState) => {
@@ -582,11 +1295,13 @@ export const Terminal: React.FC<TerminalProps> = ({
 			setHistoryPointer(historyRef.current.length);
 			drawPrompt(next, Boolean(instructionsRef.current), true);
 			updateSuggestionPosition();
+			scrollTerminalToBottom();
 		},
 		[
 			drawPrompt,
 			renderWelcomeIfNeeded,
 			setHistoryPointer,
+			scrollTerminalToBottom,
 			updateSuggestionPosition,
 			writeHistoryEntry,
 		],
@@ -595,12 +1310,49 @@ export const Terminal: React.FC<TerminalProps> = ({
 	const applySuggestion = useCallback(
 		(suggestion: string) => {
 			const currentBuffer = bufferRef.current;
-			const transformed = transformSuggestionRef.current(suggestion);
+			const completionContext = getCompletionContext(
+				currentBuffer.command,
+				currentBuffer.position,
+			);
+			const shouldTransformSuggestion =
+				completionContext?.source !== "quoted";
+			const transformed = shouldTransformSuggestion
+				? transformSuggestionRef.current(suggestion)
+				: suggestion;
 			const nextCommand = transformed ? transformed : suggestion;
-			const nextBuffer = {
-				command: nextCommand,
-				position: nextCommand.length,
-			};
+			let nextInsertion = nextCommand;
+
+			if (completionContext?.source === "quoted") {
+				const quoteChar =
+					currentBuffer.command[completionContext.start - 1];
+				const hasClosingQuote =
+					completionContext.end < currentBuffer.command.length &&
+					currentBuffer.command[completionContext.end] === quoteChar;
+
+				if (
+					(quoteChar === '"' || quoteChar === "'") &&
+					!hasClosingQuote
+				) {
+					nextInsertion = `${nextCommand}${quoteChar}`;
+				}
+			}
+
+			const nextBuffer = completionContext
+				? {
+						command:
+							currentBuffer.command.slice(
+								0,
+								completionContext.start,
+							) +
+							nextInsertion +
+							currentBuffer.command.slice(completionContext.end),
+						position:
+							completionContext.start + nextInsertion.length,
+					}
+				: {
+						command: nextCommand,
+						position: nextCommand.length,
+					};
 
 			setSuggestionUi({ activeIndex: -1, hide: true });
 			setBufferState(nextBuffer);
@@ -609,39 +1361,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 		},
 		[
 			drawCommandLine,
-			setBufferState,
-			setSuggestionUi,
-			updateSuggestionPosition,
-		],
-	);
-
-	const insertTextAtCursor = useCallback(
-		(rawText: string) => {
-			const normalizedText = normalizeInputText(rawText);
-			if (!normalizedText) {
-				return;
-			}
-
-			const currentBuffer = bufferRef.current;
-			const nextBuffer = {
-				command:
-					currentBuffer.command.slice(0, currentBuffer.position) +
-					normalizedText +
-					currentBuffer.command.slice(currentBuffer.position),
-				position: currentBuffer.position + normalizedText.length,
-			};
-
-			setSuggestionUi((previous) => ({
-				...previous,
-				activeIndex: 0,
-				hide: false,
-			}));
-			setBufferState(nextBuffer);
-			drawCommandLine(nextBuffer, currentBuffer);
-			updateSuggestionPosition();
-		},
-		[
-			drawCommandLine,
+			getCompletionContext,
 			setBufferState,
 			setSuggestionUi,
 			updateSuggestionPosition,
@@ -693,6 +1413,43 @@ export const Terminal: React.FC<TerminalProps> = ({
 		[],
 	);
 
+	const insertTextAtCursor = useCallback(
+		(rawText: string) => {
+			const normalizedText = normalizeInputText(rawText);
+			if (!normalizedText) {
+				return;
+			}
+
+			const currentBuffer = bufferRef.current;
+			const bufferAfterSelectionDelete =
+				removeSelectedTextFromBuffer(currentBuffer);
+			const baseBuffer = bufferAfterSelectionDelete || currentBuffer;
+			const nextBuffer = {
+				command:
+					baseBuffer.command.slice(0, baseBuffer.position) +
+					normalizedText +
+					baseBuffer.command.slice(baseBuffer.position),
+				position: baseBuffer.position + normalizedText.length,
+			};
+
+			setSuggestionUi((previous) => ({
+				...previous,
+				activeIndex: 0,
+				hide: false,
+			}));
+			setBufferState(nextBuffer);
+			drawCommandLine(nextBuffer, currentBuffer);
+			updateSuggestionPosition();
+		},
+		[
+			drawCommandLine,
+			removeSelectedTextFromBuffer,
+			setBufferState,
+			setSuggestionUi,
+			updateSuggestionPosition,
+		],
+	);
+
 	useEffect(() => {
 		if (!terminalRef.current) {
 			return;
@@ -708,8 +1465,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 					? THEME_OPTIONS.darkTheme
 					: THEME_OPTIONS.lightTheme,
 			fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-			fontSize: 13,
-			lineHeight: 1.2,
+			fontSize: TERMINAL_FONT_SIZE,
+			lineHeight: TERMINAL_LINE_HEIGHT,
 			scrollback: 20000,
 			convertEol: true,
 		});
@@ -718,12 +1475,13 @@ export const Terminal: React.FC<TerminalProps> = ({
 		terminal.loadAddon(fitAddon);
 		terminal.loadAddon(new WebLinksAddon());
 		terminal.loadAddon(new SearchAddon());
-		terminal.loadAddon(new ClipboardAddon());
 
 		terminal.open(terminalRef.current);
 		fitAddon.fit();
 
 		terminal.attachCustomKeyEventHandler((event) => {
+			const isWindows = isWindowsPlatform();
+
 			if (
 				(event.ctrlKey || event.metaKey) &&
 				event.shiftKey &&
@@ -736,27 +1494,30 @@ export const Terminal: React.FC<TerminalProps> = ({
 			if ((event.ctrlKey || event.metaKey) && event.code === "KeyC") {
 				const selection = terminal.getSelection();
 				if (selection) {
-					navigator.clipboard
-						.writeText(selection)
-						.then(() => terminal.clearSelection())
-						.catch(() => null);
+					navigator.clipboard.writeText(selection).catch(() => null);
 					return false;
 				}
 			}
-			if ((event.ctrlKey || event.metaKey) && event.code === "KeyV") {
-				if (isDisabledRef.current) {
-					return false;
-				}
 
-				navigator.clipboard
-					.readText()
-					.then((data) => {
-						insertTextAtCursor(data);
-						if (!isDisabledRef.current) {
-							terminal.focus();
-						}
-					})
-					.catch(() => null);
+			const shouldPageUp =
+				(isWindows
+					? event.altKey && !event.ctrlKey && !event.metaKey
+					: event.ctrlKey && !event.altKey && !event.metaKey) &&
+				!event.shiftKey &&
+				event.code === "KeyY";
+			if (shouldPageUp) {
+				scrollTerminalByPage("up");
+				return false;
+			}
+
+			const shouldPageDown =
+				(isWindows
+					? event.altKey && !event.ctrlKey && !event.metaKey
+					: event.ctrlKey && !event.altKey && !event.metaKey) &&
+				!event.shiftKey &&
+				event.code === "KeyX";
+			if (shouldPageDown) {
+				scrollTerminalByPage("down");
 				return false;
 			}
 
@@ -794,9 +1555,9 @@ export const Terminal: React.FC<TerminalProps> = ({
 			terminal.dispose();
 		};
 	}, [
-		insertTextAtCursor,
 		drawPrompt,
 		renderWelcomeIfNeeded,
+		scrollTerminalByPage,
 		setBufferState,
 		setHistoryPointer,
 		updateSuggestionPosition,
@@ -816,8 +1577,66 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 			const currentBuffer = bufferRef.current;
 			const currentSuggestions = getVisibleSuggestions();
+			const currentHistorySearch = historySearchRef.current;
+
+			if (currentHistorySearch.active) {
+				switch (key) {
+					case "\x12":
+					case "\x1b[A": {
+						previewHistorySearch(
+							currentHistorySearch.query,
+							currentHistorySearch.activeIndex + 1,
+						);
+						return;
+					}
+					case "\x1b[B": {
+						previewHistorySearch(
+							currentHistorySearch.query,
+							currentHistorySearch.activeIndex - 1,
+						);
+						return;
+					}
+					case "\r": {
+						finishHistorySearch();
+						return;
+					}
+					case "\x03":
+					case "\x1b": {
+						cancelHistorySearch();
+						return;
+					}
+					case "\x7F": {
+						removeHistorySearchQueryCharacter();
+						return;
+					}
+					default: {
+						if (!isPrintableInput(key)) {
+							return;
+						}
+
+						appendHistorySearchQuery(key);
+						return;
+					}
+				}
+			}
 
 			switch (key) {
+				case "\x12": {
+					startOrCycleHistorySearch();
+					return;
+				}
+				case "\x19": {
+					if (!isWindowsPlatform()) {
+						scrollTerminalByPage("up");
+					}
+					return;
+				}
+				case "\x18": {
+					if (!isWindowsPlatform()) {
+						scrollTerminalByPage("down");
+					}
+					return;
+				}
 				case "\x03": {
 					const terminalInstance = xtermRef.current;
 					if (!terminalInstance) {
@@ -843,24 +1662,11 @@ export const Terminal: React.FC<TerminalProps> = ({
 					return;
 				}
 				case "\r": {
-					if (currentSuggestions.length > 0) {
-						const suggestionIndex =
-							suggestionStateRef.current.activeIndex >= 0
-								? suggestionStateRef.current.activeIndex
-								: 0;
-						const suggestion =
-							currentSuggestions[suggestionIndex] ||
-							currentSuggestions[0];
-						if (suggestion) {
-							applySuggestion(suggestion);
-						}
-						return;
-					}
-
 					if (!currentBuffer.command.trim()) {
 						return;
 					}
 
+					recordUsageFromCommand(currentBuffer.command);
 					setSuggestionUi({ activeIndex: -1, hide: true });
 					const clearedBuffer = { command: "", position: 0 };
 					setBufferState(clearedBuffer);
@@ -1171,14 +1977,22 @@ export const Terminal: React.FC<TerminalProps> = ({
 		};
 	}, [
 		applySuggestion,
+		appendHistorySearchQuery,
+		cancelHistorySearch,
 		drawCommandLine,
 		drawPrompt,
+		finishHistorySearch,
 		getVisibleSuggestions,
+		previewHistorySearch,
+		recordUsageFromCommand,
 		rebuildTerminalFromHistory,
+		removeHistorySearchQueryCharacter,
 		removeSelectedTextFromBuffer,
 		setBufferState,
 		setHistoryPointer,
 		setSuggestionUi,
+		scrollTerminalByPage,
+		startOrCycleHistorySearch,
 		updateSuggestionPosition,
 	]);
 
@@ -1227,6 +2041,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 				true,
 			);
 			updateSuggestionPosition();
+			scrollTerminalToBottom();
 		}
 
 		if (history.length > renderedHistoryCountRef.current) {
@@ -1245,6 +2060,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 				true,
 			);
 			updateSuggestionPosition();
+			scrollTerminalToBottom();
 		}
 	}, [
 		clearPromptArea,
@@ -1252,6 +2068,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 		drawPrompt,
 		renderWelcomeIfNeeded,
 		setHistoryPointer,
+		scrollTerminalToBottom,
 		updateSuggestionPosition,
 		writeHistoryEntry,
 	]);
@@ -1321,7 +2138,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 			return;
 		}
 
-		const selection = terminal.getSelection() || bufferRef.current.command;
+		const selection = terminal.getSelection();
 		if (!selection) {
 			if (!isDisabledRef.current) {
 				terminal.focus();
@@ -1331,7 +2148,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 		try {
 			await navigator.clipboard.writeText(selection);
-			terminal.clearSelection();
 		} catch {
 			// Ignore clipboard failures and keep the input focused.
 		}
@@ -1372,6 +2188,9 @@ export const Terminal: React.FC<TerminalProps> = ({
 	const btnClass = isDark
 		? "bg-[#595c61] hover:bg-[#737882] text-white"
 		: "bg-[#d7dce1] hover:bg-[#bfc5cc] text-black";
+	const historySearchClass = isDark
+		? "border-white/20 bg-[#121212]/95 text-white"
+		: "border-black/15 bg-white/95 text-black";
 
 	return (
 		<div className={cn("relative h-full", className)}>
@@ -1423,8 +2242,25 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 			<div ref={terminalRef} className="h-full w-full overflow-hidden" />
 
+			{historySearch.active && (
+				<div
+					className={cn(
+						"absolute bottom-2 left-2 z-[1100] max-w-[85%] rounded-md border px-2 py-1 text-xs shadow-lg",
+						historySearchClass,
+					)}
+				>
+					<div className="font-medium">
+						Reverse Search (`Ctrl+R`): {historySearch.query || "…"}
+					</div>
+					<div className="truncate opacity-85">
+						{historySearchMatch || "No matching history command"}
+					</div>
+				</div>
+			)}
+
 			{visibleSuggestions.length > 0 && !suggestionState.hide && (
 				<div
+					ref={suggestionMenuRef}
 					className={cn(
 						"absolute z-[1000] min-w-[180px] max-w-[420px] overflow-y-auto rounded-[5px] border border-black p-1.5 shadow-lg",
 						isDark
