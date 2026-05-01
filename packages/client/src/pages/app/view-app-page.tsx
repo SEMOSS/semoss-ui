@@ -34,7 +34,7 @@ import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 const AppViewLoadingState = () => {
 	return (
 		<div
-			className="relative flex h-full w-full items-center justify-center"
+			className="absolute inset-0 flex items-center justify-center"
 			style={{
 				background: "rgba(255, 255, 255, 0.5)",
 				zIndex: 1501,
