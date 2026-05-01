@@ -1274,39 +1274,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 		return historySearchMatches[index] || "";
 	}, [historySearch.active, historySearch.activeIndex, historySearchMatches]);
 
-	const rebuildTerminalFromHistory = useCallback(
-		(next: BufferState) => {
-			const terminal = xtermRef.current;
-			if (!terminal) {
-				return;
-			}
-
-			terminal.reset();
-			welcomeRenderedRef.current = false;
-			hasInstructionLineRef.current = false;
-			renderedBufferRef.current = { command: "", position: 0 };
-
-			renderWelcomeIfNeeded();
-			for (const item of historyRef.current) {
-				writeHistoryEntry(item);
-			}
-
-			renderedHistoryCountRef.current = historyRef.current.length;
-			setHistoryPointer(historyRef.current.length);
-			drawPrompt(next, Boolean(instructionsRef.current), true);
-			updateSuggestionPosition();
-			scrollTerminalToBottom();
-		},
-		[
-			drawPrompt,
-			renderWelcomeIfNeeded,
-			setHistoryPointer,
-			scrollTerminalToBottom,
-			updateSuggestionPosition,
-			writeHistoryEntry,
-		],
-	);
-
 	const applySuggestion = useCallback(
 		(suggestion: string) => {
 			const currentBuffer = bufferRef.current;
@@ -1671,7 +1638,9 @@ export const Terminal: React.FC<TerminalProps> = ({
 					const clearedBuffer = { command: "", position: 0 };
 					setBufferState(clearedBuffer);
 					setHistoryPointer(historyRef.current.length);
-					rebuildTerminalFromHistory(clearedBuffer);
+					drawPrompt(clearedBuffer, Boolean(instructionsRef.current));
+					updateSuggestionPosition();
+					scrollTerminalToBottom();
 					await onRunRef.current(currentBuffer.command);
 					return;
 				}
@@ -1985,12 +1954,12 @@ export const Terminal: React.FC<TerminalProps> = ({
 		getVisibleSuggestions,
 		previewHistorySearch,
 		recordUsageFromCommand,
-		rebuildTerminalFromHistory,
 		removeHistorySearchQueryCharacter,
 		removeSelectedTextFromBuffer,
 		setBufferState,
 		setHistoryPointer,
 		setSuggestionUi,
+		scrollTerminalToBottom,
 		scrollTerminalByPage,
 		startOrCycleHistorySearch,
 		updateSuggestionPosition,

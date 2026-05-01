@@ -23,6 +23,20 @@ interface WorkspaceProps {
 	app: string;
 }
 
+const WorkspaceLoadingState = () => {
+	return (
+		<div
+			className="relative flex h-full w-full items-center justify-center"
+			style={{
+				background: "rgba(255, 255, 255, 0.5)",
+				zIndex: 1501,
+			}}
+		>
+			<Spinner className="size-6" />
+		</div>
+	);
+};
+
 export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 	const insight = useInsight();
 	const { configStore } = useRootStore();
@@ -85,11 +99,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 	);
 
 	if (!insight.isReady || !workspace) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
+		return <WorkspaceLoadingState />;
 	}
 
 	return (
@@ -98,13 +108,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({ app }) => {
 				workspace: workspace,
 			}}
 		>
-			<Suspense
-				fallback={
-					<div className="flex h-full w-full items-center justify-center">
-						<Spinner />
-					</div>
-				}
-			>
+			<Suspense fallback={<WorkspaceLoadingState />}>
 				{workspace.type === "CODE" && <CodeWorkspace />}
 				{workspace.type === "BLOCKS" && <BlocksWorkspace />}
 			</Suspense>
