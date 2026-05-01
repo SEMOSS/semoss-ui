@@ -1,2 +1,2 @@
 export * from "./Panel";
-export * from "./TerminalPanel";
+export * from "./terminal-panel";

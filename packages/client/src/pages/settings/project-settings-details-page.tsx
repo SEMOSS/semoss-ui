@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import { AppSettings } from "@/components/app";
@@ -17,6 +17,7 @@ type VIEW = "CURRENT" | "PENDING" | "APP";
 const AppSettingsUserDetailPage = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
+	const { search } = useLocation();
 
 	const [view, setView] = useState<VIEW>("CURRENT");
 	const [permission, setPermission] = useState<Role | null>(null);
@@ -55,7 +56,7 @@ const AppSettingsUserDetailPage = () => {
 					id={id}
 					direction={"row"}
 					onDelete={() => {
-						navigate("/settings/app");
+						navigate({ pathname: "/settings/app", search });
 					}}
 				/>
 			) : null}
@@ -98,6 +99,7 @@ const AppSettingsUserDetailPage = () => {
 const AppSettingsAdminDetailPage = () => {
 	const { id } = useParams();
 	const navigate = useNavigate();
+	const { search } = useLocation();
 
 	const [view, setView] = useState<VIEW>("CURRENT");
 
@@ -109,7 +111,7 @@ const AppSettingsAdminDetailPage = () => {
 				id={id}
 				direction={"row"}
 				onDelete={() => {
-					navigate("/settings/app");
+					navigate({ pathname: "/settings/app", search });
 				}}
 			/>
 			<div className="flex w-full flex-col gap-4">
@@ -138,7 +140,7 @@ const AppSettingsAdminDetailPage = () => {
 	);
 };
 
-export const AppSettingsDetailsPage = () => {
+export const ProjectSettingsDetailsPage = () => {
 	const { adminMode } = useSettings();
 
 	return (

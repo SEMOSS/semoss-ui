@@ -810,7 +810,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									editorRef.current?.focus();
 								}
 							}}
-							onKeyDown={() => editorRef.current?.focus()}
+							onKeyDown={(e) => {
+								const target = e.target as HTMLElement;
+								const tag = target.tagName.toLowerCase();
+								if (
+									tag === "input" ||
+									tag === "textarea" ||
+									target.isContentEditable
+								) {
+									return;
+								}
+								editorRef.current?.focus();
+							}}
 						>
 							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
