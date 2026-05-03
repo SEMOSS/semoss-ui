@@ -15,6 +15,7 @@ import {
 	DropdownMenuItem,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	useIsMobile,
 } from "@semoss/ui/next";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 
@@ -33,6 +34,7 @@ export const ResponseMessageToolMenu = ({
 	label,
 	showCancelInMenu,
 }: ResponseMessageToolMenuProps) => {
+	const isMobile = useIsMobile();
 	const { t } = useTranslation("tool");
 
 	return (
@@ -96,24 +98,27 @@ export const ResponseMessageToolMenu = ({
 					<TvMinimalIcon />
 					{t("actions.expand")}
 				</DropdownMenuItem>
-				<DropdownMenuItem
-					onClick={() => {
-						if (tool.isOpen && tool.display === "sidebar") {
-							tool.closeTool();
-						} else {
-							tool.openTool("sidebar");
-						}
-					}}
-				>
-					{tool.isOpen && tool.display === "sidebar" ? (
-						<PanelRightOpenIcon />
-					) : (
-						<PanelRightCloseIcon />
-					)}
-					{tool.isOpen && tool.display === "sidebar"
-						? t("actions.closeInSidebar")
-						: t("actions.openInSidebar")}
-				</DropdownMenuItem>
+				{(!isMobile || (tool.isOpen && tool.display === "sidebar")) && (
+					<DropdownMenuItem
+						onClick={() => {
+							if (tool.isOpen && tool.display === "sidebar") {
+								tool.closeTool();
+							} else {
+								tool.openTool("sidebar");
+							}
+						}}
+					>
+						{tool.isOpen && tool.display === "sidebar" ? (
+							<PanelRightOpenIcon />
+						) : (
+							<PanelRightCloseIcon />
+						)}
+						{tool.isOpen && tool.display === "sidebar"
+							? t("actions.closeInSidebar")
+							: t("actions.openInSidebar")}
+					</DropdownMenuItem>
+				)}
+
 				{showCancelInMenu && (
 					<>
 						<DropdownMenuSeparator />

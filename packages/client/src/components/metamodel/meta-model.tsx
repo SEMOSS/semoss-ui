@@ -12,13 +12,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import { Button, Input } from "@semoss/ui/next";
 import { MetamodelContext } from "@/contexts";
-import type { ColumnOption, Property } from "../import/database/MetamodelTypes";
+import type {
+	ColumnOption,
+	Property,
+} from "../import/database/metamodel-types";
 import {
 	createPropertiesFromNames,
 	edgeIdsEqual,
 	nodeIdsEqual,
 	updateColumnProperties,
-} from "../import/database/MetamodelUtils";
+} from "../import/database/metamodel-utils";
 import { Editmetamodel } from "./edit-meta-model";
 import EditTable from "./edit-table";
 import { FloatingEdge } from "./floating-edge";
@@ -121,6 +124,7 @@ export const Metamodel = (props: MetamodelProps) => {
 		columnId: string;
 		name: string;
 		type: string;
+		rawType?: string;
 		description?: string;
 		logicalNames?: string[];
 	} | null>(null);
@@ -167,6 +171,7 @@ export const Metamodel = (props: MetamodelProps) => {
 			columnId: string;
 			name: string;
 			type: string;
+			rawType?: string;
 			description?: string;
 			logicalNames?: string[];
 		}) => {
@@ -622,14 +627,28 @@ export const Metamodel = (props: MetamodelProps) => {
 
 	useEffect(() => {
 		if (
-			resetKeyRef.current !== undefined &&
+			resetKeyRef.current !== null &&
 			resetKeyRef.current !== resetKey
 		) {
 			const sourceKey = String(dataSourceId ?? "default");
 			isInitialMount.current[sourceKey] = false;
+
+			// Force position sync — nodeIdsEqual only checks IDs, so a reset
+			// that restores original positions (same IDs, different coords) would
+			// otherwise be silently skipped by the !isEditable effect below.
+			const nextNodes = injectIsAction(nodes || []);
+			const nextEdges = edges || [];
+			setData({ nodes: nextNodes, edges: nextEdges });
+			setFlowNodes(nextNodes);
+			setFlowEdges(nextEdges);
+
+			// Fit view after React commits the updated node positions.
+			setTimeout(() => {
+				flowInstanceRef.current?.fitView({ maxZoom: 0.75, padding: 0.2 });
+			}, 50);
 		}
-		resetKeyRef.current = resetKey;
-	}, [resetKey, dataSourceId]);
+		resetKeyRef.current = resetKey ?? null;
+	}, [resetKey, dataSourceId, nodes, edges, injectIsAction, setFlowNodes, setFlowEdges]);
 
 	useEffect(() => {
 		if (isEditable) {
@@ -919,10 +938,11 @@ export const Metamodel = (props: MetamodelProps) => {
 						flowInstanceRef.current = instance;
 					}}
 					fitView={true}
+					fitViewOptions={{ maxZoom: 0.75, padding: 0.2 }}
 					onNodesChange={onFlowNodesChange}
 					onNodeDragStop={handleNodeDragStop}
 					onEdgesChange={onFlowEdgesChange}
-					defaultViewport={{ x: 70, y: 50, zoom: 1 }}
+					defaultViewport={{ x: 70, y: 50, zoom: 0.75 }}
 				>
 					<MiniMap pannable zoomable />
 					<Controls showInteractive={false} />
@@ -948,6 +968,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				isEdit={true}
 				initialName={columnToEdit?.name ?? ""}
 				initialType={columnToEdit?.type ?? ""}
+				initialRawType={columnToEdit?.rawType}
 				initialDescription={columnToEdit?.description ?? ""}
 				initialLogicalNames={columnToEdit?.logicalNames ?? []}
 				existingColumnNames={existingColumnNames}

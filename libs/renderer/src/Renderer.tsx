@@ -160,7 +160,7 @@ export const Renderer = observer((props: RendererProps) => {
 						zIndex: 1501,
 					}}
 				>
-					<Spinner className="size-8" />
+					<Spinner className="size-6" />
 				</div>
 			);
 		} else {
