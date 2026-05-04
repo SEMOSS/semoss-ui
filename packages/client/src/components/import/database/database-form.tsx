@@ -35,6 +35,7 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { computeOptions, computeVisibility } from "../shared/import-form.utils";
 import DataSelection from "./flat-table-column-editor";
 import ExcelDataSelection from "./flat-table-column-editor-excel";
 import TableViewSelector from "./jdbc-table-selector";
@@ -105,6 +106,7 @@ export const DatabaseForm = ({
 		control,
 		handleSubmit,
 		watch,
+		getValues,
 		setValue,
 		setFocus,
 		formState,
@@ -132,59 +134,56 @@ export const DatabaseForm = ({
 	const [loadingMessage, setLoadingMessage] = useState("Loading...");
 	const [loadingLogMessages, setLoadingLogMessages] = useState<string[]>([]);
 	const [openLoadingLog, setOpenLoadingLog] = useState(false);
-	const databaseType = watch("DATABASE_TYPE");
 	const metamodelType = watch("METAMODEL_TYPE");
 
+	// Collect all field keys referenced by showWhen / optionsWhen rules
+	const watchKeys = useMemo(
+		() => [
+			...new Set(
+				fields.flatMap(
+					(f: {
+						showWhen?: unknown;
+						optionsWhen?: { field: string }[];
+					}) => [
+						...(f.showWhen
+							? (Array.isArray(f.showWhen)
+									? f.showWhen
+									: [f.showWhen]
+								).map((r: { field: string }) => r.field)
+							: []),
+						...(f.optionsWhen ?? []).map((r) => r.field),
+					],
+				),
+			),
+		],
+		[fields],
+	);
+	const watchedValues = Object.fromEntries(
+		(watchKeys as string[]).map((k) => [k, watch(k)]),
+	);
+
+	// Clear pairedFiles when leaving fromPropFile mode
 	useEffect(() => {
-		const isPropFile = metamodelType === "fromPropFile";
-		setResolvedFields((prev) =>
-			prev.map((f) => {
-				if (f.key === "FILE_UPLOAD")
-					return { ...f, hidden: isPropFile };
-				if (f.key === "PROP_FILE_UPLOAD") return { ...f, hidden: true };
-				return f;
-			}),
-		);
-		if (!isPropFile) setPairedFiles([]);
+		if (metamodelType !== "fromPropFile") setPairedFiles([]);
 	}, [metamodelType]);
 
+	// Auto-correct select values that are no longer in the available options
+	// biome-ignore lint/correctness/useExhaustiveDependencies: getValues/setValue are stable react-hook-form refs
 	useEffect(() => {
-		type MetaOpt = { display: string; value: string };
-		const type = databaseType?.toLowerCase();
-		const originalOptions: MetaOpt[] =
-			fields.find(
-				(orig: { key: string }) => orig.key === "METAMODEL_TYPE",
-			)?.options?.options ?? [];
-		let filteredOptions: MetaOpt[] = originalOptions;
-		if (type === "rdf") {
-			filteredOptions = originalOptions.filter(
-				(opt: MetaOpt) => opt.value !== "asFlatTable",
-			);
-		} else if (type) {
-			filteredOptions = originalOptions.filter(
-				(opt: MetaOpt) => opt.value === "asFlatTable",
-			);
+		for (const f of fields) {
+			if (!f.optionsWhen) continue;
+			const available = computeOptions(f, watchedValues);
+			const current = getValues(f.key);
+			if (
+				!available.some(
+					(o: { value: string }) => o.value === current,
+				) &&
+				available[0]
+			) {
+				setValue(f.key, available[0].value);
+			}
 		}
-		const currentValue = watch("METAMODEL_TYPE");
-		const valueStillValid = filteredOptions.some(
-			(opt: MetaOpt) => opt.value === currentValue,
-		);
-		if (!valueStillValid && filteredOptions[0]) {
-			setValue("METAMODEL_TYPE", filteredOptions[0].value);
-		}
-		setResolvedFields((prev: Record<string, unknown>[]) =>
-			prev.map((f: Record<string, unknown>) => {
-				if (f.key !== "METAMODEL_TYPE") return f;
-				return {
-					...f,
-					value: valueStillValid
-						? currentValue
-						: (filteredOptions[0]?.value ?? ""),
-					options: { ...f.options, options: filteredOptions },
-				};
-			}),
-		);
-	}, [databaseType, fields]);
+	}, [watchedValues, fields]);
 
 	const grouped = defaultFields.reduce((acc, f) => {
 		if (!acc[f.category]) acc[f.category] = [];
@@ -231,8 +230,8 @@ export const DatabaseForm = ({
 						...(formData.DATABASE_DESCRIPTION && {
 							description: formData.DATABASE_DESCRIPTION,
 						}),
-						...(formData.DATABASE_TAGS && {
-							tag: formData.DATABASE_TAGS,
+						...(formData.DATABASE_TAG && {
+							tag: formData.DATABASE_TAG,
 						}),
 					};
 					const pixel = `databaseVar = CreateEmptyRdbmsDatabase(database=[${JSON.stringify(formData.NAME)}], rdbmsType=[${JSON.stringify(formData.dbDriver)}], username=[${JSON.stringify(formData.USERNAME ?? "")}], password=[${JSON.stringify(formData.PASSWORD ?? "")}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
@@ -782,7 +781,7 @@ export const DatabaseForm = ({
 				([key]) =>
 					key !== "NAME" &&
 					key !== "DATABASE_DESCRIPTION" &&
-					key !== "DATABASE_TAGS" &&
+					key !== "DATABASE_TAG" &&
 					key !== "FILE_UPLOAD" &&
 					key !== "relationships" &&
 					key !== "tables" &&
@@ -971,25 +970,7 @@ export const DatabaseForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
-	// NEW: Helper functions for incremental file upload
+	// Helper functions for incremental file upload
 	const onFileUpload = (
 		files: File | File[],
 		fieldOnChange: (value: File[]) => void,
@@ -1047,14 +1028,15 @@ export const DatabaseForm = ({
 			name={val.key}
 			control={control}
 			rules={{
-				required: val?.required && !val?.hidden,
+				required:
+					val?.required && computeVisibility(val, watchedValues),
 				pattern: val.rules?.pattern,
 				validate:
 					val.type === "file-upload" || val.type === "zip-upload"
 						? (value) => {
 								if (
 									val.required &&
-									!val.hidden &&
+									computeVisibility(val, watchedValues) &&
 									(!value || value.length === 0)
 								) {
 									return "File upload is required";
@@ -1068,7 +1050,11 @@ export const DatabaseForm = ({
 					case "text":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -1181,7 +1167,11 @@ export const DatabaseForm = ({
 					case "number":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -1217,7 +1207,11 @@ export const DatabaseForm = ({
 					case "select":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -1233,7 +1227,6 @@ export const DatabaseForm = ({
 									value={field.value}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -1247,15 +1240,17 @@ export const DatabaseForm = ({
 										/>
 									</SelectTrigger>
 									<SelectContent>
-										{val?.options?.options?.map((opt) => (
-											<SelectItem
-												key={opt.value}
-												value={opt.value}
-												data-testid={`database-form-option-${val.key}-${opt.value}`}
-											>
-												{opt.display}
-											</SelectItem>
-										))}
+										{computeOptions(val, watchedValues).map(
+											(opt) => (
+												<SelectItem
+													key={opt.value}
+													value={opt.value}
+													data-testid={`database-form-option-${val.key}-${opt.value}`}
+												>
+													{opt.display}
+												</SelectItem>
+											),
+										)}
 									</SelectContent>
 								</Select>
 								{error && (
@@ -1274,7 +1269,11 @@ export const DatabaseForm = ({
 					case "radio":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel>{val.label}</FieldLabel>
@@ -1282,7 +1281,6 @@ export const DatabaseForm = ({
 									value={field.value || ""}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									className="flex flex-wrap gap-4"
 									data-testid={`database-form-input-${val.key}`}
@@ -1318,7 +1316,11 @@ export const DatabaseForm = ({
 					case "zip-upload":
 						return (
 							<div
-								className={`flex flex-col gap-2${val.hidden ? "hidden" : ""}`}
+								className={
+									computeVisibility(val, watchedValues)
+										? "flex flex-col gap-2"
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<P>
@@ -1448,9 +1450,9 @@ export const DatabaseForm = ({
 						return (
 							<div
 								className={
-									val.hidden
-										? "hidden"
-										: "flex flex-row items-center gap-2"
+									computeVisibility(val, watchedValues)
+										? "flex flex-row items-center gap-2"
+										: "hidden"
 								}
 								data-testid={`database-form-field-${val.key}`}
 							>
@@ -1487,7 +1489,11 @@ export const DatabaseForm = ({
 					case "tags":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>

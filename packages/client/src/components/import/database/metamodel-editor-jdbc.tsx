@@ -34,7 +34,9 @@ import type {
 	ParsedResult,
 } from "./metamodel-types";
 import {
+	attachConnectionsToNodes,
 	createPayloadsFromFlowStates,
+	deepClone,
 	transformMetaToParsed,
 } from "./metamodel-utils";
 import { PortalModal } from "./portal";
@@ -42,7 +44,6 @@ import { PortalModal } from "./portal";
 export const MetaModelConnections = observer(
 	({ parsedData, onCancel, onImportConnections }: MetaModelTypeProps) => {
 		const parsed = parsedData?.[0];
-		console.log("MetaModelType parsedData:", parsedData);
 		const portalContentId = useId();
 		const [selectedNode, setSelectedNode] =
 			useState<React.ComponentProps<typeof Metamodel>["selectedNode"]>(
@@ -171,27 +172,11 @@ export const MetaModelConnections = observer(
 			}
 		}, [flow.nodes]);
 
-		const attachConnectionsToNodes = (
-			nodesInput: (MetamodelNode | FlowNode)[],
-			edgesInput: Edge[],
-		) => {
-			return (nodesInput ?? []).map((n) => {
-				const nodeId = n.id;
-				const nodeConnections = (edgesInput ?? []).filter(
-					(e) => e.source === nodeId || e.target === nodeId,
-				);
-				return {
-					...n,
-					connections: nodeConnections.map((e) => ({ ...e })),
-				} as MetamodelNode & { connections?: Edge[] };
-			});
-		};
-
 		const handleSelectAll = (isChecked: boolean) => {
 			if (isChecked) {
 				setSelectedNodeIds((nodes ?? []).map((n) => n.id));
 				const restored = attachConnectionsToNodes(
-					JSON.parse(JSON.stringify(nodes ?? [])),
+					deepClone(nodes ?? []),
 					edges ?? [],
 				);
 				setFlow({ nodes: restored, edges: edges ?? [] });
@@ -224,7 +209,7 @@ export const MetaModelConnections = observer(
 				if (!exists) {
 					const canonical = initialMap.get(nodeId);
 					const nodeToAdd = canonical
-						? JSON.parse(JSON.stringify(canonical))
+						? deepClone(canonical)
 						: {
 								id: nodeId,
 								type: "metamodel",

@@ -55,7 +55,7 @@ const PromptRouter = lazy(() =>
 	import("./prompt/PromptRouter").then((m) => ({ default: m.PromptRouter })),
 );
 const SettingsRouter = lazy(() =>
-	import("./settings/SettingsRouter").then((m) => ({
+	import("./settings/settings-router").then((m) => ({
 		default: m.SettingsRouter,
 	})),
 );
