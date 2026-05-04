@@ -103,7 +103,6 @@ export const AuditLogsDashboard = ({
 }: {
 	catalogName: string;
 }) => {
-	console.log("Rendering AuditLogsDashboard for catalog:", catalogName);
 	const { monolithStore } = useRootStore();
 	const location = useLocation();
 	const params = useParams<{ appId?: string; engineId?: string }>();

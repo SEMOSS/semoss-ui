@@ -69,7 +69,6 @@ const DASHBOARD_DURATIONS = [
 type DurationValue = (typeof DASHBOARD_DURATIONS)[number]["value"];
 
 export const AuditLogPage = () => {
-	console.log("Rendering AuditLogPage");
 	const { insightId } = useInsight();
 	const rootStore = useUserRootStore(insightId);
 	const userId = rootStore?.user?.id ?? "";
