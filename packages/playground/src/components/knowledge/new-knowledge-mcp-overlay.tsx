@@ -229,17 +229,26 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 									<FieldLabel>
 										{t("knowledge:form.embeddingLabel")}
 									</FieldLabel>
-									<EngineSelect
-										name={
-											embeddingEngine?.engine_display_name ||
-											embeddingEngine?.engine_name ||
-											""
-										}
-										value={embeddingEngine?.engine_id || ""}
-										engineTypes={["MODEL"]}
-										metaFilters={[{ tag: "embeddings" }]}
-										onChange={(e) => setEmbeddingEngine(e)}
-									/>
+									<div className="rounded-md border border-input bg-transparent px-1 py-1 shadow-xs dark:bg-input/30">
+										<EngineSelect
+											className="w-full max-w-none"
+											name={
+												embeddingEngine?.engine_display_name ||
+												embeddingEngine?.engine_name ||
+												""
+											}
+											value={
+												embeddingEngine?.engine_id || ""
+											}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "embeddings" },
+											]}
+											onChange={(e) =>
+												setEmbeddingEngine(e)
+											}
+										/>
+									</div>
 								</Field>
 							)}
 

@@ -715,7 +715,7 @@ export const NewRoomPage = observer(() => {
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
-											className="absolute top-0 right-0 z-10"
+											className="absolute top-2 right-2 z-10"
 											variant="ghost"
 											size="icon-sm"
 											onClick={() => {
@@ -731,7 +731,7 @@ export const NewRoomPage = observer(() => {
 									</TooltipContent>
 								</Tooltip>
 
-								<ScrollArea className="h-full w-full">
+								<ScrollArea className="h-full w-full px-2">
 									<RoomOptionsForm
 										model={chat.models.selected}
 										options={tempRoomStore.options}
