@@ -10,10 +10,12 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@medv/finder": "^2.1.0",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.25",

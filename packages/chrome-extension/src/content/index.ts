@@ -1,3 +1,8 @@
+import React from "react";
+import type { Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
+import type { EventRecorder } from "../recorder/EventRecorder";
+import { createEventRecorder } from "../recorder/EventRecorder";
 import { initializeRPC } from "./rpc";
 import { getDOMStats, getSimplifiedDOM } from "./simplifyDOM";
 
@@ -11,6 +16,12 @@ let isPanelOpen = false;
 
 // Track portal iframe for sending completion messages back
 let portalIframeSource: Window | null = null;
+
+// Recording state
+let eventRecorder: EventRecorder | null = null;
+let _isRecording = false;
+let overlayRoot: Root | null = null;
+let overlayContainer: HTMLDivElement | null = null;
 
 // Inject MAIN world bridge script
 const script = document.createElement("script");
@@ -32,8 +43,14 @@ window.addEventListener("message", (event) => {
 
 	// Debug logging for key messages
 	if (event.data?.type === "EXECUTE_PLAYWRIGHT_SCRIPT") {
-		console.log("[CONTENT] 🔍 Received EXECUTE_PLAYWRIGHT_SCRIPT from:", event.origin);
-		console.log("[CONTENT] 🔍 Has scriptContent:", !!event.data?.payload?.scriptContent);
+		console.log(
+			"[CONTENT] 🔍 Received EXECUTE_PLAYWRIGHT_SCRIPT from:",
+			event.origin,
+		);
+		console.log(
+			"[CONTENT] 🔍 Has scriptContent:",
+			!!event.data?.payload?.scriptContent,
+		);
 	}
 
 	// Handle PING from portal iframe - respond with PONG back to iframe
@@ -42,27 +59,40 @@ window.addEventListener("message", (event) => {
 		console.log("[CONTENT] Cached isPanelOpen:", isPanelOpen);
 
 		// Always verify with background script for real-time state (don't trust cache)
-		console.log("[CONTENT] 🔍 Querying background for real-time panel state...");
-		chrome.runtime.sendMessage({ type: "CHECK_PANEL_STATE" }, (response) => {
-			const actualPanelState = response?.isPanelOpen || false;
-			console.log("[CONTENT] Background confirms panel state:", actualPanelState);
+		console.log(
+			"[CONTENT] 🔍 Querying background for real-time panel state...",
+		);
+		chrome.runtime.sendMessage(
+			{ type: "CHECK_PANEL_STATE" },
+			(response) => {
+				const actualPanelState = response?.isPanelOpen || false;
+				console.log(
+					"[CONTENT] Background confirms panel state:",
+					actualPanelState,
+				);
 
-			// Update cached state
-			isPanelOpen = actualPanelState;
+				// Update cached state
+				isPanelOpen = actualPanelState;
 
-			if (actualPanelState) {
-				// Send PONG since panel is actually open
-				console.log("[CONTENT] ✅ Sending PONG to portal");
-				if (event.source && event.source !== window) {
-					(event.source as Window).postMessage(
-						{ type: "SMSS_EXTENSION_PONG", timestamp: Date.now() },
-						event.origin
+				if (actualPanelState) {
+					// Send PONG since panel is actually open
+					console.log("[CONTENT] ✅ Sending PONG to portal");
+					if (event.source && event.source !== window) {
+						(event.source as Window).postMessage(
+							{
+								type: "SMSS_EXTENSION_PONG",
+								timestamp: Date.now(),
+							},
+							event.origin,
+						);
+					}
+				} else {
+					console.log(
+						"[CONTENT] ❌ Panel is closed, not sending PONG",
 					);
 				}
-			} else {
-				console.log("[CONTENT] ❌ Panel is closed, not sending PONG");
-			}
-		});
+			},
+		);
 	}
 
 	// Bridge relays PING from portal
@@ -79,21 +109,25 @@ window.addEventListener("message", (event) => {
 			return;
 		}
 
-		console.log("[CONTENT] 📤 Received EXECUTE from bridge, forwarding to extension");
+		console.log(
+			"[CONTENT] 📤 Received EXECUTE from bridge, forwarding to extension",
+		);
 
 		const payload = event.data.payload;
-		chrome.runtime.sendMessage({
-			type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
-			script: {
-				projectId: payload.projectID,
-				name: payload.fileName,
-				fileName: payload.fileName,
-				title: payload.title,
-				autoExecute: true
-			},
-		}).catch((error) => {
-			console.error("[CONTENT] ❌ Failed to forward:", error);
-		});
+		chrome.runtime
+			.sendMessage({
+				type: "SMSS_EXEC_PLAYWRIGHT_SCRIPT",
+				script: {
+					projectId: payload.projectID,
+					name: payload.fileName,
+					fileName: payload.fileName,
+					title: payload.title,
+					autoExecute: true,
+				},
+			})
+			.catch((error) => {
+				console.error("[CONTENT] ❌ Failed to forward:", error);
+			});
 	}
 
 	// Direct portal message (new format)
@@ -106,23 +140,32 @@ window.addEventListener("message", (event) => {
 		// Store the iframe source to send completion back later
 		if (event.source && event.source !== window) {
 			portalIframeSource = event.source as Window;
-			console.log("[CONTENT] 📍 Stored portal iframe for completion messages");
+			console.log(
+				"[CONTENT] 📍 Stored portal iframe for completion messages",
+			);
 		}
 
-		console.log("[CONTENT] 📤 Received EXECUTE_PLAYWRIGHT_SCRIPT from portal, forwarding to extension");
+		console.log(
+			"[CONTENT] 📤 Received EXECUTE_PLAYWRIGHT_SCRIPT from portal, forwarding to extension",
+		);
 
 		const payload = event.data.payload;
-		chrome.runtime.sendMessage({
-			type: "EXECUTE_PLAYWRIGHT_SCRIPT",
-			payload: {
-				fileName: payload.fileName,
-				projectID: payload.projectID,
-				title: payload.title,
-				scriptContent: payload.scriptContent // Forward scriptContent if present
-			},
-		}).catch((error) => {
-			console.error("[CONTENT] ❌ Failed to forward portal message:", error);
-		});
+		chrome.runtime
+			.sendMessage({
+				type: "EXECUTE_PLAYWRIGHT_SCRIPT",
+				payload: {
+					fileName: payload.fileName,
+					projectID: payload.projectID,
+					title: payload.title,
+					scriptContent: payload.scriptContent, // Forward scriptContent if present
+				},
+			})
+			.catch((error) => {
+				console.error(
+					"[CONTENT] ❌ Failed to forward portal message:",
+					error,
+				);
+			});
 	}
 });
 
@@ -205,26 +248,38 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 	// Forward completion messages back to portal via bridge
 	if (message.type === "SCRIPT_EXECUTION_COMPLETE") {
 		console.log("[CONTENT] ✅ Execution complete, forwarding to portal");
-		console.log("[CONTENT] Success:", message.success, "Message:", message.message);
+		console.log(
+			"[CONTENT] Success:",
+			message.success,
+			"Message:",
+			message.message,
+		);
 
-		const completionMessage = message.success ? {
-			type: "PLAYWRIGHT_SCRIPT_COMPLETED",
-			success: true,
-			message: message.message || "Script executed successfully",
-			fileName: message.fileName,
-		} : {
-			type: "PLAYWRIGHT_SCRIPT_ERROR",
-			error: message.message || "Script execution failed",
-			fileName: message.fileName,
-		};
+		const completionMessage = message.success
+			? {
+					type: "PLAYWRIGHT_SCRIPT_COMPLETED",
+					success: true,
+					message: message.message || "Script executed successfully",
+					fileName: message.fileName,
+				}
+			: {
+					type: "PLAYWRIGHT_SCRIPT_ERROR",
+					error: message.message || "Script execution failed",
+					fileName: message.fileName,
+				};
 
 		// Send to portal iframe if available, otherwise to window
 		if (portalIframeSource) {
 			console.log("[CONTENT] 📤 Sending completion to portal iframe");
-			portalIframeSource.postMessage(completionMessage, window.location.origin);
+			portalIframeSource.postMessage(
+				completionMessage,
+				window.location.origin,
+			);
 			portalIframeSource = null; // Clear after use
 		} else {
-			console.log("[CONTENT] 📤 Sending completion to window (no iframe stored)");
+			console.log(
+				"[CONTENT] 📤 Sending completion to window (no iframe stored)",
+			);
 			window.postMessage(completionMessage, "*");
 		}
 
@@ -240,7 +295,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 				type: "PLAYWRIGHT_SCRIPT_ERROR",
 				error: message.error,
 			},
-			"*"
+			"*",
 		);
 		sendResponse({ success: true });
 		return true;
@@ -330,40 +385,46 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		case "SCRIPT_EXECUTION_COMPLETE":
 			// Post message to page via bridge
-			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
-				detail: {
-					type: "SMSS_SCRIPT_EXECUTION_COMPLETE",
-					success: message.success,
-					message: message.message,
-				}
-			}));
+			document.dispatchEvent(
+				new CustomEvent("__semoss_extension_response", {
+					detail: {
+						type: "SMSS_SCRIPT_EXECUTION_COMPLETE",
+						success: message.success,
+						message: message.message,
+					},
+				}),
+			);
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_OPENED":
-			console.log("[CONTENT] 📢 Panel opened - notifying portal via window.postMessage");
+			console.log(
+				"[CONTENT] 📢 Panel opened - notifying portal via window.postMessage",
+			);
 			isPanelOpen = true;
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_OPENED",
 					timestamp: Date.now(),
 				},
-				"*"
+				"*",
 			);
 
 			sendResponse({ success: true });
 			break;
 
 		case "SMSS_EXTENSION_PANEL_CLOSED":
-			console.log("[CONTENT] 📢 Panel closed - notifying portal via window.postMessage");
+			console.log(
+				"[CONTENT] 📢 Panel closed - notifying portal via window.postMessage",
+			);
 			isPanelOpen = false;
 			window.postMessage(
 				{
 					type: "SMSS_EXTENSION_CLOSED",
 					timestamp: Date.now(),
 				},
-				"*"
+				"*",
 			);
 
 			sendResponse({ success: true });
@@ -371,13 +432,17 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 		case "SMSS_EXTENSION_PONG":
 			// Forward pong response from background to page via bridge
-			console.log("[CONTENT] ✅ Received PONG from background - forwarding to page");
-			document.dispatchEvent(new CustomEvent('__semoss_extension_response', {
-				detail: {
-					type: "SMSS_EXTENSION_PONG",
-					timestamp: message.timestamp || Date.now(),
-				}
-			}));
+			console.log(
+				"[CONTENT] ✅ Received PONG from background - forwarding to page",
+			);
+			document.dispatchEvent(
+				new CustomEvent("__semoss_extension_response", {
+					detail: {
+						type: "SMSS_EXTENSION_PONG",
+						timestamp: message.timestamp || Date.now(),
+					},
+				}),
+			);
 
 			sendResponse({ success: true });
 			break;
@@ -498,6 +563,79 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 			}
 			break;
 
+		case "START_RECORDING":
+			try {
+				console.log("[CONTENT] 🎬 Starting recording...");
+				if (!eventRecorder) {
+					eventRecorder = createEventRecorder();
+				}
+				eventRecorder.onInit();
+				_isRecording = true;
+
+				// Mount overlay toolbar
+				mountOverlay();
+
+				sendResponse({ success: true });
+			} catch (error) {
+				console.error("[CONTENT] ❌ Failed to start recording:", error);
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
+		case "STOP_RECORDING":
+			try {
+				console.log("[CONTENT] ⏹️ Stopping recording...");
+				if (eventRecorder) {
+					eventRecorder.cleanup();
+				}
+				_isRecording = false;
+
+				// Unmount overlay toolbar
+				unmountOverlay();
+
+				sendResponse({ success: true });
+			} catch (error) {
+				console.error("[CONTENT] ❌ Failed to stop recording:", error);
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
+		case "PAUSE_RECORDING":
+			try {
+				console.log("[CONTENT] ⏸️ Pausing recording...");
+				// Pause is handled by background script (filters events)
+				sendResponse({ success: true });
+			} catch (error) {
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
+		case "RESUME_RECORDING":
+			try {
+				console.log("[CONTENT] ▶️ Resuming recording...");
+				// Resume is handled by background script (accepts events again)
+				sendResponse({ success: true });
+			} catch (error) {
+				sendResponse({
+					success: false,
+					error:
+						error instanceof Error ? error.message : String(error),
+				});
+			}
+			break;
+
 		case "UPDATE_FIELD_VALUE":
 			// Handle real-time field value update from panel
 			(async () => {
@@ -584,7 +722,7 @@ function stopFieldMonitoring() {
  * Get simplified DOM optimized for LLM consumption
  */
 function getSimplifiedDOMFromPage() {
-	const startTime = performance.now();
+	const _startTime = performance.now();
 
 	// First, get annotated DOM with visibility and interactivity info
 	// This populates annotatedElements array with ALL original page elements
@@ -763,4 +901,54 @@ function highlightElement(elementId: number): void {
 	setTimeout(() => {
 		element.style.border = originalBorder;
 	}, 2000);
+}
+
+/**
+ * Mount overlay toolbar for recording
+ */
+async function mountOverlay(): Promise<void> {
+	try {
+		// Prevent duplicate mounting
+		if (overlayContainer) {
+			return;
+		}
+
+		// Create container
+		overlayContainer = document.createElement("div");
+		overlayContainer.id = "semoss-recorder-overlay";
+		overlayContainer.setAttribute("data-extension-id", chrome.runtime.id);
+		document.body.appendChild(overlayContainer);
+
+		// Dynamically import React component
+		const { RecorderToolbar } = await import("./overlay/RecorderToolbar");
+
+		// Create React root and render (component manages its own state now)
+		overlayRoot = createRoot(overlayContainer);
+		overlayRoot.render(React.createElement(RecorderToolbar));
+
+		console.log("[CONTENT] ✅ Overlay toolbar mounted");
+	} catch (error) {
+		console.error("[CONTENT] ❌ Failed to mount overlay:", error);
+	}
+}
+
+/**
+ * Unmount overlay toolbar
+ */
+function unmountOverlay(): void {
+	try {
+		if (overlayRoot) {
+			overlayRoot.unmount();
+			overlayRoot = null;
+		}
+
+		if (overlayContainer) {
+			overlayContainer.remove();
+			overlayContainer = null;
+		}
+
+		console.log("[CONTENT] ✅ Overlay toolbar unmounted");
+	} catch (error) {
+		console.error("[CONTENT] ❌ Failed to unmount overlay:", error);
+	}
 }

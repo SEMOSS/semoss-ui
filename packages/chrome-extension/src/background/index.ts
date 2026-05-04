@@ -1,4 +1,11 @@
 // Background service worker for the extension
+
+import type {
+	EventMessage,
+	RecordedAction,
+	RecordedActionType,
+	RecorderState,
+} from "../recorder/types";
 import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
 // Track which tabs have debuggers attached
@@ -8,7 +15,39 @@ const attachedDebuggers = new Set<number>();
 let executionSourceTabId: number | null = null;
 
 // Track panel state for content script queries
-let isPanelOpen = false;
+let _isPanelOpen = false;
+
+// Recording state
+let recordingState: RecorderState = {
+	isRecording: false,
+	isPaused: false,
+	isStopped: false,
+	actionsList: [],
+	actionCounter: 0,
+};
+
+// Track initial URL when recording starts (to filter out initial navigation events)
+let initialRecordingUrl: string | null = null;
+
+// Track last recorded navigation URL (to prevent duplicates)
+let lastRecordedNavigationUrl: string | null = null;
+
+// Track last recorded TYPE action per selector (to prevent duplicates)
+const lastTypeActions = new Map<string, string>(); // selector -> value
+
+// Track last click coordinates on input fields (to merge with TYPE actions)
+const lastInputClickCoords = new Map<string, { x: number; y: number }>(); // selector -> coords
+
+// Track last submit button click timestamp (to filter out redundant form submit events)
+let lastSubmitButtonClickTime = 0;
+
+// Pending blur events queue (to ensure proper ordering with clicks)
+// Blur events are delayed slightly to allow them to be processed before clicks that caused them
+let pendingBlurEvent: {
+	event: EventMessage;
+	tabId?: number;
+	timeout: number;
+} | null = null;
 
 // Handle extension icon click to open side panel
 chrome.action.onClicked.addListener((tab) => {
@@ -20,7 +59,7 @@ chrome.action.onClicked.addListener((tab) => {
 });
 
 // Clean up when debugger is detached (user closes tab, etc.)
-chrome.debugger.onDetach.addListener((source, reason) => {
+chrome.debugger.onDetach.addListener((source, _reason) => {
 	if (source.tabId) {
 		attachedDebuggers.delete(source.tabId);
 	}
@@ -29,18 +68,25 @@ chrome.debugger.onDetach.addListener((source, reason) => {
 // Listen for messages from content script or popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	// Debug: Log all messages to see sender info
-	console.log("[BACKGROUND] 📨 Received:", message.type, "hasTab:", !!sender.tab);
+	console.log(
+		"[BACKGROUND] 📨 Received:",
+		message.type,
+		"hasTab:",
+		!!sender.tab,
+	);
 
 	// Store source tab for execution messages (needed for completion routing)
 	// Content script's sendMessage already broadcasts to all extension contexts, no need to re-broadcast
 	if (
-		sender.tab &&
-		sender.tab.id &&
+		sender.tab?.id &&
 		(message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT" ||
 			message.type === "EXECUTE_PLAYWRIGHT_SCRIPT")
 	) {
 		executionSourceTabId = sender.tab.id;
-		console.log("[BACKGROUND] 📍 Stored execution source tab:", executionSourceTabId);
+		console.log(
+			"[BACKGROUND] 📍 Stored execution source tab:",
+			executionSourceTabId,
+		);
 		sendResponse({ success: true });
 		return true;
 	}
@@ -70,19 +116,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	if (!sender.tab && message.type === "SCRIPT_EXECUTION_COMPLETE") {
 		// Send ONLY to the tab that initiated execution, not all tabs
 		if (executionSourceTabId) {
-			console.log("[BACKGROUND] 📤 Sending completion to source tab:", executionSourceTabId);
+			console.log(
+				"[BACKGROUND] 📤 Sending completion to source tab:",
+				executionSourceTabId,
+			);
 			chrome.tabs
 				.sendMessage(executionSourceTabId, message)
 				.then(() => {
-					console.log("[BACKGROUND] ✅ Sent completion to source tab:", executionSourceTabId);
+					console.log(
+						"[BACKGROUND] ✅ Sent completion to source tab:",
+						executionSourceTabId,
+					);
 					executionSourceTabId = null; // Clear after sending
 				})
 				.catch((error) => {
-					console.error("[BACKGROUND] ❌ Failed to send completion:", error);
+					console.error(
+						"[BACKGROUND] ❌ Failed to send completion:",
+						error,
+					);
 					executionSourceTabId = null;
 				});
 		} else {
-			console.warn("[BACKGROUND] ⚠️ No source tab stored, cannot send completion");
+			console.warn(
+				"[BACKGROUND] ⚠️ No source tab stored, cannot send completion",
+			);
 		}
 
 		sendResponse({ success: true });
@@ -97,10 +154,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	) {
 		// Track panel state
 		if (message.type === "SMSS_EXTENSION_PANEL_OPENED") {
-			isPanelOpen = true;
+			_isPanelOpen = true;
 			console.log("[BACKGROUND] 📢 Panel opened, state updated");
 		} else {
-			isPanelOpen = false;
+			_isPanelOpen = false;
 			console.log("[BACKGROUND] 📢 Panel closed, state updated");
 		}
 
@@ -126,20 +183,67 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 	// Handle panel state check from content script
 	// Ping the panel directly to verify it's actually alive
 	if (message.type === "CHECK_PANEL_STATE") {
-		console.log("[BACKGROUND] 🔍 Panel state check requested, pinging panel...");
+		console.log(
+			"[BACKGROUND] 🔍 Panel state check requested, pinging panel...",
+		);
 
 		// Try to send a message to the panel to see if it responds
 		chrome.runtime.sendMessage({ type: "PANEL_PING_CHECK" }, (response) => {
 			const actuallyOpen = !!response && response.alive === true;
-			console.log("[BACKGROUND] Panel ping response:", actuallyOpen ? "Panel is alive" : "Panel not responding");
+			console.log(
+				"[BACKGROUND] Panel ping response:",
+				actuallyOpen ? "Panel is alive" : "Panel not responding",
+			);
 
 			// Update cached state based on actual response
-			isPanelOpen = actuallyOpen;
+			_isPanelOpen = actuallyOpen;
 
 			sendResponse({ isPanelOpen: actuallyOpen });
 		});
 
 		return true; // Async response
+	}
+
+	// Handle recording-related messages
+	if (message.type === "EVENT") {
+		_handleRecordingEvent(message.data as EventMessage, sender.tab?.id);
+		sendResponse({ success: true });
+		return true;
+	}
+
+	if (message.type === "START_RECORDING") {
+		_handleStartRecording(message.tabId || sender.tab?.id);
+		sendResponse({ success: true });
+		return true;
+	}
+
+	if (message.type === "STOP_RECORDING") {
+		_handleStopRecording();
+		sendResponse({ success: true });
+		return true;
+	}
+
+	if (message.type === "PAUSE_RECORDING") {
+		_handlePauseRecording();
+		sendResponse({ success: true });
+		return true;
+	}
+
+	if (message.type === "RESUME_RECORDING") {
+		_handleResumeRecording();
+		sendResponse({ success: true });
+		return true;
+	}
+
+	if (message.type === "GET_RECORDING_STATE") {
+		sendResponse({ success: true, state: recordingState });
+		return true;
+	}
+
+	if (message.type === "DOWNLOAD_SCRIPT") {
+		// This will be handled by the panel UI
+		sendResponse({ success: true, actions: recordingState.actionsList });
+		return true;
 	}
 
 	// Forward field monitoring messages from panel to specific tab
@@ -235,7 +339,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 		case "EXECUTE_SCRIPT_ACTION":
 			// Execute script-based actions (from JSON)
-			executeScriptAction(message.tabId, message.action, message.payload)
+			_executeScriptAction(message.tabId, message.action, message.payload)
 				.then((result) => sendResponse({ success: true, result }))
 				.catch((error) =>
 					sendResponse({ success: false, error: error.message }),
@@ -253,7 +357,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 		case "REMOVE_HIGHLIGHT":
 			// Remove highlight from a field on the webpage
-			removeHighlight(message.tabId, message.selector)
+			_removeHighlight(message.tabId, message.selector)
 				.then(() => sendResponse({ success: true }))
 				.catch((error) =>
 					sendResponse({ success: false, error: error.message }),
@@ -383,7 +487,7 @@ async function highlightElement(
 	selector: string,
 ): Promise<void> {
 	const maxRetries = 5;
-	let lastError: string | undefined;
+	let _lastError: string | undefined;
 
 	for (let attempt = 1; attempt <= maxRetries; attempt++) {
 		try {
@@ -427,9 +531,9 @@ async function highlightElement(
 				return; // Success, exit function
 			}
 
-			lastError = result?.result?.value?.error || "Unknown error";
+			_lastError = result?.result?.value?.error || "Unknown error";
 		} catch (error) {
-			lastError =
+			_lastError =
 				error instanceof Error ? error.message : "Unknown error";
 		}
 
@@ -444,7 +548,10 @@ async function highlightElement(
 }
 
 // Remove highlight from an element
-async function removeHighlight(tabId: number, selector: string): Promise<void> {
+async function _removeHighlight(
+	tabId: number,
+	selector: string,
+): Promise<void> {
 	try {
 		await sendDebuggerCommand(tabId, "Runtime.evaluate", {
 			expression: `
@@ -477,7 +584,7 @@ async function removeHighlight(tabId: number, selector: string): Promise<void> {
 }
 
 // Execute script-based actions (from Playwright JSON)
-async function executeScriptAction(
+async function _executeScriptAction(
 	tabId: number,
 	action: string,
 	payload: Record<string, unknown>,
@@ -732,3 +839,731 @@ async function typeByCoords(
 		await wait(50); // Small delay between keystrokes
 	}
 }
+
+// ============================================================================
+// Recording Functions
+// ============================================================================
+
+/**
+ * Handle incoming recording event from content script
+ */
+function _handleRecordingEvent(
+	eventMessage: EventMessage,
+	tabId?: number,
+): void {
+	// Skip if not recording or paused
+	if (!recordingState.isRecording || recordingState.isPaused) {
+		return;
+	}
+
+	console.log(
+		"[BACKGROUND] 📹 Recording event:",
+		eventMessage.action,
+		eventMessage.tagName,
+	);
+
+	// ORDERING FIX: Process any pending blur event before handling non-blur events
+	// This ensures blur events (text input completion) are recorded before the events that caused them (like button clicks)
+	if (eventMessage.action !== "blur" && pendingBlurEvent) {
+		console.log(
+			"[BACKGROUND] ⏩ Flushing pending blur event before processing",
+			eventMessage.action,
+		);
+		const pending = pendingBlurEvent;
+		pendingBlurEvent = null;
+		clearTimeout(pending.timeout);
+		processBlurEvent(pending.event, pending.tabId);
+	}
+
+	// ISSUE 1 FIX: Filter out initial navigation events AND deduplicate navigations
+	if (eventMessage.tagName === "NAVIGATE" || eventMessage.action === "load") {
+		const currentUrl =
+			eventMessage.url ||
+			(typeof eventMessage.value === "string" ? eventMessage.value : "");
+
+		// Skip if navigating to the same page where recording started
+		if (
+			initialRecordingUrl &&
+			(currentUrl === initialRecordingUrl ||
+				currentUrl.startsWith(initialRecordingUrl))
+		) {
+			console.log(
+				"[BACKGROUND] ⏭️ Skipping initial navigation event:",
+				currentUrl,
+			);
+			return;
+		}
+
+		// Skip duplicate navigation URLs
+		if (currentUrl === lastRecordedNavigationUrl) {
+			console.log(
+				"[BACKGROUND] ⏭️ Skipping duplicate navigation event:",
+				currentUrl,
+			);
+			return;
+		}
+
+		// Record the navigation and update last URL
+		const action = convertEventToAction(eventMessage, tabId);
+		recordingState.actionsList.push(action);
+		recordingState.actionCounter++;
+		lastRecordedNavigationUrl = currentUrl;
+		saveRecordingState();
+		broadcastStateUpdate();
+		console.log("[BACKGROUND] 🌐 Recorded NAVIGATE:", currentUrl);
+		return;
+	}
+
+	// ISSUE 2 FIX: Handle blur events for text input (captures final value when user leaves field)
+	// Queue blur events with a small delay to ensure proper ordering with subsequent events
+	if (eventMessage.action === "blur") {
+		// Only record blur for TEXT-BASED input fields (not buttons, checkboxes, etc.)
+		if (eventMessage.tagName === "INPUT") {
+			const inputType =
+				eventMessage.eventTypeAttr?.toLowerCase() || "text";
+
+			// Only process text-based input types
+			const textInputTypes = [
+				"text",
+				"password",
+				"email",
+				"tel",
+				"url",
+				"search",
+				"number",
+			];
+			if (!textInputTypes.includes(inputType)) {
+				console.log(
+					"[BACKGROUND] ⏭️ Skipping blur for non-text input type:",
+					inputType,
+				);
+				return;
+			}
+		} else if (eventMessage.tagName !== "TEXTAREA") {
+			// Only INPUT (text-based) and TEXTAREA are valid for TYPE recording
+			console.log(
+				"[BACKGROUND] ⏭️ Skipping blur for non-input element:",
+				eventMessage.tagName,
+			);
+			return;
+		}
+
+		const value =
+			typeof eventMessage.value === "string" ? eventMessage.value : "";
+
+		// Skip if empty value
+		if (!value || value.trim() === "") {
+			console.log("[BACKGROUND] ⏭️ Skipping blur event with empty value");
+			return;
+		}
+
+		// Clear any existing pending blur and queue this one
+		if (pendingBlurEvent) {
+			clearTimeout(pendingBlurEvent.timeout);
+		}
+
+		// Queue blur event with 50ms delay to allow reordering before clicks
+		console.log(
+			"[BACKGROUND] ⏸️ Queueing blur event (50ms delay for ordering)",
+		);
+		const timeout = setTimeout(() => {
+			if (pendingBlurEvent) {
+				console.log(
+					"[BACKGROUND] ⏰ Processing queued blur event (timeout)",
+				);
+				processBlurEvent(
+					pendingBlurEvent.event,
+					pendingBlurEvent.tabId,
+				);
+				pendingBlurEvent = null;
+			}
+		}, 50) as unknown as number;
+
+		pendingBlurEvent = { event: eventMessage, tabId, timeout };
+		return;
+	}
+
+	// Skip keyup and change events - we use blur instead
+	if (eventMessage.action === "keyup" || eventMessage.action === "change") {
+		console.log(
+			"[BACKGROUND] ⏭️ Skipping keyup/change event (using blur instead)",
+		);
+		return;
+	}
+
+	// FORM SUBMIT FIX: Skip form submit events that occur right after submit button clicks
+	// Forms can't be "clicked" - they're submitted via buttons. Recording both causes execution errors.
+	if (eventMessage.action === "submit" && eventMessage.tagName === "FORM") {
+		const timeSinceLastSubmitClick = Date.now() - lastSubmitButtonClickTime;
+		if (timeSinceLastSubmitClick < 100) {
+			console.log(
+				"[BACKGROUND] ⏭️ Skipping redundant form submit event (submit button just clicked)",
+			);
+			return;
+		}
+	}
+
+	// Track submit button clicks (to filter out subsequent form submit events)
+	if (
+		(eventMessage.action === "click" ||
+			eventMessage.action === "dblclick") &&
+		eventMessage.tagName === "INPUT"
+	) {
+		const inputType = eventMessage.eventTypeAttr?.toLowerCase() || "";
+		if (inputType === "submit" || inputType === "button") {
+			lastSubmitButtonClickTime = Date.now();
+			console.log(
+				"[BACKGROUND] 📝 Recorded submit button click time for form submit filtering",
+			);
+		}
+	}
+
+	// Store coords from CLICK events on input fields for merging with TYPE action
+	// But still record the CLICK event
+	if (
+		(eventMessage.action === "click" ||
+			eventMessage.action === "dblclick") &&
+		eventMessage.tagName === "INPUT"
+	) {
+		const inputType = eventMessage.eventTypeAttr?.toLowerCase() || "text";
+		const textInputTypes = [
+			"text",
+			"password",
+			"email",
+			"tel",
+			"url",
+			"search",
+			"number",
+		];
+
+		if (textInputTypes.includes(inputType)) {
+			// Store coords for later merging with TYPE action
+			if (
+				eventMessage.clientX !== undefined &&
+				eventMessage.clientY !== undefined
+			) {
+				const selector = eventMessage.selector?.join("|") || "";
+				lastInputClickCoords.set(selector, {
+					x: eventMessage.clientX,
+					y: eventMessage.clientY,
+				});
+				console.log(
+					"[BACKGROUND] 📍 Stored click coords for input field, will also merge with TYPE",
+				);
+			}
+			// Continue to record the CLICK action below (don't return)
+		}
+	}
+
+	// For all other events (click, dblclick, submit, etc.), record immediately
+	const action = convertEventToAction(eventMessage, tabId);
+	recordingState.actionsList.push(action);
+	recordingState.actionCounter++;
+	saveRecordingState();
+	broadcastStateUpdate();
+}
+
+/**
+ * Process a blur event and record TYPE action
+ */
+function processBlurEvent(eventMessage: EventMessage, tabId?: number): void {
+	const value =
+		typeof eventMessage.value === "string" ? eventMessage.value : "";
+	const selector = eventMessage.selector?.join("|") || "";
+
+	// Skip if this exact value was already recorded for this selector (deduplication)
+	const lastRecorded = lastTypeActions.get(selector);
+	if (lastRecorded === value) {
+		console.log("[BACKGROUND] ⏭️ Skipping duplicate TYPE:", value);
+		return;
+	}
+
+	// Record the TYPE action
+	const action = convertEventToAction(eventMessage, tabId);
+	action.type = "TYPE"; // Ensure it's marked as TYPE
+	action.text = value;
+
+	// Merge click coordinates if available (from earlier click on input field)
+	const storedCoords = lastInputClickCoords.get(selector);
+	if (storedCoords) {
+		action.coords = storedCoords;
+		lastInputClickCoords.delete(selector); // Clean up after use
+		console.log("[BACKGROUND] 📍 Merged click coords with TYPE action");
+	}
+
+	recordingState.actionsList.push(action);
+	recordingState.actionCounter++;
+
+	// Remember this action to prevent duplicates
+	lastTypeActions.set(selector, value);
+
+	saveRecordingState();
+	broadcastStateUpdate();
+	console.log("[BACKGROUND] ⌨️ Recorded TYPE action (on blur):", value);
+}
+
+/**
+ * Convert EventMessage from content script to RecordedAction
+ */
+function convertEventToAction(
+	event: EventMessage,
+	tabId?: number,
+): RecordedAction {
+	const action: RecordedAction = {
+		type: mapEventTypeToActionType(event),
+		selector: event.selector,
+		timestamp: event.timeStamp,
+		tabId: tabId,
+		eventData: {
+			tagName: event.tagName,
+			eventType: event.action,
+			eventTypeAttr: event.eventTypeAttr, // Input type or element type
+			keyCode: event.keyCode,
+			href: event.href,
+			checked: event.checked,
+		},
+	};
+
+	// Handle navigation
+	if (event.tagName === "NAVIGATE" || event.action === "load") {
+		action.type = "NAVIGATE";
+		action.url =
+			event.url || (typeof event.value === "string" ? event.value : "");
+		action.waitAfterMs = 1000; // Default wait after navigation
+	}
+
+	// Handle clicks
+	if (event.action === "click" || event.action === "dblclick") {
+		if (event.clientX !== undefined && event.clientY !== undefined) {
+			action.coords = {
+				x: event.clientX,
+				y: event.clientY,
+			};
+		}
+		action.waitAfterMs = 200; // Small wait after click
+	}
+
+	// Handle text input
+	if (event.action === "change" || event.action === "keyup") {
+		if (event.value && typeof event.value === "string") {
+			action.text = event.value;
+			action.type = "TYPE";
+		}
+	}
+
+	// Handle select/checkbox/radio
+	if (event.tagName === "SELECT" || event.eventTypeAttr === "select") {
+		action.type = "SELECT";
+		action.text =
+			typeof event.value === "string"
+				? event.value
+				: JSON.stringify(event.value);
+	}
+
+	if (event.eventTypeAttr === "checkbox") {
+		action.type = event.checked ? "CHECK" : "UNCHECK";
+	}
+
+	// Handle submit - convert to CLICK (backend doesn't support SUBMIT type)
+	if (event.action === "submit") {
+		action.type = "CLICK";
+		action.waitAfterMs = 1000;
+	}
+
+	// Build parameters for Playwright format compatibility
+	action.parameters = [];
+
+	if (action.selector && action.selector.length > 0) {
+		action.parameters.push({
+			name: "selector",
+			value: action.selector,
+			type: "selector",
+		});
+	}
+
+	if (action.text) {
+		action.parameters.push({
+			name: "value",
+			value: action.text,
+			type: "string",
+		});
+	}
+
+	if (action.coords) {
+		action.parameters.push({
+			name: "coords",
+			value: action.coords,
+			type: "object",
+		});
+	}
+
+	return action;
+}
+
+/**
+ * Map DOM event type to RecordedActionType
+ */
+function mapEventTypeToActionType(event: EventMessage): RecordedActionType {
+	switch (event.action) {
+		case "click":
+			return "CLICK";
+		case "dblclick":
+			return "DBLCLICK";
+		case "change":
+		case "keyup":
+			return "TYPE";
+		case "select":
+			return "SELECT";
+		case "submit":
+			return "CLICK";
+		case "load":
+			return "NAVIGATE";
+		default:
+			return "CLICK";
+	}
+}
+
+/**
+ * Start recording
+ */
+async function _handleStartRecording(tabId?: number): Promise<void> {
+	console.log("[BACKGROUND] 🎬 Starting recording on tab:", tabId);
+
+	// Clear previous recording tabs and tracking maps
+	recordingTabs.clear();
+	lastTypeActions.clear();
+	lastRecordedNavigationUrl = null;
+	lastSubmitButtonClickTime = 0;
+
+	// Get the current tab URL to filter out initial navigation
+	if (tabId) {
+		try {
+			const tab = await chrome.tabs.get(tabId);
+			initialRecordingUrl = tab.url || null;
+			console.log(
+				"[BACKGROUND] 🏷️ Initial recording URL:",
+				initialRecordingUrl,
+			);
+		} catch (_err) {
+			initialRecordingUrl = null;
+		}
+	} else {
+		initialRecordingUrl = null;
+	}
+
+	recordingState = {
+		isRecording: true,
+		isPaused: false,
+		isStopped: false,
+		actionsList: [],
+		actionCounter: 0,
+		startedAt: Date.now(),
+		currentTabId: tabId,
+	};
+
+	await saveRecordingState();
+
+	// Track the starting tab
+	if (tabId) {
+		recordingTabs.add(tabId);
+	}
+
+	// Inject content script and notify ALL tabs to start recording
+	chrome.tabs.query({}).then(async (tabs) => {
+		console.log(
+			`[BACKGROUND] Injecting content script and notifying ${tabs.length} tabs`,
+		);
+
+		for (const tab of tabs) {
+			if (
+				tab.id &&
+				tab.url &&
+				!tab.url.startsWith("chrome://") &&
+				!tab.url.startsWith("chrome-extension://")
+			) {
+				recordingTabs.add(tab.id);
+
+				try {
+					// Try to inject content script (will fail if already injected, that's ok)
+					await chrome.scripting
+						.executeScript({
+							target: { tabId: tab.id },
+							files: ["src/content/index.ts"],
+						})
+						.catch(() => {
+							// Already injected or not allowed, that's fine
+						});
+
+					// Small delay to ensure content script is ready
+					await new Promise((resolve) => setTimeout(resolve, 100));
+
+					// Now send START_RECORDING message
+					await chrome.tabs
+						.sendMessage(tab.id, {
+							type: "START_RECORDING",
+							timestamp: Date.now(),
+						})
+						.catch((_err) => {
+							console.log(
+								`[BACKGROUND] Tab ${tab.id} (${tab.url}) not ready for recording`,
+							);
+						});
+				} catch (error) {
+					console.log(
+						`[BACKGROUND] Could not inject into tab ${tab.id}:`,
+						error,
+					);
+				}
+			}
+		}
+	});
+
+	broadcastStateUpdate();
+}
+
+/**
+ * Stop recording
+ */
+async function _handleStopRecording(): Promise<void> {
+	console.log("[BACKGROUND] ⏹️ Stopping recording");
+
+	// Flush any pending blur event before stopping
+	if (pendingBlurEvent) {
+		console.log("[BACKGROUND] ⏩ Flushing pending blur event on stop");
+		const pending = pendingBlurEvent;
+		pendingBlurEvent = null;
+		clearTimeout(pending.timeout);
+		processBlurEvent(pending.event, pending.tabId);
+	}
+
+	// Clear tracking maps
+	lastTypeActions.clear();
+	lastInputClickCoords.clear();
+
+	recordingState.isRecording = false;
+	recordingState.isStopped = true;
+	initialRecordingUrl = null; // Clear initial URL
+	lastRecordedNavigationUrl = null; // Clear last navigation URL
+
+	await saveRecordingState();
+
+	// Notify all tabs that were part of recording to cleanup EventRecorder
+	if (recordingTabs.size > 0) {
+		recordingTabs.forEach((tabId) => {
+			chrome.tabs
+				.sendMessage(tabId, { type: "STOP_RECORDING" })
+				.catch((err) => {
+					console.error(
+						"[BACKGROUND] Failed to notify tab:",
+						tabId,
+						err,
+					);
+				});
+		});
+		// Clear tracking set
+		recordingTabs.clear();
+	} else if (recordingState.currentTabId) {
+		// Fallback: notify the current tab
+		chrome.tabs
+			.sendMessage(recordingState.currentTabId, {
+				type: "STOP_RECORDING",
+			})
+			.catch((err) => {
+				console.error(
+					"[BACKGROUND] Failed to notify content script:",
+					err,
+				);
+			});
+	}
+
+	broadcastStateUpdate();
+}
+
+/**
+ * Pause recording
+ */
+async function _handlePauseRecording(): Promise<void> {
+	console.log("[BACKGROUND] ⏸️ Pausing recording");
+
+	recordingState.isPaused = true;
+	await saveRecordingState();
+
+	if (recordingState.currentTabId) {
+		chrome.tabs
+			.sendMessage(recordingState.currentTabId, {
+				type: "PAUSE_RECORDING",
+			})
+			.catch(() => {});
+	}
+
+	broadcastStateUpdate();
+}
+
+/**
+ * Resume recording
+ */
+async function _handleResumeRecording(): Promise<void> {
+	console.log("[BACKGROUND] ▶️ Resuming recording");
+
+	recordingState.isPaused = false;
+	await saveRecordingState();
+
+	if (recordingState.currentTabId) {
+		chrome.tabs
+			.sendMessage(recordingState.currentTabId, {
+				type: "RESUME_RECORDING",
+			})
+			.catch(() => {});
+	}
+
+	broadcastStateUpdate();
+}
+
+/**
+ * Save recording state to Chrome storage
+ */
+async function saveRecordingState(): Promise<void> {
+	try {
+		await chrome.storage.local.set({
+			isRecording: recordingState.isRecording,
+			isPaused: recordingState.isPaused,
+			isStopped: recordingState.isStopped,
+			actionsList: recordingState.actionsList,
+			actionCounter: recordingState.actionCounter,
+			startedAt: recordingState.startedAt,
+			currentTabId: recordingState.currentTabId,
+		});
+	} catch (error) {
+		console.error("[BACKGROUND] Failed to save recording state:", error);
+	}
+}
+
+/**
+ * Load recording state from Chrome storage
+ */
+async function loadRecordingState(): Promise<void> {
+	try {
+		const data = await chrome.storage.local.get([
+			"isRecording",
+			"isPaused",
+			"isStopped",
+			"actionsList",
+			"actionCounter",
+			"startedAt",
+			"currentTabId",
+		]);
+
+		if (data) {
+			recordingState = {
+				isRecording: data.isRecording || false,
+				isPaused: data.isPaused || false,
+				isStopped: data.isStopped || false,
+				actionsList: data.actionsList || [],
+				actionCounter: data.actionCounter || 0,
+				startedAt: data.startedAt,
+				currentTabId: data.currentTabId,
+			};
+		}
+	} catch (error) {
+		console.error("[BACKGROUND] Failed to load recording state:", error);
+	}
+}
+
+/**
+ * Broadcast state update to panel/popup and ALL tabs
+ */
+function broadcastStateUpdate(): void {
+	const message = {
+		type: "STATE_UPDATE",
+		state: recordingState,
+	};
+
+	// Send to extension context (panel, popup, etc.)
+	chrome.runtime.sendMessage(message).catch(() => {
+		// No listeners, that's okay
+	});
+
+	// Send to ALL tabs (for toolbar sync across all tabs)
+	chrome.tabs.query({}).then((tabs) => {
+		tabs.forEach((tab) => {
+			if (tab.id) {
+				chrome.tabs.sendMessage(tab.id, message).catch(() => {
+					// Tab might not have content script, that's okay
+				});
+			}
+		});
+	});
+}
+
+/**
+ * Track tabs involved in recording
+ */
+const recordingTabs = new Set<number>();
+
+/**
+ * Listen for new tabs being created during recording
+ */
+chrome.tabs.onCreated.addListener((tab) => {
+	// If recording is active, track this new tab
+	if (recordingState.isRecording && !recordingState.isPaused && tab.id) {
+		console.log(
+			"[BACKGROUND] 📑 New tab created during recording:",
+			tab.id,
+		);
+		recordingTabs.add(tab.id);
+	}
+});
+
+/**
+ * Listen for tabs being updated (loading, complete, etc.)
+ */
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+	// Check if recording is active and this tab is part of the recording
+	if (recordingState.isRecording && !recordingState.isPaused) {
+		// When a page finishes loading during recording, inject recorder
+		if (changeInfo.status === "complete") {
+			// Add to recording tabs if not already tracked
+			recordingTabs.add(tabId);
+
+			console.log(
+				"[BACKGROUND] 📄 Tab finished loading during recording:",
+				tabId,
+				tab.url,
+			);
+
+			// Send START_RECORDING message to activate the recorder in this tab
+			// Add a small delay to ensure content script is fully loaded
+			setTimeout(() => {
+				chrome.tabs
+					.sendMessage(tabId, {
+						type: "START_RECORDING",
+						timestamp: Date.now(),
+					})
+					.then(() => {
+						console.log(
+							"[BACKGROUND] ✅ Recorder activated in tab:",
+							tabId,
+						);
+					})
+					.catch((err) => {
+						console.error(
+							"[BACKGROUND] ❌ Failed to activate recorder in tab:",
+							tabId,
+							err,
+						);
+					});
+			}, 100);
+		}
+	}
+});
+
+/**
+ * Listen for tabs being removed to clean up tracking
+ */
+chrome.tabs.onRemoved.addListener((tabId) => {
+	recordingTabs.delete(tabId);
+	attachedDebuggers.delete(tabId);
+});
+
+// Load recording state on startup
+loadRecordingState();

@@ -5,7 +5,10 @@ import {
 	type PlaywrightScript,
 	ScriptExecutor,
 } from "../services/scriptExecutor";
+import { RecordingPanel } from "./components/RecordingPanel";
 import { WelcomeState } from "./components/WelcomeState";
+
+type PanelMode = "execution" | "recording";
 
 interface ChromeMessage {
 	type: string;
@@ -25,6 +28,7 @@ interface ChromeMessage {
 }
 
 const PanelApp: React.FC = () => {
+	const [mode, setMode] = useState<PanelMode>("execution");
 	const [isLoading, setIsLoading] = useState(true);
 	const [isRunning, setIsRunning] = useState(false);
 	const [isPaused, setIsPaused] = useState(false);
@@ -36,9 +40,6 @@ const PanelApp: React.FC = () => {
 	const [userInputCallback, setUserInputCallback] = useState<
 		((value: string) => void) | null
 	>(null);
-	const [_mode, setMode] = useState<"script">("script");
-	const [_scriptJson, _setScriptJson] = useState("");
-	const [_jsonFormat, _setJsonFormat] = useState<"playwright">("playwright");
 
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
 
@@ -56,6 +57,9 @@ const PanelApp: React.FC = () => {
 	const tabActivatedListenerRef = useRef<
 		((activeInfo: chrome.tabs.TabActiveInfo) => void) | null
 	>(null);
+	// Message queue for messages received before panel is ready
+	const messageQueueRef = useRef<ChromeMessage[]>([]);
+	const listenerReadyRef = useRef<boolean>(false);
 
 	// Real-time input mirroring state
 	const [currentSelector, setCurrentSelector] = useState<string | null>(null);
@@ -112,11 +116,26 @@ const PanelApp: React.FC = () => {
 		) => {
 			console.log("[PANEL] 📨 Received message:", message.type, message);
 
-			// Respond to panel ping checks from background
+			// Respond to panel ping checks IMMEDIATELY (even if listener not fully ready)
+			// This prevents "Extension Required" popup from showing
 			if (message.type === "PANEL_PING_CHECK") {
 				console.log("[PANEL] 📨 Received ping check, responding...");
 				sendResponse({ alive: true });
 				return true;
+			}
+
+			// If listener isn't ready yet, queue execution messages
+			if (
+				!listenerReadyRef.current &&
+				(message.type === "EXECUTE_PLAYWRIGHT_SCRIPT" ||
+					message.type === "SMSS_EXEC_PLAYWRIGHT_SCRIPT")
+			) {
+				console.log(
+					"[PANEL] 📥 Queuing message (listener not ready):",
+					message.type,
+				);
+				messageQueueRef.current.push(message);
+				return;
 			}
 
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
@@ -306,6 +325,20 @@ const PanelApp: React.FC = () => {
 								throw new Error("No script content returned");
 							}
 
+							// Check if response is an error message instead of valid JSON
+							if (
+								typeof scriptContent === "string" &&
+								scriptContent.startsWith("Failed to")
+							) {
+								console.error(
+									"[PANEL] ⚠️ Backend error:",
+									scriptContent,
+								);
+								throw new Error(
+									`Backend error: ${scriptContent}`,
+								);
+							}
+
 							console.log(
 								"[PANEL] ✅ Script fetched successfully",
 							);
@@ -319,6 +352,9 @@ const PanelApp: React.FC = () => {
 									console.error(
 										"[PANEL] ❌ Failed to parse script:",
 										e,
+									);
+									throw new Error(
+										`Invalid JSON: ${e instanceof Error ? e.message : String(e)}`,
 									);
 								}
 							}
@@ -451,6 +487,18 @@ const PanelApp: React.FC = () => {
 							throw new Error("No script content returned");
 						}
 
+						// Check if response is an error message instead of valid JSON
+						if (
+							typeof scriptContent === "string" &&
+							scriptContent.startsWith("Failed to")
+						) {
+							console.error(
+								"[PANEL] ⚠️ Backend error:",
+								scriptContent,
+							);
+							throw new Error(`Backend error: ${scriptContent}`);
+						}
+
 						console.log("[PANEL] ✅ Script fetched successfully");
 
 						// Parse and set the script
@@ -462,6 +510,9 @@ const PanelApp: React.FC = () => {
 								console.error(
 									"[PANEL] ❌ Failed to parse script:",
 									e,
+								);
+								throw new Error(
+									`Invalid JSON: ${e instanceof Error ? e.message : String(e)}`,
 								);
 							}
 						}
@@ -531,8 +582,33 @@ const PanelApp: React.FC = () => {
 		chrome.runtime.onMessage.addListener(messageListener);
 		console.log("[PANEL] ✅ Message listener registered");
 
+		// Mark listener as ready
+		listenerReadyRef.current = true;
+
+		// Process any queued messages
+		if (messageQueueRef.current.length > 0) {
+			console.log(
+				`[PANEL] 📤 Processing ${messageQueueRef.current.length} queued message(s)`,
+			);
+			const queuedMessages = [...messageQueueRef.current];
+			messageQueueRef.current = [];
+
+			for (const queuedMessage of queuedMessages) {
+				console.log(
+					"[PANEL] ▶️ Processing queued message:",
+					queuedMessage.type,
+				);
+				messageListener(
+					queuedMessage,
+					{} as chrome.runtime.MessageSender,
+					() => {},
+				);
+			}
+		}
+
 		return () => {
 			console.log("[PANEL] 🔇 Removing message listener");
+			listenerReadyRef.current = false;
 		};
 	}, []); // No dependencies - listener stays stable throughout component lifecycle
 
@@ -1153,242 +1229,360 @@ const PanelApp: React.FC = () => {
 		<div className="panel-container">
 			<div className="panel-header">
 				<Typography variant="h1">Browser Automation</Typography>
-				{isPaused && (
-					<Box
-						sx={{
-							ml: 2,
-							px: 2,
-							py: 0.75,
-							borderRadius: 2,
-							bgColor: "rgba(255, 152, 0, 0.15)",
-							border: "1.5px solid rgba(255, 152, 0, 0.8)",
-							color: "#ffffff",
-							display: "inline-flex",
-							alignItems: "center",
-							gap: 0.75,
-							boxShadow: "0 2px 8px rgba(255, 152, 0, 0.3)",
-						}}
-					>
-						<Typography
-							variant="body2"
-							sx={{
-								fontWeight: 700,
-								fontSize: "0.8125rem",
-								letterSpacing: "0.5px",
-							}}
-						>
-							⏸️ PAUSED
-						</Typography>
-					</Box>
-				)}
 			</div>
 
-			<div className="panel-content">
-				{/* Welcome State - shown when no script is running */}
-				{!isRunning && actionHistory.length === 0 && <WelcomeState />}
-
-				{/* Action History */}
-				{actionHistory.length > 0 && (
-					<Box sx={{ width: "100%" }}>
-						<Card
-							sx={{
-								width: "100%",
-								p: 2.5,
-								border: "1px solid",
-								borderColor: "divider",
-								minHeight: "calc(100vh - 180px)",
-								maxHeight: "calc(100vh - 180px)",
-								overflowY: "auto",
-								backgroundColor: "background.paper",
-								boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-							}}
-						>
-							<Typography
-								variant="h4"
-								sx={{
-									mb: 2,
-									fontWeight: 600,
-									fontSize: "0.9375rem",
+			{/* Mode Switcher */}
+			<Box sx={{ display: "flex", gap: 1.5, p: 2.5, pt: 1.5 }}>
+				<Button
+					variant={mode === "execution" ? "contained" : "outlined"}
+					onClick={() => setMode("execution")}
+					fullWidth
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						py: 1.25,
+						borderRadius: "10px",
+						transition: "all 0.3s ease",
+						...(mode === "execution"
+							? {
+									background:
+										"linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+									boxShadow:
+										"0 4px 12px rgba(99, 102, 241, 0.3)",
+									"&:hover": {
+										background:
+											"linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)",
+										boxShadow:
+											"0 6px 20px rgba(99, 102, 241, 0.4)",
+										transform: "translateY(-1px)",
+									},
+								}
+							: {
+									borderWidth: "2px",
+									borderColor: "rgba(0,0,0,0.12)",
 									color: "text.secondary",
-									textTransform: "uppercase",
-									letterSpacing: "0.5px",
-								}}
-							>
-								Execution Log
-							</Typography>
-							<Stack spacing={0.75}>
-								{actionHistory.map((action, index) => {
-									const isError = action.startsWith("❌");
-									const isSuccess = action.startsWith("✅");
-									const isCheckmark = action.startsWith("✓");
-									const isNumbered = action.match(/^\d+\./);
-									const isUserInput = action.includes(
-										"User provided input",
-									);
+									"&:hover": {
+										borderWidth: "2px",
+										borderColor: "#6366f1",
+										backgroundColor:
+											"rgba(99, 102, 241, 0.04)",
+										transform: "translateY(-1px)",
+										boxShadow:
+											"0 4px 12px rgba(99, 102, 241, 0.15)",
+									},
+								}),
+					}}
+				>
+					⚡ Execute Scripts
+				</Button>
+				<Button
+					variant={mode === "recording" ? "contained" : "outlined"}
+					onClick={() => setMode("recording")}
+					fullWidth
+					sx={{
+						textTransform: "none",
+						fontWeight: 600,
+						py: 1.25,
+						borderRadius: "10px",
+						transition: "all 0.3s ease",
+						...(mode === "recording"
+							? {
+									background:
+										"linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+									boxShadow:
+										"0 4px 12px rgba(37, 99, 235, 0.3)",
+									"&:hover": {
+										background:
+											"linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)",
+										boxShadow:
+											"0 6px 20px rgba(37, 99, 235, 0.4)",
+										transform: "translateY(-1px)",
+									},
+								}
+							: {
+									borderWidth: "2px",
+									borderColor: "rgba(0,0,0,0.12)",
+									color: "text.secondary",
+									"&:hover": {
+										borderWidth: "2px",
+										borderColor: "#2563eb",
+										backgroundColor:
+											"rgba(37, 99, 235, 0.04)",
+										transform: "translateY(-1px)",
+										boxShadow:
+											"0 4px 12px rgba(37, 99, 235, 0.15)",
+									},
+								}),
+					}}
+				>
+					🎬 Record Script
+				</Button>
+			</Box>
 
-									return (
-										<Box
-											key={`action-${index}-${action.substring(0, 20)}`}
-											sx={{
-												py: 1,
-												px: 1.5,
-												borderRadius: 1.5,
-												border: "1px solid",
-												borderColor: isError
-													? "error.light"
-													: isSuccess
-														? "success.light"
-														: isCheckmark
-															? "rgba(76, 175, 80, 0.3)"
-															: "divider",
-												backgroundColor: isError
-													? "rgba(211, 47, 47, 0.04)"
-													: isSuccess
-														? "rgba(46, 125, 50, 0.04)"
-														: isCheckmark
-															? "rgba(76, 175, 80, 0.04)"
-															: isUserInput
-																? "rgba(25, 118, 210, 0.04)"
-																: "background.default",
-												transition: "all 0.2s ease",
-												"&:hover": {
-													backgroundColor: isError
-														? "rgba(211, 47, 47, 0.08)"
-														: isSuccess
-															? "rgba(46, 125, 50, 0.08)"
-															: isCheckmark
-																? "rgba(76, 175, 80, 0.08)"
-																: isUserInput
-																	? "rgba(25, 118, 210, 0.08)"
-																	: "action.hover",
-													borderColor: isError
-														? "error.main"
-														: isSuccess
-															? "success.main"
-															: isCheckmark
-																? "rgba(76, 175, 80, 0.5)"
-																: isUserInput
-																	? "primary.light"
-																	: "divider",
-													transform:
-														"translateX(2px)",
-												},
-											}}
-										>
-											<Typography
-												variant="body2"
-												sx={{
-													fontSize: "0.8125rem",
-													lineHeight: 1.6,
-													color: isError
-														? "error.dark"
-														: isSuccess
-															? "success.dark"
-															: isCheckmark
-																? "success.main"
-																: "text.primary",
-													fontWeight:
-														isNumbered ||
-														isError ||
-														isSuccess
-															? 500
-															: 400,
-													fontFamily: isNumbered
-														? "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui"
-														: "inherit",
-													letterSpacing: "0.01em",
-												}}
-											>
-												{action}
-											</Typography>
-										</Box>
-									);
-								})}
-								<div ref={historyEndRef} />
-							</Stack>
-						</Card>
-					</Box>
-				)}
+			{isPaused && mode === "execution" && (
+				<Box
+					sx={{
+						ml: 2,
+						px: 2,
+						py: 0.75,
+						borderRadius: 2,
+						bgColor: "rgba(255, 152, 0, 0.15)",
+						border: "1.5px solid rgba(255, 152, 0, 0.8)",
+						color: "#ffffff",
+						display: "inline-flex",
+						alignItems: "center",
+						gap: 0.75,
+						boxShadow: "0 2px 8px rgba(255, 152, 0, 0.3)",
+					}}
+				>
+					<Typography
+						variant="body2"
+						sx={{
+							fontWeight: 700,
+							fontSize: "0.8125rem",
+							letterSpacing: "0.5px",
+						}}
+					>
+						⏸️ PAUSED
+					</Typography>
+				</Box>
+			)}
 
-				{/* User Input Dialog */}
-				{waitingForUserInput && (
-					<div className="user-input-overlay">
-						<div className="user-input-dialog">
-							<Typography variant="h3">Input Required</Typography>
-							<Typography variant="body1">
-								{userInputPrompt}
-							</Typography>
-							<TextField
-								type={isPasswordInput ? "password" : "text"}
-								value={userInputValue}
-								disabled={isPaused}
-								onChange={(e) => {
-									const newValue = e.target.value;
-									setUserInputValue(newValue);
-									if (currentSelector && currentTabId) {
-										// Clear existing debounce timer
-										if (debounceTimerRef.current) {
-											clearTimeout(
-												debounceTimerRef.current,
-											);
-										}
+			<div className="panel-content">
+				{mode === "recording" ? (
+					<RecordingPanel />
+				) : (
+					<>
+						{/* Welcome State - shown when no script is running */}
+						{!isRunning && actionHistory.length === 0 && (
+							<WelcomeState />
+						)}
 
-										// Debounce the update to avoid excessive messages
-										debounceTimerRef.current = setTimeout(
-											() => {
-												chrome.runtime
-													.sendMessage({
-														type: "UPDATE_FIELD_VALUE",
-														tabId: currentTabId,
-														selector:
-															currentSelector,
-														value: newValue,
-													})
-													.catch((err) => {
-														console.log(
-															"[PANEL] ⚠️ Mirroring unavailable:",
-															err.message,
-														);
-													});
-											},
-											75,
-										); // 75ms debounce for responsive feel
-									}
-								}}
-								placeholder="Enter value..."
-								onKeyDown={(e) => {
-									if (
-										e.key === "Enter" &&
-										userInputValue.trim()
-									) {
-										e.preventDefault();
-										if (userInputCallback) {
-											userInputCallback(userInputValue);
-										}
-									}
-								}}
-							/>
-							<div className="user-input-buttons">
-								<Button
-									variant="contained"
-									onClick={() => {
-										if (
-											userInputCallback &&
-											userInputValue.trim()
-										) {
-											userInputCallback(userInputValue);
-										}
+						{/* Action History */}
+						{actionHistory.length > 0 && (
+							<Box sx={{ width: "100%" }}>
+								<Card
+									sx={{
+										width: "100%",
+										p: 2.5,
+										border: "1px solid",
+										borderColor: "divider",
+										minHeight: "calc(100vh - 180px)",
+										maxHeight: "calc(100vh - 180px)",
+										overflowY: "auto",
+										backgroundColor: "background.paper",
+										boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
 									}}
-									disabled={
-										!userInputValue.trim() || isPaused
-									}
-									className="submit-btn"
 								>
-									Submit
-								</Button>
+									<Typography
+										variant="h4"
+										sx={{
+											mb: 2,
+											fontWeight: 600,
+											fontSize: "0.9375rem",
+											color: "text.secondary",
+											textTransform: "uppercase",
+											letterSpacing: "0.5px",
+										}}
+									>
+										Execution Log
+									</Typography>
+									<Stack spacing={0.75}>
+										{actionHistory.map((action, index) => {
+											const isError =
+												action.startsWith("❌");
+											const isSuccess =
+												action.startsWith("✅");
+											const isCheckmark =
+												action.startsWith("✓");
+											const isNumbered =
+												action.match(/^\d+\./);
+											const isUserInput = action.includes(
+												"User provided input",
+											);
+
+											return (
+												<Box
+													key={`action-${index}-${action.substring(0, 20)}`}
+													sx={{
+														py: 1,
+														px: 1.5,
+														borderRadius: 1.5,
+														border: "1px solid",
+														borderColor: isError
+															? "error.light"
+															: isSuccess
+																? "success.light"
+																: isCheckmark
+																	? "rgba(76, 175, 80, 0.3)"
+																	: "divider",
+														backgroundColor: isError
+															? "rgba(211, 47, 47, 0.04)"
+															: isSuccess
+																? "rgba(46, 125, 50, 0.04)"
+																: isCheckmark
+																	? "rgba(76, 175, 80, 0.04)"
+																	: isUserInput
+																		? "rgba(25, 118, 210, 0.04)"
+																		: "background.default",
+														transition:
+															"all 0.2s ease",
+														"&:hover": {
+															backgroundColor:
+																isError
+																	? "rgba(211, 47, 47, 0.08)"
+																	: isSuccess
+																		? "rgba(46, 125, 50, 0.08)"
+																		: isCheckmark
+																			? "rgba(76, 175, 80, 0.08)"
+																			: isUserInput
+																				? "rgba(25, 118, 210, 0.08)"
+																				: "action.hover",
+															borderColor: isError
+																? "error.main"
+																: isSuccess
+																	? "success.main"
+																	: isCheckmark
+																		? "rgba(76, 175, 80, 0.5)"
+																		: isUserInput
+																			? "primary.light"
+																			: "divider",
+															transform:
+																"translateX(2px)",
+														},
+													}}
+												>
+													<Typography
+														variant="body2"
+														sx={{
+															fontSize:
+																"0.8125rem",
+															lineHeight: 1.6,
+															color: isError
+																? "error.dark"
+																: isSuccess
+																	? "success.dark"
+																	: isCheckmark
+																		? "success.main"
+																		: "text.primary",
+															fontWeight:
+																isNumbered ||
+																isError ||
+																isSuccess
+																	? 500
+																	: 400,
+															fontFamily:
+																isNumbered
+																	? "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui"
+																	: "inherit",
+															letterSpacing:
+																"0.01em",
+														}}
+													>
+														{action}
+													</Typography>
+												</Box>
+											);
+										})}
+										<div ref={historyEndRef} />
+									</Stack>
+								</Card>
+							</Box>
+						)}
+
+						{/* User Input Dialog */}
+						{waitingForUserInput && (
+							<div className="user-input-overlay">
+								<div className="user-input-dialog">
+									<Typography variant="h3">
+										Input Required
+									</Typography>
+									<Typography variant="body1">
+										{userInputPrompt}
+									</Typography>
+									<TextField
+										type={
+											isPasswordInput
+												? "password"
+												: "text"
+										}
+										value={userInputValue}
+										disabled={isPaused}
+										onChange={(e) => {
+											const newValue = e.target.value;
+											setUserInputValue(newValue);
+											if (
+												currentSelector &&
+												currentTabId
+											) {
+												// Clear existing debounce timer
+												if (debounceTimerRef.current) {
+													clearTimeout(
+														debounceTimerRef.current,
+													);
+												}
+
+												// Debounce the update to avoid excessive messages
+												debounceTimerRef.current =
+													setTimeout(() => {
+														chrome.runtime
+															.sendMessage({
+																type: "UPDATE_FIELD_VALUE",
+																tabId: currentTabId,
+																selector:
+																	currentSelector,
+																value: newValue,
+															})
+															.catch((err) => {
+																console.log(
+																	"[PANEL] ⚠️ Mirroring unavailable:",
+																	err.message,
+																);
+															});
+													}, 75); // 75ms debounce for responsive feel
+											}
+										}}
+										placeholder="Enter value..."
+										onKeyDown={(e) => {
+											if (
+												e.key === "Enter" &&
+												userInputValue.trim()
+											) {
+												e.preventDefault();
+												if (userInputCallback) {
+													userInputCallback(
+														userInputValue,
+													);
+												}
+											}
+										}}
+									/>
+									<div className="user-input-buttons">
+										<Button
+											variant="contained"
+											onClick={() => {
+												if (
+													userInputCallback &&
+													userInputValue.trim()
+												) {
+													userInputCallback(
+														userInputValue,
+													);
+												}
+											}}
+											disabled={
+												!userInputValue.trim() ||
+												isPaused
+											}
+											className="submit-btn"
+										>
+											Submit
+										</Button>
+									</div>
+								</div>
 							</div>
-						</div>
-					</div>
+						)}
+					</>
 				)}
 			</div>
 		</div>
