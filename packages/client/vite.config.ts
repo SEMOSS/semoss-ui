@@ -55,12 +55,6 @@ export default defineConfig(({ mode }) => {
 						) {
 							return "vendor-mobx";
 						}
-						if (
-							id.includes("/node_modules/@mui/") ||
-							id.includes("/node_modules/@emotion/")
-						) {
-							return "vendor-mui";
-						}
 					},
 				},
 			},
@@ -101,7 +95,7 @@ export default defineConfig(({ mode }) => {
 						include: ["vitest-canvas-mock"],
 					},
 				},
-				external: ["@semoss/ui", "@semoss/sdk"],
+				external: ["@semoss/ui/next", "@semoss/sdk"],
 			},
 			browser: {
 				enabled: false,

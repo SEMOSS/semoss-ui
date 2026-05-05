@@ -1,11 +1,22 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./panel.css";
-import { Box, Button, Card, Stack, TextField, Typography } from "@semoss/ui";
+import { Button, Card, cn, Input } from "@semoss/ui/next";
 import {
 	type PlaywrightScript,
 	ScriptExecutor,
 } from "../services/scriptExecutor";
 import { WelcomeState } from "./components/WelcomeState";
+
+type PanelRuntimeMessage = {
+	type: string;
+	timestamp?: number;
+	script?: {
+		name?: string;
+		scriptContent?: unknown;
+	};
+	value?: string;
+	isPassword?: boolean;
+};
 
 const PanelApp: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(true);
@@ -18,8 +29,8 @@ const PanelApp: React.FC = () => {
 	const [userInputCallback, setUserInputCallback] = useState<
 		((value: string) => void) | null
 	>(null);
-	const [mode, setMode] = useState<"script">("script");
-	const [scriptJson, setScriptJson] = useState("");
+	const [, setMode] = useState<"script">("script");
+	const [, setScriptJson] = useState("");
 	const [jsonFormat, setJsonFormat] = useState<"playwright">("playwright");
 
 	const historyEndRef = React.useRef<HTMLDivElement>(null);
@@ -68,9 +79,9 @@ const PanelApp: React.FC = () => {
 	// Listen for playground chat events from content script
 	useEffect(() => {
 		const messageListener = (
-			message: any,
+			message: PanelRuntimeMessage,
 			sender: chrome.runtime.MessageSender,
-			_sendResponse: (response?: any) => void,
+			_sendResponse: (response?: unknown) => void,
 		) => {
 			// CRITICAL: Only process messages forwarded by background script (sender.tab will be undefined)
 			// Ignore direct messages from content scripts to prevent duplicate execution
@@ -719,7 +730,7 @@ const PanelApp: React.FC = () => {
 	return (
 		<div className="panel-container">
 			<div className="panel-header">
-				<Typography variant="h1">Browser Automation</Typography>
+				<h1 className="panel-title">Browser Automation</h1>
 			</div>
 
 			<div className="panel-content">
@@ -728,34 +739,12 @@ const PanelApp: React.FC = () => {
 
 				{/* Action History */}
 				{actionHistory.length > 0 && (
-					<Box sx={{ width: "100%" }}>
-						<Card
-							sx={{
-								width: "100%",
-								p: 2.5,
-								border: "1px solid",
-								borderColor: "divider",
-								minHeight: "calc(100vh - 180px)",
-								maxHeight: "calc(100vh - 180px)",
-								overflowY: "auto",
-								backgroundColor: "background.paper",
-								boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
-							}}
-						>
-							<Typography
-								variant="h4"
-								sx={{
-									mb: 2,
-									fontWeight: 600,
-									fontSize: "0.9375rem",
-									color: "text.secondary",
-									textTransform: "uppercase",
-									letterSpacing: "0.5px",
-								}}
-							>
+					<div className="execution-log-wrapper">
+						<Card className="execution-log-card">
+							<h2 className="execution-log-title">
 								Execution Log
-							</Typography>
-							<Stack spacing={0.75}>
+							</h2>
+							<div className="execution-log-list">
 								{actionHistory.map((action, index) => {
 									const isError = action.startsWith("❌");
 									const isSuccess = action.startsWith("✅");
@@ -766,98 +755,52 @@ const PanelApp: React.FC = () => {
 									);
 
 									return (
-										<Box
+										<div
 											key={`action-${index}-${action.substring(0, 20)}`}
-											sx={{
-												py: 1,
-												px: 1.5,
-												borderRadius: 1.5,
-												border: "1px solid",
-												borderColor: isError
-													? "error.light"
-													: isSuccess
-														? "success.light"
-														: isCheckmark
-															? "rgba(76, 175, 80, 0.3)"
-															: "divider",
-												backgroundColor: isError
-													? "rgba(211, 47, 47, 0.04)"
-													: isSuccess
-														? "rgba(46, 125, 50, 0.04)"
-														: isCheckmark
-															? "rgba(76, 175, 80, 0.04)"
-															: isUserInput
-																? "rgba(25, 118, 210, 0.04)"
-																: "background.default",
-												transition: "all 0.2s ease",
-												"&:hover": {
-													backgroundColor: isError
-														? "rgba(211, 47, 47, 0.08)"
-														: isSuccess
-															? "rgba(46, 125, 50, 0.08)"
-															: isCheckmark
-																? "rgba(76, 175, 80, 0.08)"
-																: isUserInput
-																	? "rgba(25, 118, 210, 0.08)"
-																	: "action.hover",
-													borderColor: isError
-														? "error.main"
-														: isSuccess
-															? "success.main"
-															: isCheckmark
-																? "rgba(76, 175, 80, 0.5)"
-																: isUserInput
-																	? "primary.light"
-																	: "divider",
-													transform:
-														"translateX(2px)",
-												},
-											}}
+											className={cn(
+												"execution-log-item",
+												isError &&
+													"execution-log-item--error",
+												isSuccess &&
+													"execution-log-item--success",
+												!isSuccess &&
+													!isError &&
+													isCheckmark &&
+													"execution-log-item--check",
+												!isSuccess &&
+													!isError &&
+													!isCheckmark &&
+													isUserInput &&
+													"execution-log-item--input",
+											)}
 										>
-											<Typography
-												variant="body2"
-												sx={{
-													fontSize: "0.8125rem",
-													lineHeight: 1.6,
-													color: isError
-														? "error.dark"
-														: isSuccess
-															? "success.dark"
-															: isCheckmark
-																? "success.main"
-																: "text.primary",
-													fontWeight:
-														isNumbered ||
+											<p
+												className={cn(
+													"execution-log-line",
+													(isNumbered ||
 														isError ||
-														isSuccess
-															? 500
-															: 400,
-													fontFamily: isNumbered
-														? "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui"
-														: "inherit",
-													letterSpacing: "0.01em",
-												}}
+														isSuccess) &&
+														"execution-log-line--strong",
+												)}
 											>
 												{action}
-											</Typography>
-										</Box>
+											</p>
+										</div>
 									);
 								})}
 								<div ref={historyEndRef} />
-							</Stack>
+							</div>
 						</Card>
-					</Box>
+					</div>
 				)}
 
 				{/* User Input Dialog */}
 				{waitingForUserInput && (
 					<div className="user-input-overlay">
 						<div className="user-input-dialog">
-							<Typography variant="h3">Input Required</Typography>
-							<Typography variant="body1">
-								{userInputPrompt}
-							</Typography>
-							<TextField
+							<h3>Input Required</h3>
+							<p>{userInputPrompt}</p>
+							<Input
 								type={isPasswordInput ? "password" : "text"}
 								value={userInputValue}
 								onChange={(e) => {
@@ -896,6 +839,7 @@ const PanelApp: React.FC = () => {
 									}
 								}}
 								placeholder="Enter value..."
+								className="user-input-field"
 								onKeyDown={(e) => {
 									if (
 										e.key === "Enter" &&
@@ -910,7 +854,7 @@ const PanelApp: React.FC = () => {
 							/>
 							<div className="user-input-buttons">
 								<Button
-									variant="contained"
+									type="button"
 									onClick={() => {
 										if (
 											userInputCallback &&

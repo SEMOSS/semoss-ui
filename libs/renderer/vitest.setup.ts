@@ -15,17 +15,10 @@ vi.mock("monaco-editor", () => ({
 	},
 }));
 
-vi.mock(import("@semoss/ui"), async (importOriginal) => {
+vi.mock(import("@semoss/ui/next"), async (importOriginal) => {
 	const actual = await importOriginal();
 	return {
 		...actual,
-		styled: vi.fn((component) => vi.fn(() => component)),
-		useNotification: () => ({
-			notifications: [],
-			add: vi.fn(),
-			remove: vi.fn(),
-			close: vi.fn(),
-		}),
 	};
 });
 
