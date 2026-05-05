@@ -576,8 +576,7 @@ export const LoginPage = observer(() => {
 												<div className="flex items-center gap-4 py-1">
 													<Separator className="flex-1" />
 													<span className="font-medium text-black text-sm dark:text-muted-foreground">
-														or use username and
-														password
+														or
 													</span>
 													<Separator className="flex-1" />
 												</div>
