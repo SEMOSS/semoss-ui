@@ -3,8 +3,15 @@ import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import { AuthenticatedLayout } from "./AuthenticatedLayout";
-import { PageLayout } from "./PageLayout";
+
+const AuthenticatedLayout = lazy(() =>
+	import("./AuthenticatedLayout").then((m) => ({
+		default: m.AuthenticatedLayout,
+	})),
+);
+const PageLayout = lazy(() =>
+	import("./PageLayout").then((m) => ({ default: m.PageLayout })),
+);
 
 const AppCatalogPage = lazy(() =>
 	import("./app/app-catalog-page").then((m) => ({
