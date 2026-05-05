@@ -1,6 +1,6 @@
 import { CloudUploadIcon, HammerIcon, PencilIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { download, useInsight } from "@semoss/sdk/react";
 import {
 	FileExplorer,
@@ -29,13 +29,33 @@ interface AppFileExplorerProps {
 
 	/** App */
 	app: string;
+
+	/**
+	 * Optional callback when visible asset paths change in the browser
+	 */
+	onVisibleAssetPathsChange?: (payload: {
+		path: string;
+		paths: string[];
+	}) => void;
+
+	/**
+	 * Optional callback when the file explorer panel is mounted/unmounted
+	 */
+	onOpenStateChange?: (isOpen: boolean) => void;
 }
 
 export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
-	({ layout, node, app }) => {
+	({ layout, node, app, onVisibleAssetPathsChange, onOpenStateChange }) => {
 		const insight = useInsight();
 
 		const [isPublishing, setIsPublishing] = useState(false);
+
+		useEffect(() => {
+			onOpenStateChange?.(true);
+			return () => {
+				onOpenStateChange?.(false);
+			};
+		}, [onOpenStateChange]);
 
 		const getTabPath = (
 			config: { path?: string; data?: { path?: string } } | undefined,
@@ -329,6 +349,12 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 				mode={{
 					type: "APP",
 					app: app,
+				}}
+				onVisibleItemsChange={({ path, items }) => {
+					onVisibleAssetPathsChange?.({
+						path,
+						paths: items.map((item) => item.path),
+					});
 				}}
 				headerActions={
 					<Tooltip>

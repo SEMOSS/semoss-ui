@@ -355,6 +355,10 @@ export const BlocksWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
+					onOpenStateChange={workspace.setFileBrowserOpen}
+					onVisibleAssetPathsChange={({ path, paths }) => {
+						workspace.setFileBrowserVisiblePaths(path, paths);
+					}}
 				/>
 			);
 		} else if (component === "app-file-editor") {
