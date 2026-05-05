@@ -1,4 +1,4 @@
-import { SmartButton } from "@mui/icons-material";
+import { ToggleLeft } from "lucide-react";
 import type { CSSProperties } from "react";
 import { OptionsSettings, SelectInputSettings } from "../../settings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
@@ -11,7 +11,7 @@ export const DefaultStyles: CSSProperties = {};
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_ACTION,
-	icon: SmartButton,
+	icon: ToggleLeft,
 	contentMenu: [
 		{
 			name: "General",

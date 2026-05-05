@@ -35,7 +35,9 @@ describe("link block", () => {
 			blocks: blocks,
 		});
 
-		const element = container.querySelector("[data-block='link']");
+		const element = container.querySelector(
+			"[data-block='link']",
+		) as HTMLAnchorElement;
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("A", "element is type a");

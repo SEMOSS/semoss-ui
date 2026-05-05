@@ -117,9 +117,9 @@ export const EngineSelect = ({
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) =>
 			open
-				? `MyEngines(${
+				? `META | MyEngines(${
 						debouncedSearch
-							? `filterWord=["<encode>${debouncedSearch}</encode>"], `
+							? `filterWord=${JSON.stringify(debouncedSearch)}, `
 							: ""
 					} ${
 						engineTypes
@@ -213,7 +213,7 @@ export const EngineSelect = ({
 						className,
 					)}
 				>
-					<div className="flex items-center gap-2">
+					<div className="flex min-w-0 items-center gap-2 overflow-hidden">
 						{showContextIndicator && (
 							<Tooltip>
 								<TooltipTrigger asChild>

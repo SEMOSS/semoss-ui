@@ -147,7 +147,7 @@ function Markdown({
 		<div
 			data-slot="markdown"
 			className={cn(
-				"prose prose-slate dark:prose-invert max-w-none",
+				"prose prose-slate dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0",
 				className,
 			)}
 			{...props}

@@ -27,6 +27,7 @@ type MetamodelNodeProps = NodeProps<
 			columnId: string;
 			name: string;
 			type: string;
+			rawType?: string;
 			description?: string;
 			logicalNames?: string[];
 		}) => void;
@@ -196,6 +197,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 			columnId: col?.id,
 			name: col?.name,
 			type: col?.type,
+			rawType: col?.rawType,
 			description: col?.description,
 			logicalNames: col?.logicalNames,
 		});

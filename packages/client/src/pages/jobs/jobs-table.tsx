@@ -1,8 +1,8 @@
-import { Delete, Edit, PlayArrow } from "@mui/icons-material";
-import type { GridRowSelectionModel } from "@mui/x-data-grid";
+type GridRowSelectionModel = (string | number)[];
+
 import dayjs from "dayjs";
+import { Pencil, Play, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Alert,
@@ -20,6 +20,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { Job } from "./job.types";
 import { getHumanReadableCronExpression } from "./job.utils";
 
@@ -234,7 +235,7 @@ export const JobsTable = (props: {
 													{isRunning ? (
 														<Spinner className="h-4 w-4" />
 													) : (
-														<PlayArrow fontSize="small" />
+														<Play className="size-4" />
 													)}
 												</Button>
 
@@ -286,7 +287,7 @@ export const JobsTable = (props: {
 														);
 													}}
 												>
-													<Edit fontSize="small" />
+													<Pencil className="size-4" />
 												</Button>
 
 												<Button
@@ -298,7 +299,7 @@ export const JobsTable = (props: {
 														showDeleteJobModal(job)
 													}
 												>
-													<Delete fontSize="small" />
+													<Trash2 className="size-4" />
 												</Button>
 											</div>
 										</TableCell>

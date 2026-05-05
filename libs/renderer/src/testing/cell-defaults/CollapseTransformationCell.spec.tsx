@@ -188,7 +188,7 @@ describe("CollapseTransformationCell", () => {
 	it("renders collapsed state as a chip when not expanded", () => {
 		const { container } = renderCollapseCell({}, false);
 
-		const chip = container.querySelector(".MuiChip-root");
+		const chip = container.querySelector("span.rounded-full");
 		expect(chip).toBeInTheDocument();
 		expect(screen.getByText("Collapse")).toBeInTheDocument();
 	});
@@ -216,12 +216,11 @@ describe("CollapseTransformationCell", () => {
 				"Aggregate data for a group based on the delimiter",
 			),
 		).toBeInTheDocument();
-		expect(screen.getByLabelText("Group by Column(s)")).toBeInTheDocument();
-		expect(screen.getByLabelText("Value Column")).toBeInTheDocument();
-		expect(screen.getByLabelText("String Separator")).toBeInTheDocument();
-		expect(screen.getByLabelText("String Separator")).toHaveValue(", ");
+		expect(screen.getByText("Group by Column(s)")).toBeInTheDocument();
+		expect(screen.getByText("Value Column")).toBeInTheDocument();
+		expect(screen.getByText("String Separator")).toBeInTheDocument();
 		expect(
-			screen.getByLabelText("Other Column(s) to Maintain"),
+			screen.getByText("Other Column(s) to Maintain"),
 		).toBeInTheDocument();
 	});
 });

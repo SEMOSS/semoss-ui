@@ -46,7 +46,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 
 	if (embed) {
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
 					isActive={
@@ -76,7 +76,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	if (url?.startsWith("#/")) {
 		const internalPath = url.slice(1); // "#/knowledge" → "/knowledge"
 		return (
-			<SidebarMenuItem>
+			<SidebarMenuItem data-tour={`nav-${path}`}>
 				<SidebarMenuButton
 					asChild
 					isActive={!!matchPath(internalPath, pathname)}
@@ -98,7 +98,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 	}
 
 	return (
-		<SidebarMenuItem>
+		<SidebarMenuItem data-tour={`nav-${path}`}>
 			<SidebarMenuButton
 				asChild
 				tooltip={{ children: returnToolTip(name), hidden: false }}

@@ -3,16 +3,16 @@ import {
 	matchPath,
 	Outlet,
 	useLocation,
-	useNavigate,
 	useParams,
 	useResolvedPath,
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import { Spinner, Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
-import { ResourceNotFound } from "@/components/common";
+import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { Role } from "@/types";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
@@ -87,6 +87,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	);
 
 	// convert the data into an object
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pre-existing dep array uses JSON.stringify for stability
 	const values = useMemo(() => {
 		if (getEngineMetadata.status !== "SUCCESS") {
 			return {};
@@ -150,6 +151,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		: (permissionFromApi ?? "READ_ONLY");
 
 	// get the tabs based on permission and database type
+	// biome-ignore lint/correctness/useExhaustiveDependencies: pre-existing dep array shape
 	const tabs = useMemo(() => {
 		// must be valid
 		if (!route) {
@@ -176,13 +178,15 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
 		);
 
-		// additional filtering for DATABASE type engines - hide Query tab unless database is SQL
+		// additional filtering for DATABASE type engines - hide Query/SPARQL tabs based on category
 		if (route.type === "DATABASE") {
 			const databaseCategory = getDatabaseCategory.data;
 			filteredTabs = filteredTabs.filter((t) => {
-				// if it's the Query tab (path === 'query'), only show it if database is SQL
 				if (t.path === "query") {
 					return databaseCategory === "SQL";
+				}
+				if (t.path === "sparql-query") {
+					return databaseCategory === "RDF";
 				}
 				return true;
 			});

@@ -1,10 +1,10 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -32,6 +32,8 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
 	headers: string[];
@@ -266,24 +268,6 @@ export const VectorForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	const renderControllerField = (val) => (
 		<Controller
 			key={val.key}
@@ -294,10 +278,14 @@ export const VectorForm = ({
 				pattern: val.rules?.pattern,
 			}}
 			render={({ field, fieldState: { error } }) => {
-				switch (val.component) {
+				switch (val.type) {
 					case "text":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -408,7 +396,11 @@ export const VectorForm = ({
 
 					case "number":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -442,7 +434,11 @@ export const VectorForm = ({
 
 					case "select":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -455,7 +451,6 @@ export const VectorForm = ({
 									value={field.value || ""}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -503,7 +498,11 @@ export const VectorForm = ({
 
 					case "radio":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel>
 									{val.label}
 									{val?.required && (
@@ -604,7 +603,11 @@ export const VectorForm = ({
 					case "checkbox":
 						return (
 							<div
-								className={`flex items-center gap-2 ${val.hidden ? "hidden" : ""}`}
+								className={
+									computeVisibility(val, {})
+										? "flex items-center gap-2"
+										: "hidden"
+								}
 							>
 								<Checkbox
 									id={val.key}
@@ -639,7 +642,9 @@ export const VectorForm = ({
 					case "tags":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`vector-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>

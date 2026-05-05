@@ -6,7 +6,6 @@ import {
 	Outlet,
 	Link as RouterLink,
 	useLocation,
-	useNavigate,
 	useParams,
 } from "react-router-dom";
 import {
@@ -33,13 +32,24 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPrefer
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
+
+const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
+	"app",
+	"database",
+	"function",
+	"guardrail",
+	"model",
+	"storage",
+	"vector",
+]);
 
 export const SettingsLayout = observer(() => {
 	const { configStore } = useRootStore();
 	const { id, type } = useParams();
-	const { pathname, state } = useLocation();
+	const { pathname, search, state } = useLocation();
 	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
@@ -74,6 +84,15 @@ export const SettingsLayout = observer(() => {
 		return null;
 	}, [pathname]);
 	const isSettingsIndexRoute = matchedRoute?.path === "";
+	const shouldPreserveEngineCatalogSearch = useMemo(() => {
+		if (!matchedRoute || !search) {
+			return false;
+		}
+
+		const routePathRoot = matchedRoute.path.split("/:")[0];
+		return ENGINE_CATALOG_SETTINGS_PATHS.has(routePathRoot);
+	}, [matchedRoute, search]);
+
 	const hasPrivacyCenterThemeContent = useMemo(() => {
 		const theme = configStore.theme as Record<string, unknown>;
 		const order = Array.isArray(theme.cookiePolicyOrderReact)
@@ -262,6 +281,17 @@ export const SettingsLayout = observer(() => {
 													"<id>",
 													id ?? "",
 												);
+												const toRoot = to.split("/")[0];
+												const breadcrumbTo =
+													shouldPreserveEngineCatalogSearch &&
+													ENGINE_CATALOG_SETTINGS_PATHS.has(
+														toRoot,
+													)
+														? {
+																pathname: to,
+																search,
+															}
+														: to;
 
 												return (
 													<Fragment key={idx + link}>
@@ -276,7 +306,9 @@ export const SettingsLayout = observer(() => {
 																	asChild
 																>
 																	<RouterLink
-																		to={to}
+																		to={
+																			breadcrumbTo
+																		}
 																		state={
 																			state &&
 																			typeof state ===
@@ -323,7 +355,8 @@ export const SettingsLayout = observer(() => {
 											: state &&
 													typeof state === "object" &&
 													"name" in state
-												? (state as any).name
+												? (state as { name?: string })
+														.name
 												: matchedRoute.title}
 									</h1>
 								)}

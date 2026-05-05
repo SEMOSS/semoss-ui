@@ -32,7 +32,7 @@ export const PDF_FILE_PREFIX = "data:application/pdf;base64,";
 export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<PDFViewerBlockDef>(id);
 	const { state } = useBlocks();
-	const isInteractive = state.mode === "interactive";
+	const isDesignMode = state.mode !== "interactive";
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [pdfContent, setPdfContent] = useState<string | null>(null);
@@ -122,20 +122,23 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 	return (
 		<div
 			{...attrs}
-			className="relative h-full rounded-md border bg-card p-2 shadow-sm"
+			style={data.style}
+			className="relative flex h-full flex-col rounded-md border bg-card p-2 shadow-sm"
 		>
-			<div className="mb-0 flex items-center justify-between">
+			<div className="flex shrink-0 items-center justify-between">
 				<span className="flex-1 truncate font-semibold text-base">
 					{fileName}
 				</span>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					onClick={handleClear}
-					aria-label="clear pdf"
-				>
-					<X className="size-4" />
-				</Button>
+				{isDesignMode && (
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={handleClear}
+						aria-label="clear pdf"
+					>
+						<X className="size-4" />
+					</Button>
+				)}
 			</div>
 
 			{loading && (
@@ -147,25 +150,16 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 			{error && <p className="p-2.5 text-destructive text-sm">{error}</p>}
 
 			{pdfContent && !loading && !error && (
-				<div className="h-[92%] flex-1 overflow-hidden rounded-md border">
+				<div className="relative mt-1 min-h-0 flex-1 overflow-hidden rounded-md border">
 					<object
 						data={pdfContent}
 						type="application/pdf"
-						className="h-full w-full"
-						style={
-							isInteractive
-								? { pointerEvents: "none" }
-								: undefined
-						}
+						className="absolute inset-0 h-full w-full"
 					>
 						<iframe
 							src={pdfContent}
 							title={fileName}
-							className="h-full min-h-[340px] w-full border-none"
-							style={{
-								height: "calc(100% - 35px)",
-								pointerEvents: isInteractive ? "none" : "auto",
-							}}
+							className="absolute inset-0 h-full w-full border-none"
 						/>
 					</object>
 				</div>

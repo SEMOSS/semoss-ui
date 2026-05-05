@@ -55,6 +55,7 @@ import {
 import {
 	EnterPlugin,
 	FocusPlugin,
+	MCPOverlay,
 	MentionPlugin,
 	PromptLibraryDialog,
 	type PromptLibraryItem,
@@ -65,6 +66,21 @@ import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+
+const applyMCPDiff = (
+	items: MCPConfig[],
+	updated: MCPConfig[],
+	onSelect: (mcp: MCPConfig) => void,
+) => {
+	const oldIds = new Set(items.map((m) => m.id));
+	const newIds = new Set(updated.map((m) => m.id));
+	for (const mcp of updated) {
+		if (!oldIds.has(mcp.id)) onSelect(mcp);
+	}
+	for (const mcp of items) {
+		if (!newIds.has(mcp.id)) onSelect(mcp);
+	}
+};
 
 let isIframed = false;
 try {
@@ -180,8 +196,14 @@ interface RoomInputProps {
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
-		editorRef?: React.RefObject<LexicalEditor>;
+		knowledgeOverlayOpen: boolean;
+		onKnowledgeOverlayChange: (open: boolean) => void;
+		toolboxOverlayOpen: boolean;
+		onToolboxOverlayChange: (open: boolean) => void;
 	}>;
+
+	/** Callback when an MCP is toggled via the plus menu */
+	onMcpToggle?: (mcp: MCPConfig) => void;
 
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
@@ -247,6 +269,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		options,
 		onPrompt = () => null,
 		onMcpSelect,
+		onMcpToggle,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
@@ -271,6 +294,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [isScrollable, setIsScrollable] = useState(false);
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
+
+		// MCP overlay state — managed here so overlays render outside the DropdownMenu's React subtree
+		const [knowledgeOverlayOpen, setKnowledgeOverlayOpen] = useState(false);
+		const [toolboxOverlayOpen, setToolboxOverlayOpen] = useState(false);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -324,7 +351,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					throw new Error("Error processing chat");
 				}
 			} catch (e) {
-				toast.error(getGracefulErrorMessage(e));
+				toast.error(getGracefulErrorMessage(e as Error));
 			}
 		};
 		const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -573,7 +600,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// ========================================================================
 
 		return (
-			<div ref={ref}>
+			<div className="relative w-full" ref={ref} data-tour="tour-input">
 				<input
 					ref={fileRef}
 					type="file"
@@ -599,12 +626,32 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				>
 					<div
 						className={cn(
-							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-background shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50 dark:bg-input/30",
+							"flex h-full w-full flex-col overflow-hidden rounded-md border border-input bg-card shadow-lg transition-[color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50",
 							isDragging
 								? "border-primary border-dashed"
 								: "hover:border-primary",
 							className,
 						)}
+						onDrop={(e) => {
+							e.preventDefault();
+							const updated = Array.from(e.dataTransfer.files);
+							setFiles((prev) => [...prev, ...updated]);
+							setIsDragging(false);
+						}}
+						onDragOver={(e) => {
+							e.preventDefault();
+							setIsDragging(true);
+						}}
+						onDragLeave={(e) => {
+							if (
+								!e.currentTarget.contains(
+									e.relatedTarget as Node,
+								)
+							) {
+								setIsDragging(false);
+							}
+						}}
+						role="none"
 					>
 						{/* File attachments preview strip */}
 						{files.length > 0 && (
@@ -677,9 +724,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<ScrollArea
 									type="always"
 									className={cn(
-										"min-h-0 flex-1",
+										"min-h-0 flex-1 bg-card",
 										isScrollable && "mr-1",
 									)}
+									onClick={() => editorRef.current?.focus()}
 								>
 									<ContentEditable
 										ref={contentEditableRef}
@@ -707,30 +755,31 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													: t("input.menuPrompt")}
 											</div>
 										}
-										onDrop={(e) => {
-											e.preventDefault();
-											const updated = Array.from(
-												e.dataTransfer.files,
-											);
-											setFiles((prev) => [
-												...prev,
-												...updated,
-											]);
-											setIsDragging(false);
-										}}
-										onDragOver={(e) => {
-											e.preventDefault();
-											setIsDragging(true);
-										}}
-										onDragLeave={(e) => {
-											e.preventDefault();
-											setIsDragging(false);
-										}}
 										onPaste={(e) => {
-											// Support pasting files (e.g., screenshots)
-											const updated = Array.from(
+											const clipboardFiles = Array.from(
 												e.clipboardData.files,
 											);
+
+											// Microsoft apps (Word, Outlook, etc.) include an image
+											// representation alongside text in the clipboard. If text
+											// content is present, filter out those images so the text
+											// is pasted normally instead of attaching a screenshot.
+											const hasText =
+												e.clipboardData.types.includes(
+													"text/plain",
+												) ||
+												e.clipboardData.types.includes(
+													"text/html",
+												);
+
+											const updated = hasText
+												? clipboardFiles.filter(
+														(f) =>
+															!f.type.startsWith(
+																"image/",
+															),
+													)
+												: clipboardFiles;
 
 											if (updated.length > 0) {
 												e.preventDefault();
@@ -746,10 +795,39 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
 
-						<div className="flex items-center justify-between gap-2 bg-background p-2">
+						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
+						<div
+							className="flex items-center justify-between gap-2 bg-card p-2"
+							data-tour="tour-input-menu"
+							role="none"
+							onClick={(e) => {
+								const target = e.target as HTMLElement;
+								if (
+									!target.closest("button") &&
+									!target.closest('[role="button"]') &&
+									!target.closest('[role="combobox"]')
+								) {
+									editorRef.current?.focus();
+								}
+							}}
+							onKeyDown={(e) => {
+								const target = e.target as HTMLElement;
+								const tag = target.tagName.toLowerCase();
+								if (
+									tag === "input" ||
+									tag === "textarea" ||
+									target.isContentEditable
+								) {
+									return;
+								}
+								editorRef.current?.focus();
+							}}
+						>
+							{/* Left side: settings + footer */}
 							<div className="flex items-center gap-2">
 								{!(
-									root.theme.hideToolsInIframe && isIframed
+									root.theme.featureFlags
+										?.hideToolsInIframe && isIframed
 								) && (
 									<DropdownMenu
 										open={menuOpen}
@@ -788,7 +866,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												isOpen={menuOpen}
 												onOpenChange={setMenuOpen}
 												fileRef={fileRef}
-												editorRef={editorRef}
+												knowledgeOverlayOpen={
+													knowledgeOverlayOpen
+												}
+												onKnowledgeOverlayChange={
+													setKnowledgeOverlayOpen
+												}
+												toolboxOverlayOpen={
+													toolboxOverlayOpen
+												}
+												onToolboxOverlayChange={
+													setToolboxOverlayOpen
+												}
 											/>
 										</DropdownMenuContent>
 									</DropdownMenu>
@@ -796,33 +885,36 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								{footer}
 							</div>
 							<div className="flex items-center gap-2">
-								{root.theme.featureFlags?.enableModelSelect && (
-									<EngineSelect
-										className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-										disabled={isLoading}
-										name={
-											model?.engine_display_name ||
-											model?.app_name ||
-											""
-										}
-										value={model?.app_id || ""}
-										engineTypes={["MODEL"]}
-										metaFilters={[
-											{ tag: "text-generation" },
-										]}
-										onChange={(v) => {
-											setModel(v);
-										}}
-										popoverContentProps={{
-											align: "start",
-										}}
-										tokensUsed={tokensUsed}
-										tokensMax={tokensMax}
-										contextTooltipContent={
-											contextTooltipContent
-										}
-									/>
-								)}
+								<div data-tour="tour-model">
+									{root.theme.featureFlags
+										?.enableModelSelect && (
+										<EngineSelect
+											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+											disabled={isLoading}
+											name={
+												model?.engine_display_name ||
+												model?.app_name ||
+												""
+											}
+											value={model?.app_id || ""}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											onChange={(v) => {
+												setModel(v);
+											}}
+											popoverContentProps={{
+												align: "start",
+											}}
+											tokensUsed={tokensUsed}
+											tokensMax={tokensMax}
+											contextTooltipContent={
+												contextTooltipContent
+											}
+										/>
+									)}
+								</div>
 								{predefinedPrompts.length > 0 ? (
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -847,6 +939,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
+											data-tour="tour-record"
 											variant="ghost"
 											aria-label={t("input.recordLabel")}
 											size="icon-sm"
@@ -893,7 +986,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
                                          - When loading: Pause tool execution */}
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span>
+										<span data-tour="tour-send">
 											<Button
 												variant="default"
 												size="icon-sm"
@@ -990,7 +1083,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					/>
 					{/* Slash command menu - searchable knowledge & toolbox only */}
 					{!isLoading &&
-						!(root.theme.hideToolsInIframe && isIframed) && (
+						!(
+							root.theme.featureFlags?.hideToolsInIframe &&
+							isIframed
+						) && (
 							<MentionPlugin
 								trigger="/"
 								MenuComponent={({
@@ -1042,6 +1138,46 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}
 					/>
 				</LexicalComposer>
+				{onMcpToggle && (
+					<>
+						<MCPOverlay
+							type="KNOWLEDGE"
+							open={knowledgeOverlayOpen}
+							values={options.mcp.filter(
+								(m) => m.type === "VECTOR",
+							)}
+							onClose={(updated) => {
+								setKnowledgeOverlayOpen(false);
+								if (updated)
+									applyMCPDiff(
+										options.mcp.filter(
+											(m) => m.type === "VECTOR",
+										),
+										updated,
+										onMcpToggle,
+									);
+							}}
+						/>
+						<MCPOverlay
+							type="TOOLBOX"
+							open={toolboxOverlayOpen}
+							values={options.mcp.filter(
+								(m) => m.type !== "VECTOR",
+							)}
+							onClose={(updated) => {
+								setToolboxOverlayOpen(false);
+								if (updated)
+									applyMCPDiff(
+										options.mcp.filter(
+											(m) => m.type !== "VECTOR",
+										),
+										updated,
+										onMcpToggle,
+									);
+							}}
+						/>
+					</>
+				)}
 			</div>
 		);
 	},

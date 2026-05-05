@@ -21,7 +21,6 @@ import {
 	Input,
 	P,
 	Progress,
-	Skeleton,
 	Spinner,
 	Table,
 	TableBody,
@@ -538,25 +537,18 @@ export const FileTable = (props: FileTableProps) => {
 	};
 
 	const renderLoadingRows = () => {
-		return Array.from({ length: NUM_RESULTS_PER_PAGE }, () => (
-			<TableRow key={`skeleton-${crypto.randomUUID()}`}>
-				<TableCell>
-					<Skeleton className="h-4 w-4" />
-				</TableCell>
-				<TableCell>
-					<Skeleton className="h-4 w-[200px]" />
-				</TableCell>
-				<TableCell>
-					<Skeleton className="h-4 w-[120px]" />
-				</TableCell>
-				<TableCell>
-					<Skeleton className="h-4 w-20" />
-				</TableCell>
-				<TableCell>
-					<Skeleton className="h-8 w-8" />
+		return (
+			<TableRow>
+				<TableCell colSpan={5} className="h-[200px]">
+					<div className="flex flex-col items-center justify-center gap-2">
+						<Spinner className="size-8 text-muted-foreground" />
+						<P className="text-muted-foreground text-sm">
+							Loading documents...
+						</P>
+					</div>
 				</TableCell>
 			</TableRow>
-		));
+		);
 	};
 
 	/**
@@ -872,7 +864,8 @@ export const FileTable = (props: FileTableProps) => {
 							</TableRow>
 						</TableHeader>
 						<TableBody>
-							{getFileDetails.status === "LOADING"
+							{getFileDetails.status === "LOADING" ||
+							getFileDetails.status === "INITIAL"
 								? renderLoadingRows()
 								: verifiedFiles.length === 0
 									? renderEmptyState()

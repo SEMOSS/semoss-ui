@@ -1,10 +1,11 @@
 import { useQueryResults } from "./use-database-query-results";
 import { usePixel } from "./use-pixel";
+import { useSparqlQueryExecution } from "./use-sparql-query-execution";
+import { useSqlQueryExecution } from "./use-sql-query-execution";
+import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useAPI } from "./useAPI";
-import { useBlockSettings } from "./useBlockSettings";
 import { useCacheState } from "./useCacheState";
 import { useQueryEditor } from "./useDatabaseQueryEditor";
-import { useQueryExecution } from "./useDatabaseQueryExecution";
 import { useDatabaseStructure } from "./useDatabaseStructure";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
@@ -17,9 +18,12 @@ import { useSettings } from "./useSettings";
 import { useStepper } from "./useStepper";
 import { useWorkspace } from "./useWorkspace";
 
+// NOTE: Do not export `useBlockSettings` from this barrel.
+// Keep it as a direct import (`@/hooks/useBlockSettings`) to avoid pulling
+// block/renderer dependencies into the broad `@/hooks` import graph, which
+// increases production bundle size.
 export {
 	useAPI,
-	useBlockSettings,
 	useCacheState,
 	useDatabaseStructure,
 	useDesigner,
@@ -29,11 +33,13 @@ export {
 	usePage,
 	usePixel,
 	useQueryEditor,
-	useQueryExecution,
+	useSqlQueryExecution,
+	useSparqlQueryExecution,
 	useQueryResults,
 	useRootStore,
 	useServerPagination,
 	useSettings,
 	useStepper,
+	useTabBarScroll,
 	useWorkspace,
 };
