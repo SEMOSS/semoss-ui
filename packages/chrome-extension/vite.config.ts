@@ -8,6 +8,11 @@ export default defineConfig({
 	plugins: [react(), crx({ manifest })],
 	resolve: {
 		alias: {
+			"@": resolve(__dirname, "../../libs/ui/src"),
+			"@semoss/ui/next": resolve(
+				__dirname,
+				"../../libs/ui/src/next/index.ts",
+			),
 			"@semoss/ui": resolve(__dirname, "../../libs/ui/src/index.ts"),
 			"@semoss/sdk": resolve(__dirname, "../../libs/sdk/src/index.ts"),
 			"@semoss/shared": resolve(

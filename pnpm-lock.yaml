@@ -571,12 +571,6 @@ importers:
 
   packages/chrome-extension:
     dependencies:
-      '@emotion/react':
-        specifier: ^11.11.1
-        version: 11.14.0(@types/react@18.3.1)(react@18.3.1)
-      '@emotion/styled':
-        specifier: ^11.11.0
-        version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.1)(react@18.3.1))(@types/react@18.3.1)(react@18.3.1)
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
