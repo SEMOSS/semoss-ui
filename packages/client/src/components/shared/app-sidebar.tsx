@@ -127,10 +127,17 @@ export const Sidebar: React.FC = observer(() => {
 				collapsible="none"
 				className="h-full border-r-0"
 				onMouseLeave={() => closeSidebar()}
+				data-testid="sidebar"
 			>
-				<ShadcnSidebarHeader className="gap-0 p-0">
+				<ShadcnSidebarHeader
+					className="gap-0 p-0"
+					data-testid="sidebar-header"
+				>
 					<div className="relative z-0 flex w-full items-center px-4 pt-3 pb-3">
-						<span className="flex-1 font-bold text-lg leading-tight">
+						<span
+							className="flex-1 font-bold text-lg leading-tight"
+							data-testid="sidebar-theme-name"
+						>
 							{configStore.theme.name}
 						</span>
 						<button
@@ -142,6 +149,7 @@ export const Sidebar: React.FC = observer(() => {
 							}
 							className="shrink-0 rounded-[7.5px] border border-border p-[3.75px] transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
 							onClick={toggleSidebarPin}
+							data-testid={"sidebar-pin-btn"}
 						>
 							<PanelLeftOpen className="size-5" />
 						</button>
@@ -149,8 +157,10 @@ export const Sidebar: React.FC = observer(() => {
 				</ShadcnSidebarHeader>
 
 				<SidebarSeparator className="mx-0" />
-
-				<ShadcnSidebarContent className="gap-0">
+				<ShadcnSidebarContent
+					className="gap-0"
+					data-testid="sidebar-content"
+				>
 					<SidebarGroup className="p-0">
 						<SidebarMenu
 							className="gap-0"
@@ -187,7 +197,10 @@ export const Sidebar: React.FC = observer(() => {
 					{/* Catalog navigation */}
 					{viewSidebar ? (
 						<SidebarGroup className="p-0">
-							<SidebarGroupLabel className="h-auto rounded-none px-4 py-2 font-semibold text-muted-foreground text-xs">
+							<SidebarGroupLabel
+								className="h-auto rounded-none px-4 py-2 font-semibold text-muted-foreground text-xs"
+								data-testid="sidebar-catalog-label"
+							>
 								Catalog
 							</SidebarGroupLabel>
 							<SidebarMenu
@@ -301,7 +314,10 @@ export const Sidebar: React.FC = observer(() => {
 				<SidebarSeparator className="mx-0" />
 
 				{/* Footer: User / Logout */}
-				<ShadcnSidebarFooter className="p-0">
+				<ShadcnSidebarFooter
+					className="p-0"
+					data-testid="sidebar-footer"
+				>
 					<SidebarMenu className="gap-0" aria-label="user navigation">
 						<SidebarMenuItem>
 							<LogoutPopover
@@ -332,7 +348,10 @@ export const Sidebar: React.FC = observer(() => {
 	// Permanent sidebar (pinned): participates in flex layout
 	if (page.sidebar.pinned) {
 		return (
-			<aside className="relative z-10 flex h-full w-72 shrink-0 flex-col border-border border-r bg-sidebar">
+			<aside
+				className="relative z-10 flex h-full w-72 shrink-0 flex-col border-border border-r bg-sidebar"
+				data-testid="sidebar-pinned"
+			>
 				{sidebarContent}
 			</aside>
 		);
@@ -351,6 +370,7 @@ export const Sidebar: React.FC = observer(() => {
 			<SheetContent
 				side="left"
 				className="w-72 max-w-none gap-0 bg-sidebar p-0 [&>button]:hidden"
+				data-testid="sidebar-overlay"
 			>
 				<SheetTitle className="sr-only">Navigation</SheetTitle>
 				{sidebarContent}

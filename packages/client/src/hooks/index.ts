@@ -1,9 +1,11 @@
 import { useQueryResults } from "./use-database-query-results";
 import { usePixel } from "./use-pixel";
+import { useSparqlQueryExecution } from "./use-sparql-query-execution";
+import { useSqlQueryExecution } from "./use-sql-query-execution";
+import { useTabBarScroll } from "./use-tab-bar-scroll";
 import { useAPI } from "./useAPI";
 import { useCacheState } from "./useCacheState";
 import { useQueryEditor } from "./useDatabaseQueryEditor";
-import { useQueryExecution } from "./useDatabaseQueryExecution";
 import { useDatabaseStructure } from "./useDatabaseStructure";
 import { useDesigner } from "./useDesigner";
 import { useEngine } from "./useEngine";
@@ -31,11 +33,13 @@ export {
 	usePage,
 	usePixel,
 	useQueryEditor,
-	useQueryExecution,
+	useSqlQueryExecution,
+	useSparqlQueryExecution,
 	useQueryResults,
 	useRootStore,
 	useServerPagination,
 	useSettings,
 	useStepper,
+	useTabBarScroll,
 	useWorkspace,
 };

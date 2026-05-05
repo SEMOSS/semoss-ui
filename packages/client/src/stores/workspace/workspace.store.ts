@@ -70,6 +70,26 @@ export interface WorkspaceStoreInterface {
 		 */
 		content: () => JSX.Element;
 	};
+
+	/**
+	 * File browser state used to sync asset path suggestions to terminal
+	 */
+	fileBrowser: {
+		/**
+		 * True while the app file browser panel is mounted/open
+		 */
+		isOpen: boolean;
+
+		/**
+		 * Current directory path shown by the browser
+		 */
+		path: string;
+
+		/**
+		 * Visible asset paths currently rendered in the browser tree
+		 */
+		visiblePaths: string[];
+	};
 }
 
 export interface WorkspaceConfigInterface {
@@ -130,6 +150,11 @@ export class WorkspaceStore {
 				maxWidth: "sm",
 			},
 			content: () => null,
+		},
+		fileBrowser: {
+			isOpen: false,
+			path: "/",
+			visiblePaths: [],
 		},
 	};
 
@@ -211,6 +236,13 @@ export class WorkspaceStore {
 	 */
 	get metadata() {
 		return this._store.metadata;
+	}
+
+	/**
+	 * Get the file browser snapshot used for terminal suggestion sync
+	 */
+	get fileBrowser() {
+		return this._store.fileBrowser;
 	}
 
 	/**
@@ -350,5 +382,29 @@ export class WorkspaceStore {
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
+	};
+
+	/**
+	 * Track whether the app file browser is open/mounted
+	 */
+	setFileBrowserOpen = (isOpen: boolean) => {
+		this._store.fileBrowser.isOpen = isOpen;
+
+		if (!isOpen) {
+			this._store.fileBrowser.path = "/";
+			this._store.fileBrowser.visiblePaths = [];
+		}
+	};
+
+	/**
+	 * Update the latest visible paths from the app file browser
+	 */
+	setFileBrowserVisiblePaths = (path: string, visiblePaths: string[]) => {
+		const normalized = Array.from(
+			new Set(visiblePaths.map((value) => value.trim()).filter(Boolean)),
+		);
+
+		this._store.fileBrowser.path = path || "/";
+		this._store.fileBrowser.visiblePaths = normalized;
 	};
 }

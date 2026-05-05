@@ -119,7 +119,7 @@ export const EngineSelect = ({
 			open
 				? `META | MyEngines(${
 						debouncedSearch
-							? `filterWord=["<encode>${debouncedSearch}</encode>"], `
+							? `filterWord=${JSON.stringify(debouncedSearch)}, `
 							: ""
 					} ${
 						engineTypes
