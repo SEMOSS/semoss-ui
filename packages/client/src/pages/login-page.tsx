@@ -1,3 +1,4 @@
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -20,6 +21,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { setupResetPassword } from "@/api/auth";
 import { useRootStore } from "@/hooks";
 import {
 	getLoginProviderInitials,
@@ -46,6 +48,42 @@ interface TypeUserRegister {
 	PASSWORD_CONFIRMATION: "";
 }
 
+const LOGIN_ROLE_OUTCOMES = [
+	{
+		title: "Analysts",
+		description: "Go from raw data to trusted dashboards without handoffs.",
+	},
+	{
+		title: "Engineers",
+		description: "Orchestrate models, APIs, and workflows in one runtime.",
+	},
+	{
+		title: "Operations",
+		description:
+			"Secure, monitor, and scale delivery with full visibility.",
+	},
+] as const;
+const LOGIN_WHY_CHOOSE_US = [
+	{
+		title: "Build faster",
+		description:
+			"Compose notebooks, apps, and automations from one workspace.",
+	},
+	{
+		title: "Govern centrally",
+		description:
+			"Apply enterprise authentication and access controls across teams.",
+	},
+	{
+		title: "Deploy confidently",
+		description:
+			"Ship with reusable pipelines and production-ready workflows.",
+	},
+] as const;
+const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
+type LoginPasswordResetType = (typeof LOGIN_PASSWORD_RESET_TYPES)[number];
+type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
+
 export const LoginPage = observer(() => {
 	const { configStore } = useRootStore();
 	const location = useLocation();
@@ -57,9 +95,15 @@ export const LoginPage = observer(() => {
 	>("");
 	const [register, setRegister] = useState(false);
 	const [showOTPCodeField, setShowOTPCodeField] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
+	const [resetPasswordEmail, setResetPasswordEmail] = useState("");
+	const [resetPasswordError, setResetPasswordError] = useState("");
+	const [resetPasswordSuccess, setResetPasswordSuccess] = useState("");
+	const [isResetPasswordSubmitting, setIsResetPasswordSubmitting] =
+		useState(false);
 	const [oauthProviderLogos, setOauthProviderLogos] = useState<
 		Record<string, string>
 	>({});
@@ -143,6 +187,9 @@ export const LoginPage = observer(() => {
 
 	const hasMoreThanOneUserNamePassword =
 		(isNative && isLdap) || (isNative && isLinOTP) || (isLdap && isLinOTP);
+	const canRequestPasswordReset = LOGIN_PASSWORD_RESET_TYPES.includes(
+		loginType as LoginPasswordResetType,
+	);
 
 	useEffect(() => {
 		if (isNative) {
@@ -320,6 +367,75 @@ export const LoginPage = observer(() => {
 			});
 	};
 
+	const openForgotPasswordDialog = () => {
+		setResetPasswordEmail("");
+		setResetPasswordError("");
+		setResetPasswordSuccess("");
+		setForgotPassword(true);
+	};
+
+	const closeForgotPasswordDialog = () => {
+		setForgotPassword(false);
+		setResetPasswordEmail("");
+		setResetPasswordError("");
+		setResetPasswordSuccess("");
+		setIsResetPasswordSubmitting(false);
+	};
+
+	const submitForgotPassword = async () => {
+		const email = resetPasswordEmail.trim();
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+		if (!email) {
+			setResetPasswordError("Email is required.");
+			return;
+		}
+
+		if (!emailRegex.test(email)) {
+			setResetPasswordError("Please enter a valid email address.");
+			return;
+		}
+
+		if (!canRequestPasswordReset) {
+			setResetPasswordError(
+				"Password reset is only available for Native, LDAP, and LinOTP logins.",
+			);
+			return;
+		}
+
+		const selectedLoginType =
+			loginType.toUpperCase() as LoginPasswordResetApiType;
+		const subjectPrefix = configStore.theme.name?.trim() || "SEMOSS";
+		const subject = `${subjectPrefix} Reset Password Request`;
+
+		setIsResetPasswordSubmitting(true);
+		setResetPasswordError("");
+		setResetPasswordSuccess("");
+
+		try {
+			const response = await setupResetPassword(
+				email,
+				selectedLoginType,
+				subject,
+			);
+			const message =
+				response.message || `Email has been sent to: ${email}`;
+
+			setResetPasswordSuccess(message);
+			toast.success(message);
+		} catch (submissionError) {
+			const message =
+				submissionError instanceof Error
+					? submissionError.message
+					: "Unable to submit password reset request.";
+
+			setResetPasswordError(message);
+			toast.error(message);
+		} finally {
+			setIsResetPasswordSubmitting(false);
+		}
+	};
+
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
 
 	if (configStore.store.status === "SUCCESS") {
@@ -328,6 +444,27 @@ export const LoginPage = observer(() => {
 
 	return (
 		<>
+			<style>{`
+				@keyframes loginFeaturePillFadeUp {
+					from {
+						opacity: 0;
+						transform: translateY(10px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+
+				@keyframes loginCardShimmer {
+					from {
+						transform: translateX(-180%);
+					}
+					to {
+						transform: translateX(260%);
+					}
+				}
+			`}</style>
 			<div className="relative grid min-h-screen w-full bg-[#e9edf3] lg:grid-cols-2 dark:bg-muted/20">
 				<div className="relative flex min-h-screen w-full flex-col overflow-hidden">
 					<div
@@ -339,7 +476,7 @@ export const LoginPage = observer(() => {
 						className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#f4f7fb_0%,#e9edf3_44%,#e3e8ef_100%)] dark:bg-none"
 					/>
 					<div className="relative z-10 flex w-full flex-1 items-center justify-center overflow-y-auto px-6 pt-4 pb-4 md:px-10 md:pt-8 md:pb-6">
-						<div className="w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#bcc5d1] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur md:p-8 dark:border-border/70 dark:bg-background/95 dark:shadow-sm">
+						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#bcc5d1] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur md:p-8 dark:border-border/70 dark:bg-background/95 dark:shadow-sm">
 							<div className="mb-6">
 								<div className="mb-2 flex flex-row items-center gap-2">
 									{configStore.theme.logo ? (
@@ -1143,27 +1280,59 @@ export const LoginPage = observer(() => {
 																>
 																	Password
 																</Label>
-																<Input
-																	id={`${uid}-login-password`}
-																	type="password"
-																	value={
-																		field.value ||
-																		""
-																	}
-																	onChange={(
-																		e,
-																	) =>
-																		field.onChange(
-																			e
-																				.target
-																				.value,
-																		)
-																	}
-																	data-testid="loginPage-textField-password"
-																	aria-invalid={
-																		!!formErrors.PASSWORD
-																	}
-																/>
+																<div className="relative">
+																	<Input
+																		id={`${uid}-login-password`}
+																		type={
+																			showPassword
+																				? "text"
+																				: "password"
+																		}
+																		value={
+																			field.value ||
+																			""
+																		}
+																		onChange={(
+																			e,
+																		) =>
+																			field.onChange(
+																				e
+																					.target
+																					.value,
+																			)
+																		}
+																		data-testid="loginPage-textField-password"
+																		aria-invalid={
+																			!!formErrors.PASSWORD
+																		}
+																		className="pr-10"
+																	/>
+																	<Button
+																		type="button"
+																		variant="ghost"
+																		size="icon-sm"
+																		className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+																		onClick={() =>
+																			setShowPassword(
+																				(
+																					prev,
+																				) =>
+																					!prev,
+																			)
+																		}
+																		aria-label={
+																			showPassword
+																				? "Hide password"
+																				: "Show password"
+																		}
+																	>
+																		{showPassword ? (
+																			<EyeOff className="h-4 w-4" />
+																		) : (
+																			<Eye className="h-4 w-4" />
+																		)}
+																	</Button>
+																</div>
 																{formErrors.PASSWORD && (
 																	<p className="text-destructive text-sm">
 																		{
@@ -1176,6 +1345,20 @@ export const LoginPage = observer(() => {
 															</div>
 														)}
 													/>
+													{canRequestPasswordReset && (
+														<div className="flex justify-end">
+															<Button
+																type="button"
+																variant="link"
+																className="h-auto px-0 py-0 text-sm"
+																onClick={
+																	openForgotPasswordDialog
+																}
+															>
+																Forgot password?
+															</Button>
+														</div>
+													)}
 												</>
 											)}
 
@@ -1219,7 +1402,14 @@ export const LoginPage = observer(() => {
 														onClick={login}
 														data-testid="loginPage-button-login"
 													>
-														Login
+														{isLoading ? (
+															<span className="flex items-center gap-2">
+																<Loader2 className="h-4 w-4 animate-spin" />
+																Logging in...
+															</span>
+														) : (
+															"Login"
+														)}
 													</Button>
 													{configStore.store.config
 														.nativeRegistration && (
@@ -1250,6 +1440,21 @@ export const LoginPage = observer(() => {
 									)}
 								</div>
 							</form>
+							{isLoading && (
+								<div
+									aria-hidden
+									className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+								>
+									<div className="absolute inset-0 bg-white/35 dark:bg-background/25" />
+									<div
+										className="-left-1/3 -skew-x-12 absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/80 to-transparent"
+										style={{
+											animation:
+												"loginCardShimmer 1200ms ease-out infinite",
+										}}
+									/>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
@@ -1262,7 +1467,7 @@ export const LoginPage = observer(() => {
 						aria-hidden
 						className="absolute inset-0 bg-[radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.26),transparent_38%),radial-gradient(circle_at_84%_76%,rgba(255,255,255,0.22),transparent_42%)]"
 					/>
-					<div className="relative z-10 flex h-full flex-col justify-between p-10 text-white xl:p-14">
+					<div className="relative z-10 flex h-full flex-col p-10 text-white xl:p-14">
 						<div className="flex items-center">
 							{configStore.theme.logo ? (
 								<img
@@ -1272,7 +1477,7 @@ export const LoginPage = observer(() => {
 								/>
 							) : null}
 						</div>
-						<div className="max-w-md space-y-4">
+						<div className="mt-24 w-full max-w-xl space-y-4 xl:mt-28">
 							<p className="font-semibold text-4xl leading-tight">
 								From data to decisions in one platform.
 							</p>
@@ -1282,41 +1487,142 @@ export const LoginPage = observer(() => {
 								experience.
 							</p>
 						</div>
-						<div className="grid gap-3 text-sm text-white/90">
-							<div className="rounded-xl border border-white/30 bg-white/10 px-4 py-3 backdrop-blur-sm">
-								Unified workspace for notebooks, dashboards, and
-								apps
+						<div className="mt-8 mb-4 w-full max-w-xl space-y-5 text-white/92 xl:mb-6">
+							<div className="space-y-2.5">
+								<p className="font-semibold text-white/75 text-xs uppercase tracking-[0.12em]">
+									Made For
+								</p>
+								<ul className="space-y-2.5 text-[15px]">
+									{LOGIN_ROLE_OUTCOMES.map((item, index) => (
+										<li
+											key={item.title}
+											className="flex items-start gap-3"
+											style={{
+												opacity: 0,
+												animation:
+													"loginFeaturePillFadeUp 520ms ease-out forwards",
+												animationDelay: `${index * 100}ms`,
+											}}
+										>
+											<span
+												aria-hidden
+												className="mt-[0.52rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/80"
+											/>
+											<span className="leading-relaxed">
+												<span className="font-semibold text-white">
+													{item.title}
+												</span>
+												{": "}
+												{item.description}
+											</span>
+										</li>
+									))}
+								</ul>
 							</div>
-							<div className="rounded-xl border border-white/30 bg-white/10 px-4 py-3 backdrop-blur-sm">
-								Governed collaboration with enterprise
-								authentication
-							</div>
-							<div className="rounded-xl border border-white/30 bg-white/10 px-4 py-3 backdrop-blur-sm">
-								Faster delivery with reusable pipelines and
-								automation
+							<div className="h-px w-full bg-white/25" />
+							<div className="space-y-2.5">
+								<p className="font-semibold text-white/75 text-xs uppercase tracking-[0.12em]">
+									Built To
+								</p>
+								<ul className="space-y-2.5 text-[15px]">
+									{LOGIN_WHY_CHOOSE_US.map((item, index) => (
+										<li
+											key={item.title}
+											className="flex items-start gap-3"
+											style={{
+												opacity: 0,
+												animation:
+													"loginFeaturePillFadeUp 520ms ease-out forwards",
+												animationDelay: `${(index + 3) * 100}ms`,
+											}}
+										>
+											<span
+												aria-hidden
+												className="mt-[0.52rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/80"
+											/>
+											<span className="leading-relaxed">
+												<span className="font-semibold text-white">
+													{item.title}
+												</span>
+												{": "}
+												{item.description}
+											</span>
+										</li>
+									))}
+								</ul>
 							</div>
 						</div>
 					</div>
 				</aside>
-				{isLoading && (
-					<div className="pointer-events-none absolute inset-x-0 bottom-0 h-1 overflow-hidden bg-primary/20">
-						<div className="h-full animate-pulse bg-primary" />
-					</div>
-				)}
 			</div>
 
-			<Dialog open={forgotPassword} onOpenChange={setForgotPassword}>
+			<Dialog
+				open={forgotPassword}
+				onOpenChange={(isOpen) => {
+					if (!isOpen) {
+						closeForgotPasswordDialog();
+						return;
+					}
+
+					setForgotPassword(true);
+				}}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Forgot your password?</DialogTitle>
 					</DialogHeader>
-					<p>Please contact your administrator to reset password.</p>
+					<div className="flex flex-col gap-3">
+						<p className="text-muted-foreground text-sm">
+							Enter the email associated with your{" "}
+							{loginType.toUpperCase()} login.
+						</p>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor={`${uid}-forgot-password-email`}>
+								Email
+							</Label>
+							<Input
+								id={`${uid}-forgot-password-email`}
+								type="email"
+								value={resetPasswordEmail}
+								onChange={(event) =>
+									setResetPasswordEmail(event.target.value)
+								}
+								placeholder="name@company.com"
+								autoFocus
+							/>
+						</div>
+						{resetPasswordError ? (
+							<Alert variant="destructive">
+								<AlertDescription>
+									{resetPasswordError}
+								</AlertDescription>
+							</Alert>
+						) : null}
+						{resetPasswordSuccess ? (
+							<div className="rounded-md border border-green-500 bg-green-50 px-3 py-2 text-green-700 text-sm dark:bg-green-950/30 dark:text-green-400">
+								{resetPasswordSuccess}
+							</div>
+						) : null}
+					</div>
 					<DialogFooter>
 						<Button
 							variant="outline"
-							onClick={() => setForgotPassword(false)}
+							onClick={closeForgotPasswordDialog}
 						>
-							Ok
+							Cancel
+						</Button>
+						<Button
+							onClick={submitForgotPassword}
+							disabled={isResetPasswordSubmitting}
+						>
+							{isResetPasswordSubmitting ? (
+								<span className="flex items-center gap-2">
+									<Loader2 className="h-4 w-4 animate-spin" />
+									Sending...
+								</span>
+							) : (
+								"Send reset link"
+							)}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
