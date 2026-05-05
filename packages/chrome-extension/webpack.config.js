@@ -39,10 +39,6 @@ module.exports = {
 				__dirname,
 				"../../libs/ui/dist/next.mjs",
 			),
-			"@semoss/ui": path.resolve(
-				__dirname,
-				"../../libs/ui/dist/index.mjs",
-			),
 		},
 	},
 	plugins: [
