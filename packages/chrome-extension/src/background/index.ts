@@ -204,6 +204,210 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 		return true; // Async response
 	}
 
+	// Handle save recording to project - Direct HTTP call to Semoss backend
+	if (message.type === "SAVE_RECORDING_TO_PROJECT") {
+		console.log("[BACKGROUND] 💾 ========== SAVE DEBUG START ==========");
+		console.log("[BACKGROUND] Payload:", message.payload);
+
+		// Define types for the reactor response
+		interface ReactorResponse {
+			pixelReturn?: Array<{
+				output?: {
+					success?: boolean;
+					fileName?: string;
+					error?: string;
+				};
+			}>;
+		}
+
+		const { projectId, name, jsonPayload, title, description, intent } =
+			message.payload;
+
+		console.log("[BACKGROUND] Project ID:", projectId);
+		console.log("[BACKGROUND] Name:", name);
+		console.log("[BACKGROUND] JSON length:", jsonPayload?.length || 0);
+
+		// Build the pixel command
+		const pixelCommand = `SaveRecordingFromExtension(project="${projectId}", name="${name}", jsonPayload=${JSON.stringify(jsonPayload)}${title ? `, title="${title}"` : ""}${description ? `, description="${description}"` : ""}${intent ? `, intent="${intent}"` : ""});`;
+
+		console.log("[BACKGROUND] Pixel command length:", pixelCommand.length);
+		console.log(
+			"[BACKGROUND] Pixel preview:",
+			pixelCommand.substring(0, 200) + "...",
+		);
+
+		// Try multiple possible Semoss URLs
+		const possibleUrls = [
+			"http://localhost:9090/Monolith/api/engine/runPixel",
+			"http://localhost:8080/Monolith/api/engine/runPixel",
+			"http://localhost:5173/Semoss/api/engine/runPixel",
+			"http://localhost:5174/Semoss/api/engine/runPixel",
+			"http://localhost:8080/Semoss/api/engine/runPixel",
+		];
+
+		console.log("[BACKGROUND] URLs to try:", possibleUrls);
+
+		// Function to try a URL
+		const tryUrl = async (url: string): Promise<unknown> => {
+			console.log(`[BACKGROUND] 🔄 Attempting: ${url}`);
+
+			const formData = new URLSearchParams();
+			formData.append("expression", pixelCommand);
+
+			console.log(
+				`[BACKGROUND] Body size: ${formData.toString().length} bytes`,
+			);
+
+			const fetchOptions = {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				credentials: "include" as RequestCredentials,
+				body: formData.toString(),
+			};
+
+			console.log(`[BACKGROUND] Fetch options:`, {
+				method: fetchOptions.method,
+				headers: fetchOptions.headers,
+				credentials: fetchOptions.credentials,
+			});
+
+			console.log(`[BACKGROUND] 📡 Sending request...`);
+			const response = await fetch(url, fetchOptions);
+
+			console.log(`[BACKGROUND] 📥 Response:`, {
+				status: response.status,
+				statusText: response.statusText,
+				ok: response.ok,
+				type: response.type,
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error(
+					`[BACKGROUND] ❌ Response body:`,
+					errorText.substring(0, 500),
+				);
+				throw new Error(
+					`HTTP ${response.status}: ${errorText.substring(0, 100)}`,
+				);
+			}
+
+			const data = await response.json();
+			console.log(`[BACKGROUND] 📦 Parsed JSON:`, data);
+			return data;
+		};
+
+		// Try URLs sequentially until one works
+		(async () => {
+			let lastError: unknown = null;
+			let attemptNum = 0;
+
+			for (const url of possibleUrls) {
+				attemptNum++;
+				try {
+					console.log(
+						`[BACKGROUND] ========== ATTEMPT ${attemptNum}/${possibleUrls.length} ==========`,
+					);
+					const data = (await tryUrl(url)) as ReactorResponse;
+					console.log("[BACKGROUND] ✅ SUCCESS! Data:", data);
+
+					// Parse the reactor response
+					let success = false;
+					let fileName = null;
+					let error = null;
+
+					console.log("[BACKGROUND] Parsing response...");
+					console.log(
+						"[BACKGROUND] Has pixelReturn:",
+						!!data?.pixelReturn,
+					);
+
+					if (
+						data &&
+						data.pixelReturn &&
+						data.pixelReturn.length > 0
+					) {
+						const result = data.pixelReturn[0];
+						console.log("[BACKGROUND] First result:", result);
+
+						if (result && result.output) {
+							console.log("[BACKGROUND] Output:", result.output);
+							success = result.output.success || false;
+							fileName = result.output.fileName;
+							error = result.output.error;
+						}
+					}
+
+					console.log("[BACKGROUND] Parsed:", {
+						success,
+						fileName,
+						error,
+					});
+
+					if (success) {
+						console.log("[BACKGROUND] ✅ Sending success");
+						sendResponse({ success: true, fileName: fileName });
+					} else {
+						console.error(
+							"[BACKGROUND] ❌ Sending failure:",
+							error,
+						);
+						sendResponse({
+							success: false,
+							error: error || "Failed to save recording",
+						});
+					}
+
+					console.log(
+						"[BACKGROUND] ========== SAVE DEBUG END (SUCCESS) ==========",
+					);
+					return;
+				} catch (error: unknown) {
+					const err =
+						error instanceof Error
+							? error
+							: new Error(String(error));
+					console.error(
+						`[BACKGROUND] ❌ Attempt ${attemptNum} FAILED`,
+					);
+					console.error(
+						`[BACKGROUND] Error type:`,
+						err?.constructor?.name,
+					);
+					console.error(`[BACKGROUND] Error message:`, err?.message);
+					console.error(`[BACKGROUND] Full error:`, error);
+
+					lastError = error;
+				}
+			}
+
+			// All URLs failed
+			console.error("[BACKGROUND] ❌❌❌ ALL ATTEMPTS FAILED");
+			console.error("[BACKGROUND] Last error:", lastError);
+			const lastErr =
+				lastError instanceof Error
+					? lastError
+					: new Error(String(lastError));
+			console.error(
+				"[BACKGROUND] Error name:",
+				lastErr?.constructor?.name,
+			);
+			console.error("[BACKGROUND] Error message:", lastErr?.message);
+
+			const errorMsg = `Unable to connect. Error: ${lastErr?.constructor?.name}: ${lastErr?.message}`;
+			console.error("[BACKGROUND] Final message:", errorMsg);
+
+			sendResponse({ success: false, error: errorMsg });
+			console.log(
+				"[BACKGROUND] ========== SAVE DEBUG END (FAILURE) ==========",
+			);
+		})();
+
+		return true; // Async response
+	}
+
 	// Handle recording-related messages
 	if (message.type === "EVENT") {
 		_handleRecordingEvent(message.data as EventMessage, sender.tab?.id);

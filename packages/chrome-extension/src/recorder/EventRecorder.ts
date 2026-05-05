@@ -62,9 +62,6 @@ export class EventRecorder {
 		(
 			window as Window & { __semossRecorderInitialized?: boolean }
 		).__semossRecorderInitialized = true;
-
-		// Send initial navigation event for current URL
-		this.sendNavigationEvent(window.location.href);
 	}
 
 	/**

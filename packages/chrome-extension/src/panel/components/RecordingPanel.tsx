@@ -6,7 +6,15 @@
 import type { FC } from "react";
 // biome-ignore lint/correctness/noUnusedImports: React is required for JSX transform
 import React, { useState } from "react";
-import { Box, Button, Card, Stack, TextField, Typography } from "@semoss/ui";
+import {
+	Box,
+	Button,
+	Card,
+	Stack,
+	TextField,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import type { RecordedAction } from "../../recorder/types";
 import { useRecordingState } from "../../services/recordingStateManager";
 
@@ -20,6 +28,7 @@ export const RecordingPanel: FC = () => {
 		resumeRecording,
 		clearRecording,
 	} = useRecordingState();
+	const notification = useNotification();
 	const [scriptName, setScriptName] = useState("");
 
 	const handleStartRecording = async () => {
@@ -27,9 +36,10 @@ export const RecordingPanel: FC = () => {
 			await startRecording();
 		} catch (error) {
 			console.error("[RecordingPanel] Failed to start recording:", error);
-			alert(
-				`Failed to start recording: ${error instanceof Error ? error.message : "Unknown error"}`,
-			);
+			notification.add({
+				color: "error",
+				message: `Failed to start recording: ${error instanceof Error ? error.message : "Unknown error"}`,
+			});
 		}
 	};
 
@@ -55,7 +65,7 @@ export const RecordingPanel: FC = () => {
 
 	const handleSave = async () => {
 		try {
-			// Save to Chrome storage with the current name
+			// Generate Playwright JSON
 			const { PlaywrightExporter } = await import(
 				"../../recorder/exporters/PlaywrightExporter"
 			);
@@ -67,21 +77,53 @@ export const RecordingPanel: FC = () => {
 				name,
 			);
 
-			// Save to local storage
-			await chrome.storage.local.set({
-				[`savedScript_${Date.now()}`]: {
-					name,
-					script: playwrightJson,
-					savedAt: Date.now(),
-				},
-			});
+			// Custom replacer to ensure deviceScaleFactor is always formatted as float (1.0)
+			const replacer = (key: string, value: unknown) => {
+				if (key === "deviceScaleFactor" && typeof value === "number") {
+					// Force float format by converting to string with .toFixed(1)
+					return parseFloat(value.toFixed(1));
+				}
+				return value;
+			};
 
-			alert("Script saved successfully!");
+			// Format JSON with proper indentation (4 spaces to match Playwright unified format)
+			const jsonString = JSON.stringify(playwrightJson, replacer, 4);
+
+			// Send to portal to save to project
+			const payload = {
+				type: "SAVE_RECORDING_TO_PROJECT",
+				payload: {
+					projectId: "b12d7bd5-7338-445d-9b11-ef1f3322d52b",
+					name: name,
+					jsonPayload: jsonString,
+					title: playwrightJson.meta.title,
+					description: playwrightJson.meta.description,
+					intent: playwrightJson.meta.intent,
+				},
+			};
+
+			console.log(
+				"[RecordingPanel] Sending save request to portal:",
+				payload,
+			);
+
+			// Send message to content script which will forward to portal
+			const response = await chrome.runtime.sendMessage(payload);
+
+			if (response?.success) {
+				notification.add({
+					color: "success",
+					message: `Recording saved successfully: ${response.fileName || name}`,
+				});
+			} else {
+				throw new Error(response?.error || "Failed to save recording");
+			}
 		} catch (error) {
 			console.error("[RecordingPanel] Failed to save:", error);
-			alert(
-				`Failed to save: ${error instanceof Error ? error.message : "Unknown error"}`,
-			);
+			notification.add({
+				color: "error",
+				message: `Failed to save: ${error instanceof Error ? error.message : "Unknown error"}`,
+			});
 		}
 	};
 
@@ -107,9 +149,8 @@ export const RecordingPanel: FC = () => {
 				return value;
 			};
 
-			// Create blob and download with custom JSON formatting
-			const jsonString = JSON.stringify(playwrightJson, replacer, 2);
-			// Post-process to ensure deviceScaleFactor has .0 suffix
+			// Create blob and download with custom JSON formatting (4 spaces to match Playwright unified format)
+			const jsonString = JSON.stringify(playwrightJson, replacer, 4); // Post-process to ensure deviceScaleFactor has .0 suffix
 			const jsonWithFloats = jsonString.replace(
 				/"deviceScaleFactor"\s*:\s*1([,\s}])/g,
 				'"deviceScaleFactor": 1.0$1',
@@ -126,9 +167,10 @@ export const RecordingPanel: FC = () => {
 			URL.revokeObjectURL(url);
 		} catch (error) {
 			console.error("[RecordingPanel] Failed to download:", error);
-			alert(
-				`Failed to download: ${error instanceof Error ? error.message : "Unknown error"}`,
-			);
+			notification.add({
+				color: "error",
+				message: `Failed to download: ${error instanceof Error ? error.message : "Unknown error"}`,
+			});
 		}
 	};
 
