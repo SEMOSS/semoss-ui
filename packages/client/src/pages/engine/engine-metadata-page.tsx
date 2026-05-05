@@ -16,6 +16,7 @@ import {
 	console as getPixelConsole,
 	usePixel,
 } from "@semoss/sdk/react";
+import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -43,10 +44,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import {
-	ColumnMetadataModal,
-	type LogicalDataType,
-} from "@semoss/shared";
 import { SyncExternalDatabaseOverlay } from "@/components/database";
 import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
@@ -332,7 +329,7 @@ export const EngineMetadataPage = observer(() => {
 	);
 
 	const getDatabaseCategory = usePixel<string>(
-		active.id ? `GetDatabaseCategory(database=["${active.id}"]);` : "",
+		active.id ? `GetDatabaseCategory(engine=["${active.id}"]);` : "",
 	);
 	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
 
@@ -997,7 +994,16 @@ Error ${e.message || "Unknown error"}
 		const data = getDatabaseMetamodel.data;
 		if (!data) return;
 
-		const { nodes: rawNodes, edges: rawEdges, positions, dataTypes, additionalDataTypes, logicalNames, descriptions, physicalTypes = {} } = data;
+		const {
+			nodes: rawNodes,
+			edges: rawEdges,
+			positions,
+			dataTypes,
+			additionalDataTypes,
+			logicalNames,
+			descriptions,
+			physicalTypes = {},
+		} = data;
 
 		const n = rawNodes.map((n) => ({
 			id: n.conceptualName,
@@ -1008,19 +1014,29 @@ Error ${e.message || "Unknown error"}
 					const propertyId = `${n.conceptualName}__${p}`;
 					const normalizedDataType =
 						normalizeSupportedDataType(dataTypes[propertyId]) ||
-						normalizeSupportedDataType(additionalDataTypes[propertyId]);
+						normalizeSupportedDataType(
+							additionalDataTypes[propertyId],
+						);
 					return {
 						id: propertyId,
 						name: p,
 						type: normalizedDataType,
-						physicalType: resolvePhysicalType(physicalTypes, n.conceptualName, p, propertyId),
+						physicalType: resolvePhysicalType(
+							physicalTypes,
+							n.conceptualName,
+							p,
+							propertyId,
+						),
 						description: descriptions[propertyId] ?? "",
 						logicalNames: logicalNames[propertyId] ?? [],
 					};
 				}),
 			},
 			position: positions[n.conceptualName]
-				? { x: positions[n.conceptualName].left, y: positions[n.conceptualName].top }
+				? {
+						x: positions[n.conceptualName].left,
+						y: positions[n.conceptualName].top,
+					}
 				: { x: 0, y: 0 },
 		}));
 

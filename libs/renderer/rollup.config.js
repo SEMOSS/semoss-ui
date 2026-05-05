@@ -46,11 +46,6 @@ export default defineConfig({
 		isProduction && terser(),
 	],
 	external: [
-		"@emotion/react",
-		"@emotion/styled",
-		"@mui/icons-material",
-		"@mui/material",
-		"@mui/x-data-grid",
 		/@semoss\/sdk/,
 		/@semoss\/ui/,
 		"@semoss/shared",
