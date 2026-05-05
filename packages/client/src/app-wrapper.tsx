@@ -1,14 +1,13 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { HashRouter } from "react-router-dom";
-import { LoadingScreen, ThemeProvider, Toaster, useTheme } from "@semoss/ui/next";
+import { LoadingScreen } from "@semoss/ui/next";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
 import { useRootStore } from "./hooks";
 
 export const AppWrapper = observer(() => {
 	const { configStore } = useRootStore();
-	const { theme: selectedTheme } = useTheme();
 
 	useEffect(() => {
 		try {
@@ -24,34 +23,13 @@ export const AppWrapper = observer(() => {
 		}
 	}, [configStore.theme]);
 
-	const themeMode = useMemo<"light" | "dark">(() => {
-		if (selectedTheme === "dark") {
-			return "dark";
-		}
-
-		if (selectedTheme === "light") {
-			return "light";
-		}
-
-		if (typeof window !== "undefined") {
-			return window.matchMedia("(prefers-color-scheme: dark)").matches
-				? "dark"
-				: "light";
-		}
-
-		return "light";
-	}, [selectedTheme]);
-
 	return (
-		<ThemeProvider defaultTheme="light" type={themeMode}>
-			<Toaster />
-			<LoadingScreen>
-				<CookieWrapper>
-					<HashRouter>
-						<Router />
-					</HashRouter>
-				</CookieWrapper>
-			</LoadingScreen>
-		</ThemeProvider>
+		<LoadingScreen>
+			<CookieWrapper>
+				<HashRouter>
+					<Router />
+				</HashRouter>
+			</CookieWrapper>
+		</LoadingScreen>
 	);
 });

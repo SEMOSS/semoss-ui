@@ -268,6 +268,7 @@ export class ConfigStore {
 	get theme(): {
 		name: string;
 		logo: string;
+		logoLight: string;
 		banner: string | undefined;
 		landingPageName: string;
 		isLogoUrl: boolean;
@@ -287,6 +288,7 @@ export class ConfigStore {
 		const defaultTheme = {
 			name: THEME.name,
 			logo: THEME.logo,
+			logoLight: THEME.logoLight,
 			banner: undefined,
 			landingPageName: THEME.name,
 			isLogoUrl: false,

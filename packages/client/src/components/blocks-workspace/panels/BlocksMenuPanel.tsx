@@ -287,15 +287,15 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 				display: "flex",
 				flexDirection: "column",
 				overflow: "hidden",
-				backgroundColor: "#fff",
 			}}
+			className="bg-background text-foreground"
 		>
 			<div
 				style={{ flexShrink: 0 }}
 				className="flex w-full flex-col gap-2 px-3 py-1"
 			>
-				<div className="w-fit rounded-2xl bg-[#EBF4FE] px-4">
-					<span className="font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
+				<div className="w-fit rounded-2xl bg-primary/10 px-4">
+					<span className="font-normal text-[13px] text-primary leading-[18px] tracking-[0.16px]">
 						{title}
 					</span>
 				</div>
@@ -390,7 +390,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 								</div>
 							)}
 							<div className="px-3 pt-2 pb-1.5">
-								<p className="m-0 select-none font-semibold text-gray-500 text-xs uppercase tracking-[0.05em]">
+								<p className="m-0 select-none font-semibold text-muted-foreground text-xs uppercase tracking-[0.05em]">
 									{sectionItems[0].section ?? defaultSection}
 								</p>
 							</div>

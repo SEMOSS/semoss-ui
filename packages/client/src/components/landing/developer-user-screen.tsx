@@ -5,6 +5,7 @@ import { Link, Navigate } from "react-router-dom";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
 import { Button, H4, Muted } from "@semoss/ui/next";
+import DevBannerDark from "@/assets/img/DevBanner-dark.png";
 import DevBanner from "@/assets/img/DevBanner.png";
 import { NewAppModal } from "@/components/app";
 import { BannerSection } from "@/components/landing/banner-section";
@@ -50,9 +51,10 @@ export const DeveloperUserScreen = observer(() => {
 	}
 
 	return (
-		<div className="flex w-full flex-col gap-6 pb-8">
+		<div className="flex w-full flex-col gap-8 pb-8">
 			<BannerSection
 				imageUrl={DevBanner}
+				darkImageUrl={DevBannerDark}
 				tagline={"Experiment with AI in the Playground"}
 				description={
 					"Experience AI that goes beyond chat. Deploy multiple LLMs with powerful tool-calling abilities through MCP integration. Watch AI agents manipulate files, call APIs, and execute real workflows while tackling complex tasks. Turn conversations into actions and ideas into results."

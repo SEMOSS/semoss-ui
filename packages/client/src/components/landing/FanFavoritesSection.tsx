@@ -1,5 +1,7 @@
 import { H4, Muted } from "@semoss/ui/next";
+import BIDark from "@/assets/img/BI-dark.png";
 import BI from "@/assets/img/BI.png";
+import TerminalDark from "@/assets/img/Terminal-dark.png";
 import Terminal from "@/assets/img/Terminal.png";
 import { type AppMetadata, AppTileCard } from "../app";
 
@@ -75,6 +77,7 @@ export const FanFavoritesSection = () => {
 					showSkeleton={false}
 					variant="fillerCard"
 					cardImgSrc={BI}
+					cardDarkImgSrc={BIDark}
 				/>
 				<AppTileCard
 					app={TERMINAL_APP}
@@ -86,6 +89,7 @@ export const FanFavoritesSection = () => {
 					showSkeleton={false}
 					variant="fillerCard"
 					cardImgSrc={Terminal}
+					cardDarkImgSrc={TerminalDark}
 				/>
 			</div>
 		</div>

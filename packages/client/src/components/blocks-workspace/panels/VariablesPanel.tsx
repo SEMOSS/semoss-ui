@@ -420,9 +420,9 @@ export const VariablesPanel = observer(
 		return (
 			<Panel
 				actions={
-					<div className="flex w-full flex-col bg-white p-0">
-						<div className="mt-1 mb-2 ml-3 w-fit rounded-2xl bg-[#EBF4FE] px-3">
-							<span className="mt-2 mb-2 inline-block font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
+					<div className="flex w-full flex-col bg-card p-0 text-card-foreground">
+						<div className="mt-1 mb-2 ml-3 w-fit rounded-2xl bg-primary/10 px-3">
+							<span className="mt-2 mb-2 inline-block font-normal text-[13px] text-primary leading-[18px] tracking-[0.16px]">
 								{title}
 							</span>
 						</div>
@@ -464,7 +464,7 @@ export const VariablesPanel = observer(
 									className="w-72 p-0"
 									align="end"
 								>
-									<div className="flex flex-col rounded-lg bg-white">
+									<div className="flex flex-col rounded-lg border border-border bg-popover text-popover-foreground">
 										<div className="flex items-center justify-between border-border border-b px-4 py-2">
 											<span className="font-medium text-primary text-sm">
 												Filter By
@@ -740,7 +740,7 @@ export const VariablesPanel = observer(
 					</div>
 				}
 			>
-				<div className="flex h-full flex-col overflow-auto bg-white">
+				<div className="flex h-full flex-col overflow-auto bg-background">
 					<Accordion
 						type="multiple"
 						value={Object.keys(expandedItems).filter(

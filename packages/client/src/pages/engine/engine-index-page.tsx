@@ -479,6 +479,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										data-testid={formatToDataTestId(
 											`engineIndexPage-${route ? `${route.name}s` : "Engines"}-my-switch`,
 										)}
+										className="border-none"
 									>
 										My{" "}
 										{route ? `${route.name}s` : "Engines"}
@@ -488,6 +489,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 										data-testid={formatToDataTestId(
 											`engineIndexPage-${route ? `${route.name}s` : "Engines"}-discoverable-switch`,
 										)}
+										className="border-none"
 									>
 										Discoverable{" "}
 										{route ? `${route.name}s` : "Engines"}

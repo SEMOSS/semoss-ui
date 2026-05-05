@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { Button } from "@semoss/ui/next";
+import { Switch } from "@semoss/ui/next";
 import { BusinessUserScreen, DeveloperUserScreen } from "@/components/landing";
 import { useCacheState, usePage } from "@/hooks";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../components/shared";
@@ -9,7 +9,7 @@ export const LandingPage: React.FC = observer(() => {
 
 	// setup the page
 	usePage({
-		showNavbarSearch: devMode,
+		showNavbarSearch: true,
 	});
 
 	return (
@@ -18,13 +18,14 @@ export const LandingPage: React.FC = observer(() => {
 				<NavbarHeader />
 			</NavbarLeft>
 			<NavbarRight>
-				<Button
-					variant={devMode ? "default" : "outline"}
-					size="sm"
-					onClick={() => setDevMode(!devMode)}
-				>
-					Build
-				</Button>
+				<div className="flex h-9 items-center gap-3 px-2 font-medium text-foreground text-sm">
+					<span>App Builder</span>
+					<Switch
+						checked={devMode}
+						onCheckedChange={setDevMode}
+						aria-label="Toggle app builder"
+					/>
+				</div>
 			</NavbarRight>
 			{devMode ? <DeveloperUserScreen /> : <BusinessUserScreen />}
 		</>

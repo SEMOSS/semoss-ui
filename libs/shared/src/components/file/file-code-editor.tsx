@@ -107,19 +107,6 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 					config.completionItemProvider,
 				);
 			}
-
-			// set the theme
-			if (config.theme) {
-				monaco.editor.defineTheme(
-					`${language}-smss-theme`,
-					config.theme,
-				);
-				monaco.editor.setTheme(`${language}-smss-theme`);
-			} else {
-				monaco.editor.setTheme("light");
-			}
-		} else {
-			monaco.editor.setTheme("light");
 		}
 
 		// editor.addAction({

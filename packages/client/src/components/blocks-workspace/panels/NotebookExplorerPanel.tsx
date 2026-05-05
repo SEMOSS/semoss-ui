@@ -301,9 +301,9 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 		return (
 			<Panel
 				actions={
-					<div className="flex w-full flex-col bg-white p-0">
-						<div className="mx-4 mt-1 mb-2 w-fit rounded-2xl bg-blue-50 px-4 py-0.5">
-							<span className="font-normal text-[13px] text-blue-700 leading-[18px] tracking-[0.16px]">
+					<div className="flex w-full flex-col bg-card p-0 text-card-foreground">
+						<div className="mx-4 mt-1 mb-2 w-fit rounded-2xl bg-primary/10 px-4 py-0.5">
+							<span className="font-normal text-[13px] text-primary leading-[18px] tracking-[0.16px]">
 								{title}
 							</span>
 						</div>
@@ -316,7 +316,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 								className="pl-9"
 							/>
 						</div>
-						<div className="flex items-center justify-between bg-white px-4 pt-4 pb-2">
+						<div className="flex items-center justify-between bg-card px-4 pt-4 pb-2">
 							<span className="text-sm">Notebook</span>
 							<Button
 								variant="ghost"
@@ -335,7 +335,7 @@ export const NotebookExplorerPanel: React.FC<NotebookExplorerPanelProps> =
 			>
 				<div
 					key={counter}
-					className="flex h-full flex-col overflow-auto bg-white"
+					className="flex h-full flex-col overflow-auto bg-background"
 				>
 					{filteredNotebooks.map((q) => {
 						return (

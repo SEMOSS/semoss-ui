@@ -19,9 +19,11 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useTheme,
 } from "@semoss/ui/next";
+import LOGIN_DARK_HERO from "@/assets/img/login-dark.gif";
 import LOGIN_HERO from "@/assets/img/login-hero.jpeg";
-import { useRootStore } from "@/hooks";
+import { useRootStore, useThemeLogo } from "@/hooks";
 
 interface TypeUserLogin {
 	USERNAME: string;
@@ -44,6 +46,8 @@ interface TypeUserRegister {
 
 export const LoginPage = observer(() => {
 	const { configStore } = useRootStore();
+	const { resolvedTheme } = useTheme();
+	const themeLogo = useThemeLogo();
 	const location = useLocation();
 	const uid = useId();
 
@@ -56,7 +60,7 @@ export const LoginPage = observer(() => {
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const [loginHeroImage, setLoginHeroImage] = useState(LOGIN_HERO);
+	const [lightLoginHeroImage, setLightLoginHeroImage] = useState(LOGIN_HERO);
 
 	const {
 		control,
@@ -142,10 +146,14 @@ export const LoginPage = observer(() => {
 	}, [isNative, isLdap, isLinOTP]);
 
 	useEffect(() => {
+		if (resolvedTheme === "dark") {
+			return;
+		}
+
 		const timeoutId = window.setTimeout(() => {
 			import("@/assets/img/login-gif.gif")
 				.then((module) => {
-					setLoginHeroImage(module.default);
+					setLightLoginHeroImage(module.default);
 				})
 				.catch(() => undefined);
 		}, 1200);
@@ -153,7 +161,7 @@ export const LoginPage = observer(() => {
 		return () => {
 			window.clearTimeout(timeoutId);
 		};
-	}, []);
+	}, [resolvedTheme]);
 
 	const login = handleSubmit(
 		async (data: TypeUserLogin): Promise<TypeUserLogin> => {
@@ -293,15 +301,15 @@ export const LoginPage = observer(() => {
 
 	return (
 		<>
-			<div className="flex h-screen w-screen flex-col bg-background">
+			<div className="semoss-login-page flex h-screen w-screen flex-col bg-background">
 				<div className="relative flex w-full flex-1 flex-row overflow-hidden">
-					<div className="relative z-10 flex shrink-0 flex-col items-center overflow-y-auto overflow-x-hidden bg-background max-md:h-full max-md:w-full">
-						<div className="mx-[108px] mt-36 mb-4 flex w-[610px] flex-col gap-6 max-md:m-0 max-md:w-full max-md:max-w-[610px] max-md:p-8">
+					<div className="relative z-10 flex w-[46vw] shrink-0 flex-col items-start overflow-y-auto overflow-x-hidden bg-background max-md:h-full max-md:w-full max-md:items-center max-xl:bg-transparent dark:bg-transparent">
+						<div className="mt-[30vh] mb-4 ml-[10vw] flex w-[410px] flex-col gap-5 max-md:m-0 max-md:w-full max-md:max-w-[410px] max-md:p-8">
 							<div>
 								<div className="mb-2 flex flex-row items-center gap-2">
-									{configStore.theme.logo ? (
+									{themeLogo ? (
 										<img
-											src={configStore.theme.logo}
+											src={themeLogo}
 											alt={
 												configStore.theme.name || "logo"
 											}
@@ -314,7 +322,7 @@ export const LoginPage = observer(() => {
 								<h4 className="mb-2 scroll-m-20 font-semibold text-3xl tracking-tight">
 									Welcome!
 								</h4>
-								<p className="mb-8 text-base">
+								<p className="mb-4 text-xs">
 									{register
 										? "Register below"
 										: "Log in below"}
@@ -395,7 +403,7 @@ export const LoginPage = observer(() => {
 								</div>
 							)}
 
-							<form>
+							<form className="semoss-login-form">
 								<div className="flex flex-col gap-4">
 									{hasUsernamePassword && (
 										<>
@@ -1145,12 +1153,19 @@ export const LoginPage = observer(() => {
 							</form>
 						</div>
 					</div>
-					<div className="z-10 h-full w-[336px] shrink-0 bg-gradient-to-r from-background to-transparent" />
-					<div className="absolute inset-y-0 right-0 z-0 overflow-hidden">
+					<div className="z-10 h-full w-0 shrink-0 bg-gradient-to-r from-background to-transparent dark:hidden" />
+					<div className="absolute inset-y-0 right-0 left-[46vw] z-0 overflow-hidden bg-background max-sm:hidden max-xl:inset-0 max-xl:bg-transparent dark:bg-transparent">
 						<img
-							src={loginHeroImage}
+							src={lightLoginHeroImage}
 							alt=""
-							className="h-full object-cover"
+							className="h-full w-full object-cover object-right dark:hidden"
+							loading="lazy"
+							decoding="async"
+						/>
+						<img
+							src={LOGIN_DARK_HERO}
+							alt=""
+							className="hidden h-full w-full object-contain object-right mix-blend-lighten dark:block"
 							loading="lazy"
 							decoding="async"
 						/>

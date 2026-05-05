@@ -166,13 +166,6 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 				},
 			});
 
-			monaco.editor.defineTheme("custom-theme", {
-				base: "vs",
-				inherit: false,
-				rules: [],
-				colors: { "editor.background": "#FAFAFA" },
-			});
-			monaco.editor.setTheme("custom-theme");
 			resizeEditor();
 		};
 

@@ -306,14 +306,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			return suggestions;
 		};
 
-		monaco.editor.defineTheme("custom-theme", {
-			base: "vs",
-			inherit: false,
-			rules: [],
-			colors: { "editor.background": "#FAFAFA" },
-		});
-		monaco.editor.setTheme("custom-theme");
-
 		monaco.languages.register({ id: "pixel" });
 
 		Object.values(EditorLanguages).forEach((language) => {

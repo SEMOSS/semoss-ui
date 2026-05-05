@@ -79,7 +79,7 @@ const CATALOG_ROUTES = [
 
 const SIDEBAR_WIDTH = "18rem";
 const NAV_BUTTON_CLASS =
-	"h-auto rounded-none px-4 py-2 text-sm data-[active=true]:bg-primary/10 data-[active=true]:text-primary";
+	"h-auto rounded-none px-4 py-2 text-sm data-[active=true]:rounded-md data-[active=true]:bg-primary/10 data-[active=true]:text-primary dark:data-[active=true]:bg-[#262626] dark:data-[active=true]:text-white";
 
 export const Sidebar: React.FC = observer(() => {
 	const { configStore } = useRootStore();

@@ -76,6 +76,9 @@ const skeletonKeys = Array.from(
 	(_, i) => `skeleton-key-${i}`,
 );
 
+const APP_CATALOG_TAB_TRIGGER_CLASS =
+	"!flex-none !border-0 !shadow-none rounded-md px-2.5 py-1 text-sm font-medium text-muted-foreground hover:!bg-accent hover:!text-foreground data-[state=active]:!bg-background data-[state=active]:!text-foreground data-[state=active]:!shadow-none dark:hover:!bg-[#333333] dark:data-[state=active]:!bg-[#3A3A3A]";
+
 type ReducerAction = {
 	type: "field";
 	field: keyof AppCatalogState;
@@ -956,39 +959,47 @@ export const AppCatalogPage = observer((): JSX.Element => {
 					<div className="flex min-w-0 flex-1 flex-col gap-6">
 						{/* Tabs and Content */}
 						<div className="flex flex-col gap-6">
-							<div className="border-b pb-1">
+							<div>
 								<Tabs
 									value={mode}
 									onValueChange={(val) =>
 										setMode(val as TabMode)
 									}
 								>
-									<TabsList className="w-full flex-nowrap justify-start gap-4 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+									<TabsList className="w-fit max-w-full flex-nowrap justify-start gap-1 overflow-x-auto rounded-lg bg-muted p-1 [-ms-overflow-style:none] [scrollbar-width:none] dark:bg-[#262626] [&::-webkit-scrollbar]:hidden">
 										<TabsTrigger
 											value="Mine"
 											data-testid="appCatalogPage-myApps-btn"
-											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+											className={
+												APP_CATALOG_TAB_TRIGGER_CLASS
+											}
 										>
 											My Apps
 										</TabsTrigger>
 										<TabsTrigger
 											value="Bookmarked"
 											data-testid="appCatalogPage-bookmarked-btn"
-											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+											className={
+												APP_CATALOG_TAB_TRIGGER_CLASS
+											}
 										>
 											Bookmarked Apps
 										</TabsTrigger>
 										<TabsTrigger
 											value="Discoverable"
 											data-testid="appCatalogPage-discoverable-btn"
-											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+											className={
+												APP_CATALOG_TAB_TRIGGER_CLASS
+											}
 										>
 											Discoverable Apps
 										</TabsTrigger>
 										<TabsTrigger
 											value="System"
 											data-testid="appCatalogPage-systemApps-btn"
-											className="!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100"
+											className={
+												APP_CATALOG_TAB_TRIGGER_CLASS
+											}
 										>
 											System Apps
 										</TabsTrigger>

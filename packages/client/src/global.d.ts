@@ -37,6 +37,14 @@ declare module "*.gif" {
 	export = value;
 }
 
+declare module "*?worker" {
+	const WorkerConstructor: {
+		new (): Worker;
+	};
+
+	export default WorkerConstructor;
+}
+
 declare module "!!raw-loader!*" {
 	const contents: string;
 	export = contents;
