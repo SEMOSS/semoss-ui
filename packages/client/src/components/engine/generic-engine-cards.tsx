@@ -37,7 +37,7 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
 import GOOGLE from "@/assets/img/google.png";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/pages/import";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 
 /**
