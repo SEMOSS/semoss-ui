@@ -52,7 +52,7 @@ export default defineConfig({
 		}),
 		isProduction && terser(),
 	],
-	external: ["@mui/material", "react", "react-dom"],
+	external: ["react", "react-dom"],
 	watch: {
 		clearScreen: false,
 	},
