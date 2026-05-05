@@ -8,10 +8,6 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	Sheet,
-	SheetContent,
-	SheetHeader,
-	SheetTitle,
 	Spinner,
 	Table,
 	TableBody,
@@ -20,34 +16,60 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
-import { TraceTree } from "@/components/agent-traces/TraceTree";
-import type { AgentTrace } from "@/components/agent-traces/types";
+import type { TraceRow } from "@/components/agent-traces/types";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
-function calcDurationMs(start: string, end: string): string {
-	const diff = new Date(end).getTime() - new Date(start).getTime();
-	return Number.isNaN(diff) ? "—" : `${diff}ms`;
+function formatDuration(ms: number): string {
+	if (!ms || ms <= 0) return "—";
+	if (ms < 1000) return `${ms}ms`;
+	const s = Math.floor(ms / 1000);
+	if (s < 60) return `${s}s`;
+	const m = Math.floor(s / 60);
+	const rem = s % 60;
+	return rem > 0 ? `${m}m ${rem}s` : `${m}m`;
 }
 
-function formatDateTime(iso: string): string {
+function formatDateTime(raw: string): string {
+	if (!raw) return "—";
 	try {
-		return new Date(iso).toLocaleString();
+		// Handle "2026-05-05 12:49:45" format from backend
+		const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+		const d = new Date(normalized);
+		if (Number.isNaN(d.getTime())) return raw;
+		return d.toLocaleString();
 	} catch {
-		return iso;
+		return raw;
 	}
 }
 
 const ALL_HARNESS = "ALL";
 
+const HARNESS_COLORS: Record<string, string> = {
+	claude_code:
+		"bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
+	room_loop: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+	AskPlayground:
+		"bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+	github_copilot:
+		"bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+};
+
+function getHarnessColor(harness: string): string {
+	return (
+		HARNESS_COLORS[harness] ??
+		"bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
+	);
+}
+
 export const AgentsPage: React.FC = () => {
 	const { monolithStore } = useRootStore();
+	const navigate = useNavigate();
 
-	const [traces, setTraces] = useState<AgentTrace[]>([]);
-	const [filtered, setFiltered] = useState<AgentTrace[]>([]);
+	const [traces, setTraces] = useState<TraceRow[]>([]);
+	const [filtered, setFiltered] = useState<TraceRow[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [selectedTrace, setSelectedTrace] = useState<AgentTrace | null>(null);
-	const [sheetOpen, setSheetOpen] = useState(false);
 	const [copiedId, setCopiedId] = useState<string | null>(null);
 
 	// Form element IDs
@@ -62,7 +84,7 @@ export const AgentsPage: React.FC = () => {
 	const [harnessType, setHarnessType] = useState<string>(ALL_HARNESS);
 
 	const harnessOptions = React.useMemo(() => {
-		const set = new Set<string>(traces.map((t) => t.HARNESS_TYPE));
+		const set = new Set<string>(traces.map((t) => t.HARNESS_NAME));
 		return Array.from(set).sort();
 	}, [traces]);
 
@@ -75,7 +97,7 @@ export const AgentsPage: React.FC = () => {
 			);
 			const output = res?.pixelReturn?.[0]?.output;
 			if (Array.isArray(output)) {
-				setTraces(output as AgentTrace[]);
+				setTraces(output as TraceRow[]);
 			}
 		} catch (e) {
 			setError((e as Error).message ?? "Failed to load traces");
@@ -101,20 +123,26 @@ export const AgentsPage: React.FC = () => {
 
 		if (startDate) {
 			const start = new Date(startDate).getTime();
-			result = result.filter(
-				(t) => new Date(t.START_TIME).getTime() >= start,
-			);
+			result = result.filter((t) => {
+				const ts = new Date(
+					(t.STARTED_AT || "").replace(" ", "T"),
+				).getTime();
+				return !Number.isNaN(ts) && ts >= start;
+			});
 		}
 
 		if (endDate) {
-			const end = new Date(endDate).getTime() + 86400000; // inclusive
-			result = result.filter(
-				(t) => new Date(t.START_TIME).getTime() <= end,
-			);
+			const end = new Date(endDate).getTime() + 86400000;
+			result = result.filter((t) => {
+				const ts = new Date(
+					(t.STARTED_AT || "").replace(" ", "T"),
+				).getTime();
+				return !Number.isNaN(ts) && ts <= end;
+			});
 		}
 
 		if (harnessType !== ALL_HARNESS) {
-			result = result.filter((t) => t.HARNESS_TYPE === harnessType);
+			result = result.filter((t) => t.HARNESS_NAME === harnessType);
 		}
 
 		setFiltered(result);
@@ -131,9 +159,8 @@ export const AgentsPage: React.FC = () => {
 		}
 	};
 
-	const handleRowClick = (trace: AgentTrace) => {
-		setSelectedTrace(trace);
-		setSheetOpen(true);
+	const handleRowClick = (trace: TraceRow) => {
+		navigate(trace.TRACE_ID);
 	};
 
 	return (
@@ -256,12 +283,13 @@ export const AgentsPage: React.FC = () => {
 					<TableHeader>
 						<TableRow>
 							<TableHead>Trace ID</TableHead>
-							<TableHead>User ID</TableHead>
-							<TableHead>Project ID</TableHead>
+							<TableHead>User</TableHead>
+							<TableHead>Project</TableHead>
 							<TableHead>Harness</TableHead>
 							<TableHead>Start Time</TableHead>
 							<TableHead>Duration</TableHead>
-							<TableHead>Iterations</TableHead>
+							<TableHead>Tokens (In/Out)</TableHead>
+							<TableHead>Iters</TableHead>
 							<TableHead>Tools</TableHead>
 							<TableHead>Status</TableHead>
 						</TableRow>
@@ -270,7 +298,7 @@ export const AgentsPage: React.FC = () => {
 						{filtered.length === 0 && !loading && (
 							<TableRow>
 								<TableCell
-									colSpan={9}
+									colSpan={10}
 									className="py-8 text-center text-muted-foreground"
 								>
 									No traces found
@@ -278,8 +306,8 @@ export const AgentsPage: React.FC = () => {
 							</TableRow>
 						)}
 						{filtered.map((trace) => {
-							const isSuccess =
-								trace.TERMINATION_REASON === "SUCCESS";
+							const isSuccess = trace.STATUS === "OK";
+							const isRunning = trace.STATUS === "RUNNING";
 							return (
 								<TableRow
 									key={trace.TRACE_ID}
@@ -316,17 +344,27 @@ export const AgentsPage: React.FC = () => {
 									<TableCell className="max-w-[100px] truncate text-muted-foreground text-xs">
 										{trace.PROJECT_ID ?? "—"}
 									</TableCell>
-									<TableCell className="text-sm">
-										{trace.HARNESS_TYPE}
+									<TableCell>
+										<span
+											className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold text-xs ${getHarnessColor(trace.HARNESS_NAME)}`}
+										>
+											{trace.HARNESS_NAME}
+										</span>
 									</TableCell>
 									<TableCell className="whitespace-nowrap text-xs">
-										{formatDateTime(trace.START_TIME)}
+										{formatDateTime(trace.STARTED_AT)}
 									</TableCell>
 									<TableCell className="font-mono text-xs">
-										{calcDurationMs(
-											trace.START_TIME,
-											trace.END_TIME,
-										)}
+										{formatDuration(trace.DURATION_MS)}
+									</TableCell>
+									<TableCell className="whitespace-nowrap font-mono text-xs">
+										{(
+											trace.TOTAL_INPUT_TOKENS ?? 0
+										).toLocaleString()}
+										{" / "}
+										{(
+											trace.TOTAL_OUTPUT_TOKENS ?? 0
+										).toLocaleString()}
 									</TableCell>
 									<TableCell className="text-center">
 										{trace.ITERATIONS}
@@ -339,10 +377,12 @@ export const AgentsPage: React.FC = () => {
 											className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold text-xs ${
 												isSuccess
 													? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-													: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+													: isRunning
+														? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+														: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
 											}`}
 										>
-											{isSuccess ? "SUCCESS" : "ERROR"}
+											{trace.STATUS}
 										</span>
 									</TableCell>
 								</TableRow>
@@ -351,120 +391,6 @@ export const AgentsPage: React.FC = () => {
 					</TableBody>
 				</Table>
 			</div>
-
-			{/* Slide-over detail panel */}
-			<Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-				<SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
-					<SheetHeader>
-						<SheetTitle>Trace Detail</SheetTitle>
-					</SheetHeader>
-					{selectedTrace && (
-						<div className="mt-4 space-y-4">
-							<div className="grid grid-cols-2 gap-2 text-sm">
-								<div className="col-span-2">
-									<p className="text-muted-foreground text-xs">
-										Trace ID
-									</p>
-									<p className="break-all font-mono text-xs">
-										{selectedTrace.TRACE_ID}
-									</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										User ID
-									</p>
-									<p className="text-sm">
-										{selectedTrace.USER_ID}
-									</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										Project ID
-									</p>
-									<p className="text-sm">
-										{selectedTrace.PROJECT_ID ?? "—"}
-									</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										Harness
-									</p>
-									<p>{selectedTrace.HARNESS_TYPE}</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										Model
-									</p>
-									<p className="text-sm">
-										{selectedTrace.MODEL_ENGINE_ID}
-									</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										Start
-									</p>
-									<p className="text-xs">
-										{formatDateTime(
-											selectedTrace.START_TIME,
-										)}
-									</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										End
-									</p>
-									<p className="text-xs">
-										{formatDateTime(selectedTrace.END_TIME)}
-									</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										Iterations
-									</p>
-									<p>{selectedTrace.ITERATIONS}</p>
-								</div>
-								<div>
-									<p className="text-muted-foreground text-xs">
-										Tool Calls
-									</p>
-									<p>{selectedTrace.TOOL_CALL_COUNT}</p>
-								</div>
-								<div className="col-span-2">
-									<p className="text-muted-foreground text-xs">
-										Status
-									</p>
-									<p
-										className={
-											selectedTrace.TERMINATION_REASON ===
-											"SUCCESS"
-												? "text-emerald-600"
-												: "text-red-600"
-										}
-									>
-										{selectedTrace.TERMINATION_REASON}
-									</p>
-								</div>
-							</div>
-
-							<div>
-								<p className="mb-2 font-medium text-sm">
-									Trace Tree
-								</p>
-								<TraceTree
-									traces={[
-										selectedTrace,
-										...filtered.filter(
-											(t) =>
-												t.PARENT_TRACE_ID ===
-												selectedTrace.TRACE_ID,
-										),
-									]}
-								/>
-							</div>
-						</div>
-					)}
-				</SheetContent>
-			</Sheet>
 		</div>
 	);
 };

@@ -75,6 +75,11 @@ const LoginPage = lazy(() =>
 const AgentsPage = lazy(() =>
 	import("./agents/AgentsPage").then((m) => ({ default: m.AgentsPage })),
 );
+const AgentTracePage = lazy(() =>
+	import("./agents/AgentTracePage").then((m) => ({
+		default: m.AgentTracePage,
+	})),
+);
 
 const PageSpinner = () => (
 	<div className="flex h-screen w-screen items-center justify-center">
@@ -127,6 +132,12 @@ export const Router = observer(() => {
 						<Route path="settings/*" element={<SettingsRouter />} />
 						{configStore.store.user.admin && (
 							<Route path="agents" element={<AgentsPage />} />
+						)}
+						{configStore.store.user.admin && (
+							<Route
+								path="agents/:traceId"
+								element={<AgentTracePage />}
+							/>
 						)}
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
