@@ -2,7 +2,6 @@ import { ArrowRight, Copy } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Navigate } from "react-router-dom";
-import { Box, styled, useNotification } from "@semoss/ui";
 import {
 	SelectContent,
 	SelectItem,
@@ -11,6 +10,7 @@ import {
 	Button as ShadcnButton,
 	Select as ShadcnSelect,
 	Textarea as ShadcnTextarea,
+	toast,
 } from "@semoss/ui/next";
 import { QueryResultsPanel } from "@/components/database";
 import { useRootStore, useSettings } from "@/hooks";
@@ -18,47 +18,7 @@ import {
 	hasTabularData,
 	isErrorResponse,
 	type QueryResult,
-} from "@/hooks/useDatabaseQueryExecution";
-
-const StyledContainer = styled("div")(() => ({
-	display: "flex",
-	width: "100%",
-	gap: "24px",
-}));
-
-const StyledLeft = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	width: "100%",
-}));
-
-const StyledRight = styled("div")(() => ({
-	width: "100%",
-	marginTop: "20px",
-}));
-const Styledform = styled("div")(() => ({
-	width: "100%",
-}));
-const StyledStack = styled("div")(() => ({
-	width: "100%",
-	gap: "20px",
-	flexDirection: "column",
-	display: "flex",
-	marginBottom: "20px",
-}));
-
-const Field = styled(Box)(() => ({
-	display: "flex",
-	flexDirection: "column",
-	width: "100%",
-	gap: "8px",
-}));
-
-const Label = styled("label")(({ theme }) => ({
-	fontSize: "0.875rem",
-	lineHeight: 1.4,
-	color: theme.palette.text.secondary,
-}));
+} from "@/hooks/use-database-query-execution";
 
 const DATABASE_OPTIONS = [
 	{ label: "Audit Logs", value: "AuditLogs" },
@@ -84,7 +44,6 @@ export const AdminQueryPage = () => {
 	const { adminMode } = useSettings();
 	const dbSelectId = useId();
 	const queryTextareaId = useId();
-	const notification = useNotification();
 	const [previewData, setPreviewData] = useState<QueryResult | null>(null);
 	const [previewLoading, setPreviewLoading] = useState(false);
 	const [queryEditorHeight, setQueryEditorHeight] = useState(160);
@@ -146,15 +105,9 @@ export const AdminQueryPage = () => {
 
 		try {
 			await navigator.clipboard.writeText(value);
-			notification.add({
-				color: "success",
-				message: "Query copied",
-			});
+			toast.success("Query copied");
 		} catch (_error) {
-			notification.add({
-				color: "error",
-				message: "Failed to copy query",
-			});
+			toast.error("Failed to copy query");
 		}
 	};
 
@@ -174,10 +127,6 @@ export const AdminQueryPage = () => {
 			]
 		: DATABASE_OPTIONS;
 
-	/**
-	 * @name submitQuery
-	 * @desc make runQuery API call based on submitted fields
-	 */
 	const mapResponseToQueryResult = (
 		response: unknown,
 		queryText: string,
@@ -225,20 +174,15 @@ export const AdminQueryPage = () => {
 			setPreviewData(result);
 
 			if (isErrorResponse(result)) {
-				notification.add({
-					color: "error",
-					message:
-						typeof result.output === "string"
-							? result.output
-							: JSON.stringify(result.output),
-				});
+				toast.error(
+					typeof result.output === "string"
+						? result.output
+						: JSON.stringify(result.output),
+				);
 				return;
 			}
 
-			notification.add({
-				color: "success",
-				message: "Successfully submitted query",
-			});
+			toast.success("Successfully submitted query");
 		} catch (error) {
 			const message =
 				error instanceof Error ? error.message : String(error);
@@ -249,26 +193,28 @@ export const AdminQueryPage = () => {
 				queryType: "OTHER",
 				queryText: queryToRun,
 			});
-			notification.add({
-				color: "error",
-				message,
-			});
+			toast.error(message);
 		} finally {
 			setPreviewLoading(false);
 		}
 	});
 
 	return (
-		<StyledContainer>
-			<StyledLeft>
-				<Styledform>
-					<StyledStack>
+		<div className="flex w-full gap-6">
+			<div className="flex w-full flex-col">
+				<div className="w-full">
+					<div className="mb-5 flex w-full flex-col gap-5">
 						<Controller
 							name="SELECTED_DATABASE"
 							control={control}
 							render={({ field }) => (
-								<Field>
-									<Label htmlFor={dbSelectId}>Database</Label>
+								<div className="flex w-full flex-col gap-2">
+									<label
+										htmlFor={dbSelectId}
+										className="text-muted-foreground text-sm"
+									>
+										Database
+									</label>
 									<ShadcnSelect
 										value={field.value ?? ""}
 										onValueChange={field.onChange}
@@ -293,21 +239,24 @@ export const AdminQueryPage = () => {
 											)}
 										</SelectContent>
 									</ShadcnSelect>
-								</Field>
+								</div>
 							)}
 						/>
-					</StyledStack>
+					</div>
 
 					<Controller
 						name={"QUERY"}
 						control={control}
 						render={({ field }) => {
 							return (
-								<Field>
+								<div className="flex w-full flex-col gap-2">
 									<div className="mb-1 flex items-center justify-between">
-										<Label htmlFor={queryTextareaId}>
+										<label
+											htmlFor={queryTextareaId}
+											className="text-muted-foreground text-sm"
+										>
 											Enter Query
-										</Label>
+										</label>
 									</div>
 									<div className="group/query-editor relative">
 										<ShadcnTextarea
@@ -350,7 +299,7 @@ export const AdminQueryPage = () => {
 											<div className="mx-2 mt-1 h-1 rounded bg-border/70 hover:bg-border" />
 										</button>
 									</div>
-								</Field>
+								</div>
 							);
 						}}
 					/>
@@ -364,7 +313,7 @@ export const AdminQueryPage = () => {
 						Run Query
 						<ArrowRight size={18} />
 					</ShadcnButton>
-					<StyledRight>
+					<div className="mt-5 w-full">
 						<div className="h-[420px] min-h-[240px]">
 							<QueryResultsPanel
 								previewData={previewData}
@@ -372,9 +321,9 @@ export const AdminQueryPage = () => {
 								clearResults={() => setPreviewData(null)}
 							/>
 						</div>
-					</StyledRight>
-				</Styledform>
-			</StyledLeft>
-		</StyledContainer>
+					</div>
+				</div>
+			</div>
+		</div>
 	);
 };

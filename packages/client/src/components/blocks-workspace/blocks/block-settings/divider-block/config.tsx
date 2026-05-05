@@ -1,4 +1,4 @@
-import { HorizontalRule } from "@mui/icons-material";
+import { Minus } from "lucide-react";
 import type { CSSProperties } from "react";
 import { InputSettings, SelectInputSettings } from "../../settings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
@@ -15,7 +15,7 @@ export const DefaultStyles: CSSProperties = {};
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
-	icon: HorizontalRule,
+	icon: Minus,
 	contentMenu: [
 		{
 			name: "General",

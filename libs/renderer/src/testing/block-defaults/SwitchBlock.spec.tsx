@@ -45,18 +45,13 @@ describe("switch block", () => {
 	});
 
 	it("toggles value on clicked", async () => {
-		render(<SwitchBlock id={blocks.switch.id} />, {
+		const { container } = render(<SwitchBlock id={blocks.switch.id} />, {
 			blocks: blocks,
 		});
-		const switchElement = screen.getByRole("checkbox");
-		expect(switchElement).not.toBeChecked();
-		// fireEvent.click(switchElement);
-		// await waitFor(() => {
-		// 	expect(switchElement).toBeChecked();
-		// });
-		// fireEvent.click(switchElement);
-		// await waitFor(() => {
-		// 	expect(switchElement).not.toBeChecked();
-		// });
+		const switchElement = container.querySelector(
+			"[data-slot='switch']",
+		) as HTMLElement;
+		expect(switchElement).toBeInTheDocument();
+		expect(switchElement).toHaveAttribute("data-state", "unchecked");
 	});
 });

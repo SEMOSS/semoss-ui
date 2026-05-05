@@ -1,8 +1,9 @@
 //Drag and Drop Data
 
-import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
+import { Terminal } from "lucide-react";
 //Add Storage
 import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
+import APACHE_JENA from "@/assets/img/APACHE_JENA.svg";
 //Connect to an External Database
 import ASTER from "@/assets/img/ASTER.png";
 import ATHENA from "@/assets/img/ATHENA.png";
@@ -74,6 +75,7 @@ import PHOENIX from "@/assets/img/PHOENIX.png";
 import PINECONE from "@/assets/img/PINECONE.png";
 import POSTGRES from "@/assets/img/POSTGRES.svg";
 import PYTHON from "@/assets/img/PYTHON.svg";
+import RDF4J from "@/assets/img/RDF4J.svg";
 import REDSHIFT from "@/assets/img/REDSHIFT.png";
 import REPLIT from "@/assets/img/REPLIT_CODE.png";
 // Functions
@@ -9607,6 +9609,10 @@ export const ENGINE_IMAGES = {
 			icon: BEDROCK,
 		},
 		{
+			name: "BRAIN",
+			icon: BRAIN,
+		},
+		{
 			name: "CLAUDE",
 			icon: CLAUDE,
 		},
@@ -9848,6 +9854,10 @@ export const ENGINE_IMAGES = {
 	],
 	DATABASE: [
 		{
+			name: "APACHE_JENA",
+			icon: APACHE_JENA,
+		},
+		{
 			name: "ASTER_DB",
 			icon: ASTER,
 		},
@@ -9912,6 +9922,14 @@ export const ENGINE_IMAGES = {
 			icon: IMPALA,
 		},
 		{
+			name: "JENA",
+			icon: APACHE_JENA,
+		},
+		{
+			name: "JENA_TDB",
+			icon: APACHE_JENA,
+		},
+		{
 			name: "MARIA_DB",
 			icon: MARIA_DB,
 		},
@@ -9940,6 +9958,10 @@ export const ENGINE_IMAGES = {
 			icon: POSTGRES,
 		},
 		{
+			name: "RDF4J",
+			icon: RDF4J,
+		},
+		{
 			name: "REDSHIFT",
 			icon: REDSHIFT,
 		},
@@ -9950,6 +9972,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "SEMOSS",
 			icon: SEMOSS,
+		},
+		{
+			name: "SESAME",
+			icon: RDF4J,
 		},
 		{
 			name: "SNOWFLAKE",
@@ -10091,7 +10117,7 @@ export const SIDEBAR_MENU = {
 			icon: {
 				default: NOTEBOOK,
 				active: NOTEBOOK_SELECTED,
-				component: TerminalRoundedIcon,
+				component: Terminal,
 				tooltip: "Terminal",
 			},
 		},

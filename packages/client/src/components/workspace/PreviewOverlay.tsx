@@ -1,12 +1,11 @@
 import { observer } from "mobx-react-lite";
 import { Renderer, type SerializedState } from "@semoss/renderer";
-import { Button, Modal, styled } from "@semoss/ui";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	height: "60vh",
-	width: "100%",
-	border: `1px solid ${theme.palette.divider}`,
-}));
+import {
+	Button,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@semoss/ui/next";
 
 interface PreviewOverlayProps {
 	/** State to load in the preview */
@@ -21,21 +20,17 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
 
 	return (
 		<>
-			<Modal.Title>Preview</Modal.Title>
-			<Modal.Content>
-				<StyledContainer>
-					<Renderer state={state} />
-				</StyledContainer>
-			</Modal.Content>
-			<Modal.Actions>
-				<Button
-					onClick={() => {
-						onClose();
-					}}
-				>
+			<DialogHeader>
+				<DialogTitle>Preview</DialogTitle>
+			</DialogHeader>
+			<div className="h-[60vh] w-full border border-border">
+				<Renderer state={state} />
+			</div>
+			<DialogFooter>
+				<Button variant="outline" onClick={onClose}>
 					Cancel
 				</Button>
-			</Modal.Actions>
+			</DialogFooter>
 		</>
 	);
 });

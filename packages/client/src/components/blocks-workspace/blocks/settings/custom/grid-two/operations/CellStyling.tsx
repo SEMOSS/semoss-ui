@@ -1,5 +1,4 @@
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import { Check, ChevronsUpDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import type {
@@ -12,14 +11,20 @@ import type {
 	PathValue,
 } from "@semoss/renderer";
 import {
-	Autocomplete,
 	Button,
 	Checkbox,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+	Command,
+	CommandEmpty,
+	CommandGroup,
+	CommandInput,
+	CommandItem,
+	CommandList,
+	Input,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerSettingsNew } from "../../../../settings/shared/ColorPickerSettingsNew";
 
 export interface CellStylingProps<D extends BlockDef = GridBlockDef> {
@@ -27,37 +32,8 @@ export interface CellStylingProps<D extends BlockDef = GridBlockDef> {
 	path: Paths<Block<D>["data"], 4>;
 }
 
-const StyledContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledFieldWrapper = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "center",
-	gap: "8px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 0",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-
 export const CellStyling = observer(
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
 	<D extends BlockDef = GridBlockDef>({ id, path }: CellStylingProps<D>) => {
 		const { data, setData } = useBlockSettings<GridBlockDef>(id);
 		const [gridStyle, setGridStyle] = useState<CellBackgroundSettings>({
@@ -66,6 +42,7 @@ export const CellStyling = observer(
 			fontColor: "#000000",
 			selectedColumn: [] as string[],
 		});
+		const [columnPopoverOpen, setColumnPopoverOpen] = useState(false);
 
 		useEffect(() => {
 			if (data.option?.cellBackgroundSettings) {
@@ -73,8 +50,12 @@ export const CellStyling = observer(
 			}
 		}, [data.option]);
 
-		const handleColumnChange = (_, selected: GridBlockColumn[]) => {
-			const newSelected = selected.map((col) => col.name);
+		const handleColumnToggle = (column: GridBlockColumn) => {
+			const currentSelected = gridStyle.selectedColumn ?? [];
+			const newSelected = currentSelected.includes(column.name)
+				? currentSelected.filter((name) => name !== column.name)
+				: [...currentSelected, column.name];
+
 			const newOption = {
 				...data.option,
 				cellBackgroundSettings: {
@@ -84,7 +65,7 @@ export const CellStyling = observer(
 			};
 			setGridStyle((prev) => ({
 				...prev,
-				selectedColumns: newSelected,
+				selectedColumn: newSelected,
 			}));
 			setData(
 				"option",
@@ -170,75 +151,99 @@ export const CellStyling = observer(
 			);
 		};
 
-		const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
-		const checkedIcon = <CheckBoxIcon fontSize="small" />;
-		const renderOption = (
-			props: any,
-			option: GridBlockColumn,
-			{ selected }: any,
-		) => {
-			return (
-				<li {...props}>
-					<Checkbox checked={selected} />
-					{option.name}
-				</li>
-			);
-		};
+		const selectedColumn = gridStyle.selectedColumn ?? [];
+		const columns = data.columns || [];
+		const selectedLabel =
+			selectedColumn.length === 0
+				? "Select column"
+				: selectedColumn.length === 1
+					? selectedColumn[0]
+					: `${selectedColumn.length} columns selected`;
 
 		return (
-			<StyledContainer>
-				<StyledFieldWrapper>
+			<div className="flex flex-col gap-2">
+				<div className="flex flex-col justify-center gap-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label>
-						<Typography variant="body2" color="secondary">
+						<p className="text-muted-foreground text-sm">
 							Select Column
-						</Typography>{" "}
+						</p>
 					</label>
-					<Autocomplete
-						fullWidth
-						multiple
-						disableCloseOnSelect
-						size="small"
-						value={data.columns?.filter((c) =>
-							gridStyle.selectedColumn.includes(c.name),
-						)}
-						onChange={handleColumnChange}
-						options={data.columns || []}
-						getOptionLabel={(option) =>
-							typeof option === "object" && "name" in option
-								? option.name
-								: option
-						}
-						renderOption={renderOption}
-						renderInput={(params) => (
-							<TextField
-								{...params}
-								variant="outlined"
-								size="small"
-								placeholder="Select column"
-							/>
-						)}
-					/>
-				</StyledFieldWrapper>
-				<StyledFieldWrapper>
+					<Popover
+						open={columnPopoverOpen}
+						onOpenChange={setColumnPopoverOpen}
+					>
+						<PopoverTrigger asChild>
+							<Button
+								variant="outline"
+								role="combobox"
+								aria-expanded={columnPopoverOpen}
+								className="w-full justify-between font-normal"
+							>
+								<span className="truncate">
+									{selectedLabel}
+								</span>
+								<ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+							</Button>
+						</PopoverTrigger>
+						<PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+							<Command>
+								<CommandInput placeholder="Search columns..." />
+								<CommandList>
+									<CommandEmpty>
+										No columns found.
+									</CommandEmpty>
+									<CommandGroup>
+										{columns.map((col) => (
+											<CommandItem
+												key={col.name}
+												value={col.name}
+												onSelect={() =>
+													handleColumnToggle(col)
+												}
+											>
+												<Checkbox
+													checked={selectedColumn.includes(
+														col.name,
+													)}
+													className="mr-2"
+												/>
+												{col.name}
+												{selectedColumn.includes(
+													col.name,
+												) && (
+													<Check className="ml-auto size-4" />
+												)}
+											</CommandItem>
+										))}
+									</CommandGroup>
+								</CommandList>
+							</Command>
+						</PopoverContent>
+					</Popover>
+				</div>
+				<div className="flex flex-col justify-center gap-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label>
-						<Typography variant="body2" color="secondary">
+						<p className="text-muted-foreground text-sm">
 							Font Size
-						</Typography>{" "}
+						</p>
 					</label>
-					<StyledTextField
-						id="length"
-						size="small"
-						name="length"
+					<Input
 						value={gridStyle?.fontSize}
 						onChange={handleFontSizeChange}
 					/>
-				</StyledFieldWrapper>
+				</div>
 
-				<StyledFieldWrapper>
+				<div className="flex flex-col justify-center gap-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label>
-						<Typography variant="body2" color="secondary">
+						<p className="text-muted-foreground text-sm">
 							Font Color
-						</Typography>{" "}
+						</p>
 					</label>
 					<ColorPickerSettingsNew
 						id={id}
@@ -246,13 +251,15 @@ export const CellStyling = observer(
 						colorValue={gridStyle.fontColor}
 						onChange={handleFontColorChange}
 					/>
-				</StyledFieldWrapper>
+				</div>
 
-				<StyledFieldWrapper>
+				<div className="flex flex-col justify-center gap-2">
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
 					<label>
-						<Typography variant="body2" color="secondary">
+						<p className="text-muted-foreground text-sm">
 							Background Color
-						</Typography>{" "}
+						</p>
 					</label>
 					<ColorPickerSettingsNew
 						id={id}
@@ -260,19 +267,14 @@ export const CellStyling = observer(
 						colorValue={gridStyle.backgroundColor}
 						onChange={handleColorChange}
 					/>
-				</StyledFieldWrapper>
+				</div>
 
-				<StyledAxisDiv display="flex" justifyContent="end">
-					<Button
-						size="small"
-						color="primary"
-						variant="contained"
-						onClick={resetToInitialState}
-					>
+				<div className="flex flex-row items-center justify-end py-2">
+					<Button size="sm" onClick={resetToInitialState}>
 						Reset
 					</Button>
-				</StyledAxisDiv>
-			</StyledContainer>
+				</div>
+			</div>
 		);
 	},
 );

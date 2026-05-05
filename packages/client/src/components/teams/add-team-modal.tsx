@@ -1,7 +1,6 @@
 import { Users, X } from "lucide-react";
 import React, { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Dialog,
@@ -40,6 +39,7 @@ import Siteminder from "@/assets/loginProviders/siteminder.png";
 import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 const TypeImageObject = {
 	native: AMAZON_S3,
@@ -211,7 +211,10 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-			<DialogContent className="max-w-[550px]" showCloseButton={false}>
+			<DialogContent
+				className="max-w-[550px] gap-6 rounded-xl"
+				showCloseButton={false}
+			>
 				<DialogHeader>
 					<div className="flex items-center justify-between">
 						<DialogTitle className="text-foreground">
@@ -231,7 +234,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					</div>
 				</DialogHeader>
 				<form onSubmit={onSubmit}>
-					<div className="flex flex-col gap-4 pb-4">
+					<div className="flex flex-col gap-6 pb-6">
 						<Field>
 							<Controller
 								name="TEAM_TYPE"
@@ -263,68 +266,85 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 													className="w-full"
 													aria-invalid={!!error}
 												>
-													<SelectValue placeholder="Select a team type" />
+													<SelectValue placeholder="Select a team type">
+														{field.value
+															? loginTypes.find(
+																	(p) =>
+																		p.provider ===
+																		field.value,
+																)?.name
+															: "Select a team type"}
+													</SelectValue>
 												</SelectTrigger>
 												<SelectContent>
-													{loginTypes
-														.sort()
-														.filter(
-															(p) =>
-																![
-																	"native",
-																	"registration",
-																].includes(
-																	p.provider,
-																),
-														)
-														.map((p) => {
-															return (
-																<SelectItem
-																	key={`logintype-${p.provider}`}
-																	value={
-																		p.provider
-																	}
-																	className={
-																		p.provider ===
-																		"CUSTOM"
-																			? "border-border border-b"
-																			: ""
-																	}
-																>
-																	<div className="flex flex-row items-center gap-6">
-																		{TypeImageObject[
-																			p
-																				.provider
-																		] ? (
-																			<img
-																				src={
-																					TypeImageObject[
-																						p
-																							.provider
-																					]
-																				}
-																				className="h-6 w-6"
-																				alt="login provider icon"
-																			/>
-																		) : (
-																			<Users className="h-6 w-6 text-muted-foreground" />
-																		)}
-																		<span>
-																			{
-																				p.name
-																			}
-																		</span>
-																		{p.description && (
-																			<span className="text-muted-foreground text-xs italic">
+													{(() => {
+														const filteredTypes =
+															loginTypes
+																.sort()
+																.filter(
+																	(p) =>
+																		![
+																			"native",
+																			"registration",
+																		].includes(
+																			p.provider,
+																		),
+																);
+														const hasMultipleTypes =
+															filteredTypes.length >
+															1;
+														return filteredTypes.map(
+															(p) => {
+																return (
+																	<SelectItem
+																		key={`logintype-${p.provider}`}
+																		value={
+																			p.provider
+																		}
+																		className={
+																			p.provider ===
+																				"CUSTOM" &&
+																			hasMultipleTypes
+																				? "border-border border-b"
+																				: ""
+																		}
+																	>
+																		<div className="flex flex-row items-center gap-6">
+																			{TypeImageObject[
+																				p
+																					.provider
+																			] ? (
+																				<img
+																					src={
+																						TypeImageObject[
+																							p
+																								.provider
+																						]
+																					}
+																					className="h-6 w-6"
+																					alt="login provider icon"
+																				/>
+																			) : (
+																				<Users className="h-6 w-6 text-muted-foreground" />
+																			)}
+																			<span>
 																				{
-																					p.description
+																					p.name
 																				}
 																			</span>
-																		)}
-																	</div>
-																</SelectItem>
-															);
-														})}
+																			{p.description && (
+																				<span className="text-muted-foreground text-xs italic">
+																					{
+																						p.description
+																					}
+																				</span>
+																			)}
+																		</div>
+																	</SelectItem>
+																);
+															},
+														);
+													})()}
 												</SelectContent>
 											</Select>
 											{error && (

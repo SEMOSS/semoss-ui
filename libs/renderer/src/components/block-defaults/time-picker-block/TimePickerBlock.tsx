@@ -1,26 +1,10 @@
-import { styled, Typography } from "@mui/material";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DigitalClock } from "@mui/x-date-pickers/DigitalClock";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { TimeField } from "@mui/x-date-pickers/TimeField";
-import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs from "dayjs";
+import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
+import { Button, cn, Input } from "@semoss/ui/next";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-
-const StyledContainer = styled("div")(({ theme }) => ({
-	padding: theme.spacing(0.5),
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-}));
-
-const StyledLabel = styled(Typography)(({ theme }) => ({
-	fontSize: theme.typography.subtitle2.fontSize,
-	fontWeight: theme.typography.subtitle2.fontWeight,
-}));
 
 export interface TimePickerBlockDef extends BlockDef<"timepicker"> {
 	widget: "timepicker";
@@ -55,69 +39,54 @@ export const TimePickerBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } =
 		useBlock<TimePickerBlockDef>(id);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
 		}
 	}, []);
 
-	// Parse the value string to a dayjs object, default to null if invalid
-	const timeValue = data.value ? dayjs(data.value) : null;
-
-	const handleChange = (newValue: dayjs.Dayjs | null) => {
-		// Convert to ISO string for storage or null if no value
-		setData("value", newValue ? newValue.toISOString() : "");
-
+	const handleChange = (timeStr: string) => {
+		setData("value", timeStr ? dayjs(timeStr, "HH:mm").toISOString() : "");
 		listeners.onChange();
 	};
 
-	// Common props for all time components
-	const commonProps = {
-		value: timeValue,
-		onChange: handleChange,
-		ampm: data.ampm,
-		disabled: data.disabled,
-		required: data.required,
-		format: data.format || undefined,
-		slotProps: {
-			textField: {
-				size: data.size,
-				fullWidth: data.fullWidth,
-				placeholder: data.placeholder,
-				variant: "outlined" as const,
-			},
-		},
-		clearable: data.clearable,
-	};
-
-	// Render the appropriate time component based on variant
-	const renderTimeComponent = () => {
-		switch (data.variant) {
-			case "field":
-				return <TimeField {...commonProps} />;
-			case "digital":
-				return (
-					<DigitalClock
-						value={timeValue}
-						onChange={handleChange}
-						ampm={data.ampm}
-						disabled={data.disabled}
-						skipDisabled={true}
-						timeStep={1}
-					/>
-				);
-			case "picker":
-			default:
-				return <TimePicker {...commonProps} views={data.views} />;
-		}
-	};
+	const inputValue = data.value ? dayjs(data.value).format("HH:mm") : "";
 
 	return (
-		<StyledContainer {...attrs} style={data.style}>
-			{data.label && <StyledLabel>{data.label}</StyledLabel>}
-			<LocalizationProvider dateAdapter={AdapterDayjs}>
-				{renderTimeComponent()}
-			</LocalizationProvider>
-		</StyledContainer>
+		<div
+			{...attrs}
+			style={data.style}
+			className={cn("flex flex-col gap-1 p-0.5")}
+		>
+			{data.label && (
+				<p className="font-semibold text-sm">{data.label}</p>
+			)}
+			<div
+				className={cn(
+					"flex items-center gap-1",
+					data.fullWidth && "w-full",
+				)}
+			>
+				<Input
+					type="time"
+					value={inputValue}
+					onChange={(e) => handleChange(e.target.value)}
+					disabled={data.disabled}
+					required={data.required}
+					placeholder={data.placeholder}
+					className={cn(data.fullWidth && "w-full")}
+				/>
+				{data.clearable && inputValue && (
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => handleChange("")}
+					>
+						<X className="size-3" />
+					</Button>
+				)}
+			</div>
+		</div>
 	);
 });

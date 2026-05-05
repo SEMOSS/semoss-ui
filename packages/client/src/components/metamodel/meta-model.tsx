@@ -12,13 +12,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import { Button, Input } from "@semoss/ui/next";
 import { MetamodelContext } from "@/contexts";
-import type { ColumnOption, Property } from "../import/database/MetamodelTypes";
+import type {
+	ColumnOption,
+	Property,
+} from "../import/database/metamodel-types";
 import {
 	createPropertiesFromNames,
 	edgeIdsEqual,
 	nodeIdsEqual,
 	updateColumnProperties,
-} from "../import/database/MetamodelUtils";
+} from "../import/database/metamodel-utils";
 import { Editmetamodel } from "./edit-meta-model";
 import EditTable from "./edit-table";
 import { FloatingEdge } from "./floating-edge";
@@ -121,6 +124,7 @@ export const Metamodel = (props: MetamodelProps) => {
 		columnId: string;
 		name: string;
 		type: string;
+		rawType?: string;
 		description?: string;
 		logicalNames?: string[];
 	} | null>(null);
@@ -153,6 +157,7 @@ export const Metamodel = (props: MetamodelProps) => {
 	const flowInstanceRef = useRef<ReactFlowInstance | null>(null);
 	const lastFocusedSearchMatchRef = useRef<string | null>(null);
 	const lastEmittedSearchMatchRef = useRef<string | null>(null);
+	const lastAutoFocusedSelectedNodeRef = useRef<string | null>(null);
 	const lastPropsRef = useRef<{ nodes: MetamodelNodeType[]; edges: Edge[] }>({
 		nodes: [],
 		edges: [],
@@ -166,6 +171,7 @@ export const Metamodel = (props: MetamodelProps) => {
 			columnId: string;
 			name: string;
 			type: string;
+			rawType?: string;
 			description?: string;
 			logicalNames?: string[];
 		}) => {
@@ -468,6 +474,58 @@ export const Metamodel = (props: MetamodelProps) => {
 		[availableColumnNames, callback, onMetaModelUpdate, setFlowNodes],
 	);
 
+	const handleNodeDragStop = useCallback(
+		(
+			_event: unknown,
+			_node: unknown,
+			draggedNodes: MetamodelNodeType[],
+		) => {
+			const flowInstanceNodes = flowInstanceRef.current?.getNodes?.() as
+				| MetamodelNodeType[]
+				| undefined;
+
+			// `draggedNodes` can be only the dragged/selected subset.
+			// Build the next state from the full graph to avoid dropping nodes.
+			const nextSourceNodes =
+				Array.isArray(flowInstanceNodes) && flowInstanceNodes.length > 0
+					? flowInstanceNodes
+					: (() => {
+							const draggedById = new Map(
+								(Array.isArray(draggedNodes)
+									? draggedNodes
+									: []
+								).map((dragged) => [dragged.id, dragged]),
+							);
+
+							return flowNodes.map((existing) => {
+								const dragged = draggedById.get(existing.id);
+								if (!dragged) {
+									return existing;
+								}
+
+								return {
+									...existing,
+									position: dragged.position,
+								};
+							});
+						})();
+
+			const nextNodes = injectIsAction(nextSourceNodes);
+
+			setData((prev) => ({ ...prev, nodes: nextNodes }));
+			setFlowNodes(nextNodes);
+
+			if (onMetaModelUpdate) {
+				try {
+					onMetaModelUpdate(JSON.parse(JSON.stringify(nextNodes)));
+				} catch {
+					onMetaModelUpdate(nextNodes);
+				}
+			}
+		},
+		[flowNodes, injectIsAction, onMetaModelUpdate, setFlowNodes],
+	);
+
 	const updateData = useCallback((nodeData, action: string) => {
 		setData((prev) => {
 			const temp = { ...prev };
@@ -569,14 +627,28 @@ export const Metamodel = (props: MetamodelProps) => {
 
 	useEffect(() => {
 		if (
-			resetKeyRef.current !== undefined &&
+			resetKeyRef.current !== null &&
 			resetKeyRef.current !== resetKey
 		) {
 			const sourceKey = String(dataSourceId ?? "default");
 			isInitialMount.current[sourceKey] = false;
+
+			// Force position sync — nodeIdsEqual only checks IDs, so a reset
+			// that restores original positions (same IDs, different coords) would
+			// otherwise be silently skipped by the !isEditable effect below.
+			const nextNodes = injectIsAction(nodes || []);
+			const nextEdges = edges || [];
+			setData({ nodes: nextNodes, edges: nextEdges });
+			setFlowNodes(nextNodes);
+			setFlowEdges(nextEdges);
+
+			// Fit view after React commits the updated node positions.
+			setTimeout(() => {
+				flowInstanceRef.current?.fitView({ maxZoom: 0.75, padding: 0.2 });
+			}, 50);
 		}
-		resetKeyRef.current = resetKey;
-	}, [resetKey, dataSourceId]);
+		resetKeyRef.current = resetKey ?? null;
+	}, [resetKey, dataSourceId, nodes, edges, injectIsAction, setFlowNodes, setFlowEdges]);
 
 	useEffect(() => {
 		if (isEditable) {
@@ -773,6 +845,11 @@ export const Metamodel = (props: MetamodelProps) => {
 
 	useEffect(() => {
 		if (!autoFocusSelectedNode || !selectedNode?.id) {
+			lastAutoFocusedSelectedNodeRef.current = null;
+			return;
+		}
+
+		if (lastAutoFocusedSelectedNodeRef.current === selectedNode.id) {
 			return;
 		}
 
@@ -781,12 +858,14 @@ export const Metamodel = (props: MetamodelProps) => {
 			return;
 		}
 
-		const selectedFlowNode = flowNodes.find(
-			(n) => n.id === selectedNode.id,
-		);
+		const selectedFlowNode =
+			flowInstance.getNode?.(selectedNode.id) ??
+			flowNodes.find((n) => n.id === selectedNode.id);
 		if (!selectedFlowNode) {
 			return;
 		}
+
+		lastAutoFocusedSelectedNodeRef.current = selectedNode.id;
 
 		flowInstance.setCenter(
 			selectedFlowNode.position.x + 180,
@@ -859,9 +938,11 @@ export const Metamodel = (props: MetamodelProps) => {
 						flowInstanceRef.current = instance;
 					}}
 					fitView={true}
+					fitViewOptions={{ maxZoom: 0.75, padding: 0.2 }}
 					onNodesChange={onFlowNodesChange}
+					onNodeDragStop={handleNodeDragStop}
 					onEdgesChange={onFlowEdgesChange}
-					defaultViewport={{ x: 70, y: 50, zoom: 1 }}
+					defaultViewport={{ x: 70, y: 50, zoom: 0.75 }}
 				>
 					<MiniMap pannable zoomable />
 					<Controls showInteractive={false} />
@@ -887,6 +968,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				isEdit={true}
 				initialName={columnToEdit?.name ?? ""}
 				initialType={columnToEdit?.type ?? ""}
+				initialRawType={columnToEdit?.rawType}
 				initialDescription={columnToEdit?.description ?? ""}
 				initialLogicalNames={columnToEdit?.logicalNames ?? []}
 				existingColumnNames={existingColumnNames}

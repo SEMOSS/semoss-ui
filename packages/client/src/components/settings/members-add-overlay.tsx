@@ -171,6 +171,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
+		YEAR: "Yearly",
+		ALL_TIME: "All time",
 	};
 	const unitTypes: string[] = ["milliseconds"];
 

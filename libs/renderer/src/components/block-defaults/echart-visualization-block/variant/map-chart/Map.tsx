@@ -9,7 +9,6 @@ import { CanvasRenderer } from "echarts/renderers";
 import EChartsReact from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockComponent } from "../../../../../store";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
@@ -26,15 +25,14 @@ echarts.use([
 	CanvasRenderer,
 ]);
 
-const StyledNoDataContainer = styled("div")({
-	height: "100%",
-	width: "100%",
-});
-
+// biome-ignore lint/suspicious/noShadowRestrictedNames: component name follows Map chart convention
 export const Map: BlockComponent = observer(({ id }) => {
+	// biome-ignore lint/suspicious/noExplicitAny: echart block data type is untyped
 	const { data } = useBlock<any>(id);
+	// biome-ignore lint/suspicious/noExplicitAny: echart chart ref type is untyped
 	const chartRef = useRef<any>(null);
 
+	// biome-ignore lint/suspicious/noExplicitAny: context menu state type is untyped
 	const [contextMenu, setContextMenu] = useState<any>(null);
 
 	const frame = useFrame(data?.frame?.name, {
@@ -65,7 +63,7 @@ export const Map: BlockComponent = observer(({ id }) => {
 			},
 		],
 	};
-	
+
 	useEffect(() => {
 		const worldJson = fetchWorldMap("");
 		echarts.registerMap("world", worldJson);
@@ -73,10 +71,13 @@ export const Map: BlockComponent = observer(({ id }) => {
 
 	const processedData = processData(frame.data, data);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (!chartRef.current || !processedData?.length) return;
 
+		// biome-ignore lint/suspicious/noExplicitAny: echart data map type is untyped
 		const lats = processedData.map((d: any) => d.value[0]);
+		// biome-ignore lint/suspicious/noExplicitAny: echart data map type is untyped
 		const lons = processedData.map((d: any) => d.value[1]);
 
 		const minLat = Math.min(...lats);
@@ -114,10 +115,12 @@ export const Map: BlockComponent = observer(({ id }) => {
 		);
 	}, [processedData, frame.data]);
 
+	// biome-ignore lint/suspicious/noExplicitAny: echart chart ready callback type is untyped
 	const onChartReady = (chart: any) => {
 		chartRef.current = chart;
 		chart.setOption(baseOption);
 
+		// biome-ignore lint/suspicious/noExplicitAny: echart contextmenu event type is untyped
 		chart.on("contextmenu", (params: any) => {
 			if (!params.data) return;
 			setContextMenu({
@@ -130,7 +133,7 @@ export const Map: BlockComponent = observer(({ id }) => {
 	};
 
 	return (
-		<StyledNoDataContainer data-block-id={id}>
+		<div data-block-id={id} className="h-full w-full">
 			<EChartsReact
 				option={baseOption}
 				echarts={echarts}
@@ -144,6 +147,6 @@ export const Map: BlockComponent = observer(({ id }) => {
 				contextMenu={contextMenu}
 				onClose={() => setContextMenu(null)}
 			/>
-		</StyledNoDataContainer>
+		</div>
 	);
 });

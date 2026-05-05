@@ -5,7 +5,7 @@ import { GuardrailImport } from "@/components/import/guardrail/guardrail-import"
 import { StorageImport } from "@/components/import/storage/storage-import";
 import { VectorImport } from "@/components/import/vector/vector-import";
 import type { ENGINE_TYPES } from "@/types";
-import { ImportLayout } from "./ImportLayout";
+import { ImportLayout } from "./import-layout";
 import { ModelImportPage } from "./model-import-page";
 
 /** TODO: Refactor */

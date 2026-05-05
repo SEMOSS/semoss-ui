@@ -1,6 +1,8 @@
 import {
+	ChevronDown,
 	ChevronLeft,
 	ChevronRight,
+	ChevronUp,
 	DownloadIcon,
 	Pencil,
 	RefreshCwIcon,
@@ -8,19 +10,23 @@ import {
 	Search,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
-import { download, usePixel } from "@semoss/sdk/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	download,
+	console as getPixelConsole,
+	usePixel,
+} from "@semoss/sdk/react";
+import { ColumnMetadataModal, type LogicalDataType } from "@semoss/shared";
 import {
 	Badge,
 	Button,
 	Card,
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+	H4,
 	Input,
+	Muted,
 	P,
 	Select,
 	SelectContent,
@@ -39,26 +45,21 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { SyncExternalDatabaseOverlay } from "@/components/database";
-import { Metamodel } from "@/components/metamodel";
+import { Metamodel, type MetamodelNodeType } from "@/components/metamodel";
 import { Section } from "@/components/ui";
 import { useEngine, useRootStore } from "@/hooks";
-import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
+import { useQueryResults } from "@/hooks/use-database-query-results";
 
 const normalizeSearchValue = (value: string) =>
 	value.toLowerCase().replace(/[\s_]+/g, "");
+const CONSOLE_POLL_INTERVAL_MS = 1000;
 
 type SearchMatch = {
 	nodeId: string;
 	columnIndex: number | null;
 };
 
-type SupportedDataType =
-	| "BOOLEAN"
-	| "INT"
-	| "DOUBLE"
-	| "STRING"
-	| "DATE"
-	| "TIMESTAMP";
+type SupportedDataType = LogicalDataType;
 
 type ColumnDetails = {
 	tableName: string;
@@ -69,39 +70,8 @@ type ColumnDetails = {
 	logicalNames: string[];
 };
 
-const normalizeSupportedDataType = (value?: string): SupportedDataType | "" => {
-	if (!value) {
-		return "";
-	}
-
-	switch (value.toUpperCase()) {
-		case "BOOLEAN":
-		case "BOOL":
-			return "BOOLEAN";
-		case "INT":
-		case "INTEGER":
-		case "BIGINT":
-		case "SMALLINT":
-			return "INT";
-		case "DOUBLE":
-		case "FLOAT":
-		case "NUMERIC":
-		case "DECIMAL":
-			return "DOUBLE";
-		case "STRING":
-		case "VARCHAR":
-		case "CHAR":
-		case "TEXT":
-			return "STRING";
-		case "DATE":
-			return "DATE";
-		case "TIMESTAMP":
-		case "DATETIME":
-			return "TIMESTAMP";
-		default:
-			return "";
-	}
-};
+const normalizeSupportedDataType = (value?: string): SupportedDataType | "" =>
+	(value || "") as SupportedDataType | "";
 
 const normalizePhysicalTypeKey = (value: string) =>
 	value.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -145,6 +115,40 @@ const resolvePhysicalType = (
 	}
 
 	return "";
+};
+
+const haveNodePositionsChanged = (
+	prevNodes: {
+		id: string;
+		position: {
+			x: number;
+			y: number;
+		};
+	}[],
+	nextNodes: {
+		id: string;
+		position: {
+			x: number;
+			y: number;
+		};
+	}[],
+) => {
+	const previousById = new Map(
+		prevNodes.map((node) => [node.id, node.position]),
+	);
+
+	for (const node of nextNodes) {
+		const previous = previousById.get(node.id);
+		if (
+			!previous ||
+			previous.x !== node.position.x ||
+			previous.y !== node.position.y
+		) {
+			return true;
+		}
+	}
+
+	return false;
 };
 
 export const EngineMetadataPage = observer(() => {
@@ -324,7 +328,93 @@ export const EngineMetadataPage = observer(() => {
 		configStore.store.insightID,
 	);
 
+	const getDatabaseCategory = usePixel<string>(
+		active.id ? `GetDatabaseCategory(engine=["${active.id}"]);` : "",
+	);
+	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
+
 	const [showSyncDatabase, setShowSyncDatabase] = useState(false);
+	const [metamodelResetKey, setMetamodelResetKey] = useState(0);
+	const [showSaveReminder, setShowSaveReminder] = useState(false);
+	const [hasSchemaChanges, setHasSchemaChanges] = useState(false);
+	const [hasPositionChanges, setHasPositionChanges] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [loadingMessage, setLoadingMessage] = useState("Loading...");
+	const [loadingLogMessages, setLoadingLogMessages] = useState<string[]>([]);
+	const [openLoadingLog, setOpenLoadingLog] = useState(false);
+
+	const createPositionsMap = useCallback(
+		(sourceNodes = nodes) => {
+			return sourceNodes.reduce<
+				Record<string, { top: number; left: number }>
+			>((acc, node) => {
+				acc[node.id] = {
+					top: node.position.y,
+					left: node.position.x,
+				};
+
+				return acc;
+			}, {});
+		},
+		[nodes],
+	);
+
+	const runPixelWithConsole = async <O extends unknown[] | []>(
+		pixel: string,
+	) => {
+		const insightId = configStore.store.insightID;
+		if (!insightId) {
+			throw new Error("Missing insight ID for metadata save request.");
+		}
+
+		let stopPolling = false;
+		const pollConsole = async () => {
+			while (!stopPolling) {
+				try {
+					const { message } = await getPixelConsole(insightId);
+
+					if (Array.isArray(message) && message.length > 0) {
+						let latestConsoleMessage = "";
+						const cleanedMessages = message
+							.map((entry) => String(entry ?? "").trim())
+							.filter(Boolean);
+
+						if (cleanedMessages.length > 0) {
+							latestConsoleMessage =
+								cleanedMessages[cleanedMessages.length - 1];
+							setLoadingLogMessages((prev) => {
+								const next = [...prev];
+								for (const entry of cleanedMessages) {
+									if (next[next.length - 1] !== entry) {
+										next.push(entry);
+									}
+								}
+								return next;
+							});
+						}
+
+						if (latestConsoleMessage) {
+							setLoadingMessage(latestConsoleMessage);
+						}
+					}
+				} catch {
+					// Ignore console polling failures; pixel result decides success/failure.
+				}
+
+				await new Promise((resolve) =>
+					setTimeout(resolve, CONSOLE_POLL_INTERVAL_MS),
+				);
+			}
+		};
+
+		const pollPromise = pollConsole();
+		try {
+			return await configStore.runPixel<O>(pixel);
+		} finally {
+			stopPolling = true;
+			await pollPromise;
+		}
+	};
 
 	const filteredColumns = useMemo(() => {
 		if (!selectedNode?.data?.properties?.length) {
@@ -436,6 +526,43 @@ export const EngineMetadataPage = observer(() => {
 			getData.data.data.values,
 			getData.data.numCollected,
 		],
+	);
+
+	const handleMetaModelUpdate = useCallback(
+		(snapshot: MetamodelNodeType[]) => {
+			const normalizedNodes = snapshot.map((node) => ({
+				id: node.id,
+				type: "metamodel" as const,
+				data: {
+					name: node.data?.name ?? node.id,
+					properties: Array.isArray(node.data?.properties)
+						? node.data.properties.map((property) => ({
+								id: property.id,
+								name: property.name,
+								type: property.type,
+								physicalType: property.physicalType,
+								description: property.description,
+								logicalNames: property.logicalNames,
+							}))
+						: [],
+				},
+				position: {
+					x: node.position?.x ?? 0,
+					y: node.position?.y ?? 0,
+				},
+			}));
+
+			setNodes((previousNodes) => {
+				if (haveNodePositionsChanged(previousNodes, normalizedNodes)) {
+					setIsModified(true);
+					setHasPositionChanges(true);
+					setShowSaveReminder(true);
+				}
+
+				return normalizedNodes;
+			});
+		},
+		[],
 	);
 
 	/**
@@ -723,6 +850,8 @@ export const EngineMetadataPage = observer(() => {
 
 			// set as modified
 			setIsModified(true);
+			setHasSchemaChanges(true);
+			setShowSaveReminder(true);
 		} catch (e) {
 			toast.error(
 				`
@@ -768,49 +897,83 @@ Error ${e.message || "Unknown error"}
 	 * Save the changes
 	 */
 	const saveDatabase = async () => {
+		if (!hasSchemaChanges && !hasPositionChanges) {
+			return;
+		}
+
+		const saveSchemaChanges = hasSchemaChanges;
+
+		setLoading(true);
+		if (saveSchemaChanges) {
+			setLoadingMessage("Starting database synchronization...");
+			setLoadingLogMessages(["Starting database synchronization..."]);
+		} else {
+			setLoadingMessage("Saving table positions...");
+			setLoadingLogMessages(["Saving table positions..."]);
+		}
+		setOpenLoadingLog(false);
 		try {
-			const relationships = [];
-			for (const edge of edges) {
-				const relName = edge.relName || `${edge.source}_${edge.target}`;
+			const positions = createPositionsMap();
 
-				relationships.push({
-					fromTable: edge.source,
-					toTable: edge.target,
-					relName: relName,
-				});
-			}
+			if (saveSchemaChanges) {
+				const relationships = [];
+				for (const edge of edges) {
+					const relName =
+						edge.relName || `${edge.source}_${edge.target}`;
 
-			const tables = {};
-			const positions = {};
-			for (const node of nodes) {
-				if (!positions[node.id]) {
-					positions[node.id] = {
-						top: node.position.y,
-						left: node.position.x,
-					};
-				}
-
-				const tableKey = `${node.data.name}.${node.data.properties[0].name}`;
-				if (!tables[tableKey]) {
-					tables[tableKey] = node.data.properties.map((col) => {
-						return col.name;
+					relationships.push({
+						fromTable: edge.source,
+						toTable: edge.target,
+						relName: relName,
 					});
 				}
-			}
 
-			const { errors } = await configStore.runPixel(
-				`RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]); META|SyncDatabaseWithLocalMaster(database=["${active.id}"]);`,
-			);
+				const tables = {};
+				for (const node of nodes) {
+					const firstProperty = node.data.properties[0]?.name;
+					if (!firstProperty) {
+						continue;
+					}
 
-			if (errors.length > 0) {
-				throw new Error(errors.join(""));
+					const tableKey = `${node.data.name}.${firstProperty}`;
+					if (!tables[tableKey]) {
+						tables[tableKey] = node.data.properties.map((col) => {
+							return col.name;
+						});
+					}
+				}
+
+				const { errors } = await runPixelWithConsole(
+					`RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);SyncDatabaseWithLocalMaster(database=["${active.id}"]);`,
+				);
+
+				if (errors.length > 0) {
+					throw new Error(errors.join(""));
+				}
+			} else {
+				const { errors } = await configStore.runPixel(
+					`META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(positions)}]);`,
+				);
+
+				if (errors.length > 0) {
+					throw new Error(errors.join(""));
+				}
 			}
 
 			// refresh it
 			getDatabaseMetamodel.refresh();
 
+			setIsModified(false);
+			setHasSchemaChanges(false);
+			setHasPositionChanges(false);
+			setShowSaveReminder(false);
+
 			// throw a success
-			toast.success("Successfully saved changes.");
+			toast.success(
+				saveSchemaChanges
+					? "Successfully saved changes."
+					: "Successfully saved table positions.",
+			);
 		} catch (e) {
 			toast.error(
 				`
@@ -819,33 +982,155 @@ Failed to sync with database changes. Please try again.
 Error ${e.message || "Unknown error"}				
 				`,
 			);
+		} finally {
+			setLoading(false);
+			setLoadingMessage("Loading...");
+			setLoadingLogMessages([]);
+			setOpenLoadingLog(false);
 		}
 	};
+
+	const handleReset = useCallback(() => {
+		const data = getDatabaseMetamodel.data;
+		if (!data) return;
+
+		const {
+			nodes: rawNodes,
+			edges: rawEdges,
+			positions,
+			dataTypes,
+			additionalDataTypes,
+			logicalNames,
+			descriptions,
+			physicalTypes = {},
+		} = data;
+
+		const n = rawNodes.map((n) => ({
+			id: n.conceptualName,
+			type: "metamodel" as const,
+			data: {
+				name: n.conceptualName,
+				properties: n.propSet.map((p) => {
+					const propertyId = `${n.conceptualName}__${p}`;
+					const normalizedDataType =
+						normalizeSupportedDataType(dataTypes[propertyId]) ||
+						normalizeSupportedDataType(
+							additionalDataTypes[propertyId],
+						);
+					return {
+						id: propertyId,
+						name: p,
+						type: normalizedDataType,
+						physicalType: resolvePhysicalType(
+							physicalTypes,
+							n.conceptualName,
+							p,
+							propertyId,
+						),
+						description: descriptions[propertyId] ?? "",
+						logicalNames: logicalNames[propertyId] ?? [],
+					};
+				}),
+			},
+			position: positions[n.conceptualName]
+				? {
+						x: positions[n.conceptualName].left,
+						y: positions[n.conceptualName].top,
+					}
+				: { x: 0, y: 0 },
+		}));
+
+		const e = rawEdges.map((e, i) => ({
+			id: `${e.relation}-${i}`,
+			type: "floating" as const,
+			source: e.source,
+			target: e.target,
+			relName: e.relation,
+		}));
+
+		setNodes(n);
+		setEdges(e);
+		setIsModified(false);
+		setHasSchemaChanges(false);
+		setHasPositionChanges(false);
+		setShowSaveReminder(false);
+		setMetamodelResetKey((k) => k + 1);
+	}, [getDatabaseMetamodel.data]);
+
+	const isPositionOnlyChange = hasPositionChanges && !hasSchemaChanges;
+	const saveReminderText = isPositionOnlyChange
+		? "Positions updated. Save to persist layout."
+		: "Save changes or they will be lost.";
+	const saveButtonHighlightClass = isPositionOnlyChange
+		? "border-sky-500 bg-sky-50 text-sky-900 hover:bg-sky-100"
+		: "border-amber-500 bg-amber-50 text-amber-900 hover:bg-amber-100";
+	const saveTooltipText = isPositionOnlyChange
+		? "Save to persist updated table positions."
+		: "You must save your changes or they will be lost.";
 
 	return (
 		<div className="relative z-0">
 			<Section>
 				<Section.Header
 					actions={
-						<div className="flex gap-2">
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										size="sm"
-										disabled={!active?.id}
-										variant="outline"
-										onClick={() =>
-											setShowSyncDatabase(true)
+						<div className="flex items-center gap-2">
+							{showSaveReminder && (
+								<div
+									className={
+										isPositionOnlyChange
+											? "rounded-md border border-sky-300 bg-sky-50 px-2 py-1"
+											: "rounded-md border border-amber-300 bg-amber-50 px-2 py-1"
+									}
+								>
+									<P
+										className={
+											isPositionOnlyChange
+												? "whitespace-nowrap font-medium text-[11px] text-sky-900"
+												: "whitespace-nowrap font-medium text-[11px] text-amber-900"
 										}
-										data-testid="engineMetadata-refresh-btn"
 									>
-										<RefreshCwIcon />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									Sync the metamodel with the database
-								</TooltipContent>
-							</Tooltip>
+										{saveReminderText}
+									</P>
+								</div>
+							)}
+							{isModified && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											size="sm"
+											variant="outline"
+											onClick={handleReset}
+											data-testid="engineMetadata-reset-btn"
+										>
+											<RefreshCwIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Reset to last saved state
+									</TooltipContent>
+								</Tooltip>
+							)}
+
+							{isRdbms && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											size="sm"
+											disabled={!active?.id}
+											variant="outline"
+											onClick={() =>
+												setShowSyncDatabase(true)
+											}
+											data-testid="engineMetadata-sync-btn"
+										>
+											<RefreshCwIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Sync the metamodel with the database
+									</TooltipContent>
+								</Tooltip>
+							)}
 
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -872,14 +1157,27 @@ Error ${e.message || "Unknown error"}
 										size="sm"
 										disabled={!active?.id || !isModified}
 										variant="outline"
+										className={
+											showSaveReminder
+												? saveButtonHighlightClass
+												: undefined
+										}
 										onClick={() => saveDatabase()}
 										data-testid="engineMetadata-save-btn"
 									>
-										<SaveIcon />
+										<SaveIcon
+											className={
+												showSaveReminder
+													? "animate-pulse"
+													: undefined
+											}
+										/>
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									Save changes to the metamodel
+									{showSaveReminder
+										? saveTooltipText
+										: "Save changes to the metamodel"}
 								</TooltipContent>
 							</Tooltip>
 						</div>
@@ -887,11 +1185,12 @@ Error ${e.message || "Unknown error"}
 				>
 					Metamodel
 				</Section.Header>
-				<div className="flex flex-col">
+				<div className="relative flex flex-col">
 					<section className="relative h-[55vh] w-full overflow-hidden rounded-lg border border-border">
 						<Metamodel
 							nodes={nodes}
 							edges={edges}
+							resetKey={metamodelResetKey}
 							selectedNode={selectedNode}
 							onSelectNode={(node) => {
 								setSelectedNode(node);
@@ -917,6 +1216,7 @@ Error ${e.message || "Unknown error"}
 								})
 							}
 							isInteractive={true}
+							onMetaModelUpdate={handleMetaModelUpdate}
 							showSearch={true}
 							searchValue={metadataSearch}
 							onSearchValueChange={setMetadataSearch}
@@ -924,6 +1224,82 @@ Error ${e.message || "Unknown error"}
 							searchInputTestId="engineMetadata-search-input"
 						/>
 					</section>
+					{loading && (
+						<div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/70 backdrop-blur-sm">
+							<div className="w-full max-w-2xl px-4">
+								<div className="flex flex-col items-center gap-5 rounded-md border border-border bg-card p-6 shadow-md">
+									<div className="size-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+									<div className="flex flex-col items-center gap-1">
+										<H4 className="text-center font-semibold text-lg tracking-tight">
+											Syncing Database
+										</H4>
+										<Muted className="text-center text-sm leading-6">
+											We are applying your database
+											changes.
+										</Muted>
+									</div>
+									<div className="flex w-full max-w-xl flex-col items-center gap-1">
+										<Muted className="text-xs uppercase tracking-wide">
+											Latest Status
+										</Muted>
+										<P className="text-center text-base leading-6">
+											{loadingMessage}
+										</P>
+									</div>
+
+									<Collapsible
+										open={openLoadingLog}
+										onOpenChange={setOpenLoadingLog}
+									>
+										<div className="flex w-full justify-center">
+											<CollapsibleTrigger asChild>
+												<Button
+													variant="outline"
+													size="sm"
+													className="gap-2 font-medium"
+												>
+													{openLoadingLog ? (
+														<ChevronUp className="size-4" />
+													) : (
+														<ChevronDown className="size-4" />
+													)}
+													{openLoadingLog
+														? "Hide"
+														: "Show"}{" "}
+													Execution Log (
+													{loadingLogMessages.length})
+												</Button>
+											</CollapsibleTrigger>
+										</div>
+										<CollapsibleContent>
+											<div className="mt-3 max-h-64 overflow-auto rounded-md border border-border bg-background p-3">
+												{loadingLogMessages.length >
+												0 ? (
+													<div className="space-y-1.5">
+														{loadingLogMessages.map(
+															(entry, index) => (
+																<P
+																	key={`${index}-${entry}`}
+																	className="break-words text-muted-foreground text-sm leading-6"
+																>
+																	{entry}
+																</P>
+															),
+														)}
+													</div>
+												) : (
+													<P className="text-center text-muted-foreground text-sm">
+														No console messages
+														received yet.
+													</P>
+												)}
+											</div>
+										</CollapsibleContent>
+									</Collapsible>
+								</div>
+							</div>
+						</div>
+					)}
 				</div>
 			</Section>
 
@@ -1303,88 +1679,15 @@ Error ${e.message || "Unknown error"}
 				</Section>
 			)}
 
-			<Dialog
+			<ColumnMetadataModal
 				open={openColumnDetails}
-				onOpenChange={(open) => {
-					if (!open) {
-						closeColumnDetailsModal();
-					}
-				}}
-			>
-				<DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-xl">
-					<DialogHeader>
-						<DialogTitle>Column Metadata</DialogTitle>
-						<DialogDescription>
-							View logical names and description.
-						</DialogDescription>
-					</DialogHeader>
-
-					<div className="space-y-4 overflow-y-auto pr-1">
-						<div className="flex flex-wrap items-center gap-2">
-							<Badge variant="outline">
-								Table:{" "}
-								{selectedColumnDetails?.tableName ?? "N/A"}
-							</Badge>
-							<Badge variant="outline">
-								Column:{" "}
-								{selectedColumnDetails?.columnName ?? "N/A"}
-							</Badge>
-							<Badge variant="outline">
-								Physical Type:{" "}
-								{selectedColumnDetails?.physicalType || "N/A"}
-							</Badge>
-						</div>
-
-						<div className="space-y-2 rounded-md border border-border p-3">
-							<div className="space-y-1">
-								<P className="font-medium text-foreground text-sm">
-									Logical Names
-								</P>
-								<div className="flex flex-wrap gap-1">
-									{selectedColumnDetails?.logicalNames
-										?.length ? (
-										selectedColumnDetails.logicalNames.map(
-											(name) => (
-												<Badge
-													key={name}
-													variant="default"
-													className="text-xs"
-												>
-													{name}
-												</Badge>
-											),
-										)
-									) : (
-										<P className="text-muted-foreground text-sm">
-											No logical names provided.
-										</P>
-									)}
-								</div>
-							</div>
-
-							<div className="space-y-1">
-								<P className="font-medium text-foreground text-sm">
-									Description
-								</P>
-								<P className="text-muted-foreground text-sm">
-									{selectedColumnDetails?.description ||
-										"No description provided."}
-								</P>
-							</div>
-						</div>
-					</div>
-
-					<DialogFooter>
-						<Button
-							variant="outline"
-							onClick={closeColumnDetailsModal}
-							data-testid="column-details-close-btn"
-						>
-							Close
-						</Button>
-					</DialogFooter>
-				</DialogContent>
-			</Dialog>
+				onClose={closeColumnDetailsModal}
+				tableName={selectedColumnDetails?.tableName}
+				columnName={selectedColumnDetails?.columnName}
+				physicalType={selectedColumnDetails?.physicalType}
+				logicalNames={selectedColumnDetails?.logicalNames}
+				description={selectedColumnDetails?.description}
+			/>
 
 			{active?.id && (
 				<SyncExternalDatabaseOverlay

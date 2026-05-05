@@ -7,30 +7,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import BRAIN from "@/assets/img/BRAIN.png";
 import { formatToDataTestId } from "@/utility";
-
-function hashString(str: string): number {
-	let h = 0;
-	for (let i = 0; i < str.length; i++) {
-		h = (h << 5) - h + str.charCodeAt(i);
-		h |= 0;
-	}
-	return Math.abs(h);
-}
-
-function pickGradient(name: string): string {
-	// Subtle pastel gradient derived from hash: lower saturation + higher lightness.
-	const base = hashString(name) % 360;
-	const hue2 = (base + 35) % 360;
-	const hue3 = (base + 70) % 360;
-	return `linear-gradient(135deg, hsl(${base} 45% 88%), hsl(${hue2} 40% 84%), hsl(${hue3} 35% 80%))`;
-}
-
-function buildInitials(label: string): string {
-	const tokens = label.split(/[\s-]+/).filter((t) => t.length > 0);
-	const chars = tokens.map((t) => t[0]);
-	return chars.slice(0, 3).join("");
-}
 
 interface Vector {
 	name: string;
@@ -72,9 +50,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 		};
 	}, []);
 
-	const initials = buildInitials(label);
-	// Dynamic gradient based on vector name for visual distinction
-	const avatarGradient = pickGradient(vector.name);
+	const iconSrc = vector.icon || BRAIN;
 
 	const handleCardClick = () => {
 		if (!vector.disable && onModelSelect) {
@@ -100,7 +76,7 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 			)}
 			onClick={handleCardClick}
 			onKeyDown={handleCardKeyDown}
-			data-testId={formatToDataTestId(
+			data-testid={formatToDataTestId(
 				`importPageContent-connect-to-${vector.name}-img`,
 			)}
 			role="button"
@@ -108,20 +84,11 @@ export const VectorTitleCard: React.FC<VectorTileCardProps> = ({
 		>
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
-					{vector.icon ? (
-						<img
-							src={vector.icon}
-							alt={initials}
-							className="flex h-[30px] w-[30px] rounded-lg object-cover"
-						/>
-					) : (
-						<div
-							className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-lg font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset,0_2px_4px_-1px_rgba(0,0,0,0.12)] transition-[filter] duration-250 [-webkit-font-smoothing:antialiased] hover:brightness-[1.03]"
-							style={{ background: avatarGradient }}
-						>
-							{initials}
-						</div>
-					)}
+					<img
+						src={iconSrc}
+						alt={label}
+						className="flex h-[30px] w-[30px] rounded-lg object-cover"
+					/>
 					{vector.disable && (
 						<Badge variant="secondary">Coming Soon</Badge>
 					)}

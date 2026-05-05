@@ -6,7 +6,6 @@ import {
 	Outlet,
 	Link as RouterLink,
 	useLocation,
-	useNavigate,
 	useParams,
 } from "react-router-dom";
 import {
@@ -33,13 +32,24 @@ import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPrefer
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
+
+const ENGINE_CATALOG_SETTINGS_PATHS = new Set([
+	"app",
+	"database",
+	"function",
+	"guardrail",
+	"model",
+	"storage",
+	"vector",
+]);
 
 export const SettingsLayout = observer(() => {
 	const { configStore } = useRootStore();
 	const { id, type } = useParams();
-	const { pathname, state } = useLocation();
+	const { pathname, search, state } = useLocation();
 	const navigate = useNavigate();
 	const [privacyCenterOpen, setPrivacyCenterOpen] = useState(false);
 
@@ -74,6 +84,15 @@ export const SettingsLayout = observer(() => {
 		return null;
 	}, [pathname]);
 	const isSettingsIndexRoute = matchedRoute?.path === "";
+	const shouldPreserveEngineCatalogSearch = useMemo(() => {
+		if (!matchedRoute || !search) {
+			return false;
+		}
+
+		const routePathRoot = matchedRoute.path.split("/:")[0];
+		return ENGINE_CATALOG_SETTINGS_PATHS.has(routePathRoot);
+	}, [matchedRoute, search]);
+
 	const hasPrivacyCenterThemeContent = useMemo(() => {
 		const theme = configStore.theme as Record<string, unknown>;
 		const order = Array.isArray(theme.cookiePolicyOrderReact)
@@ -233,6 +252,17 @@ export const SettingsLayout = observer(() => {
 										</BreadcrumbItem>
 										{matchedRoute.history.map(
 											(link, idx) => {
+												const linkRoute =
+													SETTINGS_ROUTES.find(
+														(r) =>
+															r.path === link ||
+															r.path ===
+																link.replace(
+																	"/<id>",
+																	"/:id",
+																),
+													);
+
 												const isLastItem =
 													matchedRoute.history
 														.length -
@@ -242,11 +272,26 @@ export const SettingsLayout = observer(() => {
 													"<id>",
 												)
 													? id
-													: matchedRoute.title;
+													: isLastItem
+														? matchedRoute.title
+														: linkRoute?.title ||
+															link;
+
 												const to = link.replace(
 													"<id>",
 													id ?? "",
 												);
+												const toRoot = to.split("/")[0];
+												const breadcrumbTo =
+													shouldPreserveEngineCatalogSearch &&
+													ENGINE_CATALOG_SETTINGS_PATHS.has(
+														toRoot,
+													)
+														? {
+																pathname: to,
+																search,
+															}
+														: to;
 
 												return (
 													<Fragment key={idx + link}>
@@ -261,10 +306,18 @@ export const SettingsLayout = observer(() => {
 																	asChild
 																>
 																	<RouterLink
-																		to={to}
-																		state={{
-																			...state,
-																		}}
+																		to={
+																			breadcrumbTo
+																		}
+																		state={
+																			state &&
+																			typeof state ===
+																				"object"
+																				? {
+																						...state,
+																					}
+																				: undefined
+																		}
 																	>
 																		{label}
 																	</RouterLink>
@@ -299,8 +352,11 @@ export const SettingsLayout = observer(() => {
 									<h1 className="font-semibold text-2xl leading-normal">
 										{matchedRoute.history.length < 2
 											? matchedRoute.title
-											: state
-												? state.name
+											: state &&
+													typeof state === "object" &&
+													"name" in state
+												? (state as { name?: string })
+														.name
 												: matchedRoute.title}
 									</h1>
 								)}

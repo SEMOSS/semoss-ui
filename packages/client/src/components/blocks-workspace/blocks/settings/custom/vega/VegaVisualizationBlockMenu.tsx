@@ -1,60 +1,42 @@
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useState } from "react";
 import { type BlockComponent, useBlock } from "@semoss/renderer";
-import { Accordion, Stack, styled } from "@semoss/ui";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "@semoss/ui/next";
 import {
 	DEFAULT_FALSE_VARIABLE,
 	DEFAULT_TRUE_VARIABLE,
 } from "../../../block-settings/block-defaults.constants";
-import {
-	AIGenerationSettings,
-	CodeEditorSettings,
-	JsonSettings,
-	QueryInputSettings,
-} from "../../";
+import { AIGenerationSettings, JsonSettings, QueryInputSettings } from "../../";
 
 const trueSegment = DEFAULT_TRUE_VARIABLE;
 const falseSegment = DEFAULT_FALSE_VARIABLE;
 
-const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
-	"& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
-		transform: "rotate(180deg)",
-	},
-}));
-const StyledSpan = styled("span")(() => ({
-	fontSize: "14px",
-	fontStyle: "normal",
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-	fontFamily: '"Inter", sans-serif',
-	textTransform: "uppercase",
-	fontWeight: "bold",
-}));
 export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 	const { data } = useBlock(id);
-	const [expandAccordion, setExpandAccordion] = useState(true);
 	return (
-		<Stack padding={2} height="100%">
-			<Accordion
-				expanded={expandAccordion}
-				onChange={() =>
-					setExpandAccordion((expandAccordion) => !expandAccordion)
-				}
-			>
-				<StyledAccordionTrigger expandIcon={<ExpandMoreIcon />}>
-					<StyledSpan>CONDITIONAL</StyledSpan>
-				</StyledAccordionTrigger>
-				<Accordion.Content>
-					<QueryInputSettings
-						id={id}
-						label="Show Block"
-						path="show"
-						defaultPathMap={{
-							...trueSegment,
-							...falseSegment,
-						}}
-					/>
-				</Accordion.Content>
+		<div className="flex h-full flex-col p-4">
+			<Accordion type="single" collapsible defaultValue="conditional">
+				<AccordionItem value="conditional">
+					<AccordionTrigger>
+						<span className="font-bold text-sm uppercase tracking-wide">
+							CONDITIONAL
+						</span>
+					</AccordionTrigger>
+					<AccordionContent>
+						<QueryInputSettings
+							id={id}
+							label="Show Block"
+							path="show"
+							defaultPathMap={{
+								...trueSegment,
+								...falseSegment,
+							}}
+						/>
+					</AccordionContent>
+				</AccordionItem>
 			</Accordion>
 			{/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
 			{/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
@@ -72,6 +54,6 @@ export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 					valueAsObject
 				/>
 			)}
-		</Stack>
+		</div>
 	);
 };

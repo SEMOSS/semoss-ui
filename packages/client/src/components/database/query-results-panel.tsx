@@ -16,8 +16,8 @@ import {
 	getErrorMessage,
 	isErrorResponse,
 	type QueryResult,
-} from "@/hooks/useDatabaseQueryExecution";
-import { useQueryResults } from "@/hooks/useDatabaseQueryResults";
+} from "@/hooks/use-database-query-execution";
+import { useQueryResults } from "@/hooks/use-database-query-results";
 
 interface QueryResultsPanelProps {
 	previewData: QueryResult | null;

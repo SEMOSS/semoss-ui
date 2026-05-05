@@ -1,5 +1,10 @@
 import { observer } from "mobx-react-lite";
-import { Menu } from "@semoss/ui";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from "@semoss/ui/next";
 import { useBlock, type useFrame } from "../../../hooks";
 import type { GridBlockDef } from "./GridBlock";
 import type { GridBlockColumn } from "./grid-block.types";
@@ -34,51 +39,51 @@ export const GridBlockContextMenu: React.FC<GridBlockContextMenuProps> =
 			const { data } = useBlock<GridBlockDef>(id);
 
 			return (
-				<Menu
+				<DropdownMenu
 					open={contextMenu !== null}
-					onClose={() => onClose()}
-					anchorReference="anchorPosition"
-					anchorPosition={
-						contextMenu !== null
-							? {
-									top: contextMenu.mouseY,
-									left: contextMenu.mouseX,
-								}
-							: undefined
-					}
+					onOpenChange={(open) => !open && onClose()}
 				>
-					{contextMenu && !data.contextMenu?.hideUnfilter ? (
-						<Menu.Item
-							dense={true}
-							value={"unfilter"}
-							onClick={() => {
-								frame.unfilter();
-								onClose();
+					<DropdownMenuTrigger asChild>
+						<span
+							style={{
+								position: "fixed",
+								top: contextMenu?.mouseY ?? 0,
+								left: contextMenu?.mouseX ?? 0,
+								width: 0,
+								height: 0,
 							}}
-						>
-							Unfilter
-						</Menu.Item>
-					) : null}
-					{contextMenu && !data.contextMenu?.hideFilter ? (
-						<Menu.Item
-							dense={true}
-							value={"filter"}
-							onClick={() => {
-								frame.filter(
-									`SetFrameFilter(${
-										contextMenu.column.selector
-									}==${JSON.stringify(contextMenu.value)})`,
-								);
-								onClose();
-							}}
-						>
-							Filter {contextMenu.column.name} ==
-							{typeof contextMenu.value === "string"
-								? contextMenu.value
-								: JSON.stringify(contextMenu.value)}
-						</Menu.Item>
-					) : null}
-				</Menu>
+						/>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent>
+						{contextMenu && !data.contextMenu?.hideUnfilter ? (
+							<DropdownMenuItem
+								onClick={() => {
+									frame.unfilter();
+									onClose();
+								}}
+							>
+								Unfilter
+							</DropdownMenuItem>
+						) : null}
+						{contextMenu && !data.contextMenu?.hideFilter ? (
+							<DropdownMenuItem
+								onClick={() => {
+									frame.filter(
+										`SetFrameFilter(${
+											contextMenu.column.selector
+										}==${JSON.stringify(contextMenu.value)})`,
+									);
+									onClose();
+								}}
+							>
+								Filter {contextMenu.column.name} =={" "}
+								{typeof contextMenu.value === "string"
+									? contextMenu.value
+									: JSON.stringify(contextMenu.value)}
+							</DropdownMenuItem>
+						) : null}
+					</DropdownMenuContent>
+				</DropdownMenu>
 			);
 		},
 	);
