@@ -38,7 +38,10 @@ export interface MemberUser {
 	usage_restriction?: string;
 	usage_frequency?: string;
 	max_tokens?: number;
+	max_input_tokens?: number;
+	max_output_tokens?: number;
 	max_response_time?: number;
+	restrict_per_model?: boolean;
 }
 
 interface MembersProps {
@@ -67,8 +70,6 @@ interface MembersProps {
 const formatValue = (input?: string) => {
 	if (!input) return "—";
 	const mappings: Record<string, string> = {
-		TOKEN: "Token",
-		COMPUTE: "Compute time",
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
@@ -194,18 +195,28 @@ export const MembersList = ({
 			userid: user.id,
 			permission,
 		};
-		if (type === "MODEL") {
-			const r = user.usage_restriction;
-			if (r && r !== "null") {
-				payload.usageRestriction = r;
-				if (r.toUpperCase() === "TOKEN" && user.max_tokens != null)
-					payload.maxTokens = user.max_tokens;
-				if (
-					r.toUpperCase() === "COMPUTE" &&
-					user.max_response_time != null
-				)
-					payload.maxResponseTime = user.max_response_time;
+		if (type === "MODEL" || type === "PROJECT" || type === "WORKSPACE") {
+			const hasAnyLimit =
+				user.max_tokens != null ||
+				user.max_input_tokens != null ||
+				user.max_output_tokens != null;
+			const hasComputeTime = user.max_response_time != null;
+			if (hasAnyLimit) {
+				payload.usageRestriction = "token";
 				payload.usageFrequency = user.usage_frequency;
+				if (user.max_tokens != null)
+					payload.maxTokens = user.max_tokens;
+				if (user.max_input_tokens != null)
+					payload.maxInputTokens = user.max_input_tokens;
+				if (user.max_output_tokens != null)
+					payload.maxOutputTokens = user.max_output_tokens;
+			}
+			if (hasComputeTime) {
+				if (!hasAnyLimit) {
+					payload.usageRestriction = "compute";
+					payload.usageFrequency = user.usage_frequency;
+				}
+				payload.maxResponseTime = user.max_response_time;
 			}
 		}
 		const response = await post(url, {
@@ -274,7 +285,13 @@ export const MembersList = ({
 		selectableUsers.length > 0 &&
 		selectableUsers.every((u) => selectedIds.has(u.id));
 	const someSelected = selectableUsers.some((u) => selectedIds.has(u.id));
-	const colCount = (type === "MODEL" ? 6 : 3) + (!isAddMember ? 2 : 0) + 1;
+	const colCount =
+		3 +
+		(type === "MODEL" || type === "PROJECT" || type === "WORKSPACE"
+			? 5
+			: 0) +
+		(!isAddMember ? 2 : 0) +
+		1;
 
 	function toggleSelectAll() {
 		if (allSelected) {
@@ -339,10 +356,14 @@ export const MembersList = ({
 								<TableHead>Name</TableHead>
 								<TableHead>Login Type</TableHead>
 								<TableHead>Permission</TableHead>
-								{type === "MODEL" && (
+								{(type === "MODEL" ||
+									type === "PROJECT" ||
+									type === "WORKSPACE") && (
 									<>
-										<TableHead>Limit Type</TableHead>
-										<TableHead>Limit Value</TableHead>
+										<TableHead>Combined Limit</TableHead>
+										<TableHead>Input Limit</TableHead>
+										<TableHead>Output Limit</TableHead>
+										<TableHead>Compute Time</TableHead>
 										<TableHead>Frequency</TableHead>
 									</>
 								)}
@@ -506,29 +527,49 @@ export const MembersList = ({
 												</DropdownMenuContent>
 											</DropdownMenu>
 										</TableCell>
-										{type === "MODEL" &&
+										{(type === "MODEL" ||
+											type === "PROJECT" ||
+											type === "WORKSPACE") &&
 											(() => {
-												const limitValue =
-													user.usage_restriction?.toUpperCase() ===
-													"COMPUTE"
-														? `${user.max_response_time?.toLocaleString() ?? "—"} ms`
-														: user.usage_restriction?.toUpperCase() ===
-																"TOKEN"
-															? (user.max_tokens?.toLocaleString() ??
-																"—")
-															: "—";
+												const combinedLimit =
+													user.max_tokens != null
+														? user.max_tokens.toLocaleString()
+														: "—";
+												const inputLimit =
+													user.max_input_tokens !=
+													null
+														? user.max_input_tokens.toLocaleString()
+														: "—";
+												const outputLimit =
+													user.max_output_tokens !=
+													null
+														? user.max_output_tokens.toLocaleString()
+														: "—";
+												const computeTime =
+													user.max_response_time !=
+													null
+														? user.max_response_time.toLocaleString()
+														: "—";
 												return (
 													<>
 														<TableCell>
 															<span className="text-sm">
-																{formatValue(
-																	user.usage_restriction,
-																)}
+																{combinedLimit}
 															</span>
 														</TableCell>
 														<TableCell>
 															<span className="text-sm">
-																{limitValue}
+																{inputLimit}
+															</span>
+														</TableCell>
+														<TableCell>
+															<span className="text-sm">
+																{outputLimit}
+															</span>
+														</TableCell>
+														<TableCell>
+															<span className="text-sm">
+																{computeTime}
 															</span>
 														</TableCell>
 														<TableCell>

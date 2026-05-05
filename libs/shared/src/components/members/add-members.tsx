@@ -91,9 +91,10 @@ export const AddMembersOverlay = ({
 	const fetchVersionRef = useRef(0);
 	const isFetchingRef = useRef(false);
 	const [isSearching, setIsSearching] = useState<boolean>(false);
-	const [restriction, setRestriction] = useState<string>("null");
 	const [maxTokens, setMaxTokens] = useState<string>("");
-	const [maxTime, setMaxTime] = useState<string>("");
+	const [maxInputTokens, setMaxInputTokens] = useState<string>("");
+	const [maxOutputTokens, setMaxOutputTokens] = useState<string>("");
+	const [maxResponseTime, setMaxResponseTime] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
 	const [restrictionsOpen, setRestrictionsOpen] = useState<boolean>(true);
@@ -171,19 +172,25 @@ export const AddMembersOverlay = ({
 				type: m.type,
 				username: m.username,
 			};
-			if (type !== "MODEL") return base;
+			if (type !== "MODEL" && type !== "PROJECT" && type !== "WORKSPACE")
+				return base;
+			const hasAnyLimit = maxTokens || maxInputTokens || maxOutputTokens;
+			const hasComputeTime = !!maxResponseTime;
+			if (!hasAnyLimit && !hasComputeTime) return base;
 			return {
 				...base,
-				...(restriction !== "null" && {
-					usageRestriction: restriction,
+				usageRestriction: hasAnyLimit ? "token" : "compute",
+				usageFrequency: frequency,
+				...(maxTokens && { maxTokens: Number(maxTokens) }),
+				...(maxInputTokens && {
+					maxInputTokens: Number(maxInputTokens),
 				}),
-				...(restriction === "token" && {
-					maxTokens: Number(maxTokens),
+				...(maxOutputTokens && {
+					maxOutputTokens: Number(maxOutputTokens),
 				}),
-				...(restriction === "compute" && {
-					maxResponseTime: Number(maxTime),
+				...(maxResponseTime && {
+					maxResponseTime: Number(maxResponseTime),
 				}),
-				...(restriction !== "null" && { usageFrequency: frequency }),
 			};
 		});
 
@@ -211,9 +218,10 @@ export const AddMembersOverlay = ({
 	function resetState() {
 		setSelectedUsers([]);
 		setSearchKey("");
-		setRestriction("null");
 		setMaxTokens("");
-		setMaxTime("");
+		setMaxInputTokens("");
+		setMaxOutputTokens("");
+		setMaxResponseTime("");
 		setFrequency("DAY");
 		setOffset(0);
 		setHasMore(true);
@@ -467,8 +475,10 @@ export const AddMembersOverlay = ({
 					</div>
 				</div>
 
-				{/* MODEL restriction fields */}
-				{type === "MODEL" && (
+				{/* MODEL / PROJECT token limit fields */}
+				{(type === "MODEL" ||
+					type === "PROJECT" ||
+					type === "WORKSPACE") && (
 					<div className="flex flex-col gap-3 rounded border border-border p-3">
 						<button
 							type="button"
@@ -480,78 +490,90 @@ export const AddMembersOverlay = ({
 							) : (
 								<ChevronRight className="h-4 w-4 shrink-0" />
 							)}
-							Model Limit Restrictions (for all selected users)
+							Token Limits (for all selected users)
 						</button>
 						{restrictionsOpen && (
 							<div className="flex flex-col gap-3">
 								<div className="flex flex-col gap-1.5">
-									<Label>Usage Limit Type</Label>
-									<Select
-										value={restriction}
-										onValueChange={(val) => {
-											setRestriction(val);
-											setMaxTokens("");
-											setMaxTime("");
-										}}
-									>
-										<SelectTrigger className="w-full">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectItem value="null">
-												None
-											</SelectItem>
-											<SelectItem value="token">
-												Token
-											</SelectItem>
-											<SelectItem value="compute">
-												Compute time
-											</SelectItem>
-										</SelectContent>
-									</Select>
+									<Label>
+										Combined Token Limit{" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxTokens)}
+										onChange={(e) =>
+											setMaxTokens(
+												parseNum(e.target.value),
+											)
+										}
+									/>
 								</div>
-								{restriction === "token" && (
-									<div className="flex flex-col gap-1.5">
-										<Label>Max Tokens</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											value={formatNum(maxTokens)}
-											onChange={(e) =>
-												setMaxTokens(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-								)}
-								{restriction === "compute" && (
-									<div className="flex gap-3">
-										<div className="flex flex-1 flex-col gap-1.5">
-											<Label>Max Response Time</Label>
-											<Input
-												type="text"
-												inputMode="numeric"
-												value={formatNum(maxTime)}
-												onChange={(e) =>
-													setMaxTime(
-														parseNum(
-															e.target.value,
-														),
-													)
-												}
-											/>
-										</div>
-										<div className="flex w-36 flex-col gap-1.5">
-											<Label>Unit</Label>
-											<Input
-												value="milliseconds"
-												readOnly
-											/>
-										</div>
-									</div>
-								)}
-								{restriction !== "null" && (
+								<div className="flex flex-col gap-1.5">
+									<Label>
+										Input Token Limit (Prompt){" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxInputTokens)}
+										onChange={(e) =>
+											setMaxInputTokens(
+												parseNum(e.target.value),
+											)
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<Label>
+										Output Token Limit (Response){" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxOutputTokens)}
+										onChange={(e) =>
+											setMaxOutputTokens(
+												parseNum(e.target.value),
+											)
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<Label>
+										Max Compute Time (seconds){" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxResponseTime)}
+										onChange={(e) =>
+											setMaxResponseTime(
+												parseNum(e.target.value),
+											)
+										}
+									/>
+								</div>
+								{(maxTokens ||
+									maxInputTokens ||
+									maxOutputTokens ||
+									maxResponseTime) && (
 									<div className="flex flex-col gap-1.5">
 										<Label>Frequency</Label>
 										<Select
