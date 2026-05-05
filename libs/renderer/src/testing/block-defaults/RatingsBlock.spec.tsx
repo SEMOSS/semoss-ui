@@ -66,11 +66,9 @@ describe("ratings block", async () => {
 				blocks: blocks,
 			},
 		);
-		const heartIcon = container.querySelector(
-			"[data-testid='FavoriteIcon']",
-		);
+		const heartIcon = container.querySelector("svg.lucide-heart");
 		expect(heartIcon).toBeInTheDocument();
-		const starIcon = container.querySelector("[data-testid='StarIcon']");
+		const starIcon = container.querySelector("svg.lucide-star");
 		expect(starIcon).not.toBeInTheDocument();
 	});
 });

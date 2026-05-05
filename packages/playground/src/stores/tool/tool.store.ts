@@ -216,10 +216,7 @@ export class ToolStore {
 				config: {
 					app: this.json._meta.SMSS_PROJECT_ID,
 					message: this.toolCall.message?.id,
-					tool: this.json,
-					toolResponse:
-						this.status === "SUCCESS" ? this.response : undefined,
-					toolParameters: this.parameters,
+					toolId: this.json.id,
 				},
 				enableClose: true,
 			});

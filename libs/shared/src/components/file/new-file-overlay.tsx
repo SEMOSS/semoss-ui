@@ -28,6 +28,40 @@ import {
 } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
 
+export type NewFileAction = "upload" | "add_file" | "add_directory";
+type NewFileData =
+	| {
+			action: "upload";
+			files: File[];
+	  }
+	| {
+			action: "add_file";
+			name: string;
+	  }
+	| {
+			action: "add_directory";
+			name: string;
+	  };
+
+const getInitialData = (action: NewFileAction): NewFileData => {
+	if (action === "add_file") {
+		return {
+			action: "add_file",
+			name: "",
+		};
+	}
+	if (action === "add_directory") {
+		return {
+			action: "add_directory",
+			name: "",
+		};
+	}
+	return {
+		action: "upload",
+		files: [],
+	};
+};
+
 interface NewFileOverlayProps {
 	/** Mode of file editor */
 	mode: FileMode;
@@ -38,6 +72,9 @@ interface NewFileOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
+	/** Initial action selected when the overlay opens */
+	initialAction?: NewFileAction;
+
 	/** Callback triggered when the dialog is closed */
 	onClose: (success: boolean) => void;
 }
@@ -46,27 +83,14 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 	mode,
 	path,
 	open,
+	initialAction = "upload",
 	onClose = () => null,
 }) => {
 	const insight = useInsight();
 	const fileInputId = useId();
-	const [data, setData] = useState<
-		| {
-				action: "upload";
-				files: File[];
-		  }
-		| {
-				action: "add_file";
-				name: string;
-		  }
-		| {
-				action: "add_directory";
-				name: string;
-		  }
-	>({
-		action: "upload",
-		files: [],
-	});
+	const [data, setData] = useState<NewFileData>(() =>
+		getInitialData(initialAction),
+	);
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [isDragging, setIsDragging] = useState(false);
@@ -216,10 +240,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						try {
 							const uploadedFile = uploadedFiles[i];
 							// Normalize path to use forward slashes
-							const uploadedPath = uploadedFile.fileLocation.replace(
-								/\\/g,
-								"/",
-							);
+							const uploadedPath =
+								uploadedFile.fileLocation.replace(/\\/g, "/");
 
 							let unzipPixel = "";
 							if (mode.type === "APP") {

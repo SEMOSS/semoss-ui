@@ -90,7 +90,7 @@ export const MCPCard = ({
 						<TooltipTrigger asChild>
 							{effectivePermission === "FULLY_PRIVATE" ? (
 								<AlertCircle className="size-4 shrink-0 cursor-help text-destructive" />
-							) : root.theme.showPlatformLinks !== false ? (
+							) : root.theme.featureFlags?.showPlatformLinks ? (
 								<Button
 									variant="ghost"
 									size="icon"

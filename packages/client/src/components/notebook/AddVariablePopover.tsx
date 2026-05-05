@@ -1,4 +1,3 @@
-import { JsonViewer } from "@textea/json-viewer";
 import {
 	AlertTriangle,
 	Archive,
@@ -45,6 +44,7 @@ import {
 	SelectValue,
 	toast,
 } from "@semoss/ui/next";
+import { JsonValueViewer } from "@/components/common/JsonValueViewer";
 import PreviewButton from "../../assets/img/PreviewRounded.png";
 // TODO: MOVE TO SDK/UTILITY LIB
 import {
@@ -521,12 +521,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					let value = null;
 					value = isOutputJSON(variableInputValue);
 					return (
-						<JsonViewer
+						<JsonValueViewer
 							value={value === null ? variableInputValue : value}
-							displayDataTypes={true}
-							displaySize={true}
-							displayComma={true}
-							rootName={false}
 						/>
 					);
 				} else {

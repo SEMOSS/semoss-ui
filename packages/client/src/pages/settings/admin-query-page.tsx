@@ -18,7 +18,7 @@ import {
 	hasTabularData,
 	isErrorResponse,
 	type QueryResult,
-} from "@/hooks/useDatabaseQueryExecution";
+} from "@/hooks/use-database-query-execution";
 
 const DATABASE_OPTIONS = [
 	{ label: "Audit Logs", value: "AuditLogs" },

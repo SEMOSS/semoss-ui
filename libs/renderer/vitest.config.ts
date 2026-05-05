@@ -29,8 +29,8 @@ export default defineConfig({
 				replacement: resolve(__dirname, "./src"),
 			},
 			{
-				find: "@semoss/ui",
-				replacement: resolve(__dirname, "../ui/src"),
+				find: "@semoss/ui/next",
+				replacement: resolve(__dirname, "../ui/src/next/index.ts"),
 			},
 			{
 				find: /^monaco-editor$/,
@@ -84,7 +84,7 @@ export default defineConfig({
 					],
 				},
 			},
-			external: ["@semoss/ui", "@semoss/sdk"],
+			external: ["@semoss/ui/next", "@semoss/sdk"],
 			//helps Vitest handle CommonJS/ES module interoperability
 			interopDefault: true,
 		},
