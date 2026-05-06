@@ -8,6 +8,9 @@ import type {
 } from "../recorder/types";
 import { enhancedClick, enhancedSetValue } from "./enhancedActions";
 
+// Constant SEMOSS endpoint path
+const SEMOSS_ENDPOINT = "/Monolith/api/engine/runPixel";
+
 // Track which tabs have debuggers attached
 const attachedDebuggers = new Set<number>();
 
@@ -236,14 +239,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 			pixelCommand.substring(0, 200) + "...",
 		);
 
-		// Try multiple possible Semoss URLs
+		// Try multiple possible Semoss URLs (base URLs + constant endpoint)
 		const possibleUrls = [
-			"http://localhost:9090/Monolith/api/engine/runPixel",
-			"http://localhost:8080/Monolith/api/engine/runPixel",
-			"http://localhost:5173/Semoss/api/engine/runPixel",
-			"http://localhost:5174/Semoss/api/engine/runPixel",
-			"http://localhost:8080/Semoss/api/engine/runPixel",
-		];
+			"https://workshop.cfg.deloitte.com/cfg-ai-dev",
+			"http://localhost:9090",
+			"http://localhost:8080",
+		].map((baseUrl) => `${baseUrl}${SEMOSS_ENDPOINT}`);
 
 		console.log("[BACKGROUND] URLs to try:", possibleUrls);
 
