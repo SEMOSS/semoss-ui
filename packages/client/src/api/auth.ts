@@ -1,4 +1,4 @@
-import { Env, get, post } from "@semoss/sdk/react";
+import { CSRF, Env, get, post } from "@semoss/sdk/react";
 
 export const config = async () => {
 	// get the response
@@ -190,6 +190,74 @@ export const loginLDAP = async (
 		throw Error(error);
 	});
 	return status;
+};
+
+export const setupResetPassword = async (
+	email: string,
+	type: "NATIVE" | "LDAP" | "LINOTP",
+	subject: string,
+	url?: string,
+): Promise<{ success: boolean; message?: string }> => {
+	await ensureCsrfToken();
+
+	const postData: Record<string, string> = {
+		email: email,
+		type: type,
+		subject: subject,
+	};
+
+	if (url) {
+		postData.url = url;
+	}
+
+	const response = await post<{ success: boolean; message?: string }>(
+		`${Env.MODULE}/api/auth/user/setupResetPassword`,
+		postData,
+	).catch((error) => {
+		const errorMessage =
+			error?.response?.data?.errorMessage ||
+			error?.response?.data?.ERROR_MESSAGE ||
+			error?.response?.data?.message ||
+			error?.message ||
+			"Failed to request a password reset.";
+
+		throw Error(errorMessage);
+	});
+
+	if (!response) {
+		throw Error("No response while requesting password reset.");
+	}
+
+	return response.data;
+};
+
+const ensureCsrfToken = async () => {
+	// CSRF is disabled by configuration, no token needed.
+	if (!CSRF.isEnabled && !Env.CSRF) {
+		return;
+	}
+
+	// Token already cached.
+	if (CSRF.token) {
+		return;
+	}
+
+	const response = await fetch(`${Env.MODULE}/api/config/fetchCsrf`, {
+		headers: {
+			"X-CSRF-Token": "fetch",
+		},
+	});
+
+	CSRF.token =
+		response.headers.get("X-CSRF-Token") ||
+		response.headers.get("x-csrf-token") ||
+		"";
+
+	if (!CSRF.token) {
+		throw Error(
+			"Unable to initialize security token for password reset. Please refresh and try again.",
+		);
+	}
 };
 
 export const registerUser = async (

@@ -329,7 +329,7 @@ export const EngineMetadataPage = observer(() => {
 	);
 
 	const getDatabaseCategory = usePixel<string>(
-		active.id ? `GetDatabaseCategory(database=["${active.id}"]);` : "",
+		active.id ? `GetDatabaseCategory(engine=["${active.id}"]);` : "",
 	);
 	const isRdbms = getDatabaseCategory.data?.toUpperCase() === "SQL";
 

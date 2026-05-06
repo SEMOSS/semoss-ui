@@ -16,6 +16,6 @@
 		"hooks": "@/hooks",
 		"lib": "@/lib",
 		"utils": "@semoss/ui/lib/utils",
-		"ui": "@semoss/ui/components"
+		"ui": "@semoss/ui/next"
 	}
 }
