@@ -22,7 +22,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { setupResetPassword } from "@/api/auth";
-import { AgentNetworkViz } from "@/components/landing/agent-network-viz";
+import loginHero from "@/assets/img/login-hero.jpeg";
 import { useRootStore } from "@/hooks";
 import {
 	getLoginProviderInitials,
@@ -38,15 +38,15 @@ interface TypeUserLogin {
 }
 
 interface TypeUserRegister {
-	FIRST_NAME: "";
-	LAST_NAME: "";
-	USERNAME: "";
-	EMAIL: "";
-	PHONE: "";
-	EXTENTION: "";
-	COUNTRY_CODE: "";
-	PASSWORD: "";
-	PASSWORD_CONFIRMATION: "";
+	FIRST_NAME: string;
+	LAST_NAME: string;
+	USERNAME: string;
+	EMAIL: string;
+	PHONE: string;
+	EXTENTION: string;
+	COUNTRY_CODE: string;
+	PASSWORD: string;
+	PASSWORD_CONFIRMATION: string;
 }
 
 const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
@@ -76,6 +76,7 @@ export const LoginPage = observer(() => {
 	const [oauthProviderLogos, setOauthProviderLogos] = useState<
 		Record<string, string>
 	>({});
+	const [heroImage, setHeroImage] = useState<string>(loginHero);
 
 	const {
 		control,
@@ -133,7 +134,7 @@ export const LoginPage = observer(() => {
 			isOauth: boolean;
 		}
 	> = configStore.store.config.availableProviders.reduce((acc, val) => {
-		acc[val.provider] = acc;
+		acc[val.provider] = val;
 		return acc;
 	}, {});
 
@@ -206,67 +207,75 @@ export const LoginPage = observer(() => {
 		};
 	}, [oauthProvidersSignature]);
 
-	const login = handleSubmit(
-		async (data: TypeUserLogin): Promise<TypeUserLogin> => {
-			setIsLoading(true);
-			setSuccess("");
+	useEffect(() => {
+		const timeoutId = window.setTimeout(() => {
+			import("@/assets/img/login-gif.gif")
+				.then((module) => setHeroImage(module.default))
+				.catch(() => undefined);
+		}, 1200);
 
-			if (!data.USERNAME || !data.PASSWORD) {
-				setError("Username and Password is Required");
-				return;
-			}
+		return () => window.clearTimeout(timeoutId);
+	}, []);
 
-			if (!showOTPCodeField) {
-				if (loginType === "native") {
-					await configStore
-						.login(data.USERNAME, data.PASSWORD)
-						.catch((err) => {
-							setError(err.message);
-						})
-						.finally(() => {
-							setIsLoading(false);
-						});
-				}
-				if (loginType === "ldap") {
-					await configStore
-						.loginLDAP(data.USERNAME, data.PASSWORD)
-						.catch((err) => {
-							setError(err.message);
-						})
-						.finally(() => {
-							setIsLoading(false);
-						});
-				}
-				if (loginType === "linotp") {
-					await configStore
-						.loginOTP(data.USERNAME, data.PASSWORD)
-						.then(() => {
-							setShowOTPCodeField(true);
-						})
-						.catch((err) => {
-							setError(err.message);
-						})
-						.finally(() => {
-							setIsLoading(false);
-						});
-				}
-			}
-			if (showOTPCodeField) {
+	const login = handleSubmit(async (data: TypeUserLogin): Promise<void> => {
+		setIsLoading(true);
+		setSuccess("");
+
+		if (!data.USERNAME || !data.PASSWORD) {
+			setError("Username and Password is Required");
+			return;
+		}
+
+		if (!showOTPCodeField) {
+			if (loginType === "native") {
 				await configStore
-					.confirmOTP(data.OTP_CONFIRM)
+					.login(data.USERNAME, data.PASSWORD)
 					.catch((err) => {
 						setError(err.message);
 					})
 					.finally(() => {
 						setIsLoading(false);
 					});
-				setShowOTPCodeField(true);
 			}
-		},
-	);
+			if (loginType === "ldap") {
+				await configStore
+					.loginLDAP(data.USERNAME, data.PASSWORD)
+					.catch((err) => {
+						setError(err.message);
+					})
+					.finally(() => {
+						setIsLoading(false);
+					});
+			}
+			if (loginType === "linotp") {
+				await configStore
+					.loginOTP(data.USERNAME, data.PASSWORD)
+					.then(() => {
+						setShowOTPCodeField(true);
+					})
+					.catch((err) => {
+						setError(err.message);
+					})
+					.finally(() => {
+						setIsLoading(false);
+					});
+			}
+		}
+		if (showOTPCodeField) {
+			await configStore
+				.confirmOTP(data.OTP_CONFIRM)
+				.catch((err) => {
+					setError(err.message);
+				})
+				.finally(() => {
+					setIsLoading(false);
+				});
+			setShowOTPCodeField(true);
+		}
+	});
 
 	const registerAccount = registerSubmit(
-		async (data: TypeUserRegister): Promise<TypeUserRegister> => {
+		async (data: TypeUserRegister): Promise<void> => {
 			setIsLoading(true);
 
 			if (
@@ -414,6 +423,12 @@ export const LoginPage = observer(() => {
 	return (
 		<>
 			<style>{`
+				@media (min-width: 1024px) {
+					.login-grid {
+						grid-template-columns: 1fr clamp(512px, calc(100vw - 512px), 60vw);
+					}
+				}
+
 				@keyframes loginFeaturePillFadeUp {
 					from {
 						opacity: 0;
@@ -434,18 +449,10 @@ export const LoginPage = observer(() => {
 					}
 				}
 			`}</style>
-			<div className="relative grid min-h-screen w-full bg-[#e9edf3] lg:grid-cols-2 dark:bg-muted/20">
+			<div className="login-grid relative grid min-h-screen w-full bg-white dark:bg-muted/20">
 				<div className="relative flex min-h-screen w-full flex-col overflow-hidden">
-					<div
-						aria-hidden
-						className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(1,118,211,0.12),transparent_46%)]"
-					/>
-					<div
-						aria-hidden
-						className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#f4f7fb_0%,#e9edf3_44%,#e3e8ef_100%)] dark:bg-none"
-					/>
 					<div className="relative z-10 flex w-full flex-1 items-center justify-center overflow-y-auto px-6 pt-4 pb-4 md:px-10 md:pt-8 md:pb-6">
-						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#bcc5d1] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur md:p-8 dark:border-border/70 dark:bg-background/95 dark:shadow-sm">
+						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl p-6 md:p-8 dark:bg-background/95 dark:shadow-sm">
 							<div className="mb-6">
 								<div className="mb-2 flex flex-row items-center gap-2">
 									{configStore.theme.logo ? (
@@ -1427,73 +1434,17 @@ export const LoginPage = observer(() => {
 					</div>
 				</div>
 				<aside className="relative hidden overflow-hidden lg:block">
-					<div
-						aria-hidden
-						className="absolute inset-0 bg-[linear-gradient(165deg,#0b3d7f_0%,#0176d3_40%,#0284c7_70%,#38bdf8_100%)]"
+					<img
+						src={heroImage}
+						alt=""
+						className="absolute inset-0 h-full w-full object-cover"
+						loading="lazy"
+						decoding="async"
 					/>
 					<div
 						aria-hidden
-						className="absolute inset-0 bg-[radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.26),transparent_38%),radial-gradient(circle_at_84%_76%,rgba(255,255,255,0.22),transparent_42%)]"
+						className="pointer-events-none absolute inset-y-0 left-0 z-10 w-96 bg-gradient-to-r from-white to-transparent dark:from-background"
 					/>
-					<div className="relative z-10 flex h-full flex-col overflow-y-auto px-10 py-6 text-white xl:px-14 xl:py-8">
-						<div className="flex items-center">
-							{configStore.theme.logo ? (
-								<img
-									src={configStore.theme.logo}
-									alt={configStore.theme.name || "logo"}
-									className="h-9 w-auto rounded-sm bg-white/90 px-2 py-1"
-								/>
-							) : null}
-						</div>
-						<div className="flex flex-1 flex-col justify-center gap-4">
-							<div className="w-full max-w-xl space-y-4">
-								<p className="font-semibold text-4xl leading-tight">
-									From data to decisions in one platform.
-								</p>
-								<p className="text-base text-white/85 leading-relaxed">
-									Build analytics, automate workflows, and
-									ship AI-powered apps with a secure,
-									enterprise-ready experience.
-								</p>
-							</div>
-							<ul className="space-y-3">
-								{[
-									{
-										title: "Agentic Workflows",
-										desc: "Autonomous multi-step reasoning across tools and data",
-									},
-									{
-										title: "MCP Integration",
-										desc: "Native Model Context Protocol support for any tool",
-									},
-									{
-										title: "Governed Access",
-										desc: "Enterprise security, compliance, and audit built in",
-									},
-								].map((b) => (
-									<li
-										key={b.title}
-										className="flex items-start gap-3"
-									>
-										<span
-											aria-hidden
-											className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/70"
-										/>
-										<span className="text-sm leading-snug">
-											<span className="font-semibold text-white">
-												{b.title}
-											</span>
-											<span className="text-white/70">
-												{" — "}
-												{b.desc}
-											</span>
-										</span>
-									</li>
-								))}
-							</ul>
-							<AgentNetworkViz className="w-full" />
-						</div>
-					</div>
 				</aside>
 			</div>
 
