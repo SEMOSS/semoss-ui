@@ -70,7 +70,7 @@ const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
 const LoginPage = lazy(() =>
-	import("./LoginPage").then((m) => ({ default: m.LoginPage })),
+	import("./login-page").then((m) => ({ default: m.LoginPage })),
 );
 
 const PageSpinner = () => (
