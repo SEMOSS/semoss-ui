@@ -91,6 +91,7 @@ function toolPath(idx: number, dir: "out" | "in"): string {
 
 // animateMotion: travel path in first `frac` of CYCLE, hold at destination
 function motion(begin: string, path: string, frac: number) {
+	// biome-ignore lint/suspicious/noExplicitAny: keyPoints is absent from React SVG types
 	return {
 		keyPoints: "0;1;1",
 		keyTimes: `0;${frac};1`,
@@ -99,7 +100,7 @@ function motion(begin: string, path: string, frac: number) {
 		repeatCount: "indefinite",
 		begin,
 		path,
-	} as Record<string, string | number>;
+	} as any;
 }
 
 // opacity: pop in → hold through travel → fade at arrival
@@ -158,7 +159,6 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 			xmlns="http://www.w3.org/2000/svg"
 			className={className ?? "h-full w-full"}
 		>
-			<title>Agent network visualization</title>
 			<defs>
 				<filter
 					id={glowId}
@@ -335,14 +335,13 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 			{/* ── Animated phases — remounted each cycle so ball order reshuffles ── */}
 			<g key={cycle}>
 				{/* Phase 1: User → Agent */}
-				<circle r="4" fill="white" filter={glowUrl}>
-					{/* biome-ignore lint/suspicious/noExplicitAny: keyPoints is not in React SVG types */}
+				<circle r="4" fill="white" filter={glowUrl} opacity="0">
 					<animateMotion
-						{...(motion(
+						{...motion(
 							"0s",
 							`M ${UX_EDGE},${UY} L ${AX},${AY}`,
 							FRAC_LONG,
-						) as any)}
+						)}
 					/>
 					<animate {...opacity("0s", FRAC_LONG)} />
 				</circle>
@@ -357,14 +356,14 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 					return (
 						// biome-ignore lint/suspicious/noArrayIndexKey: each slot has a fixed timing offset determined by its position
 						<Fragment key={i}>
-							<circle r="3.5" fill={t.fill} filter={glowUrl}>
-								{/* biome-ignore lint/suspicious/noExplicitAny: keyPoints is not in React SVG types */}
+							<circle
+								r="3.5"
+								fill={t.fill}
+								filter={glowUrl}
+								opacity="0"
+							>
 								<animateMotion
-									{...(motion(
-										outT,
-										outPath,
-										FRAC_TOOL,
-									) as any)}
+									{...motion(outT, outPath, FRAC_TOOL)}
 								/>
 								<animate {...opacity(outT, FRAC_TOOL)} />
 							</circle>
@@ -373,10 +372,10 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 								fill={t.fill}
 								fillOpacity="0.85"
 								filter={glowUrl}
+								opacity="0"
 							>
-								{/* biome-ignore lint/suspicious/noExplicitAny: keyPoints is not in React SVG types */}
 								<animateMotion
-									{...(motion(inT, inPath, FRAC_TOOL) as any)}
+									{...motion(inT, inPath, FRAC_TOOL)}
 								/>
 								<animate {...opacity(inT, FRAC_TOOL)} />
 							</circle>
@@ -385,14 +384,13 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 				})}
 
 				{/* Phase 4: Agent → User */}
-				<circle r="4" fill="#93c5fd" filter={glowUrl}>
-					{/* biome-ignore lint/suspicious/noExplicitAny: keyPoints is not in React SVG types */}
+				<circle r="4" fill="#93c5fd" filter={glowUrl} opacity="0">
 					<animateMotion
-						{...(motion(
+						{...motion(
 							"5.0s",
 							`M ${AX},${AY} L ${UX_EDGE},${UY}`,
 							FRAC_LONG,
-						) as any)}
+						)}
 					/>
 					<animate {...opacity("5.0s", FRAC_LONG)} />
 				</circle>
