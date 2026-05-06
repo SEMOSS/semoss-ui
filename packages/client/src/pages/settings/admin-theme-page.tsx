@@ -220,6 +220,7 @@ export const AdminThemePage: React.FC = () => {
 						headerItems: [],
 						footerItems: [],
 						chatHistoryDate: false,
+						expandedByDefault: true,
 					},
 					toolAutoExecutionLimit: undefined,
 					defaultRoomSettings: {

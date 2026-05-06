@@ -1,5 +1,4 @@
 import { DicesIcon } from "lucide-react";
-import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -22,34 +21,32 @@ interface RoomOptionsImageProps {
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
 }
 
+const deriveImagePreset = (
+	imageHeight: number,
+	imageWidth: number,
+): { size: ImageSize; type: ImageType } => {
+	for (const [size, types] of Object.entries(IMAGE_SIZE_PRESETS)) {
+		for (const [type, dims] of Object.entries(types)) {
+			if (dims.height === imageHeight && dims.width === imageWidth) {
+				return {
+					size: size as ImageSize,
+					type: type as ImageType,
+				};
+			}
+		}
+	}
+	return { size: "large", type: "square" };
+};
+
 export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 	options,
 	onOptionsChange,
 }) => {
 	const { t } = useTranslation(["room", "common"]);
 
-	const deriveImagePreset = (): { size: ImageSize; type: ImageType } => {
-		for (const [size, types] of Object.entries(IMAGE_SIZE_PRESETS)) {
-			for (const [type, dims] of Object.entries(types)) {
-				if (
-					dims.height === options.imageHeight &&
-					dims.width === options.imageWidth
-				) {
-					return {
-						size: size as ImageSize,
-						type: type as ImageType,
-					};
-				}
-			}
-		}
-		return { size: "large", type: "square" };
-	};
-
-	const [imageSize, setImageSize] = useState<ImageSize>(
-		() => deriveImagePreset().size,
-	);
-	const [imageType, setImageType] = useState<ImageType>(
-		() => deriveImagePreset().type,
+	const { size: imageSize, type: imageType } = deriveImagePreset(
+		options.imageHeight,
+		options.imageWidth,
 	);
 
 	const handleImagePresetChange = (size: ImageSize, type: ImageType) => {
@@ -76,7 +73,6 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 						<RoomOptionsImageSelect
 							value={imageType}
 							onChange={(v) => {
-								setImageType(v as typeof imageType);
 								handleImagePresetChange(
 									imageSize,
 									v as typeof imageType,
@@ -149,7 +145,6 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 						<RoomOptionsImageSelect
 							value={imageSize}
 							onChange={(v) => {
-								setImageSize(v as typeof imageSize);
 								handleImagePresetChange(
 									v as typeof imageSize,
 									imageType,
