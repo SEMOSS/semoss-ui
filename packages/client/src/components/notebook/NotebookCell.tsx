@@ -450,15 +450,13 @@ export const NotebookCell = observer(
 						>
 							{showRaw ? "Formatted" : "Raw"}
 						</button>
-						{showRaw && (
-							<button
-								type="button"
-								className="rounded px-1.5 py-0.5 text-muted-foreground text-xs hover:text-foreground"
-								onClick={() => copyTextToClipboard(rawOutput)}
-							>
-								<Copy className="inline size-3" /> Copy
-							</button>
-						)}
+						<button
+							type="button"
+							className="rounded px-1.5 py-0.5 text-muted-foreground text-xs hover:text-foreground"
+							onClick={() => copyTextToClipboard(rawOutput)}
+						>
+							<Copy className="inline size-3" /> Copy
+						</button>
 					</div>
 				)}
 			</div>

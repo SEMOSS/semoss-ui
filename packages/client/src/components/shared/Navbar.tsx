@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/correctness/useUniqueElementIds: <explanation> */
 import { Bell } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
 	Badge,
@@ -13,7 +13,12 @@ import {
 } from "@semoss/ui/next";
 import { usePage, useRootStore } from "@/hooks";
 import { NotificationDrawer } from "../notifications/notification-drawer";
-import { PlatformSearch } from "./platform-search";
+
+const PlatformSearch = lazy(() =>
+	import("./platform-search").then((module) => ({
+		default: module.PlatformSearch,
+	})),
+);
 
 export const Navbar: React.FC = observer(() => {
 	const { page } = usePage();
@@ -80,7 +85,11 @@ export const Navbar: React.FC = observer(() => {
 					className="flex flex-row items-center justify-end gap-0.5"
 				>
 					{/* Search — Popover with Tooltip */}
-					{page.navbar?.search && <PlatformSearch />}
+					{page.navbar?.search && (
+						<Suspense fallback={null}>
+							<PlatformSearch />
+						</Suspense>
+					)}
 
 					{/* Notification bell */}
 					{notificationsEnabled && (

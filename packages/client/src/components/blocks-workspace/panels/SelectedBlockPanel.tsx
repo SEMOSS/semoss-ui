@@ -345,7 +345,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "16px",
 									fontWeight: 500,
 									lineHeight: "150%",
@@ -358,7 +359,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "14px",
 									fontWeight: 400,
 									lineHeight: "150%",
@@ -389,7 +391,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "16px",
 									fontWeight: 500,
 									lineHeight: "150%",
@@ -402,7 +405,8 @@ export const SelectedBlockPanel = observer(() => {
 								style={{
 									alignSelf: "stretch",
 									color: "#666",
-									fontFamily: "Inter",
+									fontFamily:
+										'"Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
 									fontSize: "14px",
 									fontWeight: 400,
 									lineHeight: "150%",

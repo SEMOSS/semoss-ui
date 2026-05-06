@@ -29,6 +29,7 @@ export const FontFamily = [
 	"Comic Sans MS",
 	"Courier New",
 	"Garamond",
+	"Geist",
 	"Georgia",
 	"Helvetica",
 	"Inter",

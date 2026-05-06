@@ -1,5 +1,5 @@
-import { JsonViewer } from "@textea/json-viewer";
 import { observer } from "mobx-react-lite";
+import { JsonValueViewer } from "@/components/common/JsonValueViewer";
 import { isOutputJSON } from "@/utility";
 
 interface DefaultOperationProps {
@@ -17,13 +17,7 @@ export const DefaultOperation = observer(
 		if (typeof output === "string" || typeof output === "object") {
 			const value = isOutputJSON(output);
 			if (value != null) {
-				return (
-					<JsonViewer
-						value={value}
-						displayComma={true}
-						rootName={false}
-					/>
-				);
+				return <JsonValueViewer value={value} />;
 			} else {
 				return (
 					<pre className="max-h-[200px] overflow-y-scroll text-wrap text-sm">
