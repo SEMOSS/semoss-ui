@@ -2,33 +2,33 @@ import { Fragment, useEffect, useId, useState } from "react";
 
 // ── Layout ──────────────────────────────────────────────────────────────────
 const UX = 55,
-	UY = 155;
+	UY = 148;
 const UX_EDGE = UX + 23; // right edge of user circle — line/dots start here
 const AX = 215,
-	AY = 155;
+	AY = 148;
 const TX = 378;
 const TLX = TX - 25; // left edge of tool badges (bw=50, half=25) — line/dot endpoints
 
 const EH_X = 105,
-	EH_Y = 28,
+	EH_Y = 20,
 	EH_W = 313,
 	EH_H = 255;
 
-// Tool y values: 38 px apart, centred on AY=155  →  79, 117, 155, 193, 231
+// Tool y values: 38 px apart, centred on AY=148  →  72, 110, 148, 186, 224
 const TOOLS = [
 	{
 		id: "mcp",
 		label: "MCP",
-		y: 79,
+		y: 72,
 		fill: "#7F77DD",
 		stroke: "#534AB7",
 		textColor: "#EEEDFE",
-		curve: [262, 55] as [number, number] | null,
+		curve: [262, 48] as [number, number] | null,
 	},
 	{
 		id: "api",
 		label: "API",
-		y: 117,
+		y: 110,
 		fill: "#378ADD",
 		stroke: "#185FA5",
 		textColor: "#E6F1FB",
@@ -37,7 +37,7 @@ const TOOLS = [
 	{
 		id: "web",
 		label: "Web",
-		y: 155,
+		y: 148,
 		fill: "#5DCAA5",
 		stroke: "#0F6E56",
 		textColor: "white",
@@ -46,7 +46,7 @@ const TOOLS = [
 	{
 		id: "code",
 		label: "Code",
-		y: 193,
+		y: 186,
 		fill: "#85B7EB",
 		stroke: "#378ADD",
 		textColor: "white",
@@ -55,11 +55,11 @@ const TOOLS = [
 	{
 		id: "files",
 		label: "Files",
-		y: 231,
+		y: 224,
 		fill: "#AFA9EC",
 		stroke: "#7F77DD",
 		textColor: "white",
-		curve: [262, 248] as [number, number] | null,
+		curve: [262, 241] as [number, number] | null,
 	},
 ];
 
@@ -91,8 +91,7 @@ function toolPath(idx: number, dir: "out" | "in"): string {
 
 // animateMotion: travel path in first `frac` of CYCLE, hold at destination
 function motion(begin: string, path: string, frac: number) {
-	// biome-ignore lint/suspicious/noExplicitAny: keyPoints is absent from React SVG types
-	return {
+	const props = {
 		keyPoints: "0;1;1",
 		keyTimes: `0;${frac};1`,
 		calcMode: "linear",
@@ -100,7 +99,9 @@ function motion(begin: string, path: string, frac: number) {
 		repeatCount: "indefinite",
 		begin,
 		path,
-	} as any;
+	};
+	// biome-ignore lint/suspicious/noExplicitAny: keyPoints is absent from React SVG types
+	return props as any;
 }
 
 // opacity: pop in → hold through travel → fade at arrival
@@ -155,7 +156,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 		<svg
 			role="img"
 			aria-label="Agent network visualization"
-			viewBox="0 0 460 295"
+			viewBox="0 0 460 278"
 			xmlns="http://www.w3.org/2000/svg"
 			className={className ?? "h-full w-full"}
 		>
@@ -252,7 +253,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 			<g>
 				<rect
 					x={137}
-					y={115}
+					y={108}
 					width={18}
 					height={80}
 					rx="4"
@@ -262,7 +263,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 				/>
 				<text
 					x={146}
-					y={155}
+					y={148}
 					textAnchor="middle"
 					dominantBaseline="central"
 					fill="rgba(255,255,255,0.9)"
@@ -270,7 +271,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 					fontWeight="600"
 					fontFamily="Geist, sans-serif"
 					letterSpacing="0.8"
-					transform="rotate(-90, 146, 155)"
+					transform="rotate(-90, 146, 148)"
 				>
 					Guardrails
 				</text>
@@ -281,7 +282,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 			<g>
 				<rect
 					x={285}
-					y={71}
+					y={64}
 					width={18}
 					height={168}
 					rx="4"
@@ -291,7 +292,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 				/>
 				<text
 					x={294}
-					y={155}
+					y={148}
 					textAnchor="middle"
 					dominantBaseline="central"
 					fill="rgba(255,255,255,0.9)"
@@ -299,7 +300,7 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 					fontWeight="600"
 					fontFamily="Geist, sans-serif"
 					letterSpacing="0.8"
-					transform="rotate(-90, 294, 155)"
+					transform="rotate(-90, 294, 148)"
 				>
 					Guardrails
 				</text>
@@ -471,9 +472,9 @@ export const AgentNetworkViz: React.FC<AgentNetworkVizProps> = ({
 			{/* ── Badge backing card — subtle enclosure for the tool group ── */}
 			<rect
 				x={TLX - 8}
-				y={79 - 14}
+				y={72 - 14}
 				width={50 + 16}
-				height={231 - 79 + 28}
+				height={224 - 72 + 28}
 				rx="8"
 				fill="rgba(255,255,255,0.06)"
 				stroke="rgba(255,255,255,0.12)"

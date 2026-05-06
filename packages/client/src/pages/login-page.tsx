@@ -1435,7 +1435,7 @@ export const LoginPage = observer(() => {
 						aria-hidden
 						className="absolute inset-0 bg-[radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.26),transparent_38%),radial-gradient(circle_at_84%_76%,rgba(255,255,255,0.22),transparent_42%)]"
 					/>
-					<div className="relative z-10 flex h-full flex-col p-10 text-white xl:p-14">
+					<div className="relative z-10 flex h-full flex-col overflow-y-auto px-10 py-6 text-white xl:px-14 xl:py-8">
 						<div className="flex items-center">
 							{configStore.theme.logo ? (
 								<img
@@ -1445,52 +1445,52 @@ export const LoginPage = observer(() => {
 								/>
 							) : null}
 						</div>
-						<div className="mt-24 w-full max-w-xl space-y-4 xl:mt-28">
-							<p className="font-semibold text-4xl leading-tight">
-								From data to decisions in one platform.
-							</p>
-							<p className="text-base text-white/85 leading-relaxed">
-								Build analytics, automate workflows, and ship
-								AI-powered apps with a secure, enterprise-ready
-								experience.
-							</p>
-						</div>
-						<ul className="mt-3 space-y-3">
-							{[
-								{
-									title: "Agentic Workflows",
-									desc: "Autonomous multi-step reasoning across tools and data",
-								},
-								{
-									title: "MCP Integration",
-									desc: "Native Model Context Protocol support for any tool",
-								},
-								{
-									title: "Governed Access",
-									desc: "Enterprise security, compliance, and audit built in",
-								},
-							].map((b) => (
-								<li
-									key={b.title}
-									className="flex items-start gap-3"
-								>
-									<span
-										aria-hidden
-										className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/70"
-									/>
-									<span className="text-sm leading-snug">
-										<span className="font-semibold text-white">
-											{b.title}
+						<div className="flex flex-1 flex-col justify-center gap-4">
+							<div className="w-full max-w-xl space-y-4">
+								<p className="font-semibold text-4xl leading-tight">
+									From data to decisions in one platform.
+								</p>
+								<p className="text-base text-white/85 leading-relaxed">
+									Build analytics, automate workflows, and
+									ship AI-powered apps with a secure,
+									enterprise-ready experience.
+								</p>
+							</div>
+							<ul className="space-y-3">
+								{[
+									{
+										title: "Agentic Workflows",
+										desc: "Autonomous multi-step reasoning across tools and data",
+									},
+									{
+										title: "MCP Integration",
+										desc: "Native Model Context Protocol support for any tool",
+									},
+									{
+										title: "Governed Access",
+										desc: "Enterprise security, compliance, and audit built in",
+									},
+								].map((b) => (
+									<li
+										key={b.title}
+										className="flex items-start gap-3"
+									>
+										<span
+											aria-hidden
+											className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/70"
+										/>
+										<span className="text-sm leading-snug">
+											<span className="font-semibold text-white">
+												{b.title}
+											</span>
+											<span className="text-white/70">
+												{" — "}
+												{b.desc}
+											</span>
 										</span>
-										<span className="text-white/70">
-											{" — "}
-											{b.desc}
-										</span>
-									</span>
-								</li>
-							))}
-						</ul>
-						<div className="flex flex-1 items-center justify-center">
+									</li>
+								))}
+							</ul>
 							<AgentNetworkViz className="w-full" />
 						</div>
 					</div>
