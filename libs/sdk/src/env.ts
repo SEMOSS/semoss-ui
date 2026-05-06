@@ -8,6 +8,8 @@ const envStore: {
 	MODULE: string;
 	ACCESS_KEY: string;
 	SECRET_KEY: string;
+	BEARER_TOKEN: string;
+	BEARER_PROVIDER: string;
 	CSRF: boolean;
 	TOOL: MCPToolRequest | null;
 } = {
@@ -15,6 +17,8 @@ const envStore: {
 	MODULE: "",
 	ACCESS_KEY: "",
 	SECRET_KEY: "",
+	BEARER_TOKEN: "",
+	BEARER_PROVIDER: "",
 	CSRF: false,
 	TOOL: null,
 };
@@ -46,6 +50,20 @@ export const Env = {
 	 */
 	get SECRET_KEY() {
 		return envStore.SECRET_KEY;
+	},
+
+	/**
+	 * Bearer token passed from embed host
+	 */
+	get BEARER_TOKEN() {
+		return envStore.BEARER_TOKEN;
+	},
+
+	/**
+	 * Bearer provider passed from embed host
+	 */
+	get BEARER_PROVIDER() {
+		return envStore.BEARER_PROVIDER;
 	},
 
 	/**

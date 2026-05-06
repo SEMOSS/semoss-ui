@@ -1,5 +1,6 @@
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { type Location, Navigate, useLocation } from "react-router-dom";
 import {
@@ -20,8 +21,14 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import LOGIN_HERO from "@/assets/img/login-hero.jpeg";
+import { setupResetPassword } from "@/api/auth";
+import { AgentNetworkViz } from "@/components/landing/agent-network-viz";
 import { useRootStore } from "@/hooks";
+import {
+	getLoginProviderInitials,
+	getLoginProviderKey,
+	loadLoginProviderLogos,
+} from "@/shared/constants/login-provider-icons.constants";
 
 interface TypeUserLogin {
 	USERNAME: string;
@@ -42,6 +49,10 @@ interface TypeUserRegister {
 	PASSWORD_CONFIRMATION: "";
 }
 
+const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
+type LoginPasswordResetType = (typeof LOGIN_PASSWORD_RESET_TYPES)[number];
+type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
+
 export const LoginPage = observer(() => {
 	const { configStore } = useRootStore();
 	const location = useLocation();
@@ -53,10 +64,18 @@ export const LoginPage = observer(() => {
 	>("");
 	const [register, setRegister] = useState(false);
 	const [showOTPCodeField, setShowOTPCodeField] = useState(false);
+	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState("");
 	const [success, setSuccess] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
-	const [loginHeroImage, setLoginHeroImage] = useState(LOGIN_HERO);
+	const [resetPasswordEmail, setResetPasswordEmail] = useState("");
+	const [resetPasswordError, setResetPasswordError] = useState("");
+	const [resetPasswordSuccess, setResetPasswordSuccess] = useState("");
+	const [isResetPasswordSubmitting, setIsResetPasswordSubmitting] =
+		useState(false);
+	const [oauthProviderLogos, setOauthProviderLogos] = useState<
+		Record<string, string>
+	>({});
 
 	const {
 		control,
@@ -122,6 +141,13 @@ export const LoginPage = observer(() => {
 		(val) => val.isOauth,
 	);
 
+	const oauthProvidersSignature = useMemo(() => {
+		return configStore.store.config.availableProviders
+			.filter((provider) => provider.isOauth)
+			.map((provider) => provider.provider.trim().toLowerCase())
+			.join("|");
+	}, [configStore.store.config.availableProviders]);
+
 	const isNative = Object.hasOwn(availableProvidersMap, "native"),
 		isLdap = Object.hasOwn(availableProvidersMap, "ldap"),
 		isLinOTP = Object.hasOwn(availableProvidersMap, "linotp");
@@ -130,6 +156,9 @@ export const LoginPage = observer(() => {
 
 	const hasMoreThanOneUserNamePassword =
 		(isNative && isLdap) || (isNative && isLinOTP) || (isLdap && isLinOTP);
+	const canRequestPasswordReset = LOGIN_PASSWORD_RESET_TYPES.includes(
+		loginType as LoginPasswordResetType,
+	);
 
 	useEffect(() => {
 		if (isNative) {
@@ -142,18 +171,40 @@ export const LoginPage = observer(() => {
 	}, [isNative, isLdap, isLinOTP]);
 
 	useEffect(() => {
-		const timeoutId = window.setTimeout(() => {
-			import("@/assets/img/login-gif.gif")
-				.then((module) => {
-					setLoginHeroImage(module.default);
-				})
-				.catch(() => undefined);
-		}, 1200);
+		if (!oauthProvidersSignature) return;
+
+		const providers = oauthProvidersSignature.split("|").filter(Boolean);
+
+		if (providers.length === 0) return;
+
+		let isMounted = true;
+
+		const loadProviderLogos = async () => {
+			const loadedLogos = await loadLoginProviderLogos(providers);
+
+			if (!isMounted) return;
+
+			setOauthProviderLogos((previous) => {
+				let hasChanged = false;
+				const next = { ...previous };
+
+				for (const [provider, src] of Object.entries(loadedLogos)) {
+					if (next[provider] === src) continue;
+
+					next[provider] = src;
+					hasChanged = true;
+				}
+
+				return hasChanged ? next : previous;
+			});
+		};
+
+		void loadProviderLogos();
 
 		return () => {
-			window.clearTimeout(timeoutId);
+			isMounted = false;
 		};
-	}, []);
+	}, [oauthProvidersSignature]);
 
 	const login = handleSubmit(
 		async (data: TypeUserLogin): Promise<TypeUserLogin> => {
@@ -285,6 +336,75 @@ export const LoginPage = observer(() => {
 			});
 	};
 
+	const openForgotPasswordDialog = () => {
+		setResetPasswordEmail("");
+		setResetPasswordError("");
+		setResetPasswordSuccess("");
+		setForgotPassword(true);
+	};
+
+	const closeForgotPasswordDialog = () => {
+		setForgotPassword(false);
+		setResetPasswordEmail("");
+		setResetPasswordError("");
+		setResetPasswordSuccess("");
+		setIsResetPasswordSubmitting(false);
+	};
+
+	const submitForgotPassword = async () => {
+		const email = resetPasswordEmail.trim();
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+		if (!email) {
+			setResetPasswordError("Email is required.");
+			return;
+		}
+
+		if (!emailRegex.test(email)) {
+			setResetPasswordError("Please enter a valid email address.");
+			return;
+		}
+
+		if (!canRequestPasswordReset) {
+			setResetPasswordError(
+				"Password reset is only available for Native, LDAP, and LinOTP logins.",
+			);
+			return;
+		}
+
+		const selectedLoginType =
+			loginType.toUpperCase() as LoginPasswordResetApiType;
+		const subjectPrefix = configStore.theme.name?.trim() || "SEMOSS";
+		const subject = `${subjectPrefix} Reset Password Request`;
+
+		setIsResetPasswordSubmitting(true);
+		setResetPasswordError("");
+		setResetPasswordSuccess("");
+
+		try {
+			const response = await setupResetPassword(
+				email,
+				selectedLoginType,
+				subject,
+			);
+			const message =
+				response.message || `Email has been sent to: ${email}`;
+
+			setResetPasswordSuccess(message);
+			toast.success(message);
+		} catch (submissionError) {
+			const message =
+				submissionError instanceof Error
+					? submissionError.message
+					: "Unable to submit password reset request.";
+
+			setResetPasswordError(message);
+			toast.error(message);
+		} finally {
+			setIsResetPasswordSubmitting(false);
+		}
+	};
+
 	const path = (location.state as { from: Location })?.from?.pathname || "/";
 
 	if (configStore.store.status === "SUCCESS") {
@@ -293,11 +413,40 @@ export const LoginPage = observer(() => {
 
 	return (
 		<>
-			<div className="flex h-screen w-screen flex-col bg-background">
-				<div className="relative flex w-full flex-1 flex-row overflow-hidden">
-					<div className="relative z-10 flex shrink-0 flex-col items-center overflow-y-auto overflow-x-hidden bg-background max-md:h-full max-md:w-full">
-						<div className="mx-[108px] mt-36 mb-4 flex w-[610px] flex-col gap-6 max-md:m-0 max-md:w-full max-md:max-w-[610px] max-md:p-8">
-							<div>
+			<style>{`
+				@keyframes loginFeaturePillFadeUp {
+					from {
+						opacity: 0;
+						transform: translateY(10px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+
+				@keyframes loginCardShimmer {
+					from {
+						transform: translateX(-180%);
+					}
+					to {
+						transform: translateX(260%);
+					}
+				}
+			`}</style>
+			<div className="relative grid min-h-screen w-full bg-[#e9edf3] lg:grid-cols-2 dark:bg-muted/20">
+				<div className="relative flex min-h-screen w-full flex-col overflow-hidden">
+					<div
+						aria-hidden
+						className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(1,118,211,0.12),transparent_46%)]"
+					/>
+					<div
+						aria-hidden
+						className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#f4f7fb_0%,#e9edf3_44%,#e3e8ef_100%)] dark:bg-none"
+					/>
+					<div className="relative z-10 flex w-full flex-1 items-center justify-center overflow-y-auto px-6 pt-4 pb-4 md:px-10 md:pt-8 md:pb-6">
+						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#bcc5d1] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur md:p-8 dark:border-border/70 dark:bg-background/95 dark:shadow-sm">
+							<div className="mb-6">
 								<div className="mb-2 flex flex-row items-center gap-2">
 									{configStore.theme.logo ? (
 										<img
@@ -311,77 +460,17 @@ export const LoginPage = observer(() => {
 										{configStore.theme.name}
 									</span>
 								</div>
-								<h4 className="mb-2 scroll-m-20 font-semibold text-3xl tracking-tight">
-									Welcome!
-								</h4>
-								<p className="mb-8 text-base">
+								<h4 className="mb-2 min-h-[2.2rem] scroll-m-20 font-semibold text-2xl tracking-tight md:min-h-[2.6rem] md:text-3xl">
 									{register
-										? "Register below"
-										: "Log in below"}
+										? "Create your account"
+										: "Welcome back"}
+								</h4>
+								<p className="min-h-[1.25rem] text-black text-sm md:text-base dark:text-muted-foreground">
+									{register
+										? "Register to access your workspace."
+										: "Sign in to continue to your workspace."}
 								</p>
 							</div>
-
-							{!register && hasMoreThanOneUserNamePassword && (
-								<div className="flex overflow-hidden rounded-md border border-input">
-									{isNative && (
-										<button
-											type="button"
-											onClick={() => {
-												setLoginType("native");
-												setSuccess("");
-												setError("");
-											}}
-											className={cn(
-												"flex-1 px-4 py-2 font-medium text-sm transition-colors",
-												loginType === "native"
-													? "bg-primary text-primary-foreground"
-													: "bg-background text-primary hover:bg-muted",
-											)}
-											data-testid="loginPage-button-native"
-										>
-											Native
-										</button>
-									)}
-									{isLdap && (
-										<button
-											type="button"
-											onClick={() => {
-												setLoginType("ldap");
-												setSuccess("");
-												setError("");
-											}}
-											className={cn(
-												"flex-1 px-4 py-2 font-medium text-sm transition-colors",
-												loginType === "ldap"
-													? "bg-primary text-primary-foreground"
-													: "bg-background text-primary hover:bg-muted",
-											)}
-											data-testid="loginPage-button-ldap"
-										>
-											LDAP
-										</button>
-									)}
-									{isLinOTP && (
-										<button
-											type="button"
-											onClick={() => {
-												setLoginType("linotp");
-												setSuccess("");
-												setError("");
-											}}
-											className={cn(
-												"flex-1 px-4 py-2 font-medium text-sm transition-colors",
-												loginType === "linotp"
-													? "bg-primary text-primary-foreground"
-													: "bg-background text-primary hover:bg-muted",
-											)}
-											data-testid="loginPage-button-linotp"
-										>
-											LinOTP
-										</button>
-									)}
-								</div>
-							)}
 
 							{error && (
 								<Alert variant="destructive">
@@ -396,9 +485,160 @@ export const LoginPage = observer(() => {
 							)}
 
 							<form>
-								<div className="flex flex-col gap-4">
+								<div className="flex flex-col gap-4 [&_input]:border-[#9ea5af] [&_input]:bg-white [&_input]:shadow-none [&_input]:focus-visible:border-[#0176d3] [&_input]:focus-visible:ring-[#0176d3]/35 dark:[&_input]:border-input dark:[&_input]:bg-background dark:[&_input]:focus-visible:border-primary dark:[&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-black dark:[&_label]:text-muted-foreground">
+									{!register && hasOAuth && (
+										<>
+											{configStore.store.config.availableProviders.map(
+												(p) => {
+													if (!p.isOauth) return null;
+
+													const providerKey =
+														getLoginProviderKey(
+															p.provider,
+														);
+													const providerLogo =
+														oauthProviderLogos[
+															providerKey
+														];
+													const providerInitials =
+														getLoginProviderInitials(
+															p.name ||
+																p.provider,
+														);
+
+													return (
+														<Button
+															key={p.provider}
+															type="button"
+															variant="outline"
+															className="w-full gap-2"
+															onClick={() =>
+																oauth(
+																	p.provider,
+																)
+															}
+														>
+															{providerLogo ? (
+																<img
+																	src={
+																		providerLogo
+																	}
+																	alt=""
+																	aria-hidden="true"
+																	className="h-4 w-4 shrink-0 object-contain"
+																	loading="lazy"
+																	decoding="async"
+																/>
+															) : (
+																<span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
+																	{
+																		providerInitials
+																	}
+																</span>
+															)}
+															{p.name}
+														</Button>
+													);
+												},
+											)}
+											{hasUsernamePassword && (
+												<div className="flex items-center gap-4 py-1">
+													<Separator className="flex-1" />
+													<span className="font-medium text-black text-sm dark:text-muted-foreground">
+														or
+													</span>
+													<Separator className="flex-1" />
+												</div>
+											)}
+										</>
+									)}
+
 									{hasUsernamePassword && (
 										<>
+											{!register &&
+												hasMoreThanOneUserNamePassword && (
+													<div className="flex overflow-hidden rounded-md border border-input">
+														{isNative && (
+															<button
+																type="button"
+																onClick={() => {
+																	setLoginType(
+																		"native",
+																	);
+																	setSuccess(
+																		"",
+																	);
+																	setError(
+																		"",
+																	);
+																}}
+																className={cn(
+																	"flex-1 px-4 py-2 font-medium text-sm transition-colors",
+																	loginType ===
+																		"native"
+																		? "bg-primary text-primary-foreground"
+																		: "bg-background text-primary hover:bg-muted",
+																)}
+																data-testid="loginPage-button-native"
+															>
+																Native
+															</button>
+														)}
+														{isLdap && (
+															<button
+																type="button"
+																onClick={() => {
+																	setLoginType(
+																		"ldap",
+																	);
+																	setSuccess(
+																		"",
+																	);
+																	setError(
+																		"",
+																	);
+																}}
+																className={cn(
+																	"flex-1 px-4 py-2 font-medium text-sm transition-colors",
+																	loginType ===
+																		"ldap"
+																		? "bg-primary text-primary-foreground"
+																		: "bg-background text-primary hover:bg-muted",
+																)}
+																data-testid="loginPage-button-ldap"
+															>
+																LDAP
+															</button>
+														)}
+														{isLinOTP && (
+															<button
+																type="button"
+																onClick={() => {
+																	setLoginType(
+																		"linotp",
+																	);
+																	setSuccess(
+																		"",
+																	);
+																	setError(
+																		"",
+																	);
+																}}
+																className={cn(
+																	"flex-1 px-4 py-2 font-medium text-sm transition-colors",
+																	loginType ===
+																		"linotp"
+																		? "bg-primary text-primary-foreground"
+																		: "bg-background text-primary hover:bg-muted",
+																)}
+																data-testid="loginPage-button-linotp"
+															>
+																LinOTP
+															</button>
+														)}
+													</div>
+												)}
+
 											{!showOTPCodeField && register && (
 												<>
 													<div className="flex gap-3">
@@ -911,23 +1151,10 @@ export const LoginPage = observer(() => {
 															</div>
 														)}
 													/>
-													<div className="flex justify-between gap-2">
+													<div className="flex flex-col gap-2">
 														<Button
 															type="button"
-															variant="ghost"
-															className="flex-1"
-															onClick={() =>
-																setRegister(
-																	false,
-																)
-															}
-															data-testid="loginPage-button-back"
-														>
-															Go Back
-														</Button>
-														<Button
-															type="button"
-															className="flex-1"
+															className="w-full"
 															onClick={
 																registerAccount
 															}
@@ -935,6 +1162,26 @@ export const LoginPage = observer(() => {
 														>
 															Register
 														</Button>
+														<div className="flex items-center justify-center gap-1 text-sm">
+															Already have an
+															account?{" "}
+															<Button
+																type="button"
+																variant="link"
+																className="h-auto p-0"
+																onClick={() => {
+																	setRegister(
+																		false,
+																	);
+																	setError(
+																		"",
+																	);
+																}}
+																data-testid="loginPage-button-back"
+															>
+																Login Now
+															</Button>
+														</div>
 													</div>
 												</>
 											)}
@@ -1001,27 +1248,59 @@ export const LoginPage = observer(() => {
 																>
 																	Password
 																</Label>
-																<Input
-																	id={`${uid}-login-password`}
-																	type="password"
-																	value={
-																		field.value ||
-																		""
-																	}
-																	onChange={(
-																		e,
-																	) =>
-																		field.onChange(
-																			e
-																				.target
-																				.value,
-																		)
-																	}
-																	data-testid="loginPage-textField-password"
-																	aria-invalid={
-																		!!formErrors.PASSWORD
-																	}
-																/>
+																<div className="relative">
+																	<Input
+																		id={`${uid}-login-password`}
+																		type={
+																			showPassword
+																				? "text"
+																				: "password"
+																		}
+																		value={
+																			field.value ||
+																			""
+																		}
+																		onChange={(
+																			e,
+																		) =>
+																			field.onChange(
+																				e
+																					.target
+																					.value,
+																			)
+																		}
+																		data-testid="loginPage-textField-password"
+																		aria-invalid={
+																			!!formErrors.PASSWORD
+																		}
+																		className="pr-10"
+																	/>
+																	<Button
+																		type="button"
+																		variant="ghost"
+																		size="icon-sm"
+																		className="-translate-y-1/2 absolute top-1/2 right-1 h-8 w-8 text-muted-foreground hover:text-foreground"
+																		onClick={() =>
+																			setShowPassword(
+																				(
+																					prev,
+																				) =>
+																					!prev,
+																			)
+																		}
+																		aria-label={
+																			showPassword
+																				? "Hide password"
+																				: "Show password"
+																		}
+																	>
+																		{showPassword ? (
+																			<EyeOff className="h-4 w-4" />
+																		) : (
+																			<Eye className="h-4 w-4" />
+																		)}
+																	</Button>
+																</div>
 																{formErrors.PASSWORD && (
 																	<p className="text-destructive text-sm">
 																		{
@@ -1034,6 +1313,20 @@ export const LoginPage = observer(() => {
 															</div>
 														)}
 													/>
+													{canRequestPasswordReset && (
+														<div className="flex justify-end">
+															<Button
+																type="button"
+																variant="link"
+																className="h-auto px-0 py-0 text-sm"
+																onClick={
+																	openForgotPasswordDialog
+																}
+															>
+																Forgot password?
+															</Button>
+														</div>
+													)}
 												</>
 											)}
 
@@ -1077,11 +1370,18 @@ export const LoginPage = observer(() => {
 														onClick={login}
 														data-testid="loginPage-button-login"
 													>
-														Login
+														{isLoading ? (
+															<span className="flex items-center gap-2">
+																<Loader2 className="h-4 w-4 animate-spin" />
+																Logging in...
+															</span>
+														) : (
+															"Login"
+														)}
 													</Button>
 													{configStore.store.config
 														.nativeRegistration && (
-														<div className="flex items-center justify-center gap-1">
+														<div className="flex items-center justify-center gap-1 text-sm">
 															Don&apos;t have an
 															account?{" "}
 															<Button
@@ -1106,75 +1406,164 @@ export const LoginPage = observer(() => {
 											)}
 										</>
 									)}
-
-									{!register && (
-										<>
-											{hasUsernamePassword &&
-												hasOAuth && (
-													<div className="flex items-center gap-4">
-														<Separator className="flex-1" />
-														<span className="font-bold text-base">
-															or
-														</span>
-														<Separator className="flex-1" />
-													</div>
-												)}
-											{configStore.store.config.availableProviders.map(
-												(p) => {
-													if (!p.isOauth) return null;
-													return (
-														<Button
-															key={p.provider}
-															type="button"
-															variant="outline"
-															className="w-full"
-															onClick={() =>
-																oauth(
-																	p.provider,
-																)
-															}
-														>
-															{p.name}
-														</Button>
-													);
-												},
-											)}
-										</>
-									)}
 								</div>
 							</form>
+							{isLoading && (
+								<div
+									aria-hidden
+									className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+								>
+									<div className="absolute inset-0 bg-white/35 dark:bg-background/25" />
+									<div
+										className="-left-1/3 -skew-x-12 absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/80 to-transparent"
+										style={{
+											animation:
+												"loginCardShimmer 1200ms ease-out infinite",
+										}}
+									/>
+								</div>
+							)}
 						</div>
 					</div>
-					<div className="z-10 h-full w-[336px] shrink-0 bg-gradient-to-r from-background to-transparent" />
-					<div className="absolute inset-y-0 right-0 z-0 overflow-hidden">
-						<img
-							src={loginHeroImage}
-							alt=""
-							className="h-full object-cover"
-							loading="lazy"
-							decoding="async"
-						/>
-					</div>
 				</div>
-				{isLoading && (
-					<div className="h-1 w-full overflow-hidden bg-primary/20">
-						<div className="h-full animate-pulse bg-primary" />
+				<aside className="relative hidden overflow-hidden lg:block">
+					<div
+						aria-hidden
+						className="absolute inset-0 bg-[linear-gradient(165deg,#0b3d7f_0%,#0176d3_40%,#0284c7_70%,#38bdf8_100%)]"
+					/>
+					<div
+						aria-hidden
+						className="absolute inset-0 bg-[radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.26),transparent_38%),radial-gradient(circle_at_84%_76%,rgba(255,255,255,0.22),transparent_42%)]"
+					/>
+					<div className="relative z-10 flex h-full flex-col p-10 text-white xl:p-14">
+						<div className="flex items-center">
+							{configStore.theme.logo ? (
+								<img
+									src={configStore.theme.logo}
+									alt={configStore.theme.name || "logo"}
+									className="h-9 w-auto rounded-sm bg-white/90 px-2 py-1"
+								/>
+							) : null}
+						</div>
+						<div className="mt-24 w-full max-w-xl space-y-4 xl:mt-28">
+							<p className="font-semibold text-4xl leading-tight">
+								From data to decisions in one platform.
+							</p>
+							<p className="text-base text-white/85 leading-relaxed">
+								Build analytics, automate workflows, and ship
+								AI-powered apps with a secure, enterprise-ready
+								experience.
+							</p>
+						</div>
+						<ul className="mt-3 space-y-3">
+							{[
+								{
+									title: "Agentic Workflows",
+									desc: "Autonomous multi-step reasoning across tools and data",
+								},
+								{
+									title: "MCP Integration",
+									desc: "Native Model Context Protocol support for any tool",
+								},
+								{
+									title: "Governed Access",
+									desc: "Enterprise security, compliance, and audit built in",
+								},
+							].map((b) => (
+								<li
+									key={b.title}
+									className="flex items-start gap-3"
+								>
+									<span
+										aria-hidden
+										className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/70"
+									/>
+									<span className="text-sm leading-snug">
+										<span className="font-semibold text-white">
+											{b.title}
+										</span>
+										<span className="text-white/70">
+											{" — "}
+											{b.desc}
+										</span>
+									</span>
+								</li>
+							))}
+						</ul>
+						<div className="flex flex-1 items-center justify-center">
+							<AgentNetworkViz className="w-full" />
+						</div>
 					</div>
-				)}
+				</aside>
 			</div>
 
-			<Dialog open={forgotPassword} onOpenChange={setForgotPassword}>
+			<Dialog
+				open={forgotPassword}
+				onOpenChange={(isOpen) => {
+					if (!isOpen) {
+						closeForgotPasswordDialog();
+						return;
+					}
+
+					setForgotPassword(true);
+				}}
+			>
 				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Forgot your password?</DialogTitle>
 					</DialogHeader>
-					<p>Please contact your administrator to reset password.</p>
+					<div className="flex flex-col gap-3">
+						<p className="text-muted-foreground text-sm">
+							Enter the email associated with your{" "}
+							{loginType.toUpperCase()} login.
+						</p>
+						<div className="flex flex-col gap-1.5">
+							<Label htmlFor={`${uid}-forgot-password-email`}>
+								Email
+							</Label>
+							<Input
+								id={`${uid}-forgot-password-email`}
+								type="email"
+								value={resetPasswordEmail}
+								onChange={(event) =>
+									setResetPasswordEmail(event.target.value)
+								}
+								placeholder="name@company.com"
+								autoFocus
+							/>
+						</div>
+						{resetPasswordError ? (
+							<Alert variant="destructive">
+								<AlertDescription>
+									{resetPasswordError}
+								</AlertDescription>
+							</Alert>
+						) : null}
+						{resetPasswordSuccess ? (
+							<div className="rounded-md border border-green-500 bg-green-50 px-3 py-2 text-green-700 text-sm dark:bg-green-950/30 dark:text-green-400">
+								{resetPasswordSuccess}
+							</div>
+						) : null}
+					</div>
 					<DialogFooter>
 						<Button
 							variant="outline"
-							onClick={() => setForgotPassword(false)}
+							onClick={closeForgotPasswordDialog}
 						>
-							Ok
+							Cancel
+						</Button>
+						<Button
+							onClick={submitForgotPassword}
+							disabled={isResetPasswordSubmitting}
+						>
+							{isResetPasswordSubmitting ? (
+								<span className="flex items-center gap-2">
+									<Loader2 className="h-4 w-4 animate-spin" />
+									Sending...
+								</span>
+							) : (
+								"Send reset link"
+							)}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
