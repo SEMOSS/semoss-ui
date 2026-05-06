@@ -22,7 +22,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { setupResetPassword } from "@/api/auth";
-import { useRootStore } from "@/hooks";
+import { useRootStore, useThemeLogo } from "@/hooks";
 import {
 	getLoginProviderInitials,
 	getLoginProviderKey,
@@ -86,6 +86,7 @@ type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
 
 export const LoginPage = observer(() => {
 	const { configStore } = useRootStore();
+	const themeLogo = useThemeLogo();
 	const location = useLocation();
 	const uid = useId();
 
@@ -465,23 +466,23 @@ export const LoginPage = observer(() => {
 					}
 				}
 			`}</style>
-			<div className="relative grid min-h-screen w-full bg-[#e9edf3] lg:grid-cols-2 dark:bg-muted/20">
+			<div className="semoss-login-page relative grid min-h-screen w-full bg-[#e9edf3] text-foreground lg:grid-cols-2 dark:bg-background">
 				<div className="relative flex min-h-screen w-full flex-col overflow-hidden">
 					<div
 						aria-hidden
-						className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(1,118,211,0.12),transparent_46%)]"
+						className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(1,118,211,0.12),transparent_46%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(5,112,240,0.18),transparent_48%)]"
 					/>
 					<div
 						aria-hidden
-						className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#f4f7fb_0%,#e9edf3_44%,#e3e8ef_100%)] dark:bg-none"
+						className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,#f4f7fb_0%,#e9edf3_44%,#e3e8ef_100%)] dark:bg-[linear-gradient(180deg,rgba(23,23,23,0.92)_0%,rgba(10,10,10,0.96)_58%,rgba(10,10,10,1)_100%)]"
 					/>
 					<div className="relative z-10 flex w-full flex-1 items-center justify-center overflow-y-auto px-6 pt-4 pb-4 md:px-10 md:pt-8 md:pb-6">
-						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#bcc5d1] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur md:p-8 dark:border-border/70 dark:bg-background/95 dark:shadow-sm">
+						<div className="relative w-full max-w-[520px] overflow-hidden rounded-2xl border border-[#bcc5d1] bg-white p-6 shadow-[0_1px_2px_rgba(15,23,42,0.06),0_12px_28px_rgba(15,23,42,0.06)] backdrop-blur md:p-8 dark:border-border/70 dark:bg-card/95 dark:shadow-sm">
 							<div className="mb-6">
 								<div className="mb-2 flex flex-row items-center gap-2">
-									{configStore.theme.logo ? (
+									{themeLogo ? (
 										<img
-											src={configStore.theme.logo}
+											src={themeLogo}
 											alt={
 												configStore.theme.name || "logo"
 											}
@@ -496,7 +497,7 @@ export const LoginPage = observer(() => {
 										? "Create your account"
 										: "Welcome back"}
 								</h4>
-								<p className="min-h-[1.25rem] text-black text-sm md:text-base dark:text-muted-foreground">
+								<p className="min-h-[1.25rem] text-muted-foreground text-sm md:text-base">
 									{register
 										? "Register to access your workspace."
 										: "Sign in to continue to your workspace."}
@@ -516,7 +517,7 @@ export const LoginPage = observer(() => {
 							)}
 
 							<form>
-								<div className="flex flex-col gap-4 [&_input]:border-[#9ea5af] [&_input]:bg-white [&_input]:shadow-none [&_input]:focus-visible:border-[#0176d3] [&_input]:focus-visible:ring-[#0176d3]/35 dark:[&_input]:border-input dark:[&_input]:bg-background dark:[&_input]:focus-visible:border-primary dark:[&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-black dark:[&_label]:text-muted-foreground">
+								<div className="semoss-login-form flex flex-col gap-4 [&_input]:border-[#9ea5af] [&_input]:bg-white [&_input]:shadow-none [&_input]:focus-visible:border-[#0176d3] [&_input]:focus-visible:ring-[#0176d3]/35 dark:[&_input]:border-input dark:[&_input]:bg-background dark:[&_input]:focus-visible:border-primary dark:[&_input]:focus-visible:ring-primary/30 [&_label]:font-medium [&_label]:text-foreground">
 									{!register && hasOAuth && (
 										<>
 											{configStore.store.config.availableProviders.map(
@@ -575,7 +576,7 @@ export const LoginPage = observer(() => {
 											{hasUsernamePassword && (
 												<div className="flex items-center gap-4 py-1">
 													<Separator className="flex-1" />
-													<span className="font-medium text-black text-sm dark:text-muted-foreground">
+													<span className="font-medium text-muted-foreground text-sm">
 														or
 													</span>
 													<Separator className="flex-1" />
@@ -1460,19 +1461,19 @@ export const LoginPage = observer(() => {
 				<aside className="relative hidden overflow-hidden lg:block">
 					<div
 						aria-hidden
-						className="absolute inset-0 bg-[linear-gradient(165deg,#0b3d7f_0%,#0176d3_40%,#0284c7_70%,#38bdf8_100%)]"
+						className="absolute inset-0 bg-[linear-gradient(165deg,#0b3d7f_0%,#0176d3_40%,#0284c7_70%,#38bdf8_100%)] dark:bg-[linear-gradient(165deg,#020617_0%,#0f2c5c_38%,#075985_72%,#0e7490_100%)]"
 					/>
 					<div
 						aria-hidden
-						className="absolute inset-0 bg-[radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.26),transparent_38%),radial-gradient(circle_at_84%_76%,rgba(255,255,255,0.22),transparent_42%)]"
+						className="absolute inset-0 bg-[radial-gradient(circle_at_12%_16%,rgba(255,255,255,0.26),transparent_38%),radial-gradient(circle_at_84%_76%,rgba(255,255,255,0.22),transparent_42%)] dark:bg-[radial-gradient(circle_at_12%_16%,rgba(56,189,248,0.18),transparent_36%),radial-gradient(circle_at_84%_76%,rgba(5,112,240,0.22),transparent_42%)]"
 					/>
 					<div className="relative z-10 flex h-full flex-col p-10 text-white xl:p-14">
 						<div className="flex items-center">
-							{configStore.theme.logo ? (
+							{themeLogo ? (
 								<img
-									src={configStore.theme.logo}
+									src={themeLogo}
 									alt={configStore.theme.name || "logo"}
-									className="h-9 w-auto rounded-sm bg-white/90 px-2 py-1"
+									className="h-9 w-auto rounded-sm bg-white/90 px-2 py-1 dark:bg-white/10"
 								/>
 							) : null}
 						</div>

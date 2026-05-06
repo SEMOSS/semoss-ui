@@ -1,4 +1,6 @@
+import type { DiffEditorProps, EditorProps } from "@monaco-editor/react";
 import { lazy } from "react";
+import { useTheme } from "@semoss/ui/next";
 
 type MonacoReactModule = typeof import("@monaco-editor/react");
 
@@ -8,6 +10,9 @@ type MonacoEnvironment = {
 
 let monacoReactModulePromise: Promise<MonacoReactModule> | null = null;
 let monacoSetupPromise: Promise<void> | null = null;
+
+const getMonacoTheme = (resolvedTheme: "dark" | "light") =>
+	resolvedTheme === "dark" ? "vs-dark" : "vs";
 
 const loadMonacoReact = () => {
 	if (!monacoReactModulePromise) {
@@ -79,14 +84,36 @@ const ensureMonacoSetup = async () => {
 	return monacoSetupPromise;
 };
 
-export const MonacoEditor = lazy(() =>
+const MonacoEditorBase = lazy(() =>
 	ensureMonacoSetup()
 		.then(() => loadMonacoReact())
 		.then((mod) => ({ default: mod.Editor })),
 );
 
-export const MonacoDiffEditor = lazy(() =>
+const MonacoDiffEditorBase = lazy(() =>
 	ensureMonacoSetup()
 		.then(() => loadMonacoReact())
 		.then((mod) => ({ default: mod.DiffEditor })),
 );
+
+export const MonacoEditor = ({ theme, ...props }: EditorProps) => {
+	const { resolvedTheme } = useTheme();
+
+	return (
+		<MonacoEditorBase
+			{...props}
+			theme={theme ?? getMonacoTheme(resolvedTheme)}
+		/>
+	);
+};
+
+export const MonacoDiffEditor = ({ theme, ...props }: DiffEditorProps) => {
+	const { resolvedTheme } = useTheme();
+
+	return (
+		<MonacoDiffEditorBase
+			{...props}
+			theme={theme ?? getMonacoTheme(resolvedTheme)}
+		/>
+	);
+};
