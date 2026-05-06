@@ -339,14 +339,14 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 													Select All
 												</span>
 											</div>
-											{options.map((_option) => (
+											{options.map((option) => (
 												// biome-ignore lint/a11y/noStaticElementInteractions: visual item
 												// biome-ignore lint/a11y/useKeyWithClickEvents: visual item
 												<div
 													key={option}
 													className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-accent"
 													onClick={handleToggle(
-														_option,
+														option,
 													)}
 												>
 													<Checkbox

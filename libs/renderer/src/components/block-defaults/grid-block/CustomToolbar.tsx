@@ -1,8 +1,3 @@
-import {
-	type GridApi,
-	GridToolbarContainer,
-	GridToolbarFilterButton,
-} from "@mui/x-data-grid";
 import { FileDown } from "lucide-react";
 import {
 	Button,
@@ -13,44 +8,23 @@ import {
 } from "@semoss/ui/next";
 
 interface CustomToolbarProps {
-	apiRef: React.MutableRefObject<GridApi>;
 	frameName?: string;
 	isBatchingEnabled: boolean;
+	onExportCsv: () => void;
 }
 
 export const CustomToolbar = ({
-	apiRef,
 	frameName,
 	isBatchingEnabled,
+	onExportCsv,
 }: CustomToolbarProps) => {
-	const handleExportClick = () => {
-		if (apiRef.current) {
-			apiRef.current.exportDataAsCsv({
-				fileName: frameName || "grid-export",
-			});
-		}
-	};
-
 	return (
-		<GridToolbarContainer
-			style={{
-				padding: "8px",
-				borderBottom: "1px solid rgba(224, 224, 224, 1)",
-				display: "flex",
-				alignItems: "center",
-				gap: "8px",
-			}}
-		>
-			{isBatchingEnabled && <GridToolbarFilterButton />}
+		<div className="flex items-center gap-2 border-b px-2 py-2">
 			<div style={{ flex: 1 }} />
 			<TooltipProvider>
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={handleExportClick}
-						>
+						<Button variant="ghost" size="sm" onClick={onExportCsv}>
 							<FileDown className="mr-1.5 size-4" />
 							Export
 						</Button>
@@ -58,6 +32,6 @@ export const CustomToolbar = ({
 					<TooltipContent>Export CSV</TooltipContent>
 				</Tooltip>
 			</TooltipProvider>
-		</GridToolbarContainer>
+		</div>
 	);
 };

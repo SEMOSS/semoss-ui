@@ -4,7 +4,7 @@ import {
 	SearchIcon,
 	UploadIcon,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import type { Variable } from "@semoss/renderer";
 import { STATE_VERSION } from "@semoss/renderer/version";
@@ -30,7 +30,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { AddAppModal, NewAppModal, TEMPLATES } from "@/components/app";
+import { AddAppModal, NewAppModal } from "@/components/app";
+import type { Template } from "@/components/app/templates";
 import { LandingHeader } from "@/components/landing";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
@@ -46,8 +47,15 @@ export const CreateAppPage = () => {
 
 	const { configStore } = useRootStore();
 	const [search, setSearch] = useState<string>("");
+	const [templates, setTemplates] = useState<Template[]>([]);
+	const [isTemplatesLoading, setIsTemplatesLoading] = useState<boolean>(true);
 
 	const cleanedSearch = search.trim().toLowerCase();
+	const filteredTemplates = templates.filter(
+		(template) =>
+			template.name.toLowerCase().indexOf(cleanedSearch) !== -1 ||
+			template.description.toLowerCase().indexOf(cleanedSearch) !== -1,
+	);
 
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [newAppOptions, setNewAppOptions] = useState<
@@ -68,6 +76,33 @@ export const CreateAppPage = () => {
 
 		navigate(`/app/${appId}/edit`);
 	};
+
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadTemplates = async () => {
+			try {
+				const { TEMPLATES } = await import(
+					"@/components/app/templates"
+				);
+				if (!isMounted) {
+					return;
+				}
+
+				setTemplates(TEMPLATES);
+			} finally {
+				if (isMounted) {
+					setIsTemplatesLoading(false);
+				}
+			}
+		};
+
+		loadTemplates();
+
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	const isRestricted = !configStore.isEngineOperationAvailable(
 		"PROJECT",
@@ -189,12 +224,20 @@ export const CreateAppPage = () => {
 							</div>
 
 							<div className="grid w-full grid-cols-1 gap-4 p-2 md:grid-cols-3">
-								{TEMPLATES.filter(
-									(t) =>
-										t.name.indexOf(cleanedSearch) !== -1 ||
-										t.description.indexOf(cleanedSearch) !==
-											-1,
-								).map((template) => (
+								{isTemplatesLoading ? (
+									<div className="col-span-full p-4 text-muted-foreground text-sm">
+										Loading templates...
+									</div>
+								) : null}
+
+								{!isTemplatesLoading &&
+								filteredTemplates.length === 0 ? (
+									<div className="col-span-full p-4 text-muted-foreground text-sm">
+										No templates match your search.
+									</div>
+								) : null}
+
+								{filteredTemplates.map((template) => (
 									<Card
 										key={template.name}
 										className="relative w-full pt-0"

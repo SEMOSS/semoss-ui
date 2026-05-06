@@ -26,7 +26,7 @@ import {
 import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/pages/import";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 import { EngineAccessButton } from ".";
 

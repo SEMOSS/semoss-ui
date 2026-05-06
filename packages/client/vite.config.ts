@@ -37,6 +37,37 @@ export default defineConfig(({ mode }) => {
 				output: {
 					manualChunks(id: string) {
 						if (
+							id.includes("/src/pages/import/import.constants.ts")
+						) {
+							return "import-constants";
+						}
+						if (
+							id.includes(
+								"/src/components/import/model/model-import.constants.ts",
+							)
+						) {
+							return "model-import-constants";
+						}
+						if (
+							id.includes(
+								"/src/shared/constants/engine-images.constants.ts",
+							) ||
+							id.includes(
+								"/src/shared/constants/sidebar-menu.constants.ts",
+							)
+						) {
+							return "icon-assets";
+						}
+						if (id.includes("/node_modules/flexlayout-react/")) {
+							return "vendor-flexlayout";
+						}
+						if (
+							id.includes("/node_modules/@xyflow/react/") ||
+							id.includes("/node_modules/@xyflow/system/")
+						) {
+							return "vendor-xyflow";
+						}
+						if (
 							id.includes("/node_modules/react/") ||
 							id.includes("/node_modules/react-dom/") ||
 							id.includes("/node_modules/scheduler/")
@@ -54,12 +85,6 @@ export default defineConfig(({ mode }) => {
 							id.includes("/node_modules/mobx-react-lite/")
 						) {
 							return "vendor-mobx";
-						}
-						if (
-							id.includes("/node_modules/@mui/") ||
-							id.includes("/node_modules/@emotion/")
-						) {
-							return "vendor-mui";
 						}
 					},
 				},
@@ -101,7 +126,7 @@ export default defineConfig(({ mode }) => {
 						include: ["vitest-canvas-mock"],
 					},
 				},
-				external: ["@semoss/ui", "@semoss/sdk"],
+				external: ["@semoss/ui/next", "@semoss/sdk"],
 			},
 			browser: {
 				enabled: false,

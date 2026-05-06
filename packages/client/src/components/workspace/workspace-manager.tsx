@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { ClosePage } from "@/assets/img/ClosePage";
 import { FlexLayout } from "@/components/flex-layout";
 import { useTabBarScroll, useWorkspace } from "@/hooks";
-import { SIDEBAR_MENU } from "@/pages/import/import.constants";
+import { SIDEBAR_MENU } from "@/shared/constants/sidebar-menu.constants";
 import type { WorkspaceOptions } from "@/stores";
 import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";

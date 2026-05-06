@@ -35,9 +35,9 @@ import {
 } from "@semoss/ui/next";
 import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
-import GOOGLE from "@/assets/img/google.png";
+import GOOGLE from "@/assets/img/GOOGLE.svg";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/pages/import";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 
 /**
@@ -550,13 +550,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								>
 									{name}
 								</P>
-								{sub_type === "EMBEDDED" && (
-									<img
-										src={GOOGLE}
-										alt="Google"
-										className="size-5 flex-shrink-0 object-cover"
-									/>
-								)}
 							</div>
 							<div className="flex min-w-0 items-center gap-1">
 								<P

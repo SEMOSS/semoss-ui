@@ -60,7 +60,7 @@
     --size-mini-scroll-indicator: 3px;
     --color-toolbar-button-hover: var(--color-3);
     --font-size: medium;
-    --font-family: Roboto, Arial, sans-serif;
+    --font-family: var(--font-sans, "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
     background-color: var(--color-background);
     bottom: 0;
     display: flex;
@@ -299,7 +299,7 @@
     --color-background: transparent;
     --color-tabset-background: transparent;
     --color-tabset-background-selected: transparent;
-    --font-family: 'Inter', sans-serif;
+    --font-family: var(--font-sans, "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
     --font-size: 0.875rem;
     --smss-tab-border-radius: 4px;
 }
