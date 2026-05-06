@@ -19,12 +19,18 @@ export const CustomToolbar = ({
 	onExportCsv,
 }: CustomToolbarProps) => {
 	return (
-		<div className="flex items-center gap-2 border-b px-2 py-2">
+		<div
+			className="flex items-center gap-2 border-b px-2 py-2"
+		>
 			<div style={{ flex: 1 }} />
 			<TooltipProvider>
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<Button variant="ghost" size="sm" onClick={onExportCsv}>
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={onExportCsv}
+						>
 							<FileDown className="mr-1.5 size-4" />
 							Export
 						</Button>
