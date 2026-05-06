@@ -12,6 +12,7 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
 
+import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -127,31 +128,45 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	 * Functions
 	 */
 	const handlePrompt = async (prompt: string, files: File[]) => {
-		// If there are dismissed pending askUser tools, route the text input
-		// through normal chat after cancelling the pending tool calls.
+		// Cancel dismissed askUser tools before sending the new message
 		if (askUserDismissed && pendingAskUserTools.length > 0) {
-			await Promise.all(
-				pendingAskUserTools.map(async (tool) => {
-					const messageId = tool.toolCallMessage?.id;
-					if (!messageId) {
-						return;
-					}
+			for (const tool of pendingAskUserTools) {
+				const messageId = tool.toolCallMessage?.id;
+				if (!messageId) continue;
 
-					const params = (tool.parameters || {}) as Record<
-						string,
-						unknown
-					>;
-					await room.processTool(
-						messageId,
-						tool.id,
-						"",
-						"cancelled",
-						{
-							...params,
-						},
+				const params = (tool.parameters || {}) as Record<
+					string,
+					unknown
+				>;
+				const cancelResponse =
+					"The user declined to answer this question and sent a different message instead.";
+
+				try {
+					await room.runRoomPixel(
+						`AddPlaygroundToolExecution(
+engine=["${room.model.app_id}"],
+roomId = ["${room.roomId}"],
+parentMessageId=["${messageId}"],
+toolId = ["${tool.id}"],
+toolName=["askUser"],
+toolExecutionResponse=["<encode>${cancelResponse}</encode>"],
+paramValues=[${JSON.stringify({})}],
+mcpToolStatus="cancelled",
+toolParameterValues=[${JSON.stringify(params)}]
+);`,
+						false,
+						false,
 					);
-				}),
-			);
+				} catch (e) {
+					console.error("Failed to cancel askUser tool:", e);
+				}
+
+				// Update local state
+				runInAction(() => {
+					tool.response = cancelResponse;
+					tool.status = "CANCELLED";
+				});
+			}
 
 			setAskUserDismissed(false);
 		}

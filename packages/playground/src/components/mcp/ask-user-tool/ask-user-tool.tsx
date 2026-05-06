@@ -127,21 +127,24 @@ export const AskUserTool: React.FC<AskUserToolProps> = observer(
 			}
 		};
 
-		/** Clicking an option selects it and clears custom text */
-		const handleOptionClick = (value: string) => {
-			if (!activeTool) return;
+		/** Clicking an option auto-submits the answer */
+		const handleOptionClick = async (value: string) => {
+			if (!activeTool || isSubmitting || !messageId) return;
 
-			// If not using options with freeform, submit immediately
 			updateDraft({ selectedOption: value, textValue: "" });
-			// Auto-submit when clicking an option (no need for extra step)
-			if (!isSubmitting && messageId && activeTool) {
-				setIsSubmitting(true);
-				room.processTool(messageId, activeTool.id, value, "success", {
-					...params,
-					user_response: value,
-				})
-					.catch((e) => console.error("askUser submit failed:", e))
-					.finally(() => setIsSubmitting(false));
+			setIsSubmitting(true);
+			try {
+				await room.processTool(
+					messageId,
+					activeTool.id,
+					value,
+					"success",
+					{ ...params, user_response: value },
+				);
+			} catch (e) {
+				console.error("askUser submit failed:", e);
+			} finally {
+				setIsSubmitting(false);
 			}
 		};
 
