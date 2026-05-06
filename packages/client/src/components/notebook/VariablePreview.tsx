@@ -1,4 +1,3 @@
-import { JsonViewer } from "@textea/json-viewer";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import {
@@ -8,6 +7,7 @@ import {
 	type Variable,
 } from "@semoss/renderer";
 import { Separator } from "@semoss/ui/next";
+import { JsonValueViewer } from "@/components/common/JsonValueViewer";
 import { capitalizeFirstLetter, isOutputJSON } from "@/utility";
 import PreviewButton from "../../assets/img/PreviewRounded.png";
 
@@ -104,13 +104,7 @@ export const VariablePreview = observer(
 				const found = state.parseVariable(`{{${id}}}`);
 				const value = isOutputJSON(found);
 				if (value != null) {
-					return (
-						<JsonViewer
-							value={value}
-							displayComma={true}
-							rootName={false}
-						/>
-					);
+					return <JsonValueViewer value={value} />;
 				} else {
 					return (
 						<span className="text-muted-foreground text-sm">
