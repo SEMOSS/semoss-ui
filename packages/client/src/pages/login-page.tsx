@@ -22,6 +22,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { setupResetPassword } from "@/api/auth";
+import { AgentNetworkViz } from "@/components/landing/agent-network-viz";
 import { useRootStore } from "@/hooks";
 import {
 	getLoginProviderInitials,
@@ -48,38 +49,6 @@ interface TypeUserRegister {
 	PASSWORD_CONFIRMATION: "";
 }
 
-const LOGIN_ROLE_OUTCOMES = [
-	{
-		title: "Analysts",
-		description: "Go from raw data to trusted dashboards without handoffs.",
-	},
-	{
-		title: "Engineers",
-		description: "Orchestrate models, APIs, and workflows in one runtime.",
-	},
-	{
-		title: "Operations",
-		description:
-			"Secure, monitor, and scale delivery with full visibility.",
-	},
-] as const;
-const LOGIN_WHY_CHOOSE_US = [
-	{
-		title: "Build faster",
-		description:
-			"Compose notebooks, apps, and automations from one workspace.",
-	},
-	{
-		title: "Govern centrally",
-		description:
-			"Apply enterprise authentication and access controls across teams.",
-	},
-	{
-		title: "Deploy confidently",
-		description:
-			"Ship with reusable pipelines and production-ready workflows.",
-	},
-] as const;
 const LOGIN_PASSWORD_RESET_TYPES = ["native", "ldap", "linotp"] as const;
 type LoginPasswordResetType = (typeof LOGIN_PASSWORD_RESET_TYPES)[number];
 type LoginPasswordResetApiType = "NATIVE" | "LDAP" | "LINOTP";
@@ -1486,70 +1455,43 @@ export const LoginPage = observer(() => {
 								experience.
 							</p>
 						</div>
-						<div className="mt-8 mb-4 w-full max-w-xl space-y-5 text-white/92 xl:mb-6">
-							<div className="space-y-2.5">
-								<p className="font-semibold text-white/75 text-xs uppercase tracking-[0.12em]">
-									Made For
-								</p>
-								<ul className="space-y-2.5 text-[15px]">
-									{LOGIN_ROLE_OUTCOMES.map((item, index) => (
-										<li
-											key={item.title}
-											className="flex items-start gap-3"
-											style={{
-												opacity: 0,
-												animation:
-													"loginFeaturePillFadeUp 520ms ease-out forwards",
-												animationDelay: `${index * 100}ms`,
-											}}
-										>
-											<span
-												aria-hidden
-												className="mt-[0.52rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/80"
-											/>
-											<span className="leading-relaxed">
-												<span className="font-semibold text-white">
-													{item.title}
-												</span>
-												{": "}
-												{item.description}
-											</span>
-										</li>
-									))}
-								</ul>
-							</div>
-							<div className="h-px w-full bg-white/25" />
-							<div className="space-y-2.5">
-								<p className="font-semibold text-white/75 text-xs uppercase tracking-[0.12em]">
-									Built To
-								</p>
-								<ul className="space-y-2.5 text-[15px]">
-									{LOGIN_WHY_CHOOSE_US.map((item, index) => (
-										<li
-											key={item.title}
-											className="flex items-start gap-3"
-											style={{
-												opacity: 0,
-												animation:
-													"loginFeaturePillFadeUp 520ms ease-out forwards",
-												animationDelay: `${(index + 3) * 100}ms`,
-											}}
-										>
-											<span
-												aria-hidden
-												className="mt-[0.52rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/80"
-											/>
-											<span className="leading-relaxed">
-												<span className="font-semibold text-white">
-													{item.title}
-												</span>
-												{": "}
-												{item.description}
-											</span>
-										</li>
-									))}
-								</ul>
-							</div>
+						<ul className="mt-3 space-y-3">
+							{[
+								{
+									title: "Agentic Workflows",
+									desc: "Autonomous multi-step reasoning across tools and data",
+								},
+								{
+									title: "MCP Integration",
+									desc: "Native Model Context Protocol support for any tool",
+								},
+								{
+									title: "Governed Access",
+									desc: "Enterprise security, compliance, and audit built in",
+								},
+							].map((b) => (
+								<li
+									key={b.title}
+									className="flex items-start gap-3"
+								>
+									<span
+										aria-hidden
+										className="mt-[0.45rem] h-1.5 w-1.5 shrink-0 rounded-full bg-white/70"
+									/>
+									<span className="text-sm leading-snug">
+										<span className="font-semibold text-white">
+											{b.title}
+										</span>
+										<span className="text-white/70">
+											{" — "}
+											{b.desc}
+										</span>
+									</span>
+								</li>
+							))}
+						</ul>
+						<div className="flex flex-1 items-center justify-center">
+							<AgentNetworkViz className="w-full" />
 						</div>
 					</div>
 				</aside>
