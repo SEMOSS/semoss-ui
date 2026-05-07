@@ -127,18 +127,19 @@ describe("CodeCell", () => {
 
 	it("should have code parameter set correctly", () => {
 		const { codeCell } = createCodeCellStore();
+		const params = codeCell.parameters as Record<string, unknown>;
 
-		expect(codeCell.parameters.code).toBe("print('test')");
-		expect(codeCell.parameters.language).toBe("python");
+		expect(params.code).toBe("print('test')");
+		expect(params.language).toBe("python");
 	});
 
 	it("should have target cell reference configured", () => {
 		const { codeCell } = createCodeCellStore();
+		const params = codeCell.parameters as Record<string, unknown>;
+		const targetCell = params.targetCell as Record<string, unknown>;
 
-		expect(codeCell.parameters.targetCell).toBeDefined();
-		expect(codeCell.parameters.targetCell.id).toBe("1");
-		expect(codeCell.parameters.targetCell.frameVariableName).toBe(
-			"sourceFrame",
-		);
+		expect(targetCell).toBeDefined();
+		expect(targetCell.id).toBe("1");
+		expect(targetCell.frameVariableName).toBe("sourceFrame");
 	});
 });

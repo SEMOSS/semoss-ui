@@ -28,6 +28,12 @@
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src"],
+	"include": [
+		"src/index.ts",
+		"src/hooks/**/*",
+		"src/lib/**/*",
+		"src/next/**/*",
+		"src/styles/**/*"
+	],
 	"exclude": ["dist", "node_modules", "**/*.spec.ts"]
 }

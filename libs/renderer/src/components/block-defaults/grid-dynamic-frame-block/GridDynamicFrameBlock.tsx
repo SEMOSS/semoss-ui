@@ -1,7 +1,29 @@
-// biome-ignore-all lint/a11y/noStaticElementInteractions: DataGrid renderCell content — keyboard events handled by DataGrid
-import { DataGrid } from "@mui/x-data-grid";
+// biome-ignore-all lint/a11y/noStaticElementInteractions: table cell context menu — keyboard events not applicable
+
+import {
+	ArrowDown,
+	ArrowUp,
+	ArrowUpDown,
+	ChevronLeft,
+	ChevronRight,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
+import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@semoss/ui/next";
+import { getContextMenuPosition } from "@/components/shared/common";
 import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
 import { GridBlockContextMenu } from "../grid-block/GridBlockContextMenu";
@@ -84,7 +106,6 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 		limit: paginationModel.pageSize,
 		enableCount: true,
 	});
-
 	// When headers come from user upload
 	const frameHeaders = useFrameHeaders(data.frame.name);
 
@@ -99,7 +120,7 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 				syncBlockDataColumns(frameHeaders);
 			}
 		}
-	}, [frameHeaders.data.list]);
+	}, [frameHeaders?.data?.list]);
 
 	/**
 	 * Updates data.columns
@@ -130,13 +151,16 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 	) => {
 		// prevent the default interaction
 		event.preventDefault();
-
+		const { finalMouseX, finalMouseY } = getContextMenuPosition(
+			event.clientX + 2,
+			event.clientY - 6,
+		);
 		// open the menu and save the data
 		setContextMenu(
 			contextMenu === null
 				? {
-						mouseX: event.clientX + 2,
-						mouseY: event.clientY - 6,
+						mouseX: finalMouseX,
+						mouseY: finalMouseY,
 						column: column,
 						value: value,
 					}
@@ -147,44 +171,74 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 		);
 	};
 
-	const columns = data.columns.map((col) => ({
-		field: col.name,
-		headerName: col.name,
-		sortable: false,
-		renderHeader: () => <div style={{ padding: "8px" }}>{col.name}</div>,
-		renderCell: (params) => {
-			return (
-				<div
-					style={{ padding: "8px" }}
-					onContextMenu={(e) =>
-						handleTableCellOnContextMenu(e, col, params.value)
-					}
-				>
-					{params.value}
-				</div>
-			);
-		},
-	}));
+	const [sortConfig, setSortConfig] = useState<{
+		field: string;
+		direction: "asc" | "desc";
+	} | null>(null);
+
+	const handleSort = (field: string) => {
+		setSortConfig((prev) => {
+			if (prev?.field === field) {
+				if (prev.direction === "asc") {
+					return { field, direction: "desc" };
+				}
+				return null;
+			}
+			return { field, direction: "asc" };
+		});
+	};
 
 	const rows = frame.data.values.map((r, idx) => {
 		const obj: Record<string, unknown> = { id: idx };
-		columns.forEach((c, cIdx) => {
-			obj[c.field] = r[cIdx];
+		data.columns.forEach((c, cIdx) => {
+			obj[c.name] = r[cIdx];
 		});
 		return obj;
 	});
 
-	const handlePaginationModalChange = (newmodel) => {
-		// if the page size has changed reset the page
+	const sortedRows = useMemo(() => {
+		if (!sortConfig) return rows;
+		return [...rows].sort((a, b) => {
+			const aVal = a[sortConfig.field];
+			const bVal = b[sortConfig.field];
+			if (aVal == null && bVal == null) return 0;
+			if (aVal == null) return 1;
+			if (bVal == null) return -1;
+			if (typeof aVal === "number" && typeof bVal === "number") {
+				return sortConfig.direction === "asc"
+					? aVal - bVal
+					: bVal - aVal;
+			}
+			const aStr = String(aVal);
+			const bStr = String(bVal);
+			const cmp = aStr.localeCompare(bStr);
+			return sortConfig.direction === "asc" ? cmp : -cmp;
+		});
+	}, [rows, sortConfig]);
+
+	const handlePaginationModalChange = (newmodel: {
+		page: number;
+		pageSize: number;
+	}) => {
 		if (newmodel.pageSize !== paginationModel.pageSize) {
-			setPaginationModel({
-				page: 0,
-				pageSize: newmodel.pageSize,
-			});
+			setPaginationModel({ page: 0, pageSize: newmodel.pageSize });
 		} else {
 			setPaginationModel(newmodel);
 		}
 	};
+
+	// Pagination display values
+	const totalRows = frame.count ?? 0;
+	const startRow =
+		totalRows > 0 ? paginationModel.page * paginationModel.pageSize + 1 : 0;
+	const endRow = Math.min(
+		(paginationModel.page + 1) * paginationModel.pageSize,
+		totalRows,
+	);
+	const totalPages = Math.max(
+		1,
+		Math.ceil(totalRows / paginationModel.pageSize),
+	);
 
 	return (
 		<div
@@ -197,44 +251,159 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 			}}
 			{...attrs}
 		>
-			<div style={{ flex: 1, width: "100%", height: "100%" }}>
-				<DataGrid
-					rows={rows}
-					columns={columns}
-					pagination
-					density="compact"
-					paginationMode="server"
-					rowCount={frame.count}
-					paginationModel={paginationModel}
-					onPaginationModelChange={handlePaginationModalChange}
-					pageSizeOptions={[10, 50, 100]}
-					columnHeaderHeight={50}
-					disableColumnMenu
-					disableRowSelectionOnClick
-					disableColumnSorting
-					sx={{
-						borderRadius: "0",
-						"& .MuiDataGrid-columnHeaderTitleContainer": {
-							fontWeight: "bold",
-						},
-						"& .MuiDataGrid-columnHeader": {
-							padding: "0px",
-						},
-						"& .MuiDataGrid-columnHeaderTitleContainerContent": {
-							width: "100%",
-						},
-						"& .MuiDataGrid-cell": {
-							padding: "0px",
-						},
-					}}
-				/>
+			<div
+				className="flex flex-col border"
+				style={{ flex: 1, width: "100%", height: "100%" }}
+			>
+				{/* Table */}
+				<div className="relative flex-1 overflow-auto">
+					<Table className="min-w-full">
+						<TableHeader>
+							<TableRow className="hover:bg-transparent">
+								{data.columns.map((col) => (
+									<TableHead
+										key={col.name}
+										className="sticky top-0 z-10 cursor-pointer select-none bg-background"
+										style={{ height: 50, padding: 0 }}
+										onClick={() => handleSort(col.name)}
+									>
+										<div
+											className="flex items-center gap-1"
+											style={{
+												padding: "8px",
+												width: "100%",
+												fontWeight: "bold",
+											}}
+										>
+											{col.name}
+											{sortConfig?.field === col.name ? (
+												sortConfig.direction ===
+												"asc" ? (
+													<ArrowUp className="size-3.5 shrink-0" />
+												) : (
+													<ArrowDown className="size-3.5 shrink-0" />
+												)
+											) : (
+												<ArrowUpDown className="size-3.5 shrink-0 opacity-30" />
+											)}
+										</div>
+									</TableHead>
+								))}
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{sortedRows.length > 0 &&
+								sortedRows.map((row) => (
+									<TableRow key={row.id as number}>
+										{data.columns.map((col) => {
+											const cellValue = row[col.name];
+											return (
+												<TableCell
+													key={col.name}
+													className="p-0"
+												>
+													<div
+														style={{
+															padding: "8px",
+														}}
+														onContextMenu={(e) =>
+															handleTableCellOnContextMenu(
+																e,
+																col,
+																cellValue,
+															)
+														}
+													>
+														{cellValue != null
+															? String(cellValue)
+															: ""}
+													</div>
+												</TableCell>
+											);
+										})}
+									</TableRow>
+								))}
+						</TableBody>
+					</Table>
+					{sortedRows.length === 0 && (
+						<div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+							<span className="text-lg text-muted-foreground">
+								No rows
+							</span>
+						</div>
+					)}
+				</div>
+
+				{/* Pagination */}
+				<div className="flex items-center justify-between border-t px-3 py-1.5 text-sm">
+					<div className="flex items-center gap-2">
+						<span className="text-muted-foreground">
+							Rows per page:
+						</span>
+						<Select
+							value={String(paginationModel.pageSize)}
+							onValueChange={(val) =>
+								handlePaginationModalChange({
+									page: 0,
+									pageSize: Number(val),
+								})
+							}
+						>
+							<SelectTrigger size="sm" className="w-16">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{[10, 50, 100].map((size) => (
+									<SelectItem key={size} value={String(size)}>
+										{size}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<span className="text-muted-foreground">
+						{startRow}–{endRow} of {totalRows}
+					</span>
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="size-8"
+							disabled={paginationModel.page === 0}
+							onClick={() =>
+								handlePaginationModalChange({
+									page: paginationModel.page - 1,
+									pageSize: paginationModel.pageSize,
+								})
+							}
+						>
+							<ChevronLeft className="size-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="size-8"
+							disabled={paginationModel.page >= totalPages - 1}
+							onClick={() =>
+								handlePaginationModalChange({
+									page: paginationModel.page + 1,
+									pageSize: paginationModel.pageSize,
+								})
+							}
+						>
+							<ChevronRight className="size-4" />
+						</Button>
+					</div>
+				</div>
+				<div style={{ display: "inline" }}>
+					<GridBlockContextMenu
+						id={id}
+						frame={frame}
+						contextMenu={contextMenu}
+						onClose={() => setContextMenu(null)}
+					/>
+				</div>
 			</div>
-			<GridBlockContextMenu
-				id={id}
-				frame={frame}
-				contextMenu={contextMenu}
-				onClose={() => setContextMenu(null)}
-			/>
 		</div>
 	);
 });

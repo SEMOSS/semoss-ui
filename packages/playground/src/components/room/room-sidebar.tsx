@@ -1,75 +1,27 @@
 import {
-	FileArchiveIcon,
-	FileAudioIcon,
-	FileBadgeIcon,
-	FileChartPieIcon,
-	FileCodeIcon,
-	FileIcon,
-	FileJsonIcon,
-	FileSpreadsheetIcon,
-	FileTerminalIcon,
-	FileTextIcon,
-	FileTypeIcon,
-	FileVideoIcon,
 	FolderTreeIcon,
 	HammerIcon,
-	ImageIcon,
 	MonitorXIcon,
 	PanelBottomIcon,
 	Settings2Icon,
 	TvMinimalIcon,
 	XIcon,
 } from "lucide-react";
-
-const getFileTabIcon = (fileName: string) => {
-	const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
-	if (
-		["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "img"].includes(ext)
-	)
-		return <ImageIcon className="size-4 text-foreground" />;
-	if (ext === "pdf")
-		return <FileBadgeIcon className="size-4 text-foreground" />;
-	if (["xls", "xlsx", "csv"].includes(ext))
-		return <FileSpreadsheetIcon className="size-4 text-foreground" />;
-	if (
-		[
-			"py",
-			"js",
-			"ts",
-			"tsx",
-			"jsx",
-			"java",
-			"cpp",
-			"c",
-			"go",
-			"rs",
-		].includes(ext)
-	)
-		return <FileCodeIcon className="size-4 text-foreground" />;
-	if (["sh", "bash", "zsh", "bat", "ps1"].includes(ext))
-		return <FileTerminalIcon className="size-4 text-foreground" />;
-	if (ext === "json")
-		return <FileJsonIcon className="size-4 text-foreground" />;
-	if (["zip", "tar", "gz", "rar", "7z"].includes(ext))
-		return <FileArchiveIcon className="size-4 text-foreground" />;
-	if (["ppt", "pptx"].includes(ext))
-		return <FileChartPieIcon className="size-4 text-foreground" />;
-	if (["mp3", "wav", "ogg", "flac", "aac"].includes(ext))
-		return <FileAudioIcon className="size-4 text-foreground" />;
-	if (["mp4", "mov", "avi", "mkv", "webm"].includes(ext))
-		return <FileVideoIcon className="size-4 text-foreground" />;
-	if (["html", "xml", "md", "mdx", "rtf"].includes(ext))
-		return <FileTypeIcon className="size-4 text-foreground" />;
-	if (["doc", "docx", "msg", "txt"].includes(ext))
-		return <FileTextIcon className="size-4 text-foreground" />;
-	return <FileIcon className="size-4 text-foreground" />;
-};
-
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
-import { FlexLayout } from "@semoss/shared";
+import {
+	FlexLayout,
+	getFileIconComponent,
+	useTabBarScroll,
+} from "@semoss/shared";
+
+const getFileTabIcon = (fileName: string) => {
+	const Icon = getFileIconComponent(fileName);
+	return <Icon className="size-4 text-foreground" />;
+};
+
 import {
 	Button,
 	Separator,
@@ -147,54 +99,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 		}
 	}
 
-	/**
-	 * Support smooth tab-strip scrolling on devices that emit horizontal wheel deltas (Mac trackpads).
-	 */
-	useEffect(() => {
-		const container = sidebarRef.current;
-		if (!container) {
-			return;
-		}
-
-		const onWheel = (event: WheelEvent) => {
-			const target = event.target;
-			if (!(target instanceof Element)) {
-				return;
-			}
-
-			const tabBar = target.closest(
-				".flexlayout__tabset_tabbar_inner",
-			) as HTMLElement | null;
-			if (!tabBar || !container.contains(tabBar)) {
-				return;
-			}
-
-			if (tabBar.scrollWidth <= tabBar.clientWidth) {
-				return;
-			}
-
-			const delta =
-				Math.abs(event.deltaX) > Math.abs(event.deltaY)
-					? event.deltaX
-					: event.deltaY;
-			if (delta === 0) {
-				return;
-			}
-
-			tabBar.scrollLeft += delta;
-			event.preventDefault();
-			event.stopPropagation();
-		};
-
-		container.addEventListener("wheel", onWheel, {
-			capture: true,
-			passive: false,
-		});
-
-		return () => {
-			container.removeEventListener("wheel", onWheel, true);
-		};
-	}, []);
+	useTabBarScroll(sidebarRef);
 
 	useEffect(() => {
 		const container = sidebarRef.current;

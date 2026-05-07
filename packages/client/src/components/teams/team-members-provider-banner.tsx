@@ -6,30 +6,33 @@ import {
 	CardDescription,
 	CardTitle,
 } from "@semoss/ui/next";
-import AMAZON_S3 from "@/assets/loginProviders/AMAZON_S3.png";
-import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
-import Dropbox from "@/assets/loginProviders/DROPBOX.png";
-import Github from "@/assets/loginProviders/github.png";
-import Gitlab from "@/assets/loginProviders/gitlab.png";
-import newGoogle from "@/assets/loginProviders/google.png";
-import Keycloak from "@/assets/loginProviders/keycloak.png";
-import Linkedin from "@/assets/loginProviders/linkedin.png";
+import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
+import Dropbox from "@/assets/img/DROPBOX.png";
+import Github from "@/assets/img/GITHUB.svg";
+import newGoogle from "@/assets/img/GOOGLE.svg";
+import CAC from "@/assets/loginProviders/CAC.svg";
+import Generic from "@/assets/loginProviders/GENERIC.svg";
+import Gitlab from "@/assets/loginProviders/GITLAB.svg";
+import Keycloak from "@/assets/loginProviders/KEYCLOAK.svg";
+import Linkedin from "@/assets/loginProviders/LINKEDIN.svg";
 import Microsoft from "@/assets/loginProviders/MICROSOFT.png";
-import Okta from "@/assets/loginProviders/okta.png";
+import Okta from "@/assets/loginProviders/OKTA.svg";
 import ProductHunt from "@/assets/loginProviders/product_hunt.png";
-import Salesforce from "@/assets/loginProviders/salesforce.png";
+import Salesforce from "@/assets/loginProviders/SALESFORCE.svg";
+import Surverymonkey from "@/assets/loginProviders/SURVEYMONKEY.svg";
 import Saml from "@/assets/loginProviders/saml.png";
 import Siteminder from "@/assets/loginProviders/siteminder.png";
-import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
-import Twitter from "@/assets/loginProviders/x_twitter.png";
+import Twitter from "@/assets/loginProviders/X_TWITTER.svg";
 
 const TypeImageObject = {
 	native: AMAZON_S3,
 	google: newGoogle,
 	github: Github,
 	okta: Okta,
+	cac: CAC,
 	dropbox: Dropbox,
-	adfs: ADFS,
+	adfs: Microsoft,
+	generic: Generic,
 	gitlab: Gitlab,
 	keycloak: Keycloak,
 	linkedin: Linkedin,

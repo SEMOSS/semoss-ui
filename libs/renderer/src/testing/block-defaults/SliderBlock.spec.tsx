@@ -1,6 +1,14 @@
-import { expect } from "vitest";
+import { expect, vi } from "vitest";
 import { SliderBlock } from "../../components/block-defaults/slider-block/SliderBlock";
-import { render, screen } from "../utils";
+import { render } from "../utils";
+
+// Radix Slider uses ResizeObserver internally
+class ResizeObserverMock {
+	observe = vi.fn();
+	unobserve = vi.fn();
+	disconnect = vi.fn();
+}
+vi.stubGlobal("ResizeObserver", ResizeObserverMock);
 
 const blocks = {
 	slider: {
@@ -61,12 +69,12 @@ describe("slider block", () => {
 			blocks: blocks,
 		});
 
-		const buttonElement = container.querySelector(
-			"[data-block='slider'] input",
+		const sliderElement = container.querySelector(
+			"[data-block='slider'] [role='slider']",
 		);
 
-		expect(buttonElement).toBeInTheDocument();
-		expect(screen.getByText("50")).toBeInTheDocument();
+		expect(sliderElement).toBeInTheDocument();
+		expect(sliderElement).toHaveAttribute("aria-valuenow", "50");
 	});
 
 	it("renders discrete correctly with mocked provider", async () => {
@@ -74,10 +82,13 @@ describe("slider block", () => {
 			blocks: blocks,
 		});
 
-		const markElement = container.querySelector("[style='left: 40%;']");
+		const sliderElement = container.querySelector(
+			"[data-block='slider2'] [role='slider']",
+		);
 
-		expect(markElement).toBeInTheDocument();
-		expect(screen.getByText("40")).toBeInTheDocument();
-		expect(screen.getByText("50")).toBeInTheDocument();
+		expect(sliderElement).toBeInTheDocument();
+		expect(sliderElement).toHaveAttribute("aria-valuenow", "50");
+		expect(sliderElement).toHaveAttribute("aria-valuemin", "0");
+		expect(sliderElement).toHaveAttribute("aria-valuemax", "100");
 	});
 });
