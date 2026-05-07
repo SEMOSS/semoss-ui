@@ -1,4 +1,12 @@
-import { FilePenIcon, ImageIcon, SearchIcon } from "lucide-react";
+import {
+	FileImageIcon,
+	FilePenIcon,
+	ImageIcon,
+	MoveDownIcon,
+	MoveUpIcon,
+	SearchIcon,
+	TypeIcon,
+} from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
@@ -50,10 +58,27 @@ const getTags = (engine: Engine): string[] => {
 	return [];
 };
 
-/** Icon + human label for known capability tags. */
-const TAG_CONFIG: Record<string, { icon: React.ElementType; label: string }> = {
-	"text-generation": { icon: FilePenIcon, label: "Text Generation" },
-	"image-generation": { icon: ImageIcon, label: "Image Generation" },
+/** Icon + human label + direction for known capability tags. */
+const TAG_CONFIG: Record<
+	string,
+	{ icon: React.ElementType; label: string; direction: "input" | "output" }
+> = {
+	"text-generation": {
+		icon: FilePenIcon,
+		label: "Text Generation",
+		direction: "output",
+	},
+	"image-generation": {
+		icon: ImageIcon,
+		label: "Image Generation",
+		direction: "output",
+	},
+	"text-input": { icon: TypeIcon, label: "Text Input", direction: "input" },
+	"image-input": {
+		icon: FileImageIcon,
+		label: "Image Input",
+		direction: "input",
+	},
 };
 
 // ============================================================================
@@ -86,7 +111,7 @@ const EngineCard: React.FC<EngineCardProps> = ({
 		>
 			<CardContent className="space-y-2 p-4">
 				{/* Name */}
-				<div className="wrap-break-word min-w-0 font-semibold text-sm leading-tight">
+				<div className="line-clamp-2 min-w-0 font-semibold text-sm leading-tight">
 					{displayName}
 				</div>
 
@@ -116,25 +141,48 @@ const EngineCard: React.FC<EngineCardProps> = ({
 						{(() => {
 							const tags = getTags(engine);
 							const known = tags.filter((t) => TAG_CONFIG[t]);
+							// Sort: text-* before image-* (reverse alpha on tag name)
+							known.sort((a, b) => b.localeCompare(a));
+							const inputs = known.filter(
+								(t) => TAG_CONFIG[t].direction === "input",
+							);
+							const outputs = known.filter(
+								(t) => TAG_CONFIG[t].direction === "output",
+							);
 							if (known.length === 0) return null;
+
+							const renderPills = (tagList: string[]) =>
+								tagList.map((tag) => {
+									const { icon: Icon, label } =
+										TAG_CONFIG[tag];
+									return (
+										<Tooltip key={tag}>
+											<TooltipTrigger asChild>
+												<div className="flex items-center justify-center rounded-full border border-border bg-muted p-1.5 text-muted-foreground">
+													<Icon className="size-3" />
+												</div>
+											</TooltipTrigger>
+											<TooltipContent>
+												{label}
+											</TooltipContent>
+										</Tooltip>
+									);
+								});
+
 							return (
-								<div className="flex flex-wrap gap-1">
-									{known.map((tag) => {
-										const { icon: Icon, label } =
-											TAG_CONFIG[tag];
-										return (
-											<Tooltip key={tag}>
-												<TooltipTrigger asChild>
-													<div className="flex items-center justify-center rounded-full border border-border bg-muted p-1.5 text-muted-foreground">
-														<Icon className="size-3" />
-													</div>
-												</TooltipTrigger>
-												<TooltipContent>
-													{label}
-												</TooltipContent>
-											</Tooltip>
-										);
-									})}
+								<div className="flex flex-wrap items-center gap-1">
+									{inputs.length > 0 && (
+										<>
+											<MoveDownIcon className="size-2.5 shrink-0 text-muted-foreground" />
+											{renderPills(inputs)}
+										</>
+									)}
+									{outputs.length > 0 && (
+										<>
+											<MoveUpIcon className="size-2.5 shrink-0 text-muted-foreground" />
+											{renderPills(outputs)}
+										</>
+									)}
 								</div>
 							);
 						})()}
@@ -142,7 +190,7 @@ const EngineCard: React.FC<EngineCardProps> = ({
 				</div>
 
 				{/* Description */}
-				<div className="text-muted-foreground text-xs">
+				<div className="line-clamp-2 text-muted-foreground text-xs">
 					{engine.description || "No description available."}
 				</div>
 			</CardContent>
