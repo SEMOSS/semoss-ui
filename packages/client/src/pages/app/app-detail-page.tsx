@@ -57,6 +57,7 @@ import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
+import { getTagBadgeStyle } from "@/utility";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { AccessControl } from "./app-detail-tabs/access-control";
 import { CommitsTab } from "./app-detail-tabs/commits-tab";
@@ -788,7 +789,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											<Badge
 												key={`tag-${tag}-${tag}`}
 												variant="outline"
-												className="border-primary text-primary"
+												style={getTagBadgeStyle(tag)}
 											>
 												{tag}
 											</Badge>
