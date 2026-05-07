@@ -141,6 +141,12 @@ export interface ThemeMap {
 		allowedFileTypes?: string[];
 
 		/**
+		 * Additional URL prefixes (e.g. custom protocols) allowed in markdown link rendering.
+		 * Defaults to ["docubridge://"].
+		 */
+		allowedUrlPrefixes?: string[];
+
+		/**
 		 * Default embedding engine UUID to use when allowEmbeddingOptions is false.
 		 */
 		defaultEmbedderId?: string;

@@ -86,6 +86,7 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
+			allowedUrlPrefixes: ["docubridge://"],
 			defaultTools: [],
 			gracefulErrors: [],
 			featureFlags: {
@@ -303,6 +304,9 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			allowedUrlPrefixes:
+				theme?.allowedUrlPrefixes ||
+				this._store.theme.allowedUrlPrefixes,
 			defaultEmbedderId:
 				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
 			defaultTools: [
