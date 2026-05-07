@@ -463,6 +463,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							}}
 							filteredCatalogIds={[]}
 							hideHeaderToggleFrom="md"
+							colorizeValues
+							colorizeSelectedOnly
 						/>
 					</div>
 					<div className="flex h-full w-full flex-1 flex-col gap-6">
