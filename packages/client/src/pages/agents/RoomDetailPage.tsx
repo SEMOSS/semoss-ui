@@ -20,9 +20,12 @@ const HARNESS_COLORS: Record<string, string> = {
 	claude_code:
 		"bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
 	room_loop: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+	semoss: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400",
 	AskPlayground:
 		"bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 	github_copilot:
+		"bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+	github_copilot_py:
 		"bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
 	orchestrator:
 		"bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
@@ -129,6 +132,7 @@ export const RoomDetailPage = () => {
 						TOTAL_INPUT_TOKENS: t.TOTAL_INPUT_TOKENS ?? 0,
 						TOTAL_OUTPUT_TOKENS: t.TOTAL_OUTPUT_TOKENS ?? 0,
 						USER_PROMPT: t.USER_PROMPT ?? null,
+						AGENT_RESPONSE: t.AGENT_RESPONSE ?? null,
 					}),
 				);
 				setTraces(roomTraces);
@@ -354,21 +358,25 @@ export const RoomDetailPage = () => {
 									{isExpanded && (
 										<div className="border-border/50 border-t bg-muted/20 px-4 py-4">
 											{/* User prompt that triggered this run */}
-											{(trace as Record<string, unknown>)
-												.USER_PROMPT && (
+											{trace.USER_PROMPT && (
 												<div className="mb-3 rounded-md border border-sky-200 bg-sky-50 p-3 dark:border-sky-800 dark:bg-sky-950/30">
 													<p className="mb-1 font-semibold text-sky-700 text-xs dark:text-sky-400">
 														💬 User Prompt
 													</p>
 													<p className="text-sky-900 text-sm dark:text-sky-200">
-														{
-															(
-																trace as Record<
-																	string,
-																	unknown
-																>
-															).USER_PROMPT
-														}
+														{trace.USER_PROMPT}
+													</p>
+												</div>
+											)}
+
+											{/* Agent response */}
+											{trace.AGENT_RESPONSE && (
+												<div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
+													<p className="mb-1 font-semibold text-emerald-700 text-xs dark:text-emerald-400">
+														🤖 Agent Response
+													</p>
+													<p className="max-h-40 overflow-auto whitespace-pre-wrap text-emerald-900 text-sm dark:text-emerald-200">
+														{trace.AGENT_RESPONSE}
 													</p>
 												</div>
 											)}
@@ -490,7 +498,12 @@ export const RoomDetailPage = () => {
 														Tool Steps (
 														{steps.length})
 													</h3>
-													<SpanTree steps={steps} />
+													<SpanTree
+														steps={steps}
+														harnessName={
+															trace.HARNESS_NAME
+														}
+													/>
 												</div>
 											) : (
 												<p className="text-muted-foreground text-xs">

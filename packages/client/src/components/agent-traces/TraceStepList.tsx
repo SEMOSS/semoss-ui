@@ -1,6 +1,5 @@
 import type React from "react";
 import {
-	Badge,
 	Table,
 	TableBody,
 	TableCell,
@@ -12,6 +11,7 @@ import type { AgentTraceStep } from "./types";
 
 interface TraceStepListProps {
 	steps: AgentTraceStep[];
+	harnessName?: string;
 }
 
 function calcDurationMs(start: string, end: string): string {
@@ -31,7 +31,63 @@ const ENGINE_TYPE_COLORS: Record<string, string> = {
 		"bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300",
 };
 
-export const TraceStepList: React.FC<TraceStepListProps> = ({ steps }) => {
+/** Classifies a tool step's source for display. */
+function getToolSource(
+	step: AgentTraceStep,
+	harnessName?: string,
+): { label: string; color: string } {
+	// SDK-based harnesses — the tool was executed by an external SDK
+	if (
+		harnessName === "claude_code" ||
+		harnessName === "github_copilot" ||
+		harnessName === "github_copilot_py"
+	) {
+		const sdkLabels: Record<string, string> = {
+			claude_code: "Claude Code SDK",
+			github_copilot: "GitHub Copilot SDK",
+			github_copilot_py: "GitHub Copilot SDK",
+		};
+		return {
+			label: sdkLabels[harnessName] ?? "SDK",
+			color: "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400",
+		};
+	}
+
+	// MCP tool routed through a SEMOSS engine (DATABASE, MODEL, VECTOR, etc.)
+	if (step.IS_MCP && step.ENGINE_TYPE) {
+		return {
+			label: `Engine MCP · ${step.ENGINE_TYPE}`,
+			color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+		};
+	}
+
+	// MCP tool routed through a project/app (no ENGINE_TYPE)
+	if (step.IS_MCP && step.ENGINE_ID) {
+		return {
+			label: "App MCP",
+			color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+		};
+	}
+
+	// Internal MCP (no engine routing)
+	if (step.IS_MCP) {
+		return {
+			label: "Internal MCP",
+			color: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
+		};
+	}
+
+	// No MCP flag — direct reactor call or internal tool
+	return {
+		label: "Internal",
+		color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
+	};
+}
+
+export const TraceStepList: React.FC<TraceStepListProps> = ({
+	steps,
+	harnessName,
+}) => {
 	if (!steps.length) {
 		return (
 			<p className="py-2 text-muted-foreground text-sm">
@@ -48,7 +104,7 @@ export const TraceStepList: React.FC<TraceStepListProps> = ({ steps }) => {
 						<TableHead className="w-10">#</TableHead>
 						<TableHead>Tool</TableHead>
 						<TableHead>Engine</TableHead>
-						<TableHead>MCP</TableHead>
+						<TableHead>Source</TableHead>
 						<TableHead>Duration</TableHead>
 						<TableHead>Status</TableHead>
 						<TableHead>Error</TableHead>
@@ -80,14 +136,19 @@ export const TraceStepList: React.FC<TraceStepListProps> = ({ steps }) => {
 									)}
 								</TableCell>
 								<TableCell>
-									{step.IS_MCP && (
-										<Badge
-											variant="secondary"
-											className="text-xs"
-										>
-											MCP
-										</Badge>
-									)}
+									{(() => {
+										const source = getToolSource(
+											step,
+											harnessName,
+										);
+										return (
+											<span
+												className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${source.color}`}
+											>
+												{source.label}
+											</span>
+										);
+									})()}
 								</TableCell>
 								<TableCell className="font-mono text-xs">
 									{calcDurationMs(

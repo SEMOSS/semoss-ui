@@ -16,6 +16,7 @@ import type { AgentTraceStep } from "./types";
 
 interface SpanTreeProps {
 	steps: AgentTraceStep[];
+	harnessName?: string;
 }
 
 interface StepNodeProps {
@@ -23,6 +24,7 @@ interface StepNodeProps {
 	index: number;
 	expanded: boolean;
 	onToggle: () => void;
+	harnessName?: string;
 }
 
 function computeDuration(step: AgentTraceStep): string {
@@ -62,17 +64,52 @@ function getToolIcon(step: AgentTraceStep) {
 	return <Wrench className="size-3.5 text-amber-500" />;
 }
 
-function getSourceBadge(step: AgentTraceStep) {
-	if (step.IS_MCP) {
+function getSourceBadge(step: AgentTraceStep, harnessName?: string) {
+	// SDK-based harnesses — tools executed by external agent SDK
+	const sdkHarnesses: Record<string, string> = {
+		claude_code: "Claude Code SDK",
+		github_copilot: "GitHub Copilot SDK",
+		github_copilot_py: "GitHub Copilot SDK",
+	};
+	if (harnessName && sdkHarnesses[harnessName]) {
 		return (
-			<span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 font-medium text-[9px] text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-				SEMOSS {step.ENGINE_TYPE ?? "ENGINE"}
+			<span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 font-medium text-[9px] text-violet-700 dark:bg-violet-900/30 dark:text-violet-400">
+				{sdkHarnesses[harnessName]}
 			</span>
 		);
 	}
+
+	// MCP tool routed through a SEMOSS engine (DATABASE, MODEL, VECTOR, etc.)
+	if (step.IS_MCP && step.ENGINE_TYPE) {
+		return (
+			<span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 font-medium text-[9px] text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+				Engine MCP · {step.ENGINE_TYPE}
+			</span>
+		);
+	}
+
+	// MCP tool routed through a project/app (no ENGINE_TYPE means it's a project)
+	if (step.IS_MCP && step.ENGINE_ID) {
+		return (
+			<span className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 font-medium text-[9px] text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+				App MCP
+			</span>
+		);
+	}
+
+	// Internal MCP (no engine routing)
+	if (step.IS_MCP) {
+		return (
+			<span className="inline-flex items-center rounded-full bg-sky-100 px-1.5 py-0.5 font-medium text-[9px] text-sky-700 dark:bg-sky-900/30 dark:text-sky-400">
+				Internal MCP
+			</span>
+		);
+	}
+
+	// Direct internal tool
 	return (
 		<span className="inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 font-medium text-[9px] text-gray-600 dark:bg-gray-800 dark:text-gray-400">
-			SDK
+			Internal
 		</span>
 	);
 }
@@ -196,7 +233,13 @@ function tryExtractSummary(json: string): string | null {
 	}
 }
 
-const StepNode = ({ step, index, expanded, onToggle }: StepNodeProps) => {
+const StepNode = ({
+	step,
+	index,
+	expanded,
+	onToggle,
+	harnessName,
+}: StepNodeProps) => {
 	const isSuccess = step.STATUS === "success";
 	const inputSummary = step.TOOL_INPUT_JSON
 		? tryExtractSummary(step.TOOL_INPUT_JSON)
@@ -238,7 +281,7 @@ const StepNode = ({ step, index, expanded, onToggle }: StepNodeProps) => {
 				</span>
 
 				{/* Source badge */}
-				{getSourceBadge(step)}
+				{getSourceBadge(step, harnessName)}
 
 				{/* Input summary (inline preview) */}
 				{inputSummary && (
@@ -279,9 +322,21 @@ const StepNode = ({ step, index, expanded, onToggle }: StepNodeProps) => {
 								Source
 							</p>
 							<p>
-								{step.IS_MCP
-									? `SEMOSS Engine (${step.ENGINE_TYPE ?? "unknown"})`
-									: "Claude SDK (external)"}
+								{(() => {
+									const sdkNames: Record<string, string> = {
+										claude_code: "Claude Code SDK",
+										github_copilot: "GitHub Copilot SDK",
+										github_copilot_py: "GitHub Copilot SDK",
+									};
+									if (harnessName && sdkNames[harnessName])
+										return sdkNames[harnessName];
+									if (step.IS_MCP && step.ENGINE_TYPE)
+										return `Engine MCP (${step.ENGINE_TYPE})`;
+									if (step.IS_MCP && step.ENGINE_ID)
+										return "App MCP";
+									if (step.IS_MCP) return "Internal MCP";
+									return "Internal";
+								})()}
 							</p>
 						</div>
 						{step.ENGINE_ID && (
@@ -385,7 +440,7 @@ const StepNode = ({ step, index, expanded, onToggle }: StepNodeProps) => {
 	);
 };
 
-export const SpanTree = ({ steps }: SpanTreeProps) => {
+export const SpanTree = ({ steps, harnessName }: SpanTreeProps) => {
 	const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
 	if (!steps || steps.length === 0) {
@@ -417,6 +472,7 @@ export const SpanTree = ({ steps }: SpanTreeProps) => {
 					index={i}
 					expanded={expandedIds.has(step.STEP_ID)}
 					onToggle={() => toggle(step.STEP_ID)}
+					harnessName={harnessName}
 				/>
 			))}
 		</div>

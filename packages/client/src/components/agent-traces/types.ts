@@ -32,6 +32,8 @@ export interface TraceRow {
 	TOTAL_COST_USD: number;
 	PARENT_TRACE_ID: string | null;
 	ERROR_MESSAGE: string | null;
+	USER_PROMPT: string | null;
+	AGENT_RESPONSE: string | null;
 }
 
 export interface AgentTraceStep {
