@@ -1,4 +1,4 @@
-import { JsonViewer } from "@textea/json-viewer";
+import { JsonValueViewer } from "@/components/common/JsonValueViewer";
 import { isOutputJSON } from "@/utility/general";
 
 interface ConsoleProps {
@@ -15,16 +15,7 @@ export const NotebookCellConsole = (props: ConsoleProps) => {
 			{messages.map((m, i) => {
 				const value = isOutputJSON(m);
 				if (value != null) {
-					return (
-						<JsonViewer
-							key={`${i}-${m}`}
-							value={value}
-							displayDataTypes={true}
-							displaySize={true}
-							displayComma={true}
-							rootName={false}
-						/>
-					);
+					return <JsonValueViewer key={`${i}-${m}`} value={value} />;
 				} else {
 					return (
 						<span key={`${i}-${m}`} className="text-xs">

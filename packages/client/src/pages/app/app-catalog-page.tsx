@@ -943,6 +943,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								applyOnMount={false}
 								showHeader={true}
 								hideHeaderToggleFrom="md"
+								colorizeValues
+								colorizeSelectedOnly
 								onChange={handleFilterboxChange}
 								filteredCatalogIds={renderedAppIds}
 								filterBoxRefresh={filterBoxRefresh}

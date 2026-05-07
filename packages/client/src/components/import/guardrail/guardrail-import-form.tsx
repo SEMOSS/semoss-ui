@@ -31,6 +31,7 @@ import {
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
 	headers: string[];
@@ -392,24 +393,6 @@ export const GuardrailForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	/**
 	 * This runs on input changes to check if the user has changed a dynamically updated field manually
 	 * It sets a flag that will stop dynamic update from running if the user has manually changed it
@@ -530,11 +513,13 @@ export const GuardrailForm = ({
 				required: val?.required,
 			}}
 			render={({ field, fieldState: { error } }) => {
-				switch (val.component) {
+				switch (val.type) {
 					case "text":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -656,7 +641,9 @@ export const GuardrailForm = ({
 					case "number":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -691,7 +678,9 @@ export const GuardrailForm = ({
 					case "select":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -707,7 +696,6 @@ export const GuardrailForm = ({
 									value={field.value}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -753,7 +741,9 @@ export const GuardrailForm = ({
 					case "radio":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel>{val.label}</FieldLabel>
@@ -930,9 +920,9 @@ export const GuardrailForm = ({
 						return (
 							<div
 								className={
-									val.hidden
-										? "hidden"
-										: "flex flex-row items-center gap-2"
+									computeVisibility(val, {})
+										? "flex flex-row items-center gap-2"
+										: "hidden"
 								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
@@ -969,7 +959,9 @@ export const GuardrailForm = ({
 					case "tags":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`guardrail-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>

@@ -1,7 +1,7 @@
 import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, Spinner } from "@semoss/ui/next";
+import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { RoomInlineTool } from "../room";
@@ -20,21 +20,21 @@ const getToolState = (
 				ERROR: {
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
-						text: t("tool.failed"),
+						text: t("status.failed"),
 						variant: "muted" as const,
 					},
 				},
 				CANCELLED: {
 					icon: <XCircleIcon className="size-5" />,
 					badge: {
-						text: t("tool.cancelled"),
+						text: t("status.cancelled"),
 						variant: "muted" as const,
 					},
 				},
 				PAUSED: {
 					icon: <CirclePause className="size-5" />,
 					badge: {
-						text: t("tool.paused"),
+						text: t("status.paused"),
 						variant: "muted" as const,
 					},
 				},
@@ -44,10 +44,9 @@ const getToolState = (
 				...config[tool.status],
 				iconClassName: "bg-muted text-muted-foreground",
 				subtext: tool.json.description,
-				canInteract: false,
-				actionType: null,
+				actionType: "menu" as const,
 				background: "bg-background" as const,
-				showHoverAccent: false,
+				showHoverAccent: true,
 				showCancelInMenu: false,
 			};
 		}
@@ -57,7 +56,7 @@ const getToolState = (
 				iconClassName: "bg-primary/10 text-primary",
 				subtext: tool.json.description,
 				badge: null,
-				canInteract: true,
+
 				actionType: "menu" as const,
 				background: "bg-sidebar" as const,
 				showHoverAccent: false,
@@ -69,10 +68,10 @@ const getToolState = (
 				iconClassName: "bg-muted text-muted-foreground",
 				subtext: toolExecutionMessage,
 				badge: null,
-				canInteract: false,
+
 				actionType: "cancel" as const,
 				background: "bg-background" as const,
-				showHoverAccent: false,
+				showHoverAccent: true,
 				showCancelInMenu: false,
 			};
 		default:
@@ -82,7 +81,7 @@ const getToolState = (
 					iconClassName: "bg-primary/10 text-primary",
 					subtext: tool.json.description,
 					badge: null,
-					canInteract: true,
+
 					actionType: "menu" as const,
 					background: "bg-background" as const,
 					showHoverAccent: true,
@@ -93,12 +92,12 @@ const getToolState = (
 			return {
 				icon: <HammerIcon className="size-5" />,
 				iconClassName: "bg-muted text-muted-foreground",
-				subtext: t("tool.queued"),
+				subtext: t("status.queued"),
 				badge: null,
-				canInteract: false,
+
 				actionType: "cancel" as const,
 				background: "bg-background" as const,
-				showHoverAccent: false,
+				showHoverAccent: true,
 				showCancelInMenu: false,
 			};
 	}
@@ -117,8 +116,9 @@ interface ResponseMessageToolProps {
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool, isLarge }) => {
-		const { t } = useTranslation("chat");
+		const { t } = useTranslation("tool");
 		const { room } = message;
+		const isMobile = useIsMobile();
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
 			tool.status === "LOADING",
@@ -141,7 +141,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		const toolState = getToolState(tool, t, toolExecutionMessage);
 
-		const isButtonDisabled = isDisabled || !toolState.canInteract;
+		const isButtonDisabled = !tool.isOpen && isDisabled;
 
 		// Don't render if hidden
 		if (tool.display === "hidden") {
@@ -160,11 +160,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					// Clicks when inline should close
 					tool.closeTool();
 				} else {
-					// if it's open in the sidebar, we want to move it to the front
-					tool.openTool("sidebar");
+					// if it's open in the sidebar, move to front on desktop or switch to inline on mobile
+					tool.openTool(isMobile ? "inline" : "sidebar");
 				}
 			} else {
-				tool.openTool();
+				tool.openTool(isMobile ? "inline" : undefined);
 			}
 		};
 
@@ -219,25 +219,15 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								className="flex shrink-0 cursor-pointer items-center self-stretch rounded-r-lg px-4.5 text-muted-foreground text-sm hover:bg-accent"
 								onClick={handleCancel}
 							>
-								{t("tool.cancel")}
+								{t("actions.cancel")}
 							</button>
-						)}
-						{toolState.badge && (
-							<span
-								className={cn(
-									"shrink-0 pr-3 text-sm",
-									toolState.badge.variant === "muted" &&
-										"text-muted-foreground",
-								)}
-							>
-								{toolState.badge.text}
-							</span>
 						)}
 						{toolState.actionType === "menu" && (
 							<ResponseMessageToolMenu
 								message={message}
 								tool={tool}
 								isFullButton
+								label={toolState.badge?.text}
 								showCancelInMenu={toolState.showCancelInMenu}
 							/>
 						)}
@@ -316,24 +306,14 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							className="mr-2 shrink-0"
 							onClick={handleCancel}
 						>
-							{t("tool.cancel")}
+							{t("actions.cancel")}
 						</Button>
-					)}
-					{toolState.badge && (
-						<span
-							className={cn(
-								"shrink-0 pr-3 font-medium text-sm",
-								toolState.badge.variant === "muted" &&
-									"text-muted-foreground",
-							)}
-						>
-							{toolState.badge.text}
-						</span>
 					)}
 					{toolState.actionType === "menu" && (
 						<ResponseMessageToolMenu
 							message={message}
 							tool={tool}
+							label={toolState.badge?.text}
 							showCancelInMenu={toolState.showCancelInMenu}
 						/>
 					)}

@@ -35,10 +35,10 @@ import {
 } from "@semoss/ui/next";
 import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
-import GOOGLE from "@/assets/img/google.png";
+import GOOGLE from "@/assets/img/GOOGLE.svg";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/pages/import";
-import { formatToDataTestId } from "@/utility";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
+import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 /**
  * @name findDBImage
@@ -299,6 +299,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -345,6 +346,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -548,13 +550,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								>
 									{name}
 								</P>
-								{sub_type === "EMBEDDED" && (
-									<img
-										src={GOOGLE}
-										alt="Google"
-										className="size-5 flex-shrink-0 object-cover"
-									/>
-								)}
 							</div>
 							<div className="flex min-w-0 items-center gap-1">
 								<P
@@ -771,7 +766,11 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 						(Array.isArray(tag) ? (
 							<>
 								{tag.slice(0, 2).map((t, _i) => (
-									<Badge key={`${id}`} variant="secondary">
+									<Badge
+										key={`${id}`}
+										variant="secondary"
+										style={getTagBadgeStyle(t)}
+									>
 										{t}
 									</Badge>
 								))}
@@ -795,7 +794,12 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								)}
 							</>
 						) : tag !== "" ? (
-							<Badge variant="secondary">{tag}</Badge>
+							<Badge
+								variant="secondary"
+								style={getTagBadgeStyle(tag)}
+							>
+								{tag}
+							</Badge>
 						) : null)}
 				</div>
 			</CardContent>

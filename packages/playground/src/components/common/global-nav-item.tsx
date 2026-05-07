@@ -57,10 +57,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					}
 					tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
-					<Link
-						to={`/embed/${path}`}
-						aria-label={name}
-					>
+					<Link to={`/embed/${path}`} aria-label={name}>
 						{icon ? (
 							<img
 								className="size-4 select-none"
@@ -85,10 +82,7 @@ export const GlobalNavItem: React.FC<GlobalNavItemProps> = ({
 					isActive={!!matchPath(internalPath, pathname)}
 					tooltip={{ children: returnToolTip(name), hidden: false }}
 				>
-					<Link
-						to={internalPath}
-						aria-label={name}
-					>
+					<Link to={internalPath} aria-label={name}>
 						{icon ? (
 							<img
 								className="size-4 select-none"

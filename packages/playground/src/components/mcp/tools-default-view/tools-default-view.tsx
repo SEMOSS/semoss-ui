@@ -1,7 +1,7 @@
 import { AlertCircle, Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -28,13 +28,7 @@ export interface ToolsDefaultViewProps {
 	message: string;
 
 	/** Connected tool */
-	tool: ToolStore["json"];
-
-	/** Response to the tool, if already completed */
-	toolResponse?: string;
-
-	/** Parameters that were executed */
-	toolParameters?: Record<string, unknown>;
+	tool: ToolStore;
 }
 
 interface FieldSchema {
@@ -51,8 +45,10 @@ interface FieldSchema {
 	description?: string;
 }
 
-export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
-	({ room, app, message, tool, toolResponse, toolParameters }) => {
+export const ToolsDefaultView = observer(
+	({ room, app, message, tool }: ToolsDefaultViewProps) => {
+		const { t } = useTranslation("tool");
+
 		/*
 		 * Library hooks
 		 */
@@ -79,17 +75,11 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		});
 
 		/*
-		 * Constants
-		 */
-		const title = tool?.title || "";
-		const description = tool?.description || "";
-
-		/*
 		 * State
 		 */
-		const [data, setData] = useState<Record<string, unknown>>(() => {
-			return toolParameters || {};
-		});
+		const [data, setData] = useState<Record<string, unknown>>(
+			tool.parameters || {},
+		);
 		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 		const [showOptional, setShowOptional] = useState<boolean>(false);
 		const [required, setRequired] = useState<string[]>([]);
@@ -98,7 +88,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			Record<string, FieldSchema>
 		>({});
 		const [response, setResponse] = useState<string | undefined>(
-			toolResponse,
+			tool.status === "SUCCESS" ? tool.response : undefined,
 		);
 		const [showExtensionDialog, setShowExtensionDialog] =
 			useState<boolean>(false);
@@ -135,13 +125,22 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 		 * Constants
 		 */
 		// Separate required and optional fields
-		const hasBeenExecuted = response !== undefined;
+		const showResponse = tool.status === "SUCCESS";
+		const toolFailed =
+			tool.status === "ERROR" ||
+			tool.status === "CANCELLED" ||
+			tool.status === "PAUSED";
 		const requiredFields = Object.entries(properties).filter(
 			([fieldName]) => required.includes(fieldName),
 		);
 		const optionalFields = Object.entries(properties).filter(
 			([fieldName]) => !required.includes(fieldName),
 		);
+		const title = tool?.json.title || "";
+		const description = tool?.json.description || "";
+		const isAutoExecuting =
+			tool?.json._meta.SMSS_MCP_EXECUTION !== "ask" &&
+			tool.status !== "SUCCESS";
 
 		/*
 		 * Functions
@@ -258,7 +257,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					// Normal MCP tool execution for non-Playwright tools
 					const response = await room.runRoomPixel<[unknown]>(
 						`RunMCPTool(project = [ "${app}" ], function=[ "${
-							tool.name
+							tool?.json.name
 						}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
 						false,
 						false,
@@ -276,11 +275,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 			}
 			const m = room.getMessage(message);
 			// Only process the tool response if the tool is still open
-			if (
-				m &&
-				m instanceof ResponseMessageStore &&
-				room.getTool(tool.id).isOpen
-			) {
+			if (m && m instanceof ResponseMessageStore && tool.isOpen) {
 				room.processTool(
 					m.id,
 					tool.id,
@@ -303,8 +298,8 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 					key={fieldName}
 					fieldName={fieldName}
 					fieldSchema={fieldSchema}
-					required={required && !hasBeenExecuted}
-					disabled={hasBeenExecuted}
+					required={required && !showResponse && !isAutoExecuting}
+					disabled={showResponse || !!isAutoExecuting}
 					value={data[fieldName] ?? ""}
 					onChange={(val) => handleChange(fieldName, val)}
 				/>
@@ -316,36 +311,38 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 
 		// Load tool schema
 		useEffect(() => {
-			if (getMCP.status === "SUCCESS" && tool?.original_name) {
+			if (getMCP.status === "SUCCESS" && tool?.json.original_name) {
 				const foundTool = getMCP.data.tools.find(
-					(t) => t.name === tool.original_name,
+					(t) => t.name === tool?.json.original_name,
 				);
 				if (foundTool) {
 					setProperties(foundTool.inputSchema.properties);
 					setRequired(foundTool.inputSchema.required);
 				}
 			}
-		}, [getMCP, tool.original_name]);
+		}, [getMCP, tool?.json.original_name]);
 
 		return (
 			// px-3 because applying padding on this div was clipping the shadow of the textareas
 			// so we apply px-1 to the inner divs instead
-			<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4">
+			<div className="flex h-full w-full flex-col space-y-4 overflow-auto px-3 py-4 text-foreground">
 				<div className="space-y-2 px-1">
-					<h2 className="font-semibold text-2xl">{title}</h2>
+					<h2 className="font-semibold text-2xl text-foreground">
+						{title}
+					</h2>
 					{!!description && (
 						<p className="text-muted-foreground">{description}</p>
 					)}
 				</div>
 
 				<div className="flex-1 space-y-4 overflow-y-auto px-1">
-					{hasBeenExecuted && (
+					{showResponse && (
 						<div className="flex flex-col space-y-2">
 							<Label
 								htmlFor="tool-response"
 								className="shrink-0 font-semibold"
 							>
-								Result
+								{t("form.result")}
 							</Label>
 							<Textarea
 								readOnly
@@ -358,16 +355,15 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 							<div className="text-destructive">
 								<p className="font-semibold text-lg">
-									Failed to load tool schema
+									{t("form.schemaLoadFailed")}
 								</p>
 								<p className="text-muted-foreground text-sm">
-									Unable to retrieve tool configuration.
-									Please try again later.
+									{t("form.schemaLoadFailedDescription")}
 								</p>
 							</div>
 						</div>
 					) : getMCP.status === "SUCCESS" ? (
-						hasBeenExecuted ? (
+						showResponse ? (
 							Object.keys(properties).length > 0 && (
 								<>
 									<Button
@@ -379,7 +375,15 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 										}
 										className="w-full"
 									>
-										{`${showOptional ? "Hide" : "Show"} Parameters (${Object.keys(properties).length})`}
+										{t(
+											showOptional
+												? "form.hideParameters"
+												: "form.showParameters",
+											{
+												count: Object.keys(properties)
+													.length,
+											},
+										)}
 									</Button>
 
 									{showOptional &&
@@ -392,6 +396,13 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						) : (
 							<form onSubmit={handleSubmit}>
 								<div className="space-y-4">
+									{Object.keys(properties).length === 0 &&
+										!scriptForBrowserAutomation && (
+											<p className="py-8 text-center text-muted-foreground text-sm">
+												{t("form.noParameters")}
+											</p>
+										)}
+
 									{/* Required fields */}
 									{renderFields(requiredFields, true)}
 
@@ -399,12 +410,15 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 									{scriptForBrowserAutomation && (
 										<div className="space-y-3 rounded-md border bg-muted/50 p-4">
 											<h3 className="font-semibold text-base">
-												Playwright Script Details
+												{t("playwright.details")}
 											</h3>
 											<div className="space-y-2 text-sm">
 												<div>
 													<span className="font-medium">
-														Project ID:
+														{t(
+															"playwright.projectId",
+														)}
+														:
 													</span>
 													<span className="ml-2 text-muted-foreground">
 														{app}
@@ -412,7 +426,10 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 												</div>
 												<div>
 													<span className="font-medium">
-														Recorded File:
+														{t(
+															"playwright.recordedFile",
+														)}
+														:
 													</span>
 													<span className="ml-2 text-muted-foreground">
 														{
@@ -438,7 +455,14 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 												}
 												className="w-full"
 											>
-												{`${showOptional ? "Hide" : "Show"} Optional Fields (${optionalFields.length})`}
+												{t(
+													showOptional
+														? "form.hideOptionalFields"
+														: "form.showOptionalFields",
+													{
+														count: optionalFields.length,
+													},
+												)}
 											</Button>
 
 											{showOptional &&
@@ -455,34 +479,37 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						<div className="flex flex-col items-center justify-center gap-2 py-12">
 							<Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
 							<p className="text-muted-foreground text-sm">
-								Loading tool schema...
+								{t("form.schemaLoading")}
 							</p>
 						</div>
 					)}
 				</div>
 
-				{!hasBeenExecuted && getMCP.status === "SUCCESS" && (
-					<div className="shrink-0 px-1">
-						<Button
-							type="button"
-							className="w-full"
-							size="lg"
-							onClick={() => {
-								handleSubmit();
-							}}
-							disabled={isSubmitting}
-						>
-							{isSubmitting ? (
-								<>
-									<Loader2 className="animate-spin" />
-									Executing...
-								</>
-							) : (
-								"Execute Tool"
-							)}
-						</Button>
-					</div>
-				)}
+				{!showResponse &&
+					!isAutoExecuting &&
+					!toolFailed &&
+					getMCP.status === "SUCCESS" && (
+						<div className="shrink-0 px-1">
+							<Button
+								type="button"
+								className="w-full"
+								size="lg"
+								onClick={() => {
+									handleSubmit();
+								}}
+								disabled={isSubmitting}
+							>
+								{isSubmitting ? (
+									<>
+										<Loader2 className="animate-spin" />
+										{t("form.executing")}
+									</>
+								) : (
+									t("form.execute")
+								)}
+							</Button>
+						</div>
+					)}
 
 				{/* Extension Not Available Dialog */}
 				<Dialog
@@ -493,31 +520,22 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 						<DialogHeader>
 							<DialogTitle className="flex items-center gap-2">
 								<AlertCircle className="h-5 w-5 text-warning" />
-								Browser Extension Required
+								{t("extension.required")}
 							</DialogTitle>
 							<DialogDescription>
-								The browser extension is not responding. To
-								execute Playwright scripts, please ensure the
-								SEMOSS Chrome Extension is installed and the
-								side panel is open.
+								{t("extension.notResponding")}
 							</DialogDescription>
 						</DialogHeader>
 						<div className="space-y-3 py-4">
 							<p className="font-medium text-sm">
-								Steps to open the extension:
+								{t("extension.stepsTitle")}
 							</p>
 							{/* biome-ignore lint/nursery/useSortedClasses: order is correct */}
 							<ol className="ml-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
-								<li>
-									Look for the SEMOSS extension icon in your
-									browser toolbar (puzzle piece icon)
-								</li>
-								<li>
-									Click the extension icon to open the side
-									panel
-								</li>
-								<li>Wait for the panel to load completely</li>
-								<li>Click "Retry" below to continue</li>
+								<li>{t("extension.step1")}</li>
+								<li>{t("extension.step2")}</li>
+								<li>{t("extension.step3")}</li>
+								<li>{t("extension.step4")}</li>
 							</ol>
 						</div>
 						<DialogFooter className="gap-2">
@@ -525,7 +543,7 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								variant="outline"
 								onClick={() => setShowExtensionDialog(false)}
 							>
-								Cancel
+								{t("extension.cancel")}
 							</Button>
 							<Button
 								onClick={async () => {
@@ -550,10 +568,10 @@ export const ToolsDefaultView: React.FC<ToolsDefaultViewProps> = observer(
 								{extensionCheckRetrying ? (
 									<>
 										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-										Checking...
+										{t("extension.checking")}
 									</>
 								) : (
-									"Retry"
+									t("extensionRetry")
 								)}
 							</Button>
 						</DialogFooter>

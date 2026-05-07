@@ -73,6 +73,20 @@ const interceptors: {
 			};
 		}
 
+		if (Env.BEARER_TOKEN) {
+			options.headers = {
+				...options.headers,
+				authorization: `Bearer ${Env.BEARER_TOKEN}`,
+			};
+		}
+
+		if (Env.BEARER_PROVIDER) {
+			options.headers = {
+				...options.headers,
+				"Bearer-Provider": Env.BEARER_PROVIDER,
+			};
+		}
+
 		// only set if enabled
 		if (CSRF.isEnabled || Env.CSRF) {
 			if (options.method === "POST") {

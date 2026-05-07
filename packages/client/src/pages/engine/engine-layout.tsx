@@ -178,13 +178,15 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
 		);
 
-		// additional filtering for DATABASE type engines - hide Query tab unless database is SQL
+		// additional filtering for DATABASE type engines - hide Query/SPARQL tabs based on category
 		if (route.type === "DATABASE") {
 			const databaseCategory = getDatabaseCategory.data;
 			filteredTabs = filteredTabs.filter((t) => {
-				// if it's the Query tab (path === 'query'), only show it if database is SQL
 				if (t.path === "query") {
 					return databaseCategory === "SQL";
+				}
+				if (t.path === "sparql-query") {
+					return databaseCategory === "RDF";
 				}
 				return true;
 			});
