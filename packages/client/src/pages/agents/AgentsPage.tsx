@@ -1,22 +1,15 @@
-import { Check, Copy, RefreshCcw } from "lucide-react";
-import React, { useCallback, useEffect, useId, useState } from "react";
 import {
-	Button,
-	Input,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-	Spinner,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableHeader,
-	TableRow,
-} from "@semoss/ui/next";
-import type { TraceRow } from "@/components/agent-traces/types";
+	Activity,
+	ChevronRight,
+	Clock,
+	MessageSquare,
+	RefreshCcw,
+	Wrench,
+	Zap,
+} from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Button, Spinner } from "@semoss/ui/next";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 
@@ -30,10 +23,9 @@ function formatDuration(ms: number): string {
 	return rem > 0 ? `${m}m ${rem}s` : `${m}m`;
 }
 
-function formatDateTime(raw: string): string {
+function _formatDateTime(raw: string): string {
 	if (!raw) return "—";
 	try {
-		// Handle "2026-05-05 12:49:45" format from backend
 		const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
 		const d = new Date(normalized);
 		if (Number.isNaN(d.getTime())) return raw;
@@ -43,7 +35,19 @@ function formatDateTime(raw: string): string {
 	}
 }
 
-const ALL_HARNESS = "ALL";
+function timeAgo(raw: string): string {
+	if (!raw) return "";
+	try {
+		const d = new Date(raw.includes("T") ? raw : raw.replace(" ", "T"));
+		const diff = Date.now() - d.getTime();
+		if (diff < 60000) return "just now";
+		if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+		if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+		return `${Math.floor(diff / 86400000)}d ago`;
+	} catch {
+		return "";
+	}
+}
 
 const HARNESS_COLORS: Record<string, string> = {
 	claude_code:
@@ -53,6 +57,8 @@ const HARNESS_COLORS: Record<string, string> = {
 		"bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
 	github_copilot:
 		"bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+	orchestrator:
+		"bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400",
 };
 
 function getHarnessColor(harness: string): string {
@@ -62,42 +68,71 @@ function getHarnessColor(harness: string): string {
 	);
 }
 
+interface RoomGroup {
+	roomId: string;
+	projectId: string | null;
+	traces: unknown[];
+	totalRuns: number;
+	totalToolCalls: number;
+	totalInputTokens: number;
+	totalOutputTokens: number;
+	totalDurationMs: number;
+	harnessTypes: string[];
+	lastActivity: string;
+	hasErrors: boolean;
+	users: string[];
+}
+
 export const AgentsPage: React.FC = () => {
 	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
 
-	const [traces, setTraces] = useState<TraceRow[]>([]);
-	const [filtered, setFiltered] = useState<TraceRow[]>([]);
+	const [rooms, setRooms] = useState<RoomGroup[]>([]);
+	const [filteredRooms, setFilteredRooms] = useState<RoomGroup[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [copiedId, setCopiedId] = useState<string | null>(null);
-
-	// Form element IDs
-	const userIdInputId = useId();
-	const startDateInputId = useId();
-	const endDateInputId = useId();
 
 	// Filters
-	const [userId, setUserId] = useState("");
-	const [startDate, setStartDate] = useState("");
-	const [endDate, setEndDate] = useState("");
-	const [harnessType, setHarnessType] = useState<string>(ALL_HARNESS);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [harnessFilter, setHarnessFilter] = useState("ALL");
+	const [userFilter, setUserFilter] = useState("ALL");
 
-	const harnessOptions = React.useMemo(() => {
-		const set = new Set<string>(traces.map((t) => t.HARNESS_NAME));
-		return Array.from(set).sort();
-	}, [traces]);
-
-	const fetchTraces = useCallback(async () => {
+	const fetchRooms = useCallback(async () => {
 		setLoading(true);
 		setError(null);
 		try {
 			const res = await monolithStore.runQuery(
-				`ListAgentTraces(limit=["100"]);`,
+				`ListAgentTracesByRoom(limit=["200"]);`,
 			);
 			const output = res?.pixelReturn?.[0]?.output;
 			if (Array.isArray(output)) {
-				setTraces(output as TraceRow[]);
+				const mapped: RoomGroup[] = output.map(
+					(r: Record<string, unknown>) => ({
+						roomId: r.ROOM_ID ?? "unknown",
+						projectId: r.PROJECT_ID ?? null,
+						traces: (r.TRACES ?? []).map(
+							(t: Record<string, unknown>) => ({
+								TRACE_ID: t.TRACE_ID,
+								HARNESS_NAME: t.HARNESS_NAME,
+								STATUS: t.STATUS,
+								STARTED_AT: t.STARTED_AT,
+								DURATION_MS: t.DURATION_MS ?? 0,
+								TOOL_CALL_COUNT: t.TOOL_CALL_COUNT ?? 0,
+								ITERATIONS: t.ITERATIONS ?? 0,
+							}),
+						),
+						totalRuns: r.TOTAL_RUNS ?? 0,
+						totalToolCalls: r.TOTAL_TOOL_CALLS ?? 0,
+						totalInputTokens: r.TOTAL_INPUT_TOKENS ?? 0,
+						totalOutputTokens: r.TOTAL_OUTPUT_TOKENS ?? 0,
+						totalDurationMs: r.TOTAL_DURATION_MS ?? 0,
+						harnessTypes: r.HARNESS_TYPES ?? [],
+						lastActivity: r.LAST_ACTIVITY ?? "",
+						hasErrors: r.HAS_ERRORS ?? false,
+						users: r.USERS ?? [],
+					}),
+				);
+				setRooms(mapped);
 			}
 		} catch (e) {
 			setError((e as Error).message ?? "Failed to load traces");
@@ -107,290 +142,245 @@ export const AgentsPage: React.FC = () => {
 	}, [monolithStore]);
 
 	useEffect(() => {
-		fetchTraces();
-	}, [fetchTraces]);
+		fetchRooms();
+	}, [fetchRooms]);
+
+	// Derive unique filter options from room data
+	const allUsers = React.useMemo(() => {
+		const set = new Set<string>();
+		for (const r of rooms) {
+			for (const u of r.users) set.add(u);
+		}
+		return Array.from(set).sort();
+	}, [rooms]);
+
+	const allHarnesses = React.useMemo(() => {
+		const set = new Set<string>();
+		for (const r of rooms) {
+			for (const h of r.harnessTypes) set.add(h);
+		}
+		return Array.from(set).sort();
+	}, [rooms]);
 
 	// Apply filters
 	useEffect(() => {
-		let result = traces;
+		let result = rooms;
 
-		if (userId.trim()) {
-			const lower = userId.trim().toLowerCase();
-			result = result.filter((t) =>
-				t.USER_ID.toLowerCase().includes(lower),
+		if (searchQuery.trim()) {
+			const q = searchQuery.toLowerCase();
+			result = result.filter(
+				(r) =>
+					r.roomId.toLowerCase().includes(q) ||
+					(r.projectId ?? "").toLowerCase().includes(q),
 			);
 		}
 
-		if (startDate) {
-			const start = new Date(startDate).getTime();
-			result = result.filter((t) => {
-				const ts = new Date(
-					(t.STARTED_AT || "").replace(" ", "T"),
-				).getTime();
-				return !Number.isNaN(ts) && ts >= start;
-			});
+		if (harnessFilter !== "ALL") {
+			result = result.filter((r) =>
+				r.harnessTypes.includes(harnessFilter),
+			);
 		}
 
-		if (endDate) {
-			const end = new Date(endDate).getTime() + 86400000;
-			result = result.filter((t) => {
-				const ts = new Date(
-					(t.STARTED_AT || "").replace(" ", "T"),
-				).getTime();
-				return !Number.isNaN(ts) && ts <= end;
-			});
+		if (userFilter !== "ALL") {
+			result = result.filter((r) => r.users?.includes(userFilter));
 		}
 
-		if (harnessType !== ALL_HARNESS) {
-			result = result.filter((t) => t.HARNESS_NAME === harnessType);
-		}
+		setFilteredRooms(result);
+	}, [rooms, searchQuery, harnessFilter, userFilter]);
 
-		setFiltered(result);
-	}, [traces, userId, startDate, endDate, harnessType]);
-
-	const handleCopy = async (id: string, e: React.MouseEvent) => {
-		e.stopPropagation();
-		try {
-			await navigator.clipboard.writeText(id);
-			setCopiedId(id);
-			setTimeout(() => setCopiedId(null), 1500);
-		} catch {
-			// ignore
-		}
-	};
-
-	const handleRowClick = (trace: TraceRow) => {
-		navigate(trace.TRACE_ID);
-	};
+	const hasActiveFilters =
+		searchQuery || harnessFilter !== "ALL" || userFilter !== "ALL";
 
 	return (
-		<div className="flex flex-col gap-4 p-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="font-bold text-2xl">Agent Traces</h1>
-					<p className="text-muted-foreground text-sm">
-						Global view of all agent traces
-					</p>
-				</div>
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={fetchTraces}
-					disabled={loading}
-				>
-					{loading ? (
-						<Spinner className="mr-2 size-4" />
-					) : (
-						<RefreshCcw className="mr-2 size-4" />
-					)}
-					Refresh
-				</Button>
-			</div>
-
-			{/* Filters */}
-			<div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-muted/30 p-3">
-				<div className="flex flex-col gap-1">
-					<label
-						htmlFor={userIdInputId}
-						className="font-medium text-muted-foreground text-xs"
-					>
-						User ID
-					</label>
-					<Input
-						id={userIdInputId}
-						placeholder="Filter by user..."
-						value={userId}
-						onChange={(e) => setUserId(e.target.value)}
-						className="h-8 w-48 text-sm"
-					/>
-				</div>
-				<div className="flex flex-col gap-1">
-					<label
-						htmlFor={startDateInputId}
-						className="font-medium text-muted-foreground text-xs"
-					>
-						Start Date
-					</label>
-					<Input
-						id={startDateInputId}
-						type="date"
-						value={startDate}
-						onChange={(e) => setStartDate(e.target.value)}
-						className="h-8 w-40 text-sm"
-					/>
-				</div>
-				<div className="flex flex-col gap-1">
-					<label
-						htmlFor={endDateInputId}
-						className="font-medium text-muted-foreground text-xs"
-					>
-						End Date
-					</label>
-					<Input
-						id={endDateInputId}
-						type="date"
-						value={endDate}
-						onChange={(e) => setEndDate(e.target.value)}
-						className="h-8 w-40 text-sm"
-					/>
-				</div>
-				<div className="flex flex-col gap-1">
-					<p className="font-medium text-muted-foreground text-xs">
-						Harness Type
-					</p>
-					<Select value={harnessType} onValueChange={setHarnessType}>
-						<SelectTrigger className="h-8 w-44 text-sm">
-							<SelectValue placeholder="All" />
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value={ALL_HARNESS}>All</SelectItem>
-							{harnessOptions.map((h) => (
-								<SelectItem key={h} value={h}>
-									{h}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-				{(userId ||
-					startDate ||
-					endDate ||
-					harnessType !== ALL_HARNESS) && (
+		<>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<div className="flex flex-col gap-5 p-6">
+				{/* Header */}
+				<div className="flex items-center justify-between">
+					<div>
+						<h1 className="font-bold text-2xl tracking-tight">
+							Agent Activity
+						</h1>
+						<p className="mt-0.5 text-muted-foreground text-sm">
+							Monitor all agent runs grouped by conversation room
+						</p>
+					</div>
 					<Button
-						variant="ghost"
+						variant="outline"
 						size="sm"
-						className="h-8 self-end"
-						onClick={() => {
-							setUserId("");
-							setStartDate("");
-							setEndDate("");
-							setHarnessType(ALL_HARNESS);
-						}}
+						onClick={fetchRooms}
+						disabled={loading}
 					>
-						Clear
-					</Button>
-				)}
-			</div>
-
-			{error && <p className="text-red-600 text-sm">{error}</p>}
-
-			<div className="text-muted-foreground text-xs">
-				Showing {filtered.length} of {traces.length} traces
-			</div>
-
-			<div className="overflow-x-auto rounded border border-border">
-				<Table>
-					<TableHeader>
-						<TableRow>
-							<TableHead>Trace ID</TableHead>
-							<TableHead>User</TableHead>
-							<TableHead>Project</TableHead>
-							<TableHead>Harness</TableHead>
-							<TableHead>Start Time</TableHead>
-							<TableHead>Duration</TableHead>
-							<TableHead>Tokens (In/Out)</TableHead>
-							<TableHead>Iters</TableHead>
-							<TableHead>Tools</TableHead>
-							<TableHead>Status</TableHead>
-						</TableRow>
-					</TableHeader>
-					<TableBody>
-						{filtered.length === 0 && !loading && (
-							<TableRow>
-								<TableCell
-									colSpan={10}
-									className="py-8 text-center text-muted-foreground"
-								>
-									No traces found
-								</TableCell>
-							</TableRow>
+						{loading ? (
+							<Spinner className="mr-2 size-4" />
+						) : (
+							<RefreshCcw className="mr-2 size-4" />
 						)}
-						{filtered.map((trace) => {
-							const isSuccess = trace.STATUS === "OK";
-							const isRunning = trace.STATUS === "RUNNING";
-							return (
-								<TableRow
-									key={trace.TRACE_ID}
-									className="cursor-pointer hover:bg-muted/50"
-									onClick={() => handleRowClick(trace)}
-								>
-									<TableCell>
-										<div className="flex items-center gap-1">
-											<span className="max-w-[100px] truncate font-mono text-xs">
-												{trace.TRACE_ID}
-											</span>
-											<button
-												type="button"
-												className="shrink-0 rounded p-0.5 hover:bg-muted"
-												onClick={(e) =>
-													handleCopy(
-														trace.TRACE_ID,
-														e,
-													)
-												}
-												title="Copy trace ID"
-											>
-												{copiedId === trace.TRACE_ID ? (
-													<Check className="size-3 text-emerald-500" />
-												) : (
-													<Copy className="size-3 text-muted-foreground" />
-												)}
-											</button>
-										</div>
-									</TableCell>
-									<TableCell className="max-w-[100px] truncate text-xs">
-										{trace.USER_ID}
-									</TableCell>
-									<TableCell className="max-w-[100px] truncate text-muted-foreground text-xs">
-										{trace.PROJECT_ID ?? "—"}
-									</TableCell>
-									<TableCell>
-										<span
-											className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold text-xs ${getHarnessColor(trace.HARNESS_NAME)}`}
-										>
-											{trace.HARNESS_NAME}
+						Refresh
+					</Button>
+				</div>
+
+				{error && <p className="text-red-600 text-sm">{error}</p>}
+
+				{/* Filters */}
+				<div className="flex flex-wrap items-center gap-3">
+					<div className="relative">
+						<input
+							type="text"
+							placeholder="Search rooms..."
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							className="h-8 w-52 rounded-md border border-border bg-background px-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+						/>
+					</div>
+					<select
+						value={harnessFilter}
+						onChange={(e) => setHarnessFilter(e.target.value)}
+						className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+					>
+						<option value="ALL">All harnesses</option>
+						{allHarnesses.map((h) => (
+							<option key={h} value={h}>
+								{h}
+							</option>
+						))}
+					</select>
+					<select
+						value={userFilter}
+						onChange={(e) => setUserFilter(e.target.value)}
+						className="h-8 rounded-md border border-border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+					>
+						<option value="ALL">All users</option>
+						{allUsers.map((u) => (
+							<option key={u} value={u}>
+								{u}
+							</option>
+						))}
+					</select>
+					{hasActiveFilters && (
+						<button
+							type="button"
+							className="h-8 rounded-md px-2 text-muted-foreground text-xs hover:bg-muted"
+							onClick={() => {
+								setSearchQuery("");
+								setHarnessFilter("ALL");
+								setUserFilter("ALL");
+							}}
+						>
+							Clear filters
+						</button>
+					)}
+					<span className="ml-auto text-muted-foreground text-xs">
+						{filteredRooms.length} room
+						{filteredRooms.length !== 1 ? "s" : ""} ·{" "}
+						{filteredRooms.reduce((s, r) => s + r.totalRuns, 0)}{" "}
+						total runs
+					</span>
+				</div>
+
+				{/* Room cards */}
+				<div className="grid gap-2">
+					{filteredRooms.map((room) => (
+						<button
+							key={room.roomId}
+							type="button"
+							className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm"
+							onClick={() => navigate(`room/${room.roomId}`)}
+						>
+							{/* Status indicator */}
+							<div
+								className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
+									room.hasErrors
+										? "bg-red-100 dark:bg-red-900/30"
+										: "bg-emerald-100 dark:bg-emerald-900/30"
+								}`}
+							>
+								<MessageSquare
+									className={`size-5 ${
+										room.hasErrors
+											? "text-red-600 dark:text-red-400"
+											: "text-emerald-600 dark:text-emerald-400"
+									}`}
+								/>
+							</div>
+
+							{/* Content */}
+							<div className="flex min-w-0 flex-1 flex-col gap-1.5">
+								<div className="flex items-center gap-2">
+									<span className="truncate font-semibold text-sm">
+										{room.projectId &&
+										room.projectId !== "null" &&
+										room.projectId !== null
+											? room.projectId.replace(
+													"SYSTEM__",
+													"",
+												)
+											: `Room ${room.roomId.slice(0, 8)}`}
+									</span>
+									<span className="shrink-0 text-muted-foreground text-xs">
+										{timeAgo(room.lastActivity)}
+									</span>
+									{/* User badge */}
+									{room.users && room.users.length > 0 && (
+										<span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+											{room.users[0]}
 										</span>
-									</TableCell>
-									<TableCell className="whitespace-nowrap text-xs">
-										{formatDateTime(trace.STARTED_AT)}
-									</TableCell>
-									<TableCell className="font-mono text-xs">
-										{formatDuration(trace.DURATION_MS)}
-									</TableCell>
-									<TableCell className="whitespace-nowrap font-mono text-xs">
-										{(
-											trace.TOTAL_INPUT_TOKENS ?? 0
-										).toLocaleString()}
-										{" / "}
-										{(
-											trace.TOTAL_OUTPUT_TOKENS ?? 0
-										).toLocaleString()}
-									</TableCell>
-									<TableCell className="text-center">
-										{trace.ITERATIONS}
-									</TableCell>
-									<TableCell className="text-center">
-										{trace.TOOL_CALL_COUNT}
-									</TableCell>
-									<TableCell>
+									)}
+								</div>
+
+								{/* Harness pills */}
+								<div className="flex flex-wrap items-center gap-1.5">
+									{room.harnessTypes.map((h) => (
 										<span
-											className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold text-xs ${
-												isSuccess
-													? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-													: isRunning
-														? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-														: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-											}`}
+											key={h}
+											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-[10px] ${getHarnessColor(h)}`}
 										>
-											{trace.STATUS}
+											{h}
 										</span>
-									</TableCell>
-								</TableRow>
-							);
-						})}
-					</TableBody>
-				</Table>
+									))}
+									<span className="mx-1 text-border">|</span>
+									<span className="flex items-center gap-1 text-muted-foreground text-xs">
+										<Activity className="size-3" />
+										{room.totalRuns}
+									</span>
+									<span className="flex items-center gap-1 text-muted-foreground text-xs">
+										<Wrench className="size-3" />
+										{room.totalToolCalls}
+									</span>
+									<span className="flex items-center gap-1 text-muted-foreground text-xs">
+										<Zap className="size-3" />
+										<span className="text-green-600 dark:text-green-400">
+											↑
+											{room.totalInputTokens.toLocaleString()}
+										</span>
+										<span className="text-blue-600 dark:text-blue-400">
+											↓
+											{room.totalOutputTokens.toLocaleString()}
+										</span>
+									</span>
+									<span className="flex items-center gap-1 text-muted-foreground text-xs">
+										<Clock className="size-3" />
+										{formatDuration(room.totalDurationMs)}
+									</span>
+								</div>
+							</div>
+
+							{/* Chevron */}
+							<ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+						</button>
+					))}
+
+					{filteredRooms.length === 0 && !loading && (
+						<div className="py-12 text-center text-muted-foreground">
+							{hasActiveFilters
+								? "No rooms match current filters"
+								: "No agent activity found"}
+						</div>
+					)}
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };

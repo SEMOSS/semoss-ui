@@ -3,7 +3,11 @@ import {
 	ChevronDown,
 	ChevronRight,
 	Clock,
+	Code,
 	Database,
+	FileText,
+	Globe,
+	Terminal,
 	Wrench,
 	XCircle,
 } from "lucide-react";
@@ -16,12 +20,12 @@ interface SpanTreeProps {
 
 interface StepNodeProps {
 	step: AgentTraceStep;
+	index: number;
 	expanded: boolean;
 	onToggle: () => void;
 }
 
 function computeDuration(step: AgentTraceStep): string {
-	// Prefer server-computed DURATION_MS (millisecond precision)
 	if (step.DURATION_MS != null && step.DURATION_MS > 0) {
 		const ms = step.DURATION_MS;
 		if (ms < 1000) return `${ms}ms`;
@@ -40,9 +44,163 @@ function computeDuration(step: AgentTraceStep): string {
 	}
 }
 
-const StepNode = ({ step, expanded, onToggle }: StepNodeProps) => {
+function getToolIcon(step: AgentTraceStep) {
+	if (step.IS_MCP) {
+		if (step.ENGINE_TYPE === "DATABASE")
+			return <Database className="size-3.5 text-blue-500" />;
+		if (step.ENGINE_TYPE === "VECTOR")
+			return <Globe className="size-3.5 text-teal-500" />;
+		return <Database className="size-3.5 text-blue-500" />;
+	}
+	const name = step.TOOL_NAME?.toLowerCase() ?? "";
+	if (name === "bash" || name === "execute")
+		return <Terminal className="size-3.5 text-green-500" />;
+	if (name === "read" || name === "readfile")
+		return <FileText className="size-3.5 text-amber-500" />;
+	if (name === "write" || name === "writefile" || name === "edit")
+		return <Code className="size-3.5 text-purple-500" />;
+	return <Wrench className="size-3.5 text-amber-500" />;
+}
+
+function getSourceBadge(step: AgentTraceStep) {
+	if (step.IS_MCP) {
+		return (
+			<span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 font-medium text-[9px] text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+				SEMOSS {step.ENGINE_TYPE ?? "ENGINE"}
+			</span>
+		);
+	}
+	return (
+		<span className="inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 font-medium text-[9px] text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+			SDK
+		</span>
+	);
+}
+
+// Interactive JSON tree viewer (inspired by audit logs JSONTreeView)
+function JsonViewer({
+	data,
+	defaultExpanded = true,
+}: {
+	data: unknown;
+	defaultExpanded?: boolean;
+}) {
+	const [expanded, setExpanded] = useState(defaultExpanded);
+
+	if (data === null) return <span className="text-blue-500">null</span>;
+	if (data === undefined)
+		return <span className="text-blue-500">undefined</span>;
+	if (typeof data === "string")
+		return (
+			<span className="text-rose-600 dark:text-rose-400">"{data}"</span>
+		);
+	if (typeof data === "number")
+		return (
+			<span className="text-emerald-600 dark:text-emerald-400">
+				{data}
+			</span>
+		);
+	if (typeof data === "boolean")
+		return (
+			<span className="text-blue-600 dark:text-blue-400">
+				{data.toString()}
+			</span>
+		);
+
+	const isArray = Array.isArray(data);
+	const entries = Object.entries(data as Record<string, unknown>);
+	const isEmpty = entries.length === 0;
+
+	if (isEmpty)
+		return (
+			<span className="text-muted-foreground">
+				{isArray ? "[]" : "{}"}
+			</span>
+		);
+
+	return (
+		<div className="ml-0">
+			<button
+				type="button"
+				className="inline-flex items-center gap-0.5 font-mono text-muted-foreground hover:text-foreground"
+				onClick={() => setExpanded(!expanded)}
+			>
+				{expanded ? (
+					<ChevronDown className="inline size-3" />
+				) : (
+					<ChevronRight className="inline size-3" />
+				)}
+				<span>
+					{isArray ? `[${entries.length}]` : `{${entries.length}}`}
+				</span>
+			</button>
+			{expanded && (
+				<div className="ml-4 border-border/50 border-l pl-2">
+					{entries.map(([key, value]) => (
+						<div key={key} className="my-0.5">
+							{!isArray && (
+								<span className="text-sky-600 dark:text-sky-400">
+									"{key}"
+								</span>
+							)}
+							{!isArray && (
+								<span className="text-muted-foreground">
+									:{" "}
+								</span>
+							)}
+							{isArray && (
+								<span className="mr-1 text-[10px] text-muted-foreground">
+									{key}.
+								</span>
+							)}
+							{value !== null && typeof value === "object" ? (
+								<JsonViewer
+									data={value}
+									defaultExpanded={false}
+								/>
+							) : (
+								<JsonViewer data={value} />
+							)}
+						</div>
+					))}
+				</div>
+			)}
+		</div>
+	);
+}
+
+function parseJsonSafe(input: string): unknown | null {
+	try {
+		return JSON.parse(input);
+	} catch {
+		return null;
+	}
+}
+
+function tryExtractSummary(json: string): string | null {
+	try {
+		const parsed = JSON.parse(json);
+		if (typeof parsed === "string")
+			return parsed.length > 120 ? `${parsed.slice(0, 120)}…` : parsed;
+		if (parsed.command) return parsed.command;
+		if (parsed.query) return parsed.query;
+		if (parsed.path) return parsed.path;
+		if (parsed.file_path) return parsed.file_path;
+		if (parsed.content)
+			return typeof parsed.content === "string"
+				? parsed.content.slice(0, 80)
+				: null;
+		return null;
+	} catch {
+		return json.length > 120 ? `${json.slice(0, 120)}…` : json;
+	}
+}
+
+const StepNode = ({ step, index, expanded, onToggle }: StepNodeProps) => {
 	const isSuccess = step.STATUS === "success";
-	const isMcp = step.IS_MCP;
+	const inputSummary = step.TOOL_INPUT_JSON
+		? tryExtractSummary(step.TOOL_INPUT_JSON)
+		: null;
 
 	return (
 		<div className="border-border border-b last:border-b-0">
@@ -59,115 +217,164 @@ const StepNode = ({ step, expanded, onToggle }: StepNodeProps) => {
 					)}
 				</span>
 
+				{/* Step number */}
+				<span className="flex size-5 shrink-0 items-center justify-center rounded bg-muted font-mono text-[10px] text-muted-foreground">
+					{index + 1}
+				</span>
+
+				{/* Status */}
 				{isSuccess ? (
 					<CheckCircle2 className="size-3.5 shrink-0 text-emerald-500" />
 				) : (
 					<XCircle className="size-3.5 shrink-0 text-red-500" />
 				)}
 
-				{isMcp ? (
-					<Database className="size-3.5 shrink-0 text-blue-500" />
-				) : (
-					<Wrench className="size-3.5 shrink-0 text-amber-500" />
-				)}
+				{/* Tool icon */}
+				{getToolIcon(step)}
 
-				<span className="flex-1 truncate font-medium text-sm">
+				{/* Tool name */}
+				<span className="shrink-0 font-semibold text-sm">
 					{step.TOOL_NAME}
 				</span>
 
+				{/* Source badge */}
+				{getSourceBadge(step)}
+
+				{/* Input summary (inline preview) */}
+				{inputSummary && (
+					<span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground">
+						{inputSummary}
+					</span>
+				)}
+
+				{/* Duration */}
 				<span className="flex shrink-0 items-center gap-1 text-muted-foreground text-xs">
 					<Clock className="size-3" />
 					{computeDuration(step)}
 				</span>
-
-				<span
-					className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-medium text-[10px] ${
-						isSuccess
-							? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-							: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-					}`}
-				>
-					{step.STATUS}
-				</span>
 			</button>
 
 			{expanded && (
-				<div className="space-y-2 border-border border-t bg-muted/20 px-4 py-3">
-					<div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+				<div className="space-y-3 border-border border-t bg-muted/10 px-4 py-3">
+					{/* Metadata grid */}
+					<div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
 						<div>
-							<span className="text-muted-foreground">
-								Tool Call ID:
-							</span>{" "}
-							<span className="font-mono">
-								{step.TOOL_CALL_ID?.slice(0, 20)}...
-							</span>
+							<p className="font-medium text-muted-foreground">
+								Tool Call ID
+							</p>
+							<p className="truncate font-mono">
+								{step.TOOL_CALL_ID}
+							</p>
 						</div>
 						<div>
-							<span className="text-muted-foreground">
-								Step #:
-							</span>{" "}
-							{step.STEP_NUMBER}
+							<p className="font-medium text-muted-foreground">
+								Step
+							</p>
+							<p>
+								#{step.STEP_NUMBER} · {step.STEP_TYPE}
+							</p>
+						</div>
+						<div>
+							<p className="font-medium text-muted-foreground">
+								Source
+							</p>
+							<p>
+								{step.IS_MCP
+									? `SEMOSS Engine (${step.ENGINE_TYPE ?? "unknown"})`
+									: "Claude SDK (external)"}
+							</p>
 						</div>
 						{step.ENGINE_ID && (
 							<div>
-								<span className="text-muted-foreground">
-									Engine:
-								</span>{" "}
-								<span className="font-mono text-[11px]">
-									{step.ENGINE_ID.slice(0, 12)}...
-								</span>
-							</div>
-						)}
-						{step.ENGINE_TYPE && (
-							<div>
-								<span className="text-muted-foreground">
-									Engine Type:
-								</span>{" "}
-								{step.ENGINE_TYPE}
+								<p className="font-medium text-muted-foreground">
+									Engine ID
+								</p>
+								<p className="truncate font-mono">
+									{step.ENGINE_ID}
+								</p>
 							</div>
 						)}
 						<div>
-							<span className="text-muted-foreground">MCP:</span>{" "}
-							{step.IS_MCP ? "Yes" : "No"}
+							<p className="font-medium text-muted-foreground">
+								Start
+							</p>
+							<p className="font-mono">{step.START_TIME}</p>
 						</div>
 						<div>
-							<span className="text-muted-foreground">
-								Start:
-							</span>{" "}
-							{step.START_TIME}
+							<p className="font-medium text-muted-foreground">
+								End
+							</p>
+							<p className="font-mono">{step.END_TIME}</p>
 						</div>
 					</div>
 
+					{/* Input */}
 					{step.TOOL_INPUT_JSON && (
 						<div>
-							<p className="mb-1 font-medium text-muted-foreground text-xs">
+							<p className="mb-1.5 font-semibold text-xs">
 								Input
 							</p>
-							<pre className="max-h-32 overflow-auto rounded bg-background p-2 font-mono text-[11px]">
-								{formatJson(step.TOOL_INPUT_JSON)}
-							</pre>
+							<div className="max-h-64 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-[12px] leading-relaxed">
+								{(() => {
+									const parsed = parseJsonSafe(
+										step.TOOL_INPUT_JSON,
+									);
+									if (parsed !== null) {
+										return (
+											<JsonViewer
+												data={parsed}
+												defaultExpanded={true}
+											/>
+										);
+									}
+									return (
+										<pre className="whitespace-pre-wrap">
+											{step.TOOL_INPUT_JSON}
+										</pre>
+									);
+								})()}
+							</div>
 						</div>
 					)}
 
+					{/* Output */}
 					{step.OUTPUT_TEXT && (
 						<div>
-							<p className="mb-1 font-medium text-muted-foreground text-xs">
+							<p className="mb-1.5 font-semibold text-xs">
 								Output
 							</p>
-							<pre className="max-h-48 overflow-auto rounded bg-background p-2 font-mono text-[11px]">
-								{step.OUTPUT_TEXT.length > 2000
-									? `${step.OUTPUT_TEXT.slice(0, 2000)}...`
-									: step.OUTPUT_TEXT}
-							</pre>
+							<div className="max-h-72 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-[12px] leading-relaxed">
+								{(() => {
+									const parsed = parseJsonSafe(
+										step.OUTPUT_TEXT,
+									);
+									if (parsed !== null) {
+										return (
+											<JsonViewer
+												data={parsed}
+												defaultExpanded={false}
+											/>
+										);
+									}
+									return (
+										<pre className="whitespace-pre-wrap">
+											{step.OUTPUT_TEXT.length > 3000
+												? `${step.OUTPUT_TEXT.slice(0, 3000)}\n\n… (truncated ${step.OUTPUT_TEXT.length - 3000} chars)`
+												: step.OUTPUT_TEXT}
+										</pre>
+									);
+								})()}
+							</div>
 						</div>
 					)}
 
+					{/* Error */}
 					{step.ERROR_MESSAGE && (
 						<div>
-							<p className="mb-1 font-medium text-red-600 text-xs">
+							<p className="mb-1.5 font-semibold text-red-600 text-xs">
 								Error
 							</p>
-							<pre className="max-h-32 overflow-auto rounded bg-red-50 p-2 font-mono text-[11px] text-red-700 dark:bg-red-950/30 dark:text-red-400">
+							<pre className="max-h-40 overflow-auto rounded-md border border-red-200 bg-red-50 p-3 font-mono text-[11px] text-red-700 leading-relaxed dark:border-red-800 dark:bg-red-950/30 dark:text-red-400">
 								{step.ERROR_MESSAGE}
 							</pre>
 						</div>
@@ -177,14 +384,6 @@ const StepNode = ({ step, expanded, onToggle }: StepNodeProps) => {
 		</div>
 	);
 };
-
-function formatJson(input: string): string {
-	try {
-		return JSON.stringify(JSON.parse(input), null, 2);
-	} catch {
-		return input;
-	}
-}
 
 export const SpanTree = ({ steps }: SpanTreeProps) => {
 	const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -206,12 +405,16 @@ export const SpanTree = ({ steps }: SpanTreeProps) => {
 		});
 	};
 
+	// Sort by step number (chronological — earliest first)
+	const sorted = [...steps].sort((a, b) => a.STEP_NUMBER - b.STEP_NUMBER);
+
 	return (
-		<div className="divide-y-0 rounded border border-border bg-card">
-			{steps.map((step) => (
+		<div className="divide-y-0 rounded-lg border border-border bg-card">
+			{sorted.map((step, i) => (
 				<StepNode
 					key={step.STEP_ID}
 					step={step}
+					index={i}
 					expanded={expandedIds.has(step.STEP_ID)}
 					onToggle={() => toggle(step.STEP_ID)}
 				/>
