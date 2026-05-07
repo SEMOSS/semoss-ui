@@ -17,7 +17,7 @@ import {
 	useState,
 } from "react";
 import { useSearchParams } from "react-router-dom";
-import { debounced, useIteratorPixel } from "@semoss/sdk/react";
+import { debounced, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	H3,
@@ -61,6 +61,10 @@ type CloneRefreshState = {
 interface AppCatalogState {
 	favoritedApps: AppMetadata[];
 	apps: AppMetadata[];
+}
+
+interface CreatedByMeAppsResponse {
+	createdProjects: string[];
 }
 
 const INITIAL_STATE: AppCatalogState = {
@@ -379,8 +383,18 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	// Determine pixel query based on mode
 	const isSystemMode = mode === "System";
 	const isBookmarkedMode = mode === "Bookmarked";
+	const isCreatedByMeMode =
+		createdByMe && (mode === "Mine" || mode === "Bookmarked");
 	const pixel =
 		mode === "Discoverable" ? "MyDiscoverableProjects" : "MyProjects";
+	const createdByMeApps = usePixel<CreatedByMeAppsResponse>(
+		isCreatedByMeMode ? "CreatedByMeApps();" : "",
+		{
+			data: {
+				createdProjects: [],
+			},
+		},
+	);
 
 	// Fetch apps with pagination
 	const getApps = useIteratorPixel<AppMetadata[], AppMetadata>(
@@ -726,36 +740,51 @@ export const AppCatalogPage = observer((): JSX.Element => {
 			app.project_name.toLowerCase().includes(searchLower),
 		);
 	}, [search]);
+	const createdByMeProjectIds = useMemo(
+		() => new Set(createdByMeApps.data?.createdProjects ?? []),
+		[createdByMeApps.data],
+	);
+	const isCreatedByMeLoading =
+		isCreatedByMeMode &&
+		(createdByMeApps.status === "INITIAL" ||
+			createdByMeApps.status === "LOADING");
+	const isCreatedByMeError =
+		isCreatedByMeMode && createdByMeApps.status === "ERROR";
+	const isBookmarkedLoading =
+		isBookmarkedMode &&
+		getFavoritedApps.isLoading &&
+		favoritedApps.length === 0;
 
 	// Apps to display
 	const displayedApps = useMemo(() => {
+		const filterCreatedApps = (appList: AppMetadata[]) => {
+			if (!isCreatedByMeMode) {
+				return appList;
+			}
+
+			return appList.filter((app) =>
+				createdByMeProjectIds.has(app.project_id),
+			);
+		};
+
 		// For Bookmarked mode, use favoritedApps
 		if (isBookmarkedMode) {
-			if (createdByMe) {
-				const currentUserId = configStore.store.user.id;
-				return favoritedApps.filter(
-					(app) => app.project_created_by === currentUserId,
-				);
-			}
-			return favoritedApps;
+			return filterCreatedApps(favoritedApps);
 		}
 
 		// Filter by created by me if toggle is on and we're in "My Apps" tab
-		if (createdByMe && mode === "Mine") {
-			const currentUserId = configStore.store.user.id;
-			return apps.filter(
-				(app) => app.project_created_by === currentUserId,
-			);
+		if (mode === "Mine") {
+			return filterCreatedApps(apps);
 		}
 
 		return apps;
 	}, [
 		apps,
+		createdByMeProjectIds,
 		favoritedApps,
 		isBookmarkedMode,
-		createdByMe,
 		mode,
-		configStore.store.user.id,
+		isCreatedByMeMode,
 	]);
 
 	return (
@@ -1000,7 +1029,18 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 							{/* Bookmarked Apps */}
 							{isBookmarkedMode &&
-								(displayedApps.length > 0 ? (
+								(isBookmarkedLoading || isCreatedByMeLoading ? (
+									<div className="flex items-center justify-center py-4">
+										<Spinner className="size-5" />
+									</div>
+								) : isCreatedByMeError ? (
+									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+										<P>
+											Unable to load apps created by you.
+											Please try again.
+										</P>
+									</div>
+								) : displayedApps.length > 0 ? (
 									<div className={containerClass}>
 										{displayedApps.map((app) => (
 											<AppTileCard
@@ -1094,6 +1134,29 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							{/* Regular Apps */}
 							{!isSystemMode &&
 								!isBookmarkedMode &&
+								!getApps.isLoading &&
+								isCreatedByMeLoading && (
+									<div className="flex items-center justify-center py-4">
+										<Spinner className="size-5" />
+									</div>
+								)}
+
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								!getApps.isLoading &&
+								isCreatedByMeError && (
+									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+										<P>
+											Unable to load apps created by you.
+											Please try again.
+										</P>
+									</div>
+								)}
+
+							{!isSystemMode &&
+								!isBookmarkedMode &&
+								!isCreatedByMeError &&
+								!isCreatedByMeLoading &&
 								displayedApps.length > 0 && (
 									<div className={containerClass}>
 										{displayedApps.map((app) => (
@@ -1146,6 +1209,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							{!isSystemMode &&
 								!isBookmarkedMode &&
 								!getApps.isLoading &&
+								!isCreatedByMeError &&
+								!isCreatedByMeLoading &&
 								displayedApps.length === 0 &&
 								apps.length > 0 &&
 								createdByMe && (
@@ -1158,6 +1223,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							{!isSystemMode &&
 								!isBookmarkedMode &&
 								!getApps.isLoading &&
+								!isCreatedByMeError &&
+								!isCreatedByMeLoading &&
 								displayedApps.length === 0 &&
 								apps.length === 0 && (
 									<div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
