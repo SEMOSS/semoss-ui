@@ -186,15 +186,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			)
 				return;
 			try {
-				const byteString = atob(mediaPart.mediaInfo.base64Data);
-				const bytes = new Uint8Array(byteString.length);
-				for (let i = 0; i < byteString.length; i++) {
-					bytes[i] = byteString.charCodeAt(i);
-				}
 				const mimeType = mediaPart.mediaInfo.mimeType || "image/png";
-				const blob = new Blob([bytes], { type: mimeType });
+				const res = await fetch(
+					`data:${mimeType};base64,${mediaPart.mediaInfo.base64Data}`,
+				);
+				const blob = await res.blob();
 				await navigator.clipboard.write([
-					new ClipboardItem({ [blob.type]: blob }),
+					new ClipboardItem({ [mimeType]: blob }),
 				]);
 				toast.success(t("notifications.copySuccess"));
 			} catch (e: unknown) {
