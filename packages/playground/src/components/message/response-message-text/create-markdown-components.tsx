@@ -77,6 +77,20 @@ export const createMarkdownComponents = (
 		</P>
 	),
 	a: ({ children, href, ...props }) => {
+		if (
+			href &&
+			(href.startsWith("file://") || href.startsWith("docubridge://"))
+		) {
+			return (
+				<button
+					type="button"
+					className="cursor-pointer font-medium text-base text-primary underline underline-offset-1"
+					onClick={() => window.open(href, "_blank")}
+				>
+					{children}
+				</button>
+			);
+		}
 		if (href?.startsWith("room://") && room) {
 			const path = `/${href.slice("room://".length)}`;
 
