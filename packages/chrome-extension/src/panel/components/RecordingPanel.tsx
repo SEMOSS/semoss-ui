@@ -5,7 +5,7 @@
 
 import type { FC } from "react";
 // biome-ignore lint/correctness/noUnusedImports: React is required for JSX transform
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Box,
 	Button,
@@ -16,7 +16,14 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import type { RecordedAction } from "../../recorder/types";
+import { AuthService } from "../../services/authService";
 import { useRecordingState } from "../../services/recordingStateManager";
+
+interface SaveRecordingResponse {
+	success?: boolean;
+	fileName?: string;
+	message?: string;
+}
 
 export const RecordingPanel: FC = () => {
 	const {
@@ -30,6 +37,46 @@ export const RecordingPanel: FC = () => {
 	} = useRecordingState();
 	const notification = useNotification();
 	const [scriptName, setScriptName] = useState("");
+	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [selectedProject, setSelectedProject] = useState<string | null>(null);
+
+	// Check authentication status on mount and when storage changes
+	useEffect(() => {
+		const checkAuth = async () => {
+			const authenticated = await AuthService.isAuthenticated();
+			const project = await AuthService.getSelectedProject();
+			setIsAuthenticated(authenticated);
+			setSelectedProject(project);
+		};
+
+		// Initial check
+		checkAuth();
+
+		// Listen for storage changes (when user saves credentials in Settings)
+		const handleStorageChange = (
+			changes: { [key: string]: chrome.storage.StorageChange },
+			areaName: string,
+		) => {
+			if (
+				areaName === "local" &&
+				(changes.isAuthenticated || changes.selectedProject)
+			) {
+				checkAuth();
+			}
+		};
+
+		chrome.storage.onChanged.addListener(handleStorageChange);
+
+		// Cleanup listener on unmount
+		return () => {
+			chrome.storage.onChanged.removeListener(handleStorageChange);
+		};
+	}, []);
+
+	const handleSettings = () => {
+		// Open the extension options page
+		chrome.runtime.openOptionsPage();
+	};
 
 	const handleStartRecording = async () => {
 		try {
@@ -59,12 +106,36 @@ export const RecordingPanel: FC = () => {
 				await pauseRecording();
 			}
 		} catch (error) {
-			console.error("[RecordingPanel] Failed to pause/resume:", error);
+			console.error(
+				"[RecordingPanel] Failed to pause/resume recording:",
+				error,
+			);
 		}
 	};
 
 	const handleSave = async () => {
 		try {
+			// Check if authenticated
+			if (!isAuthenticated || !selectedProject) {
+				notification.add({
+					color: "error",
+					message:
+						"Please configure Semoss credentials (Click ⚙️ Settings icon)",
+				});
+				return;
+			}
+
+			// Get stored credentials
+			const credentials = await AuthService.getCredentials();
+			if (!credentials) {
+				notification.add({
+					color: "error",
+					message:
+						"Authentication credentials not found. Please reconfigure in settings.",
+				});
+				return;
+			}
+
 			// Generate Playwright JSON
 			const { PlaywrightExporter } = await import(
 				"../../recorder/exporters/PlaywrightExporter"
@@ -89,34 +160,55 @@ export const RecordingPanel: FC = () => {
 			// Format JSON with proper indentation (4 spaces to match Playwright unified format)
 			const jsonString = JSON.stringify(playwrightJson, replacer, 4);
 
-			// Send to portal to save to project
-			const payload = {
-				type: "SAVE_RECORDING_TO_PROJECT",
-				payload: {
-					projectId: "b12d7bd5-7338-445d-9b11-ef1f3322d52b",
-					name: name,
-					jsonPayload: jsonString,
-					title: playwrightJson.meta.title,
-					description: playwrightJson.meta.description,
-					intent: playwrightJson.meta.intent,
-				},
-			};
+			// Build Semoss pixel expression
+			const escapedJson = jsonString
+				.replace(/"/g, '\\"')
+				.replace(/\n/g, "\\n");
+			const expression = `SaveRecordingFromExtension(project=["${selectedProject}"], name=["${name}"], jsonPayload=["${escapedJson}"], clientKey=["${credentials.clientKey}"], secretKey=["${credentials.secretKey}"]);`;
 
-			console.log(
-				"[RecordingPanel] Sending save request to portal:",
-				payload,
+			console.log("[RecordingPanel] Saving recording to Semoss...");
+
+			// Send to Semoss
+			const response = await fetch(
+				`${credentials.endpointUrl}/api/engine/runPixel`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/x-www-form-urlencoded",
+					},
+					body: new URLSearchParams({
+						expression: expression,
+					}),
+				},
 			);
 
-			// Send message to content script which will forward to portal
-			const response = await chrome.runtime.sendMessage(payload);
+			if (!response.ok) {
+				throw new Error(
+					`HTTP ${response.status}: ${response.statusText}`,
+				);
+			}
 
-			if (response?.success) {
+			const rawData = await response.json();
+
+			// Unwrap Pixel engine response format
+			let data: SaveRecordingResponse;
+			if (
+				rawData.pixelReturn &&
+				Array.isArray(rawData.pixelReturn) &&
+				rawData.pixelReturn.length > 0
+			) {
+				data = rawData.pixelReturn[0].output;
+			} else {
+				data = rawData;
+			}
+
+			if (data && data.success) {
 				notification.add({
 					color: "success",
-					message: `Recording saved successfully: ${response.fileName || name}`,
+					message: `Recording saved successfully: ${data.fileName || name}`,
 				});
 			} else {
-				throw new Error(response?.error || "Failed to save recording");
+				throw new Error(data?.message || "Failed to save recording");
 			}
 		} catch (error) {
 			console.error("[RecordingPanel] Failed to save:", error);
@@ -204,6 +296,97 @@ export const RecordingPanel: FC = () => {
 					"linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%)",
 			}}
 		>
+			{/* Header with Settings */}
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					mb: -1,
+				}}
+			>
+				<Typography
+					variant="h6"
+					sx={{
+						fontWeight: 700,
+						color: "#1e293b",
+						fontSize: "18px",
+					}}
+				>
+					🎬 Recording Panel
+				</Typography>
+				<Button
+					onClick={handleSettings}
+					variant="text"
+					size="small"
+					sx={{
+						minWidth: "36px",
+						width: "36px",
+						height: "36px",
+						padding: 0,
+						borderRadius: "50%",
+						color: "#64748b",
+						fontSize: "20px",
+						transition: "all 0.2s ease",
+						"&:hover": {
+							color: "#2563eb",
+							backgroundColor: "rgba(37, 99, 235, 0.08)",
+							transform: "rotate(90deg)",
+						},
+					}}
+					title="Settings"
+				>
+					⚙️
+				</Button>
+			</Box>
+
+			{/* Authentication Status Banner */}
+			{!isAuthenticated && (
+				<Card
+					sx={{
+						width: "100%",
+						backgroundColor: "#fff3cd",
+						borderLeft: "4px solid #ffc107",
+						borderRadius: "8px",
+						p: 2,
+						boxShadow: "none",
+						flexShrink: 0,
+					}}
+				>
+					<Stack spacing={1} sx={{ width: "100%" }}>
+						<Typography
+							variant="subtitle2"
+							sx={{ fontWeight: 600, color: "#856404" }}
+						>
+							⚠️ Authentication Required
+						</Typography>
+						<Typography variant="body2" sx={{ color: "#856404" }}>
+							Please configure your Semoss credentials to save
+							recordings.
+						</Typography>
+						<Button
+							variant="outlined"
+							size="small"
+							onClick={handleSettings}
+							sx={{
+								mt: 0.5,
+								borderColor: "#ffc107",
+								color: "#856404",
+								textTransform: "none",
+								fontWeight: 600,
+								alignSelf: "flex-start",
+								"&:hover": {
+									borderColor: "#e0a800",
+									backgroundColor: "rgba(255, 193, 7, 0.08)",
+								},
+							}}
+						>
+							⚙️ Open Settings
+						</Button>
+					</Stack>
+				</Card>
+			)}
+
 			{/* Recording Controls Card */}
 			<Card
 				sx={{

@@ -29,8 +29,8 @@ let recordingState: RecorderState = {
 	actionCounter: 0,
 };
 
-// Track initial URL when recording starts (to filter out initial navigation events)
-let initialRecordingUrl: string | null = null;
+// Track initial URLs of ALL tabs when recording starts (to filter out initial navigation events)
+const initialRecordingUrls = new Set<string>();
 
 // Track last recorded navigation URL (to prevent duplicates)
 let lastRecordedNavigationUrl: string | null = null;
@@ -1086,14 +1086,10 @@ function _handleRecordingEvent(
 			eventMessage.url ||
 			(typeof eventMessage.value === "string" ? eventMessage.value : "");
 
-		// Skip if navigating to the same page where recording started
-		if (
-			initialRecordingUrl &&
-			(currentUrl === initialRecordingUrl ||
-				currentUrl.startsWith(initialRecordingUrl))
-		) {
+		// Skip if this URL was already loaded when recording started
+		if (initialRecordingUrls.has(currentUrl)) {
 			console.log(
-				"[BACKGROUND] ⏭️ Skipping initial navigation event:",
+				"[BACKGROUND] ⏭️ Skipping initial navigation event (tab was already open):",
 				currentUrl,
 			);
 			return;
@@ -1439,21 +1435,27 @@ async function _handleStartRecording(tabId?: number): Promise<void> {
 	lastTypeActions.clear();
 	lastRecordedNavigationUrl = null;
 	lastSubmitButtonClickTime = 0;
+	initialRecordingUrls.clear();
 
-	// Get the current tab URL to filter out initial navigation
-	if (tabId) {
-		try {
-			const tab = await chrome.tabs.get(tabId);
-			initialRecordingUrl = tab.url || null;
-			console.log(
-				"[BACKGROUND] 🏷️ Initial recording URL:",
-				initialRecordingUrl,
-			);
-		} catch (_err) {
-			initialRecordingUrl = null;
+	// Collect URLs of ALL currently open tabs to filter out initial navigations
+	try {
+		const allTabs = await chrome.tabs.query({});
+		for (const tab of allTabs) {
+			if (
+				tab.url &&
+				!tab.url.startsWith("chrome://") &&
+				!tab.url.startsWith("chrome-extension://")
+			) {
+				initialRecordingUrls.add(tab.url);
+			}
 		}
-	} else {
-		initialRecordingUrl = null;
+		console.log(
+			"[BACKGROUND] 🏷️ Stored initial URLs for",
+			initialRecordingUrls.size,
+			"tabs to filter out initial navigations",
+		);
+	} catch (error) {
+		console.error("[BACKGROUND] Failed to collect initial URLs:", error);
 	}
 
 	recordingState = {
@@ -1547,7 +1549,7 @@ async function _handleStopRecording(): Promise<void> {
 
 	recordingState.isRecording = false;
 	recordingState.isStopped = true;
-	initialRecordingUrl = null; // Clear initial URL
+	initialRecordingUrls.clear(); // Clear initial URLs
 	lastRecordedNavigationUrl = null; // Clear last navigation URL
 
 	await saveRecordingState();

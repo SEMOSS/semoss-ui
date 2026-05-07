@@ -171,9 +171,12 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.8;
   }
@@ -303,6 +306,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -323,6 +327,7 @@ body {
     transform: translateY(30px) scale(0.95);
     opacity: 0;
   }
+
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
@@ -535,6 +540,7 @@ body {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -598,6 +604,7 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -687,6 +694,60 @@ body {
   border: 1px solid #bae6fd;
 }
 
+/* Override notification error and success colors to white text */
+/* Target @semoss/ui Notification component with error and success colors */
+[data-color="error"],
+[data-color="success"],
+.MuiAlert-standardError,
+.MuiAlert-filledError,
+.MuiAlert-standardSuccess,
+.MuiAlert-filledSuccess,
+.notification-error,
+.notification-success,
+.semoss-notification[data-color="error"],
+.semoss-notification[data-color="success"] {
+  color: #ffffff !important;
+}
+
+/* Make sure all text elements within error and success notifications are white */
+[data-color="error"] *,
+[data-color="success"] *,
+.MuiAlert-standardError *,
+.MuiAlert-filledError *,
+.MuiAlert-standardSuccess *,
+.MuiAlert-filledSuccess *,
+.notification-error *,
+.notification-success *,
+.semoss-notification[data-color="error"] *,
+.semoss-notification[data-color="success"] * {
+  color: #ffffff !important;
+}
+
+/* Make error and success notification icons white */
+[data-color="error"] .MuiSvgIcon-root,
+[data-color="success"] .MuiSvgIcon-root,
+.MuiAlert-standardError .MuiSvgIcon-root,
+.MuiAlert-filledError .MuiSvgIcon-root,
+.MuiAlert-standardSuccess .MuiSvgIcon-root,
+.MuiAlert-filledSuccess .MuiSvgIcon-root,
+.notification-error .MuiSvgIcon-root,
+.notification-success .MuiSvgIcon-root,
+.semoss-notification[data-color="error"] .MuiSvgIcon-root,
+.semoss-notification[data-color="success"] .MuiSvgIcon-root,
+[data-color="error"] svg,
+[data-color="success"] svg,
+.MuiAlert-standardError svg,
+.MuiAlert-filledError svg,
+.MuiAlert-standardSuccess svg,
+.MuiAlert-filledSuccess svg,
+.notification-error svg,
+.notification-success svg,
+.semoss-notification[data-color="error"] svg,
+.semoss-notification[data-color="success"] svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
 .playground-current strong,
 .playground-submitted strong {
   display: block;
@@ -756,9 +817,12 @@ body {
 }
 
 @keyframes pulse-border {
-  0%, 100% {
+
+  0%,
+  100% {
     border-color: #6ee7b7;
   }
+
   50% {
     border-color: #10b981;
   }
@@ -791,4 +855,3 @@ body {
 .use-playground-btn:active {
   transform: translateY(0);
 }
-
