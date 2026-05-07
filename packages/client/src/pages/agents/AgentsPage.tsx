@@ -1,14 +1,15 @@
 import {
 	Activity,
+	BotMessageSquare,
 	ChevronRight,
 	Clock,
-	MessageSquare,
+	Copy,
 	RefreshCcw,
 	Wrench,
 	Zap,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
-import { Button, Spinner } from "@semoss/ui/next";
+import { Button, Spinner, toast } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
@@ -23,7 +24,7 @@ function formatDuration(ms: number): string {
 	return rem > 0 ? `${m}m ${rem}s` : `${m}m`;
 }
 
-function _formatDateTime(raw: string): string {
+function formatDateTime(raw: string): string {
 	if (!raw) return "—";
 	try {
 		const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
@@ -297,7 +298,7 @@ export const AgentsPage: React.FC = () => {
 										: "bg-emerald-100 dark:bg-emerald-900/30"
 								}`}
 							>
-								<MessageSquare
+								<BotMessageSquare
 									className={`size-5 ${
 										room.hasErrors
 											? "text-red-600 dark:text-red-400"
@@ -320,7 +321,8 @@ export const AgentsPage: React.FC = () => {
 											: `Room ${room.roomId.slice(0, 8)}`}
 									</span>
 									<span className="shrink-0 text-muted-foreground text-xs">
-										{timeAgo(room.lastActivity)}
+										{formatDateTime(room.lastActivity)} (
+										{timeAgo(room.lastActivity)})
 									</span>
 									{/* User badge */}
 									{room.users && room.users.length > 0 && (
@@ -328,6 +330,36 @@ export const AgentsPage: React.FC = () => {
 											{room.users[0]}
 										</span>
 									)}
+								</div>
+
+								{/* Room ID */}
+								<div className="flex items-center gap-1.5">
+									<span className="font-mono text-[10px] text-muted-foreground">
+										{room.roomId}
+									</span>
+									<button
+										type="button"
+										onClick={(e) => {
+											e.stopPropagation();
+											try {
+												navigator.clipboard.writeText(
+													room.roomId,
+												);
+												toast.success(
+													"Room ID copied to clipboard",
+												);
+											} catch {
+												toast.error(
+													"Failed to copy room ID",
+												);
+											}
+										}}
+										className="text-muted-foreground text-xs transition-colors hover:text-foreground"
+										title="Copy room ID"
+										aria-label="Copy room ID"
+									>
+										<Copy className="size-3.5" />
+									</button>
 								</div>
 
 								{/* Harness pills */}

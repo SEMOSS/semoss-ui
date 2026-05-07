@@ -4,12 +4,13 @@ import {
 	ChevronDown,
 	ChevronRight,
 	Clock,
+	Copy,
 	Wrench,
 	Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Button, Spinner } from "@semoss/ui/next";
+import { Button, Spinner, toast } from "@semoss/ui/next";
 import { SpanTree } from "@/components/agent-traces";
 import type { AgentTraceStep, TraceRow } from "@/components/agent-traces/types";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
@@ -99,6 +100,9 @@ export const RoomDetailPage = () => {
 	const [stepsMap, setStepsMap] = useState<Record<string, AgentTraceStep[]>>(
 		{},
 	);
+	const [selectedStepByTraceId, setSelectedStepByTraceId] = useState<
+		Record<string, string | undefined>
+	>({});
 	const [_messages, setMessages] = useState<unknown[]>([]);
 
 	const fetchRoomDetail = useCallback(async () => {
@@ -184,6 +188,19 @@ export const RoomDetailPage = () => {
 	const totalDuration = traces.reduce((s, t) => s + (t.DURATION_MS ?? 0), 0);
 	const projectId = traces[0]?.PROJECT_ID;
 
+	const handleCopyId = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			try {
+				navigator.clipboard.writeText(roomId || "");
+				toast.success("Room ID copied to clipboard");
+			} catch {
+				toast.error("Failed to copy Room ID");
+			}
+		},
+		[roomId],
+	);
+
 	if (loading) {
 		return (
 			<div className="flex h-64 items-center justify-center">
@@ -214,9 +231,19 @@ export const RoomDetailPage = () => {
 								? projectId.replace("SYSTEM__", "")
 								: `Room ${roomId?.slice(0, 8)}`}
 						</h1>
-						<span className="font-mono text-muted-foreground text-xs">
-							{roomId}
-						</span>
+						<div className="flex min-w-0 items-center gap-1 text-muted-foreground text-xs">
+							<span className="truncate">{roomId}</span>
+							<Button
+								variant="ghost"
+								size="icon-sm"
+								className="h-6 w-6"
+								onClick={handleCopyId}
+								aria-label="Copy room ID"
+								title="Copy room ID"
+							>
+								<Copy className="size-3.5" />
+							</Button>
+						</div>
 					</div>
 				</div>
 
@@ -434,7 +461,7 @@ export const RoomDetailPage = () => {
 																			: 1.5;
 																	const isOk =
 																		step.STATUS ===
-																		"success";
+																		"SUCCESS";
 																	return (
 																		<div
 																			key={
@@ -442,12 +469,28 @@ export const RoomDetailPage = () => {
 																			}
 																			className="flex items-center gap-1"
 																		>
-																			<span className="w-20 truncate text-right font-mono text-[10px] text-muted-foreground">
-																				{
-																					step.TOOL_NAME
-																				}
+																			<span className="w-20 truncate text-left font-mono text-[10px] text-muted-foreground">
+																				{step.TOOL_NAME?.split(
+																					"_",
+																				).pop() ??
+																					step.TOOL_NAME}
 																			</span>
-																			<div className="relative h-4 flex-1 rounded-sm bg-muted/40">
+																			<button
+																				type="button"
+																				className="relative h-4 flex-1 rounded-sm bg-muted/40 text-left transition-opacity hover:opacity-80"
+																				onClick={() =>
+																					setSelectedStepByTraceId(
+																						(
+																							prev,
+																						) => ({
+																							...prev,
+																							[trace.TRACE_ID]:
+																								step.STEP_ID,
+																						}),
+																					)
+																				}
+																				aria-label={`Expand ${step.TOOL_NAME?.split("_").pop() ?? step.TOOL_NAME} in span tree`}
+																			>
 																				<div className="pointer-events-none absolute inset-0 flex justify-between">
 																					{[
 																						0,
@@ -473,7 +516,7 @@ export const RoomDetailPage = () => {
 																						width: `${Math.min(widthPct, 100 - offsetPct)}%`,
 																					}}
 																				/>
-																			</div>
+																			</button>
 																			<span className="w-10 text-right font-mono text-[10px] text-muted-foreground">
 																				{stepMs >
 																				0
@@ -502,6 +545,11 @@ export const RoomDetailPage = () => {
 														steps={steps}
 														harnessName={
 															trace.HARNESS_NAME
+														}
+														expandedStepId={
+															selectedStepByTraceId[
+																trace.TRACE_ID
+															]
 														}
 													/>
 												</div>

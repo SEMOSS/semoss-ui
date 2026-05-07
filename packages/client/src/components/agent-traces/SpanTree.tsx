@@ -4,6 +4,7 @@ import {
 	ChevronRight,
 	Clock,
 	Code,
+	Copy,
 	Database,
 	FileText,
 	Globe,
@@ -11,12 +12,14 @@ import {
 	Wrench,
 	XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Button, toast } from "@semoss/ui/next";
 import type { AgentTraceStep } from "./types";
 
 interface SpanTreeProps {
 	steps: AgentTraceStep[];
 	harnessName?: string;
+	expandedStepId?: string;
 }
 
 interface StepNodeProps {
@@ -127,20 +130,34 @@ function JsonViewer({
 	if (data === null) return <span className="text-blue-500">null</span>;
 	if (data === undefined)
 		return <span className="text-blue-500">undefined</span>;
-	if (typeof data === "string")
+	if (typeof data === "string") {
+		const str = data as string;
+		const charCount = str.length;
 		return (
-			<span className="text-rose-600 dark:text-rose-400">"{data}"</span>
+			<span className="text-rose-600 dark:text-rose-400">
+				"{str}"
+				<span className="ml-1 text-[10px] text-muted-foreground">
+					({charCount} char{charCount === 1 ? "" : "s"})
+				</span>
+			</span>
 		);
+	}
 	if (typeof data === "number")
 		return (
 			<span className="text-emerald-600 dark:text-emerald-400">
 				{data}
+				<span className="ml-1 text-[10px] text-muted-foreground">
+					(number)
+				</span>
 			</span>
 		);
 	if (typeof data === "boolean")
 		return (
 			<span className="text-blue-600 dark:text-blue-400">
 				{data.toString()}
+				<span className="ml-1 text-[10px] text-muted-foreground">
+					(bool)
+				</span>
 			</span>
 		);
 
@@ -155,6 +172,12 @@ function JsonViewer({
 			</span>
 		);
 
+	// Build first-key preview for non-empty containers
+	const firstKeyHint = entries.length > 0 ? entries[0][0] : "";
+	const previewLabel = isArray
+		? `[${entries.length} item${entries.length === 1 ? "" : "s"}]`
+		: `{${entries.length} field${entries.length === 1 ? "" : "s"}${firstKeyHint ? `: ${firstKeyHint}` : ""}${entries.length > 1 ? ", ..." : ""}}`;
+
 	return (
 		<div className="ml-0">
 			<button
@@ -167,8 +190,14 @@ function JsonViewer({
 				) : (
 					<ChevronRight className="inline size-3" />
 				)}
-				<span>
-					{isArray ? `[${entries.length}]` : `{${entries.length}}`}
+				<span
+					className={
+						isArray
+							? "text-cyan-600 dark:text-cyan-400"
+							: "text-amber-600 dark:text-amber-400"
+					}
+				>
+					{previewLabel}
 				</span>
 			</button>
 			{expanded && (
@@ -240,7 +269,46 @@ const StepNode = ({
 	onToggle,
 	harnessName,
 }: StepNodeProps) => {
-	const isSuccess = step.STATUS === "success";
+	const isSuccess = step.STATUS === "SUCCESS";
+	const handleCopyInput = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			try {
+				navigator.clipboard.writeText(step.TOOL_INPUT_JSON || "");
+				toast.success("Input copied to clipboard");
+			} catch {
+				toast.error("Failed to copy input");
+			}
+		},
+		[step.TOOL_INPUT_JSON],
+	);
+
+	const handleCopyOutput = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			try {
+				navigator.clipboard.writeText(step.OUTPUT_TEXT || "");
+				toast.success("Output copied to clipboard");
+			} catch {
+				toast.error("Failed to copy output");
+			}
+		},
+		[step.OUTPUT_TEXT],
+	);
+
+	const handleCopyId = useCallback(
+		(e: React.MouseEvent) => {
+			e.stopPropagation();
+			try {
+				navigator.clipboard.writeText(step.ENGINE_ID || "");
+				toast.success("Engine ID copied to clipboard");
+			} catch {
+				toast.error("Failed to copy Engine ID");
+			}
+		},
+		[step.ENGINE_ID],
+	);
+
 	const inputSummary = step.TOOL_INPUT_JSON
 		? tryExtractSummary(step.TOOL_INPUT_JSON)
 		: null;
@@ -277,7 +345,7 @@ const StepNode = ({
 
 				{/* Tool name */}
 				<span className="shrink-0 font-semibold text-sm">
-					{step.TOOL_NAME}
+					{step.TOOL_NAME?.split("_").pop() ?? step.TOOL_NAME}
 				</span>
 
 				{/* Source badge */}
@@ -314,7 +382,7 @@ const StepNode = ({
 								Step
 							</p>
 							<p>
-								#{step.STEP_NUMBER} · {step.STEP_TYPE}
+								#{step.STEP_NUMBER + 1} · {step.STEP_TYPE}
 							</p>
 						</div>
 						<div>
@@ -344,31 +412,58 @@ const StepNode = ({
 								<p className="font-medium text-muted-foreground">
 									Engine ID
 								</p>
-								<p className="truncate font-mono">
-									{step.ENGINE_ID}
-								</p>
+								<div className="flex min-w-0 items-center gap-1">
+									<span className="truncate font-mono">
+										{step.ENGINE_ID}
+									</span>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										className="h-6 w-6"
+										onClick={handleCopyId}
+										aria-label="Copy engine ID"
+										title="Copy engine ID"
+									>
+										<Copy className="size-3.5" />
+									</Button>
+								</div>
 							</div>
 						)}
 						<div>
 							<p className="font-medium text-muted-foreground">
 								Start
 							</p>
-							<p className="font-mono">{step.START_TIME}</p>
+							<div className="mt-1 flex min-w-0 items-center gap-1">
+								<span className="font-mono">
+									{step.START_TIME}
+								</span>
+							</div>
 						</div>
 						<div>
 							<p className="font-medium text-muted-foreground">
 								End
 							</p>
-							<p className="font-mono">{step.END_TIME}</p>
+							<div className="mt-1 flex min-w-0 items-center gap-1">
+								<span className="font-mono">
+									{step.END_TIME}
+								</span>
+							</div>
 						</div>
 					</div>
 
 					{/* Input */}
 					{step.TOOL_INPUT_JSON && (
 						<div>
-							<p className="mb-1.5 font-semibold text-xs">
-								Input
-							</p>
+							<div className="mb-1.5 flex items-center justify-between">
+								<p className="font-semibold text-xs">Input</p>
+								<button
+									type="button"
+									onClick={handleCopyInput}
+									className="text-muted-foreground text-xs transition-colors hover:text-foreground"
+								>
+									Copy
+								</button>
+							</div>
 							<div className="max-h-64 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-[12px] leading-relaxed">
 								{(() => {
 									const parsed = parseJsonSafe(
@@ -395,9 +490,16 @@ const StepNode = ({
 					{/* Output */}
 					{step.OUTPUT_TEXT && (
 						<div>
-							<p className="mb-1.5 font-semibold text-xs">
-								Output
-							</p>
+							<div className="mb-1.5 flex items-center justify-between">
+								<p className="font-semibold text-xs">Output</p>
+								<button
+									type="button"
+									onClick={handleCopyOutput}
+									className="text-muted-foreground text-xs transition-colors hover:text-foreground"
+								>
+									Copy
+								</button>
+							</div>
 							<div className="max-h-72 overflow-auto rounded-md border border-border bg-background p-3 font-mono text-[12px] leading-relaxed">
 								{(() => {
 									const parsed = parseJsonSafe(
@@ -440,8 +542,18 @@ const StepNode = ({
 	);
 };
 
-export const SpanTree = ({ steps, harnessName }: SpanTreeProps) => {
+export const SpanTree = ({
+	steps,
+	harnessName,
+	expandedStepId,
+}: SpanTreeProps) => {
 	const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+	useEffect(() => {
+		if (expandedStepId) {
+			setExpandedIds(new Set([expandedStepId]));
+		}
+	}, [expandedStepId]);
 
 	if (!steps || steps.length === 0) {
 		return (
