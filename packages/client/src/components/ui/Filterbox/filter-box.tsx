@@ -556,7 +556,7 @@ export const Filterbox = (props: FilterboxProps) => {
 											{activeCount > 0 && (
 												<Badge
 													variant="secondary"
-													className="h-5 min-w-5 rounded-full px-1.5 font-medium text-[10px]"
+													className="h-5 min-w-5 rounded-full px-1.5 font-medium text-[10px] leading-none [font-variant-numeric:tabular-nums]"
 												>
 													{activeCount}
 												</Badge>
@@ -690,7 +690,7 @@ export const Filterbox = (props: FilterboxProps) => {
 								{totalActiveFilters > 0 && (
 									<Badge
 										variant="default"
-										className="h-5 min-w-5 rounded-full px-1.5 text-[10px]"
+										className="h-5 min-w-5 rounded-full px-1.5 text-[10px] leading-none [font-variant-numeric:tabular-nums]"
 									>
 										{totalActiveFilters}
 									</Badge>
