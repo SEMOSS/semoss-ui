@@ -15,7 +15,12 @@ import {
 	Input,
 } from "@semoss/ui/next";
 import { usePixel, useRootStore } from "@/hooks";
-import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
+import {
+	formatToDataTestId,
+	getTagColorPalette,
+	removeUnderscores,
+	toTitleCase,
+} from "@/utility";
 
 export interface FilterboxProps {
 	/** Determined to get filter keys for Engines/App */
@@ -35,6 +40,8 @@ export interface FilterboxProps {
 	applyOnMount?: boolean;
 	showHeader?: boolean;
 	hideHeaderToggleFrom?: "md" | "lg";
+	colorizeValues?: boolean;
+	colorizeSelectedOnly?: boolean;
 }
 
 const COLLAPSED_ITEM_LIMIT = 8;
@@ -49,6 +56,8 @@ export const Filterbox = (props: FilterboxProps) => {
 		applyOnMount = true,
 		showHeader = true,
 		hideHeaderToggleFrom,
+		colorizeValues = false,
+		colorizeSelectedOnly = false,
 	} = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -437,27 +446,36 @@ export const Filterbox = (props: FilterboxProps) => {
 		setSearchParams(new URLSearchParams());
 	}, [onChange, setSearchParams]);
 
+	const getValuePillStyle = useCallback(
+		(value: string, isSelected: boolean) => {
+			if (!colorizeValues) {
+				return undefined;
+			}
+
+			const palette = getTagColorPalette(value);
+
+			if (isSelected) {
+				return {
+					backgroundColor: palette.backgroundColor,
+					color: palette.color,
+					borderColor: palette.borderColor,
+				};
+			}
+
+			if (colorizeSelectedOnly) {
+				return undefined;
+			}
+
+			return {
+				color: palette.color,
+				borderColor: palette.borderColor,
+			};
+		},
+		[colorizeSelectedOnly, colorizeValues],
+	);
+
 	const filterBody = (
 		<div className="flex flex-col gap-1 pb-3">
-			{/* Clear All button */}
-			{totalActiveFilters > 0 && (
-				<div className="flex items-center justify-between px-4 pt-2 pb-1">
-					<span className="text-foreground text-xs">
-						{totalActiveFilters} active{" "}
-						{totalActiveFilters === 1 ? "filter" : "filters"}
-					</span>
-					<Button
-						type="button"
-						variant="ghost"
-						className="h-auto px-2 py-1 font-medium text-primary text-xs hover:text-primary/80"
-						onClick={clearAllFilters}
-						data-testid="filterbox-clear-all"
-					>
-						Clear all
-					</Button>
-				</div>
-			)}
-
 			{/* Search input */}
 			{Object.entries(filterOptions).length ? (
 				<div className={showHeader ? "mx-3 mt-1" : "mx-3 mt-4"}>
@@ -538,7 +556,7 @@ export const Filterbox = (props: FilterboxProps) => {
 											{activeCount > 0 && (
 												<Badge
 													variant="secondary"
-													className="h-5 min-w-5 rounded-full px-1.5 font-medium text-[10px]"
+													className="h-5 min-w-5 rounded-full px-1.5 font-medium text-[10px] leading-none [font-variant-numeric:tabular-nums]"
 												>
 													{activeCount}
 												</Badge>
@@ -565,6 +583,10 @@ export const Filterbox = (props: FilterboxProps) => {
 												aria-pressed={true}
 												aria-label={`Remove ${opt.value} filter`}
 												className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-medium text-primary text-xs transition-all duration-200 hover:bg-primary/20 active:scale-95"
+												style={getValuePillStyle(
+													opt.value,
+													true,
+												)}
 												data-testid={formatToDataTestId(
 													`filterbox-${opt.value}-filterBtn`,
 												)}
@@ -589,6 +611,10 @@ export const Filterbox = (props: FilterboxProps) => {
 												aria-pressed={false}
 												aria-label={`Filter by ${opt.value}`}
 												className="inline-flex items-center gap-1.5 rounded-full border border-border bg-transparent px-2.5 py-1 text-foreground text-xs transition-all duration-200 hover:border-foreground/30 hover:bg-accent active:scale-95"
+												style={getValuePillStyle(
+													opt.value,
+													false,
+												)}
 												data-testid={formatToDataTestId(
 													`filterbox-${opt.value}-filterBtn`,
 												)}
@@ -656,7 +682,7 @@ export const Filterbox = (props: FilterboxProps) => {
 									: "justify-between"
 							}`}
 						>
-							<span className="flex items-center gap-2">
+							<div className="flex items-center gap-2">
 								<SlidersHorizontal className="size-4 text-muted-foreground" />
 								<h6 className="font-semibold text-foreground text-sm">
 									Filters
@@ -664,12 +690,23 @@ export const Filterbox = (props: FilterboxProps) => {
 								{totalActiveFilters > 0 && (
 									<Badge
 										variant="default"
-										className="h-5 min-w-5 rounded-full px-1.5 text-[10px]"
+										className="h-5 min-w-5 rounded-full px-1.5 text-[10px] leading-none [font-variant-numeric:tabular-nums]"
 									>
 										{totalActiveFilters}
 									</Badge>
 								)}
-							</span>
+								{totalActiveFilters > 0 && (
+									<Button
+										type="button"
+										variant="ghost"
+										className="h-auto px-2 py-1 font-medium text-primary text-xs hover:text-primary/80"
+										onClick={clearAllFilters}
+										data-testid="filterbox-clear-all"
+									>
+										Clear all
+									</Button>
+								)}
+							</div>
 							{!(
 								hideHeaderToggleFrom && isDesktopFilterLayout
 							) ? (

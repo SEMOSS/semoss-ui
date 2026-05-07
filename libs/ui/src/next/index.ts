@@ -7,7 +7,6 @@ export * from "../lib";
 // export the hooks
 
 export * from "../hooks";
-export { darkTheme, lightTheme } from "../theme";
 // Re-export all components (only export what exists)
 export * from "./accordion";
 export * from "./alert";
@@ -54,6 +53,7 @@ export * from "./table";
 export * from "./tabs";
 export * from "./terminal";
 export * from "./textarea";
+export * from "./theme";
 export * from "./theme-provider";
 export * from "./toggle";
 export * from "./toggle-group";
