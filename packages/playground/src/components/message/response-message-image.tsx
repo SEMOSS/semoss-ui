@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { forwardRef, useState } from "react";
 
 interface ResponseMessageImageProps {
 	src: string;
@@ -6,15 +6,15 @@ interface ResponseMessageImageProps {
 	onClick: () => void;
 }
 
-export const ResponseMessageImage: React.FC<ResponseMessageImageProps> = ({
-	src,
-	alt,
-	onClick,
-}) => {
+export const ResponseMessageImage = forwardRef<
+	HTMLButtonElement,
+	ResponseMessageImageProps
+>(({ src, alt, onClick }, ref) => {
 	const [dimensions, setDimensions] = useState<string>("");
 
 	return (
 		<button
+			ref={ref}
 			type="button"
 			className="relative w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
 			onClick={onClick}
@@ -36,4 +36,6 @@ export const ResponseMessageImage: React.FC<ResponseMessageImageProps> = ({
 			)}
 		</button>
 	);
-};
+});
+
+ResponseMessageImage.displayName = "ResponseMessageImage";
