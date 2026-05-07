@@ -12,6 +12,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { setProjectFavorite } from "@/api";
+import { getTagBadgeStyle } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
 interface AppTileCardProps {
@@ -76,6 +77,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 											key={`${app.project_id}-${i}`}
 											variant="secondary"
 											className="max-w-[59px] overflow-hidden text-ellipsis"
+											style={getTagBadgeStyle(t)}
 										>
 											{t}
 										</Badge>
@@ -91,6 +93,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 								key={app.project_id + app.tag}
 								variant="secondary"
 								className="max-w-[59px] overflow-hidden text-ellipsis"
+								style={getTagBadgeStyle(app.tag)}
 							>
 								{app.tag}
 							</Badge>

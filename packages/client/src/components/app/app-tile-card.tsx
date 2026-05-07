@@ -26,7 +26,7 @@ import {
 import { AppDeleteModal } from "@/components/app/app-delete-modal";
 import { AddAppCloneModal } from "@/components/app/save-app/add-app-clone-modal";
 import { useNavigate } from "@/hooks/useNavigate";
-import { formatToDataTestId } from "@/utility";
+import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
 interface AppTileCardProps {
@@ -121,48 +121,6 @@ const extractTags = (app: AppMetadata): string[] => {
 	return (Array.isArray(app.tag) ? app.tag : [app.tag])
 		.filter(Boolean)
 		.map((tag) => String(tag));
-};
-
-const getTagPillStyles = (tag: string) => {
-	const normalizedTag = tag
-		.trim()
-		.toUpperCase()
-		.replace(/[_-]+/g, " ")
-		.replace(/\s+/g, " ");
-
-	if (normalizedTag === "MCP") {
-		return {
-			backgroundColor: "#ede9fe",
-			color: "#5b21b6",
-			border: "none",
-			borderRadius: "4px",
-			padding: "3px 8px",
-			fontSize: "11px",
-			fontWeight: 500,
-		};
-	}
-
-	if (/(DUMMY|SAMPLE|TEST)\s*DATA/.test(normalizedTag)) {
-		return {
-			backgroundColor: "#fef3c7",
-			color: "#78350f",
-			border: "none",
-			borderRadius: "4px",
-			padding: "3px 8px",
-			fontSize: "11px",
-			fontWeight: 500,
-		};
-	}
-
-	return {
-		backgroundColor: "var(--color-background-secondary)",
-		color: "var(--color-text-secondary)",
-		border: "0.5px solid var(--color-border-tertiary)",
-		borderRadius: "4px",
-		padding: "3px 8px",
-		fontSize: "11px",
-		fontWeight: 500,
-	};
 };
 
 /**
@@ -755,7 +713,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 								key={`${app.project_id}-measure-${tag}`}
 								data-tag-measure="true"
 								variant="secondary"
-								style={getTagPillStyles(tag)}
+								style={getTagBadgeStyle(tag)}
 							>
 								{tag}
 							</Badge>
@@ -834,7 +792,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<Badge
 											key={`${app.project_id}-left-${tag}`}
 											variant="secondary"
-											style={getTagPillStyles(tag)}
+											style={getTagBadgeStyle(tag)}
 										>
 											{tag}
 										</Badge>
@@ -869,7 +827,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									<Badge
 										key={`${app.project_id}-right-${tag}`}
 										variant="secondary"
-										style={getTagPillStyles(tag)}
+										style={getTagBadgeStyle(tag)}
 									>
 										{tag}
 									</Badge>
@@ -1121,7 +1079,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										key={`${app.project_id}-grid-measure-${tag}`}
 										data-grid-tag-measure="true"
 										variant="secondary"
-										style={getTagPillStyles(tag)}
+										style={getTagBadgeStyle(tag)}
 									>
 										{tag}
 									</Badge>
@@ -1162,7 +1120,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<Badge
 											key={`${app.project_id}-${tag}`}
 											variant="secondary"
-											style={getTagPillStyles(tag)}
+											style={getTagBadgeStyle(tag)}
 										>
 											{tag}
 										</Badge>
@@ -1264,6 +1222,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									<Badge
 										variant="secondary"
 										className="background-color-[var(--muted-foreground)] text-[12px]"
+										style={getTagBadgeStyle(displayTags[0])}
 									>
 										{displayTags[0]}
 									</Badge>
@@ -1412,6 +1371,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										key={`${app.project_id}-${tag}`}
 										variant="secondary"
 										className="text-[11px] uppercase"
+										style={getTagBadgeStyle(tag)}
 									>
 										{tag}
 									</Badge>
