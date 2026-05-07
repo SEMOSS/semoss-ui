@@ -244,9 +244,17 @@ export class ChatStore {
 		});
 
 		// ask the room
-		room.askMessage(prompt, files).then(() => {
+		room.askMessage(prompt, files).then(async () => {
 			runInAction(() => {
 				// increment the roomCounter to force re-render of the nav
+				this._store.keys.roomCounter++;
+			});
+
+			// Stream the BE-generated LLM room title and update when ready
+			await room.generateName();
+
+			runInAction(() => {
+				// Refresh the sidebar now that the generated name is available
 				this._store.keys.roomCounter++;
 			});
 		});
