@@ -26,7 +26,7 @@
 		"enterInstructions": "Ingrese las instrucciones",
 		"updateInstructions": "Actualizar instrucciones",
 		"updateMaxToken": "Actualizar tokens máximos",
-		"updateImageSeed": "-1",
+		"updateImageSeed": "1",
 		"uploadFiles": "Subir archivos",
 		"search": "Buscar..."
 	},

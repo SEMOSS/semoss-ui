@@ -1,4 +1,5 @@
 import { DicesIcon } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -13,7 +14,7 @@ import {
 } from "@semoss/ui/next";
 import { RoomOptionsImageSelect } from "@/components/room/room-options-image-select";
 import type { ImageSize, ImageType } from "@/constants";
-import { IMAGE_SIZE_PRESETS } from "@/constants";
+import { IMAGE_SIZE_PRESETS, MAX_SEED } from "@/constants";
 import type { RoomStore } from "@/stores";
 
 interface RoomOptionsImageProps {
@@ -48,6 +49,12 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 		options.imageHeight,
 		options.imageWidth,
 	);
+
+	const [seedInput, setSeedInput] = useState<string>(
+		options.seed?.toString() ?? "",
+	);
+	const seedNum = seedInput === "" ? undefined : Number(seedInput);
+	const isSeedInvalid = seedNum !== undefined && seedNum > MAX_SEED;
 
 	const handleImagePresetChange = (size: ImageSize, type: ImageType) => {
 		const preset = IMAGE_SIZE_PRESETS[size][type];
@@ -218,45 +225,47 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 								placeholder={t(
 									"common:placeholders.updateImageSeed",
 								)}
-								min={0}
-								max={2147483646}
-								value={options.seed ?? ""}
+								value={seedInput}
 								onChange={(e) => {
 									const raw = e.target.value.replace(
 										/\D/g,
 										"",
 									);
-									onOptionsChange({
-										seed:
-											raw === ""
-												? undefined
-												: Math.min(
-														Math.max(
-															Number(raw),
-															0,
-														),
-														2147483646,
-													),
-									});
+									setSeedInput(raw);
+									const num =
+										raw === "" ? undefined : Number(raw);
+									if (num === undefined || num <= MAX_SEED) {
+										onOptionsChange({ seed: num });
+									}
 								}}
-								className="w-full"
+								className={[
+									"w-full",
+									isSeedInvalid
+										? "border-destructive focus-visible:ring-destructive"
+										: "",
+								].join(" ")}
 							/>
 							<Button
 								variant="outline"
 								size="icon"
 								type="button"
-								onClick={() =>
-									onOptionsChange({
-										seed:
-											Math.floor(
-												Math.random() * 2147483646,
-											) + 1,
-									})
-								}
+								onClick={() => {
+									const newSeed =
+										Math.floor(Math.random() * MAX_SEED) +
+										1;
+									setSeedInput(newSeed.toString());
+									onOptionsChange({ seed: newSeed });
+								}}
 							>
 								<DicesIcon />
 							</Button>
 						</div>
+						{isSeedInvalid && (
+							<p className="mt-1 text-destructive text-xs">
+								Cannot input a number higher than{" "}
+								{MAX_SEED.toLocaleString()}
+							</p>
+						)}
 					</Field>
 				</FieldGroup>
 			</FieldSet>
