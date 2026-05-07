@@ -5,6 +5,7 @@ import {
 	ExternalLink,
 	Info,
 	MoreVertical,
+	Tag,
 } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -45,7 +46,6 @@ interface AppTileCardProps {
 	variant?: "classic" | "catalog" | "row" | "fillerCard";
 	onCloneComplete?: (appId?: string) => void;
 	cardImgSrc?: string;
-	cardDarkImgSrc?: string;
 }
 
 /**
@@ -66,6 +66,11 @@ const hashString = (str: string): number => {
 const generateGradient = (name: string): string => {
 	const base = hashString(name) % 360;
 	return `hsl(${base}, 22%, 72%)`;
+};
+
+const generateInitialsColor = (name: string): string => {
+	const base = hashString(name) % 360;
+	return `hsl(${base}, 28%, 28%)`;
 };
 
 /**
@@ -117,7 +122,6 @@ const extractTags = (app: AppMetadata): string[] => {
 		.filter(Boolean)
 		.map((tag) => String(tag));
 };
-
 
 /**
  * Skeleton Card Component
@@ -225,7 +229,6 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		variant = "classic",
 		onCloneComplete,
 		cardImgSrc,
-		cardDarkImgSrc,
 	} = props;
 
 	const navigate = useNavigate();
@@ -238,7 +241,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	const [bottomVisibleTagCount, setBottomVisibleTagCount] = useState(0);
 	const [gridVisibleTagCount, setGridVisibleTagCount] = useState(0);
 	const rowRef = useRef<HTMLDivElement>(null);
-	const leftContentRef = useRef<HTMLDivElement>(null);
+	const leftContentRef = useRef<HTMLButtonElement>(null);
 	const leftTextRef = useRef<HTMLDivElement>(null);
 	const rightMetaRef = useRef<HTMLDivElement>(null);
 	const rightInfoRef = useRef<HTMLDivElement>(null);
@@ -274,6 +277,10 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		() => buildInitials(displayName || appType || "App"),
 		[displayName, appType],
 	);
+	const initialsColor = useMemo(
+		() => generateInitialsColor(displayName || appType || "App"),
+		[displayName, appType],
+	);
 	const displayTags = useMemo(
 		() => (systemApp ? ["SYSTEM"] : tags),
 		[systemApp, tags],
@@ -286,8 +293,6 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	const isRow = variant === "row";
 	const isFillerCard = variant === "fillerCard";
 	const canEdit = app?.user_permission != null && app.user_permission < 2;
-	const fillerDarkImageSrc = cardDarkImgSrc || cardImgSrc;
-	const initialsTextColor = "#000000";
 
 	// Style classes
 	const cardWidthClass = isRow
@@ -297,7 +302,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 			: "min-w-[272px] w-[272px]";
 	const headerHeightClass = isCatalog ? "h-[72px]" : "h-[77px]";
 	const headerActionClass = isCatalog
-		? "bg-white/15 text-white hover:bg-white/25 dark:text-neutral-900 dark:hover:text-neutral-950"
+		? "bg-white/15 text-white hover:bg-white/25"
 		: "";
 
 	useEffect(() => {
@@ -714,9 +719,9 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 							data-tag-overflow-measure="true"
 							variant="outline"
 							className="flex items-center gap-1"
-							style={tagPillStyles}
 						>
-							+{Math.max(0, displayTags.length - 2)}
+							<Tag className="size-3" />
+							{Math.max(0, displayTags.length - 2)}
 						</Badge>
 					</div>
 					<span
@@ -753,7 +758,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						>
 							<div
 								className="font-semibold text-xs"
-								style={{ color: initialsTextColor }}
+								style={{ color: initialsColor }}
 							>
 								{initials}
 							</div>
@@ -793,9 +798,9 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<Badge
 											variant="outline"
 											className="flex items-center gap-1"
-											style={tagPillStyles}
 										>
-											+{bottomOverflowCount}
+											<Tag className="size-3" />
+											{bottomOverflowCount}
 										</Badge>
 									) : null}
 								</div>
@@ -830,9 +835,9 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 							<Badge
 								variant="outline"
 								className="flex items-center gap-1"
-								style={tagPillStyles}
 							>
-								+{rightOverflowCount}
+								<Tag className="size-3" />
+								{rightOverflowCount}
 							</Badge>
 						) : null}
 						<div
@@ -985,7 +990,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					>
 						<div
 							className="flex h-full items-center justify-center font-semibold text-base"
-							style={{ color: initialsTextColor }}
+							style={{ color: initialsColor }}
 						>
 							{initials}
 						</div>
@@ -1080,9 +1085,9 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									data-grid-tag-overflow-measure="true"
 									variant="outline"
 									className="flex shrink-0 items-center gap-1"
-									style={tagPillStyles}
 								>
-									+{displayTags.length}
+									<Tag className="size-3" />
+									{displayTags.length}
 								</Badge>
 							</div>
 						</div>
@@ -1121,9 +1126,9 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<Badge
 											variant="outline"
 											className="flex shrink-0 items-center gap-1"
-											style={tagPillStyles}
 										>
-											+{gridHiddenTagCount}
+											<Tag className="size-3" />
+											{gridHiddenTagCount}
 										</Badge>
 									) : null}
 								</div>
@@ -1135,7 +1140,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						<CardFooter className="px-3 pt-0.5 pb-3">
 							<div className="flex w-full items-center gap-2">
 								<Button
-									variant="default"
+									variant="outline"
 									size="sm"
 									className={
 										showInfo
@@ -1250,18 +1255,11 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 						{/* Right illustration - fills right half on md+ and sits below on small */}
 						<div className="relative w-1/2">
 							<div className="absolute inset-0 h-full w-full overflow-hidden">
-                                            <img
-                                                src={cardImgSrc}
-                                                alt={`${displayName} illustration`}
-                                                className="absolute inset-0 h-full w-full transform object-contain object-right dark:hidden"
-                                            />
-                                            {fillerDarkImageSrc ? (
-                                                <img
-                                                    src={fillerDarkImageSrc}
-                                                    alt={`${displayName} illustration`}
-                                                    className="absolute inset-0 hidden h-full w-full transform object-contain object-right dark:block"
-                                                />
-                                            ) : null}
+								<img
+									src={cardImgSrc}
+									alt={`${displayName} illustration`}
+									className={`absolute inset-0 h-full w-full transform object-cover object-right`}
+								/>
 							</div>
 						</div>
 					</div>
@@ -1286,12 +1284,12 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					className="relative h-[77px] w-full"
 					style={{ background: background || gradient }}
 				>
-							<div
-								className="flex h-full items-center justify-center font-semibold text-2xl"
-								style={{ color: initialsTextColor }}
-							>
-								{initials}
-							</div>
+					<div
+						className="flex h-full items-center justify-center font-semibold text-2xl"
+						style={{ color: initialsColor }}
+					>
+						{initials}
+					</div>
 					<div className="-translate-y-1/2 absolute top-1/2 right-2 flex items-center gap-2">
 						{showBookmark && (
 							<Button
@@ -1386,7 +1384,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 				<CardFooter className="px-4 py-2">
 					<div className="grid w-full grid-cols-2 gap-2">
 						<Button
-							variant="default"
+							variant="outline"
 							size="sm"
 							className={showInfo ? "" : "col-span-2"}
 							onClick={handleOpenApp}
