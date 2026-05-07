@@ -180,7 +180,6 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 
 		const urlTransform = (url: string) => {
 			if (url.startsWith("room://")) return url;
-			if (url.startsWith("file://")) return url;
 			if (url.startsWith("docubridge://")) return url;
 			if (/^(https?:|mailto:|#)/.test(url)) return url;
 			return "";
