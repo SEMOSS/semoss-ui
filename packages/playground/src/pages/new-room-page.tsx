@@ -90,6 +90,7 @@ export const NewRoomPage = observer(() => {
 		[root.theme],
 	);
 	const bannerRef = useRef<HTMLDivElement>(null);
+	const settingsCloseButtonRef = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		if (!bannerRef.current) return;
@@ -107,6 +108,12 @@ export const NewRoomPage = observer(() => {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
+
+	useEffect(() => {
+		if (isConfigurationOpen) {
+			settingsCloseButtonRef.current?.focus();
+		}
+	}, [isConfigurationOpen]);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
@@ -701,6 +708,7 @@ export const NewRoomPage = observer(() => {
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
+											ref={settingsCloseButtonRef}
 											className="absolute top-2 right-2 z-10"
 											variant="ghost"
 											size="icon-sm"
