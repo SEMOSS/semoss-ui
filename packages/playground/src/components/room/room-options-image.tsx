@@ -222,9 +222,7 @@ export const RoomOptionsImage: React.FC<RoomOptionsImageProps> = ({
 								type="text"
 								inputMode="numeric"
 								pattern="[0-9]*"
-								placeholder={t(
-									"common:placeholders.updateImageSeed",
-								)}
+								placeholder="1"
 								value={seedInput}
 								onChange={(e) => {
 									const raw = e.target.value.replace(
