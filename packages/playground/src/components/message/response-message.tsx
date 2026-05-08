@@ -187,10 +187,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				return;
 			try {
 				const mimeType = mediaPart.mediaInfo.mimeType || "image/png";
-				const res = await fetch(
-					`data:${mimeType};base64,${mediaPart.mediaInfo.base64Data}`,
+				const bytes = atob(mediaPart.mediaInfo.base64Data);
+				const arr = new Uint8Array(bytes.length).map((_, i) =>
+					bytes.charCodeAt(i),
 				);
-				const blob = await res.blob();
+				const blob = new Blob([arr], { type: mimeType });
 				await navigator.clipboard.write([
 					new ClipboardItem({ [mimeType]: blob }),
 				]);
