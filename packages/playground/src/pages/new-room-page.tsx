@@ -704,6 +704,9 @@ export const NewRoomPage = observer(() => {
 											className="absolute top-2 right-2 z-10"
 											variant="ghost"
 											size="icon-sm"
+											aria-label={t(
+												"room:settings.close",
+											)}
 											onClick={() => {
 												// close it
 												setIsConfgurationOpen(false);

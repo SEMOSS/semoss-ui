@@ -606,6 +606,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					type="file"
 					multiple={true}
 					hidden
+					aria-label="Upload files"
 					onChange={(e) => {
 						// set the new files
 						if (e.target.files) {
@@ -679,6 +680,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 															variant="destructive"
 															size="icon"
 															className="absolute top-1 right-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
+															aria-label={`Remove ${file.name}`}
 															onClick={() => {
 																setFiles(
 																	(prev) =>
