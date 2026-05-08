@@ -19,7 +19,6 @@ import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
-import { isImageGenerationModel } from "./utility";
 
 /**
  * Response Message Store
@@ -146,9 +145,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	runMessage = async (inputMessage: InputMessageStore) => {
 		const room = this.room;
-		const isImageModel = isImageGenerationModel(
-			room.model as Parameters<typeof isImageGenerationModel>[0],
-		);
 
 		// Create a placeholder response message to show streaming content
 		const responseMessage = new ResponseMessageStore(room, {
@@ -234,7 +230,7 @@ ${this.id ? `parentMessageId=["${this.id}"]` : ""}
 								});
 							}
 						} else if (chunk.stream_type === "thinking") {
-							if (!isImageModel && chunk.data.thinking) {
+							if (chunk.data.thinking) {
 								responseMessage.savePart({
 									type: "THINKING",
 									thinking: chunk.data.thinking,
