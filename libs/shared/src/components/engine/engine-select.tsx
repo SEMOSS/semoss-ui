@@ -1,4 +1,4 @@
-import { CheckIcon, ChevronDown } from "lucide-react";
+import { CheckIcon, ChevronDown, ImageIcon } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
@@ -129,7 +129,7 @@ export const EngineSelect = ({
 						metaFilters
 							? `metaFilters=[${JSON.stringify(metaFilters)}],`
 							: ""
-					} limit=[${limit}], offset=[${offset}]);`
+					} metaKeys=["tag"], limit=[${limit}], offset=[${offset}]);`
 				: "",
 		// Determine if there are more pages to load
 		(response) => {
@@ -311,6 +311,14 @@ export const EngineSelect = ({
 									engine.engine_name;
 								const engineId = engine.engine_id;
 
+								const tags = Array.isArray(engine.tag)
+									? engine.tag
+									: typeof engine.tag === "string"
+										? engine.tag.split(",")
+										: [];
+								const isImageGen =
+									tags.includes("image-generation");
+
 								return (
 									<CommandItem
 										key={engineId}
@@ -329,9 +337,23 @@ export const EngineSelect = ({
 											}`}
 										/>
 										<div className="flex flex-1 flex-col truncate">
-											<span className="truncate">
-												{displayName}
-											</span>
+											<div className="flex min-w-0 items-center gap-1.5">
+												<span className="truncate">
+													{displayName}
+												</span>
+												{isImageGen && (
+													<Tooltip>
+														<TooltipTrigger asChild>
+															<span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
+																<ImageIcon className="size-3" />
+															</span>
+														</TooltipTrigger>
+														<TooltipContent>
+															Image Generation
+														</TooltipContent>
+													</Tooltip>
+												)}
+											</div>
 											{/* Optional description shown below engine name */}
 											{engine.description && (
 												<span
