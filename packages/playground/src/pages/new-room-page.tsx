@@ -421,6 +421,8 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
+	// Sync selected model to temporary RoomStore, now important for making sure the BE knows
+	// whether this model is text-gen, image-gen, or both
 	useEffect(() => {
 		tempRoomStore.setModel(chat.models.selected);
 	}, [chat.models.selected, tempRoomStore.setModel]);
