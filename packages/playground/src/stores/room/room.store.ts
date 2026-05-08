@@ -8,13 +8,13 @@ import {
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import {
-	IMAGE_GENERATION_FLAG,
+	IMAGE_GENERATION_RESPONSE_ENABLED,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	MAX_TOKENS,
 	STREAMING_PLACEHOLDER_ID,
 	TEMPERATURE,
-	TEXT_GENERATION_FLAG,
+	TEXT_GENERATION_RESPONSE_ENABLED,
 } from "@/constants";
 import {
 	type AbstractMessageStore,
@@ -203,8 +203,8 @@ export class RoomStore {
 			imageHeight: IMAGE_HEIGHT,
 			imageWidth: IMAGE_WIDTH,
 			seed: undefined,
-			"text-generation": TEXT_GENERATION_FLAG,
-			"image-generation": IMAGE_GENERATION_FLAG,
+			"text-generation": TEXT_GENERATION_RESPONSE_ENABLED,
+			"image-generation": IMAGE_GENERATION_RESPONSE_ENABLED,
 		},
 		sidebar: {
 			isOpen: false,

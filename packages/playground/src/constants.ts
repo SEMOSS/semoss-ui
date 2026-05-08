@@ -5,8 +5,8 @@ export const TEMPERATURE = 0.3;
 
 export const IMAGE_HEIGHT = 1024;
 export const IMAGE_WIDTH = 1024;
-export const TEXT_GENERATION_FLAG = false;
-export const IMAGE_GENERATION_FLAG = false;
+export const TEXT_GENERATION_RESPONSE_ENABLED = false;
+export const IMAGE_GENERATION_RESPONSE_ENABLED = false;
 export const MAX_SEED = 2147483646;
 
 export type ImageSize = "small" | "medium" | "large";

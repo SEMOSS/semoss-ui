@@ -2,12 +2,12 @@ import { configure, makeAutoObservable } from "mobx";
 import type React from "react";
 import type { ThemeMap } from "@semoss/shared";
 import {
-	IMAGE_GENERATION_FLAG,
+	IMAGE_GENERATION_RESPONSE_ENABLED,
 	IMAGE_HEIGHT,
 	IMAGE_WIDTH,
 	MAX_TOKENS,
 	TEMPERATURE,
-	TEXT_GENERATION_FLAG,
+	TEXT_GENERATION_RESPONSE_ENABLED,
 } from "@/constants";
 
 configure({
@@ -94,8 +94,8 @@ export class RootStore {
 				imageHeight: IMAGE_HEIGHT,
 				imageWidth: IMAGE_WIDTH,
 				seed: undefined,
-				"text-generation": TEXT_GENERATION_FLAG,
-				"image-generation": IMAGE_GENERATION_FLAG,
+				"text-generation": TEXT_GENERATION_RESPONSE_ENABLED,
+				"image-generation": IMAGE_GENERATION_RESPONSE_ENABLED,
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
