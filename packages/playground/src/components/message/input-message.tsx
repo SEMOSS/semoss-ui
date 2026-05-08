@@ -275,7 +275,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 						{textParts.map(({ p, i }) => (
 							<span
 								key={`${message.id}-text-${i}`}
-								className="text-foreground text-small"
+								className="whitespace-pre-wrap text-foreground text-small"
 							>
 								{p.text}
 							</span>
