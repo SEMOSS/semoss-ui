@@ -344,7 +344,6 @@ ${this.id ? `parentMessageId=["${this.id}"]` : ""}
 		const room = this.room;
 
 		try {
-			// idk why failing for image response
 			// wait for the pixel to run
 			await room.runRoomPixel<[boolean]>(
 				`SubmitLlmFeedback(messageId=${JSON.stringify(this.id)}, feedbackText=${JSON.stringify(feedbackText)}, rating=${JSON.stringify(rating)}, roomId=${JSON.stringify(room.roomId)});`,
