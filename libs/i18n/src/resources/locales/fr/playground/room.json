@@ -1,5 +1,6 @@
 {
 	"welcome": "Bienvenue, {{name}}",
+	"pageTitle": "Nouvelle discussion",
 	"settings": {
 		"title": "Paramètres de la salle",
 		"description": "Mettez à jour les paramètres de la salle et modifiez le comportement du chat",

@@ -1,5 +1,6 @@
 {
 	"welcome": "Bienvenido, {{name}}",
+	"pageTitle": "Nuevo chat",
 	"settings": {
 		"title": "Configuración de la sala",
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",

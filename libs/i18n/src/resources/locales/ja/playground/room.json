@@ -1,5 +1,6 @@
 {
 	"welcome": "{{name}}さん、ようこそ",
+	"pageTitle": "新しいチャット",
 	"settings": {
 		"title": "ルーム設定",
 		"description": "ルーム設定を更新し、チャットの動作を変更します",
