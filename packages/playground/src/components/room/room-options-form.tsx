@@ -114,16 +114,13 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											engineTypes={["MODEL"]}
 											metaFilters={[
 												{
-													tag: [
-														"text-generation",
-														...(root.theme
-															.featureFlags
-															?.enableImageGeneration
-															? [
-																	"image-generation",
-																]
-															: []),
-													],
+													tag: root.theme.featureFlags
+														?.enableImageGeneration
+														? [
+																"text-generation",
+																"image-generation",
+															]
+														: ["text-generation"],
 												},
 											]}
 											onChange={(v) => {
