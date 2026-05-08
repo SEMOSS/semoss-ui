@@ -7,7 +7,7 @@
 		"close": "रूम सेटिंग्स बंद करें",
 		"edit": "रूम सेटिंग्स संपादित करें",
 		"textGenDescription": "टोकन सीमाएँ और तापमान समायोजित करें ताकि नियंत्रित किया जा सके कि मॉडल प्रतिक्रियाएँ कैसे उत्पन्न करता है",
-		"imageGenDescription": "छवि आकार और रैंडम सीड कॉन्फ़िगर करें ताकि छवि निर्माण के आउटपुट को नियंत्रित किया जा सके"
+		"imageGenDescription": "छवि आकार और यादृच्छिक बीज कॉन्फ़िगर करें ताकि छवि निर्माण के आउटपुट को नियंत्रित किया जा सके"
 	},
 	"form": {
 		"modelLabel": "मॉडल",
@@ -18,14 +18,13 @@
 		"temperatureLabel": "टेम्परेचर",
 		"imageSizeLabel": "छवि आकार",
 		"imageOrientationLabel": "छवि अभिविन्यास",
-		"imageSeedLabel": "सीड",
-		"taskTypeLabel": "कार्य प्रकार",
+		"imageSeedLabel": "बीज",
 		"imageSizeSmallLabel": "छोटा",
 		"imageSizeMediumLabel": "मध्यम",
 		"imageSizeLargeLabel": "बड़ा",
 		"imageTypeSquareLabel": "वर्गाकार",
-		"imageTypePortraitLabel": "पोर्ट्रेट",
-		"imageTypeLandscapeLabel": "लैंडस्केप"
+		"imageTypePortraitLabel": "लंबवत",
+		"imageTypeLandscapeLabel": "क्षैतिज"
 	},
 	"modes": {
 		"ask": "पूछें",
