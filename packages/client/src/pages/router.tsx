@@ -75,11 +75,6 @@ const LoginPage = lazy(() =>
 const AgentsPage = lazy(() =>
 	import("./agents/AgentsPage").then((m) => ({ default: m.AgentsPage })),
 );
-const AgentTracePage = lazy(() =>
-	import("./agents/AgentTracePage").then((m) => ({
-		default: m.AgentTracePage,
-	})),
-);
 const RoomDetailPage = lazy(() =>
 	import("./agents/RoomDetailPage").then((m) => ({
 		default: m.RoomDetailPage,
@@ -142,12 +137,6 @@ export const Router = observer(() => {
 							<Route
 								path="agents/room/:roomId"
 								element={<RoomDetailPage />}
-							/>
-						)}
-						{configStore.store.user.admin && (
-							<Route
-								path="agents/:traceId"
-								element={<AgentTracePage />}
 							/>
 						)}
 						<Route path="*" element={<Navigate to="/" replace />} />

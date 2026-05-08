@@ -1,10 +1,12 @@
 import {
 	Activity,
 	ArrowLeft,
+	Bot,
 	ChevronDown,
 	ChevronRight,
 	Clock,
 	Copy,
+	MessageSquareMore,
 	Wrench,
 	Zap,
 } from "lucide-react";
@@ -387,8 +389,9 @@ export const RoomDetailPage = () => {
 											{/* User prompt that triggered this run */}
 											{trace.USER_PROMPT && (
 												<div className="mb-3 rounded-md border border-sky-200 bg-sky-50 p-3 dark:border-sky-800 dark:bg-sky-950/30">
-													<p className="mb-1 font-semibold text-sky-700 text-xs dark:text-sky-400">
-														💬 User Prompt
+													<p className="mb-1 flex items-center gap-1 font-semibold text-sky-700 text-xs dark:text-sky-400">
+														<MessageSquareMore className="size-3" />
+														User Prompt
 													</p>
 													<p className="text-sky-900 text-sm dark:text-sky-200">
 														{trace.USER_PROMPT}
@@ -399,8 +402,9 @@ export const RoomDetailPage = () => {
 											{/* Agent response */}
 											{trace.AGENT_RESPONSE && (
 												<div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/30">
-													<p className="mb-1 font-semibold text-emerald-700 text-xs dark:text-emerald-400">
-														🤖 Agent Response
+													<p className="mb-1 flex items-center gap-1 font-semibold text-emerald-700 text-xs dark:text-emerald-400">
+														<Bot className="size-3" />
+														Agent Response
 													</p>
 													<p className="max-h-40 overflow-auto whitespace-pre-wrap text-emerald-900 text-sm dark:text-emerald-200">
 														{trace.AGENT_RESPONSE}
@@ -475,22 +479,7 @@ export const RoomDetailPage = () => {
 																				).pop() ??
 																					step.TOOL_NAME}
 																			</span>
-																			<button
-																				type="button"
-																				className="relative h-4 flex-1 rounded-sm bg-muted/40 text-left transition-opacity hover:opacity-80"
-																				onClick={() =>
-																					setSelectedStepByTraceId(
-																						(
-																							prev,
-																						) => ({
-																							...prev,
-																							[trace.TRACE_ID]:
-																								step.STEP_ID,
-																						}),
-																					)
-																				}
-																				aria-label={`Expand ${step.TOOL_NAME?.split("_").pop() ?? step.TOOL_NAME} in span tree`}
-																			>
+																			<div className="relative h-4 flex-1 rounded-sm bg-muted/40">
 																				<div className="pointer-events-none absolute inset-0 flex justify-between">
 																					{[
 																						0,
@@ -509,14 +498,32 @@ export const RoomDetailPage = () => {
 																						),
 																					)}
 																				</div>
-																				<div
-																					className={`absolute top-0.5 bottom-0.5 rounded-sm ${isOk ? "bg-emerald-400/80 dark:bg-emerald-600/60" : "bg-red-400/80 dark:bg-red-600/60"}`}
+																				<Button
+																					type="button"
+																					variant="ghost"
+																					className={`absolute top-0.5 bottom-0.5 z-10 h-auto rounded-sm border-0 p-0 shadow-none transition-opacity hover:opacity-80 focus-visible:ring-1 focus-visible:ring-offset-0 ${
+																						isOk
+																							? "bg-emerald-400/80 dark:bg-emerald-600/60"
+																							: "bg-red-400/80 dark:bg-red-600/60"
+																					}`}
 																					style={{
 																						left: `${Math.min(offsetPct, 98)}%`,
 																						width: `${Math.min(widthPct, 100 - offsetPct)}%`,
 																					}}
+																					onClick={() =>
+																						setSelectedStepByTraceId(
+																							(
+																								prev,
+																							) => ({
+																								...prev,
+																								[trace.TRACE_ID]:
+																									step.STEP_ID,
+																							}),
+																						)
+																					}
+																					aria-label={`Expand ${step.TOOL_NAME?.split("_").pop() ?? step.TOOL_NAME} in span tree`}
 																				/>
-																			</button>
+																			</div>
 																			<span className="w-10 text-right font-mono text-[10px] text-muted-foreground">
 																				{stepMs >
 																				0

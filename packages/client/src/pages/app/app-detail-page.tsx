@@ -64,7 +64,6 @@ import { CommitsTab } from "./app-detail-tabs/commits-tab";
 import { Dependencies } from "./app-detail-tabs/dependencies-tab";
 import { Overview } from "./app-detail-tabs/overview-tab";
 import { SettingsTab } from "./app-detail-tabs/settings-tab";
-import { TracesTab } from "./app-detail-tabs/traces-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
 const modelDependencies = (
@@ -554,7 +553,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"Access Control",
 			"Files",
 			"SMSS",
-			"Traces",
 		],
 		editor: [
 			"Overview",
@@ -872,11 +870,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											SMSS
 										</TabsTrigger>
 									)}
-									{visibleTabs.includes("Traces") && (
-										<TabsTrigger value="Traces">
-											Traces
-										</TabsTrigger>
-									)}
 								</TabsList>
 							</div>
 						</Tabs>
@@ -1123,9 +1116,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 							>
 								<UpdateSMSS type={"PROJECT"} id={appId} />
 							</SettingsContext.Provider>
-						)}
-						{selectedTab === "Traces" && (
-							<TracesTab appId={appId} />
 						)}
 					</div>
 				</div>

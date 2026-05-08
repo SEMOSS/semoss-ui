@@ -313,6 +313,7 @@ const StepNode = ({
 		? tryExtractSummary(step.TOOL_INPUT_JSON)
 		: null;
 
+	console.log(step);
 	return (
 		<div className="border-border border-b last:border-b-0">
 			<button
@@ -449,6 +450,18 @@ const StepNode = ({
 								</span>
 							</div>
 						</div>
+						{step.TOOL_GIT_COMMIT && (
+							<div>
+								<p className="font-medium text-muted-foreground">
+									Tool Git Commit
+								</p>
+								<div className="flex min-w-0 items-center gap-1">
+									<span className="truncate font-mono">
+										{step.TOOL_GIT_COMMIT}
+									</span>
+								</div>
+							</div>
+						)}
 					</div>
 
 					{/* Input */}

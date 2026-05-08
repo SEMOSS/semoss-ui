@@ -1,9 +1,10 @@
 import {
 	Activity,
 	BotMessageSquare,
-	ChevronRight,
 	Clock,
 	Copy,
+	ExternalLink,
+	Info,
 	RefreshCcw,
 	Wrench,
 	Zap,
@@ -283,126 +284,168 @@ export const AgentsPage: React.FC = () => {
 
 				{/* Room cards */}
 				<div className="grid gap-2">
-					{filteredRooms.map((room) => (
-						<button
-							key={room.roomId}
-							type="button"
-							className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm"
-							onClick={() => navigate(`room/${room.roomId}`)}
-						>
-							{/* Status indicator */}
-							<div
-								className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
-									room.hasErrors
-										? "bg-red-100 dark:bg-red-900/30"
-										: "bg-emerald-100 dark:bg-emerald-900/30"
-								}`}
+					{filteredRooms.map((room) => {
+						return (
+							<button
+								key={room.roomId}
+								type="button"
+								className="group flex items-center gap-4 rounded-lg border border-border bg-card p-4 text-left transition-all hover:border-primary/30 hover:shadow-sm"
+								onClick={() => navigate(`room/${room.roomId}`)}
 							>
-								<BotMessageSquare
-									className={`size-5 ${
+								{/* Status indicator */}
+								<div
+									className={`flex size-10 shrink-0 items-center justify-center rounded-full ${
 										room.hasErrors
-											? "text-red-600 dark:text-red-400"
-											: "text-emerald-600 dark:text-emerald-400"
+											? "bg-red-100 dark:bg-red-900/30"
+											: "bg-emerald-100 dark:bg-emerald-900/30"
 									}`}
-								/>
-							</div>
-
-							{/* Content */}
-							<div className="flex min-w-0 flex-1 flex-col gap-1.5">
-								<div className="flex items-center gap-2">
-									<span className="truncate font-semibold text-sm">
-										{room.projectId &&
-										room.projectId !== "null" &&
-										room.projectId !== null
-											? room.projectId.replace(
-													"SYSTEM__",
-													"",
-												)
-											: `Room ${room.roomId.slice(0, 8)}`}
-									</span>
-									<span className="shrink-0 text-muted-foreground text-xs">
-										{formatDateTime(room.lastActivity)} (
-										{timeAgo(room.lastActivity)})
-									</span>
-									{/* User badge */}
-									{room.users && room.users.length > 0 && (
-										<span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-											{room.users[0]}
-										</span>
-									)}
+								>
+									<BotMessageSquare
+										className={`size-5 ${
+											room.hasErrors
+												? "text-red-600 dark:text-red-400"
+												: "text-emerald-600 dark:text-emerald-400"
+										}`}
+									/>
 								</div>
 
-								{/* Room ID */}
-								<div className="flex items-center gap-1.5">
-									<span className="font-mono text-[10px] text-muted-foreground">
-										{room.roomId}
-									</span>
-									<button
-										type="button"
-										onClick={(e) => {
-											e.stopPropagation();
-											try {
-												navigator.clipboard.writeText(
-													room.roomId,
-												);
-												toast.success(
-													"Room ID copied to clipboard",
-												);
-											} catch {
-												toast.error(
-													"Failed to copy room ID",
-												);
-											}
-										}}
-										className="text-muted-foreground text-xs transition-colors hover:text-foreground"
-										title="Copy room ID"
-										aria-label="Copy room ID"
-									>
-										<Copy className="size-3.5" />
-									</button>
-								</div>
+								{/* Content */}
+								<div className="flex min-w-0 flex-1 items-center gap-4">
+									{/* Left: title + ID */}
+									<div className="flex min-w-0 flex-col gap-0.5">
+										<div className="flex items-center gap-2">
+											<span className="truncate font-semibold text-sm">
+												{room.projectId &&
+												room.projectId !== "null" &&
+												room.projectId !== null
+													? room.projectId.replace(
+															"SYSTEM__",
+															"",
+														)
+													: `Room ${room.roomId.slice(0, 8)}`}
+											</span>
+											{/* User badge */}
+											{room.users &&
+												room.users.length > 0 && (
+													<span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+														{room.users[0]}
+													</span>
+												)}
+										</div>
+										{/* Room ID */}
+										<div className="flex items-center gap-1">
+											<span className="font-mono text-[10px] text-muted-foreground">
+												id: {room.roomId}
+											</span>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													try {
+														navigator.clipboard.writeText(
+															room.roomId,
+														);
+														toast.success(
+															"Room ID copied to clipboard",
+														);
+													} catch {
+														toast.error(
+															"Failed to copy room ID",
+														);
+													}
+												}}
+												className="text-muted-foreground transition-colors hover:text-foreground"
+												title="Copy room ID"
+												aria-label="Copy room ID"
+											>
+												<Copy className="size-3" />
+											</button>
+										</div>
+									</div>
 
-								{/* Harness pills */}
-								<div className="flex flex-wrap items-center gap-1.5">
-									{room.harnessTypes.map((h) => (
-										<span
-											key={h}
-											className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-[10px] ${getHarnessColor(h)}`}
-										>
-											{h}
+									{/* Right: timestamp above stats */}
+									<div className="ml-auto flex shrink-0 flex-col items-end gap-1">
+										{/* Timestamp */}
+										<span className="text-muted-foreground text-xs">
+											{formatDateTime(room.lastActivity)}{" "}
+											({timeAgo(room.lastActivity)})
 										</span>
-									))}
-									<span className="mx-1 text-border">|</span>
-									<span className="flex items-center gap-1 text-muted-foreground text-xs">
-										<Activity className="size-3" />
-										{room.totalRuns}
-									</span>
-									<span className="flex items-center gap-1 text-muted-foreground text-xs">
-										<Wrench className="size-3" />
-										{room.totalToolCalls}
-									</span>
-									<span className="flex items-center gap-1 text-muted-foreground text-xs">
-										<Zap className="size-3" />
-										<span className="text-green-600 dark:text-green-400">
-											↑
-											{room.totalInputTokens.toLocaleString()}
-										</span>
-										<span className="text-blue-600 dark:text-blue-400">
-											↓
-											{room.totalOutputTokens.toLocaleString()}
-										</span>
-									</span>
-									<span className="flex items-center gap-1 text-muted-foreground text-xs">
-										<Clock className="size-3" />
-										{formatDuration(room.totalDurationMs)}
-									</span>
+										{/* Stats + Actions */}
+										<div className="flex flex-wrap items-center justify-end gap-1.5">
+											{room.harnessTypes.map((h) => (
+												<span
+													key={h}
+													className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-[10px] ${getHarnessColor(h)}`}
+												>
+													{h}
+												</span>
+											))}
+											<span className="mx-1 text-border">
+												|
+											</span>
+											<span className="flex items-center gap-1 text-muted-foreground text-xs">
+												<Activity className="size-3" />
+												{room.totalRuns}
+											</span>
+											<span className="flex items-center gap-1 text-muted-foreground text-xs">
+												<Wrench className="size-3" />
+												{room.totalToolCalls}
+											</span>
+											<span className="flex items-center gap-1 text-muted-foreground text-xs">
+												<Zap className="size-3" />
+												<span className="text-green-600 dark:text-green-400">
+													↑
+													{room.totalInputTokens.toLocaleString()}
+												</span>
+												<span className="text-blue-600 dark:text-blue-400">
+													↓
+													{room.totalOutputTokens.toLocaleString()}
+												</span>
+											</span>
+											<span className="flex items-center gap-1 text-muted-foreground text-xs">
+												<Clock className="size-3" />
+												{formatDuration(
+													room.totalDurationMs,
+												)}
+											</span>
+											<div className="ml-2 flex shrink-0 items-center gap-1 text-muted-foreground">
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														window.open(
+															`/agents/room/${room.roomId}`,
+															"_blank",
+															"noopener,noreferrer",
+														);
+													}}
+													className="transition-colors hover:text-foreground"
+													title="Open info in new window"
+													aria-label="Open room info in new window"
+												>
+													<ExternalLink className="size-4" />
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation();
+														navigate(
+															`room/${room.roomId}`,
+														);
+													}}
+													className="transition-colors hover:text-foreground"
+													title="Room info"
+													aria-label="Room info"
+												>
+													<Info className="size-4" />
+												</button>
+											</div>
+										</div>
+									</div>
 								</div>
-							</div>
-
-							{/* Chevron */}
-							<ChevronRight className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-						</button>
-					))}
+							</button>
+						);
+					})}
 
 					{filteredRooms.length === 0 && !loading && (
 						<div className="py-12 text-center text-muted-foreground">

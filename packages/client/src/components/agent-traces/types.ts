@@ -53,6 +53,7 @@ export interface AgentTraceStep {
 	ENGINE_TYPE: string | null;
 	IS_MCP: boolean;
 	STATUS: string;
+	TOOL_GIT_COMMIT: string | null;
 }
 
 export interface SpanRow {
