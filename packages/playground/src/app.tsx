@@ -1,6 +1,5 @@
 import { I18nBuilder, I18nextProvider } from "@semoss/i18n";
 import { Env, InsightProvider } from "@semoss/sdk/react";
-import { Notification } from "@semoss/ui";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { Router } from "@/pages";
 
@@ -18,18 +17,16 @@ export const App = () => {
 	return (
 		<I18nextProvider i18n={i18n}>
 			<InsightProvider>
-				<Notification>
-					{/* TODO: read default theme from theme map somehow */}
-					<ThemeProvider
-						defaultTheme="light"
-						storageKey="smss-ui-theme-playground"
-					>
-						<div className="absolute inset-0 h-screen w-screen overflow-hidden">
-							<Router />
-						</div>
-						<Toaster position="top-center" />
-					</ThemeProvider>
-				</Notification>
+				{/* TODO: read default theme from theme map somehow */}
+				<ThemeProvider
+					defaultTheme="light"
+					storageKey="smss-ui-theme-playground"
+				>
+					<div className="absolute inset-0 h-screen w-screen overflow-hidden">
+						<Router />
+					</div>
+					<Toaster position="top-center" />
+				</ThemeProvider>
 			</InsightProvider>
 		</I18nextProvider>
 	);

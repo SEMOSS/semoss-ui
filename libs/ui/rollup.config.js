@@ -52,14 +52,7 @@ export default defineConfig({
 		}),
 		isProduction && terser(),
 	],
-	external: [
-		"@emotion/react",
-		"@emotion/styled",
-		"@mui/icons-material",
-		"@mui/material",
-		"react",
-		"react-dom",
-	],
+	external: ["react", "react-dom"],
 	watch: {
 		clearScreen: false,
 	},
