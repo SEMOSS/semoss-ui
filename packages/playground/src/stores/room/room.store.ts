@@ -679,12 +679,9 @@ export class RoomStore {
 
 			// set the model based on the history
 			if (activeModelId) {
-				const tags = [
-					"text-generation",
-					...(this._theme.featureFlags?.enableImageGeneration
-						? ["image-generation"]
-						: []),
-				];
+				const tags = this._theme.featureFlags?.enableImageGeneration
+					? ["text-generation", "image-generation"]
+					: ["text-generation"];
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
 					`META | MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : ${JSON.stringify(tags)} }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
 				);
@@ -771,6 +768,7 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
+			// Filter out workspace MCPs before saving (they shouldn't be persisted to the room)
 			const optionsToSave = {
 				...options,
 				modelId: this._store.model.engine_id,
