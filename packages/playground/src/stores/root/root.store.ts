@@ -7,8 +7,8 @@ configure({
 	enforceActions: "always",
 });
 
-const NAME = import.meta.env.VITE_NAME ? import.meta.env.VITE_NAME : "";
-const THEME = import.meta.env.VITE_THEME ? import.meta.env.VITE_THEME : "{}";
+const NAME = import.meta.env.VITE_NAME || "";
+const THEME = import.meta.env.VITE_THEME || "{}";
 
 interface RootStoreInterface {
 	/**
@@ -45,6 +45,7 @@ export class RootStore {
 		navbarActions: null,
 		theme: {
 			name: "",
+			banner: "",
 			description: "",
 			variables: {
 				backgroundColor: "",
@@ -56,15 +57,24 @@ export class RootStore {
 				logo: "",
 				login: "",
 				landing: "",
+				tabIcon: "",
 				workspace: "",
+				loginDark: "",
+				landingDark: "",
+				workspaceDark: "",
+				error: "",
+				errorDark: "",
 			},
 			overrides: {
 				"main-layout": {},
 			},
 			footer: "",
 			landing: "",
+			altLandingKey: "",
+			altLanding: "",
 			sidebar: {
-				//workspaceAlias: "Workspace",
+				expandedByDefault: false,
+				chatHistoryDate: false,
 				headerItems: [],
 				footerItems: [],
 			},
@@ -77,6 +87,23 @@ export class RootStore {
 			},
 			allowedFileTypes: [],
 			defaultTools: [],
+			gracefulErrors: [],
+			featureFlags: {
+				// These will be the defaults, used when the user has no theme
+				enableModelSelect: true,
+				enableAgent: true,
+				enableSuggestions: false,
+				enablePlan: false,
+				enableRewrite: true,
+				enablePromptOptimizer: true,
+				enableDarkMode: true,
+				hideToolsInIframe: false,
+				enableKnowledgeMCP: true,
+				allowEmbeddingOptions: true,
+				showKnowledgeMenu: true,
+				showToolboxMenu: true,
+				showPlatformLinks: true,
+			},
 		},
 	};
 
@@ -88,7 +115,11 @@ export class RootStore {
 
 		// merge with the environment variables
 		try {
-			const theme = JSON.parse(THEME) as Partial<ThemeMap["playground"]>;
+			const parsed = JSON.parse(THEME);
+			// Support both wrapped ({ playground: {...} }) and flat formats
+			const theme = (parsed?.playground || parsed) as Partial<
+				ThemeMap["playground"]
+			>;
 
 			// update the theme
 			this.updateTheme(theme);
@@ -179,11 +210,49 @@ export class RootStore {
 	 * Update the theme
 	 * @param theme Theme
 	 */
-	private updateTheme = (theme: Partial<ThemeMap["playground"]>) => {
+	private updateTheme = (theme: Partial<ThemeMap["playground"]> = {}) => {
+		// Resolve featureFlags before building the merged theme. Several flags
+		// were historically stored as top-level keys on the theme object; new
+		// themes should put them inside featureFlags instead. Top-level values
+		// are treated as migration fallbacks so old stored themes continue to
+		// work — explicit featureFlags always wins over the promoted top-level value.
+		//
+		// The cast to `legacy` suppresses @deprecated hints: reading these fields
+		// here is intentional — it's the one place responsible for the migration.
+		const legacy = (theme ?? {}) as Record<string, unknown>;
+		const resolvedFeatureFlags = {
+			...this._store.theme.featureFlags,
+			// Migrate top-level booleans for old stored themes
+			...(legacy.hideToolsInIframe !== undefined
+				? { hideToolsInIframe: legacy.hideToolsInIframe as boolean }
+				: {}),
+			...(legacy.enableKnowledgeMCP !== undefined
+				? { enableKnowledgeMCP: legacy.enableKnowledgeMCP as boolean }
+				: {}),
+			...(legacy.allowEmbeddingOptions !== undefined
+				? {
+						allowEmbeddingOptions:
+							legacy.allowEmbeddingOptions as boolean,
+					}
+				: {}),
+			...(legacy.showKnowledgeMenu !== undefined
+				? { showKnowledgeMenu: legacy.showKnowledgeMenu as boolean }
+				: {}),
+			...(legacy.showToolboxMenu !== undefined
+				? { showToolboxMenu: legacy.showToolboxMenu as boolean }
+				: {}),
+			...(legacy.showPlatformLinks !== undefined
+				? { showPlatformLinks: legacy.showPlatformLinks as boolean }
+				: {}),
+			// Explicit featureFlags take precedence over everything above
+			...(theme?.featureFlags || {}),
+		};
+
 		// deep merge from the environment
 		this._store.theme = {
 			...this._store.theme,
 			name: theme?.name || this._store.theme.name,
+			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
 			variables: {
 				...this._store.theme.variables,
@@ -199,9 +268,28 @@ export class RootStore {
 			},
 			footer: theme?.footer || this._store.theme.footer,
 			landing: theme?.landing || this._store.theme.landing,
+			altLandingKey:
+				theme?.altLandingKey || this._store.theme.altLandingKey,
+			altLanding: theme?.altLanding || this._store.theme.altLanding,
 			sidebar: {
 				...this._store.theme.sidebar,
 				...(theme?.sidebar || {}),
+				expandedByDefault:
+					theme?.sidebar?.expandedByDefault !== undefined
+						? theme.sidebar.expandedByDefault
+						: this._store.theme.sidebar.expandedByDefault,
+				chatHistoryDate:
+					theme?.sidebar?.chatHistoryDate !== undefined
+						? theme.sidebar.chatHistoryDate
+						: this._store.theme.sidebar.chatHistoryDate,
+				headerItems: [
+					...this._store.theme.sidebar.headerItems,
+					...(theme?.sidebar?.headerItems || []),
+				],
+				footerItems: [
+					...this._store.theme.sidebar.footerItems,
+					...(theme?.sidebar?.footerItems || []),
+				],
 			},
 			dialog: theme?.dialog || this._store.theme.dialog,
 			defaultRoomSettings: {
@@ -215,6 +303,8 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			defaultEmbedderId:
+				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
 			defaultTools: [
 				...new Map(
 					[
@@ -223,6 +313,12 @@ export class RootStore {
 					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
+			gracefulErrors: [
+				...this._store.theme.gracefulErrors,
+				...(theme?.gracefulErrors || []),
+			],
+			tour: theme?.tour || this._store.theme.tour,
+			featureFlags: resolvedFeatureFlags,
 		};
 
 		// apply the theme to document root

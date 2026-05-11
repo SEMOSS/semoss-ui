@@ -1,8 +1,7 @@
-import { Edit, Eye, Plus } from "lucide-react";
+import { Eye, LockKeyhole, Pencil, Plus, User } from "lucide-react";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
-	Avatar,
-	AvatarFallback,
 	Button,
 	Card,
 	CardDescription,
@@ -27,15 +26,46 @@ type EngineAccessButtonProps = {
 	fromApp?: boolean;
 };
 
+const PermissionCard = ({
+	icon,
+	title,
+	description,
+	value,
+}: {
+	icon: ReactNode;
+	title: string;
+	description: string;
+	value: string;
+}) => {
+	return (
+		<Card className="rounded-xl p-2">
+			<CardHeader className="px-3 py-2">
+				<div className="flex items-start justify-between gap-4">
+					<div className="flex items-start gap-3">
+						<div className="mt-0.5 flex h-6 w-6 items-center justify-center text-muted-foreground">
+							{icon}
+						</div>
+						<div className="space-y-1">
+							<CardTitle className="text-base">{title}</CardTitle>
+							<CardDescription className="text-sm">
+								{description}
+							</CardDescription>
+						</div>
+					</div>
+					<RadioGroupItem value={value} />
+				</div>
+			</CardHeader>
+		</Card>
+	);
+};
+
 export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	const { type, active } = useEngine();
 
 	const { monolithStore } = useRootStore();
 
-	// track if open
 	const [open, setOpen] = useState(false);
-	const [requestedRole, setRequestedRole] = useState<Role>(active.role);
-
+	const [requestedRole, setRequestedRole] = useState<Role>("READ_ONLY");
 	const [comment, setComment] = useState<string>("");
 
 	// close when the id changes
@@ -43,10 +73,13 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 		setOpen(false);
 	}, [active.id]);
 
-	// update the requested whenever the role changes
-	useEffect(() => {
-		setRequestedRole(active.role);
-	}, [active.role]);
+	const handleOpen = () => {
+		setRequestedRole("READ_ONLY");
+		setComment(
+			`I am requesting access to ${active.name || "this engine"} for [please provide a reason]`,
+		);
+		setOpen(true);
+	};
 
 	/**
 	 * Request the new access
@@ -71,7 +104,6 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 
 			toast.success(String(output));
 
-			// close is
 			setOpen(false);
 		} catch (e) {
 			console.log(e);
@@ -88,22 +120,29 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 				<Button
 					variant="outline"
 					className="h-[30px] rounded-xl border-primary px-6 text-(--primary) text-[13px]"
-					onClick={() => setOpen(true)}
+					onClick={handleOpen}
 				>
 					{active?.role === "DISCOVERABLE" || !active.role
 						? "Request Access"
 						: "Change Access"}
 				</Button>
+			) : active?.role === "DISCOVERABLE" || !active.role ? (
+				<Button
+					variant="default"
+					className="gap-2"
+					onClick={handleOpen}
+				>
+					<LockKeyhole className="size-4" />
+					Request Access
+				</Button>
 			) : (
 				<Button
 					variant="outline"
-					onClick={() => setOpen(true)}
-					className="border-(--primary) bg-transparet text-(--primary) hover:text-(--primary)"
+					onClick={handleOpen}
+					className="border-(--primary) bg-transparent text-(--primary) hover:text-(--primary)"
 				>
 					<Plus className="size-4" />
-					{active?.role === "DISCOVERABLE" || !active.role
-						? "Request Access"
-						: "Change Access"}
+					Change Access
 				</Button>
 			)}
 
@@ -127,89 +166,36 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 							onValueChange={(value) => {
 								setRequestedRole(value as Role);
 							}}
+							className="space-y-2"
 						>
-							<div className="space-y-2">
-								<Card className="m-2 rounded-xl p-2">
-									<CardHeader className="px-2">
-										<div className="flex flex-col gap-2">
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-3">
-													<Avatar className="h-5 w-5 font-bold text-xs">
-														<AvatarFallback className="bg-black/50 text-white">
-															A
-														</AvatarFallback>
-													</Avatar>
-													<CardTitle className="text-base">
-														Author
-													</CardTitle>
-												</div>
-												<RadioGroupItem value="OWNER" />
-											</div>
-											<CardDescription className="ml-8 text-sm">
-												{
-													PERMISSION_DESCRIPTION_MAP[
-														type
-													].author
-												}
-											</CardDescription>
-										</div>
-									</CardHeader>
-								</Card>
-
-								<Card className="m-2 rounded-xl p-2">
-									<CardHeader className="px-2">
-										<div className="flex flex-col gap-2">
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-3">
-													<div className="flex h-6 w-6 items-center justify-center text-black/50">
-														<Edit className="h-5 w-5" />
-													</div>
-													<CardTitle className="text-base">
-														Editor
-													</CardTitle>
-												</div>
-												<RadioGroupItem value="EDIT" />
-											</div>
-											<CardDescription className="ml-9 text-sm">
-												{
-													PERMISSION_DESCRIPTION_MAP[
-														type
-													].editor
-												}
-											</CardDescription>
-										</div>
-									</CardHeader>
-								</Card>
-
-								<Card className="m-2 rounded-xl p-2">
-									<CardHeader className="px-2">
-										<div className="flex flex-col gap-2">
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-3">
-													<div className="flex h-6 w-6 items-center justify-center text-black/50">
-														<Eye className="h-5 w-5" />
-													</div>
-													<CardTitle className="text-base">
-														Read-Only
-													</CardTitle>
-												</div>
-												<RadioGroupItem value="READ_ONLY" />
-											</div>
-											<CardDescription className="ml-9 text-sm">
-												{
-													PERMISSION_DESCRIPTION_MAP[
-														type
-													].readonly
-												}
-											</CardDescription>
-										</div>
-									</CardHeader>
-								</Card>
-							</div>
+							<PermissionCard
+								icon={<User className="size-4" />}
+								title="Author"
+								description={
+									PERMISSION_DESCRIPTION_MAP[type].author
+								}
+								value="OWNER"
+							/>
+							<PermissionCard
+								icon={<Pencil className="size-4" />}
+								title="Editor"
+								description={
+									PERMISSION_DESCRIPTION_MAP[type].editor
+								}
+								value="EDIT"
+							/>
+							<PermissionCard
+								icon={<Eye className="size-4" />}
+								title="Read-Only"
+								description={
+									PERMISSION_DESCRIPTION_MAP[type].readonly
+								}
+								value="READ_ONLY"
+							/>
 						</RadioGroup>
 
 						<div className="space-y-2">
-							<Label>Comment:</Label>
+							<Label>Reason For Access</Label>
 							<Textarea
 								value={comment}
 								onChange={(e) => setComment(e.target.value)}

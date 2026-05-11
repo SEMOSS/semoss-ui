@@ -2,11 +2,14 @@
 	"search": "Search",
 	"new": "New",
 	"agents": "Agents",
+	"takeTour": "Take a Tour",
 	"buckets": {
 		"favorites": "Favorites",
 		"today": "Today",
 		"yesterday": "Yesterday",
+		"fewDaysAgo": "Few Days Ago",
 		"lastWeek": "Last Week",
+		"thisMonth": "This Month",
 		"lastMonth": "Last Month",
 		"older": "Older"
 	},

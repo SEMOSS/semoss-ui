@@ -1,6 +1,5 @@
-import { JsonViewer } from "@textea/json-viewer";
 import { observer } from "mobx-react-lite";
-import { Typography } from "@semoss/ui";
+import { JsonValueViewer } from "@/components/common/JsonValueViewer";
 import { isOutputJSON } from "@/utility";
 
 interface SuccessOperationProps {
@@ -17,19 +16,9 @@ export const SuccessOperation = observer(
 
 		const value = isOutputJSON(output);
 		if (value != null) {
-			return (
-				<JsonViewer
-					value={value}
-					displayComma={true}
-					rootName={false}
-				/>
-			);
+			return <JsonValueViewer value={value} />;
 		} else {
-			return (
-				<Typography variant="caption" color="success">
-					{output}
-				</Typography>
-			);
+			return <span className="text-green-600 text-xs">{output}</span>;
 		}
 	},
 );

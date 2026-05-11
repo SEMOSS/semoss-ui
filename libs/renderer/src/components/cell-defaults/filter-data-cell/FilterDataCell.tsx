@@ -1,25 +1,23 @@
-import { DeleteOutline } from "@mui/icons-material";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
 import {
 	DragDropContext,
 	Draggable,
 	Droppable,
 	type DropResult,
-} from "react-beautiful-dnd";
+} from "@hello-pangea/dnd";
+import { GripVertical, Trash2 } from "lucide-react";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useEffect, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
-	Autocomplete,
 	Button,
 	Checkbox,
 	Select,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { useBlocks } from "../../../hooks";
 import {
 	ActionMessages,
@@ -29,50 +27,6 @@ import {
 } from "../../../store";
 import type { QueryImportCellDef } from "../query-import-cell";
 
-const StyledSelect = styled(Select)(() => ({
-	flex: 1,
-	minWidth: 0,
-}));
-const StyledSelectItem = styled(Select.Item)(({ theme }) => ({}));
-const StyledContent = styled("div")(({ theme }) => ({
-	position: "relative",
-	width: "100%",
-}));
-const EmptyContainer = styled("div")(() => ({}));
-const LeftButtonContainer = styled("div")(() => ({
-	display: "flex",
-	gap: "10px",
-	marginTop: "5px",
-}));
-const RightButtonContainer = styled("div")(() => ({
-	justifyContent: "flex-end",
-	display: "flex",
-	gap: "10px",
-	marginTop: "5px",
-	marginRight: "15px",
-}));
-const AutoCompleteValueDiv = styled("div")(() => ({
-	flex: 1,
-}));
-const MainContainer = styled("div")(() => ({
-	paddingBottom: "20px",
-	paddingLeft: "20px",
-	paddingRight: "10px",
-}));
-const BorderContainer = styled("div")(() => ({
-	border: "2px dotted #ccc",
-	padding: "10px",
-	margin: "10px",
-	position: "relative",
-}));
-const StackContainer = styled("div")(() => ({
-	display: "flex",
-	width: "100%",
-}));
-const StackChildContainer = styled("div")(() => ({
-	width: "inherit",
-}));
-const RuleButton = styled(Button)(() => ({}));
 export interface TransformationTargetCell {
 	id: string;
 	frameVariableName: string;
@@ -122,13 +76,13 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 		 * Cell that Transformation will be made to
 		 */
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c;
+			let c: CellState<QueryImportCellDef> | undefined;
 			let cellId: number | null = null;
 			Object.values(state.queries).forEach((query) => {
 				Object.entries(query.cells).forEach(
-					([key, value], cellIndex) => {
+					([key, value], _cellIndex) => {
 						const parsedId =
-							value["parameters"]?.["frameVariableName"] || null;
+							value.parameters?.frameVariableName || null;
 						if (cellId || parsedId === null) return;
 
 						const target = (parsedId as string)?.match(/\d+/);
@@ -209,32 +163,34 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 			const parsedRules = parseQuery(query);
 			setRuleGroups(parsedRules);
 			const getFrames = await state.runSideEffect("GetFrames();");
-			const list = getFrames["pixelReturn"][0]["output"] as string[];
+			const list = getFrames.pixelReturn[0].output as string[];
 			if (list.length > 0) {
-				setFramelist((prev) => [...list]);
+				setFramelist((_prev) => [...list]);
 			}
 			const headerResponse = await state.runSideEffect(
 				`META | ${selectedFrame} | FrameHeaders();`,
 			);
 			if (headerResponse) {
-				const headers = headerResponse["pixelReturn"][0]["output"][
-					"headerInfo"
-				]["headers"].map((element) => ({
-					name: element["displayName"],
-					type: element["dataType"],
-				}));
+				const headers =
+					headerResponse.pixelReturn[0].output.headerInfo.headers.map(
+						(element) => ({
+							name: element.displayName,
+							type: element.dataType,
+						}),
+					);
 				setSelectedFrameHeaders(headers);
 			}
 			const response = await state.runSideEffect(
 				`META | Frame("${selectedFrame}") | QueryAll()| Limit(1000) | CollectAll()`,
 			);
-			const responseData = response["pixelReturn"][0]["output"]["data"];
-			const headers = response["pixelReturn"][0]["output"][
-				"headerInfo"
-			].map((element) => ({
-				name: element["header"],
-				type: element["dataType"],
-			}));
+			const responseData = response.pixelReturn[0].output.data;
+			const headers = response.pixelReturn[0].output.headerInfo.map(
+				(element) => ({
+					name: element.header,
+					type: element.dataType,
+				}),
+			);
+			// biome-ignore lint/suspicious/noExplicitAny: external API type
 			const fieldToValues: Record<string, any[]> = {};
 			headers.forEach((name, index) => {
 				const rawValues = responseData.values.map((row) => row[index]);
@@ -245,7 +201,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 					if (val === "NaN") {
 						hasNaNString = true; // Keep only one "NaN"
 					} else if (
-						!isNaN(Number(val)) &&
+						!Number.isNaN(Number(val)) &&
 						val !== null &&
 						val !== undefined &&
 						val !== ""
@@ -281,7 +237,9 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 					else if (rule.field) usedFields.add(rule.field);
 				}
 			};
-			parsedRules.forEach((group) => extractFields(group.rules));
+			parsedRules.forEach((group) => {
+				extractFields(group.rules);
+			});
 		}
 		function parseQuery(query: string): RuleGroup[] {
 			query = query.replace(/\s+/g, " ").trim();
@@ -299,13 +257,15 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 				}
 				const match = expr.match(/^(\w+)\s*([!=<>]+)\s*(\[.*?\])$/);
 				if (!match)
-					throw new Error("Invalid rule format: " + expression);
+					throw new Error(`Invalid rule format: ${expression}`);
 				const [, field, operator, valueRaw] = match;
 				const parts = valueRaw
 					.replace(/[[\]]/g, "")
 					.split(",")
 					.map((v) => v.trim().replace(/^["']|["']$/g, ""));
-				const allAreNumbers = parts.every((p) => !isNaN(Number(p)));
+				const allAreNumbers = parts.every(
+					(p) => !Number.isNaN(Number(p)),
+				);
 				const value = allAreNumbers ? parts.map(Number) : parts;
 				return {
 					id: Date.now() + Math.random(),
@@ -353,7 +313,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 						}
 						continue;
 					}
-					buffer += token + " ";
+					buffer += `${token} `;
 				}
 				flushBuffer();
 				return {
@@ -511,7 +471,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 				};
 			}
 		};
-		const removeRuleOrGroup = (groupId: number, ruleId: number) => {
+		const removeRuleOrGroup = (_groupId: number, ruleId: number) => {
 			const deepRemove = (
 				rules: (Rule | RuleGroup)[],
 			): (Rule | RuleGroup)[] => {
@@ -599,9 +559,9 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 		};
 		async function handleFrame() {
 			const getFrames = await state.runSideEffect("GetFrames();");
-			const list = getFrames["pixelReturn"][0]["output"] as string[];
+			const list = getFrames.pixelReturn[0].output as string[];
 			if (list.length > 0) {
-				setFramelist((prev) => [...list]);
+				setFramelist((_prev) => [...list]);
 			}
 		}
 		async function handleFrameSelected(frameSelected) {
@@ -644,19 +604,6 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 			!doesFrameExist && cell.parameters.targetCell.id
 				? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying filter.`
 				: "";
-		const renderOption = (
-			props: any,
-			option: string | number,
-			{ selected }: any,
-		) => {
-			const { ...optionProps } = props;
-			return (
-				<li {...optionProps}>
-					<Checkbox checked={selected} />
-					{option}
-				</li>
-			);
-		};
 		const getOperatorsForField = (fieldName: string) => {
 			const field = selectedFrameHeaders.find(
 				(h) => h.name === fieldName,
@@ -701,128 +648,108 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 		};
 		const renderRules = (group: RuleGroup, parentId?: number) => {
 			return (
-				<BorderContainer key={group.id}>
-					<Stack>
-						<StackContainer>
-							{/* Condition selector */}
-							{group.rules.length > 1 && (
-								<StyledSelect
-									size={"small"}
-									sx={{
-										justifyContent: "center",
-										flex: "none",
-									}}
-									value={group.condition}
-									onChange={(e) => {
-										const newCondition = e.target.value as
-											| "AND"
-											| "OR";
-										handleConditionChange(
+				<div
+					key={group.id}
+					className="relative m-2.5 border-2 border-border border-dashed p-2.5"
+				>
+					<div className="flex w-full">
+						{/* Condition selector */}
+						{group.rules.length > 1 && (
+							<Select
+								value={group.condition}
+								onValueChange={(newCondition: "AND" | "OR") => {
+									handleConditionChange(
+										group.id,
+										newCondition,
+									);
+									setRuleGroups((prev) =>
+										updateRules(
+											prev,
 											group.id,
+											(rules) => rules,
 											newCondition,
-										);
-										setRuleGroups((prev) =>
-											updateRules(
-												prev,
-												group.id,
-												(rules) => rules,
-												newCondition,
-											),
-										);
-									}}
-								>
-									<StyledSelectItem value="AND">
-										AND
-									</StyledSelectItem>
-									<StyledSelectItem value="OR">
-										OR
-									</StyledSelectItem>
-								</StyledSelect>
-							)}
-							{/* Render Rules with DragDropContext */}
-							<DragDropContext onDragEnd={onDragEnd}>
-								<Droppable droppableId={group.id.toString()}>
-									{(provided) => (
-										<StackChildContainer
-											ref={provided.innerRef}
-											{...provided.droppableProps}
-										>
-											{group.rules.map((rule, index) =>
-												"condition" in rule ? (
-													<EmptyContainer
-														key={rule.id}
-													>
-														{renderRules(
-															rule,
-															group.id,
-														)}
-													</EmptyContainer>
-												) : (
-													<Draggable
-														key={rule.id}
-														draggableId={rule.id.toString()}
-														index={index}
-													>
-														{(provided) => (
-															<EmptyContainer
-																ref={
-																	provided.innerRef
+										),
+									);
+								}}
+							>
+								<SelectTrigger className="h-8 w-20 shrink-0">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="AND">AND</SelectItem>
+									<SelectItem value="OR">OR</SelectItem>
+								</SelectContent>
+							</Select>
+						)}
+						{/* Render Rules with DragDropContext */}
+						<DragDropContext onDragEnd={onDragEnd}>
+							<Droppable droppableId={group.id.toString()}>
+								{(provided) => (
+									<div
+										className="w-full"
+										ref={provided.innerRef}
+										{...provided.droppableProps}
+									>
+										{group.rules.map((rule, index) =>
+											"condition" in rule ? (
+												<div key={rule.id}>
+													{renderRules(
+														rule,
+														group.id,
+													)}
+												</div>
+											) : (
+												<Draggable
+													key={rule.id}
+													draggableId={rule.id.toString()}
+													index={index}
+												>
+													{(provided) => (
+														<div
+															ref={
+																provided.innerRef
+															}
+															{...provided.draggableProps}
+															style={{
+																display: "flex",
+																gap: "8px",
+																padding:
+																	"12px 16px",
+																alignItems:
+																	"center",
+																...provided
+																	.draggableProps
+																	.style,
+															}}
+														>
+															{/* Header Select */}
+															<Select
+																disabled={
+																	cell.isLoading
 																}
-																{...provided.draggableProps}
-																style={{
-																	display:
-																		"flex",
-																	gap: "8px",
-																	padding:
-																		"12px 16px",
-																	alignItems:
-																		"center",
-																	...provided
-																		.draggableProps
-																		.style,
+																defaultValue={
+																	rule.field
+																}
+																onValueChange={(
+																	value,
+																) => {
+																	updateRuleValue(
+																		group.id,
+																		rule.id,
+																		"field",
+																		value,
+																	);
 																}}
 															>
-																{/* Header Select */}
-																<StyledSelect
-																	size={
-																		"small"
-																	}
-																	disabled={
-																		cell.isLoading
-																	}
-																	title={
-																		"Select Header"
-																	}
-																	name="Select Header"
-																	label={
-																		"Select Header"
-																	}
-																	defaultValue={
-																		rule.field
-																	}
-																	onChange={(
-																		e,
-																	) => {
-																		const value =
-																			e
-																				.target
-																				.value;
-																		updateRuleValue(
-																			group.id,
-																			rule.id,
-																			"field",
-																			value,
-																		);
-																	}}
-																	sx={{
-																		flex: 1,
-																	}}
-																>
+																<SelectTrigger className="min-w-0 flex-1">
+																	<SelectValue placeholder="Select Header" />
+																</SelectTrigger>
+																<SelectContent>
 																	{selectedFrameHeaders.map(
 																		(
 																			framelist,
 																		) => (
-																			<StyledSelectItem
+																			<SelectItem
 																				key={
 																					framelist.name
 																				}
@@ -833,51 +760,41 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 																			>
 																				{framelist.name ??
 																					""}
-																			</StyledSelectItem>
+																			</SelectItem>
 																		),
 																	)}
-																</StyledSelect>
-																{/* Operator Select */}
-																<StyledSelect
-																	size={
-																		"small"
-																	}
-																	disabled={
-																		cell.isLoading
-																	}
-																	title={
-																		"Select Operator"
-																	}
-																	name="Select Operator"
-																	label={
-																		"Select Operator"
-																	}
-																	value={
-																		rule.operator
-																	}
-																	onChange={(
-																		e,
-																	) => {
-																		updateRuleValue(
-																			group.id,
-																			rule.id,
-																			"operator",
-																			e
-																				.target
-																				.value,
-																		);
-																	}}
-																	sx={{
-																		flex: 1,
-																	}}
-																>
+																</SelectContent>
+															</Select>
+															{/* Operator Select */}
+															<Select
+																disabled={
+																	cell.isLoading
+																}
+																value={
+																	rule.operator
+																}
+																onValueChange={(
+																	value,
+																) => {
+																	updateRuleValue(
+																		group.id,
+																		rule.id,
+																		"operator",
+																		value,
+																	);
+																}}
+															>
+																<SelectTrigger className="min-w-0 flex-1">
+																	<SelectValue placeholder="Select Operator" />
+																</SelectTrigger>
+																<SelectContent>
 																	{getOperatorsForField(
 																		rule.field,
 																	).map(
 																		(
 																			op,
 																		) => (
-																			<StyledSelectItem
+																			<SelectItem
 																				key={
 																					op.value
 																				}
@@ -888,169 +805,217 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
 																				{
 																					op.label
 																				}
-																			</StyledSelectItem>
+																			</SelectItem>
 																		),
 																	)}
-																</StyledSelect>
-																{/* Value Select */}
-																<AutoCompleteValueDiv
-																	style={{
-																		flex: 1,
-																	}}
-																>
-																	<Autocomplete
-																		size="small"
-																		multiple
-																		renderOption={
-																			renderOption
-																		}
-																		options={
+																</SelectContent>
+															</Select>
+															{/* Value multi-select via checkboxes in a dropdown */}
+															<div className="relative min-w-0 flex-1">
+																<div className="max-h-[120px] overflow-y-auto rounded-md border border-input px-3 py-2 text-sm">
+																	{(
+																		valueOptionsMap[
+																			rule
+																				.field
+																		] ?? []
+																	).length ===
+																	0 ? (
+																		<span className="text-muted-foreground text-xs">
+																			Select
+																			Data
+																		</span>
+																	) : (
+																		(
 																			valueOptionsMap[
 																				rule
 																					.field
 																			] ??
 																			[]
-																		}
-																		value={
-																			Array.isArray(
-																				rule.value,
-																			)
-																				? rule.value
-																				: []
-																		}
-																		onChange={(
-																			_,
-																			value,
-																		) => {
-																			updateRuleValue(
-																				group.id,
-																				rule.id,
-																				"value",
-																				value,
-																			);
-																		}}
-																		renderInput={(
-																			params,
-																		) => (
-																			<TextField
-																				{...params}
-																				label="Select Data"
-																			/>
-																		)}
-																	/>
-																</AutoCompleteValueDiv>
-																<EmptyContainer
-																	{...provided.dragHandleProps}
-																>
-																	<DragIndicatorIcon
-																		style={{
-																			cursor: "grab",
-																			color: "#888",
-																		}}
-																	/>
-																</EmptyContainer>
-																{/* Delete Icon */}
-																<DeleteOutline
-																	style={{
-																		marginBottom:
-																			"7px",
-																	}}
-																	onClick={() =>
-																		removeRuleOrGroup(
-																			group.id,
-																			rule.id,
+																		).map(
+																			(
+																				option,
+																			) => {
+																				const isChecked =
+																					Array.isArray(
+																						rule.value,
+																					)
+																						? (
+																								rule.value as (
+																									| string
+																									| number
+																								)[]
+																							).includes(
+																								option as
+																									| string
+																									| number,
+																							)
+																						: false;
+																				return (
+																					// biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input
+																					<label
+																						key={String(
+																							option,
+																						)}
+																						className="flex cursor-pointer items-center gap-2 py-0.5"
+																					>
+																						<Checkbox
+																							checked={
+																								isChecked
+																							}
+																							onCheckedChange={(
+																								checked,
+																							) => {
+																								const current =
+																									Array.isArray(
+																										rule.value,
+																									)
+																										? [
+																												...(rule.value as (
+																													| string
+																													| number
+																												)[]),
+																											]
+																										: [];
+																								const newVal =
+																									checked
+																										? [
+																												...current,
+																												option,
+																											]
+																										: current.filter(
+																												(
+																													v,
+																												) =>
+																													v !==
+																													option,
+																											);
+																								updateRuleValue(
+																									group.id,
+																									rule.id,
+																									"value",
+																									newVal as (
+																										| string
+																										| number
+																									)[],
+																								);
+																							}}
+																						/>
+																						<span className="text-sm">
+																							{String(
+																								option,
+																							)}
+																						</span>
+																					</label>
+																				);
+																			},
 																		)
-																	}
-																	fontSize="small"
+																	)}
+																</div>
+															</div>
+															<div
+																{...provided.dragHandleProps}
+															>
+																<GripVertical
+																	style={{
+																		cursor: "grab",
+																		color: "#888",
+																	}}
 																/>
-															</EmptyContainer>
-														)}
-													</Draggable>
-												),
-											)}
-											{provided.placeholder}
-										</StackChildContainer>
-									)}
-								</Droppable>
-							</DragDropContext>
-						</StackContainer>
-					</Stack>
+															</div>
+															{/* Delete Icon */}
+															<Trash2
+																style={{
+																	marginBottom:
+																		"7px",
+																}}
+																onClick={() =>
+																	removeRuleOrGroup(
+																		group.id,
+																		rule.id,
+																	)
+																}
+															/>
+														</div>
+													)}
+												</Draggable>
+											),
+										)}
+										{provided.placeholder}
+									</div>
+								)}
+							</Droppable>
+						</DragDropContext>
+					</div>
 					{/* Action buttons */}
-					<EmptyContainer>
-						{parentId == undefined && (
-							<LeftButtonContainer>
-								<RuleButton onClick={() => addRule(group.id)}>
+					<div>
+						{parentId === undefined && (
+							<div className="mt-1.5 flex gap-2.5">
+								<Button onClick={() => addRule(group.id)}>
 									+ Add Rule
-								</RuleButton>
-								<RuleButton
+								</Button>
+								<Button
 									onClick={() => addNestedGroup(group.id)}
 								>
 									+ Add Nested Rule
-								</RuleButton>
-							</LeftButtonContainer>
+								</Button>
+							</div>
 						)}
 						{parentId !== undefined && (
-							<RightButtonContainer>
-								<RuleButton onClick={() => addRule(group.id)}>
+							<div className="mt-1.5 mr-[15px] flex justify-end gap-2.5">
+								<Button onClick={() => addRule(group.id)}>
 									+ Add Rule
-								</RuleButton>
-								<RuleButton
+								</Button>
+								<Button
 									onClick={() => addNestedGroup(group.id)}
 								>
 									+ Add Nested Rule
-								</RuleButton>
-								<DeleteOutline
+								</Button>
+								<Trash2
 									style={{ marginTop: "5px" }}
 									onClick={() =>
 										removeRuleOrGroup(parentId, group.id)
 									}
-									fontSize="small"
 								/>
-							</RightButtonContainer>
+							</div>
 						)}
-					</EmptyContainer>
-				</BorderContainer>
+					</div>
+				</div>
 			);
 		};
 		return (
-			<StyledContent>
-				<Stack direction="column" spacing={1}>
-					<MainContainer>
-						<Autocomplete
-							fullWidth
-							label="Frame"
-							multiple={false}
+			<div className="relative w-full">
+				<div className="flex flex-col gap-1">
+					<div className="pr-2.5 pb-5 pl-5">
+						<Select
 							disabled={cell.isLoading}
-							value={selectedFrame}
-							options={framelist}
-							getOptionLabel={(option) => {
-								return option;
-							}}
-							onChange={(e, value) => {
-								handleFrameSelected(value);
-							}}
-							freeSolo={false}
-							renderInput={(params) => (
-								<TextField
-									{...params}
-									placeholder="Select Frame"
-									size="small"
-									variant="outlined"
-								/>
-							)}
-						/>
-					</MainContainer>
-					<EmptyContainer>
+							value={selectedFrame ?? ""}
+							onValueChange={(value) =>
+								handleFrameSelected(value)
+							}
+						>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select Frame" />
+							</SelectTrigger>
+							<SelectContent>
+								{framelist.map((f) => (
+									<SelectItem key={f} value={f}>
+										{f}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+					<div>
 						{doesFrameExist &&
 							ruleGroups.map((group) => renderRules(group))}
-					</EmptyContainer>
-					<Stack width="100%" paddingY={0.75}>
-						<Typography variant="caption">
+					</div>
+					<div className="w-full py-0.75">
+						<p className="text-muted-foreground text-xs">
 							<em>{helpText}</em>
-						</Typography>
-					</Stack>
-				</Stack>
-			</StyledContent>
+						</p>
+					</div>
+				</div>
+			</div>
 		);
 	},
 );

@@ -11,7 +11,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
-import { useChat, useGlobalBreadcrumbs } from "@/hooks";
+import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
 /**
@@ -21,12 +21,13 @@ import type { Engine } from "@/types";
  */
 export const RoomPage = observer(() => {
 	const { t } = useTranslation("workspace");
-
-	// set the get the room based on the params
+	const { setNavbarActions } = useGlobalBreadcrumbs({});
 	const { roomId } = useParams();
 	const { chat } = useChat();
-	// const { setBreadcrumbs } = useGlobalBreadcrumbs();
+	const { root } = useRoot();
 	const navigate = useNavigate();
+
+	const platformLinksDisabled = !root.theme.featureFlags?.showPlatformLinks;
 
 	/**
 	 * State
@@ -37,13 +38,28 @@ export const RoomPage = observer(() => {
 	/**
 	 * Library hooks
 	 */
-	// set the breadcrumbs
-	const { setBreadcrumbs } = useGlobalBreadcrumbs({
+	// set the breadcrumbs (reactive to room state so we don't race with loadRoom)
+	const workspace = room?.options?.workspace;
+	useGlobalBreadcrumbs({
 		breadcrumbs: [
 			{
 				name: t("breadcrumbs.home"),
 				path: "/",
 			},
+			...(workspace?.workspace_id
+				? [
+						{
+							name: t("breadcrumbs.agent"),
+							path: platformLinksDisabled ? "" : "/agent",
+						},
+						{
+							name: workspace.name || workspace.workspace_id,
+							path: platformLinksDisabled
+								? ""
+								: `/agent/${workspace.workspace_id}`,
+						},
+					]
+				: []),
 			{
 				name: room?.metadata?.name || t("breadcrumbs.room"),
 				path: `/room/${roomId}`,
@@ -62,7 +78,14 @@ export const RoomPage = observer(() => {
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
+			// Reset room state when roomId changes to prevent stale content flash
+			setRoom(null);
 			try {
+				if (!roomId) {
+					navigate("/");
+					return;
+				}
+
 				const room = await chat.loadRoom(roomId);
 
 				// update the model based on the room
@@ -72,47 +95,17 @@ export const RoomPage = observer(() => {
 					chat.setSelectedModel(room.model);
 				}
 
-				if (room.options.workspace)
-					setBreadcrumbs([
-						{
-							name: t("breadcrumbs.home"),
-							path: "/",
-						},
-						{
-							name: t("breadcrumbs.agent"),
-							path: "/agent",
-						},
-						{
-							name:
-								room.options.workspace?.name ||
-								room.options.workspace.workspace_id,
-							path: `/agent/${room.options.workspace.workspace_id}`,
-						},
-						{
-							name: t("breadcrumbs.room"),
-							path: `/room/${room.roomId}`,
-						},
-					]);
-
-				// set the room
+				// set the room (breadcrumbs are driven reactively via useGlobalBreadcrumbs above)
 				setRoom(room);
 			} catch (e) {
 				// if it doesn't load successfully, go back to home
-				toast.error(e.message);
+				toast.error((e as Error).message);
 				navigate("/");
 			}
 		};
 
 		loadRoom();
-	}, [
-		roomId,
-		navigate,
-		chat.loadRoom,
-		chat.setSelectedModel,
-		setBreadcrumbs,
-	]);
-
-	const { setNavbarActions } = useGlobalBreadcrumbs({});
+	}, [roomId, navigate, chat.loadRoom, chat.setSelectedModel]);
 
 	const navbarActions = useMemo<React.ReactNode>(() => {
 		if (room?.options) {

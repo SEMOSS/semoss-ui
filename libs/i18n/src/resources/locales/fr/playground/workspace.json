@@ -52,13 +52,6 @@
 	"mcp": {
 		"noToolboxes": "Aucune boîte à outils trouvée",
 		"noKnowledge": "Aucune bibliothèque de connaissances trouvée",
-		"accessRequested": "Accès demandé",
-		"requestAccess": "Demander l'accès",
-		"noAccess": "Aucun accès",
-		"requestAccessButton": "Demander l'Accès",
-		"noDescription": "Aucune description disponible.",
-		"tooltipNoAccess": "Vous n'avez pas accès à ce {{type}}. Veuillez demander l'accès au propriétaire.",
-		"tooltipOpen": "Ouvrir ce {{type}} dans la plateforme",
 		"failedToLoad": "Échec du chargement des ressources de l'espace de travail",
 		"requestedSuccess": "Accès demandé à {{name}}",
 		"requestedFailed": "Échec de la demande d'accès"

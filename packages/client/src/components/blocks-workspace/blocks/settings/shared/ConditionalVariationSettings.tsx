@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface ConditionalVariationSettingsProps {
 	/**
@@ -32,11 +32,13 @@ export const ConditionalVariationSettings: ConditionalVariationSettingsComponent
 			(!data?.variation ||
 				!variations.includes(data?.variation as string))
 		) {
+			// biome-ignore lint/complexity/noUselessFragments: intentional
 			return <></>;
 		}
 
 		// we want to show the settings for the generic version but the block is a specific variation
 		if (variations === undefined && !!data?.variation) {
+			// biome-ignore lint/complexity/noUselessFragments: intentional
 			return <></>;
 		}
 

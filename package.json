@@ -4,7 +4,7 @@
   "description": "SEMOSS Analytics Platform",
   "scripts": {
     "prepare":"lefthook install",
-    "dev": "turbo run dev --filter=@semoss/client... --filter=@semoss/playground...",
+    "dev": "turbo run dev",
     "dev:client": "turbo run dev --filter=@semoss/client...",
     "dev:playground": "turbo run dev --filter=@semoss/playground...",
     "build": "turbo run build",
@@ -33,5 +33,10 @@
   "engines": {
     "pnpm": "~10.13.0",
     "node": ">=24.4.0 <25"
+  },
+  "pnpm": {
+    "overrides": {
+      "flatted": "3.4.2"
+    }
   }
 }

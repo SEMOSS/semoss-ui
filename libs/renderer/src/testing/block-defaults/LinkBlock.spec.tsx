@@ -12,7 +12,7 @@ const blocks = {
 				gap: "8px",
 				flexWrap: "wrap",
 			},
-			href: "http://localhost:9090/SemossWeb/#!",
+			href: "http://localhost:8080/SemossWeb/#!",
 			text: "Link test",
 		},
 		id: "link",
@@ -35,12 +35,14 @@ describe("link block", () => {
 			blocks: blocks,
 		});
 
-		const element = container.querySelector("[data-block='link']");
+		const element = container.querySelector(
+			"[data-block='link']",
+		) as HTMLAnchorElement;
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("A", "element is type a");
 		expect(element.href).equal(
-			"http://localhost:9090/SemossWeb/#!",
+			"http://localhost:8080/SemossWeb/#!",
 			"element contain href",
 		);
 		expect(screen.getByText("Link test")).toBeInTheDocument();

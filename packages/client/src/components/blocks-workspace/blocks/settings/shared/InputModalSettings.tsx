@@ -1,4 +1,4 @@
-import { Close, OpenInNew } from "@mui/icons-material";
+import { ExternalLink } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -10,15 +10,14 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import {
-	Divider,
-	IconButton,
-	Modal,
-	Stack,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+	Button,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	Input,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 interface InputModalSettingsProps<D extends BlockDef = BlockDef> {
@@ -42,13 +41,6 @@ interface InputModalSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	placeholder?: string;
 }
-
-const StyledModalHeader = styled(Stack)(({ theme }) => ({
-	padding: theme.spacing(2),
-	flexDirection: "row",
-	justifyContent: "space-between",
-	alignItems: "center",
-}));
 
 export const InputModalSettings = observer(
 	<D extends BlockDef = BlockDef>({
@@ -116,8 +108,7 @@ export const InputModalSettings = observer(
 		return (
 			<>
 				<BaseSettingSection label={label}>
-					<TextField
-						fullWidth
+					<Input
 						placeholder={placeholder}
 						value={value}
 						onChange={(e) => {
@@ -129,57 +120,48 @@ export const InputModalSettings = observer(
 								? (data.type as string)
 								: undefined
 						}
-						size="small"
-						variant="outlined"
 						autoComplete="off"
 					/>
-					<IconButton size="small" onClick={() => setOpen(true)}>
-						<OpenInNew />
-					</IconButton>
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => setOpen(true)}
+					>
+						<ExternalLink />
+					</Button>
 				</BaseSettingSection>
-				<Modal
-					open={open}
-					fullWidth
-					maxWidth={
-						Object.hasOwn(data, "type") && data.type === "date"
-							? "sm"
-							: "lg"
-					}
-				>
-					<StyledModalHeader>
-						<Typography variant="h5">{`Edit ${label}`}</Typography>
-						<IconButton onClick={() => setOpen(false)}>
-							<Close />
-						</IconButton>
-					</StyledModalHeader>
-					<Divider />
-					<Modal.Content>
-						<TextField
-							fullWidth
-							placeholder={placeholder}
-							multiline
-							rows={
-								Object.hasOwn(data, "type") &&
-								data.type === "date"
-									? 1
-									: 15
-							}
-							value={value}
-							onChange={(e) => {
-								// sync the data on change
-								onChange(e.target.value);
-							}}
-							type={
-								Object.hasOwn(data, "type") && path === "value"
-									? (data.type as string)
-									: undefined
-							}
-							size="small"
-							variant="outlined"
-							autoComplete="off"
-						/>
-					</Modal.Content>
-				</Modal>
+				<Dialog open={open} onOpenChange={setOpen}>
+					<DialogContent
+						className={
+							Object.hasOwn(data, "type") && data.type === "date"
+								? "max-w-sm"
+								: "max-w-4xl"
+						}
+					>
+						<DialogHeader>
+							<DialogTitle>{`Edit ${label}`}</DialogTitle>
+						</DialogHeader>
+						<div className="border-b" />
+						<div className="p-4">
+							<textarea
+								placeholder={placeholder}
+								rows={
+									Object.hasOwn(data, "type") &&
+									data.type === "date"
+										? 1
+										: 15
+								}
+								value={value}
+								onChange={(e) => {
+									// sync the data on change
+									onChange(e.target.value);
+								}}
+								className="w-full resize-none rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+								autoComplete="off"
+							/>
+						</div>
+					</DialogContent>
+				</Dialog>
 			</>
 		);
 	},

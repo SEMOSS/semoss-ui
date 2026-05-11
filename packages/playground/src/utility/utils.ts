@@ -19,14 +19,17 @@ export const capitalizeWords = (str: string | undefined) => {
  * @param str - The string to convert
  * @returns The sentence case string, or undefined if input is undefined
  */
-export const toSentenceCase = (str: string | undefined) => {
-	if (!str) return undefined;
+export const toSentenceCase = <T extends string | undefined>(
+	str: T,
+): T extends undefined ? undefined : string => {
+	if (!str) return undefined as T extends undefined ? undefined : string;
 	const normalized = str.replace(/[_\s]+/g, " ").toLowerCase();
-	return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+	return (normalized.charAt(0).toUpperCase() +
+		normalized.slice(1)) as T extends undefined ? undefined : string;
 };
 
 /**
- * Extracts the first and last initials from a name string
+ * Extracts the first and last initials from a name string`
  *
  * Splits the name by whitespace and takes the first letter of the first word
  * and the first letter of the last word. Apostrophes and hyphens are treated
@@ -49,4 +52,30 @@ export const toInitials = (str: string | undefined) => {
 	return (
 		words[0].charAt(0) + words[words.length - 1].charAt(0)
 	).toUpperCase();
+};
+
+export const setFavicon = (href: string) => {
+	// Remove existing icon links
+	document
+		.querySelectorAll(
+			'link[rel="icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]',
+		)
+		.forEach((n) => {
+			n.parentNode?.removeChild(n);
+		});
+
+	const link = document.createElement("link");
+	link.rel = "icon";
+
+	// Set MIME type when using SVG data URLs (helps some browsers)
+	if (href.startsWith("data:image/svg+xml")) link.type = "image/svg+xml";
+	if (href.startsWith("data:image/png")) link.type = "image/png";
+
+	// Only cache-bust normal URLs, not data: URLs
+	const finalHref = href.startsWith("data:")
+		? href
+		: `${href}${href.includes("?") ? "&" : "?"}v=${Date.now()}`;
+
+	link.href = finalHref;
+	document.head.appendChild(link);
 };

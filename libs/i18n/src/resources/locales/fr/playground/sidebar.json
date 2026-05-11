@@ -2,11 +2,14 @@
 	"search": "Rechercher",
 	"new": "Nouveau",
 	"agents": "Agents",
+	"takeTour": "Faire une Visite",
 	"buckets": {
 		"favorites": "Favoris",
 		"today": "Aujourd'hui",
 		"yesterday": "Hier",
+		"fewDaysAgo": "Il y a quelques jours",
 		"lastWeek": "La semaine dernière",
+		"thisMonth": "Ce mois-ci",
 		"lastMonth": "Le mois dernier",
 		"older": "Plus ancien"
 	},

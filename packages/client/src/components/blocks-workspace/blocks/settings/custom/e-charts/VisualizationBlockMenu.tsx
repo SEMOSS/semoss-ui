@@ -3,8 +3,7 @@ import type {
 	BlockComponent,
 	EchartVisualizationBlockDef,
 } from "@semoss/renderer";
-import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { AIGenerationSettings, JsonSettings } from "../../shared";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
 import {
@@ -19,78 +18,15 @@ import {
 	WorldMap,
 } from "./variant/Constant";
 import { FrameOperations } from "./variant/FrameOperations";
-import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
-
-const StyledContainer = styled("div")(() => ({
-	height: "100%",
-}));
-const StyledSubSection = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "center",
-	padding: "8px 16px",
-}));
-const StyledJsonSection = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "center",
-	height: "100%",
-}));
-const StyledToolsSection = styled("div")(() => ({
-	display: "flex",
-	justifyContent: "space-around",
-	width: "100%",
-}));
-const StyledStack = styled(Stack)(() => ({
-	">.MuiBox-root": {
-		width: "90%",
-		margin: "auto",
-	},
-}));
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-	width: "100%",
-	margin: "0 auto",
-	display: "flex",
-	justifyContent: "space-between",
-	">.MuiTabs-scroller": {
-		display: "flex",
-		justifyContent: "space-around",
-		".MuiTabs-flexContainer": {
-			flex: 1,
-		},
-
-		">.MuiTabs-flexContainer": {
-			width: "100%",
-			justifyContent: "space-around",
-		},
-	},
-}));
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 16px",
-
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-		width: "30%",
-		padding: "4px 8px",
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
 
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
-	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+	const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 	const [selectedTab, setSelectedTab] = useState("Data");
 	const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
-	const [forceRender, setForceRender] = useState(false);
+	const [_forceRender, setForceRender] = useState(false);
 	function updateFrame() {}
 
+	// biome-ignore lint/suspicious/noExplicitAny: echart event type
 	function handleStoreData(storeData: any[]) {
 		const hasValues = storeData.some(
 			(item) => item?.values && item?.values.length > 0,
@@ -100,6 +36,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 		}
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: echart event type
 	const handleSelectedItem = (item: any) => {
 		if (item.title && item.option) {
 			data.variation = item.title;
@@ -107,35 +44,38 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 			if (item?.facet) {
 				data.facet = item.facet;
 			}
-			setForceRender((prev) => !prev); // Force re-render to update the chart with the new data
+			setForceRender((prev) => !prev);
 		}
 	};
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 	useEffect(() => {
 		setSelectedColumn([]);
 	}, [data.variation]);
+
+	const tabs = ["Data", "Tools", "JSON"];
+
 	return (
-		<StyledStack>
-			{/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
-			{/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
-			{/* <JsonSettings id={id} path="option" /> */}
-			{/* <CodeEditorSettings id={id} path="specJson" /> */}
-			<StyledToggleTabsGroup
-				variant="fullWidth"
-				value={selectedTab}
-				style={{
-					width: "100% !important",
-				}}
-				onChange={(e: React.SyntheticEvent, val: string) => {
-					setSelectedTab(val);
-				}}
-			>
-				<StyledToggleTabsGroupItem label="Data" value={"Data"} />
-				<StyledToggleTabsGroupItem label="Tools" value={"Tools"} />
-				<StyledToggleTabsGroupItem label="JSON" value={"JSON"} />
-			</StyledToggleTabsGroup>
-			<StyledContainer>
+		<div className="[&>.MuiBox-root]:mx-auto [&>.MuiBox-root]:w-[90%]">
+			<div className="flex w-full border-b">
+				{tabs.map((tab) => (
+					<button
+						type="button"
+						key={tab}
+						className={`flex-1 px-4 py-2 font-medium text-sm transition-colors ${
+							selectedTab === tab
+								? "border-primary border-b-2 text-primary shadow-sm"
+								: "text-muted-foreground hover:text-foreground"
+						}`}
+						onClick={() => setSelectedTab(tab)}
+					>
+						{tab}
+					</button>
+				))}
+			</div>
+			<div className="h-full">
 				{selectedTab === "Data" && (
-					<StyledSubSection>
+					<div className="flex flex-col justify-center px-4 py-2">
 						{data.variation === "echart-bar-graph" && (
 							<FrameOperations
 								id={id}
@@ -191,7 +131,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 								selectedItem={handleSelectedItem}
 							/>
 						)}
-						{/* Render StackChartBlockSettings component when 'Data' tab is selected */}
 						{data.variation === "echart-stack-chart" && (
 							<FrameOperations
 								id={id}
@@ -225,7 +164,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 								selectedItem={handleSelectedItem}
 							/>
 						)}
-
 						{data.variation === "echart-word-cloud" && (
 							<FrameOperations
 								id={id}
@@ -237,20 +175,19 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 								selectedItem={handleSelectedItem}
 							/>
 						)}
-					</StyledSubSection>
+					</div>
 				)}
 				{selectedTab === "Tools" && (
-					<StyledToolsSection>
-						{/* Render UpgradedVisualizationTool component when 'Tools' tab is selected */}
+					<div className="flex w-full justify-around">
 						<UpgradedVisualizationTool id={id} />
-					</StyledToolsSection>
+					</div>
 				)}
 				{selectedTab === "JSON" && (
-					<StyledJsonSection>
+					<div className="flex h-full flex-col justify-center">
 						<JsonSettings id={id} path="option" height="100vh" />
-					</StyledJsonSection>
+					</div>
 				)}
-			</StyledContainer>
+			</div>
 			{!data.variation && (
 				<AIGenerationSettings
 					id={id}
@@ -260,6 +197,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 					valueAsObject
 				/>
 			)}
-		</StyledStack>
+		</div>
 	);
 };

@@ -10,7 +10,8 @@
         ".": {
             "types": "./dist/types/index.d.ts",
             "default": "./dist/index.mjs"
-        }
+        },
+        "./version": "./src/version.ts"
     },
     "scripts": {
         "dev": "rollup -w -c",
@@ -25,11 +26,10 @@
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@mui/x-data-grid": "^7.28.3",
-        "@mui/x-date-pickers": "6.8.0",
         "dayjs": "1.11.8",
         "echarts-wordcloud": "^2.1.0",
-        "mermaid": "^10.9.1"
+        "lucide-react": "^0.545.0",
+        "mermaid": "^11.12.3"
     },
     "devDependencies": {
         "@rollup/plugin-commonjs": "28.0.6",
@@ -40,34 +40,30 @@
         "@rollup/plugin-typescript": "12.1.4",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
+        "@testing-library/user-event": "^14.4.3",
         "@types/jest": "^29.5.14",
         "@types/react": "18.3.1",
         "@types/react-dom": "18.3.0",
+        "@vitejs/plugin-react": "^4.6.0",
+        "@vitest/browser-playwright": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitest/ui": "^4.0.0",
         "dompurify": "^2.3.10",
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
         "react": "18.3.1",
-        "react-beautiful-dnd": "^13.1.1",
+        "@hello-pangea/dnd": "^18.0.1",
         "react-hook-form": "^7.34.2",
         "react-vega": "^7.6.0",
-        "rollup": "4.44.2",
+        "rollup": "4.59.0",
         "rollup-plugin-delete": "3.0.1",
         "tslib": "2.5.3",
         "typescript": "~5.5.2",
-        "vega": "^6.1.2",
+        "vega": "^6.2.0",
         "vega-lite": "^6.2.0",
-        "vitest": "^4.0.0",
-        "@vitest/ui": "^4.0.0",
-        "@vitest/coverage-v8": "^4.0.0",
-        "@vitest/browser-playwright": "^4.0.0",
-        "@testing-library/user-event": "^14.4.3",
-        "@vitejs/plugin-react": "^4.6.0"
+        "vitest": "^4.0.0"
     },
     "peerDependencies": {
-        "@emotion/react": "11.11.1",
-        "@emotion/styled": "11.11.0",
-        "@mui/icons-material": "6.0.0",
-        "@mui/material": "6.0.0",
         "@semoss/sdk": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@semoss/ui": "workspace:*",
@@ -75,6 +71,6 @@
         "mobx-react-lite": "^3.4.0",
         "react": "18.3.1",
         "react-dom": "18.3.1",
-        "react-router-dom": "^6.3.0"
+        "react-router-dom": "^6.30.3"
     }
 }

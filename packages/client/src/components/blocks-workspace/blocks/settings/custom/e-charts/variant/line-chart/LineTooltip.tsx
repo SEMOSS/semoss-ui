@@ -1,47 +1,21 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
-	EchartVisualizationBlockDef,
 	getValueByPath,
 	type Paths,
 	type PathValue,
-	useBlocksPixel,
-	useFrameHeaders,
 } from "@semoss/renderer";
-import { Switch, styled, Typography } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
+
 export const LineTooltip = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
@@ -61,9 +35,11 @@ export const LineTooltip = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reInitializeFeatures(data.option);
@@ -77,43 +53,35 @@ export const LineTooltip = observer(
 			// Check if the options include tooltip settings
 			if (Object.hasOwn(options, "tooltip")) {
 				// Set the tooltip visibility based on the options
-				setShowTooltip(options["tooltip"]["show"]);
+				setShowTooltip(options.tooltip.show);
 			}
 		};
 		/**
 		 * Handles the change event for the toggle switch. Updates the state of showTooltips
 		 * and sets the tooltip.show property in the chart options.
-		 * @param e - The event object from the toggle switch
+		 * @param checked - The new checked value
 		 */
-		const showTooltip = (e: ChangeEvent<HTMLInputElement>) => {
+		const showTooltip = (checked: boolean) => {
 			const option = JSON.parse(value);
 			// Toggle the state of showTooltips
-			setShowTooltip(!showTooltips);
+			setShowTooltip(checked);
 			// Update the tooltip.show property in the chart options
-			option["tooltip"]["show"] = e.target.checked;
+			option.tooltip.show = checked;
 			// Update the chart options in the data
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 		return (
-			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					gap="8px"
-					style={{ marginTop: "8px" }}
-				>
+			<div>
+				<div className="mt-2 flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
 						checked={showTooltips}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							showTooltip(e)
-						}
-						title="Show Tooltip"
-						size="small"
+						onCheckedChange={showTooltip}
 					/>
-					<Typography variant="body2" color="secondary">
+					<span className="text-muted-foreground text-sm">
 						Show Tooltip
-					</Typography>
-				</StyledAxisDiv>
-			</StyledAxis>
+					</span>
+				</div>
+			</div>
 		);
 	},
 );

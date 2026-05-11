@@ -1,9 +1,10 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -32,6 +33,8 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
 	headers: string[];
@@ -117,7 +120,7 @@ export const FunctionForm = ({
 				}
 				pixel = pixel.replace(
 					");",
-					`,filePaths=["${uploadedFiles[0].fileLocation}"]` + ");",
+					`,filePaths=["${uploadedFiles[0].fileLocation}"]);`,
 				);
 			} catch {
 				toast.error("Upload failed or returned invalid response.");
@@ -136,9 +139,14 @@ export const FunctionForm = ({
 			}
 			toast.success("Successfully added function database to catalog");
 
-			navigate(
-				`/engine/function/${(pixelOutput as { database_id: string }).database_id}`,
-			);
+			{
+				// engine_id is the current key; database_id is the legacy fallback
+				const o = pixelOutput as {
+					engine_id?: string;
+					database_id?: string;
+				};
+				navigate(`/engine/function/${o.engine_id || o.database_id}`);
+			}
 			setLoading(false);
 		});
 	};
@@ -245,24 +253,6 @@ export const FunctionForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	// Helper functions for file upload
 	const onFileUpload = (
 		files: File | File[],
@@ -345,11 +335,15 @@ export const FunctionForm = ({
 				required: val?.required,
 				pattern: val.rules?.pattern,
 			}}
-			render={({ field, fieldState: { error }, formState }) => {
+			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
 					case "text":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -460,7 +454,11 @@ export const FunctionForm = ({
 
 					case "number":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -494,7 +492,11 @@ export const FunctionForm = ({
 
 					case "select":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -507,7 +509,6 @@ export const FunctionForm = ({
 									value={field.value || ""}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -555,7 +556,11 @@ export const FunctionForm = ({
 
 					case "radio":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel>
 									{val.label}
 									{val?.required && (
@@ -569,7 +574,7 @@ export const FunctionForm = ({
 									onValueChange={(value) =>
 										field.onChange(value)
 									}
-									className="flex flex-row gap-4"
+									className="flex flex-wrap gap-4"
 									data-testid={`function-form-input-${val.key}`}
 								>
 									{val.options.options.map((opt) => (
@@ -675,47 +680,53 @@ export const FunctionForm = ({
 												selected:
 											</P>
 											<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
-												{field.value.map((file, index) => (
-													<div
-														key={`${file.name}-${index}`}
-														className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
-														data-testid={`uploaded-file-item-${index}`}
-													>
-														<div className="flex min-w-0 flex-1 items-center gap-2">
-															<div className="min-w-0 flex-1">
-																<P className="truncate text-foreground text-sm">
-																	{file.name}
-																</P>
-																<P className="text-muted-foreground text-xs">
-																	{(
-																		file.size /
-																		1024
-																	).toFixed(
-																		2,
-																	)}{" "}
-																	KB
-																</P>
-															</div>
-														</div>
-														<Button
-															type="button"
-															variant="ghost"
-															size="icon"
-															onClick={(e) => {
-																e.stopPropagation();
-																removeFile(
-																	index,
-																	field.onChange,
-																	field.value,
-																);
-															}}
-															className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
-															data-testid={`remove-file-btn-${index}`}
+												{field.value.map(
+													(file, index) => (
+														<div
+															key={`${file.name}-${index}`}
+															className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+															data-testid={`uploaded-file-item-${index}`}
 														>
-															<X className="size-4" />
-														</Button>
-													</div>
-												))}
+															<div className="flex min-w-0 flex-1 items-center gap-2">
+																<div className="min-w-0 flex-1">
+																	<P className="truncate text-foreground text-sm">
+																		{
+																			file.name
+																		}
+																	</P>
+																	<P className="text-muted-foreground text-xs">
+																		{(
+																			file.size /
+																			1024
+																		).toFixed(
+																			2,
+																		)}{" "}
+																		KB
+																	</P>
+																</div>
+															</div>
+															<Button
+																type="button"
+																variant="ghost"
+																size="icon"
+																onClick={(
+																	e,
+																) => {
+																	e.stopPropagation();
+																	removeFile(
+																		index,
+																		field.onChange,
+																		field.value,
+																	);
+																}}
+																className="size-8 shrink-0 hover:bg-destructive/10 hover:text-destructive"
+																data-testid={`remove-file-btn-${index}`}
+															>
+																<X className="size-4" />
+															</Button>
+														</div>
+													),
+												)}
 											</div>
 										</div>
 									)}
@@ -735,7 +746,11 @@ export const FunctionForm = ({
 					case "checkbox":
 						return (
 							<div
-								className={`flex items-center gap-2 ${val.hidden ? "hidden" : ""}`}
+								className={
+									computeVisibility(val, {})
+										? "flex items-center gap-2"
+										: "hidden"
+								}
 							>
 								<Checkbox
 									id={val.key}
@@ -769,7 +784,11 @@ export const FunctionForm = ({
 						);
 					case "tags":
 						return (
-							<Field className={val.hidden ? "hidden" : ""}>
+							<Field
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
+							>
 								<FieldLabel htmlFor={val.key}>
 									{val.label}
 									{val?.required && (
@@ -841,17 +860,23 @@ export const FunctionForm = ({
 							key={category}
 							className="mb-4 flex flex-col gap-4"
 						>
-							<div className="flex items-start gap-4">
+							<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 								<div className="flex flex-1 flex-col gap-1">
-									<H4 data-testId="function-importForm-category-title">
+									<H4
+										className="font-semibold text-base tracking-tight"
+										data-testid="function-importForm-category-title"
+									>
 										{category}
 									</H4>
-									<Muted data-testId="model-importForm-category-description">
+									<Muted
+										className="text-muted-foreground text-sm leading-6"
+										data-testid="model-importForm-category-description"
+									>
 										{categoryDescriptions[category] ??
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-[2] flex-col gap-2">
+								<div className="flex flex-2 flex-col gap-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
@@ -866,7 +891,7 @@ export const FunctionForm = ({
 								open={openAdvanced}
 								onOpenChange={setOpenAdvanced}
 							>
-								<div className="flex flex-row items-center justify-between py-2">
+								<div className="flex flex-row items-center justify-between gap-2 py-2">
 									<H4 data-testid="function-form-advanced-header">
 										ADVANCED SETTINGS
 									</H4>
@@ -886,13 +911,13 @@ export const FunctionForm = ({
 								</div>
 								<CollapsibleContent>
 									<div className="mb-4 flex flex-col gap-4">
-										<div className="flex items-start gap-4">
+										<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
 											<div className="flex flex-1 flex-col gap-1">
 												<Muted>
 													Add advanced settings here
 												</Muted>
 											</div>
-											<div className="flex flex-[2] flex-col gap-2">
+											<div className="flex flex-2 flex-col gap-2">
 												{advancedFields.map((val) => (
 													<div
 														key={val.key}
@@ -913,7 +938,7 @@ export const FunctionForm = ({
 				</div>
 
 				<div
-					className="mt-8 flex justify-end gap-2"
+					className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-end"
 					data-testid="function-form-actions"
 				>
 					<Button
@@ -921,7 +946,7 @@ export const FunctionForm = ({
 						variant="default"
 						data-testid="function-form-submit"
 						disabled={!formState.isValid || isValidDatabaseName}
-						className="min-w-[128px] capitalize"
+						className="w-full min-w-32 capitalize sm:w-auto"
 					>
 						Connect
 					</Button>

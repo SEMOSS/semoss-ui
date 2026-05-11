@@ -5,9 +5,10 @@ import { Help } from "@/components/help";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
-import { AuditLogsDashboard } from "../AuditLogsDashboard";
+import { AuditLogsDashboard } from "../audit-logs-dashboard";
 import { ImportPage } from "../import";
 import { ENGINE_ROUTES } from "./engine.constants";
+import { EngineEditPage } from "./engine-edit-page";
 import { EngineIndexPage } from "./engine-index-page";
 import { EngineLayout } from "./engine-layout";
 
@@ -61,6 +62,10 @@ export const EngineRouter = observer(() => {
 										element={createElement(s.component, {})}
 									/>
 								))}
+								<Route
+									path="edit"
+									element={<EngineEditPage />}
+								/>
 							</Route>
 							<Route
 								path=":engineId/dashboard"

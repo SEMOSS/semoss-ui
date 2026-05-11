@@ -51,7 +51,7 @@ export const AdminThemePage: React.FC = () => {
 	// set the active theme based on the data
 	// biome-ignore lint/correctness/useExhaustiveDependencies: this is okay
 	useEffect(() => {
-		if (getThemes.status !== "SUCCESS") {
+		if (getThemes.status !== "SUCCESS" || !getThemes.data) {
 			return;
 		}
 
@@ -111,7 +111,9 @@ export const AdminThemePage: React.FC = () => {
 
 			getThemes.refresh();
 		} catch (error) {
-			toast.error(error.message);
+			toast.error(
+				error instanceof Error ? error.message : "Failed to save theme",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -125,7 +127,7 @@ export const AdminThemePage: React.FC = () => {
 		try {
 			setIsLoading(true);
 
-			const response = await deleteAdminTheme(selectedTheme.ID);
+			const response = await deleteAdminTheme(selectedTheme?.ID || "");
 
 			if (!response) {
 				throw new Error("Failed to delete theme");
@@ -135,7 +137,11 @@ export const AdminThemePage: React.FC = () => {
 
 			toast.success("Theme deleted successfully");
 		} catch (error) {
-			toast.error(error.message);
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to delete theme",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -159,7 +165,11 @@ export const AdminThemePage: React.FC = () => {
 
 			toast.success("Theme activated successfully");
 		} catch (error) {
-			toast.error(error.message);
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to activate theme",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -181,6 +191,7 @@ export const AdminThemePage: React.FC = () => {
 			const emptyTheme: ThemeMap = {
 				playground: {
 					name: newThemeName,
+					banner: "",
 					description: "",
 					variables: {
 						backgroundColor: "",
@@ -193,6 +204,12 @@ export const AdminThemePage: React.FC = () => {
 						login: "",
 						landing: "",
 						workspace: "",
+						tabIcon: "",
+						loginDark: "",
+						landingDark: "",
+						workspaceDark: "",
+						error: "",
+						errorDark: "",
 					},
 					overrides: {
 						"main-layout": {},
@@ -202,9 +219,26 @@ export const AdminThemePage: React.FC = () => {
 					sidebar: {
 						headerItems: [],
 						footerItems: [],
+						chatHistoryDate: false,
 					},
-					toolAutoExecutionLimit: null,
+					toolAutoExecutionLimit: undefined,
 					defaultTools: [],
+					gracefulErrors: [],
+					featureFlags: {
+						enableAgent: true,
+						enableModelSelect: true,
+						enablePlan: false,
+						enableSuggestions: false,
+						enableRewrite: true,
+						enableDarkMode: true,
+						enablePromptOptimizer: true,
+						hideToolsInIframe: false,
+						enableKnowledgeMCP: true,
+						allowEmbeddingOptions: true,
+						showKnowledgeMenu: true,
+						showToolboxMenu: true,
+						showPlatformLinks: true,
+					},
 				},
 			};
 
@@ -224,7 +258,11 @@ export const AdminThemePage: React.FC = () => {
 			setNewThemeName("");
 			getThemes.refresh();
 		} catch (error) {
-			toast.error(error.message || "Failed to create theme");
+			toast.error(
+				error instanceof Error
+					? error.message
+					: "Failed to create theme",
+			);
 		} finally {
 			setIsLoading(false);
 		}
@@ -256,7 +294,7 @@ export const AdminThemePage: React.FC = () => {
 						<SelectValue placeholder="Select Theme" />
 					</SelectTrigger>
 					<SelectContent>
-						{getThemes.data.map((t) => (
+						{getThemes.data?.map((t) => (
 							<SelectItem key={t.ID} value={t.ID}>
 								{t.THEME_NAME}
 							</SelectItem>
@@ -344,7 +382,7 @@ export const AdminThemePage: React.FC = () => {
 							value={themeValue}
 							language={"json"}
 							onChange={(newValue) => {
-								setThemeValue(newValue);
+								setThemeValue(newValue as string);
 							}}
 							data-test-id="theme-editor"
 						/>

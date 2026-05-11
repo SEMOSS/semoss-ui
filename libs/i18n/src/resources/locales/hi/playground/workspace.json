@@ -52,13 +52,6 @@
 	"mcp": {
 		"noToolboxes": "कोई टूलबॉक्स नहीं मिला",
 		"noKnowledge": "कोई ज्ञान लाइब्रेरी नहीं मिली",
-		"accessRequested": "पहुंच का अनुरोध किया गया",
-		"requestAccess": "पहुंच का अनुरोध करें",
-		"noAccess": "कोई पहुंच नहीं",
-		"requestAccessButton": "पहुंच का अनुरोध करें",
-		"noDescription": "कोई विवरण उपलब्ध नहीं।",
-		"tooltipNoAccess": "आपके पास इस {{type}} तक पहुंच नहीं है। कृपया मालिक से पहुंच का अनुरोध करें।",
-		"tooltipOpen": "प्लेटफ़ॉर्म में इस {{type}} को खोलें",
 		"failedToLoad": "वर्कस्पेस संसाधन लोड करने में विफल",
 		"requestedSuccess": "{{name}} तक पहुंच का अनुरोध किया गया",
 		"requestedFailed": "पहुंच का अनुरोध करने में विफल"

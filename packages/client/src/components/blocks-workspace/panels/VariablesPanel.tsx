@@ -1,332 +1,74 @@
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
 import {
-	Add,
-	ArrowDownward,
-	ArrowUpward,
-	AutoFixHighOutlined,
-	Close,
-	Tune,
-} from "@mui/icons-material";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+	Archive,
+	ArrowDown,
+	ArrowUp,
+	Bolt,
+	Bot,
+	ChevronsUpDown,
+	Database,
+	type LucideIcon,
+	Plus,
+	Search,
+	Sigma,
+	SlidersHorizontal,
+	Wand2,
+	X,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useBlocks, VARIABLE_TYPES, type Variable } from "@semoss/renderer";
 import {
 	Accordion,
-	Badge,
-	Box,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
 	Button,
 	Checkbox,
-	CircularProgress,
-	Divider,
-	IconButton,
-	List,
-	Modal,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	Input,
 	Popover,
-	Search,
-	Stack,
-	styled,
+	PopoverContent,
+	PopoverTrigger,
+	Separator,
+	Spinner,
 	Tooltip,
-	Typography,
-} from "@semoss/ui";
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import { AddVariablePopover, NotebookVariable } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { usePixel, useWorkspace } from "@/hooks";
-import ExpandCollapseIcon from "../../../assets/img/ExpandCollapseIcon.png";
+import VariableArray from "../../../assets/img/VariableArray.svg";
+import VariableBlock from "../../../assets/img/VariableBlock.svg";
+import VariableCell from "../../../assets/img/VariableCell.svg";
+import VariableDate from "../../../assets/img/VariableDate.svg";
+import VariableJSON from "../../../assets/img/VariableJSON.svg";
+import VariableQuery from "../../../assets/img/VariableQuery.svg";
+import VariableString from "../../../assets/img/VariableString.svg";
 import { suggestVariableRenames } from "../utils";
 
-const StyledStack = styled(Stack)(() => ({
-	maxHeight: "100%",
-}));
+const ENGINE_TYPE_ICONS: Record<string, LucideIcon> = {
+	model: Bot,
+	database: Database,
+	vector: Bolt,
+	storage: Archive,
+	function: Sigma,
+};
 
-const StyledMenu = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	width: "100%",
-	paddingTop: theme.spacing(1),
-	backgroundColor: theme.palette.background.paper,
-	overflowY: "scroll",
-}));
-
-const StyledMenuTitle = styled(Typography)(() => ({
-	color: "#212121",
-	fontFamily: "Inter",
-	fontSize: "16px",
-	fontWeight: "500",
-	lineHeight: "150%",
-	letterSpacing: "0.15px",
-}));
-
-const StyledTitleSpan = styled("span")(() => ({
-	color: "var(--Primary-Dark, #1260DD)",
-	fontFamily: "Inter",
-	fontFeatureSettings: "'liga' off, 'clig' off",
-	fontStyle: "normal",
-	fontSize: "13px",
-	lineHeight: "18px",
-	fontWeight: 400,
-	marginTop: "8px",
-	letterSpacing: "0.16px",
-	marginBottom: "8px",
-}));
-
-const StyledMenuScroll = styled("div")(({ theme }) => ({
-	flex: "1",
-	width: "100%",
-	paddingBottom: theme.spacing(1),
-	overflowX: "hidden",
-	overflowY: "auto",
-}));
-
-const StyledBox = styled(Box)(({ theme }) => ({
-	height: "752px",
-	width: "344px",
-	display: "inline-flex",
-	flexDirection: "column",
-	borderRadius: "8px",
-	borderRight: "1px solid var(--Secondary-Divider, #E6E6E6)",
-	background: "var(--Background-Paper-1, #FFF)",
-	boxShadow: "0 5px 8px 0 rgba(0, 0, 0, 0.08)",
-	gap: "8px",
-}));
-
-const StyledTitle = styled("div")(({ theme }) => ({
-	borderRadius: "16px",
-	background: " #EBF4FE",
-	width: "fit-content",
-	marginTop: "8px",
-	paddingRight: theme.spacing(2),
-	paddingLeft: theme.spacing(2),
-	marginBottom: "8px",
-	backgroundColor: theme.palette.primary.selected,
-	color: theme.palette.info.dark,
-}));
-
-const StyledStackFilter = styled(Stack)(() => ({
-	display: "flex",
-	padding: "4px 16px",
-	height: "40px",
-	alignSelf: "stretch",
-	borderRadius: "6px 6px 0 0",
-}));
-
-const StyledTypography = styled(Typography)(() => ({
-	display: "flex",
-	padding: "4px 0",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	flex: "1 0 0",
-	height: "21px",
-	color: "#0471F0",
-	fontSize: "14px",
-	fontWeight: "400",
-	lineHeigh: "150%",
-	letterSpacing: "0.17px",
-	position: "relative",
-	top: "3px",
-}));
-
-const StyledList = styled(List)(() => ({
-	height: "464px",
-	overflowY: "auto",
-}));
-
-const StyledListContent = styled(Stack)(() => ({
-	display: "flex",
-	paddingTop: "8px",
-	flexDirection: "row",
-	marginLeft: "15px",
-}));
-const StyledSelectAllListContent = styled(Stack)(() => ({
-	display: "flex",
-	flexDirection: "row",
-	marginLeft: "15px",
-}));
-
-const StyledTypographyContent = styled(Typography)(() => ({
-	color: "#212121",
-	fontSize: "16px",
-	fontWeight: "400",
-	lineHeight: "150%",
-	letterSpacing: "0.15px",
-	position: "relative",
-	top: "1px",
-}));
-
-const StyledBoxSort = styled(Stack)(() => ({
-	display: "flex",
-	height: "138px",
-	padding: "8px 0",
-}));
-
-const StyledTypographySort = styled(Typography)(() => ({
-	display: "flex",
-	padding: "4px 16px",
-	color: "#212121",
-	fontSize: "14px",
-	lineHeight: "150%",
-	letterSpacing: "0.17px",
-	height: "21px",
-	fontWeight: 400,
-	position: "relative",
-	bottom: "8px",
-}));
-
-const FlexButton = styled(Button)({
-	flex: 1,
-	textWrap: "nowrap",
-});
-
-const StyledStackFilterBy = styled(Stack)({
-	padding: "4px 0",
-});
-
-const StyledTypographyAsc = styled(Typography)(() => ({
-	display: "flex",
-	padding: "4px 0px",
-	color: "#212121",
-	fontSize: "14px",
-	fontWeight: "400",
-	lineHeight: "150%",
-	letterSpacing: "0.17px",
-	height: "21px",
-}));
-
-const StyledListItem = styled(List.Item)(() => ({
-	cursor: "pointer",
-	"&:hover": {
-		backgroundColor: "#f5f5f5",
-	},
-	"&:active": {
-		backgroundColor: "#e0e0e0",
-	},
-	transition: "background-color 0.15s ease-in-out",
-}));
-
-const StyledCheckbox = styled(Checkbox)(() => ({
-	width: "56px",
-	marginRight: "0px",
-}));
-
-const StyledCheckboxFilter = styled(Checkbox)(() => ({
-	width: "56px",
-	position: "relative",
-	bottom: "8px",
-	marginRight: "0px",
-}));
-
-const StyledIconButtonAsc = styled(IconButton)(() => ({
-	position: "relative",
-	right: "2px",
-	color: "#757575",
-	bottom: "2px",
-}));
-
-const StyledIconButtonDesc = styled(IconButton)(() => ({
-	position: "relative",
-	color: "#757575",
-	bottom: "1px",
-	right: "10px",
-}));
-
-const StyledStackVariable = styled(Stack)(() => ({
-	paddingLeft: "16px",
-	paddingTop: "16px",
-}));
-
-const StyledTooltip = styled(Tooltip)(() => ({
-	"& .MuiTooltip-tooltip": {
-		bgcolor: "#757575",
-		color: "#FFFFFF",
-		fontSize: "12px",
-		fontWeight: 400,
-		padding: "6px 12px",
-		borderRadius: "4px",
-		boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.15)",
-	},
-	"& .MuiTooltip-arrow": {
-		color: "#424242",
-	},
-}));
-
-const StyledAccordion = styled(Accordion)(() => ({
-	boxShadow: "none",
-	"&:before": { display: "none" },
-	"&.Mui-expanded": {
-		margin: 0,
-	},
-	"&:not(:last-child)": {
-		marginBottom: 0,
-	},
-}));
-
-const StyledStackAccordion = styled(Stack)(() => ({
-	padding: "2px 0px",
-	height: "40px",
-}));
-
-const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
-	minHeight: "48px",
-	flexDirection: "row-reverse",
-	"& .MuiAccordionSummary-expandIconWrapper": {
-		marginRight: "2px",
-		marginLeft: 0,
-		transform: "rotate(0deg)",
-		transition: "transform 0.2s",
-		"&.Mui-expanded": {
-			transform: "rotate(90deg)",
-		},
-	},
-	"&.Mui-expanded": {
-		minHeight: "48px",
-	},
-	"& .MuiAccordionSummary-content": {
-		margin: 0,
-		"&.Mui-expanded": {
-			margin: 0,
-		},
-	},
-}));
-
-const StyledTypographyType = styled(Typography)(() => ({
-	fontWeight: 400,
-	fontSize: "16px",
-	color: "#212121",
-}));
-
-const StyledAccordionContent = styled(Accordion.Content)(() => ({
-	padding: 0,
-	"& .MuiAccordionDetails-root": {
-		padding: 0,
-	},
-}));
-
-const StyledListVariableContent = styled(List)(() => ({
-	padding: 0,
-	"& .MuiStack-root > :not(style):not(style)": {
-		marginTop: 0,
-	},
-}));
-
-const StyledListItemContent = styled(List.Item)(() => ({
-	paddingY: 1,
-	paddingX: 2,
-	display: "flex",
-	alignItems: "center",
-	gap: 1.5,
-	"&:hover": {
-		backgroundColor: "#f9f9f9",
-		cursor: "pointer",
-	},
-	"&:last-child": {
-		borderBottom: "none",
-	},
-}));
-
-const StyledExpandIcon = styled("img")(() => ({
-	width: 20,
-	height: 20,
-}));
+const VARIABLE_TYPE_ICONS: Record<string, string> = {
+	block: VariableBlock,
+	cell: VariableCell,
+	query: VariableQuery,
+	string: VariableString,
+	JSON: VariableJSON,
+	date: VariableDate,
+	array: VariableArray,
+};
 
 interface VariablePanelProps {
 	title: string;
@@ -347,38 +89,37 @@ export const VariablesPanel = observer(
 		 */
 		const [popoverAnchorEle, setPopoverAnchorEl] =
 			useState<HTMLElement | null>(null);
-		const [filterAnchorEl, setFilterAnchorEl] =
-			useState<HTMLElement | null>(null);
+		const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
 		const [engines, setEngines] = useState<{
 			models: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			databases: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			storages: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			functions: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 			vectors: {
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				app_subtype: string;
+				engine_id: string;
+				engine_name: string;
+				engine_type: string;
+				engine_subtype: string;
 			}[];
 		}>({
 			models: [],
@@ -408,7 +149,7 @@ export const VariablesPanel = observer(
 			});
 			return initial;
 		});
-		const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc"); // Default to ascending
+		const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 		const [tempSortOrder, setTempSortOrder] = useState<"asc" | "desc">(
 			"asc",
 		);
@@ -421,7 +162,7 @@ export const VariablesPanel = observer(
 		const [selectedChanges, setSelectedChanges] = useState<
 			Record<string, boolean>
 		>({});
-		const [isProcessing, setIsProcessing] = useState(false);
+		const [isProcessing, _setIsProcessing] = useState(false);
 
 		const [llmLoad, setLLMLoad] = useState<boolean>(false);
 
@@ -431,17 +172,16 @@ export const VariablesPanel = observer(
 		const getEngines =
 			usePixel<
 				{
-					app_id: string;
-					app_name: string;
-					app_type: string;
-					app_subtype: string;
+					engine_id: string;
+					engine_name: string;
+					engine_type: string;
+					engine_subtype: string;
 				}[]
 			>(`MyEngines();`);
 
 		/**
 		 * Computed
 		 */
-		const isFilterPopoverOpen = Boolean(filterAnchorEl);
 		const isPopoverOpen = Boolean(popoverAnchorEle);
 
 		/**
@@ -452,41 +192,45 @@ export const VariablesPanel = observer(
 				return;
 			}
 			const cleanedEngines = getEngines.data.map((d) => ({
-				app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-				app_id: d.app_id,
-				app_type: d.app_type,
-				app_subtype: d.app_subtype,
+				engine_name: d.engine_name
+					? d.engine_name.replace(/_/g, " ")
+					: "",
+				engine_id: d.engine_id,
+				engine_type: d.engine_type,
+				engine_subtype: d.engine_subtype,
 			}));
 
 			const newEngines = {
-				models: cleanedEngines.filter((e) => e.app_type === "MODEL"),
+				models: cleanedEngines.filter((e) => e.engine_type === "MODEL"),
 				databases: cleanedEngines.filter(
-					(e) => e.app_type === "DATABASE",
+					(e) => e.engine_type === "DATABASE",
 				),
 				storages: cleanedEngines.filter(
-					(e) => e.app_type === "STORAGE",
+					(e) => e.engine_type === "STORAGE",
 				),
 				functions: cleanedEngines.filter(
-					(e) => e.app_type === "FUNCTION",
+					(e) => e.engine_type === "FUNCTION",
 				),
-				vectors: cleanedEngines.filter((e) => e.app_type === "VECTOR"),
+				vectors: cleanedEngines.filter(
+					(e) => e.engine_type === "VECTOR",
+				),
 			};
 
 			setEngines(newEngines);
 		}, [getEngines.status, getEngines.data]);
 
 		useEffect(() => {
-			if (filterAnchorEl) {
+			if (filterPopoverOpen) {
 				setTempFilter(selectedFilter);
 				setTempSortOrder(sortOrder);
 			}
-		}, [filterAnchorEl]);
+		}, [filterPopoverOpen]);
 
 		useEffect(() => {
-			if (filterAnchorEl) {
+			if (filterPopoverOpen) {
 				setTempFilter(selectedFilter);
 			}
-		}, [filterAnchorEl]);
+		}, [filterPopoverOpen]);
 
 		const variables = useMemo(() => {
 			return Object.entries(state.variables)
@@ -526,7 +270,6 @@ export const VariablesPanel = observer(
 					const changesRecord = changes as Record<string, string>;
 					setSuggestedChanges(changesRecord);
 
-					// Initialize all changes as selected (true)
 					const initialSelection: Record<string, boolean> = {};
 					Object.keys(changesRecord).forEach((key) => {
 						initialSelection[key] = true;
@@ -548,7 +291,6 @@ export const VariablesPanel = observer(
 		const handleApplyChanges = async () => {
 			workspace.setLoading(true);
 			try {
-				// Filter only the selected changes
 				const changesToApply: Record<string, string> = {};
 				Object.entries(suggestedChanges).forEach(
 					([oldName, newName]) => {
@@ -559,15 +301,16 @@ export const VariablesPanel = observer(
 				);
 
 				if (Object.keys(changesToApply).length > 0) {
-					// TODO: Refactor this and go off of cell and variable class functions
-					const success = await (state as any).applyVariableRenames(
-						changesToApply,
-					);
-					// if (success) {
+					await (
+						state as {
+							applyVariableRenames: (
+								changes: Record<string, string>,
+							) => Promise<unknown>;
+						}
+					).applyVariableRenames(changesToApply);
 					setIsRenameModalOpen(false);
 					setSuggestedChanges({});
 					setSelectedChanges({});
-					// }
 				}
 			} catch (error) {
 				console.error("Error applying changes:", error);
@@ -675,150 +418,116 @@ export const VariablesPanel = observer(
 		}, [groupedVariables]);
 
 		return (
-			<Panel>
-				<StyledStack
-					direction={"column"}
-					spacing={0}
-					className="notebook-variables-menu"
-				>
-					<StyledTitle>
-						<StyledTitleSpan>{title}</StyledTitleSpan>
-					</StyledTitle>
-					<StyledMenu>
-						<Stack
-							spacing={2}
-							paddingLeft={2}
-							paddingBottom={1}
-							paddingRight={2}
-							direction="row"
-							justifyContent={"space-between"}
-							alignItems={"center"}
-						>
-							<Search
-								size={"small"}
-								placeholder="Search"
-								onChange={(e) => {
-									setFilterWord(e.target.value);
-								}}
-								data-testid={"variable-panel-search-txt"}
-							/>
-							<IconButton
-								size="small"
-								onClick={(e) => {
-									setFilterAnchorEl(e.currentTarget);
-								}}
-								data-testid={"variable-panel-filter-btn"}
-							>
-								<Badge
-									variant="dot"
-									color="primary"
-									invisible={
-										selectedFilter.length ===
-											VARIABLE_TYPES.length &&
-										sortOrder === "asc"
+			<Panel
+				actions={
+					<div className="flex w-full flex-col bg-white p-0">
+						<div className="mt-1 mb-2 ml-3 w-fit rounded-2xl bg-[#EBF4FE] px-3">
+							<span className="mt-2 mb-2 inline-block font-normal text-[#1260DD] text-[13px] leading-[18px] tracking-[0.16px]">
+								{title}
+							</span>
+						</div>
+						<div className="mt-1 mb-0 flex items-center gap-2 px-3">
+							<div className="relative flex-1">
+								<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
+								<Input
+									placeholder="Search"
+									className="w-full rounded-lg pl-9"
+									value={filterWord}
+									onChange={(e) =>
+										setFilterWord(e.target.value)
 									}
-								>
-									<Tune />
-								</Badge>
-							</IconButton>
-						</Stack>
-						<Stack spacing={2} paddingLeft={2}>
+									data-testid={"variable-panel-search-txt"}
+								/>
+							</div>
 							<Popover
-								id={"filter-variable-popover"}
-								open={isFilterPopoverOpen}
-								anchorEl={filterAnchorEl}
-								onClose={() => {
-									setFilterAnchorEl(null);
-								}}
-								anchorOrigin={{
-									vertical: "top",
-									horizontal: "right",
-								}}
-								transformOrigin={{
-									vertical: "bottom",
-									horizontal: "left",
-								}}
-								sx={{
-									"& .MuiPopover-paper": {
-										overflowY: "auto",
-									},
-								}}
-								marginThreshold={45}
+								open={filterPopoverOpen}
+								onOpenChange={setFilterPopoverOpen}
 							>
-								<StyledBox>
-									<StyledStackFilter>
-										<StyledStackFilterBy direction="row">
-											<StyledTypography variant="body2">
+								<PopoverTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										data-testid={
+											"variable-panel-filter-btn"
+										}
+										className="relative shrink-0"
+									>
+										{(selectedFilter.length !==
+											VARIABLE_TYPES.length ||
+											sortOrder !== "asc") && (
+											<span className="absolute top-0.5 right-0.5 size-2 rounded-full bg-primary" />
+										)}
+										<SlidersHorizontal className="size-4" />
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent
+									className="w-72 p-0"
+									align="end"
+								>
+									<div className="flex flex-col rounded-lg bg-white">
+										<div className="flex items-center justify-between border-border border-b px-4 py-2">
+											<span className="font-medium text-primary text-sm">
 												Filter By
-											</StyledTypography>
-											<IconButton
-												size="small"
-												onClick={() => {
-													setFilterAnchorEl(null);
-												}}
+											</span>
+											<Button
+												variant="ghost"
+												size="icon-sm"
+												onClick={() =>
+													setFilterPopoverOpen(false)
+												}
 												data-testid={
 													"variable-filter-popover-close-btn"
 												}
 											>
-												<Close />
-											</IconButton>
-										</StyledStackFilterBy>
-									</StyledStackFilter>
-
-									<Divider />
-									<StyledList>
-										{/* SELECT ALL CHECKBOX */}
-										<StyledListItem
-											onClick={(e) => {
-												e.stopPropagation();
-												if (allSelected) {
-													setTempFilter([]);
-												} else {
-													setTempFilter([
-														...VARIABLE_TYPES,
-													]);
+												<X className="size-4" />
+											</Button>
+										</div>
+										<ul className="m-0 flex max-h-64 list-none flex-col overflow-y-auto p-0 py-1">
+											{/* biome-ignore lint/a11y/useKeyWithClickEvents: filter list item */}
+											<li
+												className="flex cursor-pointer items-center gap-3 px-4 py-2 transition-colors hover:bg-accent"
+												onClick={() =>
+													allSelected
+														? setTempFilter([])
+														: setTempFilter([
+																...VARIABLE_TYPES,
+															])
 												}
-											}}
-											data-testid={
-												"variable-filter-select-all-item"
-											}
-										>
-											<StyledSelectAllListContent>
-												<Box
+												data-testid={
+													"variable-filter-select-all-item"
+												}
+											>
+												<Checkbox
+													checked={allSelected}
+													onCheckedChange={(
+														checked,
+													) => {
+														setTempFilter(
+															checked
+																? [
+																		...VARIABLE_TYPES,
+																	]
+																: [],
+														);
+													}}
 													onClick={(e) =>
 														e.stopPropagation()
 													}
-												>
-													<StyledCheckbox
-														checked={allSelected}
-														onChange={(e) => {
-															e.stopPropagation();
-															if (allSelected) {
-																setTempFilter(
-																	[],
-																);
-															} else {
-																setTempFilter([
-																	...VARIABLE_TYPES,
-																]);
-															}
-														}}
-														data-testid={
-															"variable-filter-select-all-chk"
-														}
-													/>
-												</Box>
-												<StyledTypographyContent variant="body1">
+													data-testid={
+														"variable-filter-select-all-chk"
+													}
+												/>
+												<span className="text-foreground text-sm">
 													Select All
-												</StyledTypographyContent>
-											</StyledSelectAllListContent>
-										</StyledListItem>
-										<Stack direction="column" spacing={0}>
+												</span>
+											</li>
 											{VARIABLE_TYPES.map((type) => (
-												<List.Item
+												// biome-ignore lint/a11y/useKeyWithClickEvents: filter list item
+												<li
 													key={type}
 													data-testid={`variable-filter-${type}-item`}
-													onClick={() => {
+													className="flex cursor-pointer items-center gap-3 px-4 py-2 transition-colors hover:bg-accent"
+													onClick={() =>
 														setTempFilter((prev) =>
 															prev.includes(type)
 																? prev.filter(
@@ -830,258 +539,170 @@ export const VariablesPanel = observer(
 																		...prev,
 																		type,
 																	],
-														);
-													}}
-													sx={{
-														"& .MuiStack-root > :not(style) ~ :not(style)":
-															{
-																marginTop:
-																	"0 !important",
-															},
-														cursor: "pointer",
-														"&:hover": {
-															backgroundColor:
-																"#f5f5f5",
-														},
-														"&:active": {
-															backgroundColor:
-																"#e0e0e0",
-														},
-														transition:
-															"background-color 0.15s ease-in-out",
-													}}
+														)
+													}
 												>
-													<StyledListContent>
-														<Box
-															onClick={(e) =>
-																e.stopPropagation()
-															}
-														>
-															<StyledCheckboxFilter
-																checked={tempFilter.includes(
-																	type,
-																)}
-																data-testid={`variable-filter-${type}-chk`}
-																onChange={(
-																	e,
-																) => {
-																	e.stopPropagation();
-																	setTempFilter(
-																		(
-																			prev,
-																		) => {
-																			if (
-																				prev.includes(
-																					type,
-																				)
-																			) {
-																				return prev.filter(
-																					(
-																						t,
-																					) =>
-																						t !==
-																						type,
-																				);
-																			}
-																			return [
+													<Checkbox
+														checked={tempFilter.includes(
+															type,
+														)}
+														data-testid={`variable-filter-${type}-chk`}
+														onCheckedChange={(
+															checked,
+														) => {
+															setTempFilter(
+																(prev) =>
+																	checked
+																		? [
 																				...prev,
 																				type,
-																			];
-																		},
-																	);
-																}}
-															/>
-														</Box>
-														<StyledTypographyContent variant="body1">
-															{capitalizeFirstLetter(
-																type,
-															)}
-														</StyledTypographyContent>
-													</StyledListContent>
-												</List.Item>
+																			]
+																		: prev.filter(
+																				(
+																					t,
+																				) =>
+																					t !==
+																					type,
+																			),
+															);
+														}}
+														onClick={(e) =>
+															e.stopPropagation()
+														}
+													/>
+													<span className="text-foreground text-sm">
+														{capitalizeFirstLetter(
+															type,
+														)}
+													</span>
+												</li>
 											))}
-										</Stack>
-									</StyledList>
-									<Divider />
-									<StyledBoxSort direction="column">
-										<StyledTypographySort variant="subtitle1">
-											Sort By:
-										</StyledTypographySort>
-
-										{/* ASC */}
-										<List.Item
-											onClick={() =>
-												setTempSortOrder("asc")
-											}
-											data-testid={
-												"variable-filter-sort-asc-item"
-											}
-											sx={{
-												"& .MuiStack-root > :not(style) ~ :not(style)":
-													{
-														marginTop:
-															"0 !important",
-													},
-												backgroundColor:
-													tempSortOrder === "asc"
-														? "#E3F2FD"
-														: "transparent",
-												cursor: "pointer",
-												"&:hover": {
-													backgroundColor:
-														tempSortOrder === "asc"
-															? "#BBDEFB"
-															: "#f5f5f5",
-												},
-											}}
-										>
-											<StyledTypographyAsc variant="body2">
-												<StyledTypographySort variant="body2">
-													Asc
-												</StyledTypographySort>
-												<StyledIconButtonAsc>
-													<ArrowUpward fontSize="small" />
-												</StyledIconButtonAsc>
-											</StyledTypographyAsc>
-										</List.Item>
-
-										{/* DESC */}
-										<List.Item
-											onClick={() =>
-												setTempSortOrder("desc")
-											}
-											data-testid={
-												"variable-filter-sort-desc-item"
-											}
-											sx={{
-												"& .MuiStack-root > :not(style) ~ :not(style)":
-													{
-														marginTop:
-															"0 !important",
-													},
-												backgroundColor:
-													tempSortOrder === "desc"
-														? "#E3F2FD"
-														: "transparent",
-												cursor: "pointer",
-												height: "40px",
-												alignItems: "center",
-												"&:hover": {
-													backgroundColor:
-														tempSortOrder === "desc"
-															? "#BBDEFB"
-															: "#f5f5f5",
-												},
-											}}
-										>
-											<StyledTypographyAsc variant="body2">
-												<StyledTypographySort variant="body2">
-													Desc
-												</StyledTypographySort>
-												<StyledIconButtonDesc>
-													<ArrowDownward fontSize="small" />
-												</StyledIconButtonDesc>
-											</StyledTypographyAsc>
-										</List.Item>
-									</StyledBoxSort>
-									<Divider />
-									<Stack
-										direction="row"
-										paddingX={4}
-										paddingY={2}
-										spacing={2}
-									>
-										<FlexButton
-											variant="outlined"
-											color="secondary"
-											onClick={() => {
-												setTempFilter(VARIABLE_TYPES);
-												setSelectedFilter(
-													VARIABLE_TYPES,
-												);
-												setTempSortOrder("asc");
-												setSortOrder("asc");
-												setFilterAnchorEl(null);
-											}}
-											data-testid={
-												"variable-filter-clear-all-btn"
-											}
-										>
-											Clear All
-										</FlexButton>
-										<FlexButton
-											variant="contained"
-											onClick={() => {
-												setSelectedFilter(tempFilter);
-												setSortOrder(tempSortOrder);
-												setFilterAnchorEl(null);
-											}}
-											data-testid={
-												"variable-filter-apply-btn"
-											}
-										>
-											Apply
-										</FlexButton>
-									</Stack>
-								</StyledBox>
+										</ul>
+										<Separator />
+										<div className="flex flex-col py-1">
+											<span className="px-4 py-1 font-medium text-muted-foreground text-xs uppercase tracking-wider">
+												Sort By
+											</span>
+											<button
+												type="button"
+												className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${tempSortOrder === "asc" ? "bg-accent font-medium" : "hover:bg-accent"}`}
+												onClick={() =>
+													setTempSortOrder("asc")
+												}
+												data-testid={
+													"variable-filter-sort-asc-item"
+												}
+											>
+												<ArrowUp className="size-4 text-muted-foreground" />
+												<span>Ascending</span>
+											</button>
+											<button
+												type="button"
+												className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${tempSortOrder === "desc" ? "bg-accent font-medium" : "hover:bg-accent"}`}
+												onClick={() =>
+													setTempSortOrder("desc")
+												}
+												data-testid={
+													"variable-filter-sort-desc-item"
+												}
+											>
+												<ArrowDown className="size-4 text-muted-foreground" />
+												<span>Descending</span>
+											</button>
+										</div>
+										<Separator />
+										<div className="flex gap-2 px-4 py-3">
+											<Button
+												variant="outline"
+												className="flex-1"
+												onClick={() => {
+													setTempFilter(
+														VARIABLE_TYPES,
+													);
+													setSelectedFilter(
+														VARIABLE_TYPES,
+													);
+													setTempSortOrder("asc");
+													setSortOrder("asc");
+													setFilterPopoverOpen(false);
+												}}
+												data-testid={
+													"variable-filter-clear-all-btn"
+												}
+											>
+												Clear All
+											</Button>
+											<Button
+												className="flex-1"
+												onClick={() => {
+													setSelectedFilter(
+														tempFilter,
+													);
+													setSortOrder(tempSortOrder);
+													setFilterPopoverOpen(false);
+												}}
+												data-testid={
+													"variable-filter-apply-btn"
+												}
+											>
+												Apply
+											</Button>
+										</div>
+									</div>
+								</PopoverContent>
 							</Popover>
-						</Stack>
-						<StyledStackVariable spacing={2}>
-							<Stack
-								direction="row"
-								justifyContent="space-between"
-								alignItems={"center"}
-							>
-								<StyledMenuTitle variant="h6">
-									Variables
-								</StyledMenuTitle>
-								<Stack direction="row" spacing={1}>
-									<IconButton
-										size="small"
-										disabled={
-											!workspace.agentModelEngine ||
-											isProcessing
-										}
-										onClick={handleOpenRenameModal}
-										data-testid={
-											"variable-panel-rename-suggest-btn"
-										}
-									>
-										{llmLoad ? (
-											<CircularProgress
-												size="1.5rem"
-												color="secondary"
-											/>
-										) : (
-											<AutoFixHighOutlined />
-										)}
-									</IconButton>
-									<StyledTooltip
-										title="Create New Variable"
-										arrow
-									>
-										<IconButton
+						</div>
+						<div className="flex items-center justify-between px-3 py-3">
+							<p className="m-0 font-semibold text-sm">
+								Variables
+							</p>
+							<div className="flex flex-row gap-1">
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									disabled={
+										!workspace.agentModelEngine ||
+										isProcessing
+									}
+									onClick={handleOpenRenameModal}
+									data-testid={
+										"variable-panel-rename-suggest-btn"
+									}
+								>
+									{llmLoad ? (
+										<Spinner className="size-4" />
+									) : (
+										<Wand2 className="size-4" />
+									)}
+								</Button>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
 											className="notebook-variable-menu__add-variable-button"
-											onClick={(e) => {
+											onClick={(e) =>
 												setPopoverAnchorEl(
 													e.currentTarget,
-												);
-											}}
+												)
+											}
 											data-testid={
 												"variable-panel-add-variable-btn"
 											}
 										>
-											<Add />
-										</IconButton>
-									</StyledTooltip>
-									<StyledTooltip
-										title={tooltipText}
-										placement="bottom"
-										arrow
-									>
-										<IconButton
+											<Plus className="size-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										Create New Variable
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon-sm"
 											onClick={() => {
-												const newState = {};
 												const types =
 													Object.keys(
 														groupedVariables,
@@ -1093,6 +714,10 @@ export const VariablesPanel = observer(
 																type
 															] === true,
 													);
+												const newState: Record<
+													string,
+													boolean
+												> = {};
 												types.forEach((type) => {
 													newState[type] =
 														!hasAnyExpanded;
@@ -1103,180 +728,170 @@ export const VariablesPanel = observer(
 												"variable-panel-expand-collapse-btn"
 											}
 										>
-											<StyledExpandIcon
-												src={ExpandCollapseIcon}
-												alt="Expand/Collapse"
-											/>
-										</IconButton>
-									</StyledTooltip>
-								</Stack>
-							</Stack>
-						</StyledStackVariable>
-
-						<StyledMenuScroll>
-							{Object.entries(groupedVariables).map(
-								([type, vars]) => {
-									if (expandedItems[type] === undefined) {
-										return null;
-									}
-									return (
-										<StyledAccordion
-											key={type}
-											expanded={expandedItems[type]}
-											onChange={(_, isExpanded) => {
+											<ChevronsUpDown className="h-4 w-4" />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{tooltipText}
+									</TooltipContent>
+								</Tooltip>
+							</div>
+						</div>
+					</div>
+				}
+			>
+				<div className="flex h-full flex-col overflow-auto bg-white">
+					<Accordion
+						type="multiple"
+						value={Object.keys(expandedItems).filter(
+							(k) => expandedItems[k],
+						)}
+					>
+						{Object.entries(groupedVariables).map(
+							([type, vars]) => {
+								if (expandedItems[type] === undefined)
+									return null;
+								return (
+									<AccordionItem
+										key={type}
+										value={type}
+										className="border-b-0 shadow-none"
+										data-testid={`variable-panel-type-${type}-accordion`}
+									>
+										<AccordionTrigger
+											className="h-10 px-3 py-2.5 hover:bg-accent/50 hover:no-underline"
+											onClick={() => {
 												setExpandedItems((prev) => ({
 													...prev,
-													[type]: isExpanded,
+													[type]: !prev[type],
 												}));
 											}}
-											data-testid={`variable-panel-type-${type}-accordion`}
 										>
-											<StyledStackAccordion>
-												<StyledAccordionTrigger
-													expandIcon={
-														<ChevronRightIcon />
-													}
-												>
-													<StyledTypographyType variant="body1">
-														{capitalizeFirstLetter(
-															type,
-														)}
-													</StyledTypographyType>
-												</StyledAccordionTrigger>
-											</StyledStackAccordion>
-											<StyledAccordionContent>
-												<StyledListVariableContent>
-													{vars.map(
-														({ id, variable }) => (
-															<StyledListItemContent
-																key={id}
-															>
-																<NotebookVariable
-																	id={id}
-																	variable={
-																		variable
-																	}
-																	engines={
-																		engines
-																	}
-																	suggestVariableRenames={
-																		suggestVariableRenames
-																	}
-																/>
-															</StyledListItemContent>
-														),
+											<div className="flex items-center gap-2">
+												{(() => {
+													const LucideIcon =
+														ENGINE_TYPE_ICONS[type];
+													if (LucideIcon)
+														return (
+															<LucideIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+														);
+													if (type === "number")
+														return (
+															<span className="flex h-4 w-4 shrink-0 items-center justify-center font-bold text-muted-foreground text-xs">
+																#
+															</span>
+														);
+													if (
+														VARIABLE_TYPE_ICONS[
+															type
+														]
+													)
+														return (
+															<img
+																src={
+																	VARIABLE_TYPE_ICONS[
+																		type
+																	]
+																}
+																alt={type}
+																className="h-4 w-4 shrink-0"
+															/>
+														);
+													return null;
+												})()}
+												<span className="font-medium text-foreground text-sm">
+													{capitalizeFirstLetter(
+														type,
 													)}
-												</StyledListVariableContent>
-											</StyledAccordionContent>
-										</StyledAccordion>
-									);
-								},
-							)}
-						</StyledMenuScroll>
-
-						{isPopoverOpen && (
-							<AddVariablePopover
-								open={isPopoverOpen}
-								anchorEl={popoverAnchorEle}
-								onClose={() => {
-									setPopoverAnchorEl(null);
-								}}
-								engines={engines}
-							/>
+												</span>
+											</div>
+										</AccordionTrigger>
+										<AccordionContent className="p-0 pb-0">
+											<ul className="m-0 list-none p-0">
+												{vars.map(
+													({ id, variable }) => (
+														<NotebookVariable
+															key={id}
+															id={id}
+															variable={variable}
+															engines={engines}
+															suggestVariableRenames={
+																suggestVariableRenames
+															}
+														/>
+													),
+												)}
+											</ul>
+										</AccordionContent>
+									</AccordionItem>
+								);
+							},
 						)}
-					</StyledMenu>
-				</StyledStack>
+					</Accordion>
+				</div>
 
-				{/* Rename Modal */}
-				<Modal
+				{isPopoverOpen && (
+					<AddVariablePopover
+						open={isPopoverOpen}
+						anchorEl={popoverAnchorEle}
+						onClose={() => setPopoverAnchorEl(null)}
+						engines={engines}
+					/>
+				)}
+
+				<Dialog
 					open={isRenameModalOpen}
-					onClose={() => setIsRenameModalOpen(false)}
-					aria-labelledby="rename-variables-modal"
+					onOpenChange={(open) =>
+						!open && setIsRenameModalOpen(false)
+					}
 				>
-					<Box
-						sx={{
-							position: "absolute",
-							top: "50%",
-							left: "50%",
-							transform: "translate(-50%, -50%)",
-							width: 600,
-							maxHeight: "80vh",
-							bgcolor: "background.paper",
-							borderRadius: 2,
-							boxShadow: 24,
-							p: 4,
-							overflow: "auto",
-						}}
-					>
-						<Typography variant="h6" gutterBottom>
-							Suggested Variable Name Changes
-						</Typography>
-						<Typography
-							variant="body2"
-							color="text.secondary"
-							sx={{ mb: 3 }}
-						>
+					<DialogContent className="max-h-[80vh] max-w-[600px] overflow-auto">
+						<DialogHeader>
+							<DialogTitle>
+								Suggested Variable Name Changes
+							</DialogTitle>
+						</DialogHeader>
+						<p className="text-muted-foreground text-sm">
 							Review and select the variable name changes you'd
 							like to apply. All changes are selected by default.
-						</Typography>
-
-						<Stack spacing={2} sx={{ mb: 3 }}>
+						</p>
+						<div className="flex flex-col gap-2">
 							{Object.entries(suggestedChanges).map(
 								([oldName, newName]) => (
-									<Box
+									<div
 										key={oldName}
-										sx={{
-											display: "flex",
-											alignItems: "center",
-											p: 2,
-											border: "1px solid",
-											borderColor: "divider",
-											borderRadius: 1,
-											backgroundColor:
-												"background.default",
-										}}
+										className="flex items-center gap-3 rounded-md border border-border bg-background p-3"
 									>
 										<Checkbox
 											checked={
 												selectedChanges[oldName] ||
 												false
 											}
-											onChange={() =>
+											onCheckedChange={() =>
 												handleToggleChange(oldName)
 											}
 										/>
-										<Box sx={{ ml: 2, flex: 1 }}>
-											<Typography
-												variant="body2"
-												color="text.secondary"
-											>
+										<div className="min-w-0 flex-1">
+											<p className="truncate text-muted-foreground text-xs">
 												{oldName}
-											</Typography>
-											<Typography
-												variant="body1"
-												sx={{ fontWeight: "bold" }}
-											>
+											</p>
+											<p className="font-medium text-sm">
 												→ {newName}
-											</Typography>
-										</Box>
-									</Box>
+											</p>
+										</div>
+									</div>
 								),
 							)}
-						</Stack>
-
-						<Stack
-							direction="row"
-							spacing={2}
-							justifyContent="flex-end"
-						>
+						</div>
+						<DialogFooter>
 							<Button
+								variant="outline"
 								onClick={() => setIsRenameModalOpen(false)}
 								disabled={isProcessing}
 							>
 								Cancel
 							</Button>
 							<Button
-								variant="contained"
 								onClick={handleApplyChanges}
 								disabled={
 									isProcessing ||
@@ -1289,9 +904,9 @@ export const VariablesPanel = observer(
 									? "Applying..."
 									: "Apply Selected Changes"}
 							</Button>
-						</Stack>
-					</Box>
-				</Modal>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
 			</Panel>
 		);
 	},

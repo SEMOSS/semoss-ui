@@ -1,6 +1,6 @@
-import { ArrowRight, Edit, Eye, Trash2} from "lucide-react";
+import { ArrowRight, Edit, Eye, Trash2 } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Button,
 	Dialog,
@@ -46,6 +46,7 @@ interface ConnectionProps {
 	initialConnections?: Conn[];
 	onEditConnection?: (updated: Conn) => void;
 	onDeleteConnection?: (id: string) => void;
+	isRdf?: boolean;
 }
 
 export const CreateConnection: React.FC<ConnectionProps> = ({
@@ -56,6 +57,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 	initialConnections = [],
 	onEditConnection,
 	onDeleteConnection,
+	isRdf = false,
 }) => {
 	const tableOptions = useMemo(() => nodes.map((n) => n.data.name), [nodes]);
 
@@ -65,6 +67,9 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [error, setError] = useState<string>("");
 	const [save, setSave] = useState(true);
+
+	// Snapshot of connections at dialog open — used to diff on Save
+	const snapshotRef = useRef<Conn[]>([]);
 
 	const makeId = (c: Conn) =>
 		`${c.parentTable}_${c.childTable}`.replace(/\s+/g, "_");
@@ -76,6 +81,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 				if (!copy.id) copy.id = makeId(copy);
 				return copy;
 			});
+			snapshotRef.current = normalized;
 			setConnections(normalized);
 			setEditingId(null);
 			setParentTable("");
@@ -179,11 +185,9 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 			setConnections((prev) =>
 				prev.map((p) => (p.id === editingId ? newConn : p)),
 			);
-			onEditConnection?.(newConn);
 			setEditingId(null);
 		} else {
 			setConnections((prev) => [...prev, newConn]);
-			onCreateConnection?.(newConn);
 		}
 
 		setParentTable("");
@@ -197,7 +201,6 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 		setConnections((prev) =>
 			prev.filter((c) => (c.id ?? makeId(c)) !== id),
 		);
-		if (id && onDeleteConnection) onDeleteConnection(id);
 
 		if (editingId === id) {
 			setEditingId(null);
@@ -205,6 +208,48 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 			setChildTable("");
 		}
 		setError("");
+		setSave(false);
+	};
+
+	const handleSave = () => {
+		const snapshot = snapshotRef.current;
+		const snapshotIds = new Set(snapshot.map((c) => c.id ?? makeId(c)));
+		const currentIds = new Set(connections.map((c) => c.id ?? makeId(c)));
+
+		// Deleted: in snapshot but not in current
+		for (const c of snapshot) {
+			const id = c.id ?? makeId(c);
+			if (!currentIds.has(id)) {
+				onDeleteConnection?.(id);
+			}
+		}
+
+		// Added: in current but not in snapshot
+		for (const c of connections) {
+			const id = c.id ?? makeId(c);
+			if (!snapshotIds.has(id)) {
+				onCreateConnection?.(c);
+			}
+		}
+
+		// Edited: same id but different tables
+		for (const c of connections) {
+			const id = c.id ?? makeId(c);
+			if (snapshotIds.has(id)) {
+				const orig = snapshot.find(
+					(ic) => (ic.id ?? makeId(ic)) === id,
+				);
+				if (
+					orig &&
+					(orig.parentTable !== c.parentTable ||
+						orig.childTable !== c.childTable)
+				) {
+					onEditConnection?.(c);
+				}
+			}
+		}
+
+		onClose();
 	};
 
 	useEffect(() => {
@@ -223,7 +268,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 				<div className="flex flex-col gap-4 pb-2">
 					<Field>
 						<FieldLabel className="mb-1.5 block text-xs">
-							Parent Table{" "}
+							{isRdf ? "Start Node" : "Parent Table"}{" "}
 							<span className="text-destructive">*</span>
 						</FieldLabel>
 						<Select
@@ -231,7 +276,13 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 							onValueChange={(value) => setParentTable(value)}
 						>
 							<SelectTrigger className="w-full">
-								<SelectValue placeholder="Select or type parent table" />
+								<SelectValue
+									placeholder={
+										isRdf
+											? "Select start node"
+											: "Select parent table"
+									}
+								/>
 							</SelectTrigger>
 							<SelectContent>
 								{tableOptions.map((table) => (
@@ -245,7 +296,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 
 					<Field>
 						<FieldLabel className="mb-1.5 block text-xs">
-							Child Table{" "}
+							{isRdf ? "Child Node" : "Child Table"}{" "}
 							<span className="text-destructive">*</span>
 						</FieldLabel>
 						<Select
@@ -253,7 +304,13 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 							onValueChange={(value) => setChildTable(value)}
 						>
 							<SelectTrigger className="w-full">
-								<SelectValue placeholder="Select or type child table" />
+								<SelectValue
+									placeholder={
+										isRdf
+											? "Select child node"
+											: "Select child table"
+									}
+								/>
 							</SelectTrigger>
 							<SelectContent>
 								{tableOptions.map((table) => (
@@ -265,12 +322,31 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 						</Select>
 					</Field>
 
-					{/* Relationship Preview Box */}
-					<div className="flex h-11 w-full cursor-pointer items-center gap-2 rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1.5">
-						<Eye className="mr-1 size-[18px] text-primary" />
-						<P className="font-medium text-primary">
-							Relationship Preview
-						</P>
+					{/* Live Relationship Preview */}
+					<div className="flex h-11 w-full items-center gap-2 rounded-md border border-border bg-muted/40 px-3">
+						<Eye className="size-4 shrink-0 text-muted-foreground" />
+						{parentTable || childTable ? (
+							<div className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
+								<span
+									className={`truncate font-medium ${parentTable ? "text-foreground" : "text-muted-foreground italic"}`}
+								>
+									{parentTable ||
+										(isRdf ? "Start Node" : "Parent Table")}
+								</span>
+								<ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
+								<span
+									className={`truncate font-medium ${childTable ? "text-foreground" : "text-muted-foreground italic"}`}
+								>
+									{childTable ||
+										(isRdf ? "Child Node" : "Child Table")}
+								</span>
+							</div>
+						) : (
+							<span className="text-muted-foreground text-sm">
+								Select {isRdf ? "nodes" : "tables"} above to
+								preview
+							</span>
+						)}
 					</div>
 
 					{/* Error Message */}
@@ -287,13 +363,15 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 									key={id}
 									className="mb-1 flex items-center"
 								>
-									<P className="mr-4 font-normal text-foreground">
-										{c.parentTable}
-									</P>
-									<ArrowRight className="size-5 text-muted-foreground" />
-									<P className="ml-4 font-normal text-foreground">
-										{c.childTable}
-									</P>
+									<div className="flex min-w-0 flex-1 items-center gap-1.5 text-sm">
+										<span className="truncate font-medium text-foreground">
+											{c.parentTable}
+										</span>
+										<ArrowRight className="size-3.5 shrink-0 text-muted-foreground" />
+										<span className="truncate font-medium text-foreground">
+											{c.childTable}
+										</span>
+									</div>
 
 									<div className="ml-auto flex gap-1">
 										<Button
@@ -337,9 +415,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 					</Button>
 					<Button
 						variant="default"
-						onClick={() => {
-							onClose();
-						}}
+						onClick={handleSave}
 						disabled={error !== "" || save}
 						data-testid="save-connection"
 					>

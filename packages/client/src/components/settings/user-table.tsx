@@ -75,6 +75,8 @@ const formatValue = (input: string) => {
 			DAY: "Daily",
 			WEEK: "Weekly",
 			MONTH: "Monthly",
+			YEAR: "Yearly",
+			ALL_TIME: "All time",
 		};
 		return mappings[input.toUpperCase()] || input;
 	}
@@ -161,6 +163,7 @@ export const UserTable = (props: UserTableProps) => {
 		setPaginationTotalUsers(nextActiveTotal);
 	}, [getUsers.status, getUsers.data, cachedTotalUsers, hasSearch]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional reset on search change
 	useEffect(() => {
 		resetPage();
 	}, [debouncedSearch, resetPage]);
@@ -401,9 +404,7 @@ export const UserTable = (props: UserTableProps) => {
 									</TableHead>
 									<TableHead>Name</TableHead>
 									<TableHead>Type</TableHead>
-									<TableHead>Model Limit Type</TableHead>
-									<TableHead>Limit Value</TableHead>
-									<TableHead>Frequency</TableHead>
+									<TableHead>Model Limits</TableHead>
 									<TableHead>Role</TableHead>
 									<TableHead>Actions</TableHead>
 								</TableRow>
@@ -418,6 +419,20 @@ export const UserTable = (props: UserTableProps) => {
 									const avatarLabel = displayName
 										.charAt(0)
 										.toUpperCase();
+									const modelLimitType = formatValue(
+										user?.model_usage_restriction,
+									);
+									const modelLimitValue =
+										user?.model_usage_restriction ===
+										"compute"
+											? `${user?.model_max_response_time?.toLocaleString()} ms`
+											: user?.model_usage_restriction ===
+													"token"
+												? `${user?.model_max_tokens?.toLocaleString()}`
+												: "";
+									const modelLimitFrequency = formatValue(
+										user?.model_usage_frequency,
+									);
 
 									return (
 										<TableRow
@@ -481,6 +496,10 @@ export const UserTable = (props: UserTableProps) => {
 																{displayName}
 															</span>
 															<span className="text-muted-foreground text-xs">
+																id: {user.id}
+															</span>
+															<span className="text-muted-foreground text-xs">
+																email:{" "}
 																{user.email ||
 																	"No email"}
 															</span>
@@ -490,23 +509,27 @@ export const UserTable = (props: UserTableProps) => {
 											</TableCell>
 											<TableCell>{user.type}</TableCell>
 											<TableCell>
-												{formatValue(
-													user?.model_usage_restriction,
-												)}
-											</TableCell>
-											<TableCell>
-												{user?.model_usage_restriction ===
-													"compute" &&
-													`${user?.model_max_response_time?.toLocaleString()} ms`}
-
-												{user?.model_usage_restriction ===
-													"token" &&
-													`${user?.model_max_tokens?.toLocaleString()}`}
-											</TableCell>
-											<TableCell>
-												{formatValue(
-													user?.model_usage_frequency,
-												)}
+												<div className="flex flex-col gap-1 text-sm">
+													<div>
+														<span className="font-medium">
+															Type:
+														</span>{" "}
+														{modelLimitType || "-"}
+													</div>
+													<div>
+														<span className="font-medium">
+															Value:
+														</span>{" "}
+														{modelLimitValue || "-"}
+													</div>
+													<div>
+														<span className="font-medium">
+															Frequency:
+														</span>{" "}
+														{modelLimitFrequency ||
+															"-"}
+													</div>
+												</div>
 											</TableCell>
 											<TableCell>
 												<div className="flex flex-col gap-2">
@@ -649,7 +672,7 @@ export const UserTable = (props: UserTableProps) => {
 							</TableBody>
 							<TableFooter>
 								<TableRow>
-									<TableCell colSpan={8} className="py-3">
+									<TableCell colSpan={6} className="py-3">
 										<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 											<div className="flex items-center gap-2 text-sm">
 												<span className="text-muted-foreground">

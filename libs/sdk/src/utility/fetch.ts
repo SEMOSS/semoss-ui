@@ -6,6 +6,50 @@ export const CSRF = {
 	token: "",
 };
 
+const getAbsoluteUrl = (url: string): string | null => {
+	if (typeof window === "undefined") {
+		return null;
+	}
+
+	try {
+		const parsed = new URL(url, window.location.origin);
+		return parsed.toString();
+	} catch {
+		return null;
+	}
+};
+
+const isHtmlResponse = (response: Response): boolean => {
+	const contentType = response.headers.get("content-type") || "";
+	return contentType.toLowerCase().includes("text/html");
+};
+
+const handleHeaderRedirect = (response: Response): boolean => {
+	if (typeof window === "undefined") {
+		return false;
+	}
+
+	// backend behavior (also used in legacy) can send redirect info on API error responses.
+	const redirectHeader =
+		response.headers.get("redirect") || response.headers.get("location");
+
+	if (redirectHeader) {
+		const redirectUrl = getAbsoluteUrl(redirectHeader);
+		if (redirectUrl) {
+			window.location.replace(redirectUrl);
+			return true;
+		}
+	}
+
+	// fetch follows redirects for API calls; this catches a final redirected HTML page.
+	if (response.redirected && response.url && isHtmlResponse(response)) {
+		window.location.replace(response.url);
+		return true;
+	}
+
+	return false;
+};
+
 /**
  * Store the interceptors to modify any fetch command
  */
@@ -26,6 +70,20 @@ const interceptors: {
 				authorization: `Basic ${btoa(
 					`${Env.ACCESS_KEY}:${Env.SECRET_KEY}`,
 				)}`,
+			};
+		}
+
+		if (Env.BEARER_TOKEN) {
+			options.headers = {
+				...options.headers,
+				authorization: `Bearer ${Env.BEARER_TOKEN}`,
+			};
+		}
+
+		if (Env.BEARER_PROVIDER) {
+			options.headers = {
+				...options.headers,
+				"Bearer-Provider": Env.BEARER_PROVIDER,
 			};
 		}
 
@@ -63,9 +121,11 @@ const interceptors: {
 		return options;
 	},
 	response: async ({ response }) => {
-		// TODO: maybe we shouldn't just throw unauthorized error for 302 and actually honor the redirect?
-		if (response.status === 302) {
-			throw new UnauthorizedError("Unauthorized");
+		if (handleHeaderRedirect(response)) {
+			throw new UnauthorizedError(
+				"Redirecting from header direct value",
+				302,
+			);
 		}
 	},
 };
@@ -178,7 +238,12 @@ export const post = async <O>(
 	}
 
 	if (!response.ok) {
-		const errorData = await response.json();
+		let errorData: Record<string, string> = {};
+		try {
+			errorData = await response.json();
+		} catch {
+			errorData = {};
+		}
 		const errorMessage =
 			errorData.message ||
 			errorData.error ||

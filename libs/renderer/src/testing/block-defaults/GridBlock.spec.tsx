@@ -56,8 +56,10 @@ describe("grid block", () => {
 			},
 			count: 2,
 			error: undefined,
-			filter: undefined,
-			unfilter: undefined,
+			filter: vi.fn() as unknown as (
+				filterPixel: string,
+			) => Promise<boolean>,
+			unfilter: vi.fn() as unknown as () => Promise<boolean>,
 		});
 
 		const { container } = render(<GridBlock id={blocks.grid.id} />, {
