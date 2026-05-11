@@ -1,5 +1,5 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { FilePenLine, Maximize2 } from "lucide-react";
+import { FilePenLine, Maximize2, Pencil } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { DATA_FRAME_TYPES } from "@semoss/sdk";
@@ -21,6 +21,7 @@ import {
 	type CellComponent,
 	type CellDef,
 } from "../../../store";
+import { QueryImportFormModal } from "../../shared/QueryImportFormModal";
 import { DatabaseTables } from "./DatabaseTables";
 
 const EDITOR_LINE_HEIGHT = 19;
@@ -41,14 +42,21 @@ export interface QueryImportCellDef extends CellDef<"query-import"> {
 
 export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 	(props) => {
-		const editorRef = useRef(null);
+		// biome-ignore lint/suspicious/noExplicitAny: monaco editor type is complex
+		const editorRef = useRef<any>(null);
 
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
 		const [showTables, setShowTables] = useState(false);
+		const [isQueryImportModalOpen, setIsQueryImportModalOpen] =
+			useState<boolean>(false);
 
-		const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState({
+		const [cfgLibraryDatabases, setCfgLibraryDatabases] = useState<{
+			loading: boolean;
+			ids: string[];
+			display: Record<string, string>;
+		}>({
 			loading: true,
 			ids: [],
 			display: {},
@@ -81,7 +89,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			if (myDbs.status !== "SUCCESS") return;
 
 			const dbIds: string[] = [];
-			const dbDisplay = {};
+			const dbDisplay: Record<string, string> = {};
 			myDbs.data.forEach((db) => {
 				dbIds.push(db.engine_id);
 				dbDisplay[db.engine_id] = db.engine_name;
@@ -105,7 +113,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			}
 		}, [myDbs.status, myDbs.data]);
 
-		const handleEditorMount = (editor, monaco) => {
+		// biome-ignore lint/suspicious/noExplicitAny: monaco types are complex
+		const handleEditorMount = (editor: any, monaco: any) => {
 			editorRef.current = editor;
 
 			let ignoreResize = false;
@@ -123,7 +132,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 				id: "run",
 				label: "Run",
 				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-				run: (editor) => {
+				// biome-ignore lint/suspicious/noExplicitAny: monaco editor type is complex
+				run: (editor: any) => {
 					const newValue = editor.getValue();
 					state.dispatch({
 						message: ActionMessages.UPDATE_CELL,
@@ -180,19 +190,20 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 			let height = 0;
 			if (isExpanded) {
 				height = Math.min(
-					editorRef.current.getContentHeight(),
+					editorRef.current?.getContentHeight() ?? 0,
 					EDITOR_MAX_HEIGHT,
 				);
 			}
 			height += EDITOR_LINE_HEIGHT;
-			editorRef.current.layout({
-				width: editorRef.current.getContainerDomNode().clientWidth,
+			editorRef.current?.layout({
+				width:
+					editorRef.current?.getContainerDomNode().clientWidth ?? 0,
 				height,
 			});
 		};
 
-		const handleEditorChange = (newValue: string) => {
-			if (cell.isLoading) return;
+		const handleEditorChange = (newValue: string | undefined) => {
+			if (cell.isLoading || newValue === undefined) return;
 			state.dispatch({
 				message: ActionMessages.UPDATE_CELL,
 				payload: {
@@ -245,12 +256,25 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 									)}
 								</SelectContent>
 							</Select>
-							<Button
-								variant="ghost"
-								onClick={() => setShowTables(!showTables)}
-							>
-								{showTables ? "Hide" : "Show"} Available Columns
-							</Button>
+							<div className="flex items-center gap-2">
+								<Button
+									variant="ghost"
+									onClick={() => setShowTables(!showTables)}
+								>
+									{showTables ? "Hide" : "Show"} Available
+									Columns
+								</Button>
+								<Button
+									variant="ghost"
+									onClick={() =>
+										setIsQueryImportModalOpen(true)
+									}
+									key={`cell-edit-query-import-${cell.id}`}
+								>
+									<Pencil className="mr-1 size-4" />
+									Edit
+								</Button>
+							</div>
 						</div>
 						{showTables && cell.parameters.databaseId ? (
 							<DatabaseTables
@@ -401,6 +425,14 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							</>
 						)}
 					</div>
+				)}
+				{isQueryImportModalOpen && (
+					<QueryImportFormModal
+						setIsQueryImportModalOpen={setIsQueryImportModalOpen}
+						query={cell.query}
+						cell={cell}
+						editMode={true}
+					/>
 				)}
 			</div>
 		);

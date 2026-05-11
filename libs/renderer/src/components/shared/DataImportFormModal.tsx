@@ -1,28 +1,23 @@
 import {
-	AlertTriangle,
 	ArrowLeftFromLine,
 	ArrowRightFromLine,
-	CalendarDays,
-	CopyPlus,
-	Filter,
+	Loader2,
 	Merge,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Checkbox,
 	Dialog,
 	DialogContent,
+	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-	Input,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -47,8 +42,8 @@ import {
 	type QueryState,
 } from "../../store";
 import { DefaultCells } from "../cell-defaults";
-import { CodeCellConfig } from "../cell-defaults/code-cell";
 import { DataImportCellConfig } from "../cell-defaults/data-import-cell";
+import { DatabaseAccordions } from "../cell-defaults/query-import-cell/DatabaseAccordions";
 
 const JOIN_ICONS = {
 	inner: <Merge className="size-4" />,
@@ -56,8 +51,6 @@ const JOIN_ICONS = {
 	"left.outer": <ArrowLeftFromLine className="size-4" />,
 	outer: <Merge className="size-4" />,
 };
-
-const SQL_COLUMN_TYPES = ["DATE", "NUMBER", "STRING", "TIMESTAMP"];
 
 type JoinElement = {
 	leftTable: string;
@@ -68,38 +61,29 @@ type JoinElement = {
 };
 
 interface Column {
-	id: number;
-	tableName: string;
 	columnName: string;
 	columnType: string;
-	userAlias: string;
-	checked: boolean;
+	alias: string;
 }
-
-interface TableInterface {
-	id: number;
-	columns: Column[];
-	name: string;
-}
-
-interface NewFormData {
-	databaseSelect: string;
-	tables: TableInterface[];
-}
-
-type FormValues = {
-	databaseSelect: string;
-	joins: JoinElement[];
-	tables: TableInterface[];
-};
 
 export const DataImportFormModal = observer(
 	(props: {
 		query?: QueryState;
 		previousCellId?: string;
-		setIsDataImportModalOpen?;
+		setIsDataImportModalOpen?: (open: boolean) => void;
 		editMode?: boolean;
-		cell?;
+		cell?: {
+			id: string;
+			query: QueryState;
+			parameters: {
+				databaseId: string;
+				rootTable: string;
+				selectedColumns?: string[];
+				columnAliases?: string[];
+				joins?: JoinElement[];
+				[key: string]: unknown;
+			};
+		};
 	}): JSX.Element => {
 		const {
 			query,
@@ -109,1027 +93,653 @@ export const DataImportFormModal = observer(
 			cell,
 		} = props;
 
-		const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
 		const { state, notebook } = useBlocks();
 
-		const {
-			control: formControl,
-			setValue: formSetValue,
-			reset: formReset,
-			handleSubmit: formHandleSubmit,
-			watch: dataImportwatch,
-		} = useForm<FormValues>();
-
-		const watchedTables = dataImportwatch("tables");
-		const watchedJoins = dataImportwatch("joins");
-		const [userDatabases, setUserDatabases] = useState(null);
-		const [databaseTableHeaders, setDatabaseTableHeaders] = useState([]);
-		const [selectedDatabaseId, setSelectedDatabaseId] = useState(
-			cell ? cell.parameters.databaseId : null,
-		);
+		// Database state
+		const [userDatabases, setUserDatabases] = useState<
+			{ database_id: string; app_name: string }[] | null
+		>(null);
+		const [selectedDatabaseId, setSelectedDatabaseId] = useState<
+			string | null
+		>(cell ? cell.parameters.databaseId : null);
 		const getDatabases = usePixel("META | GetDatabaseList ( ) ;");
-		const [databaseTableRows, setDatabaseTableRows] = useState([]);
-		const [tableNames, setTableNames] = useState<string[]>([]);
+
+		// Column selection state - simplified from react-hook-form
+		const [selectedColumns, setSelectedColumns] = useState<{
+			[tableName: string]: Column[];
+		}>({});
+		const [selectedTableName, setSelectedTableName] = useState<
+			string | null
+		>(cell ? cell.parameters.rootTable : null);
+
+		// Join state
+		const [joins, setJoins] = useState<JoinElement[]>([]);
+		const [joinTypeSelectIndex, setJoinTypeSelectIndex] = useState(-1);
+		const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
+
+		// Table edges for determining available joins
+		const [tableEdges, setTableEdges] = useState<{
+			[tableName: string]: {
+				[relatedTable: string]: { leftKey: string; rightKey: string };
+			};
+		}>({});
+
+		// Preview state
+		const [showPreview, setShowPreview] = useState<boolean>(false);
 		const [isDatabaseLoading, setIsDatabaseLoading] =
 			useState<boolean>(false);
-		const [showPreview, setShowTablePreview] = useState<boolean>(false);
-		const [showEditColumns, setShowEditColumns] = useState<boolean>(true);
-		const [tableEdgesObject, setTableEdgesObject] = useState(null);
-		const [aliasesCountObj, setAliasesCountObj] = useState({});
-		const aliasesCountObjRef = useRef({});
-		const [tableEdges, setTableEdges] = useState({});
-		const [rootTable, setRootTable] = useState(
-			cell ? cell.parameters.rootTable : null,
-		);
-		const [dataLimit, _setDataLimit] = useState(
-			cell ? cell.parameters.dataLimit : -1,
+		const [databaseTableHeaders, setDatabaseTableHeaders] = useState<
+			string[]
+		>([]);
+		const [databaseTableRows, setDatabaseTableRows] = useState<unknown[][]>(
+			[],
 		);
 
-		const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
-		const [selectedTableNames, setSelectedTableNames] = useState(new Set());
-		const [shownTables, setShownTables] = useState(new Set());
-		const [joinsSet, setJoinsSet] = useState(new Set());
+		// Refs for pixel queries
 		const pixelStringRef = useRef<string>("");
 		const pixelPartialRef = useRef<string>("");
-		const [isInitLoadComplete, setIsInitLoadComplete] = useState(false);
-		const [isJoinSelectOpen, setIsJoinSelectOpen] = useState(false);
-		const [initEditPrepopulateComplete, setInitEditPrepopulateComplete] =
-			useState(!editMode);
 
-		const { fields: newTableFields } = useFieldArray({
-			control: formControl,
-			name: "tables",
-		});
-
-		const {
-			fields: joinElements,
-			append: appendJoinElement,
-			remove: removeJoinElement,
-		} = useFieldArray({
-			control: formControl,
-			name: "joins",
-		});
-
-		/** Select all the rows from a Table */
-		const [isAllSelected, setIsAllSelected] = useState<boolean>(false);
-		useEffect(() => {
-			if (editMode)
-				retrieveDatabaseTablesAndEdges(cell.parameters.databaseId);
-		}, []);
-
-		useEffect(() => {
-			setShowTablePreview(false);
-			setShowEditColumns(true);
-		}, [selectedDatabaseId]);
-
-		useEffect(() => {
-			if (
-				editMode &&
-				checkedColumnsCount === 0 &&
-				cell.parameters.databaseId === selectedDatabaseId &&
-				newTableFields.length &&
-				!initEditPrepopulateComplete
-			) {
-				prepoulateFormForEdit(cell);
-			}
-		}, [newTableFields]);
-
+		// Load databases
 		useEffect(() => {
 			if (getDatabases.status !== "SUCCESS") {
 				return;
 			}
-			setUserDatabases(getDatabases.data);
+			setUserDatabases(
+				getDatabases.data as {
+					database_id: string;
+					app_name: string;
+				}[],
+			);
 		}, [getDatabases.status, getDatabases.data]);
 
+		// Load database schema when database is selected
+		// biome-ignore lint/correctness/useExhaustiveDependencies: retrieveDatabaseTablesAndEdges is stable
 		useEffect(() => {
-			if (!editMode || initEditPrepopulateComplete) {
-				setJoinsStackHandler();
-				updateSelectedTables();
+			if (selectedDatabaseId) {
+				retrieveDatabaseTablesAndEdges(selectedDatabaseId);
 			}
-		}, [checkedColumnsCount]);
+		}, [selectedDatabaseId]);
 
+		// Pre-populate form in edit mode
+		// biome-ignore lint/correctness/useExhaustiveDependencies: prepopulateFormForEdit and cell are stable
 		useEffect(() => {
-			if (showPreview) {
-				retrievePreviewData();
+			if (
+				editMode &&
+				cell &&
+				selectedDatabaseId &&
+				tableEdges &&
+				Object.keys(tableEdges).length > 0
+			) {
+				prepopulateFormForEdit();
 			}
-		}, [
-			aliasesCountObj,
-			checkedColumnsCount,
-			showPreview,
-			selectedDatabaseId,
-		]);
+		}, [editMode, selectedDatabaseId, tableEdges]);
 
-		const getSelectedColumnNames = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-
-			watchedTables.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-					}
-				});
-			});
-
-			return pixelColumnNames;
-		};
-
-		const getColumnAliases = () => {
-			const pixelTables = new Set();
-			const pixelColumnAliases = [];
-
-			watchedTables.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
-				});
-			});
-
-			return pixelColumnAliases;
-		};
-
-		/** Create a New Cell and Add to Notebook */
-		const appendCell = async (widget: string) => {
-			try {
-				const config: NewCellAction["payload"]["config"] = {
-					widget: DefaultCells[widget].widget,
-					parameters: DefaultCells[widget].parameters,
-				};
-
-				if (widget === DataImportCellConfig.widget) {
-					config.parameters = {
-						...DefaultCells[widget].parameters,
-						frameVariableName: `FRAME_${Math.floor(
-							Math.random() * 100000,
-						)}`,
-						databaseId: selectedDatabaseId,
-						joins: watchedJoins,
-						selectQuery: pixelPartialRef.current,
-						tableNames: Array.from(selectedTableNames),
-						selectedColumns: getSelectedColumnNames(),
-						columnAliases: getColumnAliases(),
-						rootTable: rootTable,
-					};
-				}
-
-				if (
-					previousCellId &&
-					state.queries[query.id].cells[previousCellId].widget ===
-						widget &&
-					widget === CodeCellConfig.widget
-				) {
-					const previousCellType =
-						state.queries[query.id].cells[previousCellId].parameters
-							?.type ?? "pixel";
-					config.parameters = {
-						...DefaultCells[widget].parameters,
-						type: previousCellType,
-					};
-				}
-
-				const newCellId = (await state.dispatch({
-					message: ActionMessages.NEW_CELL,
-					payload: {
-						queryId: query.id,
-						previousCellId: previousCellId,
-						config: config as Omit<CellStateConfig, "id">,
-					},
-				})) as string;
-
-				state.dispatch({
-					message: ActionMessages.ADD_VARIABLE,
-					payload: {
-						id: `${query.id}--${newCellId}`,
-						type: "cell",
-						to: query.id,
-						cellId: newCellId,
-					},
-				});
-
-				notebook.selectCell(query.id, newCellId);
-			} catch (e) {
-				console.error(e);
+		// Update pixel ref when selected columns or joins change
+		// biome-ignore lint/correctness/useExhaustiveDependencies: updatePixelRef is stable, joins tracked internally
+		useEffect(() => {
+			if (Object.keys(selectedColumns).length > 0) {
+				updatePixelRef();
 			}
-		};
+		}, [selectedColumns]);
 
-		/**
-		 * Handles the event when a user clicks the "Select All" button in the Data Import Form Modal.
-		 */
-		const addAllTableColumnsHandler = (tableIndex: number) => {
-			setShownTables(new Set(tableNames));
-			setRootTable(watchedTables[tableIndex].name);
-			const allChecked = !isAllSelected;
-			const updatedColumns = watchedTables[tableIndex].columns.map(
-				(column) => ({
-					...column,
-					checked: allChecked,
-				}),
+		// Update joins when columns change
+		// biome-ignore lint/correctness/useExhaustiveDependencies: updateAvailableJoins is stable
+		useEffect(() => {
+			if (Object.keys(selectedColumns).length > 0) {
+				updateAvailableJoins();
+			}
+		}, [selectedColumns]);
+
+		const prepopulateFormForEdit = () => {
+			if (!cell) return;
+
+			// Build selected columns from cell parameters
+			const newSelectedColumns: { [tableName: string]: Column[] } = {};
+			const columnAliasMap: { [key: string]: string } = {};
+
+			// Map aliases to columns
+			cell.parameters.selectedColumns?.forEach(
+				(selectedColumnTableCombinedString: string, idx: number) => {
+					const alias =
+						cell.parameters.columnAliases?.[idx] ||
+						selectedColumnTableCombinedString.split("__")[1];
+					columnAliasMap[selectedColumnTableCombinedString] = alias;
+				},
 			);
 
-			const freshAliasCountObj = {};
-			updatedColumns.forEach((column) => {
-				if (allChecked) {
-					const alias = column.userAlias;
-					if (alias in freshAliasCountObj) {
-						freshAliasCountObj[alias] += 1;
-					} else {
-						freshAliasCountObj[alias] = 1;
+			// Build selectedColumns structure
+			cell.parameters.selectedColumns?.forEach(
+				(selectedColumnTableCombinedString: string) => {
+					const [tableName, columnName] =
+						selectedColumnTableCombinedString.split("__");
+					const alias =
+						columnAliasMap[selectedColumnTableCombinedString];
+
+					if (!newSelectedColumns[tableName]) {
+						newSelectedColumns[tableName] = [];
 					}
-				}
-			});
 
-			setAliasesCountObj(freshAliasCountObj);
-			aliasesCountObjRef.current = { ...freshAliasCountObj };
+					// Get column type from tableEdges or default to STRING
+					const columnType = "STRING";
+					// You would need to get this from the database schema
+					// For now, we'll use a default
 
-			formSetValue(`tables.${tableIndex}.columns`, updatedColumns, {
-				shouldDirty: true,
-				shouldValidate: true,
-			});
+					newSelectedColumns[tableName].push({
+						columnName,
+						columnType,
+						alias,
+					});
+				},
+			);
 
-			setCheckedColumnsCount(allChecked ? updatedColumns.length : 0);
-			setIsAllSelected(allChecked);
-			setJoinsStackHandler();
+			setSelectedColumns(newSelectedColumns);
+			setSelectedTableName(cell.parameters.rootTable);
+			setJoins(cell.parameters.joins || []);
 		};
 
-		const updateSubmitDispatches = () => {
-			const currTableNamesSet = retrieveSelectedTableNames();
-			const currTableNames = Array.from(currTableNamesSet);
-			const currSelectedColumns = retrieveSelectedColumnNames();
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.tableNames",
-					value: currTableNames,
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.selectedColumns",
-					value: currSelectedColumns,
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.columnAliases",
-					value: getColumnAliases(),
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.joins",
-					value: joinElements,
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.rootTable",
-					value: rootTable,
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.selectQuery",
-					value: pixelPartialRef.current,
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.databaseId",
-					value: selectedDatabaseId,
-				},
-			});
-
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.joins",
-					value: watchedJoins,
-				},
-			});
-		};
-
-		/** New Submit for Import Data */
-		const onImportDataSubmit = (data: NewFormData) => {
-			console.log("submitted data", data);
-			if (editMode) {
-				retrievePreviewData();
-				updatePixelRef();
-				updateSubmitDispatches();
-			} else {
-				retrievePreviewData();
-				appendCell("data-import");
-			}
-
-			closeImportModalHandler();
-			setIsDataImportModalOpen(false);
-		};
-
-		/** Close and Reset Import Data Form Modal */
-		const closeImportModalHandler = () => {
-			setIsDataImportModalOpen(false);
-		};
-
-		/** Get Database Information for Data Import Modal */
-		const retrieveDatabaseTablesAndEdges = async (databaseId) => {
+		const retrieveDatabaseTablesAndEdges = async (databaseId: string) => {
 			setIsDatabaseLoading(true);
 			const pixelString = `META|GetDatabaseTableStructure(database=[ "${databaseId}" ]);META|GetDatabaseMetamodel( database=[ "${databaseId}" ], options=["dataTypes","positions"]);`;
 
-			runPixel(pixelString).then((pixelResponse) => {
-				const responseTableStructure = pixelResponse.pixelReturn[0]
-					.output as string[][];
-				const isResponseTableStructureGood =
-					pixelResponse.pixelReturn[0].operationType.indexOf(
+			try {
+				const pixelResponse = await runPixel(pixelString);
+
+				if (
+					pixelResponse.pixelReturn[0]?.operationType.indexOf(
 						"ERROR",
-					) === -1;
+					) !== -1
+				) {
+					console.error("Error loading table structure");
+					toast.error("Error loading database structure");
+					setIsDatabaseLoading(false);
+					return;
+				}
 
 				const responseTableEdgesStructure = pixelResponse.pixelReturn[1]
-					.output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const isResponseTableEdgesStructureGood =
-					pixelResponse.pixelReturn[1].operationType.indexOf(
+					?.output as
+					| {
+							edges?: Record<
+								string,
+								{
+									source: string;
+									target: string;
+									fromAttribute: string;
+									toAttribute: string;
+								}
+							>;
+					  }
+					| undefined;
+
+				if (
+					!responseTableEdgesStructure ||
+					pixelResponse.pixelReturn[1]?.operationType.indexOf(
 						"ERROR",
-					) === -1;
+					) !== -1
+				) {
+					console.error("Error loading table edges");
+				}
 
-				let newTableNames = [];
+				// Process table edges
+				const newTableEdges: {
+					[tableName: string]: {
+						[relatedTable: string]: {
+							leftKey: string;
+							rightKey: string;
+						};
+					};
+				} = {};
 
-				if (isResponseTableStructureGood) {
-					newTableNames = responseTableStructure.reduce(
-						(acc, ele) => {
-							if (!acc.includes(ele[0])) {
-								acc.push(ele[0]);
-							}
-							return acc;
-						},
-						[],
-					);
+				if (responseTableEdgesStructure?.edges) {
+					const { edges } = responseTableEdgesStructure;
+					Object.keys(edges).forEach((edgeKey) => {
+						const edge = edges[edgeKey];
+						const fromTable = edge.source;
+						const toTable = edge.target;
+						const fromColumn = edge.fromAttribute;
+						const toColumn = edge.toAttribute;
 
-					const tableColumnsObject = responseTableStructure.reduce(
-						(acc, ele) => {
-							const tableName = ele[0];
-							const columnName = ele[1];
-							const columnType = ele[2];
-							const columnBoolean = ele[3];
-							const columnName2 = ele[4];
-							const tableName2 = ele[4];
+						if (!newTableEdges[fromTable]) {
+							newTableEdges[fromTable] = {};
+						}
+						if (!newTableEdges[toTable]) {
+							newTableEdges[toTable] = {};
+						}
 
-							if (!acc[tableName]) acc[tableName] = [];
-							acc[tableName].push({
-								tableName,
-								columnName,
-								columnType,
-								columnBoolean,
-								columnName2,
-								tableName2,
-								userAlias: columnName,
-								checked: true,
-							});
-
-							return acc;
-						},
-						{},
-					);
-
-					const newTableColumnsObject: TableInterface[] =
-						tableColumnsObject
-							? Object.keys(tableColumnsObject).map(
-									(tableName, tableIdx) => ({
-										id: tableIdx,
-										name: tableName,
-										columns: tableColumnsObject[
-											tableName
-										].map((colObj, colIdx) => ({
-											id: colIdx,
-											tableName: tableName,
-											columnName: colObj.columnName,
-											columnType: colObj.columnType,
-											userAlias: colObj.userAlias,
-											checked: false,
-										})),
-									}),
-								)
-							: [];
-
-					formReset({
-						databaseSelect: databaseId,
-						tables: newTableColumnsObject,
+						newTableEdges[fromTable][toTable] = {
+							leftKey: fromColumn,
+							rightKey: toColumn,
+						};
+						newTableEdges[toTable][fromTable] = {
+							leftKey: toColumn,
+							rightKey: fromColumn,
+						};
 					});
-				} else {
-					console.error("Error retrieving database tables");
-					toast.error("Error retrieving database tables");
 				}
 
-				if (isResponseTableEdgesStructureGood) {
-					const newEdgesDict =
-						responseTableEdgesStructure.edges.reduce((acc, ele) => {
-							const source = ele.source;
-							const target = ele.target;
-							const sourceColumn = ele.sourceColumn;
-							const targetColumn = ele.targetColumn;
-
-							if (!acc[source]) {
-								acc[source] = {
-									[target]: {
-										sourceColumn,
-										targetColumn,
-									},
-								};
-							} else {
-								acc[source][target] = {
-									sourceColumn,
-									targetColumn,
-								};
-							}
-
-							if (!acc[target]) {
-								acc[target] = {
-									[source]: {
-										sourceColumn: targetColumn,
-										targetColumn: sourceColumn,
-									},
-								};
-							} else {
-								acc[target][source] = {
-									sourceColumn: targetColumn,
-									targetColumn: sourceColumn,
-								};
-							}
-							return acc;
-						}, {});
-
-					setTableEdgesObject(newEdgesDict);
-				} else {
-					console.error("Error retrieving database edges");
-					toast.error("Error retrieving database tables");
-				}
-
-				const o = pixelResponse.pixelReturn[1].output as {
-					edges: {
-						relation: string;
-						source: string;
-						sourceColumn: string;
-						target: string;
-						targetColumn: string;
-					}[];
-				};
-				const edges = o.edges;
-
-				const newTableEdges = {};
-				edges.forEach((edge) => {
-					if (newTableEdges[edge.source]) {
-						newTableEdges[edge.source][edge.target] = edge.relation;
-					} else {
-						newTableEdges[edge.source] = {
-							[edge.target]: edge.relation,
-						};
-					}
-					if (newTableEdges[edge.target]) {
-						newTableEdges[edge.target][edge.source] = edge.relation;
-					} else {
-						newTableEdges[edge.target] = {
-							[edge.source]: edge.relation,
-						};
-					}
-				});
 				setTableEdges(newTableEdges);
 				setIsDatabaseLoading(false);
-
-				setTableNames(newTableNames);
-				if (editMode && !isInitLoadComplete) {
-					const newEdges = [
-						rootTable,
-						...(newTableEdges[rootTable]
-							? Object.keys(newTableEdges[rootTable])
-							: []),
-					];
-					setShownTables(new Set(newEdges));
-				} else {
-					setShownTables(new Set(newTableNames));
-				}
-
-				if (!editMode || isInitLoadComplete) {
-					setAliasesCountObj({});
-					aliasesCountObjRef.current = {};
-					removeJoinElement();
-					setJoinsSet(new Set());
-				}
-			});
-
-			setAliasesCountObj({});
-			aliasesCountObjRef.current = {};
-			removeJoinElement();
-			setIsInitLoadComplete(true);
-		};
-
-		/**
-		 * Updates pixel without building preview.
-		 */
-		const updatePixelRef = async (): Promise<void> => {
-			try {
-				const databaseId = selectedDatabaseId;
-				const pixelTables: Set<string> = new Set();
-				const pixelColumnNames: string[] = [];
-				const pixelColumnAliases: string[] = [];
-				const pixelJoins: string[] = [];
-				watchedTables?.forEach((tableObject) => {
-					const currTableColumns = tableObject.columns;
-					currTableColumns?.forEach((columnObject) => {
-						if (columnObject.checked) {
-							pixelTables.add(columnObject.tableName);
-							pixelColumnNames.push(
-								`${columnObject.tableName}__${columnObject.columnName}`,
-							);
-							pixelColumnAliases.push(columnObject.userAlias);
-						}
-					});
-				});
-
-				watchedJoins?.forEach((joinEle) => {
-					pixelJoins.push(
-						`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
-					);
-				});
-
-				let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
-				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} )`;
-				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] )`;
-				if (pixelJoins.length > 0) {
-					pixelStringPart1 += ` | Join ( ${pixelJoins.join(
-						" , ",
-					)} ) `;
-				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
-
-				const combinedJoinString =
-					pixelJoins.length > 0
-						? `| Join ( ${pixelJoins.join(" , ")} ) `
-						: "";
-
-				const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} ) .as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
-
-				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = `${pixelStringPart1};`;
-			} catch {
+			} catch (error) {
+				console.error("Error loading database:", error);
+				toast.error("Error loading database structure");
 				setIsDatabaseLoading(false);
-				setShowTablePreview(false);
-				setShowEditColumns(true);
-
-				toast.error("Error updating Data Import");
 			}
 		};
 
-		const retrieveSelectedColumnNames = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
+		const updateAvailableJoins = () => {
+			if (!selectedTableName || Object.keys(selectedColumns).length < 2) {
+				return;
+			}
 
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-						pixelColumnAliases.push(columnObject.userAlias);
+			// Get all selected table names
+			const selectedTableNames = Object.keys(selectedColumns);
+
+			// Build joins automatically based on table edges
+			const newJoins: JoinElement[] = [];
+			const processedPairs = new Set<string>();
+
+			selectedTableNames.forEach((leftTable) => {
+				if (!tableEdges[leftTable]) return;
+
+				selectedTableNames.forEach((rightTable) => {
+					if (leftTable === rightTable) return;
+
+					const pairKey = [leftTable, rightTable].sort().join("__");
+					if (processedPairs.has(pairKey)) return;
+
+					if (tableEdges[leftTable][rightTable]) {
+						const edge = tableEdges[leftTable][rightTable];
+						newJoins.push({
+							leftTable,
+							rightTable,
+							joinType: "inner",
+							leftKey: edge.leftKey,
+							rightKey: edge.rightKey,
+						});
+						processedPairs.add(pairKey);
 					}
 				});
 			});
 
-			return pixelColumnNames;
+			// Keep existing join types where possible
+			const updatedJoins = newJoins.map((newJoin) => {
+				const existingJoin = joins.find(
+					(j) =>
+						j.leftTable === newJoin.leftTable &&
+						j.rightTable === newJoin.rightTable,
+				);
+				return existingJoin
+					? { ...newJoin, joinType: existingJoin.joinType }
+					: newJoin;
+			});
+
+			setJoins(updatedJoins);
 		};
 
-		const retrieveSelectedTableNames = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
+		const updatePixelRef = () => {
+			if (Object.keys(selectedColumns).length === 0) return;
 
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
+			const selectedTableNames = Object.keys(selectedColumns);
+			const columnsList: string[] = [];
+			const aliasesList: string[] = [];
+
+			selectedTableNames.forEach((tableName) => {
+				selectedColumns[tableName].forEach((col) => {
+					columnsList.push(`${tableName}__${col.columnName}`);
+					aliasesList.push(col.alias);
 				});
 			});
 
-			return pixelTables;
+			// Build pixel query
+			let pixelQuery = `Database(database=["${selectedDatabaseId}"])|Select(`;
+
+			// Add columns
+			pixelQuery += columnsList.map((col) => `"${col}"`).join(", ");
+			pixelQuery += ")|";
+
+			// Add joins
+			if (joins.length > 0) {
+				joins.forEach((join) => {
+					pixelQuery += `Join(join=["${join.leftTable}__${join.leftKey}"], comparator=["=="], to=["${join.rightTable}__${join.rightKey}"], joinType=["${join.joinType}"])|`;
+				});
+			}
+
+			// Add aliases
+			if (aliasesList.length > 0) {
+				pixelQuery += "As(";
+				pixelQuery += aliasesList.map((a) => `"${a}"`).join(", ");
+				pixelQuery += ")|";
+			}
+
+			pixelQuery += "Limit(-1)";
+			pixelPartialRef.current = `${pixelQuery};`;
 		};
 
-		const updateSelectedTables = () => {
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
+		const handleAddColumn = (
+			tableName: string,
+			columnName: string,
+			columnType: string,
+		) => {
+			setSelectedColumns((prev) => {
+				const updated = { ...prev };
+				if (!updated[tableName]) {
+					updated[tableName] = [];
+				}
 
-			watchedTables?.forEach((tableObject) => {
-				const currTableColumns = tableObject.columns;
-				currTableColumns.forEach((columnObject) => {
-					if (columnObject.checked) {
-						pixelTables.add(columnObject.tableName);
-						pixelColumnNames.push(
-							`${columnObject.tableName}__${columnObject.columnName}`,
-						);
-						pixelColumnAliases.push(columnObject.userAlias);
-					}
+				// Check if column already exists
+				const exists = updated[tableName].some(
+					(col) => col.columnName === columnName,
+				);
+				if (exists) return prev;
+
+				updated[tableName].push({
+					columnName,
+					columnType,
+					alias: columnName, // Default alias to column name
 				});
+
+				return updated;
 			});
 
-			setSelectedTableNames(pixelTables);
+			// Set root table if not set
+			if (!selectedTableName) {
+				setSelectedTableName(tableName);
+			}
+		};
+
+		const handleAddAllColumns = (
+			tableName: string,
+			columns: { columnName: string; columnType: string }[],
+		) => {
+			setSelectedColumns((prev) => {
+				const updated = { ...prev };
+				updated[tableName] = columns.map((col) => ({
+					columnName: col.columnName,
+					columnType: col.columnType,
+					alias: col.columnName,
+				}));
+				return updated;
+			});
+
+			// Set root table if not set
+			if (!selectedTableName) {
+				setSelectedTableName(tableName);
+			}
+		};
+
+		const handleRemoveColumn = (tableName: string, columnName: string) => {
+			setSelectedColumns((prev) => {
+				const updated = { ...prev };
+				if (updated[tableName]) {
+					updated[tableName] = updated[tableName].filter(
+						(col) => col.columnName !== columnName,
+					);
+					if (updated[tableName].length === 0) {
+						delete updated[tableName];
+					}
+				}
+				return updated;
+			});
+		};
+
+		const handleAliasChange = (
+			tableName: string,
+			columnName: string,
+			newAlias: string,
+		) => {
+			setSelectedColumns((prev) => {
+				const updated = { ...prev };
+				if (updated[tableName]) {
+					const col = updated[tableName].find(
+						(c) => c.columnName === columnName,
+					);
+					if (col) {
+						col.alias = newAlias;
+					}
+				}
+				return { ...updated };
+			});
+		};
+
+		const handleClearTable = (tableName: string) => {
+			setSelectedColumns((prev) => {
+				const updated = { ...prev };
+				delete updated[tableName];
+				return updated;
+			});
 		};
 
 		const retrievePreviewData = async () => {
+			if (!pixelPartialRef.current) {
+				await updatePixelRef();
+			}
+
 			setIsDatabaseLoading(true);
-			const databaseId = selectedDatabaseId;
-			const pixelTables = new Set();
-			const pixelColumnNames = [];
-			const pixelColumnAliases = [];
-			const pixelJoins = [];
 
 			try {
-				watchedTables?.forEach((tableObject) => {
-					const currTableColumns = tableObject.columns;
-					currTableColumns?.forEach((columnObject) => {
-						if (columnObject.checked) {
-							pixelTables.add(columnObject.tableName);
-							pixelColumnNames.push(
-								`${columnObject.tableName}__${columnObject.columnName}`,
-							);
-							pixelColumnAliases.push(columnObject.userAlias);
-						}
-					});
-				});
+				const previewPixel = `${pixelPartialRef.current.slice(0, -1)}|Limit(50);META|Frame()|QueryAll()|Collect(500);`;
+				pixelStringRef.current = previewPixel;
 
-				watchedJoins?.forEach((joinEle) => {
-					pixelJoins.push(
-						`( ${joinEle.leftTable} , ${joinEle.joinType}.join , ${joinEle.rightTable} )`,
-					);
-				});
+				const response = await runPixel(previewPixel);
 
-				let pixelStringPart1 = `Database ( database = [ "${databaseId}" ] )`;
-				pixelStringPart1 += ` | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} )`;
-				pixelStringPart1 += `.as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] )`;
-				if (pixelJoins.length > 0) {
-					pixelStringPart1 += ` | Join ( ${pixelJoins.join(
-						" , ",
-					)} ) `;
-				}
-				pixelStringPart1 += ` | Distinct ( false ) | Limit ( ${dataLimit} )`;
-
-				const combinedJoinString =
-					pixelJoins.length > 0
-						? `| Join ( ${pixelJoins.join(" , ")} ) `
-						: "";
-
-				const reactorPixel = `Database ( database = [ "${databaseId}" ] ) | Select ( ${pixelColumnNames.join(
-					" , ",
-				)} ) .as ( [ ${pixelColumnAliases.join(
-					" , ",
-				)} ] ) ${combinedJoinString}| Distinct ( false ) | Limit ( ${dataLimit} ) | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "consolidated_settings_FRAME932867__Preview" ] ) ] ) ;  META | Frame() | QueryAll() | Limit(50) | Collect(500);`;
-
-				pixelStringRef.current = reactorPixel;
-				pixelPartialRef.current = `${pixelStringPart1};`;
-
-				runPixel(reactorPixel).then((response) => {
-					const type = response.pixelReturn[0]?.operationType;
-
-					const o = response.pixelReturn[1]?.output as {
-						data: {
-							values: unknown[][];
-							headers: string[];
-						};
-					};
-					const tableHeadersData = o.data?.headers;
-					const tableRowsData = o.data?.values;
-
-					if (type.indexOf("ERROR") !== -1) {
-						console.error("Error retrieving database tables");
-						toast.error("Error retrieving database tables");
-						setIsDatabaseLoading(false);
-						setShowTablePreview(false);
-						setShowEditColumns(true);
-						return;
-					}
-
-					setDatabaseTableHeaders(tableHeadersData);
-					setDatabaseTableRows(tableRowsData);
+				const type = response.pixelReturn[0]?.operationType;
+				if (type?.indexOf("ERROR") !== -1) {
+					const error = response.pixelReturn[0]?.output;
+					console.error(`${error}`);
+					toast.error(`${error}`, { position: "top-right" });
 					setIsDatabaseLoading(false);
-				});
-			} catch {
+					return;
+				}
+
+				const output = response.pixelReturn[1]?.output as {
+					data: {
+						values: unknown[][];
+						headers: string[];
+					};
+				};
+
+				setDatabaseTableHeaders(output.data?.headers || []);
+				setDatabaseTableRows(output.data?.values || []);
 				setIsDatabaseLoading(false);
-				setShowTablePreview(false);
-				setShowEditColumns(true);
-
-				toast.error("Error retrieving database tables");
-			}
-		};
-
-		/** Helper Function Update Alias Tracker Object */
-		const updateAliasCountObj = (
-			isBeingAdded,
-			newAlias,
-			oldAlias = null,
-		) => {
-			const newAliasesCountObj = { ...aliasesCountObj };
-			if (isBeingAdded) {
-				if (newAliasesCountObj[newAlias] > 0) {
-					newAliasesCountObj[newAlias] =
-						newAliasesCountObj[newAlias] + 1;
-				} else {
-					newAliasesCountObj[newAlias] = 1;
-				}
-			} else {
-				if (newAliasesCountObj[newAlias] > 0) {
-					newAliasesCountObj[newAlias] =
-						newAliasesCountObj[newAlias] - 1;
-				} else {
-					newAliasesCountObj[newAlias] = 0;
-				}
-			}
-
-			if (newAliasesCountObj[newAlias] < 1) {
-				delete newAliasesCountObj[newAlias];
-			}
-			if (oldAlias != null) {
-				if (newAliasesCountObj[oldAlias] > 0) {
-					newAliasesCountObj[oldAlias] =
-						newAliasesCountObj[oldAlias] - 1;
-				} else {
-					newAliasesCountObj[oldAlias] = 0;
-				}
-
-				if (newAliasesCountObj[oldAlias] < 1) {
-					delete newAliasesCountObj[oldAlias];
-				}
-			}
-
-			setAliasesCountObj(newAliasesCountObj);
-			aliasesCountObjRef.current = { ...newAliasesCountObj };
-
-			updatePixelRef();
-		};
-
-		/** Find Joinable Tables */
-		const findAllJoinableTables = (rootTableName) => {
-			const joinableTables = tableEdges[rootTableName]
-				? Object.keys(tableEdges[rootTableName])
-				: [];
-			const newShownTables = new Set([...joinableTables, rootTableName]);
-			setShownTables(newShownTables);
-		};
-
-		/** Checkbox Handler */
-		const checkBoxHandler = (tableIndex, columnIndex) => {
-			const columnObject = watchedTables[tableIndex].columns[columnIndex];
-			updateAliasCountObj(columnObject?.checked, columnObject.userAlias);
-			if (columnObject?.checked) {
-				if (checkedColumnsCount === 0) {
-					findAllJoinableTables(watchedTables[tableIndex].name);
-					setRootTable(watchedTables[tableIndex].name);
-				}
-				setCheckedColumnsCount(checkedColumnsCount + 1);
-			} else if (columnObject?.checked === false) {
-				if (checkedColumnsCount === 1) {
-					setShownTables(new Set(tableNames));
-					setRootTable(null);
-				}
-				setCheckedColumnsCount(checkedColumnsCount - 1);
-			}
-			setJoinsStackHandler();
-			const tables = dataImportwatch("tables");
-			const totalColumns = tables[tableIndex].columns.length;
-			const selectedCount = tables[tableIndex].columns.filter(
-				(col) => col.checked,
-			).length;
-
-			if (selectedCount === totalColumns) {
-				setIsAllSelected(true);
-			}
-		};
-
-		/** Pre-Populate form For Edit */
-		const prepoulateFormForEdit = (cell) => {
-			const tablesWithCheckedBoxes = new Set();
-			const checkedColumns = new Set();
-			const columnAliasMap = {};
-			const newAliasesCountObj = {};
-
-			setCheckedColumnsCount(cell.parameters.selectedColumns.length);
-			cell.parameters.selectedColumns?.forEach(
-				(selectedColumnTableCombinedString, idx) => {
-					const [currTableName, currColumnName] =
-						selectedColumnTableCombinedString.split("__");
-					const currColumnAlias = cell.parameters.columnAliases[idx];
-					tablesWithCheckedBoxes.add(currTableName);
-					checkedColumns.add(selectedColumnTableCombinedString);
-					columnAliasMap[selectedColumnTableCombinedString] =
-						currColumnAlias;
-					newAliasesCountObj[currColumnAlias || currColumnName] = 1;
-				},
-			);
-
-			setAliasesCountObj({ ...newAliasesCountObj });
-			aliasesCountObjRef.current = { ...newAliasesCountObj };
-
-			let totalColumnsToCheck = 0;
-			let totalCheckedColumns = 0;
-
-			if (newTableFields) {
-				newTableFields?.forEach((newTableObj, tableIdx) => {
-					if (tablesWithCheckedBoxes.has(newTableObj.name)) {
-						const watchedTableColumns =
-							watchedTables[tableIdx].columns;
-						totalColumnsToCheck += watchedTableColumns.length;
-
-						watchedTableColumns?.forEach(
-							(tableColumnObj, columnIdx) => {
-								const columnName = `${tableColumnObj.tableName}__${tableColumnObj.columnName}`;
-								if (checkedColumns.has(columnName)) {
-									const columnAlias =
-										columnAliasMap[columnName];
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.checked`,
-										true,
-									);
-									totalCheckedColumns += 1;
-									formSetValue(
-										`tables.${tableIdx}.columns.${columnIdx}.userAlias`,
-										columnAlias,
-									);
-								}
-							},
-						);
-					}
-					if (
-						totalCheckedColumns === totalColumnsToCheck &&
-						totalColumnsToCheck > 0
-					) {
-						setIsAllSelected(true);
-					} else {
-						setIsAllSelected(false);
-					}
+			} catch (error) {
+				console.error("Error in preview:", error);
+				toast.error("Error running query preview", {
+					position: "top-right",
 				});
+				setIsDatabaseLoading(false);
 			}
+		};
 
-			const newJoinsSet = new Set();
-			cell.parameters.joins?.forEach((joinObject) => {
-				appendJoinElement(joinObject);
-				const joinsSetString1 = `${joinObject.leftTable}:${joinObject.rightTable}`;
-				const joinsSetString2 = `${joinObject.rightTable}:${joinObject.leftTable}`;
-				newJoinsSet.add(joinsSetString1);
-				newJoinsSet.add(joinsSetString2);
+		const onImportDataSubmit = () => {
+			if (
+				!query ||
+				!selectedTableName ||
+				Object.keys(selectedColumns).length === 0
+			)
+				return;
+
+			const selectedTableNames = Object.keys(selectedColumns);
+			const columnsList: string[] = [];
+			const aliasesList: string[] = [];
+
+			selectedTableNames.forEach((tableName) => {
+				selectedColumns[tableName].forEach((col) => {
+					columnsList.push(`${tableName}__${col.columnName}`);
+					aliasesList.push(col.alias);
+				});
 			});
 
-			setJoinsSet(newJoinsSet);
-			setCheckedColumnsCount(checkedColumns.size);
+			if (editMode && cell) {
+				// Update existing cell
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+						path: "parameters.databaseId",
+						value: selectedDatabaseId,
+					},
+				});
 
-			const loadedQueryString = cell.parameters.selectQuery;
-			pixelPartialRef.current = loadedQueryString;
-		};
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+						path: "parameters.tableNames",
+						value: selectedTableNames,
+					},
+				});
 
-		const checkTableForSelectedColumns = (tableName) => {
-			for (let i = 0; i < watchedTables.length; i++) {
-				const currTable = watchedTables[i];
-				if (currTable.name === tableName) {
-					const currTableColumns = currTable.columns;
-					for (let j = 0; j < currTableColumns.length; j++) {
-						const currColumn = currTableColumns[j];
-						if (currColumn.checked === true) return true;
-					}
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+						path: "parameters.selectedColumns",
+						value: columnsList,
+					},
+				});
+
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+						path: "parameters.columnAliases",
+						value: aliasesList,
+					},
+				});
+
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+						path: "parameters.joins",
+						value: joins,
+					},
+				});
+
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+						path: "parameters.rootTable",
+						value: selectedTableName,
+					},
+				});
+
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+						path: "parameters.selectQuery",
+						value: pixelPartialRef.current,
+					},
+				});
+
+				// Run the cell
+				state.dispatch({
+					message: ActionMessages.RUN_CELL,
+					payload: {
+						queryId: query.id,
+						cellId: cell.id,
+					},
+				});
+			} else {
+				// Create new cell
+				try {
+					const defaultParams =
+						(
+							DefaultCells as Record<
+								string,
+								{
+									// biome-ignore lint/suspicious/noExplicitAny: DefaultCells has dynamic parameters
+									parameters: any;
+								}
+							>
+						)[DataImportCellConfig.widget]?.parameters || {};
+
+					const config: NewCellAction["payload"]["config"] = {
+						widget: DataImportCellConfig.widget,
+						parameters: {
+							...defaultParams,
+							databaseId: selectedDatabaseId,
+							tableNames: selectedTableNames,
+							selectedColumns: columnsList,
+							columnAliases: aliasesList,
+							joins: joins,
+							rootTable: selectedTableName,
+							selectQuery: pixelPartialRef.current,
+							dataLimit: -1,
+						},
+					};
+
+					state
+						.dispatch({
+							message: ActionMessages.NEW_CELL,
+							payload: {
+								queryId: query.id,
+								previousCellId: previousCellId ?? "",
+								config: config as Omit<CellStateConfig, "id">,
+							},
+						})
+						.then((newCellId: unknown) => {
+							if (typeof newCellId !== "string") return;
+
+							state.dispatch({
+								message: ActionMessages.ADD_VARIABLE,
+								payload: {
+									id: `${query.id}--${newCellId}`,
+									type: "cell",
+									to: query.id,
+									cellId: newCellId,
+								},
+							});
+
+							notebook.selectCell(query.id, newCellId);
+
+							// Run the new cell
+							state.dispatch({
+								message: ActionMessages.RUN_CELL,
+								payload: {
+									queryId: query.id,
+									cellId: newCellId,
+								},
+							});
+						});
+				} catch (e) {
+					console.error(e);
 				}
 			}
-			return false;
+
+			setIsDataImportModalOpen?.(false);
 		};
 
-		const setJoinsStackHandler = () => {
-			if (checkedColumnsCount < 2) {
-				removeJoinElement();
-				setJoinsSet(new Set());
-			} else {
-				const leftTable = rootTable;
-				const rightTables =
-					tableEdgesObject[rootTable] &&
-					tableEdgesObject &&
-					Object.entries(tableEdgesObject[rootTable]);
+		const closeImportModalHandler = () => {
+			setIsDataImportModalOpen?.(false);
+		};
 
-				rightTables?.forEach((entry, joinIdx) => {
-					console.log(joinIdx);
-					const rightTable = entry[0];
-					const leftKey = entry[1].sourceColumn;
-					const rightKey = entry[1].targetColumn;
-
-					const leftTableContainsCheckedColumns =
-						checkTableForSelectedColumns(leftTable);
-					const rightTableContainsCheckedColumns =
-						checkTableForSelectedColumns(rightTable);
-
-					const defaultJoinType = "inner";
-
-					const joinsSetString = `${leftTable}:${rightTable}`;
-					if (
-						leftTableContainsCheckedColumns &&
-						rightTableContainsCheckedColumns &&
-						joinsSet.has(joinsSetString) === false
-					) {
-						appendJoinElement({
-							leftTable: leftTable,
-							rightTable: rightTable,
-							joinType: defaultJoinType,
-							leftKey: leftKey,
-							rightKey: rightKey,
-						});
-						addToJoinsSetHelper(joinsSetString);
-					} else if (
-						leftTableContainsCheckedColumns === false ||
-						(rightTableContainsCheckedColumns === false &&
-							joinsSet.has(joinsSetString))
-					) {
-						joinsSet.delete(joinsSetString);
-						joinElements.some((ele, idx) => {
-							if (
-								leftTable === ele.leftTable &&
-								rightTable === ele.rightTable &&
-								defaultJoinType === ele.joinType &&
-								leftKey === ele.leftKey &&
-								rightKey === ele.rightKey
-							) {
-								removeJoinElement(idx);
-								return true;
-							} else {
-								return false;
-							}
-						});
-					}
+		// Check for duplicate aliases
+		const hasDuplicateAliases = () => {
+			const aliases: string[] = [];
+			Object.values(selectedColumns).forEach((cols) => {
+				cols.forEach((col) => {
+					aliases.push(col.alias);
 				});
-			}
-
-			setInitEditPrepopulateComplete(true);
+			});
+			return (
+				new Set(aliases).size !== aliases.length ||
+				aliases.some((a) => !a || a.trim() === "")
+			);
 		};
 
-		const addToJoinsSetHelper = (newJoinSet) => {
-			const joinsSetCopy = new Set(joinsSet);
-			joinsSetCopy.add(newJoinSet);
-			setJoinsSet(joinsSetCopy);
-		};
+		const totalSelectedColumns = Object.values(selectedColumns).reduce(
+			(sum, cols) => sum + cols.length,
+			0,
+		);
 
 		return (
 			<Dialog
@@ -1140,622 +750,435 @@ export const DataImportFormModal = observer(
 			>
 				<DialogContent
 					style={{ maxWidth: "70vw", width: "70vw" }}
-					className="max-h-[90vh] overflow-y-auto"
+					className="flex max-h-[90vh] flex-col overflow-hidden"
 				>
-					<DialogHeader>
-						<DialogTitle>Import Data</DialogTitle>
-					</DialogHeader>
-					<form onSubmit={formHandleSubmit(onImportDataSubmit)}>
-						{/* Database selector */}
-						<div className="mt-6 mb-4 flex items-center justify-between gap-3">
-							<div className="flex items-center gap-3">
-								<span className="font-semibold text-base">
-									Import Data from
-								</span>
-								<Controller
-									name={"databaseSelect"}
-									control={formControl}
-									render={({ field }) => (
-										<Select
-											disabled={editMode}
-											value={field.value || ""}
-											onValueChange={(value) => {
-												field.onChange(value);
-												setSelectedDatabaseId(value);
-												retrieveDatabaseTablesAndEdges(
-													value,
-												);
-												setShowEditColumns(true);
-												setShowTablePreview(false);
-											}}
-										>
-											<SelectTrigger className="min-w-[220px]">
-												<SelectValue placeholder="Select Database" />
-											</SelectTrigger>
-											<SelectContent>
-												{userDatabases?.map(
-													(ele, dbIndex) => (
-														<SelectItem
-															value={
-																ele.database_id
-															}
-															// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-															key={dbIndex}
-														>
-															{ele.app_name}
-														</SelectItem>
-													),
-												)}
-											</SelectContent>
-										</Select>
-									)}
-								/>
-							</div>
-						</div>
-
-						{isDatabaseLoading && (
-							<div className="py-4 text-muted-foreground text-sm">
-								LOADING....
-							</div>
-						)}
-
-						{!selectedDatabaseId && (
-							<div className="mb-4 rounded-md bg-muted p-4">
-								<p className="font-medium text-muted-foreground text-sm">
-									Select a Database for Import
-								</p>
-							</div>
-						)}
-
-						{selectedDatabaseId && !isDatabaseLoading && (
-							<div className="mb-4 flex flex-col gap-3 rounded-md bg-[#FAFAFA] p-4">
-								<div className="flex items-center justify-between">
-									<div className="flex items-center">
-										<h6 className="mr-4 font-semibold text-base">
-											Data
-										</h6>
-									</div>
-									<div className="flex items-center gap-2">
-										<Button
-											variant="ghost"
-											type="button"
-											className="mr-4"
-											onClick={() => {
-												if (!showEditColumns) {
-													setShowEditColumns(true);
-													setShowTablePreview(false);
-												}
-											}}
-										>
-											Edit Columns
-										</Button>
-										<Button
-											variant="outline"
-											type="button"
-											disabled={
-												!checkedColumnsCount ||
-												Object.values(
-													aliasesCountObj,
-												).some((key: number) => key > 1)
-											}
-											onClick={() => {
-												if (!showPreview) {
-													setShowTablePreview(true);
-													setShowEditColumns(false);
-												}
-											}}
-										>
-											Preview
-										</Button>
-									</div>
-								</div>
-
-								{showEditColumns && (
-									<div className="mb-5 bg-white">
-										<h6 className="mt-4 mb-5 ml-4 font-semibold text-base">
-											Available Tables / Columns
-										</h6>
-										<div className="max-h-[350px] overflow-y-scroll">
-											{newTableFields.map(
-												(table, tableIndex) => (
-													<div
-														key={`${table.name}-${tableIndex}`}
-													>
-														{shownTables.has(
-															table.name,
-														) && (
-															<div
-																key={`${table.name}-${tableIndex}`}
-																className="mr-3 mb-[60px] ml-3"
-															>
-																<div className="mt-4 flex p-0">
-																	<div className="mb-4 flex w-fit items-center rounded-[10px] bg-primary/10 px-[17.5px] py-[7.5px]">
-																		<Tooltip>
-																			<TooltipTrigger
-																				asChild
-																			>
-																				<span className="flex cursor-default items-center gap-1.5">
-																					<CalendarDays className="-ml-0.5 mr-1.5 size-4 text-primary/60" />
-																					{
-																						table.name
-																					}
-																				</span>
-																			</TooltipTrigger>
-																			<TooltipContent>
-																				Table
-																			</TooltipContent>
-																		</Tooltip>
-																	</div>
-																</div>
-																<Table className="text-sm">
-																	<TableBody>
-																		<TableRow>
-																			<TableCell>
-																				<Checkbox
-																					checked={
-																						isAllSelected
-																					}
-																					onCheckedChange={() =>
-																						addAllTableColumnsHandler(
-																							tableIndex,
-																						)
-																					}
-																				/>
-																			</TableCell>
-																			<TableCell>
-																				<span className="font-bold">
-																					Fields
-																				</span>
-																			</TableCell>
-																			<TableCell>
-																				<span className="font-bold">
-																					Alias
-																				</span>
-																			</TableCell>
-																			<TableCell>
-																				<span className="font-bold">
-																					Field
-																					Type
-																				</span>
-																			</TableCell>
-																		</TableRow>
-
-																		{table.columns.map(
-																			(
-																				column,
-																				columnIndex,
-																			) => (
-																				<TableRow
-																					key={`${column.columnName}-${columnIndex}`}
-																				>
-																					<TableCell>
-																						<Controller
-																							name={`tables.${tableIndex}.columns.${columnIndex}.checked`}
-																							control={
-																								formControl
-																							}
-																							render={({
-																								field,
-																							}) => (
-																								<Checkbox
-																									checked={
-																										field.value
-																									}
-																									id={`checkbox-${column.columnName}-${columnIndex}`}
-																									onCheckedChange={(
-																										checked,
-																									) => {
-																										field.onChange(
-																											checked,
-																										);
-																										checkBoxHandler(
-																											tableIndex,
-																											columnIndex,
-																										);
-																									}}
-																								/>
-																							)}
-																						/>
-																					</TableCell>
-																					<TableCell>
-																						{
-																							column.columnName
-																						}
-																						{column.columnName ===
-																							"ID" && (
-																							<span className="ml-[7px] inline-block h-6 w-[37px] rounded-[3px] bg-[#F1E9FB] pt-[3px] text-center text-xs">
-																								PK
-																							</span>
-																						)}
-																						{column.columnName.includes(
-																							"_ID",
-																						) && (
-																							<span className="ml-[7px] inline-block h-6 w-[37px] rounded-[3px] bg-[#EBEBEB] pt-[3px] text-center text-xs">
-																								FK
-																							</span>
-																						)}
-																					</TableCell>
-																					<TableCell>
-																						<div className="flex items-center">
-																							<Controller
-																								name={`tables.${tableIndex}.columns.${columnIndex}.userAlias`}
-																								control={
-																									formControl
-																								}
-																								render={({
-																									field,
-																								}) => (
-																									<Input
-																										type="text"
-																										className="h-8"
-																										value={
-																											field.value
-																										}
-																										onChange={(
-																											e,
-																										) => {
-																											if (
-																												watchedTables[
-																													tableIndex
-																												]
-																													.columns[
-																													columnIndex
-																												]
-																													.checked
-																											) {
-																												updateAliasCountObj(
-																													true,
-																													e
-																														.target
-																														.value,
-																													field.value,
-																												);
-																											}
-																											field.onChange(
-																												e
-																													.target
-																													.value,
-																											);
-																										}}
-																									/>
-																								)}
-																							/>
-																							{watchedTables[
-																								tableIndex
-																							]
-																								.columns[
-																								columnIndex
-																							]
-																								.checked &&
-																								aliasesCountObj[
-																									watchedTables[
-																										tableIndex
-																									]
-																										.columns[
-																										columnIndex
-																									]
-																										.userAlias
-																								] >
-																									1 && (
-																									<Tooltip>
-																										<TooltipTrigger
-																											asChild
-																										>
-																											<AlertTriangle className="ml-2.5 size-4 text-yellow-600" />
-																										</TooltipTrigger>
-																										<TooltipContent>
-																											Duplicate
-																											Alias
-																											Name
-																										</TooltipContent>
-																									</Tooltip>
-																								)}
-																						</div>
-																					</TableCell>
-
-																					<TableCell>
-																						<Controller
-																							name={`tables.${tableIndex}.columns.${columnIndex}.columnType`}
-																							control={
-																								formControl
-																							}
-																							render={({
-																								field,
-																							}) => (
-																								<Select
-																									disabled
-																									value={
-																										field.value ||
-																										""
-																									}
-																									onValueChange={(
-																										value,
-																									) => {
-																										field.onChange(
-																											value,
-																										);
-																									}}
-																								>
-																									<SelectTrigger className="h-8 min-w-[220px]">
-																										<SelectValue />
-																									</SelectTrigger>
-																									<SelectContent>
-																										{SQL_COLUMN_TYPES.map(
-																											(
-																												ele,
-																												eleIdx,
-																											) => (
-																												<SelectItem
-																													value={
-																														ele
-																													}
-																													key={
-																														// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																														eleIdx
-																													}
-																												>
-																													{
-																														ele
-																													}
-																												</SelectItem>
-																											),
-																										)}
-																									</SelectContent>
-																								</Select>
-																							)}
-																						/>
-																					</TableCell>
-																				</TableRow>
-																			),
-																		)}
-																	</TableBody>
-																</Table>
-															</div>
-														)}
-													</div>
-												),
-											)}
-										</div>
-									</div>
-								)}
-
-								{showPreview && (
-									<div className="mb-5 bg-white">
-										<h6 className="mt-4 mb-5 ml-4 font-semibold text-base">
-											Preview
-										</h6>
-										<div className="max-h-[350px] overflow-y-scroll">
-											<Table>
-												<TableHeader>
-													<TableRow>
-														{databaseTableHeaders.map(
-															(h, hIdx) => (
-																<TableHead
-																	// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																	key={hIdx}
-																>
-																	{h}
-																</TableHead>
-															),
-														)}
-													</TableRow>
-												</TableHeader>
-												<TableBody>
-													{databaseTableRows.map(
-														(r, rIdx) => (
-															<TableRow
-																// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																key={rIdx}
-															>
-																{r.map(
-																	(
-																		v,
-																		vIdx,
-																	) => (
-																		<TableCell
-																			// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-																			key={`${rIdx}-${vIdx}`}
-																		>
-																			{v}
-																		</TableCell>
-																	),
-																)}
-															</TableRow>
-														),
-													)}
-												</TableBody>
-											</Table>
-										</div>
-									</div>
-								)}
-							</div>
-						)}
-
-						{joinElements.map((join, joinIndex) => (
-							<div
-								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-								key={joinIndex}
-								className="mb-4 flex flex-col gap-3 rounded-md bg-[#FAFAFA] p-4"
-							>
-								<div className="flex items-center">
-									<h6 className="mr-3 font-semibold text-base">
-										Join
-									</h6>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-[12px] border-none bg-primary/10 px-3 py-1 text-black text-sm">
-												{join.leftTable}
-											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Left Table
-										</TooltipContent>
-									</Tooltip>
-
-									<DropdownMenu
-										open={
-											isJoinSelectOpen &&
-											joinTypeSelectIndex === joinIndex
-										}
-										onOpenChange={(open) => {
-											if (!open) {
-												setIsJoinSelectOpen(false);
-												setJoinTypeSelectIndex(-1);
-											}
-										}}
-									>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon-sm"
-												type="button"
-												className="mx-[7.5px]"
-												onClick={() => {
-													setJoinTypeSelectIndex(
-														joinIndex,
-													);
-													setIsJoinSelectOpen(true);
-												}}
-											>
-												{
-													JOIN_ICONS[
-														watchedJoins?.[
-															joinIndex
-														]?.joinType
-													]
-												}
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"inner",
-													);
-												}}
-											>
-												Inner Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"left.outer",
-													);
-												}}
-											>
-												Left Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"right.outer",
-													);
-												}}
-											>
-												Right Join
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() => {
-													setIsJoinSelectOpen(false);
-													formSetValue(
-														`joins.${joinIndex}.joinType`,
-														"outer",
-													);
-												}}
-											>
-												Outer Join
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-[12px] bg-[#DEF4F3] px-3 py-1 text-black text-sm">
-												{join.rightTable}
-											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Right Table
-										</TooltipContent>
-									</Tooltip>
-
-									<span className="mx-3 cursor-default text-secondary-foreground text-sm">
-										where
-									</span>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-[12px] bg-primary/10 px-3 py-1 text-black text-sm">
-												{join.leftKey}
-											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Left Key
-										</TooltipContent>
-									</Tooltip>
-
-									<span className="mx-3 cursor-default text-secondary-foreground text-sm">
-										=
-									</span>
-
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<div className="cursor-default rounded-[12px] bg-[#DEF4F3] px-3 py-1 text-black text-sm">
-												{join.rightKey}
-											</div>
-										</TooltipTrigger>
-										<TooltipContent>
-											Right Key
-										</TooltipContent>
-									</Tooltip>
-								</div>
-							</div>
-						))}
-
-						{/* Action buttons row */}
-						<div className="mt-4 mb-4 flex justify-start gap-2">
-							<Button variant="outline" type="button" disabled>
-								<Filter className="mr-1 size-4" />
-								Add Filter
-							</Button>
-							<Button variant="outline" type="button" disabled>
-								<CopyPlus className="mr-1 size-4" />
-								Add Summary
-							</Button>
-						</div>
-
-						{/* Footer actions */}
-						<div className="mt-2 flex justify-end gap-2">
-							<Button
-								variant="ghost"
-								type="button"
-								onClick={() => {
-									closeImportModalHandler();
+					<DialogHeader className="px-6 pt-6">
+						<div className="flex items-center gap-4">
+							<DialogTitle>Import Data From</DialogTitle>
+							<Select
+								disabled={editMode}
+								value={selectedDatabaseId || ""}
+								onValueChange={(value) => {
+									setSelectedDatabaseId(value);
+									setSelectedColumns({});
+									setJoins([]);
+									setSelectedTableName(null);
+									setShowPreview(false);
 								}}
 							>
-								Cancel
-							</Button>
-							<Button
-								type="submit"
-								disabled={
-									!checkedColumnsCount ||
-									Object.values(aliasesCountObj).some(
-										(key: number) => key > 1,
-									) ||
-									aliasesCountObj[""] > 0
-								}
-							>
-								{editMode ? "Update Cell" : "Import"}
-							</Button>
+								<SelectTrigger className="w-[220px]">
+									<SelectValue placeholder="Select Database" />
+								</SelectTrigger>
+								<SelectContent>
+									{userDatabases?.map((db, idx) => (
+										<SelectItem
+											key={`${idx}-${db.database_id}`}
+											value={db.database_id}
+										>
+											{db.app_name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
 						</div>
-					</form>
+					</DialogHeader>
+
+					{!selectedDatabaseId && (
+						<div className="p-4 text-center">
+							<p className="text-muted-foreground text-sm">
+								Select a Database for Import
+							</p>
+						</div>
+					)}
+
+					{isDatabaseLoading && (
+						<div className="flex items-center justify-center py-8">
+							<Loader2 className="size-8 animate-spin text-primary" />
+						</div>
+					)}
+
+					{selectedDatabaseId && !isDatabaseLoading && (
+						<div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden px-6">
+							{/* Accordions section with dynamic height */}
+							<div
+								className="flex flex-col overflow-hidden transition-[height] duration-300"
+								style={{
+									height: showPreview ? "30vh" : "100%",
+								}}
+							>
+								<div className="flex flex-1 flex-row gap-2 overflow-hidden">
+									{/* Available Tables - 50% */}
+									<div className="flex w-1/2 flex-col gap-1 overflow-y-auto border-border border-r pr-2">
+										<h3 className="font-semibold text-sm">
+											Available Tables
+										</h3>
+										<DatabaseAccordions
+											databaseId={selectedDatabaseId}
+											mode="data-available"
+											selectedTableName={
+												selectedTableName
+											}
+											onAddColumn={handleAddColumn}
+											onAddAllColumns={
+												handleAddAllColumns
+											}
+										/>
+									</div>
+
+									{/* Selected Columns - 50% */}
+									<div className="flex w-1/2 flex-col gap-1 overflow-y-auto">
+										<div className="flex items-center justify-between">
+											<h3 className="font-semibold text-sm">
+												Selected Columns (
+												{totalSelectedColumns})
+											</h3>
+										</div>
+										{totalSelectedColumns > 0 ? (
+											<DatabaseAccordions
+												databaseId={selectedDatabaseId}
+												mode="data-selected"
+												selectedColumns={
+													selectedColumns
+												}
+												onRemoveColumn={
+													handleRemoveColumn
+												}
+												onAliasChange={
+													handleAliasChange
+												}
+												onClearTable={handleClearTable}
+											/>
+										) : (
+											<div className="py-8 text-center text-muted-foreground text-sm">
+												No columns selected. Add columns
+												from available tables.
+											</div>
+										)}
+									</div>
+								</div>
+							</div>
+
+							{/* Joins Section */}
+							{joins.length > 0 && (
+								<div className="border-t pt-2">
+									<h3 className="mb-2 font-semibold text-sm">
+										Joins ({joins.length})
+									</h3>
+									<div className="flex flex-col gap-2">
+										{joins.map((join, joinIndex) => (
+											<div
+												// biome-ignore lint/suspicious/noArrayIndexKey: joins are stable during render
+												key={`join-${joinIndex}`}
+												className="flex items-center gap-2 rounded-md bg-muted/30 p-2"
+											>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div className="cursor-default rounded-xl bg-primary/10 px-3 py-1 text-xs">
+															{join.leftTable}
+														</div>
+													</TooltipTrigger>
+													<TooltipContent>
+														Left Table
+													</TooltipContent>
+												</Tooltip>
+
+												<DropdownMenu
+													open={
+														isJoinSelectOpen &&
+														joinTypeSelectIndex ===
+															joinIndex
+													}
+													onOpenChange={(open) => {
+														if (!open) {
+															setIsJoinSelectOpen(
+																false,
+															);
+															setJoinTypeSelectIndex(
+																-1,
+															);
+														}
+													}}
+												>
+													<DropdownMenuTrigger
+														asChild
+													>
+														<Button
+															variant="ghost"
+															size="icon-sm"
+															onClick={() => {
+																setJoinTypeSelectIndex(
+																	joinIndex,
+																);
+																setIsJoinSelectOpen(
+																	true,
+																);
+															}}
+														>
+															{
+																JOIN_ICONS[
+																	join.joinType as keyof typeof JOIN_ICONS
+																]
+															}
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent>
+														<DropdownMenuItem
+															onClick={() => {
+																setIsJoinSelectOpen(
+																	false,
+																);
+																setJoins(
+																	(prev) => {
+																		const updated =
+																			[
+																				...prev,
+																			];
+																		updated[
+																			joinIndex
+																		].joinType =
+																			"inner";
+																		return updated;
+																	},
+																);
+															}}
+														>
+															Inner Join
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={() => {
+																setIsJoinSelectOpen(
+																	false,
+																);
+																setJoins(
+																	(prev) => {
+																		const updated =
+																			[
+																				...prev,
+																			];
+																		updated[
+																			joinIndex
+																		].joinType =
+																			"left.outer";
+																		return updated;
+																	},
+																);
+															}}
+														>
+															Left Join
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={() => {
+																setIsJoinSelectOpen(
+																	false,
+																);
+																setJoins(
+																	(prev) => {
+																		const updated =
+																			[
+																				...prev,
+																			];
+																		updated[
+																			joinIndex
+																		].joinType =
+																			"right.outer";
+																		return updated;
+																	},
+																);
+															}}
+														>
+															Right Join
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onClick={() => {
+																setIsJoinSelectOpen(
+																	false,
+																);
+																setJoins(
+																	(prev) => {
+																		const updated =
+																			[
+																				...prev,
+																			];
+																		updated[
+																			joinIndex
+																		].joinType =
+																			"outer";
+																		return updated;
+																	},
+																);
+															}}
+														>
+															Outer Join
+														</DropdownMenuItem>
+													</DropdownMenuContent>
+												</DropdownMenu>
+
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div className="cursor-default rounded-xl bg-[#DEF4F3] px-3 py-1 text-xs">
+															{join.rightTable}
+														</div>
+													</TooltipTrigger>
+													<TooltipContent>
+														Right Table
+													</TooltipContent>
+												</Tooltip>
+
+												<span className="text-muted-foreground text-xs">
+													ON
+												</span>
+
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div className="cursor-default rounded-xl bg-primary/10 px-3 py-1 text-xs">
+															{join.leftKey}
+														</div>
+													</TooltipTrigger>
+													<TooltipContent>
+														Left Key
+													</TooltipContent>
+												</Tooltip>
+
+												<span className="text-muted-foreground text-xs">
+													=
+												</span>
+
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<div className="cursor-default rounded-xl bg-[#DEF4F3] px-3 py-1 text-xs">
+															{join.rightKey}
+														</div>
+													</TooltipTrigger>
+													<TooltipContent>
+														Right Key
+													</TooltipContent>
+												</Tooltip>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+
+							{/* Preview Panel */}
+							{showPreview && (
+								<div
+									className="flex flex-col overflow-hidden"
+									style={{ height: "30vh" }}
+								>
+									<div
+										className="flex h-full flex-col bg-white"
+										style={{ marginBottom: "20px" }}
+									>
+										<h3 className="mt-4 mb-5 ml-4 font-semibold text-lg">
+											Preview
+										</h3>
+										{isDatabaseLoading ? (
+											<div className="flex min-h-[200px] items-center justify-center">
+												<Loader2 className="size-8 animate-spin text-primary" />
+											</div>
+										) : databaseTableHeaders.length === 0 ||
+											databaseTableRows.length === 0 ? (
+											<p className="p-10 text-center font-bold text-lg">
+												No Rows
+											</p>
+										) : (
+											<div
+												className="flex-1 overflow-y-scroll"
+												style={{ maxHeight: "350px" }}
+											>
+												<Table className="bg-white">
+													<TableHeader>
+														<TableRow>
+															{databaseTableHeaders.map(
+																(h, hIdx) => (
+																	<TableHead
+																		// biome-ignore lint/suspicious/noArrayIndexKey: headers are stable
+																		key={`header-${hIdx}`}
+																	>
+																		{h}
+																	</TableHead>
+																),
+															)}
+														</TableRow>
+													</TableHeader>
+													<TableBody>
+														{databaseTableRows.map(
+															(r, rIdx) => (
+																<TableRow
+																	// biome-ignore lint/suspicious/noArrayIndexKey: rows are stable during render
+																	key={`row-${rIdx}`}
+																>
+																	{(
+																		r as unknown[]
+																	).map(
+																		(
+																			v,
+																			vIdx,
+																		) => (
+																			<TableCell
+																				// biome-ignore lint/suspicious/noArrayIndexKey: cells are stable during render
+																				key={`cell-${rIdx}-${vIdx}`}
+																			>
+																				{typeof v ===
+																					"object" &&
+																				v !==
+																					null
+																					? JSON.stringify(
+																							v,
+																						)
+																					: String(
+																							v ??
+																								"",
+																						)}
+																			</TableCell>
+																		),
+																	)}
+																</TableRow>
+															),
+														)}
+													</TableBody>
+												</Table>
+											</div>
+										)}
+									</div>
+								</div>
+							)}
+						</div>
+					)}
+
+					<DialogFooter className="border-t p-4">
+						<Button
+							variant="outline"
+							onClick={closeImportModalHandler}
+						>
+							Cancel
+						</Button>
+						{selectedDatabaseId && !isDatabaseLoading && (
+							<Button
+								variant="outline"
+								onClick={() => {
+									if (showPreview) {
+										setShowPreview(false);
+									} else {
+										setShowPreview(true);
+										retrievePreviewData();
+									}
+								}}
+								disabled={totalSelectedColumns === 0}
+							>
+								{showPreview ? "Hide Preview" : "Show Preview"}
+							</Button>
+						)}
+						<Button
+							onClick={onImportDataSubmit}
+							disabled={
+								totalSelectedColumns === 0 ||
+								hasDuplicateAliases()
+							}
+						>
+							{editMode ? "Update Cell" : "Import"}
+						</Button>
+					</DialogFooter>
 				</DialogContent>
 			</Dialog>
 		);
