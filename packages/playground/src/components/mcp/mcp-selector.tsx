@@ -156,26 +156,26 @@ export const MCPSelector = observer(
 					)}
 				</div>
 
-				<div className="min-h-0 flex-1">
-					<ScrollArea
-						className="h-full w-full"
-						viewportRef={(e) => setScroll(e)}
-					>
-						{getMCP.isLoading && (
-							<div className="flex h-full w-full items-center justify-center">
-								<Spinner />
-							</div>
-						)}
-						{!getMCP.isLoading && getMCP.data.length === 0 && (
-							<div className="flex h-full w-full items-center justify-center">
-								<Muted>
-									{type === "TOOLBOX"
-										? t("selector.noToolboxesFound")
-										: t("selector.noKnowledgeFound")}
-								</Muted>
-							</div>
-						)}
-						{!getMCP.isLoading && getMCP.data.length !== 0 && (
+				<div className="flex min-h-0 flex-1 flex-col">
+					{getMCP.isLoading && (
+						<div className="flex w-full flex-1 items-center justify-center">
+							<Spinner />
+						</div>
+					)}
+					{!getMCP.isLoading && getMCP.data.length === 0 && (
+						<div className="flex w-full flex-1 items-center justify-center">
+							<Muted>
+								{type === "TOOLBOX"
+									? t("selector.noToolboxesFound")
+									: t("selector.noKnowledgeFound")}
+							</Muted>
+						</div>
+					)}
+					{!getMCP.isLoading && getMCP.data.length !== 0 && (
+						<ScrollArea
+							className="h-full w-full"
+							viewportRef={(e) => setScroll(e)}
+						>
 							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
 								{getMCP.data.map((mcp) => (
 									<MCPCard
@@ -191,8 +191,8 @@ export const MCPSelector = observer(
 									/>
 								))}
 							</div>
-						)}
-					</ScrollArea>
+						</ScrollArea>
+					)}
 				</div>
 				{values.length > 0 && isMobile && (
 					<div className="flex max-h-20 flex-wrap gap-2 overflow-y-auto p-4">
