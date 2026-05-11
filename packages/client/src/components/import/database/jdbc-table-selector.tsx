@@ -47,7 +47,6 @@ const TableViewSelector = ({
 	);
 	const hasTables = tables.length > 0;
 	const hasViews = views.length > 0;
-	const hasBothData = hasTables && hasViews;
 	const hasNoTablesOrViews = tables.length === 0 && views.length === 0;
 	const isApplyDisabled =
 		selectedTables.length === 0 && selectedViews.length === 0;
@@ -160,7 +159,7 @@ const TableViewSelector = ({
 		emptyMessage: string;
 	}) => {
 		return (
-			<Card className="flex min-h-0 flex-col border-border/70">
+			<Card className="flex h-full min-h-0 flex-col border-border/70">
 				<CardHeader
 					className={hasData ? "space-y-3 pb-3" : "space-y-1 pb-4"}
 				>
@@ -193,7 +192,7 @@ const TableViewSelector = ({
 
 				{hasData ? (
 					<CardContent className="min-h-0 flex-1 pt-0">
-						<div className="h-full max-h-[52dvh] min-h-0 overflow-y-auto rounded-md border border-border/70">
+						<div className="h-full min-h-0 overflow-y-auto rounded-md border border-border/70">
 							<div className="sticky top-0 z-10 flex items-center gap-2 border-border/60 border-b bg-muted/90 px-3 py-2 backdrop-blur-sm">
 								<Checkbox
 									id={selectAllId}
@@ -353,18 +352,10 @@ const TableViewSelector = ({
 			<Separator />
 
 			<div className="flex min-h-0 flex-1 flex-col gap-2">
-				<div
-					className={
-						hasBothData && hasTables ? "min-h-0 flex-1" : "shrink-0"
-					}
-				>
+				<div className={hasTables ? "min-h-0 flex-1" : "shrink-0"}>
 					{tablesPanel}
 				</div>
-				<div
-					className={
-						hasBothData && hasViews ? "min-h-0 flex-1" : "shrink-0"
-					}
-				>
+				<div className={hasViews ? "min-h-0 flex-1" : "shrink-0"}>
 					{viewsPanel}
 				</div>
 			</div>
