@@ -117,7 +117,7 @@ export const MCPSelector = observer(
 		};
 
 		return (
-			<div className="w-full overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
+			<div className="flex h-96 w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
 				<div className="flex w-full flex-row gap-2 border-border border-b bg-muted p-4">
 					<div className="flex-1">
 						<InputGroup className="bg-background">
@@ -156,39 +156,44 @@ export const MCPSelector = observer(
 					)}
 				</div>
 
-				<ScrollArea
-					className="h-64 w-full flex-1"
-					viewportRef={(e) => setScroll(e)}
-				>
-					{getMCP.isLoading && (
-						<div className="flex h-64 w-full items-center justify-center">
-							<Spinner />
-						</div>
-					)}
-					{!getMCP.isLoading && getMCP.data.length === 0 && (
-						<div className="flex h-64 w-full items-center justify-center">
-							<Muted>
-								{type === "TOOLBOX"
-									? t("selector.noToolboxesFound")
-									: t("selector.noKnowledgeFound")}
-							</Muted>
-						</div>
-					)}
-					{!getMCP.isLoading && getMCP.data.length !== 0 && (
-						<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-							{getMCP.data.map((mcp) => (
-								<MCPCard
-									key={mcp.id}
-									m={mcp}
-									type={type}
-									onClick={() => onSelect(mcp)}
-									selected={Object.hasOwn(selected, mcp.id)}
-									effectivePermission={mcp.permission}
-								/>
-							))}
-						</div>
-					)}
-				</ScrollArea>
+				<div className="min-h-0 flex-1">
+					<ScrollArea
+						className="h-full w-full"
+						viewportRef={(e) => setScroll(e)}
+					>
+						{getMCP.isLoading && (
+							<div className="flex h-full w-full items-center justify-center">
+								<Spinner />
+							</div>
+						)}
+						{!getMCP.isLoading && getMCP.data.length === 0 && (
+							<div className="flex h-full w-full items-center justify-center">
+								<Muted>
+									{type === "TOOLBOX"
+										? t("selector.noToolboxesFound")
+										: t("selector.noKnowledgeFound")}
+								</Muted>
+							</div>
+						)}
+						{!getMCP.isLoading && getMCP.data.length !== 0 && (
+							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
+								{getMCP.data.map((mcp) => (
+									<MCPCard
+										key={mcp.id}
+										m={mcp}
+										type={type}
+										onClick={() => onSelect(mcp)}
+										selected={Object.hasOwn(
+											selected,
+											mcp.id,
+										)}
+										effectivePermission={mcp.permission}
+									/>
+								))}
+							</div>
+						)}
+					</ScrollArea>
+				</div>
 				{values.length > 0 && isMobile && (
 					<div className="flex max-h-20 flex-wrap gap-2 overflow-y-auto p-4">
 						{values.map((t) => (
