@@ -112,7 +112,7 @@ describe("AreaChart Block Component", () => {
 				renderEngineId: placeholders.areaChart,
 			},
 		);
-		const spec = JSON.parse(result.current.data.specJson);
+		const spec = JSON.parse(result.current.data.specJson as string);
 
 		// Check that the data values match expected
 		expect(spec.data.values).toEqual([

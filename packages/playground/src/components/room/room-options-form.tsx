@@ -1,5 +1,6 @@
 import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import type { MouseEvent } from "react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
@@ -21,10 +22,9 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { MCPOverlay } from "@/components";
+import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
-
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface RoomOptionsFormProps {
 	/** Model of the room */
@@ -48,14 +48,16 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		onOptionsChange = () => null,
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
+		const { root } = useRoot();
 
 		/**
 		 * State
 		 */
 		const [mCPOverlay, setMCPOverlay] = useState<{
-			type?: "KNOWLEDGE" | "TOOLBOX";
+			type: "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
 		}>({
+			type: "KNOWLEDGE",
 			isOpen: false,
 		});
 
@@ -84,7 +86,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		};
 
 		return (
-			<form className="p-4">
+			<form className="p-4 text-foreground">
 				<FieldGroup>
 					<FieldSet>
 						<FieldLegend className="flex w-full flex-1 items-center justify-between gap-2">
@@ -94,25 +96,32 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							{t("room:settings.description")}
 						</FieldDescription>
 						<FieldGroup>
-							{ENABLE_MODEL_SELECT && (
+							{root.theme.featureFlags?.enableModelSelect && (
 								<Field>
 									<FieldLabel>
 										{t("room:form.modelLabel")}
 									</FieldLabel>
-									<EngineSelect
-										name={model?.app_name || ""}
-										value={model?.app_id || ""}
-										engineTypes={["MODEL"]}
-										metaFilters={[
-											{ tag: "text-generation" },
-										]}
-										onChange={(v) => {
-											onModelChange(v);
-										}}
-										popoverContentProps={{
-											align: "start",
-										}}
-									/>
+									<div className="rounded-md border border-input bg-transparent px-1 py-1 shadow-xs dark:bg-input/30">
+										<EngineSelect
+											className="w-full max-w-none"
+											name={
+												model?.engine_display_name ||
+												model?.app_name ||
+												""
+											}
+											value={model?.app_id || ""}
+											engineTypes={["MODEL"]}
+											metaFilters={[
+												{ tag: "text-generation" },
+											]}
+											onChange={(v) => {
+												onModelChange(v);
+											}}
+											popoverContentProps={{
+												align: "start",
+											}}
+										/>
+									</div>
 								</Field>
 							)}
 							<Field>
@@ -134,7 +143,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<Field>
 								<FieldLabel
-									onClick={(event) => {
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
 										event.preventDefault();
 										event.stopPropagation();
 
@@ -176,7 +187,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											return (
 												<div
 													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
@@ -231,7 +242,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									) : (
 										<button
 											type="button"
-											className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
 											onClick={() =>
 												setMCPOverlay({
 													type: "KNOWLEDGE",
@@ -250,7 +261,9 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<Field>
 								<FieldLabel
-									onClick={(event) => {
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
 										event.preventDefault();
 										event.stopPropagation();
 
@@ -293,7 +306,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											return (
 												<div
 													key={mcp.id}
-													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border px-3 py-2 ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
+													className={`group h flex h-10 items-center justify-between gap-2 rounded-md border border-border bg-card px-3 py-2 text-card-foreground ${mcp.fromWorkspace ? "" : "hover:bg-muted/50"}`}
 												>
 													<HammerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
@@ -347,7 +360,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									) : (
 										<button
 											type="button"
-											className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
 											onClick={() =>
 												setMCPOverlay({
 													type: "TOOLBOX",
@@ -386,7 +399,10 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									}
 
 									// close it
-									setMCPOverlay({ isOpen: false });
+									setMCPOverlay({
+										isOpen: false,
+										type: "KNOWLEDGE",
+									});
 								}}
 							/>
 						</FieldGroup>

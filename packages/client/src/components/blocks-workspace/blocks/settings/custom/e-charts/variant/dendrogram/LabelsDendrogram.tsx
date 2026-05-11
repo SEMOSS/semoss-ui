@@ -1,56 +1,25 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
-import { Button, Switch, styled, TextField } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Button, Input, Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
 
-const StyledMainContainer = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledSubSection = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-	marginLeft: "2px",
-}));
-
-const StyledSubColumnSection = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "0.5rem",
-	marginLeft: "2px",
-}));
-
+// biome-ignore lint/correctness/noUnusedVariables: used in JSX or callback
 interface LabelsDendrogramProps {
 	id: string;
+	// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 	path: any;
 }
 
 export const LabelsDendrogram = observer(
 	<D extends BlockDef = BlockDef>({ id, path }) => {
 		const { data, setData } = useBlockSettings<D>(id);
-		const [value, setValue] = useState("");
 		const [seriesIndexData, setSeriesIndexData] = useState(
 			"option.series.0.label.color",
 		);
@@ -61,6 +30,7 @@ export const LabelsDendrogram = observer(
 		});
 		const [labelsUpdated, setLabelsUpdated] = useState(false);
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -75,63 +45,56 @@ export const LabelsDendrogram = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, "option"]).get();
-		// useEffect(() => {
-		//     let option = typeof computedValue === 'string' ? JSON.parse(computedValue) : computedValue;
-		//         let seriesIndex = option['series'].findIndex((item)=>item.type==='tree' && item.data.length>0);
-		//         setSeriesIndexData(`option.series.${seriesIndex}.label.color`);
-		// },[computedValue]);
-
-		function updateFields(fieldsName, fieldsValue) {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function updateFields(fieldsName: string, fieldsValue: any) {
 			setLabelsUpdated(true);
 			setLabelsData({
 				...labelsData,
 				[fieldsName]: fieldsValue,
 			});
 		}
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (!labelsUpdated) return;
 			const option: PathValue<D["data"], typeof path> =
 				typeof computedValue === "string"
 					? JSON.parse(computedValue)
 					: computedValue;
-			const seriesIndex = option["series"].findIndex(
+			const seriesIndex = option.series.findIndex(
 				(item) => item.type === "tree" && item.data.length > 0,
 			);
-			option["series"][seriesIndex] = {
-				...option["series"][seriesIndex],
+			option.series[seriesIndex] = {
+				...option.series[seriesIndex],
 				label: {
-					...option["series"][seriesIndex]["label"],
+					...option.series[seriesIndex].label,
 					fontSize: labelsData.labelFontSize,
 					show: labelsData.showLabels,
 				},
 			};
 			runStateUpdateCustom(option);
 		}, [labelsData]);
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const option: PathValue<D["data"], typeof path> =
 				typeof computedValue === "string"
 					? JSON.parse(computedValue)
 					: computedValue;
-			const seriesIndex = option["series"].findIndex(
+			const seriesIndex = option.series.findIndex(
 				(item) => item.type === "tree" && item.data.length > 0,
 			);
 			const labelsDataList = labelsData;
-			labelsDataList.showLabels =
-				option["series"][seriesIndex]["label"]["show"];
+			labelsDataList.showLabels = option.series[seriesIndex].label.show;
 			labelsDataList.labelFontColor =
-				option["series"][seriesIndex]["label"]["color"];
+				option.series[seriesIndex].label.color;
 			labelsDataList.labelFontSize = Number(
-				option["series"][seriesIndex]["label"]["fontSize"],
+				option.series[seriesIndex].label.fontSize,
 			);
 			setLabelsUpdated(false);
-			setLabelsData((prevLabels) => {
-				return { ...labelsDataList };
-			});
+			setLabelsData({ ...labelsDataList });
 			setSeriesIndexData(`option.series.${seriesIndex}.label.color`);
 		}, []);
-
-		function runStateUpdateCustom(option) {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function runStateUpdateCustom(option: any) {
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
 				timeoutRef.current = null;
@@ -144,49 +107,50 @@ export const LabelsDendrogram = observer(
 				}
 			}, 300);
 		}
+
 		function resetToInitialState() {
-			setLabelsData((prevLabels) => ({
+			setLabelsData({
 				showLabels: false,
 				labelFontColor: "#000000",
 				labelFontSize: 18,
-			}));
+			});
 		}
-		console.log(labelsData, "labelsData", JSON.parse(computedValue));
+
 		const showLabelsEnabled = labelsData.showLabels;
 		return (
-			<StyledMainContainer>
-				<StyledSubSection display="flex" justifyContent="start">
+			<div className="flex flex-col p-2">
+				<div className="flex flex-row items-center gap-2 p-2">
 					<Switch
 						checked={showLabelsEnabled}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							updateFields("showLabels", e.target.checked)
+						onCheckedChange={(checked: boolean) =>
+							updateFields("showLabels", checked)
 						}
-						title="Show Labels"
 					/>
-					<label style={{ paddingLeft: "0.5rem" }}>Show Labels</label>
-				</StyledSubSection>
+					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
+					<label className="pl-2 text-sm">Show Labels</label>
+				</div>
 				{showLabelsEnabled && (
-					<StyledSubColumnSection
-						display="flex"
-						justifyContent="space-between"
-					>
+					<div className="flex flex-col gap-2 p-2">
 						<ColorPickerSettings
 							id={id}
 							path={seriesIndexData}
 							colorValue={labelsData.labelFontColor}
-							onChange={(e: string) => {}}
+							onChange={() => {}}
 						/>
-					</StyledSubColumnSection>
+					</div>
 				)}
 				{showLabelsEnabled && (
-					<StyledSubColumnSection
-						display="flex"
-						justifyContent="space-between"
-					>
-						<label htmlFor="label-font-size">
+					<div className="flex flex-col gap-2 p-2">
+						<label
+							className="text-muted-foreground text-sm"
+							htmlFor="label-font-size"
+						>
 							Label Font Size:
 						</label>
-						<TextField
+						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<Input
 							id="label-font-size"
 							type="number"
 							value={labelsData.labelFontSize}
@@ -194,18 +158,12 @@ export const LabelsDendrogram = observer(
 								updateFields("labelFontSize", e.target.value)
 							}
 						/>
-					</StyledSubColumnSection>
+					</div>
 				)}
-				<StyledSubSection display="flex" justifyContent="flex-end">
-					<Button
-						color="primary"
-						variant="contained"
-						onClick={resetToInitialState}
-					>
-						Reset
-					</Button>
-				</StyledSubSection>
-			</StyledMainContainer>
+				<div className="flex justify-end p-2">
+					<Button onClick={resetToInitialState}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

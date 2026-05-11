@@ -1,7 +1,6 @@
 import { Users, X } from "lucide-react";
-import React, { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Dialog,
@@ -23,42 +22,13 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { addTeam, editTeam } from "@/api/teams";
-import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
-import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
-import Dropbox from "@/assets/loginProviders/dropbox.png";
-import Github from "@/assets/loginProviders/github.png";
-import Gitlab from "@/assets/loginProviders/gitlab.png";
-import newGoogle from "@/assets/loginProviders/google.png";
-import Keycloak from "@/assets/loginProviders/keycloak.png";
-import Linkedin from "@/assets/loginProviders/linkedin.png";
-import Microsoft from "@/assets/loginProviders/microsoft.png";
-import Okta from "@/assets/loginProviders/okta.png";
-import ProductHunt from "@/assets/loginProviders/product_hunt.png";
-import Salesforce from "@/assets/loginProviders/salesforce.png";
-import Saml from "@/assets/loginProviders/saml.png";
-import Siteminder from "@/assets/loginProviders/siteminder.png";
-import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
-import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
-
-const TypeImageObject = {
-	native: AMAZON_S3,
-	google: newGoogle,
-	github: Github,
-	okta: Okta,
-	dropbox: Dropbox,
-	adfs: ADFS,
-	gitlab: Gitlab,
-	keycloak: Keycloak,
-	linkedin: Linkedin,
-	ms: Microsoft,
-	product_hunt: ProductHunt,
-	salesforce: Salesforce,
-	saml: Saml,
-	siteminder: Siteminder,
-	surveymonkey: Surverymonkey,
-	twitter: Twitter,
-};
+import { useNavigate } from "@/hooks/useNavigate";
+import {
+	getLoginProviderInitials,
+	getLoginProviderKey,
+	loadLoginProviderLogos,
+} from "@/shared/constants/login-provider-icons.constants";
 
 type TeamReturn = {
 	id: string;
@@ -97,14 +67,15 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	const navigate = useNavigate();
 	const { configStore } = useRootStore();
+	const [providerLogos, setProviderLogos] = useState<Record<string, string>>(
+		{},
+	);
 
 	// State to track the previous team name, type
-	const [previousTeamName, setPreviousTeamName] = React.useState<
+	const [previousTeamName, setPreviousTeamName] = useState<
 		string | undefined
 	>(id);
-	const [_previousType, setPreviousType] = React.useState<string | undefined>(
-		id,
-	);
+	const [_previousType, setPreviousType] = useState<string | undefined>(id);
 	const {
 		handleSubmit,
 		control,
@@ -134,20 +105,69 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	const selectedTeamType = watch("TEAM_TYPE");
 
-	const loginTypes = [
-		{
-			provider: "CUSTOM",
-			name: "Custom",
-			description: "Directly manage users in the team",
-			isOauth: false,
-		},
-		...configStore.store.config.availableProviders,
-	] as {
-		provider: string;
-		name: string;
-		isOauth: boolean;
-		description?: string;
-	}[];
+	const loginTypes = useMemo(() => {
+		return [
+			{
+				provider: "CUSTOM",
+				name: "Custom",
+				description: "Directly manage users in the team",
+				isOauth: false,
+			},
+			...configStore.store.config.availableProviders,
+		] as {
+			provider: string;
+			name: string;
+			isOauth: boolean;
+			description?: string;
+		}[];
+	}, [configStore.store.config.availableProviders]);
+
+	const loginTypesSignature = useMemo(() => {
+		return loginTypes
+			.map((provider) => getLoginProviderKey(provider.provider))
+			.sort()
+			.join("|");
+	}, [loginTypes]);
+
+	useEffect(() => {
+		if (!open || !loginTypesSignature) return;
+
+		const providers = loginTypesSignature
+			.split("|")
+			.filter(
+				(provider) =>
+					!["custom", "native", "registration"].includes(provider),
+			);
+
+		if (providers.length === 0) return;
+
+		let isMounted = true;
+
+		const loadProviderLogos = async () => {
+			const loadedLogos = await loadLoginProviderLogos(providers);
+
+			if (!isMounted || Object.keys(loadedLogos).length === 0) return;
+
+			setProviderLogos((previous) => {
+				const next = { ...previous };
+				let hasChanged = false;
+
+				for (const [provider, logo] of Object.entries(loadedLogos)) {
+					if (next[provider] === logo) continue;
+					next[provider] = logo;
+					hasChanged = true;
+				}
+
+				return hasChanged ? next : previous;
+			});
+		};
+
+		void loadProviderLogos();
+
+		return () => {
+			isMounted = false;
+		};
+	}, [open, loginTypesSignature]);
 
 	/**
 	 * Method that is called to create the team
@@ -211,7 +231,10 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-			<DialogContent className="max-w-[550px]" showCloseButton={false}>
+			<DialogContent
+				className="max-w-[550px] gap-6 rounded-xl"
+				showCloseButton={false}
+			>
 				<DialogHeader>
 					<div className="flex items-center justify-between">
 						<DialogTitle className="text-foreground">
@@ -231,7 +254,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					</div>
 				</DialogHeader>
 				<form onSubmit={onSubmit}>
-					<div className="flex flex-col gap-4 pb-4">
+					<div className="flex flex-col gap-6 pb-6">
 						<Field>
 							<Controller
 								name="TEAM_TYPE"
@@ -244,10 +267,10 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 										<>
 											<FieldLabel>
 												Type
-											<span className="text-destructive">
-												*
-											</span>
-									</FieldLabel>
+												<span className="text-destructive">
+													*
+												</span>
+											</FieldLabel>
 											<Select
 												value={
 													field.value
@@ -263,68 +286,109 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 													className="w-full"
 													aria-invalid={!!error}
 												>
-													<SelectValue placeholder="Select a team type" />
+													<SelectValue placeholder="Select a team type">
+														{field.value
+															? loginTypes.find(
+																	(p) =>
+																		p.provider ===
+																		field.value,
+																)?.name
+															: "Select a team type"}
+													</SelectValue>
 												</SelectTrigger>
 												<SelectContent>
-													{loginTypes
-														.sort()
-														.filter(
-															(p) =>
-																![
-																	"native",
-																	"registration",
-																].includes(
-																	p.provider,
+													{(() => {
+														const filteredTypes = [
+															...loginTypes,
+														]
+															.sort((a, b) =>
+																a.name.localeCompare(
+																	b.name,
 																),
-														)
-														.map((p) => {
-															return (
-																<SelectItem
-																	key={`logintype-${p.provider}`}
-																	value={
-																		p.provider
-																	}
-																	className={
-																		p.provider ===
-																		"CUSTOM"
-																			? "border-border border-b"
-																			: ""
-																	}
-																>
-																	<div className="flex flex-row items-center gap-6">
-																		{TypeImageObject[
-																			p
-																				.provider
-																		] ? (
-																			<img
-																				src={
-																					TypeImageObject[
-																						p
-																							.provider
-																					]
-																				}
-																				className="h-6 w-6"
-																				alt="login provider icon"
-																			/>
-																		) : (
-																			<Users className="h-6 w-6 text-muted-foreground" />
-																		)}
-																		<span>
-																			{
-																				p.name
-																			}
-																		</span>
-																		{p.description && (
-																			<span className="text-muted-foreground text-xs italic">
+															)
+															.filter(
+																(p) =>
+																	![
+																		"native",
+																		"registration",
+																	].includes(
+																		getLoginProviderKey(
+																			p.provider,
+																		),
+																	),
+															);
+														const hasMultipleTypes =
+															filteredTypes.length >
+															1;
+														return filteredTypes.map(
+															(p) => {
+																const providerKey =
+																	getLoginProviderKey(
+																		p.provider,
+																	);
+																const providerLogo =
+																	providerLogos[
+																		providerKey
+																	];
+																const providerInitials =
+																	getLoginProviderInitials(
+																		p.name ||
+																			p.provider,
+																	);
+
+																return (
+																	<SelectItem
+																		key={`logintype-${p.provider}`}
+																		value={
+																			p.provider
+																		}
+																		className={
+																			providerKey ===
+																				"custom" &&
+																			hasMultipleTypes
+																				? "border-border border-b"
+																				: ""
+																		}
+																	>
+																		<div className="flex flex-row items-center gap-6">
+																			{providerKey ===
+																			"custom" ? (
+																				<Users className="h-6 w-6 text-muted-foreground" />
+																			) : providerLogo ? (
+																				<img
+																					src={
+																						providerLogo
+																					}
+																					className="h-6 w-6"
+																					alt="login provider icon"
+																					loading="lazy"
+																					decoding="async"
+																				/>
+																			) : (
+																				<div className="flex h-6 w-6 items-center justify-center rounded-md border border-border/70 bg-muted/60 font-semibold text-[9px] text-muted-foreground">
+																					{
+																						providerInitials
+																					}
+																				</div>
+																			)}
+																			<span>
 																				{
-																					p.description
+																					p.name
 																				}
 																			</span>
-																		)}
-																	</div>
-																</SelectItem>
-															);
-														})}
+																			{p.description && (
+																				<span className="text-muted-foreground text-xs italic">
+																					{
+																						p.description
+																					}
+																				</span>
+																			)}
+																		</div>
+																	</SelectItem>
+																);
+															},
+														);
+													})()}
 												</SelectContent>
 											</Select>
 											{error && (
@@ -346,10 +410,11 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 								render={({ field, fieldState: { error } }) => {
 									return (
 										<>
-											<FieldLabel>Name
+											<FieldLabel>
+												Name
 												<span className="text-destructive">
-												*
-											</span>
+													*
+												</span>
 											</FieldLabel>
 											<Input
 												value={

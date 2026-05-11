@@ -12,42 +12,48 @@ import {
 } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
 
-export const GlobalDialog: React.FC = observer(() => {
-	const { t } = useTranslation("common");
-	const { root } = useRoot();
-	const [visible, setVisible] = useCacheState(
-		true,
-		`global-dialog--${root.theme.dialog?.key}`,
-	);
+export const GlobalDialog: React.FC<{ onAcknowledge?: () => void }> = observer(
+	({ onAcknowledge }) => {
+		const { t } = useTranslation("common");
+		const { root } = useRoot();
+		const [visible, setVisible] = useCacheState(
+			true,
+			`global-dialog--${root.theme.dialog?.key}`,
+		);
 
-	if (!root.theme.dialog || !visible) {
-		return null;
-	}
+		if (!root.theme.dialog || !visible) {
+			return null;
+		}
 
-	return (
-		<Dialog open={visible}>
-			<DialogContent className="sm:max-w-4xl" showCloseButton={false}>
-				<DialogHeader>
-					<DialogTitle>{root.theme.dialog.title}</DialogTitle>
-				</DialogHeader>
-				<div
-					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-					dangerouslySetInnerHTML={{
-						__html: root.theme.dialog.content,
-					}}
-				/>
-				<DialogFooter>
-					<Button
-						variant="default"
-						onClick={() => {
-							// close it
-							setVisible(false);
+		return (
+			<Dialog open={visible}>
+				<DialogContent
+					className="max-h-[90dvh] grid-rows-[auto_1fr_auto] overflow-hidden sm:max-w-4xl"
+					showCloseButton={false}
+				>
+					<DialogHeader>
+						<DialogTitle>{root.theme.dialog.title}</DialogTitle>
+					</DialogHeader>
+					<div
+						className="overflow-y-auto"
+						// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+						dangerouslySetInnerHTML={{
+							__html: root.theme.dialog.content,
 						}}
-					>
-						{t("navigation.acknowledge")}
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
-});
+					/>
+					<DialogFooter>
+						<Button
+							variant="default"
+							onClick={() => {
+								setVisible(false);
+								onAcknowledge?.();
+							}}
+						>
+							{t("navigation.acknowledge")}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		);
+	},
+);

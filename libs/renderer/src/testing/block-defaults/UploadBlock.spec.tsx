@@ -1,3 +1,4 @@
+import { fireEvent, waitFor } from "@testing-library/react";
 import { expect } from "vitest";
 import { UploadBlock } from "../../components/block-defaults/upload-block/UploadBlock";
 import { render, screen } from "../utils";
@@ -54,20 +55,20 @@ describe("Upload Block", () => {
 	});
 
 	it("handles file upload", async () => {
-		// const mockFile = new File(["dummy content"], "example.jpg", {
-		// 	type: "image/jpeg",
-		// });
+		const mockFile = new File(["dummy content"], "example.jpg", {
+			type: "image/jpeg",
+		});
 
 		render(<UploadBlock id={blocks.upload.id} />, {
 			blocks: blocks,
 		});
 
-		// const input = screen.getByLabelText(/Upload File/i) as HTMLInputElement;
-		// fireEvent.change(input, { target: { files: [mockFile] } });
-		// await waitFor(() => {
-		// 	expect(input.files?.[0]).toBe(mockFile);
-		// 	expect(input.files?.[0].name).toBe("example.jpg");
-		// });
+		const input = screen.getByLabelText(/Upload File/i) as HTMLInputElement;
+		fireEvent.change(input, { target: { files: [mockFile] } });
+		await waitFor(() => {
+			expect(input.files?.[0]).toBe(mockFile);
+			expect(input.files?.[0].name).toBe("example.jpg");
+		});
 	});
 
 	it("disables the input when loading", async () => {

@@ -4,24 +4,315 @@
  * SMSS Theme for FlexLayout
  */
 
- /** Layout **/
+/**
+ * FlexLayout base classes.
+ * These are required for positioning/sizing and are normally provided by
+ * flexlayout-react/style/light.css. We keep them here so client/playground
+ * consume one stable stylesheet in production builds.
+ */
+.flexlayout__layout {
+    --color-text: black;
+    --color-background: white;
+    --color-base: white;
+    --color-1: rgb(247.35, 247.35, 247.35);
+    --color-2: rgb(239.7, 239.7, 239.7);
+    --color-3: rgb(232.05, 232.05, 232.05);
+    --color-4: rgb(224.4, 224.4, 224.4);
+    --color-5: rgb(216.75, 216.75, 216.75);
+    --color-6: rgb(209.1, 209.1, 209.1);
+    --color-overflow: gray;
+    --color-icon: gray;
+    --color-tabset-background: var(--color-background);
+    --color-tabset-background-selected: var(--color-1);
+    --color-tabset-background-maximized: var(--color-2);
+    --color-tabset-divider-line: var(--color-4);
+    --color-tabset-header-background: var(--color-background);
+    --color-tabset-header: var(--color-text);
+    --color-border-tab-content: var(--color-background);
+    --color-border-background: var(--color-background);
+    --color-border-divider-line: var(--color-4);
+    --color-tab-content: var(--color-background);
+    --color-tab-selected: var(--color-text);
+    --color-tab-selected-background: var(--color-4);
+    --color-tab-unselected: gray;
+    --color-tab-unselected-background: transparent;
+    --color-tab-textbox: var(--color-text);
+    --color-tab-textbox-background: var(--color-3);
+    --color-border-tab-selected: var(--color-text);
+    --color-border-tab-selected-background: var(--color-4);
+    --color-border-tab-unselected: gray;
+    --color-border-tab-unselected-background: var(--color-2);
+    --color-splitter: var(--color-1);
+    --color-splitter-hover: var(--color-4);
+    --color-splitter-drag: var(--color-4);
+    --color-drag-rect-border: #ccc;
+    --color-drag-rect-background: var(--color-5);
+    --color-drag-rect: var(--color-text);
+    --color-popup-border: var(--color-6);
+    --color-popup-unselected: var(--color-text);
+    --color-popup-unselected-background: white;
+    --color-popup-selected: var(--color-text);
+    --color-popup-selected-background: var(--color-3);
+    --color-edge-marker: #aaa;
+    --color-edge-icon: #555;
+    --color-mini-scroll-indicator: rgba(128, 128, 128, 0.5);
+    --color-mini-scroll-indicator-hovered: rgba(128, 128, 128, 0.7);
+    --size-mini-scroll-indicator: 3px;
+    --color-toolbar-button-hover: var(--color-3);
+    --font-size: medium;
+    --font-family: var(--font-sans, "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+    background-color: var(--color-background);
+    bottom: 0;
+    display: flex;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+}
+
+.flexlayout__layout_overlay {
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 1000;
+}
+
+.flexlayout__layout_tab_stamps {
+    align-items: start;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: -10000px;
+    z-index: 100;
+}
+
+.flexlayout__layout_moveables {
+    height: 100px;
+    position: absolute;
+    top: -20000px;
+    visibility: hidden;
+    width: 100px;
+}
+
+.flexlayout__layout_main {
+    display: flex;
+    flex-basis: 0;
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+    position: relative;
+}
+
+.flexlayout__row {
+    box-sizing: border-box;
+    display: flex;
+    flex-basis: 0;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.flexlayout__tabset {
+    background-color: var(--color-tabset-background);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    font-family: var(--font-family);
+    overflow: hidden;
+    position: relative;
+}
+
+.flexlayout__tabset_container {
+    display: flex;
+    flex-basis: 0;
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.flexlayout__tabset_tabbar_outer {
+    background-color: var(--color-tabset-background);
+    box-sizing: border-box;
+    display: flex;
+    font-size: var(--font-size);
+    overflow: hidden;
+}
+
+.flexlayout__tabset_tabbar_outer_top {
+    border-bottom: 1px solid var(--color-tabset-divider-line);
+    padding: 0 2px;
+}
+
+.flexlayout__tabset_tabbar_inner {
+    box-sizing: border-box;
+    display: flex;
+    flex-grow: 1;
+    position: relative;
+    scrollbar-width: none;
+}
+
+.flexlayout__tabset_tabbar_inner::-webkit-scrollbar {
+    display: none;
+}
+
+.flexlayout__tabset_tabbar_inner_tab_container {
+    box-sizing: border-box;
+    display: flex;
+    padding-left: 4px;
+    padding-right: 4px;
+    position: relative;
+    white-space: nowrap;
+}
+
+.flexlayout__tabset_tabbar_inner_tab_container_top {
+    border-top: 2px solid transparent;
+}
+
+.flexlayout__tabset_tab_divider {
+    width: 4px;
+}
+
+.flexlayout__tabset_content {
+    box-sizing: border-box;
+    display: flex;
+    flex-basis: 0;
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+    position: relative;
+}
+
+.flexlayout__tab {
+    background-color: var(--color-tab-content);
+    box-sizing: border-box;
+    color: var(--color-text);
+    overflow: hidden;
+    position: relative;
+}
+
+.flexlayout__tab_moveable {
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 1px;
+    min-width: 1px;
+    overflow: auto;
+    position: relative;
+}
+
+.flexlayout__tab_button {
+    align-items: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    gap: 0.3em;
+    padding: 3px 0.5em;
+}
+
+.flexlayout__tab_button_leading {
+    display: flex;
+}
+
+.flexlayout__tab_button_content {
+    display: flex;
+    text-wrap: nowrap;
+}
+
+.flexlayout__tab_button_trailing {
+    border-radius: 4px;
+    display: flex;
+    visibility: hidden;
+}
+
+.flexlayout__tab_button--selected .flexlayout__tab_button_trailing {
+    visibility: visible;
+}
+
+.flexlayout__tab_toolbar {
+    align-items: center;
+    display: flex;
+    gap: 0.3em;
+    padding-left: 0.5em;
+    padding-right: 0.3em;
+}
+
+.flexlayout__popup_menu {
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+}
+
+.flexlayout__popup_menu_container {
+    background: var(--color-popup-unselected-background);
+    border: 1px solid var(--color-popup-border);
+    border-radius: 3px;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.15);
+    color: var(--color-popup-unselected);
+    max-height: 50%;
+    min-width: 100px;
+    overflow: auto;
+    padding: 2px;
+    position: absolute;
+    z-index: 1000;
+}
+
+.flexlayout__popup_menu_item {
+    border-radius: 2px;
+    cursor: pointer;
+    padding: 2px 0.5em;
+    white-space: nowrap;
+}
+
+.flexlayout__mini_scrollbar {
+    background-color: var(--color-mini-scroll-indicator);
+    border-radius: 5px;
+    height: var(--size-mini-scroll-indicator);
+    opacity: 0;
+    position: absolute;
+    transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+    visibility: hidden;
+    width: var(--size-mini-scroll-indicator);
+}
+
+.flexlayout__mini_scrollbar_container {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.flexlayout__border_sizer {
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+    padding-bottom: 5px;
+    padding-top: 6px;
+    position: absolute;
+    top: -30000px;
+}
+
+/** Layout **/
 .flexlayout__theme_smss .flexlayout__layout {
     --color-background: transparent;
     --color-tabset-background: transparent;
     --color-tabset-background-selected: transparent;
-    --font-family: 'Inter', sans-serif;
+    --font-family: var(--font-sans, "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
     --font-size: 0.875rem;
     --smss-tab-border-radius: 4px;
 }
 
- /** Tabs **/
+/** Tabs **/
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer {
     @apply p-2;
     min-height: 51px;
 }
 
 .flexlayout__theme_smss .flexlayout__tabset_tabbar_outer_top {
-    padding-right: 85px;
+    padding-right: var(--room-sidebar-controls-width, 85px);
+    @apply border-b border-muted;
 }
 
 .flexlayout__theme_smss .flexlayout__tab_button {
@@ -32,7 +323,7 @@
     @apply dark:bg-input/30 shadow-xs border border-input;
 }
 
-.flexlayout__theme_smss .flexlayout__tab_button__content {
+.flexlayout__theme_smss .flexlayout__tab_button_content {
     @apply truncate text-foreground text-xs leading-normal font-medium;
 }
 
@@ -44,17 +335,61 @@
     @apply w-2;
 }
 
- /** Popover **/
+/** Popover **/
 .flexlayout__theme_smss .flexlayout__popup_menu_container {
-    @apply border border-input rounded-md shadow-xs;
+    @apply border border-input rounded-md bg-popover text-popover-foreground shadow-lg;
+    min-width: min(22rem, calc(100vw - 2rem));
+    max-width: min(34rem, calc(100vw - 2rem));
+    max-height: min(24rem, calc(100vh - 6rem));
+    padding: 0.25rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_container::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu {
+    @apply flex flex-col gap-0.5;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item {
-    @apply h-8 px-2 py-3;
+    @apply flex min-h-8 items-center rounded-sm px-2 py-1.5;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_stamp {
+    @apply flex w-full min-w-0 gap-2;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_content {
+    @apply min-w-0 flex-1 truncate text-xs leading-normal font-medium;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item .flexlayout__tab_button_leading {
+    @apply shrink-0;
+}
+
+.flexlayout__theme_smss .flexlayout__popup_menu_item--selected {
+    @apply bg-secondary text-foreground;
 }
 
 .flexlayout__theme_smss .flexlayout__popup_menu_item:hover {
     @apply bg-secondary;
+}
+
+/** Rename textbox **/
+.flexlayout__theme_smss .flexlayout__tab_button_textbox {
+    @apply bg-background border border-primary rounded px-1 text-xs font-medium outline-none;
+    min-width: 4rem;
 }
 
 /** Borders **/

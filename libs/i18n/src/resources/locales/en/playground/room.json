@@ -1,11 +1,11 @@
 {
-	"welcome": "Welcome",
+	"welcome": "Welcome, {{name}}",
 	"settings": {
 		"title": "Room Settings",
 		"description": "Update room settings and modify the behavior of the chat",
-		"open": "Open Settings",
-		"close": "Close",
-		"edit": "Edit Settings"
+		"open": "Open Room Settings",
+		"close": "Close Room Settings",
+		"edit": "Edit Room Settings"
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "Enter text",
 		"thinking": "Thinking...",
-		"menuPrompt": "/ to open menu",
-		"openSettings": "Open settings",
+		"menuPrompt": "How can I help you today?",
+		"openSettings": "Add files, agents, and more",
 		"recordLabel": "Record the Model",
 		"stopRecording": "Stop Recording",
 		"record": "Record",
@@ -47,12 +47,13 @@
 		"enterQuestion": "Please enter a question",
 		"completeTool": "Please complete the tool(s) to proceed",
 		"ask": "Ask",
-		"errorProcessing": "Error processing chat"
+		"errorProcessing": "Error processing chat",
+		"pauseTools": "Pause tools",
+		"pauseToolsTooltip": "Pause all tool execution until after the next message"
 	},
 	"content": {
 		"scrollToTop": "Scroll to top",
-		"scrollToBottom": "Scroll to bottom",
-		"errorDefault": "Unable to process request. Please check your connection, copy your message, and refresh."
+		"scrollToBottom": "Scroll to bottom"
 	},
 	"inlineTool": {
 		"openInSidebar": "Open in Sidebar",
@@ -67,15 +68,10 @@
 		"copyFailed": "Failed to copy to clipboard"
 	},
 	"menuToolbox": {
-		"addToolbox": "Add Toolbox",
-		"searchPlaceholder": "Search toolboxes",
-		"notFound": "Not Found",
-		"allTools": "All Tools"
+		"addToolbox": "Add Toolboxes"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "Add Knowledge",
-		"searchPlaceholder": "Search knowledge",
-		"notFound": "Not Found"
+		"addKnowledge": "Add Knowledge"
 	},
 	"menuWorkspace": {
 		"selectAgent": "Select Agent",
@@ -83,7 +79,7 @@
 		"notFound": "Not Found"
 	},
 	"menuUpload": {
-		"attachDocument": "Attach Document"
+		"attachDocument": "Add Documents"
 	},
 	"menuFileExplorer": {
 		"name": "File Explorer",
@@ -92,5 +88,18 @@
 	},
 	"errors": {
 		"createRoom": "An error occurred while creating the room. Error: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",
+		"descriptionMedium": "This conversation is getting long. If it continues, the model will start forgetting earlier messages. Consider starting a new chat soon.",
+		"descriptionHigh": "This conversation is nearly full. The model will soon start forgetting earlier messages. Consider starting a new chat.",
+		"descriptionExceeded": "This conversation has exceeded its limit. The model is now forgetting earlier messages when generating responses. Start a new chat for best results.",
+		"memoryUsedTitle": "Memory used:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and toolboxes",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or toolboxes available"
 	}
 }

@@ -4,6 +4,13 @@ import { screen } from "@testing-library/react";
 import { VisualizationFilterBlock } from "../../components/block-defaults/visualization-filter-block/VisualizationFilterBlock";
 import { render } from "../utils";
 
+class ResizeObserverMock {
+	observe = vi.fn();
+	unobserve = vi.fn();
+	disconnect = vi.fn();
+}
+vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+
 const mockState = {
 	runSideEffect: vi.fn().mockResolvedValue({
 		pixelReturn: [
@@ -12,9 +19,13 @@ const mockState = {
 	}),
 };
 
-vi.mock("@semoss/ui", async () => ({
-	...(await vi.importActual("@semoss/ui")),
-	useNotification: () => ({ add: vi.fn() }),
+vi.mock("@semoss/ui/next", async () => ({
+	...(await vi.importActual("@semoss/ui/next")),
+	toast: {
+		error: vi.fn(),
+		warning: vi.fn(),
+		success: vi.fn(),
+	},
 }));
 
 vi.mock("../../../hooks", () => ({

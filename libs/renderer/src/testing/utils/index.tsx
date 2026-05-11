@@ -64,7 +64,7 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
 
 	return (
 		<Blocks state={store} registry={DefaultBlocks}>
-			<RendererEngine id={renderEngineId} />
+			{!!renderEngineId && <RendererEngine id={renderEngineId} />}
 			{children && children}
 		</Blocks>
 	);
@@ -101,7 +101,7 @@ const customRender = (
 interface CustomHookRenderOptions<TProps> extends RenderHookOptions<TProps> {
 	blocks: Record<string, Block>;
 	queryConfig?: Record<string, QueryStateConfig>;
-	renderEngineId: string;
+	renderEngineId?: string;
 	customChildren?: React.ReactNode;
 }
 const customRenderHook = <TProps, TResult>(

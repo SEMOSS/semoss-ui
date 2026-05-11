@@ -52,13 +52,6 @@
 	"mcp": {
 		"noToolboxes": "لم يتم العثور على صناديق أدوات",
 		"noKnowledge": "لم يتم العثور على مكتبات معرفة",
-		"accessRequested": "تم طلب الوصول",
-		"requestAccess": "طلب الوصول",
-		"noAccess": "لا يوجد وصول",
-		"requestAccessButton": "طلب الوصول",
-		"noDescription": "لا يوجد وصف متاح.",
-		"tooltipNoAccess": "ليس لديك وصول إلى {{type}} هذا. يرجى طلب الوصول من المالك.",
-		"tooltipOpen": "فتح {{type}} هذا في المنصة",
 		"failedToLoad": "فشل تحميل موارد مساحة العمل",
 		"requestedSuccess": "تم طلب الوصول إلى {{name}}",
 		"requestedFailed": "فشل طلب الوصول"

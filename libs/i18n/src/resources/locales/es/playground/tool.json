@@ -1,0 +1,57 @@
+{
+	"status": {
+		"failed": "Fallido",
+		"cancelled": "Cancelado",
+		"completed": "Completado",
+		"ready": "Listo",
+		"autoExecute": "Ejecutando automáticamente",
+		"paused": "En pausa",
+		"queued": "En cola para ejecutarse automáticamente"
+	},
+	"actions": {
+		"cancel": "Cancelar",
+		"expand": "Expandir",
+		"collapse": "Colapsar",
+		"openInSidebar": "Abrir en barra lateral",
+		"closeInSidebar": "Cerrar barra lateral",
+		"openInline": "Abrir en línea"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} + {{count}} más",
+		"labelOpen": "Herramientas ejecutadas ({{count}})",
+		"summaryCompleted": "{{count}} completado",
+		"summaryError": "{{count}} fallido",
+		"summaryCancelled": "{{count}} cancelado",
+		"summaryPaused": "{{count}} en pausa"
+	},
+	"form": {
+		"result": "Resultado",
+		"schemaLoadFailed": "Error al cargar el esquema de la herramienta",
+		"schemaLoadFailedDescription": "No se pudo recuperar la configuración de la herramienta. Por favor, inténtelo de nuevo más tarde.",
+		"schemaLoading": "Cargando esquema de la herramienta...",
+		"noParameters": "No se requieren parámetros",
+		"showParameters": "Mostrar parámetros ({{count}})",
+		"hideParameters": "Ocultar parámetros ({{count}})",
+		"showOptionalFields": "Mostrar campos opcionales ({{count}})",
+		"hideOptionalFields": "Ocultar campos opcionales ({{count}})",
+		"execute": "Ejecutar herramienta",
+		"executing": "Ejecutando..."
+	},
+	"playwright": {
+		"details": "Detalles del script de Playwright",
+		"projectId": "ID del proyecto",
+		"recordedFile": "Archivo grabado"
+	},
+	"extension": {
+		"required": "Extensión de navegador requerida",
+		"notResponding": "La extensión del navegador no responde. Para ejecutar scripts de Playwright, asegúrese de que la extensión SEMOSS para Chrome esté instalada y el panel lateral esté abierto.",
+		"stepsTitle": "Pasos para abrir la extensión:",
+		"step1": "Busque el icono de la extensión SEMOSS en la barra de herramientas del navegador (icono de pieza de puzzle)",
+		"step2": "Haga clic en el icono de la extensión para abrir el panel lateral",
+		"step3": "Espere a que el panel se cargue completamente",
+		"step4": "Haga clic en \"Reintentar\" a continuación para continuar",
+		"cancel": "Cancelar",
+		"retry": "Reintentar",
+		"checking": "Verificando..."
+	}
+}

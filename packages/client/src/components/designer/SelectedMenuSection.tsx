@@ -1,63 +1,6 @@
-import { BorderColor, ExpandMore } from "@mui/icons-material";
+import { ChevronDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { createElement } from "react";
-import { Accordion, Stack, styled, Typography } from "@semoss/ui";
-
-const StyledMenuSectionHeader = styled("div")(({ theme }) => ({
-	alignItems: "center",
-	paddingTop: theme.spacing(1.5),
-	paddingRight: theme.spacing(1),
-	paddingBottom: theme.spacing(1.5),
-	paddingLeft: theme.spacing(2),
-}));
-
-const StyledMenuSection = styled(Accordion)<{ expansion: boolean }>(
-	({ theme, expansion }) => ({
-		boxShadow: "none",
-		borderRadius: "0 !important",
-		border: "0px",
-		borderBottom: `1px solid ${theme.palette.divider}`,
-		":hover": {
-			backgroundColor: expansion ? "transparent" : "#F5F5F5",
-		},
-		"&:before": {
-			display: "none",
-		},
-		"&.Mui-expanded": {
-			margin: "0",
-			"&:last-child": {
-				borderBottom: "0px",
-			},
-		},
-	}),
-);
-
-const StyledTypography = styled(Typography)(() => ({}));
-
-const StyledMenuSectionTitle = styled(Accordion.Trigger)<{
-	expansion?: boolean;
-}>(({ theme, expansion }) => ({
-	minHeight: "auto !important",
-	borderLeft: expansion ? "3px solid #1976d2" : "3px solid transparent",
-	height: theme.spacing(3),
-	paddingLeft: "12px",
-	paddingTop: "8px",
-	paddingBottom: "8px",
-	":hover": {
-		backgroundColor: expansion ? "transparent" : "#F5F5F5",
-	},
-	marginTop: expansion ? "8px" : "0px",
-	marginBottom: expansion ? "8px" : "0px",
-}));
-
-const StyledStack = styled(Stack)(() => ({
-	">.MuiAccordion-root": {
-		paddingTop: "8px",
-		paddingBottom: "8px",
-		marginTop: "0px",
-		marginBottom: "8px",
-	},
-}));
 
 export const SelectedMenuSection = observer(
 	(props: {
@@ -74,55 +17,55 @@ export const SelectedMenuSection = observer(
 		setAccordion: (accordion: object) => void;
 	}) => {
 		return (
-			<StyledStack>
-				{props.sectionTitle != "" && (
-					<StyledMenuSectionHeader>
-						<StyledTypography variant="subtitle1">
+			<div className="flex flex-col">
+				{props.sectionTitle !== "" && (
+					<div className="py-1.5 pr-3 pl-2">
+						<span className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">
 							{props.sectionTitle}
-						</StyledTypography>
-					</StyledMenuSectionHeader>
+						</span>
+					</div>
 				)}
 				{props.menu.map((s, sIdx) => {
 					const key = `section--${sIdx}`;
+					const isOpen = !!props.accordion[key];
 
 					return (
 						<React.Fragment key={key}>
-							<StyledMenuSection
-								expanded={props.accordion[key]}
-								expansion={props.accordion[key]}
-								onChange={() =>
-									props.setAccordion({
-										...props.accordion,
-										[key]: !props.accordion[key],
-									})
-								}
-							>
-								<StyledMenuSectionTitle
-									expandIcon={""}
-									expansion={props.accordion[key]}
+							<div className="border-b last:border-b-0">
+								<button
+									type="button"
+									className="flex w-full cursor-pointer items-center justify-between py-1.5 pr-3 pl-2 text-left transition-colors hover:bg-muted/40"
+									onClick={() =>
+										props.setAccordion({
+											...props.accordion,
+											[key]: !isOpen,
+										})
+									}
 								>
-									<StyledTypography variant="body1">
+									<span className="font-semibold text-muted-foreground text-xs uppercase tracking-widest">
 										{s.name}
-									</StyledTypography>
-								</StyledMenuSectionTitle>
-
-								<Accordion.Content>
-									{s.children.length > 0 ? (
-										<Stack direction="column" spacing={1}>
-											{s.children.map((c, cIdx) => {
-												return createElement(c.render, {
-													key: cIdx,
-													id: props.id,
-												});
-											})}
-										</Stack>
-									) : null}
-								</Accordion.Content>
-							</StyledMenuSection>
+									</span>
+									<ChevronDown
+										className={`size-3 shrink-0 text-muted-foreground/60 transition-transform duration-200 ${
+											isOpen ? "rotate-180" : ""
+										}`}
+									/>
+								</button>
+								{isOpen && s.children.length > 0 && (
+									<div className="flex flex-col gap-1 pb-3 pl-3">
+										{s.children.map((c, cIdx) =>
+											createElement(c.render, {
+												key: cIdx,
+												id: props.id,
+											}),
+										)}
+									</div>
+								)}
+							</div>
 						</React.Fragment>
 					);
 				})}
-			</StyledStack>
+			</div>
 		);
 	},
 );

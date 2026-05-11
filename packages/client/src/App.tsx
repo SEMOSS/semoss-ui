@@ -1,124 +1,17 @@
-import axios, { isAxiosError } from "axios";
 import { useEffect } from "react";
 import { CSRF, Env } from "@semoss/sdk/react";
 import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
-import { AppWrapper } from "./AppWrapper";
+import { AppWrapper } from "./app-wrapper";
 
 // use the environment variable to set the module
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
 });
 
-/**
- * Get the CSRF Token
- * @returns token
- */
-async function getToken(): Promise<string> {
-	try {
-		const response = await axios.get(`${Env.MODULE}/api/config/fetchCsrf`, {
-			headers: {
-				"X-CSRF-Token": "fetch",
-			},
-		});
-
-		// not sure why the server is sending it as lowercase, preserving headers doesn't fix it
-		const token =
-			response.headers["X-CSRF-Token"] ||
-			response.headers["x-csrf-token"] ||
-			"";
-
-		return token;
-	} catch {
-		return "";
-	}
-}
-
-// add interceptors
-axios.interceptors.request.use(
-	async (config) => {
-		// Check if the request is a GET request
-		if (config.method === "get" && config.params) {
-			config.paramsSerializer = (params) => {
-				return Object.keys(params)
-					.map((key) => {
-						if (params[key] === undefined) {
-							return "";
-						}
-
-						return `${encodeURIComponent(key)}=${encodeURIComponent(
-							params[key],
-						)}`;
-					})
-					.filter((p) => {
-						if (p) {
-							return true;
-						}
-
-						return false;
-					})
-					.join("&");
-			};
-		}
-
-		// Check the CSRF before login or after the configStore is set, then add the token
-		if (CSRF.isEnabled || _store.configStore.store.config.csrf) {
-			if (config.method === "post") {
-				if (!CSRF.token) {
-					CSRF.token = await getToken();
-				}
-
-				config.headers["X-CSRF-Token"] = CSRF.token;
-			}
-		}
-		return config;
-	},
-	(error) => {
-		// Handle request error
-		return Promise.reject(error);
-	},
-);
-
-axios.interceptors.response.use(
-	(response) => response,
-	(error) => {
-		getError(error);
-	},
-);
-
 // create a new root store
 const _store = new RootStore();
-
-//get error from request or response
-function getError(error) {
-	if (error.status === 302 && error.headers && error.headers.redirect) {
-		window.location.replace(error.headers.redirect);
-	}
-
-	if (isAxiosError(error)) {
-		const { response } = error;
-		if (
-			response.status === 302 &&
-			response.headers &&
-			response.headers.redirect
-		) {
-			window.location.replace(response.headers.redirect);
-		}
-	}
-
-	const apiMessage = error.response?.data?.errorMessage;
-	if (apiMessage && typeof apiMessage === "string") {
-		// Exception for returning the errorMessage provided via the API if available.
-		return Promise.reject(apiMessage);
-	} else if (error.message) {
-		// return the message if it exists
-		return Promise.reject(error.message);
-	} else {
-		// reject with generic error
-		return Promise.reject("Error");
-	}
-}
 
 export const App = () => {
 	useEffect(() => {
@@ -159,7 +52,10 @@ export const App = () => {
 
 	return (
 		<RootStoreContext.Provider value={_store}>
-			<ThemeProvider defaultTheme="light">
+			<ThemeProvider
+				defaultTheme="light"
+				storageKey="smss-ui-theme-client"
+			>
 				<AppWrapper />
 				<Toaster />
 			</ThemeProvider>

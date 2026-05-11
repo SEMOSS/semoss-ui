@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -10,13 +10,15 @@ import {
 } from "@semoss/renderer";
 import {
 	Button,
+	Input,
 	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Switch,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerSettings } from "../../../shared/ColorPickerSettings";
 import {
 	FontFamily,
@@ -25,59 +27,15 @@ import {
 } from "../Visualization.constants";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: gap ?? undefined,
-}));
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
-const StyledButtonWrapper = styled("div")({
-	display: "flex",
-	justifyContent: "flex-end",
-	padding: "8px 16px",
-});
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-	marginBottom: "8px",
-}));
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-const StyledSelect = styled(Select)(() => ({
-	width: "100%",
-}));
+
 export const TitleTool = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
-		const [value, setValue] = useState("");
+		// biome-ignore lint/style/useConst: reassigned
+		let [value, setValue] = useState("");
 		const [showTitle, setShowTitle] = useState(true);
 		const [title, setTitle] = useState({
 			name: "",
@@ -89,170 +47,103 @@ export const TitleTool = observer(
 		});
 		const computedValue = useMemo(() => {
 			return computed(() => {
-				if (!data) {
-					return "";
-				}
+				if (!data) return "";
 				const v = getValueByPath(data, path);
-				if (typeof v === "undefined") {
-					return "";
-				} else if (typeof v === "string") {
-					return v;
-				}
+				if (typeof v === "undefined") return "";
+				else if (typeof v === "string") return v;
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reInitializeFeatures(data.option);
 			}
 		}, [id]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				retainLocalState(data.option);
 			}
 		}, [showTitle]);
-		/**
-		 * Retains the local state of the feature on toggle switch and on reset button
-		 * With the local state we will be displaying the values in the fields
-		 */
-		const retainLocalState = (options) => {
-			setTitle((prev) => ({
-				// Retain the title name
-				name: options["title"]["text"],
-				// Retain the alignment of the title
-				alignment: options["title"]["left"],
-				// Retain the font size of the title
-				size: options["title"]["textStyle"]["fontSize"],
-				// Retain the font weight of the title
-				weight: options["title"]["textStyle"]["fontWeight"],
-				// Retain the font family of the title
-				family: options["title"]["textStyle"]["fontFamily"],
-				// Retain the color of the title
-				color: options["title"]["textStyle"]["color"],
-			}));
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const retainLocalState = (options: any) => {
+			setTitle({
+				name: options.title.text,
+				alignment: options.title.left,
+				size: options.title.textStyle.fontSize,
+				weight: options.title.textStyle.fontWeight,
+				family: options.title.textStyle.fontFamily,
+				color: options.title.textStyle.color,
+			});
 		};
-		//Reinitialize the feature when the chart is loaded
-		const reInitializeFeatures = (options) => {
-			setShowTitle(options["title"].show ?? true);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const reInitializeFeatures = (options: any) => {
+			setShowTitle(options.title.show ?? true);
 		};
-		/**
-		 * Handle the change event for any Title input
-		 * @param title - name of the input field
-		 * @param inputValue - value of the input field
-		 */
-		function handleInputChange(title: string, inputValue) {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function handleInputChange(titleKey: string, inputValue: any) {
 			const option = JSON.parse(value);
-			if (title === "showTitle") {
-				// Update the showTitle property of the option
-				option["title"].show = inputValue;
-				// Update the showTitle state
+			if (titleKey === "showTitle") {
+				option.title.show = inputValue;
 				setShowTitle(inputValue);
-			} else if (title === "titleName") {
-				// Update the titleName property of the option
-				option["title"]["text"] = inputValue;
-				// Update the titleName state
-				setTitle((prev) => ({
-					...prev,
-					name: inputValue,
-				}));
-			} else if (title === "titleAlignment") {
-				// Update the titleAlignment property of the option
-				option["title"]["left"] = inputValue;
-				// Update the titleAlignment state
-				setTitle((prev) => ({
-					...prev,
-					alignment: inputValue,
-				}));
-			} else if (title === "titleSize") {
-				// Update the titleSize property of the option
-				option["title"]["textStyle"]["fontSize"] = inputValue;
-				// Update the titleSize state
-				setTitle((prev) => ({
-					...prev,
-					size: inputValue,
-				}));
-			} else if (title === "titleWeight") {
-				// Update the titleWeight property of the option
-				option["title"]["textStyle"]["fontWeight"] = inputValue;
-				// Update the titleWeight state
-				setTitle((prev) => ({
-					...prev,
-					weight: inputValue,
-				}));
-			} else if (title === "titleFamily") {
-				// Update the titleFamily property of the option
-				option["title"]["textStyle"]["fontFamily"] = inputValue;
-				// Update the titleFamily state
-				setTitle((prev) => ({
-					...prev,
-					family: inputValue,
-				}));
+			} else if (titleKey === "titleName") {
+				option.title.text = inputValue;
+				setTitle((prev) => ({ ...prev, name: inputValue }));
+			} else if (titleKey === "titleAlignment") {
+				option.title.left = inputValue;
+				setTitle((prev) => ({ ...prev, alignment: inputValue }));
+			} else if (titleKey === "titleSize") {
+				option.title.textStyle.fontSize = inputValue;
+				setTitle((prev) => ({ ...prev, size: inputValue }));
+			} else if (titleKey === "titleWeight") {
+				option.title.textStyle.fontWeight = inputValue;
+				setTitle((prev) => ({ ...prev, weight: inputValue }));
+			} else if (titleKey === "titleFamily") {
+				option.title.textStyle.fontFamily = inputValue;
+				setTitle((prev) => ({ ...prev, family: inputValue }));
 			}
-			// Update the data with the new option
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
-		/**
-		 * Resets the title feature to its default values.
-		 * Default values are defined in the 'reset' object of the option.
-		 */
+
 		function handleReset() {
-			// Parse the current option value
 			const option = JSON.parse(value);
-			// Reset show property of the title
-			option["title"].show = option["reset"]["title"]["show"];
-			// Reset text property of the title
-			option["title"]["text"] = option["reset"]["title"]["text"];
-			// Reset alignment of the title
-			option["title"]["left"] = option["reset"]["title"]["left"];
-			// Reset font size of the title
-			option["title"]["textStyle"]["fontSize"] =
-				option["reset"]["title"]["textStyle"]["fontSize"];
-			// Reset font weight of the title
-			option["title"]["textStyle"]["fontWeight"] =
-				option["reset"]["title"]["textStyle"]["fontWeight"];
-			// Reset font family of the title
-			option["title"]["textStyle"]["fontFamily"] =
-				option["reset"]["title"]["textStyle"]["fontFamily"];
-			// Reset color of the title
-			option["title"]["textStyle"]["color"] =
-				option["reset"]["title"]["textStyle"]["color"];
-			// Update the data with the reset option
+			option.title.show = option.reset.title.show;
+			option.title.text = option.reset.title.text;
+			option.title.left = option.reset.title.left;
+			option.title.textStyle.fontSize =
+				option.reset.title.textStyle.fontSize;
+			option.title.textStyle.fontWeight =
+				option.reset.title.textStyle.fontWeight;
+			option.title.textStyle.fontFamily =
+				option.reset.title.textStyle.fontFamily;
+			option.title.textStyle.color = option.reset.title.textStyle.color;
 			setData(path, option as PathValue<D["data"], typeof path>);
-			// Retain the local state with the updated option
 			retainLocalState(option);
 		}
+
 		return (
-			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					gap="8px"
-					style={{ marginTop: "8px" }}
-				>
+			<div className="flex flex-col">
+				<div className="mt-2 flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
-						checked={showTitle}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange("showTitle", e.target.checked)
+						checked={!!showTitle}
+						onCheckedChange={(checked: boolean) =>
+							handleInputChange("showTitle", checked)
 						}
-						title="Show Title"
 					/>
-					<Typography variant="body2" color="secondary">
-						Show Title
-					</Typography>
-				</StyledAxisDiv>
+					<span className="text-sm">Show Title</span>
+				</div>
 				{showTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Title Name
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<Input
 							id="name"
 							name="name"
 							value={title?.name}
@@ -260,51 +151,40 @@ export const TitleTool = observer(
 								handleInputChange("titleName", e.target.value)
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{showTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Select Alignment
-						</Typography>
-						<StyledSelect
-							size="small"
-							id="alignment"
-							name="alignment"
+						</span>
+						<Select
 							value={title?.alignment}
-							onChange={(e) =>
-								handleInputChange(
-									"titleAlignment",
-									e.target.value,
-								)
+							onValueChange={(val) =>
+								handleInputChange("titleAlignment", val)
 							}
 						>
-							<Select.Item key="-1" value="">
-								Select
-							</Select.Item>
-							{Title_Alignment.map((label, index) => {
-								return (
-									<Select.Item value={label} key={index}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select" />
+							</SelectTrigger>
+							<SelectContent>
+								{Title_Alignment.map((label, index) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									<SelectItem key={index} value={label}>
 										{label}
-									</Select.Item>
-								);
-							})}
-						</StyledSelect>
-					</StyledAxisColDiv>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				)}
 				{showTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Text Size
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<Input
 							id="size"
 							name="size"
 							value={title?.size}
@@ -312,67 +192,57 @@ export const TitleTool = observer(
 								handleInputChange("titleSize", e.target.value)
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{showTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Select Font Weight
-						</Typography>
-						<StyledSelect
-							size="small"
-							id="font-weight"
-							name="fontWeight"
+						</span>
+						<Select
 							value={title?.weight}
-							onChange={(e) =>
-								handleInputChange("titleWeight", e.target.value)
+							onValueChange={(val) =>
+								handleInputChange("titleWeight", val)
 							}
 						>
-							<Select.Item key="-1" value="">
-								Select
-							</Select.Item>
-							{FontWeights.map((label, index) => {
-								return (
-									<Select.Item value={label} key={index}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select" />
+							</SelectTrigger>
+							<SelectContent>
+								{FontWeights.map((label, index) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									<SelectItem key={index} value={label}>
 										{label}
-									</Select.Item>
-								);
-							})}
-						</StyledSelect>
-					</StyledAxisColDiv>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				)}
 				{showTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Select Font Family
-						</Typography>
-						<StyledSelect
-							size="small"
-							id="font-family"
-							name="fontFamily"
+						</span>
+						<Select
 							value={title?.family}
-							onChange={(e) =>
-								handleInputChange("titleFamily", e.target.value)
+							onValueChange={(val) =>
+								handleInputChange("titleFamily", val)
 							}
 						>
-							<Select.Item key="-1" value="">
-								Select
-							</Select.Item>
-							{FontFamily.map((label, index) => {
-								return (
-									<Select.Item value={label} key={index}>
+							<SelectTrigger className="w-full">
+								<SelectValue placeholder="Select" />
+							</SelectTrigger>
+							<SelectContent>
+								{FontFamily.map((label, index) => (
+									// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+									<SelectItem key={index} value={label}>
 										{label}
-									</Select.Item>
-								);
-							})}
-						</StyledSelect>
-					</StyledAxisColDiv>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
 				)}
 				{showTitle && (
 					<ColorPickerSettings
@@ -383,18 +253,11 @@ export const TitleTool = observer(
 					/>
 				)}
 				{showTitle && (
-					<StyledButtonWrapper>
-						<Button
-							variant="contained"
-							color="primary"
-							size="small"
-							onClick={handleReset}
-						>
-							Reset
-						</Button>
-					</StyledButtonWrapper>
+					<div className="flex justify-end px-4 py-2">
+						<Button onClick={handleReset}>Reset</Button>
+					</div>
 				)}
-			</StyledAxis>
+			</div>
 		);
 	},
 );

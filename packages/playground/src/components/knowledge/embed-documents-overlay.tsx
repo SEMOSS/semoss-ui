@@ -53,6 +53,9 @@ export const EmbedDocumentsOverlay = ({
 			return;
 		}
 
+		let embeddingsResponse:
+			| Awaited<ReturnType<typeof actions.run>>
+			| undefined;
 		setIsEmbedding(true);
 		try {
 			// Upload the files
@@ -63,7 +66,7 @@ export const EmbedDocumentsOverlay = ({
 				.map(({ fileLocation }) => `"${fileLocation}"`)
 				.join(", ");
 
-			await actions.run<
+			embeddingsResponse = await actions.run<
 				[
 					{
 						database_id: string;
@@ -80,6 +83,7 @@ export const EmbedDocumentsOverlay = ({
 		} catch (e) {
 			toast.error(t("embedMessages.embedFailed"));
 			console.error(e);
+			console.log(embeddingsResponse?.pixelReturn[0]?.output);
 		} finally {
 			setIsEmbedding(false);
 		}

@@ -48,6 +48,8 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = (props) => {
 						? t("overlay.editToolbox")
 						: t("overlay.editKnowledge")
 				}
+				onOpenAutoFocus={(e) => e.preventDefault()}
+				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
 				<DialogHeader>
 					<DialogTitle>

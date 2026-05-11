@@ -39,7 +39,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	 * Get all of the groups
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL", "VECTOR"])`,
+		`META | MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL", "VECTOR"])`,
 		{
 			data: [],
 		},
@@ -50,11 +50,20 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	 */
 	const getMCP = usePixel<{
 		tools: MCPTool[];
-	}>(toolbox ? `GetMCPTools("${toolbox.id}")` : null, {
-		data: {
-			tools: [],
+	}>(
+		toolbox
+			? `GetMCPTools(${
+					toolbox.type === "PROJECT"
+						? `project=["${toolbox.id}"]`
+						: `engine=["${toolbox.id}"]`
+				});`
+			: "",
+		{
+			data: {
+				tools: [],
+			},
 		},
-	});
+	);
 
 	const toolboxOptions = getApps.data.map(engineProjectToMCP);
 

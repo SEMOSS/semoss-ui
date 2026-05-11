@@ -1,13 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { MembersTable } from "@semoss/shared";
 import { H2 } from "@semoss/ui/next";
-import {
-	MembersTable,
-	PendingMembersTable,
-	SettingsTiles,
-} from "@/components/settings";
+import { PendingMembersTable, SettingsTiles } from "@/components/settings";
 import { TeamsTable } from "@/components/settings/teams-table";
 import { SettingsContext } from "@/contexts";
 import { useEngine } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 
 export const EngineSettingsPage = () => {
 	const { name, path, type, active } = useEngine();
@@ -21,7 +18,9 @@ export const EngineSettingsPage = () => {
 		>
 			<div className="flex w-full flex-col items-start gap-6 self-stretch">
 				<section className="w-full">
-					<H2 className="mb-2 font-medium text-xl">Acess Settings</H2>
+					<H2 className="mb-2 font-medium text-xl">
+						Access Settings
+					</H2>
 					<SettingsTiles
 						type={type}
 						id={active.id}

@@ -1,4 +1,4 @@
-import { HighlightAlt } from "@mui/icons-material";
+import { Crosshair } from "lucide-react";
 import { ColorSettings, SwitchSettings } from "../../settings/shared";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import {
@@ -23,7 +23,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: HighlightAlt,
+	icon: Crosshair,
 	contentMenu: [
 		{
 			name: "General",

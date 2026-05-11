@@ -1,11 +1,11 @@
 {
-	"welcome": "مرحباً",
+	"welcome": "مرحباً، {{name}}",
 	"settings": {
 		"title": "إعدادات الغرفة",
 		"description": "تحديث إعدادات الغرفة وتعديل سلوك الدردشة",
-		"open": "فتح الإعدادات",
-		"close": "إغلاق",
-		"edit": "تعديل الإعدادات"
+		"open": "فتح إعدادات الغرفة",
+		"close": "إغلاق إعدادات الغرفة",
+		"edit": "تعديل إعدادات الغرفة"
 	},
 	"form": {
 		"modelLabel": "النموذج",
@@ -37,8 +37,8 @@
 	"input": {
 		"ariaPlaceholder": "أدخل النص",
 		"thinking": "جارٍ التفكير...",
-		"menuPrompt": "/ لفتح القائمة",
-		"openSettings": "فتح الإعدادات",
+		"menuPrompt": "كيف يمكنني مساعدتك اليوم؟",
+		"openSettings": "إضافة ملفات ووكلاء والمزيد",
 		"recordLabel": "تسجيل النموذج",
 		"stopRecording": "إيقاف التسجيل",
 		"record": "تسجيل",
@@ -47,12 +47,13 @@
 		"enterQuestion": "الرجاء إدخال سؤال",
 		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
 		"ask": "اسأل",
-		"errorProcessing": "خطأ في معالجة الدردشة"
+		"errorProcessing": "خطأ في معالجة الدردشة",
+		"pauseTools": "إيقاف الأدوات مؤقتاً",
+		"pauseToolsTooltip": "إيقاف تنفيذ جميع الأدوات مؤقتاً حتى بعد الرسالة التالية"
 	},
 	"content": {
 		"scrollToTop": "انتقل إلى الأعلى",
-		"scrollToBottom": "انتقل إلى الأسفل",
-		"errorDefault": "غير قادر على معالجة الطلب. يرجى التحقق من اتصالك، ونسخ رسالتك، والتحديث."
+		"scrollToBottom": "انتقل إلى الأسفل"
 	},
 	"inlineTool": {
 		"openInSidebar": "فتح في الشريط الجانبي",
@@ -67,23 +68,18 @@
 		"copyFailed": "فشل النسخ إلى الحافظة"
 	},
 	"menuToolbox": {
-		"addToolbox": "إضافة صندوق أدوات",
-		"searchPlaceholder": "البحث في صناديق الأدوات",
-		"notFound": "غير موجود",
-		"allTools": "جميع الأدوات"
+		"addToolbox": "إضافة صناديق أدوات"
 	},
 	"menuKnowledge": {
-		"addKnowledge": "إضافة معرفة",
-		"searchPlaceholder": "البحث في المعرفة",
-		"notFound": "غير موجود"
+		"addKnowledge": "إضافة معرفة"
 	},
 	"menuWorkspace": {
 		"selectAgent": "اختر وكيل",
-		"searchPlaceholder": "البحث في مساحات العمل",
+		"searchPlaceholder": "البحث عن وكلاء",
 		"notFound": "غير موجود"
 	},
 	"menuUpload": {
-		"attachDocument": "إرفاق مستند"
+		"attachDocument": "إضافة مستندات"
 	},
 	"menuFileExplorer": {
 		"name": "مستكشف الملفات",
@@ -92,5 +88,18 @@
 	},
 	"errors": {
 		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "جميع المحادثات لها حد. ستؤدي المحادثات الطويلة جدًا في نهاية المطاف إلى نسيان النموذج للرسائل السابقة.",
+		"descriptionMedium": "تطول هذه المحادثة. إذا استمرت، سيبدأ النموذج في نسيان الرسائل السابقة. فكر في بدء دردشة جديدة قريبًا.",
+		"descriptionHigh": "هذه المحادثة على وشك الامتلاء. سيبدأ النموذج قريبًا في نسيان الرسائل السابقة. فكر في بدء دردشة جديدة.",
+		"descriptionExceeded": "تجاوزت هذه المحادثة حدها. يقوم النموذج الآن بنسيان الرسائل السابقة عند توليد الردود. ابدأ دردشة جديدة للحصول على أفضل النتائج.",
+		"memoryUsedTitle": "الذاكرة المستخدمة:",
+		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
+		"noResults": "لم يتم العثور على عناصر مطابقة",
+		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
 	}
 }

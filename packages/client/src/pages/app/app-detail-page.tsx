@@ -11,10 +11,9 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import { getUserProjectPermission } from "@semoss/shared";
-import { Modal, useNotification } from "@semoss/ui";
 import {
 	Badge,
 	Breadcrumb,
@@ -24,6 +23,8 @@ import {
 	BreadcrumbPage,
 	BreadcrumbSeparator,
 	Button,
+	Dialog,
+	DialogContent,
 	H4,
 	Spinner,
 	Tabs,
@@ -49,17 +50,20 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
+import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { UpdateSMSS } from "@/components/settings";
 import { McpUsage } from "@/components/shared/mcp-usage";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import type { Role } from "@/types";
+import { getTagBadgeStyle } from "@/utility";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
-import { AccessControl } from "./AppDetailTabs/access-control";
-import { Dependencies } from "./AppDetailTabs/dependencies-tab";
-import { Overview } from "./AppDetailTabs/overview-tab";
-import { SettingsTab } from "./AppDetailTabs/settings-tab";
+import { AccessControl } from "./app-detail-tabs/access-control";
+import { CommitsTab } from "./app-detail-tabs/commits-tab";
+import { Dependencies } from "./app-detail-tabs/dependencies-tab";
+import { Overview } from "./app-detail-tabs/overview-tab";
+import { SettingsTab } from "./app-detail-tabs/settings-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
 const modelDependencies = (
@@ -74,6 +78,7 @@ const modelDependencies = (
 		isDiscoverable: !!dep.engine_discoverable,
 		description: dep.description,
 		access_permission: dep.access_permission,
+		can_view_dependencies: dep.can_view_dependencies,
 	}));
 };
 
@@ -139,7 +144,6 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	);
 	const [pendingRequest, setPendingRequest] = useState(false);
 	const { monolithStore, configStore } = useRootStore();
-	const notification = useNotification();
 	const { appId } = useParams();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
@@ -147,29 +151,34 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 	const [mcpTools, setMcpTools] = useState<MCPToolDefinition[]>([]);
 	const [mcpToolsLoading, setMcpToolsLoading] = useState(false);
 	const [mcpToolsError, setMcpToolsError] = useState("");
+	const [permissionError, setPermissionError] = useState(false);
+	const [searchParams, setSearchParams] = useSearchParams();
+	const tab = searchParams.get("tab");
 
-	const emitMessage = useCallback(
-		(isError: boolean, message: string) => {
-			notification.add({
-				color: isError ? "error" : "success",
-				message,
-			});
-		},
-		[notification.add],
-	);
+	const emitMessage = useCallback((isError: boolean, message: string) => {
+		if (isError) toast.error(message);
+		else toast.success(message);
+	}, []);
 	const getPermission = useCallback(async () => {
-		const role = await getUserProjectPermission(appId);
+		try {
+			const role = await getUserProjectPermission(appId);
 
-		setValue("userRole", role);
-		const nextPermission = determineUserPermission(role);
-		setValue("permission", nextPermission);
+			setValue("userRole", role);
+			const nextPermission = determineUserPermission(role);
+			setValue("permission", nextPermission);
 
-		if (nextPermission === "author")
-			setValue("requestedPermission", "OWNER");
-		if (nextPermission === "editor")
-			setValue("requestedPermission", "EDIT");
-		if (nextPermission === "readOnly" || nextPermission === "discoverable")
-			setValue("requestedPermission", "READ_ONLY");
+			if (nextPermission === "author")
+				setValue("requestedPermission", "OWNER");
+			if (nextPermission === "editor")
+				setValue("requestedPermission", "EDIT");
+			if (
+				nextPermission === "readOnly" ||
+				nextPermission === "discoverable"
+			)
+				setValue("requestedPermission", "READ_ONLY");
+		} catch {
+			setPermissionError(true);
+		}
 	}, [appId, setValue]);
 
 	const fetchSimilarApps = useCallback(() => {
@@ -349,6 +358,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 		setSelectedTab("Overview");
 		setMcpTools([]);
 		setMcpToolsError("");
+		setPermissionError(false);
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		if (appId) {
@@ -383,6 +393,14 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				});
 		}
 	}, [appId, monolithStore]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: setSearchParams is stable
+	useEffect(() => {
+		if (tab === "accesscontrol") {
+			setSelectedTab("Access Control");
+			setSearchParams({});
+		}
+	}, [tab]);
 
 	const handleCloseChangeAccessModal = (refresh?: boolean) => {
 		if (refresh) {
@@ -472,7 +490,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			.runQuery(
 				`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 					meta,
-				)}], jsonCleanup=[true])`,
+				)}])`,
 			)
 			.then(async (response) => {
 				const { output, additionalOutput, operationType } =
@@ -530,6 +548,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"Overview",
 			"Dependencies",
 			"MCP Usage",
+			"Commits",
 			"Settings",
 			"Access Control",
 			"Files",
@@ -539,6 +558,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"Overview",
 			"Dependencies",
 			"MCP Usage",
+			"Commits",
 			"Access Control",
 			"Files",
 		],
@@ -548,6 +568,22 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 
 	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
 
+	if (permissionError) {
+		return (
+			<>
+				{showNav && (
+					<NavbarLeft>
+						<NavbarHeader />
+					</NavbarLeft>
+				)}
+				<ResourceNotFound
+					catalogPath="/app"
+					catalogLabel="App Catalog"
+				/>
+			</>
+		);
+	}
+
 	return (
 		<div className="w-full">
 			{showNav && (
@@ -556,13 +592,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				</NavbarLeft>
 			)}
 			<div
-				className={`h-full w-full${
+				className={`h-full w-full ${
 					showNav ? "flex flex-col justify-center gap-4" : "m-2 p-5"
 				}`}
 			>
 				<div
 					className={`flex h-full w-full flex-col gap-3 ${
-						showNav ? "m-auto max-w-316" : ""
+						showNav ? "mx-auto w-full" : ""
 					}`}
 				>
 					{showNav && (
@@ -572,22 +608,26 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									<BreadcrumbLink asChild>
 										<Link
 											to={"/app"}
-											className="text-inherit"
+											className="inline-flex items-center text-inherit leading-none"
 										>
 											App Catalog
 										</Link>
 									</BreadcrumbLink>
 								</BreadcrumbItem>
-								<BreadcrumbSeparator>
+								<BreadcrumbSeparator className="inline-flex items-center [&>svg]:translate-y-[0.5px]">
 									<ChevronRight />
 								</BreadcrumbSeparator>
 								<BreadcrumbItem>
-									<BreadcrumbPage>
+									<BreadcrumbPage className="inline-flex items-center leading-none">
 										<span
-											title={appInfo?.project_name}
-											className="inline-block max-w-[40ch] truncate text-ellipsis"
+											title={
+												appInfo?.project_display_name ||
+												appInfo?.project_name
+											}
+											className="inline-block max-w-[40ch] truncate text-ellipsis leading-none"
 										>
-											{appInfo?.project_name}
+											{appInfo?.project_display_name ||
+												appInfo?.project_name}
 										</span>
 									</BreadcrumbPage>
 								</BreadcrumbItem>
@@ -599,7 +639,11 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 						<div className="h-16 w-16 shrink-0 rounded-lg bg-muted">
 							<img
 								src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-								alt={appInfo?.project_name || "App"}
+								alt={
+									appInfo?.project_display_name ||
+									appInfo?.project_name ||
+									"App"
+								}
 								className="size-full object-cover"
 							/>
 						</div>
@@ -607,9 +651,13 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 						<div className="flex min-w-0 flex-1 flex-col gap-1">
 							<h1
 								className="wrap-break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
-								title={appInfo?.project_name}
+								title={
+									appInfo?.project_display_name ||
+									appInfo?.project_name
+								}
 							>
-								{appInfo?.project_name}
+								{appInfo?.project_display_name ||
+									appInfo?.project_name}
 							</h1>
 							{appId && (
 								<div className="flex items-center gap-1 text-muted-foreground text-sm">
@@ -665,9 +713,21 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 												: "outline"
 									}
 									className="gap-2"
-									onClick={() =>
-										setIsChangeAccessModalOpen(true)
-									}
+									onClick={() => {
+										const appName =
+											appInfo?.project_display_name ||
+											appInfo?.project_name ||
+											"this app";
+										setValue(
+											"requestedPermission",
+											"READ_ONLY",
+										);
+										setValue(
+											"roleChangeComment",
+											`I am requesting access to ${appName} for [please provide a reason]`,
+										);
+										setIsChangeAccessModalOpen(true);
+									}}
 									data-testid={"appDetail-access-btn"}
 								>
 									{responseStatus ? (
@@ -727,7 +787,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											<Badge
 												key={`tag-${tag}-${tag}`}
 												variant="outline"
-												className="border-primary text-primary"
+												style={getTagBadgeStyle(tag)}
 											>
 												{tag}
 											</Badge>
@@ -782,6 +842,11 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 									{visibleTabs.includes("MCP Usage") && (
 										<TabsTrigger value="MCP Usage">
 											MCP Usage
+										</TabsTrigger>
+									)}
+									{visibleTabs.includes("Commits") && (
+										<TabsTrigger value="Commits">
+											Commits
 										</TabsTrigger>
 									)}
 									{visibleTabs.includes("Settings") && (
@@ -1010,9 +1075,18 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											)}
 									</div>
 
-									<McpUsage id={appId} />
+									<McpUsage
+										id={appId}
+										name={
+											appInfo?.project_display_name ||
+											appInfo?.project_name
+										}
+									/>
 								</div>
 							</SettingsContext.Provider>
+						)}
+						{selectedTab === "Commits" && (
+							<CommitsTab appId={appId} />
 						)}
 						{selectedTab === "Settings" && (
 							<SettingsContext.Provider
@@ -1047,16 +1121,18 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 				</div>
 			</div>
 
-			<Modal
+			<Dialog
 				open={isShareOverlayOpen}
-				onClose={() => setIsShareOverlayOpen(false)}
+				onOpenChange={(o) => !o && setIsShareOverlayOpen(false)}
 			>
-				<ShareOverlay
-					appId={appId}
-					diffs={false}
-					onClose={() => setIsShareOverlayOpen(false)}
-				/>
-			</Modal>
+				<DialogContent className="max-w-lg p-0">
+					<ShareOverlay
+						appId={appId}
+						diffs={false}
+						onClose={() => setIsShareOverlayOpen(false)}
+					/>
+				</DialogContent>
+			</Dialog>
 
 			<ChangeAccessModal
 				open={isChangeAccessModalOpen}

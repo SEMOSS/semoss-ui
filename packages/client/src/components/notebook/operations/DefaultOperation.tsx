@@ -1,14 +1,6 @@
-import { JsonViewer } from "@textea/json-viewer";
 import { observer } from "mobx-react-lite";
-import { styled } from "@semoss/ui";
+import { JsonValueViewer } from "@/components/common/JsonValueViewer";
 import { isOutputJSON } from "@/utility";
-
-const StyledJson = styled("pre")(({ theme }) => ({
-	...theme.typography.body2,
-	textWrap: "wrap",
-	maxHeight: "200px",
-	overflowY: "scroll",
-}));
 
 interface DefaultOperationProps {
 	/** Output of the code */
@@ -25,18 +17,20 @@ export const DefaultOperation = observer(
 		if (typeof output === "string" || typeof output === "object") {
 			const value = isOutputJSON(output);
 			if (value != null) {
-				return (
-					<JsonViewer
-						value={value}
-						displayComma={true}
-						rootName={false}
-					/>
-				);
+				return <JsonValueViewer value={value} />;
 			} else {
-				return <StyledJson>{output as string}</StyledJson>;
+				return (
+					<pre className="max-h-[200px] overflow-y-scroll text-wrap text-sm">
+						{output as string}
+					</pre>
+				);
 			}
 		}
 
-		return <StyledJson>{JSON.stringify(output, null, 4)}</StyledJson>;
+		return (
+			<pre className="max-h-[200px] overflow-y-scroll text-wrap text-sm">
+				{JSON.stringify(output, null, 4)}
+			</pre>
+		);
 	},
 );
