@@ -4,6 +4,13 @@ import { screen } from "@testing-library/react";
 import { VisualizationFilterBlock } from "../../components/block-defaults/visualization-filter-block/VisualizationFilterBlock";
 import { render } from "../utils";
 
+class ResizeObserverMock {
+	observe = vi.fn();
+	unobserve = vi.fn();
+	disconnect = vi.fn();
+}
+vi.stubGlobal("ResizeObserver", ResizeObserverMock);
+
 const mockState = {
 	runSideEffect: vi.fn().mockResolvedValue({
 		pixelReturn: [
