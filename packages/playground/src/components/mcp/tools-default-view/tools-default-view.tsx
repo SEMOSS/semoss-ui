@@ -61,7 +61,7 @@ export const ToolsDefaultView = observer(
 					required: string[];
 				};
 			}[];
-		}>(`GetMCPTools(project=["${app}"]);`, {
+		}>(app ? `GetMCPTools(project=["${app}"]);` : "", {
 			data: {
 				tools: [
 					{
@@ -355,7 +355,7 @@ export const ToolsDefaultView = observer(
 							/>
 						</div>
 					)}
-					{getMCP.status === "ERROR" ? (
+					{getMCP.status === "ERROR" && app ? (
 						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 							<div className="text-destructive">
 								<p className="font-semibold text-lg">
@@ -366,7 +366,7 @@ export const ToolsDefaultView = observer(
 								</p>
 							</div>
 						</div>
-					) : getMCP.status === "SUCCESS" ? (
+					) : getMCP.status === "SUCCESS" || !app ? (
 						showResponse ? (
 							Object.keys(properties).length > 0 && (
 								<>
