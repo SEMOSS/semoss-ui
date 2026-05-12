@@ -291,6 +291,9 @@ export const FunctionImport = ({ name }: { name: string }) => {
 					<FunctionForm
 						title={selectedDatabase.name}
 						description={`Fill out ${selectedDatabase.name} details in order to add function to catalog`}
+						notice={
+							(selectedDatabase as { notice?: string }).notice
+						}
 						fields={selectedDatabase.fields}
 						advanced={selectedDatabase.advanced}
 						categoryDescription={CategoryDescription}
