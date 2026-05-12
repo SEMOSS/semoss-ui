@@ -7,15 +7,6 @@ export function formatInlineAskPair(
 	return `"${flat}" - ${question.trim()}`;
 }
 
-/**
- * Clear any active text selection in the document. Called as defensive cleanup
- * after sending or dismissing an inline-ask pair.
- */
-export function clearBrowserSelection(): void {
-	const sel = typeof window !== "undefined" ? window.getSelection() : null;
-	sel?.removeAllRanges();
-}
-
 type HighlightCtor = new (range: Range) => unknown;
 type HighlightRegistry = {
 	set(key: string, value: unknown): void;

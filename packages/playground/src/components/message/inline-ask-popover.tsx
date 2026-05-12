@@ -15,7 +15,6 @@ import {
 } from "@semoss/ui/next";
 import {
 	type ActiveSelectionInfo,
-	clearBrowserSelection,
 	formatInlineAskPair,
 	paintHighlight,
 } from "@/utility";
@@ -66,7 +65,7 @@ export const InlineAskPopover: React.FC<InlineAskPopoverProps> = ({
 		const trimmed = question.trim();
 		if (!trimmed) return;
 		appendToMainInput(formatInlineAskPair(selection.text, trimmed));
-		clearBrowserSelection();
+		window.getSelection()?.removeAllRanges();
 		onClose();
 	};
 
