@@ -13,7 +13,6 @@ import {
 	PopoverAnchor,
 	PopoverContent,
 } from "@semoss/ui/next";
-import { useMainInput } from "@/contexts";
 import {
 	type ActiveSelectionInfo,
 	clearBrowserSelection,
@@ -27,13 +26,14 @@ const HIGHLIGHT_NAME = "inline-ask";
 interface InlineAskPopoverProps {
 	selection: ActiveSelectionInfo;
 	onClose: () => void;
+	appendToMainInput: (text: string) => void;
 }
 
 export const InlineAskPopover: React.FC<InlineAskPopoverProps> = ({
 	selection,
 	onClose,
+	appendToMainInput,
 }) => {
-	const { appendToMainInput } = useMainInput();
 	const [showInput, setShowInput] = useState(false);
 	const [question, setQuestion] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);

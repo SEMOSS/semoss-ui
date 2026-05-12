@@ -42,7 +42,6 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { InlineAskPopover } from "@/components/message/inline-ask-popover";
-import { type MainInputAPI, MainInputContext } from "@/contexts";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
@@ -99,11 +98,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 		editor.focus();
 	}, []);
-
-	const mainInputApi = React.useMemo<MainInputAPI>(
-		() => ({ appendToMainInput }),
-		[appendToMainInput],
-	);
 
 	useEffect(() => {
 		const update = () => {
@@ -389,233 +383,206 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		isAutoExecutingTools;
 
 	return (
-		<MainInputContext.Provider value={mainInputApi}>
-			<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
-				<div className="relative w-full flex-1 overflow-hidden">
-					<ScrollArea
-						className="h-full w-full overflow-hidden"
-						viewportRef={(ele) => {
-							setScrollEle(ele);
+		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
+			<div className="relative w-full flex-1 overflow-hidden">
+				<ScrollArea
+					className="h-full w-full overflow-hidden"
+					viewportRef={(ele) => {
+						setScrollEle(ele);
+					}}
+				>
+					<div
+						ref={(ele) => {
+							setContentEle(ele);
 						}}
 					>
-						<div
-							ref={(ele) => {
-								setContentEle(ele);
-							}}
-						>
-							<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
-								{room.history.map((m, mIdx) => {
-									if (!m.visible) {
-										return null;
-									}
+						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
+							{room.history.map((m, mIdx) => {
+								if (!m.visible) {
+									return null;
+								}
 
-									return (
-										<React.Fragment key={m.key}>
-											{(m.parent.modelId !== m.modelId ||
-												m.parent.parent === null) && (
-												<div className="relative flex flex-col items-center justify-center">
-													<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
-														{m.ornaments.modelName}
-													</div>
-													<Separator className="absolute top-1/2" />
+								return (
+									<React.Fragment key={m.key}>
+										{(m.parent.modelId !== m.modelId ||
+											m.parent.parent === null) && (
+											<div className="relative flex flex-col items-center justify-center">
+												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
+													{m.ornaments.modelName}
 												</div>
-											)}
-											{m.type === "INPUT" && (
-												<InputMessage
-													room={room}
-													message={m}
-												/>
-											)}
-											{m.type === "OUTPUT" && (
-												<ResponseMessage
-													room={room}
-													message={m}
-												/>
-											)}
-											{m.type === "PLAN" && (
-												<PlanMessage
-													message={m}
-													isLast={
-														mIdx ===
-														room.history.length - 1
-													}
-												/>
-											)}
-										</React.Fragment>
-									);
-								})}
-								{room.theme.featureFlags?.enableSuggestions && (
-									<RoomSuggestions room={room} />
-								)}
-							</div>
-							{room.error ? (
-								<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
-									<div className="flex h-10 w-10 items-center justify-center rounded-full">
-										<TriangleAlertIcon className="h-6 w-6" />
-									</div>
-									<span>
-										{getGracefulErrorMessage(room.error)}
-									</span>
-								</div>
-							) : null}
+												<Separator className="absolute top-1/2" />
+											</div>
+										)}
+										{m.type === "INPUT" && (
+											<InputMessage
+												room={room}
+												message={m}
+											/>
+										)}
+										{m.type === "OUTPUT" && (
+											<ResponseMessage
+												room={room}
+												message={m}
+											/>
+										)}
+										{m.type === "PLAN" && (
+											<PlanMessage
+												message={m}
+												isLast={
+													mIdx ===
+													room.history.length - 1
+												}
+											/>
+										)}
+									</React.Fragment>
+								);
+							})}
+							{room.theme.featureFlags?.enableSuggestions && (
+								<RoomSuggestions room={room} />
+							)}
 						</div>
-					</ScrollArea>
-
-					{showScrollup && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="absolute top-4 right-4 z-50">
-									<Button
-										size="icon-sm"
-										variant={"outline"}
-										onClick={() => scrollToTarget(0)}
-										aria-label={t("content.scrollToTop")}
-										className="shadow-lg"
-									>
-										<MoveUpIcon />
-									</Button>
+						{room.error ? (
+							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+								<div className="flex h-10 w-10 items-center justify-center rounded-full">
+									<TriangleAlertIcon className="h-6 w-6" />
+								</div>
+								<span>
+									{getGracefulErrorMessage(room.error)}
 								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								{t("content.scrollToTop")}
-							</TooltipContent>
-						</Tooltip>
-					)}
+							</div>
+						) : null}
+					</div>
+				</ScrollArea>
 
-					{showScrolldown && (
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span className="absolute right-4 bottom-4 z-50">
-									<Button
-										size="icon-sm"
-										variant={"outline"}
-										onClick={() => {
-											scrollToTarget(contentHeight);
-										}}
-										aria-label={t("content.scrollToBottom")}
-										className="shadow-lg"
-									>
-										<MoveDownIcon />
-									</Button>
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								{t("content.scrollToBottom")}
-							</TooltipContent>
-						</Tooltip>
-					)}
-				</div>
-				<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
-					<RoomInput
-						predefinedPrompts={room.options.predefinedPrompts}
-						className="max-h-56 min-h-24"
-						isLoading={showLoadingState}
-						hidePauseButton={!room.numberOfTools}
-						model={room.model}
-						room={room}
-						setModel={(model) => {
-							room.setModel(model);
-							chat.setSelectedModel(model);
-						}}
-						options={room.options}
-						onMcpSelect={handleToolAdd}
-						onMcpToggle={handleToolSelect}
-						MenuComponent={observer(
-							({
-								onOpenChange,
-								fileRef,
-								knowledgeOverlayOpen,
-								onKnowledgeOverlayChange,
-								toolboxOverlayOpen,
-								onToolboxOverlayChange,
-							}) => (
-								<>
-									<RoomInputMenuUpload
-										fileRef={fileRef}
-										onSelect={() => onOpenChange(false)}
-									/>
-									<DropdownMenuSeparator />
-									<RoomInputMenuMCP
-										type="KNOWLEDGE"
-										options={room.options}
-										open={knowledgeOverlayOpen}
-										onOpenChange={onKnowledgeOverlayChange}
-									/>
-									<RoomInputMenuMCP
-										type="TOOLBOX"
-										options={room.options}
-										open={toolboxOverlayOpen}
-										onOpenChange={onToolboxOverlayChange}
-									/>
-									<DropdownMenuSeparator />
-									<RoomInputMenuFileExplorer
-										room={room}
-										onSelect={() => onOpenChange(false)}
-									/>
-									<DropdownMenuItem
-										onSelect={(e) => {
-											e.preventDefault();
+				{showScrollup && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<span className="absolute top-4 right-4 z-50">
+								<Button
+									size="icon-sm"
+									variant={"outline"}
+									onClick={() => scrollToTarget(0)}
+									aria-label={t("content.scrollToTop")}
+									className="shadow-lg"
+								>
+									<MoveUpIcon />
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent>
+							{t("content.scrollToTop")}
+						</TooltipContent>
+					</Tooltip>
+				)}
 
-											// add to the sidebar
-											room.addSidebarNode(
-												ROOM_CONFIGURATION_ID,
-												{
-													type: "tab",
-													name: "Configuration",
-													component:
-														"room-configuration",
-													config: {},
-													enableClose: true,
-												},
-											);
-											onOpenChange(false);
-										}}
-									>
-										<Settings2Icon />
-										<span className="flex-1">
-											{t("settings.edit")}
-										</span>
-									</DropdownMenuItem>
-								</>
-							),
-						)}
-						footer={
-							room.options.workspace?.workspace_id ? (
-								room.theme.showPlatformLinks !== false ? (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span>
-												<Badge
-													variant="secondary"
-													asChild
+				{showScrolldown && (
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<span className="absolute right-4 bottom-4 z-50">
+								<Button
+									size="icon-sm"
+									variant={"outline"}
+									onClick={() => {
+										scrollToTarget(contentHeight);
+									}}
+									aria-label={t("content.scrollToBottom")}
+									className="shadow-lg"
+								>
+									<MoveDownIcon />
+								</Button>
+							</span>
+						</TooltipTrigger>
+						<TooltipContent>
+							{t("content.scrollToBottom")}
+						</TooltipContent>
+					</Tooltip>
+				)}
+			</div>
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
+				<RoomInput
+					predefinedPrompts={room.options.predefinedPrompts}
+					className="max-h-56 min-h-24"
+					isLoading={showLoadingState}
+					hidePauseButton={!room.numberOfTools}
+					model={room.model}
+					room={room}
+					setModel={(model) => {
+						room.setModel(model);
+						chat.setSelectedModel(model);
+					}}
+					options={room.options}
+					onMcpSelect={handleToolAdd}
+					onMcpToggle={handleToolSelect}
+					MenuComponent={observer(
+						({
+							onOpenChange,
+							fileRef,
+							knowledgeOverlayOpen,
+							onKnowledgeOverlayChange,
+							toolboxOverlayOpen,
+							onToolboxOverlayChange,
+						}) => (
+							<>
+								<RoomInputMenuUpload
+									fileRef={fileRef}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuMCP
+									type="KNOWLEDGE"
+									options={room.options}
+									open={knowledgeOverlayOpen}
+									onOpenChange={onKnowledgeOverlayChange}
+								/>
+								<RoomInputMenuMCP
+									type="TOOLBOX"
+									options={room.options}
+									open={toolboxOverlayOpen}
+									onOpenChange={onToolboxOverlayChange}
+								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuFileExplorer
+									room={room}
+									onSelect={() => onOpenChange(false)}
+								/>
+								<DropdownMenuItem
+									onSelect={(e) => {
+										e.preventDefault();
+
+										// add to the sidebar
+										room.addSidebarNode(
+											ROOM_CONFIGURATION_ID,
+											{
+												type: "tab",
+												name: "Configuration",
+												component: "room-configuration",
+												config: {},
+												enableClose: true,
+											},
+										);
+										onOpenChange(false);
+									}}
+								>
+									<Settings2Icon />
+									<span className="flex-1">
+										{t("settings.edit")}
+									</span>
+								</DropdownMenuItem>
+							</>
+						),
+					)}
+					footer={
+						room.options.workspace?.workspace_id ? (
+							room.theme.featureFlags?.showPlatformLinks !==
+							false ? (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary" asChild>
+												<a
+													target="_blank"
+													href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
 												>
-													<a
-														target="_blank"
-														href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
-													>
-														<ComputerIcon data-icon="inline-start" />
-														<div className="w-18 truncate">
-															{room.options
-																.workspace
-																.name ||
-																room.options
-																	.workspace
-																	.workspace_id}
-														</div>
-														<ExternalLinkIcon data-icon="inline-end" />
-													</a>
-												</Badge>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											Click to view agent details
-										</TooltipContent>
-									</Tooltip>
-								) : (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span>
-												<Badge variant="secondary">
 													<ComputerIcon data-icon="inline-start" />
 													<div className="w-18 truncate">
 														{room.options.workspace
@@ -624,38 +591,58 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 																.workspace
 																.workspace_id}
 													</div>
-												</Badge>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											{room.options.workspace.name ||
-												room.options.workspace
-													.workspace_id}
-										</TooltipContent>
-									</Tooltip>
-								)
-							) : null
-						}
-						onPrompt={handlePrompt}
-						hasOutstandingTools={
-							room.latestResponseMessage.hasUnfinishedTools
-						}
-						hasToolsPaused={room.latestResponseMessage.isPaused}
-						toggleToolsPaused={
-							room.latestResponseMessage.toggleIsPaused
-						}
-						tokensUsed={room.tokensUsed}
-						tokensMax={chat.models.contextWindow}
-						editorRef={editorRef}
-					/>
-				</div>
-				{activeSelection && (
-					<InlineAskPopover
-						selection={activeSelection}
-						onClose={() => setActiveSelection(null)}
-					/>
-				)}
+													<ExternalLinkIcon data-icon="inline-end" />
+												</a>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										Click to view agent details
+									</TooltipContent>
+								</Tooltip>
+							) : (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Badge variant="secondary">
+												<ComputerIcon data-icon="inline-start" />
+												<div className="w-18 truncate">
+													{room.options.workspace
+														.name ||
+														room.options.workspace
+															.workspace_id}
+												</div>
+											</Badge>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										{room.options.workspace.name ||
+											room.options.workspace.workspace_id}
+									</TooltipContent>
+								</Tooltip>
+							)
+						) : null
+					}
+					onPrompt={handlePrompt}
+					hasOutstandingTools={
+						room.latestResponseMessage.hasUnfinishedTools
+					}
+					hasToolsPaused={room.latestResponseMessage.isPaused}
+					toggleToolsPaused={
+						room.latestResponseMessage.toggleIsPaused
+					}
+					tokensUsed={room.tokensUsed}
+					tokensMax={chat.models.contextWindow}
+					editorRef={editorRef}
+				/>
 			</div>
-		</MainInputContext.Provider>
+			{activeSelection && (
+				<InlineAskPopover
+					selection={activeSelection}
+					onClose={() => setActiveSelection(null)}
+					appendToMainInput={appendToMainInput}
+				/>
+			)}
+		</div>
 	);
 });
