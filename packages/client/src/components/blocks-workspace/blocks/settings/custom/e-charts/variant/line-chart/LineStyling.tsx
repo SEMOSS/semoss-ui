@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -9,6 +9,7 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import {
+	Input,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -21,6 +22,21 @@ import { Line_Curve_Type, Line_Type } from "../../Visualization.constants";
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	id: string;
 	path: Paths<Block<D>["data"], 4>;
+}
+
+interface LineSeriesStyle {
+	type?: string;
+	width?: number;
+}
+
+interface LineSeriesOption {
+	smooth?: boolean;
+	step?: string | boolean;
+	lineStyle?: LineSeriesStyle;
+}
+
+interface LineStyleOption {
+	series: LineSeriesOption[];
 }
 
 export const LineStyling = observer(
@@ -52,14 +68,14 @@ export const LineStyling = observer(
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
-				reInitializeFeatures(data.option);
+				reInitializeFeatures(data.option as LineStyleOption);
 			}
 		}, [id]);
 		/**
 		 * Reinitializes the features when the chart is loaded.
 		 * @param options the options passed in when the chart is loaded
 		 */
-		const reInitializeFeatures = (options) => {
+		const reInitializeFeatures = (options: LineStyleOption) => {
 			if (Object.hasOwn(options, "series")) {
 				const seriesLength = options.series.length;
 				for (let i = 0; i < seriesLength; i++) {
@@ -70,19 +86,18 @@ export const LineStyling = observer(
 					} else {
 						setLineCurve("Exact");
 					}
-					if (Object.hasOwn(options.series[i].lineStyle, "type")) {
-						if (options.series[i].lineStyle.type === "solid") {
+					const lineStyle = options.series[i].lineStyle;
+					if (lineStyle?.type) {
+						if (lineStyle.type === "solid") {
 							setLineType("Solid");
-						} else if (
-							options.series[i].lineStyle.type === "dashed"
-						) {
+						} else if (lineStyle.type === "dashed") {
 							setLineType("Dashed");
 						} else {
 							setLineType("Dotted");
 						}
 					}
-					if (Object.hasOwn(options.series[i].lineStyle, "width")) {
-						setLineWidth(options.series[i].lineStyle.width);
+					if (typeof lineStyle?.width === "number") {
+						setLineWidth(lineStyle.width);
 					}
 				}
 			}
@@ -92,7 +107,7 @@ export const LineStyling = observer(
 		 * @param line the line of the input field
 		 * @param inputValue the value of the input field
 		 */
-		function handleInputChange(line: string, inputValue) {
+		function handleInputChange(line: string, inputValue: string | number) {
 			const option = JSON.parse(value);
 			if (line === "lineCurve") {
 				const dataLength = option.series.length;
@@ -107,7 +122,7 @@ export const LineStyling = observer(
 						option.series[i].step = "start";
 					}
 				}
-				setLineCurve(inputValue);
+				setLineCurve(inputValue as string);
 			} else if (line === "lineType") {
 				const dataLength = option.series.length;
 				for (let i = 0; i < dataLength; i++) {
@@ -119,13 +134,13 @@ export const LineStyling = observer(
 						option.series[i].lineStyle.type = "dotted";
 					}
 				}
-				setLineType(inputValue);
+				setLineType(inputValue as string);
 			} else if (line === "lineWidth") {
 				const dataLength = option.series.length;
 				for (let i = 0; i < dataLength; i++) {
-					option.series[i].lineStyle.width = inputValue;
+					option.series[i].lineStyle.width = inputValue as number;
 				}
-				setLineWidth(inputValue);
+				setLineWidth(inputValue as number);
 			}
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
@@ -145,7 +160,6 @@ export const LineStyling = observer(
 							<SelectValue placeholder="Select" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">Select</SelectItem>
 							{Line_Curve_Type.map((label, index) => (
 								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 								<SelectItem value={label} key={index}>
@@ -170,7 +184,6 @@ export const LineStyling = observer(
 							<SelectValue placeholder="Select" />
 						</SelectTrigger>
 						<SelectContent>
-							<SelectItem value="">Select</SelectItem>
 							{Line_Type.map((label, index) => (
 								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
 								<SelectItem value={label} key={index}>
@@ -190,8 +203,11 @@ export const LineStyling = observer(
 						id="size"
 						name="size"
 						value={_lineWidth}
-						onChange={(e) =>
-							handleInputChange("lineWidth", e.target.value)
+						onChange={(e: ChangeEvent<HTMLInputElement>) =>
+							handleInputChange(
+								"lineWidth",
+								Number(e.target.value),
+							)
 						}
 					/>
 				</div>

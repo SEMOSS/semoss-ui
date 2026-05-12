@@ -1,3 +1,4 @@
+import type { ECharts } from "echarts";
 import ReactECharts, { type EChartsOption } from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
@@ -5,12 +6,70 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { CustomContextMenu } from "../../CustomContextMenu";
+import type { AxisDataItem, BrushEndParams } from "../../shared-types";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+
+type FrameCell = string | number | null;
+type FrameRow = FrameCell[];
+
+interface LineStateFields {
+	xAxis: string[];
+	yAxis: string[];
+	tooltip: string[];
+}
+
+interface LineSeries {
+	data: Array<number | null>;
+	name?: string;
+	type?: "line";
+	[key: string]: unknown;
+}
+
+interface TooltipParam {
+	dataIndex?: number;
+	name: string;
+	value: string | number | null;
+	seriesName: string;
+	color: string;
+}
+
+interface TooltipDataEntry {
+	name: string;
+	data: string[];
+}
+
+interface LineChartOption {
+	xAxis: {
+		data: AxisDataItem[];
+		name?: string;
+	};
+	series: LineSeries[];
+	tooltip: {
+		formatter?: (params: TooltipParam[]) => string;
+		[key: string]: unknown;
+	};
+	_state?: {
+		fields: LineStateFields;
+	};
+	[key: string]: unknown;
+}
+
+interface ChartOptionSnapshot {
+	series: Array<{ data?: number[]; name?: string }>;
+	xAxis?: Array<{ data?: Array<string | number>; name?: string }>;
+}
+
+interface ContextMenuEventParams {
+	data: string | number | Record<string, unknown>;
+	seriesName: string;
+	event: {
+		event: MouseEvent;
+	};
+}
 
 interface LineProps {
 	id: string;
-	// biome-ignore lint/suspicious/noExplicitAny: echart data/path types are untyped
-	updateJson: (data: any, path: any) => void;
+	updateJson: (data: LineChartOption, path: string) => void;
 }
 export const Line = observer(({ id, updateJson }: LineProps) => {
 	const { data } = useBlock<EchartVisualizationBlockDef>(id);
@@ -19,7 +78,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		mouseY: number;
 		value: unknown;
 	} | null>(null);
-	let resultData: unknown = {};
+	let resultData: LineChartOption = {} as LineChartOption;
 	// get the frame
 	function _getVisualizationBlockSelector(id: string) {
 		if (id) {
@@ -60,35 +119,58 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 	 * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
 	 * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
 	 */
-	const buildDynamicQuery = (inputData): string => {
+	const buildDynamicQuery = (
+		inputData: [string, Record<string, string | undefined>][],
+	): string => {
 		const blockJSON = data.option;
-		if (!blockJSON._state) return null;
+		if (!blockJSON._state || inputData.length === 0) {
+			return "";
+		}
+
 		const selectParts: string[] = [];
 		const aliasParts: string[] = [];
 		const groupByParts: string[] = [];
 
-		inputData.forEach(([_, fields]) => {
+		inputData.forEach(([_key, fields]) => {
 			for (const field in fields) {
 				const rawAgg = fields[field];
 				aliasParts.push(field);
 
 				if (rawAgg) {
-					const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+					const cleanedAgg = rawAgg.split(" ").join("");
 					selectParts.push(`${cleanedAgg}(${field})`);
 				} else {
 					selectParts.push(field);
-					groupByParts.push(field); // Only unaggregated fields are grouped
+					groupByParts.push(field);
 				}
 			}
 		});
 
+		if (selectParts.length === 0 || aliasParts.length === 0) {
+			return "";
+		}
+
+		const groupClause = groupByParts.length
+			? ` | Group(${groupByParts.join(", ")})`
+			: "";
+
 		return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
 			", ",
-		)}]) | Group(${groupByParts.join(", ")})`;
+		)}])${groupClause}`;
 	};
 
+	const selector =
+		buildDynamicQuery(Object.entries(data?.aggregate ?? {})) ||
+		_getVisualizationBlockSelector(data.frame.name) ||
+		"";
+	const hasXAxisSelection =
+		(data.option?._state?.fields?.xAxis?.length ?? 0) > 0;
+	const hasYAxisSelection =
+		(data.option?._state?.fields?.yAxis?.length ?? 0) > 0;
+	const canRenderChartData = hasXAxisSelection && hasYAxisSelection;
+
 	const frame = useFrame(data.frame.name, {
-		selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
+		selector,
 	});
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on data only
 	const computedValue = useMemo(() => {
@@ -108,21 +190,22 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data.values only
 	useEffect(() => {
 		if (
+			canRenderChartData &&
 			data?.frame?.name &&
 			frame?.data?.values.length > 0 &&
 			frame?.isLoading === false
 		) {
 			updateJson(resultData, "option");
 		}
-	}, [frame.data.values]);
+	}, [canRenderChartData, frame.data.values]);
 	//format the frame option data for echart
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data.values only
 	const formatDataPoints = useCallback(
-		(resultData: unknown) => {
+		(resultData: LineChartOption) => {
 			if (frame.data.values.length > 0) {
 				const valuesDataSet = JSON.parse(
 					JSON.stringify(frame.data.values),
-				);
+				) as FrameRow[];
 				let headersDataSet: string[] = JSON.parse(
 					JSON.stringify(frame.data.headers),
 				);
@@ -130,97 +213,130 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 					header.replace("Average_", ""),
 				);
 				//format the data points to match the echart specification
-				resultData.xAxis.data = valuesDataSet
-					?.map((x) =>
-						x?.[0] !== undefined && !Number.isNaN(parseFloat(x[0]))
-							? parseFloat(x[0]).toFixed(2)
-							: null,
-					)
-					.filter((value) => value !== null);
-				valuesDataSet.map((x) => x.shift());
+				//setting xaxis data - accept all values (strings for categorical, numbers for continuous)
+				resultData.xAxis.data = valuesDataSet?.map((x: FrameRow) => {
+					const value = x?.[0];
+					// X-axis accepts any value (strings for categorical axis, numbers for value axis)
+					if (typeof value === "number" && !Number.isNaN(value)) {
+						return parseFloat(value.toFixed(2));
+					}
+					// Return strings and other values as-is for categorical axis
+					if (
+						typeof value === "string" ||
+						typeof value === "number"
+					) {
+						return value;
+					}
+					return "";
+				});
+				valuesDataSet.map((x: FrameRow) => x.shift());
 				headersDataSet.shift();
-				const yAxisListLength = resultData._state?.fields?.yAxis.length;
+				const yAxisListLength =
+					resultData._state?.fields?.yAxis.length ?? 0;
 				if (!resultData.series) {
 					resultData.series = [];
 				}
 				for (let index = 0; index < yAxisListLength; index++) {
 					if (!resultData.series[index]) {
-						resultData.series[index] = {};
+						resultData.series[index] = { data: [] };
 					}
 
-					resultData.series[index].data = valuesDataSet.map((x) => {
-						const value = x[index];
-						if (
-							value === null ||
-							value === undefined ||
-							value === "NaN" ||
-							Number.isNaN(Number(value))
-						) {
-							return null; // Replace invalid values with null
-						}
-						return parseFloat(value).toFixed(2); // Round to 2 decimal places
-					});
+					resultData.series[index].data = valuesDataSet.map(
+						(x: FrameRow) => {
+							const value = x[index];
+							if (
+								value === null ||
+								value === undefined ||
+								value === "NaN" ||
+								Number.isNaN(Number(value))
+							) {
+								return null; // Replace invalid values with null
+							}
+							return parseFloat(String(value).trim());
+						},
+					);
 					resultData.series[index].name = headersDataSet[index];
 					resultData.series[index].type = "line";
 				}
 
-				const yAxisNames = resultData.yAxis.name;
+				const yAxisNames = resultData._state?.fields?.yAxis || [];
 
-				resultData.series = resultData.series.filter((seriesItem) =>
-					yAxisNames.includes(seriesItem.name),
-				);
+				// Filter series to only include those in yAxisNames
+				// Only filter if yAxisNames is populated to avoid removing all series
+				if (yAxisNames.length > 0) {
+					resultData.series = resultData.series.filter((seriesItem) =>
+						yAxisNames.includes(seriesItem.name ?? ""),
+					);
+				}
 
-				valuesDataSet.forEach((x) => {
+				valuesDataSet.forEach((x: FrameRow) => {
 					x.splice(0, yAxisListLength);
 				});
 				headersDataSet.splice(0, yAxisListLength);
-				const customTooltipData = [];
-				data.option._state?.fields.tooltip.forEach((x, index) => {
-					customTooltipData.push({
-						name: x,
-						data: valuesDataSet.map(
-							(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
-						),
-					});
-				});
-				if (!Object.hasOwn(resultData.tooltip, "formatter")) {
-					const customTooltipData = [];
-					data.option._state?.fields.tooltip.forEach((x, index) => {
+				const customTooltipData: TooltipDataEntry[] = [];
+				data.option._state?.fields.tooltip.forEach(
+					(x: string, index: number) => {
 						customTooltipData.push({
 							name: x,
 							data: valuesDataSet.map(
-								(y) => parseFloat(y[index]).toFixed(2), // Round tooltip data to 2 decimal places
+								(y: FrameRow) =>
+									parseFloat(String(y[index])).toFixed(2), // Round tooltip data to 2 decimal places
 							),
 						});
-					});
+					},
+				);
+				if (!Object.hasOwn(resultData.tooltip, "formatter")) {
+					const tooltipData: TooltipDataEntry[] = [];
+					data.option._state?.fields.tooltip.forEach(
+						(x: string, index: number) => {
+							customTooltipData.push({
+								name: x,
+								data: valuesDataSet.map(
+									(y: FrameRow) =>
+										parseFloat(String(y[index])).toFixed(2), // Round tooltip data to 2 decimal places
+								),
+							});
+							tooltipData.push({
+								name: x,
+								data: valuesDataSet.map((y: FrameRow) =>
+									parseFloat(String(y[index])).toFixed(2),
+								),
+							});
+						},
+					);
 					resultData.tooltip = {
 						...resultData.tooltip,
-						formatter: ((customTooltipData) => (params) => {
-							const formatterStringArr = ["<div>"];
-							const dataIndex = params[0]?.dataIndex;
-							formatterStringArr.push(
-								`<strong>${params[0].name}</strong><br>`,
-							);
-							params.forEach((param) => {
-								let { value, seriesName, color } = param;
-								if (
-									!Number.isNaN(value) &&
-									value !== undefined
-								) {
-									value = parseFloat(value).toFixed(2);
-								}
+						formatter: (
+							(tooltipRows: TooltipDataEntry[]) =>
+							(params: TooltipParam[]) => {
+								const formatterStringArr = ["<div>"];
+								const dataIndex = params[0]?.dataIndex;
 								formatterStringArr.push(
-									`<span style="color:${color}">\u25CF</span> Average of ${seriesName}:<strong> ${value}</strong><br>`,
+									`<strong>${params[0].name}</strong><br>`,
 								);
-							});
-							customTooltipData.forEach((data) => {
-								formatterStringArr.push(
-									`<span style="color:">\u25CF</span> ${data.name}:<strong> ${data.data[dataIndex]}</strong><br>`,
-								);
-							});
-							formatterStringArr.push(`</div>`);
-							return formatterStringArr.join(" ");
-						})(customTooltipData),
+								params.forEach((param: TooltipParam) => {
+									let { value, seriesName, color } = param;
+									if (
+										!Number.isNaN(Number(value)) &&
+										value !== undefined
+									) {
+										value = parseFloat(
+											String(value),
+										).toFixed(2);
+									}
+									formatterStringArr.push(
+										`<span style="color:${color}">\u25CF</span> Average of ${seriesName}:<strong> ${value}</strong><br>`,
+									);
+								});
+								tooltipRows.forEach((tooltipRow) => {
+									formatterStringArr.push(
+										`<span style="color:">\u25CF</span> ${tooltipRow.name}:<strong> ${tooltipRow.data[dataIndex ?? 0]}</strong><br>`,
+									);
+								});
+								formatterStringArr.push(`</div>`);
+								return formatterStringArr.join(" ");
+							}
+						)(tooltipData),
 					};
 				} else {
 					delete resultData.tooltip.formatter;
@@ -230,29 +346,31 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		},
 		[frame.data.values],
 	);
-	function debounce(fn, delay) {
+	function debounce<TArg>(fn: (arg: TArg) => void, delay: number) {
 		let timer: ReturnType<typeof setTimeout> | undefined;
-		return (...args) => {
+		return (arg: TArg) => {
 			clearTimeout(timer);
-			timer = setTimeout(() => fn(...args), delay);
+			timer = setTimeout(() => fn(arg), delay);
 		};
 	}
 
-	const echartsLoaded = debounce((chart) => {
+	const echartsLoaded = debounce((chart: ECharts) => {
 		// Fires only once when brush is released
-		chart.on("brushEnd", (params) => {
+		chart.on("brushEnd", (rawParams: unknown) => {
+			const params = rawParams as BrushEndParams;
 			if (!params.areas || !params.areas.length) return;
 			const area = params.areas[0];
 			// Get xAxis data
-			const currentOption = chart.getOption();
+			const currentOption =
+				chart.getOption() as unknown as ChartOptionSnapshot;
 			const labelData = currentOption.series[0].data || [];
 			const xAxisData = currentOption.xAxis?.[0]?.data || [];
-			let indices = [];
+			let indices: number[] = [];
 			if (area.coordRange && area.coordRange.length === 2) {
 				const [xRange, yRange] = area.coordRange;
-				const xIndices = [];
+				const xIndices: number[] = [];
 				for (let i = xRange[0]; i <= xRange[1]; i++) xIndices.push(i);
-				const yIndices = [];
+				const yIndices: number[] = [];
 				for (let i = 0; i < labelData.length; i++) {
 					const val = labelData[i];
 					if (val >= yRange[0] && val <= yRange[1]) yIndices.push(i);
@@ -271,7 +389,7 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 		});
 	}, 2000);
 	const onClickChart = {
-		contextmenu: (params) => {
+		contextmenu: (params: ContextMenuEventParams) => {
 			if (params.data) {
 				const labelName = params.seriesName;
 				setContextMenu(
@@ -319,12 +437,24 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
 			);
 		}
 	} else {
-		resultData =
-			data?.frame?.name &&
-			frame.data.values.length > 0 &&
-			frame.isLoading === false
-				? formatDataPoints(JSON.parse(computedValue))
-				: JSON.parse(computedValue);
+		const parsedOption = JSON.parse(computedValue) as LineChartOption;
+		if (!canRenderChartData) {
+			resultData = {
+				...parsedOption,
+				xAxis: {
+					...parsedOption.xAxis,
+					data: [],
+				},
+				series: [],
+			};
+		} else {
+			resultData =
+				data?.frame?.name &&
+				frame.data.values.length > 0 &&
+				frame.isLoading === false
+					? formatDataPoints(parsedOption)
+					: parsedOption;
+		}
 		return (
 			<div className="h-full">
 				<ReactECharts

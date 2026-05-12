@@ -1,6 +1,6 @@
 import worldjson from "./world";
 
-const fetchWorldMap = (urlString: string) => {
+const fetchWorldMap = (urlString: string): Record<string, unknown> => {
 	return worldjson;
 };
 

@@ -1,11 +1,49 @@
+import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import type { PathValue } from "@semoss/renderer";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+	type BlockDef,
+	type EchartVisualizationBlockDef,
+	getValueByPath,
+	type PathValue,
+} from "@semoss/renderer";
+import { Slider } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
+import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
+import { BAR_CHART_DATA } from "../../Visualization.constants";
 
 interface BarChartStyle {
 	barwidth: number;
 	minBarWidth: number;
 	maxBarWidth: number;
 	barColour: string;
+}
+
+interface BarSeriesItem {
+	barWidth?: number;
+	itemStyle?: {
+		color?: string;
+		[key: string]: unknown;
+	};
+	type?: string;
+	[key: string]: unknown;
+}
+
+interface BarChartOption {
+	series: BarSeriesItem[];
+	customSettings?: {
+		toolsUpdated?: boolean;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+}
+
+interface VisualizationStylesProps<_D extends BlockDef = BlockDef> {
+	updateChart: (option: unknown) => void;
+	chartType: string;
+	option: BarChartOption;
+	id: string;
+	path: string;
 }
 
 const _CUSTOM_BAR_CHART_STYLES = {
@@ -15,7 +53,7 @@ const _CUSTOM_BAR_CHART_STYLES = {
 	barColour: "#5470c6",
 };
 
-const _INITIAL_BAR_CHART_STYLES: BarChartStyle[] = [];
+const INITIAL_BAR_CHART_STYLES: BarChartStyle[] = [];
 
 export const VisualizationStyles = observer(
 	<D extends BlockDef = BlockDef>({
@@ -26,16 +64,14 @@ export const VisualizationStyles = observer(
 		option,
 		id,
 		path,
-	}) => {
+	}: VisualizationStylesProps<D>) => {
 		const [styleData, setStyleData] = useState<BarChartStyle[]>(
 			INITIAL_BAR_CHART_STYLES,
 		);
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
-		const [value, setValue] = useState<
-			typeof EchartVisualizationBlockConfig.data.option
-		>(data.option);
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const [value, setValue] = useState<string>("");
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		const [stylesUpdated, setStylesUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
@@ -57,12 +93,12 @@ export const VisualizationStyles = observer(
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			const barChartData = option.series.filter((item) =>
-				BAR_CHART_DATA.JSONVALUE.includes(item.type),
+			const barChartData = option.series.filter((item: BarSeriesItem) =>
+				BAR_CHART_DATA.JSONVALUE.includes(item.type ?? ""),
 			);
 			if (barChartData.length) {
 				const barStyleData: BarChartStyle[] = barChartData.map(
-					(item) => ({
+					(item: BarSeriesItem) => ({
 						barwidth: item?.barWidth ?? 10,
 						barColour: item.itemStyle?.color ?? "#5470c6",
 						minBarWidth: 1,
@@ -82,10 +118,11 @@ export const VisualizationStyles = observer(
 
 		function _getFilteredSeriesIndex(): number[] {
 			const index: number[] = [];
-			const seriesAvailable = data.option.series.filter((item) =>
-				BAR_CHART_DATA.JSONVALUE.includes(item.type),
+			const seriesAvailable = option.series.filter(
+				(item: BarSeriesItem) =>
+					BAR_CHART_DATA.JSONVALUE.includes(item.type ?? ""),
 			);
-			seriesAvailable.forEach((_, seriesIndex) => {
+			seriesAvailable.forEach((_: BarSeriesItem, seriesIndex: number) => {
 				index.push(seriesIndex);
 			});
 			return index;
@@ -115,7 +152,7 @@ export const VisualizationStyles = observer(
 			barData: BarChartStyle[],
 			_selectedSeries: string,
 		) {
-			let opt = typeof value === "string" ? JSON.parse(value) : value;
+			let opt = JSON.parse(value || "{}") as BarChartOption;
 			barData.forEach((barDataSegment, barDataIndex) => {
 				const barWidth: number = barDataSegment.barwidth;
 				const barColour: string = barDataSegment.barColour;
@@ -152,17 +189,15 @@ export const VisualizationStyles = observer(
 			});
 			opt = {
 				...opt,
-				çustomSettings: {
-					...opt.çustomSettings,
+				customSettings: {
+					...opt.customSettings,
 					toolsUpdated: true,
 				},
 			};
 			runStateUpdateCustom(opt);
 		}
 
-		function runStateUpdateCustom(
-			option: typeof EchartVisualizationBlockConfig.data.option,
-		) {
+		function runStateUpdateCustom(option: BarChartOption) {
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
 				timeoutRef.current = null;
@@ -191,15 +226,15 @@ export const VisualizationStyles = observer(
 							// biome-ignore lint/a11y/useButtonType: handled by caller
 							<button
 								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-								key={`series${index}`}
+								key={`series${_index}`}
 								className={`rounded border px-3 py-1 text-sm ${
-									selectedSeries === `${index}`
+									selectedSeries === `${_index}`
 										? "border-primary bg-primary text-primary-foreground"
 										: "border-border"
 								}`}
-								onClick={() => setSelectedSeries(`${index}`)}
+								onClick={() => setSelectedSeries(`${_index}`)}
 							>
-								{`Series ${index + 1}`}
+								{`Series ${_index + 1}`}
 							</button>
 						))}
 					</div>
@@ -207,7 +242,6 @@ export const VisualizationStyles = observer(
 				{styleData[Number(selectedSeries)] && (
 					<>
 						<div className="flex flex-col gap-2 py-2">
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
 							{/* biome-ignore lint/a11y/noLabelWithoutControl: label paired with adjacent control*/}
 							<label className="text-muted-foreground text-sm">
 								Bar Width

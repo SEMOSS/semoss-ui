@@ -19,6 +19,18 @@ interface CloudSettingsProps<D extends BlockDef = BlockDef> {
 	path: Paths<Block<D>["data"], 4>;
 }
 
+interface CloudSeriesSettings {
+	rotationRange?: [number, number];
+	rotationStep?: number;
+	shape?: string;
+	[key: string]: unknown;
+}
+
+interface CloudSettingsOption {
+	series?: CloudSeriesSettings[];
+	[key: string]: unknown;
+}
+
 export const CloudSettings = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: CloudSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
@@ -47,32 +59,37 @@ export const CloudSettings = observer(
 			});
 		}, [data, path]).get();
 
-		const retainLocalState = useCallback(
-			(options: Record<string, unknown>) => {
-				if (
-					options?.series?.[0]?.rotationRange ||
-					options?.series?.[0]?.rotationStep ||
-					options?.series?.[0]?.shape
-				) {
-					const seriesConfig = options.series[0];
+		const parseOption = useCallback((): CloudSettingsOption => {
+			if (!computedValue) {
+				return {};
+			}
 
-					setDetail({
-						rotationMin: seriesConfig.rotationRange?.[0] || -90,
-						rotationMax: seriesConfig.rotationRange?.[1] || 90,
-						rotationStep: seriesConfig.rotationStep || 45,
-						shape: seriesConfig.shape || "circle",
-					});
-				}
-			},
-			[],
-		);
+			return JSON.parse(computedValue) as CloudSettingsOption;
+		}, [computedValue]);
+
+		const retainLocalState = useCallback((options: CloudSettingsOption) => {
+			const seriesConfig = options.series?.[0];
+
+			if (
+				seriesConfig?.rotationRange ||
+				seriesConfig?.rotationStep ||
+				seriesConfig?.shape
+			) {
+				setDetail({
+					rotationMin: seriesConfig.rotationRange?.[0] || -90,
+					rotationMax: seriesConfig.rotationRange?.[1] || 90,
+					rotationStep: seriesConfig.rotationStep || 45,
+					shape: seriesConfig.shape || "circle",
+				});
+			}
+		}, []);
 
 		useEffect(() => {
 			if (!data || !Object.hasOwn(data, "option")) {
 				return;
 			}
 
-			const option = JSON.parse(computedValue);
+			const option = parseOption();
 
 			const needsInitialization =
 				!isInitialized.current || !option.series?.[0];
@@ -96,15 +113,17 @@ export const CloudSettings = observer(
 						path,
 						updatedOption as PathValue<D["data"], typeof path>,
 					);
+					retainLocalState(updatedOption);
+				} else {
+					retainLocalState(option);
 				}
-				retainLocalState(option);
 				isInitialized.current = true;
 			}
-		}, [data, computedValue, path, setData, retainLocalState]);
+		}, [data, parseOption, path, setData, retainLocalState]);
 
 		const handleInputChange = useCallback(
 			(inputType: string, inputValue: string | number | boolean) => {
-				const option = JSON.parse(computedValue);
+				const option = parseOption();
 
 				if (!option.series || !option.series[0]) {
 					return;
@@ -146,11 +165,15 @@ export const CloudSettings = observer(
 
 				setData(path, option as PathValue<D["data"], typeof path>);
 			},
-			[computedValue, path, setData],
+			[parseOption, path, setData],
 		);
 
 		const handleReset = useCallback(() => {
-			const option = JSON.parse(computedValue);
+			const option = parseOption();
+
+			if (!option.series || !option.series[0]) {
+				option.series = [{}];
+			}
 
 			option.series[0].rotationRange = [-90, 90];
 			option.series[0].rotationStep = 45;
@@ -159,7 +182,7 @@ export const CloudSettings = observer(
 			setData(path, option as PathValue<D["data"], typeof path>);
 
 			retainLocalState(option);
-		}, [computedValue, path, setData, retainLocalState]);
+		}, [parseOption, path, setData, retainLocalState]);
 
 		return (
 			<div className="flex flex-col">

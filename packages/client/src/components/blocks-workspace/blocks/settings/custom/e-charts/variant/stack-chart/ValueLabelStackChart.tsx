@@ -207,8 +207,6 @@ export const ValueLabelStackChart = observer(
 						</div>
 						<div className="flex flex-col gap-2 p-2">
 							<span className="text-sm">Select Font Size</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="Select Font Size"

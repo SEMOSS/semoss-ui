@@ -4,7 +4,8 @@ import type {
 	EchartVisualizationBlockDef,
 } from "@semoss/renderer";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
-import { AIGenerationSettings, JsonSettings } from "../../shared";
+import { JsonSettings } from "../../shared";
+import { VisualMap } from "./VisualMap";
 import { UpgradedVisualizationTool } from "./variant/bar-chart/UpgradedVisualizationTool";
 import {
 	Bar,
@@ -18,16 +19,20 @@ import {
 	WorldMap,
 } from "./variant/Constant";
 import { FrameOperations } from "./variant/FrameOperations";
+import type {
+	StoredColumn,
+	VisualMapItem,
+} from "./variant/shared/shared-interfaces";
 
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
-	const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 	const [selectedTab, setSelectedTab] = useState("Data");
-	const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
+	const [selectedColumn, setSelectedColumn] = useState<StoredColumn[]>([]);
 	const [_forceRender, setForceRender] = useState(false);
 	function updateFrame() {}
 
-	// biome-ignore lint/suspicious/noExplicitAny: echart event type
-	function handleStoreData(storeData: any[]) {
+	// echart event type
+	function handleStoreData(storeData: StoredColumn[]) {
 		const hasValues = storeData.some(
 			(item) => item?.values && item?.values.length > 0,
 		);
@@ -36,13 +41,13 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 		}
 	}
 
-	// biome-ignore lint/suspicious/noExplicitAny: echart event type
-	const handleSelectedItem = (item: any) => {
+	// echart event type
+	const handleSelectedItem = (item: VisualMapItem) => {
 		if (item.title && item.option) {
-			data.variation = item.title;
-			data.option = item.option;
+			setData("variation", item.title);
+			setData("option", item.option);
 			if (item?.facet) {
-				data.facet = item.facet;
+				setData("facet", item.facet);
 			}
 			setForceRender((prev) => !prev);
 		}
@@ -74,129 +79,137 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 				))}
 			</div>
 			<div className="h-full">
-				{selectedTab === "Data" && (
-					<div className="flex flex-col justify-center px-4 py-2">
-						{data.variation === "echart-bar-graph" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={Bar}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
+				<div
+					className="flex flex-col justify-center px-4 py-2"
+					style={{
+						display: selectedTab === "Data" ? "flex" : "none",
+					}}
+				>
+					{!data.variation && (
+						<div className="px-4 py-2">
+							<VisualMap
 								selectedItem={handleSelectedItem}
+								handleClose={() => {}}
 							/>
-						)}
-						{data.variation === "echart-line-graph" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={Line}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-						{data.variation === "echart-pie-chart" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={Pie}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-						{data.variation === "echart-scatter-plots" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={ScatterPlot}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-						{data.variation === "echart-world-map-chart" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={WorldMap}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-						{data.variation === "echart-stack-chart" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={StackChart}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-						{data.variation === "echart-gantt-chart" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={Gantt}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-						{data.variation === "echart-dendrogram-chart" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={Dendrogram}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-						{data.variation === "echart-word-cloud" && (
-							<FrameOperations
-								id={id}
-								updateFrame={updateFrame}
-								path="option"
-								chart={Cloud}
-								storedColumns={selectedColumn}
-								handleStoreData={handleStoreData}
-								selectedItem={handleSelectedItem}
-							/>
-						)}
-					</div>
-				)}
-				{selectedTab === "Tools" && (
-					<div className="flex w-full justify-around">
-						<UpgradedVisualizationTool id={id} />
-					</div>
-				)}
-				{selectedTab === "JSON" && (
-					<div className="flex h-full flex-col justify-center">
-						<JsonSettings id={id} path="option" height="100vh" />
-					</div>
-				)}
+						</div>
+					)}
+					{data.variation === "echart-bar-graph" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={Bar}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-line-graph" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={Line}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-pie-chart" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={Pie}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-scatter-plots" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={ScatterPlot}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-world-map-chart" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={WorldMap}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-stack-chart" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={StackChart}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-gantt-chart" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={Gantt}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-dendrogram-chart" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={Dendrogram}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+					{data.variation === "echart-word-cloud" && (
+						<FrameOperations
+							id={id}
+							updateFrame={updateFrame}
+							path="option"
+							chart={Cloud}
+							storedColumns={selectedColumn}
+							handleStoreData={handleStoreData}
+							selectedItem={handleSelectedItem}
+						/>
+					)}
+				</div>
+				<div
+					className="flex w-full justify-around"
+					style={{
+						display: selectedTab === "Tools" ? "flex" : "none",
+					}}
+				>
+					<UpgradedVisualizationTool id={id} />
+				</div>
+				<div
+					className="flex h-full flex-col justify-center"
+					style={{
+						display: selectedTab === "JSON" ? "flex" : "none",
+					}}
+				>
+					<JsonSettings id={id} path="option" height="100vh" />
+				</div>
 			</div>
-			{!data.variation && (
-				<AIGenerationSettings
-					id={id}
-					path="option"
-					appendPrompt={"An EChart graph"}
-					placeholder="Ex: Generate a E-Chart bar graph."
-					valueAsObject
-				/>
-			)}
 		</div>
 	);
 };

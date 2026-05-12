@@ -1,13 +1,24 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+	type BlockDef,
 	type EchartVisualizationBlockConfig,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
 } from "@semoss/renderer";
+import {
+	Input,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Switch,
+} from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
+import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 
 //Initial state of custom value labels as default values for managing and restoring
@@ -37,18 +48,40 @@ interface CustomizeValueLabelsKeys {
 	seriesIndex: number | string;
 }
 
+interface CustomizeValueLabelStyle {
+	show: boolean;
+	position: string;
+	rotate: string;
+	alignment: string;
+	font: string;
+	fontsize: string;
+	fontweight: string;
+	fontcolour: string;
+}
+
+interface CustomizeValueLabelsProps {
+	id: string;
+	path: string;
+	chartType: string;
+	option: typeof EchartVisualizationBlockConfig.data.option;
+}
+
 export const CustomizeValueLabels = observer(
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
-	<D extends BlockDef = BlockDef>({ option, chartType, id, path }) => {
+	<D extends BlockDef = BlockDef>({
+		id,
+		path,
+	}: CustomizeValueLabelsProps) => {
 		const [fieldData, setFieldData] =
 			useState<CustomizeValueLabelsKeys[]>(INITIAL_VALUE_LABELS);
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [value, setValue] = useState<
-			typeof EchartVisualizationBlockConfig.data.option
+			string | typeof EchartVisualizationBlockConfig.data.option
 		>(data.option);
-		const [selectedSeries, _setSelectedSeries] = useState<string>("0");
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const [selectedSeries, setSelectedSeries] = useState<string>("0");
+		const rotateLabelId = useId();
+		const fontSizeId = useId();
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		const [valueLabelsUpdated, setValueLabelsUpdated] = useState<
 			"initial" | "updated"
 		>("initial");
@@ -67,9 +100,9 @@ export const CustomizeValueLabels = observer(
 			"insideTopRight",
 			"insideBottomRight",
 		];
-		const _alignment: string[] = ["left", "center", "right"];
-		const _fontFamily: string[] = ["sans-serif", "serif", "monospace"];
-		const _fontWeight: string[] = [
+		const alignment: string[] = ["left", "center", "right"];
+		const fontFamily: string[] = ["sans-serif", "serif", "monospace"];
+		const fontWeight: string[] = [
 			"normal",
 			"bold",
 			"bolder",
@@ -148,7 +181,14 @@ export const CustomizeValueLabels = observer(
 			}
 		}, [fieldData]);
 
-		const _updateFields = (
+		const parseOption =
+			(): typeof EchartVisualizationBlockConfig.data.option => {
+				return (
+					typeof value === "string" ? JSON.parse(value) : value
+				) as typeof EchartVisualizationBlockConfig.data.option;
+			};
+
+		const updateFields = (
 			fieldName: string,
 			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 			fieldValue: any,
@@ -165,9 +205,11 @@ export const CustomizeValueLabels = observer(
 		};
 
 		function updateChartData(values: CustomizeValueLabelsKeys[]) {
-			let opt = typeof value === "string" ? JSON.parse(value) : value;
-			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-			const customizeLabelOptionsData: Record<string | number, any> = {};
+			let opt = parseOption();
+			const customizeLabelOptionsData: Record<
+				string | number,
+				CustomizeValueLabelStyle
+			> = {};
 			values.forEach((item) => {
 				customizeLabelOptionsData[item.seriesIndex] = {
 					show: item.show,
@@ -219,13 +261,16 @@ export const CustomizeValueLabels = observer(
 
 		function getFilteredSeriesIndex() {
 			const index: number[] = [];
-			const opt = typeof value === "string" ? JSON.parse(value) : value;
-			const seriesAvailable = opt.series.filter((item) =>
-				BAR_CHART_DATA.JSONVALUE.includes(item.type),
+			const opt = parseOption();
+			const seriesAvailable = opt.series.filter(
+				(item: { type?: string }) =>
+					BAR_CHART_DATA.JSONVALUE.includes(item.type ?? ""),
 			);
-			seriesAvailable.forEach((_, seriesIndex) => {
-				index.push(seriesIndex);
-			});
+			seriesAvailable.forEach(
+				(_: { type?: string }, seriesIndex: number) => {
+					index.push(seriesIndex);
+				},
+			);
 			return index;
 		}
 
@@ -248,7 +293,7 @@ export const CustomizeValueLabels = observer(
 			}, 300);
 		}
 
-		const _fieldSelectedSeries: CustomizeValueLabelsKeys =
+		const fieldSelectedSeries: CustomizeValueLabelsKeys =
 			fieldData[parseInt(selectedSeries, 10)] || DEFAULT_VALUE_LABELS;
 
 		return (
@@ -256,11 +301,10 @@ export const CustomizeValueLabels = observer(
 				{/* Series tabs */}
 				{fieldData.length > 1 && (
 					<div className="flex flex-row gap-1 px-4 py-2">
-						{fieldData.map((_, _index) => (
+						{fieldData.map((item, index) => (
 							// biome-ignore lint/a11y/useButtonType: handled by caller
 							<button
-								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-								key={`series${index}`}
+								key={String(item.seriesIndex)}
 								className={`rounded border px-3 py-1 text-sm ${
 									selectedSeries === `${index}`
 										? "border-primary bg-primary text-primary-foreground"
@@ -304,9 +348,8 @@ export const CustomizeValueLabels = observer(
 									<SelectValue placeholder="Select" />
 								</SelectTrigger>
 								<SelectContent>
-									{labelPositionValues.map((label, index) => (
-										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-										<SelectItem key={index} value={label}>
+									{_labelPositionValues.map((label) => (
+										<SelectItem key={label} value={label}>
 											{label}
 										</SelectItem>
 									))}
@@ -317,12 +360,9 @@ export const CustomizeValueLabels = observer(
 							<span className="text-muted-foreground text-sm">
 								Rotate Label (In Degrees)
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
-							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								type="number"
-								id="rotate-label"
+								id={rotateLabelId}
 								value={fieldSelectedSeries.rotate ?? ""}
 								onChange={(e) =>
 									updateFields(
@@ -351,9 +391,8 @@ export const CustomizeValueLabels = observer(
 									<SelectValue placeholder="Select Alignment" />
 								</SelectTrigger>
 								<SelectContent>
-									{alignment.map((label, index) => (
-										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-										<SelectItem key={index} value={label}>
+									{alignment.map((label) => (
+										<SelectItem key={label} value={label}>
 											{label}
 										</SelectItem>
 									))}
@@ -374,9 +413,8 @@ export const CustomizeValueLabels = observer(
 									<SelectValue placeholder="Select Font" />
 								</SelectTrigger>
 								<SelectContent>
-									{fontFamily.map((label, index) => (
-										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-										<SelectItem key={index} value={label}>
+									{fontFamily.map((label) => (
+										<SelectItem key={label} value={label}>
 											{label}
 										</SelectItem>
 									))}
@@ -387,12 +425,9 @@ export const CustomizeValueLabels = observer(
 							<span className="text-muted-foreground text-sm">
 								Select Font Size (Default: 12)
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
-							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								type="number"
-								id="font-size"
+								id={fontSizeId}
 								value={fieldSelectedSeries.fontsize}
 								onChange={(e) =>
 									updateFields(
@@ -421,9 +456,8 @@ export const CustomizeValueLabels = observer(
 									<SelectValue placeholder="Select Font Weight" />
 								</SelectTrigger>
 								<SelectContent>
-									{fontWeight.map((label, index) => (
-										// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-										<SelectItem key={index} value={label}>
+									{fontWeight.map((label) => (
+										<SelectItem key={label} value={label}>
 											{label}
 										</SelectItem>
 									))}

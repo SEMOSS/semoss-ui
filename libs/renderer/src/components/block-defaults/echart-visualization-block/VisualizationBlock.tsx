@@ -65,12 +65,12 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const VisualizationBlock: BlockComponent = observer(
-	<D extends BlockDef = BlockDef>({ id }) => {
+	<D extends BlockDef = BlockDef>({ id }: { id: string }) => {
 		const { data, setData, attrs, listeners } =
 			useBlock<EchartVisualizationBlockDef>(id);
 
 		const elementRef = useRef<HTMLDivElement>(null);
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 		useEffect(() => {
@@ -81,9 +81,24 @@ export const VisualizationBlock: BlockComponent = observer(
 
 		// biome-ignore lint/correctness/noUnusedFunctionParameters: path required for type safety
 		//biome-ignore lint/suspicious/noExplicitAny: data and path's value can't be predicted
-		function updateChartJson(data: any, path: any) {
+		function updateChartJson(nextOption: any, path: any) {
 			const parsedData =
-				typeof data === "string" ? JSON.parse(data) : data;
+				typeof nextOption === "string"
+					? JSON.parse(nextOption)
+					: nextOption;
+			const currentOption =
+				typeof data.option === "string"
+					? (() => {
+							try {
+								return JSON.parse(data.option);
+							} catch {
+								return data.option;
+							}
+						})()
+					: data.option;
+			if (JSON.stringify(parsedData) === JSON.stringify(currentOption)) {
+				return;
+			}
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
 				timeoutRef.current = null;

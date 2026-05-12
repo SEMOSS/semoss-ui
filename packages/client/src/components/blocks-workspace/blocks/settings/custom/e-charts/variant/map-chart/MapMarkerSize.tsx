@@ -47,10 +47,9 @@ export const MapMarkerSize = observer(
 		}, [id]);
 		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 		const reinitializeFeatures = (options: any) => {
-			if (Object.hasOwn(options, "series")) {
-				if (Object.hasOwn(options.series[0], "symbolSize")) {
-					setMarkerSize(options.series[0].symbolSize);
-				}
+			const configuredSymbolSize = Number(options.symbolSize);
+			if (!Number.isNaN(configuredSymbolSize)) {
+				setMarkerSize(configuredSymbolSize);
 			}
 		};
 
@@ -58,9 +57,16 @@ export const MapMarkerSize = observer(
 			e: React.ChangeEvent<HTMLInputElement>,
 		) => {
 			const option = JSON.parse(value);
-			setMarkerSize(Number(e.target.value));
-			option.series[0].symbolSize = e.target.value;
-			option.symbolSize = e.target.value;
+			const nextSize = Number(e.target.value);
+			if (Number.isNaN(nextSize)) {
+				return;
+			}
+
+			setMarkerSize(nextSize);
+			option.symbolSize = nextSize;
+			if (Array.isArray(option.series) && option.series[0]) {
+				option.series[0].symbolSize = nextSize;
+			}
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 

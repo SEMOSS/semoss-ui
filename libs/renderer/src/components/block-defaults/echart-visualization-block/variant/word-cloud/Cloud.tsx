@@ -12,6 +12,18 @@ interface CloudProps {
 	updateJson: (data: unknown, path: unknown) => void;
 }
 
+interface CloudSeriesOption {
+	data?: unknown[];
+	[key: string]: unknown;
+}
+
+interface CloudOption {
+	series?: CloudSeriesOption[];
+	tooltip?: Record<string, unknown>;
+	color?: string[];
+	[key: string]: unknown;
+}
+
 export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 	const { data } = useBlock<EchartVisualizationBlockDef>(id);
 	const sampleColors: string[] = [
@@ -67,19 +79,19 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 	});
 
 	// Parse the option data as JSON if string, otherwise use as is
-	let parsedOption: Record<string, unknown> = {};
+	let parsedOption: CloudOption = {};
 	if (data?.option) {
 		parsedOption =
 			typeof data?.option === "string"
 				? JSON.parse(data?.option)
-				: data?.option;
+				: (data?.option as CloudOption);
 	}
 
 	/**
 	 * Format the frame data for word cloud display
 	 */
 	const formatCloudData = useCallback(
-		(resultData: Record<string, unknown>) => {
+		(resultData: CloudOption): CloudOption => {
 			// Get the color palette from the result data
 			const colorPalette = (resultData.color as string[]) || sampleColors;
 
@@ -102,10 +114,14 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 
 				// Get the aggregation methods
 				const sizeAggregation = data?.aggregate?.size
-					? data.aggregate.size[sizeFieldName]
+					? sizeFieldName
+						? data.aggregate.size[sizeFieldName]
+						: null
 					: null;
 				const tooltipAggregation = data?.aggregate?.tooltip
-					? data.aggregate.tooltip[tooltipFieldName]
+					? tooltipFieldName
+						? data.aggregate.tooltip[tooltipFieldName]
+						: null
 					: null;
 
 				const wordsIndex = wordsFieldName
@@ -285,18 +301,34 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 			frame?.isLoading === false;
 
 		if (shouldUpdate) {
-			let currentParsedOption: Record<string, unknown> = {};
+			let currentParsedOption: CloudOption = {};
 			if (data?.option) {
 				currentParsedOption =
 					typeof data.option === "string"
 						? JSON.parse(data.option)
-						: data.option;
+						: (data.option as CloudOption);
 			}
 
 			const formattedData = formatCloudData(currentParsedOption);
-			updateJson(formattedData, "option");
+			const currentSeriesData = JSON.stringify(
+				currentParsedOption.series?.[0]?.data ?? [],
+			);
+			const formattedSeriesData = JSON.stringify(
+				formattedData.series?.[0]?.data ?? [],
+			);
+
+			if (currentSeriesData !== formattedSeriesData) {
+				updateJson(formattedData, "option");
+			}
 		}
-	}, [frame.data.values, frame.isLoading, data, updateJson, formatCloudData]);
+	}, [
+		frame.data.values,
+		frame.isLoading,
+		data?.frame?.name,
+		data?.option,
+		updateJson,
+		formatCloudData,
+	]);
 
 	// Handle cases where option is a string (raw JSON or query output)
 	if (typeof data.option === "string") {
@@ -324,11 +356,10 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 			frame.isLoading === false;
 
 		// Always format the data to ensure proper coloring (handles both real and sample data)
-		const finalOption: Record<string, unknown> =
-			formatCloudData(parsedOption);
+		const finalOption: CloudOption = formatCloudData(parsedOption);
 
 		// Check if we have words to display
-		const wordData = finalOption?.series?.[0]?.data as unknown[];
+		const wordData = finalOption.series?.[0]?.data;
 		const hasWords = Array.isArray(wordData) && wordData.length > 0;
 
 		// Show empty state if no words are available
@@ -341,13 +372,10 @@ export const Cloud = observer(({ id, updateJson }: CloudProps) => {
 			);
 		}
 
-		// Add key to force re-render when data changes
-		const chartKey = `cloud-${id}-${JSON.stringify(finalOption?.series?.[0]?.data)}`;
-
 		return (
 			<div id={id} className="h-full w-full">
 				<EChartsReact
-					key={chartKey}
+					key={`cloud-${id}`}
 					option={finalOption as EChartsOption}
 					style={{
 						height: "inherit",

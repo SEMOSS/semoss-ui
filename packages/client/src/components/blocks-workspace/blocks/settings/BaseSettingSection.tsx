@@ -16,6 +16,7 @@ export const BaseSettingSection = (props: {
 	children: ReactNode;
 	wide?: boolean;
 	description?: string;
+	contentClassName?: string;
 }) => {
 	return (
 		<div className="base-setting-section flex flex-col gap-1">
@@ -36,7 +37,12 @@ export const BaseSettingSection = (props: {
 					</Tooltip>
 				)}
 			</div>
-			<div className="flex w-full flex-row justify-start gap-1">
+			<div
+				className={
+					props.contentClassName ||
+					"flex w-full flex-row justify-start gap-1"
+				}
+			>
 				{props.children}
 			</div>
 		</div>

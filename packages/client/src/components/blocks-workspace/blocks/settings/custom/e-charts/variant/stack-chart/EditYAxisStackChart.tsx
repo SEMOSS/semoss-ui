@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useState } from "react";
+import { type ChangeEvent, useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -10,10 +10,20 @@ import {
 } from "@semoss/renderer";
 import { Button, Input, Slider, Switch } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
+import type { AxisConfig } from "../shared/shared-interfaces";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	id: string;
 	path: Paths<Block<D>["data"], 4>;
+}
+
+interface StackChartOption {
+	yAxis: AxisConfig;
+	reset: {
+		axis: {
+			yaxis: AxisConfig;
+		};
+	};
 }
 
 export const EditYAxisStackChart = observer(
@@ -50,12 +60,18 @@ export const EditYAxisStackChart = observer(
 		}, [computedValue, data]);
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			if (Object.hasOwn(data, "option")) {
-				reinitializeFeatures(data.option);
+			if (
+				data &&
+				typeof data === "object" &&
+				Object.hasOwn(data, "option")
+			) {
+				reinitializeFeatures(
+					(data as { option: StackChartOption }).option,
+				);
 			}
 		}, [id]);
 
-		const reinitializeFeatures = (options) => {
+		const reinitializeFeatures = (options: StackChartOption) => {
 			if (Object.hasOwn(options, "yAxis")) {
 				if (options.yAxis && Object.hasOwn(options.yAxis, "show")) {
 					setShowYaxis(options.yAxis.show);
@@ -81,90 +97,99 @@ export const EditYAxisStackChart = observer(
 		};
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			if (Object.hasOwn(data, "option")) {
-				retainYAxisTitle(data.option);
+			if (
+				data &&
+				typeof data === "object" &&
+				Object.hasOwn(data, "option")
+			) {
+				retainYAxisTitle((data as { option: StackChartOption }).option);
 			}
-		}, [data.option.yAxis.name]);
+		}, [data]);
 
-		const retainYAxisTitle = (options) => {
+		const retainYAxisTitle = (options: StackChartOption) => {
 			if (Object.hasOwn(options, "yAxis")) {
 				if (options.yAxis && Object.hasOwn(options.yAxis, "name")) {
-					setYaxisTitle(data.option.yAxis.name);
+					setYaxisTitle(options.yAxis.name as string);
 				}
 			}
 		};
 
 		const showYAxis = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as StackChartOption;
 			setShowYaxis(checked);
 			option.yAxis.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showYAxisTitle = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as StackChartOption;
 			setShowYaxisTitle(checked);
 			option.yAxis.name =
 				option.yAxis.name === "" ? option.yAxis.pixelName : "";
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleYaxisTitleChange = (e) => {
+		const handleYaxisTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
 			setYaxisTitle(e.target.value);
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as StackChartOption;
 			option.yAxis.name = e.target.value;
 			option.yAxis.flipAxisName = e.target.value;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleChangeYAxisFontSize = (e) => {
-			const option = JSON.parse(value);
+		const handleChangeYAxisFontSize = (
+			e: ChangeEvent<HTMLInputElement>,
+		) => {
+			const option = JSON.parse(value) as StackChartOption;
 			setFontSizeYAxis(e.target.valueAsNumber);
 			option.yAxis.nameTextStyle.fontSize = e.target.valueAsNumber;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
-		const handleChangeYAxisLabelFontSize = (e) => {
-			const option = JSON.parse(value);
-			setFontSizeYAxisLabel(e.target.value);
-			option.yAxis.axisLabel.fontSize = e.target.value;
+		const handleChangeYAxisLabelFontSize = (
+			e: ChangeEvent<HTMLInputElement>,
+		) => {
+			const option = JSON.parse(value) as StackChartOption;
+			const nextFontSize = e.target.valueAsNumber;
+			setFontSizeYAxisLabel(nextFontSize);
+			option.yAxis.axisLabel.fontSize = nextFontSize;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const rotateYAxis = (newValue: number[]) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as StackChartOption;
 			setRotateYaxis(newValue[0]);
 			option.yAxis.axisLabel.rotate = newValue[0];
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showYAxisTick = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as StackChartOption;
 			setShowYaxisTick(checked);
 			option.yAxis.axisTick.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const showYAxisLabel = (checked: boolean) => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as StackChartOption;
 			setShowAxisLabel(checked);
 			option.yAxis.axisLabel.show = checked;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		};
 
 		const Reset = () => {
-			const option = JSON.parse(value);
+			const option = JSON.parse(value) as StackChartOption;
 			setShowYaxis(option.reset.axis.yaxis.show);
 			setShowYaxisTitle(true);
-			setYaxisTitle(option.yAxis.pixelName);
+			setYaxisTitle(option.yAxis.pixelName as string);
 			setFontSizeYAxis(option.reset.axis.yaxis.nameTextStyle.fontSize);
 			setFontSizeYAxisLabel(option.reset.axis.yaxis.axisLabel.fontSize);
 			setRotateYaxis(option.reset.axis.yaxis.axisLabel.rotate);
 			setShowYaxisTick(option.reset.axis.yaxis.axisTick.show);
 			setShowAxisLabel(option.reset.axis.yaxis.axisLabel.show);
 			option.yAxis.show = option.reset.axis.yaxis.show;
-			option.yAxis.name = option.yAxis.pixelName;
-			option.yAxis.flipAxisName = option.yAxis.pixelName;
+			option.yAxis.name = option.yAxis.pixelName as string;
+			option.yAxis.flipAxisName = option.yAxis.pixelName as string;
 			option.yAxis.nameTextStyle.fontSize =
 				option.reset.axis.yaxis.nameTextStyle.fontSize;
 			option.yAxis.axisLabel.fontSize =
@@ -193,8 +218,6 @@ export const EditYAxisStackChart = observer(
 					<div className="flex flex-col p-2">
 						<div className="flex flex-col gap-2 p-2">
 							<span className="text-sm">Set Y Axis Title</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="yaxis-title"
@@ -206,8 +229,6 @@ export const EditYAxisStackChart = observer(
 							<span className="text-sm">
 								Edit Axis Title Font Size
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="yaxis-edit-title-font-size"
@@ -231,8 +252,6 @@ export const EditYAxisStackChart = observer(
 							<span className="text-sm">
 								Edit Label Font Size
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="yaxis-label-font-size"

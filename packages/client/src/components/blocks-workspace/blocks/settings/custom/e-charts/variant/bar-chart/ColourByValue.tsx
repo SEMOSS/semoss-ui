@@ -25,11 +25,61 @@ import {
 
 export interface ColourByValueProps {
 	id: string;
-	// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-	updateChart: (option: any) => void;
+	updateChart: (option: BarChartOption) => void;
+	path: string;
 }
 
-const INITIAL_NEW_RULES = {
+type AxisValue = string | number;
+
+type XAxisDataEntry = AxisValue | { value: AxisValue };
+
+interface ColourRule {
+	column: string;
+	columnColour: string;
+	columnToColour: string;
+	columnComparision: string;
+	valuesToColour: string[];
+	filterValue: number;
+	filterMinValue: number;
+	filterMaxValue: number;
+	index: number;
+	columnName?: string;
+	columnNameToColour?: string;
+}
+
+interface BarChartSeriesItem {
+	name?: string;
+	type?: string;
+	data: Array<number | null>;
+	itemStyle?: {
+		color?: (seriesData: EChartColorParams) => string;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+}
+
+interface BarChartOption {
+	xAxis: {
+		pixelname?: string | string[];
+		data: XAxisDataEntry[];
+	};
+	yAxis: {
+		pixelname?: string | string[];
+	};
+	series: BarChartSeriesItem[];
+	customSettings?: {
+		appliedColourByValue?: ColourRule[];
+		toolsUpdated?: boolean;
+		[key: string]: unknown;
+	};
+	[key: string]: unknown;
+}
+
+interface EChartColorParams {
+	dataIndex: number;
+}
+
+const INITIAL_NEW_RULES: ColourRule = {
 	column: "",
 	columnColour: "#000000",
 	columnToColour: "",
@@ -42,23 +92,25 @@ const INITIAL_NEW_RULES = {
 };
 
 const ColourByValue = observer(
-	// biome-ignore lint/correctness/noUnusedFunctionParameters: required by interface
-	<_D extends BlockDef = BlockDef>({ id, updateChart, path }) => {
+	<_D extends BlockDef = BlockDef>({ id, path }: ColourByValueProps) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
 
-		const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		const [valuesToColour, setValuesToColour] = useState<any[]>([]);
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		const [value, setValue] = useState<any>({});
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		const [appliedRules, setAppliedRules] = useState<any[]>([]);
+		const [newRules, setNewRules] = useState<ColourRule>(INITIAL_NEW_RULES);
+		const [valuesToColour, setValuesToColour] = useState<string[]>([]);
+		const [value, setValue] = useState<BarChartOption | string>(
+			{} as BarChartOption,
+		);
+		const [appliedRules, setAppliedRules] = useState<ColourRule[]>([]);
 		const [_valuesColourMapping, setValuesColourMapping] = useState<
 			Record<string, string>
 		>({});
 
-		const functionCallReference = useRef({
+		const functionCallReference = useRef<{
+			valuesResetCheck: boolean;
+			assignedRules: ColourRule[];
+			applyRulesToChart: boolean;
+		}>({
 			valuesResetCheck: false,
 			assignedRules: [],
 			applyRulesToChart: false,
@@ -82,15 +134,19 @@ const ColourByValue = observer(
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			functionCallReference.current.applyRulesToChart = false;
-			const option =
+			const option = (
 				typeof computedValue === "string"
 					? JSON.parse(computedValue)
-					: computedValue;
+					: computedValue
+			) as BarChartOption;
 			if (
+				option.customSettings &&
 				Object.hasOwn(option, "customSettings") &&
 				Object.hasOwn(option.customSettings, "appliedColourByValue")
 			) {
-				setAppliedRules(option.customSettings.appliedColourByValue);
+				setAppliedRules(
+					option.customSettings.appliedColourByValue ?? [],
+				);
 			}
 		}, []);
 
@@ -101,10 +157,11 @@ const ColourByValue = observer(
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (functionCallReference.current.applyRulesToChart) {
-				const option =
-					typeof value === "string" ? JSON.parse(value) : value;
+				const option = (
+					typeof value === "string" ? JSON.parse(value) : value
+				) as BarChartOption;
 				let colourObj: Record<number, string> = {};
-				let optionUpdated = option;
+				let optionUpdated: BarChartOption = option;
 				appliedRules.forEach((appliedItem) => {
 					const xAxisPosition = getXAxisPositions(appliedItem);
 					const filteredSeriesIndex = getFilteredSeriesIndex();
@@ -130,7 +187,11 @@ const ColourByValue = observer(
 								});
 								setValuesColourMapping((prev) => ({
 									...prev,
-									...colourObj,
+									...Object.fromEntries(
+										Object.entries(colourObj).map(
+											([k, v]) => [String(k), v],
+										),
+									),
 								}));
 								if (
 									Object.hasOwn(
@@ -141,14 +202,14 @@ const ColourByValue = observer(
 									option.series[seriesIndexData].itemStyle = {
 										...option.series[seriesIndexData]
 											.itemStyle,
-										color: (sd) =>
+										color: (sd: EChartColorParams) =>
 											updateColorData(sd, colourObj),
 									};
 								} else {
 									option.series[seriesIndexData] = {
 										...option.series[seriesIndexData],
 										itemStyle: {
-											color: (sd) =>
+											color: (sd: EChartColorParams) =>
 												updateColorData(sd, colourObj),
 										},
 									};
@@ -170,9 +231,10 @@ const ColourByValue = observer(
 
 		function getFilteredSeriesIndex() {
 			const index: number[] = [];
-			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-			const seriesAvailable: any[] = data.option.series.filter((item) =>
-				BAR_CHART_DATA.JSONVALUE.includes(item.type),
+			const seriesAvailable = (
+				data.option as BarChartOption
+			).series.filter((item) =>
+				BAR_CHART_DATA.JSONVALUE.includes(item.type ?? ""),
 			);
 			seriesAvailable.forEach((_, seriesIndex) => {
 				index.push(seriesIndex);
@@ -180,16 +242,12 @@ const ColourByValue = observer(
 			return index;
 		}
 
-		function runStateUpdateCustom(
-			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-			updatedOption: PathValue<any, typeof path>,
-		) {
+		function runStateUpdateCustom(updatedOption: BarChartOption) {
 			setTimeout(() => {
 				try {
 					setData(
 						"option",
-						// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-						updatedOption as PathValue<any, typeof path>,
+						updatedOption as PathValue<BarChartOption, typeof path>,
 					);
 				} catch (e) {
 					console.log(e);
@@ -197,19 +255,28 @@ const ColourByValue = observer(
 			}, 300);
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function convertSeriesDataToValue(item: any) {
-			if (typeof item === "object" && Object.hasOwn(item, "value"))
-				return item.value;
+		function convertSeriesDataToValue(item: XAxisDataEntry | null): number {
+			if (typeof item === "object" && item !== null) {
+				const v = item.value;
+				if (typeof v === "number") {
+					return v;
+				}
+				const parsedValue = Number(v);
+				return Number.isNaN(parsedValue) ? 0 : parsedValue;
+			}
 			if (typeof item === "number") return item;
-			if (Number.isNaN(item)) return 0;
+			if (item === null) return 0;
+			const parsedValue = Number(item);
+			return Number.isNaN(parsedValue) ? 0 : parsedValue;
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function updateField(column: string, val: any) {
+		function updateField<K extends keyof ColourRule>(
+			column: K,
+			val: ColourRule[K],
+		) {
 			setNewRules((prev) => ({ ...prev, [column]: val }));
-			if (column === "columnToColour") {
-				const option = data.option;
+			if (column === "columnToColour" && typeof val === "string") {
+				const option = data.option as BarChartOption;
 				const jsonPropName = data.columns.find(
 					(item) => item.selector === val,
 				);
@@ -222,9 +289,9 @@ const ColourByValue = observer(
 					if (option.xAxis.pixelname === jsonPropName.name) {
 						setValuesToColour(
 							option.xAxis.data.map((item) =>
-								Object.hasOwn(item, "value")
-									? item.value
-									: item,
+								typeof item === "object"
+									? String(item.value)
+									: String(item),
 							),
 						);
 						const dataArray = option.xAxis.data.map(
@@ -244,7 +311,11 @@ const ColourByValue = observer(
 							seriesIndex > -1 &&
 							Object.hasOwn(option.series[seriesIndex], "data")
 						) {
-							setValuesToColour(option.series[seriesIndex].data);
+							setValuesToColour(
+								option.series[seriesIndex].data.map((item) =>
+									String(convertSeriesDataToValue(item)),
+								),
+							);
 							const dataArray = option.series[
 								seriesIndex
 							].data.map(convertSeriesDataToValue);
@@ -259,35 +330,38 @@ const ColourByValue = observer(
 			}
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function getXAxisPositions(sourceObject: any = {}) {
-			const option =
-				typeof value === "string" ? JSON.parse(value) : value;
+		function getXAxisPositions(sourceObject: Partial<ColourRule> = {}) {
+			const option = (
+				typeof value === "string" ? JSON.parse(value) : value
+			) as BarChartOption;
 			const positions: number[] = [];
-			if (Object.keys(sourceObject).length === 0) sourceObject = newRules;
+			const sourceRule: ColourRule =
+				Object.keys(sourceObject).length === 0
+					? newRules
+					: ({ ...newRules, ...sourceObject } as ColourRule);
 
-			if (sourceObject.columnComparision === "==") {
-				sourceObject.valuesToColour.forEach((item) => {
+			if (sourceRule.columnComparision === "==") {
+				sourceRule.valuesToColour.forEach((item) => {
 					option.xAxis.data.forEach((itemAvailable, index) => {
-						if (
-							item === itemAvailable ||
-							(Object.hasOwn(itemAvailable, "value") &&
-								itemAvailable.value === item)
-						) {
+						const availableValue =
+							typeof itemAvailable === "object"
+								? itemAvailable.value
+								: itemAvailable;
+						if (String(item) === String(availableValue)) {
 							positions.push(index);
 						}
 					});
 				});
 			}
-			if (sourceObject.columnComparision === "!=") {
+			if (sourceRule.columnComparision === "!=") {
 				const matchedPositions: number[] = [];
-				sourceObject.valuesToColour.forEach((item) => {
+				sourceRule.valuesToColour.forEach((item) => {
 					option.xAxis.data.forEach((itemAvailable, index) => {
-						if (
-							item === itemAvailable ||
-							(Object.hasOwn(itemAvailable, "value") &&
-								itemAvailable.value === item)
-						) {
+						const availableValue =
+							typeof itemAvailable === "object"
+								? itemAvailable.value
+								: itemAvailable;
+						if (String(item) === String(availableValue)) {
 							matchedPositions.push(index);
 						}
 					});
@@ -297,45 +371,57 @@ const ColourByValue = observer(
 						positions.push(index);
 				});
 			}
-			if (sourceObject.columnComparision === "<") {
+			if (sourceRule.columnComparision === "<") {
 				option.xAxis.data.forEach((item, index) => {
+					const itemValue =
+						typeof item === "object"
+							? Number(item.value)
+							: Number(item);
 					if (
-						(Object.hasOwn(item, "value") &&
-							item.value < sourceObject.filterValue) ||
-						parseInt(item, 10) < sourceObject.filterValue
+						!Number.isNaN(itemValue) &&
+						itemValue < sourceRule.filterValue
 					) {
 						positions.push(index);
 					}
 				});
 			}
-			if (sourceObject.columnComparision === ">") {
+			if (sourceRule.columnComparision === ">") {
 				option.xAxis.data.forEach((item, index) => {
+					const itemValue =
+						typeof item === "object"
+							? Number(item.value)
+							: Number(item);
 					if (
-						(Object.hasOwn(item, "value") &&
-							item.value > sourceObject.filterValue) ||
-						parseInt(item, 10) > sourceObject.filterValue
+						!Number.isNaN(itemValue) &&
+						itemValue > sourceRule.filterValue
 					) {
 						positions.push(index);
 					}
 				});
 			}
-			if (sourceObject.columnComparision === "<=") {
+			if (sourceRule.columnComparision === "<=") {
 				option.xAxis.data.forEach((item, index) => {
+					const itemValue =
+						typeof item === "object"
+							? Number(item.value)
+							: Number(item);
 					if (
-						(Object.hasOwn(item, "value") &&
-							item.value <= sourceObject.filterValue) ||
-						parseInt(item, 10) <= sourceObject.filterValue
+						!Number.isNaN(itemValue) &&
+						itemValue <= sourceRule.filterValue
 					) {
 						positions.push(index);
 					}
 				});
 			}
-			if (sourceObject.columnComparision === ">=") {
+			if (sourceRule.columnComparision === ">=") {
 				option.xAxis.data.forEach((item, index) => {
+					const itemValue =
+						typeof item === "object"
+							? Number(item.value)
+							: Number(item);
 					if (
-						(Object.hasOwn(item, "value") &&
-							item.value >= sourceObject.filterValue) ||
-						parseInt(item, 10) >= sourceObject.filterValue
+						!Number.isNaN(itemValue) &&
+						itemValue >= sourceRule.filterValue
 					) {
 						positions.push(index);
 					}
@@ -345,8 +431,7 @@ const ColourByValue = observer(
 		}
 
 		function updateColorData(
-			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-			seriesData: any,
+			seriesData: EChartColorParams,
 			colourObj: Record<number, string>,
 		) {
 			if (Object.hasOwn(colourObj, seriesData.dataIndex)) {
@@ -393,8 +478,7 @@ const ColourByValue = observer(
 			newRules.columnComparision === "<=" ||
 			newRules.columnComparision === ">=";
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function deleteAssignedRule(_rule: any, index: number) {
+		function deleteAssignedRule(_rule: ColourRule, index: number) {
 			let assignedRules = appliedRules.filter((_, i) => i !== index);
 			assignedRules = assignedRules.map((item, i) => ({
 				...item,
@@ -404,8 +488,7 @@ const ColourByValue = observer(
 			setAppliedRules(assignedRules);
 		}
 
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
-		function editAssignedRule(rule: any, _index: number) {
+		function editAssignedRule(rule: ColourRule, _index: number) {
 			setNewRules(rule);
 		}
 
@@ -435,8 +518,7 @@ const ColourByValue = observer(
 								</tr>
 							)}
 							{appliedRules.map((rule, index) => (
-								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-								<tr key={index} className="border-b">
+								<tr key={rule.index} className="border-b">
 									<td className="py-1 pr-2">
 										{rule.column} {rule.columnToColour}
 									</td>
@@ -450,10 +532,8 @@ const ColourByValue = observer(
 									}`}</td>
 									<td className="py-1">
 										<div className="flex gap-2">
-											{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-											// biome-ignore caller
-											{/* biome-ignore lint/a11y/useButtonType: handled by parent */}
 											<button
+												type="button"
 												className="text-muted-foreground hover:text-foreground"
 												onClick={() =>
 													deleteAssignedRule(
@@ -464,10 +544,8 @@ const ColourByValue = observer(
 											>
 												<Trash2 className="h-4 w-4" />
 											</button>
-											{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-											// biome-ignore caller
-											{/* biome-ignore lint/a11y/useButtonType: handled by parent */}
 											<button
+												type="button"
 												className="text-muted-foreground hover:text-foreground"
 												onClick={() =>
 													editAssignedRule(
@@ -601,7 +679,10 @@ const ColourByValue = observer(
 							type="number"
 							value={newRules.filterValue}
 							onChange={(e) =>
-								updateField("filterValue", e.target.value)
+								updateField(
+									"filterValue",
+									Number(e.target.value),
+								)
 							}
 							placeholder="Select Value"
 						/>

@@ -1,27 +1,70 @@
-import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { ChevronDown, Search } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import {
+	DragDropContext,
+	Draggable,
+	Droppable,
+	type DropResult,
+} from "react-beautiful-dnd";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 	type PathValue,
-	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
-import { DataTypeIcon } from "@semoss/shared";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
+import NumberIcon from "../../../../../../../assets/block-settings/img/NumberIcon.svg";
+import StringIcon from "../../../../../../../assets/block-settings/img/StringIcon.svg";
 import { buildListener } from "../../../../block-settings/block-defaults.shared";
-import { BAR_CHART_DATA } from "../Visualization.constants";
 import { DataTabStyling } from "./bar-chart/DataTabStyling";
+import type { StoredColumn, VisualMapItem } from "./shared/shared-interfaces";
+
+// Chart configuration item
+interface ChartConfigItem {
+	name: string;
+	label: string;
+	values?: string[];
+	selectors?: string[];
+	dataType?: string[];
+	multiLabel?: boolean;
+	aggregate?: boolean;
+}
+
+// Column with selector information
+interface ColumnWithSelector {
+	name: string;
+	selector: string;
+	width?: number;
+}
+
+// State item for dendrogram
+interface DendrogramStateItem {
+	name: string;
+	selector: string;
+	value?: number;
+	isFacet?: boolean;
+}
+
+// Column item for operations
+interface ColumnItem {
+	name: string;
+	selector: string;
+	width: undefined;
+	dataType: string;
+}
 
 //frame operations component props structure
 export interface FrameOperationsProps {
 	id: string;
-	updateFrame: (option) => void;
+	updateFrame: (option: unknown) => void;
+	path: string;
+	chart: ChartConfigItem[];
+	storedColumns: StoredColumn[];
+	handleStoreData: (data: StoredColumn[]) => void;
+	selectedItem: (item: VisualMapItem) => void;
 }
 
 const COLOUR_PALATTE_DATA = [
@@ -51,6 +94,13 @@ interface DroppedColumns {
 	};
 }
 
+type ColumnType = {
+	name: string;
+	selector: string;
+	width: undefined;
+	dataType: string;
+};
+
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
 	<_D extends BlockDef = BlockDef>({
@@ -61,10 +111,10 @@ export const FrameOperations = observer(
 		storedColumns,
 		handleStoreData,
 		selectedItem,
-	}) => {
+	}: FrameOperationsProps) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
-		const [_columnsData, setColumnsData] = useState([]);
+		const [_columnsData, setColumnsData] = useState<ColumnType[]>([]);
 		const [search, setSearch] = useState("");
 		const [isAdd, setIsAdd] = useState(false);
 		const [addedColumnName, setAddedColumnName] = useState("");
@@ -72,7 +122,8 @@ export const FrameOperations = observer(
 			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 			Record<string, any>
 		>({});
-		const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
+		// biome-ignore lint/suspicious/noExplicitAny: temp store for chart columns with dynamic fields
+		const [selectedColumn, setSelectedColumn] = useState<any[]>([]);
 		const [accordionSection, setAccordionSection] = useState<
 			AccordionSection[]
 		>([
@@ -85,11 +136,10 @@ export const FrameOperations = observer(
 		]);
 		const accordionList = ["preProcess"];
 		const [_value, setValue] = useState("");
-		const _getFrames = useBlocksPixel<string[]>("GetFrames();", {
-			data: [],
-		});
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-		const [filteredColumns, setFilteredColumns] = useState([]);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+		const [filteredColumns, setFilteredColumns] = useState<ColumnType[]>(
+			[],
+		);
 		const frameHeaders = useFrameHeaders(data.frame?.name);
 		const columnsSelector = useMemo(() => {
 			return frameHeaders.data.list.map((item) => {
@@ -107,11 +157,12 @@ export const FrameOperations = observer(
 			const columnsSelectorString = JSON.stringify(columnsSelector);
 			if (
 				columnsSelector.length > 0 &&
-				filteredColumnsString !== columnsSelectorString
+				filteredColumnsString !== columnsSelectorString &&
+				!search
 			) {
 				setFilteredColumns(columnsSelector);
 			}
-		}, [columnsSelector]);
+		}, [columnsSelector, search]);
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setDroppedColumns({});
@@ -147,7 +198,7 @@ export const FrameOperations = observer(
 					},
 				};
 			} else if (data.variation === "echart-pie-chart") {
-				const { _state, ...mainParsedData } = parsedValue;
+				const { ...mainParsedData } = parsedValue;
 				parsedValue = {
 					...mainParsedData,
 				};
@@ -167,8 +218,8 @@ export const FrameOperations = observer(
 			} else if (data.variation === "echart-dendrogram-chart") {
 				parsedValue = {
 					...parsedValue,
-					_state: {
-						...parsedValue._state,
+					state: {
+						...parsedValue.state,
 						dimensions: [],
 						facet: [],
 					},
@@ -181,28 +232,28 @@ export const FrameOperations = observer(
 			} else if (data.variation === "echart-world-map-chart") {
 				parsedValue = {
 					...parsedValue,
-					_state: {
+					state: {
 						fields: {},
 					},
 				};
 			} else if (data.variation === "echart-scatter-plots") {
 				parsedValue = {
 					...parsedValue,
-					_state: {
+					state: {
 						fields: {},
 					},
 				};
 			} else if (data.variation === "echart-stack-chart") {
 				parsedValue = {
 					...parsedValue,
-					_state: {
+					state: {
 						fields: {},
 					},
 				};
 			} else if (data.variation === "echart-word-cloud") {
 				parsedValue = {
 					...parsedValue,
-					_state: {
+					state: {
 						fields: {},
 					},
 				};
@@ -210,7 +261,7 @@ export const FrameOperations = observer(
 				//to be used for special case if nothing matches
 			}
 			//all the stored and dropped columns are resetted to empty
-			storedColumns = {};
+			storedColumns = [];
 			setDroppedColumns({});
 			try {
 				setData("option", parsedValue);
@@ -218,7 +269,7 @@ export const FrameOperations = observer(
 				console.log("error: ", e);
 			}
 		}
-		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		// biome-ignore lint/suspicious/noExplicitAny: echart event type
 		function syncHeaders(value: any, frameChanged: boolean) {
 			if (!value) return;
 			const columns = frameHeaders.data.list.map((item) => {
@@ -253,25 +304,22 @@ export const FrameOperations = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data.option]).get();
-		// biome-ignore lint/suspicious/noExplicitAny: chart settings payload is polymorphic
-		const setSelectedColumnIfChanged = (nextValue: any) => {
-			setSelectedColumn((prevValue) =>
-				JSON.stringify(prevValue) === JSON.stringify(nextValue)
-					? prevValue
-					: nextValue,
-			);
-		};
-		// biome-ignore lint/suspicious/noExplicitAny: dropped columns shape varies by chart type
-		const setDroppedColumnsIfChanged = (nextValue: any) => {
-			setDroppedColumns((prevValue) =>
-				JSON.stringify(prevValue) === JSON.stringify(nextValue)
-					? prevValue
-					: nextValue,
-			);
-		};
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
-			let tempStoredColumnsForDropped = {};
+			// Normalize dataType values from saved charts (convert single-letter codes to full aggregate names)
+			const normalizeDataType = (dataType: string): string => {
+				const typeMap: Record<string, string> = {
+					N: "Average",
+					S: "Count",
+					A: "Average",
+					C: "Count",
+					NUMBER: "Average",
+					STRING: "Count",
+				};
+				return typeMap[dataType] || dataType;
+			};
+
+			let tempStoredColumnsForDropped: StoredColumn[] = [];
 			if (data.variation === "echart-bar-graph") {
 				const parsedOption = JSON.parse(computedValue) || {};
 				if (
@@ -280,7 +328,7 @@ export const FrameOperations = observer(
 					Object.hasOwn(parsedOption.xAxis, "pixelname") &&
 					Object.hasOwn(parsedOption.yAxis, "pixelname")
 				) {
-					const dataTypeList = {};
+					const dataTypeList: Record<string, string[]> = {};
 					["xAxis", "yAxis"].forEach((item) => {
 						const pixelDataType = parsedOption[item].pixeldataType;
 						if (Array.isArray(pixelDataType)) {
@@ -297,63 +345,66 @@ export const FrameOperations = observer(
 							label: item.label,
 							values: parsedOption[item.label].pixelname,
 							selectors: parsedOption[item.label].pixelvalue,
-							dataType: dataTypeList[item.label],
+							dataType:
+								dataTypeList[item.label].map(normalizeDataType),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_preVCol) => tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-dendrogram-chart") {
 				const parsedOption = JSON.parse(computedValue) || {};
-				const dataTypeList = {};
+				const dataTypeList: Record<string, string[]> = {};
 				if (
-					Object.hasOwn(parsedOption, "_state") &&
-					Object.hasOwn(parsedOption._state, "dimensions") &&
-					Object.hasOwn(parsedOption._state, "facet")
+					Object.hasOwn(parsedOption, "state") &&
+					Object.hasOwn(parsedOption.state, "dimensions") &&
+					Object.hasOwn(parsedOption.state, "facet")
 				) {
 					["dimensions", "facet"].forEach((item) => {
 						dataTypeList[item] = columnsSelector
 							.filter((col) =>
-								parsedOption._state[item].some(
-									(stateItem) => stateItem.name === col.name,
+								parsedOption.state[item].some(
+									(stateItem: DendrogramStateItem) =>
+										stateItem.name === col.name,
 								),
 							)
 							.map((col) => col.dataType);
 					});
+					const tempStoredColumns = chart.map((item) => {
+						return {
+							name: item.name,
+							label: item.label,
+							values: parsedOption.state[item.label].map(
+								(val: DendrogramStateItem) => val.name,
+							),
+							selectors: parsedOption.state[item.label].map(
+								(selector: DendrogramStateItem) =>
+									selector.selector,
+							),
+							dataType: dataTypeList[item.label],
+						};
+					});
+					tempStoredColumnsForDropped = tempStoredColumns;
+					setSelectedColumn((_preVCol) => tempStoredColumns);
 				}
-				const tempStoredColumns = chart.map((item) => {
-					return {
-						name: item.name,
-						label: item.label,
-						values: parsedOption._state[item.label].map(
-							(val) => val.name,
-						),
-						selectors: parsedOption._state[item.label].map(
-							(selector) => selector.selector,
-						),
-						dataType: dataTypeList[item.label],
-					};
-				});
-				tempStoredColumnsForDropped = tempStoredColumns;
-				setSelectedColumnIfChanged(tempStoredColumns);
 			}
 			if (data.variation === "echart-pie-chart") {
 				const parsedOption = JSON.parse(computedValue) || {};
 				if (
-					Object.hasOwn(parsedOption, "_state") &&
-					Object.hasOwn(parsedOption._state, "fields") &&
-					Object.hasOwn(parsedOption._state.fields, "Label") &&
-					Object.hasOwn(parsedOption._state.fields, "Value")
+					Object.hasOwn(parsedOption, "state") &&
+					Object.hasOwn(parsedOption.state, "fields") &&
+					Object.hasOwn(parsedOption.state.fields, "Label") &&
+					Object.hasOwn(parsedOption.state.fields, "Value")
 				) {
-					const dataTypeList = {};
+					const dataTypeList: Record<string, string[]> = {};
 					["Label", "Value"].forEach((item) => {
 						const dataTypeKey =
 							item === "Label"
 								? "labelDataType"
 								: "valueDataType";
 						const pixelDataType =
-							parsedOption._state.fields[dataTypeKey];
+							parsedOption.state.fields[dataTypeKey];
 						if (Array.isArray(pixelDataType)) {
 							dataTypeList[item] = pixelDataType.flat();
 						} else if (pixelDataType) {
@@ -366,20 +417,21 @@ export const FrameOperations = observer(
 						return {
 							name: item.name,
 							label: item.label,
-							values:
-								parsedOption._state.fields[item.label] || [],
+							values: parsedOption.state.fields[item.label] || [],
 							selectors:
-								parsedOption._state.fields[item.label] || [],
-							dataType: dataTypeList[item.label],
+								parsedOption.state.fields[item.label] || [],
+							dataType: (dataTypeList[item.label] || []).map(
+								normalizeDataType,
+							),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_preVCol) => tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-line-graph") {
 				const parsedOption = JSON.parse(computedValue) || {};
-				const dataTypeList = {};
+				const dataTypeList: Record<string, string[]> = {};
 				if (
 					Object.hasOwn(parsedOption, "_state") &&
 					Object.hasOwn(parsedOption._state, "fields") &&
@@ -404,24 +456,26 @@ export const FrameOperations = observer(
 								parsedOption._state.fields[item.label] || [],
 							selectors:
 								parsedOption._state.fields[item.label] || [],
-							dataType: dataTypeList[item.label],
+							dataType: (dataTypeList[item.label] || []).map(
+								normalizeDataType,
+							),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_prevSelectedCol) => tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-world-map-chart") {
 				const parsedJson = JSON.parse(computedValue);
 				if (
-					Object.hasOwn(parsedJson, "_state") &&
-					Object.hasOwn(parsedJson._state, "fields") &&
-					Object.hasOwn(parsedJson._state.fields, "label") &&
-					Object.hasOwn(parsedJson._state.fields, "Latitude") &&
-					Object.hasOwn(parsedJson._state.fields, "Longitude")
+					Object.hasOwn(parsedJson, "state") &&
+					Object.hasOwn(parsedJson.state, "fields") &&
+					Object.hasOwn(parsedJson.state.fields, "label") &&
+					Object.hasOwn(parsedJson.state.fields, "Latitude") &&
+					Object.hasOwn(parsedJson.state.fields, "Longitude")
 				) {
-					const dataTypeList = {};
-					const selectorList = [];
+					const dataTypeList: Record<string, string[]> = {};
+					const selectorList: string[] = [];
 					[
 						"label",
 						"Latitude",
@@ -431,19 +485,24 @@ export const FrameOperations = observer(
 						"tooltip",
 					].forEach((item) => {
 						const dataTypeKey = `${item}DataType`;
-						dataTypeList[item] =
-							parsedJson._state.fields[dataTypeKey] ||
-							columnsSelector
-								.filter((col) =>
-									parsedJson._state.fields[item]?.includes(
-										col.name,
-									),
-								)
-								.map((col) => col.dataType);
+						const rawDataType =
+							parsedJson.state.fields[dataTypeKey];
+						// Ensure dataType is always an array
+						dataTypeList[item] = rawDataType
+							? Array.isArray(rawDataType)
+								? rawDataType
+								: [rawDataType]
+							: columnsSelector
+									.filter((col) =>
+										parsedJson.state.fields[item]?.includes(
+											col.name,
+										),
+									)
+									.map((col) => col.dataType);
 						selectorList.push(
 							columnsSelector.find(
 								(col) =>
-									col.name === parsedJson._state.fields[item],
+									col.name === parsedJson.state.fields[item],
 							)?.selector || "",
 						);
 					});
@@ -452,36 +511,39 @@ export const FrameOperations = observer(
 							name: item.name,
 							label: item.label,
 							values: Object.hasOwn(
-								parsedJson._state.fields,
+								parsedJson.state.fields,
 								item.label,
 							)
 								? Array.isArray(
-										parsedJson._state.fields[item.label],
+										parsedJson.state.fields[item.label],
 									)
-									? parsedJson._state.fields[item.label]
-									: [parsedJson._state.fields[item.label]]
+									? parsedJson.state.fields[item.label]
+									: [parsedJson.state.fields[item.label]]
 								: [],
-							selectors: Array.isArray(selectorList[index])
-								? selectorList[index]
-								: [selectorList[index]],
-							dataType: dataTypeList[item.label],
+							// selectors: Array.isArray(selectorList[index])
+							// 	? selectorList[index]
+							// 	: [selectorList[index]],
+							selectors: [selectorList[index]],
+							dataType: (dataTypeList[item.label] || []).map(
+								normalizeDataType,
+							),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_prevSelectedCol) => tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-scatter-plots") {
 				const parsedOption = JSON.parse(computedValue) || {};
 				if (
-					Object.hasOwn(parsedOption, "_state") &&
-					Object.hasOwn(parsedOption._state, "fields") &&
-					Object.hasOwn(parsedOption._state.fields, "label") &&
-					Object.hasOwn(parsedOption._state.fields, "XAxis") &&
-					Object.hasOwn(parsedOption._state.fields, "YAxis")
+					Object.hasOwn(parsedOption, "state") &&
+					Object.hasOwn(parsedOption.state, "fields") &&
+					Object.hasOwn(parsedOption.state.fields, "label") &&
+					Object.hasOwn(parsedOption.state.fields, "XAxis") &&
+					Object.hasOwn(parsedOption.state.fields, "YAxis")
 				) {
-					const dataTypeList = {};
-					const selectorList = [];
+					const dataTypeList: Record<string, string[]> = {};
+					const selectorList: string[] = [];
 					[
 						"label",
 						"XAxis",
@@ -490,23 +552,28 @@ export const FrameOperations = observer(
 						"color",
 						"tooltip",
 					].forEach((item) => {
-						if (!parsedOption._state.fields[item]) {
+						if (!parsedOption.state.fields[item]) {
 							dataTypeList[item] = [];
 							return;
 						}
 						const dataTypeKey = `${item}DataType`;
-						dataTypeList[item] =
-							parsedOption._state.fields[dataTypeKey] ||
-							columnsSelector
-								.filter((col) =>
-									parsedOption._state.fields[item]?.includes(
-										col.name,
-									),
-								)
-								.map((col) => col.dataType);
+						const rawDataType =
+							parsedOption.state.fields[dataTypeKey];
+						// Ensure dataType is always an array
+						dataTypeList[item] = rawDataType
+							? Array.isArray(rawDataType)
+								? rawDataType
+								: [rawDataType]
+							: columnsSelector
+									.filter((col) =>
+										parsedOption.state.fields[
+											item
+										]?.includes(col.name),
+									)
+									.map((col) => col.dataType);
 						selectorList.push(
 							columnsSelector.find((col) =>
-								parsedOption._state.fields[item]?.includes(
+								parsedOption.state.fields[item]?.includes(
 									col.name,
 								),
 							)?.selector || "",
@@ -516,41 +583,49 @@ export const FrameOperations = observer(
 						return {
 							name: item.name,
 							label: item.label,
-							values:
-								parsedOption._state.fields[item.label] || [],
-							selectors: selectorList[index] || [],
-							dataType: dataTypeList[item.label],
+							values: parsedOption.state.fields[item.label] || [],
+							selectors: selectorList[index]
+								? [selectorList[index]]
+								: [],
+							dataType: (dataTypeList[item.label] || []).map(
+								normalizeDataType,
+							),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_preVCol) => tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-stack-chart") {
 				const parsedJson = JSON.parse(computedValue);
 				if (
-					Object.hasOwn(parsedJson, "_state") &&
-					Object.hasOwn(parsedJson._state, "fields") &&
-					Object.hasOwn(parsedJson._state.fields, "XAxis") &&
-					Object.hasOwn(parsedJson._state.fields, "YAxis")
+					Object.hasOwn(parsedJson, "state") &&
+					Object.hasOwn(parsedJson.state, "fields") &&
+					Object.hasOwn(parsedJson.state.fields, "XAxis") &&
+					Object.hasOwn(parsedJson.state.fields, "YAxis")
 				) {
-					const dataTypeList = [];
-					const selectorList = [];
+					const dataTypeList: Record<string, string[]> = {};
+					const selectorList: string[] = [];
 					["XAxis", "YAxis", "category", "tooltip"].forEach(
 						(item) => {
 							const dataTypeKey = `${item}DataType`;
-							dataTypeList[item] =
-								parsedJson._state.fields[dataTypeKey] ||
-								columnsSelector
-									.filter((col) =>
-										parsedJson._state.fields[
-											item
-										]?.includes(col.name),
-									)
-									.map((col) => col.dataType);
+							const rawDataType =
+								parsedJson.state.fields[dataTypeKey];
+							// Ensure dataType is always an array
+							dataTypeList[item] = rawDataType
+								? Array.isArray(rawDataType)
+									? rawDataType
+									: [rawDataType]
+								: columnsSelector
+										.filter((col) =>
+											parsedJson.state.fields[
+												item
+											]?.includes(col.name),
+										)
+										.map((col) => col.dataType);
 							selectorList.push(
 								columnsSelector.find((col) =>
-									parsedJson._state.fields[item]?.includes(
+									parsedJson.state.fields[item]?.includes(
 										col.name,
 									),
 								)?.selector || "",
@@ -561,13 +636,17 @@ export const FrameOperations = observer(
 						return {
 							name: item.name,
 							label: item.label,
-							values: parsedJson._state.fields[item.label] || [],
-							selectors: selectorList[index] || [],
-							dataType: dataTypeList[item.label],
+							values: parsedJson.state.fields[item.label] || [],
+							selectors: selectorList[index]
+								? [selectorList[index]]
+								: [],
+							dataType: (dataTypeList[item.label] || []).map(
+								normalizeDataType,
+							),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_preVCol) => tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-gantt-chart") {
@@ -588,9 +667,9 @@ export const FrameOperations = observer(
 						"enddate",
 					)
 				) {
-					const dataTypeList = [];
-					const selectorList = [];
-					const valueList = [];
+					const dataTypeList: Record<string, string[]> = {};
+					const selectorList: Record<string, string> = {};
+					const valueList: Record<string, string> = {};
 					[
 						"task",
 						"startdate",
@@ -624,33 +703,37 @@ export const FrameOperations = observer(
 						return {
 							name: item.name,
 							label: item.label,
-							values: Array.isArray(valueList[item.label])
-								? valueList[item.label]
-								: [valueList[item.label]],
-							selectors: Array.isArray(selectorList[item.label])
-								? selectorList[item.label]
-								: [selectorList[item.label]],
-							dataType: dataTypeList[item.label],
+							// values: Array.isArray(valueList[item.label])
+							// 	? valueList[item.label]
+							// 	: [valueList[item.label]],
+							// selectors: Array.isArray(selectorList[item.label])
+							// 	? selectorList[item.label]
+							// 	: [selectorList[item.label]],
+							values: [valueList[item.label]],
+							selectors: [selectorList[item.label]],
+							dataType: (dataTypeList[item.label] || []).map(
+								normalizeDataType,
+							),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_preVCol) => tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-word-cloud") {
 				const parsedOption = JSON.parse(computedValue) || {};
 				if (
-					Object.hasOwn(parsedOption, "_state") &&
-					Object.hasOwn(parsedOption._state, "fields") &&
-					Object.hasOwn(parsedOption._state.fields, "words") &&
-					Object.hasOwn(parsedOption._state.fields, "size")
+					Object.hasOwn(parsedOption, "state") &&
+					Object.hasOwn(parsedOption.state, "fields") &&
+					Object.hasOwn(parsedOption.state.fields, "words") &&
+					Object.hasOwn(parsedOption.state.fields, "size")
 				) {
-					const dataTypeList = {};
+					const dataTypeList: Record<string, string[]> = {};
 					["words", "size", "tooltip"].forEach((item) => {
-						if (parsedOption._state.fields[item]) {
+						if (parsedOption.state.fields[item]) {
 							dataTypeList[item] = columnsSelector
 								.filter((col) =>
-									parsedOption._state.fields[item]?.includes(
+									parsedOption.state.fields[item]?.includes(
 										col.name,
 									),
 								)
@@ -659,17 +742,19 @@ export const FrameOperations = observer(
 					});
 					const tempStoredColumns = chart.map((item) => {
 						const fieldValues =
-							parsedOption._state.fields[item.label] || [];
+							parsedOption.state.fields[item.label] || [];
 						return {
 							name: item.name,
 							label: item.label,
 							values: fieldValues,
 							selectors: fieldValues,
-							dataType: dataTypeList[item.label],
+							dataType: (dataTypeList[item.label] || []).map(
+								normalizeDataType,
+							),
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
-					setSelectedColumnIfChanged(tempStoredColumns);
+					setSelectedColumn((_preVCol) => tempStoredColumns);
 				}
 			}
 			//run the dropped columns update when block is changed
@@ -678,18 +763,22 @@ export const FrameOperations = observer(
 					tempStoredColumnsForDropped,
 					data.variation,
 				);
-				setDroppedColumnsIfChanged(dragAndDropColumns);
+				setDroppedColumns((_preVCol) => dragAndDropColumns);
 			}
-		}, [data.variation, id, filteredColumns]);
+		}, [data.variation, id]);
+		// }, [data.variation, id]);
 
 		//update the local state value when computed value is getting updated
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue]);
-		function getDraggedColumns(tempStoredColumns, _chart) {
+		function getDraggedColumns(
+			tempStoredColumns: StoredColumn[],
+			_variation: string | undefined,
+		) {
 			const droppedColumnsList = { ...droppedColumns };
 
-			tempStoredColumns.forEach((item, index) => {
+			tempStoredColumns.forEach((item: StoredColumn, index: number) => {
 				const key = `data-tab-drop-area-${index}`;
 				if (item.values && item.values.length > 0) {
 					droppedColumnsList[key] = {
@@ -707,7 +796,7 @@ export const FrameOperations = observer(
 				(item) => item?.values && item?.values.length > 0,
 			);
 			if (hasValues) {
-				setSelectedColumnIfChanged(columnsValue);
+				setSelectedColumn(columnsValue);
 				handleStoreData(columnsValue);
 			}
 
@@ -728,16 +817,16 @@ export const FrameOperations = observer(
 
 			const firstColumn = columnsDrop[0];
 			const secondColumn = columnsDrop[1];
-			let fieldsData = {
+			let fieldsData: Record<string, ColumnItem[]> = {
 				[firstColumn?.label]: [],
 				[secondColumn?.label]: [],
 			};
-			let selectedValues = {
+			let selectedValues: Record<string, string[]> = {
 				[firstColumn?.label]: [],
 				[secondColumn?.label]: [],
 			};
 
-			const columns = { ...fieldsData };
+			const columns: Record<string, ColumnItem[]> = { ...fieldsData };
 
 			if (variation === "echart-bar-graph") {
 				let tempVal = JSON.parse(computedValue) || {};
@@ -762,21 +851,23 @@ export const FrameOperations = observer(
 				}
 				if (secondColumn?.label) {
 					columns[secondColumn?.label] = [];
-					secondColumn.values.forEach((_item, index) => {
-						columns[secondColumn?.label].push({
-							name: secondColumn.values[index] || "",
-							selector: secondColumn.selectors[index],
-							width: undefined,
-							dataType: secondColumn.dataType || "",
-						});
-					});
+					secondColumn.values.forEach(
+						(_item: unknown, index: number) => {
+							columns[secondColumn?.label].push({
+								name: secondColumn.values[index] || "",
+								selector: secondColumn.selectors[index],
+								width: undefined,
+								dataType: secondColumn.dataType || "",
+							});
+						},
+					);
 					fieldsData = {
 						...fieldsData,
 						[secondColumn?.label]: columns[secondColumn?.label],
 					};
-					let LabelData = [];
+					let LabelData: string[] = [];
 					columns[secondColumn?.label].forEach(
-						(labelItem, _labelIndex) => {
+						(labelItem: ColumnItem, _labelIndex: number) => {
 							LabelData = [...LabelData, labelItem.selector];
 						},
 					);
@@ -790,15 +881,21 @@ export const FrameOperations = observer(
 					columns[firstColumn?.label] &&
 					columns[secondColumn?.label]
 				) {
-					const _seriesIndex =
-						tempVal.series.findIndex((item) =>
-							BAR_CHART_DATA.JSONVALUE?.includes(item.type),
-						) || 0;
-					let columnsmerged = [];
+					// const _seriesIndex =
+					// 	tempVal.series.findIndex((item: any) =>
+					// 		BAR_CHART_DATA.JSONVALUE?.includes(item.type),
+					// 	) || 0;
+					let columnsmerged: ColumnWithSelector[] = [];
 					if (columns[firstColumn?.label]?.length) {
+						// Extract column name - handle both string and array formats
+						const columnName = columns[firstColumn?.label][0]?.name;
+						const extractedName = Array.isArray(columnName)
+							? columnName[0]
+							: columnName;
+
 						tempVal[firstColumn?.label] = {
 							...tempVal[firstColumn?.label],
-							name: columns[firstColumn?.label][0]?.name || [],
+							name: extractedName || [],
 							pixelname:
 								columns[firstColumn?.label][0]?.name || [],
 							pixelvalue:
@@ -824,12 +921,12 @@ export const FrameOperations = observer(
 								"",
 						},
 					];
-					const pixelName = [],
-						pixelValue = [],
-						pixeldataType = [];
-					const axisName = [];
+					const pixelName: string[] = [];
+					const pixelValue: string[] = [];
+					const pixeldataType: string[] = [];
+					const axisName: string[] = [];
 					columns[secondColumn?.label].forEach(
-						(columItem, _columIndex) => {
+						(columItem: ColumnItem, _columIndex: number) => {
 							pixelName.push(columItem?.name);
 							axisName.push(columItem?.name);
 							pixelValue.push(columItem?.selector);
@@ -841,9 +938,15 @@ export const FrameOperations = observer(
 						},
 					);
 					if (columns[secondColumn?.label]?.length) {
+						// For Y-axis, extract first series name as string (not array)
+						const firstSeriesName = axisName[0] || pixelName[0];
+						const extractedYName = Array.isArray(firstSeriesName)
+							? firstSeriesName[0]
+							: firstSeriesName;
+
 						tempVal[secondColumn?.label] = {
 							...tempVal[secondColumn?.label],
-							name: axisName || pixelName[0],
+							name: extractedYName || pixelName[0],
 							pixelname: pixelName,
 							pixelvalue: pixelValue,
 							pixeldataType: pixeldataType,
@@ -865,8 +968,13 @@ export const FrameOperations = observer(
 						i < columns[secondColumn?.label]?.length;
 						i++
 					) {
+						const existingSeries = tempVal.series[i] || {};
+						// Don't preserve trendline-specific properties for data series
+						const { _toggleTrendLineObject, ...baseSeriesProps } =
+							existingSeries;
+
 						tempVal.series[i] = {
-							...tempVal.series[i],
+							...baseSeriesProps,
 							data: [],
 							name: columns[secondColumn?.label][i]?.name,
 							type: "bar",
@@ -891,11 +999,11 @@ export const FrameOperations = observer(
 			if (variation === "echart-pie-chart") {
 				const tempValue = JSON.parse(computedValue);
 
-				tempValue._state = {};
-				tempValue._state.fields = {};
+				tempValue.state = {};
+				tempValue.state.fields = {};
 
-				tempValue._state.fields = {
-					...tempValue._state.fields,
+				tempValue.state.fields = {
+					...tempValue.state.fields,
 					Value: secondColumn?.values || [],
 					valueDataType: secondColumn?.dataType || [],
 					Label: firstColumn?.values || [],
@@ -907,21 +1015,21 @@ export const FrameOperations = observer(
 			if (variation === "echart-scatter-plots") {
 				const tempValue = JSON.parse(computedValue);
 
-				tempValue._state =
-					tempValue._state && Object.keys(tempValue._state).length > 0
-						? tempValue._state
+				tempValue.state =
+					tempValue.state && Object.keys(tempValue.state).length > 0
+						? tempValue.state
 						: {};
 				if (firstColumn?.values) {
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						label: firstColumn?.values,
 						labelDataType: firstColumn?.dataType,
 					};
 					tempValue.series[0].label.name = firstColumn?.values;
 				}
 				if (secondColumn?.values) {
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						XAxis: secondColumn?.values,
 						XAxisDataType: secondColumn?.dataType,
 					};
@@ -929,8 +1037,8 @@ export const FrameOperations = observer(
 					tempValue.xAxis.pixelName = secondColumn?.values;
 				}
 				if (columnsDrop[2]?.values.length > 0) {
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						YAxis: columnsDrop[2]?.values,
 						YAxisDataType: columnsDrop[2]?.dataType,
 					};
@@ -939,22 +1047,22 @@ export const FrameOperations = observer(
 					tempValue.yAxis.pixelName = columnsDrop[2]?.values;
 				}
 				if (columnsDrop[3]?.values.length > 0) {
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						size: columnsDrop[3]?.values,
 						sizeDataType: columnsDrop[3]?.dataType,
 					};
 				}
 				if (columnsDrop[4]?.values.length > 0) {
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						color: columnsDrop[4]?.values,
 						colorDataType: columnsDrop[4]?.dataType,
 					};
 				}
 				if (columnsDrop[5]?.values.length > 0) {
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						tooltip: columnsDrop[5]?.values,
 						tooltipDataType: columnsDrop[5]?.dataType,
 					};
@@ -965,13 +1073,13 @@ export const FrameOperations = observer(
 			if (variation === "echart-stack-chart") {
 				const tempValue = JSON.parse(computedValue);
 				if (firstColumn?.values) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						XAxis: firstColumn?.values,
 						XAxisDataType: firstColumn?.dataType,
 					};
@@ -982,13 +1090,13 @@ export const FrameOperations = observer(
 					tempValue.xAxis.axisName = firstColumn?.values;
 				}
 				if (secondColumn?.values) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						YAxis: secondColumn?.values,
 						YAxisDataType: secondColumn?.dataType,
 					};
@@ -999,25 +1107,25 @@ export const FrameOperations = observer(
 					tempValue.yAxis.axisName = secondColumn?.values;
 				}
 				if (columnsDrop[2]?.values.length > 0) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						category: columnsDrop[2]?.values,
 						categoryDataType: columnsDrop[2]?.dataType,
 					};
 				}
 				if (columnsDrop[3]?.values.length > 0) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						tooltip: columnsDrop[3]?.values,
 						tooltipDataType: columnsDrop[3]?.dataType,
 					};
@@ -1031,40 +1139,44 @@ export const FrameOperations = observer(
 				secondColumn !== null
 			) {
 				const tempValue = JSON.parse(computedValue);
+				const hasXAxisValues = (firstColumn?.values?.length ?? 0) > 0;
+				const hasYAxisValues = (secondColumn?.values?.length ?? 0) > 0;
 				tempValue.xAxis = {
 					...tempValue.xAxis,
-					name: firstColumn?.values,
+					name: firstColumn?.values?.[0] || "",
 					dataType: firstColumn?.dataType,
+					data: hasXAxisValues ? tempValue.xAxis?.data || [] : [],
 				};
 				tempValue.yAxis = {
 					...tempValue.yAxis,
-					name: secondColumn?.values,
+					name: secondColumn?.values?.[0] || "",
 					dataType: secondColumn?.dataType,
 				};
 
-				tempValue._state = {};
+				tempValue._state = tempValue._state || {};
 				tempValue._state.fields = {};
 				let tempSeries = tempValue.series || [];
 				tempValue._state.fields = {
 					...tempValue._state.fields,
-					xAxis: firstColumn?.values,
-					xAxisDataType: firstColumn?.dataType,
-					yAxis: secondColumn?.values,
-					yAxisDataType: secondColumn?.dataType,
+					xAxis: firstColumn?.values || [],
+					xAxisDataType: firstColumn?.dataType || [],
+					yAxis: secondColumn?.values || [],
+					yAxisDataType: secondColumn?.dataType || [],
 					tooltip: columnsDrop[2]?.values
 						? columnsDrop[2]?.values
 						: [],
 				};
-				if (secondColumn?.values.length > 1) {
+				if (!hasXAxisValues || !hasYAxisValues) {
+					tempSeries = [];
+				} else {
 					const seriesListToAdd = [];
-					//Adding newly added field to the state
 					for (let i = 0; i < secondColumn.values.length; i++) {
 						seriesListToAdd[i] = {
 							...tempSeries[i],
 							name: secondColumn.values[i],
 							dataType: secondColumn.dataType[i],
 							type: "line",
-							data: tempSeries[i]?.data ?? [],
+							data: [],
 							lineStyle: {
 								...tempSeries[i]?.lineStyle,
 								type: tempSeries[i]?.lineStyle?.type ?? "solid",
@@ -1082,9 +1194,6 @@ export const FrameOperations = observer(
 						};
 					}
 					tempSeries = seriesListToAdd;
-				} else {
-					//Removing the field from the state if it is not selected
-					tempSeries = tempSeries.slice(0, 1);
 				}
 				tempValue.series = tempSeries;
 				setValue(JSON.stringify(tempValue));
@@ -1093,75 +1202,75 @@ export const FrameOperations = observer(
 			if (variation === "echart-world-map-chart") {
 				const tempValue = JSON.parse(computedValue);
 				if (firstColumn?.values) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
 					tempValue.series[0].label.name = firstColumn?.values;
 
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						label: firstColumn?.values?.[0],
 						labelDataType: firstColumn?.dataType?.[0],
 					};
 				}
 				if (secondColumn?.values) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						Latitude: secondColumn?.values?.[0],
 						LatitudeDataType: secondColumn?.dataType?.[0],
 					};
 				}
 				if (columnsDrop[2]?.values.length > 0) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						Longitude: columnsDrop[2]?.values?.[0],
 						LongitudeDataType: columnsDrop[2]?.dataType?.[0],
 					};
 				}
 				if (columnsDrop[3]?.values.length > 0) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						size: columnsDrop[3]?.values?.[0],
 						sizeDataType: columnsDrop[3]?.dataType?.[0],
 					};
 				}
 				if (columnsDrop[4]?.values.length > 0) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						color: columnsDrop[4]?.values?.[0],
 						colorDataType: columnsDrop[4]?.dataType?.[0],
 					};
 				}
 				if (columnsDrop[5]?.values.length > 0) {
-					tempValue._state =
-						tempValue._state &&
-						Object.keys(tempValue._state).length > 0
-							? tempValue._state
+					tempValue.state =
+						tempValue.state &&
+						Object.keys(tempValue.state).length > 0
+							? tempValue.state
 							: {};
-					tempValue._state.fields = {
-						...tempValue._state.fields,
+					tempValue.state.fields = {
+						...tempValue.state.fields,
 						tooltip: columnsDrop[5]?.values?.[0],
 						tooltipDataType: columnsDrop[5]?.dataType?.[0],
 					};
@@ -1170,12 +1279,11 @@ export const FrameOperations = observer(
 				setData("option", tempValue);
 			}
 			if (variation === "echart-gantt-chart") {
-				let columnsToSet = [];
-				const columnsObject = {
+				let columnsToSet: (string | string[])[] = [];
+				const columnsObject: Record<string, string[]> = {
 					tooltip: [],
 				};
-				const formattedArray = [];
-
+				const formattedArray: ColumnWithSelector[] = [];
 				const tempValue = JSON.parse(computedValue);
 
 				for (let i = 0; i < columnsValue.length; i++) {
@@ -1418,15 +1526,18 @@ export const FrameOperations = observer(
 					columnsObj,
 					columnsToSet,
 				);
-				const tooltipIndexToSet = tooltip.reduce((acc, item) => {
-					columnsToSet.forEach((colSetItem, colSetIndex) => {
-						if (colSetItem?.includes(item)) {
-							// biome-ignore lint/performance/noAccumulatingSpread: small array
-							acc = [...acc, colSetIndex];
-						}
-					});
-					return acc;
-				}, []);
+				const tooltipIndexToSet = tooltip.reduce(
+					(acc: number[], item: string) => {
+						columnsToSet.forEach((colSetItem, colSetIndex) => {
+							if (colSetItem?.includes(item)) {
+								// biome-ignore lint/performance/noAccumulatingSpread: small array
+								acc = [...acc, colSetIndex];
+							}
+						});
+						return acc;
+					},
+					[],
+				);
 
 				if (columnsIndexToSet) {
 					tempValue.customSettings.columnIndexDetails = {
@@ -1441,24 +1552,24 @@ export const FrameOperations = observer(
 				setData("columns", formattedArray);
 			}
 			if (variation === "echart-word-cloud") {
-				const fieldsData = {};
+				const fieldsData: Record<string, string[]> = {};
 				const parsedJson = JSON.parse(computedValue) || {};
-				if (!parsedJson._state) {
-					parsedJson._state = { fields: {} };
+				if (!parsedJson.state) {
+					parsedJson.state = { fields: {} };
 				}
-				if (!parsedJson._state.fields) {
-					parsedJson._state.fields = {};
+				if (!parsedJson.state.fields) {
+					parsedJson.state.fields = {};
 				}
-				columnsValue.forEach((column, _index) => {
+				columnsValue.forEach((column: StoredColumn, _index: number) => {
 					if (column?.values?.values?.length > 0) {
-						const columnValues = column.values.values;
+						const columnValues = column.values;
 						fieldsData[column.label] = columnValues;
 					} else {
 						fieldsData[column.label] = [];
 					}
 				});
-				parsedJson._state.fields = {
-					...parsedJson._state.fields,
+				parsedJson.state.fields = {
+					...parsedJson.state.fields,
 					...fieldsData,
 				};
 
@@ -1466,41 +1577,51 @@ export const FrameOperations = observer(
 				setData("option", parsedJson);
 			}
 			if (variation === "echart-dendrogram-chart") {
-				let columnsToPush = [];
+				let columnsToPush: DendrogramStateItem[] = [];
 				let dimensionElement = columnsValue.find(
 					(element) => element.label === "dimensions",
 				);
 				let facetElement = columnsValue.find(
 					(element) => element.label === "facet",
 				);
-				dimensionElement = {
-					...dimensionElement,
-					values: dimensionElement.values?.values || [],
-				};
-				facetElement = {
-					...facetElement,
-					values: facetElement.values?.values || [],
-				};
+				// Ensure we have the proper structure - values should be a direct array
+				if (dimensionElement) {
+					dimensionElement = {
+						...dimensionElement,
+						values: dimensionElement?.values || [],
+						selectors: dimensionElement?.selectors || [],
+					};
+				}
+				if (facetElement) {
+					facetElement = {
+						...facetElement,
+						values: facetElement?.values || [],
+						selectors: facetElement?.selectors || [],
+					};
+				}
 				let parsedJson = JSON.parse(computedValue) || {};
 				if (
-					dimensionElement.label === "dimensions" &&
-					dimensionElement.values.length
+					dimensionElement?.label === "dimensions" &&
+					dimensionElement?.values?.length
 				) {
-					dimensionElement.selectors.forEach((item, index) => {
-						if (!item || !dimensionElement.values[index]) return;
-						columnsToPush = [
-							...columnsToPush,
-							{
-								name: dimensionElement.values[index],
-								selector: item,
-							},
-						];
-					});
+					dimensionElement.selectors.forEach(
+						(item: string, index: number) => {
+							if (!item || !dimensionElement.values[index])
+								return;
+							columnsToPush = [
+								...columnsToPush,
+								{
+									name: dimensionElement.values[index],
+									selector: item,
+								},
+							];
+						},
+					);
 					setData("columns", columnsToPush);
 					parsedJson = {
 						...parsedJson,
-						_state: {
-							...parsedJson._state,
+						state: {
+							...parsedJson.state,
 							dimensions: columnsToPush,
 						},
 					};
@@ -1508,8 +1629,8 @@ export const FrameOperations = observer(
 				} else {
 					parsedJson = {
 						...parsedJson,
-						_state: {
-							...parsedJson._state,
+						state: {
+							...parsedJson.state,
 							dimensions: [],
 						},
 					};
@@ -1517,8 +1638,8 @@ export const FrameOperations = observer(
 					setData("option", parsedJson);
 				}
 				if (
-					facetElement.label === "facet" &&
-					facetElement.values.length
+					facetElement?.label === "facet" &&
+					facetElement?.values?.length
 				) {
 					if (!facetElement.values[0] || !facetElement.selectors[0])
 						return;
@@ -1543,8 +1664,8 @@ export const FrameOperations = observer(
 					setData("columns", columnsToPush);
 					parsedJson = {
 						...parsedJson,
-						_state: {
-							...parsedJson._state,
+						state: {
+							...parsedJson.state,
 							facet: [
 								{
 									name: facetElement.values[0],
@@ -1558,8 +1679,8 @@ export const FrameOperations = observer(
 				} else {
 					parsedJson = {
 						...parsedJson,
-						_state: {
-							...parsedJson._state,
+						state: {
+							...parsedJson.state,
 							facet: [],
 						},
 					};
@@ -1568,38 +1689,74 @@ export const FrameOperations = observer(
 				}
 			}
 
-			const checkAggregate = (functionName) =>
-				({ NUMBER: "Average", STRING: "Count" })[functionName] ||
-				functionName;
+			// Valid aggregate function names that should be preserved
+			const VALID_AGGREGATES = [
+				"Sum",
+				"Average",
+				"Count",
+				"Unique Count",
+				"Min",
+				"Max",
+				"Minimum",
+				"Maximum",
+				"Median",
+			];
+
+			const checkAggregate = (dataTypeOrAggregate: string) => {
+				// If it's already a valid aggregate function, preserve it
+				if (VALID_AGGREGATES.includes(dataTypeOrAggregate)) {
+					return dataTypeOrAggregate;
+				}
+				// Otherwise, map data type codes to default aggregates
+				const typeMap: Record<string, string> = {
+					NUMBER: "Average",
+					STRING: "Count",
+					N: "Average",
+					S: "Count",
+				};
+				return typeMap[dataTypeOrAggregate] || "";
+			};
 			const formatAggregates = () => {
-				const formattedAggregates = {};
+				const formattedAggregates: Record<
+					string,
+					Record<string, string>
+				> = {};
+
 				columnsValue.forEach((column, columnIndex) => {
-					const valueMap = {};
-					if (
-						Object.hasOwn(column, "values") &&
-						Object.hasOwn(column.values, "values")
-					) {
-						const columnValues = column?.values?.values || [];
-						columnValues.forEach((value, valueIndex) => {
+					const valueMap: Record<string, string> = {};
+
+					const columnValues = Array.isArray(column?.values)
+						? column.values
+						: (column?.values?.values ?? []);
+
+					const columnDataTypes = Array.isArray(column?.dataType)
+						? column.dataType
+						: (column?.values?.dataType ?? []);
+
+					columnValues.forEach(
+						(value: string, valueIndex: number) => {
 							valueMap[value] = chart[columnIndex]?.aggregate
 								? checkAggregate(
-										column?.values?.dataType[valueIndex],
+										columnDataTypes[valueIndex] ?? "",
 									)
 								: "";
-						});
+						},
+					);
+
+					if (column.label && columnValues.length > 0) {
 						formattedAggregates[column.label] = valueMap;
 					}
 				});
+
 				return formattedAggregates;
 			};
 			setData("aggregate", formatAggregates());
 		};
-		function _dispatchData(option) {
+		function _dispatchData(option: Record<string, unknown>) {
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
-				timeoutRef.current = null;
 			}
-			timeoutRef.current = setTimeout(() => {
+			const _newTimeout = setTimeout(() => {
 				try {
 					// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
 					setData("option", option as PathValue<any, typeof path>);
@@ -1608,23 +1765,31 @@ export const FrameOperations = observer(
 				}
 			}, 100);
 		}
-		function getColumnIndexToSetData(columnsObject, columnsToSet) {
-			const colIndex = {};
+		function getColumnIndexToSetData(
+			columnsObject: Record<string, unknown>,
+			columnsToSet: (string | string[])[],
+		) {
+			const colIndex: Record<string, number> = {};
 			Object.keys(columnsObject).forEach((key) => {
 				if (
 					typeof columnsObject[key] === "object" &&
 					Array.isArray(columnsObject[key])
 				) {
-					colIndex[key] = columnsToSet.findIndex(
-						(colSetItem) => colSetItem[0] === columnsObject[key][0],
-					);
+					colIndex[key] = columnsToSet.findIndex((colSetItem) => {
+						const firstItem = Array.isArray(colSetItem)
+							? colSetItem[0]
+							: colSetItem;
+						return (
+							firstItem === (columnsObject[key] as unknown[])[0]
+						);
+					});
 				} else {
 					colIndex[key] = -1; // Default to -1 if no match is found
 				}
 			});
 			return colIndex;
 		}
-		const handleDragEnd = (result) => {
+		const handleDragEnd = (result: DropResult) => {
 			if (!result.destination) return;
 			// biome-ignore lint/correctness/noUnusedVariables: used in JSX or callback
 			const { source, destination, draggableId } = result;
@@ -1637,10 +1802,8 @@ export const FrameOperations = observer(
 			const dropCol = filteredColumns.find(
 				(col) => col?.name === draggableId,
 			);
-			const dropIndex = parseInt(dropId.split("-").pop(), 10);
-
+			const dropIndex = parseInt(dropId.split("-").pop() as string, 10);
 			const isMultiLabel = chart[dropIndex]?.multiLabel;
-
 			if (isMultiLabel) {
 				if (!updated[dropId].values.includes(draggableId)) {
 					updated[dropId] = {
@@ -1701,11 +1864,8 @@ export const FrameOperations = observer(
 							key={section.title}
 							className="mb-1 w-full rounded border"
 						>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							{/* biome-ignore lint/a11y/useButtonType: handled by */}
-							caller
-							{/* biome-ignore lint/a11y/useButtonType: handled by caller */}
 							<button
+								type="button"
 								className="flex w-full items-center justify-between px-4 py-2 font-medium text-sm hover:bg-muted"
 								onClick={() => {
 									const accordionSectionToUp = [
@@ -1807,147 +1967,154 @@ export const FrameOperations = observer(
 											draggableId={col.name}
 											index={index}
 										>
-											{(provided, snapshot) => {
-												const draggableItem = (
-													<div
-														ref={provided.innerRef}
-														{...provided.draggableProps}
-														{...provided.dragHandleProps}
-														className={`mb-1 flex w-full items-center gap-2 rounded-md border px-2 py-1.5 ${snapshot.isDragging ? "border-[#9ec5fe] bg-[#f0f0f0]" : "border-[#e5e7eb] bg-white hover:bg-[#fafafa]"}`}
-														style={{
-															...provided
-																.draggableProps
-																.style,
-															willChange:
-																"transform",
-														}}
-													>
-														<div className="flex flex-none items-center">
-															<DataTypeIcon
-																type={
-																	col.dataType
-																}
-																className="mr-0.5 size-4 text-muted-foreground"
+											{(provided, snapshot) => (
+												<div
+													ref={provided.innerRef}
+													{...provided.draggableProps}
+													{...provided.dragHandleProps}
+													className={`mt-0.5 mb-2 flex max-w-full items-center justify-between gap-3 rounded p-2 ${snapshot.isDragging ? "bg-[#f0f0f0] shadow-md" : "bg-white"}`}
+													style={{
+														...provided
+															.draggableProps
+															.style,
+													}}
+												>
+													<div className="flex flex-none items-center">
+														{col.dataType ===
+														"STRING" ? (
+															// biome-ignore lint/a11y/useAltText: decorative image
+															<img
+																src={String(
+																	StringIcon,
+																)}
+																className="mr-0.5"
 															/>
-														</div>
-														<div className="flex min-w-0 flex-1 items-center">
+														) : (
+															// biome-ignore lint/a11y/useAltText: decorative image
+															<img
+																src={String(
+																	NumberIcon,
+																)}
+																className="mr-0.5"
+															/>
+														)}
+													</div>
+													<div className="flex flex-1 items-center">
+														{col.name.length > 7 ? (
 															<span
-																className="block truncate font-medium text-sm leading-6"
+																className="leading-6"
 																title={col.name}
 															>
+																{col.name.slice(
+																	0,
+																	7,
+																)}
+																...
+															</span>
+														) : (
+															<span className="leading-6">
 																{col.name}
 															</span>
-														</div>
-														{isAdd && (
-															<div className="ml-auto flex items-center pl-2">
-																<input
-																	type="checkbox"
-																	className="cursor-pointer"
-																	onChange={(
-																		e,
-																	) => {
-																		setDroppedColumns(
-																			(
-																				prev,
-																			) => {
-																				const updated =
-																					{
-																						...prev,
-																					};
+														)}
+													</div>
+													{isAdd && (
+														<div className="flex flex-1 justify-end">
+															<input
+																type="checkbox"
+																className="cursor-pointer"
+																onChange={(
+																	e,
+																) => {
+																	setDroppedColumns(
+																		(
+																			prev,
+																		) => {
+																			const updated =
+																				{
+																					...prev,
+																				};
+																			if (
+																				e
+																					.target
+																					.checked
+																			) {
 																				if (
-																					e
-																						.target
-																						.checked
-																				) {
-																					if (
-																						!updated[
-																							addedColumnName
-																						]
-																					)
-																						updated[
-																							addedColumnName
-																						] =
-																							{
-																								values: [],
-																								dataType:
-																									[],
-																							};
+																					!updated[
+																						addedColumnName
+																					]
+																				)
 																					updated[
 																						addedColumnName
 																					] =
 																						{
-																							values: [
+																							values: [],
+																							dataType:
+																								[],
+																						};
+																				updated[
+																					addedColumnName
+																				] =
+																					{
+																						values: [
+																							...updated[
+																								addedColumnName
+																							]
+																								.values,
+																							col.name,
+																						],
+																						dataType:
+																							[
 																								...updated[
 																									addedColumnName
 																								]
-																									.values,
-																								col.name,
+																									.dataType,
+																								col.dataType,
 																							],
-																							dataType:
-																								[
-																									...updated[
-																										addedColumnName
-																									]
-																										.dataType,
-																									col.dataType,
-																								],
-																						};
-																				} else {
+																					};
+																			} else {
+																				if (
+																					updated[
+																						addedColumnName
+																					]
+																				) {
+																					const index =
+																						updated[
+																							addedColumnName
+																						].values.indexOf(
+																							col.name,
+																						);
+																					updated[
+																						addedColumnName
+																					] =
+																						updated[
+																							addedColumnName
+																						].values.splice(
+																							index,
+																							1,
+																						);
 																					if (
 																						updated[
 																							addedColumnName
 																						]
+																							?.values
+																							?.length ===
+																						0
 																					) {
-																						const index =
-																							updated[
-																								addedColumnName
-																							].values.indexOf(
-																								col.name,
-																							);
-																						updated[
+																						delete updated[
 																							addedColumnName
-																						] =
-																							updated[
-																								addedColumnName
-																							].values.splice(
-																								index,
-																								1,
-																							);
-																						if (
-																							updated[
-																								addedColumnName
-																							]
-																								?.values
-																								?.length ===
-																							0
-																						) {
-																							delete updated[
-																								addedColumnName
-																							];
-																						}
+																						];
 																					}
 																				}
-																				return updated;
-																			},
-																		);
-																	}}
-																/>
-															</div>
-														)}
-													</div>
-												);
-												if (
-													snapshot.isDragging &&
-													typeof document !==
-														"undefined"
-												) {
-													return createPortal(
-														draggableItem,
-														document.body,
-													);
-												}
-												return draggableItem;
-											}}
+																			}
+																			return updated;
+																		},
+																	);
+																}}
+															/>
+														</div>
+													)}
+												</div>
+											)}
 										</Draggable>
 									))}
 									{provided.placeholder}

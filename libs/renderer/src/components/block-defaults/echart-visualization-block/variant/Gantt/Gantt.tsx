@@ -17,10 +17,164 @@ import { GANTT_CHART } from "../../Visualization.constants";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 
+type ChartUpdateOption = Record<string, unknown>;
+
+type FrameRow = unknown[];
+
+interface ColumnDetail {
+	name: string;
+	selector?: string;
+	[key: string]: unknown;
+}
+
+interface ColumnDetails {
+	task: ColumnDetail;
+	taskgroup?: ColumnDetail;
+	[key: string]: unknown;
+}
+
+interface ColumnIndexDetails {
+	task: number;
+	startdate: number;
+	enddate: number;
+	taskprogress?: number;
+	taskgroup?: number;
+	milestone?: number;
+	tooltip?: number[];
+	[key: string]: number | number[] | undefined;
+}
+
+interface GanttCustomizeSymbolRule {
+	dimensionSelected?: string;
+	dimensionValues?: unknown[];
+	symbol?: string;
+	symbolSize?: number;
+	symbolColor?: string;
+}
+
+interface GanttToolsSettings {
+	showLegend?: boolean;
+	showGroupView?: boolean;
+	customizeSymbol?: GanttCustomizeSymbolRule[];
+	targetLineName?: string;
+	targetLineColor?: string;
+	targetDate?: string;
+	showDisplayValueLabels?: boolean;
+	enableFiscalAxis?: boolean;
+	fiscalYearValue?: string;
+	fiscalYearStart?: string;
+	fiscalAxisBackgroundColor?: string;
+}
+
+interface GanttCustomSettings {
+	columnDetails: ColumnDetails;
+	columnIndexDetails: ColumnIndexDetails;
+	gantttools?: GanttToolsSettings;
+}
+
+interface GanttTargetSeriesItem extends Record<string, unknown> {
+	name?: string;
+	targetDateSegment?: boolean;
+	frameName?: string;
+	renderItem?: (
+		params: GanttRenderParams,
+		api: GanttRenderApi,
+	) => Record<string, unknown>;
+	data?: unknown[];
+}
+
+interface GanttOption extends ChartUpdateOption {
+	customSettings: GanttCustomSettings;
+	series: GanttTargetSeriesItem[];
+	grid?: Record<string, unknown>;
+	xAxis?: {
+		axisLabel?: {
+			truncateCharCount?: string | number;
+			[key: string]: unknown;
+		};
+		[key: string]: unknown;
+	};
+	yAxis?: {
+		axisLabel?: {
+			truncateCharCount?: string | number;
+			[key: string]: unknown;
+		};
+		[key: string]: unknown;
+	};
+	tooltip?: Record<string, unknown>;
+	legend?: Record<string, unknown>;
+}
+
+interface GanttSeriesRow {
+	name: string;
+	resource?: string;
+	taskprogress?: number;
+	value: [number, number, number, ...unknown[]];
+}
+
+interface GanttMilestoneRow {
+	name: string;
+	value: [number, string, number];
+	mileStoneOriginalDate: unknown;
+	symbol: string;
+	symbolSize: number;
+	itemStyle: {
+		color: string;
+	};
+}
+
+interface FiscalQuarter {
+	name: string;
+	month: string[];
+	order: number;
+	colSpan?: number;
+	fiscalYear?: string;
+}
+
+interface GanttRenderParams {
+	dataIndex: number;
+	coordSys: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	};
+}
+
+interface GanttRenderApi {
+	value: (index: number) => number;
+	coord: (value: [number, number]) => [number, number];
+	size: (value: [number, number]) => [number, number];
+}
+
+interface GanttChartFormatterParams {
+	name: string;
+	dataIndex: number;
+	value: [number, number | string, number, ...unknown[]];
+}
+
+interface ChartInstance {
+	setOption: (option: GanttOption, opts?: { notMerge: boolean }) => void;
+}
+
+interface EchartsRef {
+	getEchartsInstance: () => ChartInstance;
+}
+
+interface GanttContextMenuParams {
+	data?: {
+		name?: string;
+	};
+	seriesIndex: number;
+	event: {
+		event: MouseEvent;
+	};
+}
+
 //Gantt chart props
 interface GanttProps {
 	id: string;
-	updateChart: (dataOption, path) => void;
+	updateChart: (dataOption: ChartUpdateOption, path: string) => void;
 }
 //Gantt chart main component
 export const Gantt = observer(
@@ -49,9 +203,9 @@ export const Gantt = observer(
 			mouseY: number; //y axis position for the click/brush event
 			value: unknown; //value can be of object or string or number type
 		} | null>(null);
-		const chartRef = useRef(null);
+		const chartRef = useRef<EchartsRef | null>(null);
 		//table reference variable to align series name with fiscal axis
-		const tableRef = useRef(null);
+		const tableRef = useRef<HTMLElement | null>(null);
 		const [seriesNameCol, setSeriesNameCol] = useState(70);
 
 		/**
@@ -96,14 +250,27 @@ export const Gantt = observer(
 		// custom variable to hold the chart data to render
 		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional dependency on frame.data.values
 		const dataOption = useMemo(() => {
-			let option = JSON.parse(computedValue);
-			let resourceRows = []; // Stores resource related details
-			let seriesData = []; // series data to be used for rendering chart
+			let option = JSON.parse(computedValue) as GanttOption;
+			let resourceRows: string[] = []; // Stores resource related details
+			let seriesData: GanttSeriesRow[] = []; // series data to be used for rendering chart
 			let _yAxisName = "";
-			const _toolTipSelected = [];
-			let toolTipSelectedIndex = [];
+			const _toolTipSelected: string[] = [];
+			let toolTipSelectedIndex: number[] = [];
 			const _mileStoneIndex = "";
-			let milestoneData = [];
+			let milestoneData: GanttMilestoneRow[] = [];
+			const toDateMillis = (value: unknown): number => {
+				if (value instanceof Date) {
+					return value.getTime();
+				}
+				if (typeof value === "number" || typeof value === "string") {
+					return new Date(value).getTime();
+				}
+				return Number.NaN;
+			};
+			const toNumber = (value: unknown): number | undefined => {
+				const parsed = Number(value);
+				return Number.isNaN(parsed) ? undefined : parsed;
+			};
 			//detect task progress column is selected or not
 			const taskProgressSelected = Object.keys(
 				option.customSettings.columnDetails,
@@ -114,58 +281,42 @@ export const Gantt = observer(
 				color: GANTT_CHART.MILESTONE_COLOR,
 				symbolSize: GANTT_CHART.MILESTONE_SYMBOL_SIZE,
 			};
-			// symbol value, size, color based on the milestone selected
-			const symbolValue = [];
-			const symbolSize = [];
-			const symbolColor = [];
 			//show legend or not
 			let legendShow = false;
 			//show group view or not
 			let groupViewShow = false;
 			//column details selected in the data section
 			const columnIndexDetails = option.customSettings.columnIndexDetails;
+			const customizeSymbolList: GanttCustomizeSymbolRule[] =
+				option.customSettings?.gantttools?.customizeSymbol || [];
+			const clampMilestoneSymbolSize = (value: unknown) => {
+				const parsedSize = Number(value);
+				if (Number.isNaN(parsedSize)) {
+					return mileStoneProperties.symbolSize;
+				}
+
+				return Math.min(40, Math.max(1, parsedSize));
+			};
+			const resolveMilestoneSymbol = (mileStoneDate: number) => {
+				return [...customizeSymbolList]
+					.reverse()
+					.find((customizeItem) => {
+						const ganttToolsDimensionValues =
+							customizeItem?.dimensionValues?.map(
+								(dimensionValue: unknown) =>
+									toDateMillis(dimensionValue),
+							) || [];
+
+						return (
+							customizeItem?.dimensionSelected === "milestone" &&
+							ganttToolsDimensionValues.includes(mileStoneDate)
+						);
+					});
+			};
 			//frame data values
 			if (frame.data.values.length) {
-				frame.data.values.forEach((item, _index) => {
-					const itemIndex = parseInt(
-						columnIndexDetails.milestone,
-						10,
-					);
-					const mileStoneDate = new Date(
-						item[itemIndex] as Date,
-					).getTime();
-
-					const ganttToolsLength =
-						option.customSettings?.gantttools?.customizeSymbol
-							?.length;
-					const ganttToolsSelected =
-						ganttToolsLength > -1
-							? option.customSettings?.gantttools
-									?.customizeSymbol?.[ganttToolsLength - 1]
-							: {};
-
-					const ganttToolsDimensionValues =
-						ganttToolsSelected?.dimensionValues?.map(
-							(item, _index) => new Date(item).getTime(),
-						) || [];
-
-					if (
-						ganttToolsSelected?.dimensionSelected === "milestone" &&
-						ganttToolsDimensionValues?.includes(mileStoneDate)
-					) {
-						symbolValue.push(ganttToolsSelected.symbol);
-						symbolSize.push(ganttToolsSelected.symbolSize);
-						symbolColor.push(ganttToolsSelected.symbolColor);
-					} else {
-						symbolValue.push(mileStoneProperties.symbol);
-						symbolSize.push(mileStoneProperties.symbolSize);
-						symbolColor.push(mileStoneProperties.color);
-					}
-				});
-			}
-			if (frame.data.values.length) {
 				// Step 1: Group tasks by resource
-				const groupedData = {};
+				const groupedData: Record<string, FrameRow[]> = {};
 				const dataGrouped = Object.keys(
 					option.customSettings.columnDetails,
 				).some((item) => item === "taskgroup");
@@ -191,32 +342,33 @@ export const Gantt = observer(
 				if (dataGrouped && groupViewShow) {
 					_yAxisName =
 						taskGroupIndex > -1
-							? option.customSettings.columnDetails.taskgroup.name
+							? option.customSettings.columnDetails.taskgroup
+									?.name || ""
 							: "";
-					frame.data.values.forEach((d: string[], _index) => {
-						if (!groupedData[d[taskGroupIndex]])
-							groupedData[d[taskGroupIndex]] = [];
-						groupedData[d[taskGroupIndex]].push(d);
+					frame.data.values.forEach((d: unknown[]) => {
+						const groupKey = String(d[taskGroupIndex] ?? "");
+						if (!groupedData[groupKey]) {
+							groupedData[groupKey] = [];
+						}
+						groupedData[groupKey].push(d);
 					});
 
 					Object.keys(groupedData).forEach((resource) => {
 						const tasks = groupedData[resource];
 						tasks.sort(
-							// biome-ignore lint/suspicious/noExplicitAny: echart type is untyped
-							(a: any, b: any) =>
-								new Date(a[1]).getTime() -
-								new Date(b[1]).getTime(),
+							(a: FrameRow, b: FrameRow) =>
+								toDateMillis(a[1]) - toDateMillis(b[1]),
 						); // Sort by start date
 
-						const rowIndexes = []; // Tracks task end times per row
+						const rowIndexes: number[] = []; // Tracks task end times per row
 						resourceRows.push(resource); // First row for the resource
 
-						tasks.forEach((task) => {
-							const taskStart = new Date(task[1]).getTime();
-							const taskEnd = new Date(task[2]).getTime();
+						tasks.forEach((task: FrameRow) => {
+							const taskStart = toDateMillis(task[1]);
+							const taskEnd = toDateMillis(task[2]);
 							// Find an available row (avoid overlap)
 							let rowIndex = rowIndexes.findIndex(
-								(endTime) => taskStart >= endTime,
+								(endTime: number) => taskStart >= endTime,
 							);
 							if (rowIndex === -1) {
 								rowIndex = rowIndexes.length;
@@ -224,17 +376,23 @@ export const Gantt = observer(
 							}
 							rowIndexes[rowIndex] = taskEnd; // Update row availability
 							// Push formatted task data
+							const taskName = String(task[0] ?? "");
+							const taskProgressIndex =
+								columnIndexDetails.taskprogress;
+							const taskProgress =
+								typeof taskProgressIndex === "number"
+									? toNumber(task[taskProgressIndex])
+									: undefined;
 							seriesData.push({
-								name: task[0],
+								name: taskName,
 								resource: resource,
-								taskprogress:
-									task[columnIndexDetails.taskprogress],
+								taskprogress: taskProgress,
 								value: [
 									taskStart,
 									resourceRows.length - 1,
 									taskEnd,
 									...toolTipSelectedIndex.map(
-										(item) => task[item],
+										(item: number) => task[item],
 									),
 								],
 							});
@@ -244,51 +402,69 @@ export const Gantt = observer(
 					_yAxisName = option.customSettings.columnDetails.task.name;
 					// Convert data to proper format
 					seriesData = frame.data.values.map(
-						(d: string[], index) => ({
-							name: d[columnIndexDetails.task],
-							taskprogress: d[columnIndexDetails.taskprogress],
+						(d: unknown[], index: number) => ({
+							name: String(d[columnIndexDetails.task] ?? ""),
+							taskprogress:
+								typeof columnIndexDetails.taskprogress ===
+								"number"
+									? toNumber(
+											d[columnIndexDetails.taskprogress],
+										)
+									: undefined,
 							value: [
-								new Date(
-									d[columnIndexDetails.startdate],
-								).getTime(),
+								toDateMillis(d[columnIndexDetails.startdate]),
 								index,
-								new Date(
-									d[columnIndexDetails.enddate],
-								).getTime(),
-								...toolTipSelectedIndex.map((item) => d[item]),
+								toDateMillis(d[columnIndexDetails.enddate]),
+								...toolTipSelectedIndex.map(
+									(item: number) => d[item],
+								),
 							],
 						}),
 					);
-					resourceRows = frame.data.values.map((d, _index) => d[0]);
+					resourceRows = frame.data.values.map((d: unknown[]) =>
+						String(d[0] ?? ""),
+					);
 				}
 				if (
 					Object.hasOwn(columnIndexDetails, "milestone") &&
 					columnIndexDetails.milestone
 				) {
-					const _gantttools = option.customSettings.gantttools;
 					milestoneData = frame.data.values.map(
-						(d: string[], index) => {
-							const _mileStoneSymbol = mileStoneProperties.symbol;
-							const symbolSize = mileStoneProperties.symbolSize;
-							const mileStoneDate = new Date(
-								d[columnIndexDetails.milestone],
-							).getTime();
-							const endDate = new Date(
+						(d: unknown[], index: number) => {
+							const milestoneIndex = columnIndexDetails.milestone;
+							const mileStoneDate =
+								typeof milestoneIndex === "number"
+									? toDateMillis(d[milestoneIndex])
+									: Number.NaN;
+							const endDate = toDateMillis(
 								d[columnIndexDetails.enddate],
-							).getTime();
+							);
+							const matchingCustomSymbol =
+								resolveMilestoneSymbol(mileStoneDate);
+							const resolvedSymbol =
+								matchingCustomSymbol?.symbol ||
+								mileStoneProperties.symbol;
+							const resolvedSymbolSize = clampMilestoneSymbolSize(
+								matchingCustomSymbol?.symbolSize,
+							);
+							const resolvedSymbolColor =
+								matchingCustomSymbol?.symbolColor ||
+								mileStoneProperties.color;
 							return {
 								name: `MileStone ${index + 1}`,
 								value: [
 									mileStoneDate,
-									d[columnIndexDetails.task],
+									String(d[columnIndexDetails.task] ?? ""),
 									endDate,
 								],
 								mileStoneOriginalDate:
-									d[columnIndexDetails.milestone],
-								symbol: symbolValue[index],
-								symbolSize: symbolSize[index],
+									typeof milestoneIndex === "number"
+										? d[milestoneIndex]
+										: undefined,
+								symbol: resolvedSymbol,
+								symbolSize: resolvedSymbolSize,
 								itemStyle: {
-									color: symbolColor[index],
+									color: resolvedSymbolColor,
 								},
 							};
 						},
@@ -296,7 +472,7 @@ export const Gantt = observer(
 				}
 			}
 
-			let lineData = [];
+			let lineData: GanttTargetSeriesItem[] = [];
 			const showDisplayValueLabels =
 				option.customSettings?.gantttools?.showDisplayValueLabels ||
 				false;
@@ -306,11 +482,13 @@ export const Gantt = observer(
 				option.customSettings?.columnDetails?.task?.selector;
 			if (
 				option.series.some(
-					(series) => series.name === "targetDateSegment",
+					(series: GanttTargetSeriesItem) =>
+						series.name === "targetDateSegment",
 				)
 			) {
 				const targetDateSegment = option.series.filter(
-					(item) => item.name === "targetDateSegment",
+					(item: GanttTargetSeriesItem) =>
+						item.name === "targetDateSegment",
 				);
 				targetDateSegment[0] = {
 					...targetDateSegment[0],
@@ -318,7 +496,10 @@ export const Gantt = observer(
 					// name: targetDateSegment[0]?.["data"]?.length
 					//     ? "Target Data Segment"
 					//     : "",
-					renderItem: (params, api) => {
+					renderItem: (
+						params: GanttRenderParams,
+						api: GanttRenderApi,
+					) => {
 						const x = api.coord([api.value(0), 0])[0];
 						const targetText =
 							option.customSettings?.gantttools?.targetLineName ||
@@ -378,15 +559,17 @@ export const Gantt = observer(
 				}
 			}
 			//truncate char count for y axis
-			const truncateCharCount = option.yAxis?.axisLabel?.truncateCharCount
-				? parseInt(option.yAxis?.axisLabel?.truncateCharCount, 10)
-				: 0;
+			const truncateCharCountValue =
+				option.yAxis?.axisLabel?.truncateCharCount;
+			const truncateCharCount =
+				typeof truncateCharCountValue !== "undefined"
+					? Number(truncateCharCountValue)
+					: 0;
 			option = {
 				...option,
 				tooltip: {
 					trigger: "item",
-					// biome-ignore lint/suspicious/noExplicitAny: echart type is untyped
-					formatter: (params: any) =>
+					formatter: (params: GanttChartFormatterParams) =>
 						chartFormatter(
 							params,
 							toolTipSelectedIndex,
@@ -402,7 +585,7 @@ export const Gantt = observer(
 					// name: 'Date',
 					axisLabel: {
 						...option.xAxis?.axisLabel,
-						formatter: (value) =>
+						formatter: (value: number | string) =>
 							new Date(value).toLocaleDateString(),
 					},
 					splitLine: { show: true },
@@ -420,12 +603,13 @@ export const Gantt = observer(
 					axisLabel: {
 						...option.yAxis?.axisLabel,
 						// margin: resourceRows.length > 1 ? 0 : 12,
-						formatter: (value) =>
-							value &&
-							truncateCharCount &&
-							value.length > truncateCharCount
-								? `${value.slice(0, truncateCharCount)}...`
-								: value,
+						formatter: (value: number | string) => {
+							const valueAsString = String(value);
+							return truncateCharCount &&
+								valueAsString.length > truncateCharCount
+								? `${valueAsString.slice(0, truncateCharCount)}...`
+								: valueAsString;
+						},
 					},
 				},
 				legend: {
@@ -438,7 +622,11 @@ export const Gantt = observer(
 						chartrendered: true,
 						name: mainSeriesName,
 						frameName: mainSeriesFrameName,
-						renderItem: (params, api) => {
+						renderItem: (
+							params: GanttRenderParams,
+							api: GanttRenderApi,
+						) => {
+							const currentSeries = seriesData[params.dataIndex];
 							const categoryIndex = api.value(1);
 							const start = api.coord([
 								api.value(0),
@@ -449,17 +637,11 @@ export const Gantt = observer(
 								categoryIndex,
 							]);
 							const height = api.size([0, 1])[1] * 0.6;
-							const tooltipName = seriesData[params.dataIndex]
-								.name
-								? seriesData[params.dataIndex].name
-								: "";
+							const tooltipName = currentSeries?.name || "";
 							if (taskProgressSelected) {
-								const partialWidth = seriesData[
-									params.dataIndex
-								].taskprogress
+								const partialWidth = currentSeries?.taskprogress
 									? (end[0] - start[0]) *
-										(seriesData[params.dataIndex]
-											.taskprogress /
+										((currentSeries.taskprogress ?? 0) /
 											100)
 									: end[0] - start[0];
 
@@ -562,7 +744,9 @@ export const Gantt = observer(
 			return option;
 		}, [frame.data.values, data.columns, computedValue]);
 		//get quarter and month list with fiscal year details
-		function getQuarterAndMonthList(startFiscalMonth) {
+		function getQuarterAndMonthList(
+			startFiscalMonth: string,
+		): FiscalQuarter[] {
 			const startMonth = startFiscalMonth;
 			const month = [
 				"Jan",
@@ -580,7 +764,7 @@ export const Gantt = observer(
 			];
 			const startIndex = month.indexOf(startMonth);
 			let startIndexTemp = startIndex;
-			const quarterObject = {};
+			const quarterObject: Record<string, string[]> = {};
 			//create quarter object
 			[1, 2, 3, 4].forEach((item) => {
 				quarterObject[`Q${item}`] = [];
@@ -594,14 +778,14 @@ export const Gantt = observer(
 				}
 			});
 			//month based on quarter from Jan to Dec based on fiscal year start
-			let monthBasedQuarter = [];
+			let monthBasedQuarter: FiscalQuarter[] = [];
 			let lastMonthInQuarter = "";
 			month.forEach((item, _index) => {
 				let monthExistsInQuarter = "";
 				for (let i = 0; i < 4; i++) {
 					if (
 						quarterObject[`Q${i + 1}`].some(
-							(qoItem) => item === qoItem,
+							(qoItem: string) => item === qoItem,
 						)
 					) {
 						monthExistsInQuarter = `Q${i + 1}`;
@@ -610,7 +794,7 @@ export const Gantt = observer(
 				const quarterExistsInArray = monthBasedQuarter
 					.reverse()
 					.findIndex(
-						(mbitem, _mbindex) =>
+						(mbitem: FiscalQuarter, _mbindex) =>
 							monthExistsInQuarter === mbitem.name,
 					);
 				if (
@@ -634,13 +818,12 @@ export const Gantt = observer(
 				lastMonthInQuarter = monthExistsInQuarter;
 			});
 			//set initial fiscal year based on current month selection, if month data is not available, then first record of seriesdata is selected
+			const fiscalYearValue =
+				dataOption.customSettings?.gantttools?.fiscalYearValue;
 			const FYYear =
-				parseInt(
-					dataOption.customSettings?.gantttools?.fiscalYearValue?.substring(
-						2,
-					),
-					10,
-				) + 1;
+				fiscalYearValue && fiscalYearValue.length >= 2
+					? parseInt(fiscalYearValue.substring(2), 10) + 1
+					: Number.NaN;
 			monthBasedQuarter = monthBasedQuarter.map((item, _index) => {
 				return {
 					...item,
@@ -654,7 +837,7 @@ export const Gantt = observer(
 			const monthSelected =
 				dataOption.customSettings?.gantttools?.fiscalYearStart;
 			const yearQuarterIndex = monthBasedQuarter.findIndex((item) =>
-				item.month.includes(monthSelected),
+				monthSelected ? item.month.includes(monthSelected) : false,
 			);
 			monthBasedQuarter = monthBasedQuarter.map((item, index) => {
 				return {
@@ -710,18 +893,17 @@ export const Gantt = observer(
 		}, [enableFiscalAxis]);
 		//tooltip function to render tooltip based on options provided
 		function chartFormatter(
-			params,
-			tooltipData,
-			frameHeaders,
-			frameValues,
-		) {
+			params: GanttChartFormatterParams,
+			tooltipData: number[],
+			frameHeaders: string[],
+			frameValues: unknown[][],
+		): string {
 			let chartToolTip = `<b>${params.name}</b><br>
             Start: ${new Date(params.value[0]).toLocaleDateString()}<br>
             End: ${new Date(params.value[2]).toLocaleDateString()}<br>`;
-			tooltipData.forEach((item, _index) => {
-				chartToolTip += `${frameHeaders[item]}: ${
-					frameValues[params.dataIndex][item]
-				}<br>`;
+			tooltipData.forEach((item: number, _index: number) => {
+				const row = frameValues[params.dataIndex] || [];
+				chartToolTip += `${frameHeaders[item]}: ${row[item]}<br>`;
 			});
 			return chartToolTip;
 		}
@@ -739,12 +921,12 @@ export const Gantt = observer(
 			dataOption.customSettings?.columnDetails?.task?.name || "";
 		const onClickChart = {
 			//when contextmenu event is raised, default context menu made hidden, and custom component is shown
-			contextmenu: (params) => {
+			contextmenu: (params: GanttContextMenuParams) => {
 				if (params.data) {
-					const taskColumn = params.data.name;
-					const parsedJson = JSON.parse(computedValue);
+					const taskColumn = params.data.name || "";
+					const parsedJson = JSON.parse(computedValue) as GanttOption;
 					const taskName =
-						parsedJson.series[params.seriesIndex].frameName;
+						parsedJson.series[params.seriesIndex]?.frameName || "";
 					setContextMenu(
 						contextMenu === null
 							? {
@@ -789,7 +971,7 @@ export const Gantt = observer(
 						<Table
 							aria-label="simple table"
 							ref={(e) => {
-								tableRef.current = e;
+								tableRef.current = e as HTMLElement | null;
 							}}
 						>
 							<TableHeader>
@@ -822,19 +1004,21 @@ export const Gantt = observer(
 								<TableRow>
 									{quarterAndMonth.length &&
 										quarterAndMonth.map((item, i) =>
-											item.month.map((monthItem) => (
-												<TableCell
-													// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
-													key={i}
-													className="p-1 text-xs"
-													style={{
-														backgroundColor: "#fff",
-														border: "1px solid #e6e6e6",
-													}}
-												>
-													{monthItem}
-												</TableCell>
-											)),
+											item.month.map(
+												(monthItem, monthIndex) => (
+													<TableCell
+														key={`${i}-${monthIndex}-${monthItem}`}
+														className="p-1 text-xs"
+														style={{
+															backgroundColor:
+																"#fff",
+															border: "1px solid #e6e6e6",
+														}}
+													>
+														{monthItem}
+													</TableCell>
+												),
+											),
 										)}
 								</TableRow>
 							</TableBody>
@@ -847,7 +1031,7 @@ export const Gantt = observer(
 					option={dataOption}
 					onEvents={onClickChart}
 					ref={(e) => {
-						chartRef.current = e;
+						chartRef.current = e as EchartsRef | null;
 					}}
 					style={{
 						width: "inherit",

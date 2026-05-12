@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import type { EChartsOption } from "echarts";
 import ReactECharts from "echarts-for-react";
 import { computed } from "mobx";
@@ -10,6 +8,48 @@ import { getValueByPath } from "../../../../../utility";
 import type { EchartVisualizationBlockDef } from "../..";
 import { CustomContextMenu } from "../../CustomContextMenu";
 
+type PieValue = string | number | null;
+type FrameRow = [string, PieValue];
+
+interface PieSeriesDataPoint {
+	name: string;
+	value: PieValue;
+}
+
+interface PieSeries {
+	data: PieSeriesDataPoint[];
+	[key: string]: unknown;
+}
+
+interface PieTooltip {
+	formatter?: unknown;
+	[key: string]: unknown;
+}
+
+interface PieStateFields {
+	Label?: string[];
+	Value?: string[];
+	[key: string]: unknown;
+}
+
+interface PieChartOption {
+	series?: PieSeries[];
+	tooltip?: PieTooltip;
+	state?: {
+		fields?: PieStateFields;
+	};
+	[key: string]: unknown;
+}
+
+interface PieContextMenuEvent {
+	data?: {
+		name: string;
+	};
+	event: {
+		event: MouseEvent;
+	};
+}
+
 interface PieProps {
 	/**
 	 *
@@ -19,7 +59,7 @@ interface PieProps {
 	/**
 	 *
 	 */
-	updateJson: (data, path) => void;
+	updateJson: (data: unknown, path: string) => void;
 }
 
 export const Pie = observer(({ id, updateJson }: PieProps) => {
@@ -30,19 +70,21 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 		mouseY: number;
 		value: unknown;
 	} | null>(null);
-	let resultData: unknown = {};
+	let resultData: PieChartOption = {};
 
 	/**
 	 * Builds a dynamic query string based on the provided input data.
 	 * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
 	 * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
 	 */
-	const buildDynamicQuery = (inputData): string => {
+	const buildDynamicQuery = (
+		inputData: [string, Record<string, string | undefined>][],
+	): string => {
 		const selectParts: string[] = [];
 		const aliasParts: string[] = [];
 		const groupByParts: string[] = [];
 
-		inputData.forEach(([_, fields]) => {
+		inputData.forEach(([_key, fields]) => {
 			for (const field in fields) {
 				const rawAgg = fields[field];
 				aliasParts.push(field);
@@ -68,6 +110,11 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	const frame = useFrame(data?.frame?.name, {
 		selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
 	});
+	const hasLabelSelection =
+		(data.option?.state?.fields?.Label?.length ?? 0) > 0;
+	const hasValueSelection =
+		(data.option?.state?.fields?.Value?.length ?? 0) > 0;
+	const canRenderChartData = hasLabelSelection && hasValueSelection;
 
 	/**
 	 * @description Trying out different approach for TrendLine, work in progress
@@ -92,9 +139,11 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	 * @description
 	 */
 	const parsedOption = useMemo(() => {
-		return typeof computedValue === "string"
-			? JSON.parse(computedValue)
-			: computedValue;
+		return (
+			typeof computedValue === "string"
+				? JSON.parse(computedValue)
+				: computedValue
+		) as PieChartOption;
 	}, [computedValue]);
 
 	/**
@@ -103,22 +152,23 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		if (
+			canRenderChartData &&
 			data?.frame?.name &&
 			frame?.data?.values.length > 0 &&
 			frame?.isLoading === false
 		) {
 			updateJson(parsedOption, "option");
 		}
-	}, [frame.data.values]);
+	}, [canRenderChartData, frame.data.values]);
 
 	/**
 	 * @description format the frame option data for echart
 	 */
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	const formatDataPoints = useCallback(
-		(resultData: unknown) => {
+		(resultData: PieChartOption) => {
 			if (frame.data.values.length > 0) {
-				const valuesDataSet = JSON.parse(
+				const valuesDataSet: FrameRow[] = JSON.parse(
 					JSON.stringify(frame.data.values),
 				);
 				let headersDataSet: string[] = JSON.parse(
@@ -128,12 +178,18 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 					header.replace("Average_", ""),
 				);
 				//format the data points to match the echart specification
-				resultData.series[0].data = valuesDataSet.map(
-					([name, value]) => ({ name, value }),
-				);
+				const nextSeries = resultData.series ?? [];
+				if (!nextSeries[0]) {
+					nextSeries[0] = { data: [] };
+				}
+				nextSeries[0].data = valuesDataSet.map(([name, value]) => ({
+					name,
+					value,
+				}));
+				resultData.series = nextSeries;
 				valuesDataSet.map((x) => x.shift());
 				headersDataSet.shift();
-			} else {
+			} else if (resultData.tooltip) {
 				delete resultData.tooltip.formatter;
 			}
 			return resultData;
@@ -145,10 +201,11 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 	 * @description
 	 */
 	const onClickChart = {
-		contextmenu: (params) => {
+		contextmenu: (params: PieContextMenuEvent) => {
 			//  let currentOption = chart.getOption();
 			if (params.data) {
-				const labelName = data.option._state.fields.Label[0];
+				const option = data.option as PieChartOption;
+				const labelName = option.state?.fields?.Label?.[0];
 				setContextMenu(
 					contextMenu === null
 						? {
@@ -192,12 +249,22 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
 			);
 		}
 	} else {
-		resultData =
-			data?.frame?.name &&
-			frame.data.values.length > 0 &&
-			frame.isLoading === false
-				? formatDataPoints(parsedOption)
-				: parsedOption;
+		if (!canRenderChartData) {
+			resultData = {
+				...parsedOption,
+				series: (parsedOption.series ?? []).map((seriesItem) => ({
+					...seriesItem,
+					data: [],
+				})),
+			};
+		} else {
+			resultData =
+				data?.frame?.name &&
+				frame.data.values.length > 0 &&
+				frame.isLoading === false
+					? formatDataPoints(parsedOption)
+					: parsedOption;
+		}
 		return (
 			<div className="h-full">
 				<ReactECharts

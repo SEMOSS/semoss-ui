@@ -1,25 +1,98 @@
-export const formatdatapoints = (apiData, data) => {
-	let fields = "",
+type TooltipApiData = {
+	values?: unknown[][];
+};
+
+type TooltipStateFields = Record<string, unknown>;
+
+type TooltipOptionState = {
+	fields: TooltipStateFields;
+};
+
+type TooltipOption = {
+	state?: TooltipOptionState;
+	_state?: TooltipOptionState;
+};
+
+type TooltipInput = {
+	option: TooltipOption;
+};
+
+type TooltipPointData = {
+	label: {
+		formatter: string;
+	};
+	value: unknown[];
+	symbolSize?: unknown;
+	itemStyle: {
+		colorValue?: unknown;
+	};
+	tooltipValue?: unknown;
+};
+
+export type TooltipFormatterParam = {
+	data: TooltipPointData;
+	color: string;
+};
+
+const toText = (value: unknown): string => String(value ?? "");
+
+export const formatdatapoints = (
+	apiData: TooltipApiData,
+	data: TooltipInput,
+): ((params: TooltipFormatterParam) => string) | "" => {
+	let fields: TooltipStateFields = {},
 		label = "",
 		xAxis = "",
 		yAxis = "",
 		size = "",
 		color = "",
 		tooltip = "";
-	if (Object.hasOwn(data.option, "_state")) {
-		fields = data.option["_state"]["fields"];
-		label = fields["label"];
-		xAxis = fields["XAxis"];
-		yAxis = fields["YAxis"];
-		size = fields["size"];
-		color = fields["color"];
-		tooltip = fields["tooltip"];
-	}
-	const getSelectorType = (type) => {
-		if (!fields[type]) return "";
-		return fields[type][0] === "NUMBER" ? "Average of" : "Count of";
+
+	const stateKey: "state" | "_state" | undefined = Object.hasOwn(
+		data.option,
+		"state",
+	)
+		? "state"
+		: Object.hasOwn(data.option, "_state")
+			? "_state"
+			: undefined;
+
+	const getFirst = (value: unknown): string => {
+		if (Array.isArray(value)) {
+			return toText(value[0]);
+		}
+		return toText(value);
 	};
-	const getSelectors = () => {
+
+	if (stateKey) {
+		const optionState = data.option[stateKey];
+		if (!optionState) {
+			return "";
+		}
+
+		fields = optionState.fields;
+		label = getFirst(fields["label"]);
+		xAxis = getFirst(fields["XAxis"]);
+		yAxis = getFirst(fields["YAxis"]);
+		size = getFirst(fields["size"]);
+		color = getFirst(fields["color"]);
+		tooltip = getFirst(fields["tooltip"]);
+	}
+	const getSelectorType = (type: string): string => {
+		if (!fields[type]) return "";
+		const typeValues = fields[type];
+		if (!Array.isArray(typeValues)) {
+			return "";
+		}
+		return typeValues[0] === "NUMBER" ? "Average of" : "Count of";
+	};
+	const getSelectors = (): {
+		xAxis: string;
+		yAxis: string;
+		size: string;
+		tooltip: string;
+		color: string;
+	} => {
 		return {
 			xAxis: getSelectorType("XAxisDataType"),
 			yAxis: getSelectorType("YAxisDataType"),
@@ -29,108 +102,116 @@ export const formatdatapoints = (apiData, data) => {
 		};
 	};
 	const selectors = getSelectors();
-	const getToolTipContent = (color, Data, apiData) => {
+	const getToolTipContent = (
+		seriesColor: string,
+		pointData: TooltipPointData,
+		frameData: TooltipApiData,
+	): string => {
+		if (!frameData.values) {
+			return "";
+		}
 		return `
         <div>
-            <span style="color:${color}">\u25CF</span>
-            ${Data.label.formatter.toString()}<br>
-            ${selectors.xAxis} ${xAxis}: ${Data.value[0]}<br>
+            <span style="color:${seriesColor}">\u25CF</span>
+            ${pointData.label.formatter.toString()}<br>
+            ${selectors.xAxis} ${xAxis}: ${pointData.value[0]}<br>
         </div>
     `;
 	};
 	if (apiData["values"]) {
-		if (Object.hasOwn(data.option, "_state")) {
-			if (Object.hasOwn(data.option["_state"], "fields")) {
+		if (stateKey) {
+			const optionState = data.option[stateKey];
+			if (optionState && Object.hasOwn(optionState, "fields")) {
 				if (label && xAxis && yAxis && size && color && tooltip) {
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
 						if (
-							xAxis == yAxis &&
-							xAxis == size &&
-							xAxis == color &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							xAxis === size &&
+							xAxis === color &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                             `
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							label == size &&
-							label == color &&
-							label == tooltip
+							xAxis === yAxis &&
+							label === size &&
+							label === color &&
+							label === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>
                             `
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							xAxis == size &&
-							label == color &&
-							label == tooltip
+							xAxis === yAxis &&
+							xAxis === size &&
+							label === color &&
+							label === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>
                             `
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							xAxis == size &&
-							label == color &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							xAxis === size &&
+							label === color &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`
-                                        ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                        ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                     `
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							label == size &&
-							xAxis == color &&
-							label == tooltip
+							xAxis === yAxis &&
+							label === size &&
+							xAxis === color &&
+							label === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                    ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                    ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                     ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>
                                 `
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							label == size &&
-							label == color &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							label === size &&
+							label === color &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                    ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                    ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							(size == color || label == color) &&
-							size == tooltip
+							xAxis === yAxis &&
+							(size === color || label === color) &&
+							size === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                        ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                        ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
@@ -222,7 +303,7 @@ export const formatdatapoints = (apiData, data) => {
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
@@ -232,7 +313,7 @@ export const formatdatapoints = (apiData, data) => {
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
@@ -242,7 +323,7 @@ export const formatdatapoints = (apiData, data) => {
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								` ${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								` ${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
@@ -252,37 +333,41 @@ export const formatdatapoints = (apiData, data) => {
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							(label == size || xAxis == size) &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							(label === size || xAxis === size) &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
                                 ${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							label == color &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							label === color &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && label == size && label == color) {
+						if (
+							xAxis === yAxis &&
+							label === size &&
+							label === color
+						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>
                             `
 							);
@@ -295,127 +380,131 @@ export const formatdatapoints = (apiData, data) => {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`
-                                    ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                    ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                     ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>
                                 `
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							label == color &&
-							label == tooltip
+							xAxis === yAxis &&
+							label === color &&
+							label === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							label == size &&
-							label == tooltip
+							xAxis === yAxis &&
+							label === size &&
+							label === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && xAxis == size && xAxis == color) {
+						if (
+							xAxis === yAxis &&
+							xAxis === size &&
+							xAxis === color
+						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`   ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+								`   ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                     ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>
                                 `
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							xAxis == size &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							xAxis === size &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							xAxis == color &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							xAxis === color &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
-							(size == color && xAxis == tooltip) ||
-							yAxis == tooltip ||
-							(size == color && size == tooltip) ||
-							(size == tooltip && xAxis == color) ||
-							yAxis == color
+							(size === color && xAxis === tooltip) ||
+							yAxis === tooltip ||
+							(size === color && size === tooltip) ||
+							(size === tooltip && xAxis === color) ||
+							yAxis === color
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && xAxis == size) {
+						if (xAxis === yAxis && xAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`   ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+								`   ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                     ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
 						if (
-							(xAxis == yAxis && xAxis == color) ||
-							size == color
+							(xAxis === yAxis && xAxis === color) ||
+							size === color
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
 						if (
-							(xAxis == yAxis && xAxis == tooltip) ||
-							size == tooltip
+							(xAxis === yAxis && xAxis === tooltip) ||
+							size === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && label == size) {
+						if (xAxis === yAxis && label === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && label == color) {
+						if (xAxis === yAxis && label === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                 ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                  ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && label == tooltip) {
+						if (xAxis === yAxis && label === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -424,7 +513,7 @@ export const formatdatapoints = (apiData, data) => {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -432,7 +521,7 @@ export const formatdatapoints = (apiData, data) => {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -441,7 +530,7 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === tooltip && label === color) {
@@ -449,34 +538,34 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === size && xAxis === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
 						if (yAxis === size && yAxis === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
 						if (xAxis === size && xAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === size && yAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === color && xAxis === tooltip) {
@@ -484,7 +573,7 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
                                 ${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === color && yAxis === tooltip) {
@@ -492,14 +581,14 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === size && yAxis === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -507,20 +596,20 @@ export const formatdatapoints = (apiData, data) => {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
 						if (xAxis === size && yAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === size && xAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === color && yAxis === tooltip) {
@@ -528,7 +617,7 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === color && xAxis === tooltip) {
@@ -541,7 +630,7 @@ export const formatdatapoints = (apiData, data) => {
 									Data.symbolSize
 								}<br>
                                 ${selectors.color} ${color}: ${
-									Data.itemStyle.colorValue
+									Data.itemStyle?.colorValue
 								}<br>
                             `;
 						}
@@ -555,15 +644,15 @@ export const formatdatapoints = (apiData, data) => {
 									Data.symbolSize
 								}<br>
                                 ${selectors.color} ${color}: ${
-									Data.itemStyle.colorValue
+									Data.itemStyle?.colorValue
 								}<br>
                             `;
 						}
-						if (xAxis == yAxis) {
+						if (xAxis === yAxis) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -577,7 +666,7 @@ export const formatdatapoints = (apiData, data) => {
 									Data.symbolSize
 								}<br>
                                 ${selectors.color} ${color}: ${
-									Data.itemStyle.colorValue
+									Data.itemStyle?.colorValue
 								}<br>
                                 ${selectors.tooltip} ${tooltip}: ${
 									Data.tooltipValue
@@ -594,7 +683,7 @@ export const formatdatapoints = (apiData, data) => {
 									Data.symbolSize
 								}<br>
                                 ${selectors.color} ${color}: ${
-									Data.itemStyle.colorValue
+									Data.itemStyle?.colorValue
 								}<br>
                                 ${selectors.tooltip} ${tooltip}: ${
 									Data.tooltipValue
@@ -606,7 +695,7 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -614,7 +703,7 @@ export const formatdatapoints = (apiData, data) => {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
-                                 ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                 ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                  ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -632,14 +721,14 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 								`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -662,7 +751,7 @@ export const formatdatapoints = (apiData, data) => {
 									Data.symbolSize
 								}<br>
                                 ${selectors.color} ${color}: ${
-									Data.itemStyle.colorValue
+									Data.itemStyle?.colorValue
 								}<br>
                             `;
 						}
@@ -685,7 +774,7 @@ export const formatdatapoints = (apiData, data) => {
 									Data.symbolSize
 								}<br>
                                 ${selectors.color} ${color}: ${
-									Data.itemStyle.colorValue
+									Data.itemStyle?.colorValue
 								}<br>
                             `;
 						}
@@ -694,52 +783,52 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
                                 ${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						return (
 							getToolTipContent(Color, Data, apiData) +
 							`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 							`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-							`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+							`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 							`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 						);
 					};
 				}
 				if (label && xAxis && yAxis && size && color) {
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
 						if (
-							xAxis == yAxis &&
-							xAxis == size &&
-							(xAxis == color || xAxis == color)
+							xAxis === yAxis &&
+							xAxis === size &&
+							(xAxis === color || xAxis === color)
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								` ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								` ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							(xAxis == color || size == color)
+							xAxis === yAxis &&
+							(xAxis === color || size === color)
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                    ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                    ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && label == color) {
+						if (xAxis === yAxis && label === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && xAxis == size) {
+						if (xAxis === yAxis && xAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === size && xAxis === color) {
@@ -769,20 +858,20 @@ export const formatdatapoints = (apiData, data) => {
 						if (xAxis === size && label === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === size && label === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
-						if (xAxis == yAxis) {
+						if (xAxis === yAxis) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                    ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                    ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (label === color) {
@@ -790,7 +879,7 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${data.option["_state"]["fields"]["color"]}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (size === color) {
@@ -798,19 +887,19 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === color) {
@@ -818,7 +907,7 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
                                 ${selectors.size} ${size}: ${Data.symbolSize}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === color) {
@@ -826,44 +915,44 @@ export const formatdatapoints = (apiData, data) => {
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						return (
 							getToolTipContent(Color, Data, apiData) +
 							`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
 							`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
-							`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+							`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 						);
 					};
 				}
 				if (label && xAxis && yAxis && color && tooltip) {
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
 						if (
-							xAxis == yAxis &&
-							(xAxis == color || label == color) &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							(xAxis === color || label === color) &&
+							xAxis === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (
-							xAxis == yAxis &&
-							(xAxis == color || label == color)
+							xAxis === yAxis &&
+							(xAxis === color || label === color)
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
-						if (xAxis == yAxis && xAxis == tooltip) {
+						if (xAxis === yAxis && xAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}`
 							);
 						}
 						if (xAxis === color && xAxis === tooltip) {
@@ -893,19 +982,19 @@ export const formatdatapoints = (apiData, data) => {
 						if (xAxis === tooltip && label === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${tooltip}: ${Data.itemStyle.colorValue}<br> `
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${tooltip}: ${Data.itemStyle?.colorValue}<br> `
 							);
 						}
 						if (yAxis === tooltip && label === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${tooltip}: ${Data.itemStyle.colorValue}<br> `
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${tooltip}: ${Data.itemStyle?.colorValue}<br> `
 							);
 						}
-						if (xAxis == yAxis) {
+						if (xAxis === yAxis) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								` ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+								` ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                             ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -913,7 +1002,7 @@ export const formatdatapoints = (apiData, data) => {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>
                                 ${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
@@ -921,7 +1010,7 @@ export const formatdatapoints = (apiData, data) => {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === color) {
@@ -939,42 +1028,42 @@ export const formatdatapoints = (apiData, data) => {
 						if (xAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (yAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br> ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						return (
 							getToolTipContent(Color, Data, apiData) +
 							`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>` +
-							`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>` +
+							`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>` +
 							`${selectors.tooltip} ${tooltip}: ${Data.tooltipValue}<br>`
 						);
 					};
 				}
 				if (label && xAxis && yAxis && size && tooltip) {
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
 						if (
-							xAxis == yAxis &&
-							xAxis == size &&
-							xAxis == tooltip
+							xAxis === yAxis &&
+							xAxis === size &&
+							xAxis === tooltip
 						) {
 							return getToolTipContent(Color, Data, apiData);
 						}
-						if (xAxis == yAxis && xAxis == size) {
+						if (xAxis === yAxis && xAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.tooltip}${tooltip}: ${Data.tooltipValue}<br>`
 							);
 						}
 						if (
-							(xAxis == yAxis && xAxis == tooltip) ||
-							size == tooltip
+							(xAxis === yAxis && xAxis === tooltip) ||
+							size === tooltip
 						) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
@@ -1005,7 +1094,7 @@ export const formatdatapoints = (apiData, data) => {
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>`
 							);
 						}
-						if (xAxis == yAxis) {
+						if (xAxis === yAxis) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>` +
@@ -1055,23 +1144,23 @@ export const formatdatapoints = (apiData, data) => {
 					};
 				}
 				if (label && xAxis && yAxis && color) {
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
 						if (
-							xAxis == yAxis &&
-							(xAxis == color || label == color)
+							xAxis === yAxis &&
+							(xAxis === color || label === color)
 						) {
 							return `
                                 ${getToolTipContent(Color, Data, apiData)}
                                 ${selectors.color} ${color}: ${
-									Data.itemStyle.colorValue
+									Data.itemStyle?.colorValue
 								}<br>
                             `;
 						}
-						if (xAxis == yAxis) {
+						if (xAxis === yAxis) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
-								`${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+								`${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						if (xAxis === color) {
@@ -1088,33 +1177,33 @@ export const formatdatapoints = (apiData, data) => {
                                 ${selectors.color} ${color}: ${Data.value[1]}<br>`
 							);
 						}
-						if (label == color) {
+						if (label === color) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
-                                ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                                ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 							);
 						}
 						return (
 							getToolTipContent(Color, Data, apiData) +
 							`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>
-                            ${selectors.color} ${color}: ${Data.itemStyle.colorValue}<br>`
+                            ${selectors.color} ${color}: ${Data.itemStyle?.colorValue}<br>`
 						);
 					};
 				}
 				if (label && xAxis && yAxis && size) {
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
-						if (xAxis == yAxis && xAxis == size) {
+						if (xAxis === yAxis && xAxis === size) {
 							return getToolTipContent(Color, Data, apiData);
 						}
-						if (xAxis == yAxis) {
+						if (xAxis === yAxis) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.size} ${size}: ${Data.symbolSize}<br>`
 							);
 						}
-						if (xAxis == size) {
+						if (xAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`
@@ -1122,7 +1211,7 @@ export const formatdatapoints = (apiData, data) => {
                             `
 							);
 						}
-						if (yAxis == size) {
+						if (yAxis === size) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`
@@ -1138,25 +1227,25 @@ export const formatdatapoints = (apiData, data) => {
 					};
 				}
 				if (label && xAxis && yAxis && tooltip) {
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
-						if (xAxis == yAxis && xAxis == tooltip) {
+						if (xAxis === yAxis && xAxis === tooltip) {
 							return getToolTipContent(Color, Data, apiData);
 						}
-						if (xAxis == yAxis) {
+						if (xAxis === yAxis) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.tooltip} ${yAxis}: ${Data.tooltipValue}<br>
                         `
 							);
 						}
-						if (xAxis == tooltip) {
+						if (xAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>`
 							);
 						}
-						if (yAxis == tooltip) {
+						if (yAxis === tooltip) {
 							return (
 								getToolTipContent(Color, Data, apiData) +
 								`${selectors.yAxis} ${yAxis}: ${Data.value[1]}<br>`
@@ -1169,13 +1258,13 @@ export const formatdatapoints = (apiData, data) => {
 					};
 				}
 				if (label && xAxis && yAxis) {
-					if (xAxis == yAxis) {
-						return (params) => {
+					if (xAxis === yAxis) {
+						return (params: TooltipFormatterParam) => {
 							const { data: Data, color: Color } = params;
 							return getToolTipContent(Color, Data, apiData);
 						};
 					}
-					return (params) => {
+					return (params: TooltipFormatterParam) => {
 						const { data: Data, color: Color } = params;
 						return (
 							getToolTipContent(Color, Data, apiData) +

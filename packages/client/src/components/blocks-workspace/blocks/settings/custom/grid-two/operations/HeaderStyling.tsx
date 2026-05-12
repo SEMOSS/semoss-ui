@@ -167,13 +167,9 @@ export const HeaderStyling = observer(
 		return (
 			<div className="flex flex-col gap-2">
 				<div className="flex flex-col justify-center gap-2">
-					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
-					<label>
-						<p className="text-muted-foreground text-sm">
-							Select Column
-						</p>
-					</label>
+					<p className="text-muted-foreground text-sm">
+						Select Column
+					</p>
 					<Popover
 						open={columnPopoverOpen}
 						onOpenChange={setColumnPopoverOpen}
@@ -228,13 +224,9 @@ export const HeaderStyling = observer(
 					</Popover>
 				</div>
 				<div className="flex flex-col justify-center gap-2">
-					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
-					<label>
-						<p className="text-muted-foreground text-sm">
-							Header Font Size
-						</p>
-					</label>
+					<p className="text-muted-foreground text-sm">
+						Header Font Size
+					</p>
 					<Input
 						value={gridStyle?.fontSize}
 						onChange={handleFontSizeChange}
@@ -242,13 +234,9 @@ export const HeaderStyling = observer(
 				</div>
 
 				<div className="flex flex-col justify-center gap-2">
-					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
-					<label>
-						<p className="text-muted-foreground text-sm">
-							Header Font Color
-						</p>
-					</label>
+					<p className="text-muted-foreground text-sm">
+						Header Font Color
+					</p>
 					<ColorPickerSettingsNew
 						id={id}
 						path="option.headerBackgroundSettings.fontColor"
@@ -258,13 +246,9 @@ export const HeaderStyling = observer(
 				</div>
 
 				<div className="flex flex-col justify-center gap-2">
-					{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-					{/* biome-ignore lint/a11y/noLabelWithoutControl: label */}
-					<label>
-						<p className="text-muted-foreground text-sm">
-							Header Background Color
-						</p>
-					</label>
+					<p className="text-muted-foreground text-sm">
+						Header Background Color
+					</p>
 					<ColorPickerSettingsNew
 						id={id}
 						path="option.headerBackgroundSettings.backgroundColor"

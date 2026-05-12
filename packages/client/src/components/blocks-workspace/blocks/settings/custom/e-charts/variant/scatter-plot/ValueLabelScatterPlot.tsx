@@ -213,8 +213,6 @@ export const ValueLabelScatterPlot = observer(
 							<span className="text-muted-foreground text-sm">
 								Select Font Size
 							</span>
-							{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
-							// biome-ignore
 							{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
 							<Input
 								id="Select Font Size"
