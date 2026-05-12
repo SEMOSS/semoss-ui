@@ -1,0 +1,7 @@
+/* Inline-ask: paint the captured selection range with the CSS Custom
+   Highlight API so it stays visible even when keyboard focus moves to the
+   popover input. Independent of the browser's native selection state. */
+::highlight(inline-ask) {
+	background-color: rgb(59 130 246 / 0.35);
+	color: inherit;
+}

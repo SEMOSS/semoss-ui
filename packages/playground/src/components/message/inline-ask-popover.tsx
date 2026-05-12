@@ -20,6 +20,7 @@ import {
 	formatInlineAskPair,
 	paintHighlight,
 } from "@/utility";
+import "./inline-ask.css";
 
 const HIGHLIGHT_NAME = "inline-ask";
 
