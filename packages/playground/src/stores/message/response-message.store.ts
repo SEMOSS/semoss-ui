@@ -556,11 +556,18 @@ paramValues=[${JSON.stringify({
 					false,
 				);
 
-				const rawOutput = response.pixelReturn[0].output;
+				const { output: rawOutput, operationType } =
+					response.pixelReturn[0];
 				output =
 					typeof rawOutput === "string"
 						? rawOutput
 						: JSON.stringify(rawOutput);
+				if (
+					Array.isArray(operationType) &&
+					operationType.includes("ERROR")
+				) {
+					toolError = true;
+				}
 			} catch (e) {
 				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
 				output = (e as Error).message;
