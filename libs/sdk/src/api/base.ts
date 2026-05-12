@@ -239,7 +239,18 @@ export const getPixelJobStreaming = async (jobId: string) => {
 					stream_type: "tool";
 					/** Data payload for the message */
 					data: {
-						/** Stop reason*/
+						/** Index of the tool call within this turn (used to associate deltas) */
+						index?: number;
+						/** Tool call id; present on the opening chunk for a given index */
+						id?: string;
+						/** Tool call type, typically "function" */
+						type?: string;
+						/** Function delta — name arrives once, arguments arrive as JSON string chunks */
+						function?: {
+							name?: string;
+							arguments?: string;
+						};
+						/** Stop reason; present on the final tool chunk */
 						finish_reason?: string;
 					};
 			  }
