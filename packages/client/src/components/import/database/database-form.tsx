@@ -1730,9 +1730,9 @@ export const DatabaseForm = ({
 	const hasBothOptions = hasTableOptions && hasViewOptions;
 	const hasSingleOptionType = hasTableOptions !== hasViewOptions;
 	const connectionDialogClassName = hasBothOptions
-		? "h-[92dvh] max-h-[980px] w-[96vw] max-w-[1500px] overflow-hidden p-0"
+		? "flex h-[92dvh] max-h-[980px] w-[96vw] max-w-[1500px] flex-col overflow-hidden p-0"
 		: hasSingleOptionType
-			? "h-[90dvh] max-h-[920px] w-[96vw] max-w-[980px] overflow-hidden p-0"
+			? "flex h-[90dvh] max-h-[920px] w-[96vw] max-w-[980px] flex-col overflow-hidden p-0"
 			: "max-h-[520px] w-[96vw] max-w-[640px] overflow-hidden p-0";
 
 	const handleApply = async (output) => {
