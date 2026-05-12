@@ -88,7 +88,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 			setChildTable("");
 			setError("");
 		}
-	}, [open, initialConnections, makeId]);
+	}, [open, initialConnections]);
 
 	useEffect(() => {
 		if (parentTable && !tableOptions.includes(parentTable)) {
@@ -97,11 +97,11 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 		if (childTable && !tableOptions.includes(childTable)) {
 			setChildTable("");
 		}
-	}, [parentTable, childTable, tableOptions]);
+	}, [nodes, parentTable, childTable, tableOptions]);
 
 	useEffect(() => {
 		setSave(true);
-	}, []);
+	}, [open]);
 
 	const sanitizeForForm = (c: Conn) => {
 		const sanitized: Conn = { ...c };
@@ -253,7 +253,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 	};
 
 	useEffect(() => {
-		setError("");
+		if (error) setError("");
 	}, [parentTable, childTable]);
 
 	return (

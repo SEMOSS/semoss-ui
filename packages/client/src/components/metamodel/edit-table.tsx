@@ -83,7 +83,7 @@ const EditTable: React.FC<EditTableProps> = ({
 		setAliasVal(node?.data?.name ?? "");
 		setDescriptionVal(node?.data?.description ?? "");
 
-		if (node?.data) {
+		if (node && node.data) {
 			node.data = {
 				...node.data,
 				properties: props,

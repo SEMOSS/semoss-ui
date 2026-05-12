@@ -46,14 +46,10 @@ export const ColumnMetadataModal: React.FC<ColumnMetadataModalProps> = ({
 							<Badge variant="outline">Table: {tableName}</Badge>
 						)}
 						{columnName && (
-							<Badge variant="outline">
-								Column: {columnName}
-							</Badge>
+							<Badge variant="outline">Column: {columnName}</Badge>
 						)}
 						{physicalType && (
-							<Badge variant="outline">
-								Physical Type: {physicalType}
-							</Badge>
+							<Badge variant="outline">Physical Type: {physicalType}</Badge>
 						)}
 					</div>
 

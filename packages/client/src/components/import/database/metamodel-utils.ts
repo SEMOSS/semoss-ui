@@ -265,10 +265,7 @@ export const rebuildNodesFromParsed = (parsed: {
 }): (MetamodelNode | FlowNode)[] => {
 	if (!parsed?.positions) return [];
 
-	const positions = parsed.positions as Record<
-		string,
-		{ left: number; top: number }
-	>;
+	const positions = parsed.positions as Record<string, { left: number; top: number }>;
 	let rawTypeIdx = 0;
 	return Object.keys(positions).map((nodeName) => {
 		const position = positions[nodeName];
