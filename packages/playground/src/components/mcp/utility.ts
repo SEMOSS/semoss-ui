@@ -60,5 +60,5 @@ export const mcpToPlatformUrl = (
 	if (type === "PROJECT") {
 		return `${PLATFORM_URL}/#/app/${id}`;
 	}
-	return `${PLATFORM_URL}/#/engine/${type.toLowerCase()}/${id}`;
+	return `${PLATFORM_URL}/#/engine/${type.toLowerCase()}/${id}/mcp-usage`;
 };

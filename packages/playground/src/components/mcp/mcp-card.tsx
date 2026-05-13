@@ -16,6 +16,7 @@ import {
 import { useRoot } from "@/hooks";
 import type { MCP } from "@/types";
 import { toSentenceCase } from "@/utility";
+import { MCPToolsPreview } from "./mcp-tools-preview";
 import { mcpToPlatformUrl } from "./utility";
 
 export interface MCPCardProps {
@@ -190,8 +191,13 @@ export const MCPCard = ({
 				</div>
 
 				{/* Description */}
-				<div className="text-muted-foreground text-xs">
-					{m.description || t("permission.noDescription")}
+				<div className="flex items-center justify-between gap-2">
+					<div className="text-muted-foreground text-xs">
+						{m.description || t("permission.noDescription")}
+					</div>
+					{effectivePermission !== "FULLY_PRIVATE" && (
+						<MCPToolsPreview engineId={m.id} />
+					)}
 				</div>
 				{m.tags?.length > 0 ? (
 					<div className="flex flex-wrap gap-1">
