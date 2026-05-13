@@ -564,6 +564,37 @@ paramValues=[${JSON.stringify({
 					typeof rawOutput === "string"
 						? rawOutput
 						: JSON.stringify(rawOutput);
+
+				// Auto-open File Explorer as soon as export tools return a download key.
+				let hasDownloadKey = false;
+				if (
+					typeof rawOutput === "object" &&
+					rawOutput !== null &&
+					"downloadKey" in rawOutput
+				) {
+					hasDownloadKey = Boolean(
+						(rawOutput as { downloadKey?: unknown }).downloadKey,
+					);
+				} else {
+					try {
+						const parsed = JSON.parse(output);
+						hasDownloadKey = Boolean(
+							(parsed as { downloadKey?: unknown })?.downloadKey,
+						);
+					} catch {
+						hasDownloadKey = false;
+					}
+				}
+
+				if (hasDownloadKey) {
+					this.room.addSidebarNode("FILE_EXPLORER", {
+						type: "tab",
+						name: "File Explorer",
+						component: "room-file-explorer",
+						config: {},
+						enableClose: true,
+					});
+				}
 			} catch (e) {
 				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
 				output = (e as Error).message;

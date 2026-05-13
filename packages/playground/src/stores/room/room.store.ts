@@ -835,6 +835,45 @@ export class RoomStore {
 		// select the node if there
 		const selectedNode = this._store.sidebar.model.getNodeById(nodeId);
 		if (selectedNode) {
+			const nextName =
+				typeof options.name === "string" ? options.name : undefined;
+			if (
+				nextName &&
+				selectedNode instanceof FlexLayout.TabNode &&
+				selectedNode.getName() !== nextName
+			) {
+				this._store.sidebar.model.doAction(
+					FlexLayout.Actions.renameTab(
+						selectedNode.getId(),
+						nextName,
+					),
+				);
+			}
+
+			const nextComponent =
+				typeof options.component === "string"
+					? options.component
+					: undefined;
+			if (nextComponent) {
+				this._store.sidebar.model.doAction(
+					FlexLayout.Actions.updateNodeAttributes(
+						selectedNode.getId(),
+						{
+							component: nextComponent,
+							config:
+								typeof options.config === "object" &&
+								options.config
+									? options.config
+									: {},
+							enableClose:
+								typeof options.enableClose === "boolean"
+									? options.enableClose
+									: true,
+						},
+					),
+				);
+			}
+
 			this._store.sidebar.model.doAction(
 				FlexLayout.Actions.selectTab(selectedNode.getId()),
 			);
