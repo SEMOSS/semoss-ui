@@ -1,6 +1,5 @@
 import {
 	AlertCircle,
-	ImageIcon,
 	SquareArrowOutUpRightIcon,
 	TriangleAlert,
 } from "lucide-react";
@@ -147,26 +146,8 @@ export const MCPCard = ({
 					</Tooltip>
 				</div>
 
-				{/* Image & Details */}
+				{/* Type & Permission */}
 				<div className="flex items-center gap-3">
-					{/* Image Placeholder */}
-					{effectivePermission === "FULLY_PRIVATE" ? (
-						<div className="flex size-16 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
-							<ImageIcon className="size-6 text-muted-foreground" />
-						</div>
-					) : (
-						<img
-							src={
-								m.type === "PROJECT"
-									? `${import.meta.env.MODULE}/api/project-${m.id}/projectImage/download`
-									: `${import.meta.env.MODULE}/api/e-${m.id}/image/download`
-							}
-							alt={m.name}
-							className="size-16 shrink-0 rounded-md object-cover object-center"
-						/>
-					)}
-
-					{/* Type & Permission */}
 					{effectivePermission && (
 						<div className="flex flex-1 flex-col gap-2">
 							{/* Type */}
