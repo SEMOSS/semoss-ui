@@ -248,9 +248,18 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Room Token Limits",
+		path: "room-token-limits",
+		description: "Configure per-room token limits for platform users.",
+		icon: mdiChatProcessingOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
 		title: "Add Jobs",
 		path: "jobs/add-new-job",
-		description: "Fill out all the details in order to add the model to the catalog.",
+		description:
+			"Fill out all the details in order to add the model to the catalog.",
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "add-new-job"],
 		admin: true,
@@ -258,9 +267,10 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Edit Jobs",
 		path: "jobs/edit-job/:id",
-		description: "Fill out all the details in order to edit the model in the catalog.",
+		description:
+			"Fill out all the details in order to edit the model in the catalog.",
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "edit-job/:id"],
 		admin: true,
-	}
+	},
 ];
