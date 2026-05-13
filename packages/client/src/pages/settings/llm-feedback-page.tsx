@@ -2,12 +2,13 @@ import {
 	CalendarIcon,
 	ChevronLeft,
 	ChevronRight,
+	Download,
 	Search,
 	X,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -33,12 +34,15 @@ import {
 interface LLMFeedback {
 	AGENT_ID: string;
 	PROJECT_ID: string;
+	WORKSPACE_ID: string;
 	USER_ID: string;
+	USER_NAME: string;
 	ENGINE_ID: string;
 	DATE_CREATED: string;
 	MESSAGE_ID: string;
 	MESSAGE_DATA: string;
 	MESSAGE_TEXT: string;
+	PROMPT: string;
 	FEEDBACK_TEXT: string;
 	FEEDBACK_DATE: string;
 	RATING: boolean;
@@ -79,14 +83,17 @@ export const LLMFeedbackPage = () => {
 	const [isSearching, setIsSearching] = useState(false);
 	const [openMessageModal, setOpenMessageModal] = useState(false);
 	const [selectedMessageData, setSelectedMessageData] = useState<string>("");
+	const [isExporting, setIsExporting] = useState(false);
 
 	const columnDefinitions = [
 		"AGENT_ID",
 		"PROJECT_ID",
-		"USER_ID",
+		"WORKSPACE_ID",
+		"USER_NAME",
 		"DATE_CREATED",
 		"RATING",
 		"MESSAGE_ID",
+		"PROMPT",
 		"MESSAGE_DATA",
 		"FEEDBACK_TEXT",
 		"FEEDBACK_DATE",
@@ -219,13 +226,10 @@ export const LLMFeedbackPage = () => {
 
 	useEffect(() => {
 		if (getFeedback.status === "SUCCESS") {
-			const dataGridRows = getFeedback.data.map((item, index) => {
-				const { USER_NAME: _USER_NAME, ...rest } = item;
-				return {
-					id: index + 1,
-					...rest,
-				};
-			});
+			const dataGridRows = getFeedback.data.map((item, index) => ({
+				id: index + 1,
+				...item,
+			}));
 
 			setFeedback(dataGridRows);
 
@@ -250,6 +254,76 @@ export const LLMFeedbackPage = () => {
 		}
 	}, [getCount.status, getCount.data, getCount.error]);
 
+	const escapeCsvValue = (value: unknown): string => {
+		if (value === null || value === undefined) return "";
+		const str = String(value);
+		return `"${str.replace(/"/g, '""')}"`;
+	};
+
+	const handleExportToCsv = async () => {
+		if (!startDate || !endDate || count === 0) return;
+
+		setIsExporting(true);
+		try {
+			const exportPixel = `AdminGetLlmFeedback(
+                limit=[${count}],
+                offset=[0]${engineId ? `, engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}, startDate=["${startDate.toISOString().split("T")[0]}"], endDate=["${endDate.toISOString().split("T")[0]}"]);`;
+
+			const response = await runPixel(exportPixel);
+			const firstResult = response?.pixelReturn?.[0];
+			const rows = (firstResult?.output as LLMFeedback[]) || [];
+
+			if (rows.length === 0) {
+				toast.error("No data to export");
+				return;
+			}
+
+			const headers = columnDefinitions.map((field) =>
+				field
+					.replace(/_/g, " ")
+					.toLowerCase()
+					.replace(/\b\w/g, (char) => char.toUpperCase()),
+			);
+
+			const csvRows = rows.map((row) =>
+				columnDefinitions
+					.map((field) => {
+						const value = row[field as keyof LLMFeedback];
+						if (field === "RATING") {
+							return escapeCsvValue(
+								value === true ? "Positive" : "Negative",
+							);
+						}
+						return escapeCsvValue(value);
+					})
+					.join(","),
+			);
+
+			const csvContent = [
+				headers.map(escapeCsvValue).join(","),
+				...csvRows,
+			].join("\n");
+
+			const blob = new Blob([csvContent], {
+				type: "text/csv;charset=utf-8;",
+			});
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = `llm-feedback-${new Date().toISOString().split("T")[0]}.csv`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(url);
+
+			toast.success("Exported to CSV");
+		} catch (error) {
+			toast.error(`Failed to export: ${error}`);
+		} finally {
+			setIsExporting(false);
+		}
+	};
+
 	const uniqueEngineIds = useMemo(
 		() =>
 			Array.from(new Set(feedback.map((item) => item.AGENT_ID)))
@@ -269,7 +343,8 @@ export const LLMFeedbackPage = () => {
 	const isLoading =
 		getFeedback.status === "LOADING" ||
 		getCount.status === "LOADING" ||
-		isSearching;
+		isSearching ||
+		isExporting;
 
 	return (
 		<>
@@ -278,7 +353,11 @@ export const LLMFeedbackPage = () => {
 					<div className="flex flex-col items-center gap-1">
 						<Spinner />
 						<p className="text-sm">
-							{isSearching ? "Searching" : "Loading"}
+							{isExporting
+								? "Exporting"
+								: isSearching
+									? "Searching"
+									: "Loading"}
 						</p>
 						<p className="text-muted-foreground text-xs">
 							LLM Feedback
@@ -386,7 +465,16 @@ export const LLMFeedbackPage = () => {
 							/>
 						</PopoverContent>
 					</Popover>
-					<div className="ml-auto">
+					<div className="ml-auto flex gap-2">
+						<Button
+							variant="outline"
+							className="bg-transparent text-muted-foreground"
+							disabled={isExporting || count === 0 || isLoading}
+							onClick={handleExportToCsv}
+						>
+							<Download className="mr-2 size-4" />
+							Export CSV
+						</Button>
 						<Button
 							variant="outline"
 							className="bg-transparent text-muted-foreground"
