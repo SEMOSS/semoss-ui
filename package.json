@@ -36,7 +36,15 @@
   },
   "pnpm": {
     "overrides": {
-      "flatted": "3.4.2"
+      "flatted": "3.4.2",
+      "rollup": "4.59.0",
+      "lodash@<4.18.1": "4.18.1",
+      "lodash-es@<4.18.1": "4.18.1",
+      "ajv": "8.18.0",
+      "diff@4.0.2": "4.0.4",
+      "diff@5.2.0": "5.2.2",
+      "brace-expansion@1.1.12": "1.1.13",
+      "brace-expansion@2.0.2": "2.0.3"
     }
   }
 }
