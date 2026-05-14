@@ -17,6 +17,9 @@
 		"poorResponse": "Poor response",
 		"copyResponse": "Copy Response",
 		"copyCode": "Copy Code",
+		"feedbackPlaceholder": "Add a comment (optional)",
+		"feedbackCancel": "Cancel",
+		"feedbackSubmit": "Submit",
 		"fastForwardToEnd": "Fast Forward to End",
 		"completeToolsAsk_one": "Please complete the tool to proceed.",
 		"completeToolsAsk_other": "Please complete the tools to proceed.",
@@ -35,7 +38,7 @@
 		"confirmPlan": "Confirm Plan"
 	},
 	"notifications": {
-		"feedbackSuccess": "Thank you for the feedback!",
+		"feedbackSuccess": "Successfully submitted feedback",
 		"rewriteSuccess": "Successfully rewrote message",
 		"copySuccess": "Successfully copied to clipboard",
 		"noCopyContent": "No content to copy",
