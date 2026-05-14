@@ -48,24 +48,48 @@ export class ToolStore {
 	parameters: Record<string, unknown> = {};
 
 	/**
+	 * Whether the tool call is still streaming in (name/arguments arriving via SSE).
+	 * While true, the tool does not have its final `_meta`, `title`, or parsed
+	 * `arguments` yet and should not be interactive.
+	 */
+	argumentsStreaming: boolean = false;
+
+	/**
+	 * Raw partial JSON string for `arguments` accumulated from streaming chunks.
+	 * Cleared once the final response sync replaces it with the parsed object.
+	 */
+	argumentsBuffer: string = "";
+
+	/**
+	 * Wire name received from the streaming chunk, used as a placeholder for
+	 * `name`/`title` until the final synced part provides the friendly title.
+	 */
+	streamingName: string = "";
+
+	/**
 	 * Json for the tool
 	 */
 	get json() {
-		return (
-			this.toolCall.part?.toolCall ||
-			({
-				id: "",
-				title: "",
-				_meta: {
-					SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-					SMSS_PROJECT_NAME: "",
-					SMSS_PROJECT_ID: "",
-				},
-				name: "",
-				original_name: "",
-				description: "",
-			} as PixelMessageToolCallPart["toolCall"])
-		);
+		const part = this.toolCall.part?.toolCall;
+		// If the real part has arrived (has a title), use it. Otherwise (placeholder
+		// pushed during streaming, or no part at all) synthesize from streamingName
+		// so the pill renders the wire name until the final sync swaps it.
+		if (part && part.title) {
+			return part;
+		}
+		const name = this.streamingName;
+		return {
+			id: this.id,
+			title: name,
+			_meta: {
+				SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
+				SMSS_PROJECT_NAME: "",
+				SMSS_PROJECT_ID: "",
+			},
+			name,
+			original_name: name,
+			description: "",
+		} as PixelMessageToolCallPart["toolCall"];
 	}
 
 	/**
@@ -138,6 +162,11 @@ export class ToolStore {
 				message: message,
 				part,
 			};
+
+			// the final part has arrived — clear streaming bookkeeping
+			this.argumentsStreaming = false;
+			this.argumentsBuffer = "";
+			this.streamingName = "";
 		} else if (
 			part.type === "TOOL_RESULT" &&
 			message instanceof InputMessageStore
@@ -161,6 +190,37 @@ export class ToolStore {
 				part,
 			};
 		}
+	};
+
+	/**
+	 * Mark the tool as actively streaming and seed its wire identity.
+	 * Called when the first streaming chunk for this tool arrives (carries `id`).
+	 */
+	beginStreaming = () => {
+		this.argumentsStreaming = true;
+		this.argumentsBuffer = "";
+	};
+
+	/**
+	 * Record the wire name from a streaming chunk.
+	 */
+	setStreamingName = (name: string) => {
+		this.streamingName = name;
+	};
+
+	/**
+	 * Append an `arguments` delta from a streaming chunk.
+	 */
+	appendStreamingArguments = (delta: string) => {
+		this.argumentsBuffer += delta;
+	};
+
+	/**
+	 * Streaming finished; we still don't have the parsed meta (that arrives in
+	 * the final sync), but no further deltas are coming.
+	 */
+	endStreaming = () => {
+		this.argumentsStreaming = false;
 	};
 
 	/**
