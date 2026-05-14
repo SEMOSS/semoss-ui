@@ -116,6 +116,7 @@ export class RootStore {
 				showKnowledgeMenu: true,
 				showToolboxMenu: true,
 				showPlatformLinks: true,
+				enableFeedbackText: true,
 			},
 		},
 	};

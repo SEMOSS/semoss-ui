@@ -23,7 +23,7 @@ import {
 	ThumbsUpIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -32,6 +32,7 @@ import {
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
+	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -114,6 +115,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		const [downloadingFormat, setDownloadingFormat] = useState<
 			string | null
 		>(null);
+		const [isFeedbackTextOpen, setIsFeedbackTextOpen] = useState(false);
+		const [feedbackText, setFeedbackText] = useState(
+			message.feedback?.feedbackText ?? "",
+		);
+		const [pendingRating, setPendingRating] = useState<boolean | null>(
+			null,
+		);
+		const feedbackTextRef = useRef<HTMLTextAreaElement>(null);
 
 		// get the parent input message
 		let inputMessage: InputMessageStore | null = null;
@@ -121,17 +130,51 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			inputMessage = message.parent;
 		}
 
+		const feedbackTextEnabled =
+			!!root.theme.featureFlags?.enableFeedbackText;
+
 		/**
 		 * Record the feedback
 		 * @param rating - positive or negative
 		 */
 		const recordFeedback = async (rating: boolean) => {
 			const isDeleting = message.feedback?.rating === rating;
+
+			if (feedbackTextEnabled && !isDeleting) {
+				// Open text input for the user to optionally add a comment
+				setPendingRating(rating);
+				setFeedbackText("");
+				setIsFeedbackTextOpen(true);
+				return;
+			}
+
 			try {
 				await message.recordFeedback(isDeleting ? null : rating);
-				if (!isDeleting) {
+				if (isDeleting) {
+					setFeedbackText("");
+					setIsFeedbackTextOpen(false);
+				} else {
 					toast.success(t("notifications.feedbackSuccess"));
 				}
+			} catch (e: unknown) {
+				const error = e as { message: string };
+				toast.error(error.message);
+			}
+		};
+
+		/**
+		 * Submit the feedback with optional text comment
+		 */
+		const submitFeedbackText = async () => {
+			if (pendingRating === null) return;
+			try {
+				await message.recordFeedback(
+					pendingRating,
+					feedbackText.trim(),
+				);
+				toast.success(t("notifications.feedbackSuccess"));
+				setIsFeedbackTextOpen(false);
+				setPendingRating(null);
 			} catch (e: unknown) {
 				const error = e as { message: string };
 				toast.error(error.message);
@@ -571,6 +614,67 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								{t("response.poorResponse")}
 							</TooltipContent>
 						</Tooltip>
+
+						{feedbackTextEnabled && isFeedbackTextOpen && (
+							<Dialog
+								open={isFeedbackTextOpen}
+								onOpenChange={(open) => {
+									if (!open) {
+										setIsFeedbackTextOpen(false);
+										setPendingRating(null);
+										setFeedbackText("");
+									}
+								}}
+							>
+								<DialogContent className="sm:max-w-md">
+									<DialogHeader>
+										<DialogTitle className="flex items-center gap-2">
+											{pendingRating === true ? (
+												<ThumbsUpIcon
+													className="size-5"
+													fill="currentColor"
+												/>
+											) : (
+												<ThumbsDownIcon
+													className="size-5"
+													fill="currentColor"
+												/>
+											)}
+											{pendingRating === true
+												? t("response.goodResponse")
+												: t("response.poorResponse")}
+										</DialogTitle>
+									</DialogHeader>
+									<Textarea
+										ref={feedbackTextRef}
+										placeholder={t(
+											"response.feedbackPlaceholder",
+										)}
+										value={feedbackText}
+										onChange={(e) =>
+											setFeedbackText(e.target.value)
+										}
+										rows={3}
+										className="text-sm"
+									/>
+									<div className="flex justify-end gap-2">
+										<Button
+											variant="ghost"
+											onClick={() => {
+												setIsFeedbackTextOpen(false);
+												setPendingRating(null);
+												setFeedbackText("");
+											}}
+										>
+											{t("response.feedbackCancel")}
+										</Button>
+										<Button onClick={submitFeedbackText}>
+											{t("response.feedbackSubmit")}
+										</Button>
+									</div>
+								</DialogContent>
+							</Dialog>
+						)}
 
 						{hasOnlyMedia && (
 							<Tooltip>
