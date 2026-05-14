@@ -416,7 +416,7 @@ export const NewRoomPage = observer(() => {
 			{root.theme.banner ? (
 				<div
 					ref={bannerRef}
-					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80"
+					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80 [&_a]:underline"
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
 				/>
