@@ -1,4 +1,4 @@
-import { CopyIcon } from "lucide-react";
+import { CopyIcon, DownloadIcon } from "lucide-react";
 import { type ComponentProps, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
@@ -15,8 +15,16 @@ import {
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
-import { copyToClipboard, getErrorMessage } from "./clipboard";
-import { CODE_LANG_LABELS, createCodeFilePath } from "./constants";
+import {
+	copyToClipboard,
+	downloadWithPrompt,
+	getErrorMessage,
+} from "./clipboard";
+import {
+	CODE_LANG_EXT,
+	CODE_LANG_LABELS,
+	createCodeFilePath,
+} from "./constants";
 
 interface CodePreviewBlockProps {
 	code: string;
@@ -91,10 +99,40 @@ export const CodePreviewBlock = ({
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
+								className="-my-1 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!code}
+								aria-label={`Download ${langLabel} code`}
+								onClick={() => {
+									const ext =
+										CODE_LANG_EXT[langStr.toLowerCase()] ||
+										"txt";
+									downloadWithPrompt(
+										code,
+										ext,
+										"code",
+										(filename) =>
+											toast.success(
+												`Downloaded as ${filename}`,
+											),
+									);
+								}}
+							>
+								<DownloadIcon className="size-3.5" />
+								Download
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">Download</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
 								className="-my-1 -mr-2 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
 								variant="ghost"
 								size="sm"
 								disabled={!code}
+								aria-label={`Copy ${langLabel} code`}
 								onClick={() =>
 									void copyToClipboard(
 										code,

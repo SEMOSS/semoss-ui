@@ -67,7 +67,7 @@ export const KNOWN_SHIKI_LANGS = new Set([
 	"plaintext",
 ]);
 
-const CODE_LANG_EXT: Record<string, string> = {
+export const CODE_LANG_EXT: Record<string, string> = {
 	javascript: "js",
 	typescript: "ts",
 	python: "py",

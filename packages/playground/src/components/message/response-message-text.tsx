@@ -1,4 +1,4 @@
-import { SkipForwardIcon } from "lucide-react";
+import { CopyIcon, SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
@@ -8,10 +8,12 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
+import { getCommentSyntax } from "./response-message-text/clipboard";
 import { FENCED_HTML_RE } from "./response-message-text/constants";
 import { createMarkdownComponents } from "./response-message-text/create-markdown-components";
 import { HtmlPreviewBlock } from "./response-message-text/html-preview-block";
@@ -27,9 +29,70 @@ interface ResponseMessageTextProps {
 	isLast: boolean;
 }
 
+interface CodeBlock {
+	language: string;
+	code: string;
+}
+
+/**
+ * Extract all fenced code blocks from markdown text
+ * Excludes HTML and mermaid blocks
+ */
+const extractCodeBlocks = (text: string): CodeBlock[] => {
+	const blocks: CodeBlock[] = [];
+
+	// Regex to match fenced code blocks: ```language\ncode\n```
+	const fenceRegex = /```([a-zA-Z0-9_-]+)?\s*\r?\n([\s\S]*?)(?:\r?\n```|$)/g;
+
+	let match: RegExpExecArray | null = fenceRegex.exec(text);
+	while (match !== null) {
+		const language = match[1]?.toLowerCase() || "txt";
+		const code = match[2].trim();
+
+		// Exclude HTML preview and mermaid diagrams
+		if (language !== "html" && language !== "mermaid" && code) {
+			blocks.push({ language, code });
+		}
+		match = fenceRegex.exec(text);
+	}
+
+	return blocks;
+};
+
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
 		const { t } = useTranslation("chat");
+
+		// ── Code block extraction for "Copy All Code" feature ───────────────────
+		const codeBlocks = useMemo(() => {
+			return extractCodeBlocks(part.text);
+		}, [part.text]);
+
+		const hasMultipleCodeBlocks = codeBlocks.length > 1;
+
+		const handleCopyAllCode = async () => {
+			if (codeBlocks.length === 0) return;
+
+			// Concatenate all code blocks with language separators
+			const concatenated = codeBlocks
+				.map(({ language, code }) => {
+					const comment = getCommentSyntax(language);
+					const closingComment =
+						language === "html" || language === "xml" ? " -->" : "";
+
+					return `${comment} --- ${language.toUpperCase()} ---${closingComment}\n${code}`;
+				})
+				.join("\n\n");
+
+			try {
+				await navigator.clipboard.writeText(concatenated);
+				toast.success(t("notifications.copySuccess"));
+			} catch (error) {
+				const message =
+					error instanceof Error ? error.message : "Unable to copy";
+				toast.error(message);
+			}
+		};
 
 		// ── Standalone-HTML detection ────────────────────────────────────────────
 		// Sticky: once the response opens with <!DOCTYPE (no code fence), stay in
@@ -186,6 +249,20 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 
 		return (
 			<>
+				{hasMultipleCodeBlocks && !message.isThinking && (
+					<div className="mb-3 flex justify-end">
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={handleCopyAllCode}
+							aria-label="Copy all code blocks"
+							className="gap-2"
+						>
+							<CopyIcon className="size-4" />
+							Copy All Code ({codeBlocks.length})
+						</Button>
+					</div>
+				)}
 				{standaloneHtml ? (
 					<>
 						<HtmlPreviewBlock

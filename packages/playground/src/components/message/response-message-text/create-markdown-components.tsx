@@ -1,4 +1,6 @@
+import { CopyIcon } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
 	type Code,
@@ -9,8 +11,10 @@ import {
 	type Markdown,
 	P,
 	ScrollArea,
+	toast,
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
+import { copyToClipboard } from "./clipboard";
 import { CodePreviewBlock } from "./code-preview-block";
 import { KNOWN_SHIKI_LANGS } from "./constants";
 import { HtmlPreviewBlock } from "./html-preview-block";
@@ -204,15 +208,48 @@ export const createMarkdownComponents = (
 		// During streaming children can briefly be undefined before content arrives.
 		// String() coerces undefined/null to "" so Shiki never receives a non-string.
 		const code = children != null ? String(children) : "";
-
+		console.log("Inline code value:", code);
 		// Inline code — no language class means this is a `backtick` snippet inside
 		// a paragraph. Return a plain <code> so we don't nest a <div> inside a <p>.
 		if (!match?.[1]) {
-			return (
-				<code className={className} {...props}>
-					{children}
-				</code>
-			);
+			const InlineCode = () => {
+				const [isHovered, setIsHovered] = useState(false);
+
+				return (
+					// biome-ignore lint/a11y/noStaticElementInteractions: Hover detection for showing copy button (actual button has proper a11y)
+					<span
+						className="group/inline-code relative inline-flex items-center"
+						onMouseEnter={() => setIsHovered(true)}
+						onMouseLeave={() => setIsHovered(false)}
+					>
+						<code className={className} {...props}>
+							{children}
+						</code>
+						{isHovered && code && (
+							<button
+								type="button"
+								className="ml-1 inline-flex size-4 items-center justify-center rounded bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+								onClick={() => {
+									console.log(code);
+									void copyToClipboard(
+										code,
+										() =>
+											toast.success(
+												t("notifications.copySuccess"),
+											),
+										(msg) => toast.error(msg),
+									);
+								}}
+								aria-label="Copy inline code"
+							>
+								<CopyIcon className="size-3" />
+							</button>
+						)}
+					</span>
+				);
+			};
+
+			return <InlineCode />;
 		}
 
 		// Fenced code block — render the full UI with copy button and syntax highlighting.

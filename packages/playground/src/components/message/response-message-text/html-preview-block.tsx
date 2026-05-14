@@ -1,4 +1,4 @@
-import { CopyIcon, Loader2 } from "lucide-react";
+import { CopyIcon, DownloadIcon, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Button,
@@ -14,7 +14,11 @@ import {
 } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { BlockHeader } from "./block-header";
-import { copyToClipboard, getErrorMessage } from "./clipboard";
+import {
+	copyToClipboard,
+	downloadWithPrompt,
+	getErrorMessage,
+} from "./clipboard";
 import { createHtmlResponseFilePath } from "./constants";
 import { SandpackHtmlPreview } from "./sandpack-html-preview";
 
@@ -245,6 +249,32 @@ export const HtmlPreviewBlock = ({
 					>
 						{isSavingToRoom ? "Saving..." : "Save In Room"}
 					</Button>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								className="-my-1 h-6 gap-1 px-2 text-muted-foreground text-xs hover:text-foreground"
+								variant="ghost"
+								size="sm"
+								disabled={!html || isLoading}
+								aria-label="Download HTML"
+								onClick={() => {
+									downloadWithPrompt(
+										html,
+										"html",
+										"preview",
+										(filename) =>
+											toast.success(
+												`Downloaded as ${filename}`,
+											),
+									);
+								}}
+							>
+								<DownloadIcon className="size-3.5" />
+								Download
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent side="bottom">Download</TooltipContent>
+					</Tooltip>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
