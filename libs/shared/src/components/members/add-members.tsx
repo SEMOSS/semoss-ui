@@ -91,9 +91,10 @@ export const AddMembersOverlay = ({
 	const fetchVersionRef = useRef(0);
 	const isFetchingRef = useRef(false);
 	const [isSearching, setIsSearching] = useState<boolean>(false);
-	const [restriction, setRestriction] = useState<string>("null");
 	const [maxTokens, setMaxTokens] = useState<string>("");
-	const [maxTime, setMaxTime] = useState<string>("");
+	const [maxInputTokens, setMaxInputTokens] = useState<string>("");
+	const [maxOutputTokens, setMaxOutputTokens] = useState<string>("");
+	const [maxResponseTime, setMaxResponseTime] = useState<string>("");
 	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
 	const [restrictionsOpen, setRestrictionsOpen] = useState<boolean>(true);
@@ -171,19 +172,25 @@ export const AddMembersOverlay = ({
 				type: m.type,
 				username: m.username,
 			};
-			if (type !== "MODEL") return base;
+			if (type !== "MODEL" && type !== "PROJECT" && type !== "WORKSPACE")
+				return base;
+			const hasAnyLimit = maxTokens || maxInputTokens || maxOutputTokens;
+			const hasComputeTime = !!maxResponseTime;
+			if (!hasAnyLimit && !hasComputeTime) return base;
 			return {
 				...base,
-				...(restriction !== "null" && {
-					usageRestriction: restriction,
+				usageRestriction: hasAnyLimit ? "token" : "compute",
+				usageFrequency: frequency,
+				...(maxTokens && { maxTokens: Number(maxTokens) }),
+				...(maxInputTokens && {
+					maxInputTokens: Number(maxInputTokens),
 				}),
-				...(restriction === "token" && {
-					maxTokens: Number(maxTokens),
+				...(maxOutputTokens && {
+					maxOutputTokens: Number(maxOutputTokens),
 				}),
-				...(restriction === "compute" && {
-					maxResponseTime: Number(maxTime),
+				...(maxResponseTime && {
+					maxResponseTime: Number(maxResponseTime),
 				}),
-				...(restriction !== "null" && { usageFrequency: frequency }),
 			};
 		});
 
@@ -211,9 +218,10 @@ export const AddMembersOverlay = ({
 	function resetState() {
 		setSelectedUsers([]);
 		setSearchKey("");
-		setRestriction("null");
 		setMaxTokens("");
-		setMaxTime("");
+		setMaxInputTokens("");
+		setMaxOutputTokens("");
+		setMaxResponseTime("");
 		setFrequency("DAY");
 		setOffset(0);
 		setHasMore(true);
@@ -275,7 +283,7 @@ export const AddMembersOverlay = ({
 				onClose();
 			}}
 		>
-			<DialogContent className="flex max-h-[90vh] w-full max-w-2xl flex-col gap-4 overflow-hidden">
+			<DialogContent className="flex w-full max-w-2xl flex-col gap-4">
 				<DialogHeader>
 					<DialogTitle>Add Members</DialogTitle>
 					<DialogDescription>
@@ -286,7 +294,7 @@ export const AddMembersOverlay = ({
 				{/* Search input */}
 				<input
 					ref={inputRef}
-					className="h-10 w-full shrink-0 rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
+					className="h-10 w-full rounded border bg-background px-3 text-sm outline-none ring-primary placeholder:text-muted-foreground focus:ring-2"
 					placeholder="Search by name or email..."
 					value={searchKey}
 					autoComplete="off"
@@ -297,322 +305,311 @@ export const AddMembersOverlay = ({
 					onKeyDown={handleSearchKeyDown}
 				/>
 
-				{/* Scrollable middle section */}
-				<div className="flex flex-1 flex-col gap-4 overflow-y-auto">
-					{/* Search results */}
-					<div
-						className="max-h-56 min-h-32 w-full shrink-0 overflow-y-auto rounded-md border bg-background"
-						onScroll={handleResultsScroll}
-					>
-						{searchedResults.length > 0 ? (
-							searchedResults.map((item) => {
-								const isAdded = selectedUsers.some(
-									(u) => u.email === item.email,
-								);
-								return (
-									<button
-										key={`${item.type}-${item.id}`}
-										type="button"
-										className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
-										onClick={() => toggleUserSelected(item)}
-									>
-										<span className="flex items-center gap-2">
-											<Avatar className="h-7 w-7 items-center justify-center bg-muted text-muted-foreground text-xs">
-												{item.name
-													.charAt(0)
-													.toUpperCase()}
-											</Avatar>
-											<span className="flex flex-col">
-												<span className="font-medium">
-													{item.name}
-												</span>
-												<span className="text-muted-foreground text-xs">
-													id: {item.id}
-												</span>
-												<span className="text-muted-foreground text-xs">
-													email: {item.email}
-												</span>
-											</span>
-										</span>
-										{isAdded && (
-											<span className="font-medium text-primary text-xs">
-												Added ✓
-											</span>
-										)}
-									</button>
-								);
-							})
-						) : (
-							<div className="px-3 py-4 text-center text-muted-foreground text-sm">
-								{isSearching
-									? "Searching for users..."
-									: "No users found"}
-							</div>
-						)}
-					</div>
-
-					{/* Selected users — always shown, scrollable cards */}
-					<div className="flex flex-col gap-2">
-						<span className="font-medium text-muted-foreground text-sm">
-							{selectedUsers.length} user
-							{selectedUsers.length !== 1 ? "s" : ""} selected
-						</span>
-						<div className="flex flex-col gap-1.5">
-							{selectedUsers.map((u, i) => (
-								<div
-									key={`${u.type}-${u.id}`}
-									className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2"
+				{/* Search results */}
+				<div
+					className="max-h-56 w-full overflow-y-auto rounded-md border bg-background"
+					onScroll={handleResultsScroll}
+				>
+					{searchedResults.length > 0 ? (
+						searchedResults.map((item) => {
+							const isAdded = selectedUsers.some(
+								(u) => u.email === item.email,
+							);
+							return (
+								<button
+									key={`${item.type}-${item.id}`}
+									type="button"
+									className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
+									onClick={() => toggleUserSelected(item)}
 								>
 									<span className="flex items-center gap-2">
-										<Avatar className="h-8 w-8 items-center justify-center bg-muted text-muted-foreground text-sm">
-											{u.name.charAt(0).toUpperCase()}
+										<Avatar className="h-7 w-7 items-center justify-center bg-muted text-muted-foreground text-xs">
+											{item.name.charAt(0).toUpperCase()}
 										</Avatar>
 										<span className="flex flex-col">
-											<span className="font-medium text-sm">
-												{u.name}
+											<span className="font-medium">
+												{item.name}
 											</span>
 											<span className="text-muted-foreground text-xs">
-												id: {u.id}
+												id: {item.id}
 											</span>
 											<span className="text-muted-foreground text-xs">
-												email: {u.email}
+												email: {item.email}
 											</span>
 										</span>
 									</span>
-									<div className="flex flex-col items-end gap-1.5">
-										<button
-											type="button"
-											className="text-muted-foreground hover:text-destructive"
-											onClick={() =>
-												toggleUserSelected(u)
-											}
-										>
-											<X className="h-4 w-4" />
-										</button>
-										<DropdownMenu>
-											<DropdownMenuTrigger asChild>
-												<Button
-													variant="outline"
-													className="shrink-0"
-												>
-													{u.permission}
-													<ChevronDown className="ml-1 h-4 w-4" />
-												</Button>
-											</DropdownMenuTrigger>
-											<DropdownMenuContent>
-												<DropdownMenuCheckboxItem
-													checked={
-														u.permission ===
-														"Viewer"
-													}
-													onCheckedChange={() =>
-														setSelectedUsers(
-															(prev) =>
-																prev.map(
-																	(s, idx) =>
-																		idx ===
-																		i
-																			? {
-																					...s,
-																					permission:
-																						"Viewer",
-																				}
-																			: s,
-																),
-														)
-													}
-												>
-													Viewer
-												</DropdownMenuCheckboxItem>
-												<DropdownMenuCheckboxItem
-													checked={
-														u.permission ===
-														"Editor"
-													}
-													onCheckedChange={() =>
-														setSelectedUsers(
-															(prev) =>
-																prev.map(
-																	(s, idx) =>
-																		idx ===
-																		i
-																			? {
-																					...s,
-																					permission:
-																						"Editor",
-																				}
-																			: s,
-																),
-														)
-													}
-												>
-													Editor
-												</DropdownMenuCheckboxItem>
-												{isOwner && (
-													<DropdownMenuCheckboxItem
-														checked={
-															u.permission ===
-															"Owner"
-														}
-														onCheckedChange={() =>
-															setSelectedUsers(
-																(prev) =>
-																	prev.map(
-																		(
-																			s,
-																			idx,
-																		) =>
-																			idx ===
-																			i
-																				? {
-																						...s,
-																						permission:
-																							"Owner",
-																					}
-																				: s,
-																	),
-															)
-														}
-													>
-														Owner
-													</DropdownMenuCheckboxItem>
-												)}
-											</DropdownMenuContent>
-										</DropdownMenu>
-									</div>
-								</div>
-							))}
+									{isAdded && (
+										<span className="font-medium text-primary text-xs">
+											Added ✓
+										</span>
+									)}
+								</button>
+							);
+						})
+					) : (
+						<div className="px-3 py-4 text-center text-muted-foreground text-sm">
+							{isSearching
+								? "Searching for users..."
+								: "No users found"}
 						</div>
-					</div>
+					)}
+				</div>
 
-					{/* MODEL restriction fields */}
-					{type === "MODEL" && (
-						<div className="flex flex-col gap-3 rounded border border-border p-3">
-							<button
-								type="button"
-								className="flex items-center gap-1.5 text-left font-medium text-sm"
-								onClick={() =>
-									setRestrictionsOpen((prev) => !prev)
-								}
+				{/* Selected users */}
+				<div className="flex flex-col gap-2">
+					<span className="font-medium text-muted-foreground text-sm">
+						{selectedUsers.length} user
+						{selectedUsers.length !== 1 ? "s" : ""} selected
+					</span>
+					<div className="flex max-h-44 flex-col gap-1.5 overflow-y-auto">
+						{selectedUsers.map((u, i) => (
+							<div
+								key={`${u.type}-${u.id}`}
+								className="flex items-center justify-between rounded-md border bg-muted/40 px-3 py-2"
 							>
-								{restrictionsOpen ? (
-									<ChevronDown className="h-4 w-4 shrink-0" />
-								) : (
-									<ChevronRight className="h-4 w-4 shrink-0" />
-								)}
-								Model Limit Restrictions (for all selected
-								users)
-							</button>
-							{restrictionsOpen && (
-								<div className="flex flex-col gap-3">
+								<span className="flex items-center gap-2">
+									<Avatar className="h-8 w-8 items-center justify-center bg-muted text-muted-foreground text-sm">
+										{u.name.charAt(0).toUpperCase()}
+									</Avatar>
+									<span className="flex flex-col">
+										<span className="font-medium text-sm">
+											{u.name}
+										</span>
+										<span className="text-muted-foreground text-xs">
+											id: {u.id}
+										</span>
+										<span className="text-muted-foreground text-xs">
+											email: {u.email}
+										</span>
+									</span>
+								</span>
+								<div className="flex flex-col items-end gap-1.5">
+									<button
+										type="button"
+										className="text-muted-foreground hover:text-destructive"
+										onClick={() => toggleUserSelected(u)}
+									>
+										<X className="h-4 w-4" />
+									</button>
+									<DropdownMenu>
+										<DropdownMenuTrigger asChild>
+											<Button
+												variant="outline"
+												className="shrink-0"
+											>
+												{u.permission}
+												<ChevronDown className="ml-1 h-4 w-4" />
+											</Button>
+										</DropdownMenuTrigger>
+										<DropdownMenuContent>
+											<DropdownMenuCheckboxItem
+												checked={
+													u.permission === "Viewer"
+												}
+												onCheckedChange={() =>
+													setSelectedUsers((prev) =>
+														prev.map((s, idx) =>
+															idx === i
+																? {
+																		...s,
+																		permission:
+																			"Viewer",
+																	}
+																: s,
+														),
+													)
+												}
+											>
+												Viewer
+											</DropdownMenuCheckboxItem>
+											<DropdownMenuCheckboxItem
+												checked={
+													u.permission === "Editor"
+												}
+												onCheckedChange={() =>
+													setSelectedUsers((prev) =>
+														prev.map((s, idx) =>
+															idx === i
+																? {
+																		...s,
+																		permission:
+																			"Editor",
+																	}
+																: s,
+														),
+													)
+												}
+											>
+												Editor
+											</DropdownMenuCheckboxItem>
+											{isOwner && (
+												<DropdownMenuCheckboxItem
+													checked={
+														u.permission === "Owner"
+													}
+													onCheckedChange={() =>
+														setSelectedUsers(
+															(prev) =>
+																prev.map(
+																	(s, idx) =>
+																		idx ===
+																		i
+																			? {
+																					...s,
+																					permission:
+																						"Owner",
+																				}
+																			: s,
+																),
+														)
+													}
+												>
+													Owner
+												</DropdownMenuCheckboxItem>
+											)}
+										</DropdownMenuContent>
+									</DropdownMenu>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+
+				{/* MODEL / PROJECT token limit fields */}
+				{(type === "MODEL" ||
+					type === "PROJECT" ||
+					type === "WORKSPACE") && (
+					<div className="flex flex-col gap-3 rounded border border-border p-3">
+						<button
+							type="button"
+							className="flex items-center gap-1.5 text-left font-medium text-sm"
+							onClick={() => setRestrictionsOpen((prev) => !prev)}
+						>
+							{restrictionsOpen ? (
+								<ChevronDown className="h-4 w-4 shrink-0" />
+							) : (
+								<ChevronRight className="h-4 w-4 shrink-0" />
+							)}
+							Token Limits (for all selected users)
+						</button>
+						{restrictionsOpen && (
+							<div className="flex flex-col gap-3">
+								<div className="flex flex-col gap-1.5">
+									<Label>
+										Combined Token Limit{" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxTokens)}
+										onChange={(e) =>
+											setMaxTokens(
+												parseNum(e.target.value),
+											)
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<Label>
+										Input Token Limit (Prompt){" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxInputTokens)}
+										onChange={(e) =>
+											setMaxInputTokens(
+												parseNum(e.target.value),
+											)
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<Label>
+										Output Token Limit (Response){" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxOutputTokens)}
+										onChange={(e) =>
+											setMaxOutputTokens(
+												parseNum(e.target.value),
+											)
+										}
+									/>
+								</div>
+								<div className="flex flex-col gap-1.5">
+									<Label>
+										Max Compute Time (seconds){" "}
+										<span className="text-muted-foreground">
+											(optional)
+										</span>
+									</Label>
+									<Input
+										type="text"
+										inputMode="numeric"
+										placeholder="No limit"
+										value={formatNum(maxResponseTime)}
+										onChange={(e) =>
+											setMaxResponseTime(
+												parseNum(e.target.value),
+											)
+										}
+									/>
+								</div>
+								{(maxTokens ||
+									maxInputTokens ||
+									maxOutputTokens ||
+									maxResponseTime) && (
 									<div className="flex flex-col gap-1.5">
-										<Label>Usage Limit Type</Label>
+										<Label>Frequency</Label>
 										<Select
-											value={restriction}
-											onValueChange={(val) => {
-												setRestriction(val);
-												setMaxTokens("");
-												setMaxTime("");
-											}}
+											value={frequency}
+											onValueChange={setFrequency}
 										>
 											<SelectTrigger className="w-full">
 												<SelectValue />
 											</SelectTrigger>
 											<SelectContent>
-												<SelectItem value="null">
-													None
+												<SelectItem value="DAY">
+													Daily
 												</SelectItem>
-												<SelectItem value="token">
-													Token
+												<SelectItem value="WEEK">
+													Weekly
 												</SelectItem>
-												<SelectItem value="compute">
-													Compute time
+												<SelectItem value="MONTH">
+													Monthly
+												</SelectItem>
+												<SelectItem value="YEAR">
+													Yearly
+												</SelectItem>
+												<SelectItem value="ALL_TIME">
+													All time
 												</SelectItem>
 											</SelectContent>
 										</Select>
 									</div>
-									{restriction === "token" && (
-										<div className="flex flex-col gap-1.5">
-											<Label>Max Tokens</Label>
-											<Input
-												type="text"
-												inputMode="numeric"
-												value={formatNum(maxTokens)}
-												onChange={(e) =>
-													setMaxTokens(
-														parseNum(
-															e.target.value,
-														),
-													)
-												}
-											/>
-										</div>
-									)}
-									{restriction === "compute" && (
-										<div className="flex gap-3">
-											<div className="flex flex-1 flex-col gap-1.5">
-												<Label>Max Response Time</Label>
-												<Input
-													type="text"
-													inputMode="numeric"
-													value={formatNum(maxTime)}
-													onChange={(e) =>
-														setMaxTime(
-															parseNum(
-																e.target.value,
-															),
-														)
-													}
-												/>
-											</div>
-											<div className="flex w-36 flex-col gap-1.5">
-												<Label>Unit</Label>
-												<Input
-													value="milliseconds"
-													readOnly
-												/>
-											</div>
-										</div>
-									)}
-									{restriction !== "null" && (
-										<div className="flex flex-col gap-1.5">
-											<Label>Frequency</Label>
-											<Select
-												value={frequency}
-												onValueChange={setFrequency}
-											>
-												<SelectTrigger className="w-full">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="DAY">
-														Daily
-													</SelectItem>
-													<SelectItem value="WEEK">
-														Weekly
-													</SelectItem>
-													<SelectItem value="MONTH">
-														Monthly
-													</SelectItem>
-													<SelectItem value="YEAR">
-														Yearly
-													</SelectItem>
-													<SelectItem value="ALL_TIME">
-														All time
-													</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
-					)}
-				</div>
-				{/* end scrollable middle section */}
+								)}
+							</div>
+						)}
+					</div>
+				)}
 
 				{/* Footer: permission selector + invite */}
-				<div className="flex items-center justify-end border-t pt-3">
+				<div className="flex items-center justify-between border-t pt-3">
 					<Button
 						onClick={addNewMembers}
 						disabled={selectedUsers.length === 0}
