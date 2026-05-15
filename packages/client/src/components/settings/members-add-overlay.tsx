@@ -6,6 +6,9 @@ import {
 	editProjectUserPermissions,
 	getProjectUsers,
 	getProjectUsersNoCredentials,
+	supportsTokenLimits,
+	TokenLimitFields,
+	useTokenLimitFields,
 } from "@semoss/shared";
 import {
 	Avatar,
@@ -26,20 +29,12 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	Field,
-	Input,
-	Label,
 	P,
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 	RadioGroup,
 	RadioGroupItem,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
@@ -124,6 +119,8 @@ interface User {
 	usage_restriction?: string;
 	usage_frequency?: string;
 	max_tokens?: number;
+	max_input_tokens?: number;
+	max_output_tokens?: number;
 	max_response_time?: number;
 }
 
@@ -145,10 +142,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	const [commandOpen, setCommandOpen] = useState(false);
 	const [selectedRole, setSelectedRole] = useState<SETTINGS_ROLE>(null);
 	const [search, setSearch] = useState<string>("");
-	const [restriction, setRestriction] = useState<string>("null");
-	const [maxTokens, setMaxTokens] = useState<string>("");
-	const [maxTime, setMaxTime] = useState<string>("");
-	const [frequency, setFrequency] = useState<string>("");
+	const tokenLimits = useTokenLimitFields();
 
 	//modal member logic
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
@@ -162,20 +156,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
 
-	const usageRestritctionTypes: Record<string, string> = {
-		null: "None",
-		token: "Token",
-		compute: "Compute time",
-	};
-	const frequencyTypes: Record<string, string> = {
-		DAY: "Daily",
-		WEEK: "Weekly",
-		MONTH: "Monthly",
-		YEAR: "Yearly",
-		ALL_TIME: "All time",
-	};
-	const unitTypes: string[] = ["milliseconds"];
-
 	useEffect(() => {
 		setSelectedRole("Read-Only");
 		if (user) {
@@ -183,20 +163,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				permissionPriorityMapper(user?.permission)
 					?.permission as SETTINGS_ROLE,
 			);
-			setRestriction(
-				user?.usage_restriction !== undefined
-					? user?.usage_restriction
-					: "null",
-			);
-			setMaxTokens(user?.max_tokens?.toString());
-			setMaxTime(user?.max_response_time?.toString());
-			setFrequency(user?.usage_frequency);
+			tokenLimits.loadFromServer(user);
 		}
 
 		// reset on open or close
 		setSelectedMembers([]);
 		setSearch("");
-	}, [user]);
+	}, [user, tokenLimits.loadFromServer]);
 
 	useEffect(() => {
 		if (!open) return;
@@ -301,44 +274,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		let success = false;
 		try {
 			// construct requests for post data
-			const requests = members.map((m) => {
-				let json: Record<string, unknown> = {
-					userid: m.id,
-					permission: validSetting(selectedRole)
-						? permissionPriorityMapper(selectedRole)?.permission
-						: selectedRole,
-				};
-
-				// FOR MODELS
-				if (restriction !== "null") {
-					json = {
-						...json,
-						usageRestriction: restriction,
-					};
-				}
-
-				if (frequency) {
-					json = {
-						...json,
-						usageFrequency: frequency,
-					};
-				}
-
-				if (restriction === "token") {
-					json = {
-						...json,
-						maxTokens: Number(maxTokens),
-					};
-				}
-
-				if (restriction === "compute") {
-					json = {
-						...json,
-						maxResponseTime: Number(maxTime),
-					};
-				}
-				return json;
-			});
+			const requests = members.map((m) => ({
+				userid: m.id,
+				permission: validSetting(selectedRole)
+					? permissionPriorityMapper(selectedRole)?.permission
+					: selectedRole,
+				...tokenLimits.buildPayload(type),
+			}));
 
 			if (requests.length === 0) {
 				toast.warning("No permissions to change");
@@ -403,41 +345,15 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 		try {
 			// construct requests for post data
-			let requests: unknown[] = [];
-			if (type === "MODEL") {
-				requests = selectedMembers.map((m) => {
-					return {
-						userid: m.id,
-						permission:
-							permissionPriorityMapper(selectedRole)?.permission,
-						email: m.email,
-						name: m.name,
-						type: m.type,
-						username: m.username,
-						usageRestriction:
-							restriction === "null" ? null : restriction,
-						usageFrequency: frequency,
-						...(restriction === "token" && {
-							maxTokens: Number(maxTokens),
-						}),
-						...(restriction === "compute" && {
-							maxResponseTime: Number(maxTime),
-						}),
-					};
-				});
-			} else {
-				requests = selectedMembers.map((m) => {
-					return {
-						userid: m.id,
-						permission:
-							permissionPriorityMapper(selectedRole)?.permission,
-						email: m.email,
-						name: m.name,
-						type: m.type,
-						username: m.username,
-					};
-				});
-			}
+			const requests = selectedMembers.map((m) => ({
+				userid: m.id,
+				permission: permissionPriorityMapper(selectedRole)?.permission,
+				email: m.email,
+				name: m.name,
+				type: m.type,
+				username: m.username,
+				...tokenLimits.buildPayload(type),
+			}));
 
 			if (requests.length === 0) {
 				toast.warning("No permissions to change");
@@ -500,11 +416,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	};
 
 	const closeOverlay = (type: ALL_TYPES, isSuccess: boolean) => {
-		if (type === "MODEL") {
-			setRestriction("null");
-			setFrequency("");
-			setMaxTime("");
-			setMaxTokens("");
+		if (supportsTokenLimits(type)) {
+			tokenLimits.reset();
 		}
 		setAddModalUser(null);
 		onClose(isSuccess);
@@ -847,121 +760,20 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						</div>
 					</div>
 
-					{type === "MODEL" && (
-						<>
+					{supportsTokenLimits(type) && (
+						<div className="flex flex-col gap-4">
 							<P
 								className="font-medium"
 								data-testid="model-limit-restrictions"
 							>
-								Model Limit Restrictions
+								Token Limits
 							</P>
-							<div className="flex flex-col gap-4">
-								<Field>
-									<Label>Limit Type</Label>
-									<Select
-										value={restriction}
-										onValueChange={(value) => {
-											setRestriction(value);
-										}}
-									>
-										<SelectTrigger data-testid="model-limit-restrictions-select">
-											<SelectValue />
-										</SelectTrigger>
-										<SelectContent>
-											{Object.entries(
-												usageRestritctionTypes,
-											).map((option) => {
-												return (
-													<SelectItem
-														value={option[0]}
-														key={`usageRestrictionType-${option[0]}`}
-													>
-														{option[1]}
-													</SelectItem>
-												);
-											})}
-										</SelectContent>
-									</Select>
-								</Field>
-								{restriction === "token" && (
-									<Field>
-										<Label>Max Tokens</Label>
-										<Input
-											value={maxTokens}
-											type="number"
-											onChange={(e) => {
-												setMaxTokens(e.target.value);
-											}}
-											data-testid="model-max-tokens"
-										/>
-									</Field>
-								)}
-								{restriction === "compute" && (
-									<div className="flex gap-4">
-										<Field className="flex-1">
-											<Label>Max Response Time</Label>
-											<Input
-												value={maxTime}
-												type="number"
-												onChange={(e) => {
-													setMaxTime(e.target.value);
-												}}
-												data-testid="model-max-response-time"
-											/>
-										</Field>
-										<Field className="w-40">
-											<Label>Unit</Label>
-											<Select value={unitTypes[0]}>
-												<SelectTrigger>
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													{unitTypes.map((option) => {
-														return (
-															<SelectItem
-																value={option}
-																key={`unitType-${option}`}
-															>
-																{option}
-															</SelectItem>
-														);
-													})}
-												</SelectContent>
-											</Select>
-										</Field>
-									</div>
-								)}
-								{restriction !== "null" && (
-									<Field>
-										<Label>Frequency</Label>
-										<Select
-											value={frequency}
-											onValueChange={(value) => {
-												setFrequency(value);
-											}}
-										>
-											<SelectTrigger data-testid="model-frequency-select">
-												<SelectValue />
-											</SelectTrigger>
-											<SelectContent>
-												{Object.entries(
-													frequencyTypes,
-												).map((option) => {
-													return (
-														<SelectItem
-															value={option[0]}
-															key={`frequencyType-${option[0]}`}
-														>
-															{option[1]}
-														</SelectItem>
-													);
-												})}
-											</SelectContent>
-										</Select>
-									</Field>
-								)}
-							</div>
-						</>
+							<TokenLimitFields
+								state={tokenLimits.state}
+								setField={tokenLimits.setField}
+								hasAnyLimit={tokenLimits.hasAnyLimit}
+							/>
+						</div>
 					)}
 				</div>
 
