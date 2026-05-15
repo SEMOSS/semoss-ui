@@ -28,7 +28,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
-import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPreferenceCenterModal";
+import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";

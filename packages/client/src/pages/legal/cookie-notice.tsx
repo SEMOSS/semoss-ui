@@ -9,8 +9,11 @@ export const CookieNotice = observer(() => {
 
 	return (
 		<LegalPage>
-			{/* biome-ignore lint/security/noDangerouslySetInnerHtml: server-controlled legal HTML */}
-			<div dangerouslySetInnerHTML={{ __html: html }} />
+			<div
+				className="[&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
+				// biome-ignore lint/security/noDangerouslySetInnerHtml: server-controlled legal HTML
+				dangerouslySetInnerHTML={{ __html: html }}
+			/>
 		</LegalPage>
 	);
 });
