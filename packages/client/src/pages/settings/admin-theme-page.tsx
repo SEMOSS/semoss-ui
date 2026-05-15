@@ -222,6 +222,7 @@ export const AdminThemePage: React.FC = () => {
 						chatHistoryDate: false,
 					},
 					toolAutoExecutionLimit: undefined,
+					defaultMCP: [],
 					defaultTools: [],
 					gracefulErrors: [],
 					featureFlags: {

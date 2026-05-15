@@ -86,6 +86,7 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
+			defaultMCP: [],
 			defaultTools: [],
 			gracefulErrors: [],
 			featureFlags: {
@@ -306,13 +307,19 @@ export class RootStore {
 				[],
 			defaultEmbedderId:
 				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
-			defaultTools: [
+			defaultMCP: [
 				...new Map(
 					[
-						...this._store.theme.defaultTools,
-						...(theme?.defaultTools || []),
-					].map((tool) => [tool.id, tool]),
+						...this._store.theme.defaultMCP,
+						...(theme?.defaultMCP || []),
+					].map((mcp) => [mcp.id, mcp]),
 				).values(),
+			],
+			defaultTools: [
+				...new Set([
+					...this._store.theme.defaultTools,
+					...(theme?.defaultTools || []),
+				]),
 			],
 			gracefulErrors: [
 				...this._store.theme.gracefulErrors,

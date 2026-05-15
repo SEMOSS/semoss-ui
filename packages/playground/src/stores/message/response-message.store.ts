@@ -8,7 +8,6 @@ import {
 import { download } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
-	PLATFORM_TOOL_PREFIX,
 	STREAMING_PLACEHOLDER_ID,
 	TOOL_CANCELLATION_PROMPT,
 	TOOL_ERROR_PROMPT,
@@ -554,8 +553,7 @@ paramValues=[${JSON.stringify({
 
 			try {
 				// wait for the pixel to run
-				const isPlatformTool =
-					tool.json.name.startsWith(PLATFORM_TOOL_PREFIX);
+				const isPlatformTool = !!tool.json._meta.SMSS_IS_PLATFORM_TOOL;
 				const pixel = isPlatformTool
 					? `RunDefaultTool(function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`
 					: `RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`;

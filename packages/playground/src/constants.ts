@@ -6,8 +6,6 @@ export const TEMPERATURE = 0.3;
 export const MCP_EXECUTION_AUTO = "auto";
 export const MCP_EXECUTION_ASK = "ask";
 
-export const PLATFORM_TOOL_PREFIX = "platform__";
-
 export const MCP_DISPLAY_INLINE = "inline";
 export const MCP_DISPLAY_SIDEBAR = "sidebar";
 export const MCP_DISPLAY_HIDDEN = "hidden";

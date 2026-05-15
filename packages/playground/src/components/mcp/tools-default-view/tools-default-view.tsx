@@ -14,7 +14,6 @@ import {
 	Label,
 	Textarea,
 } from "@semoss/ui/next";
-import { PLATFORM_TOOL_PREFIX } from "@/constants";
 import { ResponseMessageStore, type RoomStore, type ToolStore } from "@/stores";
 import { ToolField } from "./tool-field";
 
@@ -257,7 +256,7 @@ export const ToolsDefaultView = observer(
 				} else {
 					// Platform default tools bypass the MCP engine routing
 					const isPlatformTool =
-						tool?.json.name.startsWith(PLATFORM_TOOL_PREFIX);
+						!!tool?.json._meta.SMSS_IS_PLATFORM_TOOL;
 					const pixel = isPlatformTool
 						? `RunDefaultTool(function=[ "${tool?.json.name}" ], paramValues=[ ${JSON.stringify(data)} ]);`
 						: `RunMCPTool(project = [ "${app}" ], function=[ "${tool?.json.name}" ], paramValues=[ ${JSON.stringify(data)} ]);`;

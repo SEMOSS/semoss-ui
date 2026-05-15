@@ -199,6 +199,7 @@ export interface PixelMessageToolCallPart {
 				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
 			};
+			SMSS_IS_PLATFORM_TOOL?: boolean;
 		};
 	};
 }
@@ -288,6 +289,7 @@ export interface MCPTool {
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
 		};
+		SMSS_IS_PLATFORM_TOOL?: boolean;
 	};
 }
 
