@@ -1,8 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense } from "react";
+import { createElement, lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import { APP_DETAIL_TABS } from "./app/app-detail.constants";
 
 const AuthenticatedLayout = lazy(() =>
 	import("./AuthenticatedLayout").then((m) => ({
@@ -18,9 +19,9 @@ const AppCatalogPage = lazy(() =>
 		default: m.AppCatalogPage,
 	})),
 );
-const AppDetailPage = lazy(() =>
-	import("./app/app-detail-page").then((m) => ({
-		default: m.AppDetailPage,
+const AppDetailLayout = lazy(() =>
+	import("./app/app-detail-layout").then((m) => ({
+		default: m.AppDetailLayout,
 	})),
 );
 const CreateAppPage = lazy(() =>
@@ -51,10 +52,10 @@ const LandingPage = lazy(() =>
 	import("./landing-page").then((m) => ({ default: m.LandingPage })),
 );
 const CookieNotice = lazy(() =>
-	import("./legal/CookieNotice").then((m) => ({ default: m.CookieNotice })),
+	import("./legal/cookie-notice").then((m) => ({ default: m.CookieNotice })),
 );
 const PrivacyNotice = lazy(() =>
-	import("./legal/PrivacyNotice").then((m) => ({
+	import("./legal/privacy-notice").then((m) => ({
 		default: m.PrivacyNotice,
 	})),
 );
@@ -111,7 +112,29 @@ export const Router = observer(() => {
 								path="new/prompt"
 								element={<NewPromptBuilderAppPage />}
 							/>
-							<Route path=":appId" element={<AppDetailPage />} />
+							<Route path=":appId" element={<AppDetailLayout />}>
+								{APP_DETAIL_TABS.map((tab) =>
+									tab.path === "" ? (
+										<Route
+											key="index"
+											index
+											element={createElement(
+												tab.component,
+												{},
+											)}
+										/>
+									) : (
+										<Route
+											key={tab.path}
+											path={tab.path}
+											element={createElement(
+												tab.component,
+												{},
+											)}
+										/>
+									),
+								)}
+							</Route>
 							<Route
 								path=":appId/view/*"
 								element={<ViewAppPage />}
