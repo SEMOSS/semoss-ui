@@ -1,4 +1,5 @@
 import {
+	CheckIcon,
 	CopyIcon,
 	FileArchiveIcon,
 	FileAudioIcon,
@@ -13,6 +14,8 @@ import {
 	FileTypeIcon,
 	FileVideoIcon,
 	ImageIcon,
+	PencilIcon,
+	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -26,6 +29,7 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import type { InputMessageStore, RoomStore } from "@/stores";
 import { DateDisplay } from "../common";
 
@@ -77,6 +81,7 @@ interface InputMessageProps {
 export const InputMessage: React.FC<InputMessageProps> = observer(
 	({ room, message }) => {
 		const { t } = useTranslation("chat");
+		const { root } = useRoot();
 		const [previewPdf, setPreviewPdf] = useState<{
 			fileName: string;
 			base64Data: string;
@@ -86,6 +91,8 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 			base64Data: string;
 			mimeType: string;
 		} | null>(null);
+		const [isEditing, setIsEditing] = useState(false);
+		const [editText, setEditText] = useState("");
 
 		const mediaParts = message.parts.flatMap((p, i) =>
 			p.type === "MEDIA" ? [{ p, i }] : [],
@@ -280,6 +287,52 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 								{p.text}
 							</span>
 						))}
+						{isEditing && (
+							<div className="mt-2 flex flex-col gap-2">
+								<textarea
+									className="w-full resize-none rounded-md border border-border bg-background p-2 text-foreground text-small focus:outline-none focus:ring-1 focus:ring-ring"
+									value={editText}
+									onChange={(e) =>
+										setEditText(e.target.value)
+									}
+									rows={Math.max(
+										3,
+										editText.split("\n").length,
+									)}
+								/>
+								<div className="flex flex-row justify-end gap-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => {
+											setIsEditing(false);
+											setEditText("");
+										}}
+									>
+										<XIcon className="mr-1 size-3" />
+										{t("input.cancel")}
+									</Button>
+									<Button
+										variant="default"
+										size="sm"
+										disabled={
+											!editText.trim() ||
+											message.room.mode === "executing"
+										}
+										onClick={() => {
+											message.editMessage(
+												editText.trim(),
+											);
+											setIsEditing(false);
+											setEditText("");
+										}}
+									>
+										<CheckIcon className="mr-1 size-3" />
+										{t("input.saveAndSubmit")}
+									</Button>
+								</div>
+							</div>
+						)}
 					</div>
 					<div className="flex flex-row items-center gap-0.5 pt-2 opacity-0 transition-opacity group-hover:opacity-100">
 						<span className="px-2 text-muted-foreground text-xs">
@@ -341,6 +394,40 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 								{t("input.copyMessage")}
 							</TooltipContent>
 						</Tooltip>
+						{root.theme.featureFlags?.enableEdit &&
+							textParts.length > 0 && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="ghost"
+											size="icon"
+											disabled={
+												isEditing ||
+												message.room.mode ===
+													"executing"
+											}
+											onClick={() => {
+												const currentText =
+													message.parts
+														.filter(
+															(p) =>
+																p.type ===
+																"TEXT",
+														)
+														.map((p) => p.text)
+														.join("\n");
+												setEditText(currentText);
+												setIsEditing(true);
+											}}
+										>
+											<PencilIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent side="bottom">
+										{t("input.editMessage")}
+									</TooltipContent>
+								</Tooltip>
+							)}
 					</div>
 				</div>
 
