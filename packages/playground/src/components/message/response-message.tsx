@@ -302,21 +302,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									? `data:${p.mediaInfo.mimeType?.startsWith("image/") ? p.mediaInfo.mimeType : ({ jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp" } as Record<string, string>)[p.mediaInfo.fileName?.split(".").pop()?.toLowerCase() ?? ""] || "image/png"};base64,${p.mediaInfo.base64Data}`
 									: "";
 							const handleClick = () => {
-								if (p.mediaInfo.fileLocation) {
-									room.addSidebarNode(
-										`FILE--${p.mediaInfo.fileLocation}`,
-										{
-											type: "tab",
-											name: p.mediaInfo.fileName,
-											component: "room-file-editor",
-											config: {
-												name: p.mediaInfo.fileName,
-												path: p.mediaInfo.fileLocation,
-											},
-											enableClose: true,
-										},
-									);
-								} else if (p.mediaInfo.base64Data && isImage) {
+								if (isImage && p.mediaInfo.base64Data) {
 									const imgExt =
 										p.mediaInfo.fileName
 											?.split(".")
@@ -338,6 +324,20 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 											mimeMap[imgExt] ||
 											"image/png",
 									});
+								} else if (p.mediaInfo.fileLocation) {
+									room.addSidebarNode(
+										`FILE--${p.mediaInfo.fileLocation}`,
+										{
+											type: "tab",
+											name: p.mediaInfo.fileName,
+											component: "room-file-editor",
+											config: {
+												name: p.mediaInfo.fileName,
+												path: p.mediaInfo.fileLocation,
+											},
+											enableClose: true,
+										},
+									);
 								} else if (p.mediaInfo.base64Data) {
 									setPreviewPdf({
 										fileName: p.mediaInfo.fileName,
@@ -822,7 +822,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						if (!open) setPreviewImage(null);
 					}}
 				>
-					<DialogContent className="flex max-h-[90vh] max-w-4xl flex-col gap-3 p-4">
+					<DialogContent className="flex h-[calc(100vh-2rem)] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col gap-3 p-4 sm:max-w-[calc(100vw-2rem)]">
 						<div className="flex items-center gap-2 border-b pb-3">
 							<div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
 								<ImageIcon className="size-4 text-muted-foreground" />
@@ -835,11 +835,13 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							</span>
 						</div>
 						{previewImage && (
-							<img
-								className="max-h-[78vh] max-w-full rounded object-contain"
-								src={`data:${previewImage.mimeType};base64,${previewImage.base64Data}`}
-								alt={previewImage.fileName}
-							/>
+							<div className="flex flex-1 items-center justify-center overflow-hidden">
+								<img
+									className="max-h-full max-w-full rounded object-contain"
+									src={`data:${previewImage.mimeType};base64,${previewImage.base64Data}`}
+									alt={previewImage.fileName}
+								/>
+							</div>
 						)}
 					</DialogContent>
 				</Dialog>

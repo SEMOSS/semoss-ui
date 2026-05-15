@@ -52,10 +52,10 @@ const LandingPage = lazy(() =>
 	import("./landing-page").then((m) => ({ default: m.LandingPage })),
 );
 const CookieNotice = lazy(() =>
-	import("./legal/CookieNotice").then((m) => ({ default: m.CookieNotice })),
+	import("./legal/cookie-notice").then((m) => ({ default: m.CookieNotice })),
 );
 const PrivacyNotice = lazy(() =>
-	import("./legal/PrivacyNotice").then((m) => ({
+	import("./legal/privacy-notice").then((m) => ({
 		default: m.PrivacyNotice,
 	})),
 );
