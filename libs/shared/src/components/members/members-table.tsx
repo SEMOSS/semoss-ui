@@ -9,6 +9,7 @@ import {
 	DialogDescription,
 	DialogFooter,
 	DialogTitle,
+	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -23,11 +24,6 @@ import {
 } from "@semoss/ui/next";
 import { AddMembersOverlay } from "./add-members";
 import { MembersList, type MemberUser } from "./members-list";
-import {
-	supportsTokenLimits,
-	TokenLimitFields,
-	useTokenLimitFields,
-} from "./token-limits";
 
 interface MembersProps {
 	id: string;
@@ -45,6 +41,16 @@ interface MembersProps {
 	isOwner?: boolean;
 	adminMode?: boolean;
 	currentUserId?: string;
+}
+
+function formatNum(val: string): string {
+	const digits = val.replace(/[^0-9]/g, "");
+	if (!digits) return "";
+	return Number(digits).toLocaleString();
+}
+
+function parseNum(val: string): string {
+	return val.replace(/[^0-9]/g, "");
 }
 
 export const MembersTable = ({
@@ -95,13 +101,21 @@ export const MembersTable = ({
 	// Edit dialog state
 	const [editUser, setEditUser] = useState<MemberUser | null>(null);
 	const [editPermission, setEditPermission] = useState<string>("READ_ONLY");
-	const editTokenLimits = useTokenLimitFields();
+	const [editMaxTokens, setEditMaxTokens] = useState<string>("");
+	const [editMaxInputTokens, setEditMaxInputTokens] = useState<string>("");
+	const [editMaxOutputTokens, setEditMaxOutputTokens] = useState<string>("");
+	const [editMaxResponseTime, setEditMaxResponseTime] = useState<string>("");
+	const [editFrequency, setEditFrequency] = useState<string>("DAY");
 	const [resetConfirm, setResetConfirm] = useState<boolean>(false);
 
 	const openEditDialog = (user: MemberUser) => {
 		setEditUser(user);
 		setEditPermission(user.permission ?? "READ_ONLY");
-		editTokenLimits.loadFromServer(user);
+		setEditMaxTokens(user.max_tokens?.toString() ?? "");
+		setEditMaxInputTokens(user.max_input_tokens?.toString() ?? "");
+		setEditMaxOutputTokens(user.max_output_tokens?.toString() ?? "");
+		setEditMaxResponseTime(user.max_response_time?.toString() ?? "");
+		setEditFrequency(user.usage_frequency ?? "DAY");
 	};
 
 	const saveUserEdit = async () => {
@@ -113,8 +127,29 @@ export const MembersTable = ({
 		const payload: Record<string, unknown> = {
 			userid: editUser.id,
 			permission: editPermission,
-			...editTokenLimits.buildPayload(type),
 		};
+
+		if (type === "MODEL" || type === "PROJECT" || type === "WORKSPACE") {
+			const hasAnyLimit =
+				editMaxTokens || editMaxInputTokens || editMaxOutputTokens;
+			const hasComputeTime = !!editMaxResponseTime;
+			if (hasAnyLimit) {
+				payload.usageRestriction = "token";
+				payload.usageFrequency = editFrequency;
+				if (editMaxTokens) payload.maxTokens = Number(editMaxTokens);
+				if (editMaxInputTokens)
+					payload.maxInputTokens = Number(editMaxInputTokens);
+				if (editMaxOutputTokens)
+					payload.maxOutputTokens = Number(editMaxOutputTokens);
+			}
+			if (hasComputeTime) {
+				if (!hasAnyLimit) {
+					payload.usageRestriction = "compute";
+					payload.usageFrequency = editFrequency;
+				}
+				payload.maxResponseTime = Number(editMaxResponseTime);
+			}
+		}
 
 		const response = await post<{ success: boolean }>(url, {
 			[isEngine ? "engineId" : "projectId"]: id,
@@ -271,15 +306,140 @@ export const MembersTable = ({
 								</Select>
 							</div>
 
-							{supportsTokenLimits(type) && (
-								<TokenLimitFields
-									state={editTokenLimits.state}
-									setField={editTokenLimits.setField}
-									hasAnyLimit={editTokenLimits.hasAnyLimit}
-								/>
+							{(type === "MODEL" ||
+								type === "PROJECT" ||
+								type === "WORKSPACE") && (
+								<>
+									<div className="flex flex-col gap-1.5">
+										<Label>
+											Combined Token Limit{" "}
+											<span className="text-muted-foreground">
+												(optional)
+											</span>
+										</Label>
+										<Input
+											type="text"
+											inputMode="numeric"
+											placeholder="No limit"
+											value={formatNum(editMaxTokens)}
+											onChange={(e) =>
+												setEditMaxTokens(
+													parseNum(e.target.value),
+												)
+											}
+										/>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<Label>
+											Input Token Limit (Prompt){" "}
+											<span className="text-muted-foreground">
+												(optional)
+											</span>
+										</Label>
+										<Input
+											type="text"
+											inputMode="numeric"
+											placeholder="No limit"
+											value={formatNum(
+												editMaxInputTokens,
+											)}
+											onChange={(e) =>
+												setEditMaxInputTokens(
+													parseNum(e.target.value),
+												)
+											}
+										/>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<Label>
+											Output Token Limit (Response){" "}
+											<span className="text-muted-foreground">
+												(optional)
+											</span>
+										</Label>
+										<Input
+											type="text"
+											inputMode="numeric"
+											placeholder="No limit"
+											value={formatNum(
+												editMaxOutputTokens,
+											)}
+											onChange={(e) =>
+												setEditMaxOutputTokens(
+													parseNum(e.target.value),
+												)
+											}
+										/>
+									</div>
+
+									<div className="flex flex-col gap-1.5">
+										<Label>
+											Max Compute Time (seconds){" "}
+											<span className="text-muted-foreground">
+												(optional)
+											</span>
+										</Label>
+										<Input
+											type="text"
+											inputMode="numeric"
+											placeholder="No limit"
+											value={formatNum(
+												editMaxResponseTime,
+											)}
+											onChange={(e) =>
+												setEditMaxResponseTime(
+													parseNum(e.target.value),
+												)
+											}
+										/>
+									</div>
+
+									{(editMaxTokens ||
+										editMaxInputTokens ||
+										editMaxOutputTokens ||
+										editMaxResponseTime) && (
+										<div className="flex flex-col gap-1.5">
+											<Label>
+												Reset Frequency{" "}
+												<span className="text-muted-foreground">
+													(usage resets each period)
+												</span>
+											</Label>
+											<Select
+												value={editFrequency}
+												onValueChange={setEditFrequency}
+											>
+												<SelectTrigger className="w-full">
+													<SelectValue />
+												</SelectTrigger>
+												<SelectContent>
+													<SelectItem value="DAY">
+														Daily
+													</SelectItem>
+													<SelectItem value="WEEK">
+														Weekly
+													</SelectItem>
+													<SelectItem value="MONTH">
+														Monthly
+													</SelectItem>
+													<SelectItem value="YEAR">
+														Yearly
+													</SelectItem>
+													<SelectItem value="ALL_TIME">
+														All time
+													</SelectItem>
+												</SelectContent>
+											</Select>
+										</div>
+									)}
+								</>
 							)}
 						</div>
-						{supportsTokenLimits(type) && (
+						{(type === "MODEL" ||
+							type === "PROJECT" ||
+							type === "WORKSPACE") && (
 							<div className="flex flex-col gap-2 rounded-md border border-orange-300 border-dashed bg-orange-50 p-3">
 								<div className="flex items-center justify-between">
 									<div className="flex flex-col">
