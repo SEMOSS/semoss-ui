@@ -4,7 +4,6 @@ on:
         branches:
             - dev
             - main
-            - issue-fixes-2
     pull_request:
         branches:
             - dev
