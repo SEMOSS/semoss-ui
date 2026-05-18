@@ -268,29 +268,11 @@ export const ToolsDefaultView = observer(
 						typeof rawOutput === "string"
 							? rawOutput
 							: JSON.stringify(rawOutput);
-
-					if (typeof rawOutput === "object" && rawOutput !== null) {
-						const result = rawOutput as {
-							downloadKey?: unknown;
-							response?: { downloadKey?: unknown };
-						};
-						shouldOpenFileExplorer = Boolean(
-							result.downloadKey || result.response?.downloadKey,
+					shouldOpenFileExplorer =
+						room.shouldOpenFileExplorerForToolResult(
+							tool?.json.name,
+							rawOutput,
 						);
-					} else {
-						try {
-							const parsed = JSON.parse(output) as {
-								downloadKey?: unknown;
-								response?: { downloadKey?: unknown };
-							};
-							shouldOpenFileExplorer = Boolean(
-								parsed.downloadKey ||
-									parsed.response?.downloadKey,
-							);
-						} catch {
-							shouldOpenFileExplorer = false;
-						}
-					}
 					success = true;
 				}
 			} catch (error) {
@@ -299,13 +281,7 @@ export const ToolsDefaultView = observer(
 			}
 
 			if (success && shouldOpenFileExplorer) {
-				room.addSidebarNode("FILE_EXPLORER", {
-					type: "tab",
-					name: "File Explorer",
-					component: "room-file-explorer",
-					config: {},
-					enableClose: true,
-				});
+				room.openFileExplorerSidebar();
 			}
 
 			const m = room.getMessage(message);

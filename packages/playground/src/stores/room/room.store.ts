@@ -793,6 +793,67 @@ export class RoomStore {
 		return this._store.tools[toolId] || null;
 	};
 
+	shouldOpenFileExplorerForToolResult = (
+		toolName: string | undefined,
+		rawOutput: unknown,
+	): boolean => {
+		const parseOutput = (
+			value: unknown,
+		): {
+			downloadKey?: unknown;
+			response?: { downloadKey?: unknown };
+			message?: unknown;
+		} | null => {
+			if (typeof value === "object" && value !== null) {
+				return value as {
+					downloadKey?: unknown;
+					response?: { downloadKey?: unknown };
+					message?: unknown;
+				};
+			}
+
+			if (typeof value === "string") {
+				try {
+					return JSON.parse(value) as {
+						downloadKey?: unknown;
+						response?: { downloadKey?: unknown };
+						message?: unknown;
+					};
+				} catch {
+					return null;
+				}
+			}
+
+			return null;
+		};
+
+		const parsed = parseOutput(rawOutput);
+		if (parsed?.downloadKey || parsed?.response?.downloadKey) {
+			return true;
+		}
+
+		const normalizedToolName = toolName?.trim().toLowerCase() || "";
+		if (!normalizedToolName.includes("export")) {
+			return false;
+		}
+
+		if (typeof rawOutput === "string" && rawOutput.trim()) {
+			return true;
+		}
+
+		return Boolean(parsed);
+	};
+
+	openFileExplorerSidebar = (): void => {
+		this.addSidebarNode("FILE_EXPLORER", {
+			type: "tab",
+			name: "File Explorer",
+			component: "room-file-explorer",
+			config: {},
+			enableClose: true,
+		});
+	};
+
 	/**
 	 * Sidebar
 	 */
