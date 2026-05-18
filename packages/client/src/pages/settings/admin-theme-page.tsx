@@ -154,8 +154,8 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 		footerItems: [],
 	},
 	toolAutoExecutionLimit: undefined,
-	defaultMCP: [],
 	defaultTools: [],
+	platformTools: [],
 	gracefulErrors: [],
 	featureFlags: {
 		enableAgent: true,

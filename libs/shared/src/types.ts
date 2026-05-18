@@ -148,7 +148,7 @@ export interface ThemeMap {
 		/**
 		 * Default MCP servers to load into the room
 		 */
-		defaultMCP: {
+		defaultTools: {
 			/** Type of the mcp */
 			type:
 				| "PROJECT"
@@ -166,9 +166,9 @@ export interface ThemeMap {
 		}[];
 
 		/**
-		 * Default reactor tool identifiers to enable in the room
+		 * Default platform reactor tool identifiers to enable in the room
 		 */
-		defaultTools: string[];
+		platformTools: string[];
 
 		/**
 		 * Optional tour customization. When present, custom steps are appended

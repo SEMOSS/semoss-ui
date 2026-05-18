@@ -86,8 +86,8 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
-			defaultMCP: [],
 			defaultTools: [],
+			platformTools: [],
 			gracefulErrors: [],
 			featureFlags: {
 				// These will be the defaults, used when the user has no theme
@@ -307,18 +307,18 @@ export class RootStore {
 				[],
 			defaultEmbedderId:
 				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
-			defaultMCP: [
+			defaultTools: [
 				...new Map(
 					[
-						...this._store.theme.defaultMCP,
-						...(theme?.defaultMCP || []),
-					].map((mcp) => [mcp.id, mcp]),
+						...this._store.theme.defaultTools,
+						...(theme?.defaultTools || []),
+					].map((tool) => [tool.id, tool]),
 				).values(),
 			],
-			defaultTools: [
+			platformTools: [
 				...new Set([
-					...this._store.theme.defaultTools,
-					...(theme?.defaultTools || []),
+					...this._store.theme.platformTools,
+					...(theme?.platformTools || []),
 				]),
 			],
 			gracefulErrors: [
