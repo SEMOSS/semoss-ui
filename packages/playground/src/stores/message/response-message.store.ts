@@ -19,6 +19,7 @@ import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
+import { applyToolStreamChunk } from "./tool-stream";
 
 /**
  * Response Message Store
@@ -218,6 +219,10 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				return acc;
 			}, [] as string[]);
 
+			// per-stream map from tool delta `index` → wire `id`, used to associate
+			// arguments/name deltas with the ToolStore created on the opening chunk
+			const toolStreamIndexToId: Record<number, string> = {};
+
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
 				[
@@ -257,7 +262,11 @@ paramValues=[${JSON.stringify({
 								});
 							}
 						} else if (chunk.stream_type === "tool") {
-							//noop
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}
@@ -702,6 +711,9 @@ paramValues=[${JSON.stringify({
 			// turn on thinking
 			responseMessage.isThinking = true;
 
+			// per-stream map from tool delta `index` → wire `id` for the post-exec stream
+			const toolStreamIndexToId: Record<number, string> = {};
+
 			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
 				[PartialResponse | TotalResponse]
@@ -735,7 +747,11 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 								});
 							}
 						} else if (chunk.stream_type === "tool") {
-							//noop
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}
