@@ -80,7 +80,7 @@ export const MCPCard = ({
 			}`}
 			onClick={onClick}
 		>
-			<CardContent className="space-y-2 p-4">
+			<CardContent className="flex flex-1 flex-col gap-2 p-4">
 				{/* Title & Open Button */}
 				<div className="flex items-start justify-between gap-2">
 					<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
@@ -191,7 +191,7 @@ export const MCPCard = ({
 				</div>
 
 				{/* Description */}
-				<div className="flex items-center justify-between gap-2">
+				<div className="mt-auto flex items-center justify-between gap-2">
 					<div className="text-muted-foreground text-xs">
 						{m.description || t("permission.noDescription")}
 					</div>
