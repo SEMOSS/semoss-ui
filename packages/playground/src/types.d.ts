@@ -283,6 +283,7 @@ export interface MCPTool {
 	title?: string;
 	_meta: {
 		generated_on: string;
+		SMSS_MCP_EXECUTION?: "auto" | "ask" | "disabled";
 		SMSS_MCP_UI?: {
 			loadingMessage?: string;
 			resourceURI?: string;

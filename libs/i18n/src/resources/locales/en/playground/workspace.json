@@ -87,12 +87,32 @@
 		"new": "New",
 		"room": "Room"
 	},
+	"tools": {
+		"noConnections": "No connections available",
+		"selectConnection": "Select a connection",
+		"selectConnectionDescription": "Choose from {{count}} connected engines to view available tools",
+		"searchTools": "Search tools...",
+		"loadFailed": "Failed to load tools",
+		"loadFailedDescription": "Could not fetch tools for this connection",
+		"noTools": "No tools available",
+		"noToolsMatchSearch": "No tools match your search",
+		"noParams": "No parameters",
+		"back": "Back",
+		"noDescription": "No description provided",
+		"parameters": "Parameters ({{count}})",
+		"required": "required",
+		"optional": "optional",
+		"execution": "Execution",
+		"executionMode": "Execution mode",
+		"displayLocation": "Display location"
+	},
 	"detail": {
 		"tabs": {
 			"myChats": "My Chats",
 			"knowledge": "Knowledge",
 			"toolbox": "Toolbox",
-			"members": "Members"
+			"members": "Members",
+			"tools": "Tools"
 		},
 		"failedToDelete": "Failed to delete agent",
 		"failedToLoad": "Failed to load agent: {{error}}"
