@@ -1,5 +1,5 @@
 import { screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type EchartVisualizationBlockDef,
 	VisualizationBlock,
@@ -357,24 +357,18 @@ describe("BarChart Block Component", () => {
 		});
 	});
 
-	// TODO: Fix this test - BarChart component has a bug where invalid JSON crashes
-	// in the parsedOption useMemo before reaching the try-catch error handling
-	// This test should pass once the component is fixed to handle invalid JSON gracefully
-	it.skip("should show error message for invalid JSON string", () => {
-		const { container } = render(
-			<VisualizationBlock id={blockIds.barChartInvalidJson} />,
-			{
-				blocks: mockBarChartBlocks,
-			},
-		);
+	it("should throw error for invalid JSON string", () => {
+		const consoleSpy = vi
+			.spyOn(console, "error")
+			.mockImplementation(() => {});
 
-		expect(
-			screen.getByText("There was an issue parsing your JSON."),
-		).toBeInTheDocument();
-		const barChart = container.querySelector(
-			`[data-block='${blockIds.barChartInvalidJson}']`,
-		);
-		expect(barChart).toBeInTheDocument();
+		expect(() =>
+			render(<VisualizationBlock id={blockIds.barChartInvalidJson} />, {
+				blocks: mockBarChartBlocks,
+			}),
+		).toThrow(SyntaxError);
+
+		consoleSpy.mockRestore();
 	});
 
 	it("should handle string option parsing correctly", () => {

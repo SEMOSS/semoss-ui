@@ -48,8 +48,11 @@ interface InsightStoreInterface {
 			 * Theme of the app
 			 */
 			theme: {
-				playground: Record<string, unknown>;
 				[key: string]: unknown;
+				THEME_MAP?: string;
+				THEME_NAME?: string;
+				ID?: string;
+				IS_ACTIVE?: boolean;
 			};
 			/**
 			 * System Date
@@ -724,8 +727,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				);
 			}
 
-			const targetOrigin = new URL(Env.APP).origin;
-
 			window.parent.postMessage(
 				{
 					type: "SMSS_EXEC_TOOL",
@@ -740,7 +741,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						executedParameters: executedParameters,
 					} satisfies MCPToolResponse,
 				},
-				targetOrigin,
+				"*",
 			);
 		},
 

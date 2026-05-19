@@ -7,7 +7,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { ENGINE_IMAGES } from "@/pages/import/import.constants";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 
 const normalizeEngineKey = (value?: string) =>
