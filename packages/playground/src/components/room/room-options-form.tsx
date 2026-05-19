@@ -21,7 +21,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay } from "@/components";
+import { isKnowledgeMcp, MCPOverlay, splitMcpByType } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
@@ -61,17 +61,15 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 			isOpen: false,
 		});
 
-		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
-		const knowledge =
-			options?.mcp?.filter((mcp) => mcp.type === "VECTOR") || [];
-		const toolbox =
-			options?.mcp?.filter((mcp) => mcp.type !== "VECTOR") || [];
+		// All MCPs live in the same array; workspace-inherited MCPs carry a
+		// `fromWorkspace` flag and cannot be removed here — the room only
+		// inherits them, so removal happens in the workspace form instead.
+		const { knowledge, toolbox } = splitMcpByType(options?.mcp ?? []);
 
 		/**
 		 * Functions
 		 */
 		const handleDeleteMCP = (mcp: MCPConfig) => {
-			// Don't allow deletion of workspace MCPs
 			if (mcp.fromWorkspace) {
 				return;
 			}
@@ -387,18 +385,17 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 								}
 								onClose={(mcp) => {
 									if (mcp) {
-										// Merge updated MCPs with the other type
-										const otherTypeMCPs =
-											mCPOverlay.type === "TOOLBOX"
-												? knowledge
-												: toolbox;
-
+										const others = options.mcp.filter(
+											(m) =>
+												mCPOverlay.type === "KNOWLEDGE"
+													? !isKnowledgeMcp(m)
+													: isKnowledgeMcp(m),
+										);
 										onOptionsChange({
-											mcp: [...otherTypeMCPs, ...mcp],
+											mcp: [...others, ...mcp],
 										});
 									}
 
-									// close it
 									setMCPOverlay({
 										isOpen: false,
 										type: "KNOWLEDGE",

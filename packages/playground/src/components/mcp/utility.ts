@@ -1,4 +1,28 @@
-import type { App, Engine, MCP } from "@/types";
+import type { App, Engine, MCP, MCPConfig } from "@/types";
+
+/**
+ * Knowledge MCPs are backed by a VECTOR engine. Everything else is toolbox.
+ */
+export const isKnowledgeMcp = (mcp: Pick<MCPConfig, "type">): boolean =>
+	mcp.type === "VECTOR";
+
+/**
+ * Split a mixed MCP list into its knowledge and toolbox subsets.
+ */
+export const splitMcpByType = (
+	mcps: MCPConfig[],
+): { knowledge: MCPConfig[]; toolbox: MCPConfig[] } => {
+	const knowledge: MCPConfig[] = [];
+	const toolbox: MCPConfig[] = [];
+	for (const mcp of mcps) {
+		if (isKnowledgeMcp(mcp)) {
+			knowledge.push(mcp);
+		} else {
+			toolbox.push(mcp);
+		}
+	}
+	return { knowledge, toolbox };
+};
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL

@@ -80,32 +80,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
-	 * Handle tool selection (toggle for plus menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
-		} else {
-			tools[tool.id] = tool;
-		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
-		});
-	};
-
-	/**
 	 * Handle tool add (add-only for slash menu)
 	 * @param tool - selected tool
 	 */
@@ -461,7 +435,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}}
 					options={room.options}
 					onMcpSelect={handleToolAdd}
-					onMcpToggle={handleToolSelect}
+					onMcpChange={(mcp) =>
+						room.setOptions({
+							...room.options,
+							mcp,
+						})
+					}
 					MenuComponent={observer(
 						({
 							onOpenChange,

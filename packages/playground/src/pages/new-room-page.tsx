@@ -161,35 +161,6 @@ export const NewRoomPage = observer(() => {
 	}, [tempRoomStore, root.theme]);
 
 	/**
-	 * Functions
-	 */
-	/**
-	 * Handle tool selection (toggle for plus menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
-		const tools = tempRoomStore.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, MCPConfig>,
-		);
-
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
-		} else {
-			tools[tool.id] = tool;
-		}
-
-		tempRoomStore.setOptions({
-			...tempRoomStore.options,
-			mcp: Object.values(tools),
-		});
-	};
-
-	/**
 	 * Handle tool add (add-only for slash menu)
 	 * @param tool - selected tool
 	 */
@@ -473,7 +444,12 @@ export const NewRoomPage = observer(() => {
 							}}
 							options={tempRoomStore.options}
 							onMcpSelect={handleToolAdd}
-							onMcpToggle={handleToolSelect}
+							onMcpChange={(mcp) =>
+								tempRoomStore.setOptions({
+									...tempRoomStore.options,
+									mcp,
+								})
+							}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 

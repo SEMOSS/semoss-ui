@@ -59,6 +59,7 @@ import {
 	MentionPlugin,
 	PromptLibraryDialog,
 	type PromptLibraryItem,
+	splitMcpByType,
 } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
@@ -66,21 +67,6 @@ import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig } from "@/types";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
-
-const applyMCPDiff = (
-	items: MCPConfig[],
-	updated: MCPConfig[],
-	onSelect: (mcp: MCPConfig) => void,
-) => {
-	const oldIds = new Set(items.map((m) => m.id));
-	const newIds = new Set(updated.map((m) => m.id));
-	for (const mcp of updated) {
-		if (!oldIds.has(mcp.id)) onSelect(mcp);
-	}
-	for (const mcp of items) {
-		if (!newIds.has(mcp.id)) onSelect(mcp);
-	}
-};
 
 let isIframed = false;
 try {
@@ -202,8 +188,11 @@ interface RoomInputProps {
 		onToolboxOverlayChange: (open: boolean) => void;
 	}>;
 
-	/** Callback when an MCP is toggled via the plus menu */
-	onMcpToggle?: (mcp: MCPConfig) => void;
+	/**
+	 * Callback when the full MCP list changes (e.g. via the MCP overlay's
+	 * Save button). Receives the next merged `mcp` array.
+	 */
+	onMcpChange?: (mcp: MCPConfig[]) => void;
 
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
@@ -269,7 +258,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		options,
 		onPrompt = () => null,
 		onMcpSelect,
-		onMcpToggle,
+		onMcpChange,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
@@ -298,6 +287,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// MCP overlay state — managed here so overlays render outside the DropdownMenu's React subtree
 		const [knowledgeOverlayOpen, setKnowledgeOverlayOpen] = useState(false);
 		const [toolboxOverlayOpen, setToolboxOverlayOpen] = useState(false);
+
+		const { knowledge: knowledgeMcps, toolbox: toolboxMcps } = useMemo(
+			() => splitMcpByType(options.mcp),
+			[options.mcp],
+		);
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -1138,42 +1132,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}
 					/>
 				</LexicalComposer>
-				{onMcpToggle && (
+				{onMcpChange && (
 					<>
 						<MCPOverlay
 							type="KNOWLEDGE"
 							open={knowledgeOverlayOpen}
-							values={options.mcp.filter(
-								(m) => m.type === "VECTOR",
-							)}
+							values={knowledgeMcps}
 							onClose={(updated) => {
 								setKnowledgeOverlayOpen(false);
 								if (updated)
-									applyMCPDiff(
-										options.mcp.filter(
-											(m) => m.type === "VECTOR",
-										),
-										updated,
-										onMcpToggle,
-									);
+									onMcpChange([...updated, ...toolboxMcps]);
 							}}
 						/>
 						<MCPOverlay
 							type="TOOLBOX"
 							open={toolboxOverlayOpen}
-							values={options.mcp.filter(
-								(m) => m.type !== "VECTOR",
-							)}
+							values={toolboxMcps}
 							onClose={(updated) => {
 								setToolboxOverlayOpen(false);
 								if (updated)
-									applyMCPDiff(
-										options.mcp.filter(
-											(m) => m.type !== "VECTOR",
-										),
-										updated,
-										onMcpToggle,
-									);
+									onMcpChange([...knowledgeMcps, ...updated]);
 							}}
 						/>
 					</>
