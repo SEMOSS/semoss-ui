@@ -12,8 +12,13 @@ import {
 import { useRootStore } from "@/hooks/";
 
 const RawHtml = ({ html }: { html: string }) => {
-	// biome-ignore lint/security/noDangerouslySetInnerHtml: server-controlled terms content
-	return <div dangerouslySetInnerHTML={{ __html: html }} />;
+	return (
+		<div
+			className="[&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: server-controlled terms content
+			dangerouslySetInnerHTML={{ __html: html }}
+		/>
+	);
 };
 
 export const PlatformMessages: React.FC = observer(() => {

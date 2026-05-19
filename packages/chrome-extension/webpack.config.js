@@ -35,9 +35,9 @@ module.exports = {
 	resolve: {
 		extensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
 		alias: {
-			"@semoss/ui": path.resolve(
+			"@semoss/ui/next": path.resolve(
 				__dirname,
-				"../../libs/ui/dist/index.mjs",
+				"../../libs/ui/dist/next.mjs",
 			),
 		},
 	},

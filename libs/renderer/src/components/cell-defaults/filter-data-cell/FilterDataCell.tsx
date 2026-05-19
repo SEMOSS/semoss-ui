@@ -1,13 +1,13 @@
-import { GripVertical, Trash2 } from "lucide-react";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
 import {
 	DragDropContext,
 	Draggable,
 	Droppable,
 	type DropResult,
-} from "react-beautiful-dnd";
+} from "@hello-pangea/dnd";
+import { GripVertical, Trash2 } from "lucide-react";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useEffect, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,

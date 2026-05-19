@@ -1,8 +1,11 @@
 import {
 	AlertCircle,
+	Braces,
 	CheckCircle,
+	CheckCircle2,
 	ChevronDown,
 	ChevronUp,
+	Copy,
 	Loader2,
 	Maximize2,
 	Minimize2,
@@ -11,9 +14,11 @@ import {
 	Search,
 	Sparkles,
 	Trash2,
+	Wand2,
 	X,
 } from "lucide-react";
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Badge,
@@ -26,14 +31,19 @@ import {
 	InputGroupInput,
 	InputGroupText,
 	Label,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
+	Switch,
 	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface DescriptionDiff {
 	old: string;
@@ -72,6 +82,7 @@ export type MCPToolProperty = {
 	description?: string;
 	type: string;
 	default?: unknown;
+	enum?: Array<string | number | boolean | null>;
 };
 
 export type MCPTool = {
@@ -85,7 +96,7 @@ export type MCPTool = {
 		type: "object";
 	};
 	_type: string;
-	_meta: Record<string, unknown>;
+	_meta?: Record<string, unknown>;
 };
 
 export type MCPJsonData = {
@@ -93,83 +104,25 @@ export type MCPJsonData = {
 	tools: MCPTool[];
 };
 
-interface EditorHeaderProps {
-	functionCount: number;
-	deletedCount?: number;
-	searchQuery: string;
-	debouncedSearch?: string;
-	showExpandAll?: boolean;
-	showSave?: boolean;
-	showSearch?: boolean;
-	expandAll?: boolean;
-	hasChanges?: boolean;
-	onExpandAll?: () => void;
-	onSave?: () => void;
-	onSearchChange: (value: string) => void;
-	onSearchClear: () => void;
-	saveShortcut?: string;
-}
+const ENUM_TYPE_VALUE = "enum";
 
-interface FunctionCardProps {
-	tool: MCPTool;
-	actualIdx: number;
-	isExpanded: boolean;
-	isDeleted: boolean;
-	onToggleExpand: (toolName: string) => void;
-	onDelete: (idx: number) => void;
-	onRestore: (idx: number) => void;
-	onUpdateTool: (index: number, value: Partial<MCPTool>) => void;
-	onUpdateToolProp: (
-		toolIdx: number,
-		propKey: string,
-		changes: Partial<MCPToolProperty>,
-	) => void;
-	onRequiredToggle: (
-		toolIdx: number,
-		propKey: string,
-		isRequired: boolean,
-	) => void;
-	onTypeChange: (toolIdx: number, propKey: string, newType: string) => void;
-	onDefaultChange: (
-		toolIdx: number,
-		propKey: string,
-		newDefault: string,
-		propType: string,
-	) => void;
-	onJsonTextChange: (
-		toolIdx: number,
-		propKey: string,
-		newText: string,
-	) => void;
-	getJsonTextValue: (
-		toolIdx: number,
-		propKey: string,
-		defaultValue: unknown,
-	) => string;
-	jsonErrors: Record<string, string>;
-	showDelete?: boolean;
-	showRestore?: boolean;
-	onOptimizeDescription: (toolIdx: number) => void;
-	enableToolEnhancer: boolean;
-}
+const TYPE_OPTIONS = [
+	{ value: "array", label: "Array" },
+	{ value: "boolean", label: "Boolean" },
+	{ value: ENUM_TYPE_VALUE, label: "Enum" },
+	{ value: "number", label: "Number" },
+	{ value: "object", label: "Object" },
+	{ value: "string", label: "String" },
+];
 
-interface DiffModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	toolName: string;
-	result: MCPDescriptionApiResponse | null;
-	isLoading: boolean;
-	error: string | null;
-	onApply: (selections: DiffSelections) => void;
-}
-
-// Custom hooks
 const useDebounce = <T,>(value: T, delay: number = 400): T => {
 	const [debouncedValue, setDebouncedValue] = useState(value);
+
 	useEffect(() => {
 		const timer = setTimeout(() => setDebouncedValue(value), delay);
 		return () => clearTimeout(timer);
 	}, [value, delay]);
+
 	return debouncedValue;
 };
 
@@ -180,26 +133,25 @@ const useJsonValidation = () => {
 		try {
 			JSON.parse(value);
 			setJsonErrors((prev) => {
-				const newErrors = { ...prev };
-				delete newErrors[key];
-				return newErrors;
+				if (!(key in prev)) return prev;
+				const next = { ...prev };
+				delete next[key];
+				return next;
 			});
 			return { valid: true };
 		} catch (e) {
 			const errorMsg = e instanceof Error ? e.message : "Invalid JSON";
-			setJsonErrors((prev) => ({
-				...prev,
-				[key]: errorMsg,
-			}));
+			setJsonErrors((prev) => ({ ...prev, [key]: errorMsg }));
 			return { valid: false, error: errorMsg };
 		}
 	}, []);
 
 	const clearError = useCallback((key: string) => {
 		setJsonErrors((prev) => {
-			const newErrors = { ...prev };
-			delete newErrors[key];
-			return newErrors;
+			if (!(key in prev)) return prev;
+			const next = { ...prev };
+			delete next[key];
+			return next;
 		});
 	}, []);
 
@@ -218,10 +170,51 @@ const useKeyboardShortcut = (
 				callback();
 			}
 		};
-
 		window.addEventListener("keydown", handleKeyDown);
 		return () => window.removeEventListener("keydown", handleKeyDown);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [key, callback, ...deps]);
+};
+
+const formatEnumValue = (value: string | number | boolean | null): string => {
+	if (value === null) return "null";
+	if (typeof value === "string") return `"${value}"`;
+	return String(value);
+};
+
+const formatMetaKey = (key: string): string =>
+	key
+		.replace(/_(date|time|at|on)$/i, "")
+		.replace(/_+/g, " ")
+		.trim()
+		.toLowerCase();
+
+// JSON.parse error messages vary by engine. Try to extract line/col so the user
+// can find the bad character without counting bytes by hand.
+const locateJsonError = (
+	message: string,
+	text: string,
+): { line: number; col: number } | null => {
+	const lineColMatch = message.match(/line (\d+) column (\d+)/i);
+	if (lineColMatch) {
+		return { line: Number(lineColMatch[1]), col: Number(lineColMatch[2]) };
+	}
+	const posMatch = message.match(/position (\d+)/i);
+	if (posMatch) {
+		const pos = Math.min(Number(posMatch[1]), text.length);
+		let line = 1;
+		let col = 1;
+		for (let i = 0; i < pos; i++) {
+			if (text[i] === "\n") {
+				line++;
+				col = 1;
+			} else {
+				col++;
+			}
+		}
+		return { line, col };
+	}
+	return null;
 };
 
 // ─── DiffRow Sub-Component ────────────────────────────────────────────────────
@@ -248,7 +241,6 @@ const DiffRow: React.FC<DiffRowProps> = ({
 					? "border-primary/40 bg-primary/5"
 					: "border-border bg-card opacity-70"
 			}`}
-			data-testid={`diff-row-${label}`}
 		>
 			<div className="flex items-center gap-3 border-border border-b px-4 py-2">
 				<input
@@ -256,7 +248,6 @@ const DiffRow: React.FC<DiffRowProps> = ({
 					checked={isSelected}
 					onChange={onToggle}
 					className="h-4 w-4 cursor-pointer rounded border-border accent-primary"
-					data-testid={`diff-row-checkbox-${label}`}
 				/>
 				{isToolLevel ? (
 					<span className="flex items-center gap-1.5 font-semibold text-foreground text-sm">
@@ -303,6 +294,16 @@ const DiffRow: React.FC<DiffRowProps> = ({
 };
 
 // ─── Diff Modal Component ─────────────────────────────────────────────────────
+
+interface DiffModalProps {
+	isOpen: boolean;
+	onClose: () => void;
+	toolName: string;
+	result: MCPDescriptionApiResponse | null;
+	isLoading: boolean;
+	error: string | null;
+	onApply: (selections: DiffSelections) => void;
+}
 
 const DiffModal: React.FC<DiffModalProps> = ({
 	isOpen,
@@ -351,7 +352,7 @@ const DiffModal: React.FC<DiffModalProps> = ({
 	};
 
 	return (
-		<div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" data-testid="diff-modal">
+		<div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-sm">
 			<div className="relative mx-4 w-full max-w-4xl overflow-hidden rounded-lg bg-card shadow-2xl">
 				{/* Header */}
 				<div className="flex items-center justify-between border-border border-b bg-secondary px-6 py-4">
@@ -376,7 +377,6 @@ const DiffModal: React.FC<DiffModalProps> = ({
 						size="icon-sm"
 						onClick={onClose}
 						className="text-muted-foreground hover:text-foreground"
-						data-testid="diff-modal-close"
 					>
 						<X size={20} />
 					</Button>
@@ -422,7 +422,6 @@ const DiffModal: React.FC<DiffModalProps> = ({
 									size="sm"
 									onClick={handleToggleAll}
 									className="text-primary hover:bg-primary/10"
-									data-testid="diff-modal-toggle-all"
 								>
 									{allSelected ? "Deselect All" : "Select All"}
 								</Button>
@@ -482,7 +481,6 @@ const DiffModal: React.FC<DiffModalProps> = ({
 							variant="outline"
 							onClick={onClose}
 							className="text-muted-foreground hover:text-foreground"
-							data-testid="diff-modal-cancel"
 						>
 							Cancel
 						</Button>
@@ -491,7 +489,6 @@ const DiffModal: React.FC<DiffModalProps> = ({
 							disabled={!anySelected}
 							onClick={() => onApply(selections)}
 							className="flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-							data-testid="diff-modal-apply"
 						>
 							<CheckCircle size={16} />
 							Apply Selected
@@ -501,7 +498,7 @@ const DiffModal: React.FC<DiffModalProps> = ({
 
 				{error && !isLoading && (
 					<div className="flex items-center justify-end border-border border-t bg-secondary px-6 py-4">
-						<Button variant="outline" onClick={onClose} data-testid="diff-modal-error-close">
+						<Button variant="outline" onClick={onClose}>
 							Close
 						</Button>
 					</div>
@@ -511,7 +508,23 @@ const DiffModal: React.FC<DiffModalProps> = ({
 	);
 };
 
-// EditorHeader Component
+interface EditorHeaderProps {
+	functionCount: number;
+	deletedCount?: number;
+	searchQuery: string;
+	debouncedSearch?: string;
+	showExpandAll?: boolean;
+	showSave?: boolean;
+	showSearch?: boolean;
+	hasChanges?: boolean;
+	onExpandAll?: () => void;
+	onCollapseAll?: () => void;
+	onSave?: () => void;
+	onSearchChange: (value: string) => void;
+	onSearchClear: () => void;
+	saveShortcut?: string;
+}
+
 const EditorHeader: React.FC<EditorHeaderProps> = ({
 	functionCount,
 	deletedCount = 0,
@@ -520,17 +533,16 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 	showExpandAll = true,
 	showSave = true,
 	showSearch = true,
-	expandAll = false,
 	hasChanges = false,
 	onExpandAll,
+	onCollapseAll,
 	onSave,
 	onSearchChange,
 	onSearchClear,
 	saveShortcut = "Ctrl+S / Cmd+S",
 }) => {
 	return (
-		<div className="sticky top-0 z-50 mb-6 rounded-lg border bg-card/95 p-4 shadow-sm backdrop-blur-sm" data-testid="editor-header">
-			{/* Top Row: Function Count, Actions */}
+		<div className="sticky top-0 z-50 mb-6 rounded-lg border bg-card/95 p-4 shadow-sm backdrop-blur-sm">
 			<div className="mb-3 flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<Badge color="info" className="px-2 py-1 text-xs">
@@ -550,22 +562,34 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 				</div>
 				<div className="flex items-center gap-2">
 					{showExpandAll && onExpandAll && (
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={onExpandAll}
-							className="flex items-center gap-1.5 border-border bg-background text-foreground hover:bg-accent"
-							data-testid="editor-header-expand-all"
-						>
-							{expandAll ? (
-								<Minimize2 size={14} />
-							) : (
-								<Maximize2 size={14} />
-							)}
-							<span className="hidden sm:inline">
-								{expandAll ? "Collapse All" : "Expand All"}
-							</span>
-						</Button>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon-sm"
+									onClick={onExpandAll}
+									aria-label="Expand all"
+								>
+									<Maximize2 size={14} />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Expand all</TooltipContent>
+						</Tooltip>
+					)}
+					{showExpandAll && onCollapseAll && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon-sm"
+									onClick={onCollapseAll}
+									aria-label="Collapse all"
+								>
+									<Minimize2 size={14} />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Collapse all</TooltipContent>
+						</Tooltip>
 					)}
 					{showSave && onSave && (
 						<Button
@@ -574,8 +598,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 							onClick={onSave}
 							disabled={!hasChanges}
 							title={saveShortcut}
-							className="flex items-center gap-1.5 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
-							data-testid="editor-header-save"
+							className="flex items-center gap-1.5"
 						>
 							<Save size={14} />
 							<span>Save</span>
@@ -583,7 +606,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 					)}
 				</div>
 			</div>
-			{/* Search Bar */}
+
 			{showSearch && (
 				<InputGroup>
 					<InputGroupAddon align="inline-start">
@@ -599,7 +622,6 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 						onChange={(e) => onSearchChange?.(e.target.value)}
 						placeholder="Search functions by name, title, or description..."
 						className="text-foreground text-sm"
-						data-testid="editor-header-search"
 					/>
 					{searchQuery && (
 						<InputGroupAddon align="inline-end">
@@ -607,8 +629,7 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 								size="icon-xs"
 								variant="ghost"
 								onClick={onSearchClear}
-								className="text-muted-foreground transition-colors hover:text-foreground"
-								data-testid="editor-header-search-clear"
+								className="text-muted-foreground hover:text-foreground"
 							>
 								<X size={18} />
 							</InputGroupButton>
@@ -620,14 +641,646 @@ const EditorHeader: React.FC<EditorHeaderProps> = ({
 	);
 };
 
-// FunctionCard Component
-const TYPE_OPTIONS = [
-	{ value: "string", label: "String" },
-	{ value: "number", label: "Number" },
-	{ value: "boolean", label: "Boolean" },
-	{ value: "array", label: "Array" },
-	{ value: "object", label: "Object" },
-];
+interface JsonFieldProps {
+	value: string;
+	error?: string;
+	disabled?: boolean;
+	emptyValue: string;
+	placeholder: string;
+	label?: React.ReactNode;
+	collapsed?: boolean;
+	onToggleCollapse?: () => void;
+	onChange: (text: string) => void;
+}
+
+const JsonField: React.FC<JsonFieldProps> = ({
+	value,
+	error,
+	disabled,
+	emptyValue,
+	placeholder,
+	label,
+	collapsed,
+	onToggleCollapse,
+	onChange,
+}) => {
+	const [copied, setCopied] = useState(false);
+	const safeValue = value ?? "";
+
+	const errorLocation = useMemo(
+		() => (error ? locateJsonError(error, safeValue) : null),
+		[error, safeValue],
+	);
+
+	const handleFormat = useCallback(() => {
+		try {
+			const parsed = JSON.parse(safeValue);
+			onChange(JSON.stringify(parsed, null, 2));
+		} catch {
+			// invalid JSON: leave as-is and let the error UI guide the user
+		}
+	}, [safeValue, onChange]);
+
+	const handleReset = useCallback(() => {
+		onChange(emptyValue);
+	}, [emptyValue, onChange]);
+
+	const handleCopy = useCallback(async () => {
+		try {
+			await navigator.clipboard.writeText(safeValue);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 1200);
+		} catch {
+			// clipboard blocked; ignore silently
+		}
+	}, [safeValue]);
+
+	const isEmpty = safeValue.trim().length === 0;
+	const hasError = Boolean(error);
+	const lineCount = safeValue.length === 0 ? 1 : safeValue.split("\n").length;
+	const rows = Math.max(1, Math.min(lineCount, 12));
+
+	return (
+		<div className="flex flex-col gap-1.5">
+			<div className="flex items-center justify-between gap-2">
+				{onToggleCollapse ? (
+					<button
+						type="button"
+						onClick={onToggleCollapse}
+						className="flex min-w-0 cursor-pointer items-center gap-2 text-left text-xs"
+					>
+						{collapsed ? (
+							<ChevronDown
+								size={16}
+								className="text-muted-foreground"
+							/>
+						) : (
+							<ChevronUp
+								size={16}
+								className="text-muted-foreground"
+							/>
+						)}
+						{label && (
+							<span className="truncate font-semibold text-foreground text-sm">
+								{label}
+							</span>
+						)}
+						<span className="flex items-center gap-1.5 text-muted-foreground">
+							<Braces size={12} />
+							<span className="font-medium">JSON</span>
+						</span>
+					</button>
+				) : (
+					<div className="flex min-w-0 items-center gap-2 text-xs">
+						{label && (
+							<span className="truncate font-semibold text-foreground text-sm">
+								{label}
+							</span>
+						)}
+						<span className="flex items-center gap-1.5 text-muted-foreground">
+							<Braces size={12} />
+							<span className="font-medium">JSON</span>
+						</span>
+					</div>
+				)}
+				<div className="flex items-center gap-1">
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								onClick={handleFormat}
+								disabled={disabled || isEmpty || hasError}
+								className="text-muted-foreground hover:text-foreground"
+							>
+								<Wand2 size={14} />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Format (pretty-print)</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								onClick={handleCopy}
+								disabled={isEmpty}
+								className="text-muted-foreground hover:text-foreground"
+							>
+								<Copy size={14} />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{copied ? "Copied" : "Copy"}
+						</TooltipContent>
+					</Tooltip>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								onClick={handleReset}
+								disabled={disabled}
+								className="text-muted-foreground hover:text-foreground"
+							>
+								<RotateCcw size={14} />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>Reset to {emptyValue}</TooltipContent>
+					</Tooltip>
+				</div>
+			</div>
+			{!collapsed && (
+				<>
+					<Textarea
+						value={safeValue}
+						onChange={(e) => onChange(e.target.value)}
+						disabled={disabled}
+						rows={rows}
+						spellCheck={false}
+						placeholder={placeholder}
+						style={{ minHeight: 0 }}
+						className={`w-full resize-y px-2 py-1.5 font-mono text-foreground text-xs leading-relaxed ${
+							hasError
+								? "border-destructive ring-destructive/20 focus:border-destructive"
+								: ""
+						} ${disabled ? "cursor-not-allowed bg-muted opacity-60" : ""}`}
+					/>
+					<div className="min-h-[1rem] text-xs">
+						{hasError ? (
+							<div className="flex items-start gap-1 text-destructive">
+								<AlertCircle
+									size={12}
+									className="mt-0.5 flex-shrink-0"
+								/>
+								<span>
+									{errorLocation
+										? `Line ${errorLocation.line}, column ${errorLocation.col}: ${error}`
+										: error}
+								</span>
+							</div>
+						) : isEmpty ? (
+							<span className="text-muted-foreground">
+								No default value
+							</span>
+						) : (
+							<div className="flex items-center gap-1 text-[color:var(--chart-2)]">
+								<CheckCircle2
+									size={12}
+									className="flex-shrink-0"
+								/>
+								<span>Valid JSON</span>
+							</div>
+						)}
+					</div>
+				</>
+			)}
+		</div>
+	);
+};
+
+interface PropertyCardProps {
+	toolIdx: number;
+	propKey: string;
+	property: MCPToolProperty;
+	isRequired: boolean;
+	isDeleted: boolean;
+	jsonError?: string;
+	jsonText: string;
+	onUpdateToolProp: (
+		toolIdx: number,
+		propKey: string,
+		changes: Partial<MCPToolProperty>,
+	) => void;
+	onRequiredToggle: (
+		toolIdx: number,
+		propKey: string,
+		isRequired: boolean,
+	) => void;
+	onTypeChange: (toolIdx: number, propKey: string, newType: string) => void;
+	onDefaultChange: (
+		toolIdx: number,
+		propKey: string,
+		newDefault: string,
+		propType: string,
+	) => void;
+	onEnumDefaultChange: (
+		toolIdx: number,
+		propKey: string,
+		enumIndex: number,
+	) => void;
+	onEnumValueAdd: (
+		toolIdx: number,
+		propKey: string,
+		newValue: string,
+	) => void;
+	onEnumValueDelete: (
+		toolIdx: number,
+		propKey: string,
+		enumIndex: number,
+	) => void;
+	onJsonTextChange: (
+		toolIdx: number,
+		propKey: string,
+		newText: string,
+	) => void;
+}
+
+const PropertyCard: React.FC<PropertyCardProps> = ({
+	toolIdx,
+	propKey,
+	property,
+	isRequired,
+	isDeleted,
+	jsonError,
+	jsonText,
+	onUpdateToolProp,
+	onRequiredToggle,
+	onTypeChange,
+	onDefaultChange,
+	onEnumDefaultChange,
+	onEnumValueAdd,
+	onEnumValueDelete,
+	onJsonTextChange,
+}) => {
+	const isEnumType = Array.isArray(property.enum);
+	const enumOptions = isEnumType ? (property.enum ?? []) : [];
+	const displayedType = isEnumType ? ENUM_TYPE_VALUE : property.type;
+	const selectedEnumIndex = isEnumType
+		? Math.max(
+				enumOptions.indexOf(
+					property.default as string | number | boolean | null,
+				),
+				0,
+			)
+		: -1;
+	const isJsonType = property.type === "array" || property.type === "object";
+	const requiredId = `required-${toolIdx}-${propKey}`;
+	const [enumDraft, setEnumDraft] = useState("");
+
+	const handleJsonChange = useCallback(
+		(text: string) => onJsonTextChange(toolIdx, propKey, text),
+		[onJsonTextChange, toolIdx, propKey],
+	);
+
+	const handleAddEnum = useCallback(() => {
+		const trimmed = enumDraft.trim();
+		if (!trimmed) return;
+		if (enumOptions.some((opt) => String(opt) === trimmed)) {
+			setEnumDraft("");
+			return;
+		}
+		onEnumValueAdd(toolIdx, propKey, trimmed);
+		setEnumDraft("");
+	}, [enumDraft, enumOptions, onEnumValueAdd, toolIdx, propKey]);
+
+	return (
+		<div
+			className={`rounded-lg border bg-card transition-colors ${
+				isDeleted ? "opacity-60" : ""
+			}`}
+		>
+			<div className="flex flex-wrap items-center gap-3 border-b bg-muted/40 px-3 py-2">
+				<code
+					className="flex-1 truncate font-mono font-semibold text-foreground text-sm"
+					title={propKey}
+				>
+					{propKey}
+				</code>
+
+				<div className="flex items-center gap-1.5">
+					<Label className="text-muted-foreground text-xs">
+						Type
+					</Label>
+					<Select
+						value={displayedType}
+						onValueChange={(val) =>
+							onTypeChange(toolIdx, propKey, val)
+						}
+						disabled={isDeleted}
+					>
+						<SelectTrigger size="sm" className="h-8 w-[120px]">
+							<SelectValue />
+						</SelectTrigger>
+						<SelectContent>
+							{TYPE_OPTIONS.map((opt) => (
+								<SelectItem key={opt.value} value={opt.value}>
+									{opt.label}
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+
+				<div className="flex items-center gap-2">
+					<Label
+						htmlFor={requiredId}
+						className="text-muted-foreground text-xs"
+					>
+						Required
+					</Label>
+					<Switch
+						id={requiredId}
+						checked={isRequired}
+						onCheckedChange={(checked) =>
+							onRequiredToggle(toolIdx, propKey, checked)
+						}
+						disabled={isDeleted}
+						size="sm"
+					/>
+				</div>
+			</div>
+
+			<div className="flex flex-col gap-3 p-3">
+				<div className="flex flex-col gap-1">
+					<Label className="text-muted-foreground text-xs">
+						Title
+					</Label>
+					<Input
+						value={property.title}
+						onChange={(e) =>
+							onUpdateToolProp(toolIdx, propKey, {
+								title: e.target.value,
+							})
+						}
+						disabled={isDeleted}
+						placeholder="Human-readable label"
+						className={`text-foreground text-sm ${
+							isDeleted
+								? "cursor-not-allowed bg-muted opacity-60"
+								: ""
+						}`}
+					/>
+				</div>
+				<div className="flex flex-col gap-1">
+					<Label className="text-muted-foreground text-xs">
+						Description
+					</Label>
+					<Textarea
+						value={property.description ?? ""}
+						onChange={(e) =>
+							onUpdateToolProp(toolIdx, propKey, {
+								description: e.target.value,
+							})
+						}
+						disabled={isDeleted}
+						rows={3}
+						placeholder="What this parameter controls..."
+						className={`resize-y text-foreground text-sm ${
+							isDeleted
+								? "cursor-not-allowed bg-muted opacity-60"
+								: ""
+						}`}
+					/>
+				</div>
+
+				{!isJsonType && (
+					<div className="flex flex-col gap-1">
+						<Label className="text-muted-foreground text-xs">
+							Default value
+						</Label>
+						{isEnumType ? (
+							enumOptions.length > 0 ? (
+								<Select
+									value={String(selectedEnumIndex)}
+									onValueChange={(val) =>
+										onEnumDefaultChange(
+											toolIdx,
+											propKey,
+											Number(val),
+										)
+									}
+									disabled={isDeleted}
+								>
+									<SelectTrigger size="sm" className="h-9">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										{enumOptions.map((option, index) => (
+											<SelectItem
+												key={`${propKey}-${String(option)}-${index}`}
+												value={String(index)}
+											>
+												<span className="font-mono text-xs">
+													{formatEnumValue(option)}
+												</span>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							) : (
+								<p className="text-muted-foreground text-xs">
+									Add at least one allowed value below.
+								</p>
+							)
+						) : property.type === "boolean" ? (
+							<Select
+								value={String(Boolean(property.default))}
+								onValueChange={(val) =>
+									onDefaultChange(
+										toolIdx,
+										propKey,
+										val,
+										property.type,
+									)
+								}
+								disabled={isDeleted}
+							>
+								<SelectTrigger size="sm" className="h-9">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="true">True</SelectItem>
+									<SelectItem value="false">False</SelectItem>
+								</SelectContent>
+							</Select>
+						) : (
+							<Input
+								type={
+									property.type === "number"
+										? "number"
+										: "text"
+								}
+								value={String(property.default ?? "")}
+								onChange={(e) =>
+									onDefaultChange(
+										toolIdx,
+										propKey,
+										e.target.value,
+										property.type,
+									)
+								}
+								disabled={isDeleted}
+								placeholder={
+									property.type === "number"
+										? "0"
+										: "Default value"
+								}
+								className={`text-foreground text-sm ${
+									isDeleted
+										? "cursor-not-allowed bg-muted opacity-60"
+										: ""
+								}`}
+							/>
+						)}
+					</div>
+				)}
+
+				{isEnumType && (
+					<div className="flex flex-col gap-2">
+						<Label className="text-muted-foreground text-xs">
+							Allowed values ({enumOptions.length})
+						</Label>
+						{enumOptions.length > 0 ? (
+							<div className="flex flex-wrap gap-1.5 rounded-md border bg-muted/30 p-2">
+								{enumOptions.map((option, index) => (
+									<span
+										key={`${propKey}-${String(option)}-${index}`}
+										className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 font-mono text-foreground text-xs"
+										title={formatEnumValue(option)}
+									>
+										<span className="truncate">
+											{formatEnumValue(option)}
+										</span>
+										<button
+											type="button"
+											onClick={() =>
+												onEnumValueDelete(
+													toolIdx,
+													propKey,
+													index,
+												)
+											}
+											disabled={isDeleted}
+											aria-label={`Remove ${String(option)}`}
+											className="rounded text-muted-foreground transition-colors hover:text-destructive disabled:cursor-not-allowed disabled:opacity-50"
+										>
+											<X size={12} />
+										</button>
+									</span>
+								))}
+							</div>
+						) : (
+							<p className="text-muted-foreground text-xs">
+								No values yet. Type below and press Enter to
+								add.
+							</p>
+						)}
+						<div className="flex items-center gap-2">
+							<Input
+								value={enumDraft}
+								onChange={(e) => setEnumDraft(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										e.preventDefault();
+										handleAddEnum();
+									}
+								}}
+								disabled={isDeleted}
+								placeholder="Type a value and press Enter to add..."
+								className={`text-foreground text-sm ${
+									isDeleted
+										? "cursor-not-allowed bg-muted opacity-60"
+										: ""
+								}`}
+							/>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={handleAddEnum}
+								disabled={isDeleted || !enumDraft.trim()}
+							>
+								Add
+							</Button>
+						</div>
+					</div>
+				)}
+
+				{isJsonType && (
+					<div className="flex flex-col gap-1">
+						<Label className="text-muted-foreground text-xs">
+							Default value
+						</Label>
+						<JsonField
+							value={jsonText}
+							error={jsonError}
+							disabled={isDeleted}
+							emptyValue={property.type === "array" ? "[]" : "{}"}
+							placeholder={
+								property.type === "array"
+									? '["item1", "item2"]'
+									: '{"key": "value"}'
+							}
+							onChange={handleJsonChange}
+						/>
+					</div>
+				)}
+			</div>
+		</div>
+	);
+};
+
+interface FunctionCardProps {
+	tool: MCPTool;
+	actualIdx: number;
+	isExpanded: boolean;
+	isDeleted: boolean;
+	onToggleExpand: (toolName: string) => void;
+	onDelete: (idx: number) => void;
+	onRestore: (idx: number) => void;
+	onUpdateTool: (index: number, value: Partial<MCPTool>) => void;
+	onUpdateToolProp: (
+		toolIdx: number,
+		propKey: string,
+		changes: Partial<MCPToolProperty>,
+	) => void;
+	onRequiredToggle: (
+		toolIdx: number,
+		propKey: string,
+		isRequired: boolean,
+	) => void;
+	onTypeChange: (toolIdx: number, propKey: string, newType: string) => void;
+	onDefaultChange: (
+		toolIdx: number,
+		propKey: string,
+		newDefault: string,
+		propType: string,
+	) => void;
+	onEnumDefaultChange: (
+		toolIdx: number,
+		propKey: string,
+		enumIndex: number,
+	) => void;
+	onEnumValueAdd: (
+		toolIdx: number,
+		propKey: string,
+		newValue: string,
+	) => void;
+	onEnumValueDelete: (
+		toolIdx: number,
+		propKey: string,
+		enumIndex: number,
+	) => void;
+	onJsonTextChange: (
+		toolIdx: number,
+		propKey: string,
+		newText: string,
+	) => void;
+	getJsonTextValue: (
+		toolIdx: number,
+		propKey: string,
+		defaultValue: unknown,
+	) => string;
+	jsonErrors: Record<string, string>;
+	showDelete?: boolean;
+	showRestore?: boolean;
+	onOptimizeDescription: (toolIdx: number) => void;
+	enableToolEnhancer: boolean;
+}
 
 const FunctionCard = memo<FunctionCardProps>(
 	({
@@ -643,6 +1296,9 @@ const FunctionCard = memo<FunctionCardProps>(
 		onRequiredToggle,
 		onTypeChange,
 		onDefaultChange,
+		onEnumDefaultChange,
+		onEnumValueAdd,
+		onEnumValueDelete,
 		onJsonTextChange,
 		getJsonTextValue,
 		jsonErrors,
@@ -651,22 +1307,69 @@ const FunctionCard = memo<FunctionCardProps>(
 		onOptimizeDescription,
 		enableToolEnhancer,
 	}) => {
+		const propertyEntries = Object.entries(tool.inputSchema.properties);
+		const requiredCount = tool.inputSchema.required?.length ?? 0;
+		const [paramsExpanded, setParamsExpanded] = useState(true);
+		const [metaExpanded, setMetaExpanded] = useState(false);
+
+		const [metaText, setMetaText] = useState<string>(() => {
+			if (!tool._meta || Object.keys(tool._meta).length === 0) return "";
+			try {
+				return JSON.stringify(tool._meta, null, 2);
+			} catch {
+				return "";
+			}
+		});
+		const [metaError, setMetaError] = useState<string | undefined>(
+			undefined,
+		);
+
+		const handleMetaChange = useCallback(
+			(newText: string) => {
+				setMetaText(newText);
+
+				if (newText.trim() === "") {
+					setMetaError(undefined);
+					onUpdateTool(actualIdx, { _meta: undefined });
+					return;
+				}
+
+				try {
+					const parsed = JSON.parse(newText);
+					if (
+						typeof parsed !== "object" ||
+						parsed === null ||
+						Array.isArray(parsed)
+					) {
+						setMetaError("Metadata must be a JSON object");
+						return;
+					}
+					setMetaError(undefined);
+					onUpdateTool(actualIdx, {
+						_meta: parsed as Record<string, unknown>,
+					});
+				} catch (e) {
+					setMetaError(
+						e instanceof Error ? e.message : "Invalid JSON",
+					);
+				}
+			},
+			[actualIdx, onUpdateTool],
+		);
+
 		return (
-			<Card className="mb-5 w-full gap-0 rounded-lg py-0 transition-all" data-testid={`function-card-${tool.name}`}>
+			<Card className="mb-4 w-full gap-0 overflow-hidden rounded-lg py-0">
 				<div
 					className={`flex w-full items-center justify-between ${
 						isDeleted ? "bg-muted" : "bg-secondary"
-					} ${
-						isExpanded ? "rounded-t-lg" : "rounded-lg"
 					} transition-colors hover:bg-accent`}
 				>
 					<button
 						type="button"
 						onClick={() => onToggleExpand(tool.name)}
-						className="flex flex-1 cursor-pointer items-center gap-2 p-2 text-left"
-						data-testid={`function-card-toggle-${tool.name}`}
+						className="flex min-w-0 flex-1 cursor-pointer items-center gap-1.5 p-2 text-left sm:gap-2 sm:p-2.5"
 					>
-						<div className="rounded p-1">
+						<div className="flex-shrink-0 rounded p-1">
 							{isExpanded ? (
 								<ChevronUp
 									size={18}
@@ -679,15 +1382,35 @@ const FunctionCard = memo<FunctionCardProps>(
 								/>
 							)}
 						</div>
-						<span
-							className={`font-bold text-base ${
-								isDeleted
-									? "text-muted-foreground line-through"
-									: "text-foreground"
-							}`}
-						>
-							{tool.title || tool.name}
-						</span>
+						<div className="flex min-w-0 flex-1 flex-col">
+							<span
+								className={`truncate font-semibold text-sm sm:text-base ${
+									isDeleted
+										? "text-muted-foreground line-through"
+										: "text-foreground"
+								}`}
+							>
+								{tool.title || tool.name}
+							</span>
+							{tool.title && tool.title !== tool.name && (
+								<code className="truncate font-mono text-[10px] text-muted-foreground sm:text-xs">
+									{tool.name}
+								</code>
+							)}
+						</div>
+						<div className="hidden flex-shrink-0 items-center gap-1.5 pr-2 text-muted-foreground text-xs sm:flex">
+							<Badge variant="outline" className="text-xs">
+								{propertyEntries.length}{" "}
+								{propertyEntries.length === 1
+									? "param"
+									: "params"}
+							</Badge>
+							{requiredCount > 0 && (
+								<Badge variant="outline" className="text-xs">
+									{requiredCount} required
+								</Badge>
+							)}
+						</div>
 					</button>
 					<div className="flex gap-2 pr-2">
 						{!isDeleted && showDelete ? (
@@ -696,8 +1419,8 @@ const FunctionCard = memo<FunctionCardProps>(
 								size="sm"
 								color="error"
 								onClick={() => onDelete(actualIdx)}
+								data-action="delete"
 								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
-								data-testid={`function-card-delete-${tool.name}`}
 							>
 								<Trash2 size={14} />
 								<span className="hidden sm:inline">Delete</span>
@@ -707,22 +1430,24 @@ const FunctionCard = memo<FunctionCardProps>(
 								variant="ghost"
 								size="sm"
 								onClick={() => onRestore(actualIdx)}
+								data-action="restore"
 								className="flex items-center gap-1 text-destructive hover:bg-transparent hover:text-destructive/90"
-								data-testid={`function-card-restore-${tool.name}`}
 							>
 								<RotateCcw size={14} />
-								<span className="hidden sm:inline">Restore</span>
+								<span className="hidden sm:inline">
+									Restore
+								</span>
 							</Button>
 						) : null}
 					</div>
 				</div>
 
 				{isExpanded && (
-					<div className="p-4">
-						<div className="mb-3">
-							<div className="mb-1 flex items-center justify-between">
-								<Label className="text-foreground text-sm">
-									Description:
+					<div className="space-y-4 p-4">
+						<div className="flex flex-col gap-1">
+							<div className="flex items-center justify-between">
+								<Label className="text-muted-foreground text-xs">
+									Function description
 								</Label>
 								<Tooltip>
 									<TooltipTrigger asChild>
@@ -740,7 +1465,6 @@ const FunctionCard = memo<FunctionCardProps>(
 														actualIdx,
 													)
 												}
-												data-testid={`function-card-optimize-${tool.name}`}
 											>
 												<Sparkles size={14} />
 											</Button>
@@ -762,310 +1486,114 @@ const FunctionCard = memo<FunctionCardProps>(
 								}
 								disabled={isDeleted}
 								rows={2}
-								style={{ height: "4rem" }}
-								className={`w-full resize-y overflow-y-auto px-2 py-1 text-foreground text-sm ${
+								className={`resize-y text-foreground text-sm ${
 									isDeleted
 										? "cursor-not-allowed bg-muted opacity-60"
 										: ""
 								}`}
-								placeholder="Describe function purpose and parameters..."
-								data-testid={`function-card-description-${tool.name}`}
+								placeholder="Describe function purpose and when to use it..."
 							/>
 						</div>
 
-						{/* Properties Grid */}
-						<div className="w-full overflow-x-auto">
-							<div
-								className="min-w-full overflow-hidden rounded-lg border"
-								style={{
-									display: "grid",
-									gridTemplateColumns:
-										"10% 13% 27% 12% 12% 26%",
-									fontSize: "0.813rem",
-								}}
-							>
-								{/* Header Row */}
-								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
-									Name
-								</div>
-								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
-									Title
-								</div>
-								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
-									Description
-								</div>
-								<div className="flex items-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
-									Type
-								</div>
-								<div className="flex items-center justify-center border-border border-r border-b bg-muted px-2 py-2 font-semibold text-foreground">
-									Required
-								</div>
-								<div className="flex items-center border-border border-b bg-muted px-2 py-2 font-semibold text-foreground">
-									Default Value
-								</div>
+						<Separator />
 
-								{/* Data Rows */}
-								{Object.entries(
-									tool.inputSchema.properties,
-								).map(([k, p]) => {
-									const textKey = `${actualIdx}-${k}`;
-									const hasError = jsonErrors[textKey];
-									const isRequired =
-										tool.inputSchema.required?.includes(
-											k,
-										) || false;
-
-									return (
-										<React.Fragment key={k}>
-											{/* Name */}
-											<div className="flex w-full items-center border-border border-r border-b bg-card px-2 py-2">
-												<span
-													className="block truncate text-foreground"
-													title={k}
-												>
-													{k}
-												</span>
-											</div>
-
-											{/* Title */}
-											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
-												<Input
-													value={p.title}
-													onChange={(e) =>
-														onUpdateToolProp(
-															actualIdx,
-															k,
-															{
-																title: e.target
-																	.value,
-															},
-														)
-													}
-													disabled={isDeleted}
-													className={`w-full px-1.5 py-1 text-foreground text-sm ${
-														isDeleted
-															? "cursor-not-allowed bg-muted opacity-60"
-															: ""
-													}`}
-													data-testid={`prop-title-${tool.name}-${k}`}
-												/>
-											</div>
-
-											{/* Description */}
-											<div className="border-border border-r border-b bg-card px-2 py-2">
-												<Textarea
-													value={p.description ?? ""}
-													onChange={(e) =>
-														onUpdateToolProp(
-															actualIdx,
-															k,
-															{
-																description:
-																	e.target
-																		.value,
-															},
-														)
-													}
-													disabled={isDeleted}
-													rows={2}
-													style={{ height: "3rem" }}
-													className={`w-full resize-y overflow-y-auto px-1.5 py-1 text-foreground text-xs ${
-														isDeleted
-															? "cursor-not-allowed bg-muted opacity-60"
-															: ""
-													}`}
-													placeholder="Parameter description..."
-													data-testid={`prop-description-${tool.name}-${k}`}
-												/>
-											</div>
-
-											{/* Type */}
-											<div className="flex items-center border-border border-r border-b bg-card px-2 py-2">
-												<select
-													value={p.type}
-													onChange={(e) =>
-														onTypeChange(
-															actualIdx,
-															k,
-															e.target.value,
-														)
-													}
-													disabled={isDeleted}
-													className={`h-[34px] w-full rounded border border-border bg-card px-1.5 text-foreground text-sm ${
-														isDeleted
-															? "cursor-not-allowed opacity-60"
-															: ""
-													}`}
-													data-testid={`prop-type-${tool.name}-${k}`}
-												>
-													{TYPE_OPTIONS.map((opt) => (
-														<option
-															key={opt.value}
-															value={opt.value}
-														>
-															{opt.label}
-														</option>
-													))}
-												</select>
-											</div>
-
-											{/* Required */}
-											<div className="flex items-center justify-center border-border border-r border-b bg-card px-2 py-2">
-												<input
-													type="checkbox"
-													checked={isRequired}
-													onChange={(e) =>
-														onRequiredToggle(
-															actualIdx,
-															k,
-															e.target.checked,
-														)
-													}
-													disabled={isDeleted}
-													title={
-														isRequired
-															? "Required"
-															: "Optional"
-													}
-													className={`h-4 w-4 rounded border-border accent-primary ${
-														isDeleted
-															? "cursor-not-allowed opacity-60"
-															: "cursor-pointer"
-													}`}
-													data-testid={`prop-required-${tool.name}-${k}`}
-												/>
-											</div>
-
-											{/* Default Value */}
-											{p.type === "array" ||
-											p.type === "object" ? (
-												<div className="border-border border-b bg-card px-2 py-2">
-													<Textarea
-														value={getJsonTextValue(
-															actualIdx,
-															k,
-															p.default,
-														)}
-														onChange={(e) =>
-															onJsonTextChange(
-																actualIdx,
-																k,
-																e.target.value,
-															)
-														}
-														disabled={isDeleted}
-														rows={3}
-														style={{
-															height: "4.5rem",
-														}}
-														className={`w-full resize-y overflow-y-auto px-1.5 py-1 font-mono text-foreground text-xs ${
-															hasError
-																? "border-destructive"
-																: "border-border"
-														} ${
-															isDeleted
-																? "cursor-not-allowed bg-muted opacity-60"
-																: ""
-														}`}
-														placeholder={
-															p.type === "array"
-																? '["item1", "item2"]'
-																: '{"key": "value"}'
-														}
-														data-testid={`prop-default-${tool.name}-${k}`}
-													/>
-													{hasError && (
-														<div className="mt-1 flex items-start gap-1 text-destructive text-xs">
-															<AlertCircle
-																size={12}
-																className="mt-0.5 flex-shrink-0"
-															/>
-															<span>
-																{hasError}
-															</span>
-														</div>
-													)}
-													{!hasError &&
-														p.default !==
-															undefined && (
-															<div className="mt-1 flex items-center gap-1 text-[color:var(--chart-2)] text-xs">
-																<CheckCircle
-																	size={12}
-																	className="flex-shrink-0"
-																/>
-																<span>
-																	Valid JSON
-																</span>
-															</div>
-														)}
-												</div>
-											) : (
-												<div className="flex items-center border-border border-b bg-card px-2 py-2">
-													{p.type === "boolean" ? (
-														<select
-															value={String(
-																p.default,
-															)}
-															onChange={(e) =>
-																onDefaultChange(
-																	actualIdx,
-																	k,
-																	e.target
-																		.value,
-																	p.type,
-																)
-															}
-															disabled={isDeleted}
-															className={`h-[34px] w-full rounded border border-border bg-card px-1.5 text-foreground text-sm ${
-																isDeleted
-																	? "cursor-not-allowed opacity-60"
-																	: ""
-															}`}
-															data-testid={`prop-default-${tool.name}-${k}`}
-														>
-															<option value="true">
-																True
-															</option>
-															<option value="false">
-																False
-															</option>
-														</select>
-													) : (
-														<Input
-															type={
-																p.type ===
-																"number"
-																	? "number"
-																	: "text"
-															}
-															value={String(
-																p.default ?? "",
-															)}
-															onChange={(e) =>
-																onDefaultChange(
-																	actualIdx,
-																	k,
-																	e.target
-																		.value,
-																	p.type,
-																)
-															}
-															disabled={isDeleted}
-															className={`w-full px-1.5 py-1 text-foreground text-sm ${
-																isDeleted
-																	? "cursor-not-allowed bg-muted opacity-60"
-																	: ""
-															}`}
-															data-testid={`prop-default-${tool.name}-${k}`}
-														/>
-													)}
-												</div>
-											)}
-										</React.Fragment>
-									);
-								})}
+						<button
+							type="button"
+							onClick={() => setParamsExpanded((prev) => !prev)}
+							className="flex w-full cursor-pointer items-center justify-between gap-2 text-left"
+						>
+							<div className="flex items-center gap-1.5">
+								{paramsExpanded ? (
+									<ChevronUp
+										size={16}
+										className="text-muted-foreground"
+									/>
+								) : (
+									<ChevronDown
+										size={16}
+										className="text-muted-foreground"
+									/>
+								)}
+								<Label className="cursor-pointer font-semibold text-foreground text-sm">
+									Parameters
+								</Label>
 							</div>
-						</div>
+							<span className="text-muted-foreground text-xs">
+								{propertyEntries.length === 0
+									? "No parameters"
+									: `${propertyEntries.length} total · ${requiredCount} required`}
+							</span>
+						</button>
+
+						{paramsExpanded &&
+							(propertyEntries.length === 0 ? (
+								<div className="rounded-lg border border-dashed py-6 text-center text-muted-foreground text-sm">
+									This function has no parameters.
+								</div>
+							) : (
+								<div className="flex flex-col gap-3">
+									{propertyEntries.map(([k, p]) => {
+										const textKey = `${actualIdx}-${k}`;
+										const isRequired =
+											tool.inputSchema.required?.includes(
+												k,
+											) ?? false;
+
+										return (
+											<PropertyCard
+												key={k}
+												toolIdx={actualIdx}
+												propKey={k}
+												property={p}
+												isRequired={isRequired}
+												isDeleted={isDeleted}
+												jsonError={jsonErrors[textKey]}
+												jsonText={getJsonTextValue(
+													actualIdx,
+													k,
+													p.default,
+												)}
+												onUpdateToolProp={
+													onUpdateToolProp
+												}
+												onRequiredToggle={
+													onRequiredToggle
+												}
+												onTypeChange={onTypeChange}
+												onDefaultChange={
+													onDefaultChange
+												}
+												onEnumDefaultChange={
+													onEnumDefaultChange
+												}
+												onEnumValueAdd={onEnumValueAdd}
+												onEnumValueDelete={
+													onEnumValueDelete
+												}
+												onJsonTextChange={
+													onJsonTextChange
+												}
+											/>
+										);
+									})}
+								</div>
+							))}
+
+						<Separator />
+
+						<JsonField
+							label="Metadata"
+							value={metaText}
+							error={metaError}
+							disabled={isDeleted}
+							emptyValue="{}"
+							placeholder={'{"annotation": "value"}'}
+							collapsed={!metaExpanded}
+							onToggleCollapse={() =>
+								setMetaExpanded((prev) => !prev)
+							}
+							onChange={handleMetaChange}
+						/>
 					</div>
 				)}
 			</Card>
@@ -1075,23 +1603,20 @@ const FunctionCard = memo<FunctionCardProps>(
 
 FunctionCard.displayName = "FunctionCard";
 
-// ─── Main MCPJsonEditor Component ─────────────────────────────────────────────
-
 export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	const { initialData, onSave, path, resourceId } = dataMap;
+
 	const insight = useInsight();
-	const {insightStore} = useRootStore();
+	const { insightStore } = useRootStore();
 	const modelId = insightStore.defaultTextGenerationModel;
 	const enableToolEnhancer = !!modelId;
+
 	const [data, setData] = useState<MCPJsonData>(initialData);
 	const [deletedTools, setDeletedTools] = useState<string[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [expandedCards, setExpandedCards] = useState<Set<string>>(
-		new Set<string>(
-			initialData.tools?.length > 0 ? [initialData.tools[0].name] : [],
-		),
+		() => new Set<string>(),
 	);
-	const [expandAll, setExpandAll] = useState(false);
 	const [jsonTextValues, setJsonTextValues] = useState<
 		Record<string, string>
 	>({});
@@ -1100,7 +1625,7 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		JSON.stringify(initialData),
 	);
 
-	// ── Diff Modal State ───────────────────────────────────────────────────────
+	// ── Diff modal state ───────────────────────────────────────────────────────
 	const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
 	const [diffToolIdx, setDiffToolIdx] = useState<number | null>(null);
 	const [isDiffLoading, setIsDiffLoading] = useState(false);
@@ -1111,34 +1636,21 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 	const debouncedSearch = useDebounce(searchQuery, 400);
 	const { jsonErrors, validateJson, clearError } = useJsonValidation();
 
-	// ── Change tracking ────────────────────────────────────────────────────────
 	useEffect(() => {
+		const currentSnapshot = JSON.stringify(data);
 		const isModified =
-			JSON.stringify(data) !== initialDataSnapshot ||
-			deletedTools.length > 0;
+			currentSnapshot !== initialDataSnapshot || deletedTools.length > 0;
 		setHasChanges(isModified);
 	}, [data, deletedTools, initialDataSnapshot]);
 
-	useKeyboardShortcut(
-		"s",
-		() => {
-			if (hasChanges) handleSave();
-		},
-		[hasChanges, data, deletedTools],
-	);
-
-	// ── Tool / Property updaters ───────────────────────────────────────────────
-	const updateTool = useCallback(
-		(index: number, value: Partial<MCPTool>) => {
-			setData((d) => ({
-				...d,
-				tools: d.tools.map((t, i) =>
-					i === index ? { ...t, ...value } : t,
-				),
-			}));
-		},
-		[],
-	);
+	const updateTool = useCallback((index: number, value: Partial<MCPTool>) => {
+		setData((d) => ({
+			...d,
+			tools: d.tools.map((t, i) =>
+				i === index ? { ...t, ...value } : t,
+			),
+		}));
+	}, []);
 
 	const updateToolProp = useCallback(
 		(
@@ -1178,12 +1690,14 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				...d,
 				tools: d.tools.map((tool, i) => {
 					if (i !== toolIdx) return tool;
-					const current = tool.inputSchema.required || [];
+
+					const currentRequired = tool.inputSchema.required || [];
 					const newRequired = isRequired
-						? current.includes(propKey)
-							? current
-							: [...current, propKey]
-						: current.filter((k) => k !== propKey);
+						? currentRequired.includes(propKey)
+							? currentRequired
+							: [...currentRequired, propKey]
+						: currentRequired.filter((key) => key !== propKey);
+
 					return {
 						...tool,
 						inputSchema: {
@@ -1215,6 +1729,39 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 
 	const handleTypeChange = useCallback(
 		(toolIdx: number, propKey: string, newType: string) => {
+			const currentProperty =
+				data.tools[toolIdx]?.inputSchema.properties[propKey];
+			const currentEnum = Array.isArray(currentProperty?.enum)
+				? currentProperty.enum
+				: [];
+			const textKey = `${toolIdx}-${propKey}`;
+
+			if (newType === ENUM_TYPE_VALUE) {
+				const enumValues = currentEnum.length > 0 ? currentEnum : [];
+				const defaultFromEnum =
+					enumValues.length > 0 &&
+					enumValues.some(
+						(option) => option === currentProperty?.default,
+					)
+						? currentProperty?.default
+						: enumValues[0];
+
+				updateToolProp(toolIdx, propKey, {
+					type: "string",
+					default: defaultFromEnum,
+					enum: enumValues,
+				});
+
+				setJsonTextValues((prev) => {
+					if (!(textKey in prev)) return prev;
+					const next = { ...prev };
+					delete next[textKey];
+					return next;
+				});
+				clearError(textKey);
+				return;
+			}
+
 			const newDefault =
 				newType === "number"
 					? 0
@@ -1225,11 +1772,13 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 							: newType === "object"
 								? {}
 								: "";
+
 			updateToolProp(toolIdx, propKey, {
 				type: newType,
 				default: newDefault,
+				enum: undefined,
 			});
-			const textKey = `${toolIdx}-${propKey}`;
+
 			if (newType === "array" || newType === "object") {
 				setJsonTextValues((prev) => ({
 					...prev,
@@ -1237,14 +1786,16 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				}));
 			} else {
 				setJsonTextValues((prev) => {
+					if (!(textKey in prev)) return prev;
 					const next = { ...prev };
 					delete next[textKey];
 					return next;
 				});
 			}
+
 			clearError(textKey);
 		},
-		[updateToolProp, clearError],
+		[data.tools, updateToolProp, clearError],
 	);
 
 	const handleDefaultChange = useCallback(
@@ -1254,40 +1805,107 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			newDefault: string,
 			propType: string,
 		) => {
-			let validDefault: string | number | boolean = newDefault;
-			if (propType === "number") validDefault = Number(newDefault) || 0;
-			else if (propType === "boolean")
+			let validDefault: unknown = newDefault;
+			if (propType === "number") {
+				validDefault = Number(newDefault) || 0;
+			} else if (propType === "boolean") {
 				validDefault = newDefault === "true";
+			}
 			updateToolProp(toolIdx, propKey, { default: validDefault });
 		},
 		[updateToolProp],
 	);
 
+	const handleEnumDefaultChange = useCallback(
+		(toolIdx: number, propKey: string, enumIndex: number) => {
+			const enumValues =
+				data.tools[toolIdx]?.inputSchema.properties[propKey]?.enum;
+			if (!Array.isArray(enumValues) || enumValues.length === 0) return;
+
+			const safeIndex = Math.min(
+				Math.max(enumIndex, 0),
+				enumValues.length - 1,
+			);
+			updateToolProp(toolIdx, propKey, {
+				default: enumValues[safeIndex],
+			});
+		},
+		[data.tools, updateToolProp],
+	);
+
+	const handleEnumValueAdd = useCallback(
+		(toolIdx: number, propKey: string, newValue: string) => {
+			const property =
+				data.tools[toolIdx]?.inputSchema.properties[propKey];
+			const current = Array.isArray(property?.enum) ? property.enum : [];
+			if (current.some((v) => String(v) === newValue)) return;
+			const nextEnum = [...current, newValue];
+			const updates: Partial<MCPToolProperty> = { enum: nextEnum };
+			// First value becomes the default if there isn't one yet.
+			if (property?.default === undefined) {
+				updates.default = newValue;
+			}
+			updateToolProp(toolIdx, propKey, updates);
+		},
+		[data.tools, updateToolProp],
+	);
+
+	const handleEnumValueDelete = useCallback(
+		(toolIdx: number, propKey: string, enumIndex: number) => {
+			const property =
+				data.tools[toolIdx]?.inputSchema.properties[propKey];
+			const current = Array.isArray(property?.enum) ? property.enum : [];
+			if (enumIndex < 0 || enumIndex >= current.length) return;
+			const removed = current[enumIndex];
+			const nextEnum = current.filter((_, i) => i !== enumIndex);
+			const updates: Partial<MCPToolProperty> = { enum: nextEnum };
+			// If the deleted value was the default, point default at the first
+			// remaining value (or drop default entirely if the list is empty).
+			if (property?.default === removed) {
+				updates.default = nextEnum[0];
+			}
+			updateToolProp(toolIdx, propKey, updates);
+		},
+		[data.tools, updateToolProp],
+	);
+
 	const handleJsonTextChange = useCallback(
 		(toolIdx: number, propKey: string, newText: string) => {
 			const textKey = `${toolIdx}-${propKey}`;
+
 			setJsonTextValues((prev) => ({ ...prev, [textKey]: newText }));
+
+			// Empty text means "no default value" — clear the error and drop
+			// `default` from the property so it's omitted on serialize.
+			if (newText.trim() === "") {
+				clearError(textKey);
+				updateToolProp(toolIdx, propKey, { default: undefined });
+				return;
+			}
+
 			const result = validateJson(textKey, newText);
 			if (result.valid) {
 				try {
-					updateToolProp(toolIdx, propKey, {
-						default: JSON.parse(newText),
-					});
+					const parsed = JSON.parse(newText);
+					updateToolProp(toolIdx, propKey, { default: parsed });
 				} catch {
-					// noop
+					// already validated; unreachable
 				}
 			}
 		},
-		[updateToolProp, validateJson],
+		[updateToolProp, validateJson, clearError],
 	);
 
 	const getJsonTextValue = useCallback(
 		(toolIdx: number, propKey: string, defaultValue: unknown): string => {
 			const textKey = `${toolIdx}-${propKey}`;
-			if (jsonTextValues[textKey] !== undefined)
+			if (jsonTextValues[textKey] !== undefined) {
 				return jsonTextValues[textKey];
+			}
+			if (defaultValue === undefined) return "";
 			try {
-				return JSON.stringify(defaultValue, null, 2);
+				const serialized = JSON.stringify(defaultValue, null, 2);
+				return serialized ?? "";
 			} catch {
 				return "";
 			}
@@ -1295,6 +1913,34 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		[jsonTextValues],
 	);
 
+	const clearSearch = useCallback(() => setSearchQuery(""), []);
+
+	const toggleCardExpand = useCallback((toolName: string) => {
+		setExpandedCards((prev) => {
+			const newSet = new Set(prev);
+			if (newSet.has(toolName)) {
+				newSet.delete(toolName);
+			} else {
+				newSet.add(toolName);
+			}
+			return newSet;
+		});
+	}, []);
+
+	const handleExpandAll = useCallback(() => {
+		const allNames = new Set(
+			data.tools
+				.filter((t) => !deletedTools.includes(t.name))
+				.map((t) => t.name),
+		);
+		setExpandedCards(allNames);
+	}, [data.tools, deletedTools]);
+
+	const handleCollapseAll = useCallback(() => {
+		setExpandedCards(new Set());
+	}, []);
+
+	// ── Tool enhancer ──────────────────────────────────────────────────────────
 	const handleOptimizeDescription = useCallback(
 		async (toolIdx: number) => {
 			if (!modelId) return;
@@ -1305,11 +1951,18 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			setIsDiffLoading(true);
 			setDiffResult(null);
 			setDiffError(null);
-			const resourceType = window.location.hash.includes('app')? "project" : "engine";
+
+			const resourceType = window.location.hash.includes("app")
+				? "project"
+				: "engine";
+
 			try {
 				const pixelCommand = `GenerateDescriptionForMcp(${resourceType}=["${resourceId}"], model=["${modelId}"], toolName="${tool.name}");`;
-				const { pixelReturn } = await insight.actions.run(pixelCommand);
-				setDiffResult(pixelReturn[0].output as MCPDescriptionApiResponse);
+				const { pixelReturn } =
+					await insight.actions.run(pixelCommand);
+				setDiffResult(
+					pixelReturn[0].output as MCPDescriptionApiResponse,
+				);
 			} catch (err) {
 				setDiffError(
 					err instanceof Error
@@ -1323,7 +1976,6 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		[data.tools, resourceId, modelId, insight.actions],
 	);
 
-	// ── Apply selected diff fields ─────────────────────────────────────────────
 	const handleApplyDiff = useCallback(
 		(selections: DiffSelections) => {
 			if (diffToolIdx === null || !diffResult) return;
@@ -1359,43 +2011,14 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		setDiffError(null);
 	}, []);
 
-	// ── Search / expand helpers ────────────────────────────────────────────────
-	const clearSearch = useCallback(() => setSearchQuery(""), []);
-
-	const toggleCardExpand = useCallback((toolName: string) => {
-		setExpandedCards((prev) => {
-			const next = new Set(prev);
-			next.has(toolName) ? next.delete(toolName) : next.add(toolName);
-			return next;
-		});
-	}, []);
-
-	const handleExpandAll = useCallback(() => {
-		if (expandAll) {
-			setExpandedCards(new Set());
-			setExpandAll(false);
-		} else {
-			setExpandedCards(
-				new Set(
-					data.tools
-						.filter((t) => !deletedTools.includes(t.name))
-						.map((t) => t.name),
-				),
-			);
-			setExpandAll(true);
-		}
-	}, [expandAll, data.tools, deletedTools]);
-
-	// ── Save ───────────────────────────────────────────────────────────────────
 	const handleSave = useCallback(() => {
 		if (hasChanges) {
 			const updatedData = {
 				...data,
-				tools: data.tools.filter(
-					(t) => !deletedTools.includes(t.name),
-				),
+				tools: data.tools.filter((t) => !deletedTools.includes(t.name)),
 			};
 			onSave?.(updatedData, path);
+
 			setInitialDataSnapshot(JSON.stringify(updatedData));
 			setDeletedTools([]);
 			setData(updatedData);
@@ -1405,38 +2028,57 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 		setHasChanges(false);
 	}, [hasChanges, data, deletedTools, onSave, path]);
 
-	// ── Memos ──────────────────────────────────────────────────────────────────
+	useKeyboardShortcut("s", () => {
+		if (hasChanges) handleSave();
+	}, [hasChanges, handleSave]);
+
 	const visibleTools = useMemo(() => data.tools || [], [data.tools]);
 
 	const filteredTools = useMemo(() => {
 		if (!debouncedSearch.trim()) return visibleTools;
-		const q = debouncedSearch.toLowerCase();
+		const query = debouncedSearch.toLowerCase();
 		return visibleTools.filter(
-			(t) =>
-				t.name.toLowerCase().includes(q) ||
-				t.title?.toLowerCase().includes(q) ||
-				t.description?.toLowerCase().includes(q),
+			(tool) =>
+				tool.name.toLowerCase().includes(query) ||
+				tool.title?.toLowerCase().includes(query) ||
+				tool.description?.toLowerCase().includes(query),
 		);
 	}, [visibleTools, debouncedSearch]);
 
-	const headerText = useMemo(
-		() =>
-			`${path
-				.split("/")
-				.pop()
-				?.replace(".json", "")
-				.toUpperCase()} JSON Editor`,
-		[path],
+	const isCardExpanded = useCallback(
+		(toolName: string) => expandedCards.has(toolName),
+		[expandedCards],
 	);
 
-	const activeDiffTool =
-		diffToolIdx !== null ? data.tools[diffToolIdx] : null;
+	const isCardDeleted = useCallback(
+		(toolName: string) => deletedTools.includes(toolName),
+		[deletedTools],
+	);
 
-	// ── Render ─────────────────────────────────────────────────────────────────
+	const headerText = useMemo(() => {
+		return `${path.split("/").pop()?.replace(".json", "").toUpperCase()} JSON Editor`;
+	}, [path]);
+
+	const metaEntries = Object.entries(data._meta);
+
 	return (
-		<div className="container-padding-x mx-auto w-full max-w-full py-3" data-testid="mcp-json-editor">
-			<div className="mb-6">
+		<div className="container-padding-x mx-auto w-full max-w-full py-3">
+			<div className="mb-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 				<h2 className="heading-md">{headerText}</h2>
+				{metaEntries.length > 0 && (
+					<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+						{metaEntries.map(([key, value]) => (
+							<div key={key} className="flex items-center gap-1">
+								<span className="text-muted-foreground">
+									{formatMetaKey(key)}:
+								</span>
+								<span className="font-medium text-foreground">
+									{value}
+								</span>
+							</div>
+						))}
+					</div>
+				)}
 			</div>
 
 			<EditorHeader
@@ -1444,44 +2086,17 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				deletedCount={deletedTools.length}
 				searchQuery={searchQuery}
 				debouncedSearch={debouncedSearch}
-				expandAll={expandAll}
+				showExpandAll={true}
+				showSave={true}
+				showSearch={true}
 				hasChanges={hasChanges}
 				onExpandAll={handleExpandAll}
+				onCollapseAll={handleCollapseAll}
 				onSave={handleSave}
 				onSearchChange={setSearchQuery}
 				onSearchClear={clearSearch}
 			/>
 
-			{/* Meta Section */}
-			<Card className="mb-5 w-full rounded-lg bg-secondary p-4">
-				<h3 className="mb-3 font-semibold text-base text-foreground">
-					Meta Data
-				</h3>
-				<div
-					className="grid w-full gap-3"
-					style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
-				>
-					{Object.entries(data._meta).map(([key, value]) => (
-						<div key={key} className="flex flex-col gap-1">
-							<Label
-								htmlFor={key}
-								className="text-muted-foreground text-sm"
-							>
-								{key}
-							</Label>
-							<Input
-								id={key}
-								value={value}
-								readOnly
-								disabled
-								className="w-full cursor-not-allowed border-input bg-muted px-2 py-1 text-muted-foreground text-sm"
-							/>
-						</div>
-					))}
-				</div>
-			</Card>
-
-			{/* Empty state */}
 			{filteredTools.length === 0 && (
 				<div className="py-12 text-center">
 					<Search
@@ -1496,18 +2111,20 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 				</div>
 			)}
 
-			{/* Tool Cards */}
 			{filteredTools.map((tool) => {
 				const actualIdx = data.tools.findIndex(
 					(t) => t.name === tool.name,
 				);
+				const isExpanded = isCardExpanded(tool.name);
+				const isDeleted = isCardDeleted(tool.name);
+
 				return (
 					<FunctionCard
 						key={tool.name}
 						tool={tool}
 						actualIdx={actualIdx}
-						isExpanded={expandedCards.has(tool.name)}
-						isDeleted={deletedTools.includes(tool.name)}
+						isExpanded={isExpanded}
+						isDeleted={isDeleted}
 						onToggleExpand={toggleCardExpand}
 						onDelete={handleToolDelete}
 						onRestore={handleToolRestore}
@@ -1516,6 +2133,9 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 						onRequiredToggle={handleRequiredToggle}
 						onTypeChange={handleTypeChange}
 						onDefaultChange={handleDefaultChange}
+						onEnumDefaultChange={handleEnumDefaultChange}
+						onEnumValueAdd={handleEnumValueAdd}
+						onEnumValueDelete={handleEnumValueDelete}
 						onJsonTextChange={handleJsonTextChange}
 						getJsonTextValue={getJsonTextValue}
 						jsonErrors={jsonErrors}
@@ -1531,7 +2151,13 @@ export const MCPJsonEditor: React.FC<MCPJsonEditorProps> = ({ dataMap }) => {
 			<DiffModal
 				isOpen={isDiffModalOpen}
 				onClose={closeDiffModal}
-				toolName={activeDiffTool?.title || activeDiffTool?.name || ""}
+				toolName={
+					diffToolIdx !== null
+						? data.tools[diffToolIdx]?.title ||
+							data.tools[diffToolIdx]?.name ||
+							""
+						: ""
+				}
 				result={diffResult}
 				isLoading={isDiffLoading}
 				error={diffError}
