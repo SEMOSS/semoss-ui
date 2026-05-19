@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -59,7 +59,6 @@ import {
 	MentionPlugin,
 	PromptLibraryDialog,
 	type PromptLibraryItem,
-	splitMcpByType,
 } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
@@ -182,10 +181,8 @@ interface RoomInputProps {
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
-		knowledgeOverlayOpen: boolean;
-		onKnowledgeOverlayChange: (open: boolean) => void;
-		toolboxOverlayOpen: boolean;
-		onToolboxOverlayChange: (open: boolean) => void;
+		/** Open the MCP overlay on the given tab */
+		onOpenMcpOverlay: (defaultTab: "TOOLBOX" | "KNOWLEDGE") => void;
 	}>;
 
 	/**
@@ -284,13 +281,16 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
 
-		// MCP overlay state — managed here so overlays render outside the DropdownMenu's React subtree
-		const [knowledgeOverlayOpen, setKnowledgeOverlayOpen] = useState(false);
-		const [toolboxOverlayOpen, setToolboxOverlayOpen] = useState(false);
+		// MCP overlay state — managed here so the overlay renders outside the DropdownMenu's React subtree
+		const [mcpOverlay, setMcpOverlay] = useState<{
+			open: boolean;
+			defaultTab: "TOOLBOX" | "KNOWLEDGE";
+		}>({ open: false, defaultTab: "KNOWLEDGE" });
 
-		const { knowledge: knowledgeMcps, toolbox: toolboxMcps } = useMemo(
-			() => splitMcpByType(options.mcp),
-			[options.mcp],
+		const handleOpenMcpOverlay = useCallback(
+			(defaultTab: "TOOLBOX" | "KNOWLEDGE") =>
+				setMcpOverlay({ open: true, defaultTab }),
+			[],
 		);
 
 		// Refs for DOM elements and Lexical editor
@@ -860,17 +860,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												isOpen={menuOpen}
 												onOpenChange={setMenuOpen}
 												fileRef={fileRef}
-												knowledgeOverlayOpen={
-													knowledgeOverlayOpen
-												}
-												onKnowledgeOverlayChange={
-													setKnowledgeOverlayOpen
-												}
-												toolboxOverlayOpen={
-													toolboxOverlayOpen
-												}
-												onToolboxOverlayChange={
-													setToolboxOverlayOpen
+												onOpenMcpOverlay={
+													handleOpenMcpOverlay
 												}
 											/>
 										</DropdownMenuContent>
@@ -1133,28 +1124,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					/>
 				</LexicalComposer>
 				{onMcpChange && (
-					<>
-						<MCPOverlay
-							type="KNOWLEDGE"
-							open={knowledgeOverlayOpen}
-							values={knowledgeMcps}
-							onClose={(updated) => {
-								setKnowledgeOverlayOpen(false);
-								if (updated)
-									onMcpChange([...updated, ...toolboxMcps]);
-							}}
-						/>
-						<MCPOverlay
-							type="TOOLBOX"
-							open={toolboxOverlayOpen}
-							values={toolboxMcps}
-							onClose={(updated) => {
-								setToolboxOverlayOpen(false);
-								if (updated)
-									onMcpChange([...knowledgeMcps, ...updated]);
-							}}
-						/>
-					</>
+					<MCPOverlay
+						open={mcpOverlay.open}
+						defaultTab={mcpOverlay.defaultTab}
+						values={options.mcp}
+						onClose={(updated) => {
+							setMcpOverlay((prev) => ({ ...prev, open: false }));
+							if (updated) onMcpChange(updated);
+						}}
+					/>
 				)}
 			</div>
 		);

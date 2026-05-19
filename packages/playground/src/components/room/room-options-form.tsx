@@ -21,7 +21,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { isKnowledgeMcp, MCPOverlay, splitMcpByType } from "@/components";
+import { MCPOverlay, splitMcpByType } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
@@ -377,25 +377,12 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<MCPOverlay
 								open={mCPOverlay.isOpen}
-								type={mCPOverlay.type}
-								values={
-									mCPOverlay.type === "TOOLBOX"
-										? toolbox
-										: knowledge
-								}
+								defaultTab={mCPOverlay.type}
+								values={options?.mcp ?? []}
 								onClose={(mcp) => {
 									if (mcp) {
-										const others = options.mcp.filter(
-											(m) =>
-												mCPOverlay.type === "KNOWLEDGE"
-													? !isKnowledgeMcp(m)
-													: isKnowledgeMcp(m),
-										);
-										onOptionsChange({
-											mcp: [...others, ...mcp],
-										});
+										onOptionsChange({ mcp });
 									}
-
 									setMCPOverlay({
 										isOpen: false,
 										type: "KNOWLEDGE",

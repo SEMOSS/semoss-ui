@@ -460,10 +460,7 @@ export const NewRoomPage = observer(() => {
 								({
 									onOpenChange,
 									fileRef,
-									knowledgeOverlayOpen,
-									onKnowledgeOverlayChange,
-									toolboxOverlayOpen,
-									onToolboxOverlayChange,
+									onOpenMcpOverlay,
 								}) => (
 									<>
 										<RoomInputMenuUpload
@@ -544,18 +541,18 @@ export const NewRoomPage = observer(() => {
 										<RoomInputMenuMCP
 											type="KNOWLEDGE"
 											options={tempRoomStore.options}
-											open={knowledgeOverlayOpen}
-											onOpenChange={
-												onKnowledgeOverlayChange
-											}
+											onSelect={() => {
+												onOpenMcpOverlay("KNOWLEDGE");
+												onOpenChange(false);
+											}}
 										/>
 										<RoomInputMenuMCP
 											type="TOOLBOX"
 											options={tempRoomStore.options}
-											open={toolboxOverlayOpen}
-											onOpenChange={
-												onToolboxOverlayChange
-											}
+											onSelect={() => {
+												onOpenMcpOverlay("TOOLBOX");
+												onOpenChange(false);
+											}}
 										/>
 										<DropdownMenuSeparator />
 										<DropdownMenuItem

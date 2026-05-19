@@ -442,14 +442,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						})
 					}
 					MenuComponent={observer(
-						({
-							onOpenChange,
-							fileRef,
-							knowledgeOverlayOpen,
-							onKnowledgeOverlayChange,
-							toolboxOverlayOpen,
-							onToolboxOverlayChange,
-						}) => (
+						({ onOpenChange, fileRef, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
 									fileRef={fileRef}
@@ -459,14 +452,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<RoomInputMenuMCP
 									type="KNOWLEDGE"
 									options={room.options}
-									open={knowledgeOverlayOpen}
-									onOpenChange={onKnowledgeOverlayChange}
+									onSelect={() => {
+										onOpenMcpOverlay("KNOWLEDGE");
+										onOpenChange(false);
+									}}
 								/>
 								<RoomInputMenuMCP
 									type="TOOLBOX"
 									options={room.options}
-									open={toolboxOverlayOpen}
-									onOpenChange={onToolboxOverlayChange}
+									onSelect={() => {
+										onOpenMcpOverlay("TOOLBOX");
+										onOpenChange(false);
+									}}
 								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
