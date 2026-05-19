@@ -185,6 +185,18 @@ export class ChatStore {
 	};
 
 	/**
+	 * Register a pre-created RoomStore in the local cache so it is
+	 * discoverable by loadRoom after navigation.  Used by consumers that
+	 * need a real insight before the first message is sent (e.g. the
+	 * file-explorer on the new-room page).
+	 */
+	registerRoom = (room: RoomStore): void => {
+		runInAction(() => {
+			this._store.rooms[room.roomId] = room;
+		});
+	};
+
+	/**
 	 * Create a new room
 	 */
 	createRoom = async (

@@ -3,6 +3,7 @@ export * from "./room-inline-tool";
 export * from "./room-input";
 export * from "./room-input-menu-file-explorer";
 export * from "./room-input-menu-mcp";
+export * from "./room-input-menu-new-file-explorer";
 export * from "./room-input-menu-slash";
 export * from "./room-input-menu-upload";
 export * from "./room-input-menu-workspace";
