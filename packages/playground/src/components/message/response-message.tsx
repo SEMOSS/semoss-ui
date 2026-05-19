@@ -256,8 +256,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			})();
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
-		const parentHasText = inputMessage?.parts.some(
-			(part) => part.type === "TEXT",
+
+		const parentHasContent = inputMessage?.parts.some(
+			(part) => part.type === "TEXT" || part.type === "MEDIA",
 		);
 
 		return (
@@ -350,7 +351,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<TooltipTrigger asChild>
 										<button
 											type="button"
-											className="cursor-zoom-in overflow-hidden rounded-lg border border-border"
+											className="w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
 											onClick={handleClick}
 											aria-label={`View ${p.mediaInfo.fileName}`}
 										>
@@ -521,7 +522,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							)}
 
 						{root.theme.featureFlags?.enableRewrite &&
-							parentHasText && (
+							parentHasContent && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
