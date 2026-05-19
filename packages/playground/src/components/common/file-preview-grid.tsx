@@ -89,34 +89,33 @@ export const FilePreviewGrid = ({
 }: FilePreviewGridProps) => {
 	const urlCacheRef = useRef(new Map<string, string>());
 
-	// Add URLs for new image files; revoke URLs for files no longer present.
-	const currentKeys = new Set(
-		files
-			.filter(isImageFile)
-			.map((f) => `${f.name}-${f.size}-${f.lastModified}`),
-	);
-	urlCacheRef.current.forEach(([key, url]) => {
-		if (!currentKeys.has(key)) {
-			URL.revokeObjectURL(url);
-			urlCacheRef.current.delete(key);
-		}
-	});
-	files.forEach((f) => {
-		if (!isImageFile(f)) return;
-		const key = `${f.name}-${f.size}-${f.lastModified}`;
-		if (!urlCacheRef.current.has(key)) {
-			urlCacheRef.current.set(key, URL.createObjectURL(f));
-		}
-	});
-
 	useEffect(() => {
+		const currentKeys = new Set(
+			files
+				.filter(isImageFile)
+				.map((f) => `${f.name}-${f.size}-${f.lastModified}`),
+		);
+		urlCacheRef.current.forEach((url, key) => {
+			if (!currentKeys.has(key)) {
+				URL.revokeObjectURL(url);
+				urlCacheRef.current.delete(key);
+			}
+		});
+		files.forEach((f) => {
+			if (!isImageFile(f)) return;
+			const key = `${f.name}-${f.size}-${f.lastModified}`;
+			if (!urlCacheRef.current.has(key)) {
+				urlCacheRef.current.set(key, URL.createObjectURL(f));
+			}
+		});
+
 		return () => {
 			for (const url of urlCacheRef.current.values()) {
 				URL.revokeObjectURL(url);
 			}
 			urlCacheRef.current.clear();
 		};
-	}, []);
+	}, [files]);
 
 	if (files.length === 0) return null;
 

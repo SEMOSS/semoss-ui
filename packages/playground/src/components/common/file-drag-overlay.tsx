@@ -52,7 +52,16 @@ export const FileDragOverlay = () => {
 			/>
 
 			<Dialog open={isOpen} onOpenChange={(open) => !open && close()}>
-				<DialogContent {...{ [FILE_DRAG_ATTR]: "" }}>
+				<DialogContent
+					// Marks this element so the drag context can detect via
+					// closest() whether the cursor is inside the dialog.
+					{...{ [FILE_DRAG_ATTR]: "" }}
+					// Suppresses Radix's missing-description warning when there
+					// is no fileDragDisclaimer theme value to render.
+					{...(!root.theme.fileDragDisclaimer && {
+						"aria-describedby": undefined,
+					})}
+				>
 					<DialogHeader>
 						<DialogTitle>{t("fileDrag.modalTitle")}</DialogTitle>
 						{root.theme.fileDragDisclaimer && (
@@ -81,17 +90,12 @@ export const FileDragOverlay = () => {
 							    and re-triggers isDragging when the dialog is already open. */}
 							<button
 								type="button"
-								tabIndex={0}
 								className={`flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed transition-colors ${
 									isDragging
 										? "border-primary bg-primary/5"
 										: "border-border hover:border-primary hover:bg-primary/5"
 								}`}
 								onClick={() => fileInputRef.current?.click()}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ")
-										fileInputRef.current?.click();
-								}}
 								onDragOver={(e) => {
 									if (!e.dataTransfer.types.includes("Files"))
 										return;

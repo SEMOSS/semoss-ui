@@ -168,7 +168,7 @@ export const NewKnowledgeOverlay: React.FC<NewKnowledgeMCPOverlayProps> =
 				});
 			} catch (e) {
 				console.log(embeddingsResponse?.pixelReturn[0]?.output);
-				toast.error(e.message);
+				toast.error((e as Error).message);
 			} finally {
 				setIsLoading(false);
 			}
