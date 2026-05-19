@@ -1,4 +1,8 @@
-import * as monaco from "monaco-editor";
+import type * as Monaco from "monaco-editor";
+
+const COMPLETION_ITEM_KIND_FUNCTION = 1;
+const COMPLETION_ITEM_KIND_SNIPPET = 27;
+const COMPLETION_ITEM_INSERT_AS_SNIPPET = 4;
 
 type MONACO_LANGUAGES =
 	| "text"
@@ -65,9 +69,9 @@ export const MONACO_EXT_LANGUAGE_MAPPING: Record<string, MONACO_LANGUAGES> = {
 export const MONACO_CONFIG: Record<
 	string,
 	{
-		monarchTokensProvider?: monaco.languages.IMonarchLanguage;
-		completionItemProvider?: monaco.languages.CompletionItemProvider;
-		theme?: monaco.editor.IStandaloneThemeData;
+		monarchTokensProvider?: Monaco.languages.IMonarchLanguage;
+		completionItemProvider?: Monaco.languages.CompletionItemProvider;
+		theme?: Monaco.editor.IStandaloneThemeData;
 	}
 > = {
 	java: {
@@ -254,16 +258,14 @@ export const MONACO_CONFIG: Record<
 					suggestions: [
 						{
 							label: "System.out.println",
-							kind: monaco.languages.CompletionItemKind.Function,
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText: "System.out.println($1);",
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Prints a message to the console.",
 						},
 						{
 							label: "public class",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								"public class ${1:ClassName} {",
 								"    public static void main(String[] args) {",
@@ -271,9 +273,7 @@ export const MONACO_CONFIG: Record<
 								"    }",
 								"}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Java class with main method.",
 						},
 					].map((s) => ({
@@ -314,74 +314,62 @@ export const MONACO_CONFIG: Record<
 					suggestions: [
 						{
 							label: "print",
-							kind: monaco.languages.CompletionItemKind.Function,
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText: 'print(${1:"Hello, world!"})',
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Print to the console.",
 						},
 						{
 							label: "for loop",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								"for ${1:item} in ${2:iterable}:",
 								"    ${0:# do something}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "For loop in Python.",
 						},
 						{
 							label: "if-else",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								"if ${1:condition}:",
 								"    ${0:# do something}",
 								"else:",
 								"    # handle else",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "If-else block in Python.",
 						},
 						{
 							label: "def function",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								"def ${1:function_name}(${2:args}):",
 								"    ${0:pass}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Define a Python function.",
 						},
 						{
 							label: "class",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								"class ${1:ClassName}:",
 								"    def __init__(self, ${2:args}):",
 								"        ${0:pass}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Define a class with a constructor.",
 						},
 						{
 							label: "while loop",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								"while ${1:condition}:",
 								"    ${0:# do something}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "While loop in Python.",
 						},
 					].map((s) => ({
@@ -442,17 +430,15 @@ export const MONACO_CONFIG: Record<
 					suggestions: [
 						{
 							label: "useState",
-							kind: monaco.languages.CompletionItemKind.Function,
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText:
 								"const [${1:state}, set${1/(.*)/${1:/capitalize}/}] = useState(${2:initialValue});",
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "React useState hook.",
 						},
 						{
 							label: "useEffect",
-							kind: monaco.languages.CompletionItemKind.Function,
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText: [
 								"useEffect(() => {",
 								"    ${1:// effect}",
@@ -461,14 +447,12 @@ export const MONACO_CONFIG: Record<
 								"    };",
 								"}, [${3:dependencies}]);",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "React useEffect hook.",
 						},
 						{
 							label: "React Functional Component",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								"const ${1:ComponentName} = () => {",
 								"    return (",
@@ -480,9 +464,7 @@ export const MONACO_CONFIG: Record<
 								"",
 								"export default ${1:ComponentName};",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation:
 								"React functional component template.",
 						},

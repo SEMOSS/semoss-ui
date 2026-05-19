@@ -10,7 +10,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 export const DynamicGridMenu: BlockComponent = ({ id }) => {
 	const { data, setData } = useBlockSettings<GridDynamicFrameBlockDef>(id);

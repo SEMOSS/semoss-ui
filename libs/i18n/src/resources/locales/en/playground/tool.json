@@ -1,0 +1,59 @@
+{
+	"status": {
+		"failed": "Failed",
+		"cancelled": "Cancelled",
+		"completed": "Completed",
+		"ready": "Ready",
+		"autoExecute": "Auto-executing",
+		"paused": "Paused",
+		"queued": "In queue to auto-execute",
+		"loadingTool": "Loading tool…",
+		"waitingForArguments": "Waiting for arguments…"
+	},
+	"actions": {
+		"cancel": "Cancel",
+		"expand": "Expand",
+		"collapse": "Collapse",
+		"openInSidebar": "Open in sidebar",
+		"closeInSidebar": "Close sidebar",
+		"openInline": "Open in-line"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} + {{count}} more",
+		"labelOpen": "Executed Tools ({{count}})",
+		"summaryCompleted": "{{count}} completed",
+		"summaryError": "{{count}} failed",
+		"summaryCancelled": "{{count}} cancelled",
+		"summaryPaused": "{{count}} paused"
+	},
+	"form": {
+		"result": "Result",
+		"schemaLoadFailed": "Failed to load tool schema",
+		"schemaLoadFailedDescription": "Unable to retrieve tool configuration. Please try again later.",
+		"schemaLoading": "Loading tool schema...",
+		"noParameters": "No parameters required",
+		"showParameters": "Show Parameters ({{count}})",
+		"hideParameters": "Hide Parameters ({{count}})",
+		"showOptionalFields": "Show Optional Fields ({{count}})",
+		"hideOptionalFields": "Hide Optional Fields ({{count}})",
+		"execute": "Execute Tool",
+		"executing": "Executing..."
+	},
+	"playwright": {
+		"details": "Playwright Script Details",
+		"projectId": "Project ID",
+		"recordedFile": "Recorded File"
+	},
+	"extension": {
+		"required": "Browser Extension Required",
+		"notResponding": "The browser extension is not responding. To execute Playwright scripts, please ensure the SEMOSS Chrome Extension is installed and the side panel is open.",
+		"stepsTitle": "Steps to open the extension:",
+		"step1": "Look for the SEMOSS extension icon in your browser toolbar (puzzle piece icon)",
+		"step2": "Click the extension icon to open the side panel",
+		"step3": "Wait for the panel to load completely",
+		"step4": "Click \"Retry\" below to continue",
+		"cancel": "Cancel",
+		"retry": "Retry",
+		"checking": "Checking..."
+	}
+}

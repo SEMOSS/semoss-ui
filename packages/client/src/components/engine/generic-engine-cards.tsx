@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -36,9 +35,10 @@ import {
 } from "@semoss/ui/next";
 import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
-import GOOGLE from "@/assets/img/google.png";
-import { ENGINE_IMAGES } from "@/pages/import";
-import { formatToDataTestId } from "@/utility";
+import GOOGLE from "@/assets/img/GOOGLE.svg";
+import { useNavigate } from "@/hooks/useNavigate";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
+import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 /**
  * @name findDBImage
@@ -164,6 +164,7 @@ interface DatabaseCardProps {
 	date?: string;
 
 	onClick?: (value: string) => void;
+	href?: string;
 
 	onDelete?: () => void;
 
@@ -192,6 +193,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		desktopInlineMeta = false,
 		date,
 		onClick,
+		href,
 		onDelete,
 		favorite,
 		global,
@@ -249,6 +251,36 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 					: [];
 	const hasTags = tagArray.length > 0;
 	const hasDate = Boolean(parsedDate);
+	const displayId = `id: ${id}`;
+	const openHrefInNewTab = () => {
+		if (!href) {
+			return false;
+		}
+
+		window.open(href, "_blank", "noopener,noreferrer");
+		return true;
+	};
+
+	const handleCardClick = (event: React.MouseEvent) => {
+		if (href && (event.ctrlKey || event.metaKey || event.button === 1)) {
+			event.preventDefault();
+			event.stopPropagation();
+			openHrefInNewTab();
+			return;
+		}
+
+		onClick?.(id);
+	};
+
+	const handleCardAuxClick = (event: React.MouseEvent) => {
+		if (!href || event.button !== 1) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openHrefInNewTab();
+	};
 
 	const renderTags = (compact = false) => {
 		if (!hasTags) {
@@ -267,6 +299,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -313,6 +346,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							variant="outline"
 							title={t}
 							className={compact ? "h-6" : undefined}
+							style={getTagBadgeStyle(t)}
 						>
 							<span
 								className={
@@ -471,7 +505,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 
 	return (
 		<Card
-			onClick={() => onClick?.(id)}
+			onClick={handleCardClick}
+			onAuxClick={handleCardAuxClick}
+			data-semoss-nav-click={onClick ? "true" : undefined}
 			data-testid={formatToDataTestId(
 				`genericEngineCards-${type}-${name}`,
 			)}
@@ -487,7 +523,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 				>
 					<div className="flex min-w-0 flex-1 items-start gap-2.5">
 						{/* Engine icon — always visible */}
-						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-muted/30 p-1">
+						<div className="flex size-10 flex-shrink-0 items-center justify-center overflow-hidden bg-transparent p-1">
 							{customIcon ? (
 								<div className="flex h-full w-full items-center justify-center">
 									{customIcon}
@@ -514,20 +550,13 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								>
 									{name}
 								</P>
-								{sub_type === "EMBEDDED" && (
-									<img
-										src={GOOGLE}
-										alt="Google"
-										className="size-5 flex-shrink-0 object-cover"
-									/>
-								)}
 							</div>
 							<div className="flex min-w-0 items-center gap-1">
 								<P
 									className="truncate font-mono text-muted-foreground text-xs"
-									title={id}
+									title={displayId}
 								>
-									{id}
+									{displayId}
 								</P>
 								<Tooltip>
 									<TooltipTrigger asChild>
@@ -628,13 +657,49 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 		owner = "N/A",
 		votes = "0",
 		onClick,
+		href,
 		favorite,
 		upvote,
 		global,
 	} = props;
 
+	const openHrefInNewTab = () => {
+		if (!href) {
+			return false;
+		}
+
+		window.open(href, "_blank", "noopener,noreferrer");
+		return true;
+	};
+
+	const handleCardClick = (event: React.MouseEvent) => {
+		if (href && (event.ctrlKey || event.metaKey || event.button === 1)) {
+			event.preventDefault();
+			event.stopPropagation();
+			openHrefInNewTab();
+			return;
+		}
+
+		onClick?.(id);
+	};
+
+	const handleCardAuxClick = (event: React.MouseEvent) => {
+		if (!href || event.button !== 1) {
+			return;
+		}
+
+		event.preventDefault();
+		event.stopPropagation();
+		openHrefInNewTab();
+	};
+
 	return (
-		<Card onClick={() => onClick(id)} className="h-full cursor-pointer p-0">
+		<Card
+			onClick={handleCardClick}
+			onAuxClick={handleCardAuxClick}
+			data-semoss-nav-click={onClick ? "true" : undefined}
+			className="h-full cursor-pointer p-0"
+		>
 			<img
 				src={`${Env.MODULE}/api/e-${id}/image/download`}
 				alt={name || id}
@@ -701,7 +766,11 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 						(Array.isArray(tag) ? (
 							<>
 								{tag.slice(0, 2).map((t, _i) => (
-									<Badge key={`${id}`} variant="secondary">
+									<Badge
+										key={`${id}`}
+										variant="secondary"
+										style={getTagBadgeStyle(t)}
+									>
 										{t}
 									</Badge>
 								))}
@@ -725,7 +794,12 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 								)}
 							</>
 						) : tag !== "" ? (
-							<Badge variant="secondary">{tag}</Badge>
+							<Badge
+								variant="secondary"
+								style={getTagBadgeStyle(tag)}
+							>
+								{tag}
+							</Badge>
 						) : null)}
 				</div>
 			</CardContent>

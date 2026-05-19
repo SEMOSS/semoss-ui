@@ -60,7 +60,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 	 */
 	const getPrompts = useIteratorPixel<Prompt[], Prompt>(
 		(limit, offset) =>
-			`ListPrompt(${debouncedSearch ? `filters=[Filter( (PROMPT__TITLE ?like "${debouncedSearch}") )], ` : ""}limit=[${limit}], offset=[${offset}]);`,
+			`META | ListPrompt(${debouncedSearch ? `filters=[Filter( (PROMPT__TITLE ?like "${debouncedSearch}") )], ` : ""}limit=[${limit}], offset=[${offset}])`,
 		(response) => {
 			if (response.length < 25) {
 				return -1;
@@ -111,7 +111,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 
 	return (
 		<div className="w-full overflow-hidden rounded-xl border-border bg-card shadow-sm">
-			<div className="flex w-full flex-row gap-2 border-border bg-primary-foreground p-4">
+			<div className="flex w-full flex-row gap-2 border-border bg-muted p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
 						placeholder={t("prompts.searchPlaceholder")}

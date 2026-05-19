@@ -165,7 +165,6 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 															asChild
 														>
 															<Button
-																className=""
 																size="icon-sm"
 																variant="ghost"
 																onClick={(e) =>

@@ -1,8 +1,8 @@
 // biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Checkbox,
@@ -28,6 +28,8 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+import { computeVisibility } from "../shared/import-form.utils";
 
 export const StorageForm = ({
 	title,
@@ -206,24 +208,6 @@ export const StorageForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
 	const renderControllerField = (val) => (
 		<Controller
 			key={val.key}
@@ -234,11 +218,13 @@ export const StorageForm = ({
 				pattern: val.rules?.pattern,
 			}}
 			render={({ field, fieldState: { error } }) => {
-				switch (val.component) {
+				switch (val.type) {
 					case "text":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`storage-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -351,7 +337,9 @@ export const StorageForm = ({
 					case "number":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`storage-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -387,7 +375,9 @@ export const StorageForm = ({
 					case "select":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`storage-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -403,7 +393,6 @@ export const StorageForm = ({
 									value={field.value}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -447,7 +436,9 @@ export const StorageForm = ({
 					case "radio":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`storage-form-field-${val.key}`}
 							>
 								<FieldLabel>{val.label}</FieldLabel>
@@ -545,9 +536,9 @@ export const StorageForm = ({
 						return (
 							<div
 								className={
-									val.hidden
-										? "hidden"
-										: "flex flex-row items-center gap-2"
+									computeVisibility(val, {})
+										? "flex flex-row items-center gap-2"
+										: "hidden"
 								}
 								data-testid={`storage-form-field-${val.key}`}
 							>
@@ -584,7 +575,9 @@ export const StorageForm = ({
 					case "tags":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, {}) ? "" : "hidden"
+								}
 								data-testid={`storage-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>

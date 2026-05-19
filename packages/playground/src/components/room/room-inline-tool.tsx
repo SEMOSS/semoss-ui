@@ -123,13 +123,7 @@ export const RoomInlineTool: React.FC<RoomInlineToolProps> = observer(
 							room={room}
 							app={tool.json._meta.SMSS_PROJECT_ID}
 							message={message.id}
-							tool={tool.json}
-							toolResponse={
-								tool.status === "SUCCESS"
-									? tool.response
-									: undefined
-							}
-							toolParameters={tool.parameters}
+							toolId={tool.json.id}
 						/>
 					</div>
 				</div>

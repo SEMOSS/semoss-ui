@@ -72,6 +72,8 @@ const formatValue = (input?: string) => {
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
+		YEAR: "Yearly",
+		ALL_TIME: "All time",
 	};
 	return mappings[input.toUpperCase()] ?? input;
 };
@@ -347,7 +349,7 @@ export const MembersList = ({
 					</div>
 				)}
 				<div className="max-h-[400px] w-full overflow-y-auto">
-					<Table wrapperClassName="overflow-x-clip">
+					<Table wrapperClassName="overflow-x-auto">
 						<TableHeader className="sticky top-0 z-10 bg-background">
 							<TableRow>
 								{!isAddMember && (
@@ -387,7 +389,7 @@ export const MembersList = ({
 							{userDataFiltered.length > 0 ? (
 								userDataFiltered.map((user) => (
 									<TableRow
-										key={`members-row-${user.email}`}
+										key={`members-row-${user.type}-${user.id}`}
 										data-state={
 											selectedIds.has(user.id)
 												? "selected"
@@ -704,7 +706,7 @@ export const MembersList = ({
 					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2 pr-1">
 						{usersToDelete.map((u) => (
 							<div
-								key={u.id}
+								key={`${u.type}-${u.id}`}
 								className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2.5"
 							>
 								<Avatar className="h-9 w-9 items-center justify-center bg-muted text-muted-foreground text-sm">

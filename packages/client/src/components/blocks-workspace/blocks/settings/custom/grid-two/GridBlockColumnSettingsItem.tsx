@@ -2,7 +2,7 @@ import { Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { GridBlockColumn, GridBlockDef } from "@semoss/renderer";
 import { Button } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface GridBlockColumnSettingsItemProps {
 	/** Id of the block */

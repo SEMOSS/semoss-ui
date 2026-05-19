@@ -1,9 +1,9 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy click handlers */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
+
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Collapsible,
@@ -28,6 +28,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
 

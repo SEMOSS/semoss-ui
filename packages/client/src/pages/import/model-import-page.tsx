@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy click handlers */
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy click handlers */
+
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -39,7 +39,8 @@ import {
 } from "@/components/import/model/model-import.constants";
 import { ModelTileCard } from "@/components/import/model/model-tile-card";
 import { useRootStore } from "@/hooks";
-import { ENGINE_IMAGES } from "@/pages/import/import.constants";
+import { useNavigate } from "@/hooks/useNavigate";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
 

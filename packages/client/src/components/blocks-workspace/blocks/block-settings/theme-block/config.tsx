@@ -1,12 +1,13 @@
 import { Copy, ExternalLink, X } from "lucide-react";
 import { type CSSProperties, useState } from "react";
-import { darkTheme, lightTheme } from "@semoss/ui";
 import {
 	Button,
 	Dialog,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	darkTheme,
+	lightTheme,
 	Select,
 	SelectContent,
 	SelectItem,
@@ -17,7 +18,7 @@ import {
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import {
 	BaseSettingSection,
 	ColorSettings,
@@ -254,15 +255,15 @@ export const config: BlockSettingsConfig = {
 			],
 		},
 		{
-			name: "MUI Theme Editor",
+			name: "Theme Editor",
 			children: [
 				{
-					description: "Edit MUI Theme",
+					description: "Edit Theme",
 					render: ({ id }) => {
 						const [open, setOpen] = useState(false);
 						return (
 							<>
-								<BaseSettingSection label={"Edit MUI Theme"}>
+								<BaseSettingSection label={"Edit Theme"}>
 									<Button
 										variant="ghost"
 										size="icon-sm"
@@ -280,7 +281,7 @@ export const config: BlockSettingsConfig = {
 										<DialogHeader>
 											<div className="flex flex-row items-center justify-between">
 												<DialogTitle>
-													Edit MUI theme
+													Edit Theme
 												</DialogTitle>
 												<Button
 													variant="ghost"

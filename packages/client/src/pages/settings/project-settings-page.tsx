@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
 	Button,
 	InputGroup,
@@ -18,6 +18,24 @@ import {
 import { EngineLandscapeCard } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+
+const PROJECT_SORT_FIELDS = [
+	"PROJECTNAME",
+	"DATECREATED",
+	"DATELASTEDITED",
+] as const;
+type ProjectSortField = (typeof PROJECT_SORT_FIELDS)[number];
+
+const isValidProjectSortField = (
+	value: string | null,
+): value is ProjectSortField => {
+	return PROJECT_SORT_FIELDS.includes(value as ProjectSortField);
+};
+
+const parseSortOrder = (value: string | null): "ASC" | "DESC" => {
+	return value === "DESC" ? "DESC" : "ASC";
+};
 
 const initialState = {
 	projects: [],
@@ -70,13 +88,25 @@ export const ProjectSettingsPage = () => {
 	const { adminMode } = useSettings();
 	const { configStore, monolithStore } = useRootStore();
 	const navigate = useNavigate();
+	const { search: locationSearch } = useLocation();
+
+	const urlSearchParams = new URLSearchParams(locationSearch);
+	const urlSort = urlSearchParams.get("sort");
+	const initialSearch = urlSearchParams.get("q") || "";
+	const initialSortKey = isValidProjectSortField(urlSort)
+		? urlSort
+		: "PROJECTNAME";
+	const initialSortOrder = parseSortOrder(urlSearchParams.get("order"));
+
 	const [state, dispatch] = useReducer(reducer, initialState);
 	const { projects } = state;
 
-	const [search, setSearch] = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [sortKey, setSortKey] = useState("PROJECTNAME");
-	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
+	const [search, setSearch] = useState(initialSearch);
+	const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+	const [sortKey, setSortKey] = useState<ProjectSortField>(initialSortKey);
+	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">(
+		initialSortOrder,
+	);
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
 	const [isSearching, setIsSearching] = useState(false);
@@ -103,6 +133,38 @@ export const ProjectSettingsPage = () => {
 			clearTimeout(timer);
 		};
 	}, [search]);
+
+	useEffect(() => {
+		const params = new URLSearchParams();
+
+		if (search) {
+			params.set("q", search);
+		}
+
+		if (sortKey !== "PROJECTNAME") {
+			params.set("sort", sortKey);
+		}
+
+		if (sortOrder !== "ASC") {
+			params.set("order", sortOrder);
+		}
+
+		const nextSearch = params.toString();
+		const currentSearch = locationSearch.startsWith("?")
+			? locationSearch.slice(1)
+			: locationSearch;
+
+		if (nextSearch === currentSearch) {
+			return;
+		}
+
+		navigate(
+			{
+				search: nextSearch ? `?${nextSearch}` : "",
+			},
+			{ replace: true },
+		);
+	}, [search, sortKey, sortOrder, locationSearch, navigate]);
 
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
 		(k) => {
@@ -374,7 +436,11 @@ export const ProjectSettingsPage = () => {
 						<div className="w-[136px] sm:w-[148px]">
 							<Select
 								value={sortKey}
-								onValueChange={(value) => setSortKey(value)}
+								onValueChange={(value) => {
+									if (isValidProjectSortField(value)) {
+										setSortKey(value);
+									}
+								}}
 							>
 								<SelectTrigger
 									className="h-9 w-full"
@@ -451,6 +517,8 @@ export const ProjectSettingsPage = () => {
 									return null;
 								}
 
+								const detailHref = `#/settings/app/${projectId}${locationSearch}`;
+
 								return (
 									<div key={projectId}>
 										<EngineLandscapeCard
@@ -467,6 +535,7 @@ export const ProjectSettingsPage = () => {
 											description={getProjectDescription(
 												project,
 											)}
+											href={detailHref}
 											isGlobal={projectIsGlobal}
 											isDiscoverable={true}
 											hideFavorite={true}
@@ -484,15 +553,21 @@ export const ProjectSettingsPage = () => {
 													: undefined
 											}
 											onClick={() => {
-												navigate(`${projectId}`, {
-													state: {
-														name: projectName,
-														global: projectIsGlobal,
-														permission:
-															projectPermission ||
-															3,
+												navigate(
+													{
+														pathname: projectId,
+														search: locationSearch,
 													},
-												});
+													{
+														state: {
+															name: projectName,
+															global: projectIsGlobal,
+															permission:
+																projectPermission ||
+																3,
+														},
+													},
+												);
 											}}
 										/>
 									</div>

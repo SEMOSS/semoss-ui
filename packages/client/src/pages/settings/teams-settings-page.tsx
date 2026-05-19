@@ -1,7 +1,6 @@
 import { Plus, Search, Users } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Badge,
 	Button,
@@ -15,6 +14,7 @@ import {
 import { getTeams, getTeamsCount } from "@/api";
 import { AddTeamModal } from "@/components/teams/add-team-modal";
 import { TeamTileCard } from "@/components/teams/team-tile-card";
+import { useNavigate } from "@/hooks/useNavigate";
 import { useSettings } from "@/hooks/useSettings";
 
 export interface DBMember {

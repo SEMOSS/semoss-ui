@@ -1,8 +1,8 @@
 import { ExternalLinkIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import type { App } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	buildInitials,
 	getAppCatalogAvatarStyle,

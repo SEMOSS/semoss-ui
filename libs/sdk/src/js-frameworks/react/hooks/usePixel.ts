@@ -1,5 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { runPixel } from "../../../api";
+import { InsightContext } from "../contexts";
 
 interface PixelState<D> {
 	/** Status of the pixel call */
@@ -43,6 +51,9 @@ export function usePixel<D>(
 	config?: Partial<PixelConfig<D>>,
 	insightId?: string,
 ): usePixel<D> {
+	const context = useContext(InsightContext);
+	const resolvedInsightId = insightId ?? context?.insightId;
+
 	// Memoize the initial data
 	// biome-ignore lint/correctness/useExhaustiveDependencies: config?.data is handled by deep check
 	const initialData = useMemo(() => {
@@ -113,7 +124,7 @@ export function usePixel<D>(
 			data: initialData,
 		});
 
-		runPixel<[D]>(pixel, insightId)
+		runPixel<[D]>(pixel, resolvedInsightId)
 			.then((response) => {
 				// ignore if its cancelled
 				if (isCancelled) {
@@ -163,7 +174,7 @@ export function usePixel<D>(
 		return () => {
 			isCancelled = true;
 		};
-	}, [count, pixel, insightId, initialData]);
+	}, [count, pixel, resolvedInsightId, initialData]);
 
 	return {
 		...state,
