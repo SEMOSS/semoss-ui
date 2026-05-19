@@ -99,6 +99,70 @@ const LANGUAGE = {
 
 type LanguageType = keyof typeof LANGUAGE;
 
+type WrappedLanguage = Exclude<LanguageType, "PIXEL">;
+
+const WRAPPER_KEYWORD: Record<WrappedLanguage, string> = {
+	PYTHON: "Py",
+	R: "R",
+	SHELL: "Command",
+};
+
+// The server reformats pixel expressions with arbitrary whitespace (e.g.
+// `Py ( "<encode>2+2</encode>" ) ;`), so each separator allows optional spaces.
+const WRAPPER_REGEX: Record<WrappedLanguage, RegExp> = {
+	PYTHON: /^Py\s*\(\s*"\s*<encode>\s*([\s\S]*?)\s*<\/encode>\s*"\s*\)\s*;?\s*$/,
+	R: /^R\s*\(\s*"\s*<encode>\s*([\s\S]*?)\s*<\/encode>\s*"\s*\)\s*;?\s*$/,
+	SHELL: /^Command\s*\(\s*"\s*<encode>\s*([\s\S]*?)\s*<\/encode>\s*"\s*\)\s*;?\s*$/,
+};
+
+const detectWrapper = (
+	command: string,
+): { lang: WrappedLanguage; inner: string } | null => {
+	const trimmed = command.trim();
+	if (!trimmed) {
+		return null;
+	}
+
+	for (const lang of Object.keys(WRAPPER_REGEX) as WrappedLanguage[]) {
+		const match = trimmed.match(WRAPPER_REGEX[lang]);
+		if (match) {
+			return { lang, inner: match[1] };
+		}
+	}
+
+	return null;
+};
+
+const wrapForLanguage = (inner: string, lang: LanguageType): string => {
+	if (lang === "PIXEL") {
+		return inner;
+	}
+	return `${WRAPPER_KEYWORD[lang]}("<encode>${inner}</encode>");`;
+};
+
+// If the buffer already looks wrapped, treat it as already-pixel.
+const toPixelForm = (command: string, fromLang: LanguageType): string => {
+	if (fromLang === "PIXEL") {
+		return command;
+	}
+	if (detectWrapper(command)) {
+		return command;
+	}
+	return wrapForLanguage(command, fromLang);
+};
+
+// Unwrap when the wrapper matches the active language; otherwise pass through.
+const toDisplayForm = (pixelCommand: string, toLang: LanguageType): string => {
+	if (toLang === "PIXEL") {
+		return pixelCommand;
+	}
+	const detected = detectWrapper(pixelCommand);
+	if (detected && detected.lang === toLang) {
+		return detected.inner;
+	}
+	return pixelCommand;
+};
+
 const HELP_KEY_BY_LANGUAGE: Record<LanguageType, string> = {
 	PIXEL: "General",
 	SHELL: "Tinker",
@@ -213,6 +277,9 @@ export const TerminalPanel: React.FC = observer(() => {
 	const [command, setCommand] = useState<string>("");
 	const commandRef = useRef<string>("");
 	const [language, setLanguage] = useState<LanguageType>("PIXEL");
+	const languageRef = useRef<LanguageType>("PIXEL");
+	const previousLanguageRef = useRef<LanguageType>("PIXEL");
+	const [defaultCommand, setDefaultCommand] = useState<string>("");
 	const [helpSuggestions, setHelpSuggestions] = useState<
 		Record<string, string[]>
 	>({});
@@ -256,6 +323,56 @@ export const TerminalPanel: React.FC = observer(() => {
 
 	useEffect(() => {
 		setShortcutPlatform(getShortcutPlatform());
+	}, []);
+
+	useEffect(() => {
+		languageRef.current = language;
+		const previous = previousLanguageRef.current;
+		previousLanguageRef.current = language;
+
+		if (previous === language) {
+			return;
+		}
+
+		const currentBufferValue = commandRef.current;
+		if (!currentBufferValue.trim()) {
+			return;
+		}
+		// Leave multiline pastes/buffers untouched on mode switch.
+		if (currentBufferValue.includes("\n")) {
+			return;
+		}
+
+		const pixelForm = toPixelForm(currentBufferValue, previous);
+		const nextDisplay = toDisplayForm(pixelForm, language);
+
+		if (nextDisplay !== currentBufferValue) {
+			commandRef.current = nextDisplay;
+			setCommand(nextDisplay);
+			setDefaultCommand(nextDisplay);
+		}
+	}, [language]);
+
+	const transformHistoryCommand = useCallback((entryCommand: string) => {
+		return toDisplayForm(entryCommand, languageRef.current);
+	}, []);
+
+	const handleTerminalPaste = useCallback((text: string) => {
+		if (!text.includes("\n")) {
+			return;
+		}
+
+		let lastLang: WrappedLanguage | null = null;
+		for (const line of text.split(/\r\n|\n|\r/)) {
+			const detected = detectWrapper(line);
+			if (detected) {
+				lastLang = detected.lang;
+			}
+		}
+
+		if (lastLang && lastLang !== languageRef.current) {
+			setLanguage(lastLang);
+		}
 	}, []);
 
 	const suggestions = useMemo(() => {
@@ -410,8 +527,16 @@ export const TerminalPanel: React.FC = observer(() => {
 			try {
 				setIsLoading(true);
 
+				// Skip re-wrapping and sync the toggle when the buffer is already wrapped.
+				const detected = detectWrapper(cleaned);
+				if (detected && detected.lang !== language) {
+					setLanguage(detected.lang);
+				}
+
+				const isMultiline = cleaned.includes("\n");
+
 				let pixel = "";
-				if (language === "PIXEL") {
+				if (language === "PIXEL" || detected || isMultiline) {
 					pixel = cleaned;
 				} else if (language === "SHELL") {
 					pixel = `Command("<encode>${cleaned}</encode>");`;
@@ -759,10 +884,13 @@ export const TerminalPanel: React.FC = observer(() => {
 			<Terminal
 				history={history}
 				loading={isLoading}
+				defaultCommand={defaultCommand}
 				instructions={getInstructions(language)}
 				suggestions={suggestions}
 				getQuotedSuggestions={getQuotedSuggestions}
 				transformSuggestion={transformSuggestionForInsert}
+				transformHistoryCommand={transformHistoryCommand}
+				onPaste={handleTerminalPaste}
 				onRun={runCommand}
 				onCommand={(nextCommand) => {
 					commandRef.current = nextCommand;
