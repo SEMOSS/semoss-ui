@@ -6,7 +6,9 @@
 		"ready": "Ready",
 		"autoExecute": "Auto-executing",
 		"paused": "Paused",
-		"queued": "In queue to auto-execute"
+		"queued": "In queue to auto-execute",
+		"loadingTool": "Loading tool…",
+		"waitingForArguments": "Waiting for arguments…"
 	},
 	"actions": {
 		"cancel": "Cancel",
