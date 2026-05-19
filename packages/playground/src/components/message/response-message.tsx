@@ -226,7 +226,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			)
 				return;
 			try {
-				const mimeType = mediaPart.mediaInfo.mimeType || "image/png";
+				const mimeType = mediaPart.mediaInfo.mimeType;
+				if (!mimeType || !mimeType.startsWith("image/")) {
+					toast.error("Invalid image format");
+					return;
+				}
 				const bytes = atob(mediaPart.mediaInfo.base64Data);
 				const arr = new Uint8Array(bytes.length).map((_, i) =>
 					bytes.charCodeAt(i),
