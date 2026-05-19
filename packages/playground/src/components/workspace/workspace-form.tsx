@@ -179,6 +179,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						values={knowledge}
 						disabled={isLoading}
 						onChange={(knowledge) => setKnowledge(knowledge)}
+						className="h-96"
 					/>
 				</Field>
 				<Field>
@@ -188,6 +189,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						values={toolbox}
 						disabled={isLoading}
 						onChange={(mcps) => setToolbox(mcps)}
+						className="h-96"
 					/>
 				</Field>
 			</FieldGroup>

@@ -1,7 +1,9 @@
+import { BookOpenIcon, HammerIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	Badge,
 	Button,
 	Dialog,
 	DialogContent,
@@ -9,7 +11,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	FieldGroup,
 	Tabs,
 	TabsContent,
 	TabsList,
@@ -71,51 +72,60 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	return (
 		<Dialog open={open} onOpenChange={() => onClose()}>
 			<DialogContent
-				className="w-full sm:max-w-4xl"
+				className="flex h-[80vh] max-h-[40rem] w-full flex-col gap-4 sm:max-w-4xl"
 				onOpenAutoFocus={(e) => e.preventDefault()}
 				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
 				<DialogHeader>
-					<DialogTitle>
-						{activeTab === "TOOLBOX"
-							? t("overlay.editToolbox")
-							: t("overlay.editKnowledge")}
-					</DialogTitle>
+					<DialogTitle>{t("overlay.title")}</DialogTitle>
 					<DialogDescription>
-						{activeTab === "TOOLBOX"
-							? t("overlay.toolboxDescription")
-							: t("overlay.knowledgeDescription")}
+						{t("overlay.description")}
 					</DialogDescription>
 				</DialogHeader>
 
 				<Tabs
 					value={activeTab}
 					onValueChange={(v) => setActiveTab(v as MCPType)}
+					className="flex min-h-0 flex-1 flex-col gap-3"
 				>
-					<TabsList>
-						<TabsTrigger value="KNOWLEDGE">Knowledge</TabsTrigger>
-						<TabsTrigger value="TOOLBOX">Toolbox</TabsTrigger>
+					<TabsList className="grid w-full grid-cols-2">
+						<TabsTrigger value="KNOWLEDGE" className="gap-2">
+							<BookOpenIcon className="size-4" />
+							{t("overlay.tabKnowledge")}
+							<Badge variant="outline" className="ml-1">
+								{knowledge.length}
+							</Badge>
+						</TabsTrigger>
+						<TabsTrigger value="TOOLBOX" className="gap-2">
+							<HammerIcon className="size-4" />
+							{t("overlay.tabToolbox")}
+							<Badge variant="outline" className="ml-1">
+								{toolbox.length}
+							</Badge>
+						</TabsTrigger>
 					</TabsList>
-					<TabsContent value="KNOWLEDGE">
+					<TabsContent
+						value="KNOWLEDGE"
+						className="flex min-h-0 flex-1 flex-col"
+					>
 						{activeTab === "KNOWLEDGE" && (
-							<FieldGroup>
-								<MCPSelector
-									type="KNOWLEDGE"
-									values={knowledge}
-									onChange={setKnowledge}
-								/>
-							</FieldGroup>
+							<MCPSelector
+								type="KNOWLEDGE"
+								values={knowledge}
+								onChange={setKnowledge}
+							/>
 						)}
 					</TabsContent>
-					<TabsContent value="TOOLBOX">
+					<TabsContent
+						value="TOOLBOX"
+						className="flex min-h-0 flex-1 flex-col"
+					>
 						{activeTab === "TOOLBOX" && (
-							<FieldGroup>
-								<MCPSelector
-									type="TOOLBOX"
-									values={toolbox}
-									onChange={setToolbox}
-								/>
-							</FieldGroup>
+							<MCPSelector
+								type="TOOLBOX"
+								values={toolbox}
+								onChange={setToolbox}
+							/>
 						)}
 					</TabsContent>
 				</Tabs>

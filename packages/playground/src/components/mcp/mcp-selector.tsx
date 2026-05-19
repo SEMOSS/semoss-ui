@@ -6,6 +6,7 @@ import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
+	cn,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -36,13 +37,20 @@ interface MCPSelectorProps {
 
 	/** Callback that is fired when the form is closed or submitted. If it is successful, it will return an id */
 	onChange: (values: MCPConfig[]) => void;
+
+	/**
+	 * Extra classes applied to the selector's root container. Callers that
+	 * render the selector inline (not inside a height-constrained parent like
+	 * the MCP overlay) should set a concrete height here, e.g. `h-[420px]`.
+	 */
+	className?: string;
 }
 
 /**
  * Renders the MCPSelector component for selecting mcps within an agent
  */
 export const MCPSelector = observer(
-	({ type, values, disabled, onChange }: MCPSelectorProps) => {
+	({ type, values, disabled, onChange, className }: MCPSelectorProps) => {
 		const { t } = useTranslation("mcp");
 		const { root } = useRoot();
 		const isMobile = useIsMobile();
@@ -117,8 +125,13 @@ export const MCPSelector = observer(
 		};
 
 		return (
-			<div className="w-full overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm">
-				<div className="flex w-full flex-row gap-2 border-border border-b bg-muted p-4">
+			<div
+				className={cn(
+					"flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm",
+					className,
+				)}
+			>
+				<div className="flex w-full shrink-0 flex-row gap-2 border-border border-b bg-muted p-4">
 					<div className="flex-1">
 						<InputGroup className="bg-background">
 							<InputGroupInput
@@ -138,7 +151,6 @@ export const MCPSelector = observer(
 							<TooltipTrigger asChild>
 								<Button
 									variant="outline"
-									size="sm"
 									onClick={(event) => {
 										event.preventDefault();
 										event.stopPropagation();
@@ -157,7 +169,7 @@ export const MCPSelector = observer(
 				</div>
 
 				<ScrollArea
-					className="h-64 w-full flex-1"
+					className="min-h-0 w-full flex-1"
 					viewportRef={(e) => setScroll(e)}
 				>
 					{getMCP.isLoading && (
@@ -190,7 +202,7 @@ export const MCPSelector = observer(
 					)}
 				</ScrollArea>
 				{values.length > 0 && isMobile && (
-					<div className="flex max-h-20 flex-wrap gap-2 overflow-y-auto p-4">
+					<div className="flex max-h-20 shrink-0 flex-wrap gap-2 overflow-y-auto border-border border-t p-3">
 						{values.map((t) => (
 							<Badge
 								key={t.id}
@@ -198,7 +210,7 @@ export const MCPSelector = observer(
 								className="text-sm"
 								title={t.name}
 							>
-								<div className="max-w-32 truncate">
+								<div className="max-w-64 truncate">
 									{t.name}
 								</div>
 								<Button
@@ -218,9 +230,9 @@ export const MCPSelector = observer(
 					</div>
 				)}
 				{values.length > 0 && !isMobile && (
-					<ScrollArea className="w-full whitespace-nowrap">
+					<ScrollArea className="w-full shrink-0 whitespace-nowrap border-border border-t">
 						<ScrollBar orientation="horizontal"></ScrollBar>
-						<div className="flex space-x-2 p-4">
+						<div className="flex space-x-2 p-3">
 							{values.map((t) => (
 								<Badge
 									key={t.id}
@@ -228,7 +240,7 @@ export const MCPSelector = observer(
 									className="text-sm"
 									title={t.name}
 								>
-									<div className="w-32 truncate">
+									<div className="max-w-64 truncate">
 										{t.name}
 									</div>
 									<Button

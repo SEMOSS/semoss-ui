@@ -18,6 +18,10 @@
 		"noKnowledgeFound": "No knowledge found"
 	},
 	"overlay": {
+		"title": "Manage knowledge & tools",
+		"description": "Add knowledge sources and tools to give the model more context and capabilities.",
+		"tabKnowledge": "Knowledge",
+		"tabToolbox": "Toolbox",
 		"editToolbox": "Configure Toolboxes",
 		"editKnowledge": "Configure Knowledge",
 		"toolboxDescription": "Add tools to give this chat more capabilities",
