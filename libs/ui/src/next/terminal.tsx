@@ -345,6 +345,10 @@ export interface TerminalProps {
 	getQuotedSuggestions?: (context: QuotedSuggestionContext) => string[];
 	/** Transform selected suggestions before they are inserted */
 	transformSuggestion?: (suggestion: string) => string;
+	/** Transform a command pulled from history before placing it in the buffer */
+	transformHistoryCommand?: (command: string) => string;
+	/** Fired after a clipboard paste with the inserted text */
+	onPaste?: (text: string) => void;
 	/** Optional class name for the wrapper */
 	className?: string;
 }
@@ -361,6 +365,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 	suggestions = [],
 	getQuotedSuggestions = () => [],
 	transformSuggestion = (suggestion) => suggestion,
+	transformHistoryCommand = (command) => command,
+	onPaste = () => null,
 	className,
 }) => {
 	const terminalRef = useRef<HTMLDivElement>(null);
@@ -376,6 +382,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 	const instructionsRef = useRef(instructions);
 	const welcomeRef = useRef(welcome);
 	const transformSuggestionRef = useRef(transformSuggestion);
+	const transformHistoryCommandRef = useRef(transformHistoryCommand);
+	const onPasteRef = useRef(onPaste);
 
 	const [terminalTheme, setTerminalTheme] =
 		useState<TerminalTheme>(getInitialTheme);
@@ -449,6 +457,14 @@ export const Terminal: React.FC<TerminalProps> = ({
 	useEffect(() => {
 		transformSuggestionRef.current = transformSuggestion;
 	}, [transformSuggestion]);
+
+	useEffect(() => {
+		transformHistoryCommandRef.current = transformHistoryCommand;
+	}, [transformHistoryCommand]);
+
+	useEffect(() => {
+		onPasteRef.current = onPaste;
+	}, [onPaste]);
 
 	useEffect(() => {
 		bufferRef.current = buffer;
@@ -1148,10 +1164,13 @@ export const Terminal: React.FC<TerminalProps> = ({
 			const currentBuffer = bufferRef.current;
 			const fallbackBuffer =
 				historySearchBaseBufferRef.current || currentBuffer;
+			const transformedMatch = selectedMatch
+				? transformHistoryCommandRef.current(selectedMatch)
+				: "";
 			const nextBuffer = selectedMatch
 				? {
-						command: selectedMatch,
-						position: selectedMatch.length,
+						command: transformedMatch,
+						position: transformedMatch.length,
 					}
 				: fallbackBuffer;
 
@@ -1446,6 +1465,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 		terminal.open(terminalRef.current);
 		fitAddon.fit();
 
+		// xterm's paste handler ignores defaultPrevented and re-emits via onData,
+		// so stop the event in capture phase before it reaches the textarea.
 		const handlePasteEvent = (event: ClipboardEvent) => {
 			if (isDisabledRef.current) {
 				return;
@@ -1461,11 +1482,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 			}
 
 			event.preventDefault();
+			event.stopImmediatePropagation();
 			insertTextAtCursor(data);
+			onPasteRef.current(data);
 		};
-
-		const pasteTarget = terminal.textarea || terminalRef.current;
-		pasteTarget?.addEventListener("paste", handlePasteEvent, true);
 
 		const handleWindowPaste = (event: ClipboardEvent) => {
 			if (document.activeElement !== terminal.textarea) {
@@ -1497,6 +1517,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 						}
 
 						insertTextAtCursor(value);
+						onPasteRef.current(value);
 					})
 					.catch(() => null);
 			};
@@ -1578,7 +1599,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 		return () => {
 			resizeObserver.disconnect();
-			pasteTarget?.removeEventListener("paste", handlePasteEvent, true);
 			window.removeEventListener("paste", handleWindowPaste, true);
 			spinnerRef.current?.destroy();
 			spinnerRef.current = null;
@@ -1764,9 +1784,11 @@ export const Terminal: React.FC<TerminalProps> = ({
 					}
 
 					const fromHistory = historyRef.current[nextHistoryIndex];
+					const transformedCommand =
+						transformHistoryCommandRef.current(fromHistory.command);
 					const nextBuffer = {
-						command: fromHistory.command,
-						position: fromHistory.command.length,
+						command: transformedCommand,
+						position: transformedCommand.length,
 					};
 
 					setHistoryPointer(nextHistoryIndex);
@@ -1799,7 +1821,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 						historyPositionRef.current + 1,
 					);
 					const fromHistory = historyRef.current[nextHistoryIndex];
-					const nextCommand = fromHistory?.command || "";
+					const rawCommand = fromHistory?.command || "";
+					const nextCommand = rawCommand
+						? transformHistoryCommandRef.current(rawCommand)
+						: "";
 					const nextBuffer = {
 						command: nextCommand,
 						position: nextCommand.length,
@@ -2207,6 +2232,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 				return;
 			}
 			insertTextAtCursor(data);
+			onPasteRef.current(data);
 		} catch {
 			// Ignore clipboard failures and keep the input focused.
 		}
