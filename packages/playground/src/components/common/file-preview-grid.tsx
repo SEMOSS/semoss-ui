@@ -13,7 +13,7 @@ import {
 	FileVideoIcon,
 	XIcon,
 } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import {
 	Button,
 	ScrollArea,
@@ -87,35 +87,21 @@ export const FilePreviewGrid = ({
 	files,
 	onRemoveFile,
 }: FilePreviewGridProps) => {
-	const urlCacheRef = useRef(new Map<string, string>());
+	const previewUrls = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const f of files) {
+			if (!isImageFile(f)) continue;
+			const key = `${f.name}-${f.size}-${f.lastModified}`;
+			map.set(key, URL.createObjectURL(f));
+		}
+		return map;
+	}, [files]);
 
 	useEffect(() => {
-		const currentKeys = new Set(
-			files
-				.filter(isImageFile)
-				.map((f) => `${f.name}-${f.size}-${f.lastModified}`),
-		);
-		urlCacheRef.current.forEach((url, key) => {
-			if (!currentKeys.has(key)) {
-				URL.revokeObjectURL(url);
-				urlCacheRef.current.delete(key);
-			}
-		});
-		files.forEach((f) => {
-			if (!isImageFile(f)) return;
-			const key = `${f.name}-${f.size}-${f.lastModified}`;
-			if (!urlCacheRef.current.has(key)) {
-				urlCacheRef.current.set(key, URL.createObjectURL(f));
-			}
-		});
-
 		return () => {
-			for (const url of urlCacheRef.current.values()) {
-				URL.revokeObjectURL(url);
-			}
-			urlCacheRef.current.clear();
+			for (const url of previewUrls.values()) URL.revokeObjectURL(url);
 		};
-	}, [files]);
+	}, [previewUrls]);
 
 	if (files.length === 0) return null;
 
@@ -125,7 +111,7 @@ export const FilePreviewGrid = ({
 			<div className="flex w-max gap-2 pb-3">
 				{files.map((file, idx) => {
 					const key = `${file.name}-${file.size}-${file.lastModified}-${idx}`;
-					const previewUrl = urlCacheRef.current.get(
+					const previewUrl = previewUrls.get(
 						`${file.name}-${file.size}-${file.lastModified}`,
 					);
 
