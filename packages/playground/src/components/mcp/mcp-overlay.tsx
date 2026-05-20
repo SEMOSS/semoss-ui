@@ -8,6 +8,7 @@ import {
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -89,6 +90,14 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	);
 	const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
 
+	// Tracks which workspace's MCPs are currently merged into the drafts.
+	// Used to detect when the user picks a different agent (or clears it)
+	// inside the modal so we can swap workspace MCPs in/out of the drafts
+	// live, rather than waiting for the room to refetch after save.
+	const mergedWorkspaceId = useRef<string | null>(
+		workspace?.workspace_id ?? null,
+	);
+
 	// Reset drafts on the closed → open transition only. Mutations to props
 	// while the dialog is already open would otherwise discard the user's
 	// in-progress edits.
@@ -100,9 +109,63 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 			setToolbox(next.toolbox);
 			setWorkspaceDraft(workspace ?? null);
 			setActiveTab(defaultTab);
+			mergedWorkspaceId.current = workspace?.workspace_id ?? null;
 		}
 		wasOpen.current = open;
 	}, [open, values, defaultTab, workspace]);
+
+	// Fetch the selected agent's MCPs whenever the user picks one in the
+	// modal. Empty string disables the call (per the usePixel convention).
+	const getWorkspace = usePixel<Workspace | null>(
+		workspaceDraft?.workspace_id
+			? `GetWorkspace("${workspaceDraft.workspace_id}");`
+			: "",
+		{ data: null },
+	);
+
+	// When the selected agent changes (including to null), strip any
+	// fromWorkspace MCPs from the drafts. The follow-up effect below will
+	// then merge in the new agent's MCPs once the pixel resolves.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: only react to
+	// id changes; the setters are stable refs.
+	useEffect(() => {
+		const draftId = workspaceDraft?.workspace_id ?? null;
+		if (draftId === mergedWorkspaceId.current) return;
+		setKnowledge((prev) => prev.filter((m) => !m.fromWorkspace));
+		setToolbox((prev) => prev.filter((m) => !m.fromWorkspace));
+		mergedWorkspaceId.current = null;
+	}, [workspaceDraft?.workspace_id]);
+
+	// Merge the loaded workspace's MCPs into the drafts as fromWorkspace
+	// entries. Guards against stale pixel responses for a previously
+	// selected agent.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: setters are
+	// stable; we react to pixel status/data and the selected id only.
+	useEffect(() => {
+		const draftId = workspaceDraft?.workspace_id ?? null;
+		if (!draftId) return;
+		if (mergedWorkspaceId.current === draftId) return;
+		if (getWorkspace.status !== "SUCCESS" || !getWorkspace.data) return;
+		if (getWorkspace.data.workspace_id !== draftId) return;
+
+		const workspaceMcps: MCPConfig[] = (getWorkspace.data.mcp || []).map(
+			(m) => ({ ...m, fromWorkspace: true }),
+		);
+		const { knowledge: wsK, toolbox: wsT } = splitMcpByType(workspaceMcps);
+		const wsKnowledgeIds = new Set(wsK.map((m) => m.id));
+		const wsToolboxIds = new Set(wsT.map((m) => m.id));
+		setKnowledge((prev) => [
+			...wsK,
+			...prev.filter(
+				(m) => !m.fromWorkspace && !wsKnowledgeIds.has(m.id),
+			),
+		]);
+		setToolbox((prev) => [
+			...wsT,
+			...prev.filter((m) => !m.fromWorkspace && !wsToolboxIds.has(m.id)),
+		]);
+		mergedWorkspaceId.current = draftId;
+	}, [workspaceDraft?.workspace_id, getWorkspace.status, getWorkspace.data]);
 
 	return (
 		<Dialog open={open} onOpenChange={() => onClose()}>
