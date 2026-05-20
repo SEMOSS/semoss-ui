@@ -903,74 +903,84 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									</DropdownMenu>
 								)}
 							</div>
-							{/* Body — holds chips and middle controls. Absorbs all
-							    shrinkage between the pinned `+` and send buttons. Chips
-							    stay at natural size (shrink-0) and clip past the right
-							    edge; middle controls clip from the left. */}
-							<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-								{agentChipWorkspace && (
-									<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
+							{/* Body — holds chips and middle controls. Chips clip
+							    out first (chips-region grows then shrinks to 0); only
+							    after chips are fully gone do middle controls begin
+							    clipping from the left. */}
+							<div className="flex min-w-0 flex-1 items-center gap-2">
+								{/* Chips region — grows to push middle right, shrinks
+								    first when squeezed. Chips inside are shrink-0 and
+								    clip past the region's right edge. */}
+								<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+									{agentChipWorkspace && (
+										<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
+											<button
+												type="button"
+												onClick={() =>
+													handleOpenMcpOverlay(
+														"AGENT",
+													)
+												}
+												className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
+												title={
+													agentChipWorkspace.name ??
+													undefined
+												}
+											>
+												<ComputerIcon className="size-3.5 shrink-0" />
+												<span className="max-w-32 truncate">
+													{agentChipWorkspace.name ||
+														agentChipWorkspace.workspace_id}
+												</span>
+											</button>
+											{root.theme.featureFlags
+												?.showPlatformLinks && (
+												<a
+													target="_blank"
+													rel="noopener noreferrer"
+													href={`${PLATFORM_URL}/#/app/${agentChipWorkspace.workspace_id}`}
+													className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
+													onClick={(e) =>
+														e.stopPropagation()
+													}
+												>
+													<ExternalLinkIcon className="size-3" />
+												</a>
+											)}
+										</div>
+									)}
+									{knowledgeCount > 0 && (
 										<button
 											type="button"
 											onClick={() =>
-												handleOpenMcpOverlay("AGENT")
+												handleOpenMcpOverlay(
+													"KNOWLEDGE",
+												)
 											}
-											className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
-											title={
-												agentChipWorkspace.name ??
-												undefined
-											}
+											className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
 										>
-											<ComputerIcon className="size-3.5 shrink-0" />
-											<span className="max-w-32 truncate">
-												{agentChipWorkspace.name ||
-													agentChipWorkspace.workspace_id}
-											</span>
+											<BookOpenIcon className="size-3.5" />
+											<span>{knowledgeCount}</span>
 										</button>
-										{root.theme.featureFlags
-											?.showPlatformLinks && (
-											<a
-												target="_blank"
-												rel="noopener noreferrer"
-												href={`${PLATFORM_URL}/#/app/${agentChipWorkspace.workspace_id}`}
-												className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
-												onClick={(e) =>
-													e.stopPropagation()
-												}
-											>
-												<ExternalLinkIcon className="size-3" />
-											</a>
-										)}
-									</div>
-								)}
-								{knowledgeCount > 0 && (
-									<button
-										type="button"
-										onClick={() =>
-											handleOpenMcpOverlay("KNOWLEDGE")
-										}
-										className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-									>
-										<BookOpenIcon className="size-3.5" />
-										<span>{knowledgeCount}</span>
-									</button>
-								)}
-								{toolboxCount > 0 && (
-									<button
-										type="button"
-										onClick={() =>
-											handleOpenMcpOverlay("TOOLBOX")
-										}
-										className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-									>
-										<HammerIcon className="size-3.5" />
-										<span>{toolboxCount}</span>
-									</button>
-								)}
+									)}
+									{toolboxCount > 0 && (
+										<button
+											type="button"
+											onClick={() =>
+												handleOpenMcpOverlay("TOOLBOX")
+											}
+											className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
+										>
+											<HammerIcon className="size-3.5" />
+											<span>{toolboxCount}</span>
+										</button>
+									)}
+								</div>
 								{footer}
-								{/* Middle controls — right-aligned, clip from the left when
-								    width tightens; items disappear rather than wrapping. */}
-								<div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+								{/* Middle controls — sit at natural width on the right
+								    until chips-region collapses; then clip from the
+								    left (justify-end + overflow-hidden). */}
+								<div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
 									<div data-tour="tour-model">
 										{root.theme.featureFlags
 											?.enableModelSelect && (
