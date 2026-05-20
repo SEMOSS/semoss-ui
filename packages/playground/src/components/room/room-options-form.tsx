@@ -1,4 +1,4 @@
-import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { ComputerIcon, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
 import { useState } from "react";
@@ -38,6 +38,13 @@ interface RoomOptionsFormProps {
 
 	/** Update options on change */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
+
+	/**
+	 * Whether the user can pick/change the agent from this form. Defaults to
+	 * `false` — agents are baked in at room creation, so the existing-room
+	 * settings panel is read-only. Pass `true` from new-room contexts.
+	 */
+	agentEditable?: boolean;
 }
 
 export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
@@ -46,6 +53,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		onModelChange = () => null,
 		options,
 		onOptionsChange = () => null,
+		agentEditable = false,
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
@@ -54,7 +62,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		 * State
 		 */
 		const [mCPOverlay, setMCPOverlay] = useState<{
-			type: "KNOWLEDGE" | "TOOLBOX";
+			type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
 		}>({
 			type: "KNOWLEDGE",
@@ -138,6 +146,65 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 										});
 									}}
 								/>
+							</Field>
+							<Field>
+								<FieldLabel
+									onClick={(
+										event: MouseEvent<HTMLLabelElement>,
+									) => {
+										event.preventDefault();
+										event.stopPropagation();
+
+										setMCPOverlay({
+											type: "AGENT",
+											isOpen: true,
+										});
+									}}
+								>
+									<div className="flex-1">
+										{t("room:form.agentLabel")}
+									</div>
+								</FieldLabel>
+								<div className="space-y-2">
+									{options?.workspace ? (
+										<button
+											type="button"
+											className="group flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-left text-card-foreground hover:bg-muted/50"
+											onClick={() =>
+												setMCPOverlay({
+													type: "AGENT",
+													isOpen: true,
+												})
+											}
+										>
+											<ComputerIcon className="size-4" />
+											<span className="flex-1 truncate text-sm">
+												{options.workspace.name ||
+													options.workspace
+														.workspace_id}
+											</span>
+										</button>
+									) : (
+										<button
+											type="button"
+											className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
+											onClick={() =>
+												setMCPOverlay({
+													type: "AGENT",
+													isOpen: true,
+												})
+											}
+										>
+											<span className="text-muted-foreground text-xs">
+												{agentEditable
+													? t(
+															"room:menuWorkspace.selectAgent",
+														)
+													: t("room:form.noAgent")}
+											</span>
+										</button>
+									)}
+								</div>
 							</Field>
 							<Field>
 								<FieldLabel
@@ -379,9 +446,21 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 								open={mCPOverlay.isOpen}
 								defaultTab={mCPOverlay.type}
 								values={options?.mcp ?? []}
-								onClose={(mcp) => {
-									if (mcp) {
-										onOptionsChange({ mcp });
+								workspace={options?.workspace ?? null}
+								agentEditable={agentEditable}
+								onClose={(next) => {
+									if (next) {
+										const updates: Partial<
+											RoomStore["options"]
+										> = { mcp: next.mcp };
+										if (
+											agentEditable &&
+											"workspace" in next
+										) {
+											updates.workspace =
+												next.workspace ?? undefined;
+										}
+										onOptionsChange(updates);
 									}
 									setMCPOverlay({
 										isOpen: false,

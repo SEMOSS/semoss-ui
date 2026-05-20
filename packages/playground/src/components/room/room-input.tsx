@@ -14,6 +14,8 @@ import {
 } from "lexical";
 import {
 	BookOpenIcon,
+	ComputerIcon,
+	ExternalLinkIcon,
 	FileArchiveIcon,
 	FileAudioIcon,
 	FileBadgeIcon,
@@ -26,6 +28,7 @@ import {
 	FileTextIcon,
 	FileTypeIcon,
 	FileVideoIcon,
+	HammerIcon,
 	MicIcon,
 	PlusIcon,
 	SendIcon,
@@ -55,6 +58,7 @@ import {
 import {
 	EnterPlugin,
 	FocusPlugin,
+	isKnowledgeMcp,
 	MCPOverlay,
 	MentionPlugin,
 	PromptLibraryDialog,
@@ -64,8 +68,15 @@ import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll
 import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Engine, MCPConfig } from "@/types";
+import type { Engine, MCPConfig, Workspace } from "@/types";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
+
+type WorkspaceRef = Pick<Workspace, "workspace_id"> &
+	Partial<Pick<Workspace, "name">>;
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
 
 let isIframed = false;
 try {
@@ -182,7 +193,9 @@ interface RoomInputProps {
 		onOpenChange: (isOpen: boolean) => void;
 		fileRef: React.RefObject<HTMLInputElement>;
 		/** Open the MCP overlay on the given tab */
-		onOpenMcpOverlay: (defaultTab: "TOOLBOX" | "KNOWLEDGE") => void;
+		onOpenMcpOverlay: (
+			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE",
+		) => void;
 	}>;
 
 	/**
@@ -190,6 +203,14 @@ interface RoomInputProps {
 	 * Save button). Receives the next merged `mcp` array.
 	 */
 	onMcpChange?: (mcp: MCPConfig[]) => void;
+
+	/**
+	 * When provided, the MCP overlay grows an Agent tab and this callback
+	 * fires when the user changes the selected agent. Opting in by passing
+	 * this prop is the signal that the caller supports agent selection
+	 * (today: new-room flow only).
+	 */
+	onWorkspaceChange?: (next: WorkspaceRef | null) => void;
 
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
@@ -256,6 +277,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		onPrompt = () => null,
 		onMcpSelect,
 		onMcpChange,
+		onWorkspaceChange,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
@@ -284,14 +306,25 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// MCP overlay state — managed here so the overlay renders outside the DropdownMenu's React subtree
 		const [mcpOverlay, setMcpOverlay] = useState<{
 			open: boolean;
-			defaultTab: "TOOLBOX" | "KNOWLEDGE";
+			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE";
 		}>({ open: false, defaultTab: "KNOWLEDGE" });
 
 		const handleOpenMcpOverlay = useCallback(
-			(defaultTab: "TOOLBOX" | "KNOWLEDGE") =>
+			(defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") =>
 				setMcpOverlay({ open: true, defaultTab }),
 			[],
 		);
+
+		const knowledgeCount = useMemo(
+			() => options.mcp.filter(isKnowledgeMcp).length,
+			[options.mcp],
+		);
+		const toolboxCount = options.mcp.length - knowledgeCount;
+		// Agent chip indicates a current selection. The Agent tab inside the
+		// modal is always visible; editability is gated on `onWorkspaceChange`.
+		const agentChipWorkspace = options.workspace ?? null;
+		const hasSelectionChips =
+			!!agentChipWorkspace || knowledgeCount > 0 || toolboxCount > 0;
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -867,6 +900,75 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										</DropdownMenuContent>
 									</DropdownMenu>
 								)}
+								{hasSelectionChips && (
+									<div className="flex flex-wrap items-center gap-1.5">
+										{agentChipWorkspace && (
+											<div className="inline-flex h-7 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
+												<button
+													type="button"
+													onClick={() =>
+														handleOpenMcpOverlay(
+															"AGENT",
+														)
+													}
+													className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
+													title={
+														agentChipWorkspace.name ??
+														undefined
+													}
+												>
+													<ComputerIcon className="size-3.5 shrink-0" />
+													<span className="max-w-32 truncate">
+														{agentChipWorkspace.name ||
+															agentChipWorkspace.workspace_id}
+													</span>
+												</button>
+												{root.theme.featureFlags
+													?.showPlatformLinks && (
+													<a
+														target="_blank"
+														rel="noopener noreferrer"
+														href={`${PLATFORM_URL}/#/app/${agentChipWorkspace.workspace_id}`}
+														className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
+														onClick={(e) =>
+															e.stopPropagation()
+														}
+													>
+														<ExternalLinkIcon className="size-3" />
+													</a>
+												)}
+											</div>
+										)}
+										{knowledgeCount > 0 && (
+											<button
+												type="button"
+												onClick={() =>
+													handleOpenMcpOverlay(
+														"KNOWLEDGE",
+													)
+												}
+												className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
+											>
+												<BookOpenIcon className="size-3.5" />
+												<span>{knowledgeCount}</span>
+											</button>
+										)}
+										{toolboxCount > 0 && (
+											<button
+												type="button"
+												onClick={() =>
+													handleOpenMcpOverlay(
+														"TOOLBOX",
+													)
+												}
+												className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
+											>
+												<HammerIcon className="size-3.5" />
+												<span>{toolboxCount}</span>
+											</button>
+										)}
+									</div>
+								)}
 								{footer}
 							</div>
 							<div className="flex items-center gap-2">
@@ -1128,9 +1230,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						open={mcpOverlay.open}
 						defaultTab={mcpOverlay.defaultTab}
 						values={options.mcp}
-						onClose={(updated) => {
+						workspace={agentChipWorkspace}
+						agentEditable={!!onWorkspaceChange}
+						onClose={(next) => {
 							setMcpOverlay((prev) => ({ ...prev, open: false }));
-							if (updated) onMcpChange(updated);
+							if (!next) return;
+							onMcpChange(next.mcp);
+							if (onWorkspaceChange && "workspace" in next) {
+								onWorkspaceChange(next.workspace ?? null);
+							}
 						}}
 					/>
 				)}

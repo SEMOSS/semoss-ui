@@ -33,6 +33,12 @@ export interface MCPCardProps {
 	handleRequestAccess?: () => void;
 	onClick?: () => void;
 	selected?: boolean;
+	/**
+	 * If true, the MCP was inherited from the room's agent and can't be
+	 * removed here — the card renders with a "From agent" badge and no
+	 * click affordance.
+	 */
+	fromWorkspace?: boolean;
 }
 
 export const MCPCard = ({
@@ -43,9 +49,11 @@ export const MCPCard = ({
 	handleRequestAccess,
 	onClick,
 	selected,
+	fromWorkspace,
 }: MCPCardProps) => {
 	const { root } = useRoot();
-	const { t } = useTranslation("mcp");
+	const { t } = useTranslation(["mcp", "common"]);
+	const effectiveOnClick = fromWorkspace ? undefined : onClick;
 
 	const accessMissing =
 		effectivePermission === "REQUESTED" ||
@@ -74,11 +82,11 @@ export const MCPCard = ({
 			className={`col-span-1 p-0 transition-all ${
 				accessMissing ? "border-destructive/50 border-dashed" : ""
 			} ${selected ? "border-primary ring-2 ring-primary" : ""} ${
-				onClick
+				effectiveOnClick
 					? "cursor-pointer hover:border-primary/50 hover:shadow-md"
 					: ""
 			}`}
-			onClick={onClick}
+			onClick={effectiveOnClick}
 		>
 			<CardContent className="space-y-2 p-4">
 				{/* Title & Open Button */}
@@ -86,6 +94,14 @@ export const MCPCard = ({
 					<div className="wrap-break-word min-w-0 flex-1 font-semibold text-sm leading-tight">
 						{m.name}
 					</div>
+					{fromWorkspace && (
+						<Badge
+							variant="outline"
+							className="shrink-0 border-primary text-primary text-xs"
+						>
+							{t("common:badges.fromAgent")}
+						</Badge>
+					)}
 					<Tooltip>
 						<TooltipTrigger asChild>
 							{effectivePermission === "FULLY_PRIVATE" ? (

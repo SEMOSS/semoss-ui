@@ -15,13 +15,16 @@
 		"createKnowledgeSource": "Create Knowledge Source",
 		"viewDetails": "View Details",
 		"noToolboxesFound": "No toolboxes found",
-		"noKnowledgeFound": "No knowledge found"
+		"noKnowledgeFound": "No knowledge found",
+		"noAgentsFound": "No agents found"
 	},
 	"overlay": {
-		"title": "Manage knowledge & tools",
-		"description": "Add knowledge sources and tools to give the model more context and capabilities.",
+		"title": "Configure your chat",
+		"description": "Pick a saved agent, or assemble your own knowledge and tools.",
+		"tabAgent": "Agent",
 		"tabKnowledge": "Knowledge",
 		"tabToolbox": "Toolbox",
+		"agentReadOnlyNote": "Agents are chosen when a chat starts and can't be changed mid-chat. Start a new chat to switch.",
 		"editToolbox": "Configure Toolboxes",
 		"editKnowledge": "Configure Knowledge",
 		"toolboxDescription": "Add tools to give this chat more capabilities",

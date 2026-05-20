@@ -114,7 +114,12 @@ export const MCPSelector = observer(
 			};
 
 			if (Object.hasOwn(updated, mcp.id)) {
-				// remove it
+				// Workspace-inherited MCPs can't be removed from a room here
+				// (they live on the agent). The card disables click for these,
+				// but guard the path defensively for the chip-X route too.
+				if (updated[mcp.id].fromWorkspace) {
+					return;
+				}
 				delete updated[mcp.id];
 			} else {
 				// add it
@@ -188,16 +193,22 @@ export const MCPSelector = observer(
 					)}
 					{!getMCP.isLoading && getMCP.data.length !== 0 && (
 						<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-							{getMCP.data.map((mcp) => (
-								<MCPCard
-									key={mcp.id}
-									m={mcp}
-									type={type}
-									onClick={() => onSelect(mcp)}
-									selected={Object.hasOwn(selected, mcp.id)}
-									effectivePermission={mcp.permission}
-								/>
-							))}
+							{getMCP.data.map((mcp) => {
+								const selectedEntry = selected[mcp.id];
+								const fromWorkspace =
+									selectedEntry?.fromWorkspace === true;
+								return (
+									<MCPCard
+										key={mcp.id}
+										m={mcp}
+										type={type}
+										onClick={() => onSelect(mcp)}
+										selected={!!selectedEntry}
+										effectivePermission={mcp.permission}
+										fromWorkspace={fromWorkspace}
+									/>
+								);
+							})}
 						</div>
 					)}
 				</ScrollArea>

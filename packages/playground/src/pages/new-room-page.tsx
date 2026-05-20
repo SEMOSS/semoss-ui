@@ -1,7 +1,6 @@
 import {
 	CheckIcon,
 	ComputerIcon,
-	ExternalLinkIcon,
 	ListTodoIcon,
 	MessageCircleIcon,
 	Settings2Icon,
@@ -13,7 +12,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
-	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -29,21 +27,12 @@ import {
 } from "@semoss/ui/next";
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
-import {
-	RoomInput,
-	RoomInputMenuMCP,
-	RoomInputMenuUpload,
-	RoomInputMenuWorkspace,
-} from "@/components";
+import { RoomInput, RoomInputMenuMCP, RoomInputMenuUpload } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
-
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
-	? import.meta.env.VITE_PLATFORM_URL
-	: "";
 
 /**
  * The page to create a new room
@@ -450,6 +439,23 @@ export const NewRoomPage = observer(() => {
 									mcp,
 								})
 							}
+							onWorkspaceChange={(next) => {
+								if (next) {
+									setMode("workspace");
+									setSelectedWorkspaceId(next.workspace_id);
+									tempRoomStore.setOptions({
+										...tempRoomStore.options,
+										workspace: next,
+									});
+								} else {
+									setMode("chat");
+									setSelectedWorkspaceId("");
+									tempRoomStore.setOptions({
+										...tempRoomStore.options,
+										workspace: undefined,
+									});
+								}
+							}}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
@@ -506,37 +512,24 @@ export const NewRoomPage = observer(() => {
 												</DropdownMenuItem>
 											</>
 										)}
-										<RoomInputMenuWorkspace
-											workspace={
-												mode === "workspace" &&
-												getWorkspace.status ===
-													"SUCCESS"
-													? getWorkspace.data
-													: null
-											}
-											onSelect={(workspace) => {
-												if (workspace) {
-													if (
-														mode === "workspace" &&
-														selectedWorkspaceId ===
-															workspace.workspace_id
-													) {
-														setMode("chat");
-														setSelectedWorkspaceId(
-															"",
-														);
-													} else {
-														setMode("workspace");
-														setSelectedWorkspaceId(
-															workspace.workspace_id,
-														);
-													}
-												} else {
-													setMode("chat");
-													setSelectedWorkspaceId("");
-												}
+										<DropdownMenuItem
+											onSelect={() => {
+												onOpenMcpOverlay("AGENT");
+												onOpenChange(false);
 											}}
-										/>
+										>
+											<ComputerIcon />
+											<span className="flex-1">
+												{t(
+													"room:menuWorkspace.selectAgent",
+												)}
+											</span>
+											{tempRoomStore.options.workspace ? (
+												<div className="px-1">
+													<CheckIcon />
+												</div>
+											) : null}
+										</DropdownMenuItem>
 										<DropdownMenuSeparator />
 										<RoomInputMenuMCP
 											type="KNOWLEDGE"
@@ -574,66 +567,6 @@ export const NewRoomPage = observer(() => {
 									</>
 								),
 							)}
-							footer={
-								mode === "workspace" &&
-								getWorkspace.status === "SUCCESS" ? (
-									root.theme.featureFlags
-										?.showPlatformLinks ? (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span>
-													<Badge
-														variant="secondary"
-														asChild
-													>
-														<a
-															target="_blank"
-															href={`${PLATFORM_URL}/#/app/${getWorkspace.data?.workspace_id}`}
-														>
-															<ComputerIcon data-icon="inline-start" />
-															<div className="w-18 truncate">
-																{getWorkspace
-																	.data
-																	?.name ||
-																	t(
-																		"room:menuWorkspace.selectAgent",
-																	)}
-															</div>
-															<ExternalLinkIcon data-icon="inline-end" />
-														</a>
-													</Badge>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												Click to view agent details
-											</TooltipContent>
-										</Tooltip>
-									) : (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span>
-													<Badge variant="secondary">
-														<ComputerIcon data-icon="inline-start" />
-														<div className="w-18 truncate">
-															{getWorkspace.data
-																?.name ||
-																t(
-																	"room:menuWorkspace.selectAgent",
-																)}
-														</div>
-													</Badge>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												{getWorkspace.data?.name ||
-													t(
-														"room:menuWorkspace.selectAgent",
-													)}
-											</TooltipContent>
-										</Tooltip>
-									)
-								) : null
-							}
 						/>
 						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
 							<div className="mx-auto flex w-full flex-col items-center gap-3">
@@ -699,13 +632,25 @@ export const NewRoomPage = observer(() => {
 												chat.setSelectedModel(model);
 											}
 										}}
-										onOptionsChange={(options) => {
-											if (options) {
-												tempRoomStore.setOptions({
-													...tempRoomStore.options,
-													...options,
-												});
+										agentEditable
+										onOptionsChange={(opts) => {
+											if (!opts) return;
+											if ("workspace" in opts) {
+												if (opts.workspace) {
+													setMode("workspace");
+													setSelectedWorkspaceId(
+														opts.workspace
+															.workspace_id,
+													);
+												} else {
+													setMode("chat");
+													setSelectedWorkspaceId("");
+												}
 											}
+											tempRoomStore.setOptions({
+												...tempRoomStore.options,
+												...opts,
+											});
 										}}
 									/>
 								</ScrollArea>
