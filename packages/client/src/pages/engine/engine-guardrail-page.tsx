@@ -37,6 +37,87 @@ const isValidMethodsResponse = (raw: unknown): raw is EngineMethod[] =>
 			typeof (m as Record<string, unknown>).deprecated === "boolean",
 	);
 
+const collectMatchingGuardrailIds = (
+	raw: unknown,
+	validIds: Set<string>,
+	collected: Set<string>,
+) => {
+	if (typeof raw === "string") {
+		if (validIds.has(raw)) {
+			collected.add(raw);
+		}
+		return;
+	}
+
+	if (Array.isArray(raw)) {
+		for (const item of raw) {
+			collectMatchingGuardrailIds(item, validIds, collected);
+		}
+		return;
+	}
+
+	if (raw && typeof raw === "object") {
+		for (const value of Object.values(raw as Record<string, unknown>)) {
+			collectMatchingGuardrailIds(value, validIds, collected);
+		}
+	}
+};
+
+const extractSelectedIdsFromReactors = (
+	reactorsRaw: unknown,
+	validIds: Set<string>,
+): string[] => {
+	if (!Array.isArray(reactorsRaw) || validIds.size === 0) {
+		return [];
+	}
+
+	const selected = new Set<string>();
+	for (const reactorRaw of reactorsRaw) {
+		if (!reactorRaw || typeof reactorRaw !== "object") continue;
+		const params = (reactorRaw as Record<string, unknown>).params;
+		collectMatchingGuardrailIds(params, validIds, selected);
+	}
+
+	return Array.from(selected);
+};
+
+const buildMethodConfigsFromPipelineResponse = (
+	config: GuardrailConfig,
+	methods: EngineMethod[],
+	guardrails: unknown[],
+): MethodConfigMap => {
+	const validIds = new Set(
+		guardrails
+			.map((g) => {
+				if (!g || typeof g !== "object") return "";
+				return String((g as Record<string, unknown>).database_id ?? "");
+			})
+			.filter(Boolean),
+	);
+
+	const pipelines = config.pipelines as Record<string, unknown>;
+	const configs: MethodConfigMap = {};
+
+	for (const method of methods) {
+		const methodPipeline = pipelines[method.methodName] as
+			| Record<string, unknown>
+			| undefined;
+
+		configs[method.methodName] = {
+			input: extractSelectedIdsFromReactors(
+				methodPipeline?.input,
+				validIds,
+			),
+			output: extractSelectedIdsFromReactors(
+				methodPipeline?.output,
+				validIds,
+			),
+		};
+	}
+
+	return configs;
+};
+
 const fetchAllGuardrails = async (): Promise<unknown[]> => {
 	const all: unknown[] = [];
 	const limit = 15;
@@ -71,7 +152,6 @@ export const EngineGuardrailPage = observer(() => {
 	const [configResult, setConfigResult] = useState<GuardrailConfig | null>(
 		null,
 	);
-	const [appliedMethods, setAppliedMethods] = useState<string[]>([]);
 
 	const { hasAnyConfig, configuredCount } = useMemo(() => {
 		let count = 0;
@@ -173,7 +253,6 @@ export const EngineGuardrailPage = observer(() => {
 				);
 			}
 
-			setAppliedMethods(map.map((p) => p.methodName));
 			setConfigResult(rawOutput);
 			setPhase("configured");
 			setMethodConfigs({});
@@ -190,9 +269,30 @@ export const EngineGuardrailPage = observer(() => {
 	};
 
 	const handleReconfigure = () => {
-		setPhase("idle");
+		if (!configResult) {
+			setPhase("selecting");
+			return;
+		}
+
+		const restoredConfigs = buildMethodConfigsFromPipelineResponse(
+			configResult,
+			engineMethods,
+			guardrails,
+		);
+		const configuredMethods = Object.entries(restoredConfigs)
+			.filter(([, cfg]) => cfg.input.length > 0 || cfg.output.length > 0)
+			.map(([name]) => name);
+
+		setMethodConfigs(restoredConfigs);
+		setExpandedMethods(
+			new Set(
+				configuredMethods.length > 0
+					? configuredMethods
+					: engineMethods.slice(0, 1).map((m) => m.methodName),
+			),
+		);
 		setSubmitError(null);
-		setGuardrails([]);
+		setPhase("selecting");
 	};
 
 	// Render --------------------------------------------------------------------
@@ -258,7 +358,6 @@ export const EngineGuardrailPage = observer(() => {
 					configuredCount={configuredCount}
 					hasAnyConfig={hasAnyConfig}
 					submitError={submitError}
-					appliedMethods={appliedMethods}
 					configResult={configResult}
 					onSubmit={submitConfiguration}
 					onCancel={() => setPhase("idle")}

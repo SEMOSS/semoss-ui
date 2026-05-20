@@ -2,7 +2,6 @@ import { AlertCircle, RefreshCw, Settings2 } from "lucide-react";
 import {
 	Alert,
 	AlertDescription,
-	AlertTitle,
 	Badge,
 	Button,
 	Card,
@@ -43,7 +42,6 @@ interface GuardrailSelectingViewProps {
 	configuredCount: number;
 	hasAnyConfig: boolean;
 	submitError: string | null;
-	appliedMethods: string[];
 	configResult: GuardrailConfig | null;
 	onSubmit: () => void;
 	onCancel: () => void;
@@ -63,7 +61,6 @@ export const GuardrailSelectingView = ({
 	configuredCount,
 	hasAnyConfig,
 	submitError,
-	appliedMethods,
 	configResult,
 	onSubmit,
 	onCancel,
@@ -77,23 +74,6 @@ export const GuardrailSelectingView = ({
 	if (phase === "configured" && configResult) {
 		return (
 			<div className="space-y-4">
-				<Alert className="border-chart-2/20 bg-chart-2/5 text-chart-2 [&>svg]:text-chart-2">
-					<AlertTitle>Guardrail configured successfully</AlertTitle>
-					<AlertDescription>
-						<div className="flex flex-wrap gap-1.5 pt-1">
-							{appliedMethods.map((name) => (
-								<Badge
-									key={name}
-									variant="outline"
-									className="rounded-full border-chart-2/30 bg-chart-2/10 px-2.5 py-0.5 text-[11px] text-chart-2"
-								>
-									{name}
-								</Badge>
-							))}
-						</div>
-					</AlertDescription>
-				</Alert>
-
 				<div className="space-y-2">
 					<div className="flex items-center gap-2 px-0.5">
 						<Separator className="flex-1" />
