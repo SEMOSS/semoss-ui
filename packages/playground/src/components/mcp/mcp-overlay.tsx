@@ -126,8 +126,6 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	// When the selected agent changes (including to null), strip any
 	// fromWorkspace MCPs from the drafts. The follow-up effect below will
 	// then merge in the new agent's MCPs once the pixel resolves.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: only react to
-	// id changes; the setters are stable refs.
 	useEffect(() => {
 		const draftId = workspaceDraft?.workspace_id ?? null;
 		if (draftId === mergedWorkspaceId.current) return;
@@ -139,8 +137,6 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	// Merge the loaded workspace's MCPs into the drafts as fromWorkspace
 	// entries. Guards against stale pixel responses for a previously
 	// selected agent.
-	// biome-ignore lint/correctness/useExhaustiveDependencies: setters are
-	// stable; we react to pixel status/data and the selected id only.
 	useEffect(() => {
 		const draftId = workspaceDraft?.workspace_id ?? null;
 		if (!draftId) return;
