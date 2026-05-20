@@ -1,10 +1,9 @@
-import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
+import { ComputerIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
-	Badge,
 	Button,
 	cn,
 	InputGroup,
@@ -21,7 +20,12 @@ import {
 	useInfiniteScroll,
 	useIsMobile,
 } from "@semoss/ui/next";
-import { engineProjectToMCP, MCPCard, NewKnowledgeOverlay } from "@/components";
+import {
+	engineProjectToMCP,
+	getMcpTypeIcon,
+	MCPCard,
+	NewKnowledgeOverlay,
+} from "@/components";
 import { useRoot } from "@/hooks";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
 
@@ -253,65 +257,91 @@ export const MCPSelector = observer(
 						</>
 					)}
 				</ScrollArea>
-				{values.length > 0 && isMobile && (
-					<div className="flex max-h-20 shrink-0 flex-wrap gap-2 overflow-y-auto border-border border-t p-3">
-						{values.map((t) => (
-							<Badge
-								key={t.id}
-								variant="secondary"
-								className="text-sm"
-								title={t.name}
-							>
-								<div className="max-w-64 truncate">
-									{t.name}
-								</div>
-								<Button
-									className="ml-1"
-									type="button"
-									variant="ghost"
-									size="icon-sm"
-									disabled={disabled || t.fromWorkspace}
-									onClick={() => {
-										onSelect(t);
-									}}
+				{values.length > 0 &&
+					(() => {
+						// Split into agent-inherited (read-only here) and
+						// locally-selected (dismissible). The agent batch
+						// collapses to a single summary chip — listing each
+						// inherited MCP individually is just visual noise
+						// since the user can't remove them from this view.
+						const localValues = values.filter(
+							(v) => !v.fromWorkspace,
+						);
+						const workspaceValues = values.filter(
+							(v) => v.fromWorkspace,
+						);
+						const workspaceCount = workspaceValues.length;
+
+						const renderChip = (item: MCPConfig) => {
+							const TypeIcon = getMcpTypeIcon(item.type);
+							return (
+								<div
+									key={item.id}
+									className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-card px-2 text-card-foreground text-xs"
+									title={item.name}
 								>
-									<XIcon />
-								</Button>
-							</Badge>
-						))}
-					</div>
-				)}
-				{values.length > 0 && !isMobile && (
-					<ScrollArea className="w-full shrink-0 whitespace-nowrap border-border border-t">
-						<ScrollBar orientation="horizontal"></ScrollBar>
-						<div className="flex space-x-2 p-3">
-							{values.map((t) => (
-								<Badge
-									key={t.id}
-									variant="secondary"
-									className="text-sm"
-									title={t.name}
-								>
-									<div className="max-w-64 truncate">
-										{t.name}
-									</div>
-									<Button
-										className="ml-1"
+									<TypeIcon className="size-4 shrink-0 text-muted-foreground" />
+									<span className="max-w-40 truncate">
+										{item.name}
+									</span>
+									<button
 										type="button"
-										variant="ghost"
-										size="icon-sm"
-										disabled={disabled || t.fromWorkspace}
-										onClick={() => {
-											onSelect(t);
-										}}
+										aria-label={`Remove ${item.name}`}
+										disabled={disabled}
+										onClick={() => onSelect(item)}
+										className="-mr-0.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 									>
-										<XIcon />
-									</Button>
-								</Badge>
-							))}
-						</div>
-					</ScrollArea>
-				)}
+										<XIcon className="size-4" />
+									</button>
+								</div>
+							);
+						};
+
+						const workspaceSummary = workspaceCount > 0 && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<div
+										key="__workspace_summary"
+										className="inline-flex h-7 items-center gap-1.5 rounded-md border border-primary/60 bg-card px-2 text-primary text-xs"
+									>
+										<ComputerIcon className="size-4 shrink-0" />
+										<span>{workspaceCount} from agent</span>
+									</div>
+								</TooltipTrigger>
+								<TooltipContent
+									side="top"
+									align="start"
+									className="max-w-64"
+								>
+									<div className="flex flex-col gap-0.5">
+										{workspaceValues.map((v) => (
+											<div
+												key={v.id}
+												className="truncate"
+											>
+												{v.name}
+											</div>
+										))}
+									</div>
+								</TooltipContent>
+							</Tooltip>
+						);
+
+						return isMobile ? (
+							<div className="flex max-h-20 shrink-0 flex-wrap gap-2 overflow-y-auto border-border border-t p-2">
+								{workspaceSummary}
+								{localValues.map(renderChip)}
+							</div>
+						) : (
+							<ScrollArea className="w-full shrink-0 whitespace-nowrap border-border border-t">
+								<ScrollBar orientation="horizontal" />
+								<div className="flex gap-2 p-2">
+									{workspaceSummary}
+									{localValues.map(renderChip)}
+								</div>
+							</ScrollArea>
+						);
+					})()}
 				<NewKnowledgeOverlay
 					key={`${combinedData.length}`}
 					open={isKnowledgeOverlayOpen}

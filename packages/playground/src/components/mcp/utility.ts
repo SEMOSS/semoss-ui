@@ -1,4 +1,38 @@
+import {
+	Archive,
+	Bolt,
+	Bot,
+	BoxIcon,
+	Database,
+	LayoutGrid,
+	type LucideIcon,
+	Sigma,
+} from "lucide-react";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
+
+/**
+ * Map each MCP type to its standard lucide icon. Mirrors the catalog
+ * sidebar in `packages/client/src/components/shared/app-sidebar.tsx`
+ * so the same engine concepts share a visual across products.
+ */
+export const getMcpTypeIcon = (type: MCPConfig["type"]): LucideIcon => {
+	switch (type) {
+		case "PROJECT":
+			return LayoutGrid;
+		case "STORAGE":
+			return Archive;
+		case "DATABASE":
+			return Database;
+		case "FUNCTION":
+			return Sigma;
+		case "MODEL":
+			return Bot;
+		case "VECTOR":
+			return Bolt;
+		default:
+			return BoxIcon;
+	}
+};
 
 /**
  * Knowledge MCPs are backed by a VECTOR engine. Everything else is toolbox.
