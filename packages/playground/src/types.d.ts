@@ -141,6 +141,7 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		| PixelMessageThinkingPart
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
+		| PixelMessageToolResultPart
 	)[];
 	ornaments: {
 		modelName?: string;
@@ -189,6 +190,10 @@ export interface PixelMessageToolCallPart {
 		original_name: string;
 		title: string;
 		description: string;
+		// Set by the backend when the model provider executed the tool itself
+		// (e.g. web_search). Server tools lack the MCP `_meta`
+		// block and their TOOL_RESULT lands in the same response message.
+		server_tool?: boolean;
 		_meta: {
 			SMSS_ENGINE_NAME: string;
 			SMSS_ENGINE_ID: string;
