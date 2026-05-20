@@ -139,6 +139,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 
 		useEffect(() => {
 			if (
+				!tool.argumentsStreaming &&
 				tool.display !== "hidden" &&
 				tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
 				!tool.isOpen &&
@@ -146,7 +147,12 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			) {
 				tool.openTool();
 			}
-		}, [tool, isDisabled]);
+		}, [
+			tool,
+			tool.argumentsStreaming,
+			tool.json._meta.SMSS_MCP_UI?.autoOpen,
+			isDisabled,
+		]);
 
 		// While the tool call is still streaming in, we don't have title/meta/args
 		// yet — delegate to a dedicated placeholder pill that shows a spinner and
