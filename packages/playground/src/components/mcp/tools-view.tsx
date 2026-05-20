@@ -5,6 +5,7 @@ import { Env, type MCPToolRequest, usePixel } from "@semoss/sdk/react";
 import { Skeleton } from "@semoss/ui/next";
 import type { RoomStore } from "@/stores";
 import { ToolsDefaultView } from "./tools-default-view";
+import { ToolsServerView } from "./tools-server-view";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -175,6 +176,12 @@ export const ToolsView = observer(
 
 		if (!tool) {
 			return null;
+		}
+
+		// Server tools (e.g. provider-side web_search) have no MCP project to
+		// fetch a schema from — render the generic read-only result view.
+		if (tool.server_tool && liveTool) {
+			return <ToolsServerView tool={liveTool} />;
 		}
 
 		return (

@@ -26,7 +26,9 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 		return node.getConfig();
 	}, [node]);
 
-	if (!config || !config.app || !config.message || !config.toolId) {
+	// `app` is empty for server tools (provider-executed) — ToolsView handles
+	// the routing internally.
+	if (!config || !config.message || !config.toolId) {
 		return <div>No Tool</div>;
 	}
 

@@ -109,10 +109,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// set the parts
 		this.parts = message.parts;
 
-		// sync the tools
+		// sync the tools — server tools (e.g. provider-side web_search) deliver
+		// both the call and result in the same response message, so we sync both
+		// part types here.
 		for (const part of message.parts) {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
+			} else if (part.type === "TOOL_RESULT") {
+				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
 		}
 

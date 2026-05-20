@@ -354,7 +354,30 @@ export const ToolsDefaultView = observer(
 							/>
 						</div>
 					)}
-					{getMCP.status === "ERROR" && app ? (
+					{toolFailed && tool.response && (
+						<div className="flex flex-col space-y-2">
+							<Label
+								htmlFor="tool-response"
+								className="shrink-0 font-semibold text-destructive"
+							>
+								{t(
+									`status.${
+										tool.status === "ERROR"
+											? "failed"
+											: tool.status === "CANCELLED"
+												? "cancelled"
+												: "paused"
+									}`,
+								)}
+							</Label>
+							<Textarea
+								readOnly
+								className="w-full flex-1 resize-none border-destructive text-destructive"
+								value={tool.response}
+							/>
+						</div>
+					)}
+					{getMCP.status === "ERROR" ? (
 						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 							<div className="text-destructive">
 								<p className="font-semibold text-lg">
