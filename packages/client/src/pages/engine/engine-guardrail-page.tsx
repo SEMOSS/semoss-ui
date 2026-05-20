@@ -2,7 +2,7 @@ import { RefreshCw } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { Button, Card, CardContent, H4, P, toast } from "@semoss/ui/next";
+import { Button, H4, P, toast } from "@semoss/ui/next";
 import {
 	type EngineMethod,
 	GuardrailSelectingView,
@@ -259,10 +259,6 @@ export const EngineGuardrailPage = observer(() => {
 
 	// Handlers ------------------------------------------------------------------
 
-	const initializeSelecting = async () => {
-		await loadSelectingState();
-	};
-
 	const toggleMethod = (name: string) => {
 		setExpandedMethods((prev) => {
 			const next = new Set(prev);
@@ -409,29 +405,6 @@ export const EngineGuardrailPage = observer(() => {
 				)}
 			</div>
 
-			{phase === "idle" && (
-				<Card className="border-dashed">
-					<CardContent className="flex flex-col items-center justify-center gap-5 py-16">
-						<div className="max-w-sm space-y-1.5 text-center">
-							<P className="font-semibold text-foreground">
-								No guardrails configured
-							</P>
-							<P className="text-muted-foreground text-sm">
-								Assign input and output guardrails to each
-								engine method to filter and protect data flowing
-								through this engine.
-							</P>
-						</div>
-						<Button
-							color="primary"
-							onClick={initializeSelecting}
-						>
-							Configure Guardrail
-						</Button>
-					</CardContent>
-				</Card>
-			)}
-
 			{phase !== "idle" && (
 				<GuardrailSelectingView
 					phase={phase}
@@ -444,8 +417,9 @@ export const EngineGuardrailPage = observer(() => {
 					submitError={submitError}
 					configResult={configResult}
 					onSubmit={submitConfiguration}
-					onCancel={() => setPhase("idle")}
-					onReset={initializeSelecting}
+					onReset={() => {
+						void loadSelectingState();
+					}}
 					onToggleMethod={toggleMethod}
 					onUpdateMethod={updateMethodConfig}
 					onSave={handleSaveConfig}

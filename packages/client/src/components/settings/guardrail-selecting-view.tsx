@@ -44,7 +44,6 @@ interface GuardrailSelectingViewProps {
 	submitError: string | null;
 	configResult: GuardrailConfig | null;
 	onSubmit: () => void;
-	onCancel: () => void;
 	onReset: () => void;
 	onToggleMethod: (name: string) => void;
 	onUpdateMethod: (method: string, config: MethodGuardrailConfig) => void;
@@ -62,7 +61,6 @@ export const GuardrailSelectingView = ({
 	submitError,
 	configResult,
 	onSubmit,
-	onCancel,
 	onReset,
 	onToggleMethod,
 	onUpdateMethod,
@@ -201,13 +199,6 @@ export const GuardrailSelectingView = ({
 									Apply Configuration
 								</>
 							)}
-						</Button>
-						<Button
-							variant="ghost"
-							onClick={onCancel}
-							disabled={phase === "submitting"}
-						>
-							Cancel
 						</Button>
 					</div>
 
