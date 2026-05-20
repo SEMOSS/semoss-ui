@@ -71,7 +71,7 @@ const useDebounce = <T,>(value: T, delay = 400): T => {
 const useKeyboardShortcut = (
 	key: string,
 	cb: () => void,
-	deps: unknown[] = [],
+	deps: React.DependencyList = [],
 ) => {
 	useEffect(() => {
 		const h = (e: KeyboardEvent) => {
@@ -82,8 +82,7 @@ const useKeyboardShortcut = (
 		};
 		window.addEventListener("keydown", h);
 		return () => window.removeEventListener("keydown", h);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, deps);
+	}, [key, cb, ...deps]);
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -612,7 +611,7 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 	const [expandAll, setExpandAll] = useState(false);
 	const [hasChanges, setHasChanges] = useState(false);
 	const [saving, setSaving] = useState(false);
-	const [initialSnapshot] = useState(() =>
+	const [savedSnapshot, setSavedSnapshot] = useState(() =>
 		JSON.stringify({ pipelines: initialData?.pipelines ?? {} }),
 	);
 
@@ -620,8 +619,8 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 	const safePipelines = data?.pipelines ?? {};
 
 	useEffect(() => {
-		setHasChanges(JSON.stringify(data) !== initialSnapshot);
-	}, [data, initialSnapshot]);
+		setHasChanges(JSON.stringify(data) !== savedSnapshot);
+	}, [data, savedSnapshot]);
 
 	useEffect(() => {
 		setJsonText(JSON.stringify(data, null, 2));
@@ -636,6 +635,7 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 		setSaving(true);
 		try {
 			await onSave(data);
+			setSavedSnapshot(JSON.stringify(data));
 		} finally {
 			setSaving(false);
 		}

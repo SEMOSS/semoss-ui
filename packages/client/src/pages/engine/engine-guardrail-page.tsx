@@ -331,7 +331,22 @@ export const EngineGuardrailPage = observer(() => {
 	};
 
 	const handleSaveConfig = async (data: GuardrailConfig) => {
-		console.log("Saving guardrail config for engine:", active?.id, data);
+		if (!active?.id) {
+			return;
+		}
+
+		try {
+			await runPixel(
+				`SaveEngineAssets(engine=["${active.id}"], filePath=["/pipeline.json"], content=["<encode>${JSON.stringify(
+					data,
+					null,
+					2,
+				)}</encode>"]);`,
+			);
+			setConfigResult(data);
+		} catch (error) {
+			console.error("Failed to save guardrail config", error);
+		}
 	};
 
 	const handleReconfigure = () => {
