@@ -278,7 +278,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		for (const part of room.latestResponseMessage.parts) {
 			if (
 				part.type === "TOOL_CALL" &&
-				part.toolCall._meta.SMSS_MCP_EXECUTION === "auto"
+				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
 			) {
 				const tool = room.getTool(part.toolCall.id);
 				if (
