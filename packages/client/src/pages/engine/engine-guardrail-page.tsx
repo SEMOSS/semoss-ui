@@ -1,6 +1,6 @@
 import { RefreshCw } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import { Button, Card, CardContent, H4, P } from "@semoss/ui/next";
 import {
@@ -36,6 +36,23 @@ const isValidMethodsResponse = (raw: unknown): raw is EngineMethod[] =>
 			typeof (m as Record<string, unknown>).methodName === "string" &&
 			typeof (m as Record<string, unknown>).deprecated === "boolean",
 	);
+
+const normalizeGuardrailConfig = (raw: unknown): GuardrailConfig | null => {
+	if (isValidGuardrailConfig(raw)) {
+		return raw;
+	}
+
+	if (typeof raw === "string") {
+		try {
+			const parsed = JSON.parse(raw) as unknown;
+			return isValidGuardrailConfig(parsed) ? parsed : null;
+		} catch {
+			return null;
+		}
+	}
+
+	return null;
+};
 
 const collectMatchingGuardrailIds = (
 	raw: unknown,
@@ -136,6 +153,19 @@ const fetchAllGuardrails = async (): Promise<unknown[]> => {
 	return all;
 };
 
+const fetchExistingGuardrailConfig = async (
+	engineId: string,
+): Promise<GuardrailConfig | null> => {
+	try {
+		const response = await runPixel(
+			`GetEngineAssets(filePath=["/pipeline.json"], engine=["${engineId}"]);`,
+		);
+		return normalizeGuardrailConfig(response?.pixelReturn?.[0]?.output);
+	} catch {
+		return null;
+	}
+};
+
 // --- EngineGuardrailPage ------------------------------------------------------
 
 export const EngineGuardrailPage = observer(() => {
@@ -161,11 +191,14 @@ export const EngineGuardrailPage = observer(() => {
 		return { hasAnyConfig: count > 0, configuredCount: count };
 	}, [methodConfigs]);
 
-	// Handlers ------------------------------------------------------------------
+	const loadSelectingState = useCallback(
+		async (restoredConfig: GuardrailConfig | null = null) => {
+			if (!active?.id) {
+				return;
+			}
 
-	const initializeSelecting = async () => {
-		setPhase("loading");
-		setSubmitError(null);
+			setPhase("loading");
+			setSubmitError(null);
 
 		const [methodsResult, guardrailsResult] = await Promise.allSettled([
 			runPixel(`GetEngineMethods(engine=["${active?.id}"]);`),
@@ -180,21 +213,54 @@ export const EngineGuardrailPage = observer(() => {
 			}
 		}
 
-		if (guardrailsResult.status === "fulfilled") {
-			setGuardrails(guardrailsResult.value);
-		}
+		const guardrailItems =
+			guardrailsResult.status === "fulfilled" ? guardrailsResult.value : [];
 
-		const configs: MethodConfigMap = {};
-		methods.forEach((m) => {
-			configs[m.methodName] = { input: [], output: [] };
-		});
+			setEngineMethods(methods);
+			setGuardrails(guardrailItems);
 
-		setEngineMethods(methods);
-		setMethodConfigs(configs);
-		setExpandedMethods(
-			new Set(methods.slice(0, 1).map((m) => m.methodName)),
-		);
-		setPhase("selecting");
+			if (restoredConfig) {
+				const restoredConfigs = buildMethodConfigsFromPipelineResponse(
+					restoredConfig,
+					methods,
+					guardrailItems,
+				);
+				const configuredMethods = Object.entries(restoredConfigs)
+					.filter(([_, cfg]) => cfg.input.length > 0 || cfg.output.length > 0)
+					.map(([name]) => name);
+
+				setConfigResult(restoredConfig);
+				setMethodConfigs(restoredConfigs);
+				setExpandedMethods(
+					new Set(
+						configuredMethods.length > 0
+							? configuredMethods
+							: methods.slice(0, 1).map((m) => m.methodName),
+					),
+				);
+				setPhase("selecting");
+				return;
+			}
+
+			const configs: MethodConfigMap = {};
+			methods.forEach((m) => {
+				configs[m.methodName] = { input: [], output: [] };
+			});
+
+			setConfigResult(null);
+			setMethodConfigs(configs);
+			setExpandedMethods(
+				new Set(methods.slice(0, 1).map((m) => m.methodName)),
+			);
+			setPhase("selecting");
+		},
+		[active?.id],
+	);
+
+	// Handlers ------------------------------------------------------------------
+
+	const initializeSelecting = async () => {
+		await loadSelectingState();
 	};
 
 	const toggleMethod = (name: string) => {
@@ -269,31 +335,45 @@ export const EngineGuardrailPage = observer(() => {
 	};
 
 	const handleReconfigure = () => {
-		if (!configResult) {
-			setPhase("selecting");
+		void loadSelectingState(configResult);
+	};
+
+	useEffect(() => {
+		if (!active?.id) {
+			setPhase("idle");
+			setConfigResult(null);
+			setMethodConfigs({});
+			setEngineMethods([]);
+			setGuardrails([]);
+			setExpandedMethods(new Set());
 			return;
 		}
 
-		const restoredConfigs = buildMethodConfigsFromPipelineResponse(
-			configResult,
-			engineMethods,
-			guardrails,
-		);
-		const configuredMethods = Object.entries(restoredConfigs)
-			.filter(([, cfg]) => cfg.input.length > 0 || cfg.output.length > 0)
-			.map(([name]) => name);
+		let cancelled = false;
 
-		setMethodConfigs(restoredConfigs);
-		setExpandedMethods(
-			new Set(
-				configuredMethods.length > 0
-					? configuredMethods
-					: engineMethods.slice(0, 1).map((m) => m.methodName),
-			),
-		);
-		setSubmitError(null);
-		setPhase("selecting");
-	};
+		const initializePage = async () => {
+			setPhase("loading");
+			setSubmitError(null);
+			setConfigResult(null);
+
+			const existingConfig = await fetchExistingGuardrailConfig(active.id);
+			if (cancelled) return;
+
+			if (existingConfig) {
+				setConfigResult(existingConfig);
+				setPhase("configured");
+				return;
+			}
+
+			await loadSelectingState();
+		};
+
+		void initializePage();
+
+		return () => {
+			cancelled = true;
+		};
+	}, [active?.id, loadSelectingState]);
 
 	// Render --------------------------------------------------------------------
 
