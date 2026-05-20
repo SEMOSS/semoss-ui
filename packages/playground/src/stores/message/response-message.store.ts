@@ -556,11 +556,8 @@ paramValues=[${JSON.stringify({
 			let toolError = false;
 
 			try {
-				// wait for the pixel to run
-				const isPlatformTool = !!tool.json._meta.SMSS_IS_PLATFORM_TOOL;
-				const pixel = isPlatformTool
-					? `RunMCPTool(function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`
-					: `RunMCPTool(project = [ "${tool.json._meta.SMSS_PROJECT_ID}" ], function=[ "${tool.json.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`;
+				const projectId = tool.json._meta.SMSS_PROJECT_ID ?? null;
+				const pixel = `RunMCPTool(project=[${JSON.stringify(projectId)}], function=[${JSON.stringify(tool.json.name)}], paramValues=[${JSON.stringify(tool.parameters)}]);`;
 				const response = await this.room.runRoomPixel<[unknown]>(
 					pixel,
 					false,
