@@ -23,7 +23,7 @@ import {
 } from "@semoss/ui/next";
 import { engineProjectToMCP, MCPCard, NewKnowledgeOverlay } from "@/components";
 import { useRoot } from "@/hooks";
-import type { Engine, MCP, MCPConfig } from "@/types";
+import type { App, Engine, MCP, MCPConfig } from "@/types";
 
 interface MCPSelectorProps {
 	/** Type of mcp */
@@ -72,40 +72,69 @@ export const MCPSelector = observer(
 		);
 
 		/**
-		 * Get all of the mcps with lazy loading.
+		 * Engines source. KNOWLEDGE only ever uses this (VECTOR engines).
+		 * TOOLBOX combines this with a parallel MyProjects query below.
 		 *
-		 * Note: we use MyEngines (engines only) rather than MyEngineProject
-		 * — the latter combines engines and projects in a way that breaks
-		 * stable pagination, which the infinite-scroll list depends on.
-		 * Project-type MCPs are not surfaced here as a result.
+		 * We split into two iterators rather than using MyEngineProject —
+		 * that combined reactor mixed both shapes in a way that broke
+		 * stable pagination.
 		 */
-		const getMCP = useIteratorPixel<Engine[], MCP>(
+		const getEngines = useIteratorPixel<Engine[], MCP>(
 			(limit, offset) =>
 				`META | MyEngines (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}engineTypes=${type === "TOOLBOX" ? `["STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
-			(response) => {
-				// if its less than the limit, we know its the end
-				if (response.length < 25) {
-					return -1;
-				}
-
-				return Infinity;
-			},
-			(response) => {
-				return response.map(engineProjectToMCP);
-			},
-			{
-				limit: 25,
-			},
-			[debouncedSearch, useMCPFilter],
+			(response) => (response.length < 25 ? -1 : Infinity),
+			(response) => response.map(engineProjectToMCP),
+			{ limit: 25 },
+			[debouncedSearch, useMCPFilter, type],
 		);
 
 		/**
-		 * Setup infinite scroll for the command list
+		 * Projects source — TOOLBOX only. The MCP tag filter does double
+		 * duty: per platform business logic, projects tagged MCP and
+		 * projects of type WORKSPACE are mutually exclusive, so we don't
+		 * need a separate workspace filter to keep agents out of here.
+		 */
+		const getProjects = useIteratorPixel<App[], MCP>(
+			(limit, offset) =>
+				type === "TOOLBOX"
+					? `META | MyProjects (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""}limit=[${limit}], offset=[${offset}])`
+					: "",
+			(response) => (response.length < 25 ? -1 : Infinity),
+			(response) => response.map(engineProjectToMCP),
+			{ limit: 25 },
+			[debouncedSearch, useMCPFilter, type],
+		);
+
+		/**
+		 * Combined list. Engines and projects are braided pairwise
+		 * (engine[i], project[i], engine[i+1], project[i+1], ...); when
+		 * one source runs longer, its remaining items just append at the
+		 * end. Order within each source is whatever the reactor returns
+		 * — neither is sorted today.
+		 */
+		const combinedData: MCP[] = [];
+		for (
+			let i = 0;
+			i < Math.max(getEngines.data.length, getProjects.data.length);
+			i++
+		) {
+			const e = getEngines.data[i];
+			const p = getProjects.data[i];
+			if (e) combinedData.push(e);
+			if (p) combinedData.push(p);
+		}
+		const isLoading = getEngines.isLoading || getProjects.isLoading;
+		const hasMore = getEngines.hasMore || getProjects.hasMore;
+
+		/**
+		 * Setup infinite scroll for the command list. Each scroll-to-bottom
+		 * advances whichever sources still have more.
 		 */
 		const { setScroll } = useInfiniteScroll({
-			disabled: getMCP.isLoading || !getMCP.hasMore || !open,
+			disabled: isLoading || !hasMore,
 			onNext: () => {
-				getMCP.next();
+				if (getEngines.hasMore) getEngines.next();
+				if (getProjects.hasMore) getProjects.next();
 			},
 		});
 
@@ -182,12 +211,12 @@ export const MCPSelector = observer(
 					className="min-h-0 w-full flex-1"
 					viewportRef={(e) => setScroll(e)}
 				>
-					{getMCP.isLoading && getMCP.data.length === 0 && (
+					{isLoading && combinedData.length === 0 && (
 						<div className="flex h-64 w-full items-center justify-center">
 							<Spinner />
 						</div>
 					)}
-					{!getMCP.isLoading && getMCP.data.length === 0 && (
+					{!isLoading && combinedData.length === 0 && (
 						<div className="flex h-64 w-full items-center justify-center">
 							<Muted>
 								{type === "TOOLBOX"
@@ -196,10 +225,10 @@ export const MCPSelector = observer(
 							</Muted>
 						</div>
 					)}
-					{getMCP.data.length !== 0 && (
+					{combinedData.length !== 0 && (
 						<>
 							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-								{getMCP.data.map((mcp) => {
+								{combinedData.map((mcp) => {
 									const selectedEntry = selected[mcp.id];
 									const fromWorkspace =
 										selectedEntry?.fromWorkspace === true;
@@ -216,7 +245,7 @@ export const MCPSelector = observer(
 									);
 								})}
 							</div>
-							{getMCP.isLoading && (
+							{isLoading && (
 								<div className="flex w-full items-center justify-center pb-4">
 									<Spinner />
 								</div>
@@ -284,14 +313,15 @@ export const MCPSelector = observer(
 					</ScrollArea>
 				)}
 				<NewKnowledgeOverlay
-					key={`${getMCP?.data?.length}`}
+					key={`${combinedData.length}`}
 					open={isKnowledgeOverlayOpen}
 					onClose={(knowledge) => {
 						// update it
 						if (knowledge) {
 							onChange([...values, knowledge]);
 							// refresh the list to show the newly created knowledge store selected
-							getMCP.reset();
+							getEngines.reset();
+							getProjects.reset();
 						}
 
 						// close the overlay
