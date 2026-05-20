@@ -3,17 +3,9 @@ import {
 	ArrowUp,
 	ChevronDown,
 	ChevronUp,
-	Trash2,
 } from "lucide-react";
 import { memo } from "react";
-import {
-	Badge,
-	Button,
-	Card,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { Badge, Button, Card } from "@semoss/ui/next";
 import { GuardrailSelectorPanel } from "./guardrail-selector-panel";
 
 export type MethodGuardrailConfig = {
@@ -30,7 +22,6 @@ interface GuardrailMethodConfigCardProps {
 	isExpanded: boolean;
 	onToggle: () => void;
 	onUpdate: (config: MethodGuardrailConfig) => void;
-	onDelete: () => void;
 }
 
 export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
@@ -43,7 +34,6 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 		isExpanded,
 		onToggle,
 		onUpdate,
-		onDelete,
 	}) => {
 		const inCount = config.input.length;
 		const outCount = config.output.length;
@@ -77,7 +67,7 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 						)}
 					</button>
 
-					{/* Right — badges + delete + chevron */}
+					{/* Right — badges + chevron */}
 					<div className="flex items-center gap-2">
 						{isConfigured ? (
 							<div className="flex items-center gap-1.5">
@@ -105,23 +95,6 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 								Not configured
 							</span>
 						)}
-
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon-sm"
-									onClick={(e) => {
-										e.stopPropagation();
-										onDelete();
-									}}
-									className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-								>
-									<Trash2 />
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>Remove {methodName}</TooltipContent>
-						</Tooltip>
 
 						<Button
 							variant="ghost"

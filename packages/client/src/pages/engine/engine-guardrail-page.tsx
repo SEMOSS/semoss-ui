@@ -2,7 +2,7 @@ import { RefreshCw } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { Button, Card, CardContent, H4, P } from "@semoss/ui/next";
+import { Button, Card, CardContent, H4, P, toast } from "@semoss/ui/next";
 import {
 	type EngineMethod,
 	GuardrailSelectingView,
@@ -54,32 +54,6 @@ const normalizeGuardrailConfig = (raw: unknown): GuardrailConfig | null => {
 	return null;
 };
 
-const collectMatchingGuardrailIds = (
-	raw: unknown,
-	validIds: Set<string>,
-	collected: Set<string>,
-) => {
-	if (typeof raw === "string") {
-		if (validIds.has(raw)) {
-			collected.add(raw);
-		}
-		return;
-	}
-
-	if (Array.isArray(raw)) {
-		for (const item of raw) {
-			collectMatchingGuardrailIds(item, validIds, collected);
-		}
-		return;
-	}
-
-	if (raw && typeof raw === "object") {
-		for (const value of Object.values(raw as Record<string, unknown>)) {
-			collectMatchingGuardrailIds(value, validIds, collected);
-		}
-	}
-};
-
 const extractSelectedIdsFromReactors = (
 	reactorsRaw: unknown,
 	validIds: Set<string>,
@@ -91,8 +65,27 @@ const extractSelectedIdsFromReactors = (
 	const selected = new Set<string>();
 	for (const reactorRaw of reactorsRaw) {
 		if (!reactorRaw || typeof reactorRaw !== "object") continue;
-		const params = (reactorRaw as Record<string, unknown>).params;
-		collectMatchingGuardrailIds(params, validIds, selected);
+		const params = (reactorRaw as Record<string, unknown>).params as
+			| Record<string, unknown>
+			| undefined;
+		if (!params) continue;
+
+		const singleGuardrailId = params.guardrailEngineId;
+		if (
+			typeof singleGuardrailId === "string" &&
+			validIds.has(singleGuardrailId)
+		) {
+			selected.add(singleGuardrailId);
+		}
+
+		const multiGuardrailIds = params.guardrailEngineIds;
+		if (Array.isArray(multiGuardrailIds)) {
+			for (const id of multiGuardrailIds) {
+				if (typeof id === "string" && validIds.has(id)) {
+					selected.add(id);
+				}
+			}
+		}
 	}
 
 	return Array.from(selected);
@@ -132,6 +125,14 @@ const buildMethodConfigsFromPipelineResponse = (
 		};
 	}
 
+	return configs;
+};
+
+const buildEmptyMethodConfigs = (methods: EngineMethod[]): MethodConfigMap => {
+	const configs: MethodConfigMap = {};
+	for (const method of methods) {
+		configs[method.methodName] = { input: [], output: [] };
+	}
 	return configs;
 };
 
@@ -200,21 +201,23 @@ export const EngineGuardrailPage = observer(() => {
 			setPhase("loading");
 			setSubmitError(null);
 
-		const [methodsResult, guardrailsResult] = await Promise.allSettled([
-			runPixel(`GetEngineMethods(engine=["${active?.id}"]);`),
-			fetchAllGuardrails(),
-		]);
+			const [methodsResult, guardrailsResult] = await Promise.allSettled([
+				runPixel(`GetEngineMethods(engine=["${active?.id}"]);`),
+				fetchAllGuardrails(),
+			]);
 
-		let methods: EngineMethod[] = [];
-		if (methodsResult.status === "fulfilled") {
-			const rawMethods = methodsResult.value?.pixelReturn?.[0]?.output;
-			if (isValidMethodsResponse(rawMethods)) {
-				methods = rawMethods;
+			let methods: EngineMethod[] = [];
+			if (methodsResult.status === "fulfilled") {
+				const rawMethods = methodsResult.value?.pixelReturn?.[0]?.output;
+				if (isValidMethodsResponse(rawMethods)) {
+					methods = rawMethods;
+				}
 			}
-		}
 
-		const guardrailItems =
-			guardrailsResult.status === "fulfilled" ? guardrailsResult.value : [];
+			const guardrailItems =
+				guardrailsResult.status === "fulfilled"
+					? guardrailsResult.value
+					: [];
 
 			setEngineMethods(methods);
 			setGuardrails(guardrailItems);
@@ -242,10 +245,7 @@ export const EngineGuardrailPage = observer(() => {
 				return;
 			}
 
-			const configs: MethodConfigMap = {};
-			methods.forEach((m) => {
-				configs[m.methodName] = { input: [], output: [] };
-			});
+			const configs = buildEmptyMethodConfigs(methods);
 
 			setConfigResult(null);
 			setMethodConfigs(configs);
@@ -276,20 +276,6 @@ export const EngineGuardrailPage = observer(() => {
 		config: MethodGuardrailConfig,
 	) => {
 		setMethodConfigs((prev) => ({ ...prev, [method]: config }));
-	};
-
-	const deleteMethod = (method: string) => {
-		setEngineMethods((prev) => prev.filter((m) => m.methodName !== method));
-		setMethodConfigs((prev) => {
-			const next = { ...prev };
-			delete next[method];
-			return next;
-		});
-		setExpandedMethods((prev) => {
-			const next = new Set(prev);
-			next.delete(method);
-			return next;
-		});
 	};
 
 	const submitConfiguration = async () => {
@@ -332,7 +318,7 @@ export const EngineGuardrailPage = observer(() => {
 
 	const handleSaveConfig = async (data: GuardrailConfig) => {
 		if (!active?.id) {
-			return;
+			throw new Error("Cannot save configuration: engine is unavailable.");
 		}
 
 		try {
@@ -344,8 +330,11 @@ export const EngineGuardrailPage = observer(() => {
 				)}</encode>"]);`,
 			);
 			setConfigResult(data);
+			toast.success("Guardrail configuration saved");
 		} catch (error) {
 			console.error("Failed to save guardrail config", error);
+			toast.error("Failed to save guardrail configuration");
+			throw error;
 		}
 	};
 
@@ -459,7 +448,6 @@ export const EngineGuardrailPage = observer(() => {
 					onReset={initializeSelecting}
 					onToggleMethod={toggleMethod}
 					onUpdateMethod={updateMethodConfig}
-					onDeleteMethod={deleteMethod}
 					onSave={handleSaveConfig}
 				/>
 			)}

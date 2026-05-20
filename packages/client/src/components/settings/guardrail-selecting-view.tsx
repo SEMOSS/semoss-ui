@@ -48,7 +48,6 @@ interface GuardrailSelectingViewProps {
 	onReset: () => void;
 	onToggleMethod: (name: string) => void;
 	onUpdateMethod: (method: string, config: MethodGuardrailConfig) => void;
-	onDeleteMethod: (method: string) => void;
 	onSave: (data: GuardrailConfig) => Promise<void>;
 }
 
@@ -67,7 +66,6 @@ export const GuardrailSelectingView = ({
 	onReset,
 	onToggleMethod,
 	onUpdateMethod,
-	onDeleteMethod,
 	onSave,
 }: GuardrailSelectingViewProps) => {
 	// Configured phase
@@ -174,9 +172,6 @@ export const GuardrailSelectingView = ({
 									}
 									onUpdate={(cfg) =>
 										onUpdateMethod(method.methodName, cfg)
-									}
-									onDelete={() =>
-										onDeleteMethod(method.methodName)
 									}
 								/>
 							))}

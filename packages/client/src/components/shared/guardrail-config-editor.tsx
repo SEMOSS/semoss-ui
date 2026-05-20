@@ -617,6 +617,21 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 
 	const debouncedSearch = useDebounce(searchQuery, 400);
 	const safePipelines = data?.pipelines ?? {};
+	const incomingSnapshot = useMemo(
+		() => JSON.stringify({ pipelines: initialData?.pipelines ?? {} }),
+		[initialData],
+	);
+
+	useEffect(() => {
+		setData({ pipelines: initialData?.pipelines ?? {} });
+		setSavedSnapshot(incomingSnapshot);
+		setExpandedPipelines(
+			new Set(Object.keys(initialData?.pipelines ?? {}).slice(0, 1)),
+		);
+		setExpandAll(false);
+		setSearchQuery("");
+		setViewMode("gui");
+	}, [initialData, incomingSnapshot]);
 
 	useEffect(() => {
 		setHasChanges(JSON.stringify(data) !== savedSnapshot);
