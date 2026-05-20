@@ -86,7 +86,7 @@ export const PrivacyPreferenceCenterModal = (
 
 					{/* biome-ignore lint/correctness/useUniqueElementIds: IDs are scoped to component instances */}
 					<div
-						className="pt-6"
+						className="pt-6 [&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
 						id="modal-content"
 						// biome-ignore lint/security/noDangerouslySetInnerHtml: third-party cookie script content
 						dangerouslySetInnerHTML={{
@@ -102,7 +102,7 @@ export const PrivacyPreferenceCenterModal = (
 		return (
 			// biome-ignore lint/correctness/useUniqueElementIds: IDs are scoped to component instances
 			<div
-				className="p-4 pt-0"
+				className="p-4 pt-0 [&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
 				id="cookie-modal-body"
 				// biome-ignore lint/security/noDangerouslySetInnerHtml: third-party cookie script content
 				dangerouslySetInnerHTML={{

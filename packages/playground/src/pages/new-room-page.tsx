@@ -7,11 +7,12 @@ import {
 	Settings2Icon,
 	XIcon,
 } from "lucide-react";
+import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -31,9 +32,12 @@ import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
 	RoomInput,
+	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
+	RoomInputMenuNewFileExplorer,
 	RoomInputMenuUpload,
 	RoomInputMenuWorkspace,
+	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
@@ -107,6 +111,10 @@ export const NewRoomPage = observer(() => {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
+	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
+		null,
+	);
+	const submittedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
@@ -243,17 +251,33 @@ export const NewRoomPage = observer(() => {
 				};
 			}
 
-			// create a new room
-			const room = await chat.createRoom(
-				mode === "plan" ? "planning" : "chat",
-				prompt,
-				files,
-				options,
-				getWorkspace.data?.workspace_id,
-			);
-
-			// go to the new room
-			navigate(`/room/${room.roomId}`);
+			if (preCreatedRoom) {
+				// Room was pre-created so files could be uploaded to its insight.
+				// Sync final mode/options, fire askMessage, then navigate.
+				// Files from the file explorer are already in the insight —
+				// only RoomInput drag/drop/paste attachments are passed here.
+				preCreatedRoom.setMode(mode === "plan" ? "planning" : "chat");
+				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
+				await preCreatedRoom.updateRoomOptions(options);
+				preCreatedRoom.askMessage(prompt, files).then(() => {
+					runInAction(() => {
+						chat.keys.roomCounter++;
+					});
+				});
+				submittedRef.current = true;
+				navigate(`/room/${preCreatedRoom.roomId}`);
+			} else {
+				// Standard flow — create room and send first message together.
+				const room = await chat.createRoom(
+					mode === "plan" ? "planning" : "chat",
+					prompt,
+					files,
+					options,
+					getWorkspace.data?.workspace_id,
+				);
+				submittedRef.current = true;
+				navigate(`/room/${room.roomId}`);
+			}
 		} catch (error: unknown) {
 			const sdkError = error as { message: string; code?: number };
 			if (
@@ -411,12 +435,29 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
+	// Close the configuration panel when the file-explorer sidebar opens.
+	useEffect(() => {
+		if (preCreatedRoom?.sidebar.isOpen) {
+			setIsConfgurationOpen(false);
+		}
+	}, [preCreatedRoom?.sidebar.isOpen]);
+
+	// Discard a pre-created room if the user navigates away without submitting.
+	useEffect(() => {
+		return () => {
+			if (preCreatedRoom && !submittedRef.current) {
+				// Fire-and-forget server-side cleanup.
+				chat.closeRoom(preCreatedRoom.roomId);
+			}
+		};
+	}, [preCreatedRoom, chat]);
+
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
 			{root.theme.banner ? (
 				<div
 					ref={bannerRef}
-					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80"
+					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80 [&_a]:underline"
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
 				/>
@@ -458,7 +499,6 @@ export const NewRoomPage = observer(() => {
 								) : null}
 							</div>
 						)}
-
 						<RoomInput
 							predefinedPrompts={
 								tempRoomStore.options.predefinedPrompts
@@ -582,10 +622,28 @@ export const NewRoomPage = observer(() => {
 											}
 										/>
 										<DropdownMenuSeparator />
+										{preCreatedRoom ? (
+											<RoomInputMenuFileExplorer
+												room={preCreatedRoom}
+												onSelect={() =>
+													onOpenChange(false)
+												}
+											/>
+										) : (
+											<RoomInputMenuNewFileExplorer
+												mode={mode}
+												options={tempRoomStore.options}
+												onRoomCreated={(room) =>
+													setPreCreatedRoom(room)
+												}
+												onSelect={() =>
+													onOpenChange(false)
+												}
+											/>
+										)}
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();
-
 												setIsConfgurationOpen(
 													!isConfigurationOpen,
 												);
@@ -698,45 +756,71 @@ export const NewRoomPage = observer(() => {
 							<div
 								className={`relative h-full w-full overflow-hidden rounded-lg border border-input bg-background shadow-xs`}
 							>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											className="absolute top-2 right-2 z-10"
-											variant="ghost"
-											size="icon-sm"
-											onClick={() => {
-												// close it
-												setIsConfgurationOpen(false);
-											}}
-										>
-											<XIcon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("room:settings.close")}
-									</TooltipContent>
-								</Tooltip>
+								{isConfigurationOpen && (
+									<>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													className="absolute top-2 right-2 z-10"
+													variant="ghost"
+													size="icon-sm"
+													onClick={() => {
+														// close it
+														setIsConfgurationOpen(
+															false,
+														);
+													}}
+												>
+													<XIcon />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("room:settings.close")}
+											</TooltipContent>
+										</Tooltip>
 
-								<ScrollArea className="h-full w-full px-2">
-									<RoomOptionsForm
-										model={chat.models.selected}
-										options={tempRoomStore.options}
-										onModelChange={(model) => {
-											if (model) {
-												chat.setSelectedModel(model);
-											}
-										}}
-										onOptionsChange={(options) => {
-											if (options) {
-												tempRoomStore.setOptions({
-													...tempRoomStore.options,
-													...options,
-												});
-											}
-										}}
-									/>
-								</ScrollArea>
+										<ScrollArea className="h-full w-full px-2">
+											<RoomOptionsForm
+												model={chat.models.selected}
+												options={tempRoomStore.options}
+												onModelChange={(model) => {
+													if (model) {
+														chat.setSelectedModel(
+															model,
+														);
+													}
+												}}
+												onOptionsChange={(options) => {
+													if (options) {
+														tempRoomStore.setOptions(
+															{
+																...tempRoomStore.options,
+																...options,
+															},
+														);
+													}
+												}}
+											/>
+										</ScrollArea>
+									</>
+								)}
 							</div>
+						</ResizablePanel>
+					</>
+				)}
+				{preCreatedRoom?.sidebar.isOpen && (
+					<>
+						<ResizableHandle />
+						<ResizablePanel defaultSize={50} minSize={20}>
+							<InsightProvider
+								key={preCreatedRoom.roomId}
+								options={{
+									insightId: preCreatedRoom.insightId,
+								}}
+								destroyOnUnmount={false}
+							>
+								<RoomSidebar room={preCreatedRoom} />
+							</InsightProvider>
 						</ResizablePanel>
 					</>
 				)}

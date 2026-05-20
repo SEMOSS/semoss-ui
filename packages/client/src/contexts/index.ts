@@ -1,3 +1,8 @@
+import {
+	AppDetailContext,
+	type AppDetailContextType,
+	useAppDetail,
+} from "./AppDetailContext";
 import { DesignerContext, type DesignerContextType } from "./DesignerContext";
 import { EngineContext, type EngineContextType } from "./EngineContext";
 import { LLMContext, type LLMContextType } from "./LLMContext";
@@ -18,6 +23,7 @@ import {
 } from "./WorkspaceContext";
 
 export type {
+	AppDetailContextType,
 	DesignerContextType,
 	EngineContextType,
 	LLMContextType,
@@ -30,6 +36,7 @@ export type {
 };
 
 export {
+	AppDetailContext,
 	DesignerContext,
 	EngineContext,
 	LLMContext,
@@ -39,4 +46,5 @@ export {
 	StepperContext,
 	PageContext,
 	WorkspaceContext,
+	useAppDetail,
 };

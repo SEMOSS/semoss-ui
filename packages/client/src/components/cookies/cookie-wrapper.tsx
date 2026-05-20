@@ -4,7 +4,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { Button } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
-import { PrivacyPreferenceCenterModal } from "./PrivacyPreferenceCenterModal";
+import { PrivacyPreferenceCenterModal } from "./privacy-preference-center-modal";
 
 interface CookieWrapperProps {
 	/** Content to overlay the Loading Screen on */
@@ -42,7 +42,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 		return () => {
 			setVisible(false);
 		};
-	}, [Object.keys(configStore.store.config).length]);
+	}, [configStore.theme.cookiePolicyBannerReact]);
 
 	const acceptCookies = () => {
 		localStorage.setItem(cookieName, JSON.stringify(true));
@@ -54,12 +54,12 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 	return (
 		<>
 			{children}
-			{visible && (
+			{visible && !viewCookiePolicy && (
 				<>
 					<div className="fixed inset-0 z-[999] bg-black/50" />
 					<div className="fixed bottom-8 left-[calc(50%-250px)] z-[1000] w-[500px] rounded-md border border-border bg-background p-6">
 						<div className="mb-3 flex flex-row items-center justify-between gap-2">
-							<h6 className="font-bold text-base text-secondary">
+							<h6 className="font-bold text-base text-foreground">
 								Here&apos;s how we use cookies
 							</h6>
 
@@ -75,7 +75,7 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
 						<div className="flex justify-center">
 							{/* biome-ignore lint/correctness/useUniqueElementIds: IDs are scoped to component instances */}
 							<div
-								className="w-full"
+								className="w-full [&_a:hover]:opacity-80 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4"
 								id="cookie-policy-banner"
 								// biome-ignore lint/security/noDangerouslySetInnerHtml: third-party cookie script content
 								dangerouslySetInnerHTML={{
