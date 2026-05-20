@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { useBlocks, useBlocksPixel } from "@semoss/renderer";
 import {
 	Table,
@@ -68,10 +68,6 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 	const isSuccess =
 		getData.status === "SUCCESS" && getCount.status === "SUCCESS";
 
-	const tableRef = useRef<HTMLTableElement | null>(null);
-
-	const parent = tableRef?.current?.parentElement;
-	const parentParent = parent?.parentElement as HTMLElement | null;
 	const isTimestamp = (value: unknown): value is string => {
 		return (
 			typeof value === "string" &&
@@ -79,19 +75,10 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 		);
 	};
 
-	const containerWidth = parentParent?.getBoundingClientRect().width;
-
 	return (
 		<>
-			<div
-				className="max-h-[200px] overflow-auto"
-				style={
-					containerWidth
-						? { width: `${containerWidth}px` }
-						: undefined
-				}
-			>
-				<Table ref={tableRef}>
+			<div className="max-h-[200px] w-full overflow-auto">
+				<Table>
 					<TableHeader>
 						<TableRow>
 							{getData.status === "SUCCESS" &&

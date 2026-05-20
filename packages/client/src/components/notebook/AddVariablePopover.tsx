@@ -1,4 +1,3 @@
-import { JsonViewer } from "@textea/json-viewer";
 import {
 	AlertTriangle,
 	Archive,
@@ -12,7 +11,7 @@ import {
 } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
 	ActionMessages,
 	BLOCK_TYPE_INPUT,
@@ -26,6 +25,7 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Alert,
 	AlertDescription,
@@ -44,6 +44,7 @@ import {
 	SelectValue,
 	toast,
 } from "@semoss/ui/next";
+import { JsonValueViewer } from "@/components/common/JsonValueViewer";
 import PreviewButton from "../../assets/img/PreviewRounded.png";
 // TODO: MOVE TO SDK/UTILITY LIB
 import {
@@ -118,10 +119,6 @@ interface AddVariablePopoverProps {
 		}[];
 	};
 }
-
-const MonacoEditor = lazy(() =>
-	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
-);
 
 export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	const { open, onClose, variable, engines } = props;
@@ -525,12 +522,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					let value = null;
 					value = isOutputJSON(variableInputValue);
 					return (
-						<JsonViewer
+						<JsonValueViewer
 							value={value === null ? variableInputValue : value}
-							displayDataTypes={true}
-							displaySize={true}
-							displayComma={true}
-							rootName={false}
 						/>
 					);
 				} else {

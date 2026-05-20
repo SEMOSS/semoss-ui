@@ -66,7 +66,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 	const getWorkspaces = useIteratorPixel<App[], App>(
 		(limit, offset) =>
 			isOpen
-				? `MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}]);`
+				? `META | MyProjects(${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""} type = "WORKSPACE", limit=[${limit}], offset=[${offset}])`
 				: "",
 		(response) => {
 			// if its less than the limit, we know its the end
@@ -135,7 +135,7 @@ export const RoomInputMenuWorkspace: React.FC<RoomInputMenuWorkspaceProps> = ({
 								<div className="w-full flex-1 truncate">
 									{w.project_display_name || w.project_name}
 								</div>
-								{root.theme.showPlatformLinks !== false && (
+								{root.theme.featureFlags?.showPlatformLinks && (
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<div className="flex flex-row items-center justify-center">

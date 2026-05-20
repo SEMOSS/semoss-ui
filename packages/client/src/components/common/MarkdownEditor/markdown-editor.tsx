@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { Suspense, useState } from "react";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Markdown,
 	Tabs,
@@ -13,10 +14,6 @@ interface MarkdownEditorProps {
 	/** Callback that is triggered when the value changes */
 	onChange?: (value: string) => void;
 }
-
-const MonacoEditor = lazy(() =>
-	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
-);
 
 export const MarkdownEditor = (props: MarkdownEditorProps) => {
 	const { value, onChange = () => null } = props;

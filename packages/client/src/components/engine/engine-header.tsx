@@ -26,8 +26,8 @@ import {
 import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/pages/import";
-import { formatToDataTestId } from "@/utility";
+import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
+import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 import { EngineAccessButton } from ".";
 
 /**
@@ -317,7 +317,7 @@ export const EngineHeader: React.FC = () => {
 									<Badge
 										key={tag}
 										variant="outline"
-										className="border-(--primary) text-(--primary)"
+										style={getTagBadgeStyle(tag)}
 										data-testid="tag-chip"
 									>
 										{tag}

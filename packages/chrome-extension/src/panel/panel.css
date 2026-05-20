@@ -32,7 +32,7 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.panel-header h1 {
+.panel-title {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
@@ -60,6 +60,113 @@ body {
   padding: 20px;
   overflow-y: auto;
   background: #fafbfc;
+}
+
+.execution-log-wrapper {
+  width: 100%;
+}
+
+.execution-log-card {
+  width: 100%;
+  min-height: calc(100vh - 180px);
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding: 18px !important;
+  gap: 10px !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.execution-log-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.execution-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.execution-log-item {
+  border: 1px solid #d6dce5;
+  border-radius: 9px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.execution-log-item:hover {
+  transform: translateX(2px);
+  border-color: #c3cddd;
+  background: #f1f5f9;
+}
+
+.execution-log-item--error {
+  border-color: rgba(211, 47, 47, 0.35);
+  background: rgba(211, 47, 47, 0.05);
+}
+
+.execution-log-item--error:hover {
+  border-color: rgba(211, 47, 47, 0.7);
+  background: rgba(211, 47, 47, 0.1);
+}
+
+.execution-log-item--success {
+  border-color: rgba(46, 125, 50, 0.35);
+  background: rgba(46, 125, 50, 0.05);
+}
+
+.execution-log-item--success:hover {
+  border-color: rgba(46, 125, 50, 0.7);
+  background: rgba(46, 125, 50, 0.1);
+}
+
+.execution-log-item--check {
+  border-color: rgba(76, 175, 80, 0.32);
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.execution-log-item--check:hover {
+  border-color: rgba(76, 175, 80, 0.55);
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.execution-log-item--input {
+  border-color: rgba(25, 118, 210, 0.3);
+  background: rgba(25, 118, 210, 0.05);
+}
+
+.execution-log-item--input:hover {
+  border-color: rgba(25, 118, 210, 0.55);
+  background: rgba(25, 118, 210, 0.1);
+}
+
+.execution-log-line {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #1f2937;
+  letter-spacing: 0.01em;
+}
+
+.execution-log-line--strong {
+  font-weight: 500;
+}
+
+.execution-log-item--error .execution-log-line {
+  color: #b71c1c;
+}
+
+.execution-log-item--success .execution-log-line {
+  color: #1b5e20;
+}
+
+.execution-log-item--check .execution-log-line {
+  color: #2e7d32;
 }
 
 .mode-switcher {
@@ -344,18 +451,13 @@ body {
   line-height: 1.5;
 }
 
-/* TextField component from @semoss/ui - force full width */
-.user-input-dialog .MuiTextField-root {
-  width: 100% !important;
+.user-input-field {
+  width: 100%;
+  font-size: 15px;
   margin-bottom: 0;
 }
 
-.user-input-dialog .MuiInputBase-root {
-  width: 100%;
-  font-size: 15px;
-}
-
-.user-input-dialog .MuiInputBase-root:focus-within {
+.user-input-field:focus-within {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -367,14 +469,11 @@ body {
 }
 
 /* Override Material-UI Button width constraints */
-.user-input-dialog .MuiButton-root {
-  min-width: auto;
-}
-
 .user-input-dialog .submit-btn {
+  min-width: auto;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -791,4 +890,3 @@ body {
 .use-playground-btn:active {
   transform: translateY(0);
 }
-

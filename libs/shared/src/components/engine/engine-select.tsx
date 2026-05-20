@@ -117,9 +117,9 @@ export const EngineSelect = ({
 	const getEngines = useIteratorPixel<Engine[], Engine>(
 		(limit, offset) =>
 			open
-				? `MyEngines(${
+				? `META | MyEngines(${
 						debouncedSearch
-							? `filterWord=["<encode>${debouncedSearch}</encode>"], `
+							? `filterWord=${JSON.stringify(debouncedSearch)}, `
 							: ""
 					} ${
 						engineTypes

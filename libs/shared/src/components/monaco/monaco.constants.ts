@@ -1,9 +1,16 @@
 import { getMonaco } from "./monaco-editor-import";
 
+// import type * as Monaco from "monaco-editor";
+
+const COMPLETION_ITEM_KIND_FUNCTION = 1;
+const COMPLETION_ITEM_KIND_SNIPPET = 27;
+const COMPLETION_ITEM_INSERT_AS_SNIPPET = 4;
+
 let monaco: unknown;
 getMonaco().then((m) => {
 	monaco = m;
 });
+
 type MONACO_LANGUAGES =
 	| "text"
 	| "javascript"
@@ -69,9 +76,9 @@ export const MONACO_EXT_LANGUAGE_MAPPING: Record<string, MONACO_LANGUAGES> = {
 export const MONACO_CONFIG: Record<
 	string,
 	{
-		monarchTokensProvider?: monaco.languages.IMonarchLanguage;
-		completionItemProvider?: monaco.languages.CompletionItemProvider;
-		theme?: monaco.editor.IStandaloneThemeData;
+		monarchTokensProvider?: unknown;
+		completionItemProvider?: unknown;
+		theme?: unknown;
 	}
 > = {
 	java: {
@@ -258,16 +265,14 @@ export const MONACO_CONFIG: Record<
 					suggestions: [
 						{
 							label: "System.out.println",
-							kind: monaco.languages.CompletionItemKind.Function,
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText: "System.out.println($1);",
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Prints a message to the console.",
 						},
 						{
 							label: "public class",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"public class ${1:ClassName} {",
@@ -276,9 +281,7 @@ export const MONACO_CONFIG: Record<
 								"    }",
 								"}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Java class with main method.",
 						},
 					].map((s) => ({
@@ -319,31 +322,26 @@ export const MONACO_CONFIG: Record<
 					suggestions: [
 						{
 							label: "print",
-							kind: monaco.languages.CompletionItemKind.Function,
-							//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText: 'print(${1:"Hello, world!"})',
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Print to the console.",
 						},
 						{
 							label: "for loop",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"for ${1:item} in ${2:iterable}:",
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${0:# do something}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "For loop in Python.",
 						},
 						{
 							label: "if-else",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"if ${1:condition}:",
@@ -352,28 +350,24 @@ export const MONACO_CONFIG: Record<
 								"else:",
 								"    # handle else",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "If-else block in Python.",
 						},
 						{
 							label: "def function",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"def ${1:function_name}(${2:args}):",
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${0:pass}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Define a Python function.",
 						},
 						{
 							label: "class",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"class ${1:ClassName}:",
@@ -382,23 +376,19 @@ export const MONACO_CONFIG: Record<
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"        ${0:pass}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "Define a class with a constructor.",
 						},
 						{
 							label: "while loop",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"while ${1:condition}:",
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${0:# do something}",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "While loop in Python.",
 						},
 					].map((s) => ({
@@ -459,17 +449,15 @@ export const MONACO_CONFIG: Record<
 					suggestions: [
 						{
 							label: "useState",
-							kind: monaco.languages.CompletionItemKind.Function,
-							insertText: //biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
+							insertText:
 								"const [${1:state}, set${1/(.*)/${1:/capitalize}/}] = useState(${2:initialValue});",
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "React useState hook.",
 						},
 						{
 							label: "useEffect",
-							kind: monaco.languages.CompletionItemKind.Function,
+							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText: [
 								"useEffect(() => {",
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
@@ -481,14 +469,12 @@ export const MONACO_CONFIG: Record<
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"}, [${3:dependencies}]);",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation: "React useEffect hook.",
 						},
 						{
 							label: "React Functional Component",
-							kind: monaco.languages.CompletionItemKind.Snippet,
+							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"const ${1:ComponentName} = () => {",
@@ -502,9 +488,7 @@ export const MONACO_CONFIG: Record<
 								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"export default ${1:ComponentName};",
 							].join("\n"),
-							insertTextRules:
-								monaco.languages.CompletionItemInsertTextRule
-									.InsertAsSnippet,
+							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
 							documentation:
 								"React functional component template.",
 						},

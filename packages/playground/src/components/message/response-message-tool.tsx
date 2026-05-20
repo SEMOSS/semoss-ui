@@ -1,11 +1,12 @@
 import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
-import { Button, cn, Spinner } from "@semoss/ui/next";
+import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
+import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 
 const getToolState = (
 	tool: ToolStore,
@@ -118,6 +119,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool, isLarge }) => {
 		const { t } = useTranslation("tool");
 		const { room } = message;
+		const isMobile = useIsMobile();
 
 		const { loadingMessage: toolExecutionMessage } = useLoadingMessage(
 			tool.status === "LOADING",
@@ -125,6 +127,13 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				? [tool.json._meta.SMSS_MCP_UI.loadingMessage]
 				: [],
 		);
+
+		// While the tool call is still streaming in, we don't have title/meta/args
+		// yet — delegate to a dedicated placeholder pill that shows a spinner and
+		// optionally expands to preview the accumulating JSON.
+		if (tool.argumentsStreaming) {
+			return <ResponseMessageToolStreaming tool={tool} />;
+		}
 
 		// TODO: if the plan is executing, only the execution step is enabled
 		const isDisabled =
@@ -159,11 +168,11 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					// Clicks when inline should close
 					tool.closeTool();
 				} else {
-					// if it's open in the sidebar, we want to move it to the front
-					tool.openTool("sidebar");
+					// if it's open in the sidebar, move to front on desktop or switch to inline on mobile
+					tool.openTool(isMobile ? "inline" : "sidebar");
 				}
 			} else {
-				tool.openTool();
+				tool.openTool(isMobile ? "inline" : undefined);
 			}
 		};
 

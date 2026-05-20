@@ -183,13 +183,6 @@ const ColumnEditModal = ({
 						>
 							Logical Names
 						</TabsTrigger>
-						<TabsTrigger
-							value="sample-instances"
-							disabled
-							data-testid="tab-sample-instances"
-						>
-							Sample Instances
-						</TabsTrigger>
 					</TabsList>
 
 					{/* Settings Tab */}
@@ -411,24 +404,6 @@ const ColumnEditModal = ({
 								</div>
 							</div>
 						</div>
-					</TabsContent>
-
-					{/* Sample Instances Tab (Disabled) */}
-					<TabsContent
-						value="sample-instances"
-						className="flex-1 overflow-y-auto px-0 pt-6 pb-2"
-						data-testid="tab-content-sample-instances"
-					>
-						<Field>
-							<FieldLabel htmlFor={`${fieldIdPrefix}-search`}>
-								Search
-							</FieldLabel>
-							<Input
-								id={`${fieldIdPrefix}-search`}
-								placeholder="Search..."
-								data-testid="input-search"
-							/>
-						</Field>
 					</TabsContent>
 				</Tabs>
 

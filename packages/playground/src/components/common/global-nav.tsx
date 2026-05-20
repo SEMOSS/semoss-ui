@@ -133,7 +133,7 @@ export const GlobalNav = observer(() => {
 	>(
 		(_limit, offset) =>
 			open
-				? `GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"]);`
+				? `META | GetPlaygroundRooms(pinned=[true], offset=${offset}, sort=["DESC"])`
 				: "",
 		() => -1,
 		(response) => response,
@@ -159,7 +159,7 @@ export const GlobalNav = observer(() => {
 	>(
 		(limit, offset) =>
 			open
-				? `GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] ) ;`
+				? `META | GetPlaygroundRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>", ` : ""} limit = ${limit} , offset = ${offset} , sort = [ "DESC" ] )`
 				: "",
 
 		(response) => {
@@ -384,7 +384,8 @@ export const GlobalNav = observer(() => {
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
-					{root.theme.hideToolsInIframe && isIframed ? null : (
+					{root.theme.featureFlags?.hideToolsInIframe &&
+					isIframed ? null : (
 						<>
 							<SidebarMenuItem data-tour="tour-new-chat">
 								<SidebarMenuButton

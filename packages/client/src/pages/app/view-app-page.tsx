@@ -31,6 +31,20 @@ import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
+const AppViewLoadingState = () => {
+	return (
+		<div
+			className="absolute inset-0 flex items-center justify-center"
+			style={{
+				background: "rgba(255, 255, 255, 0.5)",
+				zIndex: 1501,
+			}}
+		>
+			<Spinner className="size-6" />
+		</div>
+	);
+};
+
 export const ViewAppPage = observer(() => {
 	// App ID Needed for pixel calls
 	const { appId } = useParams();
@@ -81,11 +95,7 @@ export const ViewAppPage = observer(() => {
 
 	// hide the screen while it loads
 	if (!workspace) {
-		return (
-			<div className="absolute inset-0 flex items-center justify-center">
-				<Spinner />
-			</div>
-		);
+		return <AppViewLoadingState />;
 	}
 
 	return (
@@ -148,30 +158,20 @@ export const ViewAppPage = observer(() => {
 					</TooltipTrigger>
 					<TooltipContent>Share App</TooltipContent>
 				</Tooltip>
-				<Button
-					variant="default"
-					size="sm"
-					disabled={
-						!(
-							workspace.role === "OWNER" ||
-							workspace.role === "EDIT"
-						)
-					}
-					onClick={() => navigate(`../../../app/${appId}/edit`)}
-					data-testid={"viewAppPage-edit-btn"}
-				>
-					<Pencil className="mr-1 size-4" />
-					Edit
-				</Button>
+				{(workspace.role === "OWNER" || workspace.role === "EDIT") && (
+					<Button
+						variant="default"
+						size="sm"
+						onClick={() => navigate(`../../../app/${appId}/edit`)}
+						data-testid={"viewAppPage-edit-btn"}
+					>
+						<Pencil className="mr-1 size-4" />
+						Edit
+					</Button>
+				)}
 			</NavbarRight>
 			<div className="absolute inset-0">
-				<Suspense
-					fallback={
-						<div className="flex h-full w-full items-center justify-center">
-							<Spinner />
-						</div>
-					}
-				>
+				<Suspense fallback={<AppViewLoadingState />}>
 					{workspace.type === "BLOCKS" ? (
 						<Renderer
 							appId={appId}

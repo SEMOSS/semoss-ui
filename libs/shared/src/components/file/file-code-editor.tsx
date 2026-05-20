@@ -9,6 +9,11 @@ import {
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
 import {
+	MONACO_CONFIG,
+	MONACO_EXT_LANGUAGE_MAPPING,
+	MonacoEditor,
+} from "@semoss/shared/monaco";
+import {
 	Button,
 	Muted,
 	Spinner,
@@ -18,6 +23,11 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
+import {
+	getFileEditorPathScope,
+	useFileEditorPathRef,
+} from "./file-editor-path-events";
+import { getFileOperationErrorMessage } from "./file-explorer.utils";
 
 function useAsyncImport<T>(importer: () => Promise<T>): T | undefined {
 	const [mod, setMod] = useState<T>();
@@ -33,9 +43,9 @@ function useAsyncImport<T>(importer: () => Promise<T>): T | undefined {
 	return mod;
 }
 
-const MonacoEditor = lazy(() =>
-	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
-);
+// const MonacoEditor = lazy(() =>
+// 	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+// );
 
 interface FileCodeEditorProps {
 	/** Mode of file editor */
@@ -63,14 +73,12 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		mode.type === "INSIGHT"
 			? mode.insightId || insight.insightId
 			: insight.insightId;
+	const pathScope = getFileEditorPathScope(mode, targetInsightId);
 
+	const currentPathRef = useFileEditorPathRef(path, pathScope);
 	// If you need MONACO_CONFIG and MONACO_EXT_LANGUAGE_MAPPING, import them dynamically as well:
-	const useMonacoConfig = useAsyncImport(() =>
-		import("@semoss/shared/monaco").then((mod) => mod.MONACO_CONFIG),
-	);
-	const useMonacoExtMapping = useAsyncImport(() =>
-		import("@semoss/shared/monaco").then((mod) => mod.MONACO_EXT_LANGUAGE_MAPPING),
-	);
+	const useMonacoConfig = MONACO_CONFIG; // useAsyncImport(() => import("@semoss/shared/monaco").then((mod) => mod.MONACO_CONFIG));
+	const useMonacoExtMapping = MONACO_EXT_LANGUAGE_MAPPING; // useAsyncImport(() => import("@semoss/shared/monaco").then((mod) => mod.MONACO_EXT_LANGUAGE_MAPPING));
 	type OnMount = import("@monaco-editor/react").OnMount;
 
 	const editorRef = useRef(null); // useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -307,15 +315,21 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		try {
 			setIsLoading(true);
 
-			const content = editorRef.current?.getValue();
+			const editor = editorRef.current;
+			if (!editor) {
+				throw new Error("Error missing editor instance");
+			}
+
+			const content = editor?.getValue();
+			const currentPath = currentPathRef.current;
 
 			let pixel = "";
 			if (mode.type === "APP") {
-				pixel = `SaveAppAssets(project=["${mode.app}"], filePath=["${path}"], content=["<encode>${content}</encode>"]);`;
+				pixel = `SaveAppAssets(project=["${mode.app}"], filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
 			} else if (mode.type === "ENGINE") {
-				pixel = `SaveEngineAssets(engine=["${mode.engine}"], filePath=["${path}"], content=["<encode>${content}</encode>"]);`;
+				pixel = `SaveEngineAssets(engine=["${mode.engine}"], filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
 			} else if (mode.type === "INSIGHT") {
-				pixel = `SaveInsightAssets(filePath=["${path}"], content=["<encode>${content}</encode>"]);`;
+				pixel = `SaveInsightAssets(filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
 			}
 
 			if (!pixel) {
@@ -336,7 +350,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			toast.success("Successfully saved file");
 		} catch (e) {
-			toast.error("Error saving file");
+			toast.error(getFileOperationErrorMessage("Error saving file", e));
 
 			console.error(e);
 		} finally {
@@ -351,13 +365,15 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		try {
 			setIsLoading(true);
 
+			const currentPath = currentPathRef.current;
+
 			let pixel = "";
 			if (mode.type === "APP") {
-				pixel = `DownloadAppAsset(project=["${mode.app}"], filePath=["${path}"]);`;
+				pixel = `DownloadAppAsset(project=["${mode.app}"], filePath=["${currentPath}"]);`;
 			} else if (mode.type === "ENGINE") {
-				pixel = `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${path}"]);`;
+				pixel = `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${currentPath}"]);`;
 			} else if (mode.type === "INSIGHT") {
-				pixel = `DownloadInsightAsset(filePath=["${path}"]);`;
+				pixel = `DownloadInsightAsset(filePath=["${currentPath}"]);`;
 			}
 
 			if (!pixel) {
@@ -382,8 +398,11 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			// download the file
 			await download(targetInsightId, fileKey);
+			toast.success("Successfully downloaded file");
 		} catch (e) {
-			toast.error("Error downloading file");
+			toast.error(
+				getFileOperationErrorMessage("Error downloading file", e),
+			);
 
 			console.error(e);
 		} finally {
@@ -498,7 +517,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 							accessibilitySupport: "off",
 						}}
 						onChange={(value) => {
-							onChange(value, value !== getFile.data);
+							const nextValue = value ?? "";
+							onChange(nextValue, nextValue !== getFile.data);
 						}}
 						onMount={onMount}
 					/>

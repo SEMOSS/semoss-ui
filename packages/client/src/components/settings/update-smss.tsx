@@ -1,6 +1,7 @@
 import { LockIcon, RefreshCwIcon, UnlockIcon } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Label,
@@ -29,10 +30,6 @@ interface UpdateSMSSFormProps {
 	 */
 	id: string;
 }
-
-const MonacoEditor = lazy(() =>
-	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
-);
 
 export const UpdateSMSS: React.FC<UpdateSMSSFormProps> = ({ type, id }) => {
 	const { adminMode } = useSettings();

@@ -140,7 +140,7 @@ export const NewRoomPage = observer(() => {
 
 	const getPrompts = usePixel<Prompt[]>(
 		mode === "workspace" && selectedWorkspaceId && prompts.length > 0
-			? `ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )]);`
+			? `META | ListPrompt(filters=[Filter( (PROMPT__ID == [${prompts.map((p) => `"${p}"`).join(", ")}]) )])`
 			: "",
 		{
 			data: [],
@@ -416,7 +416,7 @@ export const NewRoomPage = observer(() => {
 			{root.theme.banner ? (
 				<div
 					ref={bannerRef}
-					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80"
+					className="w-full shrink-0 bg-primary px-4 py-2 text-center text-sm text-white opacity-80 [&_a]:underline"
 					// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
 					dangerouslySetInnerHTML={{ __html: root.theme.banner }}
 				/>
@@ -604,7 +604,8 @@ export const NewRoomPage = observer(() => {
 							footer={
 								mode === "workspace" &&
 								getWorkspace.status === "SUCCESS" ? (
-									root.theme.showPlatformLinks !== false ? (
+									root.theme.featureFlags
+										?.showPlatformLinks ? (
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<span>
@@ -700,7 +701,7 @@ export const NewRoomPage = observer(() => {
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
-											className="absolute top-0 right-0 z-10"
+											className="absolute top-2 right-2 z-10"
 											variant="ghost"
 											size="icon-sm"
 											onClick={() => {
@@ -716,7 +717,7 @@ export const NewRoomPage = observer(() => {
 									</TooltipContent>
 								</Tooltip>
 
-								<ScrollArea className="h-full w-full">
+								<ScrollArea className="h-full w-full px-2">
 									<RoomOptionsForm
 										model={chat.models.selected}
 										options={tempRoomStore.options}

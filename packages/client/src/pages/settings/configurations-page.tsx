@@ -2,7 +2,8 @@
 
 import { ChevronDown, Search } from "lucide-react";
 import type React from "react";
-import { lazy, Suspense, useEffect, useReducer, useRef, useState } from "react";
+import { Suspense, useEffect, useReducer, useRef, useState } from "react";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Input,
@@ -17,8 +18,8 @@ import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import dropbox from "../../assets/img/DROPBOX.png";
-import github from "../../assets/img/github.png";
-import google from "../../assets/img/google.png";
+import github from "../../assets/img/GITHUB.svg";
+import google from "../../assets/img/GOOGLE.svg";
 import ms from "../../assets/img/ms.png";
 import other from "../../assets/img/other.png";
 
@@ -60,10 +61,6 @@ const reducer = (state, action) => {
 	}
 	return state;
 };
-
-const MonacoEditor = lazy(() =>
-	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
-);
 
 export const ConfigurationsPage = () => {
 	const { adminMode } = useSettings();

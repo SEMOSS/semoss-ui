@@ -74,14 +74,12 @@ export const MembersTable = ({
 
 	useEffect(() => {
 		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
-			"GetUserInfo();",
+			"META | GetUserInfo()",
 		)
-			.then(({ pixelReturn }) => {
-				const output = pixelReturn[0]?.output ?? {};
-				const providerData =
-					output.SAML ??
-					output.NATIVE ??
-					output[Object.keys(output)[0]];
+			.then((result) => {
+				if (!result) return;
+				const output = result.pixelReturn[0]?.output ?? {};
+				const providerData = output[Object.keys(output)[0]];
 				if (providerData?.id) setMyUserId(providerData.id);
 			})
 			.catch(() => undefined);
@@ -143,7 +141,7 @@ export const MembersTable = ({
 			}
 		}
 
-		const response = await post(url, {
+		const response = await post<{ success: boolean }>(url, {
 			[isEngine ? "engineId" : "projectId"]: id,
 			userpermissions: [payload],
 		}).catch((error: Error) => {
@@ -161,9 +159,9 @@ export const MembersTable = ({
 	return (
 		<div className="w-full">
 			{/* Header Section */}
-			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-[#f4f4f4] p-4 align-start">
+			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-muted p-4 align-start">
 				<div className="flex h-[36px] w-full flex-column gap-2">
-					<InputGroup className="flex h-auto gap-1 self-stretch bg-[#FFF] px-2 py-1 align-center">
+					<InputGroup className="flex h-auto gap-1 self-stretch bg-background px-2 py-1 align-center">
 						<InputGroupInput
 							placeholder="Search"
 							value={searchKey}

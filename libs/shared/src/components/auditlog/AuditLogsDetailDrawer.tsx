@@ -56,6 +56,7 @@ const JSONTreeView = ({
 	}
 
 	const isArray = Array.isArray(data);
+	const isEmpty = Object.keys(data as object).length === 0;
 
 	return (
 		<div className={isChild ? "ml-[3px]" : "ml-0"}>
@@ -77,7 +78,13 @@ const JSONTreeView = ({
 				<span style={{ color: "#0471F0" }}>{isArray ? "[" : "{"}</span>
 				{!isExpanded && (
 					<span style={{ color: "#0471F0" }}>
-						{isArray ? "]" : "}"}
+						{isEmpty
+							? isArray
+								? "]"
+								: "}"
+							: isArray
+								? "...]"
+								: "...}"}
 					</span>
 				)}
 			</div>
