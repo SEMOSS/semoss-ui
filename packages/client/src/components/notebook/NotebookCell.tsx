@@ -3,8 +3,10 @@ import {
 	ArrowLeftRight,
 	ArrowUp,
 	BookPlus,
+	ChevronRight,
 	Copy,
 	HammerIcon,
+	Maximize2,
 	Play,
 	Trash2,
 } from "lucide-react";
@@ -19,8 +21,15 @@ import { runPixel } from "@semoss/sdk";
 import {
 	Button,
 	ButtonGroup,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
 	Separator,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { useWorkspace } from "@/hooks";
@@ -61,6 +70,8 @@ export const NotebookCell = observer(
 		const { workspace } = useWorkspace();
 
 		const [showRaw, setShowRaw] = useState(false);
+		const [showConsole, setShowConsole] = useState(false);
+		const [showLoggingModal, setShowLoggingModal] = useState(false);
 		const [showCellActions, setShowCellActions] = useState(false);
 
 		const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
@@ -258,21 +269,13 @@ export const NotebookCell = observer(
 			}
 		};
 
-		const getExecutionLabel = () => {
-			let str = "";
-			if (cell.isLoading) {
-				str = "";
-			} else if (cell.query.isLoading) {
-				str = "";
-			} else if (cell.isSuccessful || cell.isError) {
-				str = getExecutionTimeString(
-					cell.executionDurationMilliseconds,
-				);
-			} else {
-				str = "Pending Execution";
-			}
-
-			return <span className="text-muted-foreground text-xs">{str}</span>;
+		const getCompactExecutionTime = (ms: number | undefined) => {
+			if (!ms) return "";
+			if (ms < 1000) return `${ms}ms`;
+			if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+			const minutes = Math.floor(ms / 60000);
+			const seconds = Math.floor((ms % 60000) / 1000);
+			return `${minutes}m ${seconds}s`;
 		};
 
 		const runCellAndBelowHandler = () => {
@@ -436,31 +439,79 @@ export const NotebookCell = observer(
 					? cell.output
 					: JSON.stringify(cell.output, null, 2);
 
-		const outputHeader = (
+		const outputHeader = cell.isExecuted ? (
 			<div className="flex w-full flex-row items-center justify-between">
-				<span className="text-muted-foreground text-xs">
-					{getExecutionLabel()}
-				</span>
-				{cell.isExecuted && (
-					<div className="flex items-center gap-1">
-						<button
-							type="button"
-							className={`rounded px-1.5 py-0.5 text-xs transition-colors ${showRaw ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-							onClick={() => setShowRaw((v) => !v)}
-						>
-							{showRaw ? "Formatted" : "Raw"}
-						</button>
-						<button
-							type="button"
-							className="rounded px-1.5 py-0.5 text-muted-foreground text-xs hover:text-foreground"
-							onClick={() => copyTextToClipboard(rawOutput)}
-						>
-							<Copy className="inline size-3" /> Copy
-						</button>
-					</div>
-				)}
+				<span className="text-muted-foreground text-xs">Output</span>
+				<div className="flex items-center gap-1">
+					<Button
+						variant={showRaw ? "secondary" : "ghost"}
+						size="sm"
+						className="h-7 px-2 text-xs"
+						onClick={() => setShowRaw((v) => !v)}
+					>
+						{showRaw ? "Formatted" : "Raw"}
+					</Button>
+					<Button
+						variant="ghost"
+						size="sm"
+						className="h-7 px-2 text-muted-foreground text-xs"
+						onClick={() => copyTextToClipboard(rawOutput)}
+					>
+						<Copy className="size-3" /> Copy
+					</Button>
+				</div>
 			</div>
-		);
+		) : null;
+
+		const consoleSection =
+			cell.messages.length > 0 ? (
+				<div className="flex flex-col">
+					<div className="flex w-full items-center justify-between">
+						<Button
+							variant="ghost"
+							size="sm"
+							className="!px-0 h-7 text-muted-foreground text-xs hover:bg-transparent"
+							onClick={() => setShowConsole((v) => !v)}
+						>
+							<ChevronRight
+								className={`size-3 transition-transform ${showConsole ? "rotate-90" : ""}`}
+							/>
+							Logging ({cell.messages.length})
+						</Button>
+						{showConsole && (
+							<div className="flex items-center gap-1">
+								<Button
+									title="Expand"
+									variant="ghost"
+									size="sm"
+									className="h-7 px-2 text-muted-foreground"
+									onClick={() => setShowLoggingModal(true)}
+								>
+									<Maximize2 className="size-3" />
+								</Button>
+								<Button
+									title="Copy logs"
+									variant="ghost"
+									size="sm"
+									className="h-7 px-2 text-muted-foreground"
+									onClick={() =>
+										copyTextToClipboard(
+											cell.messages.join("\n"),
+										)
+									}
+								>
+									<Copy className="size-3" />
+								</Button>
+							</div>
+						)}
+					</div>
+					{showConsole && (
+						<div className="max-h-[200px] overflow-y-auto rounded bg-muted/30 px-2 py-1">
+							<NotebookCellConsole messages={cell.messages} />
+						</div>
+					)}
+				</div>
+			) : null;
 
 		const cellOutput = (
 			<div
@@ -468,24 +519,24 @@ export const NotebookCell = observer(
 				ref={cardActionsRef}
 				className="flex flex-col gap-1 bg-background p-2"
 			>
+				{consoleSection}
 				{outputHeader}
-				<NotebookCellConsole messages={cell.messages} />
 				{cell.isExecuted ? (
-					showRaw ? (
-						<pre className="max-h-[300px] overflow-auto whitespace-pre-wrap break-all rounded bg-muted px-3 py-2 font-mono text-xs">
-							{rawOutput}
-						</pre>
-					) : (
-						<div className="max-h-[300px] overflow-y-auto">
-							{cell.operation.map((o) => (
+					<div className="max-h-[300px] overflow-y-auto rounded bg-muted/30 px-2 py-1">
+						{showRaw ? (
+							<pre className="whitespace-pre-wrap break-all font-mono text-xs">
+								{rawOutput}
+							</pre>
+						) : (
+							cell.operation.map((o) => (
 								<Operation
 									key={`cell-operation--${cell.id}--${o}`}
 									operation={o}
 									output={cell.output}
 								/>
-							))}
-						</div>
-					)
+							))
+						)}
+					</div>
 				) : null}
 			</div>
 		);
@@ -496,26 +547,28 @@ export const NotebookCell = observer(
 				ref={cardActionsRef}
 				className="flex flex-col gap-1 bg-background p-2"
 			>
+				{consoleSection}
 				{outputHeader}
-				<NotebookCellConsole messages={cell.messages} />
 				{cell.isExecuted ? (
-					showRaw ? (
-						<pre className="max-h-[300px] overflow-auto whitespace-pre-wrap break-all rounded bg-muted px-3 py-2 font-mono text-xs">
-							{rawOutput}
-						</pre>
-					) : (
-						cell.operation.map((o) => (
-							<Operation
-								key={`cell-operation--${cell.id}--${o}`}
-								operation={o}
-								output={cell.output}
-								cellData={{
-									cellId: cell.id.toString(),
-									queryId: queryId.toString(),
-								}}
-							/>
-						))
-					)
+					<div className="rounded bg-muted/30 px-2 py-1">
+						{showRaw ? (
+							<pre className="max-h-[300px] overflow-auto whitespace-pre-wrap break-all font-mono text-xs">
+								{rawOutput}
+							</pre>
+						) : (
+							cell.operation.map((o) => (
+								<Operation
+									key={`cell-operation--${cell.id}--${o}`}
+									operation={o}
+									output={cell.output}
+									cellData={{
+										cellId: cell.id.toString(),
+										queryId: queryId.toString(),
+									}}
+								/>
+							))
+						)}
+					</div>
 				) : null}
 			</div>
 		);
@@ -692,42 +745,60 @@ export const NotebookCell = observer(
 							ref={cardContentRef}
 							className="flex flex-row items-start gap-2 px-3 py-2"
 						>
-							<button
-								type="button"
-								title="Run cell"
-								disabled={cell.isLoading}
-								className={`flex w-14 shrink-0 items-center gap-1 pt-0.5 font-mono text-xs hover:bg-transparent disabled:opacity-70 ${
-									cell.isLoading
-										? "text-muted-foreground"
-										: cell.isSuccessful
-											? "text-green-600 hover:text-green-700"
-											: cell.isError
-												? "text-destructive hover:text-destructive/80"
-												: "text-muted-foreground hover:text-primary"
-								}`}
-								onMouseDown={() => {
-									state.dispatch({
-										message: ActionMessages.RUN_CELL,
-										payload: {
-											queryId: cell.query.id,
-											cellId: cell.id,
-										},
-									});
-								}}
-							>
-								{cell.isLoading ? (
-									<Spinner className="size-3 shrink-0" />
-								) : (
-									<Play className="size-3 shrink-0" />
+							<div className="flex w-14 shrink-0 flex-col items-start gap-0.5 pt-0.5">
+								<button
+									type="button"
+									title="Run cell"
+									disabled={cell.isLoading}
+									className={`flex items-center gap-1 font-mono text-xs hover:bg-transparent disabled:opacity-70 ${
+										cell.isLoading
+											? "text-muted-foreground"
+											: cell.isSuccessful
+												? "text-green-600 hover:text-green-700"
+												: cell.isError
+													? "text-destructive hover:text-destructive/80"
+													: "text-muted-foreground hover:text-primary"
+									}`}
+									onMouseDown={() => {
+										state.dispatch({
+											message: ActionMessages.RUN_CELL,
+											payload: {
+												queryId: cell.query.id,
+												cellId: cell.id,
+											},
+										});
+									}}
+								>
+									{cell.isLoading ? (
+										<Spinner className="size-3 shrink-0" />
+									) : (
+										<Play className="size-3 shrink-0" />
+									)}
+									<span>
+										{cell.isLoading
+											? "[*]:"
+											: localCellPlayNumber
+												? `[${localCellPlayNumber}]:`
+												: "[ ]:"}
+									</span>
+								</button>
+								{(cell.isSuccessful || cell.isError) && (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span className="font-mono text-[10px] text-muted-foreground leading-tight">
+												{getCompactExecutionTime(
+													cell.executionDurationMilliseconds,
+												)}
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											{getExecutionTimeString(
+												cell.executionDurationMilliseconds,
+											)}
+										</TooltipContent>
+									</Tooltip>
 								)}
-								<span>
-									{cell.isLoading
-										? "[*]:"
-										: localCellPlayNumber
-											? `[${localCellPlayNumber}]:`
-											: "[ ]:"}
-								</span>
-							</button>
+							</div>
 							<div className="min-w-0 flex-1">{rendered}</div>
 						</div>
 
@@ -794,6 +865,37 @@ export const NotebookCell = observer(
 					dependents={dependentBlocks}
 					replacementOptions={replacementCellOptions}
 				/>
+
+				<Dialog
+					open={showLoggingModal}
+					onOpenChange={(o) => !o && setShowLoggingModal(false)}
+				>
+					<DialogContent className="flex max-h-[80vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]">
+						<DialogHeader>
+							<DialogTitle>
+								Logging ({cell.messages.length})
+							</DialogTitle>
+						</DialogHeader>
+						<div className="relative flex-1 overflow-hidden rounded bg-muted/30">
+							<Button
+								title="Copy logs"
+								variant="ghost"
+								size="sm"
+								className="absolute top-1 right-1 z-10 h-7 px-2 text-muted-foreground"
+								onClick={() =>
+									copyTextToClipboard(
+										cell.messages.join("\n"),
+									)
+								}
+							>
+								<Copy className="size-3" />
+							</Button>
+							<div className="h-full overflow-y-auto px-3 py-2">
+								<NotebookCellConsole messages={cell.messages} />
+							</div>
+						</div>
+					</DialogContent>
+				</Dialog>
 			</div>
 		);
 	},

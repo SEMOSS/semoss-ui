@@ -203,6 +203,7 @@ export interface PixelMessageToolCallPart {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
+				autoOpen?: boolean;
 			};
 			SMSS_IS_PLATFORM_TOOL?: boolean;
 		};
@@ -293,6 +294,7 @@ export interface MCPTool {
 			loadingMessage?: string;
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
+			autoOpen?: boolean;
 		};
 		SMSS_IS_PLATFORM_TOOL?: boolean;
 	};
