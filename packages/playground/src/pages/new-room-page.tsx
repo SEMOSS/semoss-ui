@@ -574,7 +574,6 @@ export const NewRoomPage = observer(() => {
 												</div>
 											) : null}
 										</DropdownMenuItem>
-										<DropdownMenuSeparator />
 										<RoomInputMenuMCP
 											type="KNOWLEDGE"
 											options={tempRoomStore.options}
