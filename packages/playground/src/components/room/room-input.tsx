@@ -323,8 +323,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// Agent chip indicates a current selection. The Agent tab inside the
 		// modal is always visible; editability is gated on `onWorkspaceChange`.
 		const agentChipWorkspace = options.workspace ?? null;
-		const hasSelectionChips =
-			!!agentChipWorkspace || knowledgeCount > 0 || toolboxCount > 0;
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -822,9 +820,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
 
-						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
+						{/* Bottom controls. `+` and send are pinned to the corners and
+						    never shrink. Chips sit right of `+`. The middle controls
+						    (model, prompt library, mic, prompt optimizer) right-align
+						    next to send and clip from the left when there isn't
+						    enough room — they disappear rather than wrap. */}
 						<div
-							className="flex items-center justify-between gap-2 bg-card p-2"
+							className="flex items-center gap-2 bg-card p-2"
 							data-tour="tour-input-menu"
 							role="none"
 							onClick={(e) => {
@@ -850,8 +852,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								editorRef.current?.focus();
 							}}
 						>
-							{/* Left side: settings + footer */}
-							<div className="flex items-center gap-2">
+							{/* Plus menu — pinned bottom-left */}
+							<div className="shrink-0">
 								{!(
 									root.theme.featureFlags
 										?.hideToolsInIframe && isIframed
@@ -900,177 +902,183 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										</DropdownMenuContent>
 									</DropdownMenu>
 								)}
-								{hasSelectionChips && (
-									<div className="flex flex-wrap items-center gap-1.5">
-										{agentChipWorkspace && (
-											<div className="inline-flex h-7 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
-												<button
-													type="button"
-													onClick={() =>
-														handleOpenMcpOverlay(
-															"AGENT",
-														)
-													}
-													className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
-													title={
-														agentChipWorkspace.name ??
-														undefined
-													}
-												>
-													<ComputerIcon className="size-3.5 shrink-0" />
-													<span className="max-w-32 truncate">
-														{agentChipWorkspace.name ||
-															agentChipWorkspace.workspace_id}
-													</span>
-												</button>
-												{root.theme.featureFlags
-													?.showPlatformLinks && (
-													<a
-														target="_blank"
-														rel="noopener noreferrer"
-														href={`${PLATFORM_URL}/#/app/${agentChipWorkspace.workspace_id}`}
-														className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
-														onClick={(e) =>
-															e.stopPropagation()
-														}
-													>
-														<ExternalLinkIcon className="size-3" />
-													</a>
-												)}
-											</div>
-										)}
-										{knowledgeCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"KNOWLEDGE",
-													)
+							</div>
+							{/* Body — holds chips and middle controls. Absorbs all
+							    shrinkage between the pinned `+` and send buttons. Chips
+							    stay at natural size (shrink-0) and clip past the right
+							    edge; middle controls clip from the left. */}
+							<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+								{agentChipWorkspace && (
+									<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
+										<button
+											type="button"
+											onClick={() =>
+												handleOpenMcpOverlay("AGENT")
+											}
+											className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
+											title={
+												agentChipWorkspace.name ??
+												undefined
+											}
+										>
+											<ComputerIcon className="size-3.5 shrink-0" />
+											<span className="max-w-32 truncate">
+												{agentChipWorkspace.name ||
+													agentChipWorkspace.workspace_id}
+											</span>
+										</button>
+										{root.theme.featureFlags
+											?.showPlatformLinks && (
+											<a
+												target="_blank"
+												rel="noopener noreferrer"
+												href={`${PLATFORM_URL}/#/app/${agentChipWorkspace.workspace_id}`}
+												className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
+												onClick={(e) =>
+													e.stopPropagation()
 												}
-												className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
 											>
-												<BookOpenIcon className="size-3.5" />
-												<span>{knowledgeCount}</span>
-											</button>
-										)}
-										{toolboxCount > 0 && (
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"TOOLBOX",
-													)
-												}
-												className="inline-flex h-7 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
-											>
-												<HammerIcon className="size-3.5" />
-												<span>{toolboxCount}</span>
-											</button>
+												<ExternalLinkIcon className="size-3" />
+											</a>
 										)}
 									</div>
 								)}
+								{knowledgeCount > 0 && (
+									<button
+										type="button"
+										onClick={() =>
+											handleOpenMcpOverlay("KNOWLEDGE")
+										}
+										className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
+									>
+										<BookOpenIcon className="size-3.5" />
+										<span>{knowledgeCount}</span>
+									</button>
+								)}
+								{toolboxCount > 0 && (
+									<button
+										type="button"
+										onClick={() =>
+											handleOpenMcpOverlay("TOOLBOX")
+										}
+										className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
+									>
+										<HammerIcon className="size-3.5" />
+										<span>{toolboxCount}</span>
+									</button>
+								)}
 								{footer}
-							</div>
-							<div className="flex items-center gap-2">
-								<div data-tour="tour-model">
-									{root.theme.featureFlags
-										?.enableModelSelect && (
-										<EngineSelect
-											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-											disabled={isLoading}
-											name={
-												model?.engine_display_name ||
-												model?.app_name ||
-												""
-											}
-											value={model?.app_id || ""}
-											engineTypes={["MODEL"]}
-											metaFilters={[
-												{ tag: "text-generation" },
-											]}
-											onChange={(v) => {
-												setModel(v);
-											}}
-											popoverContentProps={{
-												align: "start",
-											}}
-											tokensUsed={tokensUsed}
-											tokensMax={tokensMax}
-											contextTooltipContent={
-												contextTooltipContent
-											}
-										/>
-									)}
-								</div>
-								{predefinedPrompts.length > 0 ? (
+								{/* Middle controls — right-aligned, clip from the left when
+								    width tightens; items disappear rather than wrapping. */}
+								<div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden">
+									<div data-tour="tour-model">
+										{root.theme.featureFlags
+											?.enableModelSelect && (
+											<EngineSelect
+												className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+												disabled={isLoading}
+												name={
+													model?.engine_display_name ||
+													model?.app_name ||
+													""
+												}
+												value={model?.app_id || ""}
+												engineTypes={["MODEL"]}
+												metaFilters={[
+													{ tag: "text-generation" },
+												]}
+												onChange={(v) => {
+													setModel(v);
+												}}
+												popoverContentProps={{
+													align: "start",
+												}}
+												tokensUsed={tokensUsed}
+												tokensMax={tokensMax}
+												contextTooltipContent={
+													contextTooltipContent
+												}
+											/>
+										)}
+									</div>
+									{predefinedPrompts.length > 0 ? (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													className="bg-background"
+													variant="ghost"
+													size="icon-sm"
+													disabled={isLoading}
+													aria-label="Open prompt library"
+													onClick={() =>
+														setIsPromptLibraryOpen(
+															true,
+														)
+													}
+												>
+													<BookOpenIcon />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												Prompt Library
+											</TooltipContent>
+										</Tooltip>
+									) : null}
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Button
-												className="bg-background"
+												data-tour="tour-record"
 												variant="ghost"
+												aria-label={t(
+													"input.recordLabel",
+												)}
 												size="icon-sm"
-												disabled={isLoading}
-												aria-label="Open prompt library"
-												onClick={() =>
-													setIsPromptLibraryOpen(true)
+												disabled={
+													!canListen || isLoading
 												}
+												onClick={() => {
+													if (isListening) {
+														recognitionRef.current?.stop();
+														editorRef.current?.focus();
+													} else {
+														recognitionRef.current?.start();
+													}
+												}}
+												// -ml-1 to make spacing between engine select and mic look more like spacing between mic and send
+												// this is because engine select and mic are ghost
+												className="-ml-1"
 											>
-												<BookOpenIcon />
+												<MicIcon
+													className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+												/>
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent>
-											Prompt Library
+											{isListening
+												? t("input.stopRecording")
+												: t("input.record")}
 										</TooltipContent>
 									</Tooltip>
-								) : null}
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											data-tour="tour-record"
-											variant="ghost"
-											aria-label={t("input.recordLabel")}
-											size="icon-sm"
-											disabled={!canListen || isLoading}
-											onClick={() => {
-												if (isListening) {
-													recognitionRef.current?.stop();
-													editorRef.current?.focus();
-												} else {
-													recognitionRef.current?.start();
-												}
-											}}
-											// -ml-1 to make spacing between engine select and mic look more like spacing between mic and send
-											// this is because engine select and mic are ghost
-											className="-ml-1"
-										>
-											<MicIcon
-												className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-											/>
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{isListening
-											? t("input.stopRecording")
-											: t("input.record")}
-									</TooltipContent>
-								</Tooltip>
 
-								{root.theme.featureFlags
-									?.enablePromptOptimizer && (
-									<PromptOptimizer
-										input={inputText}
-										setInput={setInputFromOptimizer}
-										disabled={Boolean(
-											isLoading || hasOutstandingTools,
-										)}
-										modelId={model?.engine_id || undefined}
-										room={room}
-									/>
-								)}
-
-								{/* Primary action button - dual purpose:
-                                         - When idle: Send prompt
-                                         - When loading: Pause tool execution */}
+									{root.theme.featureFlags
+										?.enablePromptOptimizer && (
+										<PromptOptimizer
+											input={inputText}
+											setInput={setInputFromOptimizer}
+											disabled={Boolean(
+												isLoading ||
+													hasOutstandingTools,
+											)}
+											modelId={
+												model?.engine_id || undefined
+											}
+											room={room}
+										/>
+									)}
+								</div>
+							</div>
+							{/* Send button — pinned bottom-right, sibling of body */}
+							<div className="shrink-0">
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span data-tour="tour-send">
