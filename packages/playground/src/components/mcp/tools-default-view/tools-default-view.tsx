@@ -254,7 +254,9 @@ export const ToolsDefaultView = observer(
 					output = `Successfully fetched Playwright script: ${scriptForBrowserAutomation}`;
 					success = true;
 				} else {
-					const projectId = tool?.json._meta.SMSS_PROJECT_ID ?? null;
+					// Platform tools have no app in context — pass null and the
+					// backend short-circuits before the engine lookup.
+					const projectId = app ?? null;
 					const pixel = `RunMCPTool(project=[${JSON.stringify(projectId)}], function=[${JSON.stringify(tool?.json.name)}], paramValues=[${JSON.stringify(data)}]);`;
 					const response = await room.runRoomPixel<[unknown]>(
 						pixel,
