@@ -86,19 +86,20 @@ export const AgentSelector = observer(
 					className="min-h-0 w-full flex-1"
 					viewportRef={(e) => setScroll(e)}
 				>
-					{getWorkspaces.isLoading && (
-						<div className="flex h-64 w-full items-center justify-center">
-							<Spinner />
-						</div>
-					)}
+					{getWorkspaces.isLoading &&
+						getWorkspaces.data.length === 0 && (
+							<div className="flex h-64 w-full items-center justify-center">
+								<Spinner />
+							</div>
+						)}
 					{!getWorkspaces.isLoading &&
 						getWorkspaces.data.length === 0 && (
 							<div className="flex h-64 w-full items-center justify-center">
 								<Muted>{t("selector.noAgentsFound")}</Muted>
 							</div>
 						)}
-					{!getWorkspaces.isLoading &&
-						getWorkspaces.data.length !== 0 && (
+					{getWorkspaces.data.length !== 0 && (
+						<>
 							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
 								{getWorkspaces.data.map((w) => {
 									const isSelected =
@@ -134,7 +135,13 @@ export const AgentSelector = observer(
 									);
 								})}
 							</div>
-						)}
+							{getWorkspaces.isLoading && (
+								<div className="flex w-full items-center justify-center pb-4">
+									<Spinner />
+								</div>
+							)}
+						</>
+					)}
 				</ScrollArea>
 			</div>
 		);

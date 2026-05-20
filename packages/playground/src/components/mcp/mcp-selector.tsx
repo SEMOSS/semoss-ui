@@ -23,7 +23,7 @@ import {
 } from "@semoss/ui/next";
 import { engineProjectToMCP, MCPCard, NewKnowledgeOverlay } from "@/components";
 import { useRoot } from "@/hooks";
-import type { App, Engine, MCP, MCPConfig } from "@/types";
+import type { Engine, MCP, MCPConfig } from "@/types";
 
 interface MCPSelectorProps {
 	/** Type of mcp */
@@ -72,11 +72,16 @@ export const MCPSelector = observer(
 		);
 
 		/**
-		 * Get all of the mcps with lazy loading
+		 * Get all of the mcps with lazy loading.
+		 *
+		 * Note: we use MyEngines (engines only) rather than MyEngineProject
+		 * — the latter combines engines and projects in a way that breaks
+		 * stable pagination, which the infinite-scroll list depends on.
+		 * Project-type MCPs are not surfaced here as a result.
 		 */
-		const getMCP = useIteratorPixel<(Engine | App)[], MCP>(
+		const getMCP = useIteratorPixel<Engine[], MCP>(
 			(limit, offset) =>
-				`META | MyEngineProject (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}type=${type === "TOOLBOX" ? `["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+				`META | MyEngines (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}engineTypes=${type === "TOOLBOX" ? `["STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 			(response) => {
 				// if its less than the limit, we know its the end
 				if (response.length < 25) {
@@ -177,7 +182,7 @@ export const MCPSelector = observer(
 					className="min-h-0 w-full flex-1"
 					viewportRef={(e) => setScroll(e)}
 				>
-					{getMCP.isLoading && (
+					{getMCP.isLoading && getMCP.data.length === 0 && (
 						<div className="flex h-64 w-full items-center justify-center">
 							<Spinner />
 						</div>
@@ -191,25 +196,32 @@ export const MCPSelector = observer(
 							</Muted>
 						</div>
 					)}
-					{!getMCP.isLoading && getMCP.data.length !== 0 && (
-						<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-							{getMCP.data.map((mcp) => {
-								const selectedEntry = selected[mcp.id];
-								const fromWorkspace =
-									selectedEntry?.fromWorkspace === true;
-								return (
-									<MCPCard
-										key={mcp.id}
-										m={mcp}
-										type={type}
-										onClick={() => onSelect(mcp)}
-										selected={!!selectedEntry}
-										effectivePermission={mcp.permission}
-										fromWorkspace={fromWorkspace}
-									/>
-								);
-							})}
-						</div>
+					{getMCP.data.length !== 0 && (
+						<>
+							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
+								{getMCP.data.map((mcp) => {
+									const selectedEntry = selected[mcp.id];
+									const fromWorkspace =
+										selectedEntry?.fromWorkspace === true;
+									return (
+										<MCPCard
+											key={mcp.id}
+											m={mcp}
+											type={type}
+											onClick={() => onSelect(mcp)}
+											selected={!!selectedEntry}
+											effectivePermission={mcp.permission}
+											fromWorkspace={fromWorkspace}
+										/>
+									);
+								})}
+							</div>
+							{getMCP.isLoading && (
+								<div className="flex w-full items-center justify-center pb-4">
+									<Spinner />
+								</div>
+							)}
+						</>
 					)}
 				</ScrollArea>
 				{values.length > 0 && isMobile && (
