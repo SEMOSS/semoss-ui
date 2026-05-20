@@ -258,7 +258,7 @@ export const ToolsDefaultView = observer(
 					const isPlatformTool =
 						!!tool?.json._meta.SMSS_IS_PLATFORM_TOOL;
 					const pixel = isPlatformTool
-						? `RunDefaultTool(function=[ "${tool?.json.name}" ], paramValues=[ ${JSON.stringify(data)} ]);`
+						? `RunMCPTool(function=[ "${tool?.json.name}" ], paramValues=[ ${JSON.stringify(data)} ]);`
 						: `RunMCPTool(project = [ "${app}" ], function=[ "${tool?.json.name}" ], paramValues=[ ${JSON.stringify(data)} ]);`;
 					const response = await room.runRoomPixel<[unknown]>(
 						pixel,
