@@ -2,6 +2,7 @@ import { ChevronRight, Copy, Download, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ENGINE_IMAGES } from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -26,7 +27,6 @@ import {
 import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 import { EngineAccessButton } from ".";
 

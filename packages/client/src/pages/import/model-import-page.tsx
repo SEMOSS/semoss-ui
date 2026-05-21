@@ -3,6 +3,7 @@
 
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ENGINE_IMAGES } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -40,7 +41,6 @@ import {
 import { ModelTileCard } from "@/components/import/model/model-tile-card";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
 
