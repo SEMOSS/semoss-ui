@@ -3,10 +3,10 @@
 	"aboutTitle": "Acerca de los Almacenes de Conocimiento",
 	"whatIsKnowledgeStore": "¿Qué es un Almacén de Conocimiento?",
 	"ragDescription": "El chat RAG (Generación Aumentada por Recuperación) mejora las conversaciones de IA al fundamentar las respuestas en datos confiables. Elija entre las bibliotecas a continuación para recibir una respuesta que haga referencia a esos documentos específicamente.",
-	"subtitle": "Busque, filtre y cree nuevas fuentes de conocimiento.",
+	"subtitle": "Busque, filtre y cree nuevos almacenes de conocimiento.",
 	"newSource": {
-		"title": "Nueva fuente de conocimiento",
-		"description": "Suba documentos para crear una nueva fuente de conocimiento"
+		"title": "Nuevo almacén de conocimiento",
+		"description": "Suba documentos para crear un nuevo almacén de conocimiento"
 	},
 	"form": {
 		"nameLabel": "Nombre",
@@ -25,7 +25,7 @@
 		"all": "Todos"
 	},
 	"actions": {
-		"createSource": "Crear Fuente de Conocimiento",
+		"createSource": "Crear Almacén de Conocimiento",
 		"viewDocuments": "Ver documentos",
 		"newChat": "Nuevo Chat"
 	},
@@ -37,11 +37,11 @@
 	},
 	"documents": {
 		"title": "Documentos",
-		"description": "Archivos actualmente asociados con esta fuente de conocimiento."
+		"description": "Archivos actualmente asociados con este almacén de conocimiento."
 	},
 	"embedDocuments": {
 		"title": "Insertar documentos en fuente existente",
-		"description": "Sube documentos para insertar en esta fuente de conocimiento.",
+		"description": "Sube documentos para insertar en este almacén de conocimiento.",
 		"documents": "Documentos",
 		"selectFiles": "Haz clic para seleccionar archivos o arrastra y suelta",
 		"embedButton": "Insertar documentos",
@@ -49,7 +49,7 @@
 		"removeFile": "Eliminar archivo"
 	},
 	"embedMessages": {
-		"selectKnowledgeSource": "Por favor, selecciona una fuente de conocimiento",
+		"selectKnowledgeSource": "Por favor, selecciona un almacén de conocimiento",
 		"selectDocument": "Por favor, selecciona al menos un documento",
 		"embedSuccess": "Documentos insertados con éxito",
 		"embedFailed": "Error al insertar documentos"
@@ -62,8 +62,8 @@
 	"detail": {
 		"knowledge": "Conocimiento",
 		"embedDocuments": "Insertar documentos",
-		"newKnowledgeCreated": "Se ha creado una nueva fuente de conocimiento. Ahora puedes seleccionarla para insertar documentos adicionales.",
-		"documentsDescription": "Documentos actualmente insertados en esta fuente de conocimiento.",
+		"newKnowledgeCreated": "Se ha creado un nuevo almacén de conocimiento. Ahora puedes seleccionarlo para insertar documentos adicionales.",
+		"documentsDescription": "Documentos actualmente insertados en este almacén de conocimiento.",
 		"failedToLoadDocuments": "Error al cargar los documentos."
 	}
 }

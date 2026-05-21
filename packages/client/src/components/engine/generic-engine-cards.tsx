@@ -15,6 +15,7 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Env } from "@semoss/sdk/react";
+import { ENGINE_IMAGES } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -37,7 +38,6 @@ import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
 import GOOGLE from "@/assets/img/GOOGLE.svg";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 
 /**

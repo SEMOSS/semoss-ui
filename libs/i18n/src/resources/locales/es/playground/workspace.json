@@ -6,7 +6,8 @@
 		"descriptionLabel": "Descripción",
 		"instructionsLabel": "Instrucciones",
 		"knowledgeLabel": "Conocimiento",
-		"toolboxLabel": "Caja de herramientas"
+		"toolboxLabel": "Cajas de herramientas",
+		"promptsLabel": "Biblioteca de indicaciones"
 	},
 	"actions": {
 		"create": "Crear",
@@ -17,7 +18,6 @@
 		"newChat": "Nuevo Chat"
 	},
 	"card": {
-		"noDescription": "No hay descripción disponible",
 		"deleteConfirmTitle": "¿Está seguro?",
 		"deleteConfirmDescription": "Esta acción es irreversible. Esto eliminará permanentemente el espacio de trabajo {{name}}."
 	},
@@ -90,7 +90,7 @@
 		"tabs": {
 			"myChats": "Mis Chats",
 			"knowledge": "Conocimiento",
-			"toolbox": "Caja de herramientas",
+			"toolbox": "Cajas de herramientas",
 			"members": "Miembros"
 		},
 		"failedToDelete": "Error al eliminar el agente",
@@ -106,5 +106,9 @@
 	"new": {
 		"title": "Nuevo Agente",
 		"subtitle": "Crea un nuevo agente para comenzar"
+	},
+	"prompts": {
+		"noPrompts": "No se encontraron indicaciones",
+		"searchPlaceholder": "Buscar indicaciones..."
 	}
 }

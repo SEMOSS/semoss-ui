@@ -49,12 +49,12 @@ import {
 	TreeViewItem,
 	toast,
 } from "@semoss/ui/next";
+import DuplicateIcon from "@/assets/img/Duplicate.svg";
 import { FlexLayout } from "@/components/flex-layout";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
 import { getBlockElement } from "@/stores";
-import DuplicateIcon from "../../../assets/img/Duplicate.svg";
 import { BlockSettingsRegistry } from "../blocks";
 
 const customCollisionDetection = (args) => {

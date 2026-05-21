@@ -25,10 +25,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import DuplicateIcon from "@/assets/img/Duplicate.svg";
 import { useDesigner, useRootStore } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
 import { getDependencyCells } from "@/utility/dependencyScanner";
-import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { DependencyPromptModal } from "../blocks-workspace";
 import { AddClientBlockModal } from "./AddClientBlockModal";
 import { QuickMenu } from "./QuickMenu";
