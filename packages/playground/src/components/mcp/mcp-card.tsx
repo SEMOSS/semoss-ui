@@ -8,8 +8,8 @@ import {
 import { useTranslation } from "@semoss/i18n";
 import {
 	buildInitials,
+	EngineSubtypeIcon,
 	getAppCatalogAvatarStyle,
-	getEngineSubtypeIcon,
 } from "@semoss/shared";
 import {
 	Badge,
@@ -235,8 +235,9 @@ export const MCPCard = ({
 						</div>
 					) : (
 						<div className="flex size-10 shrink-0 items-center justify-center">
-							<img
-								src={getEngineSubtypeIcon(m.type, m.subtype)}
+							<EngineSubtypeIcon
+								engineType={m.type}
+								engineSubtype={m.subtype}
 								alt={`${m.name} icon`}
 								className="size-8 object-contain"
 							/>

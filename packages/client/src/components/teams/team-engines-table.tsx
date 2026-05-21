@@ -1,6 +1,6 @@
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getEngineSubtypeIcon } from "@semoss/shared";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -909,11 +909,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 													}
 												}}
 											/>
-											<img
-												src={getEngineSubtypeIcon(
-													engine.engine_type,
-													engine.engine_subtype,
-												)}
+											<EngineSubtypeIcon
+												engineType={engine.engine_type}
+												engineSubtype={
+													engine.engine_subtype
+												}
 												alt={engine.engine_name}
 												className="size-8 rounded object-contain"
 											/>

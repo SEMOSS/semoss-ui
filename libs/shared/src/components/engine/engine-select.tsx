@@ -22,7 +22,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { Engine } from "@/types";
-import { getEngineSubtypeIcon } from "../icon-utils";
+import { EngineSubtypeIcon } from "../engine-subtype-icon";
 
 // ============================================================================
 // TypeScript Interfaces
@@ -355,11 +355,11 @@ export const EngineSelect = ({
 										)}
 									>
 										{showEngineIcon && (
-											<img
-												src={getEngineSubtypeIcon(
-													engine.engine_type,
-													engine.engine_subtype,
-												)}
+											<EngineSubtypeIcon
+												engineType={engine.engine_type}
+												engineSubtype={
+													engine.engine_subtype
+												}
 												alt={`${displayName} icon`}
 												className="mr-2 size-6 shrink-0 object-contain"
 											/>
