@@ -24,7 +24,7 @@
 		"tabAgent": "Agent",
 		"tabKnowledge": "Knowledge",
 		"tabToolbox": "Toolboxes",
-		"agentReadOnlyNote": "Agents are chosen when a chat starts and can't be changed mid-chat. Start a new chat to switch.",
+		"agentReadOnlyNote": "Agents are chosen when a chat starts and can't be changed mid-conversation. Start a new chat to switch.",
 		"editToolbox": "Configure Toolboxes",
 		"editKnowledge": "Configure Knowledge",
 		"toolboxDescription": "Add tools to give this chat more capabilities",
@@ -57,6 +57,8 @@
 		"noDescription": "No description available.",
 		"tooltipNoAccess": "You don't have access to this {{type}}. Please request access from the owner.",
 		"tooltipMissingDependencies": "You don't have access to all dependencies of this {{type}}, so functionality may be limited. Open in the platform for more information.",
-		"tooltipOpen": "Open this {{type}} in the platform"
+		"tooltipOpen": "Open this {{type}} in the platform",
+		"typeToolbox": "toolbox",
+		"typeKnowledge": "knowledge store"
 	}
 }

@@ -68,7 +68,10 @@ export const MCPCard = ({
 		effectivePermission === "DISCOVERABLE" ||
 		effectivePermission === "FULLY_PRIVATE";
 
-	const tooltipType = type === "TOOLBOX" ? "toolbox" : "knowledge base";
+	const tooltipType =
+		type === "TOOLBOX"
+			? t("permission.typeToolbox")
+			: t("permission.typeKnowledge");
 	const showPlatformLink = !!root.theme.featureFlags?.showPlatformLinks;
 
 	const permissionLabel = ((): string => {
