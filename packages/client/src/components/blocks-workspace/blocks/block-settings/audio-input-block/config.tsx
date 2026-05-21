@@ -1,5 +1,4 @@
-import { KeyboardVoice } from "@mui/icons-material";
-import { CSSProperties } from "react";
+import { Mic } from "lucide-react";
 import { QuerySelectionSettings, SelectInputSettings } from "../../settings";
 import { InputAudioSettings } from "../../settings/shared/InputAudioSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
@@ -13,7 +12,7 @@ import type { BlockSettingsConfig } from "../settings.types";
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_INPUT,
-	icon: KeyboardVoice,
+	icon: Mic,
 	contentMenu: [
 		{
 			name: "General",

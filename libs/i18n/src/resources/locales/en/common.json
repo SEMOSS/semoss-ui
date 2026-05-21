@@ -25,11 +25,12 @@
 		"updateInstructions": "Update Instructions",
 		"updateTokenLength": "Update token length",
 		"uploadFiles": "Upload Files",
-		"search": "Search..."
+		"search": "Search...",
+		"enterPromptLibraryTag": "Enter Prompt Library Tag"
 	},
 	"actions": {
 		"addKnowledge": "Add Knowledge",
-		"addToolbox": "Add Toolbox",
+		"addToolbox": "Add Toolboxes",
 		"deleteMCP": "Delete MCP"
 	},
 	"badges": {
@@ -37,7 +38,7 @@
 	},
 	"messages": {
 		"noKnowledgeFound": "No Knowledge Found",
-		"noToolboxFound": "No Toolbox Found"
+		"noToolboxFound": "No Toolboxes Found"
 	},
 	"tooltips": {
 		"cannotDeleteWorkspaceMCPs": "Cannot delete workspace MCPs",

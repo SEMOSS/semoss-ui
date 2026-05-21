@@ -13,6 +13,7 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
+import { LoginProviderIcon } from "../login-provider-icon";
 
 export function LoginForm() {
 	const usernameId = useId();
@@ -125,7 +126,7 @@ export function LoginForm() {
 						</Field>
 					</>
 				)}
-				{isNative && hasOAuth && <FieldSeparator>Or</FieldSeparator>}
+				{isNative && hasOAuth && <FieldSeparator>or</FieldSeparator>}
 
 				{system.config.availableProviders.map((p) => {
 					// skip ones that aren't oauth
@@ -164,8 +165,12 @@ export function LoginForm() {
 											toast.error(e.message);
 										});
 								}}
-								className="w-full"
+								className="w-full gap-2"
 							>
+								<LoginProviderIcon
+									provider={p.provider}
+									className="h-4 w-4 shrink-0 object-contain"
+								/>
 								{p.name}
 							</Button>
 						</Field>

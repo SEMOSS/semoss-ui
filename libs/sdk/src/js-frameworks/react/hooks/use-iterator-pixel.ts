@@ -5,6 +5,9 @@ export interface UseIteratorPixelOptions<T> {
 	/** Number of items to fetch per page */
 	limit?: number;
 
+	/** Insight ID to use for pixel calls; defaults to the app's shared insight */
+	insightId?: string;
+
 	/** Callback when data is successfully loaded */
 	onSuccess?: (data: T[], isLoadingMore: boolean) => void;
 
@@ -65,7 +68,7 @@ export function useIteratorPixel<TResponse, TItem>(
 	options: UseIteratorPixelOptions<TItem> = {},
 	dependencies: React.DependencyList = [],
 ): UseIteratorPixelReturn<TItem> {
-	const { limit = 25, onSuccess, onError } = options;
+	const { limit = 25, insightId, onSuccess, onError } = options;
 
 	const [offset, setOffset] = useState(0);
 	const [allData, setAllData] = useState<TItem[]>([]);
@@ -76,35 +79,39 @@ export function useIteratorPixel<TResponse, TItem>(
 	const query = pixelQuery(limit, offset);
 
 	// Use the standard usePixel hook
-	const pixel = usePixel<TResponse>(query, {
-		data: null as TResponse,
-		onSuccess: (response) => {
-			const newData = getData(response);
-			const count = getTotalCount(response);
+	const pixel = usePixel<TResponse>(
+		query,
+		{
+			data: null as TResponse,
+			onSuccess: (response) => {
+				const newData = getData(response);
+				const count = getTotalCount(response);
 
-			setTotalCount(count);
+				setTotalCount(count);
 
-			if (offset === 0) {
-				// First load or reset - replace all data
-				setAllData(newData);
-			} else {
-				// Loading more - append data
-				setAllData((prev) => [...prev, ...newData]);
-			}
+				if (offset === 0) {
+					// First load or reset - replace all data
+					setAllData(newData);
+				} else {
+					// Loading more - append data
+					setAllData((prev) => [...prev, ...newData]);
+				}
 
-			if (onSuccess) {
-				onSuccess(newData, offset > 0);
-			}
+				if (onSuccess) {
+					onSuccess(newData, offset > 0);
+				}
+			},
+			onError: (_data, error) => {
+				if (onError && error instanceof Error) {
+					onError(error);
+				}
+			},
+			onFinal: () => {
+				isLoadingMoreRef.current = false;
+			},
 		},
-		onError: (_data, error) => {
-			if (onError && error instanceof Error) {
-				onError(error);
-			}
-		},
-		onFinal: () => {
-			isLoadingMoreRef.current = false;
-		},
-	});
+		insightId,
+	);
 
 	/**
 	 * Get the next set of items

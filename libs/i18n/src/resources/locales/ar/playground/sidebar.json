@@ -2,11 +2,14 @@
 	"search": "بحث",
 	"new": "جديد",
 	"agents": "الوكلاء",
+	"takeTour": "خذ جولة",
 	"buckets": {
 		"favorites": "المفضلة",
 		"today": "اليوم",
 		"yesterday": "أمس",
+		"fewDaysAgo": "منذ بضعة أيام",
 		"lastWeek": "الأسبوع الماضي",
+		"thisMonth": "هذا الشهر",
 		"lastMonth": "الشهر الماضي",
 		"older": "أقدم"
 	},

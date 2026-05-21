@@ -1,6 +1,27 @@
 import { vi } from "vitest";
 import "@testing-library/jest-dom";
 
+// Mock monaco-editor to avoid complex ESM and worker issues in tests
+vi.mock("monaco-editor", () => ({
+	editor: {
+		create: vi.fn(),
+		defineTheme: vi.fn(),
+		setTheme: vi.fn(),
+	},
+	languages: {
+		register: vi.fn(),
+		setLanguageConfiguration: vi.fn(),
+		setMonarchTokensProvider: vi.fn(),
+	},
+}));
+
+vi.mock(import("@semoss/ui/next"), async (importOriginal) => {
+	const actual = await importOriginal();
+	return {
+		...actual,
+	};
+});
+
 // Mock vega packages to avoid ESM issues in tests
 vi.mock("vega-embed", () => ({
 	default: vi.fn(() => Promise.resolve({ view: {} })),
@@ -65,3 +86,9 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 	clip: vi.fn(),
 	// biome-ignore lint/suspicious/noExplicitAny: <needed for testing>
 })) as any;
+
+// Mock deprecated document.queryCommandSupported for Monaco Editor
+Object.defineProperty(document, "queryCommandSupported", {
+	value: vi.fn(() => true),
+	writable: true,
+});

@@ -48,8 +48,11 @@ interface InsightStoreInterface {
 			 * Theme of the app
 			 */
 			theme: {
-				playground: Record<string, unknown>;
 				[key: string]: unknown;
+				THEME_MAP?: string;
+				THEME_NAME?: string;
+				ID?: string;
+				IS_ACTIVE?: boolean;
 			};
 			/**
 			 * System Date
@@ -439,7 +442,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// default if there is no command to preload
 		if (!pixel) {
-			pixel = "1+1;";
+			pixel = "META | init";
 		}
 
 		// create the new insight
@@ -608,6 +611,10 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 				// turn off authorized
 				this._store.isAuthorized = false;
+
+				// reset insight state so re-login creates a fresh insight
+				this._store.insightId = "";
+				this._store.isReady = false;
 
 				// success
 				return true;

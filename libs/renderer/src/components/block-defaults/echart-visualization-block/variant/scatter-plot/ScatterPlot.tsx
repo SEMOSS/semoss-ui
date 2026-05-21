@@ -6,21 +6,12 @@ import { CanvasRenderer } from "echarts/renderers";
 import EChartsReact from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockComponent } from "../../../../../store";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { processData } from "./ScatterPlotProcessData";
 import { getSelector } from "./ScatterPlotSelector";
 import { formatdatapoints } from "./ScatterPlotTooltipData";
-
-const StyledNoDataContainer = styled("div", {
-	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
-	height: "100%",
-	width: "100%",
-	color: error ? theme.palette.error.main : "unset",
-}));
 export interface EChartColumns {
 	name: string;
 	selector: string;
@@ -29,12 +20,13 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
 	widget: "e-chart";
 	data: {
-		option: {};
+		option: Record<string, unknown>;
 		frame: {
 			name: string;
 		};
 		variation: undefined | string;
 		columns: EChartColumns[];
+		// biome-ignore lint/suspicious/noExplicitAny: echart aggregate type is dynamic
 		aggregate: Record<string, any>;
 		contextMenu: {
 			hideUnfilter: boolean;
@@ -42,7 +34,7 @@ export interface EchartVisualizationBlockDef {
 			hideExclude: boolean;
 		};
 	};
-	listeners: {};
+	listeners: Record<string, unknown>;
 	slots: never;
 }
 
@@ -60,6 +52,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 		selector: getSelector(data, data?.aggregate),
 	});
 	function debounce(fn, delay) {
+		// biome-ignore lint/suspicious/noImplicitAnyLet: debounce timer type inferred from setTimeout
 		let timer;
 		return (...args) => {
 			clearTimeout(timer);
@@ -83,6 +76,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 		});
 	}, 2000);
 
+	// biome-ignore lint/suspicious/noExplicitAny: echart handleSelection value/name types are untyped
 	const handleSelection = debounce((value: any, name: any) => {
 		// update the frame
 		frame.filter(`SetFrameFilter(${name}==[${value}])`);
@@ -90,7 +84,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 	const onClickChart = {
 		contextmenu: (params) => {
 			if (params.data) {
-				const labelName = data.option["series"][0]["label"]["name"];
+				const labelName = data.option.series[0].label.name;
 				setContextMenu(
 					contextMenu === null
 						? {
@@ -112,25 +106,25 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 
 	if (!data.option) {
 		return (
-			<StyledNoDataContainer>
+			<div className="h-full w-full">
 				Add JSON to render your visualization
-			</StyledNoDataContainer>
+			</div>
 		);
 	}
 	if (typeof data.option === "string") {
 		try {
 			const processedFrameData = processData(frame.data, data);
 			if (processedFrameData && processedFrameData.length > 0) {
-				data.option["series"][0]["data"] = processedFrameData;
+				data.option.series[0].data = processedFrameData;
 			}
-			if (!Object.hasOwn(data.option["tooltip"], "formatter")) {
-				data.option["tooltip"] = {
-					...data.option["tooltip"],
+			if (!Object.hasOwn(data.option.tooltip, "formatter")) {
+				data.option.tooltip = {
+					...data.option.tooltip,
 					formatter: formatdatapoints(frame.data, data),
 				};
 			}
 			return (
-				<StyledNoDataContainer>
+				<div className="h-full w-full">
 					<EChartsReact
 						option={data.option as unknown as EChartsOption}
 						onChartReady={(chart) => {
@@ -145,37 +139,34 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 						contextMenu={contextMenu}
 						onClose={() => setContextMenu(null)}
 					/>
-				</StyledNoDataContainer>
+				</div>
 			);
-		} catch (e) {
+		} catch (_e) {
 			return (
-				<StyledNoDataContainer error>
+				<div className="h-full w-full text-destructive">
 					There was an issue parsing your JSON.
-				</StyledNoDataContainer>
+				</div>
 			);
 		}
 	} else {
 		if (Object.hasOwn(data.option, "_state")) {
-			if (Object.hasOwn(data.option["_state"], "fields")) {
+			if (Object.hasOwn(data.option._state, "fields")) {
 				if (
-					Object.hasOwn(data.option["_state"]["fields"], "label") &&
-					Object.hasOwn(data.option["_state"]["fields"], "XAxis") &&
-					Object.hasOwn(data.option["_state"]["fields"], "YAxis")
+					Object.hasOwn(data.option._state.fields, "label") &&
+					Object.hasOwn(data.option._state.fields, "XAxis") &&
+					Object.hasOwn(data.option._state.fields, "YAxis")
 				) {
 					const processedFrameData = processData(frame.data, data);
 					if (processedFrameData && processedFrameData.length > 0) {
-						data.option["series"][0]["data"] = processedFrameData;
+						data.option.series[0].data = processedFrameData;
 					}
 					if (frame.data.values.length > 0) {
 						if (
-							!Object.hasOwn(
-								data.option["tooltip"],
-								"formatter",
-							) ||
-							data.option["tooltip"]["formatter"] === ""
+							!Object.hasOwn(data.option.tooltip, "formatter") ||
+							data.option.tooltip.formatter === ""
 						) {
-							data.option["tooltip"] = {
-								...data.option["tooltip"],
+							data.option.tooltip = {
+								...data.option.tooltip,
 								formatter: formatdatapoints(frame.data, data),
 							};
 						}
@@ -184,7 +175,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 			}
 		}
 		return (
-			<StyledNoDataContainer>
+			<div className="h-full w-full">
 				<EChartsReact
 					option={data.option as EChartsOption}
 					onChartReady={(chart) => {
@@ -199,7 +190,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
 					contextMenu={contextMenu}
 					onClose={() => setContextMenu(null)}
 				/>
-			</StyledNoDataContainer>
+			</div>
 		);
 	}
 });

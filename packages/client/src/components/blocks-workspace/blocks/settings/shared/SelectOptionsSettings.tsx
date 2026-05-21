@@ -9,8 +9,14 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Autocomplete, TextField } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 import { QuerySelectionSettings } from "../custom";
 
@@ -41,11 +47,10 @@ interface SelectOptionsSettings<D extends BlockDef = BlockDef> {
 export const SelectOptionsSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
-		label = "",
 		path,
 		optionData,
 	}: SelectOptionsSettings<D>) => {
-		const { data, setData } = useBlockSettings<D>(id);
+		const { setData } = useBlockSettings<D>(id);
 		const { state } = useBlocks();
 
 		// get the block
@@ -62,6 +67,7 @@ export const SelectOptionsSettings = observer(
 			});
 		}).get();
 
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const keys: string[] = useMemo(() => {
 			try {
 				let arr = [];
@@ -84,15 +90,21 @@ export const SelectOptionsSettings = observer(
 					}
 				} else {
 					if (
+						parsedData.options.length > 0 &&
 						typeof parsedData.options[0] === "object" &&
 						!Array.isArray(parsedData.options[0]) &&
 						parsedData.options[0] !== null
 					) {
 						arr = Object.keys(parsedData.options[0]);
 					} else {
-						arr = [];
+						arr = parsedData.options || [];
 					}
 				}
+
+				// Add variables as options (like QueryIdSelector pattern)
+				const variableKeys = Object.keys(state.variables);
+				arr = [...arr, ...variableKeys];
+
 				return arr.map((option) => {
 					if (typeof option !== "string") {
 						return JSON.stringify(option);
@@ -148,11 +160,13 @@ export const SelectOptionsSettings = observer(
 		 * Sync the data on change
 		 * @param optPath - Select Box Options menu display label, Sub - Label
 		 */
-		const onChange = (value: string, optPath) => {
+		const onChange = (
+			value: string,
+			optPath: Paths<Block<D>["data"], 4>,
+		) => {
 			// clear out he old timeout
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
-				timeoutRef.current = null;
 			}
 
 			timeoutRef.current = setTimeout(() => {
@@ -170,6 +184,7 @@ export const SelectOptionsSettings = observer(
 		if (!isJsonOpts) {
 			if (parsedData[path]) {
 				if (parsedData.options) {
+					// biome-ignore lint/suspicious/useIterableCallbackReturn: echart callback
 					optionData.map((d) => {
 						setData(
 							d.path,
@@ -179,27 +194,28 @@ export const SelectOptionsSettings = observer(
 				}
 			}
 			return (
-					<QuerySelectionSettings
-						id={id}
-						label="Options"
-						path="options"
-						queryPath="output"
-						__onChange={() => {
-							setData(
-								"value" as Paths<Block<D>["data"], 4>,
-								parsedData.multiple
-									? ([] as PathValue<D["data"], typeof path>)
-									: ("" as PathValue<D["data"], typeof path>),
-							);
+				<QuerySelectionSettings
+					id={id}
+					label="Options"
+					path="options"
+					queryPath="output"
+					__onChange={() => {
+						setData(
+							"value" as Paths<Block<D>["data"], 4>,
+							parsedData.multiple
+								? ([] as PathValue<D["data"], typeof path>)
+								: ("" as PathValue<D["data"], typeof path>),
+						);
 
-							optionData.map((d) => {
-								setData(
-									d.path,
-									"" as PathValue<D["data"], typeof path>,
-								);
-							});
-						}}
-					/>
+						// biome-ignore lint/suspicious/useIterableCallbackReturn: echart callback
+						optionData.map((d) => {
+							setData(
+								d.path,
+								"" as PathValue<D["data"], typeof path>,
+							);
+						});
+					}}
+				/>
 			);
 		}
 
@@ -221,6 +237,7 @@ export const SelectOptionsSettings = observer(
 								: ("" as PathValue<D["data"], typeof path>),
 						);
 
+						// biome-ignore lint/suspicious/useIterableCallbackReturn: echart callback
 						optionData.map((d) => {
 							setData(
 								d.path,
@@ -236,24 +253,23 @@ export const SelectOptionsSettings = observer(
 								key={`${d.label}-${i}`}
 								label={""}
 							>
-								<Autocomplete
-									fullWidth
-									multiple={false}
-									value={parsedData[d.path]}
-									options={keys}
-									onChange={(_, newValue) => {
-										// sync the data on change
-										onChange(newValue as string, d.path);
-									}}
-									renderInput={(params) => (
-										<TextField
-											{...params}
-											label={d.label}
-											size="small"
-											variant="outlined"
-										/>
-									)}
-								/>
+								<Select
+									value={(parsedData[d.path] as string) ?? ""}
+									onValueChange={(val) =>
+										onChange(val, d.path)
+									}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder={d.label} />
+									</SelectTrigger>
+									<SelectContent>
+										{keys.map((key) => (
+											<SelectItem key={key} value={key}>
+												{key}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</BaseSettingSection>
 						</div>
 					);

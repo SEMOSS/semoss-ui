@@ -5,9 +5,8 @@ import { GuardrailImport } from "@/components/import/guardrail/guardrail-import"
 import { StorageImport } from "@/components/import/storage/storage-import";
 import { VectorImport } from "@/components/import/vector/vector-import";
 import type { ENGINE_TYPES } from "@/types";
-import { ModelImport } from "../../components/import/model/model-import";
-import { ImportLayout } from "./ImportLayout";
-import { ImportPageContent } from "./ImportPageContent";
+import { ImportLayout } from "./import-layout";
+import { ModelImportPage } from "./model-import-page";
 
 /** TODO: Refactor */
 interface ImportPageProps {
@@ -28,7 +27,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "DATABASE":
 				return <DatabasePageContent name={name} />;
 			case "MODEL":
-				return <ModelImport />;
+				return <ModelImportPage />;
 			case "VECTOR":
 				return <VectorImport name={name} />;
 			case "FUNCTION":
@@ -38,9 +37,9 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "GUARDRAIL":
 				return <GuardrailImport name={name} />;
 			default:
-				return <ImportPageContent name={name} type={type} />;
+				return null;
 		}
-	}, [type]);
+	}, [name, type]);
 
 	return <ImportLayout>{EngineImportFlow}</ImportLayout>;
 };

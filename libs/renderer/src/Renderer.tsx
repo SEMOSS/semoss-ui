@@ -1,9 +1,8 @@
-import { CircularProgress, Stack } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Env, runPixel } from "@semoss/sdk/react";
-import { Backdrop, Notification, Typography } from "@semoss/ui";
+import { Spinner, Toaster } from "@semoss/ui/next";
 import { DefaultBlocks } from "./components/block-defaults";
 import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultCells } from "./components/cell-defaults";
@@ -154,39 +153,28 @@ export const Renderer = observer((props: RendererProps) => {
 	if (!stateStore || (isLoading && !preview)) {
 		if (!preview) {
 			return (
-				<Backdrop
-					open={true}
-					sx={{
+				<div
+					className="relative flex h-full w-full items-center justify-center"
+					style={{
 						background: "rgba(255, 255, 255, 0.5)",
 						zIndex: 1501,
-						position: "relative",
-						width: "100%",
-						height: "100%",
 					}}
 				>
-					<Stack
-						direction={"column"}
-						alignItems={"center"}
-						justifyContent={"center"}
-						spacing={1}
-						width={"100%"}
-						height={"100%"}
-					>
-						<CircularProgress color={"info"} />
-					</Stack>
-				</Backdrop>
+					<Spinner className="size-6" />
+				</div>
 			);
 		} else {
-			return <Typography variant="h6">Fetching Preview...</Typography>;
+			return <h6>Fetching Preview...</h6>;
 		}
 	}
 
 	return (
-		<Notification>
+		<>
+			<Toaster />
 			<Blocks state={stateStore} registry={DefaultBlocks}>
 				<RendererEngine id={homePage} />
 			</Blocks>
-		</Notification>
+		</>
 	);
 });
 

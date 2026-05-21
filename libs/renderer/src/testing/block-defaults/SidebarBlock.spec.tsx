@@ -59,10 +59,16 @@ describe("Testing the Sidebar Block", async () => {
 		expect(exist).toBeInTheDocument();
 	});
 	it("Should render the sidebar in its closed state and content to not be visible", async () => {
-		render(<SidebarBlock id={blocks["test-sidebar"].id} />, {
-			blocks: blocks,
-		});
-		expect(screen.queryByText("Hello world")).not.toBeVisible();
+		const { container } = render(
+			<SidebarBlock id={blocks["test-sidebar"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
+		const sidebar = container.querySelector(
+			"[data-block='test-sidebar']",
+		) as HTMLElement;
+		expect(sidebar.style.transform).toBe("translateX(-100%)");
 	});
 	it("Should render the sidebar in its open state and content to be visible", async () => {
 		render(<SidebarBlock id={blocks["test-sidebar"].id} />, {

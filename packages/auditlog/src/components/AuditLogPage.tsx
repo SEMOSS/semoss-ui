@@ -7,8 +7,7 @@ import {
 	AuditLogsDataTable,
 	AuditLogsTimeline,
 } from "@semoss/shared";
-import { useNotification } from "@semoss/ui";
-import { Button, Skeleton } from "@semoss/ui/next";
+import { Button, Skeleton, toast } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
 import type { EventData } from "./common/utility";
 
@@ -26,7 +25,6 @@ export const AuditLogPage = ({ catalogName }) => {
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 	const rootStore = useUserRootStore(insightId);
-	const notification = useNotification();
 	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
@@ -143,8 +141,10 @@ export const AuditLogPage = ({ catalogName }) => {
 			setLogs([]);
 			fetchLogs(rowsPerPage, page * rowsPerPage);
 		}
-		//override the parent css which has id = home__content
-		const contentElement = document.getElementById("home__container");
+		// override the parent css container used by Page
+		const contentElement = document.querySelector(
+			'[data-home-container="true"]',
+		) as HTMLElement | null;
 		if (contentElement) {
 			contentElement.style.padding = "32px";
 			contentElement.style.maxWidth = "none";
@@ -205,11 +205,9 @@ export const AuditLogPage = ({ catalogName }) => {
 							)
 								fetchLogs(rowsPerPage, page * rowsPerPage);
 							else {
-								notification.add({
-									color: "info",
-									message:
-										"Please select Engine Type and Engine to fetch logs",
-								});
+								toast.info(
+									"Please select Engine Type and Engine to fetch logs",
+								);
 							}
 						}}
 					>

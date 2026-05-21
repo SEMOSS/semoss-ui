@@ -56,7 +56,9 @@ describe("Image Block", () => {
 			blocks: blocks,
 		});
 
-		const element = container.querySelector("[data-block='image2']");
+		const element = container.querySelector(
+			"[data-block='image2']",
+		) as HTMLElement;
 		expect(element).not.toBeNull();
 		expect(element.getAttribute("style")).toBeNull();
 	});

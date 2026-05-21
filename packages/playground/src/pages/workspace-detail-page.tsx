@@ -1,30 +1,28 @@
 import {
 	BookOpenIcon,
-	EllipsisIcon,
 	HammerIcon,
 	MessagesSquareIcon,
+	PencilIcon,
 	PlusIcon,
 	SearchIcon,
+	Trash2Icon,
 	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
+import { MembersTable } from "@semoss/shared";
 import {
 	Button,
+	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -33,19 +31,16 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
-import {
-	PaginationButtons,
-	WorkspaceChatList,
-	WorkspaceMCPList,
-	WorkspaceMembersList,
-} from "@/components";
+import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
 import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
-import { usePagination } from "@/hooks/use-pagination";
 import type { Workspace } from "@/types";
 
 /**
@@ -63,7 +58,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const navigate = useNavigate();
 	const { chat } = useChat();
 	const { root } = useRoot();
-	const pagination = usePagination();
 
 	/**
 	 * State
@@ -72,8 +66,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const [tab, setTab] = useState<string>("chats");
 	const [search, setSearch] = useState<string>("");
 	const [deleteModal, setDeleteModal] = useState<boolean>(false);
-	const [isSharingModalOpen, setIsSharingModalOpen] =
-		useState<boolean>(false);
 
 	/**
 	 * Library Hooks
@@ -84,7 +76,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const getWorkspace = usePixel<Workspace>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
-			data: null,
 			onError: (_d, e) => {
 				toast.error(
 					t("workspace:detail.failedToLoad", {
@@ -124,13 +115,26 @@ export const WorkspaceDetailPage = observer(() => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR") {
+	if (getWorkspace.status === "ERROR" || !workspaceId) {
 		return <Navigate to="/agent" />;
 	}
 
 	return (
-		<div className="relative h-full w-full overflow-hidden">
-			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
+		<div
+			className={cn(
+				"relative",
+				tab !== "members" && "h-full",
+				"w-full overflow-hidden",
+			)}
+		>
+			<div
+				className={cn(
+					"mx-auto flex",
+					tab !== "members" && "h-full",
+					tab === "members" && "px-4",
+					"w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4",
+				)}
+			>
 				<div className="flex flex-row gap-2">
 					<div className="items-center text-2xl">
 						<img
@@ -139,66 +143,56 @@ export const WorkspaceDetailPage = observer(() => {
 							src={root.theme?.images.logo || logoImage}
 						/>
 					</div>
-					<div className="space-y-2.5">
-						<div className="font-semibold text-2xl text-foreground leading-none">
-							{getWorkspace.data?.name}
+					<div className="min-w-0 flex-1 space-y-2.5">
+						<div className="flex items-center justify-between gap-2">
+							<div className="min-w-0 flex-1 truncate font-semibold text-2xl text-foreground leading-none">
+								{getWorkspace.data?.name}
+							</div>
+							<div className="flex shrink-0 items-center gap-1">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="outline"
+											size="icon"
+											aria-label={t(
+												"workspace:actions.edit",
+											)}
+											onClick={() =>
+												navigate(
+													`/agent/${workspaceId}/edit`,
+												)
+											}
+										>
+											<PencilIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("workspace:actions.edit")}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="outline"
+											size="icon"
+											aria-label={t(
+												"workspace:actions.delete",
+											)}
+											onClick={() => setDeleteModal(true)}
+										>
+											<Trash2Icon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("workspace:actions.delete")}
+									</TooltipContent>
+								</Tooltip>
+							</div>
 						</div>
 						<div className="text-base text-muted-foreground">
 							{getWorkspace.data?.description || ""}
 						</div>
 					</div>
-					<div className="flex-1" />
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="outline"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<EllipsisIcon />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuGroup>
-								<DropdownMenuItem asChild>
-									<Link to={`/agent/${workspaceId}/edit`}>
-										{t("workspace:actions.edit")}
-									</Link>
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={async (e) => {
-										e.stopPropagation();
-										setDeleteModal(true);
-										setIsLoading(true);
-										try {
-											await chat.deleteWorkspace(
-												workspaceId,
-											);
-
-											// go to the workspace
-											navigate("/agent");
-										} catch (e) {
-											toast.error(
-												e instanceof Error
-													? e.message
-													: t(
-															"workspace:detail.failedToDelete",
-														),
-											);
-										} finally {
-											setIsLoading(false);
-										}
-									}}
-								>
-									{t("workspace:actions.delete")}
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-					{/* <Button
-								variant="outline"
-							>
-								<PinIcon />
-							</Button> */}
 				</div>
 
 				<Tabs
@@ -235,29 +229,28 @@ export const WorkspaceDetailPage = observer(() => {
 							{t("workspace:actions.newChat")}
 						</Button>
 					</div>
-					<div className="flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl border border-border bg-card">
-						<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
-							<InputGroup className="bg-background">
-								<InputGroupInput
-									placeholder={t("common:buttons.search")}
-									value={search}
-									onChange={(e) => setSearch(e.target.value)}
-								/>
-								<InputGroupAddon>
-									<SearchIcon />
-								</InputGroupAddon>
-							</InputGroup>
-							{/* Tab-specific actions go here */}
-							{tab === "members" ? (
-								<Button
-									variant="outline"
-									onClick={() => setIsSharingModalOpen(true)}
-								>
-									<PlusIcon />
-									{t("workspace:sharing.title")}
-								</Button>
-							) : null}
-						</div>
+					<div
+						className={cn(
+							"flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl",
+							tab !== "members" && "border border-border bg-card",
+						)}
+					>
+						{tab === "members" ? null : (
+							<div className="flex w-full flex-row gap-2 border-border border-b bg-secondary p-4">
+								<InputGroup className="bg-background">
+									<InputGroupInput
+										placeholder={t("common:buttons.search")}
+										value={search}
+										onChange={(e) =>
+											setSearch(e.target.value)
+										}
+									/>
+									<InputGroupAddon>
+										<SearchIcon />
+									</InputGroupAddon>
+								</InputGroup>
+							</div>
+						)}
 
 						<TabsContent
 							value="chats"
@@ -296,26 +289,15 @@ export const WorkspaceDetailPage = observer(() => {
 						</TabsContent>
 						<TabsContent
 							value="members"
-							className="w-full overflow-hidden"
+							className="w-full overflow-hidden rounded-md"
 						>
 							{tab === "members" && (
-								<WorkspaceMembersList
-									workspaceId={workspaceId}
-									search={debouncedSearch}
-									paginationControl={pagination}
-									isSharingModalOpen={isSharingModalOpen}
-									onSharingModalClose={() =>
-										setIsSharingModalOpen(false)
-									}
+								<MembersTable
+									id={workspaceId}
+									type="WORKSPACE"
 								/>
 							)}
 						</TabsContent>
-
-						{tab === "members" && (
-							<div className="flex w-full flex-row items-center justify-end gap-2 border-border border-t bg-primary-foreground p-4">
-								<PaginationButtons {...pagination} />
-							</div>
-						)}
 					</div>
 				</Tabs>
 			</div>

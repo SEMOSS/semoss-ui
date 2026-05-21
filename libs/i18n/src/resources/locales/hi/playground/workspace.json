@@ -6,7 +6,8 @@
 		"descriptionLabel": "विवरण",
 		"instructionsLabel": "निर्देश",
 		"knowledgeLabel": "ज्ञान",
-		"toolboxLabel": "टूलबॉक्स"
+		"toolboxLabel": "टूलबॉक्स",
+		"promptsLabel": "प्रॉम्प्ट लाइब्रेरी"
 	},
 	"actions": {
 		"create": "बनाएं",
@@ -17,7 +18,6 @@
 		"newChat": "नई चैट"
 	},
 	"card": {
-		"noDescription": "कोई विवरण उपलब्ध नहीं",
 		"deleteConfirmTitle": "क्या आपको यकीन है?",
 		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।"
 	},
@@ -52,14 +52,6 @@
 	"mcp": {
 		"noToolboxes": "कोई टूलबॉक्स नहीं मिला",
 		"noKnowledge": "कोई ज्ञान लाइब्रेरी नहीं मिली",
-		"accessRequested": "पहुंच का अनुरोध किया गया",
-		"requestAccess": "पहुंच का अनुरोध करें",
-		"noAccess": "कोई पहुंच नहीं",
-		"requestAccessButton": "पहुंच का अनुरोध करें",
-		"noDescription": "कोई विवरण उपलब्ध नहीं।",
-		"tooltipNoAccess": "आपके पास इस {{type}} तक पहुंच नहीं है। कृपया मालिक से पहुंच का अनुरोध करें।",
-		"tooltipMissingDependencies": "आपके पास इस {{type}} की सभी निर्भरताओं तक पहुंच नहीं है, इसलिए कार्यक्षमता सीमित हो सकती है। अधिक जानकारी के लिए प्लेटफ़ॉर्म में खोलें।",
-		"tooltipOpen": "प्लेटफ़ॉर्म में इस {{type}} को खोलें",
 		"failedToLoad": "वर्कस्पेस संसाधन लोड करने में विफल",
 		"requestedSuccess": "{{name}} तक पहुंच का अनुरोध किया गया",
 		"requestedFailed": "पहुंच का अनुरोध करने में विफल"
@@ -114,5 +106,9 @@
 	"new": {
 		"title": "नया एजेंट",
 		"subtitle": "शुरू करने के लिए एक नया एजेंट बनाएं"
+	},
+	"prompts": {
+		"noPrompts": "कोई प्रॉम्प्ट नहीं मिला",
+		"searchPlaceholder": "प्रॉम्प्ट खोजें..."
 	}
 }

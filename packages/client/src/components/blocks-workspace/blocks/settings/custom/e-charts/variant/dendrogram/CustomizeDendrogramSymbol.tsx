@@ -3,89 +3,39 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import {
 	type BlockDef,
-	EchartVisualizationBlockConfig,
 	type EchartVisualizationBlockDef,
 	getValueByPath,
-	PathValue,
-	useBlocksPixel,
-	useFrameHeaders,
 } from "@semoss/renderer";
 import {
-	Button,
-	Menu,
+	Input,
 	Select,
-	styled,
-	TextField,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
-
-const StyledMainContainer = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "0.5rem",
-}));
-
-const StyledSubSection = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "0.5rem",
-	marginLeft: "2px",
-}));
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 export const CustomizeDendrogramSymbol = observer(
-	<D extends BlockDef = BlockDef>({ id }: { id: string }) => {
+	<_D extends BlockDef = BlockDef>({ id }: { id: string }) => {
 		const { data, setData } =
 			useBlockSettings<EchartVisualizationBlockDef>(id);
-		const [customizeSymbolUpdated, setCustomizeSymbolUpdated] =
-			useState(false);
 		const [customizeSymbol, setCustomizeSymbol] = useState({
 			symbolShape: "circle",
 			symbolSize: 12,
 			symbolUrl: "",
 		});
 		const symbolData = [
-			{
-				label: "Circle",
-				value: "circle",
-			},
-			{
-				label: "Rectangle",
-				value: "rect",
-			},
-			{
-				label: "Round Rectagle",
-				value: "roundRect",
-			},
-			{
-				label: "Triangle",
-				value: "triangle",
-			},
-			{
-				label: "Arrow",
-				value: "arrow",
-			},
-			{
-				label: "Pin",
-				value: "pin",
-			},
-			{
-				label: "Diamond",
-				value: "diamond",
-			},
-			{
-				label: "None",
-				value: "none",
-			},
+			{ label: "Circle", value: "circle" },
+			{ label: "Rectangle", value: "rect" },
+			{ label: "Round Rectagle", value: "roundRect" },
+			{ label: "Triangle", value: "triangle" },
+			{ label: "Arrow", value: "arrow" },
+			{ label: "Pin", value: "pin" },
+			{ label: "Diamond", value: "diamond" },
+			{ label: "None", value: "none" },
 		];
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const computedValue = useMemo(() => {
 			return computed(() => {
 				if (!data) {
@@ -100,49 +50,43 @@ export const CustomizeDendrogramSymbol = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, "option"]).get();
-
-		function updateFields(fieldToUpdate, fieldUpdatedValue) {
-			setCustomizeSymbolUpdated(false);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function updateFields(fieldToUpdate: string, fieldUpdatedValue: any) {
 			setCustomizeSymbol({
 				...customizeSymbol,
 				[fieldToUpdate]: fieldUpdatedValue,
 			});
 		}
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const jsonData = JSON.parse(computedValue);
-			const seriesIndex = jsonData["series"].findIndex((item) => {
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			const seriesIndex = jsonData.series.findIndex((item: any) => {
 				return item.type === "tree";
 			});
-			const customizeSymbolList = customizeSymbol;
-			customizeSymbolList["symbolShape"] =
-				jsonData["series"][seriesIndex]["symbol"];
-			customizeSymbolList["symbolSize"] =
-				jsonData["series"][seriesIndex]["symbolSize"];
-			customizeSymbolList["symbolUrl"] =
-				jsonData["series"][seriesIndex]["symbol"];
-			setCustomizeSymbol((prevCustomizeList) => {
-				return {
-					...customizeSymbolList,
-				};
+			setCustomizeSymbol({
+				symbolShape: jsonData.series[seriesIndex].symbol,
+				symbolSize: jsonData.series[seriesIndex].symbolSize,
+				symbolUrl: jsonData.series[seriesIndex].symbol,
 			});
 		}, []);
-
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			const jsonData = JSON.parse(computedValue);
-			const seriesIndex = jsonData["series"].findIndex((item) => {
+			// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+			const seriesIndex = jsonData.series.findIndex((item: any) => {
 				return item.type === "tree";
 			});
-			jsonData["series"][seriesIndex] = {
-				...jsonData["series"][seriesIndex],
-				["symbol"]: customizeSymbol.symbolShape,
-				["symbolSize"]: customizeSymbol.symbolSize,
-				["symbolUrl"]: customizeSymbol.symbolUrl,
+			jsonData.series[seriesIndex] = {
+				...jsonData.series[seriesIndex],
+				symbol: customizeSymbol.symbolShape,
+				symbolSize: customizeSymbol.symbolSize,
+				symbolUrl: customizeSymbol.symbolUrl,
 			};
 			runStateUpdateCustom(jsonData);
 		}, [customizeSymbol]);
-
-		function runStateUpdateCustom(option) {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function runStateUpdateCustom(option: any) {
 			setTimeout(() => {
 				try {
 					setData("option", option);
@@ -151,65 +95,58 @@ export const CustomizeDendrogramSymbol = observer(
 				}
 			}, 300);
 		}
-		function resetToInitialState() {
-			setCustomizeSymbol((prevCustomizeList) => {
-				return {
-					symbolShape: "circle",
-					symbolSize: 12,
-					symbolUrl: "",
-				};
+
+		function _resetToInitialState() {
+			setCustomizeSymbol({
+				symbolShape: "circle",
+				symbolSize: 12,
+				symbolUrl: "",
 			});
-			setCustomizeSymbolUpdated(false);
 		}
+
 		return (
-			<StyledMainContainer>
-				<StyledSubSection display="flex" justifyContent="space-around">
-					<Typography variant="body2">Symbol Shape</Typography>
+			<div className="flex flex-col p-2">
+				<div className="flex flex-col gap-2 p-2">
+					<span className="text-muted-foreground text-sm">
+						Symbol Shape
+					</span>
 					<Select
-						name="Symbol Shape"
 						value={customizeSymbol.symbolShape}
-						key={customizeSymbol.symbolShape}
-						onChange={(e) => {
-							updateFields("symbolShape", e.target.value);
-						}}
-						size="small"
+						onValueChange={(val) =>
+							updateFields("symbolShape", val)
+						}
 					>
-						{symbolData.length > 0 &&
-							symbolData.map((item, index) => {
-								return (
-									<Menu.Item value={item.value} key={index}>
-										{item.label}
-									</Menu.Item>
-								);
-							})}
+						<SelectTrigger className="w-full">
+							<SelectValue placeholder="Select" />
+						</SelectTrigger>
+						<SelectContent>
+							{symbolData.map((item, index) => (
+								// biome-ignore lint/suspicious/noArrayIndexKey: no stable key available
+								<SelectItem key={index} value={item.value}>
+									{item.label}
+								</SelectItem>
+							))}
+						</SelectContent>
 					</Select>
-				</StyledSubSection>
-				<StyledSubSection display="flex" justifyContent="space-around">
-					<Typography variant="body2">Symbol Size</Typography>
-					<TextField
+				</div>
+				<div className="flex flex-col gap-2 p-2">
+					<span className="text-muted-foreground text-sm">
+						Symbol Size
+					</span>
+					{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id */}
+					<Input
 						id="Symbol Size"
-						size="small"
 						type="number"
 						value={customizeSymbol.symbolSize}
-						onChange={(e) => {
-							updateFields("symbolSize", e.target.value);
-						}}
+						onChange={(_e) =>
+							updateFields("symbolSize", _e.target.value)
+						}
 					/>
-				</StyledSubSection>
-				<StyledSubSection
-					display="flex"
-					justifyContent="end"
-					style={{ flexDirection: "row" }}
-				>
-					<Button
-						color="primary"
-						variant="contained"
-						onClick={resetToInitialState}
-					>
-						Reset
-					</Button>
-				</StyledSubSection>
-			</StyledMainContainer>
+				</div>
+				<div className="flex justify-end p-2">
+					<Button onClick={_resetToInitialState}>Reset</Button>
+				</div>
+			</div>
 		);
 	},
 );

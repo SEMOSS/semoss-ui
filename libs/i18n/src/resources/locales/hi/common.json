@@ -25,7 +25,8 @@
 		"updateInstructions": "निर्देश अपडेट करें",
 		"updateTokenLength": "टोकन लंबाई अपडेट करें",
 		"uploadFiles": "फ़ाइलें अपलोड करें",
-		"search": "खोजें..."
+		"search": "खोजें...",
+		"enterPromptLibraryTag": "प्रॉम्प्ट लाइब्रेरी टैग दर्ज करें"
 	},
 	"actions": {
 		"addKnowledge": "ज्ञान जोड़ें",

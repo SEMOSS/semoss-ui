@@ -1,16 +1,35 @@
 export interface Engine {
-	app_id: string;
-	app_name: string;
-	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_display_name?: string;
+	engine_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
+	engine_subtype?: string;
+	engine_favorite?: number;
+	engine_global?: boolean;
+	engine_discoverable?: boolean;
+	engine_user_permission?: number;
+	engine_group_permission?: number;
+	engine_date_created?: string;
+	engine_cost?: string;
+	low_engine_name?: string;
 	description?: string;
+
+	/** @deprecated legacy keys from MyEngines */
+	app_id?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_name?: string;
+	/** @deprecated legacy keys from MyEngines */
+	app_type?: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION" | "VECTOR";
 }
 
 export interface App {
 	project_id: string;
 	project_name: string;
+	project_display_name?: string;
 	description?: string;
 	project_date_created: string;
 	project_type: string;
+	user_permission: number;
 }
 
 export interface Workspace {
@@ -20,6 +39,7 @@ export interface Workspace {
 	description: string;
 	system_prompt: string;
 	mcp: MCPConfig[];
+	prompts: string[];
 }
 
 /**
@@ -46,11 +66,16 @@ export interface MCP {
 	/** Name of the mcp */
 	name: string;
 
+	/** Engine subtype (e.g. POSTGRES, OPEN_AI) — used to pick the avatar icon */
+	subtype?: string;
+
 	/** Description of the mcp */
-	description: string;
+	description?: string;
 
 	/** Tags of the mcp */
 	tags: string[];
+
+	permission: "READ_ONLY" | "EDIT" | "OWNER";
 }
 
 export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
@@ -62,14 +87,15 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
  * Item from the prompt library
  */
 export interface Prompt {
-	ID: string;
-	CREATED_BY: string;
-	DATE_CREATED: string;
-	VERSION: number;
-	INTENT: string;
-	TITLE: string;
-	CONTEXT: string;
+	id: string;
+	createdBy: string;
+	dateCreated: string;
+	version: number;
+	intent: string;
+	title: string;
+	context: string;
 	tags: string[];
+	global: boolean;
 }
 
 /**
@@ -101,6 +127,7 @@ export interface AbstractPixelMessage {
 
 export interface InputPixelMessage extends AbstractPixelMessage {
 	io: "INPUT";
+	type: "INPUT_TEXT" | "INPUT_TOOL_EXEC";
 	parts: (
 		| PixelMessageTextPart
 		| PixelMessageMediaPart
@@ -115,6 +142,7 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		| PixelMessageThinkingPart
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
+		| PixelMessageToolResultPart
 	)[];
 	ornaments: {
 		modelName?: string;
@@ -143,12 +171,12 @@ export interface PixelMessageTextPart {
 export interface PixelMessageMediaPart {
 	type: "MEDIA";
 	mediaInfo: {
-		base64Data: string;
-		fileFormat: string;
+		base64Data?: string;
+		fileFormat?: string;
 		fileName: string;
-		fileLocation: string;
+		fileLocation?: string;
 		mediaInputType: "FILE";
-		mimeType: string;
+		mimeType?: string;
 	};
 }
 
@@ -163,6 +191,10 @@ export interface PixelMessageToolCallPart {
 		original_name: string;
 		title: string;
 		description: string;
+		// Set by the backend when the model provider executed the tool itself
+		// (e.g. web_search). Server tools lack the MCP `_meta`
+		// block and their TOOL_RESULT lands in the same response message.
+		server_tool?: boolean;
 		_meta: {
 			SMSS_ENGINE_NAME: string;
 			SMSS_ENGINE_ID: string;
@@ -174,6 +206,7 @@ export interface PixelMessageToolCallPart {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
+				autoOpen?: boolean;
 			};
 		};
 	};
@@ -186,7 +219,7 @@ export interface PixelMessageToolResultPart {
 		toolName: string;
 		output: string;
 		toolParameterValues: Record<string, unknown>;
-		toolStatus: "success" | "error" | "cancelled";
+		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
 }
 
@@ -263,6 +296,7 @@ export interface MCPTool {
 			loadingMessage?: string;
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
+			autoOpen?: boolean;
 		};
 	};
 }
@@ -285,4 +319,26 @@ export interface User {
 	id: string;
 	type: string;
 	email: string;
+}
+
+export interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
+	access_permission?: number; // The permission level the user has requested, if any
+	tags?: string; // comma separated tags
+	can_view_dependencies?: boolean;
+	engine_date_created?: string;
+	dependencies?: string[]; // Array of dependency engine IDs
 }

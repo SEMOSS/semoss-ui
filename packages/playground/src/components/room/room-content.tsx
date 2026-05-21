@@ -22,19 +22,15 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
-	RoomContextChart,
 	RoomInput,
 	RoomInputMenuFileExplorer,
-	RoomInputMenuKnowledge,
-	RoomInputMenuToolbox,
+	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
-import { useChat } from "@/hooks";
+import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomSuggestions } from "./room-suggestions";
-
-const ENABLE_SUGGESTIONS = import.meta.env.VITE_ENABLE_SUGGESTIONS === "true";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
 const SCROLL_THRESHOLD = 150;
@@ -50,9 +46,9 @@ interface RoomContentProps {
 export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { chat } = useChat();
 	const { t } = useTranslation("room");
+	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
-
 	const [contentHeight, setContentHeight] = useState(0);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
@@ -68,15 +64,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		// ask the room
 		await room.askMessage(prompt, files);
 
+		// re-sync room options from backend after message completes,
+		// preserving workspace MCPs that are only held in memory
+		await room.syncRoomOptions();
+
 		return true;
 	};
 
 	/**
-	 * Handle tool selection
+	 * Handle tool add (add-only for slash menu)
 	 * @param tool - selected tool
 	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
+	const handleToolAdd = (tool: MCPConfig) => {
+		// Add tool to options (skip if already present)
 		const tools = room.options.mcp.reduce(
 			(acc, curr) => {
 				acc[curr.id] = curr;
@@ -85,9 +85,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			{} as Record<string, typeof tool>,
 		);
 
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
-		} else {
+		// Only add if not already present
+		if (!Object.hasOwn(tools, tool.id)) {
 			tools[tool.id] = tool;
 		}
 
@@ -174,7 +173,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tool.id,
 					tool.response,
 					tool.tool_status,
-					tool.executedParameters,
+					tool.executedParameters ?? {},
 				);
 			} catch {
 				// noop
@@ -188,24 +187,29 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [room]);
 
-	/**
-	 * Auto-scroll when dependency changes (new messages added)
-	 */
+	// Initial scroll to bottom when scroll element is first available
+	useEffect(() => {
+		if (!scrollEle) {
+			return;
+		}
+
+		setIsScrollLocked(false);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle]);
+
+	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
+	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
 			return;
 		}
 
-		const timeout = setTimeout(() => {
-			const animationFrame = requestAnimationFrame(() => {
-				scrollToTarget(contentHeight);
-			});
-
-			return () => cancelAnimationFrame(animationFrame);
-		}, 100); // ~100ms delay to allow for rendering
-
-		return () => clearTimeout(timeout);
-	}, [scrollEle, scrollToTarget, isScrollLocked, contentHeight]);
+		requestAnimationFrame(() => {
+			scrollEle.scrollTop = scrollEle.scrollHeight;
+		});
+	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
 
 	/**
 	 * Set up scroll event listener
@@ -262,8 +266,39 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		};
 	}, [contentEle]);
 
+	/**
+	 * Constants
+	 */
+	const isAutoExecutingTools = ((): boolean => {
+		// Check the latest response message for auto-executing tools
+		if (!room.latestResponseMessage) {
+			return false;
+		}
+
+		for (const part of room.latestResponseMessage.parts) {
+			if (
+				part.type === "TOOL_CALL" &&
+				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
+			) {
+				const tool = room.getTool(part.toolCall.id);
+				if (
+					tool &&
+					(tool.status === "INITIAL" || tool.status === "LOADING")
+				) {
+					return true;
+				}
+			}
+		}
+		return false;
+	})();
+
+	const showLoadingState =
+		room.isLoading ||
+		room.latestResponseMessage.isThinking ||
+		isAutoExecutingTools;
+
 	return (
-		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
+		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full overflow-hidden"
@@ -276,7 +311,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							setContentEle(ele);
 						}}
 					>
-						<div className="mx-auto flex w-full max-w-4xl flex-col gap-4 px-4 py-6 sm:gap-6">
+						<div className="mx-auto flex w-full max-w-[1120px] flex-col gap-2 px-4 py-6 sm:px-8 lg:px-16">
 							{room.history.map((m, mIdx) => {
 								if (!m.visible) {
 									return null;
@@ -317,18 +352,17 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									</React.Fragment>
 								);
 							})}
-							{ENABLE_SUGGESTIONS && (
+							{room.theme.featureFlags?.enableSuggestions && (
 								<RoomSuggestions room={room} />
 							)}
 						</div>
 						{room.error ? (
-							<div className="mx-auto flex w-screen max-w-4xl items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
+							<div className="mx-auto flex w-screen max-w-[1120px] items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/5 p-3 text-destructive text-sm shadow-sm">
 								<div className="flex h-10 w-10 items-center justify-center rounded-full">
 									<TriangleAlertIcon className="h-6 w-6" />
 								</div>
 								<span>
-									{room.error.message ||
-										t("content.errorDefault")}
+									{getGracefulErrorMessage(room.error)}
 								</span>
 							</div>
 						) : null}
@@ -379,40 +413,54 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					</Tooltip>
 				)}
 			</div>
-			<div className="mx-auto w-full max-w-4xl shrink-0 p-4">
+			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
 				<RoomInput
+					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"
-					isLoading={room.isLoading}
+					isLoading={showLoadingState}
+					hidePauseButton={!room.numberOfTools}
 					model={room.model}
+					room={room}
 					setModel={(model) => {
 						room.setModel(model);
 						chat.setSelectedModel(model);
 					}}
+					options={room.options}
+					onMcpSelect={handleToolAdd}
+					onMcpChange={(mcp) =>
+						room.setOptions({
+							...room.options,
+							mcp,
+						})
+					}
 					MenuComponent={observer(
-						({ addToken, onOpenChange, fileRef }) => (
+						({ onOpenChange, fileRef, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
 									fileRef={fileRef}
 									onSelect={() => onOpenChange(false)}
 								/>
+								<DropdownMenuSeparator />
+								<RoomInputMenuMCP
+									type="KNOWLEDGE"
+									options={room.options}
+									onSelect={() => {
+										onOpenMcpOverlay("KNOWLEDGE");
+										onOpenChange(false);
+									}}
+								/>
+								<RoomInputMenuMCP
+									type="TOOLBOX"
+									options={room.options}
+									onSelect={() => {
+										onOpenMcpOverlay("TOOLBOX");
+										onOpenChange(false);
+									}}
+								/>
+								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
 									room={room}
 									onSelect={() => onOpenChange(false)}
-								/>
-								<DropdownMenuSeparator />
-								<RoomInputMenuKnowledge
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
-								/>
-								<RoomInputMenuToolbox
-									options={room.options}
-									onSelect={(tool) => {
-										handleToolSelect(tool);
-										addToken(`<${tool.name}>`);
-									}}
 								/>
 								<DropdownMenuItem
 									onSelect={(e) => {
@@ -441,13 +489,15 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						),
 					)}
 					onPrompt={handlePrompt}
-					hasOutstandingTools={room.hasUnfinishedTools}
-					footer={
-						<RoomContextChart
-							tokensUsed={room.tokensUsed}
-							tokensMax={chat.models.contextWindow}
-						/>
+					hasOutstandingTools={
+						room.latestResponseMessage.hasUnfinishedTools
 					}
+					hasToolsPaused={room.latestResponseMessage.isPaused}
+					toggleToolsPaused={
+						room.latestResponseMessage.toggleIsPaused
+					}
+					tokensUsed={room.tokensUsed}
+					tokensMax={chat.models.contextWindow}
 				/>
 			</div>
 		</div>

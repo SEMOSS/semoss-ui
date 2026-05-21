@@ -1,4 +1,4 @@
-import { FileCopyOutlined } from "@mui/icons-material";
+import { Copy } from "lucide-react";
 import type { CSSProperties } from "react";
 import {
 	BorderSettings,
@@ -26,7 +26,7 @@ export const DefaultStyles: CSSProperties = {
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: FileCopyOutlined,
+	icon: Copy,
 	contentMenu: [
 		{
 			name: "General",

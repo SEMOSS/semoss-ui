@@ -1,14 +1,13 @@
-import { Ellipsis, SquarePen } from "lucide-react";
+import { PencilIcon, SquarePen, Trash2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	Card,
 	CardContent,
 	CardDescription,
-	CardHeader,
 	CardTitle,
 	Dialog,
 	DialogContent,
@@ -16,11 +15,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
 import { useRoot } from "@/hooks";
@@ -50,64 +47,27 @@ export const WorkspaceCard = observer(
 		return (
 			<>
 				<Card
-					className="cursor-pointer gap-0 bg-background p-0"
+					className="cursor-pointer gap-0 bg-card p-0"
 					onClick={() => {
 						navigate(`/agent/${workspace.workspace_id}`);
 					}}
 				>
-					<CardContent className="flex flex-col gap-4 p-6">
-						<div className="flex justify-between">
-							<div className="text-4xl">
-								<img
-									className="flex h-10 select-none flex-row items-center"
-									alt="logo"
-									src={root.theme?.images.logo || logoImage}
-								/>
-							</div>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										onClick={(e) => e.stopPropagation()}
-									>
-										<Ellipsis />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuGroup>
-										<DropdownMenuItem
-											onClick={(e) => {
-												e.stopPropagation();
-											}}
-											asChild
-										>
-											<Link
-												to={`/agent/${workspace.workspace_id}/edit`}
-											>
-												{t("workspace:actions.edit")}
-											</Link>
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={(e) => {
-												e.stopPropagation();
-												setDeleteModal(true);
-											}}
-										>
-											{t("workspace:actions.delete")}
-										</DropdownMenuItem>
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</div>
-						<CardHeader className="gap-1.5 p-0">
-							<CardTitle className="truncate leading-normal">
+					<CardContent className="flex flex-col gap-2 p-6">
+						<div className="flex min-w-0 items-center gap-3">
+							<img
+								className="size-8 shrink-0 select-none dark:brightness-0 dark:invert"
+								alt="logo"
+								src={root.theme?.images.logo || logoImage}
+							/>
+							<CardTitle className="line-clamp-2 min-w-0 flex-1 leading-normal">
 								{workspace.name}
 							</CardTitle>
+						</div>
+						{workspace.description && (
 							<CardDescription className="truncate">
-								{workspace.description ||
-									t("workspace:card.noDescription")}
+								{workspace.description}
 							</CardDescription>
-						</CardHeader>
+						)}
 					</CardContent>
 
 					<hr
@@ -117,7 +77,7 @@ export const WorkspaceCard = observer(
 						}}
 					/>
 
-					<CardContent className="px-6 py-4">
+					<CardContent className="flex flex-nowrap items-center gap-2 rounded-b-xl px-6 py-4 dark:bg-secondary">
 						<Button
 							size="sm"
 							onClick={(e) => {
@@ -127,10 +87,55 @@ export const WorkspaceCard = observer(
 								);
 							}}
 							variant="outline"
+							className="min-w-0 shrink"
 						>
-							<SquarePen />
-							{t("workspace:actions.newChat")}
+							<SquarePen className="shrink-0" />
+							<span className="truncate">
+								{t("workspace:actions.newChat")}
+							</span>
 						</Button>
+						<div className="-mr-2 ml-auto flex shrink-0 items-center gap-0">
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										aria-label={t("workspace:actions.edit")}
+										onClick={(e) => {
+											e.stopPropagation();
+											navigate(
+												`/agent/${workspace.workspace_id}/edit`,
+											);
+										}}
+									>
+										<PencilIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("workspace:actions.edit")}
+								</TooltipContent>
+							</Tooltip>
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										aria-label={t(
+											"workspace:actions.delete",
+										)}
+										onClick={(e) => {
+											e.stopPropagation();
+											setDeleteModal(true);
+										}}
+									>
+										<Trash2Icon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("workspace:actions.delete")}
+								</TooltipContent>
+							</Tooltip>
+						</div>
 					</CardContent>
 				</Card>
 				<Dialog open={deleteModal} onOpenChange={setDeleteModal}>

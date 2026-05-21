@@ -1,19 +1,24 @@
-import { Close, FileCopyOutlined, OpenInNew } from "@mui/icons-material";
+import { Copy, ExternalLink, X } from "lucide-react";
 import { type CSSProperties, useState } from "react";
 import {
-	Divider,
+	Button,
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
 	darkTheme,
-	IconButton,
 	lightTheme,
-	Menu,
-	Modal,
 	Select,
-	Stack,
-	styled,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+	Separator,
 	Tabs,
-	Typography,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+	TabsList,
+	TabsTrigger,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import {
 	BaseSettingSection,
 	ColorSettings,
@@ -31,18 +36,6 @@ export const DefaultStyles: CSSProperties = {
 	fontFamily: "roboto",
 };
 
-const StyledModalHeader = styled(Stack)(({ theme }) => ({
-	padding: theme.spacing(2),
-	flexDirection: "row",
-	justifyContent: "space-between",
-	alignItems: "center",
-}));
-
-const StyledTabBox = styled(Stack)(({ theme }) => ({
-	borderRadius: "12px",
-	backgroundColor: theme.palette.background.paper,
-}));
-
 const capitalize = (s) => {
 	return String(s[0]).toUpperCase() + String(s).slice(1);
 };
@@ -50,7 +43,7 @@ const capitalize = (s) => {
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_THEME,
-	icon: FileCopyOutlined,
+	icon: Copy,
 	contentMenu: [
 		{
 			name: "Theme Type",
@@ -80,20 +73,24 @@ export const config: BlockSettingsConfig = {
 						};
 						return (
 							<Select
-								fullWidth
-								size="small"
 								value={themeType}
-								onChange={(e) => {
-									onChange(e.target.value);
+								onValueChange={(value) => {
+									onChange(value);
 								}}
 							>
-								{Array.from(options, (option, i) => {
-									return (
-										<Menu.Item key={i} value={option.value}>
+								<SelectTrigger className="w-full">
+									<SelectValue />
+								</SelectTrigger>
+								<SelectContent>
+									{options.map((option) => (
+										<SelectItem
+											key={option.value}
+											value={option.value}
+										>
 											{option.display}
-										</Menu.Item>
-									);
-								})}
+										</SelectItem>
+									))}
+								</SelectContent>
 							</Select>
 						);
 					},
@@ -116,62 +113,62 @@ export const config: BlockSettingsConfig = {
 						const secondTabSet = ["warning", "info", "success"];
 						const variants = ["main", "dark", "light"];
 						return (
-							<StyledTabBox gap={2}>
+							<div className="flex flex-col gap-2 rounded-xl bg-background">
 								<Tabs
 									value={selectedFirstTab}
-									onChange={(_, value: string) => {
+									onValueChange={(value) => {
 										setSelectedFirstTab(value);
 									}}
-									color="primary"
 								>
-									{firstTabSet.map((key, idx: number) => (
-										<Tabs.Item
-											key={`${key}-${idx}`}
-											label={capitalize(key)}
-											value={key}
-										/>
-									))}
+									<TabsList>
+										{firstTabSet.map(
+											(key, _idx: number) => (
+												<TabsTrigger
+													key={key}
+													value={key}
+												>
+													{capitalize(key)}
+												</TabsTrigger>
+											),
+										)}
+									</TabsList>
 								</Tabs>
-								<>
-									{variants.map((variant, idx: number) => (
-										<ColorSettings
-											key={`${variant}-${idx}`}
-											id={id}
-											label={`${capitalize(
-												variant,
-											)} Color`}
-											path={`theme.palette.${selectedFirstTab}.${variant}`}
-										/>
-									))}
-								</>
+								{variants.map((variant, _idx: number) => (
+									<ColorSettings
+										key={variant}
+										id={id}
+										label={`${capitalize(variant)} Color`}
+										path={`theme.palette.${selectedFirstTab}.${variant}`}
+									/>
+								))}
 								<Tabs
 									value={selectedSecondtTab}
-									onChange={(_, value: string) => {
+									onValueChange={(value) => {
 										setSelectedSecondTab(value);
 									}}
-									color="primary"
 								>
-									{secondTabSet.map((key, idx: number) => (
-										<Tabs.Item
-											key={`${key}-${idx}`}
-											label={capitalize(key)}
-											value={key}
-										/>
-									))}
+									<TabsList>
+										{secondTabSet.map(
+											(key, _idx: number) => (
+												<TabsTrigger
+													key={key}
+													value={key}
+												>
+													{capitalize(key)}
+												</TabsTrigger>
+											),
+										)}
+									</TabsList>
 								</Tabs>
-								<>
-									{variants.map((variant, idx: number) => (
-										<ColorSettings
-											key={`${variant}-${idx}`}
-											id={id}
-											label={`${capitalize(
-												variant,
-											)} Color`}
-											path={`theme.palette.${selectedSecondtTab}.${variant}`}
-										/>
-									))}
-								</>
-							</StyledTabBox>
+								{variants.map((variant, _idx: number) => (
+									<ColorSettings
+										key={variant}
+										id={id}
+										label={`${capitalize(variant)} Color`}
+										path={`theme.palette.${selectedSecondtTab}.${variant}`}
+									/>
+								))}
+							</div>
 						);
 					},
 				},
@@ -194,55 +191,49 @@ export const config: BlockSettingsConfig = {
 							"main",
 						];
 						return (
-							<StyledTabBox gap={2}>
+							<div className="flex flex-col gap-2 rounded-xl bg-background">
 								<Tabs
 									value={selectedFirstTab}
-									onChange={(_, value: string) => {
+									onValueChange={(value) => {
 										setSelectedFirstTab(value);
 									}}
-									color="primary"
 								>
-									{firstTabSet.map((key, idx: number) => (
-										<Tabs.Item
-											key={`${key}-${idx}`}
-											label={capitalize(key)}
-											value={key}
-										/>
-									))}
+									<TabsList>
+										{firstTabSet.map(
+											(key, _idx: number) => (
+												<TabsTrigger
+													key={key}
+													value={key}
+												>
+													{capitalize(key)}
+												</TabsTrigger>
+											),
+										)}
+									</TabsList>
 								</Tabs>
-								{selectedFirstTab == "background" && (
-									<>
-										{paperVariants.map(
-											(variant, idx: number) => (
-												<ColorSettings
-													key={`${variant}-${idx}`}
-													id={id}
-													label={`${capitalize(
-														variant,
-													)} Color`}
-													path={`theme.palette.${selectedFirstTab}.${variant}`}
-												/>
-											),
-										)}
-									</>
-								)}
-								{selectedFirstTab == "text" && (
-									<>
-										{textVariants.map(
-											(variant, idx: number) => (
-												<ColorSettings
-													key={`${variant}-${idx}`}
-													id={id}
-													label={`${capitalize(
-														variant,
-													)} Color`}
-													path={`theme.palette.${selectedFirstTab}.${variant}`}
-												/>
-											),
-										)}
-									</>
-								)}
-							</StyledTabBox>
+								{selectedFirstTab === "background" &&
+									paperVariants.map(
+										(variant, _idx: number) => (
+											<ColorSettings
+												key={variant}
+												id={id}
+												label={`${capitalize(variant)} Color`}
+												path={`theme.palette.${selectedFirstTab}.${variant}`}
+											/>
+										),
+									)}
+								{selectedFirstTab === "text" &&
+									textVariants.map(
+										(variant, _idx: number) => (
+											<ColorSettings
+												key={variant}
+												id={id}
+												label={`${capitalize(variant)} Color`}
+												path={`theme.palette.${selectedFirstTab}.${variant}`}
+											/>
+										),
+									)}
+							</div>
 						);
 					},
 				},
@@ -264,42 +255,54 @@ export const config: BlockSettingsConfig = {
 			],
 		},
 		{
-			name: "MUI Theme Editor",
+			name: "Theme Editor",
 			children: [
 				{
-					description: "Edit MUI Theme",
+					description: "Edit Theme",
 					render: ({ id }) => {
 						const [open, setOpen] = useState(false);
 						return (
 							<>
-								<BaseSettingSection label={"Edit MUI Theme"}>
-									<IconButton
-										size="small"
+								<BaseSettingSection label={"Edit Theme"}>
+									<Button
+										variant="ghost"
+										size="icon-sm"
 										onClick={() => setOpen(true)}
 										disabled={false}
 									>
-										<OpenInNew />
-									</IconButton>
+										<ExternalLink className="size-4" />
+									</Button>
 								</BaseSettingSection>
-								<Modal open={open} fullWidth maxWidth={"lg"}>
-									<StyledModalHeader>
-										<Typography variant="h5">{`Edit MUI theme`}</Typography>
-										<IconButton
-											onClick={() => setOpen(false)}
-										>
-											<Close />
-										</IconButton>
-									</StyledModalHeader>
-									<Divider />
-									<Modal.Content>
+								<Dialog
+									open={open}
+									onOpenChange={(o) => setOpen(o)}
+								>
+									<DialogContent className="max-w-4xl">
+										<DialogHeader>
+											<div className="flex flex-row items-center justify-between">
+												<DialogTitle>
+													Edit Theme
+												</DialogTitle>
+												<Button
+													variant="ghost"
+													size="icon-sm"
+													onClick={() =>
+														setOpen(false)
+													}
+												>
+													<X className="size-4" />
+												</Button>
+											</div>
+										</DialogHeader>
+										<Separator />
 										<JsonSettings
 											id={id}
 											path="theme"
 											height="500px"
 											callback={() => setOpen(false)}
 										/>
-									</Modal.Content>
-								</Modal>
+									</DialogContent>
+								</Dialog>
 							</>
 						);
 					},

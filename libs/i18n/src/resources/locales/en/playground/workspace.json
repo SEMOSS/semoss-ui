@@ -6,7 +6,8 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox"
+		"toolboxLabel": "Toolboxes",
+		"promptsLabel": "Prompt Library"
 	},
 	"actions": {
 		"create": "Create",
@@ -17,7 +18,6 @@
 		"newChat": "New Chat"
 	},
 	"card": {
-		"noDescription": "No description available",
 		"deleteConfirmTitle": "Are you sure?",
 		"deleteConfirmDescription": "This action is irreversible. This will permanently delete the {{name}} workspace."
 	},
@@ -52,14 +52,6 @@
 	"mcp": {
 		"noToolboxes": "No toolboxes found",
 		"noKnowledge": "No knowledge libraries found",
-		"accessRequested": "Access requested",
-		"requestAccess": "Request access",
-		"noAccess": "No access",
-		"requestAccessButton": "Request Access",
-		"noDescription": "No description available.",
-		"tooltipNoAccess": "You don't have access to this {{type}}. Please request access from the owner.",
-		"tooltipMissingDependencies": "You don't have access to all dependencies of this {{type}}, so functionality may be limited. Open in the platform for more information.",
-		"tooltipOpen": "Open this {{type}} in the platform",
 		"failedToLoad": "Failed to load workspace resources",
 		"requestedSuccess": "Requested access to {{name}}",
 		"requestedFailed": "Failed to request access"
@@ -98,7 +90,7 @@
 		"tabs": {
 			"myChats": "My Chats",
 			"knowledge": "Knowledge",
-			"toolbox": "Toolbox",
+			"toolbox": "Toolboxes",
 			"members": "Members"
 		},
 		"failedToDelete": "Failed to delete agent",
@@ -114,5 +106,9 @@
 	"new": {
 		"title": "New Agent",
 		"subtitle": "Create a new agent to get started"
+	},
+	"prompts": {
+		"noPrompts": "No prompts found",
+		"searchPlaceholder": "Search prompts..."
 	}
 }

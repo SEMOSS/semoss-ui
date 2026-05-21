@@ -1,10 +1,11 @@
 import { ExternalLinkIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Env, useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import type { App } from "@semoss/shared";
+import { buildInitials, getAppCatalogAvatarStyle } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
+import { useNavigate } from "@/hooks/useNavigate";
 
-const LIMIT = 3;
+const LIMIT = 5;
 
 interface PlatformSearchAppProps {
 	/** Name of the group */
@@ -56,10 +57,17 @@ export const PlatformSearchApp = ({
 	return (
 		<CommandGroup heading={name}>
 			{getApps.data.map((app) => {
+				const appName =
+					(app as App & { project_display_name?: string })
+						.project_display_name || app.project_name;
+				const initials = buildInitials(appName || "App");
+				const avatarStyle = getAppCatalogAvatarStyle(appName || "App");
+
 				return (
 					<CommandItem
 						key={app.project_id}
 						value={app.project_id}
+						className="group rounded-md px-2 py-2.5"
 						onSelect={() => {
 							// manually navigate since it doesn't propagate with a link
 							navigate(`/app/${app.project_id}/view`);
@@ -68,21 +76,27 @@ export const PlatformSearchApp = ({
 							onSelect(app);
 						}}
 					>
-						<img
-							src={`${Env.MODULE}/api/project-${app.project_id}/projectImage/download`}
-							alt={`${app.project_name} icon`}
-							className="size-8 object-contain"
-						/>
+						<div
+							className="flex size-8 shrink-0 items-center justify-center rounded-md font-semibold text-[11px]"
+							style={avatarStyle}
+						>
+							{initials}
+						</div>
 						<div className="flex flex-1 flex-col truncate">
-							<span>{app.project_name}</span>
+							<span className="truncate font-medium text-sm">
+								{appName}
+							</span>
+							<span className="truncate text-[11px] text-muted-foreground">
+								{app.project_id}
+							</span>
 							{app.description && (
-								<span className="text-muted-foreground text-xs">
+								<span className="line-clamp-1 text-[11px] text-muted-foreground">
 									{app.description}
 								</span>
 							)}
 						</div>
 						<a
-							className=""
+							className="rounded-sm p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
 							target="_blank"
 							href={`./#/app/${app.project_id}/view`}
 							onClick={(e) => {
@@ -104,7 +118,7 @@ export const PlatformSearchApp = ({
 			{!getApps.isLoading && getApps.hasMore && (
 				<div className="flex items-center justify-center">
 					<Button
-						className="text-muted-foreground text-xs"
+						className="h-7 rounded-md text-muted-foreground text-xs"
 						size="sm"
 						variant="ghost"
 						onClick={() => getApps.next()}

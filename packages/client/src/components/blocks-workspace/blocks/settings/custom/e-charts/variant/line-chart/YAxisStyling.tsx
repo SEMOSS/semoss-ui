@@ -1,6 +1,6 @@
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	type Block,
 	type BlockDef,
@@ -8,47 +8,14 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { Button, Switch, styled, TextField, Typography } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { Button, Input, Switch } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
-	/**
-	 * Id of the block that is being worked with
-	 */
 	id: string;
-
 	path: Paths<Block<D>["data"], 4>;
 }
-const StyledAxisDiv = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-	padding: "8px 16px",
-	gap: gap ?? undefined,
-}));
-const StyledAxisColDiv = styled("div")<{
-	display?: string;
-	justifyContent: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "column",
-	padding: "8px 16px",
-	gap: "8px",
-	marginBottom: "8px",
-}));
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	width: "100%",
-}));
-const StyledButtonWrapper = styled("div")({
-	display: "flex",
-	justifyContent: "flex-end",
-	padding: "8px 16px",
-});
+
 export const YAxisStyling = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
@@ -72,200 +39,128 @@ export const YAxisStyling = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reInitializeFeatures(data.option);
 			}
 		}, [id]);
+		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				retainLocalState(data.option);
 			}
 		}, [showYAxis]);
-		/**
-		 * Retains the local state of the feature on toggle switch and on reset button
-		 * With the local state we will be displaying the values in the fields
-		 * @param options the options passed in when the chart is loaded
-		 */
-		const retainLocalState = (options) => {
-			//Retain the local state of the y axis visible
-			setShowYAxis(options["yAxis"].show);
-			//Retain the local state of the y axis title
-			setShowYAxisTitle(options["yAxis"]["show"]);
-			//Check if the y axis name is null
-			if (options["reset"]["yAxis"]["updatedName"] === null) {
-				//Set the y axis title to the name in the option
-				setYAxisTitle(options["yAxis"]["name"]);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const retainLocalState = (options: any) => {
+			setShowYAxis(options.yAxis.show);
+			setShowYAxisTitle(options.yAxis.show);
+			if (options.reset.yAxis.updatedName === null) {
+				setYAxisTitle(options.yAxis.name);
 			} else {
-				if (Object.hasOwn(options["reset"]["yAxis"], "updatedName")) {
-					//Set the y axis title to the updated name in the reset option
-					setYAxisTitle(options["reset"]["yAxis"]["updatedName"]);
-					//Update the y axis name in the option
-					options["yAxis"]["name"] =
-						options["reset"]["yAxis"]["updatedName"];
-					//Update the data
+				if (Object.hasOwn(options.reset.yAxis, "updatedName")) {
+					setYAxisTitle(options.reset.yAxis.updatedName);
+					options.yAxis.name = options.reset.yAxis.updatedName;
 					setData(path, options as PathValue<D["data"], typeof path>);
 				} else {
-					const yAxisNames = options["_state"]["fields"]["yAxis"];
-					setYAxisTitle(
-						options["_state"]["fields"]["yAxis"].join(","),
-					);
+					const yAxisNames = options._state.fields.yAxis;
+					setYAxisTitle(options._state.fields.yAxis.join(","));
 					for (let i = 0; i < yAxisNames.length; i++) {
-						options["series"][i]["name"] = yAxisNames[i];
+						options.series[i].name = yAxisNames[i];
 					}
-					options["yAxis"]["name"] = yAxisNames;
+					options.yAxis.name = yAxisNames;
 					setData(path, options as PathValue<D["data"], typeof path>);
 				}
 			}
-			//Retain the local state of the y axis tick
-			setShowYAxisTick(options["yAxis"]["axisTick"].show);
-			//Retain the local state of the y axis font size
-			setYAxisFont(options["yAxis"]["nameTextStyle"]["fontSize"]);
+			setShowYAxisTick(options.yAxis.axisTick.show);
+			setYAxisFont(options.yAxis.nameTextStyle.fontSize);
 		};
-		//Reinitialize the feature when the chart is loaded
-		const reInitializeFeatures = (options) => {
-			setShowYAxis(options["yAxis"].show);
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		const reInitializeFeatures = (options: any) => {
+			setShowYAxis(options.yAxis.show);
 		};
-		/**
-		 * Handle the change event for any Value Label input
-		 * @param title the title of the input field
-		 * @param inputValue the value of the input field
-		 */
-		function handleInputChange(title: string, inputValue) {
+		// biome-ignore lint/suspicious/noExplicitAny: echart/gantt type
+		function handleInputChange(title: string, inputValue: any) {
 			const option = JSON.parse(value);
-			/**
-			 * Update the showYAxis property of the option
-			 * @param inputValue boolean value indicating whether to show the y axis
-			 */
 			if (title === "showYAxis") {
-				option["yAxis"].show = inputValue;
+				option.yAxis.show = inputValue;
 				setShowYAxis(inputValue);
 			} else if (title === "showYAxisTitle") {
-				/**
-				 * Update the showYAxisTitle property of the option
-				 * @param inputValue boolean value indicating whether to show the y axis title
-				 */
 				if (inputValue) {
 					const tilteNames =
-						option["reset"]["yAxis"]["updatedName"].split(",");
-					option["yAxis"]["name"] = tilteNames;
+						option.reset.yAxis.updatedName.split(",");
+					option.yAxis.name = tilteNames;
 				} else {
-					option["yAxis"]["name"] = "";
+					option.yAxis.name = "";
 				}
 				setShowYAxisTitle(inputValue);
 			} else if (title === "yAxisTitle") {
-				/**
-				 * Update the yAxisTitle property of the option
-				 * @param inputValue string value indicating the title of the y axis
-				 */
 				setYAxisTitle(inputValue);
 				const tilteNames = inputValue.split(",");
-				option["yAxis"]["name"] = tilteNames;
-				option["reset"]["yAxis"]["updatedName"] = inputValue;
+				option.yAxis.name = tilteNames;
+				option.reset.yAxis.updatedName = inputValue;
 			} else if (title === "showYAxisTick") {
-				/**
-				 * Update the showYAxisTick property of the option
-				 * @param inputValue boolean value indicating whether to show the y axis tick
-				 */
-				option["yAxis"]["axisTick"].show = inputValue;
+				option.yAxis.axisTick.show = inputValue;
 				setShowYAxisTick(inputValue);
 			} else if (title === "yAxisFont") {
-				/**
-				 * Update the yAxisFont property of the option
-				 * @param inputValue number value indicating the font size of the y axis
-				 */
-				option["yAxis"]["nameTextStyle"]["fontSize"] = inputValue;
+				option.yAxis.nameTextStyle.fontSize = inputValue;
 				setYAxisFont(inputValue);
 			}
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
-		/**
-		 * Resets the Y Axis settings to their default values as specified
-		 * in the 'reset' object of the current option.
-		 */
+
 		function handleReset() {
-			// Parse the current option value from the stored JSON string
 			const option = JSON.parse(value);
-			// Reset Y Axis tick visibility to default
-			setShowYAxisTick(option["reset"]["yAxis"]["axisTick"]);
-			// Reset Y Axis font size to default
-			setYAxisFont(option["reset"]["yAxis"]["axisLabelFont"]);
-			// Get the Y Axis name from the local state or set it to an empty string if not available
+			setShowYAxisTick(option.reset.yAxis.axisTick);
+			setYAxisFont(option.reset.yAxis.axisLabelFont);
 			const yaxisName =
-				option["_state"] === undefined
+				option._state === undefined
 					? ""
-					: option["_state"]["fields"]["yAxis"].join(",");
-			// Update the Y Axis name in the option
-			option["yAxis"]["name"] = option["_state"]["fields"]["yAxis"];
-			// Set the Y Axis title
+					: option._state.fields.yAxis.join(",");
+			option.yAxis.name = option._state.fields.yAxis;
 			setYAxisTitle(yaxisName);
-			// Update the Y Axis title in the reset option
-			option["reset"]["yAxis"]["updatedName"] = yaxisName;
-			// Ensure Y Axis title is set to be shown
+			option.reset.yAxis.updatedName = yaxisName;
 			setShowYAxisTitle(true);
-			// Update the Y Axis tick visibility in the option
-			option["yAxis"]["axisTick"]["show"] =
-				option["reset"]["yAxis"]["axisTick"];
-			// Update the Y Axis font size in the option
-			option["yAxis"]["nameTextStyle"]["fontSize"] =
-				option["reset"]["yAxis"]["axisLabelFont"];
-			// Update the data with the new option
+			option.yAxis.axisTick.show = option.reset.yAxis.axisTick;
+			option.yAxis.nameTextStyle.fontSize =
+				option.reset.yAxis.axisLabelFont;
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
+
 		return (
-			<StyledAxisDiv>
-				<StyledAxisDiv
-					display="flex"
-					gap="8px"
-					style={{ marginTop: "8px" }}
-				>
+			<div className="flex flex-col">
+				<div className="mt-2 flex flex-row items-center gap-2 px-4 py-2">
 					<Switch
-						size="small"
-						checked={showYAxis}
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange("showYAxis", e.target.checked)
+						checked={!!showYAxis}
+						onCheckedChange={(checked: boolean) =>
+							handleInputChange("showYAxis", checked)
 						}
-						title="Show Y Axis"
 					/>
-					<Typography variant="body2" color="secondary">
-						Show Y Axis
-					</Typography>
-				</StyledAxisDiv>
+					<span className="text-sm">Show Y Axis</span>
+				</div>
 				{showYAxis && (
-					<StyledAxisDiv
-						display="flex"
-						gap="8px"
-						style={{ marginTop: "8px" }}
-					>
+					<div className="mt-2 flex flex-row items-center gap-2 px-4 py-2">
 						<Switch
-							size="small"
-							checked={showYAxisTitle}
-							onChange={(e: ChangeEvent<HTMLInputElement>) =>
-								handleInputChange(
-									"showYAxisTitle",
-									e.target.checked,
-								)
+							checked={!!showYAxisTitle}
+							onCheckedChange={(checked: boolean) =>
+								handleInputChange("showYAxisTitle", checked)
 							}
-							title="Show Y Axis Title"
 						/>
-						<Typography variant="body2" color="secondary">
-							Show Y Axis Title
-						</Typography>
-					</StyledAxisDiv>
+						<span className="text-sm">Show Y Axis Title</span>
+					</div>
 				)}
 				{showYAxis && showYAxisTitle && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							Edit Y Axis Title
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<Input
 							id="yAxisTitle"
 							name="yAxisTitle"
 							value={yAxisTitle}
@@ -273,36 +168,27 @@ export const YAxisStyling = observer(
 								handleInputChange("yAxisTitle", e.target.value)
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{showYAxis && (
-					<StyledAxisDiv display="flex" justifyContent="flex-start">
+					<div className="mt-2 flex flex-row items-center gap-2 px-4 py-2">
 						<Switch
-							size="small"
-							checked={showYAxisTick}
-							onChange={(e: ChangeEvent<HTMLInputElement>) =>
-								handleInputChange(
-									"showYAxisTick",
-									e.target.checked,
-								)
+							checked={!!showYAxisTick}
+							onCheckedChange={(checked: boolean) =>
+								handleInputChange("showYAxisTick", checked)
 							}
-							title="Show Y Axis Tick"
 						/>
-						<Typography variant="body2" color="secondary">
-							Show Y Axis Tick
-						</Typography>
-					</StyledAxisDiv>
+						<span className="text-sm">Show Y Axis Tick</span>
+					</div>
 				)}
 				{showYAxis && (
-					<StyledAxisColDiv
-						display="flex"
-						justifyContent="space-around"
-					>
-						<Typography variant="body2" color="secondary">
+					<div className="mb-2 flex flex-col gap-2 px-4 py-2">
+						<span className="text-muted-foreground text-sm">
 							YAxis Label Font Size
-						</Typography>
-						<StyledTextField
-							size="small"
+						</span>
+						{/* biome-ignore lint/suspicious/noCommentText: JSX comment in text node */}
+						{/* biome-ignore lint/correctness/useUniqueElementIds: component-scoped id*/}
+						<Input
 							id="labelfont"
 							name="labelfont"
 							value={yAxisFont}
@@ -310,21 +196,14 @@ export const YAxisStyling = observer(
 								handleInputChange("yAxisFont", e.target.value)
 							}
 						/>
-					</StyledAxisColDiv>
+					</div>
 				)}
 				{showYAxis && (
-					<StyledButtonWrapper>
-						<Button
-							variant="contained"
-							color="primary"
-							size="small"
-							onClick={handleReset}
-						>
-							Reset
-						</Button>
-					</StyledButtonWrapper>
+					<div className="flex justify-end px-4 py-2">
+						<Button onClick={handleReset}>Reset</Button>
+					</div>
 				)}
-			</StyledAxisDiv>
+			</div>
 		);
 	},
 );

@@ -1,5 +1,5 @@
 import { Edit, Eye, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	addProjectUserPermissions,
@@ -51,7 +51,7 @@ import {
 } from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useSettings } from "@/hooks";
-import type { ALL_TYPES, ApiResponse } from "@/types";
+import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./members-add-overlay-user";
 import type { SETTINGS_ROLE } from "./settings.types";
@@ -156,6 +156,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	const [renderedMembers, setRenderedMembers] = useState([]);
 	const [infiniteOn, setInfiniteOn] = useState(true);
 	const [searchLoading, setSearchLoading] = useState(false);
+	const renderedMembersLengthRef = useRef(0);
+	renderedMembersLengthRef.current = renderedMembers.length;
 
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
@@ -169,6 +171,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
+		YEAR: "Yearly",
+		ALL_TIME: "All time",
 	};
 	const unitTypes: string[] = ["milliseconds"];
 
@@ -192,10 +196,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		// reset on open or close
 		setSelectedMembers([]);
 		setSearch("");
-	}, [open]);
+	}, [user]);
 
 	useEffect(() => {
 		if (!open) return;
+		if (user?.id) {
+			setSearchLoading(false);
+			return;
+		}
 
 		const cancelled = false;
 		setSearchLoading(true);
@@ -256,7 +264,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				if (!cancelled) {
 					if (all.length < AUTOCOMPLETE_LIMIT) setInfiniteOn(false);
 					if (
-						renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
+						renderedMembersLengthRef.current >=
+							AUTOCOMPLETE_LIMIT &&
 						offset > 0
 					) {
 						setRenderedMembers((prev) => [...prev, ...all]);
@@ -274,13 +283,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		};
 
 		fetchUsers();
-	}, [open, debouncedSearch, offset, adminMode, id, type]);
+	}, [open, user, debouncedSearch, offset, adminMode, id, type]);
 
 	const isLoading = searchLoading;
 
-	const getAdditionalMembers = () => {
-		setOffset(offset + AUTOCOMPLETE_LIMIT);
-	};
+	const getAdditionalMembers = useCallback(() => {
+		setOffset((prev) => prev + AUTOCOMPLETE_LIMIT);
+	}, []);
 
 	/**
 	 * Update the selected users
@@ -507,7 +516,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				getAdditionalMembers();
 			}
 		}
-	}, [isScrollBottom]);
+	}, [isScrollBottom, infiniteOn, getAdditionalMembers]);
 
 	const removeMember = (userId: string) => {
 		const filtered = selectedMembers.filter((val) => val.id !== userId);
@@ -546,8 +555,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											: `${selectedMembers.length} members selected`}
 								</Button>
 							</PopoverTrigger>
-							<PopoverContent className="w-[600px] p-0">
-								<Command shouldFilter={false}>
+							<PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+								<Command
+									shouldFilter={false}
+									className="overflow-visible"
+								>
 									<CommandInput
 										placeholder="Search users..."
 										value={search}
@@ -559,7 +571,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											setSearchLoading(true);
 										}}
 									/>
-									<CommandList
+									<div
+										className="max-h-[300px] overflow-y-auto"
+										onWheel={(e) => e.stopPropagation()}
 										onScroll={({ currentTarget }) => {
 											setIsScrollBottom(
 												nearBottom({
@@ -573,95 +587,94 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 											);
 										}}
 									>
-										{isLoading ? (
-											<div className="flex items-center justify-center p-4">
-												<Spinner />
-											</div>
-										) : (
-											<>
-												<CommandEmpty>
-													No users found.
-												</CommandEmpty>
-												<CommandGroup>
-													{renderedMembers.map(
-														(option) => {
-															const hasPermission =
-																!!option.permission;
-															const isSelected =
-																selectedMembers.some(
-																	(m) =>
-																		m.id ===
-																		option.id,
-																);
-															return (
-																<CommandItem
-																	key={
-																		option.id
-																	}
-																	disabled={
-																		hasPermission
-																	}
-																	onSelect={() => {
-																		if (
-																			!hasPermission
-																		) {
-																			if (
-																				isSelected
-																			) {
-																				removeMember(
-																					option.id,
-																				);
-																			} else {
-																				setSelectedMembers(
-																					[
-																						...selectedMembers,
-																						option,
-																					],
-																				);
-																			}
-																			setCommandOpen(
-																				false,
-																			);
+										<CommandList className="max-h-none overflow-visible">
+											{isLoading ? (
+												<div className="flex items-center justify-center p-4">
+													<Spinner />
+												</div>
+											) : (
+												<>
+													<CommandEmpty>
+														No users found.
+													</CommandEmpty>
+													<CommandGroup>
+														{renderedMembers.map(
+															(option) => {
+																const hasPermission =
+																	!!option.permission;
+																const isSelected =
+																	selectedMembers.some(
+																		(m) =>
+																			m.id ===
+																			option.id,
+																	);
+																return (
+																	<CommandItem
+																		key={
+																			option.id
 																		}
-																	}}
-																	className="justify-between"
-																>
-																	<div className="max-w-[85%] overflow-auto">
-																		<MembersAddOverlayUser
-																			name={
-																				option.name
+																		disabled={
+																			hasPermission
+																		}
+																		onSelect={() => {
+																			if (
+																				!hasPermission
+																			) {
+																				if (
+																					isSelected
+																				) {
+																					removeMember(
+																						option.id,
+																					);
+																				} else {
+																					setSelectedMembers(
+																						[
+																							...selectedMembers,
+																							option,
+																						],
+																					);
+																				}
 																			}
-																			id={
-																				option.id
-																			}
-																			email={
-																				option.email
-																			}
-																			type={
-																				option.type
-																			}
-																		/>
-																	</div>
-																	{hasPermission && (
-																		<span className="whitespace-nowrap text-muted-foreground text-xs">
-																			Already
-																			Added
-																		</span>
-																	)}
-																	{isSelected &&
-																		!hasPermission && (
-																			<span className="text-primary text-xs">
-																				✓
+																		}}
+																		className="justify-between"
+																	>
+																		<div className="max-w-[85%] overflow-auto">
+																			<MembersAddOverlayUser
+																				name={
+																					option.name
+																				}
+																				id={
+																					option.id
+																				}
+																				email={
+																					option.email
+																				}
+																				type={
+																					option.type
+																				}
+																			/>
+																		</div>
+																		{hasPermission && (
+																			<span className="whitespace-nowrap text-muted-foreground text-xs">
+																				Already
+																				Added
 																			</span>
 																		)}
-																</CommandItem>
-															);
-														},
-													)}
-												</CommandGroup>
-											</>
-										)}
-									</CommandList>
+																		{isSelected &&
+																			!hasPermission && (
+																				<span className="text-primary text-xs">
+																					✓
+																				</span>
+																			)}
+																	</CommandItem>
+																);
+															},
+														)}
+													</CommandGroup>
+												</>
+											)}
+										</CommandList>
+									</div>
 								</Command>
 							</PopoverContent>
 						</Popover>

@@ -6,7 +6,8 @@
 		"descriptionLabel": "説明",
 		"instructionsLabel": "指示",
 		"knowledgeLabel": "ナレッジ",
-		"toolboxLabel": "ツールボックス"
+		"toolboxLabel": "ツールボックス",
+		"promptsLabel": "プロンプトライブラリ"
 	},
 	"actions": {
 		"create": "作成",
@@ -17,7 +18,6 @@
 		"newChat": "新しいチャット"
 	},
 	"card": {
-		"noDescription": "説明がありません",
 		"deleteConfirmTitle": "本当によろしいですか？",
 		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。"
 	},
@@ -52,14 +52,6 @@
 	"mcp": {
 		"noToolboxes": "ツールボックスが見つかりません",
 		"noKnowledge": "ナレッジライブラリが見つかりません",
-		"accessRequested": "アクセスをリクエスト済み",
-		"requestAccess": "アクセスをリクエスト",
-		"noAccess": "アクセス権なし",
-		"requestAccessButton": "アクセスをリクエスト",
-		"noDescription": "説明がありません。",
-		"tooltipNoAccess": "この{{type}}へのアクセス権がありません。オーナーにアクセスをリクエストしてください。",
-		"tooltipMissingDependencies": "この{{type}}のすべての依存関係にアクセスできないため、機能が制限される場合があります。詳細については、プラットフォームで開いてください。",
-		"tooltipOpen": "プラットフォームでこの{{type}}を開く",
 		"failedToLoad": "ワークスペースリソースの読み込みに失敗しました",
 		"requestedSuccess": "{{name}}へのアクセスをリクエストしました",
 		"requestedFailed": "アクセスのリクエストに失敗しました"
@@ -114,5 +106,9 @@
 	"new": {
 		"title": "新しいエージェント",
 		"subtitle": "新しいエージェントを作成して始めましょう"
+	},
+	"prompts": {
+		"noPrompts": "プロンプトが見つかりません",
+		"searchPlaceholder": "プロンプトを検索..."
 	}
 }

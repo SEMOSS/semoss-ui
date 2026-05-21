@@ -1,9 +1,7 @@
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { buildInitials, getAppCatalogAvatarStyle } from "@semoss/shared";
 import {
-	Avatar,
-	AvatarFallback,
-	AvatarImage,
 	Badge,
 	Button,
 	Card,
@@ -44,25 +42,9 @@ import {
 	getTeamProjects,
 	getUnassignedTeamProjects,
 } from "@/api";
-import codeApp2 from "@/assets/img/code_app_2.png";
-import codeApp3 from "@/assets/img/code_app_3.png";
-import codeApp4 from "@/assets/img/code_app_4.png";
-import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
 import { useServerPagination } from "@/hooks";
 import type { ApiResponse } from "@/types";
-
-const colors = [
-	"#22A4FF",
-	"#FA3F20",
-	"#FA3F20",
-	"#FF9800",
-	"#FF9800",
-	"#22A4FF",
-	"#4CAF50",
-];
-
-const projectImages = [codeApp2, codeApp3, codeApp4, codeApp5];
 
 // maps for permissions,
 const permissionMapper = {
@@ -172,10 +154,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const [_isLoading, setIsLoading] = useState<boolean>(false);
 	const [searchLoading, setSearchLoading] = useState(false);
 
-	const [projectImageMap, setProjectImageMap] = useState<
-		Record<string, string>
-	>({});
-
 	const [searchFilter, setSearchFilter] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const isLoadingRef = useRef(false);
@@ -232,14 +210,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				if (response) {
 					const projects = (
 						response as unknown as TeamProjects[]
-					)?.map((val) => {
-						return {
-							...val,
-							color: colors[
-								Math.floor(Math.random() * colors.length)
-							],
-						};
-					});
+					)?.map((val) => ({ ...val }));
 
 					setNonCredentialedProjects((prev) =>
 						reset ? projects : prev.concat(projects),
@@ -507,28 +478,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const handleInputChange = (newInputValue) => {
 		setSearchFilter(newInputValue);
 	};
-
-	const getRandomImageForProject = useCallback(
-		(projectId: string) => {
-			if (projectImageMap[projectId]) {
-				return projectImageMap[projectId];
-			}
-			const randomIndex = Math.floor(
-				Math.random() * projectImages.length,
-			);
-			const newImage = projectImages[randomIndex];
-
-			if (!projectImageMap[projectId]) {
-				setProjectImageMap((prev) => ({
-					...prev,
-					[projectId]: newImage,
-				}));
-			}
-
-			return newImage;
-		},
-		[projectImageMap],
-	);
 
 	const isAllSelected =
 		selectedProjects.length === projects.length && projects.length > 0;
@@ -992,19 +941,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 													}
 												}}
 											/>
-											<Avatar className="h-8 w-8">
-												<AvatarImage
-													src={getRandomImageForProject(
-														project.project_id,
-													)}
-												/>
-												<AvatarFallback className="text-xs">
-													{project.project_name
-														? project
-																.project_name[0]
-														: "A"}
-												</AvatarFallback>
-											</Avatar>
+											<div
+												className="flex size-8 shrink-0 items-center justify-center rounded-[10px] font-semibold text-xs"
+												style={getAppCatalogAvatarStyle(
+													project.project_name,
+												)}
+											>
+												{buildInitials(
+													project.project_name,
+												)}
+											</div>
 											<div className="flex-1">
 												<div className="font-medium text-sm">
 													{project.project_name}
