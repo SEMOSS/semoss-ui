@@ -242,6 +242,9 @@ interface RoomInputProps {
 
 	/** Room store for prompt optimizer */
 	room: RoomStore;
+
+	/** Optional external editor ref so siblings can read/append text into the editor */
+	editorRef?: React.RefObject<LexicalEditor | null>;
 }
 
 // ============================================================================
@@ -280,6 +283,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		tokensUsed,
 		tokensMax,
 		room,
+		editorRef: externalEditorRef,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -301,7 +305,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
-		const editorRef = useRef<LexicalEditor>(null);
+		const localEditorRef = useRef<LexicalEditor>(null);
+		const editorRef = externalEditorRef ?? localEditorRef;
 		const fileRef = useRef<HTMLInputElement>(null);
 		const contentEditableRef = useRef<HTMLDivElement>(null);
 		const scrollViewportRef = useRef<HTMLElement | null>(null);

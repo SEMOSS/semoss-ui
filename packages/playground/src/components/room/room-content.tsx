@@ -11,8 +11,14 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
 	: "";
 
+import {
+	$createParagraphNode,
+	$createTextNode,
+	$getRoot,
+	type LexicalEditor,
+} from "lexical";
 import { observer } from "mobx-react-lite";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
@@ -35,9 +41,14 @@ import {
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
 } from "@/components";
+import { InlineAskPopover } from "@/components/message/inline-ask-popover";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+import {
+	type ActiveSelectionInfo,
+	getActiveSelectionWithinAttr,
+} from "@/utility";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
@@ -61,6 +72,46 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+
+	const editorRef = useRef<LexicalEditor | null>(null);
+
+	const [activeSelection, setActiveSelection] =
+		useState<ActiveSelectionInfo | null>(null);
+	const activeSelectionRef = useRef<ActiveSelectionInfo | null>(null);
+	useEffect(() => {
+		activeSelectionRef.current = activeSelection;
+	}, [activeSelection]);
+
+	const appendToMainInput = useCallback((text: string) => {
+		const editor = editorRef.current;
+		if (!editor) return;
+		editor.update(() => {
+			const root = $getRoot();
+			if (root.getTextContent().length === 0) {
+				root.clear();
+			}
+			const para = $createParagraphNode();
+			para.append($createTextNode(text));
+			root.append(para);
+
+			para.selectEnd();
+		});
+		editor.focus();
+	}, []);
+
+	useEffect(() => {
+		const update = () => {
+			if (activeSelectionRef.current) return;
+			const info = getActiveSelectionWithinAttr("data-inline-ask");
+			if (info) setActiveSelection(info);
+		};
+		document.addEventListener("mouseup", update);
+		document.addEventListener("keyup", update);
+		return () => {
+			document.removeEventListener("mouseup", update);
+			document.removeEventListener("keyup", update);
+		};
+	}, []);
 
 	/**
 	 * Functions
@@ -522,7 +573,8 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					)}
 					footer={
 						room.options.workspace?.workspace_id ? (
-							room.theme.featureFlags?.showPlatformLinks ? (
+							room.theme.featureFlags?.showPlatformLinks !==
+							false ? (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span>
@@ -581,8 +633,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					editorRef={editorRef}
 				/>
 			</div>
+			{activeSelection && (
+				<InlineAskPopover
+					selection={activeSelection}
+					onClose={() => setActiveSelection(null)}
+					appendToMainInput={appendToMainInput}
+				/>
+			)}
 		</div>
 	);
 });
