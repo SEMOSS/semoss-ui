@@ -754,67 +754,85 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									)}
 									onClick={() => editorRef.current?.focus()}
 								>
-									<ContentEditable
-										ref={contentEditableRef}
-										className={cn(
-											"px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-											files.length > 0 ? "pt-0" : "pt-4",
-										)}
-										aria-placeholder={t(
-											"input.ariaPlaceholder",
-										)}
-										aria-disabled={isLoading}
-										disabled={isLoading}
-										placeholder={
+									{/* Grid overlap: editor + our own placeholder
+									    share one grid cell so the cell sizes to
+									    the larger of the two. Lexical's built-in
+									    placeholder is absolute and can't push
+									    editor height, which causes the
+									    placeholder to overflow into the buttons
+									    row when the input is narrow. */}
+									<div className="grid">
+										<ContentEditable
+											ref={contentEditableRef}
+											className={cn(
+												"col-start-1 row-start-1 px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+												files.length > 0
+													? "pt-0"
+													: "pt-4",
+											)}
+											aria-placeholder={t(
+												"input.ariaPlaceholder",
+											)}
+											aria-disabled={isLoading}
+											disabled={isLoading}
+											placeholder={<div />}
+											onPaste={(e) => {
+												const clipboardFiles =
+													Array.from(
+														e.clipboardData.files,
+													);
+
+												// Microsoft apps (Word, Outlook, etc.) include an image
+												// representation alongside text in the clipboard. If text
+												// content is present, filter out those images so the text
+												// is pasted normally instead of attaching a screenshot.
+												const hasText =
+													e.clipboardData.types.includes(
+														"text/plain",
+													) ||
+													e.clipboardData.types.includes(
+														"text/html",
+													);
+
+												const updated = hasText
+													? clipboardFiles.filter(
+															(f) =>
+																!f.type.startsWith(
+																	"image/",
+																),
+														)
+													: clipboardFiles;
+
+												if (updated.length > 0) {
+													e.preventDefault();
+													setFiles((prev) => [
+														...prev,
+														...updated,
+													]);
+												}
+											}}
+										/>
+										{isEmpty && (
 											<div
 												className={cn(
-													"pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pb-4 text-muted-foreground text-sm",
+													"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-4 text-muted-foreground text-sm",
 													files.length > 0
 														? "pt-0"
 														: "pt-4",
 												)}
 											>
-												<SparklesIcon className="size-4" />
+												{/* Inline-block + align-middle makes the icon
+											    flow with text: when the placeholder wraps,
+											    only the text after the icon wraps to the
+											    next line, instead of the whole text
+											    jumping below the icon. */}
+												<SparklesIcon className="-translate-y-px mr-1 inline-block size-4 align-middle" />
 												{isLoading
 													? t("input.thinking")
 													: t("input.menuPrompt")}
 											</div>
-										}
-										onPaste={(e) => {
-											const clipboardFiles = Array.from(
-												e.clipboardData.files,
-											);
-
-											// Microsoft apps (Word, Outlook, etc.) include an image
-											// representation alongside text in the clipboard. If text
-											// content is present, filter out those images so the text
-											// is pasted normally instead of attaching a screenshot.
-											const hasText =
-												e.clipboardData.types.includes(
-													"text/plain",
-												) ||
-												e.clipboardData.types.includes(
-													"text/html",
-												);
-
-											const updated = hasText
-												? clipboardFiles.filter(
-														(f) =>
-															!f.type.startsWith(
-																"image/",
-															),
-													)
-												: clipboardFiles;
-
-											if (updated.length > 0) {
-												e.preventDefault();
-												setFiles((prev) => [
-													...prev,
-													...updated,
-												]);
-											}
-										}}
-									/>
+										)}
+									</div>
 								</ScrollArea>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
