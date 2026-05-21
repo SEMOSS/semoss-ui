@@ -7,10 +7,8 @@ import {
 	ChevronUp,
 	Code2,
 	LayoutGrid,
-	Lock,
 	Maximize2,
 	Minimize2,
-	Pencil,
 	Save,
 	Search,
 	Shield,
@@ -39,6 +37,7 @@ import {
 
 export type PipelineReactor = {
 	reactorClass: string;
+	guardrailEngineName?: string;
 	params: Record<string, unknown>;
 };
 
@@ -88,6 +87,30 @@ const useKeyboardShortcut = (
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const toShortName = (cls: string) => cls.split(".").pop() ?? cls;
+
+const reactorUiKey = Symbol("reactorUiKey");
+type ReactorWithUiKey = PipelineReactor & { [reactorUiKey]?: string };
+
+const getReactorUiKey = (
+	reactor: PipelineReactor,
+	direction: "input" | "output",
+): string => {
+	const withKey = reactor as ReactorWithUiKey;
+	if (!withKey[reactorUiKey]) {
+		withKey[reactorUiKey] =
+			`${direction}-${Math.random().toString(36).slice(2, 10)}`;
+	}
+	return withKey[reactorUiKey] ?? `${direction}-fallback`;
+};
+
+const isValidGuardrailConfig = (raw: unknown): raw is GuardrailConfig => {
+	if (!raw || typeof raw !== "object") {
+		return false;
+	}
+
+	const pipelines = (raw as Record<string, unknown>).pipelines;
+	return !!pipelines && typeof pipelines === "object";
+};
 
 // ─── ParamField ───────────────────────────────────────────────────────────────
 
@@ -204,7 +227,9 @@ interface ReactorCardProps {
 const ReactorCard = memo<ReactorCardProps>(
 	({ reactor, direction, disabled, onUpdate, onDelete }) => {
 		const [expanded, setExpanded] = useState(false);
-		const name = toShortName(reactor.reactorClass ?? "");
+		const name =
+			reactor.guardrailEngineName?.trim() ||
+			toShortName(reactor.reactorClass ?? "");
 		const accentBorder =
 			direction === "input" ? "border-l-primary" : "border-l-chart-2";
 
@@ -212,6 +237,13 @@ const ReactorCard = memo<ReactorCardProps>(
 			onUpdate({
 				...reactor,
 				params: { ...(reactor.params ?? {}), [key]: val },
+			});
+		};
+
+		const handleReactorClassChange = (value: string) => {
+			onUpdate({
+				...reactor,
+				reactorClass: value,
 			});
 		};
 
@@ -296,21 +328,22 @@ const ReactorCard = memo<ReactorCardProps>(
 				{/* Body */}
 				{expanded && (
 					<div className="space-y-3 border-border border-t px-3 py-3">
-						{/* Reactor Class — always read-only */}
+						{/* Reactor Class */}
 						<div className="space-y-1.5">
-							<div className="flex items-center gap-1.5">
-								<Label className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
-									Reactor Class
-								</Label>
-								<span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-									<Lock size={9} />
-									read-only
-								</span>
-							</div>
+							<Label className="block font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
+								Reactor Class
+							</Label>
 							<Input
 								value={reactor.reactorClass ?? ""}
-								disabled={true}
-								className="w-full cursor-not-allowed bg-muted font-mono text-xs opacity-60"
+								onChange={(e) =>
+									handleReactorClassChange(e.target.value)
+								}
+								disabled={disabled}
+								className={`w-full font-mono text-xs ${
+									disabled
+										? "cursor-not-allowed bg-muted opacity-60"
+										: ""
+								}`}
 							/>
 						</div>
 
@@ -323,18 +356,10 @@ const ReactorCard = memo<ReactorCardProps>(
 								<div className="grid gap-3">
 									{Object.entries(params).map(
 										([key, val]) => {
-											const isEditable =
-												key === "directParameters" &&
-												!disabled;
-
 											return (
 												<div
 													key={key}
-													className={`grid grid-cols-[140px_1fr] items-start gap-2 rounded-md p-1.5 transition-colors ${
-														isEditable
-															? "bg-primary/5 ring-1 ring-primary/20"
-															: ""
-													}`}
+													className="grid grid-cols-[140px_1fr] items-start gap-2 rounded-md p-1.5"
 												>
 													<div className="pt-1">
 														<div className="flex flex-wrap items-center gap-1">
@@ -344,20 +369,6 @@ const ReactorCard = memo<ReactorCardProps>(
 															>
 																{key}
 															</span>
-															{isEditable ? (
-																<span className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 font-semibold text-[9px] text-primary">
-																	<Pencil
-																		size={8}
-																	/>
-																	editable
-																</span>
-															) : (
-																<span className="inline-flex items-center gap-0.5 text-[9px] text-muted-foreground">
-																	<Lock
-																		size={8}
-																	/>
-																</span>
-															)}
 														</div>
 														<span className="text-[10px] text-muted-foreground">
 															{Array.isArray(val)
@@ -371,7 +382,7 @@ const ReactorCard = memo<ReactorCardProps>(
 														onChange={
 															handleParamChange
 														}
-														disabled={!isEditable}
+														disabled={disabled}
 													/>
 												</div>
 											);
@@ -420,9 +431,14 @@ const PipelineCard = memo<PipelineCardProps>(
 			updated: PipelineReactor,
 		) => {
 			const list = dir === "input" ? inputList : outputList;
+			const existing = list[idx] as ReactorWithUiKey | undefined;
+			const nextUpdated = { ...updated } as ReactorWithUiKey;
+			if (existing?.[reactorUiKey]) {
+				nextUpdated[reactorUiKey] = existing[reactorUiKey];
+			}
 			onUpdate({
 				...pipeline,
-				[dir]: list.map((r, i) => (i === idx ? updated : r)),
+				[dir]: list.map((r, i) => (i === idx ? nextUpdated : r)),
 			});
 		};
 
@@ -530,7 +546,7 @@ const PipelineCard = memo<PipelineCardProps>(
 								<div className="space-y-2 border-primary/30 border-l-2 pl-3">
 									{inputList.map((r, idx) => (
 										<ReactorCard
-											key={`input-${r.reactorClass}-${idx}`}
+											key={getReactorUiKey(r, "input")}
 											reactor={r}
 											direction="input"
 											disabled={disabled}
@@ -567,7 +583,7 @@ const PipelineCard = memo<PipelineCardProps>(
 								<div className="space-y-2 border-chart-2/30 border-l-2 pl-3">
 									{outputList.map((r, idx) => (
 										<ReactorCard
-											key={`output-${r.reactorClass}-${idx}`}
+											key={getReactorUiKey(r, "output")}
 											reactor={r}
 											direction="output"
 											disabled={disabled}
@@ -611,6 +627,7 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 	const [expandAll, setExpandAll] = useState(false);
 	const [hasChanges, setHasChanges] = useState(false);
 	const [saving, setSaving] = useState(false);
+	const [jsonError, setJsonError] = useState<string | null>(null);
 	const [savedSnapshot, setSavedSnapshot] = useState(() =>
 		JSON.stringify({ pipelines: initialData?.pipelines ?? {} }),
 	);
@@ -625,6 +642,7 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 	useEffect(() => {
 		setData({ pipelines: initialData?.pipelines ?? {} });
 		setSavedSnapshot(incomingSnapshot);
+		setJsonError(null);
 		setExpandedPipelines(
 			new Set(Object.keys(initialData?.pipelines ?? {}).slice(0, 1)),
 		);
@@ -639,7 +657,27 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 
 	useEffect(() => {
 		setJsonText(JSON.stringify(data, null, 2));
+		setJsonError(null);
 	}, [data]);
+
+	const handleJsonTextChange = (text: string) => {
+		setJsonText(text);
+		try {
+			const parsed = JSON.parse(text) as unknown;
+			if (!isValidGuardrailConfig(parsed)) {
+				setJsonError(
+					"JSON must be an object with a pipelines property.",
+				);
+				return;
+			}
+			setData(parsed);
+			setJsonError(null);
+		} catch (error) {
+			setJsonError(
+				error instanceof Error ? error.message : "Invalid JSON",
+			);
+		}
+	};
 
 	useKeyboardShortcut("s", () => {
 		if (hasChanges && !readOnly) handleSave();
@@ -729,12 +767,7 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 						<Badge className="border-border bg-muted px-2 py-1 text-muted-foreground text-xs">
 							{totalReactors} Reactors
 						</Badge>
-						{!readOnly && (
-							<span className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-[10px] text-primary">
-								<Pencil size={9} />
-								directParameters editable
-							</span>
-						)}
+
 						{debouncedSearch && (
 							<span className="text-muted-foreground text-xs italic">
 								(filtered)
@@ -835,32 +868,47 @@ export const GuardrailConfigEditor: React.FC<GuardrailConfigEditorProps> = ({
 				)}
 			</div>
 
-			{/* ── JSON Mode (read-only view) ─────────────────────────────── */}
+			{/* ── JSON Mode ──────────────────────────────────────────────── */}
 			{viewMode === "json" && (
 				<div className="space-y-2">
 					<div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-muted-foreground text-xs">
-						<Lock size={12} className="shrink-0" />
-						<span>
-							JSON view is read-only. Switch to{" "}
-							<button
-								type="button"
-								onClick={() => setViewMode("gui")}
-								className="font-semibold text-primary underline-offset-2 hover:underline"
-							>
-								GUI mode
-							</button>{" "}
-							to edit{" "}
-							<code className="font-mono text-foreground">
-								directParameters
-							</code>{" "}
-							or remove interceptors and pipelines.
-						</span>
+						{jsonError ? (
+							<>
+								<AlertCircle
+									size={12}
+									className="shrink-0 text-destructive"
+								/>
+								<span className="text-destructive">
+									{jsonError}
+								</span>
+							</>
+						) : (
+							<>
+								<CheckCircle2
+									size={12}
+									className="shrink-0 text-chart-2"
+								/>
+								<span>
+									JSON editor mode. Changes are applied when
+									JSON is valid.
+								</span>
+							</>
+						)}
 					</div>
 					<Textarea
 						value={jsonText}
-						disabled={true}
+						onChange={(e) => handleJsonTextChange(e.target.value)}
+						disabled={readOnly}
 						rows={30}
-						className="w-full cursor-not-allowed resize-y rounded-lg border border-border bg-muted font-mono text-xs leading-relaxed opacity-80"
+						className={`w-full resize-y rounded-lg border font-mono text-xs leading-relaxed ${
+							readOnly
+								? "cursor-not-allowed bg-muted opacity-80"
+								: "bg-card"
+						} ${
+							jsonError
+								? "border-destructive focus:border-destructive"
+								: "border-border"
+						}`}
 					/>
 				</div>
 			)}
