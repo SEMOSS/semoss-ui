@@ -1,9 +1,8 @@
 import { ExternalLinkIcon } from "lucide-react";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import type { Engine } from "@semoss/shared";
+import { type Engine, getEngineSubtypeIcon } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
 import { useNavigate } from "@/hooks/useNavigate";
-import { getEngineSubtypeIcon } from "./platform-search-icon-utils";
 
 const LIMIT = 5;
 

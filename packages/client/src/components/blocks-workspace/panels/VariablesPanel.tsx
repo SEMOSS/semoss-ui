@@ -40,16 +40,16 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import VariableArray from "@/assets/img/VariableArray.svg";
+import VariableBlock from "@/assets/img/VariableBlock.svg";
+import VariableCell from "@/assets/img/VariableCell.svg";
+import VariableDate from "@/assets/img/VariableDate.svg";
+import VariableJSON from "@/assets/img/VariableJSON.svg";
+import VariableQuery from "@/assets/img/VariableQuery.svg";
+import VariableString from "@/assets/img/VariableString.svg";
 import { AddVariablePopover, NotebookVariable } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { usePixel, useWorkspace } from "@/hooks";
-import VariableArray from "../../../assets/img/VariableArray.svg";
-import VariableBlock from "../../../assets/img/VariableBlock.svg";
-import VariableCell from "../../../assets/img/VariableCell.svg";
-import VariableDate from "../../../assets/img/VariableDate.svg";
-import VariableJSON from "../../../assets/img/VariableJSON.svg";
-import VariableQuery from "../../../assets/img/VariableQuery.svg";
-import VariableString from "../../../assets/img/VariableString.svg";
 import { suggestVariableRenames } from "../utils";
 
 const ENGINE_TYPE_ICONS: Record<string, LucideIcon> = {
