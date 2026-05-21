@@ -161,37 +161,32 @@ export const DataImportFormModal = observer(
 		}, [selectedDatabaseId]);
 
 		// Pre-populate form in edit mode
-		// biome-ignore lint/correctness/useExhaustiveDependencies: prepopulateFormForEdit and cell are stable
+		// biome-ignore lint/correctness/useExhaustiveDependencies: prepopulateFormForEdit is stable
 		useEffect(() => {
-			if (
-				editMode &&
-				cell &&
-				selectedDatabaseId &&
-				tableEdges &&
-				Object.keys(tableEdges).length > 0
-			) {
+			if (editMode && cell && selectedDatabaseId) {
 				prepopulateFormForEdit();
 			}
-		}, [editMode, selectedDatabaseId, tableEdges]);
-
+		}, [editMode, cell, selectedDatabaseId]);
 		// Update pixel ref when selected columns or joins change
-		// biome-ignore lint/correctness/useExhaustiveDependencies: updatePixelRef is stable, joins tracked internally
+		// biome-ignore lint/correctness/useExhaustiveDependencies: updatePixelRef is stable
 		useEffect(() => {
 			if (Object.keys(selectedColumns).length > 0) {
 				updatePixelRef();
 			}
-		}, [selectedColumns]);
+		}, [selectedColumns, joins]);
 
-		// Update joins when columns change
+		// Update joins when columns change (but not in edit mode during initial load)
 		// biome-ignore lint/correctness/useExhaustiveDependencies: updateAvailableJoins is stable
 		useEffect(() => {
-			if (Object.keys(selectedColumns).length > 0) {
+			if (Object.keys(selectedColumns).length > 0 && !editMode) {
 				updateAvailableJoins();
 			}
 		}, [selectedColumns]);
 
 		const prepopulateFormForEdit = () => {
-			if (!cell) return;
+			if (!cell) {
+				return;
+			}
 
 			// Build selected columns from cell parameters
 			const newSelectedColumns: { [tableName: string]: Column[] } = {};
@@ -327,6 +322,10 @@ export const DataImportFormModal = observer(
 
 		const updateAvailableJoins = () => {
 			if (!selectedTableName || Object.keys(selectedColumns).length < 2) {
+				// Clear joins if we don't have multiple tables selected
+				if (Object.keys(selectedColumns).length < 2) {
+					setJoins([]);
+				}
 				return;
 			}
 
@@ -392,26 +391,27 @@ export const DataImportFormModal = observer(
 			// Build pixel query
 			let pixelQuery = `Database(database=["${selectedDatabaseId}"])|Select(`;
 
-			// Add columns
-			pixelQuery += columnsList.map((col) => `"${col}"`).join(", ");
-			pixelQuery += ")|";
+			// Add columns (unquoted)
+			pixelQuery += columnsList.join(", ");
+			pixelQuery += ")";
+
+			// Chain aliases to Select
+			if (aliasesList.length > 0) {
+				pixelQuery += `.as([${aliasesList.join(", ")}])`;
+			}
 
 			// Add joins
 			if (joins.length > 0) {
 				joins.forEach((join) => {
-					pixelQuery += `Join(join=["${join.leftTable}__${join.leftKey}"], comparator=["=="], to=["${join.rightTable}__${join.rightKey}"], joinType=["${join.joinType}"])|`;
+					pixelQuery += `|Join(join=["${join.leftTable}__${join.leftKey}"], comparator=["=="], to=["${join.rightTable}__${join.rightKey}"], joinType=["${join.joinType}"])`;
 				});
 			}
 
-			// Add aliases
-			if (aliasesList.length > 0) {
-				pixelQuery += "As(";
-				pixelQuery += aliasesList.map((a) => `"${a}"`).join(", ");
-				pixelQuery += ")|";
-			}
+			// Add Distinct but NO Limit - that's added by preview or cell config
+			pixelQuery += "|Distinct(false)";
 
-			pixelQuery += "Limit(-1)";
-			pixelPartialRef.current = `${pixelQuery};`;
+			// Store without trailing semicolon or limit
+			pixelPartialRef.current = `${pixelQuery}`;
 		};
 
 		const handleAddColumn = (
@@ -510,13 +510,13 @@ export const DataImportFormModal = observer(
 
 		const retrievePreviewData = async () => {
 			if (!pixelPartialRef.current) {
-				await updatePixelRef();
+				updatePixelRef();
 			}
 
 			setIsDatabaseLoading(true);
 
 			try {
-				const previewPixel = `${pixelPartialRef.current.slice(0, -1)}|Limit(50);META|Frame()|QueryAll()|Collect(500);`;
+				const previewPixel = `${pixelPartialRef.current}|Limit(50)|Import(frame=[CreateFrame(frameType=[NATIVE], override=[true]).as(["data_import_preview_frame"])]); META|Frame()|QueryAll()|Limit(50)|Collect(500);`;
 				pixelStringRef.current = previewPixel;
 
 				const response = await runPixel(previewPixel);
@@ -1072,6 +1072,11 @@ export const DataImportFormModal = observer(
 										<h3 className="mt-4 mb-5 ml-4 font-semibold text-lg">
 											Preview
 										</h3>
+										<p className="mx-4 mb-3 border-b pb-3 text-muted-foreground text-sm">
+											The preview uses a subset of your
+											data and may not be accurately
+											represented below.
+										</p>
 										{isDatabaseLoading ? (
 											<div className="flex min-h-[200px] items-center justify-center">
 												<Loader2 className="size-8 animate-spin text-primary" />

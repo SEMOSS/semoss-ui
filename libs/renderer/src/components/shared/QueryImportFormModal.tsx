@@ -558,6 +558,7 @@ export const QueryImportFormModal = (props: QueryImportFormModalProps) => {
 							</div>
 						</div>
 
+						{/* Preview Panel */}
 						{showPreview && (
 							<div
 								className="flex flex-col overflow-hidden"
@@ -572,6 +573,11 @@ export const QueryImportFormModal = (props: QueryImportFormModalProps) => {
 									<h3 className="mt-4 mb-5 ml-4 font-semibold text-lg">
 										Preview
 									</h3>
+									<p className="mx-4 mb-3 border-b pb-3 text-muted-foreground text-sm">
+										The preview uses a subset of your data
+										and may not be accurately represented
+										below.
+									</p>
 									{!sqlQuery.trim() ||
 									sqlQuery.trim().toLowerCase() ===
 										"--select * from..." ? (
