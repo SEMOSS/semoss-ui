@@ -16,8 +16,9 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { engineProjectToMCP } from "@/components";
+import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { App, Engine, MCPConfig } from "@/types";
+import type { App, Engine, MCP, MCPConfig } from "@/types";
 
 interface RoomInputMenuSlashProps {
 	/** Room options containing MCP configurations */
@@ -41,40 +42,82 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 	onRequestClose,
 }) => {
 	const { t } = useTranslation("room");
+	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 
 	const debouncedSearch = useDebouncedValue(search);
+	const applyEngineMCPFilter = !!root.theme.featureFlags?.enableKnowledgeMCP;
 
 	/**
-	 * Get all MCPs (both knowledge and tools) with lazy loading
+	 * Three sources, braided as (knowledge engine, toolbox engine, toolbox
+	 * project) per index. Splitting VECTOR off keeps the rendered order
+	 * predictable (k, t, t, k, t, t, ...) instead of relying on whatever
+	 * order the engines reactor returned the mixed types in. Same rationale
+	 * as MCPSelector for using separate iterators over MyEngineProject.
+	 *
+	 * VECTOR engines are MCP-tag-filtered only when the flag is on; the
+	 * other two sources are always filtered to MCP-tagged items.
 	 */
-	const getMCPs = useIteratorPixel<(App | Engine)[], MCPConfig>(
+	const getKnowledgeEngines = useIteratorPixel<Engine[], MCP>(
 		(limit, offset) =>
-			`META | MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
-		(response) => {
-			// if its less than the limit, we know its the end
-			if (response.length < 15) {
-				return -1;
-			}
+			`META | MyEngines (metaKeys = ["tag", "description"], ${applyEngineMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}engineTypes=["VECTOR"], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+		(response) => (response.length < 15 ? -1 : Infinity),
+		(response) => response.map(engineProjectToMCP),
+		{ limit: 15 },
+		[debouncedSearch, applyEngineMCPFilter],
+	);
 
-			return Infinity;
-		},
-		(response) => {
-			return response.map(engineProjectToMCP);
-		},
-		{
-			limit: 15,
-		},
+	const getToolboxEngines = useIteratorPixel<Engine[], MCP>(
+		(limit, offset) =>
+			`META | MyEngines (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], engineTypes=["STORAGE", "DATABASE", "FUNCTION", "MODEL"], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+		(response) => (response.length < 15 ? -1 : Infinity),
+		(response) => response.map(engineProjectToMCP),
+		{ limit: 15 },
 		[debouncedSearch],
 	);
 
+	const getProjects = useIteratorPixel<App[], MCP>(
+		(limit, offset) =>
+			`META | MyProjects (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], ${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""}limit=[${limit}], offset=[${offset}])`,
+		(response) => (response.length < 15 ? -1 : Infinity),
+		(response) => response.map(engineProjectToMCP),
+		{ limit: 15 },
+		[debouncedSearch],
+	);
+
+	const combinedData: MCP[] = [];
+	const maxLen = Math.max(
+		getKnowledgeEngines.data.length,
+		getToolboxEngines.data.length,
+		getProjects.data.length,
+	);
+	for (let i = 0; i < maxLen; i++) {
+		const k = getKnowledgeEngines.data[i];
+		const te = getToolboxEngines.data[i];
+		const p = getProjects.data[i];
+		if (k) combinedData.push(k);
+		if (te) combinedData.push(te);
+		if (p) combinedData.push(p);
+	}
+	const isLoading =
+		getKnowledgeEngines.isLoading ||
+		getToolboxEngines.isLoading ||
+		getProjects.isLoading;
+	const hasMore =
+		getKnowledgeEngines.hasMore ||
+		getToolboxEngines.hasMore ||
+		getProjects.hasMore;
+
 	/**
-	 * Setup infinite scroll for the command list
+	 * Setup infinite scroll for the command list. Each scroll-to-bottom
+	 * advances whichever sources still have more.
 	 */
 	const { setScroll } = useInfiniteScroll({
-		disabled: getMCPs.isLoading || !getMCPs.hasMore,
+		disabled: isLoading || !hasMore,
 		onNext: () => {
-			getMCPs.next();
+			if (getKnowledgeEngines.hasMore) getKnowledgeEngines.next();
+			if (getToolboxEngines.hasMore) getToolboxEngines.next();
+			if (getProjects.hasMore) getProjects.next();
 		},
 	});
 
@@ -87,7 +130,7 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 		{} as Record<string, MCPConfig>,
 	);
 
-	const hasResults = getMCPs.data.length > 0;
+	const hasResults = combinedData.length > 0;
 
 	return (
 		<Command shouldFilter={false} className="w-full">
@@ -108,7 +151,7 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 				className="max-h-[300px]"
 				ref={(ele) => setScroll(ele)}
 			>
-				{!getMCPs.isLoading && !hasResults ? (
+				{!isLoading && !hasResults ? (
 					<CommandEmpty>
 						{search
 							? t("menuMcp.noResults")
@@ -116,9 +159,9 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 					</CommandEmpty>
 				) : null}
 
-				{!getMCPs.isLoading && hasResults && (
+				{hasResults && (
 					<CommandGroup>
-						{getMCPs.data.map((item) => (
+						{combinedData.map((item) => (
 							<CommandItem
 								key={item.id}
 								value={item.id}
@@ -144,7 +187,7 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 					</CommandGroup>
 				)}
 
-				{getMCPs.isLoading && (
+				{isLoading && (
 					<div className="flex items-center justify-center py-4">
 						<Spinner className="size-4" />
 					</div>
