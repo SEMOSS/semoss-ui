@@ -66,6 +66,7 @@ const IconMapper: Record<string, ReactNode> = {
 	"View RDF Map": <FileText className={SIDEBAR_ICON_CLASS} />,
 	"LLM Feedback": <ChartBar className={SIDEBAR_ICON_CLASS} />,
 	"Room Token Limits": <Coins className={SIDEBAR_ICON_CLASS} />,
+	"Usage Limits": <Settings className={SIDEBAR_ICON_CLASS} />,
 };
 
 export const SettingsIndexPage = () => {
