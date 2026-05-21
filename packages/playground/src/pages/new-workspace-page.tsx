@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { ScrollArea } from "@semoss/ui/next";
@@ -13,6 +14,10 @@ import { useGlobalBreadcrumbs } from "@/hooks";
 export const NewWorkspacePage = observer(() => {
 	const { t } = useTranslation("workspace");
 	const navigate = useNavigate();
+
+	const scrollToTopOnMount = useCallback((node: HTMLDivElement | null) => {
+		node?.scrollTo({ top: 0 });
+	}, []);
 
 	// set the breadcrumbs
 	useGlobalBreadcrumbs({
@@ -41,7 +46,10 @@ export const NewWorkspacePage = observer(() => {
 	};
 
 	return (
-		<ScrollArea className="relative h-full w-full overflow-hidden">
+		<ScrollArea
+			className="relative h-full w-full overflow-hidden"
+			viewportRef={scrollToTopOnMount}
+		>
 			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex flex-row gap-2">
 					<div className="space-y-2.5">

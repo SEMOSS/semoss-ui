@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ENGINE_IMAGES } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -7,7 +8,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 
 const normalizeEngineKey = (value?: string) =>

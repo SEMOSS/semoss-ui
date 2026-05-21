@@ -147,6 +147,7 @@ export const WorkspaceMCPList = ({
 								id: m.engine_id,
 								name: m.engine_name,
 								type: m.engine_type,
+								subtype: m.engine_subtype,
 								description: m.description,
 								tags: m.tags?.split(",") || [],
 							}}

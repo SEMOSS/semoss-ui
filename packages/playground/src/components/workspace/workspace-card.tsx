@@ -1,7 +1,7 @@
-import { Ellipsis, SquarePen } from "lucide-react";
+import { Pencil, SquarePen, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
@@ -16,11 +16,9 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@semoss/ui/next";
 import logoImage from "@/assets/img/logo.svg";
 import { useRoot } from "@/hooks";
@@ -50,54 +48,58 @@ export const WorkspaceCard = observer(
 		return (
 			<>
 				<Card
-					className="cursor-pointer gap-0 bg-card p-0"
+					className="relative cursor-pointer gap-0 bg-card p-0"
 					onClick={() => {
 						navigate(`/agent/${workspace.workspace_id}`);
 					}}
 				>
+					<div className="absolute top-2 right-2 z-10 flex items-center gap-0.5">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={(e) => {
+										e.stopPropagation();
+										navigate(
+											`/agent/${workspace.workspace_id}/edit`,
+										);
+									}}
+									aria-label={t("workspace:actions.edit")}
+								>
+									<Pencil className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t("workspace:actions.edit")}
+							</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									onClick={(e) => {
+										e.stopPropagation();
+										setDeleteModal(true);
+									}}
+									aria-label={t("workspace:actions.delete")}
+								>
+									<Trash2 className="size-4" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t("workspace:actions.delete")}
+							</TooltipContent>
+						</Tooltip>
+					</div>
 					<CardContent className="flex flex-col gap-4 p-6">
-						<div className="flex justify-between">
-							<div className="text-4xl">
-								<img
-									className="flex h-10 select-none flex-row items-center dark:brightness-0 dark:invert"
-									alt="logo"
-									src={root.theme?.images.logo || logoImage}
-								/>
-							</div>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<Button
-										variant="ghost"
-										onClick={(e) => e.stopPropagation()}
-									>
-										<Ellipsis />
-									</Button>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuGroup>
-										<DropdownMenuItem
-											onClick={(e) => {
-												e.stopPropagation();
-											}}
-											asChild
-										>
-											<Link
-												to={`/agent/${workspace.workspace_id}/edit`}
-											>
-												{t("workspace:actions.edit")}
-											</Link>
-										</DropdownMenuItem>
-										<DropdownMenuItem
-											onClick={(e) => {
-												e.stopPropagation();
-												setDeleteModal(true);
-											}}
-										>
-											{t("workspace:actions.delete")}
-										</DropdownMenuItem>
-									</DropdownMenuGroup>
-								</DropdownMenuContent>
-							</DropdownMenu>
+						<div className="text-4xl">
+							<img
+								className="flex h-10 select-none flex-row items-center dark:brightness-0 dark:invert"
+								alt="logo"
+								src={root.theme?.images.logo || logoImage}
+							/>
 						</div>
 						<CardHeader className="gap-1.5 p-0">
 							<CardTitle className="truncate leading-normal">

@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
@@ -16,6 +17,10 @@ export const EditWorkspacePage = observer(() => {
 	const { t } = useTranslation("workspace");
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
+
+	const scrollToTopOnMount = useCallback((node: HTMLDivElement | null) => {
+		node?.scrollTo({ top: 0 });
+	}, []);
 
 	// Fetch workspace details
 	const getWorkspace = usePixel<Workspace>(
@@ -91,7 +96,10 @@ export const EditWorkspacePage = observer(() => {
 	}
 
 	return (
-		<ScrollArea className="relative h-full w-full overflow-hidden">
+		<ScrollArea
+			className="relative h-full w-full overflow-hidden"
+			viewportRef={scrollToTopOnMount}
+		>
 			<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
 				<div className="flex flex-row gap-2">
 					<div className="space-y-2.5">

@@ -60,6 +60,9 @@ export interface MCP {
 	/** Type of the mcp */
 	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
 
+	/** Engine subtype (e.g. POSTGRES, PYTHON) used to pick the icon — engines only */
+	subtype?: string;
+
 	/** Id of the mcp */
 	id: string;
 

@@ -1,15 +1,16 @@
 import {
 	BookOpenIcon,
-	EllipsisIcon,
 	HammerIcon,
 	MessagesSquareIcon,
+	Pencil,
 	PlusIcon,
 	SearchIcon,
+	Trash2,
 	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import { MembersTable } from "@semoss/shared";
@@ -22,11 +23,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -35,6 +31,9 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
@@ -154,52 +153,44 @@ export const WorkspaceDetailPage = observer(() => {
 						</div>
 					</div>
 					<div className="flex-1" />
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="outline"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<EllipsisIcon />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuGroup>
-								<DropdownMenuItem asChild>
-									<Link to={`/agent/${workspaceId}/edit`}>
-										{t("workspace:actions.edit")}
-									</Link>
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={async (e) => {
+					<div className="flex items-center gap-1">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={(e) => {
+										e.stopPropagation();
+										navigate(`/agent/${workspaceId}/edit`);
+									}}
+									aria-label={t("workspace:actions.edit")}
+								>
+									<Pencil />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t("workspace:actions.edit")}
+							</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={(e) => {
 										e.stopPropagation();
 										setDeleteModal(true);
-										setIsLoading(true);
-										try {
-											await chat.deleteWorkspace(
-												workspaceId,
-											);
-
-											// go to the workspace
-											navigate("/agent");
-										} catch (e) {
-											toast.error(
-												e instanceof Error
-													? e.message
-													: t(
-															"workspace:detail.failedToDelete",
-														),
-											);
-										} finally {
-											setIsLoading(false);
-										}
 									}}
+									aria-label={t("workspace:actions.delete")}
 								>
-									{t("workspace:actions.delete")}
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
+									<Trash2 />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>
+								{t("workspace:actions.delete")}
+							</TooltipContent>
+						</Tooltip>
+					</div>
 				</div>
 
 				<Tabs

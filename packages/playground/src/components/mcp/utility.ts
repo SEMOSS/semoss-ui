@@ -15,6 +15,7 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 		// It's an Engine
 		return {
 			type: tool.engine_type,
+			subtype: tool.engine_subtype,
 			id: tool.engine_id,
 			name: tool.engine_name,
 			description: tool.description || "",

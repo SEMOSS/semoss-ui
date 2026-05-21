@@ -44,8 +44,8 @@ import {
 	SelectValue,
 	toast,
 } from "@semoss/ui/next";
+import PreviewButton from "@/assets/img/PreviewRounded.png";
 import { JsonValueViewer } from "@/components/common/JsonValueViewer";
-import PreviewButton from "../../assets/img/PreviewRounded.png";
 // TODO: MOVE TO SDK/UTILITY LIB
 import {
 	capitalizeFirstLetter,

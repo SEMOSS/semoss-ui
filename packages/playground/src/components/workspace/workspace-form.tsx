@@ -144,16 +144,6 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						data-testid="workspaceForm-description-txt"
 					/>
 				</Field>
-				<Field>
-					<FieldLabel htmlFor={promptsId}>
-						{t("workspace:form.promptsLabel")}
-					</FieldLabel>
-					<PromptSelector
-						values={prompts}
-						disabled={isLoading}
-						onChange={(values) => setPrompts(values)}
-					/>
-				</Field>
 			</FieldGroup>
 			<FieldSeparator />
 			<FieldGroup>
@@ -167,6 +157,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						value={instructions.replace(/\\n/g, "\n")}
 						onChange={(e) => setInstructions(e.target.value)}
 						rows={4}
+						className="max-h-64 overflow-y-auto"
 						data-testid="workspaceForm-system_prompt-txt"
 					/>
 				</Field>
@@ -184,12 +175,17 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						</div>
 					</FieldLabel>
 
-					<MCPSelector
-						type="KNOWLEDGE"
-						values={knowledge}
-						disabled={isLoading}
-						onChange={(knowledge) => setKnowledge(knowledge)}
-					/>
+					<div className="flex h-[420px] w-full flex-col">
+						<MCPSelector
+							type="KNOWLEDGE"
+							values={knowledge}
+							disabled={isLoading}
+							onChange={(knowledge) => setKnowledge(knowledge)}
+							onRequestCreateKnowledge={() =>
+								setIsKnowledgeOverlayOpen(true)
+							}
+						/>
+					</div>
 
 					<NewKnowledgeOverlay
 						open={isKnowledgeOverlayOpen}
@@ -205,11 +201,23 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 				</Field>
 				<Field>
 					<FieldLabel>{t("workspace:form.toolboxLabel")}</FieldLabel>
-					<MCPSelector
-						type="TOOLBOX"
-						values={toolbox}
+					<div className="flex h-[420px] w-full flex-col">
+						<MCPSelector
+							type="TOOLBOX"
+							values={toolbox}
+							disabled={isLoading}
+							onChange={(mcps) => setToolbox(mcps)}
+						/>
+					</div>
+				</Field>
+				<Field>
+					<FieldLabel htmlFor={promptsId}>
+						{t("workspace:form.promptsLabel")}
+					</FieldLabel>
+					<PromptSelector
+						values={prompts}
 						disabled={isLoading}
-						onChange={(mcps) => setToolbox(mcps)}
+						onChange={(values) => setPrompts(values)}
 					/>
 				</Field>
 			</FieldGroup>

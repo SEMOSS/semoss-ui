@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronDown } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -22,6 +22,7 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import type { Engine } from "@/types";
+import { getEngineSubtypeIcon } from "../icon-utils";
 
 // ============================================================================
 // TypeScript Interfaces
@@ -60,6 +61,12 @@ interface EngineSelectProps {
 
 	/** Optional tooltip content to show when hovering context percentage */
 	contextTooltipContent?: React.ReactNode;
+
+	/** Show the engine ID under the engine name instead of the description */
+	showEngineId?: boolean;
+
+	/** Show the engine subtype icon next to each option */
+	showEngineIcon?: boolean;
 }
 
 // ============================================================================
@@ -88,6 +95,8 @@ export const EngineSelect = ({
 	tokensUsed,
 	tokensMax,
 	contextTooltipContent,
+	showEngineId,
+	showEngineIcon,
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -127,14 +136,16 @@ export const EngineSelect = ({
 							: ""
 					} ${
 						metaFilters
-							? `metaFilters=[${JSON.stringify(metaFilters)}],`
+							? `metaFilters=${JSON.stringify(metaFilters)},`
 							: ""
 					} limit=[${limit}], offset=[${offset}]);`
 				: "",
 		// Determine if there are more pages to load
 		(response) => {
-			// If response is smaller than page size, we've reached the end
-			if (response.length < 15) {
+			// Keep loading until the backend returns an empty page.
+			// Some engine queries can return partial pages (< limit) even when more
+			// results exist, so "< limit means end" is not reliable here.
+			if (response.length === 0) {
 				return -1;
 			}
 
@@ -160,15 +171,28 @@ export const EngineSelect = ({
 	// ========================================================================
 
 	/**
-	 * Enable infinite scroll for seamless pagination
-	 * Automatically loads next page when user scrolls near bottom
+	 * Stable onNext so useInfiniteScroll doesn't tear down the scroll listener
+	 * on every render (getEngines.next changes whenever load state changes).
 	 */
+	const nextRef = useRef(getEngines.next);
+	useEffect(() => {
+		nextRef.current = getEngines.next;
+	}, [getEngines.next]);
+	const handleNext = useCallback(() => {
+		nextRef.current();
+	}, []);
+
 	const { setScroll } = useInfiniteScroll({
 		disabled: getEngines.isLoading || !getEngines.hasMore || !open,
-		onNext: () => {
-			getEngines.next();
-		},
+		onNext: handleNext,
 	});
+
+	const listRef = useCallback(
+		(node: HTMLDivElement | null) => {
+			setScroll(node);
+		},
+		[setScroll],
+	);
 
 	// ========================================================================
 	// Context Window Calculation
@@ -209,11 +233,11 @@ export const EngineSelect = ({
 					aria-expanded={open}
 					disabled={disabled}
 					className={cn(
-						"ml-auto max-w-64 overflow-hidden hover:bg-accent",
+						"max-w-64 justify-start overflow-hidden hover:bg-accent",
 						className,
 					)}
 				>
-					<div className="flex min-w-0 items-center gap-2 overflow-hidden">
+					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
 						{showContextIndicator && (
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -283,7 +307,11 @@ export const EngineSelect = ({
 					</div>
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="p-0" {...popoverContentProps}>
+			<PopoverContent
+				align="start"
+				className="w-[var(--radix-popover-trigger-width)] min-w-64 p-0"
+				{...popoverContentProps}
+			>
 				<Command shouldFilter={false}>
 					<CommandInput
 						placeholder="Search"
@@ -291,7 +319,13 @@ export const EngineSelect = ({
 						onValueChange={setSearch}
 					/>
 					{/* Attach infinite scroll to list container */}
-					<CommandList ref={(ele) => setScroll(ele)}>
+					<CommandList
+						ref={listRef}
+						style={{
+							maxHeight: "400px",
+							overflowY: "auto",
+						}}
+					>
 						<CommandEmpty>
 							{/* Show spinner during initial load, otherwise "Not Found" */}
 							{getEngines.isLoading &&
@@ -320,26 +354,42 @@ export const EngineSelect = ({
 											setOpen(false);
 										}}
 									>
-										{/* Checkmark - visible only for selected item */}
-										<CheckIcon
-											className={`mr-2 size-4 ${
-												value === engineId
-													? "opacity-100"
-													: "opacity-0"
-											}`}
-										/>
+										{/* Checkmark - rendered only for selected item */}
+										{value === engineId && (
+											<CheckIcon className="mr-2 size-4" />
+										)}
+										{showEngineIcon && (
+											<img
+												src={getEngineSubtypeIcon(
+													engine.engine_type,
+													engine.engine_subtype,
+												)}
+												alt={`${displayName} icon`}
+												className="mr-2 size-6 shrink-0 object-contain"
+											/>
+										)}
 										<div className="flex flex-1 flex-col truncate">
 											<span className="truncate">
 												{displayName}
 											</span>
-											{/* Optional description shown below engine name */}
-											{engine.description && (
+											{showEngineId ? (
 												<span
-													title={engine.description}
+													title={engineId}
 													className="truncate text-muted-foreground text-xs"
 												>
-													{engine.description}
+													{engineId}
 												</span>
+											) : (
+												engine.description && (
+													<span
+														title={
+															engine.description
+														}
+														className="truncate text-muted-foreground text-xs"
+													>
+														{engine.description}
+													</span>
+												)
 											)}
 										</div>
 									</CommandItem>
@@ -352,6 +402,29 @@ export const EngineSelect = ({
 										<Spinner className="size-4" />
 									</div>
 								)}
+							{/* Manual "Load more" trigger as a fallback for environments where the
+							    scroll event doesn't fire reliably (small lists / cmdk internals). */}
+							{!getEngines.isLoading && getEngines.hasMore && (
+								<div className="flex items-center justify-center py-1">
+									<Button
+										type="button"
+										variant="ghost"
+										size="sm"
+										className="h-7 rounded-md px-3 text-muted-foreground text-xs"
+										onMouseDown={(e) => {
+											// Prevent cmdk from stealing focus and closing the popover
+											e.preventDefault();
+										}}
+										onClick={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											getEngines.next();
+										}}
+									>
+										Load more
+									</Button>
+								</div>
+							)}
 						</CommandGroup>
 					</CommandList>
 				</Command>

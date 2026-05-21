@@ -22,6 +22,18 @@ export default defineConfig(({ mode }) => {
 		],
 		resolve: {
 			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+			dedupe: [
+				"react",
+				"react-dom",
+				"@semoss/sdk",
+				"@semoss/sdk/react",
+				"@semoss/shared",
+				"@semoss/ui",
+				"@semoss/ui/next",
+				"@semoss/i18n",
+				"mobx",
+				"mobx-react-lite",
+			],
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
@@ -40,6 +52,14 @@ export default defineConfig(({ mode }) => {
 			commonjsOptions: { transformMixedEsModules: true },
 		},
 		optimizeDeps: {
+			exclude: [
+				"@semoss/sdk",
+				"@semoss/sdk/react",
+				"@semoss/shared",
+				"@semoss/ui",
+				"@semoss/ui/next",
+				"@semoss/i18n",
+			],
 			esbuildOptions: {
 				target: "es2020",
 			},

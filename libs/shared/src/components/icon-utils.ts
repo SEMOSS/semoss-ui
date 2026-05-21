@@ -1,5 +1,5 @@
-import BRAIN from "@/assets/img/BRAIN.png";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
+import BRAIN from "../assets/img/BRAIN.png";
+import { ENGINE_IMAGES } from "../constants/engine-images.constants";
 
 const hashString = (str: string): number => {
 	let hash = 0;
