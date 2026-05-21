@@ -7,6 +7,11 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
 import {
+	buildInitials,
+	getAppCatalogAvatarStyle,
+	getEngineSubtypeIcon,
+} from "@semoss/shared";
+import {
 	Badge,
 	Button,
 	Card,
@@ -218,16 +223,21 @@ export const MCPCard = ({
 						<div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
 							<ImageIcon className="size-4 text-muted-foreground" />
 						</div>
+					) : m.type === "PROJECT" ? (
+						<div
+							className="flex size-10 shrink-0 items-center justify-center rounded-md font-semibold text-sm"
+							style={getAppCatalogAvatarStyle(m.name)}
+						>
+							{buildInitials(m.name)}
+						</div>
 					) : (
-						<img
-							src={
-								m.type === "PROJECT"
-									? `${import.meta.env.MODULE}/api/project-${m.id}/projectImage/download`
-									: `${import.meta.env.MODULE}/api/e-${m.id}/image/download`
-							}
-							alt={m.name}
-							className="size-10 shrink-0 rounded-md object-cover object-center"
-						/>
+						<div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 p-2">
+							<img
+								src={getEngineSubtypeIcon(m.type, m.subtype)}
+								alt={`${m.name} icon`}
+								className="size-full object-contain"
+							/>
+						</div>
 					)}
 
 					<div className="flex min-w-0 flex-1 flex-col gap-0.5">
