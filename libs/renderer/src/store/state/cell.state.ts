@@ -309,6 +309,18 @@ export class CellState<D extends CellDef = CellDef> {
 			}
 		}
 
+		// Final console flush — pull any logs written after the last poll
+		try {
+			const { message: finalMessages } = await getPixelConsole(jobId);
+			runInAction(() => {
+				finalMessages.forEach((mess) => {
+					this._store.messages.push(mess);
+				});
+			});
+		} catch (error) {
+			console.error("Error during final console flush:", error.message);
+		}
+
 		const { errors, results } = await getPixelAsyncResult(jobId);
 		if (errors.length > 0) {
 			throw new Error(errors.join(""));
