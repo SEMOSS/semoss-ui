@@ -210,7 +210,6 @@ export const NewKnowledgeFormBody = observer(
 										className:
 											"w-[var(--radix-popover-trigger-width)] min-w-64 p-0",
 									}}
-									showEngineIcon
 									showEngineId
 								/>
 							</div>

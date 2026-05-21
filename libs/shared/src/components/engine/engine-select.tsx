@@ -65,7 +65,7 @@ interface EngineSelectProps {
 	/** Show the engine ID under the engine name instead of the description */
 	showEngineId?: boolean;
 
-	/** Show the engine subtype icon next to each option */
+	/** Show the engine subtype icon next to each option. Defaults to true. */
 	showEngineIcon?: boolean;
 }
 
@@ -96,7 +96,7 @@ export const EngineSelect = ({
 	tokensMax,
 	contextTooltipContent,
 	showEngineId,
-	showEngineIcon,
+	showEngineIcon = true,
 }: EngineSelectProps) => {
 	// ========================================================================
 	// State & Hooks
@@ -343,15 +343,11 @@ export const EngineSelect = ({
 											onChange(engine);
 											setOpen(false);
 										}}
+										className={cn(
+											value === engineId &&
+												"bg-primary/10 data-[selected=true]:bg-primary/15",
+										)}
 									>
-										{/* Checkmark - visible only for selected item */}
-										<CheckIcon
-											className={`mr-2 size-4 ${
-												value === engineId
-													? "opacity-100"
-													: "opacity-0"
-											}`}
-										/>
 										{showEngineIcon && (
 											<img
 												src={getEngineSubtypeIcon(
@@ -371,7 +367,7 @@ export const EngineSelect = ({
 													title={engineId}
 													className="truncate text-muted-foreground text-xs"
 												>
-													{engineId}
+													id: {engineId}
 												</span>
 											) : (
 												engine.description && (
@@ -386,6 +382,13 @@ export const EngineSelect = ({
 												)
 											)}
 										</div>
+										{/* Right-aligned check marks the selected engine without shifting the row's left content */}
+										{value === engineId && (
+											<CheckIcon
+												strokeWidth={3}
+												className="ml-2 size-4 shrink-0 text-primary"
+											/>
+										)}
 									</CommandItem>
 								);
 							})}
