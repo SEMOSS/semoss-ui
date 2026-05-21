@@ -18,7 +18,6 @@
 		"newChat": "新しいチャット"
 	},
 	"card": {
-		"noDescription": "説明がありません",
 		"deleteConfirmTitle": "本当によろしいですか？",
 		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。"
 	},

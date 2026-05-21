@@ -18,7 +18,6 @@
 		"newChat": "دردشة جديدة"
 	},
 	"card": {
-		"noDescription": "لا يوجد وصف متاح",
 		"deleteConfirmTitle": "هل أنت متأكد؟",
 		"deleteConfirmDescription": "هذا الإجراء لا رجعة فيه. سيؤدي ذلك إلى حذف مساحة العمل {{name}} نهائياً."
 	},

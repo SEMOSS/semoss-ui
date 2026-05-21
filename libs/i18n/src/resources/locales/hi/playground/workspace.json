@@ -18,7 +18,6 @@
 		"newChat": "नई चैट"
 	},
 	"card": {
-		"noDescription": "कोई विवरण उपलब्ध नहीं",
 		"deleteConfirmTitle": "क्या आपको यकीन है?",
 		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।"
 	},

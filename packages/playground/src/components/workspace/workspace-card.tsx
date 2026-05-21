@@ -63,10 +63,11 @@ export const WorkspaceCard = observer(
 								{workspace.name}
 							</CardTitle>
 						</div>
-						<CardDescription className="truncate">
-							{workspace.description ||
-								t("workspace:card.noDescription")}
-						</CardDescription>
+						{workspace.description && (
+							<CardDescription className="truncate">
+								{workspace.description}
+							</CardDescription>
+						)}
 					</CardContent>
 
 					<hr

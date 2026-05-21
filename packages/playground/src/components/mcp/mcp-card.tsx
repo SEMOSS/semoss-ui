@@ -267,10 +267,15 @@ export const MCPCard = ({
 					) : null}
 				</div>
 
-				{/* Row 3: description, full card width. */}
-				<div className="wrap-break-words line-clamp-4 text-muted-foreground text-xs">
-					{m.description || t("permission.noDescription")}
-				</div>
+				{/* Row 3: description, full card width. When absent, a small
+				    spacer keeps the card from looking cramped at the bottom. */}
+				{m.description ? (
+					<div className="wrap-break-words line-clamp-4 text-muted-foreground text-xs">
+						{m.description}
+					</div>
+				) : (
+					<div className="h-1" aria-hidden />
+				)}
 			</CardContent>
 		</Card>
 	);

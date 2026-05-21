@@ -49,7 +49,6 @@
 		"requestAccess": "アクセスをリクエスト",
 		"noAccess": "アクセス権なし",
 		"requestAccessButton": "アクセスをリクエスト",
-		"noDescription": "説明がありません。",
 		"tooltipNoAccess": "この{{type}}へのアクセス権がありません。オーナーにアクセスをリクエストしてください。",
 		"tooltipMissingDependencies": "この{{type}}のすべての依存関係にアクセスできないため、機能が制限される場合があります。詳細については、プラットフォームで開いてください。",
 		"tooltipOpen": "プラットフォームでこの{{type}}を開く",

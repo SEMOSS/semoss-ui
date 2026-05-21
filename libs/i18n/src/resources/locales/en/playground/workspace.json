@@ -18,7 +18,6 @@
 		"newChat": "New Chat"
 	},
 	"card": {
-		"noDescription": "No description available",
 		"deleteConfirmTitle": "Are you sure?",
 		"deleteConfirmDescription": "This action is irreversible. This will permanently delete the {{name}} workspace."
 	},

@@ -49,7 +49,6 @@
 		"requestAccess": "Solicitar acceso",
 		"noAccess": "Sin acceso",
 		"requestAccessButton": "Solicitar Acceso",
-		"noDescription": "No hay descripción disponible.",
 		"tooltipNoAccess": "No tienes acceso a este {{type}}. Por favor, solicita acceso al propietario.",
 		"tooltipMissingDependencies": "No tienes acceso a todas las dependencias de este {{type}}, por lo que la funcionalidad puede ser limitada. Ábrelo en la plataforma para más información.",
 		"tooltipOpen": "Abrir este {{type}} en la plataforma",

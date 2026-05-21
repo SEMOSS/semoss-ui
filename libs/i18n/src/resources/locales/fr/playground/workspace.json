@@ -18,7 +18,6 @@
 		"newChat": "Nouveau Chat"
 	},
 	"card": {
-		"noDescription": "Aucune description disponible",
 		"deleteConfirmTitle": "Êtes-vous sûr ?",
 		"deleteConfirmDescription": "Cette action est irréversible. Cela supprimera définitivement l'espace de travail {{name}}."
 	},
