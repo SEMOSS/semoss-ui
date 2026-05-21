@@ -144,16 +144,6 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						data-testid="workspaceForm-description-txt"
 					/>
 				</Field>
-				<Field>
-					<FieldLabel htmlFor={promptsId}>
-						{t("workspace:form.promptsLabel")}
-					</FieldLabel>
-					<PromptSelector
-						values={prompts}
-						disabled={isLoading}
-						onChange={(values) => setPrompts(values)}
-					/>
-				</Field>
 			</FieldGroup>
 			<FieldSeparator />
 			<FieldGroup>
@@ -167,6 +157,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						value={instructions.replace(/\\n/g, "\n")}
 						onChange={(e) => setInstructions(e.target.value)}
 						rows={4}
+						className="max-h-96 overflow-y-auto"
 						data-testid="workspaceForm-system_prompt-txt"
 					/>
 				</Field>
@@ -179,7 +170,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						values={knowledge}
 						disabled={isLoading}
 						onChange={(knowledge) => setKnowledge(knowledge)}
-						className="h-96"
+						className="h-112"
 					/>
 				</Field>
 				<Field>
@@ -189,7 +180,18 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						values={toolbox}
 						disabled={isLoading}
 						onChange={(mcps) => setToolbox(mcps)}
-						className="h-96"
+						className="h-112"
+					/>
+				</Field>
+				<Field>
+					<FieldLabel htmlFor={promptsId}>
+						{t("workspace:form.promptsLabel")}
+					</FieldLabel>
+					<PromptSelector
+						values={prompts}
+						disabled={isLoading}
+						onChange={(values) => setPrompts(values)}
+						className="h-112"
 					/>
 				</Field>
 			</FieldGroup>

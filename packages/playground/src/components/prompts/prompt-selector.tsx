@@ -7,6 +7,7 @@ import {
 	Badge,
 	Button,
 	Checkbox,
+	cn,
 	Field,
 	FieldContent,
 	FieldDescription,
@@ -37,6 +38,9 @@ interface PromptSelectorProps {
 
 	/** Callback fired when the selected prompt IDs change */
 	onChange: (values: string[]) => void;
+
+	/** Extra classes appended to the outer wrapper (e.g. for sizing) */
+	className?: string;
 }
 
 /**
@@ -46,6 +50,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 	values,
 	disabled,
 	onChange,
+	className,
 }) => {
 	const { t } = useTranslation("workspace");
 	const [search, setSearch] = useState<string>("");
@@ -110,8 +115,13 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 	};
 
 	return (
-		<div className="w-full overflow-hidden rounded-xl border-border bg-card shadow-sm">
-			<div className="flex w-full flex-row gap-2 border-border bg-muted p-4">
+		<div
+			className={cn(
+				"flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border-border bg-card shadow-sm",
+				className,
+			)}
+		>
+			<div className="flex w-full shrink-0 flex-row gap-2 border-border bg-muted p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
 						placeholder={t("prompts.searchPlaceholder")}
@@ -126,7 +136,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 			</div>
 
 			<ScrollArea
-				className="h-64 w-full flex-1"
+				className="min-h-0 w-full flex-1"
 				viewportRef={(e) => setScroll(e)}
 			>
 				{getPrompts.isLoading && (
@@ -203,7 +213,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 				)}
 			</ScrollArea>
 			{values.length > 0 && (
-				<ScrollArea className="w-full whitespace-nowrap">
+				<ScrollArea className="w-full shrink-0 whitespace-nowrap">
 					<ScrollBar orientation="horizontal" />
 					<div className="flex space-x-2 p-4">
 						{values.map((id) => {
