@@ -207,8 +207,6 @@ export const NewKnowledgeFormBody = observer(
 									onChange={(e) => setEmbeddingEngine(e)}
 									popoverContentProps={{
 										align: "start",
-										className:
-											"w-[var(--radix-popover-trigger-width)] min-w-64 p-0",
 									}}
 									showEngineId
 								/>

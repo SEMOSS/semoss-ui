@@ -233,11 +233,11 @@ export const EngineSelect = ({
 					aria-expanded={open}
 					disabled={disabled}
 					className={cn(
-						"ml-auto max-w-64 overflow-hidden hover:bg-accent",
+						"ml-auto max-w-64 justify-start overflow-hidden hover:bg-accent",
 						className,
 					)}
 				>
-					<div className="flex min-w-0 items-center gap-2 overflow-hidden">
+					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
 						{showContextIndicator && (
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -307,7 +307,13 @@ export const EngineSelect = ({
 					</div>
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="p-0" {...popoverContentProps}>
+			<PopoverContent
+				{...popoverContentProps}
+				className={cn(
+					"w-[var(--radix-popover-trigger-width)] min-w-64 max-w-[var(--radix-popover-trigger-width)] p-0",
+					popoverContentProps?.className,
+				)}
+			>
 				<Command shouldFilter={false}>
 					<CommandInput
 						placeholder="Search"
