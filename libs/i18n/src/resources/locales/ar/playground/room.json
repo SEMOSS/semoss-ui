@@ -10,8 +10,10 @@
 	"form": {
 		"modelLabel": "النموذج",
 		"instructionsLabel": "التعليمات",
+		"agentLabel": "الوكيل",
+		"noAgent": "لم يتم تعيين وكيل",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صندوق الأدوات",
+		"toolboxLabel": "صناديق الأدوات",
 		"maxTokenLabel": "الحد الأقصى للرموز",
 		"temperatureLabel": "درجة الحرارة"
 	},

@@ -6,7 +6,7 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Connaissances",
-		"toolboxLabel": "Boîte à outils"
+		"toolboxLabel": "Boîtes à outils"
 	},
 	"actions": {
 		"create": "Créer",
@@ -90,7 +90,7 @@
 		"tabs": {
 			"myChats": "Mes discussions",
 			"knowledge": "Connaissances",
-			"toolbox": "Boîte à outils",
+			"toolbox": "Boîtes à outils",
 			"members": "Membres"
 		},
 		"failedToDelete": "Échec de la suppression de l'agent",

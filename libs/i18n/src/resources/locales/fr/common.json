@@ -29,7 +29,7 @@
 	},
 	"actions": {
 		"addKnowledge": "Ajouter des connaissances",
-		"addToolbox": "Ajouter une boîte à outils",
+		"addToolbox": "Ajouter des boîtes à outils",
 		"deleteMCP": "Supprimer MCP"
 	},
 	"badges": {

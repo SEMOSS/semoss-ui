@@ -6,7 +6,7 @@
 		"descriptionLabel": "الوصف",
 		"instructionsLabel": "التعليمات",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صندوق الأدوات"
+		"toolboxLabel": "صناديق الأدوات"
 	},
 	"actions": {
 		"create": "إنشاء",
@@ -90,7 +90,7 @@
 		"tabs": {
 			"myChats": "محادثاتي",
 			"knowledge": "المعرفة",
-			"toolbox": "صندوق الأدوات",
+			"toolbox": "صناديق الأدوات",
 			"members": "الأعضاء"
 		},
 		"failedToDelete": "فشل حذف الوكيل",

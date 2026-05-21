@@ -29,7 +29,7 @@
 	},
 	"actions": {
 		"addKnowledge": "Añadir conocimiento",
-		"addToolbox": "Añadir caja de herramientas",
+		"addToolbox": "Añadir cajas de herramientas",
 		"deleteMCP": "Eliminar MCP"
 	},
 	"badges": {
@@ -37,7 +37,7 @@
 	},
 	"messages": {
 		"noKnowledgeFound": "No se encontró conocimiento",
-		"noToolboxFound": "No se encontró caja de herramientas"
+		"noToolboxFound": "No se encontraron cajas de herramientas"
 	},
 	"tooltips": {
 		"cannotDeleteWorkspaceMCPs": "No se pueden eliminar los MCP del espacio de trabajo",

@@ -15,13 +15,16 @@
 		"createKnowledgeSource": "ナレッジソースを作成",
 		"viewDetails": "詳細を表示",
 		"noToolboxesFound": "ツールボックスが見つかりません",
-		"noKnowledgeFound": "ナレッジが見つかりません"
+		"noKnowledgeFound": "ナレッジが見つかりません",
+		"noAgentsFound": "エージェントが見つかりません"
 	},
 	"overlay": {
-		"editToolbox": "ツールボックスを構成",
-		"editKnowledge": "ナレッジを構成",
-		"toolboxDescription": "このチャットにより多くの機能を与えるためにツールを追加します",
-		"knowledgeDescription": "モデルにより多くのコンテキストを与えるためにナレッジソースを追加します"
+		"title": "チャットを設定",
+		"description": "保存済みのエージェントを選択するか、独自のナレッジとツールボックスを組み合わせてください。",
+		"tabAgent": "エージェント",
+		"tabKnowledge": "ナレッジ",
+		"tabToolbox": "ツールボックス",
+		"agentReadOnlyNote": "エージェントはチャット開始時に選択され、会話の途中で変更することはできません。切り替えるには新しいチャットを開始してください。"
 	},
 	"tools": {
 		"enterValues": "カンマ区切りの値を入力",
@@ -50,6 +53,8 @@
 		"noDescription": "説明がありません。",
 		"tooltipNoAccess": "この{{type}}へのアクセス権がありません。オーナーにアクセスをリクエストしてください。",
 		"tooltipMissingDependencies": "この{{type}}のすべての依存関係にアクセスできないため、機能が制限される場合があります。詳細については、プラットフォームで開いてください。",
-		"tooltipOpen": "プラットフォームでこの{{type}}を開く"
+		"tooltipOpen": "プラットフォームでこの{{type}}を開く",
+		"typeToolbox": "ツールボックス",
+		"typeKnowledge": "ナレッジストア"
 	}
 }

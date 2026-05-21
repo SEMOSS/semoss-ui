@@ -15,13 +15,16 @@
 		"createKnowledgeSource": "إنشاء مصدر معرفة",
 		"viewDetails": "عرض التفاصيل",
 		"noToolboxesFound": "لم يتم العثور على صناديق أدوات",
-		"noKnowledgeFound": "لم يتم العثور على معرفة"
+		"noKnowledgeFound": "لم يتم العثور على معرفة",
+		"noAgentsFound": "لم يتم العثور على وكلاء"
 	},
 	"overlay": {
-		"editToolbox": "تكوين صناديق الأدوات",
-		"editKnowledge": "تكوين المعرفة",
-		"toolboxDescription": "أضف أدوات لمنح هذه الدردشة المزيد من القدرات",
-		"knowledgeDescription": "أضف مصادر المعرفة لمنح النموذج المزيد من السياق"
+		"title": "قم بتكوين دردشتك",
+		"description": "اختر وكيلاً محفوظاً، أو اجمع معرفتك وصناديق أدواتك الخاصة.",
+		"tabAgent": "الوكيل",
+		"tabKnowledge": "المعرفة",
+		"tabToolbox": "صناديق الأدوات",
+		"agentReadOnlyNote": "يتم اختيار الوكلاء عند بدء الدردشة ولا يمكن تغييرهم في منتصف المحادثة. ابدأ دردشة جديدة للتبديل."
 	},
 	"tools": {
 		"enterValues": "أدخل القيم المفصولة بفواصل",
@@ -50,6 +53,8 @@
 		"noDescription": "لا يوجد وصف متاح.",
 		"tooltipNoAccess": "ليس لديك وصول إلى {{type}} هذا. يرجى طلب الوصول من المالك.",
 		"tooltipMissingDependencies": "ليس لديك وصول إلى جميع تبعيات {{type}} هذا، لذا قد تكون الوظيفة محدودة. افتحه في المنصة لمزيد من المعلومات.",
-		"tooltipOpen": "فتح {{type}} هذا في المنصة"
+		"tooltipOpen": "فتح {{type}} هذا في المنصة",
+		"typeToolbox": "صندوق أدوات",
+		"typeKnowledge": "مخزن المعرفة"
 	}
 }

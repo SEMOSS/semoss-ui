@@ -15,13 +15,16 @@
 		"createKnowledgeSource": "Crear fuente de conocimiento",
 		"viewDetails": "Ver detalles",
 		"noToolboxesFound": "No se encontraron cajas de herramientas",
-		"noKnowledgeFound": "No se encontró conocimiento"
+		"noKnowledgeFound": "No se encontró conocimiento",
+		"noAgentsFound": "No se encontraron agentes"
 	},
 	"overlay": {
-		"editToolbox": "Configurar cajas de herramientas",
-		"editKnowledge": "Configurar conocimiento",
-		"toolboxDescription": "Agrega herramientas para dar a este chat más capacidades",
-		"knowledgeDescription": "Agrega fuentes de conocimiento para dar al modelo más contexto"
+		"title": "Configura tu chat",
+		"description": "Elige un agente guardado, o ensambla tu propio conocimiento y cajas de herramientas.",
+		"tabAgent": "Agente",
+		"tabKnowledge": "Conocimiento",
+		"tabToolbox": "Cajas de herramientas",
+		"agentReadOnlyNote": "Los agentes se eligen al iniciar un chat y no se pueden cambiar a mitad de la conversación. Inicia un nuevo chat para cambiar."
 	},
 	"tools": {
 		"enterValues": "Ingresa valores separados por comas",
@@ -50,6 +53,8 @@
 		"noDescription": "No hay descripción disponible.",
 		"tooltipNoAccess": "No tienes acceso a este {{type}}. Por favor, solicita acceso al propietario.",
 		"tooltipMissingDependencies": "No tienes acceso a todas las dependencias de este {{type}}, por lo que la funcionalidad puede ser limitada. Ábrelo en la plataforma para más información.",
-		"tooltipOpen": "Abrir este {{type}} en la plataforma"
+		"tooltipOpen": "Abrir este {{type}} en la plataforma",
+		"typeToolbox": "caja de herramientas",
+		"typeKnowledge": "almacén de conocimiento"
 	}
 }
