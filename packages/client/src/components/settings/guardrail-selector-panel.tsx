@@ -1,4 +1,5 @@
-import { Badge, Checkbox, P, Spinner } from "@semoss/ui/next";
+import { Badge, Checkbox, Input, P, Spinner } from "@semoss/ui/next";
+import { useGuardrailSelectorControls } from "@/contexts";
 
 interface GuardrailSelectorPanelProps {
 	direction: "input" | "output";
@@ -6,9 +7,6 @@ interface GuardrailSelectorPanelProps {
 	selected: string[];
 	onChange: (ids: string[]) => void;
 	isLoading?: boolean;
-	hasMore?: boolean;
-	isLoadingMore?: boolean;
-	onLoadMore?: () => void;
 }
 
 export const GuardrailSelectorPanel = ({
@@ -17,18 +15,25 @@ export const GuardrailSelectorPanel = ({
 	selected,
 	onChange,
 	isLoading = false,
-	hasMore = false,
-	isLoadingMore = false,
-	onLoadMore,
 }: GuardrailSelectorPanelProps) => {
+	const {
+		hasMoreGuardrails,
+		isLoadingMoreGuardrails,
+		onLoadMoreGuardrails,
+		searchTerm,
+		onSearchTermChange,
+		isSearchingGuardrails,
+		isSearchDebouncing,
+	} = useGuardrailSelectorControls();
+
 	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
 		const el = e.currentTarget;
 		if (
-			hasMore &&
-			!isLoadingMore &&
+			hasMoreGuardrails &&
+			!isLoadingMoreGuardrails &&
 			el.scrollHeight - el.scrollTop - el.clientHeight < 80
 		) {
-			onLoadMore?.();
+			onLoadMoreGuardrails();
 		}
 	};
 	const isInput = direction === "input";
@@ -41,6 +46,11 @@ export const GuardrailSelectorPanel = ({
 		);
 	};
 
+	const showSearchBusy = isSearchingGuardrails || isSearchDebouncing;
+	const emptyMessage = searchTerm.trim()
+		? "No guardrails found for your search."
+		: "No guardrails available.";
+
 	return (
 		<div
 			className={`flex flex-col gap-2 rounded-lg border p-3 ${
@@ -49,7 +59,6 @@ export const GuardrailSelectorPanel = ({
 					: "border-chart-2/20 bg-chart-2/5"
 			}`}
 		>
-			{/* Fixed-height header — prevents layout shift */}
 			<div className="flex h-5 items-center justify-between">
 				<span
 					className={`font-semibold text-xs ${
@@ -74,24 +83,36 @@ export const GuardrailSelectorPanel = ({
 				</Badge>
 			</div>
 
+			<div className="relative">
+				<Input
+					value={searchTerm}
+					onChange={(e) => onSearchTermChange(e.currentTarget.value)}
+					placeholder="Search guardrails"
+					className="h-7 pr-8 text-xs"
+				/>
+				{showSearchBusy && (
+					<div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+						<Spinner className="size-3" />
+					</div>
+				)}
+			</div>
+
 			{isLoading ? (
 				<div className="flex items-center justify-center py-4">
 					<Spinner className="size-4" />
 				</div>
 			) : guardrails.length === 0 ? (
 				<P className="py-2 text-center text-muted-foreground text-xs italic">
-					No guardrails available.
+					{emptyMessage}
 				</P>
 			) : (
-			<div
-				className="max-h-[180px] space-y-0.5 overflow-y-auto pr-1"
-				onScroll={handleScroll}
-			>
+				<div
+					className="max-h-[180px] space-y-0.5 overflow-y-auto pr-1"
+					onScroll={handleScroll}
+				>
 					{guardrails.map((g) => {
 						const guardrail = g as Record<string, unknown>;
-						const databaseId = String(
-							guardrail.database_id ?? "",
-						);
+						const databaseId = String(guardrail.database_id ?? "");
 						const databaseName = String(
 							guardrail.database_name ?? "",
 						);
@@ -128,11 +149,11 @@ export const GuardrailSelectorPanel = ({
 							</button>
 						);
 					})}
-				{isLoadingMore && (
-					<div className="flex items-center justify-center py-2">
-						<Spinner className="size-3" />
-					</div>
-				)}
+					{isLoadingMoreGuardrails && (
+						<div className="flex items-center justify-center py-2">
+							<Spinner className="size-3" />
+						</div>
+					)}
 				</div>
 			)}
 		</div>

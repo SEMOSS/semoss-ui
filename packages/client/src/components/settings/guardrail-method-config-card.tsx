@@ -1,9 +1,4 @@
-import {
-	ArrowDown,
-	ArrowUp,
-	ChevronDown,
-	ChevronUp,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp } from "lucide-react";
 import { memo } from "react";
 import { Badge, Button, Card } from "@semoss/ui/next";
 import { GuardrailSelectorPanel } from "./guardrail-selector-panel";
@@ -22,9 +17,6 @@ interface GuardrailMethodConfigCardProps {
 	isExpanded: boolean;
 	onToggle: () => void;
 	onUpdate: (config: MethodGuardrailConfig) => void;
-	hasMoreGuardrails: boolean;
-	isLoadingMoreGuardrails: boolean;
-	onLoadMoreGuardrails: () => void;
 }
 
 export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
@@ -37,9 +29,6 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 		isExpanded,
 		onToggle,
 		onUpdate,
-		hasMoreGuardrails,
-		isLoadingMoreGuardrails,
-		onLoadMoreGuardrails,
 	}) => {
 		const inCount = config.input.length;
 		const outCount = config.output.length;
@@ -54,7 +43,6 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 							: "rounded-lg bg-secondary"
 					}`}
 				>
-					{/* Left — clickable area toggles expand */}
 					<button
 						type="button"
 						onClick={onToggle}
@@ -73,7 +61,6 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 						)}
 					</button>
 
-					{/* Right — badges + chevron */}
 					<div className="flex items-center gap-2">
 						{isConfigured ? (
 							<div className="flex items-center gap-1.5">
@@ -123,9 +110,6 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 								onUpdate({ ...config, input: ids })
 							}
 							isLoading={isGuardrailsLoading}
-							hasMore={hasMoreGuardrails}
-							isLoadingMore={isLoadingMoreGuardrails}
-							onLoadMore={onLoadMoreGuardrails}
 						/>
 						<GuardrailSelectorPanel
 							direction="output"
@@ -135,9 +119,6 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 								onUpdate({ ...config, output: ids })
 							}
 							isLoading={isGuardrailsLoading}
-							hasMore={hasMoreGuardrails}
-							isLoadingMore={isLoadingMoreGuardrails}
-							onLoadMore={onLoadMoreGuardrails}
 						/>
 					</div>
 				)}

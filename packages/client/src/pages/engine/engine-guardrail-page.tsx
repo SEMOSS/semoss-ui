@@ -137,10 +137,51 @@ const buildEmptyMethodConfigs = (methods: EngineMethod[]): MethodConfigMap => {
 };
 
 const GUARDRAILS_PAGE_LIMIT = 10;
+const GUARDRAILS_SEARCH_DEBOUNCE_MS = 350;
+
+const getGuardrailId = (guardrail: unknown): string => {
+	if (!guardrail || typeof guardrail !== "object") {
+		return "";
+	}
+	return String((guardrail as Record<string, unknown>).database_id ?? "");
+};
+
+const mergeGuardrailsUnique = (
+	existing: unknown[],
+	incoming: unknown[],
+): unknown[] => {
+	if (incoming.length === 0) {
+		return existing;
+	}
+
+	const seen = new Set(
+		existing.map((item) => getGuardrailId(item)).filter(Boolean),
+	);
+	const merged = [...existing];
+	for (const item of incoming) {
+		const id = getGuardrailId(item);
+		if (!id || seen.has(id)) {
+			continue;
+		}
+		seen.add(id);
+		merged.push(item);
+	}
+	return merged;
+};
 
 const fetchGuardrailsPage = async (offset: number): Promise<unknown[]> => {
 	const response = await runPixel(
 		`MyEngines(engineTypes=["GUARDRAIL"], userT=[true], sort=[{"DATECREATED": "ASC"}], limit=[${GUARDRAILS_PAGE_LIMIT}], offset=[${offset}]);`,
+	);
+	return (response?.pixelReturn?.[0]?.output as unknown[]) ?? [];
+};
+
+const fetchGuardrailsBySearch = async (
+	searchTerm: string,
+): Promise<unknown[]> => {
+	const escaped = JSON.stringify(searchTerm);
+	const response = await runPixel(
+		`MyEngines(engineTypes=["GUARDRAIL"], userT=[true], sort=[{"DATECREATED": "ASC"}], filterWord=[${escaped}]);`,
 	);
 	return (response?.pixelReturn?.[0]?.output as unknown[]) ?? [];
 };
@@ -178,7 +219,13 @@ export const EngineGuardrailPage = observer(() => {
 	const [hasMoreGuardrails, setHasMoreGuardrails] = useState(false);
 	const [isLoadingMoreGuardrails, setIsLoadingMoreGuardrails] =
 		useState(false);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+	const [searchGuardrails, setSearchGuardrails] = useState<unknown[]>([]);
+	const [isSearchingGuardrails, setIsSearchingGuardrails] = useState(false);
 	const isLoadingMoreRef = useRef(false);
+	const searchRequestIdRef = useRef(0);
+	const searchCacheRef = useRef(new Map<string, unknown[]>());
 
 	const { hasAnyConfig, configuredCount } = useMemo(() => {
 		let count = 0;
@@ -204,7 +251,8 @@ export const EngineGuardrailPage = observer(() => {
 
 			let methods: EngineMethod[] = [];
 			if (methodsResult.status === "fulfilled") {
-				const rawMethods = methodsResult.value?.pixelReturn?.[0]?.output;
+				const rawMethods =
+					methodsResult.value?.pixelReturn?.[0]?.output;
 				if (isValidMethodsResponse(rawMethods)) {
 					methods = rawMethods;
 				}
@@ -218,9 +266,17 @@ export const EngineGuardrailPage = observer(() => {
 			setEngineMethods(methods);
 			setGuardrails(guardrailItems);
 			setGuardrailsOffset(guardrailItems.length);
-			setHasMoreGuardrails(guardrailItems.length === GUARDRAILS_PAGE_LIMIT);
+			setHasMoreGuardrails(
+				guardrailItems.length === GUARDRAILS_PAGE_LIMIT,
+			);
 			isLoadingMoreRef.current = false;
 			setIsLoadingMoreGuardrails(false);
+			setSearchTerm("");
+			setDebouncedSearchTerm("");
+			setSearchGuardrails([]);
+			setIsSearchingGuardrails(false);
+			searchRequestIdRef.current += 1;
+			searchCacheRef.current.clear();
 
 			if (restoredConfig) {
 				const restoredConfigs = buildMethodConfigsFromPipelineResponse(
@@ -229,7 +285,10 @@ export const EngineGuardrailPage = observer(() => {
 					guardrailItems,
 				);
 				const configuredMethods = Object.entries(restoredConfigs)
-					.filter(([_, cfg]) => cfg.input.length > 0 || cfg.output.length > 0)
+					.filter(
+						([_, cfg]) =>
+							cfg.input.length > 0 || cfg.output.length > 0,
+					)
 					.map(([name]) => name);
 
 				setConfigResult(restoredConfig);
@@ -264,7 +323,7 @@ export const EngineGuardrailPage = observer(() => {
 		try {
 			const nextBatch = await fetchGuardrailsPage(guardrailsOffset);
 			if (nextBatch.length > 0) {
-				setGuardrails((prev) => [...prev, ...nextBatch]);
+				setGuardrails((prev) => mergeGuardrailsUnique(prev, nextBatch));
 			}
 			setGuardrailsOffset((prev) => prev + nextBatch.length);
 			setHasMoreGuardrails(nextBatch.length === GUARDRAILS_PAGE_LIMIT);
@@ -275,6 +334,69 @@ export const EngineGuardrailPage = observer(() => {
 			setIsLoadingMoreGuardrails(false);
 		}
 	}, [guardrailsOffset, hasMoreGuardrails]);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm.trim());
+		}, GUARDRAILS_SEARCH_DEBOUNCE_MS);
+
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [searchTerm]);
+
+	useEffect(() => {
+		if (phase !== "selecting") {
+			return;
+		}
+
+		if (!debouncedSearchTerm) {
+			setSearchGuardrails([]);
+			setIsSearchingGuardrails(false);
+			return;
+		}
+
+		const cached = searchCacheRef.current.get(debouncedSearchTerm);
+		if (cached) {
+			setSearchGuardrails(cached);
+			setIsSearchingGuardrails(false);
+			return;
+		}
+
+		const requestId = searchRequestIdRef.current + 1;
+		searchRequestIdRef.current = requestId;
+		setIsSearchingGuardrails(true);
+
+		void fetchGuardrailsBySearch(debouncedSearchTerm)
+			.then((result) => {
+				if (searchRequestIdRef.current !== requestId) {
+					return;
+				}
+				searchCacheRef.current.set(debouncedSearchTerm, result);
+				setSearchGuardrails(result);
+				setGuardrails((prev) => mergeGuardrailsUnique(prev, result));
+			})
+			.catch((error) => {
+				if (searchRequestIdRef.current !== requestId) {
+					return;
+				}
+				console.error("Failed to search guardrails", error);
+				setSearchGuardrails([]);
+			})
+			.finally(() => {
+				if (searchRequestIdRef.current === requestId) {
+					setIsSearchingGuardrails(false);
+				}
+			});
+	}, [debouncedSearchTerm, phase]);
+
+	const displayGuardrails = debouncedSearchTerm
+		? searchGuardrails
+		: guardrails;
+	const isSearchDebouncing =
+		searchTerm.trim() !== debouncedSearchTerm &&
+		searchTerm.trim().length > 0;
+	const canLoadMoreGuardrails = !debouncedSearchTerm && hasMoreGuardrails;
 
 	// Handlers ------------------------------------------------------------------
 
@@ -333,7 +455,9 @@ export const EngineGuardrailPage = observer(() => {
 
 	const handleSaveConfig = async (data: GuardrailConfig) => {
 		if (!active?.id) {
-			throw new Error("Cannot save configuration: engine is unavailable.");
+			throw new Error(
+				"Cannot save configuration: engine is unavailable.",
+			);
 		}
 
 		try {
@@ -365,6 +489,12 @@ export const EngineGuardrailPage = observer(() => {
 			setEngineMethods([]);
 			setGuardrails([]);
 			setExpandedMethods(new Set());
+			setSearchTerm("");
+			setDebouncedSearchTerm("");
+			setSearchGuardrails([]);
+			setIsSearchingGuardrails(false);
+			searchRequestIdRef.current += 1;
+			searchCacheRef.current.clear();
 			return;
 		}
 
@@ -375,7 +505,9 @@ export const EngineGuardrailPage = observer(() => {
 			setSubmitError(null);
 			setConfigResult(null);
 
-			const existingConfig = await fetchExistingGuardrailConfig(active.id);
+			const existingConfig = await fetchExistingGuardrailConfig(
+				active.id,
+			);
 			if (cancelled) return;
 
 			if (existingConfig) {
@@ -401,7 +533,7 @@ export const EngineGuardrailPage = observer(() => {
 			{/* Page Header */}
 			<div className="flex items-start justify-between gap-4">
 				<div className="space-y-1">
-						<H4 data-testid="engine-guardrail-header">Guardrail</H4>
+					<H4 data-testid="engine-guardrail-header">Guardrail</H4>
 					<P className="pl-0.5 text-muted-foreground text-sm">
 						Configure guardrail interceptor pipelines for{" "}
 						<span className="font-semibold text-foreground">
@@ -428,7 +560,7 @@ export const EngineGuardrailPage = observer(() => {
 				<GuardrailSelectingView
 					phase={phase}
 					engineMethods={engineMethods}
-					guardrails={guardrails}
+					guardrails={displayGuardrails}
 					methodConfigs={methodConfigs}
 					expandedMethods={expandedMethods}
 					configuredCount={configuredCount}
@@ -441,9 +573,15 @@ export const EngineGuardrailPage = observer(() => {
 					}}
 					onToggleMethod={toggleMethod}
 					onUpdateMethod={updateMethodConfig}
-					onSave={handleSaveConfig}				hasMoreGuardrails={hasMoreGuardrails}
-				isLoadingMoreGuardrails={isLoadingMoreGuardrails}
-				onLoadMoreGuardrails={loadMoreGuardrails}				/>
+					onSave={handleSaveConfig}
+					hasMoreGuardrails={canLoadMoreGuardrails}
+					isLoadingMoreGuardrails={isLoadingMoreGuardrails}
+					onLoadMoreGuardrails={loadMoreGuardrails}
+					searchTerm={searchTerm}
+					onSearchTermChange={setSearchTerm}
+					isSearchingGuardrails={isSearchingGuardrails}
+					isSearchDebouncing={isSearchDebouncing}
+				/>
 			)}
 		</div>
 	);

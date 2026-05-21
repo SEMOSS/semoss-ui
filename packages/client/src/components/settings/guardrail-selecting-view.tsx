@@ -14,6 +14,7 @@ import {
 	type GuardrailConfig,
 	GuardrailConfigEditor,
 } from "@/components/shared";
+import { GuardrailSelectorControlsContext } from "@/contexts";
 import {
 	GuardrailMethodConfigCard,
 	type MethodGuardrailConfig,
@@ -51,6 +52,10 @@ interface GuardrailSelectingViewProps {
 	hasMoreGuardrails: boolean;
 	isLoadingMoreGuardrails: boolean;
 	onLoadMoreGuardrails: () => void;
+	searchTerm: string;
+	onSearchTermChange: (value: string) => void;
+	isSearchingGuardrails: boolean;
+	isSearchDebouncing: boolean;
 }
 
 export const GuardrailSelectingView = ({
@@ -71,8 +76,11 @@ export const GuardrailSelectingView = ({
 	hasMoreGuardrails,
 	isLoadingMoreGuardrails,
 	onLoadMoreGuardrails,
+	searchTerm,
+	onSearchTermChange,
+	isSearchingGuardrails,
+	isSearchDebouncing,
 }: GuardrailSelectingViewProps) => {
-	// Configured phase
 	if (phase === "configured" && configResult) {
 		return (
 			<div className="space-y-4">
@@ -93,7 +101,6 @@ export const GuardrailSelectingView = ({
 		);
 	}
 
-	// Selecting/loading phases
 	return (
 		<div className="space-y-4">
 			{phase === "loading" ? (
@@ -104,8 +111,17 @@ export const GuardrailSelectingView = ({
 					</P>
 				</div>
 			) : (
-				<>
-					{/* Instruction banner */}
+				<GuardrailSelectorControlsContext.Provider
+					value={{
+						hasMoreGuardrails,
+						isLoadingMoreGuardrails,
+						onLoadMoreGuardrails,
+						searchTerm,
+						onSearchTermChange,
+						isSearchingGuardrails,
+						isSearchDebouncing,
+					}}
+				>
 					<div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
 						<div className="min-w-0 flex-1 space-y-0.5">
 							<P className="font-medium text-foreground text-sm">
@@ -121,7 +137,7 @@ export const GuardrailSelectingView = ({
 								<span className="font-medium text-chart-2">
 									output
 								</span>
-								. Delete any methods you don't need to guard.
+								.
 							</P>
 						</div>
 						{configuredCount > 0 && (
@@ -135,7 +151,6 @@ export const GuardrailSelectingView = ({
 						)}
 					</div>
 
-					{/* Method cards */}
 					{engineMethods.length === 0 ? (
 						<Card className="border-dashed">
 							<CardContent className="flex flex-col items-center justify-center gap-2 py-10">
@@ -176,14 +191,12 @@ export const GuardrailSelectingView = ({
 									}
 									onUpdate={(cfg) =>
 										onUpdateMethod(method.methodName, cfg)
-									}								hasMoreGuardrails={hasMoreGuardrails}
-								isLoadingMoreGuardrails={isLoadingMoreGuardrails}
-								onLoadMoreGuardrails={onLoadMoreGuardrails}								/>
+									}
+								/>
 							))}
 						</div>
 					)}
 
-					{/* Action row */}
 					<div className="flex flex-wrap items-center gap-3 pt-1">
 						<Button
 							color="primary"
@@ -215,7 +228,7 @@ export const GuardrailSelectingView = ({
 							<AlertDescription>{submitError}</AlertDescription>
 						</Alert>
 					)}
-				</>
+				</GuardrailSelectorControlsContext.Provider>
 			)}
 		</div>
 	);
