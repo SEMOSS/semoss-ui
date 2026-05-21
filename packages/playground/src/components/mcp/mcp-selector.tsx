@@ -328,12 +328,12 @@ export const MCPSelector = observer(
 						);
 
 						return isMobile ? (
-							<div className="flex max-h-20 shrink-0 flex-wrap gap-2 overflow-y-auto border-border border-t p-2">
+							<div className="flex max-h-20 shrink-0 flex-wrap gap-2 overflow-y-auto border-border border-t bg-muted p-2">
 								{workspaceSummary}
 								{localValues.map(renderChip)}
 							</div>
 						) : (
-							<ScrollArea className="w-full shrink-0 whitespace-nowrap border-border border-t">
+							<ScrollArea className="w-full shrink-0 whitespace-nowrap border-border border-t bg-muted">
 								<ScrollBar orientation="horizontal" />
 								<div className="flex gap-2 p-2">
 									{workspaceSummary}

@@ -20,10 +20,10 @@
 	},
 	"overlay": {
 		"title": "Configure your chat",
-		"description": "Pick a saved agent, or assemble your own knowledge and tools.",
+		"description": "Pick a saved agent, or assemble your own knowledge and toolboxes.",
 		"tabAgent": "Agent",
 		"tabKnowledge": "Knowledge",
-		"tabToolbox": "Toolbox",
+		"tabToolbox": "Toolboxes",
 		"agentReadOnlyNote": "Agents are chosen when a chat starts and can't be changed mid-chat. Start a new chat to switch.",
 		"editToolbox": "Configure Toolboxes",
 		"editKnowledge": "Configure Knowledge",

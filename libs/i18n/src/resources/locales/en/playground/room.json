@@ -13,7 +13,7 @@
 		"agentLabel": "Agent",
 		"noAgent": "No agent assigned",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox",
+		"toolboxLabel": "Toolboxes",
 		"maxTokenLabel": "Max Token",
 		"temperatureLabel": "Temperature"
 	},

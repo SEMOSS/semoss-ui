@@ -182,8 +182,11 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 					onValueChange={(v) => setActiveTab(v as Tab)}
 					className="flex min-h-0 flex-1 flex-col gap-3"
 				>
-					<TabsList className="grid w-full grid-cols-3">
-						<TabsTrigger value="AGENT" className="relative gap-2">
+					<TabsList className="grid h-10 w-full grid-cols-3 p-1">
+						<TabsTrigger
+							value="AGENT"
+							className="relative h-full gap-2"
+						>
 							<ComputerIcon className="size-4" />
 							{t("overlay.tabAgent")}
 							{/* Absolutely positioned so the centered label
@@ -192,14 +195,14 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 								<CheckIcon className="absolute right-2.5 size-3.5 text-primary" />
 							) : null}
 						</TabsTrigger>
-						<TabsTrigger value="KNOWLEDGE" className="gap-2">
+						<TabsTrigger value="KNOWLEDGE" className="h-full gap-2">
 							<BookOpenIcon className="size-4" />
 							{t("overlay.tabKnowledge")}
 							<Badge variant="outline" className="ml-1">
 								{knowledge.length}
 							</Badge>
 						</TabsTrigger>
-						<TabsTrigger value="TOOLBOX" className="gap-2">
+						<TabsTrigger value="TOOLBOX" className="h-full gap-2">
 							<HammerIcon className="size-4" />
 							{t("overlay.tabToolbox")}
 							<Badge variant="outline" className="ml-1">

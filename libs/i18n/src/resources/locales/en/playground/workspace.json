@@ -6,7 +6,7 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox",
+		"toolboxLabel": "Toolboxes",
 		"promptsLabel": "Prompt Library"
 	},
 	"actions": {
@@ -91,7 +91,7 @@
 		"tabs": {
 			"myChats": "My Chats",
 			"knowledge": "Knowledge",
-			"toolbox": "Toolbox",
+			"toolbox": "Toolboxes",
 			"members": "Members"
 		},
 		"failedToDelete": "Failed to delete agent",

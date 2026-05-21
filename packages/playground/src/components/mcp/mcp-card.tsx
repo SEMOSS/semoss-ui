@@ -2,7 +2,6 @@ import {
 	AlertCircle,
 	CheckIcon,
 	ImageIcon,
-	LockIcon,
 	SquareArrowOutUpRightIcon,
 	TriangleAlert,
 } from "lucide-react";
@@ -93,6 +92,7 @@ export const MCPCard = ({
 				accessMissing && "border-destructive/50 border-dashed",
 				effectiveOnClick && "cursor-pointer hover:bg-muted/30",
 				fromWorkspace && "cursor-not-allowed",
+				selected && "border-primary",
 			)}
 			onClick={effectiveOnClick}
 		>
@@ -166,35 +166,31 @@ export const MCPCard = ({
 						) : null}
 
 						{permissionLabel ? (
-							<span className="text-[10px] text-muted-foreground capitalize">
+							// Nudge text up 1px to optically align with the
+							// icons. flex items-center centers boxes, but
+							// text glyphs sit below their box's geometric
+							// center (baseline metrics), so a small offset
+							// is needed to match visual centerlines.
+							<span className="-translate-y-px text-[10px] text-muted-foreground capitalize">
 								{permissionLabel}
 							</span>
 						) : null}
 					</div>
 					<div className="flex shrink-0 items-center gap-1.5">
 						{/* Right-most slot: a combined "lock + From agent" badge
-						    when the MCP is inherited (one visual ties the
-						    locked state to the source agent), otherwise a
-						    checkbox — empty when unselected, filled primary
-						    with a check when selected. */}
+						    when the MCP is inherited, a checkbox when the
+						    caller passes a `selected` value (picker context),
+						    or nothing at all when the card is just being
+						    shown for reference (e.g. on a workspace details
+						    page where there's no concept of selection). */}
 						{fromWorkspace ? (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Badge
-										variant="outline"
-										className="h-5 cursor-help gap-1 border-primary px-1.5 text-[10px] text-primary"
-									>
-										<LockIcon className="size-3" />
-										{t("common:badges.fromAgent")}
-									</Badge>
-								</TooltipTrigger>
-								<TooltipContent>
-									{t(
-										"common:tooltips.cannotDeleteWorkspaceMCPs",
-									)}
-								</TooltipContent>
-							</Tooltip>
-						) : (
+							<Badge
+								variant="outline"
+								className="h-5 border-primary px-1.5 text-[10px] text-primary"
+							>
+								{t("common:badges.fromAgent")}
+							</Badge>
+						) : selected !== undefined ? (
 							<div
 								className={cn(
 									"flex size-4 items-center justify-center rounded border transition-colors",
@@ -210,7 +206,7 @@ export const MCPCard = ({
 									/>
 								) : null}
 							</div>
-						)}
+						) : null}
 					</div>
 				</div>
 
