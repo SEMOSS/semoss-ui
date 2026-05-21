@@ -2,7 +2,7 @@ import { ChevronRight, Copy, Download, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ENGINE_IMAGES } from "@semoss/shared";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -24,7 +24,6 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import BRAIN from "@/assets/img/BRAIN.png";
 import { useEngine, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
@@ -49,29 +48,6 @@ export const EngineHeader: React.FC = () => {
 	const [exportLoading, setExportLoading] = useState(false);
 
 	const canEdit = active.role === "OWNER" || active.role === "EDITOR";
-
-	const normalizeEngineKey = (value?: string) =>
-		(value || "")
-			.trim()
-			.replace(/[^A-Za-z0-9]+/g, "_")
-			.toUpperCase();
-
-	const findDBImage = (appType: string, appSubType: string) => {
-		const typeKey = normalizeEngineKey(appType);
-		const subtypeKeyRaw = normalizeEngineKey(appSubType);
-		const subtypeKey =
-			subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
-		const images = ENGINE_IMAGES[typeKey] || [];
-		const obj = images.find((ele) => {
-			return normalizeEngineKey(ele.name) === subtypeKey;
-		});
-
-		if (!obj) {
-			return BRAIN;
-		}
-
-		return obj.icon;
-	};
 
 	const formatEngineTimestamp = (rawValue?: string) => {
 		if (!rawValue) {
@@ -160,13 +136,13 @@ export const EngineHeader: React.FC = () => {
 			<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
 				{/* Image placeholder - space for engine/database icon */}
 				<div className="h-16 w-16 flex-shrink-0 overflow-hidden bg-transparent p-2">
-					<img
-						src={findDBImage(
-							type,
+					<EngineSubtypeIcon
+						engineType={type}
+						engineSubtype={
 							(active.engine_subtype ||
 								(active.metadata
-									.engine_subtype as string)) as string,
-						)}
+									.engine_subtype as string)) as string
+						}
 						alt={name}
 						className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 					/>

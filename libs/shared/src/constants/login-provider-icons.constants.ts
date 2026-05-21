@@ -1,48 +1,34 @@
 const LOGIN_PROVIDER_LOGO_LOADERS = {
-	...import.meta.glob(
-		"../../../../../libs/shared/src/assets/loginProviders/*.{png,svg}",
-		{
-			query: "?url",
-			import: "default",
-		},
-	),
-	...import.meta.glob(
-		"../../../../../libs/shared/src/assets/img/*.{png,svg}",
-		{
-			query: "?url",
-			import: "default",
-		},
-	),
+	...import.meta.glob("../assets/loginProviders/*.{png,svg}", {
+		query: "?url",
+		import: "default",
+	}),
+	...import.meta.glob("../assets/img/*.{png,svg}", {
+		query: "?url",
+		import: "default",
+	}),
 } as Record<string, () => Promise<string>>;
 
 const LOGIN_PROVIDER_LOGO_PATH_BY_PROVIDER: Record<string, string> = {
-	adfs: "../../../../../libs/shared/src/assets/img/MICROSOFT.png",
-	cac: "../../../../../libs/shared/src/assets/loginProviders/CAC.svg",
-	dropbox: "../../../../../libs/shared/src/assets/img/DROPBOX.png",
-	generic: "../../../../../libs/shared/src/assets/loginProviders/GENERIC.svg",
-	github: "../../../../../libs/shared/src/assets/img/GITHUB.svg",
-	gitlab: "../../../../../libs/shared/src/assets/loginProviders/GITLAB.svg",
-	google: "../../../../../libs/shared/src/assets/img/GOOGLE.svg",
-	keycloak:
-		"../../../../../libs/shared/src/assets/loginProviders/KEYCLOAK.svg",
-	linkedin:
-		"../../../../../libs/shared/src/assets/loginProviders/LINKEDIN.svg",
-	microsoft: "../../../../../libs/shared/src/assets/img/MICROSOFT.png",
-	ms: "../../../../../libs/shared/src/assets/img/MICROSOFT.png",
-	okta: "../../../../../libs/shared/src/assets/loginProviders/OKTA.svg",
-	product_hunt:
-		"../../../../../libs/shared/src/assets/loginProviders/product_hunt.png",
-	salesforce:
-		"../../../../../libs/shared/src/assets/loginProviders/SALESFORCE.svg",
-	saml: "../../../../../libs/shared/src/assets/loginProviders/saml.png",
-	siteminder:
-		"../../../../../libs/shared/src/assets/loginProviders/siteminder.png",
-	surveymonkey:
-		"../../../../../libs/shared/src/assets/loginProviders/SURVEYMONKEY.svg",
-	twitter:
-		"../../../../../libs/shared/src/assets/loginProviders/X_TWITTER.svg",
-	x_twitter:
-		"../../../../../libs/shared/src/assets/loginProviders/X_TWITTER.svg",
+	adfs: "../assets/img/MICROSOFT.png",
+	cac: "../assets/loginProviders/CAC.svg",
+	dropbox: "../assets/img/DROPBOX.png",
+	generic: "../assets/loginProviders/GENERIC.svg",
+	github: "../assets/img/GITHUB.svg",
+	gitlab: "../assets/loginProviders/GITLAB.svg",
+	google: "../assets/img/GOOGLE.svg",
+	keycloak: "../assets/loginProviders/KEYCLOAK.svg",
+	linkedin: "../assets/loginProviders/LINKEDIN.svg",
+	microsoft: "../assets/img/MICROSOFT.png",
+	ms: "../assets/img/MICROSOFT.png",
+	okta: "../assets/loginProviders/OKTA.svg",
+	product_hunt: "../assets/loginProviders/product_hunt.png",
+	salesforce: "../assets/loginProviders/SALESFORCE.svg",
+	saml: "../assets/loginProviders/saml.png",
+	siteminder: "../assets/loginProviders/siteminder.png",
+	surveymonkey: "../assets/loginProviders/SURVEYMONKEY.svg",
+	twitter: "../assets/loginProviders/X_TWITTER.svg",
+	x_twitter: "../assets/loginProviders/X_TWITTER.svg",
 };
 
 const LOGIN_PROVIDER_ALIASES: Record<string, string> = {
