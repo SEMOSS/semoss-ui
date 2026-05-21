@@ -150,6 +150,10 @@ export const WorkspaceMCPList = ({
 								subtype: m.engine_subtype,
 								description: m.description,
 								tags: m.tags?.split(",") || [],
+								// MCPCard renders the effective permission via
+								// the prop below; m.permission is unused here
+								// but required by the MCP type.
+								permission: "READ_ONLY",
 							}}
 							type={type}
 							effectivePermission={effectivePermission}
