@@ -233,11 +233,11 @@ export const EngineSelect = ({
 					aria-expanded={open}
 					disabled={disabled}
 					className={cn(
-						"max-w-64 justify-start overflow-hidden hover:bg-accent",
+						"ml-auto max-w-64 overflow-hidden hover:bg-accent",
 						className,
 					)}
 				>
-					<div className="flex w-full min-w-0 items-center gap-2 overflow-hidden">
+					<div className="flex min-w-0 items-center gap-2 overflow-hidden">
 						{showContextIndicator && (
 							<Tooltip>
 								<TooltipTrigger asChild>
@@ -307,11 +307,7 @@ export const EngineSelect = ({
 					</div>
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent
-				align="start"
-				className="w-[var(--radix-popover-trigger-width)] min-w-64 p-0"
-				{...popoverContentProps}
-			>
+			<PopoverContent className="p-0" {...popoverContentProps}>
 				<Command shouldFilter={false}>
 					<CommandInput
 						placeholder="Search"
@@ -319,13 +315,7 @@ export const EngineSelect = ({
 						onValueChange={setSearch}
 					/>
 					{/* Attach infinite scroll to list container */}
-					<CommandList
-						ref={listRef}
-						style={{
-							maxHeight: "400px",
-							overflowY: "auto",
-						}}
-					>
+					<CommandList ref={listRef}>
 						<CommandEmpty>
 							{/* Show spinner during initial load, otherwise "Not Found" */}
 							{getEngines.isLoading &&
@@ -354,10 +344,14 @@ export const EngineSelect = ({
 											setOpen(false);
 										}}
 									>
-										{/* Checkmark - rendered only for selected item */}
-										{value === engineId && (
-											<CheckIcon className="mr-2 size-4" />
-										)}
+										{/* Checkmark - visible only for selected item */}
+										<CheckIcon
+											className={`mr-2 size-4 ${
+												value === engineId
+													? "opacity-100"
+													: "opacity-0"
+											}`}
+										/>
 										{showEngineIcon && (
 											<img
 												src={getEngineSubtypeIcon(
@@ -402,29 +396,6 @@ export const EngineSelect = ({
 										<Spinner className="size-4" />
 									</div>
 								)}
-							{/* Manual "Load more" trigger as a fallback for environments where the
-							    scroll event doesn't fire reliably (small lists / cmdk internals). */}
-							{!getEngines.isLoading && getEngines.hasMore && (
-								<div className="flex items-center justify-center py-1">
-									<Button
-										type="button"
-										variant="ghost"
-										size="sm"
-										className="h-7 rounded-md px-3 text-muted-foreground text-xs"
-										onMouseDown={(e) => {
-											// Prevent cmdk from stealing focus and closing the popover
-											e.preventDefault();
-										}}
-										onClick={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											getEngines.next();
-										}}
-									>
-										Load more
-									</Button>
-								</div>
-							)}
 						</CommandGroup>
 					</CommandList>
 				</Command>
