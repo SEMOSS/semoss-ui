@@ -15,7 +15,7 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Env } from "@semoss/sdk/react";
-import { ENGINE_IMAGES } from "@semoss/shared";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Avatar,
 	AvatarFallback,
@@ -34,38 +34,10 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import BRAIN from "@/assets/img/BRAIN.png";
 import { Folder } from "@/assets/img/Folder";
 import GOOGLE from "@/assets/img/GOOGLE.svg";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
-
-/**
- * @name findDBImage
- * @params appType & appSubType
- * @returns image link for associated engine
- */
-const findDBImage = (appType: string, appSubType: string) => {
-	const normalizeEngineKey = (value?: string) =>
-		(value || "")
-			.trim()
-			.replace(/[^A-Za-z0-9]+/g, "_")
-			.toUpperCase();
-	const typeKey = normalizeEngineKey(appType);
-	const subtypeKeyRaw = normalizeEngineKey(appSubType);
-	const subtypeKey =
-		subtypeKeyRaw === "GUANACO" ? "HUGGINGFACE" : subtypeKeyRaw;
-	const images = ENGINE_IMAGES[typeKey] || [];
-	const obj = images.find((ele) => {
-		return normalizeEngineKey(ele.name) === subtypeKey;
-	});
-
-	if (!obj) {
-		return BRAIN;
-	}
-
-	return obj.icon;
-};
 
 const parseUtcDate = (rawDate?: string) => {
 	if (!rawDate) {
@@ -533,8 +505,9 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 									<Folder />
 								</div>
 							) : (
-								<img
-									src={findDBImage(type, sub_type)}
+								<EngineSubtypeIcon
+									engineType={type}
+									engineSubtype={sub_type}
 									alt={name}
 									className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
 								/>
