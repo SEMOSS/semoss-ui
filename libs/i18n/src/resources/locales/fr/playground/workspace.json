@@ -6,7 +6,8 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Connaissances",
-		"toolboxLabel": "Boîtes à outils"
+		"toolboxLabel": "Boîtes à outils",
+		"promptsLabel": "Bibliothèque d'invites"
 	},
 	"actions": {
 		"create": "Créer",
@@ -106,5 +107,9 @@
 	"new": {
 		"title": "Nouvel agent",
 		"subtitle": "Créer un nouvel agent pour commencer"
+	},
+	"prompts": {
+		"noPrompts": "Aucune invite trouvée",
+		"searchPlaceholder": "Rechercher des invites..."
 	}
 }

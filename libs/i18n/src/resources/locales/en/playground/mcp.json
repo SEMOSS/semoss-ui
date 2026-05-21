@@ -1,18 +1,18 @@
 {
 	"embedDocuments": {
-		"title": "Embed Documents into Existing Source",
-		"description": "Select a knowledge source and upload documents to embed.",
-		"knowledgeSource": "Knowledge Source",
+		"title": "Embed Documents into Existing Store",
+		"description": "Select a knowledge store and upload documents to embed.",
+		"knowledgeSource": "Knowledge Store",
 		"documents": "Documents",
 		"selectFiles": "Click to select files or drag and drop",
 		"embedButton": "Embed Documents",
 		"embedding": "Embedding...",
 		"removeFile": "Remove file",
-		"selectPlaceholder": "Select a knowledge source"
+		"selectPlaceholder": "Select a knowledge store"
 	},
 	"selector": {
 		"search": "Search",
-		"createKnowledgeSource": "Create Knowledge Source",
+		"createKnowledgeSource": "Create Knowledge Store",
 		"viewDetails": "View Details",
 		"noToolboxesFound": "No toolboxes found",
 		"noKnowledgeFound": "No knowledge found",
@@ -24,11 +24,7 @@
 		"tabAgent": "Agent",
 		"tabKnowledge": "Knowledge",
 		"tabToolbox": "Toolboxes",
-		"agentReadOnlyNote": "Agents are chosen when a chat starts and can't be changed mid-conversation. Start a new chat to switch.",
-		"editToolbox": "Configure Toolboxes",
-		"editKnowledge": "Configure Knowledge",
-		"toolboxDescription": "Add tools to give this chat more capabilities",
-		"knowledgeDescription": "Add knowledge sources to give the model more context"
+		"agentReadOnlyNote": "Agents are chosen when a chat starts and can't be changed mid-conversation. Start a new chat to switch."
 	},
 	"tools": {
 		"enterValues": "Enter comma-separated values",
@@ -36,12 +32,12 @@
 		"enterField": "Enter {{field}}"
 	},
 	"messages": {
-		"selectKnowledgeSource": "Please select a knowledge source",
+		"selectKnowledgeSource": "Please select a knowledge store",
 		"selectDocument": "Please select at least one document",
 		"embedSuccess": "Documents embedded successfully",
 		"embedFailed": "Failed to embed documents",
-		"loadFailed": "Failed to load knowledge sources.",
-		"noSources": "No knowledge sources found."
+		"loadFailed": "Failed to load knowledge stores.",
+		"noSources": "No knowledge stores found."
 	},
 	"buttons": {
 		"cancel": "Cancel",

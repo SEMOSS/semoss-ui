@@ -6,7 +6,8 @@
 		"descriptionLabel": "説明",
 		"instructionsLabel": "指示",
 		"knowledgeLabel": "ナレッジ",
-		"toolboxLabel": "ツールボックス"
+		"toolboxLabel": "ツールボックス",
+		"promptsLabel": "プロンプトライブラリ"
 	},
 	"actions": {
 		"create": "作成",
@@ -106,5 +107,9 @@
 	"new": {
 		"title": "新しいエージェント",
 		"subtitle": "新しいエージェントを作成して始めましょう"
+	},
+	"prompts": {
+		"noPrompts": "プロンプトが見つかりません",
+		"searchPlaceholder": "プロンプトを検索..."
 	}
 }

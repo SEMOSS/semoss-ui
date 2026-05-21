@@ -1,18 +1,18 @@
 {
 	"embedDocuments": {
-		"title": "मौजूदा स्रोत में दस्तावेज़ एम्बेड करें",
-		"description": "एक ज्ञान स्रोत चुनें और एम्बेड करने के लिए दस्तावेज़ अपलोड करें।",
-		"knowledgeSource": "ज्ञान स्रोत",
+		"title": "मौजूदा भंडार में दस्तावेज़ एम्बेड करें",
+		"description": "एक ज्ञान भंडार चुनें और एम्बेड करने के लिए दस्तावेज़ अपलोड करें।",
+		"knowledgeSource": "ज्ञान भंडार",
 		"documents": "दस्तावेज़",
 		"selectFiles": "फ़ाइलें चुनने के लिए क्लिक करें या ड्रैग और ड्रॉप करें",
 		"embedButton": "दस्तावेज़ एम्बेड करें",
 		"embedding": "एम्बेड किया जा रहा है...",
 		"removeFile": "फ़ाइल हटाएं",
-		"selectPlaceholder": "एक ज्ञान स्रोत चुनें"
+		"selectPlaceholder": "एक ज्ञान भंडार चुनें"
 	},
 	"selector": {
 		"search": "खोजें",
-		"createKnowledgeSource": "ज्ञान स्रोत बनाएं",
+		"createKnowledgeSource": "ज्ञान भंडार बनाएं",
 		"viewDetails": "विवरण देखें",
 		"noToolboxesFound": "कोई टूलबॉक्स नहीं मिला",
 		"noKnowledgeFound": "कोई ज्ञान नहीं मिला",
@@ -32,12 +32,12 @@
 		"enterField": "{{field}} दर्ज करें"
 	},
 	"messages": {
-		"selectKnowledgeSource": "कृपया एक ज्ञान स्रोत चुनें",
+		"selectKnowledgeSource": "कृपया एक ज्ञान भंडार चुनें",
 		"selectDocument": "कृपया कम से कम एक दस्तावेज़ चुनें",
 		"embedSuccess": "दस्तावेज़ सफलतापूर्वक एम्बेड किए गए",
 		"embedFailed": "दस्तावेज़ एम्बेड करने में विफल",
-		"loadFailed": "ज्ञान स्रोत लोड करने में विफल।",
-		"noSources": "कोई ज्ञान स्रोत नहीं मिला।"
+		"loadFailed": "ज्ञान भंडार लोड करने में विफल।",
+		"noSources": "कोई ज्ञान भंडार नहीं मिला।"
 	},
 	"buttons": {
 		"cancel": "रद्द करें",

@@ -6,7 +6,8 @@
 		"descriptionLabel": "الوصف",
 		"instructionsLabel": "التعليمات",
 		"knowledgeLabel": "المعرفة",
-		"toolboxLabel": "صناديق الأدوات"
+		"toolboxLabel": "صناديق الأدوات",
+		"promptsLabel": "مكتبة الموجهات"
 	},
 	"actions": {
 		"create": "إنشاء",
@@ -106,5 +107,9 @@
 	"new": {
 		"title": "وكيل جديد",
 		"subtitle": "إنشاء وكيل جديد للبدء"
+	},
+	"prompts": {
+		"noPrompts": "لم يتم العثور على موجهات",
+		"searchPlaceholder": "البحث في الموجهات..."
 	}
 }

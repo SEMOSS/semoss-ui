@@ -25,7 +25,8 @@
 		"updateInstructions": "تحديث التعليمات",
 		"updateTokenLength": "تحديث طول الرموز",
 		"uploadFiles": "رفع الملفات",
-		"search": "بحث..."
+		"search": "بحث...",
+		"enterPromptLibraryTag": "أدخل علامة مكتبة الموجهات"
 	},
 	"actions": {
 		"addKnowledge": "إضافة معرفة",

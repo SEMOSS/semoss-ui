@@ -6,7 +6,8 @@
 		"descriptionLabel": "विवरण",
 		"instructionsLabel": "निर्देश",
 		"knowledgeLabel": "ज्ञान",
-		"toolboxLabel": "टूलबॉक्स"
+		"toolboxLabel": "टूलबॉक्स",
+		"promptsLabel": "प्रॉम्प्ट लाइब्रेरी"
 	},
 	"actions": {
 		"create": "बनाएं",
@@ -106,5 +107,9 @@
 	"new": {
 		"title": "नया एजेंट",
 		"subtitle": "शुरू करने के लिए एक नया एजेंट बनाएं"
+	},
+	"prompts": {
+		"noPrompts": "कोई प्रॉम्प्ट नहीं मिला",
+		"searchPlaceholder": "प्रॉम्प्ट खोजें..."
 	}
 }

@@ -6,7 +6,8 @@
 		"descriptionLabel": "Descripción",
 		"instructionsLabel": "Instrucciones",
 		"knowledgeLabel": "Conocimiento",
-		"toolboxLabel": "Cajas de herramientas"
+		"toolboxLabel": "Cajas de herramientas",
+		"promptsLabel": "Biblioteca de indicaciones"
 	},
 	"actions": {
 		"create": "Crear",
@@ -106,5 +107,9 @@
 	"new": {
 		"title": "Nuevo Agente",
 		"subtitle": "Crea un nuevo agente para comenzar"
+	},
+	"prompts": {
+		"noPrompts": "No se encontraron indicaciones",
+		"searchPlaceholder": "Buscar indicaciones..."
 	}
 }

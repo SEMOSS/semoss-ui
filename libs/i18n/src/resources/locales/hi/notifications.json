@@ -1,7 +1,7 @@
 {
 	"knowledge": {
-		"createSuccess": "ज्ञान स्रोत \"{{name}}\" सफलतापूर्वक बनाया गया",
-		"createError": "ज्ञान स्रोत बनाने में विफल"
+		"createSuccess": "ज्ञान भंडार \"{{name}}\" सफलतापूर्वक बनाया गया",
+		"createError": "ज्ञान भंडार बनाने में विफल"
 	},
 	"workspace": {
 		"saveError": "एजेंट सहेजने में विफल",

@@ -1,18 +1,18 @@
 {
 	"embedDocuments": {
-		"title": "Intégrer des documents dans une source existante",
-		"description": "Sélectionnez une source de connaissances et téléversez des documents à intégrer.",
-		"knowledgeSource": "Source de connaissances",
+		"title": "Intégrer des documents dans une base existante",
+		"description": "Sélectionnez une base de connaissances et téléversez des documents à intégrer.",
+		"knowledgeSource": "Base de connaissances",
 		"documents": "Documents",
 		"selectFiles": "Cliquez pour sélectionner des fichiers ou glissez-déposez",
 		"embedButton": "Intégrer les documents",
 		"embedding": "Intégration...",
 		"removeFile": "Supprimer le fichier",
-		"selectPlaceholder": "Sélectionnez une source de connaissances"
+		"selectPlaceholder": "Sélectionnez une base de connaissances"
 	},
 	"selector": {
 		"search": "Rechercher",
-		"createKnowledgeSource": "Créer une source de connaissances",
+		"createKnowledgeSource": "Créer une base de connaissances",
 		"viewDetails": "Voir les détails",
 		"noToolboxesFound": "Aucune boîte à outils trouvée",
 		"noKnowledgeFound": "Aucune connaissance trouvée",
@@ -32,12 +32,12 @@
 		"enterField": "Entrer {{field}}"
 	},
 	"messages": {
-		"selectKnowledgeSource": "Veuillez sélectionner une source de connaissances",
+		"selectKnowledgeSource": "Veuillez sélectionner une base de connaissances",
 		"selectDocument": "Veuillez sélectionner au moins un document",
 		"embedSuccess": "Documents intégrés avec succès",
 		"embedFailed": "Échec de l'intégration des documents",
-		"loadFailed": "Échec du chargement des sources de connaissances.",
-		"noSources": "Aucune source de connaissances trouvée."
+		"loadFailed": "Échec du chargement des bases de connaissances.",
+		"noSources": "Aucune base de connaissances trouvée."
 	},
 	"buttons": {
 		"cancel": "Annuler",

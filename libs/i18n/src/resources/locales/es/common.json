@@ -25,7 +25,8 @@
 		"updateInstructions": "Actualizar instrucciones",
 		"updateTokenLength": "Actualizar longitud del token",
 		"uploadFiles": "Subir archivos",
-		"search": "Buscar..."
+		"search": "Buscar...",
+		"enterPromptLibraryTag": "Ingresar etiqueta de biblioteca de indicaciones"
 	},
 	"actions": {
 		"addKnowledge": "Añadir conocimiento",
