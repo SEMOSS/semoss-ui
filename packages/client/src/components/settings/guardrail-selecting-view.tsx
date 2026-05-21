@@ -48,6 +48,9 @@ interface GuardrailSelectingViewProps {
 	onToggleMethod: (name: string) => void;
 	onUpdateMethod: (method: string, config: MethodGuardrailConfig) => void;
 	onSave: (data: GuardrailConfig) => Promise<void>;
+	hasMoreGuardrails: boolean;
+	isLoadingMoreGuardrails: boolean;
+	onLoadMoreGuardrails: () => void;
 }
 
 export const GuardrailSelectingView = ({
@@ -65,6 +68,9 @@ export const GuardrailSelectingView = ({
 	onToggleMethod,
 	onUpdateMethod,
 	onSave,
+	hasMoreGuardrails,
+	isLoadingMoreGuardrails,
+	onLoadMoreGuardrails,
 }: GuardrailSelectingViewProps) => {
 	// Configured phase
 	if (phase === "configured" && configResult) {
@@ -170,8 +176,9 @@ export const GuardrailSelectingView = ({
 									}
 									onUpdate={(cfg) =>
 										onUpdateMethod(method.methodName, cfg)
-									}
-								/>
+									}								hasMoreGuardrails={hasMoreGuardrails}
+								isLoadingMoreGuardrails={isLoadingMoreGuardrails}
+								onLoadMoreGuardrails={onLoadMoreGuardrails}								/>
 							))}
 						</div>
 					)}

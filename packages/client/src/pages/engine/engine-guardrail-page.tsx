@@ -1,6 +1,6 @@
 import { RefreshCw } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import { Button, H4, P, toast } from "@semoss/ui/next";
 import {
@@ -136,22 +136,13 @@ const buildEmptyMethodConfigs = (methods: EngineMethod[]): MethodConfigMap => {
 	return configs;
 };
 
-const fetchAllGuardrails = async (): Promise<unknown[]> => {
-	const all: unknown[] = [];
-	const limit = 15;
-	let offset = 0;
+const GUARDRAILS_PAGE_LIMIT = 10;
 
-	while (true) {
-		const response = await runPixel(
-			`MyEngines(engineTypes=["GUARDRAIL"], userT=[true], limit=[${limit}], offset=[${offset}]);`,
-		);
-		const batch = (response?.pixelReturn?.[0]?.output as unknown[]) ?? [];
-		all.push(...batch);
-		if (batch.length < limit) break;
-		offset += limit;
-	}
-
-	return all;
+const fetchGuardrailsPage = async (offset: number): Promise<unknown[]> => {
+	const response = await runPixel(
+		`MyEngines(engineTypes=["GUARDRAIL"], userT=[true], sort=[{"DATECREATED": "ASC"}], limit=[${GUARDRAILS_PAGE_LIMIT}], offset=[${offset}]);`,
+	);
+	return (response?.pixelReturn?.[0]?.output as unknown[]) ?? [];
 };
 
 const fetchExistingGuardrailConfig = async (
@@ -183,6 +174,11 @@ export const EngineGuardrailPage = observer(() => {
 	const [configResult, setConfigResult] = useState<GuardrailConfig | null>(
 		null,
 	);
+	const [guardrailsOffset, setGuardrailsOffset] = useState(0);
+	const [hasMoreGuardrails, setHasMoreGuardrails] = useState(false);
+	const [isLoadingMoreGuardrails, setIsLoadingMoreGuardrails] =
+		useState(false);
+	const isLoadingMoreRef = useRef(false);
 
 	const { hasAnyConfig, configuredCount } = useMemo(() => {
 		let count = 0;
@@ -203,7 +199,7 @@ export const EngineGuardrailPage = observer(() => {
 
 			const [methodsResult, guardrailsResult] = await Promise.allSettled([
 				runPixel(`GetEngineMethods(engine=["${active?.id}"]);`),
-				fetchAllGuardrails(),
+				fetchGuardrailsPage(0),
 			]);
 
 			let methods: EngineMethod[] = [];
@@ -221,6 +217,10 @@ export const EngineGuardrailPage = observer(() => {
 
 			setEngineMethods(methods);
 			setGuardrails(guardrailItems);
+			setGuardrailsOffset(guardrailItems.length);
+			setHasMoreGuardrails(guardrailItems.length === GUARDRAILS_PAGE_LIMIT);
+			isLoadingMoreRef.current = false;
+			setIsLoadingMoreGuardrails(false);
 
 			if (restoredConfig) {
 				const restoredConfigs = buildMethodConfigsFromPipelineResponse(
@@ -256,6 +256,25 @@ export const EngineGuardrailPage = observer(() => {
 		},
 		[active?.id],
 	);
+
+	const loadMoreGuardrails = useCallback(async () => {
+		if (isLoadingMoreRef.current || !hasMoreGuardrails) return;
+		isLoadingMoreRef.current = true;
+		setIsLoadingMoreGuardrails(true);
+		try {
+			const nextBatch = await fetchGuardrailsPage(guardrailsOffset);
+			if (nextBatch.length > 0) {
+				setGuardrails((prev) => [...prev, ...nextBatch]);
+			}
+			setGuardrailsOffset((prev) => prev + nextBatch.length);
+			setHasMoreGuardrails(nextBatch.length === GUARDRAILS_PAGE_LIMIT);
+		} catch (err) {
+			console.error("Failed to load more guardrails", err);
+		} finally {
+			isLoadingMoreRef.current = false;
+			setIsLoadingMoreGuardrails(false);
+		}
+	}, [guardrailsOffset, hasMoreGuardrails]);
 
 	// Handlers ------------------------------------------------------------------
 
@@ -422,8 +441,9 @@ export const EngineGuardrailPage = observer(() => {
 					}}
 					onToggleMethod={toggleMethod}
 					onUpdateMethod={updateMethodConfig}
-					onSave={handleSaveConfig}
-				/>
+					onSave={handleSaveConfig}				hasMoreGuardrails={hasMoreGuardrails}
+				isLoadingMoreGuardrails={isLoadingMoreGuardrails}
+				onLoadMoreGuardrails={loadMoreGuardrails}				/>
 			)}
 		</div>
 	);

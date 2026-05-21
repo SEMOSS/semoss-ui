@@ -22,6 +22,9 @@ interface GuardrailMethodConfigCardProps {
 	isExpanded: boolean;
 	onToggle: () => void;
 	onUpdate: (config: MethodGuardrailConfig) => void;
+	hasMoreGuardrails: boolean;
+	isLoadingMoreGuardrails: boolean;
+	onLoadMoreGuardrails: () => void;
 }
 
 export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
@@ -34,6 +37,9 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 		isExpanded,
 		onToggle,
 		onUpdate,
+		hasMoreGuardrails,
+		isLoadingMoreGuardrails,
+		onLoadMoreGuardrails,
 	}) => {
 		const inCount = config.input.length;
 		const outCount = config.output.length;
@@ -117,6 +123,9 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 								onUpdate({ ...config, input: ids })
 							}
 							isLoading={isGuardrailsLoading}
+							hasMore={hasMoreGuardrails}
+							isLoadingMore={isLoadingMoreGuardrails}
+							onLoadMore={onLoadMoreGuardrails}
 						/>
 						<GuardrailSelectorPanel
 							direction="output"
@@ -126,6 +135,9 @@ export const GuardrailMethodConfigCard = memo<GuardrailMethodConfigCardProps>(
 								onUpdate({ ...config, output: ids })
 							}
 							isLoading={isGuardrailsLoading}
+							hasMore={hasMoreGuardrails}
+							isLoadingMore={isLoadingMoreGuardrails}
+							onLoadMore={onLoadMoreGuardrails}
 						/>
 					</div>
 				)}

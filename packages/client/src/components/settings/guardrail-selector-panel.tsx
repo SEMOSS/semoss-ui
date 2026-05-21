@@ -6,6 +6,9 @@ interface GuardrailSelectorPanelProps {
 	selected: string[];
 	onChange: (ids: string[]) => void;
 	isLoading?: boolean;
+	hasMore?: boolean;
+	isLoadingMore?: boolean;
+	onLoadMore?: () => void;
 }
 
 export const GuardrailSelectorPanel = ({
@@ -14,7 +17,20 @@ export const GuardrailSelectorPanel = ({
 	selected,
 	onChange,
 	isLoading = false,
+	hasMore = false,
+	isLoadingMore = false,
+	onLoadMore,
 }: GuardrailSelectorPanelProps) => {
+	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+		const el = e.currentTarget;
+		if (
+			hasMore &&
+			!isLoadingMore &&
+			el.scrollHeight - el.scrollTop - el.clientHeight < 80
+		) {
+			onLoadMore?.();
+		}
+	};
 	const isInput = direction === "input";
 
 	const toggle = (id: string) => {
@@ -67,7 +83,10 @@ export const GuardrailSelectorPanel = ({
 					No guardrails available.
 				</P>
 			) : (
-				<div className="max-h-40 space-y-0.5 overflow-y-auto">
+			<div
+				className="max-h-[180px] space-y-0.5 overflow-y-auto pr-1"
+				onScroll={handleScroll}
+			>
 					{guardrails.map((g) => {
 						const guardrail = g as Record<string, unknown>;
 						const databaseId = String(
@@ -109,6 +128,11 @@ export const GuardrailSelectorPanel = ({
 							</button>
 						);
 					})}
+				{isLoadingMore && (
+					<div className="flex items-center justify-center py-2">
+						<Spinner className="size-3" />
+					</div>
+				)}
 				</div>
 			)}
 		</div>
