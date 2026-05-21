@@ -11,7 +11,6 @@
 		"modelLabel": "モデル",
 		"instructionsLabel": "指示",
 		"agentLabel": "エージェント",
-		"noAgent": "エージェントが未設定です",
 		"knowledgeLabel": "ナレッジ",
 		"toolboxLabel": "ツールボックス",
 		"maxTokenLabel": "最大トークン",

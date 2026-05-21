@@ -11,7 +11,6 @@
 		"modelLabel": "Model",
 		"instructionsLabel": "Instructions",
 		"agentLabel": "Agent",
-		"noAgent": "No agent assigned",
 		"knowledgeLabel": "Knowledge",
 		"toolboxLabel": "Toolboxes",
 		"maxTokenLabel": "Max Token",

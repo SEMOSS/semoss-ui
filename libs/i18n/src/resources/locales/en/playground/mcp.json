@@ -23,8 +23,7 @@
 		"description": "Pick a saved agent, or assemble your own knowledge and toolboxes.",
 		"tabAgent": "Agent",
 		"tabKnowledge": "Knowledge",
-		"tabToolbox": "Toolboxes",
-		"agentReadOnlyNote": "Agents are chosen when a chat starts and can't be changed mid-conversation. Start a new chat to switch."
+		"tabToolbox": "Toolboxes"
 	},
 	"tools": {
 		"enterValues": "Enter comma-separated values",

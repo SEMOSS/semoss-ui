@@ -23,8 +23,7 @@
 		"description": "Elige un agente guardado, o ensambla tu propio conocimiento y cajas de herramientas.",
 		"tabAgent": "Agente",
 		"tabKnowledge": "Conocimiento",
-		"tabToolbox": "Cajas de herramientas",
-		"agentReadOnlyNote": "Los agentes se eligen al iniciar un chat y no se pueden cambiar a mitad de la conversación. Inicia un nuevo chat para cambiar."
+		"tabToolbox": "Cajas de herramientas"
 	},
 	"tools": {
 		"enterValues": "Ingresa valores separados por comas",

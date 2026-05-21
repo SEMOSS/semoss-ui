@@ -23,8 +23,7 @@
 		"description": "Choisissez un agent enregistré, ou assemblez vos propres connaissances et boîtes à outils.",
 		"tabAgent": "Agent",
 		"tabKnowledge": "Connaissances",
-		"tabToolbox": "Boîtes à outils",
-		"agentReadOnlyNote": "Les agents sont choisis au démarrage d'un chat et ne peuvent pas être modifiés en cours de conversation. Démarrez un nouveau chat pour changer."
+		"tabToolbox": "Boîtes à outils"
 	},
 	"tools": {
 		"enterValues": "Entrez des valeurs séparées par des virgules",

@@ -932,25 +932,41 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
 									{agentChipWorkspace && (
 										<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
-											<button
-												type="button"
-												onClick={() =>
-													handleOpenMcpOverlay(
-														"AGENT",
-													)
-												}
-												className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
-												title={
-													agentChipWorkspace.name ??
-													undefined
-												}
-											>
-												<ComputerIcon className="size-3.5 shrink-0" />
-												<span className="max-w-32 truncate">
-													{agentChipWorkspace.name ||
-														agentChipWorkspace.workspace_id}
-												</span>
-											</button>
+											{onWorkspaceChange ? (
+												<button
+													type="button"
+													onClick={() =>
+														handleOpenMcpOverlay(
+															"AGENT",
+														)
+													}
+													className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
+													title={
+														agentChipWorkspace.name ??
+														undefined
+													}
+												>
+													<ComputerIcon className="size-3.5 shrink-0" />
+													<span className="max-w-32 truncate">
+														{agentChipWorkspace.name ||
+															agentChipWorkspace.workspace_id}
+													</span>
+												</button>
+											) : (
+												<div
+													className="flex h-full items-center gap-1.5 px-2.5"
+													title={
+														agentChipWorkspace.name ??
+														undefined
+													}
+												>
+													<ComputerIcon className="size-3.5 shrink-0" />
+													<span className="max-w-32 truncate">
+														{agentChipWorkspace.name ||
+															agentChipWorkspace.workspace_id}
+													</span>
+												</div>
+											)}
 											{root.theme.featureFlags
 												?.showPlatformLinks && (
 												<a

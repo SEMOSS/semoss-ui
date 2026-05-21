@@ -3,7 +3,6 @@ import {
 	CheckIcon,
 	ComputerIcon,
 	HammerIcon,
-	InfoIcon,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useId, useRef, useState } from "react";
@@ -51,16 +50,16 @@ interface MCPOverlayProps {
 	values: MCPConfig[];
 
 	/**
-	 * Currently-selected agent (workspace), if any. The Agent tab is always
-	 * rendered as the first tab; this just hydrates it.
+	 * Currently-selected agent (workspace), if any. When `agentEditable` is
+	 * true this hydrates the Agent tab; either way it's used to merge the
+	 * agent's MCPs into the drafts as `fromWorkspace` entries.
 	 */
 	workspace?: WorkspaceRef | null;
 
 	/**
 	 * Whether the user can change the agent inside the overlay. Defaults to
 	 * `false` — callers must explicitly opt in. When false the Agent tab is
-	 * read-only with an explanatory note (e.g. existing rooms where the
-	 * workspace is already baked in).
+	 * omitted entirely (existing rooms have their workspace baked in).
 	 */
 	agentEditable?: boolean;
 
@@ -255,19 +254,23 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 							onValueChange={(v) => setActiveTab(v as Tab)}
 							className="flex min-h-0 flex-1 flex-col gap-3"
 						>
-							<TabsList className="grid h-10 w-full grid-cols-3 p-1">
-								<TabsTrigger
-									value="AGENT"
-									className="relative h-full gap-2"
-								>
-									<ComputerIcon className="size-4" />
-									{t("overlay.tabAgent")}
-									{/* Absolutely positioned so the centered label
-									    doesn't shift when the indicator appears. */}
-									{workspaceDraft ? (
-										<CheckIcon className="absolute right-2.5 size-3.5 text-primary" />
-									) : null}
-								</TabsTrigger>
+							<TabsList
+								className={`grid h-10 w-full ${agentEditable ? "grid-cols-3" : "grid-cols-2"} p-1`}
+							>
+								{agentEditable && (
+									<TabsTrigger
+										value="AGENT"
+										className="relative h-full gap-2"
+									>
+										<ComputerIcon className="size-4" />
+										{t("overlay.tabAgent")}
+										{/* Absolutely positioned so the centered label
+										    doesn't shift when the indicator appears. */}
+										{workspaceDraft ? (
+											<CheckIcon className="absolute right-2.5 size-3.5 text-primary" />
+										) : null}
+									</TabsTrigger>
+								)}
 								<TabsTrigger
 									value="KNOWLEDGE"
 									className="h-full gap-2"
@@ -290,40 +293,19 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 								</TabsTrigger>
 							</TabsList>
 
-							<TabsContent
-								value="AGENT"
-								className="flex min-h-0 flex-1 flex-col"
-							>
-								{activeTab === "AGENT" &&
-									(agentEditable ? (
+							{agentEditable && (
+								<TabsContent
+									value="AGENT"
+									className="flex min-h-0 flex-1 flex-col"
+								>
+									{activeTab === "AGENT" && (
 										<AgentSelector
 											value={workspaceDraft}
 											onChange={setWorkspaceDraft}
 										/>
-									) : (
-										<div className="flex flex-col gap-3">
-											<div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm">
-												<InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-												<span className="text-muted-foreground">
-													{t(
-														"overlay.agentReadOnlyNote",
-													)}
-												</span>
-											</div>
-											{workspaceDraft && (
-												<div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
-													<ComputerIcon className="size-5 shrink-0 text-muted-foreground" />
-													<div className="min-w-0 flex-1">
-														<div className="truncate font-medium text-sm">
-															{workspaceDraft.name ||
-																workspaceDraft.workspace_id}
-														</div>
-													</div>
-												</div>
-											)}
-										</div>
-									))}
-							</TabsContent>
+									)}
+								</TabsContent>
+							)}
 							<TabsContent
 								value="KNOWLEDGE"
 								className="flex min-h-0 flex-1 flex-col"
