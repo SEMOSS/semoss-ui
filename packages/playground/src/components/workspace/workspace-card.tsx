@@ -76,7 +76,7 @@ export const WorkspaceCard = observer(
 						}}
 					/>
 
-					<CardContent className="flex items-center justify-between gap-2 rounded-b-xl px-6 py-4 dark:bg-secondary">
+					<CardContent className="flex flex-wrap items-center gap-2 rounded-b-xl px-6 py-4 dark:bg-secondary">
 						<Button
 							size="sm"
 							onClick={(e) => {
@@ -90,7 +90,7 @@ export const WorkspaceCard = observer(
 							<SquarePen />
 							{t("workspace:actions.newChat")}
 						</Button>
-						<div className="flex items-center gap-1">
+						<div className="ml-auto flex items-center gap-1">
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button

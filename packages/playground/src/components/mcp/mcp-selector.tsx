@@ -57,6 +57,14 @@ interface MCPSelectorProps {
 	 * Dialogs. Knowledge selectors only.
 	 */
 	onRequestCreateKnowledge?: () => void;
+
+	/**
+	 * Autofocus the search input on mount. Off by default — when multiple
+	 * selectors render together on a page (e.g. WorkspaceForm), autofocus
+	 * would steal the page scroll. Modal hosts that render one selector at
+	 * a time should opt in.
+	 */
+	autoFocus?: boolean;
 }
 
 /**
@@ -70,6 +78,7 @@ export const MCPSelector = observer(
 		onChange,
 		className,
 		onRequestCreateKnowledge,
+		autoFocus = false,
 	}: MCPSelectorProps) => {
 		const { t } = useTranslation("mcp");
 		const { root } = useRoot();
@@ -194,7 +203,7 @@ export const MCPSelector = observer(
 					<div className="flex-1">
 						<InputGroup className="bg-background">
 							<InputGroupInput
-								autoFocus
+								autoFocus={autoFocus}
 								placeholder={t("selector.search")}
 								value={search}
 								disabled={disabled}
@@ -251,7 +260,7 @@ export const MCPSelector = observer(
 					)}
 					{combinedData.length !== 0 && (
 						<>
-							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
+							<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
 								{combinedData.map((mcp) => {
 									const selectedEntry = selected[mcp.id];
 									const fromWorkspace =

@@ -336,6 +336,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										onRequestCreateKnowledge={() =>
 											setView("create")
 										}
+										autoFocus
 									/>
 								)}
 							</TabsContent>
@@ -348,6 +349,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										type="TOOLBOX"
 										values={toolbox}
 										onChange={setToolbox}
+										autoFocus
 									/>
 								)}
 							</TabsContent>
