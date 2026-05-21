@@ -114,11 +114,16 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 		}
 	};
 
+	const isEmpty =
+		!getPrompts.isLoading &&
+		getPrompts.data.length === 0 &&
+		values.length === 0;
+
 	return (
 		<div
 			className={cn(
-				"flex h-full min-h-0 w-full flex-col overflow-hidden rounded-xl border-border bg-card shadow-sm",
-				className,
+				"flex w-full flex-col overflow-hidden rounded-xl border-border bg-card shadow-sm",
+				isEmpty ? "h-auto" : cn("h-full min-h-0", className),
 			)}
 		>
 			<div className="flex w-full shrink-0 flex-row gap-2 border-border bg-muted p-4">
@@ -145,7 +150,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 					</div>
 				)}
 				{!getPrompts.isLoading && getPrompts.data.length === 0 && (
-					<div className="flex h-64 w-full items-center justify-center">
+					<div className="flex h-24 w-full items-center justify-center">
 						<Muted>{t("prompts.noPrompts")}</Muted>
 					</div>
 				)}
