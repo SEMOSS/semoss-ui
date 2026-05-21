@@ -48,13 +48,29 @@ interface MCPSelectorProps {
 	 * the MCP overlay) should set a concrete height here, e.g. `h-[420px]`.
 	 */
 	className?: string;
+
+	/**
+	 * Optional hook for the "+" (create knowledge) action. When provided, the
+	 * button calls this instead of opening the standalone NewKnowledgeOverlay
+	 * Dialog. Callers already rendering inside a modal (e.g. MCPOverlay)
+	 * should pass this to host the create flow themselves and avoid stacking
+	 * Dialogs. Knowledge selectors only.
+	 */
+	onRequestCreateKnowledge?: () => void;
 }
 
 /**
  * Renders the MCPSelector component for selecting mcps within an agent
  */
 export const MCPSelector = observer(
-	({ type, values, disabled, onChange, className }: MCPSelectorProps) => {
+	({
+		type,
+		values,
+		disabled,
+		onChange,
+		className,
+		onRequestCreateKnowledge,
+	}: MCPSelectorProps) => {
 		const { t } = useTranslation("mcp");
 		const { root } = useRoot();
 		const isMobile = useIsMobile();
@@ -197,7 +213,11 @@ export const MCPSelector = observer(
 									onClick={(event) => {
 										event.preventDefault();
 										event.stopPropagation();
-										setIsKnowledgeOverlayOpen(true);
+										if (onRequestCreateKnowledge) {
+											onRequestCreateKnowledge();
+										} else {
+											setIsKnowledgeOverlayOpen(true);
+										}
 									}}
 									disabled={disabled}
 								>

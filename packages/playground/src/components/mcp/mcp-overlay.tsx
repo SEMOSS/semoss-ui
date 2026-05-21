@@ -6,7 +6,7 @@ import {
 	InfoIcon,
 } from "lucide-react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -18,12 +18,14 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
+	Spinner,
 	Tabs,
 	TabsContent,
 	TabsList,
 	TabsTrigger,
 } from "@semoss/ui/next";
 import type { MCPConfig, Workspace } from "@/types";
+import { NewKnowledgeFormBody } from "../knowledge/new-knowledge-form-body";
 import { AgentSelector } from "./agent-selector";
 import { MCPSelector } from "./mcp-selector";
 import { splitMcpByType } from "./utility";
@@ -77,7 +79,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	agentEditable = false,
 	onClose,
 }) => {
-	const { t } = useTranslation("mcp");
+	const { t } = useTranslation(["mcp", "knowledge", "common"]);
 
 	const [knowledge, setKnowledge] = useState<MCPConfig[]>(
 		() => splitMcpByType(values).knowledge,
@@ -89,6 +91,12 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 		workspace ?? null,
 	);
 	const [activeTab, setActiveTab] = useState<Tab>(defaultTab);
+
+	// Routed view inside the overlay. "list" shows tabs + selectors; "create"
+	// swaps the body for the create-knowledge form so we don't stack Dialogs.
+	const [view, setView] = useState<"list" | "create">("list");
+	const [isCreating, setIsCreating] = useState(false);
+	const createFormId = useId();
 
 	// Tracks which workspace's MCPs are currently merged into the drafts.
 	// Used to detect when the user picks a different agent (or clears it)
@@ -109,6 +117,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 			setToolbox(next.toolbox);
 			setWorkspaceDraft(workspace ?? null);
 			setActiveTab(defaultTab);
+			setView("list");
 			mergedWorkspaceId.current = workspace?.workspace_id ?? null;
 		}
 		wasOpen.current = open;
@@ -164,127 +173,204 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 	}, [workspaceDraft?.workspace_id, getWorkspace.status, getWorkspace.data]);
 
 	return (
-		<Dialog open={open} onOpenChange={() => onClose()}>
+		<Dialog
+			open={open}
+			onOpenChange={(next) => {
+				// Don't let the user dismiss while a create is in-flight; the
+				// pixel calls can't be cancelled and the draft state would
+				// be lost.
+				if (!next && !isCreating) {
+					onClose();
+				}
+			}}
+		>
 			<DialogContent
 				className="flex h-[80vh] max-h-[40rem] w-full flex-col gap-4 sm:max-w-4xl"
 				onOpenAutoFocus={(e) => e.preventDefault()}
 				onCloseAutoFocus={(e) => e.preventDefault()}
 			>
-				<DialogHeader>
-					<DialogTitle>{t("overlay.title")}</DialogTitle>
-					<DialogDescription>
-						{t("overlay.description")}
-					</DialogDescription>
-				</DialogHeader>
+				{view === "create" ? (
+					<>
+						<DialogHeader>
+							<DialogTitle>
+								{t("knowledge:newSource.title")}
+							</DialogTitle>
+							<DialogDescription>
+								{t("knowledge:newSource.description")}
+							</DialogDescription>
+						</DialogHeader>
 
-				<Tabs
-					value={activeTab}
-					onValueChange={(v) => setActiveTab(v as Tab)}
-					className="flex min-h-0 flex-1 flex-col gap-3"
-				>
-					<TabsList className="grid h-10 w-full grid-cols-3 p-1">
-						<TabsTrigger
-							value="AGENT"
-							className="relative h-full gap-2"
+						{/* px-1 py-1: overflow-y-auto implicitly clips overflow-x,
+						    which trims the focus ring on the inputs at the edges.
+						    A tiny inset gives the rings room. */}
+						<div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
+							<NewKnowledgeFormBody
+								formId={createFormId}
+								onLoadingChange={setIsCreating}
+								onSuccess={(next) => {
+									setKnowledge((prev) =>
+										prev.some((m) => m.id === next.id)
+											? prev
+											: [...prev, next],
+									);
+									setView("list");
+									setActiveTab("KNOWLEDGE");
+								}}
+							/>
+						</div>
+
+						<DialogFooter>
+							<Button
+								variant="ghost"
+								disabled={isCreating}
+								onClick={() => setView("list")}
+							>
+								{t("common:buttons.back")}
+							</Button>
+							<Button
+								type="submit"
+								form={createFormId}
+								variant="default"
+								disabled={isCreating}
+							>
+								{isCreating ? (
+									<Spinner />
+								) : (
+									t("common:buttons.create")
+								)}
+							</Button>
+						</DialogFooter>
+					</>
+				) : (
+					<>
+						<DialogHeader>
+							<DialogTitle>{t("overlay.title")}</DialogTitle>
+							<DialogDescription>
+								{t("overlay.description")}
+							</DialogDescription>
+						</DialogHeader>
+
+						<Tabs
+							value={activeTab}
+							onValueChange={(v) => setActiveTab(v as Tab)}
+							className="flex min-h-0 flex-1 flex-col gap-3"
 						>
-							<ComputerIcon className="size-4" />
-							{t("overlay.tabAgent")}
-							{/* Absolutely positioned so the centered label
-							    doesn't shift when the indicator appears. */}
-							{workspaceDraft ? (
-								<CheckIcon className="absolute right-2.5 size-3.5 text-primary" />
-							) : null}
-						</TabsTrigger>
-						<TabsTrigger value="KNOWLEDGE" className="h-full gap-2">
-							<BookOpenIcon className="size-4" />
-							{t("overlay.tabKnowledge")}
-							<Badge variant="outline" className="ml-1">
-								{knowledge.length}
-							</Badge>
-						</TabsTrigger>
-						<TabsTrigger value="TOOLBOX" className="h-full gap-2">
-							<HammerIcon className="size-4" />
-							{t("overlay.tabToolbox")}
-							<Badge variant="outline" className="ml-1">
-								{toolbox.length}
-							</Badge>
-						</TabsTrigger>
-					</TabsList>
+							<TabsList className="grid h-10 w-full grid-cols-3 p-1">
+								<TabsTrigger
+									value="AGENT"
+									className="relative h-full gap-2"
+								>
+									<ComputerIcon className="size-4" />
+									{t("overlay.tabAgent")}
+									{/* Absolutely positioned so the centered label
+									    doesn't shift when the indicator appears. */}
+									{workspaceDraft ? (
+										<CheckIcon className="absolute right-2.5 size-3.5 text-primary" />
+									) : null}
+								</TabsTrigger>
+								<TabsTrigger
+									value="KNOWLEDGE"
+									className="h-full gap-2"
+								>
+									<BookOpenIcon className="size-4" />
+									{t("overlay.tabKnowledge")}
+									<Badge variant="outline" className="ml-1">
+										{knowledge.length}
+									</Badge>
+								</TabsTrigger>
+								<TabsTrigger
+									value="TOOLBOX"
+									className="h-full gap-2"
+								>
+									<HammerIcon className="size-4" />
+									{t("overlay.tabToolbox")}
+									<Badge variant="outline" className="ml-1">
+										{toolbox.length}
+									</Badge>
+								</TabsTrigger>
+							</TabsList>
 
-					<TabsContent
-						value="AGENT"
-						className="flex min-h-0 flex-1 flex-col"
-					>
-						{activeTab === "AGENT" &&
-							(agentEditable ? (
-								<AgentSelector
-									value={workspaceDraft}
-									onChange={setWorkspaceDraft}
-								/>
-							) : (
-								<div className="flex flex-col gap-3">
-									<div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm">
-										<InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-										<span className="text-muted-foreground">
-											{t("overlay.agentReadOnlyNote")}
-										</span>
-									</div>
-									{workspaceDraft && (
-										<div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
-											<ComputerIcon className="size-5 shrink-0 text-muted-foreground" />
-											<div className="min-w-0 flex-1">
-												<div className="truncate font-medium text-sm">
-													{workspaceDraft.name ||
-														workspaceDraft.workspace_id}
-												</div>
+							<TabsContent
+								value="AGENT"
+								className="flex min-h-0 flex-1 flex-col"
+							>
+								{activeTab === "AGENT" &&
+									(agentEditable ? (
+										<AgentSelector
+											value={workspaceDraft}
+											onChange={setWorkspaceDraft}
+										/>
+									) : (
+										<div className="flex flex-col gap-3">
+											<div className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-3 text-sm">
+												<InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+												<span className="text-muted-foreground">
+													{t(
+														"overlay.agentReadOnlyNote",
+													)}
+												</span>
 											</div>
+											{workspaceDraft && (
+												<div className="flex items-center gap-3 rounded-lg border border-border bg-card p-4">
+													<ComputerIcon className="size-5 shrink-0 text-muted-foreground" />
+													<div className="min-w-0 flex-1">
+														<div className="truncate font-medium text-sm">
+															{workspaceDraft.name ||
+																workspaceDraft.workspace_id}
+														</div>
+													</div>
+												</div>
+											)}
 										</div>
-									)}
-								</div>
-							))}
-					</TabsContent>
-					<TabsContent
-						value="KNOWLEDGE"
-						className="flex min-h-0 flex-1 flex-col"
-					>
-						{activeTab === "KNOWLEDGE" && (
-							<MCPSelector
-								type="KNOWLEDGE"
-								values={knowledge}
-								onChange={setKnowledge}
-							/>
-						)}
-					</TabsContent>
-					<TabsContent
-						value="TOOLBOX"
-						className="flex min-h-0 flex-1 flex-col"
-					>
-						{activeTab === "TOOLBOX" && (
-							<MCPSelector
-								type="TOOLBOX"
-								values={toolbox}
-								onChange={setToolbox}
-							/>
-						)}
-					</TabsContent>
-				</Tabs>
+									))}
+							</TabsContent>
+							<TabsContent
+								value="KNOWLEDGE"
+								className="flex min-h-0 flex-1 flex-col"
+							>
+								{activeTab === "KNOWLEDGE" && (
+									<MCPSelector
+										type="KNOWLEDGE"
+										values={knowledge}
+										onChange={setKnowledge}
+										onRequestCreateKnowledge={() =>
+											setView("create")
+										}
+									/>
+								)}
+							</TabsContent>
+							<TabsContent
+								value="TOOLBOX"
+								className="flex min-h-0 flex-1 flex-col"
+							>
+								{activeTab === "TOOLBOX" && (
+									<MCPSelector
+										type="TOOLBOX"
+										values={toolbox}
+										onChange={setToolbox}
+									/>
+								)}
+							</TabsContent>
+						</Tabs>
 
-				<DialogFooter>
-					<Button variant="ghost" onClick={() => onClose()}>
-						{t("buttons.cancel")}
-					</Button>
-					<Button
-						variant="default"
-						onClick={() =>
-							onClose({
-								mcp: [...knowledge, ...toolbox],
-								workspace: workspaceDraft,
-							})
-						}
-					>
-						{t("buttons.save")}
-					</Button>
-				</DialogFooter>
+						<DialogFooter>
+							<Button variant="ghost" onClick={() => onClose()}>
+								{t("buttons.cancel")}
+							</Button>
+							<Button
+								variant="default"
+								onClick={() =>
+									onClose({
+										mcp: [...knowledge, ...toolbox],
+										workspace: workspaceDraft,
+									})
+								}
+							>
+								{t("buttons.save")}
+							</Button>
+						</DialogFooter>
+					</>
+				)}
 			</DialogContent>
 		</Dialog>
 	);
