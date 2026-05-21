@@ -221,7 +221,7 @@ export const MCPCard = ({
 				{/* Row 2: image + (name on top, type below) + request access.
 				    The title sits next to the brand image where the visual
 				    association is strongest; type tucks under as metadata. */}
-				<div className="flex items-center gap-2">
+				<div className="flex items-start gap-2">
 					{effectivePermission === "FULLY_PRIVATE" ? (
 						<div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border border-dashed bg-muted/50">
 							<ImageIcon className="size-4 text-muted-foreground" />
@@ -234,11 +234,11 @@ export const MCPCard = ({
 							{buildInitials(m.name)}
 						</div>
 					) : (
-						<div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-border bg-muted/40 p-2">
+						<div className="flex size-10 shrink-0 items-center justify-center">
 							<img
 								src={getEngineSubtypeIcon(m.type, m.subtype)}
 								alt={`${m.name} icon`}
-								className="size-full object-contain"
+								className="size-8 object-contain"
 							/>
 						</div>
 					)}
