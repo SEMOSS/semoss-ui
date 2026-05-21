@@ -14,6 +14,9 @@ import {
 } from "lexical";
 import {
 	BookOpenIcon,
+	ComputerIcon,
+	ExternalLinkIcon,
+	HammerIcon,
 	MicIcon,
 	PlusIcon,
 	SendIcon,
@@ -22,7 +25,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -41,6 +44,7 @@ import {
 import {
 	EnterPlugin,
 	FocusPlugin,
+	isKnowledgeMcp,
 	MCPOverlay,
 	MentionPlugin,
 	PromptLibraryDialog,
@@ -52,23 +56,15 @@ import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
 import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Engine, MCPConfig } from "@/types";
+import type { Engine, MCPConfig, Workspace } from "@/types";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
-const applyMCPDiff = (
-	items: MCPConfig[],
-	updated: MCPConfig[],
-	onSelect: (mcp: MCPConfig) => void,
-) => {
-	const oldIds = new Set(items.map((m) => m.id));
-	const newIds = new Set(updated.map((m) => m.id));
-	for (const mcp of updated) {
-		if (!oldIds.has(mcp.id)) onSelect(mcp);
-	}
-	for (const mcp of items) {
-		if (!newIds.has(mcp.id)) onSelect(mcp);
-	}
-};
+type WorkspaceRef = Pick<Workspace, "workspace_id"> &
+	Partial<Pick<Workspace, "name">>;
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
 
 let isIframed = false;
 try {
@@ -117,14 +113,25 @@ interface RoomInputProps {
 	MenuComponent: React.ComponentType<{
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
-		knowledgeOverlayOpen: boolean;
-		onKnowledgeOverlayChange: (open: boolean) => void;
-		toolboxOverlayOpen: boolean;
-		onToolboxOverlayChange: (open: boolean) => void;
+		/** Open the MCP overlay on the given tab */
+		onOpenMcpOverlay: (
+			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE",
+		) => void;
 	}>;
 
-	/** Callback when an MCP is toggled via the plus menu */
-	onMcpToggle?: (mcp: MCPConfig) => void;
+	/**
+	 * Callback when the full MCP list changes (e.g. via the MCP overlay's
+	 * Save button). Receives the next merged `mcp` array.
+	 */
+	onMcpChange?: (mcp: MCPConfig[]) => void;
+
+	/**
+	 * When provided, the MCP overlay grows an Agent tab and this callback
+	 * fires when the user changes the selected agent. Opting in by passing
+	 * this prop is the signal that the caller supports agent selection
+	 * (today: new-room flow only).
+	 */
+	onWorkspaceChange?: (next: WorkspaceRef | null) => void;
 
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
@@ -190,7 +197,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		options,
 		onPrompt = () => null,
 		onMcpSelect,
-		onMcpToggle,
+		onMcpChange,
+		onWorkspaceChange,
 		hasOutstandingTools = false,
 		hasToolsPaused = false,
 		toggleToolsPaused,
@@ -216,9 +224,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const [inputText, setInputText] = useState("");
 		const { root } = useRoot();
 
-		// MCP overlay state — managed here so overlays render outside the DropdownMenu's React subtree
-		const [knowledgeOverlayOpen, setKnowledgeOverlayOpen] = useState(false);
-		const [toolboxOverlayOpen, setToolboxOverlayOpen] = useState(false);
+		// MCP overlay state — managed here so the overlay renders outside the DropdownMenu's React subtree
+		const [mcpOverlay, setMcpOverlay] = useState<{
+			open: boolean;
+			defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE";
+		}>({ open: false, defaultTab: "KNOWLEDGE" });
+
+		const handleOpenMcpOverlay = useCallback(
+			(defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") =>
+				setMcpOverlay({ open: true, defaultTab }),
+			[],
+		);
+
+		const knowledgeCount = useMemo(
+			() => options.mcp.filter(isKnowledgeMcp).length,
+			[options.mcp],
+		);
+		const toolboxCount = options.mcp.length - knowledgeCount;
+		// Agent chip indicates a current selection. The Agent tab inside the
+		// modal is always visible; editability is gated on `onWorkspaceChange`.
+		const agentChipWorkspace = options.workspace ?? null;
 
 		// Refs for DOM elements and Lexical editor
 		const ref = useRef<HTMLDivElement>(null);
@@ -525,70 +550,94 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									)}
 									onClick={() => editorRef.current?.focus()}
 								>
-									<ContentEditable
-										ref={contentEditableRef}
-										className={cn(
-											"px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
-											!files.length && "pt-4",
-										)}
-										aria-placeholder={t(
-											"input.ariaPlaceholder",
-										)}
-										aria-disabled={isLoading}
-										disabled={isLoading}
-										placeholder={
+									{/* Grid overlap: editor + our own placeholder
+									    share one grid cell so the cell sizes to
+									    the larger of the two. Lexical's built-in
+									    placeholder is absolute and can't push
+									    editor height, which causes the
+									    placeholder to overflow into the buttons
+									    row when the input is narrow. */}
+									<div className="grid">
+										<ContentEditable
+											ref={contentEditableRef}
+											className={cn(
+												"col-start-1 row-start-1 px-4 pb-4 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+												files.length > 0
+													? "pt-0"
+													: "pt-4",
+											)}
+											aria-placeholder={t(
+												"input.ariaPlaceholder",
+											)}
+											aria-disabled={isLoading}
+											disabled={isLoading}
+											placeholder={<div />}
+											onPaste={(e) => {
+												const clipboardFiles =
+													Array.from(
+														e.clipboardData.files,
+													);
+
+												// Microsoft apps (Word, Outlook, etc.) include an image
+												// representation alongside text in the clipboard. If text
+												// content is present, filter out those images so the text
+												// is pasted normally instead of attaching a screenshot.
+												const hasText =
+													e.clipboardData.types.includes(
+														"text/plain",
+													) ||
+													e.clipboardData.types.includes(
+														"text/html",
+													);
+
+												const updated = hasText
+													? clipboardFiles.filter(
+															(f) =>
+																!f.type.startsWith(
+																	"image/",
+																),
+														)
+													: clipboardFiles;
+
+												if (updated.length > 0) {
+													e.preventDefault();
+													addFiles(updated);
+												}
+											}}
+										/>
+										{isEmpty && (
 											<div
 												className={cn(
-													"pointer-events-none absolute top-0 left-0 inline-flex select-none flex-wrap items-center gap-1 px-4 pb-4 text-muted-foreground text-sm",
-													!files.length && "pt-4",
+													"pointer-events-none col-start-1 row-start-1 select-none px-4 pb-4 text-muted-foreground text-sm",
+													files.length > 0
+														? "pt-0"
+														: "pt-4",
 												)}
 											>
-												<SparklesIcon className="size-4" />
+												{/* Inline-block + align-middle makes the icon
+											    flow with text: when the placeholder wraps,
+											    only the text after the icon wraps to the
+											    next line, instead of the whole text
+											    jumping below the icon. */}
+												<SparklesIcon className="-translate-y-px mr-1 inline-block size-4 align-middle" />
 												{isLoading
 													? t("input.thinking")
 													: t("input.menuPrompt")}
 											</div>
-										}
-										onPaste={(e) => {
-											const clipboardFiles = Array.from(
-												e.clipboardData.files,
-											);
-
-											// Microsoft apps (Word, Outlook, etc.) include an image
-											// representation alongside text in the clipboard. If text
-											// content is present, filter out those images so the text
-											// is pasted normally instead of attaching a screenshot.
-											const hasText =
-												e.clipboardData.types.includes(
-													"text/plain",
-												) ||
-												e.clipboardData.types.includes(
-													"text/html",
-												);
-
-											const updated = hasText
-												? clipboardFiles.filter(
-														(f) =>
-															!f.type.startsWith(
-																"image/",
-															),
-													)
-												: clipboardFiles;
-
-											if (updated.length > 0) {
-												e.preventDefault();
-												addFiles(updated);
-											}
-										}}
-									/>
+										)}
+									</div>
 								</ScrollArea>
 							}
 							ErrorBoundary={LexicalErrorBoundary}
 						/>
 
-						{/* Bottom controls: left (settings + footer), right (model + mic + send) */}
+						{/* Bottom controls. `+` and send are pinned to the corners and
+						    never shrink. Chips sit right of `+`. The middle controls
+						    (model, prompt library, mic, prompt optimizer) right-align
+						    next to send and clip from the left when there isn't
+						    enough room — they disappear rather than wrap. */}
 						<div
-							className="flex items-center justify-between gap-2 bg-card p-2"
+							className="flex items-center gap-2 bg-card p-2"
 							data-tour="tour-input-menu"
 							role="none"
 							onClick={(e) => {
@@ -614,8 +663,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								editorRef.current?.focus();
 							}}
 						>
-							{/* Left side: settings + footer */}
-							<div className="flex items-center gap-2">
+							{/* Plus menu — pinned bottom-left */}
+							<div className="shrink-0">
 								{!(
 									root.theme.featureFlags
 										?.hideToolsInIframe && isIframed
@@ -656,124 +705,216 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											<MenuComponent
 												isOpen={menuOpen}
 												onOpenChange={setMenuOpen}
-												knowledgeOverlayOpen={
-													knowledgeOverlayOpen
-												}
-												onKnowledgeOverlayChange={
-													setKnowledgeOverlayOpen
-												}
-												toolboxOverlayOpen={
-													toolboxOverlayOpen
-												}
-												onToolboxOverlayChange={
-													setToolboxOverlayOpen
+												onOpenMcpOverlay={
+													handleOpenMcpOverlay
 												}
 											/>
 										</DropdownMenuContent>
 									</DropdownMenu>
 								)}
-								{footer}
 							</div>
-							<div className="flex items-center gap-2">
-								<div data-tour="tour-model">
-									{root.theme.featureFlags
-										?.enableModelSelect && (
-										<EngineSelect
-											className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-											disabled={isLoading}
-											name={
-												model?.engine_display_name ||
-												model?.app_name ||
-												""
+							{/* Body — holds chips and middle controls. Chips clip
+							    out first (chips-region grows then shrinks to 0); only
+							    after chips are fully gone do middle controls begin
+							    clipping from the left. */}
+							<div className="flex min-w-0 flex-1 items-center gap-2">
+								{/* Chips region — grows to push middle right, shrinks
+								    first when squeezed. Chips inside are shrink-0 and
+								    clip past the region's right edge. */}
+								<div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+									{agentChipWorkspace && (
+										<div className="inline-flex h-7 shrink-0 items-center overflow-hidden rounded-md border border-border bg-background text-xs">
+											{onWorkspaceChange ? (
+												<button
+													type="button"
+													onClick={() =>
+														handleOpenMcpOverlay(
+															"AGENT",
+														)
+													}
+													className="flex h-full items-center gap-1.5 px-2.5 transition-colors hover:bg-muted/50"
+													title={
+														agentChipWorkspace.name ??
+														undefined
+													}
+												>
+													<ComputerIcon className="size-3.5 shrink-0" />
+													<span className="max-w-32 truncate">
+														{agentChipWorkspace.name ||
+															agentChipWorkspace.workspace_id}
+													</span>
+												</button>
+											) : (
+												<div
+													className="flex h-full items-center gap-1.5 px-2.5"
+													title={
+														agentChipWorkspace.name ??
+														undefined
+													}
+												>
+													<ComputerIcon className="size-3.5 shrink-0" />
+													<span className="max-w-32 truncate">
+														{agentChipWorkspace.name ||
+															agentChipWorkspace.workspace_id}
+													</span>
+												</div>
+											)}
+											{root.theme.featureFlags
+												?.showPlatformLinks && (
+												<a
+													target="_blank"
+													rel="noopener noreferrer"
+													href={`${PLATFORM_URL}/#/app/${agentChipWorkspace.workspace_id}`}
+													className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
+													onClick={(e) =>
+														e.stopPropagation()
+													}
+												>
+													<ExternalLinkIcon className="size-3" />
+												</a>
+											)}
+										</div>
+									)}
+									{knowledgeCount > 0 && (
+										<button
+											type="button"
+											onClick={() =>
+												handleOpenMcpOverlay(
+													"KNOWLEDGE",
+												)
 											}
-											value={model?.app_id || ""}
-											engineTypes={["MODEL"]}
-											metaFilters={[
-												{ tag: "text-generation" },
-											]}
-											onChange={(v) => {
-												setModel(v);
-											}}
-											popoverContentProps={{
-												align: "start",
-											}}
-											tokensUsed={tokensUsed}
-											tokensMax={tokensMax}
-											contextTooltipContent={
-												contextTooltipContent
+											className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
+										>
+											<BookOpenIcon className="size-3.5" />
+											<span>{knowledgeCount}</span>
+										</button>
+									)}
+									{toolboxCount > 0 && (
+										<button
+											type="button"
+											onClick={() =>
+												handleOpenMcpOverlay("TOOLBOX")
 											}
-										/>
+											className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs transition-colors hover:bg-muted/50"
+										>
+											<HammerIcon className="size-3.5" />
+											<span>{toolboxCount}</span>
+										</button>
 									)}
 								</div>
-								{predefinedPrompts.length > 0 ? (
+								{footer}
+								{/* Middle controls — sit at natural width on the right
+								    until chips-region collapses; then clip from the
+								    left (justify-end + overflow-hidden). */}
+								<div className="flex min-w-0 items-center justify-end gap-2 overflow-hidden">
+									<div data-tour="tour-model">
+										{root.theme.featureFlags
+											?.enableModelSelect && (
+											<EngineSelect
+												className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
+												disabled={isLoading}
+												name={
+													model?.engine_display_name ||
+													model?.app_name ||
+													""
+												}
+												value={model?.app_id || ""}
+												engineTypes={["MODEL"]}
+												metaFilters={[
+													{ tag: "text-generation" },
+												]}
+												onChange={(v) => {
+													setModel(v);
+												}}
+												popoverContentProps={{
+													align: "start",
+												}}
+												tokensUsed={tokensUsed}
+												tokensMax={tokensMax}
+												contextTooltipContent={
+													contextTooltipContent
+												}
+											/>
+										)}
+									</div>
+									{predefinedPrompts.length > 0 ? (
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													className="bg-background"
+													variant="ghost"
+													size="icon-sm"
+													disabled={isLoading}
+													aria-label="Open prompt library"
+													onClick={() =>
+														setIsPromptLibraryOpen(
+															true,
+														)
+													}
+												>
+													<BookOpenIcon />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												Prompt Library
+											</TooltipContent>
+										</Tooltip>
+									) : null}
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<Button
-												className="bg-background"
+												data-tour="tour-record"
 												variant="ghost"
+												aria-label={t(
+													"input.recordLabel",
+												)}
 												size="icon-sm"
-												disabled={isLoading}
-												aria-label="Open prompt library"
-												onClick={() =>
-													setIsPromptLibraryOpen(true)
+												disabled={
+													!canListen || isLoading
 												}
+												onClick={() => {
+													if (isListening) {
+														recognitionRef.current?.stop();
+														editorRef.current?.focus();
+													} else {
+														recognitionRef.current?.start();
+													}
+												}}
+												// -ml-1 to make spacing between engine select and mic look more like spacing between mic and send
+												// this is because engine select and mic are ghost
+												className="-ml-1"
 											>
-												<BookOpenIcon />
+												<MicIcon
+													className={`${isListening ? "animate-pulse text-destructive" : ""}`}
+												/>
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent>
-											Prompt Library
+											{isListening
+												? t("input.stopRecording")
+												: t("input.record")}
 										</TooltipContent>
 									</Tooltip>
-								) : null}
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											data-tour="tour-record"
-											variant="ghost"
-											aria-label={t("input.recordLabel")}
-											size="icon-sm"
-											disabled={!canListen || isLoading}
-											onClick={() => {
-												if (isListening) {
-													recognitionRef.current?.stop();
-													editorRef.current?.focus();
-												} else {
-													recognitionRef.current?.start();
-												}
-											}}
-											// -ml-1 to make spacing between engine select and mic look more like spacing between mic and send
-											// this is because engine select and mic are ghost
-											className="-ml-1"
-										>
-											<MicIcon
-												className={`${isListening ? "animate-pulse text-destructive" : ""}`}
-											/>
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{isListening
-											? t("input.stopRecording")
-											: t("input.record")}
-									</TooltipContent>
-								</Tooltip>
 
-								{root.theme.featureFlags
-									?.enablePromptOptimizer && (
-									<PromptOptimizer
-										input={inputText}
-										setInput={setInputFromOptimizer}
-										disabled={Boolean(
-											isLoading || hasOutstandingTools,
-										)}
-										modelId={model?.engine_id || undefined}
-										room={room}
-									/>
-								)}
-
-								{/* Primary action button - dual purpose:
-                                         - When idle: Send prompt
-                                         - When loading: Pause tool execution */}
+									{root.theme.featureFlags
+										?.enablePromptOptimizer && (
+										<PromptOptimizer
+											input={inputText}
+											setInput={setInputFromOptimizer}
+											disabled={Boolean(
+												isLoading ||
+													hasOutstandingTools,
+											)}
+											modelId={
+												model?.engine_id || undefined
+											}
+											room={room}
+										/>
+									)}
+								</div>
+							</div>
+							{/* Send button — pinned bottom-right, sibling of body */}
+							<div className="shrink-0">
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span data-tour="tour-send">
@@ -928,45 +1069,22 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}
 					/>
 				</LexicalComposer>
-				{onMcpToggle && (
-					<>
-						<MCPOverlay
-							type="KNOWLEDGE"
-							open={knowledgeOverlayOpen}
-							values={options.mcp.filter(
-								(m) => m.type === "VECTOR",
-							)}
-							onClose={(updated) => {
-								setKnowledgeOverlayOpen(false);
-								if (updated)
-									applyMCPDiff(
-										options.mcp.filter(
-											(m) => m.type === "VECTOR",
-										),
-										updated,
-										onMcpToggle,
-									);
-							}}
-						/>
-						<MCPOverlay
-							type="TOOLBOX"
-							open={toolboxOverlayOpen}
-							values={options.mcp.filter(
-								(m) => m.type !== "VECTOR",
-							)}
-							onClose={(updated) => {
-								setToolboxOverlayOpen(false);
-								if (updated)
-									applyMCPDiff(
-										options.mcp.filter(
-											(m) => m.type !== "VECTOR",
-										),
-										updated,
-										onMcpToggle,
-									);
-							}}
-						/>
-					</>
+				{onMcpChange && (
+					<MCPOverlay
+						open={mcpOverlay.open}
+						defaultTab={mcpOverlay.defaultTab}
+						values={options.mcp}
+						workspace={agentChipWorkspace}
+						agentEditable={!!onWorkspaceChange}
+						onClose={(next) => {
+							setMcpOverlay((prev) => ({ ...prev, open: false }));
+							if (!next) return;
+							onMcpChange(next.mcp);
+							if (onWorkspaceChange && "workspace" in next) {
+								onWorkspaceChange(next.workspace ?? null);
+							}
+						}}
+					/>
 				)}
 			</div>
 		);

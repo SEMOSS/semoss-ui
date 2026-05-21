@@ -66,6 +66,9 @@ export interface MCP {
 	/** Name of the mcp */
 	name: string;
 
+	/** Engine subtype (e.g. POSTGRES, OPEN_AI) — used to pick the avatar icon */
+	subtype?: string;
+
 	/** Description of the mcp */
 	description?: string;
 
@@ -203,6 +206,7 @@ export interface PixelMessageToolCallPart {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
+				autoOpen?: boolean;
 			};
 		};
 	};
@@ -292,6 +296,7 @@ export interface MCPTool {
 			loadingMessage?: string;
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
+			autoOpen?: boolean;
 		};
 	};
 }

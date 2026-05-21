@@ -25,7 +25,8 @@
 		"updateInstructions": "指示を更新",
 		"updateTokenLength": "トークン長を更新",
 		"uploadFiles": "ファイルをアップロード",
-		"search": "検索..."
+		"search": "検索...",
+		"enterPromptLibraryTag": "プロンプトライブラリタグを入力"
 	},
 	"actions": {
 		"addKnowledge": "ナレッジを追加",

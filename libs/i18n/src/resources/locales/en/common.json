@@ -30,7 +30,7 @@
 	},
 	"actions": {
 		"addKnowledge": "Add Knowledge",
-		"addToolbox": "Add Toolbox",
+		"addToolbox": "Add Toolboxes",
 		"deleteMCP": "Delete MCP"
 	},
 	"badges": {
@@ -38,7 +38,7 @@
 	},
 	"messages": {
 		"noKnowledgeFound": "No Knowledge Found",
-		"noToolboxFound": "No Toolbox Found"
+		"noToolboxFound": "No Toolboxes Found"
 	},
 	"tooltips": {
 		"cannotDeleteWorkspaceMCPs": "Cannot delete workspace MCPs",
