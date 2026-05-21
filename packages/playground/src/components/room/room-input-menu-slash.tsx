@@ -16,7 +16,6 @@ import {
 	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { engineProjectToMCP } from "@/components";
-import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { App, Engine, MCPConfig } from "@/types";
 
@@ -42,18 +41,16 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 	onRequestClose,
 }) => {
 	const { t } = useTranslation("room");
-	const { root } = useRoot();
 	const [search, setSearch] = useState("");
 
 	const debouncedSearch = useDebouncedValue(search);
-	const enableKnowledgeMCP = root.theme.featureFlags?.enableKnowledgeMCP;
 
 	/**
 	 * Get all MCPs (both knowledge and tools) with lazy loading
 	 */
 	const getMCPs = useIteratorPixel<(App | Engine)[], MCPConfig>(
 		(limit, offset) =>
-			`META | MyEngineProject (metaKeys = ["tag", "description"], ${enableKnowledgeMCP ? `metaFilters=[{"tag":["MCP"]}], ` : ""}${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+			`META | MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 		(response) => {
 			// if its less than the limit, we know its the end
 			if (response.length < 15) {
@@ -68,7 +65,7 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 		{
 			limit: 15,
 		},
-		[debouncedSearch, enableKnowledgeMCP],
+		[debouncedSearch],
 	);
 
 	/**

@@ -88,7 +88,7 @@ export const MCPSelector = observer(
 			useState(false);
 
 		const debouncedSearch = useDebouncedValue(search);
-		const useMCPFilter =
+		const applyEngineMCPFilter =
 			type === "TOOLBOX" || root.theme.featureFlags?.enableKnowledgeMCP;
 
 		// track the selected one
@@ -110,11 +110,11 @@ export const MCPSelector = observer(
 		 */
 		const getEngines = useIteratorPixel<Engine[], MCP>(
 			(limit, offset) =>
-				`META | MyEngines (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}engineTypes=${type === "TOOLBOX" ? `["STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
+				`META | MyEngines (metaKeys = ["tag", "description"], ${applyEngineMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}engineTypes=${type === "TOOLBOX" ? `["STORAGE", "DATABASE", "FUNCTION", "MODEL"]` : `["VECTOR"]`}, ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
 			(response) => (response.length < 25 ? -1 : Infinity),
 			(response) => response.map(engineProjectToMCP),
 			{ limit: 25 },
-			[debouncedSearch, useMCPFilter, type],
+			[debouncedSearch, applyEngineMCPFilter, type],
 		);
 
 		/**
@@ -126,12 +126,12 @@ export const MCPSelector = observer(
 		const getProjects = useIteratorPixel<App[], MCP>(
 			(limit, offset) =>
 				type === "TOOLBOX"
-					? `META | MyProjects (metaKeys = ["tag", "description"], ${useMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""}limit=[${limit}], offset=[${offset}])`
+					? `META | MyProjects (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], ${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""}limit=[${limit}], offset=[${offset}])`
 					: "",
 			(response) => (response.length < 25 ? -1 : Infinity),
 			(response) => response.map(engineProjectToMCP),
 			{ limit: 25 },
-			[debouncedSearch, useMCPFilter, type],
+			[debouncedSearch, type],
 		);
 
 		/**
