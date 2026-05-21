@@ -10,6 +10,7 @@
 	"form": {
 		"modelLabel": "मॉडल",
 		"instructionsLabel": "निर्देश",
+		"agentLabel": "एजेंट",
 		"knowledgeLabel": "ज्ञान",
 		"toolboxLabel": "टूलबॉक्स",
 		"maxTokenLabel": "अधिकतम टोकन",

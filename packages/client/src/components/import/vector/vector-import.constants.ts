@@ -1,12 +1,12 @@
 import CHROMADB from "@/assets/img/CHROMADB.png";
 import ELASTIC_SEARCH from "@/assets/img/ELASTIC_SEARCH.svg";
 import META from "@/assets/img/META_COLOR.svg";
+import MICROSOFT from "@/assets/img/MICROSOFT.png";
 import MILVUS from "@/assets/img/MILVUS.png";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
 import PINECONE from "@/assets/img/PINECONE.png";
 import POSTGRES from "@/assets/img/POSTGRES.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
-import MICROSOFT from "@/assets/loginProviders/MICROSOFT.png";
 
 export type FieldType =
 	| "text"

@@ -1,22 +1,14 @@
 import {
-	ComputerIcon,
-	ExternalLinkIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
-
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
-	? import.meta.env.VITE_PLATFORM_URL
-	: "";
-
 import { observer } from "mobx-react-lite";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
-	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -497,16 +489,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}}
 					options={room.options}
 					onMcpSelect={handleToolAdd}
-					onMcpToggle={handleToolSelect}
+					onMcpChange={(mcp) =>
+						room.setOptions({
+							...room.options,
+							mcp,
+						})
+					}
 					MenuComponent={observer(
-						({
-							onOpenChange,
-							fileRef,
-							knowledgeOverlayOpen,
-							onKnowledgeOverlayChange,
-							toolboxOverlayOpen,
-							onToolboxOverlayChange,
-						}) => (
+						({ onOpenChange, fileRef, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
 									fileRef={fileRef}
@@ -516,14 +506,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<RoomInputMenuMCP
 									type="KNOWLEDGE"
 									options={room.options}
-									open={knowledgeOverlayOpen}
-									onOpenChange={onKnowledgeOverlayChange}
+									onSelect={() => {
+										onOpenMcpOverlay("KNOWLEDGE");
+										onOpenChange(false);
+									}}
 								/>
 								<RoomInputMenuMCP
 									type="TOOLBOX"
 									options={room.options}
-									open={toolboxOverlayOpen}
-									onOpenChange={onToolboxOverlayChange}
+									onSelect={() => {
+										onOpenMcpOverlay("TOOLBOX");
+										onOpenChange(false);
+									}}
 								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer
@@ -556,57 +550,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 							</>
 						),
 					)}
-					footer={
-						room.options.workspace?.workspace_id ? (
-							room.theme.featureFlags?.showPlatformLinks ? (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<span>
-											<Badge variant="secondary" asChild>
-												<a
-													target="_blank"
-													href={`${PLATFORM_URL}/#/app/${room.options.workspace.workspace_id}`}
-												>
-													<ComputerIcon data-icon="inline-start" />
-													<div className="w-18 truncate">
-														{room.options.workspace
-															.name ||
-															room.options
-																.workspace
-																.workspace_id}
-													</div>
-													<ExternalLinkIcon data-icon="inline-end" />
-												</a>
-											</Badge>
-										</span>
-									</TooltipTrigger>
-									<TooltipContent>
-										Click to view agent details
-									</TooltipContent>
-								</Tooltip>
-							) : (
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<span>
-											<Badge variant="secondary">
-												<ComputerIcon data-icon="inline-start" />
-												<div className="w-18 truncate">
-													{room.options.workspace
-														.name ||
-														room.options.workspace
-															.workspace_id}
-												</div>
-											</Badge>
-										</span>
-									</TooltipTrigger>
-									<TooltipContent>
-										{room.options.workspace.name ||
-											room.options.workspace.workspace_id}
-									</TooltipContent>
-								</Tooltip>
-							)
-						) : null
-					}
 					onPrompt={handlePrompt}
 					hasOutstandingTools={
 						room.latestResponseMessage.hasUnfinishedTools

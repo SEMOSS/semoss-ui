@@ -17,8 +17,9 @@
 	"form": {
 		"modelLabel": "Model",
 		"instructionsLabel": "Instructions",
+		"agentLabel": "Agent",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox",
+		"toolboxLabel": "Toolboxes",
 		"maxTokenLabel": "Max Token",
 		"temperatureLabel": "Temperature"
 	},

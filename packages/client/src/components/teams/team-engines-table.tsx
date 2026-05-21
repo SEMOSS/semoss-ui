@@ -1,5 +1,6 @@
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getEngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -42,7 +43,6 @@ import {
 	getUnassignedTeamEngines,
 } from "@/api";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
-import { getEngineSubtypeIcon } from "@/components/shared/platform-search-icon-utils";
 import { useServerPagination } from "@/hooks";
 import type { ApiResponse } from "@/types";
 
