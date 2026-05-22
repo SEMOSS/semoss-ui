@@ -1,0 +1,47 @@
+{
+	"steps": {
+		"welcome": {
+			"title": "Welcome!",
+			"content": "Let's take a quick tour to get you started."
+		},
+		"input": {
+			"title": "Start a conversation",
+			"content": "Type your question here and press Enter."
+		},
+		"inputMenu": {
+			"title": "Attach & configure",
+			"content": "Add files, agents, knowledge libraries, and tools to enhance your conversation."
+		},
+		"model": {
+			"title": "Model",
+			"content": "Select which AI model powers your conversation."
+		},
+		"record": {
+			"title": "Record",
+			"content": "Click to speak, your voice will be converted to text."
+		},
+		"newChat": {
+			"title": "New chat",
+			"content": "Start a fresh conversation anytime."
+		},
+		"chatHistory": {
+			"title": "Chat History",
+			"content": "Continue, favorite, edit, or delete past conversations."
+		},
+		"search": {
+			"title": "Search",
+			"content": "Quickly find previous chats from your chat history."
+		},
+		"takeTour": {
+			"title": "Take a tour",
+			"content": "Replay this walkthrough anytime."
+		}
+	},
+	"controls": {
+		"closeTour": "Close tour",
+		"skip": "Skip",
+		"back": "Back",
+		"next": "Next",
+		"done": "Done"
+	}
+}

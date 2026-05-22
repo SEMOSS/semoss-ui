@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "क्या आपको यकीन है?",
-		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।"
+		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।",
+		"createdAgo": "{{when}} बनाया गया"
 	},
 	"sharing": {
 		"title": "सदस्य जोड़ें",
@@ -35,6 +36,7 @@
 		"buttonAdd": "सदस्य जोड़ें"
 	},
 	"members": {
+		"autoSaveHint": "सदस्य जोड़ना, हटाना और अनुमति परिवर्तन स्वचालित रूप से सहेजे जाते हैं।",
 		"heading": "किसके पास पहुंच है",
 		"you": "(आप)",
 		"owner": "मालिक",
@@ -59,7 +61,27 @@
 	"chat": {
 		"noChats": "कोई चैट नहीं मिली",
 		"error": "त्रुटि:",
-		"selectRoom": "रूम चुनें"
+		"selectRoom": "रूम चुनें",
+		"updatedRelative": "{{time}} अपडेट किया गया",
+		"newChat": "नई चैट",
+		"delete": "हटाएं",
+		"cancel": "रद्द करें",
+		"deleteSuccess": "चैट हटा दी गई",
+		"deleteFailed": "चैट हटाने में विफल",
+		"deleteConfirmTitle": "चैट हटाएं?",
+		"deleteConfirmDescription": "यह \"{{name}}\" को स्थायी रूप से हटा देगा। इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"rename": "नाम बदलें",
+		"renameSave": "सहेजें",
+		"renameEmpty": "चैट का नाम खाली नहीं हो सकता",
+		"renameSuccess": "चैट का नाम बदला गया",
+		"renameFailed": "चैट का नाम बदलने में विफल",
+		"pin": "पसंदीदा में जोड़ें",
+		"unpin": "पसंदीदा से हटाएं",
+		"pinFailed": "चैट को पसंदीदा बनाने में विफल",
+		"unpinFailed": "चैट को पसंदीदा से हटाने में विफल",
+		"dayToday": "आज",
+		"dayYesterday": "कल",
+		"daysAgo": "{{count}} दिन पहले"
 	},
 	"images": {
 		"agentIllustration": "एजेंट चित्रण"
@@ -91,7 +113,15 @@
 			"myChats": "मेरी चैट",
 			"knowledge": "ज्ञान",
 			"toolbox": "टूलबॉक्स",
+			"prompts": "प्रॉम्प्ट",
 			"members": "सदस्य"
+		},
+		"about": {
+			"title": "परिचय",
+			"noInstructions": "कोई निर्देश कॉन्फ़िगर नहीं किए गए हैं।"
+		},
+		"recentChats": {
+			"title": "पिछली चैट जारी रखें"
 		},
 		"failedToDelete": "एजेंट हटाने में विफल",
 		"failedToLoad": "एजेंट लोड करने में विफल: {{error}}"
@@ -110,5 +140,13 @@
 	"prompts": {
 		"noPrompts": "कोई प्रॉम्प्ट नहीं मिला",
 		"searchPlaceholder": "प्रॉम्प्ट खोजें..."
+	},
+	"instructions": {
+		"expand": "विस्तृत करें",
+		"viewTitle": "निर्देश",
+		"viewDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाला सिस्टम प्रॉम्प्ट।",
+		"editTitle": "निर्देश संपादित करें",
+		"editDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाले सिस्टम प्रॉम्प्ट को अपडेट करें।",
+		"charCount": "{{count}} वर्ण"
 	}
 }
