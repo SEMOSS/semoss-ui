@@ -137,7 +137,6 @@ const buildEmptyMethodConfigs = (methods: EngineMethod[]): MethodConfigMap => {
 };
 
 const GUARDRAILS_PAGE_LIMIT = 10;
-const GUARDRAILS_SEARCH_DEBOUNCE_MS = 350;
 
 const getGuardrailId = (guardrail: unknown): string => {
 	if (!guardrail || typeof guardrail !== "object") {
@@ -219,12 +218,7 @@ export const EngineGuardrailPage = observer(() => {
 	const [hasMoreGuardrails, setHasMoreGuardrails] = useState(false);
 	const [isLoadingMoreGuardrails, setIsLoadingMoreGuardrails] =
 		useState(false);
-	const [searchTerm, setSearchTerm] = useState("");
-	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-	const [searchGuardrails, setSearchGuardrails] = useState<unknown[]>([]);
-	const [isSearchingGuardrails, setIsSearchingGuardrails] = useState(false);
 	const isLoadingMoreRef = useRef(false);
-	const searchRequestIdRef = useRef(0);
 	const searchCacheRef = useRef(new Map<string, unknown[]>());
 
 	const { hasAnyConfig, configuredCount } = useMemo(() => {
@@ -271,11 +265,6 @@ export const EngineGuardrailPage = observer(() => {
 			);
 			isLoadingMoreRef.current = false;
 			setIsLoadingMoreGuardrails(false);
-			setSearchTerm("");
-			setDebouncedSearchTerm("");
-			setSearchGuardrails([]);
-			setIsSearchingGuardrails(false);
-			searchRequestIdRef.current += 1;
 			searchCacheRef.current.clear();
 
 			if (restoredConfig) {
@@ -335,68 +324,22 @@ export const EngineGuardrailPage = observer(() => {
 		}
 	}, [guardrailsOffset, hasMoreGuardrails]);
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			setDebouncedSearchTerm(searchTerm.trim());
-		}, GUARDRAILS_SEARCH_DEBOUNCE_MS);
-
-		return () => {
-			clearTimeout(timer);
-		};
-	}, [searchTerm]);
-
-	useEffect(() => {
-		if (phase !== "selecting") {
-			return;
+	const searchGuardrailsByTerm = useCallback(async (term: string) => {
+		const normalizedTerm = term.trim();
+		if (!normalizedTerm) {
+			return [];
 		}
 
-		if (!debouncedSearchTerm) {
-			setSearchGuardrails([]);
-			setIsSearchingGuardrails(false);
-			return;
-		}
-
-		const cached = searchCacheRef.current.get(debouncedSearchTerm);
+		const cached = searchCacheRef.current.get(normalizedTerm);
 		if (cached) {
-			setSearchGuardrails(cached);
-			setIsSearchingGuardrails(false);
-			return;
+			return cached;
 		}
 
-		const requestId = searchRequestIdRef.current + 1;
-		searchRequestIdRef.current = requestId;
-		setIsSearchingGuardrails(true);
-
-		void fetchGuardrailsBySearch(debouncedSearchTerm)
-			.then((result) => {
-				if (searchRequestIdRef.current !== requestId) {
-					return;
-				}
-				searchCacheRef.current.set(debouncedSearchTerm, result);
-				setSearchGuardrails(result);
-				setGuardrails((prev) => mergeGuardrailsUnique(prev, result));
-			})
-			.catch((error) => {
-				if (searchRequestIdRef.current !== requestId) {
-					return;
-				}
-				console.error("Failed to search guardrails", error);
-				setSearchGuardrails([]);
-			})
-			.finally(() => {
-				if (searchRequestIdRef.current === requestId) {
-					setIsSearchingGuardrails(false);
-				}
-			});
-	}, [debouncedSearchTerm, phase]);
-
-	const displayGuardrails = debouncedSearchTerm
-		? searchGuardrails
-		: guardrails;
-	const isSearchDebouncing =
-		searchTerm.trim() !== debouncedSearchTerm &&
-		searchTerm.trim().length > 0;
-	const canLoadMoreGuardrails = !debouncedSearchTerm && hasMoreGuardrails;
+		const result = await fetchGuardrailsBySearch(normalizedTerm);
+		searchCacheRef.current.set(normalizedTerm, result);
+		setGuardrails((prev) => mergeGuardrailsUnique(prev, result));
+		return result;
+	}, []);
 
 	// Handlers ------------------------------------------------------------------
 
@@ -489,11 +432,6 @@ export const EngineGuardrailPage = observer(() => {
 			setEngineMethods([]);
 			setGuardrails([]);
 			setExpandedMethods(new Set());
-			setSearchTerm("");
-			setDebouncedSearchTerm("");
-			setSearchGuardrails([]);
-			setIsSearchingGuardrails(false);
-			searchRequestIdRef.current += 1;
 			searchCacheRef.current.clear();
 			return;
 		}
@@ -560,7 +498,7 @@ export const EngineGuardrailPage = observer(() => {
 				<GuardrailSelectingView
 					phase={phase}
 					engineMethods={engineMethods}
-					guardrails={displayGuardrails}
+					guardrails={guardrails}
 					methodConfigs={methodConfigs}
 					expandedMethods={expandedMethods}
 					configuredCount={configuredCount}
@@ -574,13 +512,10 @@ export const EngineGuardrailPage = observer(() => {
 					onToggleMethod={toggleMethod}
 					onUpdateMethod={updateMethodConfig}
 					onSave={handleSaveConfig}
-					hasMoreGuardrails={canLoadMoreGuardrails}
+					hasMoreGuardrails={hasMoreGuardrails}
 					isLoadingMoreGuardrails={isLoadingMoreGuardrails}
 					onLoadMoreGuardrails={loadMoreGuardrails}
-					searchTerm={searchTerm}
-					onSearchTermChange={setSearchTerm}
-					isSearchingGuardrails={isSearchingGuardrails}
-					isSearchDebouncing={isSearchDebouncing}
+					searchGuardrailsByTerm={searchGuardrailsByTerm}
 				/>
 			)}
 		</div>

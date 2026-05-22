@@ -52,10 +52,7 @@ interface GuardrailSelectingViewProps {
 	hasMoreGuardrails: boolean;
 	isLoadingMoreGuardrails: boolean;
 	onLoadMoreGuardrails: () => void;
-	searchTerm: string;
-	onSearchTermChange: (value: string) => void;
-	isSearchingGuardrails: boolean;
-	isSearchDebouncing: boolean;
+	searchGuardrailsByTerm: (searchTerm: string) => Promise<unknown[]>;
 }
 
 export const GuardrailSelectingView = ({
@@ -76,10 +73,7 @@ export const GuardrailSelectingView = ({
 	hasMoreGuardrails,
 	isLoadingMoreGuardrails,
 	onLoadMoreGuardrails,
-	searchTerm,
-	onSearchTermChange,
-	isSearchingGuardrails,
-	isSearchDebouncing,
+	searchGuardrailsByTerm,
 }: GuardrailSelectingViewProps) => {
 	if (phase === "configured" && configResult) {
 		return (
@@ -116,10 +110,7 @@ export const GuardrailSelectingView = ({
 						hasMoreGuardrails,
 						isLoadingMoreGuardrails,
 						onLoadMoreGuardrails,
-						searchTerm,
-						onSearchTermChange,
-						isSearchingGuardrails,
-						isSearchDebouncing,
+						searchGuardrailsByTerm,
 					}}
 				>
 					<div className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">

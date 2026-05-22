@@ -4,10 +4,7 @@ export type GuardrailSelectorControlsContextType = {
 	hasMoreGuardrails: boolean;
 	isLoadingMoreGuardrails: boolean;
 	onLoadMoreGuardrails: () => void;
-	searchTerm: string;
-	onSearchTermChange: (value: string) => void;
-	isSearchingGuardrails: boolean;
-	isSearchDebouncing: boolean;
+	searchGuardrailsByTerm: (searchTerm: string) => Promise<unknown[]>;
 };
 
 export const GuardrailSelectorControlsContext =

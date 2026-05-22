@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Badge, Checkbox, Input, P, Spinner } from "@semoss/ui/next";
 import { useGuardrailSelectorControls } from "@/contexts";
 
@@ -20,15 +21,60 @@ export const GuardrailSelectorPanel = ({
 		hasMoreGuardrails,
 		isLoadingMoreGuardrails,
 		onLoadMoreGuardrails,
-		searchTerm,
-		onSearchTermChange,
-		isSearchingGuardrails,
-		isSearchDebouncing,
+		searchGuardrailsByTerm,
 	} = useGuardrailSelectorControls();
+	const [searchTerm, setSearchTerm] = useState("");
+	const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+	const [searchResults, setSearchResults] = useState<unknown[]>([]);
+	const [isSearchingGuardrails, setIsSearchingGuardrails] = useState(false);
+	const searchRequestIdRef = useRef(0);
+
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			setDebouncedSearchTerm(searchTerm.trim());
+		}, 350);
+
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [searchTerm]);
+
+	useEffect(() => {
+		if (!debouncedSearchTerm) {
+			setSearchResults([]);
+			setIsSearchingGuardrails(false);
+			return;
+		}
+
+		const requestId = searchRequestIdRef.current + 1;
+		searchRequestIdRef.current = requestId;
+		setIsSearchingGuardrails(true);
+
+		void searchGuardrailsByTerm(debouncedSearchTerm)
+			.then((result) => {
+				if (searchRequestIdRef.current !== requestId) {
+					return;
+				}
+				setSearchResults(result);
+			})
+			.catch((error) => {
+				if (searchRequestIdRef.current !== requestId) {
+					return;
+				}
+				console.error("Failed to search guardrails", error);
+				setSearchResults([]);
+			})
+			.finally(() => {
+				if (searchRequestIdRef.current === requestId) {
+					setIsSearchingGuardrails(false);
+				}
+			});
+	}, [debouncedSearchTerm, searchGuardrailsByTerm]);
 
 	const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
 		const el = e.currentTarget;
 		if (
+			!debouncedSearchTerm &&
 			hasMoreGuardrails &&
 			!isLoadingMoreGuardrails &&
 			el.scrollHeight - el.scrollTop - el.clientHeight < 80
@@ -46,7 +92,11 @@ export const GuardrailSelectorPanel = ({
 		);
 	};
 
+	const isSearchDebouncing =
+		searchTerm.trim() !== debouncedSearchTerm &&
+		searchTerm.trim().length > 0;
 	const showSearchBusy = isSearchingGuardrails || isSearchDebouncing;
+	const displayGuardrails = debouncedSearchTerm ? searchResults : guardrails;
 	const emptyMessage = searchTerm.trim()
 		? "No guardrails found for your search."
 		: "No guardrails available.";
@@ -86,7 +136,7 @@ export const GuardrailSelectorPanel = ({
 			<div className="relative">
 				<Input
 					value={searchTerm}
-					onChange={(e) => onSearchTermChange(e.currentTarget.value)}
+					onChange={(e) => setSearchTerm(e.currentTarget.value)}
 					placeholder="Search guardrails"
 					className="h-7 pr-8 text-xs"
 				/>
@@ -101,7 +151,7 @@ export const GuardrailSelectorPanel = ({
 				<div className="flex items-center justify-center py-4">
 					<Spinner className="size-4" />
 				</div>
-			) : guardrails.length === 0 ? (
+			) : displayGuardrails.length === 0 ? (
 				<P className="py-2 text-center text-muted-foreground text-xs italic">
 					{emptyMessage}
 				</P>
@@ -110,7 +160,7 @@ export const GuardrailSelectorPanel = ({
 					className="max-h-[180px] space-y-0.5 overflow-y-auto pr-1"
 					onScroll={handleScroll}
 				>
-					{guardrails.map((g) => {
+					{displayGuardrails.map((g) => {
 						const guardrail = g as Record<string, unknown>;
 						const databaseId = String(guardrail.database_id ?? "");
 						const databaseName = String(
