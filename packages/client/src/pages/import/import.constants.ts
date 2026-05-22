@@ -55,6 +55,8 @@ import LAYERS_SELECTED from "@/assets/img/LAYERS_SELECTED.svg";
 import LOCAL_FILE_SYSTEM from "@/assets/img/LOCAL_FILE_SYSTEM.png";
 import MARIA_DB from "@/assets/img/MARIA_DB.png";
 import META from "@/assets/img/META_COLOR.svg";
+//Vector
+import MICROSOFT from "@/assets/img/MICROSOFT.png";
 import MILVUS from "@/assets/img/MILVUS.png";
 import MINIO from "@/assets/img/MINIO.png";
 import MOSAIC from "@/assets/img/MOSAIC.png";
@@ -99,8 +101,6 @@ import VARIABLES from "@/assets/img/VARIABLE.svg";
 import VARIABLES_SELECTED from "@/assets/img/VARIABLES_SELECTED.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
 import ZIP from "@/assets/img/ZIP.png";
-//Vector
-import MICROSOFT from "@/assets/loginProviders/MICROSOFT.png";
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [

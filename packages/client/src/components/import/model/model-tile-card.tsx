@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -7,7 +8,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 
 const normalizeEngineKey = (value?: string) =>
@@ -46,19 +46,6 @@ const MODEL_SUBTYPE_BY_ICON_FILE_NAME: Record<string, string> = {
 	"STABILITY_AI.png": "STABLITY_AI",
 };
 
-const getModelIconBySubtype = (subtype?: string) => {
-	if (!subtype) return "";
-	const normalizedSubtype = normalizeEngineKey(subtype);
-
-	const match = (ENGINE_IMAGES.MODEL || []).find((option) => {
-		return normalizeEngineKey(option.name) === normalizedSubtype;
-	});
-
-	return match?.icon || "";
-};
-
-const FALLBACK_MODEL_ICON = getModelIconBySubtype("BRAIN");
-
 const toKnownModelSubtype = (value?: string) => {
 	const normalized = normalizeEngineKey(value);
 	if (!normalized) return "";
@@ -66,27 +53,27 @@ const toKnownModelSubtype = (value?: string) => {
 	return normalized;
 };
 
-const resolveModelIcon = (model: Model, provider?: string) => {
+const resolveModelSubtype = (model: Model, provider?: string): string => {
 	const icon = model.icon;
-	if (!icon) return FALLBACK_MODEL_ICON;
 
-	if (!icon.startsWith("/src/assets/img/")) {
-		return icon;
+	if (icon?.startsWith("/src/assets/img/")) {
+		const fileName = icon.split("/").pop() || "";
+		const subtypeFromFile = MODEL_SUBTYPE_BY_ICON_FILE_NAME[fileName] || "";
+		if (subtypeFromFile) return subtypeFromFile;
 	}
 
-	const fileName = icon.split("/").pop() || "";
-	const subtypeFromFile = MODEL_SUBTYPE_BY_ICON_FILE_NAME[fileName] || "";
 	const subtypeFromBrand = toKnownModelSubtype(model.modelBrand);
+	if (subtypeFromBrand) return subtypeFromBrand;
+
 	const subtypeFromProvider = provider
 		? MODEL_PROVIDER_SUBTYPE_BY_NAME[provider] || ""
 		: "";
 
-	return (
-		getModelIconBySubtype(
-			subtypeFromFile || subtypeFromBrand || subtypeFromProvider,
-		) || FALLBACK_MODEL_ICON
-	);
+	return subtypeFromProvider;
 };
+
+const isRemoteModelIcon = (icon?: string) =>
+	Boolean(icon) && !icon?.startsWith("/src/assets/img/");
 
 interface Model {
 	name: string;
@@ -134,8 +121,10 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		};
 	}, []);
 
-	const resolvedIcon = resolveModelIcon(model, provider);
-	const hasIcon = Boolean(resolvedIcon);
+	const remoteIcon = isRemoteModelIcon(model.icon) ? model.icon : null;
+	const resolvedSubtype = remoteIcon
+		? ""
+		: resolveModelSubtype(model, provider);
 	const handleCardClick = () => {
 		if (!model.disable && onModelSelect) {
 			onModelSelect(model);
@@ -169,10 +158,19 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
 					<div className="flex h-10 w-10 shrink-0 items-center justify-center">
-						{hasIcon ? (
+						{remoteIcon ? (
 							<div className="h-10 w-10 overflow-hidden rounded-lg">
 								<img
-									src={resolvedIcon}
+									src={remoteIcon}
+									alt={label}
+									className="h-full w-full object-cover"
+								/>
+							</div>
+						) : resolvedSubtype ? (
+							<div className="h-10 w-10 overflow-hidden rounded-lg">
+								<EngineSubtypeIcon
+									engineType="MODEL"
+									engineSubtype={resolvedSubtype}
 									alt={label}
 									className="h-full w-full object-cover"
 								/>

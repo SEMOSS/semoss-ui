@@ -1,7 +1,7 @@
 {
 	"knowledge": {
-		"createSuccess": "تم إنشاء مصدر المعرفة \"{{name}}\" بنجاح",
-		"createError": "فشل في إنشاء مصدر المعرفة"
+		"createSuccess": "تم إنشاء مخزن المعرفة \"{{name}}\" بنجاح",
+		"createError": "فشل في إنشاء مخزن المعرفة"
 	},
 	"workspace": {
 		"saveError": "فشل في حفظ الوكيل",

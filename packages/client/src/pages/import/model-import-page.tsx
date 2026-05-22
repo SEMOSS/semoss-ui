@@ -3,6 +3,7 @@
 
 import { ChevronRight, SearchIcon, UploadIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -40,15 +41,11 @@ import {
 import { ModelTileCard } from "@/components/import/model/model-tile-card";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportDetailsPage } from "./model-import-details-page";
 
-const normalizeEngineKey = (value?: string) =>
-	(value || "").trim().replace(/\W+/g, "_").toUpperCase();
-
 // Provider labels shown in UI tabs/section headers are display names (e.g. "Google Gemini"),
-// while ENGINE_IMAGES.MODEL keys are engine subtypes (e.g. "VERTEX"), so we translate here.
+// while engine subtypes are keys like "VERTEX", so we translate here.
 // This mapping is used by ProviderIcon in this file (top provider labels only).
 const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	OpenAI: "OPEN_AI",
@@ -62,24 +59,11 @@ const MODEL_PROVIDER_SUBTYPE_BY_NAME: Record<string, string> = {
 	Embedded: "BRAIN",
 };
 
-const getModelIconBySubtype = (subtype?: string) => {
-	if (!subtype) return "";
-	const normalizedSubtype = normalizeEngineKey(subtype);
-
-	const match = (ENGINE_IMAGES.MODEL || []).find((option) => {
-		return normalizeEngineKey(option.name) === normalizedSubtype;
-	});
-
-	return match?.icon || "";
-};
-
 /**
  * Helper component to display provider icon with fallback to initials
  */
 const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
-	const providerIcon = getModelIconBySubtype(
-		MODEL_PROVIDER_SUBTYPE_BY_NAME[provider],
-	);
+	const subtype = MODEL_PROVIDER_SUBTYPE_BY_NAME[provider];
 
 	const getInitials = (name: string) => {
 		return name
@@ -90,10 +74,11 @@ const ProviderIcon: React.FC<{ provider: string }> = ({ provider }) => {
 			.toUpperCase();
 	};
 
-	if (providerIcon) {
+	if (subtype) {
 		return (
-			<img
-				src={providerIcon}
+			<EngineSubtypeIcon
+				engineType="MODEL"
+				engineSubtype={subtype}
 				alt={`${provider} logo`}
 				className="size-5 rounded-[4px] object-contain"
 			/>

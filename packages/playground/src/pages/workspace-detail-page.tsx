@@ -1,15 +1,16 @@
 import {
 	BookOpenIcon,
-	EllipsisIcon,
 	HammerIcon,
 	MessagesSquareIcon,
+	PencilIcon,
 	PlusIcon,
 	SearchIcon,
+	Trash2Icon,
 	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import { MembersTable } from "@semoss/shared";
@@ -22,11 +23,6 @@ import {
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -35,6 +31,9 @@ import {
 	TabsContent,
 	TabsList,
 	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 	useDebouncedValue,
 } from "@semoss/ui/next";
@@ -77,7 +76,6 @@ export const WorkspaceDetailPage = observer(() => {
 	const getWorkspace = usePixel<Workspace>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
-			data: null,
 			onError: (_d, e) => {
 				toast.error(
 					t("workspace:detail.failedToLoad", {
@@ -117,7 +115,7 @@ export const WorkspaceDetailPage = observer(() => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR") {
+	if (getWorkspace.status === "ERROR" || !workspaceId) {
 		return <Navigate to="/agent" />;
 	}
 
@@ -145,61 +143,56 @@ export const WorkspaceDetailPage = observer(() => {
 							src={root.theme?.images.logo || logoImage}
 						/>
 					</div>
-					<div className="space-y-2.5">
-						<div className="font-semibold text-2xl text-foreground leading-none">
-							{getWorkspace.data?.name}
+					<div className="min-w-0 flex-1 space-y-2.5">
+						<div className="flex items-center justify-between gap-2">
+							<div className="min-w-0 flex-1 truncate font-semibold text-2xl text-foreground leading-none">
+								{getWorkspace.data?.name}
+							</div>
+							<div className="flex shrink-0 items-center gap-1">
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="outline"
+											size="icon"
+											aria-label={t(
+												"workspace:actions.edit",
+											)}
+											onClick={() =>
+												navigate(
+													`/agent/${workspaceId}/edit`,
+												)
+											}
+										>
+											<PencilIcon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("workspace:actions.edit")}
+									</TooltipContent>
+								</Tooltip>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<Button
+											variant="outline"
+											size="icon"
+											aria-label={t(
+												"workspace:actions.delete",
+											)}
+											onClick={() => setDeleteModal(true)}
+										>
+											<Trash2Icon />
+										</Button>
+									</TooltipTrigger>
+									<TooltipContent>
+										{t("workspace:actions.delete")}
+									</TooltipContent>
+								</Tooltip>
+							</div>
 						</div>
 						<div className="text-base text-muted-foreground">
 							{getWorkspace.data?.description || ""}
 						</div>
 					</div>
-					<div className="flex-1" />
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="outline"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<EllipsisIcon />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuGroup>
-								<DropdownMenuItem asChild>
-									<Link to={`/agent/${workspaceId}/edit`}>
-										{t("workspace:actions.edit")}
-									</Link>
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={async (e) => {
-										e.stopPropagation();
-										setDeleteModal(true);
-										setIsLoading(true);
-										try {
-											await chat.deleteWorkspace(
-												workspaceId,
-											);
-
-											// go to the workspace
-											navigate("/agent");
-										} catch (e) {
-											toast.error(
-												e instanceof Error
-													? e.message
-													: t(
-															"workspace:detail.failedToDelete",
-														),
-											);
-										} finally {
-											setIsLoading(false);
-										}
-									}}
-								>
-									{t("workspace:actions.delete")}
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
 				</div>
 
 				<Tabs

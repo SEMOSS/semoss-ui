@@ -1,5 +1,8 @@
-import BRAIN from "@/assets/img/BRAIN.png";
-import { ENGINE_IMAGES } from "@/shared/constants/engine-images.constants";
+import {
+	ENGINE_ICON_FALLBACK_FILE,
+	ENGINE_IMAGES,
+	loadEngineIcon,
+} from "../constants/engine-images.constants";
 
 const hashString = (str: string): number => {
 	let hash = 0;
@@ -32,10 +35,10 @@ export const getAppCatalogAvatarStyle = (label: string) => {
 	};
 };
 
-export const getEngineSubtypeIcon = (
+export const getEngineSubtypeIcon = async (
 	engineType: string,
 	engineSubtype?: string,
-) => {
+): Promise<string | null> => {
 	const typeKey = normalizeEngineKey(engineType);
 	const subtypeKeyRaw = normalizeEngineKey(engineSubtype);
 	const subtypeKey =
@@ -46,5 +49,10 @@ export const getEngineSubtypeIcon = (
 		(option) => normalizeEngineKey(option.name) === subtypeKey,
 	);
 
-	return match?.icon || BRAIN;
+	if (match) {
+		const resolved = await loadEngineIcon(match.icon);
+		if (resolved) return resolved;
+	}
+
+	return loadEngineIcon(ENGINE_ICON_FALLBACK_FILE);
 };

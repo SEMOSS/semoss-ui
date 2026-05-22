@@ -1,3 +1,4 @@
+export * from "./agent-selector";
 export * from "./mcp-card";
 export * from "./mcp-overlay";
 export * from "./mcp-selector";

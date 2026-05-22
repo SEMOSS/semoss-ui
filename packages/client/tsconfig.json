@@ -20,9 +20,13 @@
 
 		/* Lang and Env */
 		"paths": {
+			"@/assets/img/*": ["../../libs/shared/src/assets/img/*"],
+			"@/assets/loginProviders/*": [
+				"../../libs/shared/src/assets/loginProviders/*"
+			],
 			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src"],
+	"include": ["src", "../../libs/shared/src/assets"],
 	"exclude": ["dist", "node_modules"]
 }
