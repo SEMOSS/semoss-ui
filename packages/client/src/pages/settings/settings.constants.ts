@@ -191,6 +191,14 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Service Accounts",
+		path: "service-accounts",
+		description: "Create and manage service accounts for system access.",
+		icon: mdiAccountGroup,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
 		title: "Team Permissions",
 		path: "team-permissions/:type/:id",
 		description:
