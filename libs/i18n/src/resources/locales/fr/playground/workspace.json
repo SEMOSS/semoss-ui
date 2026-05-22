@@ -35,6 +35,7 @@
 		"buttonAdd": "Ajouter des Membres"
 	},
 	"members": {
+		"autoSaveHint": "Les ajouts, suppressions de membres et les modifications d'autorisations sont enregistrés automatiquement.",
 		"heading": "Qui a accès",
 		"you": "(Vous)",
 		"owner": "Propriétaire",
@@ -59,7 +60,27 @@
 	"chat": {
 		"noChats": "Aucun chat trouvé",
 		"error": "Erreur :",
-		"selectRoom": "Sélectionner une salle"
+		"selectRoom": "Sélectionner une salle",
+		"updatedRelative": "Mis à jour {{time}}",
+		"newChat": "Nouveau chat",
+		"delete": "Supprimer",
+		"cancel": "Annuler",
+		"deleteSuccess": "Chat supprimé",
+		"deleteFailed": "Échec de la suppression du chat",
+		"deleteConfirmTitle": "Supprimer le chat ?",
+		"deleteConfirmDescription": "Cela supprimera définitivement « {{name}} ». Cette action est irréversible.",
+		"rename": "Renommer",
+		"renameSave": "Enregistrer",
+		"renameEmpty": "Le nom du chat ne peut pas être vide",
+		"renameSuccess": "Chat renommé",
+		"renameFailed": "Échec du renommage du chat",
+		"pin": "Ajouter aux favoris",
+		"unpin": "Retirer des favoris",
+		"pinFailed": "Échec de l'ajout aux favoris",
+		"unpinFailed": "Échec du retrait des favoris",
+		"dayToday": "Aujourd'hui",
+		"dayYesterday": "Hier",
+		"daysAgo": "Il y a {{count}} jours"
 	},
 	"images": {
 		"agentIllustration": "Illustration de l'agent"
@@ -91,7 +112,15 @@
 			"myChats": "Mes discussions",
 			"knowledge": "Connaissances",
 			"toolbox": "Boîtes à outils",
+			"prompts": "Invites",
 			"members": "Membres"
+		},
+		"about": {
+			"title": "À propos",
+			"noInstructions": "Aucune instruction configurée."
+		},
+		"recentChats": {
+			"title": "Continuer une discussion précédente"
 		},
 		"failedToDelete": "Échec de la suppression de l'agent",
 		"failedToLoad": "Échec du chargement de l'agent : {{error}}"
@@ -110,5 +139,13 @@
 	"prompts": {
 		"noPrompts": "Aucune invite trouvée",
 		"searchPlaceholder": "Rechercher des invites..."
+	},
+	"instructions": {
+		"expand": "Agrandir",
+		"viewTitle": "Instructions",
+		"viewDescription": "L'invite système qui guide le comportement de cet agent.",
+		"editTitle": "Modifier les instructions",
+		"editDescription": "Mettez à jour l'invite système qui guide le comportement de cet agent.",
+		"charCount": "{{count}} caractères"
 	}
 }

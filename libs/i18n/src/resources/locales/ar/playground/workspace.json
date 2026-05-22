@@ -35,6 +35,7 @@
 		"buttonAdd": "إضافة أعضاء"
 	},
 	"members": {
+		"autoSaveHint": "تُحفظ إضافات الأعضاء وإزالاتهم وتغييرات الأذونات تلقائيًا.",
 		"heading": "من لديه الوصول",
 		"you": "(أنت)",
 		"owner": "المالك",
@@ -59,7 +60,27 @@
 	"chat": {
 		"noChats": "لم يتم العثور على دردشات",
 		"error": "خطأ:",
-		"selectRoom": "اختر غرفة"
+		"selectRoom": "اختر غرفة",
+		"updatedRelative": "تم التحديث {{time}}",
+		"newChat": "دردشة جديدة",
+		"delete": "حذف",
+		"cancel": "إلغاء",
+		"deleteSuccess": "تم حذف الدردشة",
+		"deleteFailed": "فشل حذف الدردشة",
+		"deleteConfirmTitle": "حذف الدردشة؟",
+		"deleteConfirmDescription": "سيؤدي هذا إلى حذف \"{{name}}\" نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+		"rename": "إعادة تسمية",
+		"renameSave": "حفظ",
+		"renameEmpty": "لا يمكن أن يكون اسم الدردشة فارغًا",
+		"renameSuccess": "تمت إعادة تسمية الدردشة",
+		"renameFailed": "فشلت إعادة تسمية الدردشة",
+		"pin": "إضافة إلى المفضلة",
+		"unpin": "إزالة من المفضلة",
+		"pinFailed": "فشل إضافة الدردشة إلى المفضلة",
+		"unpinFailed": "فشل إزالة الدردشة من المفضلة",
+		"dayToday": "اليوم",
+		"dayYesterday": "أمس",
+		"daysAgo": "قبل {{count}} يوم"
 	},
 	"images": {
 		"agentIllustration": "توضيح الوكيل"
@@ -91,7 +112,15 @@
 			"myChats": "محادثاتي",
 			"knowledge": "المعرفة",
 			"toolbox": "صناديق الأدوات",
+			"prompts": "الموجهات",
 			"members": "الأعضاء"
+		},
+		"about": {
+			"title": "نبذة",
+			"noInstructions": "لا توجد تعليمات مكوَّنة."
+		},
+		"recentChats": {
+			"title": "متابعة دردشة سابقة"
 		},
 		"failedToDelete": "فشل حذف الوكيل",
 		"failedToLoad": "فشل تحميل الوكيل: {{error}}"
@@ -110,5 +139,13 @@
 	"prompts": {
 		"noPrompts": "لم يتم العثور على موجهات",
 		"searchPlaceholder": "البحث في الموجهات..."
+	},
+	"instructions": {
+		"expand": "توسيع",
+		"viewTitle": "التعليمات",
+		"viewDescription": "موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
+		"editTitle": "تعديل التعليمات",
+		"editDescription": "تحديث موجه النظام الذي يوجِّه سلوك هذا الوكيل.",
+		"charCount": "{{count}} حرفًا"
 	}
 }
