@@ -1,3 +1,4 @@
+export * from "./app-catalog-avatar";
 export * from "./auditlog";
 export * from "./column-metadata-modal";
 export * from "./data-type-icon";
