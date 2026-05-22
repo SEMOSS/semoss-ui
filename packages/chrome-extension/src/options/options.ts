@@ -1,9 +1,9 @@
 /**
  * Options page logic for Chrome Extension settings
- * Handles Semoss authentication and project selection
+ * Handles Semoss authentication
  */
 
-import { AuthService, type Project } from "../services/authService";
+import { AuthService } from "../services/authService";
 
 // DOM elements
 const endpointUrlInput = document.getElementById(
@@ -18,68 +18,21 @@ const authStatus = document.getElementById("authStatus");
 /**
  * Show status message
  */
-function showStatus(message: string, type: "success" | "error" | "info") {
-	if (authStatus) {
-		authStatus.textContent = message;
-		authStatus.className = `status ${type} show`;
+function showStatus(
+	message: string,
+	type: "success" | "error" | "info",
+	element: HTMLElement | null = authStatus,
+) {
+	if (element) {
+		element.textContent = message;
+		element.className = `status ${type} show`;
 
 		// Auto-hide after 5 seconds for success messages
 		if (type === "success") {
 			setTimeout(() => {
-				authStatus.classList.remove("show");
+				element.classList.remove("show");
 			}, 5000);
 		}
-	}
-}
-
-/**
- * Auto-select and save "Playwright recorded scripts" project
- */
-function populateProjects(projects: Project[]) {
-	// Filter to only show projects where user can edit
-	const editableProjects = projects.filter((p) => p.canEdit);
-
-	if (editableProjects.length === 0) {
-		showStatus("You don't have edit permission for any projects", "error");
-		return;
-	}
-
-	// Auto-select "Playwright recorded scripts" project
-	const playwrightProject = editableProjects.find((p) => {
-		const name = (p.name || "").toLowerCase();
-		const displayName = (p.displayName || "").toLowerCase();
-
-		// Exact match for "Playwright recorded scripts"
-		if (
-			name === "playwright recorded scripts" ||
-			displayName === "playwright recorded scripts"
-		) {
-			return true;
-		}
-
-		// Match if contains both "playwright" and "recorded" or "scripts"
-		return (
-			(name.includes("playwright") &&
-				(name.includes("recorded") || name.includes("scripts"))) ||
-			(displayName.includes("playwright") &&
-				(displayName.includes("recorded") ||
-					displayName.includes("scripts")))
-		);
-	});
-
-	if (playwrightProject) {
-		// Auto-save the selected project
-		AuthService.saveSelectedProject(playwrightProject.id).then(() => {
-			showStatus(
-				`✅ Connected successfully! Recordings will be saved to: Playwright recorded scripts`,
-				"success",
-			);
-		});
-	} else {
-		showStatus(
-			"✅ Connected successfully! Recordings will be saved to your project.",
-			"success",
-		);
 	}
 }
 
@@ -112,9 +65,6 @@ testConnectionBtn?.addEventListener("click", async () => {
 			`✅ Connected successfully! Welcome, ${response.userName} (${response.userEmail})`,
 			"success",
 		);
-
-		// Populate projects
-		populateProjects(response.projects);
 	} catch (error) {
 		console.error("Test connection failed:", error);
 		showStatus(
@@ -157,9 +107,6 @@ saveSettingsBtn?.addEventListener("click", async () => {
 		);
 
 		showStatus("✅ Settings saved successfully!", "success");
-
-		// Populate projects
-		populateProjects(response.projects);
 	} catch (error) {
 		console.error("Save settings failed:", error);
 		showStatus(
@@ -181,13 +128,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 			clientKeyInput.value = credentials.clientKey;
 			secretKeyInput.value = credentials.secretKey;
 
-			// Show saved status if authenticated
+			// Check authentication status
 			const isAuth = await AuthService.isAuthenticated();
 			if (isAuth) {
-				showStatus(
-					"✅ Connected successfully! Recordings will be saved to: Playwright recorded scripts",
-					"success",
-				);
+				showStatus("✅ Connected", "success");
 			}
 		}
 	} catch (error) {

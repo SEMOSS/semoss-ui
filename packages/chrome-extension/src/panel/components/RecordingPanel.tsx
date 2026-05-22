@@ -16,7 +16,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import type { RecordedAction } from "../../recorder/types";
-import { AuthService } from "../../services/authService";
+import { AuthService, type Project } from "../../services/authService";
 import { useRecordingState } from "../../services/recordingStateManager";
 
 interface SaveRecordingResponse {
@@ -39,6 +39,10 @@ export const RecordingPanel: FC = () => {
 	const [scriptName, setScriptName] = useState("");
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [selectedProject, setSelectedProject] = useState<string | null>(null);
+	const [projects, setProjects] = useState<Project[]>([]);
+	const [showNewProjectInput, setShowNewProjectInput] = useState(false);
+	const [newProjectName, setNewProjectName] = useState("");
+	const [isCreatingProject, setIsCreatingProject] = useState(false);
 
 	// Check authentication status on mount and when storage changes
 	useEffect(() => {
@@ -47,6 +51,15 @@ export const RecordingPanel: FC = () => {
 			const project = await AuthService.getSelectedProject();
 			setIsAuthenticated(authenticated);
 			setSelectedProject(project);
+
+			// Load projects if authenticated
+			if (authenticated) {
+				const projectsList = await AuthService.getProjects();
+				const editableProjects = projectsList.filter((p) => p.canEdit);
+				setProjects(editableProjects);
+			} else {
+				setProjects([]);
+			}
 		};
 
 		// Initial check
@@ -59,7 +72,9 @@ export const RecordingPanel: FC = () => {
 		) => {
 			if (
 				areaName === "local" &&
-				(changes.isAuthenticated || changes.selectedProject)
+				(changes.isAuthenticated ||
+					changes.selectedProject ||
+					changes.projects)
 			) {
 				checkAuth();
 			}
@@ -76,6 +91,109 @@ export const RecordingPanel: FC = () => {
 	const handleSettings = () => {
 		// Open the extension options page
 		chrome.runtime.openOptionsPage();
+	};
+
+	const handleProjectChange = async (newProjectId: string) => {
+		if (newProjectId === "__NEW_PROJECT__") {
+			setShowNewProjectInput(true);
+			setNewProjectName("");
+			return;
+		}
+
+		setShowNewProjectInput(false);
+		setSelectedProject(newProjectId);
+		await AuthService.saveSelectedProject(newProjectId);
+		notification.add({
+			color: "success",
+			message: "Project selection saved",
+		});
+	};
+
+	const handleNewProjectCreation = async () => {
+		const projectName = newProjectName.trim();
+
+		if (!projectName) {
+			notification.add({
+				color: "error",
+				message: "Please enter a project name",
+			});
+			return;
+		}
+
+		// Validate project name (must start with letter, only letters/numbers/spaces)
+		if (!/^[a-zA-Z][a-zA-Z0-9 ]*$/.test(projectName)) {
+			notification.add({
+				color: "error",
+				message:
+					"Invalid project name. Must start with a letter and contain only letters, numbers, and spaces.",
+			});
+			return;
+		}
+
+		setIsCreatingProject(true);
+
+		try {
+			notification.add({
+				color: "info",
+				message: `Creating project "${projectName}"...`,
+			});
+
+			// Step 1: Create the project
+			const newProjectId = await AuthService.createProject(projectName);
+			console.log("Project created with ID:", newProjectId);
+
+			notification.add({
+				color: "info",
+				message: "Project created! Cloning portal template...",
+			});
+
+			// Step 2: Clone portals to the new project
+			await AuthService.clonePortalsToProject(newProjectId);
+			console.log("Portals cloned successfully");
+
+			notification.add({
+				color: "info",
+				message: "Portals cloned! Adding MCP and Playwright tags...",
+			});
+
+			// Step 3: Add MCP and PLAYWRIGHT tags so project shows in playground
+			await AuthService.addPlaywrightTags(newProjectId);
+			console.log("Tags added successfully");
+
+			notification.add({
+				color: "info",
+				message: "Tags added! Refreshing project list...",
+			});
+
+			// Step 4: Get updated project list
+			const updatedProjects = await AuthService.getUpdatedProjects();
+			console.log("Updated projects:", updatedProjects);
+
+			// Update projects list with only editable projects
+			const editableProjects = updatedProjects.filter((p) => p.canEdit);
+			setProjects(editableProjects);
+
+			// Step 5: Save the new project as selected
+			await AuthService.saveSelectedProject(newProjectId);
+			setSelectedProject(newProjectId);
+
+			// Step 6: Reset UI state
+			setShowNewProjectInput(false);
+			setNewProjectName("");
+
+			notification.add({
+				color: "success",
+				message: `✅ Project "${projectName}" created successfully! Recordings will be saved here.`,
+			});
+		} catch (error) {
+			console.error("Project creation failed:", error);
+			notification.add({
+				color: "error",
+				message: `Failed to create project: ${error instanceof Error ? error.message : "Unknown error"}`,
+			});
+		} finally {
+			setIsCreatingProject(false);
+		}
 	};
 
 	const handleStartRecording = async () => {
@@ -644,6 +762,138 @@ export const RecordingPanel: FC = () => {
 				}}
 			>
 				<Stack spacing={2} sx={{ p: 2.5 }}>
+					{/* Project Selection Dropdown */}
+					{isAuthenticated && projects.length > 0 && (
+						<Box>
+							<Typography
+								variant="caption"
+								sx={{
+									mb: 0.5,
+									display: "block",
+									fontWeight: 500,
+									color: "#64748b",
+								}}
+							>
+								📁 Select Project
+							</Typography>
+							<select
+								value={
+									showNewProjectInput
+										? "__NEW_PROJECT__"
+										: selectedProject || ""
+								}
+								onChange={(e) =>
+									handleProjectChange(e.target.value)
+								}
+								disabled={
+									state.actionsList.length === 0 ||
+									isCreatingProject
+								}
+								style={{
+									width: "100%",
+									padding: "10px 12px",
+									border: "2px solid #e2e8f0",
+									borderRadius: "8px",
+									fontSize: "14px",
+									fontFamily: "inherit",
+									backgroundColor: "white",
+									cursor: "pointer",
+									transition: "all 0.3s ease",
+									outline: "none",
+								}}
+								onFocus={(e) => {
+									e.target.style.borderColor = "#2563eb";
+									e.target.style.boxShadow =
+										"0 0 0 3px rgba(37, 99, 235, 0.12)";
+								}}
+								onBlur={(e) => {
+									e.target.style.borderColor = "#e2e8f0";
+									e.target.style.boxShadow = "none";
+								}}
+							>
+								<option value="" disabled>
+									-- Select a project --
+								</option>
+								<option value="__NEW_PROJECT__">
+									+ New Project
+								</option>
+								{projects.map((project) => (
+									<option key={project.id} value={project.id}>
+										{project.displayName || project.name}
+									</option>
+								))}
+							</select>
+
+							{/* New Project Creation Input */}
+							{showNewProjectInput && (
+								<Box sx={{ mt: 2 }}>
+									<TextField
+										label="New Project Name"
+										placeholder="Enter project name (e.g., My Extension Project)"
+										value={newProjectName}
+										onChange={(e) =>
+											setNewProjectName(e.target.value)
+										}
+										size="small"
+										fullWidth
+										disabled={isCreatingProject}
+										onKeyPress={(e) => {
+											if (
+												e.key === "Enter" &&
+												!isCreatingProject
+											) {
+												handleNewProjectCreation();
+											}
+										}}
+										sx={{
+											"& .MuiOutlinedInput-root": {
+												borderRadius: "8px",
+											},
+										}}
+									/>
+									<Typography
+										variant="caption"
+										sx={{
+											mt: 0.5,
+											display: "block",
+											color: "#64748b",
+										}}
+									>
+										Must start with a letter and contain
+										only letters, numbers, and spaces
+									</Typography>
+									<Button
+										variant="contained"
+										color="primary"
+										onClick={handleNewProjectCreation}
+										fullWidth
+										disabled={
+											isCreatingProject ||
+											!newProjectName.trim()
+										}
+										sx={{
+											mt: 1.5,
+											py: 1.25,
+											textTransform: "none",
+											fontWeight: 600,
+											borderRadius: "8px",
+											background:
+												"linear-gradient(135deg, #10b981 0%, #059669 100)",
+											"&:hover": {
+												background:
+													"linear-gradient(135deg, #059669 0%, #047857 100%)",
+											},
+										}}
+									>
+										{isCreatingProject
+											? "Creating Project..."
+											: "Create Project"}
+									</Button>
+								</Box>
+							)}
+						</Box>
+					)}
+
 					<TextField
 						label="Script Name"
 						placeholder="Enter script name (optional)"

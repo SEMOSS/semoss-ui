@@ -185,4 +185,193 @@ export class AuthService {
 	): Promise<AuthResponse> {
 		return AuthService.authenticate(credentials);
 	}
+
+	/**
+	 * Create a new CODE project with portals enabled
+	 */
+	static async createProject(projectName: string): Promise<string> {
+		const credentials = await AuthService.getCredentials();
+		if (!credentials) {
+			throw new Error("Not authenticated. Please authenticate first.");
+		}
+
+		const { endpointUrl } = credentials;
+		const cleanUrl = endpointUrl.replace(/\/$/, "");
+
+		// CreateProjectReactor parameters: project name, type=CODE, global=true, hasPortal=true
+		const expression = `CreateProject(project=["${projectName}"], projectType=["CODE"], global=[true], portal=[true]);`;
+
+		try {
+			const response = await fetch(`${cleanUrl}/api/engine/runPixel`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: new URLSearchParams({
+					expression: expression,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(
+					`Project creation failed: ${response.status} ${response.statusText}`,
+				);
+			}
+
+			const rawData = await response.json();
+
+			// Extract project ID from response
+			let projectId: string;
+			if (
+				rawData.pixelReturn &&
+				Array.isArray(rawData.pixelReturn) &&
+				rawData.pixelReturn.length > 0
+			) {
+				const output = rawData.pixelReturn[0].output;
+				// CreateProject returns a map with project_id
+				projectId = output.project_id || output.projectId || output.id;
+			} else {
+				throw new Error("Invalid response from CreateProject");
+			}
+
+			if (!projectId) {
+				throw new Error("No project ID returned from CreateProject");
+			}
+
+			return projectId;
+		} catch (error) {
+			if (error instanceof Error) {
+				throw new Error(`Project creation error: ${error.message}`);
+			}
+			throw new Error("Project creation failed: Unknown error");
+		}
+	}
+
+	/**
+	 * Clone portal template from GitHub to the project
+	 */
+	static async clonePortalsToProject(projectId: string): Promise<void> {
+		const credentials = await AuthService.getCredentials();
+		if (!credentials) {
+			throw new Error("Not authenticated. Please authenticate first.");
+		}
+
+		const { endpointUrl } = credentials;
+		const cleanUrl = endpointUrl.replace(/\/$/, "");
+
+		// GitCloneIntoProjectPortalsReactor parameters
+		const expression = `GitCloneIntoProjectPortals(project=["${projectId}"], repo=["https://github.com/SEMOSS/semoss-ui.git"], branch=["chrome-extension-recorder"], subdirectory=["packages/chrome-extension/src/portals"]);`;
+
+		try {
+			const response = await fetch(`${cleanUrl}/api/engine/runPixel`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: new URLSearchParams({
+					expression: expression,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(
+					`Portal cloning failed: ${response.status} ${response.statusText}`,
+				);
+			}
+
+			const rawData = await response.json();
+
+			// Check for error in response
+			if (
+				rawData.pixelReturn &&
+				Array.isArray(rawData.pixelReturn) &&
+				rawData.pixelReturn.length > 0
+			) {
+				const output = rawData.pixelReturn[0];
+				if (output.operationType === "ERROR") {
+					throw new Error(output.output || "Portal cloning failed");
+				}
+			}
+		} catch (error) {
+			if (error instanceof Error) {
+				throw new Error(`Portal cloning error: ${error.message}`);
+			}
+			throw new Error("Portal cloning failed: Unknown error");
+		}
+	}
+
+	/**
+	 * Add MCP and PLAYWRIGHT tags to a project so it shows up in playground
+	 */
+	static async addPlaywrightTags(projectId: string): Promise<void> {
+		const credentials = await AuthService.getCredentials();
+		if (!credentials) {
+			throw new Error("Not authenticated. Please authenticate first.");
+		}
+
+		const { endpointUrl } = credentials;
+		const cleanUrl = endpointUrl.replace(/\/$/, "");
+
+		// Use SetProjectMetadata reactor to add tags
+		const expression = `SetProjectMetadata(project=["${projectId}"], meta=[{"tag":["MCP", "PLAYWRIGHT"]}]);`;
+
+		try {
+			const response = await fetch(`${cleanUrl}/api/engine/runPixel`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/x-www-form-urlencoded",
+				},
+				body: new URLSearchParams({
+					expression: expression,
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error(
+					`Failed to add tags: ${response.status} ${response.statusText}`,
+				);
+			}
+
+			const rawData = await response.json();
+
+			// Check for error in response
+			if (
+				rawData.pixelReturn &&
+				Array.isArray(rawData.pixelReturn) &&
+				rawData.pixelReturn.length > 0
+			) {
+				const output = rawData.pixelReturn[0];
+				if (output.operationType === "ERROR") {
+					throw new Error(output.output || "Failed to add tags");
+				}
+			}
+
+			console.log("Added MCP and PLAYWRIGHT tags to project:", projectId);
+		} catch (error) {
+			if (error instanceof Error) {
+				throw new Error(`Tag addition error: ${error.message}`);
+			}
+			throw new Error("Failed to add tags: Unknown error");
+		}
+	}
+
+	/**
+	 * Re-authenticate and get updated project list
+	 */
+	static async getUpdatedProjects(): Promise<Project[]> {
+		const credentials = await AuthService.getCredentials();
+		if (!credentials) {
+			throw new Error("Not authenticated. Please authenticate first.");
+		}
+
+		// Re-authenticate to get fresh project list
+		const authResponse = await AuthService.authenticate(credentials);
+
+		// Update stored projects
+		await chrome.storage.local.set({
+			projects: authResponse.projects,
+		});
+
+		return authResponse.projects;
+	}
 }
