@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "هل أنت متأكد؟",
-		"deleteConfirmDescription": "هذا الإجراء لا رجعة فيه. سيؤدي ذلك إلى حذف مساحة العمل {{name}} نهائياً."
+		"deleteConfirmDescription": "هذا الإجراء لا رجعة فيه. سيؤدي ذلك إلى حذف مساحة العمل {{name}} نهائياً.",
+		"createdAgo": "تم الإنشاء {{when}}"
 	},
 	"sharing": {
 		"title": "إضافة أعضاء",

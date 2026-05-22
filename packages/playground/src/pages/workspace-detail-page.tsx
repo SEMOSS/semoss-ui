@@ -15,6 +15,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	AppCatalogAvatar,
 	getUserProjectPermission,
 	MembersTable,
 	type Role,
@@ -28,6 +29,9 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import {
@@ -142,12 +146,58 @@ export const WorkspaceDetailPage = observer(() => {
 			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
 				{/* Sticky header so New Chat / Edit / Delete stay reachable while scrolling */}
 				<div className="-mx-12 -mt-8 sticky top-0 z-10 flex flex-row items-center gap-3 border-border border-b bg-background/95 px-12 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+					<AppCatalogAvatar
+						name={workspace.name}
+						className="size-10 shrink-0 rounded-md text-base"
+					/>
 					<div className="min-w-0 flex-1">
 						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
 							{workspace.name}
 						</div>
 					</div>
 					<div className="flex shrink-0 items-center gap-2">
+						{canEdit && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										aria-label={t("workspace:actions.edit")}
+										onClick={() =>
+											navigate(
+												`/agent/${workspaceId}/edit`,
+											)
+										}
+										data-testid="workspace-detail-page--edit-btn"
+									>
+										<PencilIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("workspace:actions.edit")}
+								</TooltipContent>
+							</Tooltip>
+						)}
+						{canDelete && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										aria-label={t(
+											"workspace:actions.delete",
+										)}
+										onClick={() => setDeleteModal(true)}
+										data-testid="workspace-detail-page--delete-btn"
+									>
+										<Trash2Icon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("workspace:actions.delete")}
+								</TooltipContent>
+							</Tooltip>
+						)}
 						<Button
 							onClick={() =>
 								navigate(`/new?workspaceId=${workspaceId}`)
@@ -157,28 +207,6 @@ export const WorkspaceDetailPage = observer(() => {
 							<PlusIcon />
 							{t("workspace:actions.newChat")}
 						</Button>
-						{canEdit && (
-							<Button
-								variant="outline"
-								onClick={() =>
-									navigate(`/agent/${workspaceId}/edit`)
-								}
-								data-testid="workspace-detail-page--edit-btn"
-							>
-								<PencilIcon />
-								{t("workspace:actions.edit")}
-							</Button>
-						)}
-						{canDelete && (
-							<Button
-								variant="outline"
-								onClick={() => setDeleteModal(true)}
-								data-testid="workspace-detail-page--delete-btn"
-							>
-								<Trash2Icon />
-								{t("workspace:actions.delete")}
-							</Button>
-						)}
 					</div>
 				</div>
 

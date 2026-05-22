@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "क्या आपको यकीन है?",
-		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।"
+		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।",
+		"createdAgo": "{{when}} बनाया गया"
 	},
 	"sharing": {
 		"title": "सदस्य जोड़ें",

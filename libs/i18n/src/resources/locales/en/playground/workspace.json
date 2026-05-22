@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "Are you sure?",
-		"deleteConfirmDescription": "This action is irreversible. This will permanently delete the {{name}} workspace."
+		"deleteConfirmDescription": "This action is irreversible. This will permanently delete the {{name}} workspace.",
+		"createdAgo": "Created {{when}}"
 	},
 	"sharing": {
 		"title": "Add members",

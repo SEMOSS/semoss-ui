@@ -152,8 +152,16 @@ export const WorkspacePage = observer(() => {
 										name:
 											w.project_display_name ||
 											w.project_name,
-										description: w.description,
+										description: w.description ?? "",
 									}}
+									permission={
+										w.user_permission === 1
+											? "OWNER"
+											: w.user_permission === 2
+												? "EDIT"
+												: "READ_ONLY"
+									}
+									dateCreated={w.project_date_created}
 									onDeleteClick={async () => {
 										try {
 											await chat.deleteWorkspace(

@@ -1,9 +1,20 @@
-import { CheckIcon, ComputerIcon, SearchIcon } from "lucide-react";
+import {
+	CheckIcon,
+	ComputerIcon,
+	PlusIcon,
+	SearchIcon,
+	SquareArrowOutUpRightIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
+import { AppCatalogAvatar } from "@semoss/shared";
 import {
+	Button,
+	Card,
+	CardContent,
 	cn,
 	InputGroup,
 	InputGroupAddon,
@@ -11,6 +22,9 @@ import {
 	Muted,
 	ScrollArea,
 	Spinner,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
@@ -30,7 +44,8 @@ interface AgentSelectorProps {
 // layout below is a placeholder kept visually consistent with MCPSelector.
 export const AgentSelector = observer(
 	({ value, onChange, disabled, className }: AgentSelectorProps) => {
-		const { t } = useTranslation("mcp");
+		const { t } = useTranslation(["mcp", "workspace"]);
+		const navigate = useNavigate();
 		const [search, setSearch] = useState("");
 		const debouncedSearch = useDebouncedValue(search);
 
@@ -80,6 +95,27 @@ export const AgentSelector = observer(
 							</InputGroupAddon>
 						</InputGroup>
 					</div>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="outline"
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									window.open("#/agent/new", "_blank");
+								}}
+								disabled={disabled}
+								data-testid="agent-selector--create-btn"
+							>
+								<PlusIcon />
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{t("workspace:actions.createAgent", {
+								defaultValue: "Create an Agent",
+							})}
+						</TooltipContent>
+					</Tooltip>
 				</div>
 
 				<ScrollArea
@@ -104,34 +140,147 @@ export const AgentSelector = observer(
 								{getWorkspaces.data.map((w) => {
 									const isSelected =
 										value?.workspace_id === w.project_id;
+									const permissionLabel =
+										w.user_permission === 1
+											? t("workspace:members.owner", {
+													defaultValue: "Owner",
+												})
+											: w.user_permission === 2
+												? t(
+														"workspace:members.editor",
+														{
+															defaultValue:
+																"Editor",
+														},
+													)
+												: t(
+														"workspace:members.readOnly",
+														{
+															defaultValue:
+																"Read-only",
+														},
+													);
 									return (
-										<button
-											type="button"
+										<Card
 											key={w.project_id}
-											onClick={() => select(w)}
-											disabled={disabled}
+											onClick={() =>
+												!disabled && select(w)
+											}
 											className={cn(
-												"flex items-start gap-3 rounded-lg border border-border bg-card p-4 text-left transition-colors hover:bg-muted/50 disabled:cursor-not-allowed disabled:opacity-50",
-												isSelected &&
-													"border-primary ring-2 ring-primary/20",
+												"p-0 transition-colors",
+												!disabled &&
+													"cursor-pointer hover:bg-muted/30",
+												disabled &&
+													"cursor-not-allowed opacity-50",
+												isSelected && "border-primary",
 											)}
 										>
-											<ComputerIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-											<div className="min-w-0 flex-1">
-												<div className="truncate font-medium text-sm">
-													{w.project_display_name ||
-														w.project_name}
+											<CardContent className="flex flex-col gap-2 p-3">
+												{/* Row 1: open-page link + permission text on
+												    the left; selection checkbox on the right. */}
+												<div className="flex items-center gap-2">
+													<div className="flex min-w-0 flex-1 items-center gap-1.5">
+														<Tooltip>
+															<TooltipTrigger
+																asChild
+															>
+																<a
+																	href={`#/agent/${w.project_id}`}
+																	onClick={(
+																		event,
+																	) => {
+																		event.preventDefault();
+																		event.stopPropagation();
+																		navigate(
+																			`/agent/${w.project_id}`,
+																		);
+																	}}
+																	className="text-muted-foreground hover:text-foreground"
+																>
+																	<SquareArrowOutUpRightIcon className="size-4" />
+																</a>
+															</TooltipTrigger>
+															<TooltipContent>
+																{t(
+																	"agent.openAgentPage",
+																	{
+																		defaultValue:
+																			"Open agent page",
+																	},
+																)}
+															</TooltipContent>
+														</Tooltip>
+														{permissionLabel ? (
+															<span className="-translate-y-px text-[10px] text-muted-foreground capitalize">
+																{
+																	permissionLabel
+																}
+															</span>
+														) : null}
+													</div>
+													<div className="flex shrink-0 items-center gap-1.5">
+														<div
+															className={cn(
+																"flex size-4 items-center justify-center rounded border transition-colors",
+																isSelected
+																	? "border-primary bg-primary text-primary-foreground"
+																	: "border-muted-foreground/40",
+															)}
+														>
+															{isSelected ? (
+																<CheckIcon
+																	className="size-3"
+																	strokeWidth={
+																		3
+																	}
+																/>
+															) : null}
+														</div>
+													</div>
 												</div>
+
+												{/* Row 2: avatar + (name on top, type below). */}
+												<div className="flex items-start gap-2">
+													<AppCatalogAvatar
+														name={
+															w.project_display_name ||
+															w.project_name
+														}
+														className="size-10 shrink-0 rounded-md text-sm"
+													/>
+													<div className="flex min-w-0 flex-1 flex-col gap-0.5">
+														<div className="wrap-break-word line-clamp-2 font-medium text-sm leading-tight">
+															{w.project_display_name ||
+																w.project_name}
+														</div>
+														<div className="flex items-center gap-1.5 text-muted-foreground text-xs">
+															<ComputerIcon className="size-3.5 shrink-0" />
+															<span>
+																{t(
+																	"agent.typeLabel",
+																	{
+																		defaultValue:
+																			"Agent",
+																	},
+																)}
+															</span>
+														</div>
+													</div>
+												</div>
+
+												{/* Row 3: description (full width) or spacer. */}
 												{w.description ? (
-													<div className="mt-1 line-clamp-2 text-muted-foreground text-xs">
+													<div className="wrap-break-words line-clamp-4 text-muted-foreground text-xs">
 														{w.description}
 													</div>
-												) : null}
-											</div>
-											{isSelected ? (
-												<CheckIcon className="size-4 shrink-0 text-primary" />
-											) : null}
-										</button>
+												) : (
+													<div
+														className="h-1"
+														aria-hidden
+													/>
+												)}
+											</CardContent>
+										</Card>
 									);
 								})}
 							</div>

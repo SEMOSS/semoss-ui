@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "Êtes-vous sûr ?",
-		"deleteConfirmDescription": "Cette action est irréversible. Cela supprimera définitivement l'espace de travail {{name}}."
+		"deleteConfirmDescription": "Cette action est irréversible. Cela supprimera définitivement l'espace de travail {{name}}.",
+		"createdAgo": "Créé {{when}}"
 	},
 	"sharing": {
 		"title": "Ajouter des membres",

@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "本当によろしいですか？",
-		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。"
+		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。",
+		"createdAgo": "作成: {{when}}"
 	},
 	"sharing": {
 		"title": "メンバーを追加",
