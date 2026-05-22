@@ -168,7 +168,7 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Jobs",
 		path: "jobs",
-		description: "Search by job name or filter using job tags",
+		description: "Manage and schedule cron jobs for the platform",
 		icon: mdiTabletCellphone,
 		history: ["jobs"],
 		admin: true,
@@ -250,7 +250,8 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Add Jobs",
 		path: "jobs/add-new-job",
-		description: "Fill out all the details in order to add the model to the catalog.",
+		description:
+			"Fill out all the details in order to add the model to the catalog.",
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "add-new-job"],
 		admin: true,
@@ -258,9 +259,10 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Edit Jobs",
 		path: "jobs/edit-job/:id",
-		description: "Fill out all the details in order to edit the model in the catalog.",
+		description:
+			"Fill out all the details in order to edit the model in the catalog.",
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "edit-job/:id"],
 		admin: true,
-	}
+	},
 ];
