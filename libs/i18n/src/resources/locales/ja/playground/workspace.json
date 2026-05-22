@@ -6,7 +6,8 @@
 		"descriptionLabel": "説明",
 		"instructionsLabel": "指示",
 		"knowledgeLabel": "ナレッジ",
-		"toolboxLabel": "ツールボックス"
+		"toolboxLabel": "ツールボックス",
+		"promptsLabel": "プロンプトライブラリ"
 	},
 	"actions": {
 		"create": "作成",
@@ -17,7 +18,6 @@
 		"newChat": "新しいチャット"
 	},
 	"card": {
-		"noDescription": "説明がありません",
 		"deleteConfirmTitle": "本当によろしいですか？",
 		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。"
 	},
@@ -106,5 +106,9 @@
 	"new": {
 		"title": "新しいエージェント",
 		"subtitle": "新しいエージェントを作成して始めましょう"
+	},
+	"prompts": {
+		"noPrompts": "プロンプトが見つかりません",
+		"searchPlaceholder": "プロンプトを検索..."
 	}
 }

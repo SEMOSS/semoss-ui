@@ -32,13 +32,13 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import DuplicateIcon from "@/assets/img/Duplicate.svg";
 import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
 import { replaceInBlocks } from "@/utility/dependencyReplacer";
 import { getDependentBlocks } from "@/utility/dependencyScanner";
-import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { DependencyPromptModal } from "../blocks-workspace";
 import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./NotebookAddCell";

@@ -1,12 +1,9 @@
 import { ExternalLinkIcon } from "lucide-react";
 import { useIteratorPixel } from "@semoss/sdk/react";
 import type { App } from "@semoss/shared";
+import { buildInitials, getAppCatalogAvatarStyle } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
 import { useNavigate } from "@/hooks/useNavigate";
-import {
-	buildInitials,
-	getAppCatalogAvatarStyle,
-} from "./platform-search-icon-utils";
 
 const LIMIT = 5;
 

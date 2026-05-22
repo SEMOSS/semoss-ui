@@ -1,7 +1,7 @@
 {
 	"knowledge": {
-		"createSuccess": "Fuente de conocimiento \"{{name}}\" creada exitosamente",
-		"createError": "No se pudo crear la fuente de conocimiento"
+		"createSuccess": "Almacén de conocimiento \"{{name}}\" creado exitosamente",
+		"createError": "No se pudo crear el almacén de conocimiento"
 	},
 	"workspace": {
 		"saveError": "No se pudo guardar el agente",

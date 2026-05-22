@@ -1,27 +1,29 @@
 {
 	"embedDocuments": {
-		"title": "Intégrer des documents dans une source existante",
-		"description": "Sélectionnez une source de connaissances et téléversez des documents à intégrer.",
-		"knowledgeSource": "Source de connaissances",
+		"title": "Intégrer des documents dans une base existante",
+		"description": "Sélectionnez une base de connaissances et téléversez des documents à intégrer.",
+		"knowledgeSource": "Base de connaissances",
 		"documents": "Documents",
 		"selectFiles": "Cliquez pour sélectionner des fichiers ou glissez-déposez",
 		"embedButton": "Intégrer les documents",
 		"embedding": "Intégration...",
 		"removeFile": "Supprimer le fichier",
-		"selectPlaceholder": "Sélectionnez une source de connaissances"
+		"selectPlaceholder": "Sélectionnez une base de connaissances"
 	},
 	"selector": {
 		"search": "Rechercher",
-		"createKnowledgeSource": "Créer une source de connaissances",
+		"createKnowledgeSource": "Créer une base de connaissances",
 		"viewDetails": "Voir les détails",
 		"noToolboxesFound": "Aucune boîte à outils trouvée",
-		"noKnowledgeFound": "Aucune connaissance trouvée"
+		"noKnowledgeFound": "Aucune connaissance trouvée",
+		"noAgentsFound": "Aucun agent trouvé"
 	},
 	"overlay": {
-		"editToolbox": "Configurer les boîtes à outils",
-		"editKnowledge": "Configurer les connaissances",
-		"toolboxDescription": "Ajoutez des outils pour donner plus de capacités à ce chat",
-		"knowledgeDescription": "Ajoutez des sources de connaissances pour donner plus de contexte au modèle"
+		"title": "Configurez votre chat",
+		"description": "Choisissez un agent enregistré, ou assemblez vos propres connaissances et boîtes à outils.",
+		"tabAgent": "Agent",
+		"tabKnowledge": "Connaissances",
+		"tabToolbox": "Boîtes à outils"
 	},
 	"tools": {
 		"enterValues": "Entrez des valeurs séparées par des virgules",
@@ -29,12 +31,12 @@
 		"enterField": "Entrer {{field}}"
 	},
 	"messages": {
-		"selectKnowledgeSource": "Veuillez sélectionner une source de connaissances",
+		"selectKnowledgeSource": "Veuillez sélectionner une base de connaissances",
 		"selectDocument": "Veuillez sélectionner au moins un document",
 		"embedSuccess": "Documents intégrés avec succès",
 		"embedFailed": "Échec de l'intégration des documents",
-		"loadFailed": "Échec du chargement des sources de connaissances.",
-		"noSources": "Aucune source de connaissances trouvée."
+		"loadFailed": "Échec du chargement des bases de connaissances.",
+		"noSources": "Aucune base de connaissances trouvée."
 	},
 	"buttons": {
 		"cancel": "Annuler",
@@ -47,9 +49,10 @@
 		"requestAccess": "Demander l'accès",
 		"noAccess": "Aucun accès",
 		"requestAccessButton": "Demander l'Accès",
-		"noDescription": "Aucune description disponible.",
 		"tooltipNoAccess": "Vous n'avez pas accès à ce {{type}}. Veuillez demander l'accès au propriétaire.",
 		"tooltipMissingDependencies": "Vous n'avez pas accès à toutes les dépendances de ce {{type}}, la fonctionnalité peut donc être limitée. Ouvrez dans la plateforme pour plus d'informations.",
-		"tooltipOpen": "Ouvrir ce {{type}} dans la plateforme"
+		"tooltipOpen": "Ouvrir ce {{type}} dans la plateforme",
+		"typeToolbox": "boîte à outils",
+		"typeKnowledge": "base de connaissances"
 	}
 }

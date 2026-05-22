@@ -1,34 +1,34 @@
 const LOGIN_PROVIDER_LOGO_LOADERS = {
-	...import.meta.glob("../../assets/loginProviders/*.{png,svg}", {
+	...import.meta.glob("../assets/loginProviders/*.{png,svg}", {
 		query: "?url",
 		import: "default",
 	}),
-	...import.meta.glob("../../assets/img/*.{png,svg}", {
+	...import.meta.glob("../assets/img/*.{png,svg}", {
 		query: "?url",
 		import: "default",
 	}),
 } as Record<string, () => Promise<string>>;
 
 const LOGIN_PROVIDER_LOGO_PATH_BY_PROVIDER: Record<string, string> = {
-	adfs: "../../assets/loginProviders/MICROSOFT.png",
-	cac: "../../assets/loginProviders/CAC.svg",
-	dropbox: "../../assets/img/DROPBOX.png",
-	generic: "../../assets/loginProviders/GENERIC.svg",
-	github: "../../assets/img/GITHUB.svg",
-	gitlab: "../../assets/loginProviders/GITLAB.svg",
-	google: "../../assets/img/GOOGLE.svg",
-	keycloak: "../../assets/loginProviders/KEYCLOAK.svg",
-	linkedin: "../../assets/loginProviders/LINKEDIN.svg",
-	microsoft: "../../assets/loginProviders/MICROSOFT.png",
-	ms: "../../assets/loginProviders/MICROSOFT.png",
-	okta: "../../assets/loginProviders/OKTA.svg",
-	product_hunt: "../../assets/loginProviders/product_hunt.png",
-	salesforce: "../../assets/loginProviders/SALESFORCE.svg",
-	saml: "../../assets/loginProviders/saml.png",
-	siteminder: "../../assets/loginProviders/siteminder.png",
-	surveymonkey: "../../assets/loginProviders/SURVEYMONKEY.svg",
-	twitter: "../../assets/loginProviders/X_TWITTER.svg",
-	x_twitter: "../../assets/loginProviders/X_TWITTER.svg",
+	adfs: "../assets/img/MICROSOFT.png",
+	cac: "../assets/loginProviders/CAC.svg",
+	dropbox: "../assets/img/DROPBOX.png",
+	generic: "../assets/loginProviders/GENERIC.svg",
+	github: "../assets/img/GITHUB.svg",
+	gitlab: "../assets/loginProviders/GITLAB.svg",
+	google: "../assets/img/GOOGLE.svg",
+	keycloak: "../assets/loginProviders/KEYCLOAK.svg",
+	linkedin: "../assets/loginProviders/LINKEDIN.svg",
+	microsoft: "../assets/img/MICROSOFT.png",
+	ms: "../assets/img/MICROSOFT.png",
+	okta: "../assets/loginProviders/OKTA.svg",
+	product_hunt: "../assets/loginProviders/product_hunt.png",
+	salesforce: "../assets/loginProviders/SALESFORCE.svg",
+	saml: "../assets/loginProviders/saml.png",
+	siteminder: "../assets/loginProviders/siteminder.png",
+	surveymonkey: "../assets/loginProviders/SURVEYMONKEY.svg",
+	twitter: "../assets/loginProviders/X_TWITTER.svg",
+	x_twitter: "../assets/loginProviders/X_TWITTER.svg",
 };
 
 const LOGIN_PROVIDER_ALIASES: Record<string, string> = {
