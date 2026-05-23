@@ -8,6 +8,14 @@ import { useEffect, useMemo, useState } from "react";
 
 interface JsonValueViewerProps {
 	value: unknown;
+	/**
+	 * Controlled expand-all state. When provided, the viewer uses this value
+	 * instead of its internal state and the caller is responsible for toggling
+	 * via its own UI (typically combined with `hideToggle`).
+	 */
+	expandAll?: boolean;
+	/** Hide the built-in absolute-positioned expand-all toggle. */
+	hideToggle?: boolean;
 }
 
 interface JsonTreeNodeProps {
@@ -135,9 +143,19 @@ const hasNestedObject = (value: unknown): boolean => {
 	return Object.values(value).some(isObjectValue);
 };
 
-export const JsonValueViewer = ({ value }: JsonValueViewerProps) => {
-	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
+export const JsonValueViewer = ({
+	value,
+	expandAll: controlledExpandAll,
+	hideToggle,
+}: JsonValueViewerProps) => {
+	const [internalExpandAll, setInternalExpandAll] = useState<
+		boolean | undefined
+	>(undefined);
+	const isControlled = controlledExpandAll !== undefined;
+	const expandAll = isControlled ? controlledExpandAll : internalExpandAll;
+	const setExpandAll = setInternalExpandAll;
 	const showToggle = useMemo(() => hasNestedObject(value), [value]);
+	const renderToggle = showToggle && !hideToggle && !isControlled;
 
 	if (value === null || typeof value === "undefined") {
 		return (
@@ -151,7 +169,7 @@ export const JsonValueViewer = ({ value }: JsonValueViewerProps) => {
 
 	return (
 		<div className="relative">
-			{showToggle && (
+			{renderToggle && (
 				<button
 					type="button"
 					aria-label={

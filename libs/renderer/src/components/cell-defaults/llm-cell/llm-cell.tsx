@@ -7,6 +7,7 @@ import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
@@ -618,7 +619,10 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 				open={expandedCard !== null}
 				onOpenChange={(o) => !o && setExpandedCard(null)}
 			>
-				<DialogContent className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col gap-3 sm:max-w-[80vw]">
+				<DialogContent
+					showCloseButton={false}
+					className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col gap-3 sm:max-w-[80vw]"
+				>
 					{(() => {
 						if (expandedCard === null) return null;
 						const idx = expandedCard;
@@ -633,7 +637,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 						return (
 							<>
 								<DialogHeader>
-									<div className="flex items-center justify-between gap-3 pr-8">
+									<div className="flex items-center justify-between gap-3">
 										<div className="flex min-w-0 items-center gap-2">
 											<EngineSubtypeIcon
 												engineType={model.engineType}
@@ -654,6 +658,11 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 										</div>
 										<div className="flex items-center gap-1">
 											<Button
+												title={
+													isRaw
+														? "Show pretty"
+														: "Show raw"
+												}
 												variant={
 													isRaw
 														? "secondary"
@@ -698,8 +707,18 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 													}
 												}}
 											>
-												<Copy className="size-3.5" />
+												<Copy className="size-3" />
 											</Button>
+											<DialogClose asChild>
+												<Button
+													title="Close"
+													variant="ghost"
+													size="sm"
+													className="h-7 px-2 text-muted-foreground"
+												>
+													<X className="size-3" />
+												</Button>
+											</DialogClose>
 										</div>
 									</div>
 								</DialogHeader>

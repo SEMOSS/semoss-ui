@@ -5,6 +5,10 @@ import { isOutputJSON } from "@/utility";
 interface DefaultOperationProps {
 	/** Output of the code */
 	output: unknown;
+	/** Controlled expand-all state forwarded to the JSON viewer. */
+	expandAll?: boolean;
+	/** Hide the JSON viewer's built-in expand-all toggle. */
+	hideJsonToggle?: boolean;
 }
 
 /**
@@ -12,12 +16,18 @@ interface DefaultOperationProps {
  */
 export const DefaultOperation = observer(
 	(props: DefaultOperationProps): JSX.Element => {
-		const { output } = props;
+		const { output, expandAll, hideJsonToggle } = props;
 
 		if (typeof output === "string" || typeof output === "object") {
 			const value = isOutputJSON(output);
 			if (value != null) {
-				return <JsonValueViewer value={value} />;
+				return (
+					<JsonValueViewer
+						value={value}
+						expandAll={expandAll}
+						hideToggle={hideJsonToggle}
+					/>
+				);
 			} else {
 				return (
 					<pre className="max-h-[200px] overflow-y-scroll text-wrap text-sm">
