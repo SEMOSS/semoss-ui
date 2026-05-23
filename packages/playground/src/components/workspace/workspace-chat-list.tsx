@@ -229,9 +229,7 @@ export const WorkspaceChatList = ({
 		}
 		setIsRenaming(true);
 		try {
-			await runPixel(
-				`RenameRoom(roomId=["${editingId}"], name=["<encode>${trimmed}</encode>"]);`,
-			);
+			await chat.renameRoom(editingId, trimmed);
 			toast.success(t("chat.renameSuccess"));
 			setEditingId(null);
 			setEditingName("");

@@ -11,10 +11,10 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { runPixel, useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -30,6 +30,7 @@ import {
 	InputGroupAddon,
 	InputGroupInput,
 	Muted,
+	Separator,
 	Spinner,
 	Tooltip,
 	TooltipContent,
@@ -102,18 +103,53 @@ export const ChatsPage = observer(() => {
 		[getRooms.data, deletedSet],
 	);
 
+	const hasSelection = selectedIds.size > 0;
 	const allSelected =
 		visibleRooms.length > 0 &&
+		selectedIds.size >= visibleRooms.length &&
 		visibleRooms.every((r) => selectedIds.has(r.ROOM_ID));
-	const someSelected = visibleRooms.some((r) => selectedIds.has(r.ROOM_ID));
 
-	const toggleSelectAll = () => {
-		if (allSelected) {
-			setSelectedIds(new Set());
-		} else {
-			setSelectedIds(new Set(visibleRooms.map((r) => r.ROOM_ID)));
-		}
-	};
+	const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+	const selectAll = useCallback(
+		() => setSelectedIds(new Set(visibleRooms.map((r) => r.ROOM_ID))),
+		[visibleRooms],
+	);
+
+	// Keyboard shortcuts: Esc clears the current selection;
+	// Cmd/Ctrl+A selects all visible chats (only when focus isn't
+	// inside a form input so the user can still select text normally).
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			const target = e.target as HTMLElement | null;
+			const inEditableField =
+				!!target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable);
+
+			if (
+				e.key === "Escape" &&
+				hasSelection &&
+				!editingId &&
+				!inEditableField
+			) {
+				clearSelection();
+				return;
+			}
+
+			if (
+				(e.metaKey || e.ctrlKey) &&
+				e.key.toLowerCase() === "a" &&
+				!inEditableField &&
+				visibleRooms.length > 0
+			) {
+				e.preventDefault();
+				selectAll();
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [hasSelection, editingId, visibleRooms, clearSelection, selectAll]);
 
 	const toggleSelectOne = (roomId: string) => {
 		setSelectedIds((prev) => {
@@ -187,9 +223,7 @@ export const ChatsPage = observer(() => {
 		}
 		setIsRenaming(true);
 		try {
-			await runPixel(
-				`RenameRoom(roomId=["${editingId}"], name=["<encode>${trimmed}</encode>"]);`,
-			);
+			await chat.renameRoom(editingId, trimmed);
 			toast.success(t("workspace:chat.renameSuccess"));
 			setEditingId(null);
 			setEditingName("");
@@ -224,23 +258,6 @@ export const ChatsPage = observer(() => {
 							})}
 						</div>
 					</div>
-					{selectedIds.size > 0 && (
-						<Button
-							variant="destructive"
-							size="sm"
-							onClick={() => setConfirmOpen(true)}
-							disabled={isDeleting}
-							data-testid="chats-page--delete-selected-btn"
-							aria-label={t("workspace:chats.deleteSelected", {
-								count: selectedIds.size,
-								defaultValue: "Delete {{count}} selected",
-							})}
-							className="shrink-0"
-						>
-							<Trash2Icon />
-							<span>{selectedIds.size}</span>
-						</Button>
-					)}
 				</div>
 
 				{/* Search */}
@@ -273,35 +290,6 @@ export const ChatsPage = observer(() => {
 						</div>
 					) : (
 						<div className="flex w-full flex-col gap-2">
-							{/* Select-all row */}
-							<div className="flex items-center gap-3 px-3 py-2">
-								<Checkbox
-									checked={
-										allSelected
-											? true
-											: someSelected
-												? "indeterminate"
-												: false
-									}
-									onCheckedChange={toggleSelectAll}
-									aria-label={t("workspace:chats.selectAll", {
-										defaultValue: "Select all",
-									})}
-								/>
-								<span className="text-muted-foreground text-sm">
-									{selectedIds.size > 0
-										? t("workspace:chats.selectedCount", {
-												count: selectedIds.size,
-												defaultValue:
-													"{{count}} selected",
-											})
-										: t("workspace:chats.totalCount", {
-												count: visibleRooms.length,
-												defaultValue: "{{count}} chats",
-											})}
-								</span>
-							</div>
-
 							{visibleRooms.map((r) => {
 								const isSelected = selectedIds.has(r.ROOM_ID);
 								const isEditing = editingId === r.ROOM_ID;
@@ -463,6 +451,10 @@ export const ChatsPage = observer(() => {
 															"Select chat {{name}}",
 													},
 												)}
+												className={cn(
+													!hasSelection &&
+														"invisible focus-visible:visible group-hover/row:visible",
+												)}
 											/>
 											<div className="@md:flex hidden size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
 												<MessagesSquareIcon className="size-4" />
@@ -544,6 +536,67 @@ export const ChatsPage = observer(() => {
 					)}
 				</div>
 			</div>
+
+			{/* Floating action bar — appears when ≥1 chat is selected.
+			    Fixed to viewport bottom so it follows the user as they
+			    scroll the list. Esc and the Cancel button both clear
+			    the selection. */}
+			{hasSelection && (
+				<div className="-translate-x-1/2 fade-in-0 slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-30 animate-in">
+					<div className="flex items-center gap-1 rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+						<span className="px-3 font-medium text-foreground text-sm">
+							{t("workspace:chats.selectedCount", {
+								count: selectedIds.size,
+								defaultValue: "{{count}} selected",
+							})}
+						</span>
+						{!allSelected && (
+							<>
+								<Separator
+									orientation="vertical"
+									className="h-6"
+								/>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={selectAll}
+									disabled={isDeleting}
+									data-testid="chats-page--select-all-btn"
+								>
+									{t("workspace:chats.selectAll", {
+										defaultValue: "Select all",
+									})}
+								</Button>
+							</>
+						)}
+						<Separator orientation="vertical" className="h-6" />
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={() => setConfirmOpen(true)}
+							disabled={isDeleting}
+							className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+							data-testid="chats-page--delete-selected-btn"
+						>
+							<Trash2Icon />
+							{t("workspace:chat.delete", {
+								defaultValue: "Delete",
+							})}
+						</Button>
+						<Separator orientation="vertical" className="h-6" />
+						<Button
+							variant="ghost"
+							size="sm"
+							onClick={clearSelection}
+							disabled={isDeleting}
+						>
+							{t("workspace:chat.cancel", {
+								defaultValue: "Cancel",
+							})}
+						</Button>
+					</div>
+				</div>
+			)}
 
 			{/* Bulk delete confirmation */}
 			<Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
