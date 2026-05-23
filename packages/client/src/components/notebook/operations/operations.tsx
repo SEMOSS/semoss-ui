@@ -24,13 +24,18 @@ interface OperationProps {
 		cellId: string;
 		queryId: string;
 	};
+
+	/** Controlled expand-all forwarded to the JSON viewer for DefaultOperation. */
+	expandAll?: boolean;
+	/** Hide the JSON viewer's built-in expand-all toggle. */
+	hideJsonToggle?: boolean;
 }
 
 /**
  * Operation that is rendered
  */
 export const Operation = observer((props: OperationProps): JSX.Element => {
-	const { operation, output } = props;
+	const { operation, output, expandAll, hideJsonToggle } = props;
 
 	if (operation === "SUCCESS") {
 		return <SuccessOperation output={output as string} />;
@@ -64,5 +69,11 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
 		);
 	}
 
-	return <DefaultOperation output={output} />;
+	return (
+		<DefaultOperation
+			output={output}
+			expandAll={expandAll}
+			hideJsonToggle={hideJsonToggle}
+		/>
+	);
 });

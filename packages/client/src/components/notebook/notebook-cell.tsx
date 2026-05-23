@@ -3,7 +3,10 @@ import {
 	ArrowLeftRight,
 	ArrowUp,
 	BookPlus,
+	Braces,
 	ChevronRight,
+	ChevronsDownUp,
+	ChevronsUpDown,
 	Copy,
 	CopyPlus,
 	GripVertical,
@@ -11,6 +14,7 @@ import {
 	Maximize2,
 	Play,
 	Trash2,
+	X,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +28,7 @@ import {
 	Button,
 	ButtonGroup,
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
@@ -37,7 +42,7 @@ import {
 import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
-import { copyTextToClipboard } from "@/utility";
+import { copyTextToClipboard, isOutputJSON } from "@/utility";
 import { replaceInBlocks } from "@/utility/dependencyReplacer";
 import { getDependentBlocks } from "@/utility/dependencyScanner";
 import { DependencyPromptModal } from "../blocks-workspace";
@@ -83,6 +88,7 @@ export const NotebookCell = observer(
 		const [showConsole, setShowConsole] = useState(false);
 		const [showLoggingModal, setShowLoggingModal] = useState(false);
 		const [showOutputModal, setShowOutputModal] = useState(false);
+		const [expandAllOutput, setExpandAllOutput] = useState(false);
 
 		const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
@@ -452,28 +458,47 @@ export const NotebookCell = observer(
 					? cell.output
 					: JSON.stringify(cell.output, null, 2);
 
-		const outputHeader = cell.isExecuted ? (
-			<div className="flex w-full flex-row items-center justify-between">
-				<span className="font-mono text-muted-foreground text-xs uppercase tracking-wider">
-					Out
-				</span>
+		const outputIsJson = useMemo(
+			() => isOutputJSON(cell.output) != null,
+			[cell.output],
+		);
+
+		const outputStats = useMemo(() => {
+			const lines = rawOutput ? rawOutput.split("\n").length : 0;
+			const bytes = rawOutput
+				? new TextEncoder().encode(rawOutput).length
+				: 0;
+			return { lines, bytes };
+		}, [rawOutput]);
+
+		const formatBytes = (bytes: number) => {
+			if (bytes < 1024) return `${bytes} bytes`;
+			if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+			return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+		};
+
+		const renderOutputHeader = (onExpand?: () => void) => (
+			<div className="flex w-full flex-row items-center justify-between gap-2 px-1">
+				<div className="flex min-w-0 items-center gap-2">
+					<Braces className="size-3.5 text-muted-foreground" />
+					<span className="font-medium text-foreground text-xs">
+						Output
+					</span>
+					{outputIsJson && (
+						<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+							JSON
+						</span>
+					)}
+				</div>
 				<div className="flex items-center gap-1">
 					<Button
+						title={showRaw ? "Show formatted" : "Show raw"}
 						variant={showRaw ? "secondary" : "ghost"}
 						size="sm"
 						className="h-7 px-2 text-xs"
 						onClick={() => setShowRaw((v) => !v)}
 					>
 						{showRaw ? "Formatted" : "Raw"}
-					</Button>
-					<Button
-						title="Expand"
-						variant="ghost"
-						size="sm"
-						className="h-7 px-2 text-muted-foreground"
-						onClick={() => setShowOutputModal(true)}
-					>
-						<Maximize2 className="size-3" />
 					</Button>
 					<Button
 						title="Copy output"
@@ -484,9 +509,54 @@ export const NotebookCell = observer(
 					>
 						<Copy className="size-3" />
 					</Button>
+					{onExpand && (
+						<Button
+							title="Expand"
+							variant="ghost"
+							size="sm"
+							className="h-7 px-2 text-muted-foreground"
+							onClick={onExpand}
+						>
+							<Maximize2 className="size-3" />
+						</Button>
+					)}
 				</div>
 			</div>
-		) : null;
+		);
+
+		const renderOutputFooter = () => (
+			<div className="flex w-full flex-row items-center justify-between gap-2 px-1 pt-1 text-[11px] text-muted-foreground">
+				<span className="font-mono">
+					{outputStats.lines}{" "}
+					{outputStats.lines === 1 ? "line" : "lines"}
+					{" · "}
+					{formatBytes(outputStats.bytes)}
+				</span>
+				{!showRaw && outputIsJson && (
+					<button
+						type="button"
+						aria-label={
+							expandAllOutput
+								? "Collapse all JSON nodes"
+								: "Expand all JSON nodes"
+						}
+						className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+						onClick={() => setExpandAllOutput((v) => !v)}
+					>
+						{expandAllOutput ? (
+							<ChevronsDownUp className="size-3" />
+						) : (
+							<ChevronsUpDown className="size-3" />
+						)}
+						{expandAllOutput ? "Collapse all" : "Expand all"}
+					</button>
+				)}
+			</div>
+		);
+
+		const outputHeader = cell.isExecuted
+			? renderOutputHeader(() => setShowOutputModal(true))
+			: null;
 
 		const consoleSection =
 			cell.messages.length > 0 ? (
@@ -547,21 +617,26 @@ export const NotebookCell = observer(
 				{consoleSection}
 				{outputHeader}
 				{cell.isExecuted ? (
-					<div className="max-h-[300px] overflow-y-auto rounded bg-muted/30 px-2 py-1">
-						{showRaw ? (
-							<pre className="whitespace-pre-wrap break-all font-mono text-xs">
-								{rawOutput}
-							</pre>
-						) : (
-							cell.operation.map((o) => (
-								<Operation
-									key={`cell-operation--${cell.id}--${o}`}
-									operation={o}
-									output={cell.output}
-								/>
-							))
-						)}
-					</div>
+					<>
+						<div className="max-h-[300px] overflow-y-auto rounded bg-muted/30 px-2 py-1">
+							{showRaw ? (
+								<pre className="whitespace-pre-wrap break-all font-mono text-xs">
+									{rawOutput}
+								</pre>
+							) : (
+								cell.operation.map((o) => (
+									<Operation
+										key={`cell-operation--${cell.id}--${o}`}
+										operation={o}
+										output={cell.output}
+										expandAll={expandAllOutput}
+										hideJsonToggle
+									/>
+								))
+							)}
+						</div>
+						{renderOutputFooter()}
+					</>
 				) : null}
 			</div>
 		);
@@ -596,6 +671,8 @@ export const NotebookCell = observer(
 													key={`cell-operation--${cell.id}--${o}`}
 													operation={o}
 													output={cell.output}
+													expandAll={expandAllOutput}
+													hideJsonToggle
 													cellData={{
 														cellId: cell.id.toString(),
 														queryId:
@@ -621,6 +698,7 @@ export const NotebookCell = observer(
 											))}
 										</div>
 									) : null}
+									{renderOutputFooter()}
 								</div>
 							);
 						})()
@@ -988,12 +1066,33 @@ export const NotebookCell = observer(
 					open={showOutputModal}
 					onOpenChange={(o) => !o && setShowOutputModal(false)}
 				>
-					<DialogContent className="flex max-h-[80vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]">
+					<DialogContent
+						showCloseButton={false}
+						className="flex max-h-[80vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]"
+					>
 						<DialogHeader>
-							<div className="flex items-center justify-between gap-2 pr-8">
-								<DialogTitle>Output</DialogTitle>
+							<DialogTitle className="sr-only">
+								Output
+							</DialogTitle>
+							<div className="flex items-center justify-between gap-2">
+								<div className="flex min-w-0 items-center gap-2">
+									<Braces className="size-4 text-muted-foreground" />
+									<span className="font-medium text-foreground text-sm">
+										Output
+									</span>
+									{outputIsJson && (
+										<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+											JSON
+										</span>
+									)}
+								</div>
 								<div className="flex items-center gap-1">
 									<Button
+										title={
+											showRaw
+												? "Show formatted"
+												: "Show raw"
+										}
 										variant={
 											showRaw ? "secondary" : "ghost"
 										}
@@ -1014,6 +1113,16 @@ export const NotebookCell = observer(
 									>
 										<Copy className="size-3" />
 									</Button>
+									<DialogClose asChild>
+										<Button
+											title="Close"
+											variant="ghost"
+											size="sm"
+											className="h-7 px-2 text-muted-foreground"
+										>
+											<X className="size-3" />
+										</Button>
+									</DialogClose>
 								</div>
 							</div>
 						</DialogHeader>
@@ -1040,6 +1149,10 @@ export const NotebookCell = observer(
 														key={`cell-operation-modal--${cell.id}--${o}`}
 														operation={o}
 														output={cell.output}
+														expandAll={
+															expandAllOutput
+														}
+														hideJsonToggle
 														cellData={{
 															cellId: cell.id.toString(),
 															queryId:
@@ -1069,6 +1182,7 @@ export const NotebookCell = observer(
 								);
 							})()}
 						</div>
+						{renderOutputFooter()}
 					</DialogContent>
 				</Dialog>
 			</div>
