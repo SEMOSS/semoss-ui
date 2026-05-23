@@ -185,7 +185,9 @@ export const GlobalNav = observer(() => {
 		{
 			limit: 25,
 		},
-		[debouncedSearch],
+		// Re-fetch on search change OR when the chat store's
+		// roomCounter increments (rename / delete elsewhere in app).
+		[debouncedSearch, chat.keys.roomCounter],
 	);
 
 	/**
@@ -362,7 +364,7 @@ export const GlobalNav = observer(() => {
 
 		try {
 			await runPixel(
-				`RenameRoom(roomId=["${roomId}"], name=["${editingName}"]);`,
+				`META | RenameRoom(roomId=["${roomId}"], name=["${editingName}"]);`,
 			);
 
 			toast.success(t("toasts.roomRenamedSuccess"));

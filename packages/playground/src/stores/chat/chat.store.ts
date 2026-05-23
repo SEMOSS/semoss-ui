@@ -301,6 +301,29 @@ export class ChatStore {
 	};
 
 	/**
+	 * Rename a room. Runs the RenameRoom pixel, updates the cached
+	 * room's metadata, and bumps the roomCounter so any room lists
+	 * elsewhere in the app (sidebar, chats page, per-agent timeline)
+	 * refetch and stay in sync.
+	 */
+	renameRoom = async (roomId: string, name: string): Promise<void> => {
+		const trimmed = name.trim();
+		if (!trimmed) {
+			throw new Error("Room name cannot be empty");
+		}
+		await this._actions.run<[boolean]>(
+			`META | RenameRoom(roomId=["${roomId}"], name=["<encode>${trimmed}</encode>"]);`,
+		);
+		runInAction(() => {
+			const cached = this._store.rooms[roomId];
+			if (cached) {
+				cached.setMetadata({ name: trimmed });
+			}
+			this._store.keys.roomCounter++;
+		});
+	};
+
+	/**
 	 * Load a room from the store or create a new one
 	 * @param roomId - Room to remove
 	 */
