@@ -26,8 +26,8 @@ import {
 import { getContextMenuPosition } from "@/components/shared/common";
 import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
-import { GridBlockContextMenu } from "../grid-block/GridBlockContextMenu";
 import type { GridBlockColumn } from "../grid-block/grid-block.types";
+import { GridBlockContextMenu } from "../grid-block/grid-block-context-menu";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";

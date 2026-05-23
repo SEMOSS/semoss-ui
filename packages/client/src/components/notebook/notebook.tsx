@@ -6,12 +6,12 @@ import {
 	verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import React, { useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
 import { Button, Spinner } from "@semoss/ui/next";
-import { NotebookCell } from "./NotebookCell";
+import { NotebookCell } from "./notebook-cell";
 
 interface NotebookProps {
 	/** Id of the notebook */
@@ -24,31 +24,47 @@ const SortableItems = ({
 	children,
 }: {
 	id: string;
-	children: React.ReactNode;
+	children: React.ReactElement;
 }) => {
-	// Use the sortable context
-	const { attributes, listeners, setNodeRef, transform, transition } =
-		useSortable({ id });
-
-	// Apply styles to the list items based on their state
-	const style: React.CSSProperties = {
-		transform: CSS.Transform.toString(transform),
+	const {
+		attributes,
+		listeners,
+		setNodeRef,
+		transform,
 		transition,
-		display: "flex",
-		alignItems: "center",
-		gap: 4,
+		isDragging,
+	} = useSortable({ id });
+
+	// `CSS.Translate.toString` emits only translate3d (no scaleX/scaleY) so
+	// cells with different heights don't visually morph during a drag.
+	const style: React.CSSProperties = {
+		transform: CSS.Translate.toString(transform),
+		transition,
 	};
+
+	if (isDragging) {
+		// Collapsed single-row preview while dragging — keeps large cells
+		// (long code editors, model comparisons, etc.) from blocking the view
+		// or flickering as they pass over neighbours. The real cell snaps
+		// back to its full height once the drop lands.
+		return (
+			<div ref={setNodeRef} style={style}>
+				<div
+					{...attributes}
+					{...listeners}
+					className="my-1 flex w-full cursor-grabbing items-center gap-2 rounded-sm border border-primary border-dashed bg-primary/5 px-3 py-1.5 text-muted-foreground text-xs shadow-sm"
+				>
+					<span className="font-mono">Moving cell {id}</span>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<div key={`action-${id}`} ref={setNodeRef} style={style}>
-			<div
-				{...attributes}
-				{...listeners}
-				className="cursor-grab self-start pt-2"
-			>
-				<GripVertical className="size-4 text-muted-foreground/40" />
-			</div>
-			{children}
+			{React.cloneElement(children, {
+				dragHandleProps: { ...attributes, ...listeners },
+			})}
 		</div>
 	);
 };
@@ -130,17 +146,12 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 					<div className="flex h-full w-full flex-1 flex-col overflow-auto px-3 py-2">
 						{notebook.list.map((cellId) => (
 							<SortableItems key={cellId} id={cellId}>
-								<div
-									key={cellId}
-									className="flex w-full flex-col"
-								>
-									<NotebookCell
-										queryId={id}
-										cellId={cellId}
-										cellPlayCounter={cellPlayCounter}
-										setCellPlayCounter={setCellPlayCounter}
-									/>
-								</div>
+								<NotebookCell
+									queryId={id}
+									cellId={cellId}
+									cellPlayCounter={cellPlayCounter}
+									setCellPlayCounter={setCellPlayCounter}
+								/>
 							</SortableItems>
 						))}
 					</div>

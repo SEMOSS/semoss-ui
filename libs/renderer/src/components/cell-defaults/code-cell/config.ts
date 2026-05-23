@@ -1,5 +1,5 @@
 import type { CellConfig } from "../../../store";
-import { CodeCell, type CodeCellDef } from "./CodeCell";
+import { CodeCell, type CodeCellDef } from "./code-cell";
 
 export const CodeCellConfig: CellConfig<CodeCellDef> = {
 	name: "Code",

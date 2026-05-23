@@ -5,7 +5,7 @@ import { Blocks } from "../../components/blocks";
 import {
 	CodeCell,
 	type CodeCellDef,
-} from "../../components/cell-defaults/code-cell/CodeCell";
+} from "../../components/cell-defaults/code-cell/code-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK interactions

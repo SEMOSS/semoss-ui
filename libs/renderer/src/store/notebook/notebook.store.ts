@@ -103,7 +103,7 @@ export class NotebookStore {
 	 * @param queryId - id of the block that is selected
 	 */
 	selectCell(queryId: string, cellId: string) {
-		// select the cell
+		this._store.selectedQueryId = queryId;
 		this._store.selectedCells[queryId] = cellId;
 	}
 

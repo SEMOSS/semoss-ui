@@ -395,21 +395,32 @@ export class CellState<D extends CellDef = CellDef> {
 					this._store.output = output;
 				});
 			} else if (Array.isArray(raw)) {
-				// Collect responses for each call to store in state.
-				let opTypes = [];
-				const outputs = [];
+				// Run all pixels in parallel (each kicks off its own async job
+				// and polls independently). For LLM cells this lets several
+				// models stream their responses concurrently instead of
+				// blocking on the slowest one.
+				const settled = await Promise.allSettled(
+					raw.map((str) => this.runPixel(str)),
+				);
 
-				for (const str of raw) {
-					const { opType, output } = await this.runPixel(str);
-					opTypes = [...opTypes, ...opType];
-					outputs.push(output);
+				const opTypes: string[] = [];
+				const outputs: unknown[] = [];
+				for (const result of settled) {
+					if (result.status === "fulfilled") {
+						opTypes.push(...result.value.opType);
+						outputs.push(result.value.output);
+					} else {
+						const message =
+							result.reason instanceof Error
+								? result.reason.message
+								: String(result.reason);
+						opTypes.push("ERROR");
+						outputs.push(message);
+					}
 				}
 
 				runInAction(() => {
-					// store the operation and output
 					this._store.operation = opTypes;
-
-					// save the last output
 					this._store.output = outputs;
 				});
 			}

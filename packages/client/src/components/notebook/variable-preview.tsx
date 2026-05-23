@@ -8,7 +8,7 @@ import {
 } from "@semoss/renderer";
 import { Separator } from "@semoss/ui/next";
 import PreviewButton from "@/assets/img/PreviewRounded.png";
-import { JsonValueViewer } from "@/components/common/JsonValueViewer";
+import { JsonValueViewer } from "@/components/common/json-value-viewer";
 import { capitalizeFirstLetter, isOutputJSON } from "@/utility";
 
 interface VariablePreviewProps {

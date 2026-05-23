@@ -21,8 +21,8 @@ import {
 } from "@semoss/ui/next";
 import { useWorkspace } from "@/hooks";
 import { suggestVariableRenames } from "../blocks-workspace/utils";
-import { AddVariablePopover } from "./AddVariablePopover";
-import { VariablePreview } from "./VariablePreview";
+import { AddVariablePopover } from "./add-variable-popover";
+import { VariablePreview } from "./variable-preview";
 
 interface NotebookTokenProps {
 	/** Id of the variable */

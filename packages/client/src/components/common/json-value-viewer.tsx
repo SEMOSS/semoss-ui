@@ -1,5 +1,10 @@
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+	ChevronDown,
+	ChevronRight,
+	ChevronsDownUp,
+	ChevronsUpDown,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 interface JsonValueViewerProps {
 	value: unknown;
@@ -125,7 +130,15 @@ const JsonTreeNode = ({
 	);
 };
 
+const hasNestedObject = (value: unknown): boolean => {
+	if (!isObjectValue(value)) return false;
+	return Object.values(value).some(isObjectValue);
+};
+
 export const JsonValueViewer = ({ value }: JsonValueViewerProps) => {
+	const [expandAll, setExpandAll] = useState<boolean | undefined>(undefined);
+	const showToggle = useMemo(() => hasNestedObject(value), [value]);
+
 	if (value === null || typeof value === "undefined") {
 		return (
 			<span className="text-muted-foreground text-xs">{`${value}`}</span>
@@ -137,8 +150,33 @@ export const JsonValueViewer = ({ value }: JsonValueViewerProps) => {
 	}
 
 	return (
-		<div className="max-h-[275px] overflow-auto font-mono text-[13px] text-foreground leading-[1.4]">
-			<JsonTreeNode value={value} parentRefs={[]} />
+		<div className="relative">
+			{showToggle && (
+				<button
+					type="button"
+					aria-label={
+						expandAll
+							? "Collapse all JSON nodes"
+							: "Expand all JSON nodes"
+					}
+					title={expandAll ? "Collapse all" : "Expand all"}
+					className="absolute top-0 right-0 z-10 inline-flex items-center rounded-sm bg-background/80 p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+					onClick={() => setExpandAll((v) => !v)}
+				>
+					{expandAll ? (
+						<ChevronsDownUp className="size-3" />
+					) : (
+						<ChevronsUpDown className="size-3" />
+					)}
+				</button>
+			)}
+			<div className="max-h-[275px] overflow-auto font-mono text-[13px] text-foreground leading-[1.4]">
+				<JsonTreeNode
+					value={value}
+					parentRefs={[]}
+					expandAll={expandAll}
+				/>
+			</div>
 		</div>
 	);
 };

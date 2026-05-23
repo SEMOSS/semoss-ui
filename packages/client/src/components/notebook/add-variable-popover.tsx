@@ -25,7 +25,7 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
-import { MonacoEditor } from "@semoss/shared";
+import { EngineSubtypeIcon, MonacoEditor } from "@semoss/shared";
 import {
 	Alert,
 	AlertDescription,
@@ -45,7 +45,7 @@ import {
 	toast,
 } from "@semoss/ui/next";
 import PreviewButton from "@/assets/img/PreviewRounded.png";
-import { JsonValueViewer } from "@/components/common/JsonValueViewer";
+import { JsonValueViewer } from "@/components/common/json-value-viewer";
 // TODO: MOVE TO SDK/UTILITY LIB
 import {
 	capitalizeFirstLetter,
@@ -198,6 +198,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		value: string;
 		label: string;
 		subtitle?: string;
+		engineType?: string;
+		engineSubtype?: string;
 	}[] => {
 		if (variableType === "block") {
 			return inputBlocks.map((block) => ({
@@ -221,30 +223,40 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				value: m.engine_id,
 				label: m.engine_name,
 				subtitle: m.engine_id,
+				engineType: m.engine_type,
+				engineSubtype: m.engine_subtype,
 			}));
 		} else if (variableType === "database") {
 			return engines.databases.map((m) => ({
 				value: m.engine_id,
 				label: m.engine_name,
 				subtitle: m.engine_id,
+				engineType: m.engine_type,
+				engineSubtype: m.engine_subtype,
 			}));
 		} else if (variableType === "storage") {
 			return engines.storages.map((m) => ({
 				value: m.engine_id,
 				label: m.engine_name,
 				subtitle: m.engine_id,
+				engineType: m.engine_type,
+				engineSubtype: m.engine_subtype,
 			}));
 		} else if (variableType === "function") {
 			return engines.functions.map((m) => ({
 				value: m.engine_id,
 				label: m.engine_name,
 				subtitle: m.engine_id,
+				engineType: m.engine_type,
+				engineSubtype: m.engine_subtype,
 			}));
 		} else if (variableType === "vector") {
 			return engines.vectors.map((m) => ({
 				value: m.engine_id,
 				label: m.engine_name,
 				subtitle: m.engine_id,
+				engineType: m.engine_type,
+				engineSubtype: m.engine_subtype,
 			}));
 		}
 		return [];
@@ -337,15 +349,24 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						}
 					}}
 				>
-					<SelectTrigger className="h-auto min-h-10 py-2">
+					<SelectTrigger className="h-auto min-h-10 w-full py-2">
 						{isEngineType(variableType) && engine ? (
 							<div className="flex items-center gap-2 text-left">
-								{(() => {
-									const Icon = ENGINE_ICONS[variableType];
-									return Icon ? (
-										<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-									) : null;
-								})()}
+								{engine.engine_type ? (
+									<EngineSubtypeIcon
+										engineType={engine.engine_type}
+										engineSubtype={engine.engine_subtype}
+										alt={`${engine.engine_name} icon`}
+										className="size-5 shrink-0 object-contain"
+									/>
+								) : (
+									(() => {
+										const Icon = ENGINE_ICONS[variableType];
+										return Icon ? (
+											<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+										) : null;
+									})()
+								)}
 								<div className="flex flex-col items-start gap-0.5">
 									<span className="font-medium text-sm leading-tight">
 										{engine.engine_name}
@@ -364,13 +385,24 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							opt.subtitle ? (
 								<SelectItem key={opt.value} value={opt.value}>
 									<div className="flex items-center gap-2">
-										{(() => {
-											const Icon =
-												ENGINE_ICONS[variableType];
-											return Icon ? (
-												<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-											) : null;
-										})()}
+										{opt.engineType ? (
+											<EngineSubtypeIcon
+												engineType={opt.engineType}
+												engineSubtype={
+													opt.engineSubtype
+												}
+												alt={`${opt.label} icon`}
+												className="size-5 shrink-0 object-contain"
+											/>
+										) : (
+											(() => {
+												const Icon =
+													ENGINE_ICONS[variableType];
+												return Icon ? (
+													<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+												) : null;
+											})()
+										)}
 										<div className="flex flex-col items-start gap-0.5">
 											<span className="font-medium text-sm leading-tight">
 												{opt.label}
@@ -702,7 +734,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 									setVariableType(val as VariableType);
 								}}
 							>
-								<SelectTrigger>
+								<SelectTrigger className="w-full">
 									<SelectValue placeholder="Select Type" />
 								</SelectTrigger>
 								<SelectContent>
