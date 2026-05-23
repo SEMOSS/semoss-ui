@@ -6,7 +6,7 @@ import {
 	DropdownMenuTrigger,
 } from "@semoss/ui/next";
 import { useBlock, type useFrame } from "../../../hooks";
-import type { GridBlockDef } from "./GridBlock";
+import type { GridBlockDef } from "./grid-block";
 import type { GridBlockColumn } from "./grid-block.types";
 
 export interface GridBlockContextMenuProps {

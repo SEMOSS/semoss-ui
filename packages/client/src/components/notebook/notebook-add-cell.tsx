@@ -5,8 +5,7 @@ import {
 	Code2,
 	Database,
 	Filter,
-	MoreVertical,
-	RefreshCw,
+	FunctionSquare,
 	Search,
 	X,
 } from "lucide-react";
@@ -59,24 +58,17 @@ const Transformations = Array.from(Object.values(TransformationCells)).map(
 
 const DataImportDropdownOptions = [
 	{
-		display: "From Data Catalog",
+		display: "Query Builder",
 		defaultCellType: null,
 	},
 	{
-		display: "Custom Import (SQL)",
+		display: "Custom Query",
 		defaultCellType: "query-import",
 	},
 	{
 		display: "From CSV",
 		defaultCellType: null,
 		disabled: true,
-	},
-];
-
-const OtherOptions = [
-	{
-		display: "Send Email",
-		defaultCellType: "send-email",
 	},
 ];
 
@@ -114,18 +106,13 @@ const AddCellOptions: Record<string, AddCellOption> = {
 	},
 	transformation: {
 		display: "Transformation",
-		icon: <RefreshCw className="size-4" />,
+		icon: <FunctionSquare className="size-4" />,
 		options: Transformations,
 	},
 	llm: {
 		display: "LLM",
 		defaultCellType: "llm",
 		icon: <Bot className="size-4" />,
-	},
-	others: {
-		display: "",
-		icon: <MoreVertical className="size-4" />,
-		options: OtherOptions,
 	},
 };
 
@@ -319,13 +306,12 @@ export const NotebookAddCell = observer(
 														className="h-7 w-7 p-0 text-muted-foreground"
 													>
 														{value.icon}
-														{key !== "others" &&
-															(selectedAddCell ===
-															key ? (
-																<ChevronUp className="-ml-1 size-2.5" />
-															) : (
-																<ChevronDown className="-ml-1 size-2.5" />
-															))}
+														{selectedAddCell ===
+														key ? (
+															<ChevronUp className="-ml-1 size-2.5" />
+														) : (
+															<ChevronDown className="-ml-1 size-2.5" />
+														)}
 													</Button>
 												</DropdownMenuTrigger>
 												<DropdownMenuContent align="start">

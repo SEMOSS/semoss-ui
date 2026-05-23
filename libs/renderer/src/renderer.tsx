@@ -53,7 +53,6 @@ export const Renderer = observer((props: RendererProps) => {
 	});
 
 	useEffect(() => {
-		console.log(URLroute);
 		// start the loading
 		setIsLoading(true);
 
@@ -182,9 +181,6 @@ const getCurrentPageId = (state: SerializedState) => {
 	const URLroute = window.location.href;
 	const match = URLroute.match(/([^/]+)$/);
 	const currentBlockRoute = match ? match[1] : "";
-
-	console.log("urlroute", URLroute);
-	console.log("currentBlockRoute", currentBlockRoute);
 
 	let activePageID = "";
 	const blocks = state?.blocks;

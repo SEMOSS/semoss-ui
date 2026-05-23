@@ -564,12 +564,6 @@ export class StateStore {
 	 */
 	dispatch = async (action: Actions, callbackMessage?: "sync" | "async") => {
 		// TODO: Develop History + Invert + UNDO;
-		console.log(
-			"ACTION :::",
-			JSON.parse(JSON.stringify(action.message)),
-			JSON.parse(JSON.stringify(action.payload)),
-		);
-
 		try {
 			/**
 			 * --------------------------------------------------

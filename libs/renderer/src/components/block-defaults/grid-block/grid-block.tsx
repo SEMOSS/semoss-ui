@@ -6,7 +6,7 @@ import {
 	ChevronRight,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
 	Button,
 	Select,
@@ -22,32 +22,11 @@ import {
 	TableRow,
 } from "@semoss/ui/next";
 import { getContextMenuPosition } from "@/components/shared/common";
-import { useBlock, useBlocks, useFrame, useFrameHeaders } from "../../../hooks";
-import {
-	ActionMessages,
-	type BlockComponent,
-	type BlockDef,
-} from "../../../store";
-import { CustomToolbar } from "./CustomToolbar";
-import { GridBlockContextMenu } from "./GridBlockContextMenu";
-import { GridFooter } from "./GridFooter";
+import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
+import type { BlockComponent, BlockDef } from "../../../store";
+import { CustomToolbar } from "./custom-toolbar";
 import type { GridBlockColumn } from "./grid-block.types";
-
-// Type for query import cell parameters
-interface QueryImportCellParams {
-	frameVariableName?: string;
-	enableBatching?: boolean;
-	batchSize?: number;
-	currentOffset?: number;
-}
-
-// Type for data import cell parameters
-interface DataImportCellParams {
-	frameVariableName?: string;
-	enableBatching?: boolean;
-	batchSize?: number;
-	currentOffset?: number;
-}
+import { GridBlockContextMenu } from "./grid-block-context-menu";
 
 const DEFAULT_HEIGHT = "300px";
 const DEFAULT_WIDTH = "500px";
@@ -142,17 +121,10 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 
 export const GridBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData } = useBlock<GridBlockDef>(id);
-	const { state } = useBlocks();
 	const [paginationModel, setPaginationModel] = useState({
 		page: 0,
 		pageSize: 50,
 	});
-	const [loadingMore, setLoadingMore] = useState(false);
-	const [accumulatedData, setAccumulatedData] = useState<unknown[][]>([]);
-	const accumulatedDataRef = useRef<unknown[][]>([]);
-	const lastProcessedOffsetRef = useRef<number>(-1);
-	const lastFrameDataRef = useRef<unknown[][]>([]);
-	const lastFrameKeyRef = useRef<number | null>(null);
 
 	const [contextMenu, setContextMenu] = useState<{
 		mouseX: number;
@@ -166,59 +138,10 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		direction: "asc" | "desc";
 	} | null>(null);
 
-	// Find the source QueryImportCell or DataImportCell that created this frame
-	// We need to find the cell whose frameVariableName matches our base name
-	const sourceCell = Object.values(state.queries)
-		.flatMap((q) => Object.values(q.cells))
-		.find((cell) => {
-			if (cell.widget === "query-import") {
-				const frameVar = (cell.parameters as QueryImportCellParams)
-					.frameVariableName;
-				return frameVar === data.frame.name;
-			}
-			if (cell.widget === "data-import") {
-				const frameVar = (cell.parameters as DataImportCellParams)
-					.frameVariableName;
-				return frameVar === data.frame.name;
-			}
-			return false;
-		});
-
-	// Check if batching is enabled (works for both QueryImportCell and DataImportCell)
-	// Only enable batching if we found a matching source cell
-	const isBatchingEnabled = sourceCell
-		? ((
-				sourceCell?.parameters as
-					| QueryImportCellParams
-					| DataImportCellParams
-			)?.enableBatching ?? false)
-		: false;
-
-	const batchSize = sourceCell
-		? ((
-				sourceCell?.parameters as
-					| QueryImportCellParams
-					| DataImportCellParams
-			)?.batchSize ?? 100)
-		: 100;
-
-	// Always fetch from the original frame
-	const currentOffset = sourceCell
-		? ((
-				sourceCell?.parameters as
-					| QueryImportCellParams
-					| DataImportCellParams
-			)?.currentOffset ?? 0)
-		: 0;
-	const frameName = data.frame.name;
-
-	// get the frame - when batching is enabled, don't apply pagination
-	const frame = useFrame(frameName, {
+	const frame = useFrame(data.frame.name, {
 		selector: undefined,
-		offset: isBatchingEnabled
-			? undefined
-			: paginationModel.page * paginationModel.pageSize,
-		limit: isBatchingEnabled ? undefined : paginationModel.pageSize,
+		offset: paginationModel.page * paginationModel.pageSize,
+		limit: paginationModel.pageSize,
 		enableCount: true,
 	});
 
@@ -227,7 +150,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	/**
 	 * Anytime our Frame Headers change, we need to sync our column block data with our source of truth
-	 * This ensures all columns are present, especially important for batching scenarios
 	 */
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — sync only on header list change
 	useEffect(() => {
@@ -239,89 +161,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			}
 		}
 	}, [frameHeaders.data.list, frameHeaders.isLoading]);
-
-	/**
-	 * Handle data accumulation when batching is enabled
-	 * Also handles filter detection - when filters change, frame key changes and offset resets to 0
-	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — deps use .length to avoid stale closure on full array
-	useEffect(() => {
-		if (!isBatchingEnabled) {
-			if (accumulatedDataRef.current.length > 0) {
-				accumulatedDataRef.current = [];
-				lastProcessedOffsetRef.current = -1;
-				lastFrameDataRef.current = [];
-				setAccumulatedData([]);
-				lastFrameKeyRef.current = null;
-			}
-			return;
-		}
-
-		// Wait for frame data to be available
-		if (!frame.data.values.length) return;
-
-		// Don't process if cell is still loading
-		const isCurrentlyLoading = sourceCell?.isLoading ?? false;
-		if (isCurrentlyLoading) return;
-
-		// Check if frame data has actually changed (prevent processing stale data)
-		if (frame.data.values === lastFrameDataRef.current) {
-			return;
-		}
-
-		const currentFrameKey = state.getFrameKey(frameName);
-
-		// Initialize frame key on first render
-		if (lastFrameKeyRef.current === null) {
-			lastFrameKeyRef.current = currentFrameKey;
-		}
-
-		// Detect filter changes: frame key changed AND offset reset to 0
-		const isFilterChange =
-			currentFrameKey !== lastFrameKeyRef.current && currentOffset === 0;
-
-		if (isFilterChange) {
-			lastFrameKeyRef.current = currentFrameKey;
-			accumulatedDataRef.current = frame.data.values;
-			lastFrameDataRef.current = frame.data.values;
-			setAccumulatedData([...frame.data.values]);
-			lastProcessedOffsetRef.current = 0;
-			if (loadingMore) setLoadingMore(false);
-			return; // Exit early to prevent further processing
-		}
-
-		// Check if we've already processed this offset
-		if (currentOffset === lastProcessedOffsetRef.current) {
-			return; // Already processed this batch
-		}
-
-		// For offset 0: reset and start fresh (non-filter case)
-		if (currentOffset === 0) {
-			accumulatedDataRef.current = frame.data.values;
-			lastProcessedOffsetRef.current = 0;
-			lastFrameDataRef.current = frame.data.values;
-			setAccumulatedData([...frame.data.values]);
-			if (loadingMore) setLoadingMore(false);
-		} else if (currentOffset > lastProcessedOffsetRef.current) {
-			// Loading more - append new data to ref
-			const newData = [
-				...accumulatedDataRef.current,
-				...frame.data.values,
-			];
-			accumulatedDataRef.current = newData;
-			lastProcessedOffsetRef.current = currentOffset;
-			lastFrameDataRef.current = frame.data.values;
-			setAccumulatedData(newData);
-			setLoadingMore(false);
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [
-		isBatchingEnabled,
-		currentOffset,
-		frame.data.values.length,
-		sourceCell?.isLoading,
-		loadingMore,
-	]);
 
 	/**
 	 * Updates data.columns
@@ -341,44 +180,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	// Always use data.columns - user's column selections are respected
 	const columnsToDisplay = data.columns;
-
-	/**
-	 * Handle Load More button click
-	 */
-	const handleLoadMore = () => {
-		if (!sourceCell) return;
-		if (loadingMore || sourceCell.isLoading) return; // Prevent multiple clicks while loading
-
-		setLoadingMore(true);
-
-		// Update the offset in the source cell (works for both QueryImportCell and DataImportCell)
-		const newOffset =
-			((
-				sourceCell.parameters as
-					| QueryImportCellParams
-					| DataImportCellParams
-			).currentOffset ?? 0) + batchSize;
-		state.dispatch({
-			message: ActionMessages.UPDATE_CELL,
-			payload: {
-				queryId: sourceCell.query.id,
-				cellId: sourceCell.id,
-				path: "parameters.currentOffset",
-				value: newOffset,
-			},
-		});
-
-		// Run the cell to fetch next batch
-		setTimeout(() => {
-			state.dispatch({
-				message: ActionMessages.RUN_CELL,
-				payload: {
-					queryId: sourceCell.query.id,
-					cellId: sourceCell.id,
-				},
-			});
-		}, 100);
-	};
 
 	/**
 	 * Handle the callback for the context menu
@@ -466,10 +267,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	const showVerticalBorders = !!data.option?.rowSpanning;
 	const rowHeight = data.option?.rowSpanning ? 50 : undefined;
 
-	// When batching is enabled, use accumulated data; otherwise use frame data directly
-	const dataToDisplay = isBatchingEnabled
-		? accumulatedData
-		: frame.data.values;
+	const dataToDisplay = frame.data.values;
 
 	// Build a mapping from column name to data index using frame headers
 	// This ensures data aligns correctly with columns regardless of order
@@ -538,17 +336,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		}
 	};
 
-	// Disable Load More button if:
-	// Currently loading, or last batch was partial (less than batchSize rows)
-	const lastBatchWasPartial =
-		frame.data.values.length > 0 && frame.data.values.length < batchSize;
-	const hasNoRows = rows.length === 0;
-	const shouldDisableLoadMore =
-		loadingMore ||
-		sourceCell?.isLoading ||
-		lastBatchWasPartial ||
-		hasNoRows;
-
 	// Pagination display values
 	const totalRows = frame.count ?? 0;
 	const startRow =
@@ -616,7 +403,6 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 				{data.option?.enableExport && (
 					<CustomToolbar
 						frameName={data.frame?.name}
-						isBatchingEnabled={isBatchingEnabled}
 						onExportCsv={handleExportCsv}
 					/>
 				)}
@@ -818,84 +604,67 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					)}
 				</div>
 
-				{/* Footer — batch loading */}
-				{isBatchingEnabled && (
-					<GridFooter
-						isBatchingEnabled={isBatchingEnabled}
-						loadingMore={loadingMore}
-						shouldDisableLoadMore={shouldDisableLoadMore}
-						onLoadMore={handleLoadMore}
-					/>
-				)}
-
 				{/* Pagination — server-side */}
-				{!isBatchingEnabled && (
-					<div className="flex items-center justify-between border-t px-3 py-1.5 text-sm">
-						<div className="flex items-center gap-2">
-							<span className="text-muted-foreground">
-								Rows per page:
-							</span>
-							<Select
-								value={String(paginationModel.pageSize)}
-								onValueChange={(val) =>
-									handlePaginationModalChange({
-										page: 0,
-										pageSize: Number(val),
-									})
-								}
-							>
-								<SelectTrigger size="sm" className="w-16">
-									<SelectValue />
-								</SelectTrigger>
-								<SelectContent>
-									{[10, 50, 100].map((size) => (
-										<SelectItem
-											key={size}
-											value={String(size)}
-										>
-											{size}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</div>
+				<div className="flex items-center justify-between border-t px-3 py-1.5 text-sm">
+					<div className="flex items-center gap-2">
 						<span className="text-muted-foreground">
-							{startRow}–{endRow} of {totalRows}
+							Rows per page:
 						</span>
-						<div className="flex items-center gap-1">
-							<Button
-								variant="ghost"
-								size="icon"
-								className="size-8"
-								disabled={paginationModel.page === 0}
-								onClick={() =>
-									handlePaginationModalChange({
-										page: paginationModel.page - 1,
-										pageSize: paginationModel.pageSize,
-									})
-								}
-							>
-								<ChevronLeft className="size-4" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="icon"
-								className="size-8"
-								disabled={
-									paginationModel.page >= totalPages - 1
-								}
-								onClick={() =>
-									handlePaginationModalChange({
-										page: paginationModel.page + 1,
-										pageSize: paginationModel.pageSize,
-									})
-								}
-							>
-								<ChevronRight className="size-4" />
-							</Button>
-						</div>
+						<Select
+							value={String(paginationModel.pageSize)}
+							onValueChange={(val) =>
+								handlePaginationModalChange({
+									page: 0,
+									pageSize: Number(val),
+								})
+							}
+						>
+							<SelectTrigger size="sm" className="w-16">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								{[10, 50, 100].map((size) => (
+									<SelectItem key={size} value={String(size)}>
+										{size}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
 					</div>
-				)}
+					<span className="text-muted-foreground">
+						{startRow}–{endRow} of {totalRows}
+					</span>
+					<div className="flex items-center gap-1">
+						<Button
+							variant="ghost"
+							size="icon"
+							className="size-8"
+							disabled={paginationModel.page === 0}
+							onClick={() =>
+								handlePaginationModalChange({
+									page: paginationModel.page - 1,
+									pageSize: paginationModel.pageSize,
+								})
+							}
+						>
+							<ChevronLeft className="size-4" />
+						</Button>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="size-8"
+							disabled={paginationModel.page >= totalPages - 1}
+							onClick={() =>
+								handlePaginationModalChange({
+									page: paginationModel.page + 1,
+									pageSize: paginationModel.pageSize,
+								})
+							}
+						>
+							<ChevronRight className="size-4" />
+						</Button>
+					</div>
+				</div>
 			</div>
 			<GridBlockContextMenu
 				id={id}

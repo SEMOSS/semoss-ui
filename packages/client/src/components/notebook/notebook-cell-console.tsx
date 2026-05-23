@@ -1,4 +1,4 @@
-import { JsonValueViewer } from "@/components/common/JsonValueViewer";
+import { JsonValueViewer } from "@/components/common/json-value-viewer";
 import { isOutputJSON } from "@/utility/general";
 
 interface ConsoleProps {

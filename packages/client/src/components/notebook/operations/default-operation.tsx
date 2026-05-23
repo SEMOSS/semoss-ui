@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { JsonValueViewer } from "@/components/common/JsonValueViewer";
+import { JsonValueViewer } from "@/components/common/json-value-viewer";
 import { isOutputJSON } from "@/utility";
 
 interface DefaultOperationProps {

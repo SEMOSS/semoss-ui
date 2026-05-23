@@ -1,9 +1,9 @@
 import { observer } from "mobx-react-lite";
 import type { CellState } from "@semoss/renderer";
-import { DefaultOperation } from "./DefaultOperation";
+import { DefaultOperation } from "./default-operation";
 import { ErrorOperation } from "./ErrorOperation";
 import { FrameOperation } from "./FrameOperation";
-import { SuccessOperation } from "./SuccessOperation";
+import { SuccessOperation } from "./success-operation";
 import { WarningOperation } from "./WarningOperation";
 
 interface OperationProps {

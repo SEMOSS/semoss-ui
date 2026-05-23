@@ -11,7 +11,7 @@ export { RendererEngine } from "./components/blocks";
 /**
  * PRE-CANNED MODULE THAT HANDLES APP INTERACTION (END-USER)
  */
-export * from "./Renderer";
+export * from "./renderer";
 
 /**
  * ------------------------------------------------
@@ -30,7 +30,7 @@ export type {
 	ColorRule,
 	HeaderBackgroundSettings,
 	WrapTextSettings,
-} from "./components/block-defaults/grid-block/GridBlock";
+} from "./components/block-defaults/grid-block/grid-block";
 export type { GridBlockColumn } from "./components/block-defaults/grid-block/grid-block.types";
 export type { GridDynamicFrameBlockDef } from "./components/block-defaults/grid-dynamic-frame-block";
 export type { PDFViewerBlockDef } from "./components/block-defaults/pdfViewer-block";
@@ -45,7 +45,7 @@ export { DataImportCellConfig } from "./components/cell-defaults/data-import-cel
 export { FilterDataCellConfig } from "./components/cell-defaults/filter-data-cell";
 export { QueryImportCellConfig } from "./components/cell-defaults/query-import-cell";
 export { UnFilterDataCellConfig } from "./components/cell-defaults/unfilter-data-cell";
-export { DataImportFormModal } from "./components/shared/DataImportFormModal";
+export { DataImportFormModal } from "./components/shared/data-import-form-modal";
 // HOOKS
 export {
 	useBlock,

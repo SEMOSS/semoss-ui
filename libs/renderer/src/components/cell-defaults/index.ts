@@ -38,7 +38,6 @@ import {
 	QueryImportCellConfig,
 	type QueryImportCellDef,
 } from "./query-import-cell";
-import { SendEmailCellConfig, type SendEmailCellDef } from "./send-email-cell";
 import type { TransformationCellDef } from "./shared";
 import { TextToSqlCellConfig, type TextToSqlCellDef } from "./text-to-sql-cell";
 import {
@@ -71,7 +70,6 @@ export type DefaultCellDefinitions =
 	| LLMCellDef
 	| MCPToolCellDef
 	| QueryImportCellDef
-	| SendEmailCellDef
 	| TextToSqlCellDef
 	| TransformationCellDef
 	| TimestampTransformationCellDef
@@ -104,7 +102,6 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 		EncodeColumnTransformationCellConfig,
 	[CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
 	[LLMCellConfig.widget]: LLMCellConfig,
-	[SendEmailCellConfig.widget]: SendEmailCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
