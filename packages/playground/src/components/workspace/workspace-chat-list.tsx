@@ -4,6 +4,7 @@ import {
 	ArrowRightIcon,
 	CheckIcon,
 	PencilIcon,
+	SearchIcon,
 	StarIcon,
 	Trash2Icon,
 	XIcon,
@@ -22,12 +23,17 @@ import {
 	DialogHeader,
 	DialogTitle,
 	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Muted,
 	Spinner,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useDebouncedValue,
+	useInfiniteScroll,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 
@@ -35,21 +41,19 @@ dayjs.extend(relativeTime);
 
 interface WorkspaceChatListProps {
 	/**
-	 * List of chats associated with the workspace
+	 * Workspace (agent) id whose chats to render.
 	 */
 	workspaceId: string;
 
 	/**
-	 * Search the chats by name
-	 */
-	search: string;
-
-	/**
-	 * Cap the initial fetch to this many rooms (and skip the pinned
-	 * query). Default behavior fetches up to 25 rooms and a pinned-rooms
-	 * query for favorite indicators.
+	 * Page size for the iterator. Default 25.
 	 */
 	limit?: number;
+
+	/**
+	 * Max height for the scrollable list area. Default `24rem` (`max-h-96`).
+	 */
+	maxHeightClassName?: string;
 }
 
 interface Room {
@@ -74,12 +78,14 @@ interface PinnedRoom {
  */
 export const WorkspaceChatList = ({
 	workspaceId,
-	search,
 	limit,
+	maxHeightClassName = "max-h-96",
 }: WorkspaceChatListProps) => {
 	const { t } = useTranslation("workspace");
 	const { chat } = useChat();
 
+	const [search, setSearch] = useState("");
+	const debouncedSearch = useDebouncedValue(search);
 	const [deletedSet, setDeletedSet] = useState<Set<string>>(new Set());
 	const [pendingDelete, setPendingDelete] = useState<Room | null>(null);
 	const [isDeleting, setIsDeleting] = useState(false);
@@ -92,17 +98,22 @@ export const WorkspaceChatList = ({
 		{ total_count: number; rooms: Room[] },
 		Room
 	>(
-		(l, offset) =>
-			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${search ? `filters=[Filter(room_name ?like "${search}")],` : ""} limit=[${l}], offset=[${offset}]);`,
+		(limit, offset) =>
+			`GetWorkspaceRooms(workspaceId=["${workspaceId}"], ${debouncedSearch ? `filters=[Filter(ROOM__ROOM_NAME ?like "<encode>${debouncedSearch}</encode>")],` : ""} limit=[${limit}], offset=[${offset}]);`,
 		(response) => response.total_count,
 		(response) => response.rooms,
 		{ limit: limit ?? 25 },
-		[search, workspaceId],
+		[debouncedSearch, workspaceId, chat.keys.roomCounter],
 	);
+
+	const { setScroll } = useInfiniteScroll({
+		disabled: getWorkspaceRooms.isLoading || !getWorkspaceRooms.hasMore,
+		onNext: () => getWorkspaceRooms.next(),
+	});
 
 	// Cross-workspace pinned-rooms query — filtered locally to this workspace
 	const getPinnedRooms = usePixel<PinnedRoom[]>(
-		`META | GetPlaygroundRooms(pinned=[true], offset=0, sort=["DESC"])`,
+		`META | GetPlaygroundRooms(pinned=[true], sort=["DESC"]);`,
 		{ data: [] },
 	);
 
@@ -219,7 +230,7 @@ export const WorkspaceChatList = ({
 		setIsRenaming(true);
 		try {
 			await runPixel(
-				`RenameRoom(roomId=["${editingId}"], name=["${trimmed}"]);`,
+				`RenameRoom(roomId=["${editingId}"], name=["<encode>${trimmed}</encode>"]);`,
 			);
 			toast.success(t("chat.renameSuccess"));
 			setEditingId(null);
@@ -239,87 +250,137 @@ export const WorkspaceChatList = ({
 		</div>
 	);
 
-	if (getWorkspaceRooms.isLoading && getWorkspaceRooms.data.length === 0) {
-		return renderState(<Spinner />);
-	}
-
-	if (getWorkspaceRooms.isError) {
-		return renderState(
-			<>
-				{t("chat.error")} {getWorkspaceRooms.error?.message}
-			</>,
-		);
-	}
-
-	if (visibleRooms.length === 0) {
-		return renderState(<Muted>{t("chat.noChats")}</Muted>);
-	}
+	const showInitialLoading =
+		getWorkspaceRooms.isLoading && getWorkspaceRooms.data.length === 0;
+	const showError = !showInitialLoading && getWorkspaceRooms.isError;
+	const showEmpty =
+		!showInitialLoading && !showError && visibleRooms.length === 0;
+	const showList = !showInitialLoading && !showError && !showEmpty;
 
 	return (
 		<>
-			<div className="flex flex-col">
-				{groups.map((g, gi) => {
-					const isLast = gi === groups.length - 1;
-					return (
-						<div key={g.ts} className="flex gap-4">
-							{/* Timeline column */}
-							<div className="relative flex w-3 shrink-0 flex-col items-center pt-2">
-								<div
-									className={cn(
-										"z-10 size-3 shrink-0 rounded-full ring-2 ring-background",
-										gi === 0
-											? "bg-primary"
-											: "bg-muted-foreground/40",
-									)}
-								/>
-								{!isLast && (
-									<div className="absolute top-3 bottom-0 w-px bg-border" />
-								)}
-							</div>
+			<div className="flex flex-col gap-3">
+				{/* Search */}
+				<InputGroup className="bg-background">
+					<InputGroupInput
+						placeholder={t("chat.searchPlaceholder", {
+							defaultValue: "Search chats",
+						})}
+						value={search}
+						onChange={(e) => setSearch(e.target.value)}
+					/>
+					<InputGroupAddon>
+						<SearchIcon />
+					</InputGroupAddon>
+				</InputGroup>
 
-							{/* Content column */}
-							<div
-								className={cn(
-									"flex min-w-0 flex-1 flex-col gap-2",
-									!isLast && "pb-6",
-								)}
-							>
-								<div className="text-muted-foreground text-sm">
-									{g.label}
-								</div>
-								<div className="flex flex-col gap-2">
-									{g.rooms.map((room) => (
-										<ChatRow
-											key={room.room_id}
-											t={t}
-											room={room}
-											isFavorite={pinnedSet.has(
-												room.room_id,
+				{/* Scrollable body — owns infinite scroll target */}
+				<div
+					ref={(el) => {
+						if (el) setScroll(el);
+					}}
+					className={cn("overflow-y-auto pr-1", maxHeightClassName)}
+				>
+					{showInitialLoading && renderState(<Spinner />)}
+					{showError &&
+						renderState(
+							<>
+								{t("chat.error")}{" "}
+								{getWorkspaceRooms.error?.message}
+							</>,
+						)}
+					{showEmpty &&
+						renderState(<Muted>{t("chat.noChats")}</Muted>)}
+					{showList && (
+						<div className="flex flex-col">
+							{groups.map((g, gi) => {
+								const isLast = gi === groups.length - 1;
+								return (
+									<div key={g.ts} className="flex gap-4">
+										{/* Timeline column */}
+										<div className="relative flex w-3 shrink-0 flex-col items-center pt-2">
+											<div
+												className={cn(
+													"z-10 size-3 shrink-0 rounded-full ring-2 ring-background",
+													gi === 0
+														? "bg-primary"
+														: "bg-muted-foreground/40",
+												)}
+											/>
+											{!isLast && (
+												<div className="absolute top-3 bottom-0 w-px bg-border" />
 											)}
-											isEditing={
-												editingId === room.room_id
-											}
-											editingName={editingName}
-											setEditingName={setEditingName}
-											isRenaming={isRenaming}
-											onStartRename={() =>
-												handleStartRename(room)
-											}
-											onCancelRename={handleCancelRename}
-											onSaveRename={handleSaveRename}
-											onTogglePin={() =>
-												handleTogglePin(room.room_id)
-											}
-											onRequestDelete={() =>
-												setPendingDelete(room)
-											}
-										/>
-									))}
-								</div>
-							</div>
+										</div>
+
+										{/* Content column */}
+										<div
+											className={cn(
+												"flex min-w-0 flex-1 flex-col gap-2",
+												!isLast && "pb-6",
+											)}
+										>
+											<div className="text-muted-foreground text-sm">
+												{g.label}
+											</div>
+											<div className="flex flex-col gap-2">
+												{g.rooms.map((room) => (
+													<ChatRow
+														key={room.room_id}
+														t={t}
+														room={room}
+														isFavorite={pinnedSet.has(
+															room.room_id,
+														)}
+														isEditing={
+															editingId ===
+															room.room_id
+														}
+														editingName={
+															editingName
+														}
+														setEditingName={
+															setEditingName
+														}
+														isRenaming={isRenaming}
+														onStartRename={() =>
+															handleStartRename(
+																room,
+															)
+														}
+														onCancelRename={
+															handleCancelRename
+														}
+														onSaveRename={
+															handleSaveRename
+														}
+														onTogglePin={() =>
+															handleTogglePin(
+																room.room_id,
+															)
+														}
+														onRequestDelete={() =>
+															setPendingDelete(
+																room,
+															)
+														}
+													/>
+												))}
+											</div>
+										</div>
+									</div>
+								);
+							})}
+
+							{!showInitialLoading &&
+								getWorkspaceRooms.isLoading &&
+								getWorkspaceRooms.data.length > 0 && (
+									<div className="flex items-center justify-center p-4">
+										<Spinner className="size-4" />
+									</div>
+								)}
 						</div>
-					);
-				})}
+					)}
+				</div>
 			</div>
 
 			<Dialog
@@ -495,7 +556,12 @@ function ChatRow({
 			>
 				{room.room_name}
 			</span>
-			<div className="relative z-10 flex shrink-0 items-center gap-0.5">
+			{/* Right actions: rename + delete (both hover-revealed) + arrow.
+			    Wrapper is `pointer-events-none` so clicks on the arrow
+			    (purely visual) fall through to the stretched Link and
+			    navigate to the room. Each Button re-enables events on
+			    itself via `pointer-events-auto`. */}
+			<div className="pointer-events-none relative z-10 flex shrink-0 items-center gap-0.5">
 				{/* Rename */}
 				<Tooltip>
 					<TooltipTrigger asChild>
@@ -504,7 +570,7 @@ function ChatRow({
 							variant="ghost"
 							size="icon-sm"
 							aria-label={t("chat.rename")}
-							className="invisible text-muted-foreground hover:text-foreground focus-visible:visible group-hover/row:visible"
+							className="pointer-events-auto invisible text-muted-foreground hover:text-foreground focus-visible:visible group-hover/row:visible"
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
@@ -526,7 +592,7 @@ function ChatRow({
 							variant="ghost"
 							size="icon-sm"
 							aria-label={t("chat.delete")}
-							className="invisible text-muted-foreground hover:text-destructive focus-visible:visible group-hover/row:visible"
+							className="pointer-events-auto invisible text-muted-foreground hover:text-destructive focus-visible:visible group-hover/row:visible"
 							onClick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();

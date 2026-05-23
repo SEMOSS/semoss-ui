@@ -82,7 +82,7 @@ export const MembersTable = ({
 
 	useEffect(() => {
 		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
-			"META | GetUserInfo()",
+			"META | GetUserInfo();",
 		)
 			.then((result) => {
 				if (!result) return;

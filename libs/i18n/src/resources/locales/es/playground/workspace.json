@@ -62,7 +62,6 @@
 		"noChats": "No se encontraron chats",
 		"error": "Error:",
 		"selectRoom": "Seleccionar sala",
-		"updatedRelative": "Actualizado {{time}}",
 		"newChat": "Nuevo chat",
 		"delete": "Eliminar",
 		"cancel": "Cancelar",
@@ -140,6 +139,19 @@
 	"prompts": {
 		"noPrompts": "No se encontraron indicaciones",
 		"searchPlaceholder": "Buscar indicaciones..."
+	},
+	"chats": {
+		"title": "Todos los chats",
+		"subtitle": "Explora, busca y limpia tus chats.",
+		"selectAll": "Seleccionar todo",
+		"selectChat": "Seleccionar chat {{name}}",
+		"selectedCount": "{{count}} seleccionados",
+		"totalCount": "{{count}} chats",
+		"deleteSelected": "Eliminar {{count}} seleccionados",
+		"bulkDeleteConfirmTitle": "¿Eliminar {{count}} chats?",
+		"bulkDeleteConfirmDescription": "Esto eliminará permanentemente {{count}} chats. Esta acción no se puede deshacer.",
+		"bulkDeleteSuccess": "Se eliminaron {{count}} chats",
+		"bulkDeletePartialFail": "Error al eliminar {{failed}} de {{total}} chats"
 	},
 	"instructions": {
 		"expand": "Expandir",

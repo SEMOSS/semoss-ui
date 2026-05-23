@@ -142,10 +142,10 @@ export const WorkspaceDetailPage = observer(() => {
 	const hasInstructions = !!instructions.trim();
 
 	return (
-		<div className="h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
+		<div className="@container h-full w-full overflow-y-auto">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
 				{/* Sticky header so New Chat / Edit / Delete stay reachable while scrolling */}
-				<div className="-mx-12 -mt-8 sticky top-0 z-10 flex flex-row items-center gap-3 border-border border-b bg-background/95 px-12 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
 					<AppCatalogAvatar
 						name={workspace.name}
 						className="size-10 shrink-0 rounded-md text-base"
@@ -218,12 +218,7 @@ export const WorkspaceDetailPage = observer(() => {
 							<MessagesSquareIcon className="size-5" />
 							{t("workspace:detail.recentChats.title")}
 						</h2>
-						<div className="max-h-96 overflow-y-auto pr-2">
-							<WorkspaceChatList
-								workspaceId={workspaceId}
-								search=""
-							/>
-						</div>
+						<WorkspaceChatList workspaceId={workspaceId} />
 					</section>
 
 					{/* About */}

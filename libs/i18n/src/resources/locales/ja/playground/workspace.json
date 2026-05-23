@@ -62,7 +62,6 @@
 		"noChats": "チャットが見つかりません",
 		"error": "エラー:",
 		"selectRoom": "ルームを選択",
-		"updatedRelative": "{{time}}に更新",
 		"newChat": "新しいチャット",
 		"delete": "削除",
 		"cancel": "キャンセル",
@@ -140,6 +139,19 @@
 	"prompts": {
 		"noPrompts": "プロンプトが見つかりません",
 		"searchPlaceholder": "プロンプトを検索..."
+	},
+	"chats": {
+		"title": "すべてのチャット",
+		"subtitle": "チャットの閲覧・検索・整理ができます。",
+		"selectAll": "すべて選択",
+		"selectChat": "チャット「{{name}}」を選択",
+		"selectedCount": "{{count}} 件選択",
+		"totalCount": "{{count}} 件のチャット",
+		"deleteSelected": "{{count}} 件を削除",
+		"bulkDeleteConfirmTitle": "{{count}} 件のチャットを削除しますか？",
+		"bulkDeleteConfirmDescription": "{{count}} 件のチャットを完全に削除します。この操作は元に戻せません。",
+		"bulkDeleteSuccess": "{{count}} 件のチャットを削除しました",
+		"bulkDeletePartialFail": "{{total}} 件中 {{failed}} 件の削除に失敗しました"
 	},
 	"instructions": {
 		"expand": "展開",

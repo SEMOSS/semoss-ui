@@ -166,10 +166,9 @@ export class ChatStore {
 
 	getUser = async (): Promise<void> => {
 		try {
-			const result =
-				await this._actions.run<
-					[Record<string, { id: string; name: string }>]
-				>(`META | GetUserInfo()`);
+			const result = await this._actions.run<
+				[Record<string, { id: string; name: string }>]
+			>(`META | GetUserInfo();`);
 
 			if (!result) return;
 
@@ -360,7 +359,7 @@ export class ChatStore {
 		});
 
 		const { pixelReturn } = await this._actions.run<[number | undefined]>(
-			`META | GetContextWindow(${JSON.stringify(engineId)})`,
+			`META | GetContextWindow(${JSON.stringify(engineId)});`,
 		);
 
 		if (this.models.selected?.engine_id === engineId) {
@@ -460,7 +459,7 @@ export class ChatStore {
 
 		// initially limit to 10 models
 		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			`META | MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 		);
 
 		runInAction(() => {

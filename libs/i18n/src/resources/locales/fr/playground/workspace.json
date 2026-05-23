@@ -62,7 +62,6 @@
 		"noChats": "Aucun chat trouvé",
 		"error": "Erreur :",
 		"selectRoom": "Sélectionner une salle",
-		"updatedRelative": "Mis à jour {{time}}",
 		"newChat": "Nouveau chat",
 		"delete": "Supprimer",
 		"cancel": "Annuler",
@@ -140,6 +139,19 @@
 	"prompts": {
 		"noPrompts": "Aucune invite trouvée",
 		"searchPlaceholder": "Rechercher des invites..."
+	},
+	"chats": {
+		"title": "Toutes les discussions",
+		"subtitle": "Parcourez, recherchez et nettoyez vos discussions.",
+		"selectAll": "Tout sélectionner",
+		"selectChat": "Sélectionner la discussion {{name}}",
+		"selectedCount": "{{count}} sélectionnée(s)",
+		"totalCount": "{{count}} discussions",
+		"deleteSelected": "Supprimer les {{count}} sélectionnée(s)",
+		"bulkDeleteConfirmTitle": "Supprimer {{count}} discussions ?",
+		"bulkDeleteConfirmDescription": "Cela supprimera définitivement {{count}} discussions. Cette action est irréversible.",
+		"bulkDeleteSuccess": "{{count}} discussions supprimées",
+		"bulkDeletePartialFail": "Échec de la suppression de {{failed}} discussion(s) sur {{total}}"
 	},
 	"instructions": {
 		"expand": "Agrandir",
