@@ -147,8 +147,8 @@ export const EditWorkspacePage = observer(() => {
 
 	if (getWorkspace.status === "ERROR" || !workspaceId) {
 		return (
-			<div className="relative h-full w-full overflow-hidden">
-				<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 px-12 pt-8 pb-4">
+			<div className="@container relative h-full w-full overflow-hidden">
+				<div className="mx-auto flex h-full w-full max-w-5xl flex-col gap-8 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
 					<h1 className="font-semibold text-2xl">
 						{t("workspace:edit.errorTitle")}
 					</h1>
@@ -190,10 +190,10 @@ export const EditWorkspacePage = observer(() => {
 	};
 
 	return (
-		<div className="h-full w-full overflow-y-auto">
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4">
+		<div className="@container h-full w-full overflow-y-auto">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
 				{/* Sticky header so Save/Cancel stay reachable while scrolling */}
-				<div className="-mx-12 -mt-8 sticky top-0 z-10 flex flex-row items-center gap-3 border-border border-b bg-background/95 px-12 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
 					<div className="min-w-0 flex-1">
 						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
 							{t("workspace:edit.title")}

@@ -98,9 +98,9 @@ export const WorkspacePage = observer(() => {
 			ref={(el) => {
 				if (el) setScroll(el);
 			}}
-			className="h-full w-full overflow-y-auto"
+			className="@container h-full w-full overflow-y-auto"
 		>
-			<div className="mx-auto flex w-full max-w-5xl flex-col gap-12 px-12 pt-8 pb-4">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-12 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-primary/10">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-primary text-xl leading-normal dark:text-white">
@@ -117,7 +117,7 @@ export const WorkspacePage = observer(() => {
 						</Button>
 					</div>
 					{/* Image appears only on large screens and above */}
-					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
+					<div className="relative @3xl:block hidden w-[351px] overflow-hidden rounded-r-lg">
 						<img
 							src={src}
 							alt={t("workspace:images.agentIllustration")}
@@ -143,7 +143,7 @@ export const WorkspacePage = observer(() => {
 							<Muted>{t("workspace:messages.noResults")}</Muted>
 						</div>
 					) : (
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+						<div className="grid @2xl:grid-cols-2 @3xl:grid-cols-3 grid-cols-1 gap-4 @4xl:gap-x-8">
 							{getWorkspaces.data.map((w) => (
 								<WorkspaceCard
 									key={w.project_id}

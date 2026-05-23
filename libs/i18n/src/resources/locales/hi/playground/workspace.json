@@ -62,7 +62,6 @@
 		"noChats": "कोई चैट नहीं मिली",
 		"error": "त्रुटि:",
 		"selectRoom": "रूम चुनें",
-		"updatedRelative": "{{time}} अपडेट किया गया",
 		"newChat": "नई चैट",
 		"delete": "हटाएं",
 		"cancel": "रद्द करें",
@@ -140,6 +139,19 @@
 	"prompts": {
 		"noPrompts": "कोई प्रॉम्प्ट नहीं मिला",
 		"searchPlaceholder": "प्रॉम्प्ट खोजें..."
+	},
+	"chats": {
+		"title": "सभी चैट",
+		"subtitle": "अपनी चैट ब्राउज़ करें, खोजें और साफ़ करें।",
+		"selectAll": "सभी चुनें",
+		"selectChat": "चैट {{name}} चुनें",
+		"selectedCount": "{{count}} चुनी गई",
+		"totalCount": "{{count}} चैट",
+		"deleteSelected": "{{count}} चुनी गई हटाएं",
+		"bulkDeleteConfirmTitle": "{{count}} चैट हटाएं?",
+		"bulkDeleteConfirmDescription": "यह {{count}} चैट को स्थायी रूप से हटा देगा। इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"bulkDeleteSuccess": "{{count}} चैट हटा दी गईं",
+		"bulkDeletePartialFail": "{{total}} में से {{failed}} चैट हटाने में विफल"
 	},
 	"instructions": {
 		"expand": "विस्तृत करें",
