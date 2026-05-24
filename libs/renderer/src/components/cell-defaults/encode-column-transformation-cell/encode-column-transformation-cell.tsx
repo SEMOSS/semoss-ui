@@ -19,44 +19,38 @@ import {
 	type TransformationTargetCell,
 } from "../shared";
 
-export interface UppercaseTransformationDef
-	extends TransformationDef<"uppercase"> {
-	key: "uppercase";
+export interface EncodeColumnTransformationDef
+	extends TransformationDef<"encode-column"> {
+	key: "encode-column";
 	parameters: {
 		columns: ColumnInfo[];
 	};
 }
 
-export interface UppercaseTransformationCellDef
-	extends TransformationCellDef<"uppercase-transformation"> {
-	widget: "uppercase-transformation";
+export interface EncodeColumnTransformationCellDef
+	extends TransformationCellDef<"encode-column-transformation"> {
+	widget: "encode-column-transformation";
 	parameters: {
-		transformation: Transformation<UppercaseTransformationDef>;
+		transformation: Transformation<EncodeColumnTransformationDef>;
 		targetCell: TransformationTargetCell;
 	};
 }
 
-export const UppercaseTransformationCell: CellComponent<UppercaseTransformationCellDef> =
+export const EncodeColumnTransformationCell: CellComponent<EncodeColumnTransformationCellDef> =
 	observer((props) => {
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c: CellState<QueryImportCellDef> | undefined;
-			Object.values(state.queries).forEach((query) => {
-				if (query.cells[cell.parameters.targetCell.id]) {
-					c = query.cells[
-						cell.parameters.targetCell.id
-					] as CellState<QueryImportCellDef>;
-				}
-			});
-			return c;
+			return cell.query.cells[
+				cell.parameters.targetCell.id
+			] as CellState<QueryImportCellDef>;
 		}).get();
 
-		const cellTransformation: Transformation<UppercaseTransformationDef> =
+		const cellTransformation: Transformation<EncodeColumnTransformationDef> =
 			computed(() => {
 				return cell.parameters
-					.transformation as Transformation<UppercaseTransformationDef>;
+					.transformation as Transformation<EncodeColumnTransformationDef>;
 			}).get();
 
 		const doesFrameExist: boolean = computed(() => {
@@ -66,29 +60,17 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 		}).get();
 
 		const frames = useMemo(() => {
-			const frameList = [];
-			Object.keys(state.queries).forEach((queryKey) => {
-				const query = state.queries[queryKey];
-				Object.values(query.cells).forEach((cell) => {
-					if (
-						cell.widget === "query-import" ||
-						cell.widget === "data-import"
-					)
-						frameList.push(cell);
-				});
-			});
-			return frameList;
+			return Object.values(cell.query.cells).filter(
+				(c) =>
+					c.widget === "query-import" || c.widget === "data-import",
+			);
 		}, []);
 
 		const helpText = cell.parameters.targetCell.id
 			? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
 			: "A Python or R target frame variable must be defined in order to apply a transformation.";
 
-		if (
-			(!doesFrameExist &&
-				!cellTransformation.parameters.columns.length) ||
-			!targetCell.isExecuted
-		) {
+		if (!doesFrameExist && !cellTransformation.parameters.columns.length) {
 			return (
 				<TransformationCellInput
 					isExpanded={isExpanded}
@@ -115,7 +97,7 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 						{!doesFrameExist ? (
 							<em>{helpText}</em>
 						) : (
-							"Change the values of the selected columns to uppercase"
+							"Obfuscate the values of a column"
 						)}
 					</span>
 					<ColumnTransformationField
@@ -125,7 +107,6 @@ export const UppercaseTransformationCell: CellComponent<UppercaseTransformationC
 							cellTransformation.parameters.columns ?? []
 						}
 						multiple
-						columnTypes={["STRING"]}
 						onChange={(newColumns: ColumnInfo[]) => {
 							state.dispatch({
 								message: ActionMessages.UPDATE_CELL,

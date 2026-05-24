@@ -71,18 +71,10 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 			}).get();
 
 		const frames = useMemo(() => {
-			const frameList = [];
-			Object.keys(state.queries).forEach((queryKey) => {
-				const query = state.queries[queryKey];
-				Object.values(query.cells).forEach((cell) => {
-					if (
-						cell.widget === "query-import" ||
-						cell.widget === "data-import"
-					)
-						frameList.push(cell);
-				});
-			});
-			return frameList;
+			return Object.values(cell.query.cells).filter(
+				(c) =>
+					c.widget === "query-import" || c.widget === "data-import",
+			);
 		}, []);
 
 		const targetCells: CellState<QueryImportCellDef>[] = computed(() => {

@@ -20,47 +20,41 @@ import {
 	type TransformationTargetCell,
 } from "../shared";
 
-export interface CumulativeSumTransformationDef
-	extends TransformationDef<"cumulative-sum"> {
-	key: "cumulative-sum";
+export interface CollapseTransformationDef
+	extends TransformationDef<"collapse"> {
+	key: "collapse";
 	parameters: {
-		newColumn: string;
-		valueColumn: ColumnInfo;
-		sortColumns?: ColumnInfo[];
-		groupByColumns?: ColumnInfo[];
+		columns: ColumnInfo[];
+		value: ColumnInfo;
+		delimiter: string;
+		maintainColumns?: ColumnInfo[];
 	};
 }
 
-export interface CumulativeSumTransformationCellDef
-	extends TransformationCellDef<"cumulative-sum-transformation"> {
-	widget: "cumulative-sum-transformation";
+export interface CollapseTransformationCellDef
+	extends TransformationCellDef<"collapse-transformation"> {
+	widget: "collapse-transformation";
 	parameters: {
-		transformation: Transformation<CumulativeSumTransformationDef>;
+		transformation: Transformation<CollapseTransformationDef>;
 		targetCell: TransformationTargetCell;
 	};
 }
 
-export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransformationCellDef> =
+export const CollapseTransformationCell: CellComponent<CollapseTransformationCellDef> =
 	observer((props) => {
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c: CellState<QueryImportCellDef> | undefined;
-			Object.values(state.queries).forEach((query) => {
-				if (query.cells[cell.parameters.targetCell.id]) {
-					c = query.cells[
-						cell.parameters.targetCell.id
-					] as CellState<QueryImportCellDef>;
-				}
-			});
-			return c;
+			return cell.query.cells[
+				cell.parameters.targetCell.id
+			] as CellState<QueryImportCellDef>;
 		}).get();
 
-		const cellTransformation: Transformation<CumulativeSumTransformationDef> =
+		const cellTransformation: Transformation<CollapseTransformationDef> =
 			computed(() => {
 				return cell.parameters
-					.transformation as Transformation<CumulativeSumTransformationDef>;
+					.transformation as Transformation<CollapseTransformationDef>;
 			}).get();
 
 		const doesFrameExist: boolean = computed(() => {
@@ -70,18 +64,10 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 		}).get();
 
 		const frames = useMemo(() => {
-			const frameList = [];
-			Object.keys(state.queries).forEach((queryKey) => {
-				const query = state.queries[queryKey];
-				Object.values(query.cells).forEach((cell) => {
-					if (
-						cell.widget === "query-import" ||
-						cell.widget === "data-import"
-					)
-						frameList.push(cell);
-				});
-			});
-			return frameList;
+			return Object.values(cell.query.cells).filter(
+				(c) =>
+					c.widget === "query-import" || c.widget === "data-import",
+			);
 		}, []);
 
 		const helpText = cell.parameters.targetCell.id
@@ -99,10 +85,7 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 				},
 			});
 
-		if (
-			(!doesFrameExist && !cellTransformation.parameters.newColumn) ||
-			!targetCell.isExecuted
-		) {
+		if (!doesFrameExist && !cellTransformation.parameters.columns.length) {
 			return (
 				<TransformationCellInput
 					isExpanded={isExpanded}
@@ -129,65 +112,61 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 						{!doesFrameExist ? (
 							<em>{helpText}</em>
 						) : (
-							"Add a new column for the cumulative sum of another column's values"
+							"Aggregate data for a group based on the delimiter"
 						)}
 					</span>
+					<ColumnTransformationField
+						label="Group by Column(s)"
+						disabled={!doesFrameExist}
+						cell={cell}
+						selectedColumns={cellTransformation.parameters.columns}
+						multiple
+						onChange={(newColumn: ColumnInfo) =>
+							dispatch(
+								"parameters.transformation.parameters.columns",
+								newColumn,
+							)
+						}
+					/>
+					<ColumnTransformationField
+						label="Value Column"
+						disabled={!doesFrameExist}
+						cell={cell}
+						selectedColumns={cellTransformation.parameters.value}
+						onChange={(newColumn: ColumnInfo) =>
+							dispatch(
+								"parameters.transformation.parameters.value",
+								newColumn,
+							)
+						}
+					/>
 					<div className="flex flex-col gap-1.5">
 						{/* biome-ignore lint/a11y/noLabelWithoutControl: label wraps its input */}
 						<label className="text-muted-foreground text-xs">
-							Column Name
+							String Separator
 						</label>
 						<Input
 							disabled={!doesFrameExist}
-							value={cellTransformation.parameters.newColumn}
+							value={cellTransformation.parameters.delimiter}
 							onChange={(e) =>
 								dispatch(
-									"parameters.transformation.parameters.newColumn",
+									"parameters.transformation.parameters.delimiter",
 									e.target.value,
 								)
 							}
 						/>
 					</div>
 					<ColumnTransformationField
-						label="Aggregate Value"
+						label="Other Column(s) to Maintain"
 						disabled={!doesFrameExist}
 						cell={cell}
 						selectedColumns={
-							cellTransformation.parameters.valueColumn
-						}
-						onChange={(newColumn: ColumnInfo) =>
-							dispatch(
-								"parameters.transformation.parameters.valueColumn",
-								newColumn,
-							)
-						}
-					/>
-					<ColumnTransformationField
-						label="Sort by Column(s)"
-						disabled={!doesFrameExist}
-						cell={cell}
-						selectedColumns={
-							cellTransformation.parameters.sortColumns
+							cellTransformation.parameters.maintainColumns
 						}
 						multiple
 						onChange={(newColumn: ColumnInfo) =>
 							dispatch(
-								"parameters.transformation.parameters.sortColumns",
-								newColumn,
-							)
-						}
-					/>
-					<ColumnTransformationField
-						label="Group by Column(s)"
-						disabled={!doesFrameExist}
-						cell={cell}
-						selectedColumns={
-							cellTransformation.parameters.groupByColumns
-						}
-						multiple
-						onChange={(newColumn: ColumnInfo) =>
-							dispatch(
-								"parameters.transformation.parameters.groupByColumns",
+								"parameters.transformation.parameters.maintainColumns",
 								newColumn,
 							)
 						}

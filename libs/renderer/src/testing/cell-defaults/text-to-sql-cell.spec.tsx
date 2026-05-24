@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Blocks } from "../../components/blocks";
 import TextToSqlCell, {
 	type TextToSqlCellDef,
-} from "../../components/cell-defaults/text-to-sql-cell/TextToSqlCell";
+} from "../../components/cell-defaults/text-to-sql-cell/text-to-sql-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK interactions

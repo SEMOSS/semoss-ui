@@ -62,12 +62,18 @@ export const TransformationMultiCellInput: TransformationCellInputComponent = (
 						});
 					}}
 				>
-					<SelectTrigger className="h-[30px] w-[200px]">
-						<Network className="mr-1 size-4 shrink-0" />
-						<SelectValue placeholder="From frame" />
+					<SelectTrigger className="h-9 w-[200px] min-w-0">
+						<div className="flex min-w-0 flex-1 items-center gap-1">
+							<Network className="size-4 shrink-0" />
+							<SelectValue placeholder="From frame" />
+						</div>
 					</SelectTrigger>
 					<SelectContent>
-						{frame.options.map((c) => (
+						{Array.from(
+							new Map(
+								frame.options.map((c) => [c.id, c]),
+							).values(),
+						).map((c) => (
 							<SelectItem key={c.id} value={c.id}>
 								{c.parameters.frameVariableName}
 							</SelectItem>
@@ -93,12 +99,18 @@ export const TransformationMultiCellInput: TransformationCellInputComponent = (
 						});
 					}}
 				>
-					<SelectTrigger className="h-[30px] w-[200px]">
-						<Network className="mr-1 size-4 shrink-0" />
-						<SelectValue placeholder="To frame" />
+					<SelectTrigger className="h-9 w-[200px] min-w-0">
+						<div className="flex min-w-0 flex-1 items-center gap-1">
+							<Network className="size-4 shrink-0" />
+							<SelectValue placeholder="To frame" />
+						</div>
 					</SelectTrigger>
 					<SelectContent>
-						{frame.options.map((c) => (
+						{Array.from(
+							new Map(
+								frame.options.map((c) => [c.id, c]),
+							).values(),
+						).map((c) => (
 							<SelectItem key={c.id} value={c.id}>
 								{c.parameters.frameVariableName}
 							</SelectItem>

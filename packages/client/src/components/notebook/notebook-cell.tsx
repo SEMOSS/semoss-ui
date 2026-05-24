@@ -57,6 +57,7 @@ import { NotebookAddCell } from "./notebook-add-cell";
 import { NotebookCellConsole } from "./notebook-cell-console";
 import { Operation } from "./operations";
 import { RenameVariableDialog } from "./rename-variable-dialog";
+import { noLigatureStyle } from "./variable-references";
 
 interface NotebookCellProps {
 	/** Id of the  the query */
@@ -534,7 +535,7 @@ export const NotebookCell = observer(
 		);
 
 		const renderOutputFooter = () => (
-			<div className="flex w-full flex-row items-center justify-between gap-2 px-1 pt-1 text-[11px] text-muted-foreground">
+			<div className="flex w-full flex-row items-center justify-between gap-2 px-1 pt-1 text-muted-foreground text-xs">
 				<span className="font-mono">
 					{outputStats.lines}{" "}
 					{outputStats.lines === 1 ? "line" : "lines"}
@@ -783,7 +784,7 @@ export const NotebookCell = observer(
 									<Play className="size-3.5" />
 								)}
 							</span>
-							<span className="font-mono text-[11px] text-muted-foreground leading-none">
+							<span className="font-mono text-muted-foreground text-xs leading-none">
 								{cell.isLoading
 									? "[*]"
 									: localCellPlayNumber
@@ -824,12 +825,7 @@ export const NotebookCell = observer(
 										>
 											<span
 												className="block min-w-0 max-w-[16ch] truncate font-mono"
-												style={{
-													fontVariantLigatures:
-														"none",
-													fontFeatureSettings:
-														'"liga" 0, "calt" 0',
-												}}
+												style={noLigatureStyle}
 											>
 												{variableName}
 											</span>
@@ -853,7 +849,7 @@ export const NotebookCell = observer(
 										title="Use as variable"
 										variant="ghost"
 										size="sm"
-										className="h-6 gap-1 px-1.5 text-muted-foreground text-xs"
+										className="h-7 gap-1 px-2 text-muted-foreground text-xs"
 										disabled={cell.isLoading}
 										onClick={(e) => {
 											e.stopPropagation();
@@ -872,7 +868,7 @@ export const NotebookCell = observer(
 								{(cell.isSuccessful || cell.isError) && (
 									<Tooltip>
 										<TooltipTrigger asChild>
-											<span className="font-mono text-[11px] text-muted-foreground">
+											<span className="font-mono text-muted-foreground text-xs">
 												{getCompactExecutionTime(
 													cell.executionDurationMilliseconds,
 												)}
@@ -1134,26 +1130,28 @@ export const NotebookCell = observer(
 					open={showLoggingModal}
 					onOpenChange={(o) => !o && setShowLoggingModal(false)}
 				>
-					<DialogContent className="flex max-h-[80vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]">
+					<DialogContent className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]">
 						<DialogHeader>
-							<DialogTitle>
-								Logging ({cell.messages.length})
-							</DialogTitle>
+							<div className="flex items-center justify-between gap-2 pr-8">
+								<DialogTitle>
+									Logging ({cell.messages.length})
+								</DialogTitle>
+								<Button
+									title="Copy logs"
+									variant="ghost"
+									size="sm"
+									className="h-7 px-2 text-muted-foreground"
+									onClick={() =>
+										copyTextToClipboard(
+											cell.messages.join("\n"),
+										)
+									}
+								>
+									<Copy className="size-3" />
+								</Button>
+							</div>
 						</DialogHeader>
-						<div className="relative flex-1 overflow-hidden rounded bg-muted/30">
-							<Button
-								title="Copy logs"
-								variant="ghost"
-								size="sm"
-								className="absolute top-1 right-1 z-10 h-7 px-2 text-muted-foreground"
-								onClick={() =>
-									copyTextToClipboard(
-										cell.messages.join("\n"),
-									)
-								}
-							>
-								<Copy className="size-3" />
-							</Button>
+						<div className="flex-1 overflow-hidden rounded bg-muted/30">
 							<div className="h-full overflow-y-auto px-3 py-2">
 								<NotebookCellConsole messages={cell.messages} />
 							</div>
@@ -1167,7 +1165,7 @@ export const NotebookCell = observer(
 				>
 					<DialogContent
 						showCloseButton={false}
-						className="flex max-h-[80vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]"
+						className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]"
 					>
 						<DialogHeader>
 							<DialogTitle className="sr-only">

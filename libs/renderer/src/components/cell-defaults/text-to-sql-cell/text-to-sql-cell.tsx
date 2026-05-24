@@ -268,7 +268,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 						}
 					>
 						<SelectTrigger
-							className="h-[40px] w-[200px] px-3"
+							className="h-9 w-[200px] px-3"
 							data-testid={`user-databaseid-${cell.id}`}
 						>
 							<SelectValue placeholder="Select Database" />
@@ -337,7 +337,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 							title="Set Frame Variable Name"
 							value={cell.parameters.frameVariableName}
 							disabled={cell.isLoading}
-							className="h-[40px] pl-9"
+							className="h-9 pl-9 text-sm"
 							data-testid={`frame-variable-${cell.id}`}
 							onChange={(e) =>
 								runStateDispatch([
@@ -359,7 +359,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 						}
 					>
 						<SelectTrigger
-							className="h-[40px] min-w-[200px] max-w-[300px] px-3"
+							className="h-9 min-w-[200px] max-w-[300px] px-3"
 							data-testid={`model-user-${cell.id}`}
 						>
 							<Maximize2 className="mr-1 size-4 shrink-0" />

@@ -700,7 +700,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 							}
 						}}
 					>
-						<SelectTrigger className="h-[26px] w-[36px] border-0 px-1 shadow-none">
+						<SelectTrigger className="h-7 w-9 border-0 px-1 shadow-none">
 							{cell.parameters.type === "py" ? (
 								<PythonIcon fontSize="small" />
 							) : cell.parameters.type === "r" ? (

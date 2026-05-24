@@ -5,7 +5,7 @@ import { Blocks } from "../../components/blocks";
 import {
 	TimestampTransformationCell,
 	type TimestampTransformationCellDef,
-} from "../../components/cell-defaults/timestamp-transformation-cell/TimestampTransformationCell";
+} from "../../components/cell-defaults/timestamp-transformation-cell/timestamp-transformation-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK pixel calls in ColumnTransformationField

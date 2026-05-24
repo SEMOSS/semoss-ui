@@ -52,15 +52,9 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 		const { state } = useBlocks();
 
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c: CellState<QueryImportCellDef> | undefined;
-			Object.values(state.queries).forEach((query) => {
-				if (query.cells[cell.parameters.targetCell.id]) {
-					c = query.cells[
-						cell.parameters.targetCell.id
-					] as CellState<QueryImportCellDef>;
-				}
-			});
-			return c;
+			return cell.query.cells[
+				cell.parameters.targetCell.id
+			] as CellState<QueryImportCellDef>;
 		}).get();
 
 		const cellTransformation: Transformation<ColumnTypeTransformationDef> =
@@ -76,29 +70,17 @@ export const ColumnTypeTransformationCell: CellComponent<ColumnTypeTransformatio
 		}).get();
 
 		const frames = useMemo(() => {
-			const frameList = [];
-			Object.keys(state.queries).forEach((queryKey) => {
-				const query = state.queries[queryKey];
-				Object.values(query.cells).forEach((cell) => {
-					if (
-						cell.widget === "query-import" ||
-						cell.widget === "data-import"
-					) {
-						frameList.push(cell);
-					}
-				});
-			});
-			return frameList;
+			return Object.values(cell.query.cells).filter(
+				(c) =>
+					c.widget === "query-import" || c.widget === "data-import",
+			);
 		}, []);
 
 		const helpText = cell.parameters.targetCell.id
 			? `Run Cell ${cell.parameters.targetCell.id} to define the target frame variable before applying a transformation.`
 			: "A Python or R target frame variable must be defined in order to apply a transformation.";
 
-		if (
-			(!doesFrameExist && !cellTransformation.parameters.column) ||
-			!targetCell.isExecuted
-		) {
+		if (!doesFrameExist && !cellTransformation.parameters.column) {
 			return (
 				<TransformationCellInput
 					isExpanded={isExpanded}

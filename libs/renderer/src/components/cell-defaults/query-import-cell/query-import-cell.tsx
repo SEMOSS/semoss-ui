@@ -331,7 +331,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 							<Button
 								variant="outline"
 								size="sm"
-								className="h-8"
+								className="h-9"
 								onClick={() => setShowTables(!showTables)}
 							>
 								<Columns3 className="mr-1 size-3.5" />

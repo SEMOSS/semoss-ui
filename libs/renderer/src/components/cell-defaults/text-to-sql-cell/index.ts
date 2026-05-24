@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./TextToSqlCell";
+export * from "./text-to-sql-cell";

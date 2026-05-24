@@ -126,7 +126,10 @@ export const MultiCellColumnTransformationField: MultiCellColumnTransformationFi
 							)}
 						</Button>
 					</PopoverTrigger>
-					<PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+					<PopoverContent
+						align="start"
+						className="w-[var(--radix-popover-trigger-width)] p-0"
+					>
 						<Command>
 							<CommandInput placeholder="Search columns..." />
 							<CommandEmpty>No columns found.</CommandEmpty>
@@ -176,7 +179,10 @@ export const MultiCellColumnTransformationField: MultiCellColumnTransformationFi
 						)}
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+				<PopoverContent
+					align="start"
+					className="w-[var(--radix-popover-trigger-width)] p-0"
+				>
 					<Command>
 						<CommandInput placeholder="Search columns..." />
 						<CommandEmpty>No columns found.</CommandEmpty>

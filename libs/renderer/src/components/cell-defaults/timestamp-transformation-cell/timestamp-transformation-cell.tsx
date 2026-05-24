@@ -42,15 +42,9 @@ export const TimestampTransformationCell: CellComponent<TimestampTransformationC
 		const { state } = useBlocks();
 
 		const targetCell: CellState<QueryImportCellDef> = computed(() => {
-			let c: CellState<QueryImportCellDef> | undefined;
-			Object.values(state.queries).forEach((query) => {
-				if (query.cells[cell.parameters.targetCell.id]) {
-					c = query.cells[
-						cell.parameters.targetCell.id
-					] as CellState<QueryImportCellDef>;
-				}
-			});
-			return c;
+			return cell.query.cells[
+				cell.parameters.targetCell.id
+			] as CellState<QueryImportCellDef>;
 		}).get();
 
 		const cellTransformation: Transformation<TimestampTransformationDef> =
@@ -66,18 +60,10 @@ export const TimestampTransformationCell: CellComponent<TimestampTransformationC
 		}).get();
 
 		const frames = useMemo(() => {
-			const frameList = [];
-			Object.keys(state.queries).forEach((queryKey) => {
-				const query = state.queries[queryKey];
-				Object.values(query.cells).forEach((cell) => {
-					if (
-						cell.widget === "query-import" ||
-						cell.widget === "data-import"
-					)
-						frameList.push(cell);
-				});
-			});
-			return frameList;
+			return Object.values(cell.query.cells).filter(
+				(c) =>
+					c.widget === "query-import" || c.widget === "data-import",
+			);
 		}, []);
 
 		const helpText = cell.parameters.targetCell.id
@@ -95,10 +81,7 @@ export const TimestampTransformationCell: CellComponent<TimestampTransformationC
 				},
 			});
 
-		if (
-			(!doesFrameExist && !cellTransformation.parameters.columnName) ||
-			!targetCell.isExecuted
-		) {
+		if (!doesFrameExist && !cellTransformation.parameters.columnName) {
 			return (
 				<TransformationCellInput
 					isExpanded={isExpanded}
