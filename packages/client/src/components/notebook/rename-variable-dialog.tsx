@@ -271,11 +271,11 @@ export const RenameVariableDialog = observer(
 
 		return (
 			<Dialog open={open} onOpenChange={(o) => !o && onOpenChange(false)}>
-				<DialogContent className="sm:max-w-md">
+				<DialogContent className="w-[calc(100vw-2rem)] max-w-[42rem] overflow-hidden sm:max-w-[42rem]">
 					<DialogHeader>
 						<DialogTitle>Rename variable</DialogTitle>
 					</DialogHeader>
-					<div className="flex flex-col gap-3">
+					<div className="flex min-w-0 flex-col gap-3">
 						<div className="flex flex-col gap-1.5">
 							<Label htmlFor={inputId}>New name</Label>
 							<Input
@@ -324,13 +324,13 @@ export const RenameVariableDialog = observer(
 										</span>
 										:
 									</div>
-									<ul className="mt-1.5 flex max-h-48 flex-col gap-1 overflow-y-auto text-xs">
+									<ul className="mt-1.5 flex max-h-48 min-w-0 flex-col gap-1 overflow-y-auto text-xs">
 										{affectedRefs.map((hit) => (
 											<li
 												key={hit.key}
-												className="flex flex-col gap-0.5 rounded border border-border/60 bg-background px-2 py-1.5"
+												className="flex min-w-0 flex-col gap-0.5 rounded border border-border/60 bg-background px-2 py-1.5"
 											>
-												<div className="flex items-center gap-1.5">
+												<div className="flex min-w-0 items-center gap-1.5">
 													<span className="inline-flex items-center rounded bg-primary/10 px-1 py-0.5 font-medium text-[9px] text-primary uppercase tracking-wider">
 														{hit.kind}
 													</span>
