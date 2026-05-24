@@ -102,7 +102,7 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 	};
 
 	// need a notebook to render it
-	const notebook = state.getQuery(id);
+	const notebook = state.getNotebook(id);
 	if (!notebook) {
 		return null;
 	}
@@ -118,7 +118,7 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 						disabled={notebook.isLoading}
 						onClick={() =>
 							state.dispatch({
-								message: ActionMessages.RUN_QUERY,
+								message: ActionMessages.RUN_NOTEBOOK,
 								payload: {
 									queryId: id,
 								},

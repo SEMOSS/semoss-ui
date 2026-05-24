@@ -16,7 +16,7 @@ import {
 	type CellComponent,
 	type CellState,
 } from "../../../store";
-import type { QueryImportCellDef } from "../query-import-cell";
+import type { NotebookImportCellDef } from "../notebook-import-cell";
 import {
 	type ColumnInfo,
 	type comparator,
@@ -77,12 +77,12 @@ export const JoinTransformationCell: CellComponent<JoinTransformationCellDef> =
 			);
 		}, []);
 
-		const targetCells: CellState<QueryImportCellDef>[] = computed(() => {
+		const targetCells: CellState<NotebookImportCellDef>[] = computed(() => {
 			return frames.filter(
 				(item) =>
 					item.widget === "query-import" ||
 					item.widget === "data-import",
-			) as CellState<QueryImportCellDef>[];
+			) as CellState<NotebookImportCellDef>[];
 		}).get();
 
 		const doFramesExist: boolean = computed(() => {

@@ -43,7 +43,7 @@ export { DefaultCells } from "./components/cell-defaults";
 export { CodeCellConfig } from "./components/cell-defaults/code-cell";
 export { DataImportCellConfig } from "./components/cell-defaults/data-import-cell";
 export { FilterDataCellConfig } from "./components/cell-defaults/filter-data-cell";
-export { QueryImportCellConfig } from "./components/cell-defaults/query-import-cell";
+export { NotebookImportCellConfig } from "./components/cell-defaults/notebook-import-cell";
 export { UnFilterDataCellConfig } from "./components/cell-defaults/unfilter-data-cell";
 export { DataImportFormModal } from "./components/shared/data-import-form-modal";
 // HOOKS
@@ -63,8 +63,8 @@ export type {
 	CellStateConfig,
 	ListenerActions,
 	NewCellAction,
-	QueryState,
-	QueryStateConfig,
+	NotebookState,
+	NotebookStateConfig,
 	SerializedState,
 	Variable,
 	VariableType,

@@ -1,14 +1,4 @@
-import {
-	AlertTriangle,
-	Archive,
-	Bolt,
-	Bot,
-	Database,
-	type LucideIcon,
-	MoreHorizontal,
-	Sigma,
-	X,
-} from "lucide-react";
+import { AlertTriangle, Eye, MoreHorizontal } from "lucide-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -44,27 +34,20 @@ import {
 	SelectValue,
 	toast,
 } from "@semoss/ui/next";
-import PreviewButton from "@/assets/img/PreviewRounded.png";
 import { JsonValueViewer } from "@/components/common/json-value-viewer";
 // TODO: MOVE TO SDK/UTILITY LIB
+import { isOutputJSON, splitAtPeriod } from "../../utility";
 import {
-	capitalizeFirstLetter,
-	isOutputJSON,
-	splitAtPeriod,
-} from "../../utility";
+	type EnginesByType,
+	getVariableTypeLabel,
+	TypeIcon,
+} from "./variable-icon";
 import {
 	countAffectedSources,
 	findVariableReferences,
 	noLigatureStyle,
+	rewriteVariableReferences,
 } from "./variable-references";
-
-const ENGINE_ICONS: Record<string, LucideIcon> = {
-	model: Bot,
-	database: Database,
-	vector: Bolt,
-	storage: Archive,
-	function: Sigma,
-};
 
 interface AddVariablePopoverProps {
 	/**
@@ -91,38 +74,7 @@ interface AddVariablePopoverProps {
 	/**
 	 * Engines
 	 */
-	engines: {
-		models: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		databases: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		storages: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		functions: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		vectors: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-	};
+	engines: EnginesByType;
 }
 export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	const { open, onClose, variable, engines } = props;
@@ -159,7 +111,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		engine_type: string;
 		engine_subtype;
 	} | null>(null);
-	const [showPreview, setShowPreview] = useState<boolean>(false);
+	const [showPreview, setShowPreview] = useState<boolean>(true);
 
 	const [variableInputValue, setVariableInputValue] = useState(null);
 	const inputVariableTypeList = ["string", "number", "JSON", "date", "array"];
@@ -196,20 +148,20 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	}).get();
 
 	const queries = useMemo(() => {
-		return Object.values(state.queries);
-	}, [state.queries]);
+		return Object.values(state.notebooks);
+	}, [state.notebooks]);
 
 	const cells = useMemo(() => {
 		const cells = [];
 
-		Object.values(state.queries).forEach((query) => {
+		Object.values(state.notebooks).forEach((query) => {
 			Object.values(query.cells).forEach((cell) => {
 				cells.push(cell);
 			});
 		});
 
 		return cells;
-	}, [state.queries]);
+	}, [state.notebooks]);
 
 	// Get the LLM Comparison Blocks
 	// TODO: REMOVE DEAD CODE
@@ -325,22 +277,56 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				/>
 			);
 		} else if (variableType === "JSON" || variableType === "array") {
+			const raw =
+				typeof variableInputValue === "object" &&
+				variableInputValue !== null
+					? JSON.stringify(variableInputValue, null, 2)
+					: ((variableInputValue as string | null) ?? "");
+			let parseError: string | null = null;
+			if (raw && raw.trim().length > 0) {
+				try {
+					const parsed = JSON.parse(raw);
+					if (variableType === "array" && !Array.isArray(parsed)) {
+						parseError = "Value must be a JSON array.";
+					}
+				} catch (e) {
+					parseError =
+						e instanceof Error ? e.message : "Invalid JSON.";
+				}
+			}
 			return (
-				<Suspense fallback={<>...</>}>
-					<MonacoEditor
-						width={"100%"}
-						height={"10vh"}
-						language={"json"}
-						onChange={(newValue, _e) => {
-							setVariableInputValue(newValue);
-						}}
-						value={
-							typeof variableInputValue === "object"
-								? JSON.stringify(variableInputValue)
-								: variableInputValue
-						}
-					/>
-				</Suspense>
+				<div className="flex flex-col gap-1.5">
+					<div className="overflow-hidden rounded-md border border-input">
+						<Suspense
+							fallback={
+								<div className="h-[200px] animate-pulse bg-muted" />
+							}
+						>
+							<MonacoEditor
+								width={"100%"}
+								height={"200px"}
+								language={"json"}
+								options={{
+									minimap: { enabled: false },
+									scrollBeyondLastLine: false,
+									fontSize: 13,
+									lineNumbers: "on",
+									tabSize: 2,
+									automaticLayout: true,
+								}}
+								onChange={(newValue, _e) => {
+									setVariableInputValue(newValue);
+								}}
+								value={raw}
+							/>
+						</Suspense>
+					</div>
+					{parseError && (
+						<span className="text-destructive text-xs">
+							{parseError}
+						</span>
+					)}
+				</div>
 			);
 		} else if (variableType === "date") {
 			return (
@@ -387,7 +373,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						}
 					>
 						{isEngineType(variableType) && engine ? (
-							<div className="flex items-center gap-2 text-left">
+							<div className="flex min-w-0 items-center gap-2 text-left">
 								{engine.engine_type ? (
 									<EngineSubtypeIcon
 										engineType={engine.engine_type}
@@ -396,18 +382,16 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 										className="size-5 shrink-0 object-contain"
 									/>
 								) : (
-									(() => {
-										const Icon = ENGINE_ICONS[variableType];
-										return Icon ? (
-											<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-										) : null;
-									})()
+									<TypeIcon
+										type={variableType}
+										className="size-5"
+									/>
 								)}
-								<div className="flex flex-col items-start gap-0.5">
-									<span className="font-medium text-sm leading-tight">
+								<div className="flex min-w-0 flex-col items-start gap-0.5">
+									<span className="truncate font-medium text-sm leading-tight">
 										{engine.engine_name}
 									</span>
-									<span className="text-muted-foreground text-xs leading-tight">
+									<span className="truncate text-muted-foreground text-xs leading-tight">
 										{engine.engine_id}
 									</span>
 								</div>
@@ -420,7 +404,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						{selectOptions.map((opt) =>
 							opt.subtitle ? (
 								<SelectItem key={opt.value} value={opt.value}>
-									<div className="flex items-center gap-2">
+									<div className="flex min-w-0 items-center gap-2">
 										{opt.engineType ? (
 											<EngineSubtypeIcon
 												engineType={opt.engineType}
@@ -431,19 +415,16 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 												className="size-5 shrink-0 object-contain"
 											/>
 										) : (
-											(() => {
-												const Icon =
-													ENGINE_ICONS[variableType];
-												return Icon ? (
-													<Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-												) : null;
-											})()
+											<TypeIcon
+												type={variableType}
+												className="size-5"
+											/>
 										)}
-										<div className="flex flex-col items-start gap-0.5">
-											<span className="font-medium text-sm leading-tight">
+										<div className="flex min-w-0 flex-col items-start gap-0.5">
+											<span className="truncate font-medium text-sm leading-tight">
 												{opt.label}
 											</span>
-											<span className="text-muted-foreground text-xs leading-tight">
+											<span className="truncate text-muted-foreground text-xs leading-tight">
 												{opt.subtitle}
 											</span>
 										</div>
@@ -528,41 +509,44 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						</div>
 					);
 				} else if (variableType === "query") {
-					const query = state.getQuery(variablePointer);
+					const notebook = state.getNotebook(variablePointer);
 
-					if (query.output) {
+					if (notebook.output) {
 						return (
 							<div className="max-h-[275px] w-full overflow-auto">
 								<span className="text-sm">
-									{JSON.stringify(query.output)}
+									{JSON.stringify(notebook.output)}
 								</span>
 							</div>
 						);
 					} else {
 						return (
-							<Alert>
-								<AlertTriangle className="size-4 text-yellow-600" />
-								<AlertTitle>Not yet executed</AlertTitle>
-								<AlertDescription>
-									Sheet {variablePointer} has not been
-									executed. Click &apos;Run All&apos; in order
-									to preview output.
-								</AlertDescription>
-							</Alert>
+							<div className="flex items-center gap-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2.5">
+								<AlertTriangle className="size-5 shrink-0 text-yellow-600" />
+								<div className="flex flex-col">
+									<span className="font-medium text-sm text-yellow-900">
+										Not yet executed
+									</span>
+									<span className="text-xs text-yellow-800/80">
+										Notebook {variablePointer} has no output
+										yet.
+									</span>
+								</div>
+							</div>
 						);
 					}
 				} else if (variableType === "cell") {
-					const query = state.getQuery(
+					const notebook = state.getNotebook(
 						splitAtPeriod(variablePointer, "left"),
 					);
 
-					const cell = query.getCell(
+					const cell = notebook.getCell(
 						splitAtPeriod(variablePointer, "right"),
 					);
 
 					if (cell.output) {
 						const rawOutput = state
-							.getQuery(splitAtPeriod(variablePointer, "left"))
+							.getNotebook(splitAtPeriod(variablePointer, "left"))
 							.getCell(
 								splitAtPeriod(variablePointer, "right"),
 							).output;
@@ -575,16 +559,22 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						);
 					} else {
 						return (
-							<Alert>
-								<AlertTriangle className="size-4 text-yellow-600" />
-								<AlertTitle>Not yet executed</AlertTitle>
-								<AlertDescription>
-									Cell{" "}
-									{splitAtPeriod(variablePointer, "right")}{" "}
-									has not been executed. Click &apos;Run
-									All&apos; in order to preview output.
-								</AlertDescription>
-							</Alert>
+							<div className="flex items-center gap-3 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2.5">
+								<AlertTriangle className="size-5 shrink-0 text-yellow-600" />
+								<div className="flex flex-col">
+									<span className="font-medium text-sm text-yellow-900">
+										Not yet executed
+									</span>
+									<span className="text-xs text-yellow-800/80">
+										Cell{" "}
+										{splitAtPeriod(
+											variablePointer,
+											"right",
+										)}{" "}
+										has no output yet.
+									</span>
+								</div>
+							</div>
 						);
 					}
 				} else if (inputVariableTypeList.indexOf(variableType) > -1) {
@@ -711,35 +701,14 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 	return (
 		<Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-			<DialogContent
-				className="w-[444px] max-w-[444px]"
-				showCloseButton={false}
-			>
-				<DialogHeader className="flex flex-row items-center justify-between pr-0">
+			<DialogContent className="w-[calc(100vw-2rem)] max-w-md overflow-hidden sm:max-w-2xl">
+				<DialogHeader>
 					<DialogTitle className="font-medium text-xl">
 						{variable ? "Edit" : "Create"} Variable
 					</DialogTitle>
-					<button
-						type="button"
-						className="rounded-sm opacity-70 hover:opacity-100"
-						onClick={handleClose}
-					>
-						<X className="size-4" />
-						<span className="sr-only">Close</span>
-					</button>
 				</DialogHeader>
 
-				<div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pr-1">
-					{variable && affectedRefs.length === 0 && (
-						<Alert>
-							<AlertTriangle className="size-4 text-yellow-600" />
-							<AlertTitle>Warning</AlertTitle>
-							<AlertDescription>
-								If this variable is actively being used, editing
-								it may result in errors throughout your sheets.
-							</AlertDescription>
-						</Alert>
-					)}
+				<div className="-mx-1 flex max-h-[60vh] flex-col gap-2 overflow-y-auto px-1">
 					{variable && affectedRefs.length > 0 && (
 						<div className="rounded-md border border-border bg-muted/30 px-3 py-2">
 							<div className="font-medium text-xs">
@@ -758,9 +727,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 								>
 									{`{{${variable.id}}}`}
 								</span>
-								. The alias is preserved when you save — but
-								changing type or pointer makes these resolve to
-								a different value.
+								. Renaming rewrites all of these in place;
+								changing type or pointer keeps the alias but
+								makes them resolve to a different value.
 							</div>
 							<ul className="mt-1.5 flex max-h-40 flex-col gap-1 overflow-y-auto text-xs">
 								{affectedRefs.map((hit) => (
@@ -819,10 +788,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							</Alert>
 						)}
 					<div className="flex flex-col gap-3 pt-1">
-						<div className="flex flex-col gap-1.5 px-4">
-							<Label className="text-muted-foreground text-sm">
-								Variable Name
-							</Label>
+						<div className="flex flex-col gap-1.5">
+							<Label>Variable Name</Label>
 							<Input
 								placeholder="Name"
 								value={variableName}
@@ -837,10 +804,8 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 								</span>
 							)}
 						</div>
-						<div className="flex flex-col gap-1.5 px-4">
-							<Label className="text-muted-foreground text-sm">
-								Type
-							</Label>
+						<div className="flex flex-col gap-1.5">
+							<Label>Type</Label>
 							<Select
 								value={variableType}
 								onValueChange={(val) => {
@@ -851,40 +816,67 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 								}}
 							>
 								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select Type" />
+									<SelectValue placeholder="Select Type">
+										{variableType && (
+											<div className="flex items-center gap-2">
+												<TypeIcon
+													type={variableType}
+													className="size-4"
+												/>
+												<span>
+													{getVariableTypeLabel(
+														variableType,
+													)}
+												</span>
+											</div>
+										)}
+									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
 									{VARIABLE_TYPES.map((val) => (
 										<SelectItem key={val} value={val}>
-											{capitalizeFirstLetter(val)}
+											<div className="flex items-center gap-2">
+												<TypeIcon
+													type={val}
+													className="size-4"
+												/>
+												<span>
+													{getVariableTypeLabel(val)}
+												</span>
+											</div>
 										</SelectItem>
 									))}
 								</SelectContent>
 							</Select>
 						</div>
-						<div className="flex flex-col gap-1.5 px-4">
-							<Label className="text-muted-foreground text-sm">
-								Value
-							</Label>
+						<div className="flex flex-col gap-1.5">
+							<Label>Value</Label>
 							{input}
 						</div>
-						<div
-							className={`flex flex-col gap-1.5 px-4 ${showPreview ? "bg-[#F5F9FE]" : ""}`}
-						>
+						<div className="-mx-6 border-border/60 border-t bg-muted/30 px-6 pt-3 pb-3">
 							<button
 								type="button"
-								className="flex items-center gap-1.5 font-medium text-[#0471F0] text-sm"
+								className="flex items-center gap-1.5 font-medium text-primary text-sm hover:text-primary/80"
 								onClick={() => setShowPreview(!showPreview)}
 							>
-								<img
-									src={PreviewButton}
-									alt="Expand/Collapse"
-									className="h-5 w-5"
-								/>
-								<span>Preview</span>
+								<Eye className="size-4" />
+								<span>
+									{showPreview
+										? "Hide preview"
+										: "Show preview"}
+								</span>
 							</button>
+							{showPreview && (
+								<div className="mt-3 rounded-md border border-border bg-background p-3">
+									{preview ?? (
+										<span className="text-muted-foreground text-sm">
+											Pick a type and a value to see a
+											preview.
+										</span>
+									)}
+								</div>
+							)}
 						</div>
-						{showPreview && <div className="px-4">{preview}</div>}
 					</div>
 				</div>
 
@@ -898,6 +890,17 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							// Refactor this
 							if (variableType) {
 								if (variable) {
+									const aliasChanged =
+										variable.id !== variableName;
+									if (aliasChanged) {
+										rewriteVariableReferences(
+											state,
+											variable.id,
+											variableName,
+											affectedRefs,
+										);
+									}
+
 									state.dispatch({
 										message: ActionMessages.EDIT_VARIABLE,
 										payload: {
@@ -933,9 +936,22 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 										},
 									});
 
-									toast.success(
-										`Successfully editted ${variable.id}, remember to save your app.`,
-									);
+									if (
+										aliasChanged &&
+										affectedRefs.length > 0
+									) {
+										toast.success(
+											`Renamed ${variable.id} → ${variableName} and updated ${affectedRefs.length} ${
+												affectedRefs.length === 1
+													? "reference"
+													: "references"
+											}. Remember to save your app.`,
+										);
+									} else {
+										toast.success(
+											`Successfully edited ${variable.id}, remember to save your app.`,
+										);
+									}
 									onClose();
 								} else {
 									console.warn(

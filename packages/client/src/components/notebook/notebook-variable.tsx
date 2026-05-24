@@ -1,6 +1,6 @@
 import { Copy, MoreVertical, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
 import {
 	Button,
@@ -22,6 +22,11 @@ import { useWorkspace } from "@/hooks";
 import { suggestVariableRenames } from "../blocks-workspace/utils";
 import { AddVariablePopover } from "./add-variable-popover";
 import { RenameVariableDialog } from "./rename-variable-dialog";
+import {
+	type EnginesByType,
+	formatVariableInlineValue,
+	VariableIcon,
+} from "./variable-icon";
 import { VariablePreview } from "./variable-preview";
 
 interface NotebookTokenProps {
@@ -30,38 +35,7 @@ interface NotebookTokenProps {
 	/** Variable Value */
 	variable: Variable;
 	/** Engines loaded in root variable menu */
-	engines: {
-		models: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		databases: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		storages: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		functions: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-		vectors: {
-			engine_id: string;
-			engine_name: string;
-			engine_type: string;
-			engine_subtype: string;
-		}[];
-	};
+	engines: EnginesByType;
 }
 
 export const NotebookVariable = observer((props: NotebookTokenProps) => {
@@ -72,6 +46,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
 	const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
 	const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	// Auto-rename state
 	const [isAutoRenameModalOpen, setIsAutoRenameModalOpen] = useState(false);
@@ -138,7 +113,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		setIsProcessing(true);
 
 		try {
-			const out = JSON.parse(JSON.stringify(state.queries));
+			const out = JSON.parse(JSON.stringify(state.notebooks));
 
 			const placeholderRegex = /{{\s*([^{}\s]+)\s*}}/g;
 
@@ -246,59 +221,41 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		}
 	};
 
-	/**
-	 * Effects/Memos
-	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — engines shape is stable
-	const getVariableTypeDisplay: string = useMemo(() => {
-		if (
-			variable.type !== "query" &&
-			variable.type !== "block" &&
-			variable.type !== "cell"
-		) {
-			const engineId = state.getVariable(variable.to, variable.type);
-			const engine = engines[`${variable.type}s`]
-				? engines[`${variable.type}s`].find(
-						(engineValue) => engineValue.engine_id === engineId,
-					)
-				: null;
-			if (engine) {
-				return engine.engine_name;
-			} else {
-				return variable.type;
-			}
-		} else {
-			return variable.type;
-		}
-	}, [variable.type, engines, id]);
+	const constantValueDisplay = formatVariableInlineValue(variable, engines);
 
 	return (
 		<>
 			<li
 				key={id}
-				className="flex items-center justify-between py-1 pr-3 pl-6"
+				className="group/var flex items-center justify-between py-1 pr-3 pl-6 focus-within:bg-accent/40 hover:bg-accent/40"
 			>
 				{/* Left: variable info */}
-				<Tooltip openDelay={500}>
+				<Tooltip delayDuration={500}>
 					<TooltipTrigger asChild>
 						<button
 							type="button"
-							className="flex min-w-0 flex-1 cursor-pointer items-start gap-0 text-left"
+							className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
 							onClick={() => {
 								setIsRenameDialogOpen(true);
 							}}
 							data-testid={"notebook-variable-rename-trigger"}
 						>
-							<div className="flex min-w-0 flex-1 items-center gap-0">
-								<div className="flex min-w-0 flex-1 flex-col items-start">
-									<span className="block w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
-										{id}
-									</span>
-									<span className="text-muted-foreground text-sm capitalize">
-										{getVariableTypeDisplay}
-									</span>
-								</div>
-							</div>
+							<VariableIcon
+								variable={variable}
+								engines={engines}
+								className="size-4"
+							/>
+							<span className="block min-w-0 flex-shrink overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
+								{id}
+							</span>
+							{constantValueDisplay !== null && (
+								<span
+									className="block min-w-0 flex-shrink-[2] overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[12px] text-muted-foreground"
+									title={constantValueDisplay}
+								>
+									= {constantValueDisplay}
+								</span>
+							)}
 						</button>
 					</TooltipTrigger>
 					<TooltipContent
@@ -307,12 +264,19 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 						arrow={false}
 						className="bg-white p-0 text-foreground shadow-lg"
 					>
-						<VariablePreview variable={variable} id={id} />
+						<VariablePreview
+							variable={variable}
+							id={id}
+							engines={engines}
+						/>
 					</TooltipContent>
 				</Tooltip>
 
-				{/* Right: actions */}
-				<div className="flex shrink-0 items-center">
+				{/* Right: actions (hidden until hover/focus) */}
+				<div
+					className="flex shrink-0 items-center opacity-0 transition-opacity group-focus-within/var:opacity-100 group-hover/var:opacity-100 data-[menu-open=true]:opacity-100"
+					data-menu-open={isMenuOpen}
+				>
 					<button
 						type="button"
 						className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground"
@@ -323,7 +287,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 					>
 						<Copy className="size-3.5" />
 					</button>
-					<DropdownMenu>
+					<DropdownMenu onOpenChange={setIsMenuOpen}>
 						<DropdownMenuTrigger asChild>
 							<button
 								type="button"

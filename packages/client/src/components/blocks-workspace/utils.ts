@@ -66,7 +66,7 @@ export const suggestVariableRenames = async (
 				prompt = `
  I have this snippet of code:
  ${JSON.stringify(
-		state.queries[value.to!].cells[value.cellId!].parameters.code,
+		state.notebooks[value.to!].cells[value.cellId!].parameters.code,
  )},
  the current variable name for this code is "${key}".
  I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.

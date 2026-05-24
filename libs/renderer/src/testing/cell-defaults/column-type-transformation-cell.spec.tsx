@@ -119,7 +119,7 @@ const createStoreWithCells = (overrides?: {
 	});
 
 	if (targetCellExecuted) {
-		const targetCell = store.queries["query-1"].cells[targetCellId];
+		const targetCell = store.notebooks["query-1"].cells[targetCellId];
 		if (targetCell) {
 			targetCell._update("operation", ["FORMATTED_DATA_SET"]);
 			if (targetCellOutput !== undefined) {
@@ -128,7 +128,7 @@ const createStoreWithCells = (overrides?: {
 		}
 	}
 
-	const columnTypeCell = store.queries["query-1"].cells[
+	const columnTypeCell = store.notebooks["query-1"].cells[
 		"2"
 	] as CellState<ColumnTypeTransformationCellDef>;
 

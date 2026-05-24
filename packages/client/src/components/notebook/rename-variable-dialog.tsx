@@ -16,6 +16,7 @@ import {
 	countAffectedSources,
 	findVariableReferences,
 	noLigatureStyle,
+	rewriteVariableReferences,
 } from "./variable-references";
 
 interface RenameVariableDialogProps {
@@ -31,18 +32,6 @@ interface RenameVariableDialogProps {
 // duplicates in the variable store. Cell-derived defaults often contain
 // hyphens, so we allow letters / digits / underscore / hyphen.
 const isValidVariableName = (value: string) => /^[a-zA-Z0-9_-]+$/.test(value);
-
-const escapeRegex = (value: string) =>
-	value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const getStringByPath = (root: unknown, path: string[]): string | undefined => {
-	let node: unknown = root;
-	for (const seg of path) {
-		if (node == null || typeof node !== "object") return undefined;
-		node = (node as Record<string, unknown>)[seg];
-	}
-	return typeof node === "string" ? node : undefined;
-};
 
 /**
  * Shared dialog for renaming a notebook variable.
@@ -102,151 +91,7 @@ export const RenameVariableDialog = observer(
 				return;
 			}
 
-			const escaped = escapeRegex(oldName);
-			const replaceRegex = new RegExp(
-				`\\{\\{\\s*${escaped}(?:\\.[^}\\s]+)?\\s*\\}\\}`,
-				"g",
-			);
-			const rewriteMatch = (match: string) =>
-				match.replace(
-					new RegExp(`\\{\\{\\s*${escaped}`),
-					`{{${newName}`,
-				);
-
-			const cellPaths = new Map<
-				string,
-				{ queryId: string; cellId: string; path: string[] }
-			>();
-			const blockDataPaths = new Map<
-				string,
-				{ blockId: string; dataPath: string[] }
-			>();
-			const blockListeners = new Map<
-				string,
-				{ blockId: string; listenerName: string }
-			>();
-
-			affectedRefs.forEach((hit) => {
-				if (hit.kind === "cell" && hit.queryId && hit.cellId) {
-					const key = `${hit.queryId}--${hit.cellId}--${hit.pathLabel}`;
-					if (!cellPaths.has(key)) {
-						cellPaths.set(key, {
-							queryId: hit.queryId,
-							cellId: hit.cellId,
-							path: hit.path,
-						});
-					}
-					return;
-				}
-				if (hit.kind === "block" && hit.blockId) {
-					if (hit.path[0] === "data") {
-						const dataPath = hit.path.slice(1);
-						const key = `${hit.blockId}--${dataPath.join(".")}`;
-						if (!blockDataPaths.has(key)) {
-							blockDataPaths.set(key, {
-								blockId: hit.blockId,
-								dataPath,
-							});
-						}
-					} else if (hit.path[0] === "listeners" && hit.path[1]) {
-						const listenerName = hit.path[1];
-						const key = `${hit.blockId}--${listenerName}`;
-						if (!blockListeners.has(key)) {
-							blockListeners.set(key, {
-								blockId: hit.blockId,
-								listenerName,
-							});
-						}
-					}
-				}
-			});
-
-			// Rewrite cell parameter strings
-			cellPaths.forEach(({ queryId, cellId, path }) => {
-				const query = state.queries[queryId];
-				if (!query) return;
-				const cell = query.getCell(cellId);
-				if (!cell) return;
-				const current = getStringByPath(
-					{ parameters: cell.parameters },
-					path,
-				);
-				if (typeof current !== "string") return;
-				const next = current.replace(replaceRegex, rewriteMatch);
-				if (next !== current) {
-					state.dispatch({
-						message: ActionMessages.UPDATE_CELL,
-						payload: {
-							queryId,
-							cellId,
-							path: path.join("."),
-							value: next,
-						},
-					});
-				}
-			});
-
-			// Rewrite block data strings (one SET_BLOCK_DATA per dotted path)
-			blockDataPaths.forEach(({ blockId, dataPath }) => {
-				const block = state.blocks[blockId];
-				if (!block) return;
-				const current = getStringByPath(
-					{ data: (block as { data?: unknown }).data },
-					["data", ...dataPath],
-				);
-				if (typeof current !== "string") return;
-				const next = current.replace(replaceRegex, rewriteMatch);
-				if (next !== current) {
-					state.dispatch({
-						message: ActionMessages.SET_BLOCK_DATA,
-						payload: {
-							id: blockId,
-							path: dataPath.join("."),
-							value: next,
-						},
-					});
-				}
-			});
-
-			// Rewrite block listeners by stringify-replace-parse, then dispatch
-			// the full listener via SET_LISTENER so nested action params and
-			// listener-type are preserved.
-			blockListeners.forEach(({ blockId, listenerName }) => {
-				const block = state.blocks[blockId];
-				if (!block) return;
-				const listeners = (
-					block as {
-						listeners?: Record<
-							string,
-							{ order: unknown[]; type: "sync" | "async" }
-						>;
-					}
-				).listeners;
-				const listener = listeners?.[listenerName];
-				if (!listener) return;
-				const stringified = JSON.stringify(listener);
-				const rewritten = stringified.replace(
-					replaceRegex,
-					rewriteMatch,
-				);
-				if (rewritten === stringified) return;
-				let parsed: { order: unknown[]; type: "sync" | "async" };
-				try {
-					parsed = JSON.parse(rewritten);
-				} catch (e) {
-					console.error("Failed to parse rewritten listener JSON", e);
-					return;
-				}
-				state.dispatch({
-					message: ActionMessages.SET_LISTENER,
-					payload: {
-						id: blockId,
-						listener: listenerName,
-						actions: parsed.order as never,
-						type: parsed.type,
-					},
-				});
-			});
+			rewriteVariableReferences(state, oldName, newName, affectedRefs);
 
 			const success = await state.dispatch({
 				message: ActionMessages.RENAME_VARIABLE,

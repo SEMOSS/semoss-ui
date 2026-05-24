@@ -8,7 +8,7 @@ import {
 	type CellComponent,
 	type CellState,
 } from "../../../store";
-import type { QueryImportCellDef } from "../query-import-cell";
+import type { NotebookImportCellDef } from "../notebook-import-cell";
 import {
 	type ColumnInfo,
 	ColumnTransformationField,
@@ -45,10 +45,10 @@ export const CumulativeSumTransformationCell: CellComponent<CumulativeSumTransfo
 		const { cell, isExpanded } = props;
 		const { state } = useBlocks();
 
-		const targetCell: CellState<QueryImportCellDef> = computed(() => {
+		const targetCell: CellState<NotebookImportCellDef> = computed(() => {
 			return cell.query.cells[
 				cell.parameters.targetCell.id
-			] as CellState<QueryImportCellDef>;
+			] as CellState<NotebookImportCellDef>;
 		}).get();
 
 		const cellTransformation: Transformation<CumulativeSumTransformationDef> =

@@ -46,7 +46,7 @@ import {
 	ActionMessages,
 	type CellStateConfig,
 	type NewCellAction,
-	type QueryState,
+	type NotebookState,
 } from "../../store";
 import { DefaultCells } from "../cell-defaults";
 import { CodeCellConfig } from "../cell-defaults/code-cell";
@@ -114,7 +114,7 @@ type FormValues = {
 
 export const DataImportFormModal = observer(
 	(props: {
-		query?: QueryState;
+		query?: NotebookState;
 		previousCellId?: string;
 		setIsDataImportModalOpen?;
 		editMode?: boolean;
@@ -345,13 +345,13 @@ export const DataImportFormModal = observer(
 
 				if (
 					previousCellId &&
-					state.queries[query.id].cells[previousCellId].widget ===
+					state.notebooks[query.id].cells[previousCellId].widget ===
 						widget &&
 					widget === CodeCellConfig.widget
 				) {
 					const previousCellType =
-						state.queries[query.id].cells[previousCellId].parameters
-							?.type ?? "pixel";
+						state.notebooks[query.id].cells[previousCellId]
+							.parameters?.type ?? "pixel";
 					config.parameters = {
 						...DefaultCells[widget].parameters,
 						type: previousCellType,

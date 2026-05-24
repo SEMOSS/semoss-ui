@@ -106,7 +106,7 @@ const createCodeCellStore = () => {
 		},
 	});
 
-	const codeCell = store.queries["query-1"]
+	const codeCell = store.notebooks["query-1"]
 		.cells[1] as CellState<CodeCellDef>;
 	return { store, codeCell };
 };
