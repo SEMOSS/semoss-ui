@@ -52,6 +52,11 @@ import {
 	isOutputJSON,
 	splitAtPeriod,
 } from "../../utility";
+import {
+	countAffectedSources,
+	findVariableReferences,
+	noLigatureStyle,
+} from "./variable-references";
 
 const ENGINE_ICONS: Record<string, LucideIcon> = {
 	model: Bot,
@@ -126,6 +131,28 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	const [variableName, setVariableName] = useState("");
 	const [variableType, setVariableType] = useState<VariableType | "">("");
 	const [variablePointer, setVariablePointer] = useState("");
+
+	// In edit mode, find every {{currentName}} reference so we can surface a
+	// list of affected cells/blocks and warn the user when they change the
+	// underlying type or pointer (the alias key is preserved but consumers
+	// will silently get a different value).
+	const affectedRefs = useMemo(
+		() => (variable?.id ? findVariableReferences(state, variable.id) : []),
+		[variable, state],
+	);
+	const affectedSourceCount = useMemo(
+		() => countAffectedSources(affectedRefs),
+		[affectedRefs],
+	);
+	const typeOrPointerChanged = useMemo(() => {
+		if (!variable) return false;
+		if (variableType !== variable.type) return true;
+		if (variable.type === "cell") {
+			const originalPointer = `${variable.to}.${(variable as { cellId?: string }).cellId ?? ""}`;
+			return originalPointer !== variablePointer;
+		}
+		return variable.to !== variablePointer;
+	}, [variable, variableType, variablePointer]);
 	const [engine, setEngine] = useState<{
 		engine_id: string;
 		engine_name: string;
@@ -216,7 +243,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		} else if (variableType === "cell") {
 			return cells.map((cell) => ({
 				value: `${cell.query.id}.${cell.id}`,
-				label: `${cell.query.id} - ${cell.id}`,
+				label: `${cell.query.id}--${cell.id}`,
 			}));
 		} else if (variableType === "model") {
 			return engines.models.map((m) => ({
@@ -349,7 +376,16 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						}
 					}}
 				>
-					<SelectTrigger className="h-auto min-h-10 w-full py-2">
+					<SelectTrigger
+						className="h-auto min-h-10 w-full py-2"
+						style={
+							variableType === "cell" ||
+							variableType === "block" ||
+							variableType === "query"
+								? noLigatureStyle
+								: undefined
+						}
+					>
 						{isEngineType(variableType) && engine ? (
 							<div className="flex items-center gap-2 text-left">
 								{engine.engine_type ? (
@@ -415,7 +451,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 								</SelectItem>
 							) : (
 								<SelectItem key={opt.value} value={opt.value}>
-									{opt.label}
+									<span style={noLigatureStyle}>
+										{opt.label}
+									</span>
 								</SelectItem>
 							),
 						)}
@@ -485,7 +523,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					};
 
 					return (
-						<div className="w-full">
+						<div className="relative w-full min-w-0 overflow-hidden">
 							<Renderer state={s} />
 						</div>
 					);
@@ -692,7 +730,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				</DialogHeader>
 
 				<div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pr-1">
-					{variable && (
+					{variable && affectedRefs.length === 0 && (
 						<Alert>
 							<AlertTriangle className="size-4 text-yellow-600" />
 							<AlertTitle>Warning</AlertTitle>
@@ -702,6 +740,84 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							</AlertDescription>
 						</Alert>
 					)}
+					{variable && affectedRefs.length > 0 && (
+						<div className="rounded-md border border-border bg-muted/30 px-3 py-2">
+							<div className="font-medium text-xs">
+								{affectedRefs.length}{" "}
+								{affectedRefs.length === 1
+									? "reference"
+									: "references"}{" "}
+								across {affectedSourceCount}{" "}
+								{affectedSourceCount === 1
+									? "location"
+									: "locations"}{" "}
+								to{" "}
+								<span
+									className="font-mono"
+									style={noLigatureStyle}
+								>
+									{`{{${variable.id}}}`}
+								</span>
+								. The alias is preserved when you save — but
+								changing type or pointer makes these resolve to
+								a different value.
+							</div>
+							<ul className="mt-1.5 flex max-h-40 flex-col gap-1 overflow-y-auto text-xs">
+								{affectedRefs.map((hit) => (
+									<li
+										key={hit.key}
+										className="flex flex-col gap-0.5 rounded border border-border/60 bg-background px-2 py-1.5"
+									>
+										<div className="flex items-center gap-1.5">
+											<span className="inline-flex items-center rounded bg-primary/10 px-1 py-0.5 font-medium text-[9px] text-primary uppercase tracking-wider">
+												{hit.kind}
+											</span>
+											<span
+												className="font-medium font-mono"
+												style={noLigatureStyle}
+											>
+												{hit.sourceLabel}
+											</span>
+											<span className="inline-flex items-center rounded bg-muted px-1 py-0.5 font-medium text-[9px] text-muted-foreground uppercase tracking-wider">
+												{hit.widget}
+											</span>
+											<span
+												className="truncate font-mono text-[10px] text-muted-foreground"
+												style={noLigatureStyle}
+											>
+												{hit.pathLabel}
+											</span>
+										</div>
+										<code
+											className="block overflow-hidden text-ellipsis whitespace-nowrap font-mono text-[11px] text-muted-foreground"
+											style={noLigatureStyle}
+										>
+											{hit.snippet}
+										</code>
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
+					{variable &&
+						affectedRefs.length > 0 &&
+						typeOrPointerChanged && (
+							<Alert variant="destructive">
+								<AlertTriangle className="size-4" />
+								<AlertTitle>
+									This will affect {affectedSourceCount}{" "}
+									{affectedSourceCount === 1
+										? "location"
+										: "locations"}
+								</AlertTitle>
+								<AlertDescription>
+									You're changing the type or what this
+									variable points to. The references above
+									will keep working but will silently resolve
+									to a different value (or wrong type).
+								</AlertDescription>
+							</Alert>
+						)}
 					<div className="flex flex-col gap-3 pt-1">
 						<div className="flex flex-col gap-1.5 px-4">
 							<Label className="text-muted-foreground text-sm">

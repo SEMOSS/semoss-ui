@@ -6,10 +6,10 @@ import {
 	AuditLogFilter,
 	AuditLogsDataTable,
 	AuditLogsTimeline,
+	type EventData,
 } from "@semoss/shared";
 import { Button, Skeleton, toast } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
-import type { EventData } from "./common/utility";
 
 /**
  * This component displays the audit logs.

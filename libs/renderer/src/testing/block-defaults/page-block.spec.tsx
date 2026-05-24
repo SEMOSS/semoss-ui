@@ -1,5 +1,5 @@
 import { expect, vi } from "vitest";
-import { PageBlock } from "../../components/block-defaults/page-block/PageBlock";
+import { PageBlock } from "../../components/block-defaults/page-block/page-block";
 import { render, screen } from "../utils";
 
 const blocks = {

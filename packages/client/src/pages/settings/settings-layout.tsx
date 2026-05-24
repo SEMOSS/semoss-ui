@@ -15,7 +15,11 @@ import {
 	useParams,
 } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
-import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
+import {
+	AppCatalogAvatar,
+	EngineSubtypeIcon,
+	EntityHeader,
+} from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -34,7 +38,6 @@ import {
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
 import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
-import { EntityHeader } from "@/components/shared/entity-header";
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
 import { useAPI, useRootStore } from "@/hooks";

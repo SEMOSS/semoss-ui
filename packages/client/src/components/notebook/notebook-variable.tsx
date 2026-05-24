@@ -13,7 +13,6 @@ import {
 	DropdownMenuContent,
 	DropdownMenuItem,
 	DropdownMenuTrigger,
-	Input,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
@@ -22,6 +21,7 @@ import {
 import { useWorkspace } from "@/hooks";
 import { suggestVariableRenames } from "../blocks-workspace/utils";
 import { AddVariablePopover } from "./add-variable-popover";
+import { RenameVariableDialog } from "./rename-variable-dialog";
 import { VariablePreview } from "./variable-preview";
 
 interface NotebookTokenProps {
@@ -70,8 +70,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
 	const { workspace } = useWorkspace();
 
-	const [openRenameAlias, setOpenRenameAlias] = useState(false);
-	const [newTokenAlias, setNewTokenAlias] = useState(id);
+	const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
 	const [isEditPopoverOpen, setIsEditPopoverOpen] = useState(false);
 
 	// Auto-rename state
@@ -286,86 +285,20 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 							type="button"
 							className="flex min-w-0 flex-1 cursor-pointer items-start gap-0 text-left"
 							onClick={() => {
-								setOpenRenameAlias(true);
+								setIsRenameDialogOpen(true);
 							}}
+							data-testid={"notebook-variable-rename-trigger"}
 						>
-							{!openRenameAlias ? (
-								<div className="flex min-w-0 flex-1 items-center gap-0">
-									<div className="flex min-w-0 flex-1 flex-col items-start">
-										<span className="block w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
-											{id}
-										</span>
-										<span className="text-muted-foreground text-sm capitalize">
-											{getVariableTypeDisplay}
-										</span>
-									</div>
-								</div>
-							) : (
-								<div className="flex min-w-0 flex-1 flex-col gap-1">
-									<Input
-										className="notebook-variable__alias-name-text-field h-7 rounded-none border-0 border-b px-0 text-sm focus-visible:ring-0"
-										// biome-ignore lint/suspicious/noExplicitAny: input ref callback
-										ref={(input: any) => input?.focus()}
-										value={newTokenAlias}
-										onChange={(e) => {
-											setNewTokenAlias(e.target.value);
-										}}
-										data-testid={
-											"notebook-variable-rename-input"
-										}
-										onKeyDown={async (e) => {
-											if (e.key === "Enter") {
-												setOpenRenameAlias(false);
-
-												const isValidSyntax =
-													isValidPythonVariableName(
-														newTokenAlias,
-													);
-
-												if (!isValidSyntax) {
-													toast.error(
-														`Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
-													);
-													return;
-												}
-
-												const success =
-													await state.dispatch({
-														message:
-															ActionMessages.RENAME_VARIABLE,
-														payload: {
-															id: id,
-															alias: newTokenAlias,
-														},
-													});
-
-												if (success) {
-													toast.success(
-														`Successfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`,
-													);
-												} else {
-													toast.error(
-														`Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
-													);
-												}
-
-												setNewTokenAlias(
-													success
-														? newTokenAlias
-														: id,
-												);
-											}
-										}}
-										onBlur={() => {
-											setOpenRenameAlias(false);
-											setNewTokenAlias(id);
-										}}
-									/>
-									<span className="text-muted-foreground text-xs italic">
-										Press enter to update variable name
+							<div className="flex min-w-0 flex-1 items-center gap-0">
+								<div className="flex min-w-0 flex-1 flex-col items-start">
+									<span className="block w-full min-w-0 overflow-hidden text-ellipsis whitespace-nowrap font-normal text-[#202020] text-[14px] leading-[20px]">
+										{id}
+									</span>
+									<span className="text-muted-foreground text-sm capitalize">
+										{getVariableTypeDisplay}
 									</span>
 								</div>
-							)}
+							</div>
 						</button>
 					</TooltipTrigger>
 					<TooltipContent
@@ -443,6 +376,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 					</DropdownMenu>
 				</div>
 			</li>
+
+			<RenameVariableDialog
+				open={isRenameDialogOpen}
+				onOpenChange={setIsRenameDialogOpen}
+				currentName={id}
+			/>
 
 			{/* Delete confirmation dialog */}
 			<Dialog

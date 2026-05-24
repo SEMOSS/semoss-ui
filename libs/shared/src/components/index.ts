@@ -4,6 +4,7 @@ export * from "./column-metadata-modal";
 export * from "./data-type-icon";
 export * from "./engine";
 export * from "./engine-subtype-icon";
+export * from "./entity-header";
 export * from "./file";
 export * from "./flex-layout";
 export * from "./form";

@@ -77,13 +77,26 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 		);
 	}
 
+	// Strip `overflow: auto/scroll` from data.style on text elements — saved
+	// templates historically include these, which create spurious horizontal
+	// scrollbars on tiny `<p>` tags and inflate ancestor containers (in modals
+	// like the App Preview). Text wrapping is already handled by
+	// `overflow-wrap: anywhere` / `white-space: pre-line` defaults.
+	const sanitizedStyle: CSSProperties = { ...data.style };
+	if (
+		sanitizedStyle.overflow === "auto" ||
+		sanitizedStyle.overflow === "scroll"
+	) {
+		sanitizedStyle.overflow = "visible";
+	}
+
 	// TODO: Why?
 	return showBlock(block, state)
 		? React.createElement(
 				data.variant ? data.variant : "p",
 				{
 					style: {
-						...data.style,
+						...sanitizedStyle,
 						...(data.variant === "h1"
 							? { lineHeight: "116.7%" }
 							: {}),
@@ -96,7 +109,7 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 			)
 		: React.createElement("p", {
 				style: {
-					...data.style,
+					...sanitizedStyle,
 					marginBlockStart: "0px",
 					marginBlockEnd: "0px",
 				},

@@ -3,7 +3,7 @@ import type React from "react";
 import { RendererEngine } from "@semoss/renderer";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { useDesigner } from "@/hooks";
-import { Screen } from "./Screen";
+import { Screen } from "./screen";
 
 interface DesignerPanelProps {
 	/** Id of the designer */
