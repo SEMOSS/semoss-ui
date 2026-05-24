@@ -132,6 +132,7 @@ export interface WorkspaceConfigInterface {
  * Store that manages instances of the insights and handles applicaiton level querying
  */
 export class WorkspaceStore {
+	// biome-ignore lint/correctness/noUnusedPrivateClassMembers: kept for future use
 	private _root: RootStore;
 	private _store: WorkspaceStoreInterface = {
 		appId: "",
@@ -258,7 +259,7 @@ export class WorkspaceStore {
 	 * The key for the local storage cache
 	 */
 	get cacheKey() {
-		return `smss-workspace--${this._store.appId}-v4`;
+		return `smss-workspace--${this._store.appId}-v5`;
 	}
 
 	/**

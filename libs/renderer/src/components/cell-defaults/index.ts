@@ -35,9 +35,9 @@ import {
 import { LLMCellConfig, type LLMCellDef } from "./llm-cell";
 import { MCPToolCellConfig, type MCPToolCellDef } from "./mcp-tool-cell";
 import {
-	QueryImportCellConfig,
-	type QueryImportCellDef,
-} from "./query-import-cell";
+	NotebookImportCellConfig,
+	type NotebookImportCellDef,
+} from "./notebook-import-cell";
 import type { TransformationCellDef } from "./shared";
 import { TextToSqlCellConfig, type TextToSqlCellDef } from "./text-to-sql-cell";
 import {
@@ -69,7 +69,7 @@ export type DefaultCellDefinitions =
 	| JoinTransformationCellDef
 	| LLMCellDef
 	| MCPToolCellDef
-	| QueryImportCellDef
+	| NotebookImportCellDef
 	| TextToSqlCellDef
 	| TransformationCellDef
 	| TimestampTransformationCellDef
@@ -79,7 +79,7 @@ export type DefaultCellDefinitions =
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[CodeCellConfig.widget]: CodeCellConfig,
-	[QueryImportCellConfig.widget]: QueryImportCellConfig,
+	[NotebookImportCellConfig.widget]: NotebookImportCellConfig,
 	[FilterDataCellConfig.widget]: FilterDataCellConfig,
 	[UnFilterDataCellConfig.widget]: UnFilterDataCellConfig,
 	[DataImportCellConfig.widget]: DataImportCellConfig,

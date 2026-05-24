@@ -8,7 +8,7 @@
  * variable's type or pointer changes).
  */
 
-import type { StateStore } from "@semoss/renderer";
+import { ActionMessages, type StateStore } from "@semoss/renderer";
 
 export interface ReferenceHit {
 	key: string;
@@ -86,11 +86,11 @@ export const findVariableReferences = (
 	const hits: ReferenceHit[] = [];
 
 	// Cells
-	Object.keys(state.queries).forEach((qid) => {
-		const query = state.queries[qid];
-		if (!query) return;
-		query.list.forEach((cid) => {
-			const cell = query.getCell(cid);
+	Object.keys(state.notebooks).forEach((qid) => {
+		const notebook = state.notebooks[qid];
+		if (!notebook) return;
+		notebook.list.forEach((cid) => {
+			const cell = notebook.getCell(cid);
 			if (!cell) return;
 			const cellLabel = state.getAlias(qid, cid) || cid;
 			const leaves: { path: string[]; value: string }[] = [];
@@ -174,4 +174,163 @@ export const countAffectedSources = (refs: ReferenceHit[]): number => {
 		);
 	});
 	return set.size;
+};
+
+const getStringByPath = (root: unknown, path: string[]): string | undefined => {
+	let node: unknown = root;
+	for (const seg of path) {
+		if (node == null || typeof node !== "object") return undefined;
+		node = (node as Record<string, unknown>)[seg];
+	}
+	return typeof node === "string" ? node : undefined;
+};
+
+/**
+ * Rewrite every `{{oldName}}` (and `{{oldName.path}}`) reference found in
+ * `refs` to use `newName` instead. Walks cell parameters, block data, and
+ * block listeners and dispatches the appropriate update action for each
+ * mutation. Caller is responsible for updating the variable alias in the
+ * store (via RENAME_VARIABLE or EDIT_VARIABLE) — this helper only fixes the
+ * call sites.
+ */
+export const rewriteVariableReferences = (
+	state: StateStore,
+	oldName: string,
+	newName: string,
+	refs: ReferenceHit[],
+): void => {
+	const escaped = escapeRegex(oldName);
+	const replaceRegex = new RegExp(
+		`\\{\\{\\s*${escaped}(?:\\.[^}\\s]+)?\\s*\\}\\}`,
+		"g",
+	);
+	const rewriteMatch = (match: string) =>
+		match.replace(new RegExp(`\\{\\{\\s*${escaped}`), `{{${newName}`);
+
+	const cellPaths = new Map<
+		string,
+		{ queryId: string; cellId: string; path: string[] }
+	>();
+	const blockDataPaths = new Map<
+		string,
+		{ blockId: string; dataPath: string[] }
+	>();
+	const blockListeners = new Map<
+		string,
+		{ blockId: string; listenerName: string }
+	>();
+
+	refs.forEach((hit) => {
+		if (hit.kind === "cell" && hit.queryId && hit.cellId) {
+			const key = `${hit.queryId}--${hit.cellId}--${hit.pathLabel}`;
+			if (!cellPaths.has(key)) {
+				cellPaths.set(key, {
+					queryId: hit.queryId,
+					cellId: hit.cellId,
+					path: hit.path,
+				});
+			}
+			return;
+		}
+		if (hit.kind === "block" && hit.blockId) {
+			if (hit.path[0] === "data") {
+				const dataPath = hit.path.slice(1);
+				const key = `${hit.blockId}--${dataPath.join(".")}`;
+				if (!blockDataPaths.has(key)) {
+					blockDataPaths.set(key, {
+						blockId: hit.blockId,
+						dataPath,
+					});
+				}
+			} else if (hit.path[0] === "listeners" && hit.path[1]) {
+				const listenerName = hit.path[1];
+				const key = `${hit.blockId}--${listenerName}`;
+				if (!blockListeners.has(key)) {
+					blockListeners.set(key, {
+						blockId: hit.blockId,
+						listenerName,
+					});
+				}
+			}
+		}
+	});
+
+	cellPaths.forEach(({ queryId, cellId, path }) => {
+		const notebook = state.notebooks[queryId];
+		if (!notebook) return;
+		const cell = notebook.getCell(cellId);
+		if (!cell) return;
+		const current = getStringByPath({ parameters: cell.parameters }, path);
+		if (typeof current !== "string") return;
+		const next = current.replace(replaceRegex, rewriteMatch);
+		if (next !== current) {
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					queryId,
+					cellId,
+					path: path.join("."),
+					value: next,
+				},
+			});
+		}
+	});
+
+	blockDataPaths.forEach(({ blockId, dataPath }) => {
+		const block = state.blocks[blockId];
+		if (!block) return;
+		const current = getStringByPath(
+			{ data: (block as { data?: unknown }).data },
+			["data", ...dataPath],
+		);
+		if (typeof current !== "string") return;
+		const next = current.replace(replaceRegex, rewriteMatch);
+		if (next !== current) {
+			state.dispatch({
+				message: ActionMessages.SET_BLOCK_DATA,
+				payload: {
+					id: blockId,
+					path: dataPath.join("."),
+					value: next,
+				},
+			});
+		}
+	});
+
+	// Listeners are JSON trees of action params; the simplest correct rewrite is
+	// stringify → regex-replace → parse → SET_LISTENER. Preserves listener type
+	// (sync/async) and nested action order.
+	blockListeners.forEach(({ blockId, listenerName }) => {
+		const block = state.blocks[blockId];
+		if (!block) return;
+		const listeners = (
+			block as {
+				listeners?: Record<
+					string,
+					{ order: unknown[]; type: "sync" | "async" }
+				>;
+			}
+		).listeners;
+		const listener = listeners?.[listenerName];
+		if (!listener) return;
+		const stringified = JSON.stringify(listener);
+		const rewritten = stringified.replace(replaceRegex, rewriteMatch);
+		if (rewritten === stringified) return;
+		let parsed: { order: unknown[]; type: "sync" | "async" };
+		try {
+			parsed = JSON.parse(rewritten);
+		} catch (e) {
+			console.error("Failed to parse rewritten listener JSON", e);
+			return;
+		}
+		state.dispatch({
+			message: ActionMessages.SET_LISTENER,
+			payload: {
+				id: blockId,
+				listener: listenerName,
+				actions: parsed.order as never,
+				type: parsed.type,
+			},
+		});
+	});
 };

@@ -49,8 +49,8 @@ import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard, isOutputJSON } from "@/utility";
-import { replaceInBlocks } from "@/utility/dependencyReplacer";
-import { getDependentBlocks } from "@/utility/dependencyScanner";
+import { replaceInBlocks } from "@/utility/dependency-replacer";
+import { getDependentBlocks } from "@/utility/dependency-scanner";
 import { DependencyPromptModal } from "../blocks-workspace";
 import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./notebook-add-cell";
@@ -110,23 +110,23 @@ export const NotebookCell = observer(
 		const cardActionsRef = useRef(null);
 
 		// get the cell
-		const query = state.getQuery(queryId);
+		const query = state.getNotebook(queryId);
 		const cell = query.getCell(cellId);
 
 		const variableName = state.getAlias(queryId, cellId);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: dependentBlocksModal is intentional dep
 		const replacementCellOptions = useMemo(() => {
-			if (!state.queries) return [];
+			if (!state.notebooks) return [];
 			const allCellsList = [];
-			Object.keys(state.queries).forEach((queryId) => {
-				state.queries[queryId].list.forEach((cellId) => {
+			Object.keys(state.notebooks).forEach((queryId) => {
+				state.notebooks[queryId].list.forEach((cellId) => {
 					if (cellId === cell.id && queryId === cell.query.id) return;
 					allCellsList.push(`${queryId}--${cellId}`);
 				});
 			});
 			return allCellsList;
-		}, [state.queries, dependentBlocksModal === true]);
+		}, [state.notebooks, dependentBlocksModal === true]);
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: intentional — only react to isExecuted
 		useEffect(() => {

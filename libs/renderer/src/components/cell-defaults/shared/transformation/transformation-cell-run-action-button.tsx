@@ -3,7 +3,7 @@ import { computed } from "mobx";
 import { Button } from "@semoss/ui/next";
 import { useBlocks } from "../../../../hooks";
 import { ActionMessages, type CellState } from "../../../../store";
-import type { QueryImportCellDef } from "../../query-import-cell";
+import type { NotebookImportCellDef } from "../../notebook-import-cell";
 import type { TransformationCellDef } from "./transformation.types";
 
 export const TransformationCellRunActionButton = (props: {
@@ -13,10 +13,10 @@ export const TransformationCellRunActionButton = (props: {
 	const { cell } = props;
 	const { state } = useBlocks();
 
-	const targetCell: CellState<QueryImportCellDef> = computed(() => {
+	const targetCell: CellState<NotebookImportCellDef> = computed(() => {
 		return cell.query.cells[
 			cell.parameters.targetCell.id
-		] as CellState<QueryImportCellDef>;
+		] as CellState<NotebookImportCellDef>;
 	}).get();
 
 	const doesFrameExist: boolean = computed(() => {

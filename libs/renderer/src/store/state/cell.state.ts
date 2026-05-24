@@ -5,7 +5,7 @@ import {
 	runPixelAsync,
 } from "@semoss/sdk/react";
 import { setValueByPath } from "../../utility";
-import type { QueryState } from "./query.state";
+import type { NotebookState } from "./notebook.state";
 import type { StateStore } from "./state.store";
 import type { CellComponent, CellConfig, CellDef } from "./state.types";
 
@@ -51,7 +51,7 @@ export interface CellStateConfig<D extends CellDef = CellDef> {
  */
 export class CellState<D extends CellDef = CellDef> {
 	private _state: StateStore;
-	private _query: QueryState;
+	private _query: NotebookState;
 	private _store: CellStateStoreInterface<D> = {
 		id: "",
 		isLoading: false,
@@ -63,7 +63,11 @@ export class CellState<D extends CellDef = CellDef> {
 		parameters: {},
 	};
 
-	constructor(config: CellStateConfig, query: QueryState, state: StateStore) {
+	constructor(
+		config: CellStateConfig,
+		query: NotebookState,
+		state: StateStore,
+	) {
 		// register the query + state
 		this._query = query;
 		this._state = state;

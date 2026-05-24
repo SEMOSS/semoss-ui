@@ -109,7 +109,7 @@ const createStoreWithCells = (overrides?: {
 	// Simulate target cell execution via _update to set internal store values
 	// (MobX computed properties cannot be overridden with Object.defineProperty)
 	if (targetCellExecuted) {
-		const targetCell = store.queries["mcp_driver"].cells[targetCellId];
+		const targetCell = store.notebooks.mcp_driver.cells[targetCellId];
 		if (targetCell) {
 			targetCell._update("operation", ["FORMATTED_DATA_SET"]);
 			if (targetCellOutput !== undefined) {
@@ -121,7 +121,7 @@ const createStoreWithCells = (overrides?: {
 		}
 	}
 
-	const cell = store.queries["mcp_driver"].cells[
+	const cell = store.notebooks.mcp_driver.cells[
 		"1"
 		// ] as CellState<CollapseTransformationCellDef>;
 	] as CellState<TextToSqlCellDef>;

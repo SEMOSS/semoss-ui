@@ -19,8 +19,8 @@ import {
 	type DefaultCellDefinitions,
 	DefaultCells,
 	type NewCellAction,
-	QueryImportCellConfig,
-	type QueryState,
+	NotebookImportCellConfig,
+	type NotebookState,
 	TransformationCells,
 	useBlocks,
 } from "@semoss/renderer";
@@ -117,7 +117,7 @@ const AddCellOptions: Record<string, AddCellOption> = {
 };
 
 export const NotebookAddCell = observer(
-	(props: { query: QueryState; previousCellId?: string }): JSX.Element => {
+	(props: { query: NotebookState; previousCellId?: string }): JSX.Element => {
 		const [selectedAddCell, setSelectedAddCell] = useState<string>("");
 		const [isDataImportModalOpen, setIsDataImportModalOpen] =
 			useState<boolean>(false);
@@ -194,7 +194,7 @@ export const NotebookAddCell = observer(
 					parameters: DefaultCells[widget].parameters,
 				};
 
-				if (widget === QueryImportCellConfig.widget) {
+				if (widget === NotebookImportCellConfig.widget) {
 					config.parameters = {
 						...DefaultCells[widget].parameters,
 						frameVariableName: `FRAME_${Math.floor(
@@ -205,13 +205,13 @@ export const NotebookAddCell = observer(
 
 				if (
 					previousCellId &&
-					state.queries[query.id].cells[previousCellId].widget ===
+					state.notebooks[query.id].cells[previousCellId].widget ===
 						widget &&
 					widget === CodeCellConfig.widget
 				) {
 					const previousCellType =
-						state.queries[query.id].cells[previousCellId].parameters
-							?.type ?? "pixel";
+						state.notebooks[query.id].cells[previousCellId]
+							.parameters?.type ?? "pixel";
 					config.parameters = {
 						...DefaultCells[widget].parameters,
 						type: previousCellType,

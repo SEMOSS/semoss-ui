@@ -125,7 +125,7 @@ const createStoreWithCells = (overrides?: {
 	// Simulate target cell execution via _update to set internal store values
 	// (MobX computed properties cannot be overridden with Object.defineProperty)
 	if (targetCellExecuted) {
-		const targetCell = store.queries["query-1"].cells[targetCellId];
+		const targetCell = store.notebooks["query-1"].cells[targetCellId];
 		if (targetCell) {
 			targetCell._update("operation", ["FORMATTED_DATA_SET"]);
 			if (targetCellOutput !== undefined) {
@@ -134,7 +134,7 @@ const createStoreWithCells = (overrides?: {
 		}
 	}
 
-	const timestampCell = store.queries["query-1"].cells[
+	const timestampCell = store.notebooks["query-1"].cells[
 		"2"
 	] as CellState<TimestampTransformationCellDef>;
 
