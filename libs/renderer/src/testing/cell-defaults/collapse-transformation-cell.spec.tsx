@@ -3,9 +3,9 @@ import { render, screen } from "@testing-library/react";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Blocks } from "../../components/blocks";
 import {
-	ColumnTypeTransformationCell,
-	type ColumnTypeTransformationCellDef,
-} from "../../components/cell-defaults/column-type-transformation-cell/ColumnTypeTransformationCell";
+	CollapseTransformationCell,
+	type CollapseTransformationCellDef,
+} from "../../components/cell-defaults/collapse-transformation-cell/collapse-transformation-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK pixel calls in ColumnTransformationField
@@ -17,21 +17,29 @@ vi.mock("../../hooks/useBlocksPixel", () => ({
 	}),
 }));
 
+/**
+ * Helper to create a StateStore with a query containing
+ * a query-import cell and a collapse-transformation cell.
+ */
 const createStoreWithCells = (overrides?: {
 	targetCellId?: string;
 	targetFrameVariableName?: string;
 	targetCellExecuted?: boolean;
 	targetCellOutput?: unknown;
-	column?: { name: string; dataType: string } | null;
-	columnType?: string | null;
+	columns?: { name: string; dataType: string }[];
+	value?: { name: string; dataType: string } | null;
+	delimiter?: string | null;
+	maintainColumns?: { name: string; dataType: string }[];
 }) => {
 	const {
 		targetCellId = "1",
 		targetFrameVariableName = "testFrame",
 		targetCellExecuted = false,
 		targetCellOutput = undefined,
-		column = null,
-		columnType = null,
+		columns = [],
+		value = null,
+		delimiter = null,
+		maintainColumns = [],
 	} = overrides || {};
 
 	const store = new StateStore({
@@ -58,13 +66,15 @@ const createStoreWithCells = (overrides?: {
 						},
 						{
 							id: "2",
-							widget: "column-type-transformation",
+							widget: "collapse-transformation",
 							parameters: {
 								transformation: {
-									key: "column-type",
+									key: "collapse",
 									parameters: {
-										column,
-										columnType,
+										columns,
+										value,
+										delimiter,
+										maintainColumns,
 									},
 								},
 								targetCell: {
@@ -96,16 +106,18 @@ const createStoreWithCells = (overrides?: {
 				},
 				toPixel: () => "",
 			},
-			"column-type-transformation": {
-				name: "Change Column Type",
-				widget: "column-type-transformation",
+			"collapse-transformation": {
+				name: "Collapse",
+				widget: "collapse-transformation",
 				view: () => null,
 				parameters: {
 					transformation: {
-						key: "column-type",
+						key: "collapse",
 						parameters: {
-							column: null,
-							columnType: null,
+							columns: [],
+							value: null,
+							delimiter: null,
+							maintainColumns: [],
 						},
 					},
 					targetCell: {
@@ -118,6 +130,8 @@ const createStoreWithCells = (overrides?: {
 		},
 	});
 
+	// Simulate target cell execution via _update to set internal store values
+	// (MobX computed properties cannot be overridden with Object.defineProperty)
 	if (targetCellExecuted) {
 		const targetCell = store.queries["query-1"].cells[targetCellId];
 		if (targetCell) {
@@ -128,32 +142,35 @@ const createStoreWithCells = (overrides?: {
 		}
 	}
 
-	const columnTypeCell = store.queries["query-1"].cells[
+	const collapseCell = store.queries["query-1"].cells[
 		"2"
-	] as CellState<ColumnTypeTransformationCellDef>;
+	] as CellState<CollapseTransformationCellDef>;
 
-	return { store, columnTypeCell };
+	return { store, collapseCell };
 };
 
-const renderColumnTypeCell = (
+/**
+ * Renders the CollapseTransformationCell within a Blocks provider.
+ */
+const renderCollapseCell = (
 	overrides?: Parameters<typeof createStoreWithCells>[0],
 	isExpanded = true,
 ) => {
-	const { store, columnTypeCell } = createStoreWithCells(overrides);
+	const { store, collapseCell } = createStoreWithCells(overrides);
 
 	const result = render(
 		<Blocks state={store} registry={{} as Registry}>
-			<ColumnTypeTransformationCell
-				cell={columnTypeCell}
+			<CollapseTransformationCell
+				cell={collapseCell}
 				isExpanded={isExpanded}
 			/>
 		</Blocks>,
 	);
 
-	return { ...result, store, columnTypeCell };
+	return { ...result, store, collapseCell };
 };
 
-describe("ColumnTypeTransformationCell", () => {
+describe("CollapseTransformationCell", () => {
 	beforeAll(() => {
 		vi.stubGlobal("jest", {
 			advanceTimersByTime: vi.advanceTimersByTime.bind(vi),
@@ -169,17 +186,17 @@ describe("ColumnTypeTransformationCell", () => {
 	});
 
 	it("renders collapsed state as a chip when not expanded", () => {
-		const { container } = renderColumnTypeCell({}, false);
+		const { container } = renderCollapseCell({}, false);
 
 		const chip = container.querySelector("span.rounded-full");
 		expect(chip).toBeInTheDocument();
-		expect(screen.getByText("Change Column Type")).toBeInTheDocument();
+		expect(screen.getByText("Collapse")).toBeInTheDocument();
 	});
 
 	it("renders help text when target cell is not executed", () => {
-		renderColumnTypeCell({ targetCellExecuted: false });
+		renderCollapseCell({ targetCellExecuted: false });
 
-		expect(screen.getByText("Change Column Type")).toBeInTheDocument();
+		expect(screen.getByText("Collapse")).toBeInTheDocument();
 		expect(
 			screen.getByText(
 				"Run Cell 1 to define the target frame variable before applying a transformation.",
@@ -188,16 +205,22 @@ describe("ColumnTypeTransformationCell", () => {
 	});
 
 	it("renders full form when target cell is executed", () => {
-		renderColumnTypeCell({
+		renderCollapseCell({
 			targetCellExecuted: true,
 			targetCellOutput: { frameHeaders: [] },
-			columnType: "STRING",
+			delimiter: ", ",
 		});
 
 		expect(
-			screen.getByText("Change the type of the selected column"),
+			screen.getByText(
+				"Aggregate data for a group based on the delimiter",
+			),
 		).toBeInTheDocument();
-		expect(screen.getByText("Column")).toBeInTheDocument();
-		expect(screen.getByText("STRING")).toBeInTheDocument();
+		expect(screen.getByText("Group by Column(s)")).toBeInTheDocument();
+		expect(screen.getByText("Value Column")).toBeInTheDocument();
+		expect(screen.getByText("String Separator")).toBeInTheDocument();
+		expect(
+			screen.getByText("Other Column(s) to Maintain"),
+		).toBeInTheDocument();
 	});
 });

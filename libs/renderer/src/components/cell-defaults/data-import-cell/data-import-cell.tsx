@@ -104,7 +104,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			const sq = cell.parameters.selectQuery?.trim();
 			if (!sq || !cell.parameters.databaseId) return "";
 			const withoutTrailingSemi = sq.replace(/;\s*$/, "");
-			return `${withoutTrailingSemi} | ConvertToQuery();`;
+			return `META | ${withoutTrailingSemi} | ConvertToQuery();`;
 		})();
 		const generatedQuery = usePixel<string>(convertToQueryPixel);
 
@@ -318,7 +318,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 						<Button
 							variant="outline"
 							size="sm"
-							className="h-8"
+							className="h-9"
 							onClick={() => setIsDataImportModalOpen(true)}
 							key={`cell-edit-data-import-${cell.id}`}
 						>

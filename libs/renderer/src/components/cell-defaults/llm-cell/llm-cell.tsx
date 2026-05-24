@@ -444,13 +444,13 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 													Params (JSON)
 												</span>
 												{paramsState === "valid" && (
-													<span className="text-[11px] text-green-600">
+													<span className="text-green-600 text-xs">
 														✓ valid
 													</span>
 												)}
 												{isError && (
 													<span
-														className="truncate text-[11px] text-destructive"
+														className="truncate text-destructive text-xs"
 														title={paramsError}
 													>
 														{paramsError}
@@ -539,7 +539,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 														: "ghost"
 												}
 												size="sm"
-												className="h-6 px-2 text-xs"
+												className="h-7 px-2 text-xs"
 												onClick={() =>
 													setRawCards((prev) => ({
 														...prev,
@@ -553,7 +553,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 												title="Expand"
 												variant="ghost"
 												size="sm"
-												className="h-6 px-2 text-muted-foreground"
+												className="h-7 px-2 text-muted-foreground"
 												onClick={() =>
 													setExpandedCard(idx)
 												}
@@ -565,7 +565,7 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 									{!isRaw &&
 										(tokens.prompt !== undefined ||
 											tokens.response !== undefined) && (
-											<div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+											<div className="flex items-center gap-3 text-muted-foreground text-xs">
 												{tokens.prompt !==
 													undefined && (
 													<span>

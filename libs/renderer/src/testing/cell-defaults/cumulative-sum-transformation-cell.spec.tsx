@@ -5,7 +5,7 @@ import { Blocks } from "../../components/blocks";
 import {
 	CumulativeSumTransformationCell,
 	type CumulativeSumTransformationCellDef,
-} from "../../components/cell-defaults/cumulative-sum-transformation-cell/CumulativeSumTransformationCell";
+} from "../../components/cell-defaults/cumulative-sum-transformation-cell/cumulative-sum-transformation-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK pixel calls in ColumnTransformationField
