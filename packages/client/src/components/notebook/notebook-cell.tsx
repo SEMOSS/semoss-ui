@@ -12,6 +12,8 @@ import {
 	GripVertical,
 	HammerIcon,
 	Maximize2,
+	MoreVertical,
+	Pencil,
 	Play,
 	Trash2,
 	X,
@@ -32,6 +34,10 @@ import {
 	DialogContent,
 	DialogHeader,
 	DialogTitle,
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
 	Separator,
 	Spinner,
 	Tooltip,
@@ -50,6 +56,7 @@ import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./notebook-add-cell";
 import { NotebookCellConsole } from "./notebook-cell-console";
 import { Operation } from "./operations";
+import { RenameVariableDialog } from "./rename-variable-dialog";
 
 interface NotebookCellProps {
 	/** Id of the  the query */
@@ -89,6 +96,8 @@ export const NotebookCell = observer(
 		const [showLoggingModal, setShowLoggingModal] = useState(false);
 		const [showOutputModal, setShowOutputModal] = useState(false);
 		const [expandAllOutput, setExpandAllOutput] = useState(false);
+
+		const [renameOpen, setRenameOpen] = useState(false);
 
 		const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
@@ -788,7 +797,7 @@ export const NotebookCell = observer(
 					{/* biome-ignore lint/a11y/noStaticElementInteractions: card container, selecting cell on click */}
 					{/* biome-ignore lint/a11y/useKeyWithClickEvents: card container, keyboard nav handled by inner buttons */}
 					<div
-						className={`min-w-0 flex-grow cursor-pointer overflow-visible rounded-sm border-l-[3px] transition-colors ${
+						className={`@container min-w-0 flex-grow cursor-pointer overflow-visible rounded-sm border-l-[3px] transition-colors ${
 							isCellSelected
 								? "border border-primary border-l-primary bg-background ring-1 ring-primary/30"
 								: "border border-border/40 border-l-transparent bg-background hover:bg-muted/30"
@@ -801,29 +810,44 @@ export const NotebookCell = observer(
 						<div className="flex items-center justify-between gap-2 border-border/40 border-b px-3 py-1.5">
 							<div className="flex min-w-0 items-center gap-2">
 								{variableName ? (
-									<button
-										type="button"
-										title={`Copy {{${variableName}}}`}
-										className="inline-flex cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-foreground text-sm outline-none transition-colors hover:text-primary focus:outline-none focus-visible:outline-none"
-										onClick={(e) => {
-											e.stopPropagation();
-											copyTextToClipboard(
-												`{{${variableName}}}`,
-											);
-										}}
-									>
-										<span
-											className="font-mono"
-											style={{
-												fontVariantLigatures: "none",
-												fontFeatureSettings:
-													'"liga" 0, "calt" 0',
+									<div className="inline-flex min-w-0 items-center gap-1">
+										<button
+											type="button"
+											title={`Copy {{${variableName}}}`}
+											className="inline-flex min-w-0 cursor-pointer items-center gap-1 border-none bg-transparent p-0 text-foreground text-sm outline-none transition-colors hover:text-primary focus:outline-none focus-visible:outline-none"
+											onClick={(e) => {
+												e.stopPropagation();
+												copyTextToClipboard(
+													`{{${variableName}}}`,
+												);
 											}}
 										>
-											{variableName}
-										</span>
-										<Copy className="size-3" />
-									</button>
+											<span
+												className="block min-w-0 max-w-[16ch] truncate font-mono"
+												style={{
+													fontVariantLigatures:
+														"none",
+													fontFeatureSettings:
+														'"liga" 0, "calt" 0',
+												}}
+											>
+												{variableName}
+											</span>
+											<Copy className="@md:inline-block hidden size-3 shrink-0" />
+										</button>
+										<button
+											type="button"
+											title="Rename variable"
+											className="@md:inline-flex hidden cursor-pointer items-center rounded-sm border-none bg-transparent p-0.5 text-muted-foreground outline-none transition-colors hover:text-primary focus:outline-none focus-visible:outline-none"
+											disabled={cell.isLoading}
+											onClick={(e) => {
+												e.stopPropagation();
+												setRenameOpen(true);
+											}}
+										>
+											<Pencil className="size-3" />
+										</button>
+									</div>
 								) : (
 									<Button
 										title="Use as variable"
@@ -840,7 +864,7 @@ export const NotebookCell = observer(
 										Name
 									</Button>
 								)}
-								<span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
+								<span className="@lg:inline-flex hidden @lg:items-center whitespace-nowrap rounded bg-muted px-1.5 py-0.5 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
 									{cellTypeLabel}
 								</span>
 							</div>
@@ -862,40 +886,6 @@ export const NotebookCell = observer(
 									</Tooltip>
 								)}
 								<ButtonGroup>
-									{cell.query.id === MCP_NOTEBOOK_NAME && (
-										<Button
-											title={
-												cell.widget === "mcp-tool"
-													? "Revert to Code"
-													: "Make Available through MCP"
-											}
-											variant="ghost"
-											size="sm"
-											className="h-7 px-2"
-											disabled={
-												cell.isLoading ||
-												cell.widget === "mcp-tool"
-													? false
-													: !workspace.agentModelEngine
-											}
-											onClick={(e) => {
-												e.stopPropagation();
-												if (
-													cell.widget !== "mcp-tool"
-												) {
-													makeCellMCP();
-												} else {
-													revertMCPToCell();
-												}
-											}}
-										>
-											{cell.widget === "mcp-tool" ? (
-												<ArrowLeftRight className="size-4" />
-											) : (
-												<HammerIcon size={14} />
-											)}
-										</Button>
-									)}
 									<Button
 										title="Run the cells above and this cell"
 										variant="ghost"
@@ -924,11 +914,46 @@ export const NotebookCell = observer(
 										<Play className="size-4" />
 										<ArrowDown className="absolute right-0.5 bottom-0.5 size-2.5" />
 									</Button>
+									{/* Inline secondary actions — visible when there's room */}
+									{cell.query.id === MCP_NOTEBOOK_NAME && (
+										<Button
+											title={
+												cell.widget === "mcp-tool"
+													? "Revert to Code"
+													: "Make Available through MCP"
+											}
+											variant="ghost"
+											size="sm"
+											className="@sm:inline-flex hidden h-7 px-2"
+											disabled={
+												cell.isLoading ||
+												cell.widget === "mcp-tool"
+													? false
+													: !workspace.agentModelEngine
+											}
+											onClick={(e) => {
+												e.stopPropagation();
+												if (
+													cell.widget !== "mcp-tool"
+												) {
+													makeCellMCP();
+												} else {
+													revertMCPToCell();
+												}
+											}}
+										>
+											{cell.widget === "mcp-tool" ? (
+												<ArrowLeftRight className="size-4" />
+											) : (
+												<HammerIcon size={14} />
+											)}
+										</Button>
+									)}
 									<Button
 										title="Duplicate cell"
 										variant="ghost"
 										size="sm"
-										className="h-7 px-2"
+										className="@sm:inline-flex hidden h-7 px-2"
 										disabled={cell.isLoading}
 										onClick={(e) => {
 											e.stopPropagation();
@@ -941,7 +966,7 @@ export const NotebookCell = observer(
 										title="Delete cell"
 										variant="ghost"
 										size="sm"
-										className="h-7 px-2"
+										className="@sm:inline-flex hidden h-7 px-2"
 										disabled={
 											cell.isLoading ||
 											(query?.list.length ?? 0) <= 1
@@ -954,6 +979,72 @@ export const NotebookCell = observer(
 										<Trash2 className="size-4" />
 									</Button>
 								</ButtonGroup>
+								{/* Kebab fallback — only when too narrow for inline actions */}
+								<DropdownMenu>
+									<DropdownMenuTrigger asChild>
+										<Button
+											title="More actions"
+											variant="ghost"
+											size="sm"
+											className="@sm:hidden h-7 px-1.5"
+											disabled={cell.isLoading}
+											onClick={(e) => e.stopPropagation()}
+										>
+											<MoreVertical className="size-4" />
+										</Button>
+									</DropdownMenuTrigger>
+									<DropdownMenuContent align="end">
+										<DropdownMenuItem
+											onSelect={() => duplicateCell()}
+										>
+											<CopyPlus className="size-4" />
+											Duplicate cell
+										</DropdownMenuItem>
+										{cell.query.id ===
+											MCP_NOTEBOOK_NAME && (
+											<DropdownMenuItem
+												disabled={
+													cell.isLoading ||
+													cell.widget === "mcp-tool"
+														? false
+														: !workspace.agentModelEngine
+												}
+												onSelect={() => {
+													if (
+														cell.widget !==
+														"mcp-tool"
+													) {
+														makeCellMCP();
+													} else {
+														revertMCPToCell();
+													}
+												}}
+											>
+												{cell.widget === "mcp-tool" ? (
+													<>
+														<ArrowLeftRight className="size-4" />
+														Revert to Code
+													</>
+												) : (
+													<>
+														<HammerIcon size={14} />
+														Make Available through
+														MCP
+													</>
+												)}
+											</DropdownMenuItem>
+										)}
+										<DropdownMenuItem
+											disabled={
+												(query?.list.length ?? 0) <= 1
+											}
+											onSelect={() => deleteCell()}
+										>
+											<Trash2 className="size-4" />
+											Delete cell
+										</DropdownMenuItem>
+									</DropdownMenuContent>
+								</DropdownMenu>
 							</div>
 						</div>
 
@@ -1019,6 +1110,14 @@ export const NotebookCell = observer(
 						setVariableModal(false);
 					}}
 				/>
+
+				{variableName && (
+					<RenameVariableDialog
+						open={renameOpen}
+						onOpenChange={setRenameOpen}
+						currentName={variableName}
+					/>
+				)}
 
 				<DependencyPromptModal
 					open={dependentBlocksModal}

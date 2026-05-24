@@ -29,7 +29,7 @@ import type { GridBlockColumn } from "./grid-block.types";
 import { GridBlockContextMenu } from "./grid-block-context-menu";
 
 const DEFAULT_HEIGHT = "300px";
-const DEFAULT_WIDTH = "500px";
+const DEFAULT_WIDTH = "100%";
 
 export interface HeaderBackgroundSettings {
 	backgroundColor: string;
@@ -387,11 +387,14 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 	return (
 		<div
 			style={{
+				width: DEFAULT_WIDTH,
+				minHeight: DEFAULT_HEIGHT,
+				...data.style,
 				display: "flex",
 				flexDirection: "column",
-				minHeight: DEFAULT_HEIGHT,
-				width: DEFAULT_WIDTH,
-				...data.style,
+				flexWrap: "nowrap",
+				maxWidth: "100%",
+				minWidth: 0,
 			}}
 			{...attrs}
 		>
@@ -408,8 +411,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 				)}
 
 				{/* Table */}
-				<div className="relative flex-1 overflow-auto">
-					<Table className="min-w-full">
+				<div className="relative flex-1 overflow-hidden">
+					<Table className="min-w-full" wrapperClassName="h-full">
 						<TableHeader>
 							<TableRow className="hover:bg-transparent">
 								{columnsToDisplay.map((col) => {

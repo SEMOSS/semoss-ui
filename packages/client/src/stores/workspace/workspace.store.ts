@@ -62,7 +62,16 @@ export interface WorkspaceStoreInterface {
 			/**
 			 * Set the maxWidth of the overlay
 			 */
-			maxWidth: "sm" | "md" | "lg" | "xl" | null;
+			maxWidth:
+				| "sm"
+				| "md"
+				| "lg"
+				| "xl"
+				| "2xl"
+				| "3xl"
+				| "4xl"
+				| "5xl"
+				| null;
 		};
 
 		/**

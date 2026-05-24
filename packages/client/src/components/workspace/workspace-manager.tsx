@@ -18,7 +18,7 @@ import type { WorkspaceOptions } from "@/stores";
 import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
-import { WorkspaceOverlay } from "./WorkspaceOverlay";
+import { WorkspaceOverlay } from "./workspace-overlay";
 
 const TAB_ICON_CLASS_NAME = "size-4";
 

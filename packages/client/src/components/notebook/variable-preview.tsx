@@ -89,7 +89,7 @@ export const VariablePreview = observer(
 				const config = getStateWithBlock(variable.to);
 				if (config) {
 					return (
-						<div className="w-[350px]">
+						<div className="relative w-[350px] min-w-0 overflow-hidden">
 							<Renderer state={config} preview={true} />
 						</div>
 					);

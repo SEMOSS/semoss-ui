@@ -258,18 +258,18 @@ export const Screen = observer((props: ScreenProps) => {
 			{<FormMenuHost />}
 
 			<div
-				className="flex flex-grow flex-col items-center"
+				className="flex min-w-0 flex-grow flex-col items-center"
 				style={{ userSelect: designer.drag.active ? "none" : "auto" }}
 			>
 				{/* biome-ignore lint/a11y/noStaticElementInteractions: designer canvas */}
 				<div
-					className="flex h-inherit min-w-full flex-1 p-2"
+					className="flex h-inherit w-full min-w-0 flex-1 overflow-x-hidden p-2"
 					onMouseLeave={handleMouseLeave}
 				>
 					{/* biome-ignore lint/a11y/noStaticElementInteractions: designer canvas */}
 					{/* biome-ignore lint/a11y/useKeyWithMouseEvents: designer canvas */}
 					<div
-						className="relative h-inherit min-w-full flex-1"
+						className="relative h-inherit w-full min-w-0 flex-1"
 						style={{
 							cursor: !isHoveredOverSelectedBlock
 								? "pointer"

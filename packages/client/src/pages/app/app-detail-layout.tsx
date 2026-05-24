@@ -23,7 +23,11 @@ import {
 	useResolvedPath,
 	useSearchParams,
 } from "react-router-dom";
-import { AppCatalogAvatar, getUserProjectPermission } from "@semoss/shared";
+import {
+	AppCatalogAvatar,
+	EntityHeader,
+	getUserProjectPermission,
+} from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -61,7 +65,6 @@ import {
 } from "@/components/app";
 import { ResourceNotFound } from "@/components/common/resource-not-found";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { EntityHeader } from "@/components/shared/entity-header";
 import { ShareOverlay } from "@/components/ui";
 import { AppDetailContext, type AppDetailContextType } from "@/contexts";
 import { useRootStore } from "@/hooks";

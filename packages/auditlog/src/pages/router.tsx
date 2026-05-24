@@ -1,7 +1,7 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
-import { AuditLogPage } from "@/components/AuditLogPage";
+import { AuditLogPage } from "@/components/audit-log-page";
 // import { useRootStore } from "@/hooks";
 // import { AuditLogsDashboard } from "./AuditLogsDashboard";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";

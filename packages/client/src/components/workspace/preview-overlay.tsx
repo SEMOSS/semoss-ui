@@ -19,11 +19,11 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
 	const { state, onClose = () => null } = props;
 
 	return (
-		<>
+		<div className="flex w-full min-w-0 max-w-full flex-col gap-3 overflow-hidden p-6">
 			<DialogHeader>
 				<DialogTitle>Preview</DialogTitle>
 			</DialogHeader>
-			<div className="h-[60vh] w-full border border-border">
+			<div className="relative h-[70vh] w-full min-w-0 max-w-full overflow-auto rounded-md border border-border bg-background">
 				<Renderer state={state} />
 			</div>
 			<DialogFooter>
@@ -31,6 +31,6 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
 					Cancel
 				</Button>
 			</DialogFooter>
-		</>
+		</div>
 	);
 });

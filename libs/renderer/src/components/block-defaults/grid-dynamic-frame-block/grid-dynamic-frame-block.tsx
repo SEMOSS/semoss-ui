@@ -30,7 +30,7 @@ import type { GridBlockColumn } from "../grid-block/grid-block.types";
 import { GridBlockContextMenu } from "../grid-block/grid-block-context-menu";
 
 const DEFAULT_HEIGHT = "300px";
-const DEFAULT_WIDTH = "500px";
+const DEFAULT_WIDTH = "100%";
 
 export interface GridDynamicFrameBlockDef
 	extends BlockDef<"grid-dynamic-frame"> {
@@ -243,11 +243,14 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 	return (
 		<div
 			style={{
+				width: DEFAULT_WIDTH,
+				height: DEFAULT_HEIGHT,
+				...data.style,
 				display: "flex",
 				flexDirection: "column",
-				height: DEFAULT_HEIGHT,
-				width: DEFAULT_WIDTH,
-				...data.style,
+				flexWrap: "nowrap",
+				maxWidth: "100%",
+				minWidth: 0,
 			}}
 			{...attrs}
 		>
@@ -256,8 +259,8 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 				style={{ flex: 1, width: "100%", height: "100%" }}
 			>
 				{/* Table */}
-				<div className="relative flex-1 overflow-auto">
-					<Table className="min-w-full">
+				<div className="relative flex-1 overflow-hidden">
+					<Table className="min-w-full" wrapperClassName="h-full">
 						<TableHeader>
 							<TableRow className="hover:bg-transparent">
 								{data.columns.map((col) => (

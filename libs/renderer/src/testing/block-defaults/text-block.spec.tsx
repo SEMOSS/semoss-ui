@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import { expect } from "vitest";
-import { TextBlock } from "../../components/block-defaults/text-block/TextBlock";
+import { TextBlock } from "../../components/block-defaults/text-block/text-block";
 import { render } from "../utils";
 
 const blocks = {

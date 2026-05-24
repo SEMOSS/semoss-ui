@@ -246,7 +246,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 				{isExpanded && (
 					<div className="flex flex-col gap-2">
 						<div className="flex flex-row flex-wrap items-end justify-between gap-2">
-							<div className="flex flex-col gap-1">
+							<div className="flex min-w-0 flex-1 flex-col gap-1">
 								<span className="text-muted-foreground text-xs">
 									Database
 								</span>
@@ -257,7 +257,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 										dispatch("parameters.databaseId", val)
 									}
 								>
-									<SelectTrigger className="h-auto min-h-9 w-[260px] py-1.5">
+									<SelectTrigger className="h-auto min-h-9 w-full max-w-md py-1.5">
 										<SelectValue placeholder="Select database">
 											{selectedDatabase ? (
 												<div className="flex items-center gap-2">
@@ -391,8 +391,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 					</Suspense>
 				</div>
 				{isExpanded && (
-					<div className="flex flex-row flex-wrap items-end gap-3 rounded-md border bg-muted/30 px-3 py-2">
-						<div className="flex flex-col gap-1">
+					<div className="flex flex-row flex-wrap items-end gap-3 overflow-hidden rounded-md border bg-muted/30 px-3 py-2">
+						<div className="flex min-w-[110px] max-w-[170px] flex-1 flex-col gap-1">
 							<span className="text-muted-foreground text-xs">
 								Frame type
 							</span>
@@ -403,7 +403,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 									dispatch("parameters.frameType", val)
 								}
 							>
-								<SelectTrigger className="h-8 w-[130px]">
+								<SelectTrigger className="h-9 w-full">
 									<SelectValue placeholder="Frame type" />
 								</SelectTrigger>
 								<SelectContent>
@@ -420,7 +420,7 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								</SelectContent>
 							</Select>
 						</div>
-						<div className="flex flex-col gap-1">
+						<div className="flex min-w-[140px] max-w-[170px] flex-1 flex-col gap-1 overflow-hidden">
 							<span className="text-muted-foreground text-xs">
 								Variable name
 							</span>
@@ -428,7 +428,8 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
 								title="Set frame variable name"
 								value={cell.parameters.frameVariableName}
 								disabled={cell.isLoading}
-								className="h-8 w-[170px]"
+								size={1}
+								className="box-border h-9 w-full text-sm"
 								onChange={(e) =>
 									dispatch(
 										"parameters.frameVariableName",

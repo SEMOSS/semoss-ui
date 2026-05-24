@@ -2,7 +2,7 @@ import { ChevronRight, Download, Pencil } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { EngineSubtypeIcon } from "@semoss/shared";
+import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -27,7 +27,6 @@ import {
 import { useEngine, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
-import { EntityHeader } from "../shared/entity-header";
 import { EngineAccessButton } from ".";
 
 /**

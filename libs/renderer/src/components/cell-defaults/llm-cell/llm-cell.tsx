@@ -3,7 +3,7 @@ import { Copy, Maximize2, Plus, X } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { EngineSubtypeIcon } from "@semoss/shared";
+import { EngineSubtypeIcon, EntityHeader } from "@semoss/shared";
 import {
 	Button,
 	Dialog,
@@ -637,90 +637,92 @@ export const LLMCell: CellComponent<LLMCellDef> = observer((props) => {
 						return (
 							<>
 								<DialogHeader>
-									<div className="flex items-center justify-between gap-3">
-										<div className="flex min-w-0 items-center gap-2">
+									<DialogTitle className="sr-only">
+										{model.name}
+									</DialogTitle>
+									<EntityHeader
+										size="sm"
+										copyable={false}
+										icon={
 											<EngineSubtypeIcon
 												engineType={model.engineType}
 												engineSubtype={
 													model.engineSubtype
 												}
 												alt={`${model.name} icon`}
-												className="size-6 shrink-0 object-contain"
+												className="size-full object-contain"
 											/>
-											<DialogTitle className="min-w-0">
-												<span className="truncate font-medium">
-													{model.name}
-												</span>
-												<span className="ml-2 truncate text-muted-foreground text-xs">
-													{model.id}
-												</span>
-											</DialogTitle>
-										</div>
-										<div className="flex items-center gap-1">
-											<Button
-												title={
-													isRaw
-														? "Show pretty"
-														: "Show raw"
-												}
-												variant={
-													isRaw
-														? "secondary"
-														: "ghost"
-												}
-												size="sm"
-												className="h-7 px-2 text-xs"
-												onClick={() =>
-													setRawCards((prev) => ({
-														...prev,
-														[idx]: !prev[idx],
-													}))
-												}
-											>
-												{isRaw ? "Pretty" : "Raw"}
-											</Button>
-											<Button
-												title="Copy raw JSON"
-												variant="ghost"
-												size="sm"
-												className="h-7 px-2 text-muted-foreground"
-												onClick={async () => {
-													const textToCopy =
-														typeof raw === "string"
-															? raw
-															: JSON.stringify(
-																	raw,
-																	null,
-																	2,
-																);
-													try {
-														await navigator.clipboard.writeText(
-															textToCopy,
-														);
-														toast.success(
-															"Raw JSON copied",
-														);
-													} catch {
-														toast.error(
-															"Failed to copy",
-														);
-													}
-												}}
-											>
-												<Copy className="size-3" />
-											</Button>
-											<DialogClose asChild>
+										}
+										name={model.name}
+										id={model.id}
+										actions={
+											<>
 												<Button
-													title="Close"
+													title={
+														isRaw
+															? "Show pretty"
+															: "Show raw"
+													}
+													variant={
+														isRaw
+															? "secondary"
+															: "ghost"
+													}
+													size="sm"
+													className="h-7 px-2 text-xs"
+													onClick={() =>
+														setRawCards((prev) => ({
+															...prev,
+															[idx]: !prev[idx],
+														}))
+													}
+												>
+													{isRaw ? "Pretty" : "Raw"}
+												</Button>
+												<Button
+													title="Copy raw JSON"
 													variant="ghost"
 													size="sm"
 													className="h-7 px-2 text-muted-foreground"
+													onClick={async () => {
+														const textToCopy =
+															typeof raw ===
+															"string"
+																? raw
+																: JSON.stringify(
+																		raw,
+																		null,
+																		2,
+																	);
+														try {
+															await navigator.clipboard.writeText(
+																textToCopy,
+															);
+															toast.success(
+																"Raw JSON copied",
+															);
+														} catch {
+															toast.error(
+																"Failed to copy",
+															);
+														}
+													}}
 												>
-													<X className="size-3" />
+													<Copy className="size-3" />
 												</Button>
-											</DialogClose>
-										</div>
-									</div>
+												<DialogClose asChild>
+													<Button
+														title="Close"
+														variant="ghost"
+														size="sm"
+														className="h-7 px-2 text-muted-foreground"
+													>
+														<X className="size-3" />
+													</Button>
+												</DialogClose>
+											</>
+										}
+									/>
 								</DialogHeader>
 								{!isRaw &&
 									(tokens.prompt !== undefined ||

@@ -33,7 +33,7 @@ import {
 	TableHeader,
 	TableRow,
 } from "@semoss/ui/next";
-import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
+import { AuditLogsDetailDrawer } from "./audit-logs-detail-drawer";
 import type { EventData } from "./common";
 import { TimeDateFormatter } from "./common";
 
@@ -739,7 +739,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							{["5", "10", "25", "50"].map((opt) => (
+							{["50", "100", "200", "500"].map((opt) => (
 								<SelectItem key={opt} value={opt}>
 									{opt}
 								</SelectItem>
