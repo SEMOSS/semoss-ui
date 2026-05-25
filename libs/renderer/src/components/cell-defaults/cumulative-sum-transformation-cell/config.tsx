@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	CumulativeSumTransformationCell,
 	type CumulativeSumTransformationCellDef,
-} from "./CumulativeSumTransformationCell";
+} from "./cumulative-sum-transformation-cell";
 
 // export the config for the block
 export const CumulativeSumTransformationCellConfig: CellConfig<CumulativeSumTransformationCellDef> =

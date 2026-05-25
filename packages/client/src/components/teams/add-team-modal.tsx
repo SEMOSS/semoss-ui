@@ -2,6 +2,11 @@ import { Users, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+	getLoginProviderInitials,
+	getLoginProviderKey,
+	loadLoginProviderLogos,
+} from "@semoss/shared";
+import {
 	Button,
 	Dialog,
 	DialogContent,
@@ -24,11 +29,6 @@ import {
 import { addTeam, editTeam } from "@/api/teams";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-import {
-	getLoginProviderInitials,
-	getLoginProviderKey,
-	loadLoginProviderLogos,
-} from "@/shared/constants/login-provider-icons.constants";
 
 type TeamReturn = {
 	id: string;

@@ -1,5 +1,5 @@
 import type { CellConfig } from "../../../store";
-import TextToSqlCell, { type TextToSqlCellDef } from "./TextToSqlCell";
+import TextToSqlCell, { type TextToSqlCellDef } from "./text-to-sql-cell";
 
 const sanitizeQuery = (query: string): string => {
 	return query
