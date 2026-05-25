@@ -1,6 +1,6 @@
-import { AuditLogFilter } from "./AuditLogFilter";
-import { AuditLogsDataTable } from "./AuditLogsDataTable";
-import { AuditLogsTimeline } from "./AuditLogsTimeline";
+import { AuditLogFilter } from "./audit-log-filter";
+import { AuditLogsDataTable } from "./audit-logs-data-table";
+import { AuditLogsTimeline } from "./audit-logs-timeline";
 import { dateFormat } from "./common";
 import {
 	buildSearchPayload,
