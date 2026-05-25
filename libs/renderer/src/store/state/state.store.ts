@@ -7,7 +7,7 @@ import {
 } from "../../utility";
 import type { CellStateConfig } from "./cell.state";
 import { STATE_VERSION } from "./migration/MigrationManager";
-import { QueryState, type QueryStateConfig } from "./query.state";
+import { NotebookState, type NotebookStateConfig } from "./notebook.state";
 import {
 	ActionMessages,
 	type Actions,
@@ -37,8 +37,8 @@ interface StateStoreInterface {
 	/** token to reference (blocks, cells, constants) */
 	variables: Record<string, Variable>;
 
-	/** Queries rendered in the insight */
-	queries: Record<string, QueryState>;
+	/** Notebooks rendered in the insight (key kept internal — wire format is `queries`) */
+	notebooks: Record<string, NotebookState>;
 
 	/** Blocks rendered in the insight */
 	blocks: Record<string, Block>;
@@ -78,7 +78,7 @@ export class StateStore {
 		mode: "interactive",
 		insightId: "",
 		version: "",
-		queries: {},
+		notebooks: {},
 		blocks: {},
 		frames: {},
 		cellRegistry: {},
@@ -146,11 +146,11 @@ export class StateStore {
 	}
 
 	/**
-	 * Get the queries
-	 * @returns the queries
+	 * Get the notebooks
+	 * @returns the notebooks
 	 */
-	get queries() {
-		return this._store.queries;
+	get notebooks() {
+		return this._store.notebooks;
 	}
 
 	/**
@@ -221,9 +221,9 @@ export class StateStore {
 	 * @param id - id of the queries to get
 	 * @returns the specific block information
 	 */
-	getQuery(id: string): QueryState | null {
-		if (this._store.queries[id]) {
-			return this._store.queries[id];
+	getNotebook(id: string): NotebookState | null {
+		if (this._store.notebooks[id]) {
+			return this._store.notebooks[id];
 		}
 
 		return null;
@@ -267,9 +267,12 @@ export class StateStore {
 				this.updateBlockVariableReferences(block, suggestedChanges);
 			});
 
-			// 3. Update all queries and cells - replace variable references
-			Object.values(this._store.queries).forEach((query) => {
-				this.updateQueryVariableReferences(query, suggestedChanges);
+			// 3. Update all notebooks and cells - replace variable references
+			Object.values(this._store.notebooks).forEach((notebook) => {
+				this.updateNotebookVariableReferences(
+					notebook,
+					suggestedChanges,
+				);
 			});
 
 			console.log("Variable renames applied successfully");
@@ -320,15 +323,15 @@ export class StateStore {
 	 * @param query - The query to update
 	 * @param suggestedChanges - Mapping of old to new variable names
 	 */
-	private updateQueryVariableReferences(
-		query: QueryState,
+	private updateNotebookVariableReferences(
+		notebook: NotebookState,
 		suggestedChanges: Record<string, string>,
 	): void {
-		// Update query-level data - we can't directly update _exposed as it's a getter
+		// Update notebook-level data - we can't directly update _exposed as it's a getter
 		// The _exposed data is computed from the internal store, so we need to update the store directly
 
-		// Update all cells in the query
-		Object.values(query.cells).forEach((cell) => {
+		// Update all cells in the notebook
+		Object.values(notebook.cells).forEach((cell) => {
 			if (cell.parameters) {
 				// Use the cell's _update method to update parameters
 				const updatedParameters = this.updateObjectVariableReferences(
@@ -414,7 +417,7 @@ export class StateStore {
 		cellId: string,
 		params: Record<string, unknown>,
 	) => {
-		const q = this.getQuery(queryId);
+		const q = this.getNotebook(queryId);
 		const c = q.getCell(cellId);
 
 		if (c) {
@@ -452,26 +455,26 @@ export class StateStore {
 						}
 					}
 				} else if (type === "query") {
-					const query = this._store.queries[pointer];
-					if (query) {
+					const notebook = this._store.notebooks[pointer];
+					if (notebook) {
 						if (!path || path.length === 1) {
-							// Just get query output
-							return query.output;
+							// Just get notebook output
+							return notebook.output;
 						} else {
 							const key = path[1];
-							if (query) {
-								if (key in query._exposed) {
+							if (notebook) {
+								if (key in notebook._exposed) {
 									// get the search path
 									const s = path.slice(1).join(".");
-									return getValueByPath(query._exposed, s);
+									return getValueByPath(notebook._exposed, s);
 								}
 							}
 						}
 					}
 					// get the attribute key
 				} else if (type === "cell") {
-					const query = this.getQuery(pointer);
-					const cell = query.getCell(cellId);
+					const notebook = this.getNotebook(pointer);
+					const cell = notebook.getCell(cellId);
 
 					if (cell) {
 						if (!path || path.length === 1) {
@@ -564,12 +567,6 @@ export class StateStore {
 	 */
 	dispatch = async (action: Actions, callbackMessage?: "sync" | "async") => {
 		// TODO: Develop History + Invert + UNDO;
-		console.log(
-			"ACTION :::",
-			JSON.parse(JSON.stringify(action.message)),
-			JSON.parse(JSON.stringify(action.payload)),
-		);
-
 		try {
 			/**
 			 * --------------------------------------------------
@@ -660,7 +657,7 @@ export class StateStore {
 
 				const i = JSON.stringify(indexToRemove);
 				this.removeDynamicSlot(id, i);
-			} else if (ActionMessages.NEW_QUERY === action.message) {
+			} else if (ActionMessages.NEW_NOTEBOOK === action.message) {
 				/**
 				 * --------------------------------------------------
 				 * Notebooks
@@ -668,15 +665,15 @@ export class StateStore {
 				 */
 				const { queryId, config, isCommunity } = action.payload;
 
-				this.newQuery(queryId, config, isCommunity);
-			} else if (ActionMessages.DELETE_QUERY === action.message) {
+				this.newNotebook(queryId, config, isCommunity);
+			} else if (ActionMessages.DELETE_NOTEBOOK === action.message) {
 				const { queryId } = action.payload;
 
-				this.deleteQuery(queryId);
-			} else if (ActionMessages.UPDATE_QUERY === action.message) {
+				this.deleteNotebook(queryId);
+			} else if (ActionMessages.UPDATE_NOTEBOOK === action.message) {
 				const { queryId, path, value } = action.payload;
 
-				this.updateQuery(queryId, path, value);
+				this.updateNotebook(queryId, path, value);
 			} else if (ActionMessages.NEW_CELL === action.message) {
 				const { queryId, config, previousCellId } = action.payload;
 
@@ -697,7 +694,7 @@ export class StateStore {
 				const { queryId, cellId, parameters } = action.payload;
 
 				this.makeCellMCP(queryId, cellId, parameters);
-			} else if (ActionMessages.RUN_QUERY === action.message) {
+			} else if (ActionMessages.RUN_NOTEBOOK === action.message) {
 				/**
 				 * --------------------------------------------------
 				 * Events
@@ -708,11 +705,11 @@ export class StateStore {
 				// If callback is provided, run as async with promise
 				if (callbackMessage) {
 					return (async () => {
-						await this.runQuery(queryId, callbackMessage);
-						return this._store.queries[queryId].output;
+						await this.runNotebook(queryId, callbackMessage);
+						return this._store.notebooks[queryId].output;
 					})();
 				} else {
-					return this.runQuery(queryId);
+					return this.runNotebook(queryId);
 				}
 			} else if (ActionMessages.RUN_CELL === action.message) {
 				const { queryId, cellId } = action.payload;
@@ -721,7 +718,7 @@ export class StateStore {
 				if (callbackMessage) {
 					return (async () => {
 						await this.runCell(queryId, cellId, callbackMessage);
-						return this._store.queries[queryId].cells[cellId]
+						return this._store.notebooks[queryId].cells[cellId]
 							.output;
 					})();
 				} else {
@@ -843,15 +840,15 @@ export class StateStore {
 		const isNumber = !Number.isNaN(parseFloat(path[1]));
 
 		if (isNumber) {
-			let q: QueryState;
+			let q: NotebookState;
 
 			if (this._store.variables[pointer]) {
 				const variable = this._store.variables[path[0]];
 				if (variable.type === "query") {
-					q = this._store.queries[variable.to];
+					q = this._store.notebooks[variable.to];
 				}
-			} else if (this._store.queries[pointer]) {
-				q = this._store.queries[pointer];
+			} else if (this._store.notebooks[pointer]) {
+				q = this._store.notebooks[pointer];
 			}
 
 			if (q) {
@@ -974,9 +971,9 @@ export class StateStore {
 	 */
 	toJSON(): SerializedState {
 		return {
-			queries: Object.keys(this._store.queries).reduce(
+			queries: Object.keys(this._store.notebooks).reduce(
 				(acc, val) => {
-					acc[val] = this._store.queries[val].toJSON();
+					acc[val] = this._store.notebooks[val].toJSON();
 					return acc;
 				},
 				{} as SerializedState["queries"],
@@ -1374,18 +1371,21 @@ export class StateStore {
 		// store the block information
 		this._store.blocks = state.blocks;
 
-		// load the queries
-		this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
-			acc[val] = new QueryState(state.queries[val], this);
-			return acc;
-		}, {});
+		// load the notebooks from wire-format `queries` key
+		this._store.notebooks = Object.keys(state.queries).reduce(
+			(acc, val) => {
+				acc[val] = new NotebookState(state.queries[val], this);
+				return acc;
+			},
+			{},
+		);
 
 		// store the variables
 		this._store.variables = state.variables ? state.variables : {};
 
 		// store the execution order of notebooks
 		let order = [];
-		const sheets = Object.keys(this._store.queries);
+		const sheets = Object.keys(this._store.notebooks);
 
 		if (state.executionOrder.length) {
 			order = state.executionOrder;
@@ -1756,12 +1756,12 @@ export class StateStore {
 	 * Create a new query
 	 * @param queryId - name of the query that we are setting
 	 */
-	private newQuery = (
+	private newNotebook = (
 		queryId: string,
-		config: Omit<QueryStateConfig, "id">,
+		config: Omit<NotebookStateConfig, "id">,
 		isCommunity?: boolean,
 	): string => {
-		this._store.queries[queryId] = new QueryState(
+		this._store.notebooks[queryId] = new NotebookState(
 			{
 				...config,
 				id: queryId,
@@ -1782,19 +1782,21 @@ export class StateStore {
 		});
 
 		if (!isCommunity) {
-			Object.entries(this._store.queries[queryId].cells).forEach((c) => {
-				// Automate variable creation for notebook and new cell
-				const cId = c[0];
-				this.dispatch({
-					message: ActionMessages.ADD_VARIABLE,
-					payload: {
-						id: `${queryId}--${cId}`,
-						type: "cell",
-						to: queryId,
-						cellId: cId,
-					},
-				});
-			});
+			Object.entries(this._store.notebooks[queryId].cells).forEach(
+				(c) => {
+					// Automate variable creation for notebook and new cell
+					const cId = c[0];
+					this.dispatch({
+						message: ActionMessages.ADD_VARIABLE,
+						payload: {
+							id: `${queryId}--${cId}`,
+							type: "cell",
+							to: queryId,
+							cellId: cId,
+						},
+					});
+				},
+			);
 		}
 
 		this._store.executionOrder.push(queryId);
@@ -1806,9 +1808,9 @@ export class StateStore {
 	 * Delete a query
 	 * @param queryId - name of the query that we are deleting
 	 */
-	private deleteQuery = (queryId: string): void => {
+	private deleteNotebook = (queryId: string): void => {
 		// Delete the query
-		delete this._store.queries[queryId];
+		delete this._store.notebooks[queryId];
 
 		// Remove it from our execition order tracking
 		const index = this._store.executionOrder.indexOf(queryId);
@@ -1832,12 +1834,12 @@ export class StateStore {
 	 * @param path - path of the data to set
 	 * @param value - value of the data
 	 */
-	private updateQuery = (
+	private updateNotebook = (
 		queryId: string,
 		path: string | null,
 		value: unknown,
 	): void => {
-		const q = this._store.queries[queryId];
+		const q = this._store.notebooks[queryId];
 
 		// set the value
 		q._update(path, value);
@@ -1847,11 +1849,11 @@ export class StateStore {
 	 * Run a query
 	 * @param queryId - name of the query that we are running
 	 */
-	private runQuery = (
+	private runNotebook = (
 		queryId: string,
 		type?: "sync" | "async",
 	): undefined | Promise<boolean> => {
-		const q = this._store.queries[queryId];
+		const q = this._store.notebooks[queryId];
 
 		const key = `query--${queryId};`;
 
@@ -1907,7 +1909,7 @@ export class StateStore {
 		previousCellId: string,
 	): string => {
 		// get the query
-		const q = this._store.queries[queryId];
+		const q = this._store.notebooks[queryId];
 
 		// add the cell
 		return q._addCell(config, previousCellId) as string;
@@ -1925,7 +1927,7 @@ export class StateStore {
 		overCellId: string,
 	): void => {
 		// get the query
-		const q = this._store.queries[queryId];
+		const q = this._store.notebooks[queryId];
 
 		// move the cell
 		q._moveCell(activeCellId, overCellId);
@@ -1938,7 +1940,7 @@ export class StateStore {
 	 */
 	private deleteCell = (queryId: string, cellId: string): void => {
 		// get the query
-		const q = this._store.queries[queryId];
+		const q = this._store.notebooks[queryId];
 
 		// remove the cell
 		q._removeCell(cellId);
@@ -1983,7 +1985,7 @@ export class StateStore {
 		path: string | null,
 		value: unknown,
 	): void => {
-		const q = this._store.queries[queryId];
+		const q = this._store.notebooks[queryId];
 		const s = q.getCell(cellId);
 
 		// set the value
@@ -2000,7 +2002,7 @@ export class StateStore {
 		cellId: string,
 		type?: string,
 	): undefined | Promise<boolean> => {
-		const q = this._store.queries[queryId];
+		const q = this._store.notebooks[queryId];
 		const c = q.getCell(cellId);
 
 		const key = `cell--${cellId} (query--${queryId});`;
@@ -2256,7 +2258,7 @@ export class StateStore {
 	 */
 	private dispatchDependencyQueriesAndVars = (
 		placeholderJson: BlockJSON,
-		queries: Record<string, QueryStateConfig>,
+		queries: Record<string, NotebookStateConfig>,
 		variables: Record<string, Variable | VariableWithId>,
 	): { placeholderJson: BlockJSON; variableStack: Variable[] } => {
 		const queryVariableMap: Record<string, string> = {};
@@ -2272,7 +2274,7 @@ export class StateStore {
 				const newQueryId = `com_${key}_${Math.floor(Math.random() * 1000)}`;
 				const newQuery = {
 					queryId: newQueryId,
-					config: value as QueryStateConfig,
+					config: value as NotebookStateConfig,
 				};
 
 				/**
@@ -2325,19 +2327,19 @@ export class StateStore {
 		 * @param skipKeys - set of keys to skip entire subtree
 		 * @returns the processed value
 		 */
-		placeholderJson = this.updateQueryAndVarsInBlocks(
+		placeholderJson = this.updateNotebookAndVarsInBlocks(
 			placeholderJson,
 			queryVariableMap,
 			new Set(["queries", "variables"]),
 		);
 
 		queryStack.forEach((newQuery) => {
-			newQuery = this.updateQueryAndVarsInBlocks(
+			newQuery = this.updateNotebookAndVarsInBlocks(
 				newQuery,
 				queryVariableMap,
 			);
 			this.dispatch({
-				message: ActionMessages.NEW_QUERY,
+				message: ActionMessages.NEW_NOTEBOOK,
 				payload: { ...newQuery, isCommunity: true },
 			});
 		});
@@ -2364,7 +2366,7 @@ export class StateStore {
 	 * @param skipKeys - set of keys to skip entire subtree
 	 * @returns the processed value
 	 */
-	private updateQueryAndVarsInBlocks<T>(
+	private updateNotebookAndVarsInBlocks<T>(
 		input: T,
 		replacementMap: Record<string, string>,
 		skipKeys: Set<string> = new Set(["variables", "queries"]),

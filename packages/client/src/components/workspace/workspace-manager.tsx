@@ -18,7 +18,7 @@ import type { WorkspaceOptions } from "@/stores";
 import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
-import { WorkspaceOverlay } from "./WorkspaceOverlay";
+import { WorkspaceOverlay } from "./workspace-overlay";
 
 const TAB_ICON_CLASS_NAME = "size-4";
 
@@ -449,7 +449,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 														<TooltipTrigger asChild>
 															<button
 																type="button"
-																className="flex size-7 items-center justify-center rounded hover:bg-accent"
+																className="flex size-9 items-center justify-center rounded hover:bg-accent"
 																ref={
 																	DynamicDataTestId
 																}
@@ -457,8 +457,8 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 																<Icon
 																	className={
 																		isSelected
-																			? "size-4 text-primary"
-																			: "size-4 text-inherit"
+																			? "size-5 text-primary"
+																			: "size-5 text-foreground/70"
 																	}
 																/>
 															</button>

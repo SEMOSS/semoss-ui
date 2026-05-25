@@ -4,13 +4,13 @@
 
 export { AIGenerationSettings } from "./AIGenerationSettings";
 export { ButtonGroupSettings } from "./ButtonGroupSettings";
-export { CodeEditorSettings } from "./CodeEditorSettings";
 export { ColorSettings } from "./ColorSettings";
 export { ConditionalVariationSettings } from "./ConditionalVariationSettings";
+export { CodeEditorSettings } from "./code-editor-settings";
 export { DistinctPathButtonGroupButton } from "./DistinctPathButtonGroupButton";
 export { DistinctPathButtonGroupSettings } from "./DistinctPathButtonGroupSettings";
 export { InputSettings } from "./InputSettings";
-export { JsonSettings } from "./JsonSettings";
+export { JsonSettings } from "./json-settings";
 export { PDFViewerSettings } from "./PDFViewerSettings";
 export { ResizeSetting } from "./ResizeSetting";
 export { SelectInputSettings } from "./SelectInputSettings";

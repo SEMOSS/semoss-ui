@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
+import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Button,
 	InputGroup,
@@ -525,7 +526,12 @@ export const ProjectSettingsPage = () => {
 											name={projectName}
 											id={projectId}
 											type={"PROJECT"}
-											forceFolderIcon={true}
+											customIcon={
+												<AppCatalogAvatar
+													name={projectName || "App"}
+													className="h-full w-full rounded-md text-sm"
+												/>
+											}
 											desktopInlineMeta={true}
 											tag={getProjectTags(project)}
 											date={getProjectCreatedDate(

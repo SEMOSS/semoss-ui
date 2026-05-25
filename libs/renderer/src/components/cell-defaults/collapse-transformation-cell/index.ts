@@ -1,2 +1,2 @@
-export * from "./CollapseTransformationCell";
+export * from "./collapse-transformation-cell";
 export * from "./config";

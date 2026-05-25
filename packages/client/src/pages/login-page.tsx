@@ -4,6 +4,11 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { type Location, Navigate, useLocation } from "react-router-dom";
 import {
+	getLoginProviderInitials,
+	getLoginProviderKey,
+	loadLoginProviderLogos,
+} from "@semoss/shared";
+import {
 	Alert,
 	AlertDescription,
 	Button,
@@ -26,11 +31,6 @@ import { setupResetPassword } from "@/api/auth";
 import loginDarkHero from "@/assets/img/login-dark-hero.gif";
 import loginHero from "@/assets/img/login-gif.gif";
 import { useRootStore, useThemeLogo } from "@/hooks";
-import {
-	getLoginProviderInitials,
-	getLoginProviderKey,
-	loadLoginProviderLogos,
-} from "@/shared/constants/login-provider-icons.constants";
 
 interface TypeUserLogin {
 	USERNAME: string;

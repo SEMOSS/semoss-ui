@@ -1,11 +1,13 @@
 import { CheckIcon, CirclePause, HammerIcon, XCircleIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Button, cn, Spinner, useIsMobile } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore, ToolStore } from "@/stores";
 import { RoomInlineTool } from "../room";
 import { ResponseMessageToolMenu } from "./response-message-tool-menu";
+import { ResponseMessageToolStreaming } from "./response-message-tool-streaming";
 
 const getToolState = (
 	tool: ToolStore,
@@ -134,6 +136,30 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				room.plan?.step?.details.tool_name !== tool.json.name ||
 				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
 					tool.json._meta.SMSS_PROJECT_ID);
+
+		useEffect(() => {
+			if (
+				!tool.argumentsStreaming &&
+				tool.display !== "hidden" &&
+				tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
+				!tool.isOpen &&
+				!isDisabled
+			) {
+				tool.openTool();
+			}
+		}, [
+			tool,
+			tool.argumentsStreaming,
+			tool.json._meta.SMSS_MCP_UI?.autoOpen,
+			isDisabled,
+		]);
+
+		// While the tool call is still streaming in, we don't have title/meta/args
+		// yet — delegate to a dedicated placeholder pill that shows a spinner and
+		// optionally expands to preview the accumulating JSON.
+		if (tool.argumentsStreaming) {
+			return <ResponseMessageToolStreaming tool={tool} />;
+		}
 
 		const isActive =
 			tool.isOpen &&

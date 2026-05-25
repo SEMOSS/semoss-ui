@@ -11,13 +11,13 @@ import {
 	TabsTrigger,
 	toast,
 } from "@semoss/ui/next";
+import GroupIcon from "@/assets/img/Group.svg";
+import MultiBlockIcon from "@/assets/img/Multiple_Block.svg";
+import VariationIcon from "@/assets/img/VariationLogo.svg";
 import { SelectedMenuSection } from "@/components/designer";
 import { AddVariableModal } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { useDesigner } from "@/hooks";
-import GroupIcon from "../../../assets/img/Group.svg";
-import MultiBlockIcon from "../../../assets/img/Multiple_Block.svg";
-import VariationIcon from "../../../assets/img/VariationLogo.svg";
 import { BlockSettingsRegistry } from "../blocks";
 
 // IconButtonWrapper parent of UnstyledIconButton
