@@ -1,9 +1,4 @@
-import type {
-	DayOfWeekDef,
-	Frequencies,
-	JobTypes,
-	MonthsDef,
-} from "./job.types";
+import type { DayOfWeekDef, Frequencies, MonthsDef } from "./job.types";
 
 export const timezones = [
 	"Africa/Abidjan",
@@ -744,11 +739,6 @@ export const FrequencyOptions: Frequencies[] = [
 	FrequencyMonthly,
 	FrequencyYearly,
 ];
-
-export const JobTypeCustomJob = "Custom Job";
-export const JobTypeSendEmail = "Send Email";
-
-export const JobTypeOptions: JobTypes[] = [JobTypeCustomJob, JobTypeSendEmail];
 
 export const ERROR_MSGES = {
 	MINUTE_ERROR_MSG:

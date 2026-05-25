@@ -6,7 +6,7 @@
 		"descriptionLabel": "Description",
 		"instructionsLabel": "Instructions",
 		"knowledgeLabel": "Knowledge",
-		"toolboxLabel": "Toolbox",
+		"toolboxLabel": "Toolboxes",
 		"promptsLabel": "Prompt Library"
 	},
 	"actions": {
@@ -18,9 +18,9 @@
 		"newChat": "New Chat"
 	},
 	"card": {
-		"noDescription": "No description available",
 		"deleteConfirmTitle": "Are you sure?",
-		"deleteConfirmDescription": "This action is irreversible. This will permanently delete the {{name}} workspace."
+		"deleteConfirmDescription": "This action is irreversible. This will permanently delete the {{name}} workspace.",
+		"createdAgo": "Created {{when}}"
 	},
 	"sharing": {
 		"title": "Add members",
@@ -36,6 +36,7 @@
 		"buttonAdd": "Add Members"
 	},
 	"members": {
+		"autoSaveHint": "Member additions, removals, and permission changes are saved automatically.",
 		"heading": "Who has access",
 		"you": "(You)",
 		"owner": "Owner",
@@ -60,7 +61,26 @@
 	"chat": {
 		"noChats": "No chats found",
 		"error": "Error:",
-		"selectRoom": "Select room"
+		"selectRoom": "Select room",
+		"newChat": "New chat",
+		"delete": "Delete",
+		"cancel": "Cancel",
+		"deleteSuccess": "Chat deleted",
+		"deleteFailed": "Failed to delete chat",
+		"deleteConfirmTitle": "Delete chat?",
+		"deleteConfirmDescription": "This will permanently delete \"{{name}}\". This action cannot be undone.",
+		"rename": "Rename",
+		"renameSave": "Save",
+		"renameEmpty": "Chat name cannot be empty",
+		"renameSuccess": "Chat renamed",
+		"renameFailed": "Failed to rename chat",
+		"pin": "Favorite",
+		"unpin": "Unfavorite",
+		"pinFailed": "Failed to favorite chat",
+		"unpinFailed": "Failed to unfavorite chat",
+		"dayToday": "Today",
+		"dayYesterday": "Yesterday",
+		"daysAgo": "{{count}} days ago"
 	},
 	"images": {
 		"agentIllustration": "Agent illustration"
@@ -91,8 +111,16 @@
 		"tabs": {
 			"myChats": "My Chats",
 			"knowledge": "Knowledge",
-			"toolbox": "Toolbox",
+			"toolbox": "Toolboxes",
+			"prompts": "Prompts",
 			"members": "Members"
+		},
+		"about": {
+			"title": "About",
+			"noInstructions": "No instructions configured."
+		},
+		"recentChats": {
+			"title": "Continue a previous chat"
 		},
 		"failedToDelete": "Failed to delete agent",
 		"failedToLoad": "Failed to load agent: {{error}}"
@@ -111,5 +139,26 @@
 	"prompts": {
 		"noPrompts": "No prompts found",
 		"searchPlaceholder": "Search prompts..."
+	},
+	"chats": {
+		"title": "All chats",
+		"subtitle": "Browse, search, and clean up your chats.",
+		"selectAll": "Select all",
+		"selectChat": "Select chat {{name}}",
+		"selectedCount": "{{count}} selected",
+		"totalCount": "{{count}} chats",
+		"deleteSelected": "Delete {{count}} selected",
+		"bulkDeleteConfirmTitle": "Delete {{count}} chats?",
+		"bulkDeleteConfirmDescription": "This will permanently delete {{count}} chats. This action cannot be undone.",
+		"bulkDeleteSuccess": "Deleted {{count}} chats",
+		"bulkDeletePartialFail": "Failed to delete {{failed}} of {{total}} chats"
+	},
+	"instructions": {
+		"expand": "Expand",
+		"viewTitle": "Instructions",
+		"viewDescription": "The system prompt that guides this agent's behavior.",
+		"editTitle": "Edit Instructions",
+		"editDescription": "Update the system prompt that guides this agent's behavior.",
+		"charCount": "{{count}} characters"
 	}
 }

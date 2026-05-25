@@ -10,8 +10,9 @@
 	"form": {
 		"modelLabel": "Modelo",
 		"instructionsLabel": "Instrucciones",
+		"agentLabel": "Agente",
 		"knowledgeLabel": "Conocimiento",
-		"toolboxLabel": "Caja de herramientas",
+		"toolboxLabel": "Cajas de herramientas",
 		"maxTokenLabel": "Token máximo",
 		"temperatureLabel": "Temperatura"
 	},

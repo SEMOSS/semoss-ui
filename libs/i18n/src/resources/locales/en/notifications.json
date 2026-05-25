@@ -1,7 +1,7 @@
 {
 	"knowledge": {
-		"createSuccess": "Successfully created knowledge source \"{{name}}\"",
-		"createError": "Failed to create knowledge source"
+		"createSuccess": "Successfully created knowledge store \"{{name}}\"",
+		"createError": "Failed to create knowledge store"
 	},
 	"workspace": {
 		"saveError": "Failed to save agent",

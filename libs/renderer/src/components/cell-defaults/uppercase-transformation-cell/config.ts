@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	UppercaseTransformationCell,
 	type UppercaseTransformationCellDef,
-} from "./UppercaseTransformationCell";
+} from "./uppercase-transformation-cell";
 
 export const UppercaseTransformationCellConfig: CellConfig<UppercaseTransformationCellDef> =
 	{

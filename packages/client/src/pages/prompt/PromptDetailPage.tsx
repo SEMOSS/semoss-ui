@@ -175,7 +175,7 @@ export const PromptDetailPage = observer(() => {
 	useEffect(() => {
 		let isMounted = true;
 		const pixel =
-			'MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes=["MODEL"]);';
+			'META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);';
 
 		monolithStore
 			.runQuery(pixel)
