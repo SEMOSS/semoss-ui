@@ -1,8 +1,8 @@
 import {
 	Archive,
+	Blocks,
 	Bolt,
 	Bot,
-	Component,
 	Database,
 	type LucideIcon,
 	Notebook,
@@ -40,7 +40,7 @@ const LUCIDE_TYPE_ICONS: Record<string, LucideIcon> = {
 	function: Sigma,
 	query: Notebook,
 	cell: PanelsTopLeft,
-	block: Component,
+	block: Blocks,
 };
 
 const VARIABLE_TYPE_ICONS: Record<string, string> = {
