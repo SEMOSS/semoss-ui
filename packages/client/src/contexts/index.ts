@@ -20,8 +20,8 @@ import {
 	RootStoreContext,
 	type RootStoreContextType,
 } from "./RootStoreContext";
-import { SettingsContext, type SettingsContextType } from "./SettingsContext";
 import { StepperContext, type StepperContextType } from "./StepperContext";
+import { SettingsContext, type SettingsContextType } from "./settings-context";
 import {
 	WorkspaceContext,
 	type WorkspaceContextType,

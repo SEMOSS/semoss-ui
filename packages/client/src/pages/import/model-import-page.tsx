@@ -38,7 +38,10 @@ import {
 	MODEL_VERSIONS,
 	UNKNOWN_MODEL_BRAND,
 } from "@/components/import/model/model-import.constants";
-import { ModelTileCard } from "@/components/import/model/model-tile-card";
+import {
+	ModelEngineIcon,
+	ModelTileCard,
+} from "@/components/import/model/model-tile-card";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
@@ -714,9 +717,23 @@ export const ModelImportPage: React.FC = () => {
 					</DialogContent>
 				</Dialog>
 
-				<H4 className="mb-2" data-testid="model-import-title">
-					{selectedModel?.trim() || "Connect to Model Catalog"}
-				</H4>
+				<div className="mb-2 flex items-center gap-2">
+					{selectedModel?.trim() && selectedModelMetadata && (
+						<div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+							<ModelEngineIcon
+								model={selectedModelMetadata}
+								provider={selectedProvider}
+								alt={
+									selectedModelMetadata.display ||
+									selectedModelMetadata.name
+								}
+							/>
+						</div>
+					)}
+					<H4 data-testid="model-import-title">
+						{selectedModel?.trim() || "Connect to Model Catalog"}
+					</H4>
+				</div>
 				<P
 					className="mb-3 text-muted-foreground"
 					data-testid="model-import-description"

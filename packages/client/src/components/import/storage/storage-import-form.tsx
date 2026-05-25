@@ -29,11 +29,13 @@ import {
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
 export const StorageForm = ({
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -706,15 +708,12 @@ export const StorageForm = ({
 			className="my-4"
 			autoComplete="off"
 		>
-			<div className="mb-6">
-				<H4 data-testid="storage-form-title">{title}</H4>
-				<Muted
-					className="mt-1 text-base"
-					data-testid="storage-form-description"
-				>
-					{description}
-				</Muted>
-			</div>
+			<EngineFormHeader
+				testIdPrefix="storage"
+				icon={icon}
+				title={title}
+				description={description}
+			/>
 
 			{Object.keys(grouped).map((category) => (
 				<div key={category} className="mb-4 flex flex-col gap-4">

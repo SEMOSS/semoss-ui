@@ -1,6 +1,15 @@
 import { Check, ChevronsUpDown } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import type { Block, BlockDef, GridBlockDef, Paths } from "@semoss/renderer";
+import { useEffect, useState } from "react";
+import type {
+	Block,
+	BlockDef,
+	GridBlockColumn,
+	GridBlockDef,
+	HeaderBackgroundSettings,
+	Paths,
+	PathValue,
+} from "@semoss/renderer";
 import {
 	Button,
 	Checkbox,
@@ -15,6 +24,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { ColorPickerSettingsNew } from "../../../shared/ColorPickerSettingsNew";
 
 export interface HeaderStylingProps<D extends BlockDef = GridBlockDef> {
