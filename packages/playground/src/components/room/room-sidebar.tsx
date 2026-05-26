@@ -181,7 +181,7 @@ export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 			>
 				<div
 					ref={controlsRef}
-					className="absolute top-0 right-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pr-2"
+					className="absolute end-0 top-0 z-10 flex h-12.5 flex-row items-center gap-1.5 overflow-hidden pe-2"
 				>
 					{activeTool && (
 						<Tooltip>

@@ -2257,7 +2257,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 		<div className={cn("relative h-full", className)}>
 			<div
 				className={cn(
-					"absolute top-1.5 right-4 z-[1000] flex flex-row items-center gap-0.5 rounded-md border p-[2px] shadow-sm backdrop-blur-sm",
+					"absolute end-4 top-1.5 z-[1000] flex flex-row items-center gap-0.5 rounded-md border p-[2px] shadow-sm backdrop-blur-sm",
 					toolbarClass,
 				)}
 			>
@@ -2306,7 +2306,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 			{historySearch.active && (
 				<div
 					className={cn(
-						"absolute bottom-2 left-2 z-[1100] max-w-[85%] rounded-md border px-2 py-1 text-xs shadow-lg",
+						"absolute start-2 bottom-2 z-[1100] max-w-[85%] rounded-md border px-2 py-1 text-xs shadow-lg",
 						historySearchClass,
 					)}
 				>
@@ -2364,7 +2364,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 											applySuggestion(suggestion)
 										}
 										className={cn(
-											"w-full rounded px-2 py-1 text-left text-sm",
+											"w-full rounded px-2 py-1 text-start text-sm",
 											isDark
 												? "hover:bg-[#4e4e4e]"
 												: "hover:bg-[#E0E0E0]",

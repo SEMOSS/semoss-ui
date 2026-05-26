@@ -55,7 +55,7 @@ export const RoomSuggestions: React.FC<RoomSuggestionsProps> = observer(
 						}}
 					>
 						<div
-							className="flex-1 truncate text-left text-sm"
+							className="flex-1 truncate text-start text-sm"
 							title={suggestion}
 						>
 							{suggestion}
