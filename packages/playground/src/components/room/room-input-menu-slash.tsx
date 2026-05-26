@@ -1,200 +1,160 @@
-import { BookOpenIcon, CheckIcon, HammerIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
+import { BookOpenIcon, FlaskConicalIcon, HammerIcon } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
-import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useEffect, useRef } from "react";
 import {
 	Command,
 	CommandEmpty,
 	CommandGroup,
-	CommandInput,
 	CommandItem,
 	CommandList,
-	Spinner,
-	useDebouncedValue,
-	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { engineProjectToMCP } from "@/components";
-import { useRoot } from "@/hooks";
-import type { RoomStore } from "@/stores";
-import type { App, Engine, MCP, MCPConfig } from "@/types";
 
-interface RoomInputMenuSlashProps {
-	/** Room options containing MCP configurations */
-	options: RoomStore["options"];
-	/** Callback when an MCP is selected */
-	onSelect: (tool: MCPConfig) => void;
-	/** Callback to close menu and remove slash */
-	onRequestClose?: () => void;
+// ============================================================================
+// Types
+// ============================================================================
+
+export interface SlashCommand {
+	id: string;
+	label: string;
+	description: string;
+	icon: React.ComponentType<{ className?: string }>;
+	onExecute: () => void;
 }
 
+interface RoomInputMenuSlashProps {
+	/** Text typed after the "/" trigger, used to filter commands */
+	query: string;
+	/** Index of the currently highlighted command */
+	selectedIndex: number;
+	/** Reports the current filtered item count back to the parent */
+	setItemCount: (count: number) => void;
+	/** Syncs hover / cmdk-driven selection back to the parent */
+	setSelectedIndex: (index: number) => void;
+	/** Removes the slash + query text from the editor and closes the menu */
+	onRequestClose: () => void;
+}
+
+// ============================================================================
+// Commands
+// ============================================================================
+
 /**
- * RoomInputMenuSlash - Searchable menu for slash (/) command
- *
- * Displays both knowledge (VECTOR) and toolbox (non-VECTOR) MCPs
- * in a unified list with icons for visual distinction. Fetched from
- * the backend with infinite scroll support.
+ * Slash commands that open the MCP overlay are defined in room-input.tsx
+ * (where handleOpenMcpOverlay is in scope) and injected via buildSlashCommands.
+ * Test commands are defined inline here.
  */
-const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
-	options,
-	onSelect,
+const TEST_COMMANDS: SlashCommand[] = ["A", "B", "C", "D", "E", "F"].map(
+	(letter) => ({
+		id: `test${letter}`,
+		label: `/test${letter}`,
+		description: `Test command ${letter}`,
+		icon: FlaskConicalIcon,
+		onExecute: () => console.log(`test${letter}`),
+	}),
+);
+
+export const buildSlashCommands = (
+	onOpenMcpOverlay: (tab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => void,
+): SlashCommand[] => [
+	{
+		id: "knowledge",
+		label: "/knowledge",
+		description: "Add knowledge sources to this conversation",
+		icon: BookOpenIcon,
+		onExecute: () => onOpenMcpOverlay("KNOWLEDGE"),
+	},
+	{
+		id: "mcp",
+		label: "/mcp",
+		description: "Add toolbox tools to this conversation",
+		icon: HammerIcon,
+		onExecute: () => onOpenMcpOverlay("TOOLBOX"),
+	},
+	...TEST_COMMANDS,
+];
+
+// ============================================================================
+// Component
+// ============================================================================
+
+/**
+ * RoomInputMenuSlash - Preset slash command list
+ *
+ * Filters the static command list by the text typed after "/". Arrow keys
+ * highlight items; Enter or click executes the selected command.
+ */
+export const RoomInputMenuSlash: React.FC<
+	RoomInputMenuSlashProps & { commands: SlashCommand[] }
+> = ({
+	query,
+	selectedIndex,
+	setItemCount,
+	setSelectedIndex,
 	onRequestClose,
+	commands,
 }) => {
-	const { t } = useTranslation("room");
-	const { root } = useRoot();
-	const [search, setSearch] = useState("");
-
-	const debouncedSearch = useDebouncedValue(search);
-	const applyEngineMCPFilter = !!root.theme.featureFlags?.enableKnowledgeMCP;
-
-	/**
-	 * Three sources, braided as (knowledge engine, toolbox engine, toolbox
-	 * project) per index. Splitting VECTOR off keeps the rendered order
-	 * predictable (k, t, t, k, t, t, ...) instead of relying on whatever
-	 * order the engines reactor returned the mixed types in. Same rationale
-	 * as MCPSelector for using separate iterators over MyEngineProject.
-	 *
-	 * VECTOR engines are MCP-tag-filtered only when the flag is on; the
-	 * other two sources are always filtered to MCP-tagged items.
-	 */
-	const getKnowledgeEngines = useIteratorPixel<Engine[], MCP>(
-		(limit, offset) =>
-			`META | MyEngines (metaKeys = ["tag", "description"], ${applyEngineMCPFilter ? `metaFilters=[{"tag":["MCP"]}], ` : ""}engineTypes=["VECTOR"], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
-		(response) => (response.length < 15 ? -1 : Infinity),
-		(response) => response.map(engineProjectToMCP),
-		{ limit: 15 },
-		[debouncedSearch, applyEngineMCPFilter],
+	const filtered = commands.filter((cmd) =>
+		cmd.id.startsWith(query.toLowerCase()),
 	);
 
-	const getToolboxEngines = useIteratorPixel<Engine[], MCP>(
-		(limit, offset) =>
-			`META | MyEngines (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], engineTypes=["STORAGE", "DATABASE", "FUNCTION", "MODEL"], ${debouncedSearch ? `filterWord=${JSON.stringify(debouncedSearch)}, ` : ""}limit=[${limit}], offset=[${offset}])`,
-		(response) => (response.length < 15 ? -1 : Infinity),
-		(response) => response.map(engineProjectToMCP),
-		{ limit: 15 },
-		[debouncedSearch],
-	);
+	const listRef = useRef<HTMLDivElement>(null);
 
-	const getProjects = useIteratorPixel<App[], MCP>(
-		(limit, offset) =>
-			`META | MyProjects (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], ${debouncedSearch ? `filterWord=["<encode>${debouncedSearch}</encode>"], ` : ""}limit=[${limit}], offset=[${offset}])`,
-		(response) => (response.length < 15 ? -1 : Infinity),
-		(response) => response.map(engineProjectToMCP),
-		{ limit: 15 },
-		[debouncedSearch],
-	);
+	useEffect(() => {
+		setItemCount(filtered.length);
+	}, [filtered.length, setItemCount]);
 
-	const combinedData: MCP[] = [];
-	const maxLen = Math.max(
-		getKnowledgeEngines.data.length,
-		getToolboxEngines.data.length,
-		getProjects.data.length,
-	);
-	for (let i = 0; i < maxLen; i++) {
-		const k = getKnowledgeEngines.data[i];
-		const te = getToolboxEngines.data[i];
-		const p = getProjects.data[i];
-		if (k) combinedData.push(k);
-		if (te) combinedData.push(te);
-		if (p) combinedData.push(p);
-	}
-	const isLoading =
-		getKnowledgeEngines.isLoading ||
-		getToolboxEngines.isLoading ||
-		getProjects.isLoading;
-	const hasMore =
-		getKnowledgeEngines.hasMore ||
-		getToolboxEngines.hasMore ||
-		getProjects.hasMore;
-
-	/**
-	 * Setup infinite scroll for the command list. Each scroll-to-bottom
-	 * advances whichever sources still have more.
-	 */
-	const { setScroll } = useInfiniteScroll({
-		disabled: isLoading || !hasMore,
-		onNext: () => {
-			if (getKnowledgeEngines.hasMore) getKnowledgeEngines.next();
-			if (getToolboxEngines.hasMore) getToolboxEngines.next();
-			if (getProjects.hasMore) getProjects.next();
-		},
-	});
-
-	// Track selected MCPs
-	const selectedMCPs = options.mcp.reduce(
-		(acc, curr) => {
-			acc[curr.id] = curr;
-			return acc;
-		},
-		{} as Record<string, MCPConfig>,
-	);
-
-	const hasResults = combinedData.length > 0;
+	useEffect(() => {
+		const list = listRef.current;
+		if (!list) return;
+		const items = list.querySelectorAll("[cmdk-item]");
+		(items[selectedIndex] as HTMLElement | undefined)?.scrollIntoView({
+			block: "nearest",
+		});
+	}, [selectedIndex]);
 
 	return (
-		<Command shouldFilter={false} className="w-full">
-			<CommandInput
-				placeholder={t("menuMcp.searchPlaceholder")}
-				value={search}
-				onValueChange={setSearch}
-				autoFocus
-				onKeyDown={(e) => {
-					// Close menu and delete slash on backspace when search is empty
-					if (e.key === "Backspace" && search === "") {
-						e.preventDefault();
-						onRequestClose?.();
-					}
-				}}
-			/>
-			<CommandList
-				className="max-h-[300px]"
-				ref={(ele) => setScroll(ele)}
-			>
-				{!isLoading && !hasResults ? (
-					<CommandEmpty>
-						{search
-							? t("menuMcp.noResults")
-							: t("menuMcp.noItemsAvailable")}
-					</CommandEmpty>
-				) : null}
-
-				{hasResults && (
+		<Command
+			shouldFilter={false}
+			// Drive cmdk's highlighted item from our selectedIndex so that both
+			// arrow-key nav and hover go through the same data-selected path.
+			value={filtered[selectedIndex]?.id ?? ""}
+			onValueChange={(val) => {
+				const idx = filtered.findIndex((cmd) => cmd.id === val);
+				if (idx !== -1) setSelectedIndex(idx);
+			}}
+			className="w-full"
+		>
+			<CommandList ref={listRef}>
+				{filtered.length === 0 ? (
+					<CommandEmpty>No commands found</CommandEmpty>
+				) : (
 					<CommandGroup>
-						{combinedData.map((item) => (
-							<CommandItem
-								key={item.id}
-								value={item.id}
-								onSelect={() => {
-									onSelect({
-										type: item.type,
-										id: item.id,
-										name: item.name,
-									});
-								}}
-							>
-								{item.type === "VECTOR" ? (
-									<BookOpenIcon className="mr-2 size-4" />
-								) : (
-									<HammerIcon className="mr-2 size-4" />
-								)}
-								{item.name}
-								<CheckIcon
-									className={`ml-auto ${selectedMCPs[item.id] ? "opacity-100" : "opacity-0"}`}
-								/>
-							</CommandItem>
-						))}
+						{filtered.map((cmd) => {
+							const Icon = cmd.icon;
+							return (
+								<CommandItem
+									key={cmd.id}
+									value={cmd.id}
+									onSelect={() => {
+										cmd.onExecute();
+										onRequestClose();
+									}}
+								>
+									<Icon className="mr-2 size-4 shrink-0" />
+									<div className="flex flex-col gap-0.5">
+										<span className="font-medium text-sm">
+											{cmd.label}
+										</span>
+										<span className="text-muted-foreground text-xs">
+											{cmd.description}
+										</span>
+									</div>
+								</CommandItem>
+							);
+						})}
 					</CommandGroup>
-				)}
-
-				{isLoading && (
-					<div className="flex items-center justify-center py-4">
-						<Spinner className="size-4" />
-					</div>
 				)}
 			</CommandList>
 		</Command>
 	);
 };
-
-export const RoomInputMenuSlash = observer(RoomInputMenuSlashInner);

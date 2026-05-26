@@ -4,32 +4,59 @@ import {
 	$getSelection,
 	$isRangeSelection,
 	$isTextNode,
+	COMMAND_PRIORITY_HIGH,
+	KEY_ARROW_DOWN_COMMAND,
+	KEY_ARROW_UP_COMMAND,
+	KEY_ENTER_COMMAND,
+	KEY_TAB_COMMAND,
 	TextNode,
 } from "lexical";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 interface MentionPluginProps {
-	/**
-	 * Trigger
-	 */
+	/** Character that triggers the menu (default: "/") */
 	trigger: string;
 
-	/**
-	 * Menu component
-	 */
+	/** Rendered as the suggestion menu */
 	MenuComponent: React.ComponentType<{
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
 		menuPosition: { top: number; left: number } | null;
 		addToken: (token: string) => void;
 		onRequestClose: () => void;
+		/** Text typed after the trigger character, for filtering */
+		query: string;
+		/** Index of the currently highlighted item */
+		selectedIndex: number;
+		/** Called by MenuComponent to report how many items are visible */
+		setItemCount: (count: number) => void;
+		/** Called by MenuComponent to sync hover/external selection back up */
+		setSelectedIndex: (index: number) => void;
 	}>;
+
+	/**
+	 * Called when Enter is pressed while the menu is open. The plugin closes
+	 * the menu (removing trigger + query text) after this fires.
+	 */
+	onAccept?: (query: string, selectedIndex: number) => void;
+
+	/**
+	 * Called when Tab is pressed. If it returns a string, that string replaces
+	 * the current query in the editor and the menu stays open. Return undefined
+	 * to do nothing.
+	 */
+	onTabComplete?: (
+		query: string,
+		selectedIndex: number,
+	) => string | undefined;
 }
 
 export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	trigger = "/",
 	MenuComponent,
+	onAccept,
+	onTabComplete,
 }) => {
 	const [editor] = useLexicalComposerContext();
 	const [isOpen, setIsOpen] = useState(false);
@@ -37,46 +64,56 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 		top: number;
 		left: number;
 	} | null>(null);
+	const [query, setQuery] = useState("");
+	const [selectedIndex, setSelectedIndex] = useState(0);
 
 	const triggerOffsetRef = useRef<number | null>(null);
 	const explicitlyClosedRef = useRef(false);
 
-	/**
-	 * Call back to add a token
-	 */
+	// Stable refs so key-command handlers don't need to re-register on every render
+	const queryRef = useRef(query);
+	queryRef.current = query;
+	const selectedIndexRef = useRef(selectedIndex);
+	selectedIndexRef.current = selectedIndex;
+	const onAcceptRef = useRef(onAccept);
+	onAcceptRef.current = onAccept;
+	const onTabCompleteRef = useRef(onTabComplete);
+	onTabCompleteRef.current = onTabComplete;
+	const itemCountRef = useRef(0);
+
+	// Reset selection when the filtered list changes (new query = start from top)
+	useEffect(() => {
+		setSelectedIndex(0);
+	}, [query]);
+
+	const setItemCount = useCallback((count: number) => {
+		itemCountRef.current = count;
+	}, []);
+
+	const setSelectedIndexCallback = useCallback((index: number) => {
+		setSelectedIndex(index);
+	}, []);
+
+	/** Insert a token after the trigger, replacing trigger + query text */
 	const addToken = useCallback(
 		(token: string) => {
 			const triggerIdx = triggerOffsetRef.current;
-			if (triggerIdx === null) {
-				return false;
-			}
+			if (triggerIdx === null) return false;
 
 			editor.update(() => {
 				const selection = $getSelection();
-				if (!$isRangeSelection(selection)) {
-					return;
-				}
+				if (!$isRangeSelection(selection)) return;
 
 				const anchor = selection.anchor;
 				const anchorNode = anchor.getNode();
+				if (!$isTextNode(anchorNode)) return;
 
-				if (!$isTextNode(anchorNode)) {
-					return;
-				}
-
-				// get the text content
 				const textContent = anchorNode.getTextContent();
-
-				// Get text before trigger
 				const textBeforeTrigger = textContent.slice(0, triggerIdx);
-
-				// Get text after cursor
 				const textAfterCursor = textContent.slice(anchor.offset);
 
-				// Add the node
 				const tokenNode = $createTextNode(token);
 
-				// Update the text node
 				if (textBeforeTrigger) {
 					anchorNode.setTextContent(textBeforeTrigger);
 					anchorNode.insertAfter(tokenNode);
@@ -84,17 +121,13 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 					anchorNode.replace(tokenNode);
 				}
 
-				// Add a space after the token
 				const spaceNode = new TextNode(" ");
 				tokenNode.insertAfter(spaceNode);
 
-				// Add text after cursor if any
 				if (textAfterCursor) {
-					const textAfterCursorNode = new TextNode(textAfterCursor);
-					spaceNode.insertAfter(textAfterCursorNode);
+					spaceNode.insertAfter(new TextNode(textAfterCursor));
 				}
 
-				// Move cursor after the space
 				spaceNode.select(1, 1);
 			});
 
@@ -106,53 +139,69 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	);
 
 	/**
-	 * Callback to close menu and remove trigger text
+	 * Replace the text between the trigger character and the cursor with
+	 * `replacement`. Keeps the trigger character in place and leaves the
+	 * menu open so the user can continue filtering or press Enter.
 	 */
+	const replaceQuery = useCallback(
+		(replacement: string) => {
+			const triggerIdx = triggerOffsetRef.current;
+			if (triggerIdx === null) return;
+
+			editor.update(() => {
+				const selection = $getSelection();
+				if (!$isRangeSelection(selection)) return;
+
+				const anchor = selection.anchor;
+				const anchorNode = anchor.getNode();
+				if (!$isTextNode(anchorNode)) return;
+
+				const textContent = anchorNode.getTextContent();
+				// Preserve text up to and including the trigger character
+				const textBefore = textContent.slice(0, triggerIdx + 1);
+				const textAfter = textContent.slice(anchor.offset);
+
+				anchorNode.setTextContent(textBefore + replacement + textAfter);
+
+				// Move cursor to just after the replacement
+				const newOffset = triggerIdx + 1 + replacement.length;
+				anchorNode.select(newOffset, newOffset);
+			});
+			// Intentionally do NOT close the menu
+		},
+		[editor],
+	);
+
+	/** Remove trigger + query text and close the menu */
 	const handleRequestClose = useCallback(() => {
 		const triggerIdx = triggerOffsetRef.current;
-		if (triggerIdx === null) {
-			return;
-		}
+		if (triggerIdx === null) return;
 
 		editor.update(() => {
 			const selection = $getSelection();
-			if (!$isRangeSelection(selection)) {
-				return;
-			}
+			if (!$isRangeSelection(selection)) return;
 
 			const anchor = selection.anchor;
 			const anchorNode = anchor.getNode();
-
-			if (!$isTextNode(anchorNode)) {
-				return;
-			}
+			if (!$isTextNode(anchorNode)) return;
 
 			const textContent = anchorNode.getTextContent();
-
-			// Remove from trigger to cursor
 			const textBeforeTrigger = textContent.slice(0, triggerIdx);
 			const textAfterCursor = textContent.slice(anchor.offset);
-			const newText = textBeforeTrigger + textAfterCursor;
-
-			anchorNode.setTextContent(newText);
-
-			// Select at the trigger position (now the join point)
-			// Use the length of textBeforeTrigger to ensure we're within bounds
+			anchorNode.setTextContent(textBeforeTrigger + textAfterCursor);
 			anchorNode.select(
 				textBeforeTrigger.length,
 				textBeforeTrigger.length,
 			);
 		});
 
-		// Focus editor immediately before closing menu
 		editor.focus();
-
 		setIsOpen(false);
 		explicitlyClosedRef.current = false;
 		triggerOffsetRef.current = null;
 	}, [editor]);
 
-	// Handle text changes to detect trigger
+	// Detect trigger character as user types
 	useEffect(() => {
 		return editor.registerTextContentListener(() => {
 			editor.getEditorState().read(() => {
@@ -165,7 +214,6 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 
 				const anchor = selection.anchor;
 				const anchorNode = anchor.getNode();
-
 				if (!$isTextNode(anchorNode)) {
 					setIsOpen(false);
 					explicitlyClosedRef.current = false;
@@ -175,38 +223,28 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				const text = anchorNode.getTextContent();
 				const cursorOffset = anchor.offset;
 
-				// Find the last trigger before cursor
+				// Find the last trigger character before the cursor
 				let triggerIndex = -1;
 				for (let i = cursorOffset - 1; i >= 0; i--) {
 					if (text[i] === trigger) {
-						// Check if it's at the start or preceded by a space
 						if (i === 0 || /\s/.test(text[i - 1])) {
 							triggerIndex = i;
 							break;
 						}
 					}
-					// Stop if we hit a space (no trigger in current word)
-					if (/\s/.test(text[i])) {
-						break;
-					}
+					if (/\s/.test(text[i])) break;
 				}
 
 				if (triggerIndex !== -1) {
-					// Check if this is a new trigger position or if menu was explicitly closed
 					const isNewTrigger =
 						triggerOffsetRef.current !== triggerIndex;
+					if (isNewTrigger) explicitlyClosedRef.current = false;
 
-					if (isNewTrigger) {
-						// New trigger position - reset explicit closure flag
-						explicitlyClosedRef.current = false;
-					}
-
-					// Only open if not explicitly closed
 					if (!explicitlyClosedRef.current) {
 						triggerOffsetRef.current = triggerIndex;
 						setIsOpen(true);
+						setQuery(text.slice(triggerIndex + 1, cursorOffset));
 
-						// Calculate menu position
 						const domSelection = window.getSelection();
 						if (domSelection && domSelection.rangeCount > 0) {
 							const range = domSelection.getRangeAt(0);
@@ -218,8 +256,8 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 						}
 					}
 				} else {
-					// No trigger found - reset everything
 					setIsOpen(false);
+					setQuery("");
 					explicitlyClosedRef.current = false;
 					triggerOffsetRef.current = null;
 				}
@@ -227,32 +265,83 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 		});
 	}, [editor, trigger]);
 
-	// focus on the editor when menu is closed
+	// Keyboard commands while menu is open
 	useEffect(() => {
-		if (isOpen) {
-			return;
-		}
-		editor.focus(() => null, {
-			defaultSelection: "rootEnd",
-		});
+		if (!isOpen) return;
+
+		const removeEnter = editor.registerCommand(
+			KEY_ENTER_COMMAND,
+			(event) => {
+				event?.preventDefault();
+				onAcceptRef.current?.(
+					queryRef.current,
+					selectedIndexRef.current,
+				);
+				handleRequestClose();
+				return true;
+			},
+			COMMAND_PRIORITY_HIGH,
+		);
+
+		const removeTab = editor.registerCommand(
+			KEY_TAB_COMMAND,
+			(event) => {
+				event?.preventDefault();
+				const completion = onTabCompleteRef.current?.(
+					queryRef.current,
+					selectedIndexRef.current,
+				);
+				if (completion !== undefined) replaceQuery(completion);
+				return true;
+			},
+			COMMAND_PRIORITY_HIGH,
+		);
+
+		const removeArrowDown = editor.registerCommand(
+			KEY_ARROW_DOWN_COMMAND,
+			(event) => {
+				event?.preventDefault();
+				setSelectedIndex((prev) =>
+					Math.min(prev + 1, itemCountRef.current - 1),
+				);
+				return true;
+			},
+			COMMAND_PRIORITY_HIGH,
+		);
+
+		const removeArrowUp = editor.registerCommand(
+			KEY_ARROW_UP_COMMAND,
+			(event) => {
+				event?.preventDefault();
+				setSelectedIndex((prev) => Math.max(prev - 1, 0));
+				return true;
+			},
+			COMMAND_PRIORITY_HIGH,
+		);
+
+		return () => {
+			removeEnter();
+			removeTab();
+			removeArrowDown();
+			removeArrowUp();
+		};
+	}, [editor, isOpen, handleRequestClose, replaceQuery]);
+
+	// Restore editor focus when menu closes
+	useEffect(() => {
+		if (isOpen) return;
+		editor.focus(() => null, { defaultSelection: "rootEnd" });
 	}, [editor, isOpen]);
 
-	// Track explicit closure
 	const handleOpenChange = useCallback(
 		(open: boolean) => {
-			if (!open && isOpen) {
-				// User explicitly closed the menu
-				explicitlyClosedRef.current = true;
-			}
+			if (!open && isOpen) explicitlyClosedRef.current = true;
 			setIsOpen(open);
 		},
 		[isOpen],
 	);
 
-	// don't show if not open and there is no position
-	if (!isOpen || !menuPosition) {
-		return null;
-	}
+	if (!isOpen || !menuPosition) return null;
 
 	return (
 		<MenuComponent
@@ -261,6 +350,10 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			menuPosition={menuPosition}
 			addToken={addToken}
 			onRequestClose={handleRequestClose}
+			query={query}
+			selectedIndex={selectedIndex}
+			setItemCount={setItemCount}
+			setSelectedIndex={setSelectedIndexCallback}
 		/>
 	);
 };

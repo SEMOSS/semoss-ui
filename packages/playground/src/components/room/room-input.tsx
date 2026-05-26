@@ -39,6 +39,7 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -65,7 +66,10 @@ import {
 	type PromptLibraryItem,
 } from "@/components";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
-import { RoomInputMenuSlash } from "@/components/room/room-input-menu-slash";
+import {
+	buildSlashCommands,
+	RoomInputMenuSlash,
+} from "@/components/room/room-input-menu-slash";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig, Workspace } from "@/types";
@@ -309,6 +313,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			(defaultTab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") =>
 				setMcpOverlay({ open: true, defaultTab }),
 			[],
+		);
+
+		const slashCommands = useMemo(
+			() => buildSlashCommands(handleOpenMcpOverlay),
+			[handleOpenMcpOverlay],
 		);
 
 		const knowledgeCount = useMemo(
@@ -1224,43 +1233,69 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						) && (
 							<MentionPlugin
 								trigger="/"
+								onAccept={(query, selectedIndex) => {
+									const filtered = slashCommands.filter(
+										(cmd) =>
+											cmd.id.startsWith(
+												query.toLowerCase(),
+											),
+									);
+									const match =
+										filtered[selectedIndex] ?? filtered[0];
+									match?.onExecute();
+								}}
+								onTabComplete={(query, selectedIndex) => {
+									const filtered = slashCommands.filter(
+										(cmd) =>
+											cmd.id.startsWith(
+												query.toLowerCase(),
+											),
+									);
+									const match =
+										filtered[selectedIndex] ?? filtered[0];
+									return match?.id;
+								}}
 								MenuComponent={({
 									isOpen,
-									onOpenChange,
 									menuPosition,
-									addToken,
 									onRequestClose,
-								}) => (
-									<DropdownMenu
-										open={isOpen}
-										onOpenChange={onOpenChange}
-									>
-										{/* Invisible trigger positioned at cursor for menu placement */}
-										<DropdownMenuTrigger
-											style={{
-												position: "fixed",
-												top: menuPosition?.top ?? 0,
-												left: menuPosition?.left ?? 0,
-												width: 0,
-												height: 0,
-											}}
-										/>
-										<DropdownMenuContent
-											align="start"
-											className="max-h-96 w-72 overflow-y-auto"
-										>
-											<RoomInputMenuSlash
-												options={options}
-												onRequestClose={onRequestClose}
-												onSelect={(tool) => {
-													onMcpSelect?.(tool);
-													addToken(`<${tool.name}>`);
-													onOpenChange(false);
-												}}
-											/>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								)}
+									query,
+									selectedIndex,
+									setItemCount,
+									setSelectedIndex,
+								}) =>
+									isOpen && menuPosition
+										? createPortal(
+												<div
+													style={{
+														position: "fixed",
+														top: menuPosition.top,
+														left: menuPosition.left,
+														zIndex: 50,
+													}}
+													className="w-64 overflow-hidden rounded-md border border-border bg-popover shadow-md"
+												>
+													<RoomInputMenuSlash
+														query={query}
+														selectedIndex={
+															selectedIndex
+														}
+														setItemCount={
+															setItemCount
+														}
+														setSelectedIndex={
+															setSelectedIndex
+														}
+														commands={slashCommands}
+														onRequestClose={
+															onRequestClose
+														}
+													/>
+												</div>,
+												document.body,
+											)
+										: null
+								}
 							/>
 						)}
 					<PromptLibraryDialog
