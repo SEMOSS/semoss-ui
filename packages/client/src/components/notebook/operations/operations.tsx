@@ -29,13 +29,16 @@ interface OperationProps {
 	expandAll?: boolean;
 	/** Hide the JSON viewer's built-in expand-all toggle. */
 	hideJsonToggle?: boolean;
+	/** Reserve fully-expanded height in the JSON viewer (modal contexts). */
+	fixedJsonHeight?: boolean;
 }
 
 /**
  * Operation that is rendered
  */
 export const Operation = observer((props: OperationProps): JSX.Element => {
-	const { operation, output, expandAll, hideJsonToggle } = props;
+	const { operation, output, expandAll, hideJsonToggle, fixedJsonHeight } =
+		props;
 
 	if (operation === "SUCCESS") {
 		return <SuccessOperation output={output as string} />;
@@ -74,6 +77,7 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
 			output={output}
 			expandAll={expandAll}
 			hideJsonToggle={hideJsonToggle}
+			fixedJsonHeight={fixedJsonHeight}
 		/>
 	);
 });
