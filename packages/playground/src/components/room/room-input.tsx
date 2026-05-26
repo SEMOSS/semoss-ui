@@ -215,9 +215,6 @@ interface RoomInputProps {
 	/** Room options containing MCP configurations for slash menu */
 	options: RoomStore["options"];
 
-	/** Callback when an MCP is selected/deselected from slash menu */
-	onMcpSelect?: (mcp: MCPConfig) => void;
-
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
 
@@ -275,7 +272,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		MenuComponent,
 		options,
 		onPrompt = () => null,
-		onMcpSelect,
 		onMcpChange,
 		onWorkspaceChange,
 		hasOutstandingTools = false,

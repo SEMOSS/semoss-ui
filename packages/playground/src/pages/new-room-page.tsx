@@ -162,31 +162,6 @@ export const NewRoomPage = observer(() => {
 	}, [tempRoomStore, root.theme]);
 
 	/**
-	 * Handle tool add (add-only for slash menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolAdd = (tool: MCPConfig) => {
-		// Add tool to options (skip if already present)
-		const tools = tempRoomStore.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, MCPConfig>,
-		);
-
-		// Only add if not already present
-		if (!Object.hasOwn(tools, tool.id)) {
-			tools[tool.id] = tool;
-		}
-
-		tempRoomStore.setOptions({
-			...tempRoomStore.options,
-			mcp: Object.values(tools),
-		});
-	};
-
-	/**
 	 * Create a new room and ask the model
 	 *
 	 * @param prompt The prompt to ask
@@ -480,7 +455,6 @@ export const NewRoomPage = observer(() => {
 								chat.setSelectedModel(m);
 							}}
 							options={tempRoomStore.options}
-							onMcpSelect={handleToolAdd}
 							onMcpChange={(mcp) =>
 								tempRoomStore.setOptions({
 									...tempRoomStore.options,
