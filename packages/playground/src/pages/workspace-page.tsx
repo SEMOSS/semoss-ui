@@ -138,7 +138,12 @@ export const WorkspacePage = observer(() => {
 						</InputGroupAddon>
 					</InputGroup>
 
-					{getWorkspaces.data.length === 0 ? (
+					{getWorkspaces.isLoading &&
+					getWorkspaces.data.length === 0 ? (
+						<div className="flex items-center justify-center py-12">
+							<Spinner />
+						</div>
+					) : getWorkspaces.data.length === 0 ? (
 						<div className="flex items-center justify-center py-12">
 							<Muted>{t("workspace:messages.noResults")}</Muted>
 						</div>

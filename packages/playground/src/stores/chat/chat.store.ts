@@ -348,9 +348,8 @@ export class ChatStore {
 		runInAction(() => {
 			// save it to the cache
 			this._store.rooms[roomId] = room;
-
-			// increment the roomCounter to force re-render of the nav
-			this._store.keys.roomCounter++;
+			// No roomCounter increment here — loading an existing room doesn't
+			// change the list, so there's no reason to trigger a re-fetch.
 		});
 
 		// return the room
