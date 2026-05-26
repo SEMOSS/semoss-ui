@@ -1,6 +1,6 @@
 import {
+	Blocks,
 	Braces,
-	Component,
 	Folder,
 	Layers,
 	Notebook,
@@ -41,7 +41,7 @@ export const SIDEBAR_MENU = {
 		{
 			name: "Blocks",
 			icon: {
-				component: Component,
+				component: Blocks,
 				tooltip: "Blocks",
 			},
 		},
