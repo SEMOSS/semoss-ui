@@ -101,13 +101,13 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 				{/* Header toggle */}
 				<button
 					type="button"
-					className="flex w-full cursor-pointer items-center gap-3 p-2 text-left transition-colors hover:bg-accent"
+					className="flex w-full cursor-pointer items-center gap-3 p-2 text-start transition-colors hover:bg-accent"
 					onClick={() => setIsOpen((prev) => !prev)}
 				>
 					<div className="flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground">
 						{isOpen ? <HammerIcon className="size-5" /> : icon}
 					</div>
-					<span className="-ml-1.5 truncate text-muted-foreground text-sm">
+					<span className="-ms-1.5 truncate text-muted-foreground text-sm">
 						{isOpen
 							? t("group.labelOpen", { count: tools.length })
 							: t("group.labelClosed", {
@@ -122,7 +122,7 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 					)}
 					<ChevronDownIcon
 						className={cn(
-							"mr-1 ml-auto size-5 shrink-0 text-muted-foreground transition-transform duration-200",
+							"ms-auto me-1 size-5 shrink-0 text-muted-foreground transition-transform duration-200",
 							isOpen && "rotate-180",
 						)}
 					/>
@@ -147,7 +147,7 @@ export const ResponseMessageToolGroup: React.FC<ResponseMessageToolGroupProps> =
 								))}
 							</div>
 							{summaryParts.length > 0 && (
-								<span className="pl-2 text-muted-foreground text-sm">
+								<span className="ps-2 text-muted-foreground text-sm">
 									{summaryParts.join(" · ")}
 								</span>
 							)}

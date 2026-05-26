@@ -76,7 +76,7 @@ export const WorkspaceMCPList = ({
 
 	if (searchedMCP.length === 0) {
 		return (
-			<div className="flex h-full w-full items-center justify-center">
+			<div className="flex min-h-32 w-full items-center justify-center p-6">
 				<Muted>
 					{type === "TOOLBOX"
 						? t("mcp.noToolboxes")
