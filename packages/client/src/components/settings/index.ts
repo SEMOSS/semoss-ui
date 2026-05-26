@@ -6,6 +6,7 @@ export * from "./guardrail-selecting-view";
 export * from "./guardrail-selector-panel";
 export * from "./members-table";
 export * from "./pending-members-table";
+export * from "./service-accounts-table";
 export * from "./settings.types";
 export * from "./settings-tiles";
 export * from "./update-smss";

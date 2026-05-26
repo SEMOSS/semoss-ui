@@ -1,5 +1,5 @@
 import { MousePointerClick } from "lucide-react";
-import { QueryNameDropdownSettings } from "../../settings/custom/QueryNameDropdownSettings";
+import { QueryNameDropdownSettings } from "../../settings/custom/query-name-dropdown-settings";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
@@ -12,11 +12,11 @@ export const config: BlockSettingsConfig = {
 			name: "General",
 			children: [
 				{
-					description: "Sheet",
+					description: "Notebook",
 					render: ({ id }) => (
 						<QueryNameDropdownSettings
 							id={id}
-							label="Query"
+							label="Notebook"
 							path="queryId"
 						/>
 					),

@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	DateDifferenceTransformationCell,
 	type DateDifferenceTransformationCellDef,
-} from "./DateDifferenceTransformationCell";
+} from "./date-difference-transformation-cell";
 
 export const DateDifferenceTransformationCellConfig: CellConfig<DateDifferenceTransformationCellDef> =
 	{

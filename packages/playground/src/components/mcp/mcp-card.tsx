@@ -6,11 +6,7 @@ import {
 	TriangleAlert,
 } from "lucide-react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	buildInitials,
-	EngineSubtypeIcon,
-	getAppCatalogAvatarStyle,
-} from "@semoss/shared";
+import { AppCatalogAvatar, EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -227,12 +223,10 @@ export const MCPCard = ({
 							<ImageIcon className="size-4 text-muted-foreground" />
 						</div>
 					) : m.type === "PROJECT" ? (
-						<div
-							className="flex size-10 shrink-0 items-center justify-center rounded-md font-semibold text-sm"
-							style={getAppCatalogAvatarStyle(m.name)}
-						>
-							{buildInitials(m.name)}
-						</div>
+						<AppCatalogAvatar
+							name={m.name}
+							className="size-10 shrink-0 rounded-md text-sm"
+						/>
 					) : (
 						<div className="flex size-10 shrink-0 items-center justify-center">
 							<EngineSubtypeIcon

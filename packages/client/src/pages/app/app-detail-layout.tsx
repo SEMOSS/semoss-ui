@@ -1,6 +1,5 @@
 import {
 	ChevronRight,
-	Copy,
 	Download,
 	LockKeyhole,
 	Pencil,
@@ -24,8 +23,11 @@ import {
 	useResolvedPath,
 	useSearchParams,
 } from "react-router-dom";
-import { Env } from "@semoss/sdk/react";
-import { getUserProjectPermission } from "@semoss/shared";
+import {
+	AppCatalogAvatar,
+	EntityHeader,
+	getUserProjectPermission,
+} from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -439,18 +441,6 @@ export const AppDetailLayout = ({
 		setResponseStatus(true);
 	};
 
-	const handleCopyAppId = async () => {
-		if (!appId) return;
-
-		try {
-			await navigator.clipboard.writeText(appId);
-			toast.success("App ID copied to clipboard");
-		} catch (error) {
-			console.error(error);
-			toast.error("Failed to copy App ID");
-		}
-	};
-
 	// Filter tabs by permission + chrome requirements
 	const visibleTabs = useMemo(() => {
 		return APP_DETAIL_TABS.filter((tab) => {
@@ -588,145 +578,137 @@ export const AppDetailLayout = ({
 							</Breadcrumb>
 						)}
 
-						<div className="flex w-full flex-col gap-4 md:flex-row md:items-center">
-							<div className="h-16 w-16 shrink-0 rounded-lg bg-muted">
-								<img
-									src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-									alt={
+						<EntityHeader
+							icon={
+								<AppCatalogAvatar
+									name={
 										appInfo?.project_display_name ||
 										appInfo?.project_name ||
 										"App"
 									}
-									className="size-full object-cover"
+									className="h-full w-full rounded-lg text-xl"
 								/>
-							</div>
-
-							<div className="flex min-w-0 flex-1 flex-col gap-1">
-								<h1
-									className="wrap-break-words font-semibold text-2xl text-foreground leading-normal md:overflow-hidden md:text-ellipsis md:whitespace-nowrap md:text-[30px]"
-									title={
-										appInfo?.project_display_name ||
-										appInfo?.project_name
-									}
-								>
-									{appInfo?.project_display_name ||
-										appInfo?.project_name}
-								</h1>
-								{appId && (
-									<div className="flex items-center gap-1 text-muted-foreground text-sm">
-										<span data-testid="appDetail-id">
-											{appId}
-										</span>
+							}
+							name={
+								appInfo?.project_display_name ||
+								appInfo?.project_name ||
+								""
+							}
+							id={appId}
+							copyLabel="Copy App ID"
+							idTestId="appDetail-id"
+							actions={
+								<>
+									{permission === "author" ? (
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<Button
-													variant="ghost"
-													size="icon-sm"
-													aria-label="Copy App ID"
-													onClick={(event) => {
-														event.preventDefault();
-														handleCopyAppId();
-													}}
+													disabled={exportLoading}
+													variant="outline"
+													size="icon"
+													aria-label="Export"
+													onClick={() => exportApp()}
+													data-testid={
+														"appDetail-export-btn"
+													}
 												>
-													<Copy className="size-4" />
+													{exportLoading ? (
+														<Spinner className="size-4" />
+													) : (
+														<Download className="size-4" />
+													)}
 												</Button>
 											</TooltipTrigger>
 											<TooltipContent>
-												Copy App ID
+												Export
 											</TooltipContent>
 										</Tooltip>
-									</div>
-								)}
-							</div>
-
-							<div className="flex w-full flex-wrap gap-2 md:w-auto md:flex-nowrap md:justify-end">
-								{permission === "author" ? (
-									<Button
-										disabled={exportLoading}
-										variant="ghost"
-										className="gap-2 text-primary hover:bg-transparent hover:text-primary"
-										onClick={() => exportApp()}
-										data-testid={"appDetail-export-btn"}
-									>
-										{exportLoading ? (
-											<Spinner className="size-4" />
-										) : (
-											<Download className="size-4" />
-										)}
-										Export
-									</Button>
-								) : (
-									<Button
-										disabled={
-											responseStatus || pendingRequest
-										}
-										variant={
-											responseStatus
-												? "outline"
-												: permission === "discoverable"
-													? "default"
-													: "outline"
-										}
-										className="gap-2"
-										onClick={() => {
-											const appName =
-												appInfo?.project_display_name ||
-												appInfo?.project_name ||
-												"this app";
-											setValue(
-												"requestedPermission",
-												"READ_ONLY",
-											);
-											setValue(
-												"roleChangeComment",
-												`I am requesting access to ${appName} for [please provide a reason]`,
-											);
-											setIsChangeAccessModalOpen(true);
-										}}
-										data-testid={"appDetail-access-btn"}
-									>
-										{responseStatus ? (
-											<RefreshCcw className="size-4" />
-										) : permission === "discoverable" ? (
-											<LockKeyhole className="size-4" />
-										) : null}
-										{responseStatus || pendingRequest
-											? "Pending Access"
-											: permission === "discoverable"
-												? "Request Access"
-												: "Change Access"}
-									</Button>
-								)}
-								{permission !== "discoverable" &&
-									permission !== "readOnly" && (
+									) : (
 										<Button
-											variant="default"
+											disabled={
+												responseStatus || pendingRequest
+											}
+											variant={
+												responseStatus
+													? "outline"
+													: permission ===
+															"discoverable"
+														? "default"
+														: "outline"
+											}
 											className="gap-2"
 											onClick={() => {
-												setIsEditDetailsModalOpen(true);
+												const appName =
+													appInfo?.project_display_name ||
+													appInfo?.project_name ||
+													"this app";
+												setValue(
+													"requestedPermission",
+													"READ_ONLY",
+												);
+												setValue(
+													"roleChangeComment",
+													`I am requesting access to ${appName} for [please provide a reason]`,
+												);
+												setIsChangeAccessModalOpen(
+													true,
+												);
 											}}
-											data-testid="appDetail-edit-btn"
+											data-testid={"appDetail-access-btn"}
 										>
-											<Pencil className="size-4" />
-											Edit
+											{responseStatus ? (
+												<RefreshCcw className="size-4" />
+											) : permission ===
+												"discoverable" ? (
+												<LockKeyhole className="size-4" />
+											) : null}
+											{responseStatus || pendingRequest
+												? "Pending Access"
+												: permission === "discoverable"
+													? "Request Access"
+													: "Change Access"}
 										</Button>
 									)}
-								{permission !== "discoverable" &&
-									permission !== "readOnly" &&
-									showNav && (
-										<Button
-											asChild
-											variant="outline"
-											data-testid="appDetail-edit-btn"
-										>
-											<Link to={`/app/${appId}/view`}>
-												<SquareArrowOutUpRight className="size-4" />
-												Open App
-											</Link>
-										</Button>
-									)}
-							</div>
-						</div>
+									{permission !== "discoverable" &&
+										permission !== "readOnly" && (
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<Button
+														variant="outline"
+														size="icon"
+														aria-label="Edit"
+														onClick={() => {
+															setIsEditDetailsModalOpen(
+																true,
+															);
+														}}
+														data-testid="appDetail-edit-btn"
+													>
+														<Pencil className="size-4" />
+													</Button>
+												</TooltipTrigger>
+												<TooltipContent>
+													Edit
+												</TooltipContent>
+											</Tooltip>
+										)}
+									{permission !== "discoverable" &&
+										showNav && (
+											<Button
+												asChild
+												variant="default"
+												className="gap-2"
+												data-testid="appDetail-open-btn"
+											>
+												<Link to={`/app/${appId}/view`}>
+													<SquareArrowOutUpRight className="size-4" />
+													Open App
+												</Link>
+											</Button>
+										)}
+								</>
+							}
+						/>
 
 						<div className="mt-4 flex w-full flex-col gap-4 md:flex-row md:justify-between">
 							<div className="flex flex-1 flex-col gap-4">
