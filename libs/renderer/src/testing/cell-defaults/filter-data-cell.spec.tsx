@@ -1,12 +1,21 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test, vi } from "vitest";
+import { beforeAll, describe, expect, test, vi } from "vitest";
+import "@testing-library/jest-dom";
 import { usePixel } from "@semoss/sdk/react";
 import { DefaultBlocks } from "../../components/block-defaults";
 import { Blocks } from "../../components/blocks";
-import { FilterDataCell } from "../../components/cell-defaults/filter-data-cell/FilterDataCell";
+import { FilterDataCell } from "../../components/cell-defaults/filter-data-cell";
 import * as hooks from "../../hooks";
 import { StateStore } from "../../store";
+
+// Radix Select uses pointer capture APIs not available in JSDOM
+beforeAll(() => {
+	HTMLElement.prototype.hasPointerCapture = vi.fn();
+	HTMLElement.prototype.setPointerCapture = vi.fn();
+	HTMLElement.prototype.releasePointerCapture = vi.fn();
+	Element.prototype.scrollIntoView = vi.fn();
+});
 
 vi.mock("@semoss/sdk/react", () => ({
 	usePixel: vi.fn(),
@@ -136,11 +145,12 @@ describe("Filter Data Cell", () => {
 		//Mocks user expanding the combobox to have FRAME_1
 		const frameInput = screen.getByRole("combobox");
 
-		await user.click(screen.getByLabelText("Open"));
-		await user.click(screen.getByText("FRAME_1"));
+		await user.click(frameInput);
+		const frame1Option = await screen.findByText("FRAME_1");
+		await user.click(frame1Option);
 
 		await waitFor(() => {
-			expect(frameInput).toHaveValue("FRAME_1");
+			expect(frameInput).toHaveTextContent("FRAME_1");
 		});
 	});
 
@@ -199,7 +209,7 @@ describe("Filter Data Cell", () => {
 		//Whenever useBlocks hook is called, it will always return the mockvalues
 		const useBlocksSpy = vi.spyOn(hooks, "useBlocks").mockReturnValue({
 			state: {
-				queries: {
+				notebooks: {
 					mcp_driver: {
 						id: "mcp_driver",
 						cells: {
@@ -236,13 +246,9 @@ describe("Filter Data Cell", () => {
 
 		render(<FilterDataCell cell={cell as never} isExpanded={true} />);
 
-		expect(
-			await screen.findByLabelText("Select Header"),
-		).toBeInTheDocument();
-		expect(
-			await screen.findByLabelText("Select Operator"),
-		).toBeInTheDocument();
-		expect(await screen.findByLabelText("Select Data")).toBeInTheDocument();
+		expect(await screen.findByText("name")).toBeInTheDocument();
+		expect(await screen.findByText("Equals")).toBeInTheDocument();
+		expect(await screen.findByText("Alice")).toBeInTheDocument();
 
 		useBlocksSpy.mockRestore();
 	});
