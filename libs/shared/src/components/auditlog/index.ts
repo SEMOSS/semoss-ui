@@ -1,13 +1,16 @@
-import { AuditLogFilter } from "./AuditLogFilter";
-import { AuditLogsDataTable } from "./AuditLogsDataTable";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
-import { AuditLogsTimeline } from "./AuditLogsTimeline";
-import { dateFormat } from "./common";
+import { AuditLogFilter } from "./audit-log-filter";
+import { AuditLogsDataTable } from "./audit-logs-data-table";
+import { AuditLogsTimeline } from "./audit-logs-timeline";
+import type { EventData } from "./common";
+import { dateFormat, TimeDateFormatter } from "./common";
 
 export {
 	AuditLogsDataTable,
 	AuditLogsTimeline,
 	AuditLogFilter,
-	AuditLogsDetailDrawer,
 	dateFormat,
+	TimeDateFormatter,
+	AuditLogsDetailDrawer,
 };
+export type { EventData };

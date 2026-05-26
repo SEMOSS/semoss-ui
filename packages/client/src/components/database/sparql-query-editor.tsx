@@ -1,6 +1,7 @@
 import { Check, Copy, RotateCcw } from "lucide-react";
 import type React from "react";
 import { Suspense, useState } from "react";
+import { registerSparqlLanguage, SPARQL_THEME_LIGHT } from "@semoss/shared";
 import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, cn, P } from "@semoss/ui/next";
 
@@ -14,204 +15,6 @@ interface SPARQLQueryEditorProps {
 	onUserQueryInput?: (query: string) => void;
 	raw: boolean;
 	onRawChange: (raw: boolean) => void;
-}
-
-const SPARQL_KEYWORDS = [
-	"SELECT",
-	"CONSTRUCT",
-	"DESCRIBE",
-	"ASK",
-	"WHERE",
-	"PREFIX",
-	"BASE",
-	"FROM",
-	"NAMED",
-	"OPTIONAL",
-	"GRAPH",
-	"UNION",
-	"FILTER",
-	"ORDER",
-	"BY",
-	"GROUP",
-	"HAVING",
-	"LIMIT",
-	"OFFSET",
-	"DISTINCT",
-	"REDUCED",
-	"AS",
-	"BIND",
-	"VALUES",
-	"SERVICE",
-	"MINUS",
-	"INSERT",
-	"DELETE",
-	"LOAD",
-	"CLEAR",
-	"DROP",
-	"CREATE",
-	"ADD",
-	"MOVE",
-	"COPY",
-	"WITH",
-	"USING",
-	"NOT",
-	"EXISTS",
-	"IN",
-	"true",
-	"false",
-	"a",
-];
-
-const SPARQL_FUNCTIONS = [
-	"STR",
-	"LANG",
-	"DATATYPE",
-	"IRI",
-	"URI",
-	"BNODE",
-	"RAND",
-	"ABS",
-	"CEIL",
-	"FLOOR",
-	"ROUND",
-	"STRLEN",
-	"LCASE",
-	"UCASE",
-	"ENCODE_FOR_URI",
-	"CONTAINS",
-	"STRSTARTS",
-	"STRENDS",
-	"STRBEFORE",
-	"STRAFTER",
-	"SUBSTR",
-	"REPLACE",
-	"REGEX",
-	"YEAR",
-	"MONTH",
-	"DAY",
-	"HOURS",
-	"MINUTES",
-	"SECONDS",
-	"TIMEZONE",
-	"TZ",
-	"NOW",
-	"UUID",
-	"STRUUID",
-	"MD5",
-	"SHA1",
-	"SHA256",
-	"SHA384",
-	"SHA512",
-	"COALESCE",
-	"IF",
-	"STRLANG",
-	"STRDT",
-	"SAMETERM",
-	"ISIRI",
-	"ISURI",
-	"ISBLANK",
-	"ISLITERAL",
-	"ISNUMERIC",
-	"BOUND",
-	"CONCAT",
-	"COUNT",
-	"SUM",
-	"MIN",
-	"MAX",
-	"AVG",
-	"SAMPLE",
-	"GROUP_CONCAT",
-];
-
-function registerSparqlLanguage(monaco) {
-	const languages = monaco.languages.getLanguages();
-	if (languages.some((l) => l.id === "sparql")) return;
-
-	monaco.languages.register({ id: "sparql" });
-
-	monaco.languages.setMonarchTokensProvider("sparql", {
-		keywords: SPARQL_KEYWORDS.map((k) => k.toUpperCase()),
-		builtins: SPARQL_FUNCTIONS,
-		tokenizer: {
-			root: [
-				// Comments
-				[/#.*$/, "comment"],
-				// IRIs
-				[/<[^>]*>/, "type.identifier"],
-				// Prefixed names (prefix:localName)
-				[/[a-zA-Z_][\w-]*:[a-zA-Z_][\w-]*/, "type"],
-				// Variables
-				[/[?$][a-zA-Z_]\w*/, "variable"],
-				// String literals (double-quoted)
-				[/"([^"\\]|\\.)*"/, "string"],
-				// String literals (single-quoted)
-				[/'([^'\\]|\\.)*'/, "string"],
-				// Numeric literals
-				[/[+-]?\d+(\.\d+)?([eE][+-]?\d+)?/, "number"],
-				// Keywords and identifiers
-				[
-					/[a-zA-Z_]\w*/,
-					{
-						cases: {
-							"@keywords": "keyword",
-							"@builtins": "predefined",
-							"@default": "identifier",
-						},
-					},
-				],
-				// Operators and punctuation
-				[/[{}()[\]]/, "delimiter"],
-				[/[,;.]/, "delimiter"],
-				[/[=!<>|+\-*/&^~]+/, "operator"],
-			],
-		},
-	});
-
-	monaco.languages.registerCompletionItemProvider("sparql", {
-		provideCompletionItems: (model, position) => {
-			const word = model.getWordUntilPosition(position);
-			const range = {
-				startLineNumber: position.lineNumber,
-				endLineNumber: position.lineNumber,
-				startColumn: word.startColumn,
-				endColumn: word.endColumn,
-			};
-			const keywordSuggestions = SPARQL_KEYWORDS.map((kw) => ({
-				label: kw,
-				kind: monaco.languages.CompletionItemKind.Keyword,
-				insertText: kw,
-				range,
-			}));
-			const functionSuggestions = SPARQL_FUNCTIONS.map((fn) => ({
-				label: fn,
-				kind: monaco.languages.CompletionItemKind.Function,
-				insertText: `${fn}()`,
-				insertTextRules:
-					monaco.languages.CompletionItemInsertTextRule
-						.InsertAsSnippet,
-				range,
-			}));
-			return {
-				suggestions: [...keywordSuggestions, ...functionSuggestions],
-			};
-		},
-	});
-
-	monaco.editor.defineTheme("sparql-theme-dark", {
-		base: "vs-dark",
-		inherit: true,
-		rules: [
-			{ token: "keyword", foreground: "569cd6", fontStyle: "bold" },
-			{ token: "predefined", foreground: "dcdcaa" },
-			{ token: "type.identifier", foreground: "4ec9b0" },
-			{ token: "type", foreground: "4ec9b0" },
-			{ token: "variable", foreground: "9cdcfe" },
-			{ token: "comment", foreground: "6a9955", fontStyle: "italic" },
-			{ token: "string", foreground: "ce9178" },
-			{ token: "number", foreground: "b5cea8" },
-		],
-		colors: {},
-	});
 }
 
 export const SPARQLQueryEditor: React.FC<SPARQLQueryEditorProps> = ({
@@ -241,7 +44,7 @@ export const SPARQLQueryEditor: React.FC<SPARQLQueryEditorProps> = ({
 
 	const handleMount = (editor, monaco) => {
 		registerSparqlLanguage(monaco);
-		monaco.editor.setTheme("sparql-theme-dark");
+		monaco.editor.setTheme(SPARQL_THEME_LIGHT);
 		handleEditorMount(editor, monaco);
 	};
 

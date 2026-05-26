@@ -36,6 +36,7 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
@@ -56,6 +57,7 @@ export const FunctionForm = ({
 	title,
 	description,
 	notice,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -63,6 +65,7 @@ export const FunctionForm = ({
 	title: string;
 	description: string;
 	notice?: string;
+	icon?: string;
 	fields;
 	advanced;
 	categoryDescription;
@@ -1135,10 +1138,12 @@ export const FunctionForm = ({
 
 	return (
 		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="function-form">
-			<H4 data-testid="function-form-title">{title}</H4>
-			<Muted className="mt-1" data-testid="function-form-description">
-				{description}
-			</Muted>
+			<EngineFormHeader
+				testIdPrefix="function"
+				icon={icon}
+				title={title}
+				description={description}
+			/>
 			{notice && (
 				<Alert className="mt-4" data-testid="function-form-notice">
 					<Info />

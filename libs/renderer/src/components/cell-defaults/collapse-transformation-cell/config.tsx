@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	CollapseTransformationCell,
 	type CollapseTransformationCellDef,
-} from "./CollapseTransformationCell";
+} from "./collapse-transformation-cell";
 
 // export the config for the block
 export const CollapseTransformationCellConfig: CellConfig<CollapseTransformationCellDef> =

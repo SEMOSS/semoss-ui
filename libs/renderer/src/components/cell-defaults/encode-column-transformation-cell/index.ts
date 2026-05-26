@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./EncodeColumnTransformationCell";
+export * from "./encode-column-transformation-cell";

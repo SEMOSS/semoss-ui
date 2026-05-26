@@ -214,6 +214,38 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			}
 		};
 
+		/**
+		 * Copy image to clipboard
+		 */
+		const copyImage = async () => {
+			const mediaPart = message.parts.find((p) => p.type === "MEDIA");
+			if (
+				!mediaPart ||
+				mediaPart.type !== "MEDIA" ||
+				!mediaPart.mediaInfo.base64Data
+			)
+				return;
+			try {
+				const mimeType = mediaPart.mediaInfo.mimeType;
+				if (!mimeType || !mimeType.startsWith("image/")) {
+					toast.error("Invalid image format");
+					return;
+				}
+				const bytes = atob(mediaPart.mediaInfo.base64Data);
+				const arr = new Uint8Array(bytes.length).map((_, i) =>
+					bytes.charCodeAt(i),
+				);
+				const blob = new Blob([arr], { type: mimeType });
+				await navigator.clipboard.write([
+					new ClipboardItem({ [mimeType]: blob }),
+				]);
+				toast.success(t("notifications.copySuccess"));
+			} catch (e: unknown) {
+				const error = e as { message: string };
+				toast.error(error.message);
+			}
+		};
+
 		const downloadFormats = [
 			{ value: "word", label: "Word Document", extension: ".docx" },
 			{ value: "pdf", label: "PDF Document", extension: ".pdf" },
@@ -256,8 +288,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			})();
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
-		const parentHasText = inputMessage?.parts.some(
-			(part) => part.type === "TEXT",
+		const hasImage = message.parts.some(
+			(part) => part.type === "MEDIA" && part.mediaInfo.base64Data,
+		);
+
+		const parentHasContent = inputMessage?.parts.some(
+			(part) => part.type === "TEXT" || part.type === "MEDIA",
 		);
 
 		return (
@@ -350,7 +386,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<TooltipTrigger asChild>
 										<button
 											type="button"
-											className="cursor-zoom-in overflow-hidden rounded-lg border border-border"
+											className="w-fit cursor-zoom-in overflow-hidden rounded-lg border border-border"
 											onClick={handleClick}
 											aria-label={`View ${p.mediaInfo.fileName}`}
 										>
@@ -521,7 +557,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							)}
 
 						{root.theme.featureFlags?.enableRewrite &&
-							parentHasText && (
+							parentHasContent && (
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button
@@ -650,6 +686,23 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									</div>
 								</DialogContent>
 							</Dialog>
+						)}
+
+						{hasImage && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={copyImage}
+									>
+										<CopyIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent side="bottom">
+									{t("response.copyResponse")}
+								</TooltipContent>
+							</Tooltip>
 						)}
 
 						{hasText && (

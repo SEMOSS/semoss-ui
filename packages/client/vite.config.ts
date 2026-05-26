@@ -26,6 +26,15 @@ export default defineConfig(({ mode }) => {
 		],
 		resolve: {
 			alias: [
+				{
+					find: /^@\/assets\/img\//,
+					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/img")}/`,
+				},
+				{
+					find: /^@\/assets\/loginProviders\//,
+					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/loginProviders")}/`,
+				},
+
 				{ find: "@", replacement: resolve(__dirname, "./src") },
 				{
 					find: "monaco-editor",
@@ -60,7 +69,7 @@ export default defineConfig(({ mode }) => {
 						}
 						if (
 							id.includes(
-								"/src/shared/constants/engine-images.constants.ts",
+								"/libs/shared/src/constants/engine-images.constants.ts",
 							) ||
 							id.includes(
 								"/src/shared/constants/sidebar-menu.constants.ts",

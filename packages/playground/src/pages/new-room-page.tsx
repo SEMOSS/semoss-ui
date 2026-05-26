@@ -1,19 +1,18 @@
 import {
 	CheckIcon,
 	ComputerIcon,
-	ExternalLinkIcon,
 	ListTodoIcon,
 	MessageCircleIcon,
 	Settings2Icon,
 	XIcon,
 } from "lucide-react";
+import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
-import { usePixel } from "@semoss/sdk/react";
+import { InsightProvider, usePixel } from "@semoss/sdk/react";
 import {
-	Badge,
 	Button,
 	DropdownMenuItem,
 	DropdownMenuSeparator,
@@ -31,19 +30,17 @@ import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
 	RoomInput,
+	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
+	RoomInputMenuNewFileExplorer,
 	RoomInputMenuUpload,
-	RoomInputMenuWorkspace,
+	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
-
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
-	? import.meta.env.VITE_PLATFORM_URL
-	: "";
 
 /**
  * The page to create a new room
@@ -107,6 +104,10 @@ export const NewRoomPage = observer(() => {
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [isConfigurationOpen, setIsConfgurationOpen] = useState(false);
+	const [preCreatedRoom, setPreCreatedRoom] = useState<RoomStore | null>(
+		null,
+	);
+	const submittedRef = useRef(false);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
@@ -159,35 +160,6 @@ export const NewRoomPage = observer(() => {
 			predefinedPrompts: [],
 		});
 	}, [tempRoomStore, root.theme]);
-
-	/**
-	 * Functions
-	 */
-	/**
-	 * Handle tool selection (toggle for plus menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
-		const tools = tempRoomStore.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, MCPConfig>,
-		);
-
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
-		} else {
-			tools[tool.id] = tool;
-		}
-
-		tempRoomStore.setOptions({
-			...tempRoomStore.options,
-			mcp: Object.values(tools),
-		});
-	};
 
 	/**
 	 * Handle tool add (add-only for slash menu)
@@ -243,17 +215,33 @@ export const NewRoomPage = observer(() => {
 				};
 			}
 
-			// create a new room
-			const room = await chat.createRoom(
-				mode === "plan" ? "planning" : "chat",
-				prompt,
-				files,
-				options,
-				getWorkspace.data?.workspace_id,
-			);
-
-			// go to the new room
-			navigate(`/room/${room.roomId}`);
+			if (preCreatedRoom) {
+				// Room was pre-created so files could be uploaded to its insight.
+				// Sync final mode/options, fire askMessage, then navigate.
+				// Files from the file explorer are already in the insight —
+				// only RoomInput drag/drop/paste attachments are passed here.
+				preCreatedRoom.setMode(mode === "plan" ? "planning" : "chat");
+				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
+				await preCreatedRoom.updateRoomOptions(options);
+				preCreatedRoom.askMessage(prompt, files).then(() => {
+					runInAction(() => {
+						chat.keys.roomCounter++;
+					});
+				});
+				submittedRef.current = true;
+				navigate(`/room/${preCreatedRoom.roomId}`);
+			} else {
+				// Standard flow — create room and send first message together.
+				const room = await chat.createRoom(
+					mode === "plan" ? "planning" : "chat",
+					prompt,
+					files,
+					options,
+					getWorkspace.data?.workspace_id,
+				);
+				submittedRef.current = true;
+				navigate(`/room/${room.roomId}`);
+			}
 		} catch (error: unknown) {
 			const sdkError = error as { message: string; code?: number };
 			if (
@@ -330,6 +318,10 @@ export const NewRoomPage = observer(() => {
 				getWorkspace.data?.system_prompt ||
 				tempRoomStore.options.instructions,
 			mcp: Array.from(mcpMap.values()),
+			workspace: {
+				workspace_id: getWorkspace.data.workspace_id,
+				name: getWorkspace.data.name,
+			},
 		});
 	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
 
@@ -411,6 +403,23 @@ export const NewRoomPage = observer(() => {
 		tempRoomStore,
 	]);
 
+	// Close the configuration panel when the file-explorer sidebar opens.
+	useEffect(() => {
+		if (preCreatedRoom?.sidebar.isOpen) {
+			setIsConfgurationOpen(false);
+		}
+	}, [preCreatedRoom?.sidebar.isOpen]);
+
+	// Discard a pre-created room if the user navigates away without submitting.
+	useEffect(() => {
+		return () => {
+			if (preCreatedRoom && !submittedRef.current) {
+				// Fire-and-forget server-side cleanup.
+				chat.closeRoom(preCreatedRoom.roomId);
+			}
+		};
+	}, [preCreatedRoom, chat]);
+
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden">
 			{root.theme.banner ? (
@@ -458,7 +467,6 @@ export const NewRoomPage = observer(() => {
 								) : null}
 							</div>
 						)}
-
 						<RoomInput
 							predefinedPrompts={
 								tempRoomStore.options.predefinedPrompts
@@ -473,7 +481,29 @@ export const NewRoomPage = observer(() => {
 							}}
 							options={tempRoomStore.options}
 							onMcpSelect={handleToolAdd}
-							onMcpToggle={handleToolSelect}
+							onMcpChange={(mcp) =>
+								tempRoomStore.setOptions({
+									...tempRoomStore.options,
+									mcp,
+								})
+							}
+							onWorkspaceChange={(next) => {
+								if (next) {
+									setMode("workspace");
+									setSelectedWorkspaceId(next.workspace_id);
+									tempRoomStore.setOptions({
+										...tempRoomStore.options,
+										workspace: next,
+									});
+								} else {
+									setMode("chat");
+									setSelectedWorkspaceId("");
+									tempRoomStore.setOptions({
+										...tempRoomStore.options,
+										workspace: undefined,
+									});
+								}
+							}}
 							onPrompt={async (prompt, files) => {
 								await createRoom(prompt, files);
 
@@ -484,10 +514,7 @@ export const NewRoomPage = observer(() => {
 								({
 									onOpenChange,
 									fileRef,
-									knowledgeOverlayOpen,
-									onKnowledgeOverlayChange,
-									toolboxOverlayOpen,
-									onToolboxOverlayChange,
+									onOpenMcpOverlay,
 								}) => (
 									<>
 										<RoomInputMenuUpload
@@ -533,59 +560,63 @@ export const NewRoomPage = observer(() => {
 												</DropdownMenuItem>
 											</>
 										)}
-										<RoomInputMenuWorkspace
-											workspace={
-												mode === "workspace" &&
-												getWorkspace.status ===
-													"SUCCESS"
-													? getWorkspace.data
-													: null
-											}
-											onSelect={(workspace) => {
-												if (workspace) {
-													if (
-														mode === "workspace" &&
-														selectedWorkspaceId ===
-															workspace.workspace_id
-													) {
-														setMode("chat");
-														setSelectedWorkspaceId(
-															"",
-														);
-													} else {
-														setMode("workspace");
-														setSelectedWorkspaceId(
-															workspace.workspace_id,
-														);
-													}
-												} else {
-													setMode("chat");
-													setSelectedWorkspaceId("");
-												}
+										<DropdownMenuItem
+											onSelect={() => {
+												onOpenMcpOverlay("AGENT");
+												onOpenChange(false);
 											}}
-										/>
-										<DropdownMenuSeparator />
+										>
+											<ComputerIcon />
+											<span className="flex-1">
+												{t(
+													"room:menuWorkspace.selectAgent",
+												)}
+											</span>
+											{tempRoomStore.options.workspace ? (
+												<div className="px-1">
+													<CheckIcon />
+												</div>
+											) : null}
+										</DropdownMenuItem>
 										<RoomInputMenuMCP
 											type="KNOWLEDGE"
 											options={tempRoomStore.options}
-											open={knowledgeOverlayOpen}
-											onOpenChange={
-												onKnowledgeOverlayChange
-											}
+											onSelect={() => {
+												onOpenMcpOverlay("KNOWLEDGE");
+												onOpenChange(false);
+											}}
 										/>
 										<RoomInputMenuMCP
 											type="TOOLBOX"
 											options={tempRoomStore.options}
-											open={toolboxOverlayOpen}
-											onOpenChange={
-												onToolboxOverlayChange
-											}
+											onSelect={() => {
+												onOpenMcpOverlay("TOOLBOX");
+												onOpenChange(false);
+											}}
 										/>
 										<DropdownMenuSeparator />
+										{preCreatedRoom ? (
+											<RoomInputMenuFileExplorer
+												room={preCreatedRoom}
+												onSelect={() =>
+													onOpenChange(false)
+												}
+											/>
+										) : (
+											<RoomInputMenuNewFileExplorer
+												mode={mode}
+												options={tempRoomStore.options}
+												onRoomCreated={(room) =>
+													setPreCreatedRoom(room)
+												}
+												onSelect={() =>
+													onOpenChange(false)
+												}
+											/>
+										)}
 										<DropdownMenuItem
 											onSelect={(e) => {
 												e.preventDefault();
-
 												setIsConfgurationOpen(
 													!isConfigurationOpen,
 												);
@@ -601,66 +632,6 @@ export const NewRoomPage = observer(() => {
 									</>
 								),
 							)}
-							footer={
-								mode === "workspace" &&
-								getWorkspace.status === "SUCCESS" ? (
-									root.theme.featureFlags
-										?.showPlatformLinks ? (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span>
-													<Badge
-														variant="secondary"
-														asChild
-													>
-														<a
-															target="_blank"
-															href={`${PLATFORM_URL}/#/app/${getWorkspace.data?.workspace_id}`}
-														>
-															<ComputerIcon data-icon="inline-start" />
-															<div className="w-18 truncate">
-																{getWorkspace
-																	.data
-																	?.name ||
-																	t(
-																		"room:menuWorkspace.selectAgent",
-																	)}
-															</div>
-															<ExternalLinkIcon data-icon="inline-end" />
-														</a>
-													</Badge>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												Click to view agent details
-											</TooltipContent>
-										</Tooltip>
-									) : (
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span>
-													<Badge variant="secondary">
-														<ComputerIcon data-icon="inline-start" />
-														<div className="w-18 truncate">
-															{getWorkspace.data
-																?.name ||
-																t(
-																	"room:menuWorkspace.selectAgent",
-																)}
-														</div>
-													</Badge>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												{getWorkspace.data?.name ||
-													t(
-														"room:menuWorkspace.selectAgent",
-													)}
-											</TooltipContent>
-										</Tooltip>
-									)
-								) : null
-							}
 						/>
 						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
 							<div className="mx-auto flex w-full flex-col items-center gap-3">
@@ -698,45 +669,85 @@ export const NewRoomPage = observer(() => {
 							<div
 								className={`relative h-full w-full overflow-hidden rounded-lg border border-input bg-background shadow-xs`}
 							>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											className="absolute top-2 right-2 z-10"
-											variant="ghost"
-											size="icon-sm"
-											onClick={() => {
-												// close it
-												setIsConfgurationOpen(false);
-											}}
-										>
-											<XIcon />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>
-										{t("room:settings.close")}
-									</TooltipContent>
-								</Tooltip>
+								{isConfigurationOpen && (
+									<>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<Button
+													className="absolute top-2 right-2 z-10"
+													variant="ghost"
+													size="icon-sm"
+													onClick={() => {
+														// close it
+														setIsConfgurationOpen(
+															false,
+														);
+													}}
+												>
+													<XIcon />
+												</Button>
+											</TooltipTrigger>
+											<TooltipContent>
+												{t("room:settings.close")}
+											</TooltipContent>
+										</Tooltip>
 
-								<ScrollArea className="h-full w-full px-2">
-									<RoomOptionsForm
-										model={chat.models.selected}
-										options={tempRoomStore.options}
-										onModelChange={(model) => {
-											if (model) {
-												chat.setSelectedModel(model);
-											}
-										}}
-										onOptionsChange={(options) => {
-											if (options) {
-												tempRoomStore.setOptions({
-													...tempRoomStore.options,
-													...options,
-												});
-											}
-										}}
-									/>
-								</ScrollArea>
+										<ScrollArea className="h-full w-full px-2">
+											<RoomOptionsForm
+												model={chat.models.selected}
+												options={tempRoomStore.options}
+												onModelChange={(model) => {
+													if (model) {
+														chat.setSelectedModel(
+															model,
+														);
+													}
+												}}
+												agentEditable
+												onOptionsChange={(opts) => {
+													if (!opts) return;
+													if ("workspace" in opts) {
+														if (opts.workspace) {
+															setMode(
+																"workspace",
+															);
+															setSelectedWorkspaceId(
+																opts.workspace
+																	.workspace_id,
+															);
+														} else {
+															setMode("chat");
+															setSelectedWorkspaceId(
+																"",
+															);
+														}
+													}
+													tempRoomStore.setOptions({
+														...tempRoomStore.options,
+														...opts,
+													});
+												}}
+											/>
+										</ScrollArea>
+									</>
+								)}
 							</div>
+						</ResizablePanel>
+					</>
+				)}
+				{preCreatedRoom?.sidebar.isOpen && (
+					<>
+						<ResizableHandle />
+						<ResizablePanel defaultSize={50} minSize={20}>
+							<InsightProvider
+								key={preCreatedRoom.roomId}
+								options={{
+									insightId: preCreatedRoom.insightId,
+								}}
+								destroyOnUnmount={false}
+							>
+								<RoomSidebar room={preCreatedRoom} />
+							</InsightProvider>
 						</ResizablePanel>
 					</>
 				)}
