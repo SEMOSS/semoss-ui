@@ -413,7 +413,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					<p className="w-full">{t(descriptionKey)}</p>
 					<p className="flex w-full items-baseline justify-between gap-3">
 						<span>{t("contextWindow.memoryUsedTitle")}</span>
-						<span className="whitespace-nowrap text-right tabular-nums">
+						<span className="whitespace-nowrap text-end tabular-nums">
 							{t("contextWindow.memoryUsedValue", {
 								used: formatTokens(tokensUsed),
 								total: formatTokens(tokensMax),
@@ -708,7 +708,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														<Button
 															variant="destructive"
 															size="icon"
-															className="absolute top-1 right-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
+															className="absolute end-1 top-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
 															onClick={() => {
 																setFiles(
 																	(prev) =>
@@ -744,7 +744,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</div>
 								<ScrollBar
 									orientation="horizontal"
-									className="ml-2"
+									className="ms-2"
 								/>
 							</ScrollArea>
 						)}
@@ -755,7 +755,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									type="always"
 									className={cn(
 										"min-h-0 flex-1 bg-card",
-										isScrollable && "mr-1",
+										isScrollable && "me-1",
 									)}
 									onClick={() => editorRef.current?.focus()}
 								>
@@ -831,7 +831,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											    only the text after the icon wraps to the
 											    next line, instead of the whole text
 											    jumping below the icon. */}
-												<SparklesIcon className="-translate-y-px mr-1 inline-block size-4 align-middle" />
+												<SparklesIcon className="-translate-y-px me-1 inline-block size-4 align-middle" />
 												{isLoading
 													? t("input.thinking")
 													: t("input.menuPrompt")}
@@ -978,7 +978,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													target="_blank"
 													rel="noopener noreferrer"
 													href={`#/agent/${agentChipWorkspace.workspace_id}`}
-													className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
+													className="flex h-full items-center border-border border-s px-1.5 transition-colors hover:bg-muted/50"
 													onClick={(e) =>
 														e.stopPropagation()
 													}
@@ -1093,9 +1093,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														recognitionRef.current?.start();
 													}
 												}}
-												// -ml-1 to make spacing between engine select and mic look more like spacing between mic and send
+												// -ms-1 to make spacing between engine select and mic look more like spacing between mic and send
 												// this is because engine select and mic are ghost
-												className="-ml-1"
+												className="-ms-1"
 											>
 												<MicIcon
 													className={`${isListening ? "animate-pulse text-destructive" : ""}`}

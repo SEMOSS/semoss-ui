@@ -433,7 +433,7 @@ export const ChatsPage = observer(() => {
 													toggleSelectOne(r.ROOM_ID);
 												}
 											}}
-											className="relative z-[1] flex shrink-0 cursor-pointer items-center @md:gap-3 gap-2 py-2.5 @md:pr-2 pr-1 @md:pl-3 pl-2"
+											className="relative z-[1] flex shrink-0 cursor-pointer items-center @md:gap-3 gap-2 py-2.5 @md:ps-3 ps-2 @md:pe-2 pe-1"
 										>
 											<Checkbox
 												checked={isSelected}
@@ -465,6 +465,7 @@ export const ChatsPage = observer(() => {
 										<div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col py-2.5">
 											<div className="flex min-w-0 items-center gap-1.5">
 												<div
+													dir="auto"
 													className="truncate font-semibold text-foreground text-sm leading-tight"
 													title={r.ROOM_NAME}
 												>
@@ -494,7 +495,7 @@ export const ChatsPage = observer(() => {
 										    to the stretched Link and navigate to the
 										    room. The rename Button re-enables events
 										    on itself via `pointer-events-auto`. */}
-										<div className="pointer-events-none relative z-[1] flex shrink-0 items-center gap-1 @md:pr-3 pr-2">
+										<div className="pointer-events-none relative z-[1] flex shrink-0 items-center gap-1 @md:pe-3 pe-2">
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<Button
@@ -521,7 +522,7 @@ export const ChatsPage = observer(() => {
 													{t("workspace:chat.rename")}
 												</TooltipContent>
 											</Tooltip>
-											<ArrowRightIcon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
+											<ArrowRightIcon className="rtl:-scale-x-100 size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
 										</div>
 									</div>
 								);
