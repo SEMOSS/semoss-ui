@@ -31,6 +31,8 @@ import { BlocksMenuPanelFilterMenu } from "./BlocksMenuPanelFilterMenu";
 import { PanelSearch } from "./panel-search";
 
 type MODE = "COMMUNITY" | "SYSTEM";
+type CommunityBlockItem = DesignerMenuItem & { id?: string };
+
 export interface AddBlocksMenuProps {
 	/** Title to render in the menu */
 	title: string;
@@ -50,7 +52,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const { title, items } = props;
 	const { workspace } = useWorkspace();
 	const [search, setSearch] = useState("");
-	const [communityBlock, setCommunityBlock] = useState([]);
+	const [communityBlock, setCommunityBlock] = useState<CommunityBlockItem[]>(
+		[],
+	);
 	const [loading, setLoading] = useState(false);
 	const [mode, setMode] = useState<MODE>("SYSTEM");
 
@@ -79,13 +83,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 				setLoading(false);
 			} else {
 				const { output } = pixelReturn[0];
-				const _res = (output as DesignerMenuItem[]).map((item) => {
-					return {
-						...item,
-						json: JSON.parse(JSON.stringify(item.json)),
-					};
-				});
-				setCommunityBlock(output as DesignerMenuItem[]);
+				setCommunityBlock(output as CommunityBlockItem[]);
 				setLoading(false);
 			}
 		});
@@ -192,7 +190,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 
 		// room to improve this logic in the future, but for now just keep 6 most used blocks
 		const localStorageMap: Record<string, BlockLocalStorageData> =
-			JSON.parse(localStorage.getItem("blocks--frequently-used")) ?? {};
+			JSON.parse(
+				localStorage.getItem("blocks--frequently-used") ?? "{}",
+			) ?? {};
 		const mostUsedSet = Object.values(localStorageMap)
 			.filter((item) => item.use_count)
 			.sort((a, b) => a.use_count - b.use_count)
@@ -273,7 +273,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 						enabled: false,
 						type: "MOST_USED_COMPONENTS",
 					} satisfies FilterCategory,
-				},
+				} as Record<string, FilterCategory>,
 			);
 		});
 	}, [items]);
@@ -281,30 +281,15 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const isCommunity = mode === "COMMUNITY";
 
 	return (
-		<div
-			style={{
-				position: "absolute",
-				inset: 0,
-				display: "flex",
-				flexDirection: "column",
-				overflow: "hidden",
-			}}
-			className="bg-background text-foreground"
-		>
-			<div
-				style={{ flexShrink: 0 }}
-				className="flex w-full flex-col gap-2 px-3 py-1"
-			>
-				<div className="w-fit rounded-2xl bg-primary/10 px-4">
-					<span className="font-normal text-[13px] text-primary leading-[18px] tracking-[0.16px]">
-						{title}
-					</span>
-				</div>
-				<div className="relative w-full">
-					<Search className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-					<Input
-						placeholder="Search"
-						className="w-full pr-10 pl-9"
+		<Panel
+			actions={
+				<div className="flex w-full flex-col bg-background p-0 text-foreground">
+					<div className="flex min-h-12 items-center justify-between px-3 pt-3 pb-2">
+						<p className="m-0 font-semibold text-foreground text-sm">
+							{title}
+						</p>
+					</div>
+					<PanelSearch
 						value={search}
 						onChange={setSearch}
 						trailing={
@@ -403,7 +388,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 								</p>
 							</div>
 							<div className="w-full">
-								<div className="grid w-full gap-2 px-3 [grid-template-columns:repeat(auto-fit,minmax(160px,1fr))]">
+								<div className="grid w-full grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 px-3">
 									{sectionItems.map((block) => (
 										<div key={block.name}>
 											<AddBlocksMenuCard
