@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noArrayIndexKey: TODO
 import dayjs from "dayjs";
 import {
 	ComputerIcon,

@@ -257,7 +257,7 @@ export const ChatsPage = observer(() => {
 		>
 			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
 				{/* Sticky header */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
 					<div className="min-w-0 flex-1">
 						<div className="truncate font-semibold @md:text-2xl text-foreground text-xl leading-tight">
 							{t("workspace:chats.title", {
@@ -446,7 +446,7 @@ export const ChatsPage = observer(() => {
 													toggleSelectOne(r.ROOM_ID);
 												}
 											}}
-											className="relative z-[1] flex shrink-0 cursor-pointer items-center @md:gap-3 gap-2 py-2.5 @md:ps-3 ps-2 @md:pe-2 pe-1"
+											className="relative z-1 flex shrink-0 cursor-pointer items-center @md:gap-3 gap-2 py-2.5 @md:ps-3 ps-2 @md:pe-2 pe-1"
 										>
 											<Checkbox
 												checked={isSelected}
@@ -475,7 +475,7 @@ export const ChatsPage = observer(() => {
 										</div>
 
 										{/* Name + date — link covers this area for navigation */}
-										<div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col py-2.5">
+										<div className="pointer-events-none relative z-1 flex min-w-0 flex-1 flex-col py-2.5">
 											<div className="flex min-w-0 items-center gap-1.5">
 												<div
 													dir="auto"
@@ -508,7 +508,7 @@ export const ChatsPage = observer(() => {
 										    to the stretched Link and navigate to the
 										    room. The rename Button re-enables events
 										    on itself via `pointer-events-auto`. */}
-										<div className="pointer-events-none relative z-[1] flex shrink-0 items-center gap-1 @md:pe-3 pe-2">
+										<div className="pointer-events-none relative z-1 flex shrink-0 items-center gap-1 @md:pe-3 pe-2">
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<Button
@@ -557,7 +557,7 @@ export const ChatsPage = observer(() => {
 			    the selection. */}
 			{hasSelection && (
 				<div className="-translate-x-1/2 fade-in-0 slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-30 animate-in">
-					<div className="flex items-center gap-1 rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+					<div className="flex items-center gap-1 rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur supports-backdrop-filter:bg-card/80">
 						<span className="px-3 font-medium text-foreground text-sm">
 							{t("workspace:chats.selectedCount", {
 								count: selectedIds.size,
