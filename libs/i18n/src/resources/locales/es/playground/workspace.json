@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "¿Está seguro?",
-		"deleteConfirmDescription": "Esta acción es irreversible. Esto eliminará permanentemente el espacio de trabajo {{name}}."
+		"deleteConfirmDescription": "Esta acción es irreversible. Esto eliminará permanentemente el espacio de trabajo {{name}}.",
+		"createdAgo": "Creado {{when}}"
 	},
 	"sharing": {
 		"title": "Añadir miembros",
@@ -35,6 +36,7 @@
 		"buttonAdd": "Añadir Miembros"
 	},
 	"members": {
+		"autoSaveHint": "Las adiciones y eliminaciones de miembros y los cambios de permisos se guardan automáticamente.",
 		"heading": "Quién tiene acceso",
 		"you": "(Tú)",
 		"owner": "Propietario",
@@ -59,7 +61,26 @@
 	"chat": {
 		"noChats": "No se encontraron chats",
 		"error": "Error:",
-		"selectRoom": "Seleccionar sala"
+		"selectRoom": "Seleccionar sala",
+		"newChat": "Nuevo chat",
+		"delete": "Eliminar",
+		"cancel": "Cancelar",
+		"deleteSuccess": "Chat eliminado",
+		"deleteFailed": "Error al eliminar el chat",
+		"deleteConfirmTitle": "¿Eliminar chat?",
+		"deleteConfirmDescription": "Esto eliminará permanentemente «{{name}}». Esta acción no se puede deshacer.",
+		"rename": "Renombrar",
+		"renameSave": "Guardar",
+		"renameEmpty": "El nombre del chat no puede estar vacío",
+		"renameSuccess": "Chat renombrado",
+		"renameFailed": "Error al renombrar el chat",
+		"pin": "Marcar como favorito",
+		"unpin": "Quitar de favoritos",
+		"pinFailed": "Error al marcar como favorito",
+		"unpinFailed": "Error al quitar de favoritos",
+		"dayToday": "Hoy",
+		"dayYesterday": "Ayer",
+		"daysAgo": "Hace {{count}} días"
 	},
 	"images": {
 		"agentIllustration": "Ilustración del agente"
@@ -91,7 +112,15 @@
 			"myChats": "Mis Chats",
 			"knowledge": "Conocimiento",
 			"toolbox": "Cajas de herramientas",
+			"prompts": "Indicaciones",
 			"members": "Miembros"
+		},
+		"about": {
+			"title": "Acerca de",
+			"noInstructions": "No hay instrucciones configuradas."
+		},
+		"recentChats": {
+			"title": "Continuar un chat anterior"
 		},
 		"failedToDelete": "Error al eliminar el agente",
 		"failedToLoad": "Error al cargar el agente: {{error}}"
@@ -110,5 +139,26 @@
 	"prompts": {
 		"noPrompts": "No se encontraron indicaciones",
 		"searchPlaceholder": "Buscar indicaciones..."
+	},
+	"chats": {
+		"title": "Todos los chats",
+		"subtitle": "Explora, busca y limpia tus chats.",
+		"selectAll": "Seleccionar todo",
+		"selectChat": "Seleccionar chat {{name}}",
+		"selectedCount": "{{count}} seleccionados",
+		"totalCount": "{{count}} chats",
+		"deleteSelected": "Eliminar {{count}} seleccionados",
+		"bulkDeleteConfirmTitle": "¿Eliminar {{count}} chats?",
+		"bulkDeleteConfirmDescription": "Esto eliminará permanentemente {{count}} chats. Esta acción no se puede deshacer.",
+		"bulkDeleteSuccess": "Se eliminaron {{count}} chats",
+		"bulkDeletePartialFail": "Error al eliminar {{failed}} de {{total}} chats"
+	},
+	"instructions": {
+		"expand": "Expandir",
+		"viewTitle": "Instrucciones",
+		"viewDescription": "La indicación del sistema que guía el comportamiento de este agente.",
+		"editTitle": "Editar instrucciones",
+		"editDescription": "Actualiza la indicación del sistema que guía el comportamiento de este agente.",
+		"charCount": "{{count}} caracteres"
 	}
 }

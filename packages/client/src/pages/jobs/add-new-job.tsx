@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
 import {
@@ -8,12 +8,13 @@ import {
 	AlertTitle,
 	Badge,
 	Button,
+	Checkbox,
 	Field,
 	FieldContent,
-	FieldDescription,
 	FieldLabel,
-	FieldSet,
+	H4,
 	Input,
+	Muted,
 	RadioGroup,
 	RadioGroupItem,
 	Select,
@@ -21,63 +22,86 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Separator,
 	Textarea,
 } from "@semoss/ui/next";
-import { useSettings } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { getTagBadgeStyle } from "@/utility";
 import {
 	DaysOfWeek,
 	FrequencyOptions,
-	JobTypeOptions,
 	Months,
 	timezones,
 } from "./job.constants";
-import type { JobBuilder } from "./job.types";
-import { getEncodeByJobType } from "./job.utils";
+import type { Frequencies, JobBuilder } from "./job.types";
+import { buildCron, buildStandardCron, parseCron } from "./job.utils";
+
+const RequiredMark = () => <span className="text-destructive">*</span>;
+
+const getBrowserTimeZone = (): string => {
+	try {
+		const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+		return tz && timezones.includes(tz) ? tz : "";
+	} catch {
+		return "";
+	}
+};
 
 const emptyBuilder: JobBuilder = {
 	formType: "",
 	id: null,
 	name: "",
 	pixel: "",
-	basicTz: "",
 	tags: [],
 	cronExpression: "0 0 12 * * ?",
 	cronTz: "",
-	smtpHost: "",
-	smtpPort: "",
-	subject: "",
-	jobType: "",
-	to: [],
-	cc: [],
-	bcc: [],
-	from: "",
-	message: "",
-	username: "",
-	password: "",
+	triggerOnLoad: false,
 };
 
 export const AddNewJob = () => {
 	const { adminMode } = useSettings();
+	const { configStore } = useRootStore();
+	const themeName = configStore.theme.name?.trim() || "SEMOSS";
 	const location = useLocation();
 	const navigate = useNavigate();
 	const initialBuilderFromLocation = (
 		location.state as { initialState?: JobBuilder } | undefined
 	)?.initialState;
-	const [builder, setBuilder] = useState<JobBuilder>(
-		initialBuilderFromLocation ?? emptyBuilder,
+	const [builder, setBuilder] = useState<JobBuilder>(() =>
+		initialBuilderFromLocation
+			? initialBuilderFromLocation
+			: { ...emptyBuilder, cronTz: getBrowserTimeZone() },
 	);
-	const [timeZoneType, setTimeZoneType] = useState("Standard");
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: initial cron parse only — picks default tab on mount
+	const initialMode = useMemo(
+		() => parseCron(builder.cronExpression).mode,
+		[],
+	);
+	const [scheduleType, setScheduleType] = useState<"Standard" | "Custom">(
+		initialMode === "standard" ? "Standard" : "Custom",
+	);
+	const [customMode, setCustomMode] = useState<"dropdown" | "expression">(
+		initialMode === "expression" ? "expression" : "dropdown",
+	);
 	const [notification, setNotification] = useState<{
 		type: "success" | "error";
 		message: string;
 	} | null>(null);
 
+	const scheduleStandardId = useId();
+	const scheduleCustomId = useId();
+	const triggerOnLoadId = useId();
+
 	if (!adminMode) {
 		return <Navigate to={"/settings"} />;
 	}
 
-	const setBuilderField = (field: string, value: string | string[]) => {
+	const setBuilderField = (
+		field: keyof JobBuilder,
+		value: string | string[] | boolean,
+	) => {
 		setBuilder((prev) => ({
 			...prev,
 			[field]: value,
@@ -86,13 +110,12 @@ export const AddNewJob = () => {
 
 	const addJob = async () => {
 		try {
-			const encode = getEncodeByJobType(builder);
 			const response = await runPixel(
 				`META|ScheduleJob(jobName=["${builder.name}"],${
 					builder.tags.length
 						? ` jobTags=${JSON.stringify(builder.tags)},`
 						: ""
-				} jobGroup=["defaultGroup"], cronExpression=["${builder.cronExpression}"], cronTz=["${builder.cronTz}"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${builder.jobType}","jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}","cronTimeZone":"${builder.cronTz}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+				} jobGroup=["defaultGroup"], cronExpression=["${builder.cronExpression}"], cronTz=["${builder.cronTz}"], recipe=["<encode>${builder.pixel}</encode>"], triggerOnLoad=[${builder.triggerOnLoad}], triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
 				throw new Error(response.errors[0]);
@@ -109,7 +132,6 @@ export const AddNewJob = () => {
 
 	const updateJob = async () => {
 		try {
-			const encode = getEncodeByJobType(builder);
 			const response = await runPixel(
 				`META|EditScheduledJob(jobId="${builder.id}",jobName="${
 					builder.name
@@ -117,7 +139,7 @@ export const AddNewJob = () => {
 					builder.tags.length
 						? `jobTags=${JSON.stringify(builder.tags)},`
 						: ""
-				}jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression} *",cronTz="${builder.cronTz}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${builder.jobType}", "jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}", "cronTimeZone":"${builder.cronTz}"}',triggerOnLoad=[false],triggerNow=[false]);`,
+				}jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression}",cronTz="${builder.cronTz}",recipe="<encode>${builder.pixel}</encode>",triggerOnLoad=[${builder.triggerOnLoad}],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
 				throw new Error(response.errors[0]);
@@ -133,7 +155,18 @@ export const AddNewJob = () => {
 	};
 
 	return (
-		<div className="space-y-2">
+		<form
+			className="my-4"
+			onSubmit={(e) => {
+				e.preventDefault();
+				if (builder.formType === "edit") {
+					updateJob();
+				} else {
+					addJob();
+				}
+			}}
+			autoComplete="off"
+		>
 			{notification && (
 				<Alert
 					variant={
@@ -149,35 +182,35 @@ export const AddNewJob = () => {
 					<AlertDescription>{notification.message}</AlertDescription>
 				</Alert>
 			)}
-			<FieldSet>
-				<Field className="flex flex-row items-start gap-4">
-					<div className="w-1/4">
-						<FieldLabel className="mb-2">
-							Select Time Zone
-						</FieldLabel>
-						<FieldDescription>
-							Please select the time zone for the job you are
-							adding.
-						</FieldDescription>
+
+			<div className="mb-4 flex flex-col gap-4">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+					<div className="flex flex-1 flex-col gap-1">
+						<H4 className="font-semibold text-base tracking-tight">
+							Schedule Type
+						</H4>
+						<Muted className="text-muted-foreground text-sm leading-6">
+							Choose Standard for common frequencies, or Custom
+							for full cron control.
+						</Muted>
 					</div>
-					<div className="flex w-3/4 flex-col">
+					<div className="flex flex-[2] flex-col gap-2">
 						<RadioGroup
-							name="timeZone"
-							value={timeZoneType}
-							onValueChange={(value) => {
-								setBuilderField("basicTz", value);
-								setTimeZoneType(value);
-							}}
+							name="scheduleType"
+							value={scheduleType}
+							onValueChange={(value) =>
+								setScheduleType(value as "Standard" | "Custom")
+							}
 							className="flex flex-row gap-4"
 						>
 							<div className="flex items-center gap-2">
 								<RadioGroupItem
 									value="Standard"
-									id={"standard"}
+									id={scheduleStandardId}
 									data-testid="standard"
 								/>
 								<label
-									htmlFor="standard"
+									htmlFor={scheduleStandardId}
 									className="cursor-pointer font-medium text-sm"
 								>
 									Standard
@@ -186,11 +219,11 @@ export const AddNewJob = () => {
 							<div className="flex items-center gap-2">
 								<RadioGroupItem
 									value="Custom"
-									id={"custom"}
+									id={scheduleCustomId}
 									data-testid="custom"
 								/>
 								<label
-									htmlFor="custom"
+									htmlFor={scheduleCustomId}
 									className="cursor-pointer font-medium text-sm"
 								>
 									Custom
@@ -198,66 +231,115 @@ export const AddNewJob = () => {
 							</div>
 						</RadioGroup>
 					</div>
-				</Field>
-			</FieldSet>
-			<hr className="border-gray-300" />
-			<FieldSet>
-				<Field className="flex flex-row items-start gap-4">
-					<div className="w-1/4">
-						<FieldLabel className="mb-2">Job Details</FieldLabel>
-						<FieldDescription>
-							Kindly provide the name, type, pixel, and tags to
-							proceed with adding the new job.
-						</FieldDescription>
+				</div>
+				<Separator />
+			</div>
+
+			<div className="mb-4 flex flex-col gap-4">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+					<div className="flex flex-1 flex-col gap-1">
+						<H4 className="font-semibold text-base tracking-tight">
+							Job Details
+						</H4>
+						<Muted className="text-muted-foreground text-sm leading-6">
+							Provide the name, pixel, and tags for this job.
+						</Muted>
 					</div>
-					<div className="w-3/4">
+					<div className="flex flex-[2] flex-col gap-2">
 						<JobDetails
 							builder={builder}
 							setBuilderField={setBuilderField}
 						/>
 					</div>
-				</Field>
-			</FieldSet>
-			<hr className="border-gray-300" />
-			<FieldSet>
-				<Field className="flex flex-row items-start gap-4">
-					<div className="w-1/4">
-						<FieldLabel className="mb-2">Job Time</FieldLabel>
-						<FieldDescription>
-							Kindly provide the Time zone, Frequency, and time to
-							proceed with adding the new job.
-						</FieldDescription>
+				</div>
+				<Separator />
+			</div>
+
+			<div className="mb-4 flex flex-col gap-4">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+					<div className="flex flex-1 flex-col gap-1">
+						<H4 className="font-semibold text-base tracking-tight">
+							Job Time
+						</H4>
+						<Muted className="text-muted-foreground text-sm leading-6">
+							Set the time zone and schedule for when this job
+							runs.
+						</Muted>
 					</div>
-					<div className="w-3/4">
+					<div className="flex flex-[2] flex-col gap-2">
 						<JobTimeZone
 							builder={builder}
 							setBuilderField={setBuilderField}
-							jobType={timeZoneType}
+							scheduleType={scheduleType}
+							customMode={customMode}
+							setCustomMode={setCustomMode}
 						/>
 					</div>
-				</Field>
-			</FieldSet>
-			<div className="mt-6 flex justify-end gap-4 pb-5">
+				</div>
+				<Separator />
+			</div>
+
+			<div className="mb-4 flex flex-col gap-4">
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+					<div className="flex flex-1 flex-col gap-1">
+						<H4 className="font-semibold text-base tracking-tight">
+							Run on Startup
+						</H4>
+						<Muted className="text-muted-foreground text-sm leading-6">
+							In addition to the schedule above, also execute this
+							job each time {themeName} starts.
+						</Muted>
+					</div>
+					<div className="flex flex-[2] flex-col gap-2">
+						<div className="flex items-center gap-2">
+							<Checkbox
+								id={triggerOnLoadId}
+								checked={builder.triggerOnLoad}
+								onCheckedChange={(checked) =>
+									setBuilderField(
+										"triggerOnLoad",
+										checked === true,
+									)
+								}
+							/>
+							<label
+								htmlFor={triggerOnLoadId}
+								className="cursor-pointer font-medium text-sm"
+							>
+								Execute on {themeName} startup
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
 				<Button
+					type="button"
 					variant="outline"
 					onClick={() => navigate("/settings/jobs")}
+					className="flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-[147px]"
 				>
 					Back
 				</Button>
 				<Button
+					type="submit"
 					variant="default"
-					onClick={builder.formType === "edit" ? updateJob : addJob}
+					className="flex w-full items-center justify-center gap-2 px-4 py-2 sm:w-[147px]"
 				>
 					{builder.formType === "edit" ? "Update Job" : "Add Job"}
 				</Button>
 			</div>
-		</div>
+		</form>
 	);
 };
 
 const JobDetails = (props: {
 	builder: JobBuilder;
-	setBuilderField: (field: string, value: string | string[]) => void;
+	setBuilderField: (
+		field: keyof JobBuilder,
+		value: string | string[] | boolean,
+	) => void;
 }) => {
 	const { builder, setBuilderField } = props;
 	const [tagInput, setTagInput] = useState("");
@@ -278,46 +360,25 @@ const JobDetails = (props: {
 
 	return (
 		<div className="flex flex-col gap-6">
-			<div className="flex gap-5">
-				<Field className="w-full">
-					<FieldLabel>Name</FieldLabel>
-					<FieldContent>
-						<Input
-							placeholder="Enter the Name"
-							value={builder.name}
-							onChange={(e) =>
-								setBuilderField("name", e.target.value)
-							}
-						/>
-					</FieldContent>
-				</Field>
-
-				<Field className="w-full">
-					<FieldLabel>Type</FieldLabel>
-					<FieldContent>
-						<Select
-							value={builder.jobType ?? undefined}
-							onValueChange={(value) =>
-								setBuilderField("jobType", value)
-							}
-						>
-							<SelectTrigger className="w-full">
-								<SelectValue placeholder="Select Job Type" />
-							</SelectTrigger>
-							<SelectContent>
-								{JobTypeOptions.map((option) => (
-									<SelectItem key={option} value={option}>
-										{option}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-					</FieldContent>
-				</Field>
-			</div>
+			<Field>
+				<FieldLabel>
+					Name <RequiredMark />
+				</FieldLabel>
+				<FieldContent>
+					<Input
+						placeholder="Enter the Name"
+						value={builder.name}
+						onChange={(e) =>
+							setBuilderField("name", e.target.value)
+						}
+					/>
+				</FieldContent>
+			</Field>
 
 			<Field>
-				<FieldLabel>Pixel</FieldLabel>
+				<FieldLabel>
+					Pixel <RequiredMark />
+				</FieldLabel>
 				<FieldContent>
 					<div className="relative w-full cursor-pointer">
 						<Textarea
@@ -354,6 +415,7 @@ const JobDetails = (props: {
 									key={tag}
 									variant="secondary"
 									className="gap-1"
+									style={getTagBadgeStyle(tag)}
 								>
 									{tag}
 									<button
@@ -379,104 +441,268 @@ const JobDetails = (props: {
 	);
 };
 
-type JobTimeZoneBuilder = JobBuilder & {
-	frequency?: string | null;
-};
+const isWildcard = (val: string) => val === "*" || val === "?";
 
 const JobTimeZone = (props: {
-	builder: JobTimeZoneBuilder;
-	setBuilderField: (field: string, value: string | string[]) => void;
-	jobType: string;
+	builder: JobBuilder;
+	setBuilderField: (
+		field: keyof JobBuilder,
+		value: string | string[] | boolean,
+	) => void;
+	scheduleType: "Standard" | "Custom";
+	customMode: "dropdown" | "expression";
+	setCustomMode: (mode: "dropdown" | "expression") => void;
 }) => {
-	const { builder, setBuilderField, jobType } = props;
+	const {
+		builder,
+		setBuilderField,
+		scheduleType,
+		customMode,
+		setCustomMode,
+	} = props;
 
-	const [selected, setSelected] = useState("semossStart");
-	const [time, setTime] = useState("12:00");
+	const dropdownModeId = useId();
+	const expressionModeId = useId();
 
-	const [cronMinute, setCronMinute] = useState("0");
-	const [cronHour, setCronHour] = useState("12");
-	const [cronDayOfMonth, setCronDayOfMonth] = useState("*");
-	const [cronMonth, setCronMonth] = useState("*");
-	const [cronDayOfWeek, setCronDayOfWeek] = useState("?");
+	const parsed = parseCron(builder.cronExpression);
 
-	const minutes = Array.from({ length: 60 }, (_, i) => `${i + 1}`);
-	const hours = Array.from({ length: 24 }, (_, i) => `${i + 1}`);
+	const minutes = Array.from({ length: 60 }, (_, i) => `${i}`);
+	const hours = Array.from({ length: 24 }, (_, i) => `${i}`);
 	const daysOfMonth = Array.from({ length: 31 }, (_, i) => `${i + 1}`);
 
-	useEffect(() => {
-		const cronValues = builder.cronExpression.split(" ");
-		if (cronValues.length < 6) return;
+	const TimeZoneSelect = (
+		<Field className="w-full">
+			<FieldLabel>
+				Time Zone <RequiredMark />
+			</FieldLabel>
+			<FieldContent>
+				<Select
+					value={builder.cronTz}
+					onValueChange={(v) => setBuilderField("cronTz", v)}
+				>
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder="Select Timezone" />
+					</SelectTrigger>
+					<SelectContent>
+						{timezones.map((tz: string) => (
+							<SelectItem key={tz} value={tz}>
+								{tz.replaceAll("_", " ")}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</FieldContent>
+		</Field>
+	);
 
-		setCronMinute(cronValues[1] ?? "0");
-		setCronHour(cronValues[2] ?? "12");
-		setCronMonth(cronValues[4] ?? "*");
+	if (scheduleType === "Standard") {
+		const frequency: Frequencies = parsed.frequency ?? "Daily";
+		const timeValue = `${parsed.hour.padStart(2, "0")}:${parsed.minute.padStart(2, "0")}`;
 
-		const dayOfMonth = cronValues[3];
-		const dayOfWeek = cronValues[5];
+		const rebuildStandard = (next: {
+			frequency?: Frequencies;
+			hour?: string;
+			minute?: string;
+			dayOfWeek?: string;
+			dayOfMonth?: string;
+			month?: string;
+		}) => {
+			const freq = next.frequency ?? frequency;
+			const hour = next.hour ?? parsed.hour;
+			const minute = next.minute ?? parsed.minute;
+			const dayOfWeek =
+				next.dayOfWeek ??
+				(isWildcard(parsed.dayOfWeek) ? "0" : parsed.dayOfWeek);
+			const dayOfMonth =
+				next.dayOfMonth ??
+				(isWildcard(parsed.dayOfMonth) ? "1" : parsed.dayOfMonth);
+			const month =
+				next.month ?? (parsed.month === "*" ? "1" : parsed.month);
+			setBuilderField(
+				"cronExpression",
+				buildStandardCron(freq, hour, minute, {
+					dayOfWeek,
+					dayOfMonth,
+					month,
+				}),
+			);
+		};
 
-		if (dayOfMonth && dayOfMonth !== "*" && dayOfMonth !== "?") {
-			setCronDayOfMonth(dayOfMonth);
-			setCronDayOfWeek("?");
-		} else if (dayOfWeek && dayOfWeek !== "*" && dayOfWeek !== "?") {
-			setCronDayOfWeek(dayOfWeek);
-			setCronDayOfMonth("?");
-		} else {
-			setCronDayOfMonth(dayOfMonth || "*");
-			setCronDayOfWeek(dayOfWeek || "?");
-		}
-	}, []);
+		const handleTimeChange = (value: string) => {
+			const [h, m] = value.split(":");
+			if (h === undefined || m === undefined) return;
+			rebuildStandard({
+				hour: String(parseInt(h, 10)),
+				minute: String(parseInt(m, 10)),
+			});
+		};
 
-	useEffect(() => {
-		setBuilderField(
-			"cronExpression",
-			`0 ${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek}`,
-		);
-	}, [cronMinute, cronHour, cronDayOfMonth, cronMonth, cronDayOfWeek]);
+		return (
+			<div className="flex flex-col gap-6">
+				<div className="flex gap-5">
+					{TimeZoneSelect}
 
-	return (
-		<div className="flex flex-col gap-6">
-			{jobType === "Standard" && (
-				<>
+					<Field className="w-full">
+						<FieldLabel>
+							Frequency <RequiredMark />
+						</FieldLabel>
+						<FieldContent>
+							<Select
+								value={frequency}
+								onValueChange={(v) =>
+									rebuildStandard({
+										frequency: v as Frequencies,
+									})
+								}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Select Frequency" />
+								</SelectTrigger>
+								<SelectContent>
+									{FrequencyOptions.map((f: string) => (
+										<SelectItem key={f} value={f}>
+											{f}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</FieldContent>
+					</Field>
+				</div>
+
+				<Field>
+					<FieldLabel>
+						Time <RequiredMark />
+					</FieldLabel>
+					<FieldContent>
+						<Input
+							type="time"
+							value={timeValue}
+							onChange={(e) => handleTimeChange(e.target.value)}
+						/>
+					</FieldContent>
+				</Field>
+
+				{frequency === "Weekly" && (
+					<Field>
+						<FieldLabel>
+							Day of Week <RequiredMark />
+						</FieldLabel>
+						<FieldContent>
+							<Select
+								value={
+									isWildcard(parsed.dayOfWeek)
+										? "0"
+										: parsed.dayOfWeek
+								}
+								onValueChange={(v) =>
+									rebuildStandard({ dayOfWeek: v })
+								}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Day" />
+								</SelectTrigger>
+								<SelectContent>
+									{DaysOfWeek.map((d) => (
+										<SelectItem
+											key={d.value}
+											value={`${d.value}`}
+										>
+											{d.day}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</FieldContent>
+					</Field>
+				)}
+
+				{frequency === "Monthly" && (
+					<Field>
+						<FieldLabel>
+							Day of Month <RequiredMark />
+						</FieldLabel>
+						<FieldContent>
+							<Select
+								value={
+									isWildcard(parsed.dayOfMonth)
+										? "1"
+										: parsed.dayOfMonth
+								}
+								onValueChange={(v) =>
+									rebuildStandard({ dayOfMonth: v })
+								}
+							>
+								<SelectTrigger className="w-full">
+									<SelectValue placeholder="Day" />
+								</SelectTrigger>
+								<SelectContent>
+									{daysOfMonth.map((d) => (
+										<SelectItem key={d} value={d}>
+											{d}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						</FieldContent>
+					</Field>
+				)}
+
+				{frequency === "Yearly" && (
 					<div className="flex gap-5">
 						<Field className="w-full">
-							<FieldLabel>Time Zone</FieldLabel>
+							<FieldLabel>
+								Month <RequiredMark />
+							</FieldLabel>
 							<FieldContent>
 								<Select
-									value={builder.cronTz}
+									value={
+										parsed.month === "*"
+											? "1"
+											: parsed.month
+									}
 									onValueChange={(v) =>
-										setBuilderField("cronTz", v)
+										rebuildStandard({ month: v })
 									}
 								>
 									<SelectTrigger className="w-full">
-										<SelectValue placeholder="Select Timezone" />
+										<SelectValue placeholder="Month" />
 									</SelectTrigger>
 									<SelectContent>
-										{timezones.map((tz: string) => (
-											<SelectItem key={tz} value={tz}>
-												{tz.replaceAll("_", " ")}
+										{Months.map((m) => (
+											<SelectItem
+												key={m.value}
+												value={`${m.value}`}
+											>
+												{m.month}
 											</SelectItem>
 										))}
 									</SelectContent>
 								</Select>
 							</FieldContent>
 						</Field>
-
 						<Field className="w-full">
-							<FieldLabel>Frequency</FieldLabel>
+							<FieldLabel>
+								Day of Month <RequiredMark />
+							</FieldLabel>
 							<FieldContent>
 								<Select
-									value={builder.frequency ?? undefined}
+									value={
+										isWildcard(parsed.dayOfMonth)
+											? "1"
+											: parsed.dayOfMonth
+									}
 									onValueChange={(v) =>
-										setBuilderField("frequency", v)
+										rebuildStandard({ dayOfMonth: v })
 									}
 								>
 									<SelectTrigger className="w-full">
-										<SelectValue placeholder="Select Frequency" />
+										<SelectValue placeholder="Day" />
 									</SelectTrigger>
 									<SelectContent>
-										{FrequencyOptions.map((f: string) => (
-											<SelectItem key={f} value={f}>
-												{f.replaceAll("_", " ")}
+										{daysOfMonth.map((d) => (
+											<SelectItem key={d} value={d}>
+												{d}
 											</SelectItem>
 										))}
 									</SelectContent>
@@ -484,82 +710,89 @@ const JobTimeZone = (props: {
 							</FieldContent>
 						</Field>
 					</div>
+				)}
+			</div>
+		);
+	}
 
-					<Field>
-						<FieldLabel>Time</FieldLabel>
-						<FieldContent>
-							<Input
-								type="time"
-								value={time}
-								onChange={(e) => setTime(e.target.value)}
-							/>
-						</FieldContent>
-					</Field>
-				</>
-			)}
+	const rebuildDropdown = (next: Partial<typeof parsed>) => {
+		const merged = {
+			minute: parsed.minute,
+			hour: parsed.hour,
+			dayOfMonth: parsed.dayOfMonth,
+			month: parsed.month,
+			dayOfWeek: parsed.dayOfWeek,
+			...next,
+		};
+		if (next.dayOfMonth && !isWildcard(next.dayOfMonth)) {
+			merged.dayOfWeek = "?";
+		}
+		if (next.dayOfWeek && !isWildcard(next.dayOfWeek)) {
+			merged.dayOfMonth = "?";
+		}
+		setBuilderField("cronExpression", buildCron(merged));
+	};
 
-			{jobType === "Custom" && (
-				<Field>
-					<FieldLabel>Schedule Type</FieldLabel>
-					<FieldContent>
-						<RadioGroup
-							value={selected}
-							onValueChange={setSelected}
-						>
-							<div className="flex gap-6">
-								<div className="flex items-center gap-2">
-									<RadioGroupItem value="dropdown" />
-									<span>Use Dropdown For Schedule</span>
-								</div>
-								<div className="flex items-center gap-2">
-									<RadioGroupItem value="Custom" />
-									<span>Custom Cron Expression</span>
-								</div>
+	return (
+		<div className="flex flex-col gap-6">
+			<Field>
+				<FieldLabel>Schedule Builder</FieldLabel>
+				<FieldContent>
+					<RadioGroup
+						value={customMode}
+						onValueChange={(v) =>
+							setCustomMode(v as "dropdown" | "expression")
+						}
+					>
+						<div className="flex gap-6">
+							<div className="flex items-center gap-2">
+								<RadioGroupItem
+									value="dropdown"
+									id={dropdownModeId}
+								/>
+								<label
+									htmlFor={dropdownModeId}
+									className="cursor-pointer text-sm"
+								>
+									Use Dropdown For Schedule
+								</label>
 							</div>
-
-							<div className="mt-2 flex items-center gap-2">
-								<RadioGroupItem value="semossStart" />
-								<span>
-									Execute Jobs Each Time Semoss Starts
-								</span>
+							<div className="flex items-center gap-2">
+								<RadioGroupItem
+									value="expression"
+									id={expressionModeId}
+								/>
+								<label
+									htmlFor={expressionModeId}
+									className="cursor-pointer text-sm"
+								>
+									Custom Cron Expression
+								</label>
 							</div>
-						</RadioGroup>
-					</FieldContent>
-				</Field>
-			)}
+						</div>
+					</RadioGroup>
+				</FieldContent>
+			</Field>
 
-			{selected === "dropdown" && jobType === "Custom" && (
+			{customMode === "dropdown" && (
 				<div className="flex flex-col gap-5">
 					<div className="flex gap-5">
-						<Field className="w-full">
-							<FieldLabel>Time Zone</FieldLabel>
-							<FieldContent>
-								<Select
-									value={builder.cronTz}
-									onValueChange={(v) =>
-										setBuilderField("cronTz", v)
-									}
-								>
-									<SelectTrigger className="w-full">
-										<SelectValue placeholder="Select Timezone" />
-									</SelectTrigger>
-									<SelectContent>
-										{timezones.map((tz: string) => (
-											<SelectItem key={tz} value={tz}>
-												{tz}
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							</FieldContent>
-						</Field>
+						{TimeZoneSelect}
 
 						<Field className="w-full">
-							<FieldLabel>Minute</FieldLabel>
+							<FieldLabel>
+								Minute <RequiredMark />
+							</FieldLabel>
 							<FieldContent>
 								<Select
-									value={cronMinute}
-									onValueChange={(v) => setCronMinute(v)}
+									value={
+										minutes.includes(parsed.minute)
+											? parsed.minute
+											: undefined
+									}
+									onValueChange={(v) =>
+										rebuildDropdown({ minute: v })
+									}
 								>
 									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Minute" />
@@ -578,11 +811,19 @@ const JobTimeZone = (props: {
 
 					<div className="flex gap-5">
 						<Field className="w-full">
-							<FieldLabel>Hour</FieldLabel>
+							<FieldLabel>
+								Hour <RequiredMark />
+							</FieldLabel>
 							<FieldContent>
 								<Select
-									value={cronHour}
-									onValueChange={setCronHour}
+									value={
+										hours.includes(parsed.hour)
+											? parsed.hour
+											: undefined
+									}
+									onValueChange={(v) =>
+										rebuildDropdown({ hour: v })
+									}
 								>
 									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Hour" />
@@ -599,19 +840,29 @@ const JobTimeZone = (props: {
 						</Field>
 
 						<Field className="w-full">
-							<FieldLabel>Day of Month</FieldLabel>
+							<FieldLabel>
+								Day of Month <RequiredMark />
+							</FieldLabel>
 							<FieldContent>
 								<Select
-									value={cronDayOfMonth}
-									onValueChange={(v) => {
-										setCronDayOfMonth(v);
-										if (v !== "*") setCronDayOfWeek("?");
-									}}
+									value={
+										isWildcard(parsed.dayOfMonth)
+											? "*"
+											: daysOfMonth.includes(
+														parsed.dayOfMonth,
+													)
+												? parsed.dayOfMonth
+												: undefined
+									}
+									onValueChange={(v) =>
+										rebuildDropdown({ dayOfMonth: v })
+									}
 								>
 									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Day" />
 									</SelectTrigger>
 									<SelectContent>
+										<SelectItem value="*">Any</SelectItem>
 										{daysOfMonth.map((d) => (
 											<SelectItem key={d} value={d}>
 												{d}
@@ -625,16 +876,21 @@ const JobTimeZone = (props: {
 
 					<div className="flex gap-5">
 						<Field className="w-full">
-							<FieldLabel>Month</FieldLabel>
+							<FieldLabel>
+								Month <RequiredMark />
+							</FieldLabel>
 							<FieldContent>
 								<Select
-									value={cronMonth}
-									onValueChange={(v) => setCronMonth(v)}
+									value={parsed.month}
+									onValueChange={(v) =>
+										rebuildDropdown({ month: v })
+									}
 								>
 									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Month" />
 									</SelectTrigger>
 									<SelectContent>
+										<SelectItem value="*">Any</SelectItem>
 										{Months.map((m) => (
 											<SelectItem
 												key={m.value}
@@ -649,19 +905,25 @@ const JobTimeZone = (props: {
 						</Field>
 
 						<Field className="w-full">
-							<FieldLabel>Day of Week</FieldLabel>
+							<FieldLabel>
+								Day of Week <RequiredMark />
+							</FieldLabel>
 							<FieldContent>
 								<Select
-									value={cronDayOfWeek}
-									onValueChange={(v) => {
-										setCronDayOfWeek(v);
-										setCronDayOfMonth("?");
-									}}
+									value={
+										isWildcard(parsed.dayOfWeek)
+											? "?"
+											: parsed.dayOfWeek
+									}
+									onValueChange={(v) =>
+										rebuildDropdown({ dayOfWeek: v })
+									}
 								>
 									<SelectTrigger className="w-full">
 										<SelectValue placeholder="Day" />
 									</SelectTrigger>
 									<SelectContent>
+										<SelectItem value="?">Any</SelectItem>
 										{DaysOfWeek.map((d) => (
 											<SelectItem
 												key={d.value}
@@ -678,33 +940,14 @@ const JobTimeZone = (props: {
 				</div>
 			)}
 
-			{selected === "Custom" && jobType === "Custom" && (
+			{customMode === "expression" && (
 				<div className="flex flex-col gap-5">
-					<Field>
-						<FieldLabel>Cron Time Zone</FieldLabel>
-						<FieldContent>
-							<Select
-								value={builder.cronTz}
-								onValueChange={(v) =>
-									setBuilderField("cronTz", v)
-								}
-							>
-								<SelectTrigger className="w-full">
-									<SelectValue placeholder="Select Timezone" />
-								</SelectTrigger>
-								<SelectContent>
-									{timezones.map((tz: string) => (
-										<SelectItem key={tz} value={tz}>
-											{tz}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-						</FieldContent>
-					</Field>
+					{TimeZoneSelect}
 
 					<Field>
-						<FieldLabel>Cron Expression</FieldLabel>
+						<FieldLabel>
+							Cron Expression <RequiredMark />
+						</FieldLabel>
 						<FieldContent>
 							<Textarea
 								rows={3}

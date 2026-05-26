@@ -1,5 +1,5 @@
 import type { CellConfig } from "../../../store";
-import { FilterDataCell, type FilterDataCellDef } from "./FilterDataCell";
+import { FilterDataCell, type FilterDataCellDef } from "./filter-data-cell";
 
 export const FilterDataCellConfig: CellConfig<FilterDataCellDef> = {
 	name: "FilterData",

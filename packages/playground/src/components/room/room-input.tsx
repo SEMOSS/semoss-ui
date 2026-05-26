@@ -62,10 +62,6 @@ import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
 	Partial<Pick<Workspace, "name">>;
 
-const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
-	? import.meta.env.VITE_PLATFORM_URL
-	: "";
-
 let isIframed = false;
 try {
 	isIframed = window.self !== window.top;
@@ -764,7 +760,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												<a
 													target="_blank"
 													rel="noopener noreferrer"
-													href={`${PLATFORM_URL}/#/app/${agentChipWorkspace.workspace_id}`}
+													href={`#/agent/${agentChipWorkspace.workspace_id}`}
 													className="flex h-full items-center border-border border-l px-1.5 transition-colors hover:bg-muted/50"
 													onClick={(e) =>
 														e.stopPropagation()
