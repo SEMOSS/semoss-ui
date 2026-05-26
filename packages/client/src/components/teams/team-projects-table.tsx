@@ -1,6 +1,6 @@
 import { Plus, Search, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { buildInitials, getAppCatalogAvatarStyle } from "@semoss/shared";
+import { AppCatalogAvatar } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -941,16 +941,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 													}
 												}}
 											/>
-											<div
-												className="flex size-8 shrink-0 items-center justify-center rounded-[10px] font-semibold text-xs"
-												style={getAppCatalogAvatarStyle(
-													project.project_name,
-												)}
-											>
-												{buildInitials(
-													project.project_name,
-												)}
-											</div>
+											<AppCatalogAvatar
+												name={project.project_name}
+												className="size-8 shrink-0 rounded-[10px] text-xs"
+											/>
 											<div className="flex-1">
 												<div className="font-medium text-sm">
 													{project.project_name}

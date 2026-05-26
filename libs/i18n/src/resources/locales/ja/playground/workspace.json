@@ -19,7 +19,8 @@
 	},
 	"card": {
 		"deleteConfirmTitle": "本当によろしいですか？",
-		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。"
+		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。",
+		"createdAgo": "作成: {{when}}"
 	},
 	"sharing": {
 		"title": "メンバーを追加",
@@ -35,6 +36,7 @@
 		"buttonAdd": "メンバーを追加"
 	},
 	"members": {
+		"autoSaveHint": "メンバーの追加・削除、権限の変更は自動的に保存されます。",
 		"heading": "アクセス権を持つユーザー",
 		"you": "(あなた)",
 		"owner": "オーナー",
@@ -59,7 +61,26 @@
 	"chat": {
 		"noChats": "チャットが見つかりません",
 		"error": "エラー:",
-		"selectRoom": "ルームを選択"
+		"selectRoom": "ルームを選択",
+		"newChat": "新しいチャット",
+		"delete": "削除",
+		"cancel": "キャンセル",
+		"deleteSuccess": "チャットを削除しました",
+		"deleteFailed": "チャットの削除に失敗しました",
+		"deleteConfirmTitle": "チャットを削除しますか？",
+		"deleteConfirmDescription": "「{{name}}」を完全に削除します。この操作は元に戻せません。",
+		"rename": "名前を変更",
+		"renameSave": "保存",
+		"renameEmpty": "チャット名は空にできません",
+		"renameSuccess": "チャットの名前を変更しました",
+		"renameFailed": "チャットの名前変更に失敗しました",
+		"pin": "お気に入りに追加",
+		"unpin": "お気に入りから削除",
+		"pinFailed": "お気に入りの登録に失敗しました",
+		"unpinFailed": "お気に入りの解除に失敗しました",
+		"dayToday": "今日",
+		"dayYesterday": "昨日",
+		"daysAgo": "{{count}}日前"
 	},
 	"images": {
 		"agentIllustration": "エージェントのイラスト"
@@ -91,7 +112,15 @@
 			"myChats": "マイチャット",
 			"knowledge": "ナレッジ",
 			"toolbox": "ツールボックス",
+			"prompts": "プロンプト",
 			"members": "メンバー"
+		},
+		"about": {
+			"title": "概要",
+			"noInstructions": "指示は設定されていません。"
+		},
+		"recentChats": {
+			"title": "前のチャットを続ける"
 		},
 		"failedToDelete": "エージェントの削除に失敗しました",
 		"failedToLoad": "エージェントの読み込みに失敗しました: {{error}}"
@@ -110,5 +139,26 @@
 	"prompts": {
 		"noPrompts": "プロンプトが見つかりません",
 		"searchPlaceholder": "プロンプトを検索..."
+	},
+	"chats": {
+		"title": "すべてのチャット",
+		"subtitle": "チャットの閲覧・検索・整理ができます。",
+		"selectAll": "すべて選択",
+		"selectChat": "チャット「{{name}}」を選択",
+		"selectedCount": "{{count}} 件選択",
+		"totalCount": "{{count}} 件のチャット",
+		"deleteSelected": "{{count}} 件を削除",
+		"bulkDeleteConfirmTitle": "{{count}} 件のチャットを削除しますか？",
+		"bulkDeleteConfirmDescription": "{{count}} 件のチャットを完全に削除します。この操作は元に戻せません。",
+		"bulkDeleteSuccess": "{{count}} 件のチャットを削除しました",
+		"bulkDeletePartialFail": "{{total}} 件中 {{failed}} 件の削除に失敗しました"
+	},
+	"instructions": {
+		"expand": "展開",
+		"viewTitle": "指示",
+		"viewDescription": "このエージェントの動作を導くシステムプロンプト。",
+		"editTitle": "指示を編集",
+		"editDescription": "このエージェントの動作を導くシステムプロンプトを更新します。",
+		"charCount": "{{count}} 文字"
 	}
 }

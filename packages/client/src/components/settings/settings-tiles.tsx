@@ -92,29 +92,39 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
 	const { monolithStore, configStore } = useRootStore();
-	const { adminMode } = useSettings();
+	const { adminMode, engineInfo: contextEngineInfo } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(true);
 	const [global, setGlobal] = useState(true);
 	const [loading, setLoading] = useState(false);
 
-	const engineInfo = usePixel(
+	const isEngineType =
 		type === "DATABASE" ||
-			type === "STORAGE" ||
-			type === "MODEL" ||
-			type === "VECTOR" ||
-			type === "GUARDRAIL" ||
-			type === "FUNCTION"
-			? adminMode
-				? `AdminEngineInfo(engine='${id}');`
-				: `EngineInfo(engine='${id}');`
-			: type === "PROJECT"
+		type === "STORAGE" ||
+		type === "MODEL" ||
+		type === "VECTOR" ||
+		type === "GUARDRAIL" ||
+		type === "FUNCTION";
+	// Reuse the parent settings layout's EngineInfo result when available to
+	// avoid a duplicate pixel call.
+	const shouldFetchLocally = !(isEngineType && contextEngineInfo);
+
+	const localEngineInfo = usePixel(
+		shouldFetchLocally
+			? isEngineType
 				? adminMode
-					? `AdminProjectInfo(project='${id}')`
-					: `ProjectInfo(project='${id}')`
-				: "",
+					? `AdminEngineInfo(engine='${id}');`
+					: `EngineInfo(engine='${id}');`
+				: type === "PROJECT"
+					? adminMode
+						? `AdminProjectInfo(project='${id}')`
+						: `ProjectInfo(project='${id}')`
+					: ""
+			: "",
 	);
+
+	const engineInfo = shouldFetchLocally ? localEngineInfo : contextEngineInfo;
 
 	useEffect(() => {
 		// pixel call to get pending members

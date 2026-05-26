@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	JoinTransformationCell,
 	type JoinTransformationCellDef,
-} from "./JoinTransformationCell";
+} from "./join-transformation-cell";
 
 // export the config for the block
 export const JoinTransformationCellConfig: CellConfig<JoinTransformationCellDef> =

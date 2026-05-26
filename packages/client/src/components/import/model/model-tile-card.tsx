@@ -53,7 +53,10 @@ const toKnownModelSubtype = (value?: string) => {
 	return normalized;
 };
 
-const resolveModelSubtype = (model: Model, provider?: string): string => {
+const resolveModelSubtype = (
+	model: { icon?: string; modelBrand?: string },
+	provider?: string,
+): string => {
 	const icon = model.icon;
 
 	if (icon?.startsWith("/src/assets/img/")) {
@@ -88,6 +91,48 @@ interface Model {
 	link?: string; // optional documentation link
 }
 
+interface ModelEngineIconProps {
+	model: Pick<Model, "icon" | "name"> & {
+		display?: string;
+		modelBrand?: string;
+	};
+	provider?: string;
+	alt?: string;
+	className?: string;
+	fallbackClassName?: string;
+}
+
+export const ModelEngineIcon: React.FC<ModelEngineIconProps> = ({
+	model,
+	provider,
+	alt,
+	className = "h-full w-full object-cover",
+	fallbackClassName = "flex h-full w-full select-none items-center justify-center rounded-lg bg-muted font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset] [-webkit-font-smoothing:antialiased]",
+}) => {
+	const label = alt || model.display || model.name;
+	const remoteIcon = isRemoteModelIcon(model.icon) ? model.icon : null;
+	const resolvedSubtype = remoteIcon
+		? ""
+		: resolveModelSubtype(model, provider);
+
+	if (remoteIcon) {
+		return <img src={remoteIcon} alt={label} className={className} />;
+	}
+
+	if (resolvedSubtype) {
+		return (
+			<EngineSubtypeIcon
+				engineType="MODEL"
+				engineSubtype={resolvedSubtype}
+				alt={label}
+				className={className}
+			/>
+		);
+	}
+
+	return <div className={fallbackClassName}>AI</div>;
+};
+
 interface ModelTileCardProps {
 	model: Model;
 	provider?: string;
@@ -121,10 +166,6 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		};
 	}, []);
 
-	const remoteIcon = isRemoteModelIcon(model.icon) ? model.icon : null;
-	const resolvedSubtype = remoteIcon
-		? ""
-		: resolveModelSubtype(model, provider);
 	const handleCardClick = () => {
 		if (!model.disable && onModelSelect) {
 			onModelSelect(model);
@@ -157,29 +198,12 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 		>
 			<div className="flex flex-col items-start gap-1">
 				<div className="flex w-full flex-row items-center gap-2">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center">
-						{remoteIcon ? (
-							<div className="h-10 w-10 overflow-hidden rounded-lg">
-								<img
-									src={remoteIcon}
-									alt={label}
-									className="h-full w-full object-cover"
-								/>
-							</div>
-						) : resolvedSubtype ? (
-							<div className="h-10 w-10 overflow-hidden rounded-lg">
-								<EngineSubtypeIcon
-									engineType="MODEL"
-									engineSubtype={resolvedSubtype}
-									alt={label}
-									className="h-full w-full object-cover"
-								/>
-							</div>
-						) : (
-							<div className="flex h-10 w-10 select-none items-center justify-center rounded-lg bg-muted font-semibold text-secondary-foreground text-sm uppercase shadow-[0_0_0_1px_rgba(0,0,0,0.08)_inset] [-webkit-font-smoothing:antialiased]">
-								AI
-							</div>
-						)}
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg">
+						<ModelEngineIcon
+							model={model}
+							provider={provider}
+							alt={label}
+						/>
 					</div>
 					<div className="flex flex-wrap items-center gap-1">
 						{model.disable && (

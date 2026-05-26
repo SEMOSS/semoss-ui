@@ -318,6 +318,10 @@ export const NewRoomPage = observer(() => {
 				getWorkspace.data?.system_prompt ||
 				tempRoomStore.options.instructions,
 			mcp: Array.from(mcpMap.values()),
+			workspace: {
+				workspace_id: getWorkspace.data.workspace_id,
+				name: getWorkspace.data.name,
+			},
 		});
 	}, [mode, getWorkspace.status, getWorkspace.data, tempRoomStore]);
 

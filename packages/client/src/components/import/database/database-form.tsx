@@ -35,6 +35,7 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeOptions, computeVisibility } from "../shared/import-form.utils";
 import DataSelection from "./flat-table-column-editor";
 import ExcelDataSelection from "./flat-table-column-editor-excel";
@@ -63,6 +64,7 @@ export const DatabaseForm = ({
 	selectedTab,
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -1773,15 +1775,12 @@ export const DatabaseForm = ({
 					className="my-4"
 					autoComplete="off"
 				>
-					<div className="mb-6">
-						<H4 data-testid="database-form-title">{title}</H4>
-						<Muted
-							className="mt-1 text-base"
-							data-testid="database-form-description"
-						>
-							{description}
-						</Muted>
-					</div>
+					<EngineFormHeader
+						testIdPrefix="database"
+						icon={icon}
+						title={title}
+						description={description}
+					/>
 
 					{Object.keys(grouped).map((category) => (
 						<div
