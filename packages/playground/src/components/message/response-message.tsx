@@ -291,7 +291,11 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		const hasVisibleContent = message.parts.some(
 			(part) =>
-				(part.type === "TEXT" && part.text.trim().length > 0) ||
+				(part.type === "TEXT" &&
+					part.text.replace(
+						/[\s\u00AD\u200B-\u200D\u2060\uFEFF]/g,
+						"",
+					).length > 0) ||
 				part.type === "MEDIA" ||
 				part.type === "TOOL_CALL",
 		);
