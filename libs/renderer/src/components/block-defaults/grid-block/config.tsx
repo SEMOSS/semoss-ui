@@ -1,6 +1,6 @@
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_DATA } from "../block-defaults.constants";
-import { GridBlock, type GridBlockDef } from "./GridBlock";
+import { GridBlock, type GridBlockDef } from "./grid-block";
 
 // export the config for the block
 export const config: BlockConfig<GridBlockDef> = {

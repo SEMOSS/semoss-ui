@@ -1,38 +1,39 @@
 import ASTER from "@/assets/img/ASTER.png";
-import ATHENA from "@/assets/img/ATHENA.png";
-import BIGQUERY from "@/assets/img/BIGQUERY.png";
+import ATHENA from "@/assets/img/ATHENA.svg";
+import BIGQUERY from "@/assets/img/BIGQUERY.svg";
 import CASSANDRA from "@/assets/img/CASSANDRA.svg";
-import CLICKHOUSE from "@/assets/img/CLICKHOUSE.png";
+import CLICKHOUSE from "@/assets/img/CLICKHOUSE.svg";
 import CSV from "@/assets/img/CSV.svg";
-import DATABRICKS from "@/assets/img/DATABRICKS.png";
+import DATABRICKS from "@/assets/img/DATABRICKS.svg";
 import DATASTAX from "@/assets/img/DATASTAX.png";
 import DB2 from "@/assets/img/DB2.png";
 import DERBY from "@/assets/img/DERBY.png";
 import ELASTIC_SEARCH from "@/assets/img/ELASTIC_SEARCH.svg";
-import EXCEL from "@/assets/img/EXCEL.png";
+import EXCEL from "@/assets/img/EXCEL.svg";
 import FILE_EXCEL from "@/assets/img/file-excel.svg";
 import H2_DB from "@/assets/img/H2_DB.png";
-import HIVE from "@/assets/img/HIVE.jpg";
-import IMPALA from "@/assets/img/IMPALA.png";
-import MARIA_DB from "@/assets/img/MARIA_DB.png";
+import HIVE from "@/assets/img/HIVE.svg";
+import IMPALA from "@/assets/img/IMPALA.svg";
+import MARIA_DB from "@/assets/img/MARIA_DB.svg";
 import MYSQL from "@/assets/img/MYSQL.svg";
-import NEO4J from "@/assets/img/NEO4J.png";
+import NEO4J from "@/assets/img/NEO4J.svg";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
 import ORACLE from "@/assets/img/ORACLE.svg";
 import PHOENIX from "@/assets/img/PHOENIX.png";
 import POSTGRES from "@/assets/img/POSTGRES.svg";
-import REDSHIFT from "@/assets/img/REDSHIFT.png";
-import SAP_HANA from "@/assets/img/SAP_HANA.png";
+import REDSHIFT from "@/assets/img/REDSHIFT.svg";
+import SAP_HANA from "@/assets/img/SAP_HANA.svg";
 import SEMOSS from "@/assets/img/SEMOSS_BLUE_LOGO.svg";
-import SNOWFLAKE from "@/assets/img/SNOWFLAKE.png";
-import SQL_SERVER from "@/assets/img/SQL_SERVER.png";
+import SNOWFLAKE from "@/assets/img/SNOWFLAKE.svg";
+import SQL_SERVER from "@/assets/img/SQL_SERVER.svg";
 import SQLITE from "@/assets/img/SQLITE.svg";
 import TERADATA from "@/assets/img/TERADATA.png";
 import TIBCO from "@/assets/img/TIBCO.png";
 import TINKER from "@/assets/img/TINKER.png";
 import TRINO from "@/assets/img/TRINO.jpg";
 import TSV from "@/assets/img/TSV.svg";
-import ZIP from "@/assets/img/ZIP.png";
+import TXT from "@/assets/img/TXT.svg";
+import ZIP from "@/assets/img/ZIP.svg";
 import type { FormField } from "../shared/import-form.types";
 import {
 	COMMON_FILE_GENERAL_FIELDS,
@@ -295,7 +296,7 @@ export const DATABASE_CONNECTION = {
 		{
 			name: "TXT",
 			disable: false,
-			icon: CSV,
+			icon: TXT,
 			fields: [
 				...COMMON_FILE_GENERAL_FIELDS,
 				{

@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	ColumnTypeTransformationCell,
 	type ColumnTypeTransformationCellDef,
-} from "./ColumnTypeTransformationCell";
+} from "./column-type-transformation-cell";
 
 export const ColumnTypeTransformationCellConfig: CellConfig<ColumnTypeTransformationCellDef> =
 	{

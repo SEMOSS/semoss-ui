@@ -161,10 +161,9 @@ export class ChatStore {
 
 	getUser = async (): Promise<void> => {
 		try {
-			const result =
-				await this._actions.run<
-					[Record<string, { id: string; name: string }>]
-				>(`META | GetUserInfo()`);
+			const result = await this._actions.run<
+				[Record<string, { id: string; name: string }>]
+			>(`META | GetUserInfo();`);
 
 			if (!result) return;
 
@@ -297,6 +296,29 @@ export class ChatStore {
 	};
 
 	/**
+	 * Rename a room. Runs the RenameRoom pixel, updates the cached
+	 * room's metadata, and bumps the roomCounter so any room lists
+	 * elsewhere in the app (sidebar, chats page, per-agent timeline)
+	 * refetch and stay in sync.
+	 */
+	renameRoom = async (roomId: string, name: string): Promise<void> => {
+		const trimmed = name.trim();
+		if (!trimmed) {
+			throw new Error("Room name cannot be empty");
+		}
+		await this._actions.run<[boolean]>(
+			`META | RenameRoom(roomId=["${roomId}"], name=["<encode>${trimmed}</encode>"]);`,
+		);
+		runInAction(() => {
+			const cached = this._store.rooms[roomId];
+			if (cached) {
+				cached.setMetadata({ name: trimmed });
+			}
+			this._store.keys.roomCounter++;
+		});
+	};
+
+	/**
 	 * Load a room from the store or create a new one
 	 * @param roomId - Room to remove
 	 */
@@ -355,7 +377,7 @@ export class ChatStore {
 		});
 
 		const { pixelReturn } = await this._actions.run<[number | undefined]>(
-			`META | GetContextWindow(${JSON.stringify(engineId)})`,
+			`META | GetContextWindow(${JSON.stringify(engineId)});`,
 		);
 
 		if (this.models.selected?.engine_id === engineId) {
@@ -455,7 +477,7 @@ export class ChatStore {
 
 		// initially limit to 10 models
 		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			`META | MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 		);
 
 		runInAction(() => {
