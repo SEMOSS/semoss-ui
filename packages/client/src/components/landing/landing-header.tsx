@@ -36,14 +36,6 @@ const CARDS = [
 		type: "agent",
 		testId: "new-app-agent-btn",
 	},
-	{
-		title: "Create an insight",
-		description:
-			"Create queries, select components and organize dashboards to get the most out of your data.",
-		image: Appagent,
-		type: "insight",
-		testId: "new-app-insight-btn",
-	},
 ] as const;
 
 interface LandingHeaderProps {

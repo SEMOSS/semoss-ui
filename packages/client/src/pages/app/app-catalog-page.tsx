@@ -147,6 +147,32 @@ const SYSTEM_APPS: Record<string, AppMetadata> = {
 		tag: [],
 		description: "Execute commands and see a response",
 	},
+	INSIGHT: {
+		project_id: "insight-system-app",
+		project_name: "Insight",
+		project_type: "",
+		project_cost: "",
+		project_global: "",
+		project_catalog_name: "",
+		project_created_by: "SYSTEM",
+		project_created_by_type: "",
+		project_date_created: "",
+		project_date_last_edited: "",
+		project_has_portal: false,
+		project_portal_name: "",
+		project_portal_published_date: "",
+		project_published_user: "",
+		project_published_user_type: "",
+		project_reactors_compiled_date: "",
+		project_reactors_compiled_user: "",
+		project_reactors_compiled_user_type: "",
+		project_favorite: "",
+		user_permission: undefined,
+		group_permission: "",
+		tag: [],
+		description:
+			"Create queries, dashboards, and visualizations to get the most out of your data.",
+	},
 };
 
 /**
@@ -1052,7 +1078,10 @@ export const AppCatalogPage = observer((): JSX.Element => {
 												href={
 													app.project_name === "BI"
 														? "../../../"
-														: "../../../#!/embed-terminal"
+														: app.project_name ===
+																"Insight"
+															? "#/app/new/insight"
+															: "../../../#!/embed-terminal"
 												}
 												systemApp={true}
 												layout="responsive"
