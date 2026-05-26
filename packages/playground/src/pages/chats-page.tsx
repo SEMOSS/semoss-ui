@@ -11,7 +11,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
@@ -85,10 +85,10 @@ export const ChatsPage = observer(() => {
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
 		{ limit: 25 },
-		// roomCounter is incremented by the chat store whenever a chat
-		// is created / renamed / deleted; re-fetching here keeps the
-		// "All chats" list in sync across pages without a manual refresh.
-		[debouncedSearch, chat.keys.roomCounter],
+		// Re-fetch only on search change — counter-based refreshes are
+		// handled by the useEffect below, which calls reset() and
+		// preserves current data instead of clearing it first.
+		[debouncedSearch],
 	);
 
 	const { setScroll } = useInfiniteScroll({
@@ -114,6 +114,19 @@ export const ChatsPage = observer(() => {
 		() => setSelectedIds(new Set(visibleRooms.map((r) => r.ROOM_ID))),
 		[visibleRooms],
 	);
+
+	// Re-fetch when roomCounter increments (create / rename / delete from
+	// anywhere in the app) without clearing the list first. reset()
+	// preserves current data while the refetch runs, avoiding a blank flash.
+	const didInitialMount = useRef(false);
+	useEffect(() => {
+		chat.keys.roomCounter;
+		if (!didInitialMount.current) {
+			didInitialMount.current = true;
+			return;
+		}
+		getRooms.reset();
+	}, [getRooms.reset, chat.keys.roomCounter]);
 
 	// Keyboard shortcuts: Esc clears the current selection;
 	// Cmd/Ctrl+A selects all visible chats (only when focus isn't
