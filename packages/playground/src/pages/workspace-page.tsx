@@ -117,11 +117,11 @@ export const WorkspacePage = observer(() => {
 						</Button>
 					</div>
 					{/* Image appears only on large screens and above */}
-					<div className="relative @3xl:block hidden w-[351px] overflow-hidden rounded-r-lg">
+					<div className="relative @3xl:block hidden w-[351px] overflow-hidden rounded-e-lg">
 						<img
 							src={src}
 							alt={t("workspace:images.agentIllustration")}
-							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full select-none object-cover"
+							className="-translate-y-1/2 absolute start-0 top-1/2 h-[351px] w-full select-none object-cover"
 						/>
 					</div>
 				</div>

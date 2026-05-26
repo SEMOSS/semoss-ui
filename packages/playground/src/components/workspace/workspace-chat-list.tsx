@@ -277,7 +277,7 @@ export const WorkspaceChatList = ({
 					ref={(el) => {
 						if (el) setScroll(el);
 					}}
-					className={cn("overflow-y-auto pr-1", maxHeightClassName)}
+					className={cn("overflow-y-auto pe-1", maxHeightClassName)}
 				>
 					{showInitialLoading && renderState(<Spinner />)}
 					{showError &&
@@ -502,7 +502,7 @@ function ChatRow({
 	}
 
 	return (
-		<div className="group/row relative flex items-center gap-2 rounded-lg border border-border bg-card pr-3 pl-2 transition-colors hover:border-border/80 hover:bg-accent/40">
+		<div className="group/row relative flex items-center gap-2 rounded-lg border border-border bg-card ps-2 pe-3 transition-colors hover:border-border/80 hover:bg-accent/40">
 			{/* Stretched link: makes the whole row clickable */}
 			<Link
 				to={`/room/${room.room_id}`}
@@ -549,6 +549,7 @@ function ChatRow({
 			</div>
 
 			<span
+				dir="auto"
 				className="min-w-0 flex-1 truncate py-2.5 font-semibold text-foreground text-sm"
 				title={room.room_name}
 			>
@@ -604,7 +605,7 @@ function ChatRow({
 					<TooltipContent>{t("chat.delete")}</TooltipContent>
 				</Tooltip>
 
-				<ArrowRightIcon className="ml-1 size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
+				<ArrowRightIcon className="rtl:-scale-x-100 ms-1 size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
 			</div>
 		</div>
 	);

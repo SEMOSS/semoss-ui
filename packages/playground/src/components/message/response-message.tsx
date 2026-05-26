@@ -298,7 +298,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		return (
 			<div className="group">
-				<div className="mb-0 flex w-full flex-col gap-2 pr-3 sm:pr-10">
+				<div className="mb-0 flex w-full flex-col gap-2 pe-3 sm:pe-10">
 					{message.parts.map((p, pIdx) => {
 						const key = `message-part-${pIdx}`;
 						const isLast = pIdx === message.parts.length - 1;
@@ -516,7 +516,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													inputMessage.previousSibling.activateMessage();
 												}}
 											>
-												<ArrowLeftIcon />
+												<ArrowLeftIcon className="rtl:-scale-x-100" />
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent side="bottom">
@@ -546,7 +546,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 													inputMessage.nextSibling.activateMessage();
 												}}
 											>
-												<ArrowRightIcon />
+												<ArrowRightIcon className="rtl:-scale-x-100" />
 											</Button>
 										</TooltipTrigger>
 										<TooltipContent side="bottom">
