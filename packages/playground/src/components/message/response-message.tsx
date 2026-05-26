@@ -288,6 +288,16 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			})();
 
 		const hasText = message.parts.some((part) => part.type === "TEXT");
+
+		const hasVisibleContent = message.parts.some(
+			(part) =>
+				(part.type === "TEXT" &&
+					part.text.replace(/[\s\u00AD\u200B-\u200D\u2060]/g, "")
+						.length > 0) ||
+				part.type === "MEDIA" ||
+				part.type === "TOOL_CALL",
+		);
+
 		const hasImage = message.parts.some(
 			(part) => part.type === "MEDIA" && part.mediaInfo.base64Data,
 		);
@@ -491,6 +501,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									})}
 						</p>
 					)}
+					{!hasVisibleContent &&
+						message.id !== STREAMING_PLACEHOLDER_ID && (
+							<p className="text-muted-foreground text-sm italic">
+								{t("response.emptyResponse")}
+							</p>
+						)}
 				</div>
 
 				{message.id !== STREAMING_PLACEHOLDER_ID && (

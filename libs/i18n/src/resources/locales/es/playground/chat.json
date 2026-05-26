@@ -24,7 +24,8 @@
 		"completeToolsAsk_one": "Por favor, completa la herramienta para continuar.",
 		"completeToolsAsk_other": "Por favor, completa las herramientas para continuar.",
 		"completeToolsAuto_one": "Por favor, espera a que la herramienta se complete.",
-		"completeToolsAuto_other": "Por favor, espera a que las herramientas se completen."
+		"completeToolsAuto_other": "Por favor, espera a que las herramientas se completen.",
+		"emptyResponse": "Respuesta vacía."
 	},
 	"input": {
 		"copyMessage": "Copiar mensaje"
