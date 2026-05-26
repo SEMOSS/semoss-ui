@@ -1,4 +1,4 @@
-import { HighlightAlt } from "@mui/icons-material";
+import { Crosshair } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
@@ -176,7 +176,7 @@ const FormLayoutSettings = observer(({ id }: { id: string }) => {
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_LAYOUT,
-	icon: HighlightAlt,
+	icon: Crosshair,
 	contentMenu: [
 		// {
 		//     name: "Conditional",

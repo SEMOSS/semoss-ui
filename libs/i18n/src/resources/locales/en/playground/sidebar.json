@@ -2,6 +2,8 @@
 	"search": "Search",
 	"new": "New",
 	"agents": "Agents",
+	"allChats": "All chats",
+	"takeTour": "Take a Tour",
 	"buckets": {
 		"favorites": "Favorites",
 		"today": "Today",

@@ -1,6 +1,13 @@
-import { Clear } from "@mui/icons-material";
+import { X } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Autocomplete, IconButton, Modal, Select, Stack } from "@semoss/ui";
+import {
+	Button,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 
 interface LLMOverlayProps {
 	/** List of LLMs to select from */
@@ -27,36 +34,50 @@ export const LLMSelectOverlay = observer((props: LLMOverlayProps) => {
 
 	return (
 		<>
-			<Modal.Title>
-				<Stack direction="row" justifyContent="space-between">
-					<span>Select model to use across builder</span>
-					<IconButton
-						size="small"
-						title="close"
-						aria-label="close"
-						onClick={onClose}
-					>
-						<Clear />
-					</IconButton>
-				</Stack>
-			</Modal.Title>
-			<Modal.Content>
+			<div className="flex flex-row items-center justify-between border-border border-b p-4">
+				<span>Select model to use across builder</span>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					title="close"
+					aria-label="close"
+					onClick={onClose}
+				>
+					<X className="size-4" />
+				</Button>
+			</div>
+			<div className="p-4">
 				<Select
-					fullWidth={true}
-					size="small"
 					value={selectedLLM}
-					onChange={(e) => {
-						onSelect(e.target.value);
+					onValueChange={(value) => {
+						onSelect(value);
 						onClose();
 					}}
 				>
-					{llmList.map((LLM) => (
-						<Select.Item key={LLM.value} value={LLM.value}>
-							{LLM.label}
-						</Select.Item>
-					))}
+					<SelectTrigger className="w-full">
+						<SelectValue placeholder="Select model">
+							{llmList.find((l) => l.value === selectedLLM)
+								?.label ?? "Select model"}
+						</SelectValue>
+					</SelectTrigger>
+					<SelectContent>
+						{llmList.map((LLM) => (
+							<SelectItem
+								key={LLM.value}
+								value={LLM.value}
+								className="items-start"
+							>
+								<span className="flex flex-col">
+									<span>{LLM.label}</span>
+									<span className="text-muted-foreground text-xs">
+										id: {LLM.value}
+									</span>
+								</span>
+							</SelectItem>
+						))}
+					</SelectContent>
 				</Select>
-			</Modal.Content>
+			</div>
 		</>
 	);
 });

@@ -66,6 +66,12 @@ export const RDFMapPage = () => {
 										fallback: string,
 									) => {
 										if (value.startsWith("#")) {
+											// Expand 3-digit shorthand (#fff → #ffffff) which Monaco rejects
+											if (
+												/^#[0-9a-fA-F]{3}$/.test(value)
+											) {
+												return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+											}
 											return value;
 										}
 										const match =

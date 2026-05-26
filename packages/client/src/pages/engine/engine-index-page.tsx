@@ -1,7 +1,6 @@
 import { ArrowDown, ArrowUp, SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { runPixel, useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -28,6 +27,7 @@ import { Help } from "@/components/help";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { Filterbox } from "@/components/ui";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
@@ -463,6 +463,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							}}
 							filteredCatalogIds={[]}
 							hideHeaderToggleFrom="md"
+							colorizeValues
+							colorizeSelectedOnly
 						/>
 					</div>
 					<div className="flex h-full w-full flex-1 flex-col gap-6">
@@ -514,6 +516,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 														db.engine_display_name ||
 														db.engine_name
 													}
+													href={`#/engine/${route.path}/${db.engine_id}`}
 													desktopInlineMeta={true}
 													type={db.engine_type}
 													id={db.engine_id}
@@ -631,6 +634,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 														db.engine_display_name ||
 														db.engine_name
 													}
+													href={`#/engine/${route.path}/${db.engine_id}`}
 													desktopInlineMeta={true}
 													type={db.engine_type}
 													id={db.engine_id}

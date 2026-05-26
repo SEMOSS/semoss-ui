@@ -1,6 +1,6 @@
 import { ArrowDown, ArrowUp, Search, X } from "lucide-react";
 import { useEffect, useReducer, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import {
 	Button,
 	InputGroup,
@@ -19,6 +19,7 @@ import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard } from "@/components/engine";
 import { DeleteEntityDialog } from "@/components/shared/delete-entity-dialog";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { ENGINE_TYPES } from "@/types";
 
 export interface DBMember {
@@ -51,6 +52,19 @@ export interface Database {
 	hasUpvoted?: boolean;
 	engine_date_created?: string;
 }
+
+const ENGINE_SORT_FIELDS = ["ENGINENAME", "DATECREATED"] as const;
+type EngineSortField = (typeof ENGINE_SORT_FIELDS)[number];
+
+const isValidEngineSortField = (
+	value: string | null,
+): value is EngineSortField => {
+	return ENGINE_SORT_FIELDS.includes(value as EngineSortField);
+};
+
+const parseSortOrder = (value: string | null): "ASC" | "DESC" => {
+	return value === "DESC" ? "DESC" : "ASC";
+};
 
 const initialState = {
 	databases: [],
@@ -101,14 +115,25 @@ export const EngineSettingsIndexPage = (
 	const { adminMode } = useSettings();
 	const { configStore, monolithStore } = useRootStore();
 	const navigate = useNavigate();
+	const { search: locationSearch } = useLocation();
+
+	const urlSearchParams = new URLSearchParams(locationSearch);
+	const urlSort = urlSearchParams.get("sort");
+	const initialSearch = urlSearchParams.get("q") || "";
+	const initialSort = isValidEngineSortField(urlSort)
+		? urlSort
+		: "ENGINENAME";
+	const initialSortOrder = parseSortOrder(urlSearchParams.get("order"));
 
 	const [state, dispatch] = useReducer(reducer, initialState);
 	const { databases } = state;
 
-	const [search, setSearch] = useState("");
-	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [sort, setSort] = useState("ENGINENAME");
-	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">("ASC");
+	const [search, setSearch] = useState(initialSearch);
+	const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+	const [sort, setSort] = useState<EngineSortField>(initialSort);
+	const [sortOrder, setSortOrder] = useState<"ASC" | "DESC">(
+		initialSortOrder,
+	);
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
 	const [isSearching, setIsSearching] = useState(false);
@@ -135,6 +160,38 @@ export const EngineSettingsIndexPage = (
 			clearTimeout(timer);
 		};
 	}, [search]);
+
+	useEffect(() => {
+		const params = new URLSearchParams();
+
+		if (search) {
+			params.set("q", search);
+		}
+
+		if (sort !== "ENGINENAME") {
+			params.set("sort", sort);
+		}
+
+		if (sortOrder !== "ASC") {
+			params.set("order", sortOrder);
+		}
+
+		const nextSearch = params.toString();
+		const currentSearch = locationSearch.startsWith("?")
+			? locationSearch.slice(1)
+			: locationSearch;
+
+		if (nextSearch === currentSearch) {
+			return;
+		}
+
+		navigate(
+			{
+				search: nextSearch ? `?${nextSearch}` : "",
+			},
+			{ replace: true },
+		);
+	}, [search, sort, sortOrder, locationSearch, navigate]);
 
 	// get a list of the keys
 	const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -477,7 +534,11 @@ export const EngineSettingsIndexPage = (
 						<div className="w-[136px] sm:w-[148px]">
 							<Select
 								value={sort}
-								onValueChange={(value) => setSort(value)}
+								onValueChange={(value) => {
+									if (isValidEngineSortField(value)) {
+										setSort(value);
+									}
+								}}
 							>
 								<SelectTrigger
 									className="h-9 w-full"
@@ -548,6 +609,7 @@ export const EngineSettingsIndexPage = (
 									db.engine_display_name || db.engine_name;
 								const rowType = db.engine_type || type;
 								const rowSubtype = db.engine_subtype;
+								const detailHref = `#/settings/${type.toLowerCase()}/${db.engine_id}${locationSearch}`;
 
 								return (
 									<div key={`${db.engine_id}`}>
@@ -564,6 +626,7 @@ export const EngineSettingsIndexPage = (
 											votes={db.upvotes}
 											views={db.views}
 											trending={db.trending}
+											href={detailHref}
 											isGlobal={db.engine_global}
 											isUpvoted={db.hasUpvoted}
 											isFavorite={isFavorited(db)}
@@ -587,14 +650,20 @@ export const EngineSettingsIndexPage = (
 												favoriteDb(db);
 											}}
 											onClick={() => {
-												navigate(`${db.engine_id}`, {
-													state: {
-														name: engineName,
-														global: db.engine_global,
-														permission:
-															db.engine_user_permission,
+												navigate(
+													{
+														pathname: db.engine_id,
+														search: locationSearch,
 													},
-												});
+													{
+														state: {
+															name: engineName,
+															global: db.engine_global,
+															permission:
+																db.engine_user_permission,
+														},
+													},
+												);
 											}}
 											upvote={() => {
 												upvoteDb(db);

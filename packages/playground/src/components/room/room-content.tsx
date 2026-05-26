@@ -49,7 +49,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const { getGracefulErrorMessage } = useGracefulErrors();
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);
 	const [contentEle, setContentEle] = useState<HTMLDivElement | null>(null);
-
 	const [contentHeight, setContentHeight] = useState(0);
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
@@ -70,32 +69,6 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		await room.syncRoomOptions();
 
 		return true;
-	};
-
-	/**
-	 * Handle tool selection (toggle for plus menu)
-	 * @param tool - selected tool
-	 */
-	const handleToolSelect = (tool: MCPConfig) => {
-		// Toggle tool in options
-		const tools = room.options.mcp.reduce(
-			(acc, curr) => {
-				acc[curr.id] = curr;
-				return acc;
-			},
-			{} as Record<string, typeof tool>,
-		);
-
-		if (Object.hasOwn(tools, tool.id)) {
-			delete tools[tool.id];
-		} else {
-			tools[tool.id] = tool;
-		}
-
-		room.setOptions({
-			...room.options,
-			mcp: Object.values(tools),
-		});
 	};
 
 	/**
@@ -305,7 +278,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		for (const part of room.latestResponseMessage.parts) {
 			if (
 				part.type === "TOOL_CALL" &&
-				part.toolCall._meta.SMSS_MCP_EXECUTION === "auto"
+				part.toolCall._meta?.SMSS_MCP_EXECUTION === "auto"
 			) {
 				const tool = room.getTool(part.toolCall.id);
 				if (
@@ -325,7 +298,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		isAutoExecutingTools;
 
 	return (
-		<div className="flex h-full w-full flex-col bg-secondary-background transition-all duration-200 ease-in-out">
+		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
 				<ScrollArea
 					className="h-full w-full overflow-hidden"
@@ -454,8 +427,14 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}}
 					options={room.options}
 					onMcpSelect={handleToolAdd}
+					onMcpChange={(mcp) =>
+						room.setOptions({
+							...room.options,
+							mcp,
+						})
+					}
 					MenuComponent={observer(
-						({ onOpenChange, fileRef, editorRef }) => (
+						({ onOpenChange, fileRef, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
 									fileRef={fileRef}
@@ -465,16 +444,18 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<RoomInputMenuMCP
 									type="KNOWLEDGE"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									onSelect={() => {
+										onOpenMcpOverlay("KNOWLEDGE");
+										onOpenChange(false);
+									}}
 								/>
 								<RoomInputMenuMCP
 									type="TOOLBOX"
 									options={room.options}
-									onSelect={handleToolSelect}
-									editorRef={editorRef}
-									onOverlayClose={() => onOpenChange(false)}
+									onSelect={() => {
+										onOpenMcpOverlay("TOOLBOX");
+										onOpenChange(false);
+									}}
 								/>
 								<DropdownMenuSeparator />
 								<RoomInputMenuFileExplorer

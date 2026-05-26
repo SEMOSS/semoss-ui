@@ -1,83 +1,94 @@
 import {
 	BookOpenIcon,
-	EllipsisIcon,
 	HammerIcon,
+	Maximize2Icon,
 	MessagesSquareIcon,
+	PencilIcon,
 	PlusIcon,
-	SearchIcon,
+	SparklesIcon,
+	Trash2Icon,
 	UsersRound,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
-import { MembersTable } from "@semoss/shared";
+import {
+	AppCatalogAvatar,
+	getUserProjectPermission,
+	MembersTable,
+	type Role,
+} from "@semoss/shared";
 import {
 	Button,
-	cn,
 	Dialog,
 	DialogContent,
 	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuGroup,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-	InputGroup,
-	InputGroupAddon,
-	InputGroupInput,
 	Spinner,
-	Tabs,
-	TabsContent,
-	TabsList,
-	TabsTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 	toast,
-	useDebouncedValue,
 } from "@semoss/ui/next";
-import logoImage from "@/assets/img/logo.svg";
-import { WorkspaceChatList, WorkspaceMCPList } from "@/components";
-import { useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import {
+	InstructionsModal,
+	WorkspaceChatList,
+	WorkspaceMCPList,
+	WorkspacePromptList,
+} from "@/components";
+import { useGlobalBreadcrumbs } from "@/hooks";
 import { useChat } from "@/hooks/use-chat";
 import type { Workspace } from "@/types";
 
 /**
- * Renders the Workspace Detail Page, displaying information about a specific workspace
+ * Renders the Workspace (Agent) Detail Page.
  *
- * @component
+ * Read-only configuration view:
+ *   - Header: agent name + Edit / Delete actions (top right)
+ *   - About: description (when set) + instructions
+ *   - Continue recent chats: scrollable list with a max height
+ *   - Tabs: Knowledge / Toolboxes / Prompts / Members
  */
 export const WorkspaceDetailPage = observer(() => {
 	const { t } = useTranslation(["workspace", "common"]);
 
-	/**
-	 * Library Hooks
-	 */
 	const { workspaceId } = useParams<{ workspaceId: string }>();
 	const navigate = useNavigate();
 	const { chat } = useChat();
-	const { root } = useRoot();
 
-	/**
-	 * State
-	 */
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [tab, setTab] = useState<string>("chats");
-	const [search, setSearch] = useState<string>("");
-	const [deleteModal, setDeleteModal] = useState<boolean>(false);
+	const [isDeleting, setIsDeleting] = useState(false);
+	const [deleteModal, setDeleteModal] = useState(false);
+	const [instructionsModal, setInstructionsModal] = useState(false);
+	const [userPermission, setUserPermission] = useState<Role | null>(null);
 
-	/**
-	 * Library Hooks
-	 */
-	const debouncedSearch = useDebouncedValue(search);
+	useEffect(() => {
+		if (!workspaceId) return;
+		let cancelled = false;
+		(async () => {
+			try {
+				const permission = await getUserProjectPermission(workspaceId);
+				if (!cancelled && permission) {
+					setUserPermission(permission);
+				}
+			} catch {
+				// If permission fetch fails, leave as null — Edit/Delete stay hidden
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [workspaceId]);
 
-	// Fetch workspace details
+	const canEdit = userPermission === "EDIT" || userPermission === "OWNER";
+	const canDelete = userPermission === "OWNER";
+
 	const getWorkspace = usePixel<Workspace>(
 		workspaceId ? `GetWorkspace(workspaceId=["${workspaceId}"]);` : "",
 		{
-			data: null,
 			onError: (_d, e) => {
 				toast.error(
 					t("workspace:detail.failedToLoad", {
@@ -88,17 +99,10 @@ export const WorkspaceDetailPage = observer(() => {
 		},
 	);
 
-	// set the breadcrumbs
 	useGlobalBreadcrumbs({
 		breadcrumbs: [
-			{
-				name: t("workspace:breadcrumbs.home"),
-				path: "/",
-			},
-			{
-				name: t("workspace:breadcrumbs.agent"),
-				path: "/agent",
-			},
+			{ name: t("workspace:breadcrumbs.home"), path: "/" },
+			{ name: t("workspace:breadcrumbs.agent"), path: "/agent" },
 			{
 				name:
 					getWorkspace.status === "SUCCESS"
@@ -109,7 +113,10 @@ export const WorkspaceDetailPage = observer(() => {
 		],
 	});
 
-	if (getWorkspace.status === "LOADING" || isLoading) {
+	if (
+		getWorkspace.status === "LOADING" ||
+		(getWorkspace.status === "SUCCESS" && !getWorkspace.data)
+	) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
 				<Spinner />
@@ -117,197 +124,215 @@ export const WorkspaceDetailPage = observer(() => {
 		);
 	}
 
-	if (getWorkspace.status === "ERROR") {
+	if (getWorkspace.status === "ERROR" || !workspaceId) {
 		return <Navigate to="/agent" />;
 	}
 
+	const workspace = getWorkspace.data;
+	if (!workspace) {
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
+	}
+
+	const instructions = (workspace.system_prompt || "").replace(/\\n/g, "\n");
+	const hasDescription = !!workspace.description?.trim();
+	const hasInstructions = !!instructions.trim();
+
 	return (
-		<div
-			className={cn(
-				"relative",
-				tab !== "members" && "h-full",
-				"w-full overflow-hidden",
-			)}
-		>
-			<div
-				className={cn(
-					"mx-auto flex",
-					tab !== "members" && "h-full",
-					tab === "members" && "px-4",
-					"w-full max-w-5xl flex-col gap-6 px-12 pt-8 pb-4",
-				)}
-			>
-				<div className="flex flex-row gap-2">
-					<div className="items-center text-2xl">
-						<img
-							className="flex h-6 select-none flex-row items-center"
-							alt={t("common:images.logoAlt")}
-							src={root.theme?.images.logo || logoImage}
-						/>
-					</div>
-					<div className="space-y-2.5">
-						<div className="font-semibold text-2xl text-foreground leading-none">
-							{getWorkspace.data?.name}
-						</div>
-						<div className="text-base text-muted-foreground">
-							{getWorkspace.data?.description || ""}
+		<div className="@container h-full w-full overflow-y-auto">
+			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
+				{/* Sticky header so New Chat / Edit / Delete stay reachable while scrolling */}
+				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+					<AppCatalogAvatar
+						name={workspace.name}
+						className="size-10 shrink-0 rounded-md text-base"
+					/>
+					<div className="min-w-0 flex-1">
+						<div className="truncate font-semibold text-2xl text-foreground leading-tight">
+							{workspace.name}
 						</div>
 					</div>
-					<div className="flex-1" />
-					<DropdownMenu>
-						<DropdownMenuTrigger asChild>
-							<Button
-								variant="outline"
-								onClick={(e) => e.stopPropagation()}
-							>
-								<EllipsisIcon />
-							</Button>
-						</DropdownMenuTrigger>
-						<DropdownMenuContent align="end">
-							<DropdownMenuGroup>
-								<DropdownMenuItem asChild>
-									<Link to={`/agent/${workspaceId}/edit`}>
-										{t("workspace:actions.edit")}
-									</Link>
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={async (e) => {
-										e.stopPropagation();
-										setDeleteModal(true);
-										setIsLoading(true);
-										try {
-											await chat.deleteWorkspace(
-												workspaceId,
-											);
-
-											// go to the workspace
-											navigate("/agent");
-										} catch (e) {
-											toast.error(
-												e instanceof Error
-													? e.message
-													: t(
-															"workspace:detail.failedToDelete",
-														),
-											);
-										} finally {
-											setIsLoading(false);
+					<div className="flex shrink-0 items-center gap-2">
+						{canEdit && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										aria-label={t("workspace:actions.edit")}
+										onClick={() =>
+											navigate(
+												`/agent/${workspaceId}/edit`,
+											)
 										}
-									}}
-								>
+										data-testid="workspace-detail-page--edit-btn"
+									>
+										<PencilIcon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									{t("workspace:actions.edit")}
+								</TooltipContent>
+							</Tooltip>
+						)}
+						{canDelete && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<Button
+										variant="outline"
+										size="icon"
+										aria-label={t(
+											"workspace:actions.delete",
+										)}
+										onClick={() => setDeleteModal(true)}
+										data-testid="workspace-detail-page--delete-btn"
+									>
+										<Trash2Icon />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
 									{t("workspace:actions.delete")}
-								</DropdownMenuItem>
-							</DropdownMenuGroup>
-						</DropdownMenuContent>
-					</DropdownMenu>
-				</div>
-
-				<Tabs
-					value={tab}
-					onValueChange={(value) => setTab(value)}
-					className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden"
-				>
-					<div className="flex flex-row items-center justify-between gap-4">
-						<TabsList>
-							<TabsTrigger value="chats">
-								<MessagesSquareIcon />
-								{t("workspace:detail.tabs.myChats")}
-							</TabsTrigger>
-							<TabsTrigger value="knowledge">
-								<BookOpenIcon />
-								{t("workspace:detail.tabs.knowledge")}
-							</TabsTrigger>
-							<TabsTrigger value="toolbox">
-								<HammerIcon />
-								{t("workspace:detail.tabs.toolbox")}
-							</TabsTrigger>
-							<TabsTrigger value="members">
-								<UsersRound />
-								{t("workspace:detail.tabs.members")}
-							</TabsTrigger>
-						</TabsList>
+								</TooltipContent>
+							</Tooltip>
+						)}
 						<Button
-							variant="default"
-							onClick={() => {
-								navigate(`/new?workspaceId=${workspaceId}`);
-							}}
+							onClick={() =>
+								navigate(`/new?workspaceId=${workspaceId}`)
+							}
+							data-testid="workspace-detail-page--new-chat-btn"
 						>
 							<PlusIcon />
 							{t("workspace:actions.newChat")}
 						</Button>
 					</div>
-					<div
-						className={cn(
-							"flex min-h-0 w-full flex-1 flex-col items-start overflow-hidden rounded-xl",
-							tab !== "members" && "border border-border bg-card",
-						)}
-					>
-						{tab === "members" ? null : (
-							<div className="flex w-full flex-row gap-2 border-border border-b bg-primary-foreground p-4">
-								<InputGroup className="bg-background">
-									<InputGroupInput
-										placeholder={t("common:buttons.search")}
-										value={search}
-										onChange={(e) =>
-											setSearch(e.target.value)
-										}
-									/>
-									<InputGroupAddon>
-										<SearchIcon />
-									</InputGroupAddon>
-								</InputGroup>
-							</div>
-						)}
+				</div>
 
-						<TabsContent
-							value="chats"
-							className="w-full overflow-hidden"
-						>
-							{tab === "chats" && (
-								<WorkspaceChatList
-									workspaceId={workspaceId}
-									search={debouncedSearch}
-								/>
+				{/* Body — flows naturally; outer container scrolls */}
+				<div className="flex flex-col gap-8">
+					{/* Recent chats — timeline grouped by day */}
+					<section className="flex flex-col gap-4">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<MessagesSquareIcon className="size-5" />
+							{t("workspace:detail.recentChats.title")}
+						</h2>
+						<WorkspaceChatList workspaceId={workspaceId} />
+					</section>
+
+					{/* About */}
+					<section className="flex flex-col gap-4">
+						<h2 className="font-semibold text-foreground text-lg">
+							{t("workspace:detail.about.title")}
+						</h2>
+						{hasDescription ? (
+							<div className="flex flex-col gap-1">
+								<div className="text-muted-foreground text-xs uppercase tracking-wide">
+									{t("workspace:form.descriptionLabel")}
+								</div>
+								<div className="text-foreground text-sm">
+									{workspace.description}
+								</div>
+							</div>
+						) : null}
+						<div className="flex flex-col gap-1">
+							<div className="flex items-center justify-between">
+								<div className="text-muted-foreground text-xs uppercase tracking-wide">
+									{t("workspace:form.instructionsLabel")}
+								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									onClick={() => setInstructionsModal(true)}
+									data-testid="workspace-detail-page--expand-instructions-btn"
+								>
+									<Maximize2Icon />
+									{t("workspace:instructions.expand")}
+								</Button>
+							</div>
+							{hasInstructions ? (
+								<div className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 font-mono text-foreground text-xs">
+									{instructions}
+								</div>
+							) : (
+								<div className="rounded-md border border-border border-dashed bg-muted/20 p-3 text-muted-foreground text-sm italic">
+									{t("workspace:detail.about.noInstructions")}
+								</div>
 							)}
-						</TabsContent>
-						<TabsContent
-							value="knowledge"
-							className="w-full overflow-hidden"
-						>
-							{tab === "knowledge" && (
-								<WorkspaceMCPList
-									type="KNOWLEDGE"
-									workspaceId={workspaceId}
-									search={debouncedSearch}
-								/>
-							)}
-						</TabsContent>
-						<TabsContent
-							value="toolbox"
-							className="w-full overflow-hidden"
-						>
-							{tab === "toolbox" && (
-								<WorkspaceMCPList
-									type="TOOLBOX"
-									workspaceId={workspaceId}
-									search={debouncedSearch}
-								/>
-							)}
-						</TabsContent>
-						<TabsContent
-							value="members"
-							className="w-full overflow-hidden rounded-md"
-						>
-							{tab === "members" && (
-								<MembersTable
-									id={workspaceId}
-									type="WORKSPACE"
-								/>
-							)}
-						</TabsContent>
-					</div>
-				</Tabs>
+						</div>
+					</section>
+
+					{/* Knowledge */}
+					<section className="flex flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<BookOpenIcon className="size-5" />
+							{t("workspace:detail.tabs.knowledge")}
+						</h2>
+						<div className="min-h-32 rounded-xl border border-border bg-card">
+							<WorkspaceMCPList
+								type="KNOWLEDGE"
+								workspaceId={workspaceId}
+								search=""
+							/>
+						</div>
+					</section>
+
+					{/* Toolboxes */}
+					<section className="flex flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<HammerIcon className="size-5" />
+							{t("workspace:detail.tabs.toolbox")}
+						</h2>
+						<div className="min-h-32 rounded-xl border border-border bg-card">
+							<WorkspaceMCPList
+								type="TOOLBOX"
+								workspaceId={workspaceId}
+								search=""
+							/>
+						</div>
+					</section>
+
+					{/* Prompts */}
+					<section className="flex flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<SparklesIcon className="size-5" />
+							{t("workspace:detail.tabs.prompts")}
+						</h2>
+						<div className="min-h-32 rounded-xl border border-border bg-card">
+							<WorkspacePromptList
+								promptIds={workspace.prompts ?? []}
+							/>
+						</div>
+					</section>
+
+					{/* Members */}
+					<section className="flex flex-col gap-3">
+						<h2 className="flex items-center gap-2 font-semibold text-foreground text-lg">
+							<UsersRound className="size-5" />
+							{t("workspace:detail.tabs.members")}
+						</h2>
+						<div className="min-h-32">
+							<MembersTable
+								id={workspaceId}
+								type="WORKSPACE"
+								readOnly
+							/>
+						</div>
+					</section>
+				</div>
 			</div>
+
+			{/* Instructions modal (read-only) */}
+			<InstructionsModal
+				open={instructionsModal}
+				onOpenChange={setInstructionsModal}
+				value={instructions}
+				readOnly
+			/>
+
+			{/* Delete confirmation */}
 			<Dialog open={deleteModal} onOpenChange={setDeleteModal}>
 				<DialogContent>
 					<DialogHeader>
@@ -316,7 +341,7 @@ export const WorkspaceDetailPage = observer(() => {
 						</DialogTitle>
 						<DialogDescription>
 							{t("workspace:card.deleteConfirmDescription", {
-								name: getWorkspace?.data?.name,
+								name: workspace.name,
 							})}
 						</DialogDescription>
 					</DialogHeader>
@@ -327,32 +352,30 @@ export const WorkspaceDetailPage = observer(() => {
 								e.stopPropagation();
 								setDeleteModal(false);
 							}}
-							data-testid={`workspace-detail-page--cancel-delete-btn`}
+							data-testid="workspace-detail-page--cancel-delete-btn"
 						>
 							{t("common:buttons.cancel")}
 						</Button>
 						<Button
 							variant="destructive"
-							data-testid={`workspace-detail-page--confirm-delete-btn`}
+							data-testid="workspace-detail-page--confirm-delete-btn"
+							disabled={isDeleting}
 							onClick={async (e) => {
 								e.stopPropagation();
-
-								setIsLoading(true);
+								setIsDeleting(true);
 								try {
 									await chat.deleteWorkspace(workspaceId);
-
-									// go to the workspace
 									navigate("/agent");
-								} catch (e) {
+								} catch (err) {
 									toast.error(
-										e instanceof Error
-											? e.message
+										err instanceof Error
+											? err.message
 											: t(
 													"workspace:detail.failedToDelete",
 												),
 									);
 								} finally {
-									setIsLoading(false);
+									setIsDeleting(false);
 								}
 							}}
 						>

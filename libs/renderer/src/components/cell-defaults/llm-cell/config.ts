@@ -1,27 +1,40 @@
 import type { CellConfig } from "../../../store";
-import { LLMCell, type LLMCellDef } from "./LLMCell";
-// import { CodeCell } from "../code-cell";
+import { LLMCell, type LLMCellDef } from "./llm-cell";
 
-// export the config for the block
+const escapePixelString = (value: string): string => value.replace(/"/g, '\\"');
+
 export const LLMCellConfig: CellConfig<LLMCellDef> = {
 	name: "LLM",
 	widget: "llm",
 	view: LLMCell,
 	parameters: {
 		command: "",
-		variants: {},
+		models: [],
 	},
-	toPixel: ({ command, variants }) => {
-		const pixels = Object.keys(variants).map((key) => {
-			const { id, length, temperature, topP } = variants[key].model;
-			let pixel = `LLM(engine=["${id}"], command=["${command}"], paramValues=[{`;
-			if (temperature) pixel += `"temperature":${temperature},`;
-			if (topP) pixel += `"top_p":${topP},`;
-			if (length) pixel += `"max_new_tokens":${length},`;
-			pixel = pixel.replace(/,$/, "");
-			pixel += "}]);";
-			return pixel;
+	toPixel: ({ command, models }) => {
+		if (!Array.isArray(models) || models.length === 0) {
+			return [];
+		}
+
+		const safeCommand = escapePixelString(command ?? "");
+
+		return models.map((model) => {
+			let paramFragment = "";
+			if (model.params && model.params.trim()) {
+				try {
+					const parsed = JSON.parse(model.params);
+					if (
+						parsed &&
+						typeof parsed === "object" &&
+						Object.keys(parsed).length > 0
+					) {
+						paramFragment = `, paramValues=[${JSON.stringify(parsed)}]`;
+					}
+				} catch {
+					// Ignore invalid JSON — fall through without paramValues.
+				}
+			}
+			return `LLM(engine=["${model.id}"], command=["${safeCommand}"]${paramFragment});`;
 		});
-		return pixels;
 	},
 };

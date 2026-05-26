@@ -596,6 +596,11 @@ export class RoomStore {
 				const workspaceOutput = workspaceResponse.pixelReturn[0]
 					.output as Workspace;
 
+				// Store workspace name for display
+				if (workspaceOutput?.name && newOptions.workspace) {
+					newOptions.workspace.name = workspaceOutput.name;
+				}
+
 				// Merge workspace MCPs into the mcp array with fromWorkspace flag
 				if (
 					workspaceOutput?.mcp &&
@@ -635,7 +640,7 @@ export class RoomStore {
 			// set the model based on the history
 			if (activeModelId) {
 				const { pixelReturn } = await this.runRoomPixel<[Engine[]]>(
-					` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ], filterWord=${JSON.stringify(activeModelId)})`,
+					`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=['MODEL'], filterWord=${JSON.stringify(activeModelId)})`,
 				);
 
 				runInAction(() => {

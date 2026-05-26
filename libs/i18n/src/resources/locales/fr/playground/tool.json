@@ -1,0 +1,57 @@
+{
+	"status": {
+		"failed": "Échoué",
+		"cancelled": "Annulé",
+		"completed": "Terminé",
+		"ready": "Prêt",
+		"autoExecute": "Exécution automatique en cours",
+		"paused": "En pause",
+		"queued": "En file d'attente pour l'exécution automatique"
+	},
+	"actions": {
+		"cancel": "Annuler",
+		"expand": "Développer",
+		"collapse": "Réduire",
+		"openInSidebar": "Ouvrir dans le panneau latéral",
+		"closeInSidebar": "Fermer le panneau latéral",
+		"openInline": "Ouvrir en ligne"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} + {{count}} de plus",
+		"labelOpen": "Outils exécutés ({{count}})",
+		"summaryCompleted": "{{count}} terminé",
+		"summaryError": "{{count}} échoué",
+		"summaryCancelled": "{{count}} annulé",
+		"summaryPaused": "{{count}} en pause"
+	},
+	"form": {
+		"result": "Résultat",
+		"schemaLoadFailed": "Échec du chargement du schéma de l'outil",
+		"schemaLoadFailedDescription": "Impossible de récupérer la configuration de l'outil. Veuillez réessayer ultérieurement.",
+		"schemaLoading": "Chargement du schéma de l'outil...",
+		"noParameters": "Aucun paramètre requis",
+		"showParameters": "Afficher les paramètres ({{count}})",
+		"hideParameters": "Masquer les paramètres ({{count}})",
+		"showOptionalFields": "Afficher les champs optionnels ({{count}})",
+		"hideOptionalFields": "Masquer les champs optionnels ({{count}})",
+		"execute": "Exécuter l'outil",
+		"executing": "Exécution en cours..."
+	},
+	"playwright": {
+		"details": "Détails du script Playwright",
+		"projectId": "ID du projet",
+		"recordedFile": "Fichier enregistré"
+	},
+	"extension": {
+		"required": "Extension de navigateur requise",
+		"notResponding": "L'extension du navigateur ne répond pas. Pour exécuter des scripts Playwright, assurez-vous que l'extension SEMOSS pour Chrome est installée et que le panneau latéral est ouvert.",
+		"stepsTitle": "Étapes pour ouvrir l'extension :",
+		"step1": "Recherchez l'icône de l'extension SEMOSS dans la barre d'outils de votre navigateur (icône de pièce de puzzle)",
+		"step2": "Cliquez sur l'icône de l'extension pour ouvrir le panneau latéral",
+		"step3": "Attendez que le panneau se charge complètement",
+		"step4": "Cliquez sur « Réessayer » ci-dessous pour continuer",
+		"cancel": "Annuler",
+		"retry": "Réessayer",
+		"checking": "Vérification..."
+	}
+}

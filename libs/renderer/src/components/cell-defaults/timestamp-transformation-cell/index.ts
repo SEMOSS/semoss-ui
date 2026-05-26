@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./TimestampTransformationCell";
+export * from "./timestamp-transformation-cell";

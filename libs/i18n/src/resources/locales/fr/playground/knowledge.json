@@ -3,10 +3,10 @@
 	"aboutTitle": "À propos des bases de connaissances",
 	"whatIsKnowledgeStore": "Qu'est-ce qu'une base de connaissances?",
 	"ragDescription": "Le chat RAG (Retrieval-Augmented Generation) améliore les conversations IA en ancrant les réponses dans des données fiables. Choisissez parmi les bibliothèques ci-dessous pour recevoir une réponse faisant référence spécifiquement à ces documents.",
-	"subtitle": "Recherchez, filtrez et créez de nouvelles sources de connaissances.",
+	"subtitle": "Recherchez, filtrez et créez de nouvelles bases de connaissances.",
 	"newSource": {
-		"title": "Nouvelle source de connaissances",
-		"description": "Téléchargez des documents pour créer une nouvelle source de connaissances"
+		"title": "Nouvelle base de connaissances",
+		"description": "Téléchargez des documents pour créer une nouvelle base de connaissances"
 	},
 	"form": {
 		"nameLabel": "Nom",
@@ -25,7 +25,7 @@
 		"all": "Tout"
 	},
 	"actions": {
-		"createSource": "Créer une source de connaissances",
+		"createSource": "Créer une base de connaissances",
 		"viewDocuments": "Voir les documents",
 		"newChat": "Nouveau chat"
 	},
@@ -37,11 +37,11 @@
 	},
 	"documents": {
 		"title": "Documents",
-		"description": "Fichiers actuellement associés à cette source de connaissances."
+		"description": "Fichiers actuellement associés à cette base de connaissances."
 	},
 	"embedDocuments": {
 		"title": "Intégrer des documents dans une source existante",
-		"description": "Téléversez des documents à intégrer dans cette source de connaissances.",
+		"description": "Téléversez des documents à intégrer dans cette base de connaissances.",
 		"documents": "Documents",
 		"selectFiles": "Cliquez pour sélectionner des fichiers ou glissez-déposez",
 		"embedButton": "Intégrer les documents",
@@ -49,7 +49,7 @@
 		"removeFile": "Supprimer le fichier"
 	},
 	"embedMessages": {
-		"selectKnowledgeSource": "Veuillez sélectionner une source de connaissances",
+		"selectKnowledgeSource": "Veuillez sélectionner une base de connaissances",
 		"selectDocument": "Veuillez sélectionner au moins un document",
 		"embedSuccess": "Documents intégrés avec succès",
 		"embedFailed": "Échec de l'intégration des documents"
@@ -62,8 +62,8 @@
 	"detail": {
 		"knowledge": "Connaissances",
 		"embedDocuments": "Intégrer des documents",
-		"newKnowledgeCreated": "Une nouvelle source de connaissances a été créée. Vous pouvez maintenant la sélectionner pour intégrer des documents supplémentaires.",
-		"documentsDescription": "Documents actuellement intégrés dans cette source de connaissances.",
+		"newKnowledgeCreated": "Une nouvelle base de connaissances a été créée. Vous pouvez maintenant la sélectionner pour intégrer des documents supplémentaires.",
+		"documentsDescription": "Documents actuellement intégrés dans cette base de connaissances.",
 		"failedToLoadDocuments": "Échec du chargement des documents."
 	}
 }

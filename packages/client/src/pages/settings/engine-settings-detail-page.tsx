@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import { MembersTable } from "@semoss/shared";
 import { Tabs, TabsList, TabsTrigger } from "@semoss/ui/next";
 import {
@@ -8,6 +8,7 @@ import {
 	UpdateSMSS,
 } from "@/components/settings";
 import { useAPI, useSettings } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import type { ALL_TYPES, Role } from "@/types";
 
 type VIEW = "CURRENT" | "PENDING";
@@ -27,6 +28,7 @@ export const EngineSettingsUserDetailPage = (
 
 	const { id } = useParams();
 	const navigate = useNavigate();
+	const { search } = useLocation();
 
 	const [view, setView] = useState<VIEW>("CURRENT");
 	const [permission, setPermission] = useState<Role | null>(null);
@@ -68,7 +70,10 @@ export const EngineSettingsUserDetailPage = (
 					id={id}
 					direction="row"
 					onDelete={() => {
-						navigate("..", { relative: "path" });
+						navigate(
+							{ pathname: "..", search },
+							{ relative: "path" },
+						);
 					}}
 				/>
 			) : null}
@@ -110,6 +115,7 @@ export const EngineSettingsAdminDetailPage = (
 
 	const { id } = useParams();
 	const navigate = useNavigate();
+	const { search } = useLocation();
 
 	const [view, setView] = useState<VIEW>("CURRENT");
 
@@ -121,7 +127,7 @@ export const EngineSettingsAdminDetailPage = (
 				id={id}
 				direction="row"
 				onDelete={() => {
-					navigate("..", { relative: "path" });
+					navigate({ pathname: "..", search }, { relative: "path" });
 				}}
 			/>
 			<div className="flex w-full flex-col gap-4">

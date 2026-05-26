@@ -1,5 +1,13 @@
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react";
-import React, { createContext, type ReactNode, useContext } from "react";
+import React, {
+	createContext,
+	type ReactNode,
+	useContext,
+	useRef,
+} from "react";
+
+const DOUBLE_CLICK_MS = 250;
+
 import { cn } from "@/lib/utils";
 import { Spinner } from "./spinner";
 
@@ -7,6 +15,7 @@ interface TreeViewContextProps<T = unknown> {
 	expanded: string[];
 	onExpandChange?: (expanded: string[]) => void;
 	onItemSelect?: (item: T) => void;
+	onItemDoubleClick?: (item: T) => void;
 }
 
 const TreeViewContext = createContext<TreeViewContextProps | null>(null);
@@ -27,6 +36,7 @@ function useTreeView<T>() {
 interface TreeViewProps<T = unknown>
 	extends React.HTMLAttributes<HTMLDivElement> {
 	onItemSelect?: (item: T) => void;
+	onItemDoubleClick?: (item: T) => void;
 	expanded: string[];
 	onExpandChange: (expanded: string[]) => void;
 }
@@ -35,6 +45,7 @@ function TreeView<T>({
 	children,
 	className,
 	onItemSelect = () => null,
+	onItemDoubleClick,
 	expanded,
 	onExpandChange,
 	...otherProps
@@ -44,6 +55,9 @@ function TreeView<T>({
 			value={{
 				expanded: expanded,
 				onItemSelect: onItemSelect as (item: unknown) => void,
+				onItemDoubleClick: onItemDoubleClick as
+					| ((item: unknown) => void)
+					| undefined,
 				onExpandChange: onExpandChange,
 			}}
 		>
@@ -65,6 +79,7 @@ interface TreeViewItemProps<T = unknown>
 	label: ReactNode;
 	item: T;
 	loading?: boolean;
+	leadingIcon?: ReactNode;
 }
 
 const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
@@ -75,12 +90,14 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		className,
 		item,
 		loading,
+		leadingIcon,
 		...otherProps
 	}: TreeViewItemProps<T>,
 	ref: React.ForwardedRef<HTMLLIElement>,
 ) {
 	const treeView = useTreeView<T>();
 	const depth = useContext(DepthContext);
+	const lastClickRef = useRef<number>(0);
 
 	const isExpanded = treeView.expanded.includes(id);
 	const hasChildren = React.Children.count(children) > 0;
@@ -96,8 +113,14 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		}
 	};
 
-	const handleItemSelect = (event: React.SyntheticEvent) => {
+	const handleItemClick = (event: React.MouseEvent) => {
 		event.stopPropagation();
+		const now = Date.now();
+		const isDoubleClick = now - lastClickRef.current < DOUBLE_CLICK_MS;
+		lastClickRef.current = isDoubleClick ? 0 : now;
+		if (isDoubleClick) {
+			treeView.onItemDoubleClick?.(item);
+		}
 		treeView.onItemSelect?.(item);
 	};
 
@@ -120,7 +143,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 				{hasChildren ? (
 					<button
 						type="button"
-						className="mr-1 flex size-4 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-accent"
+						className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-accent"
 						onClick={handleItemToggle}
 						onKeyDown={(e) => {
 							if (e.key === "Enter" || e.key === " ") {
@@ -138,8 +161,12 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 							<ChevronRightIcon className="size-4" />
 						)}
 					</button>
+				) : leadingIcon ? (
+					<div className="flex size-4 shrink-0 items-center justify-center">
+						{leadingIcon}
+					</div>
 				) : (
-					<div className="mr-1 flex size-4 shrink-0" />
+					<div className="flex size-4 shrink-0" />
 				)}
 
 				{/* biome-ignore lint/a11y/useSemanticElements: this is valid */}
@@ -147,10 +174,10 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 					role="button"
 					tabIndex={0}
 					className="w-full overflow-hidden"
-					onClick={handleItemSelect}
+					onClick={handleItemClick}
 					onKeyDown={(e) => {
 						if (e.key === "Enter" || e.key === " ") {
-							handleItemSelect(e);
+							treeView.onItemSelect?.(item);
 						}
 					}}
 				>

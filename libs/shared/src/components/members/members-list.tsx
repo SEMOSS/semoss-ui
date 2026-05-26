@@ -62,6 +62,11 @@ interface MembersProps {
 	adminMode?: boolean;
 	currentUserId?: string;
 	myPermission?: string;
+	/**
+	 * Read-only mode: hides bulk-select, the checkbox column, the
+	 * per-row Actions, and renders permission as static text.
+	 */
+	readOnly?: boolean;
 }
 
 const formatValue = (input?: string) => {
@@ -72,6 +77,8 @@ const formatValue = (input?: string) => {
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
+		YEAR: "Yearly",
+		ALL_TIME: "All time",
 	};
 	return mappings[input.toUpperCase()] ?? input;
 };
@@ -88,6 +95,7 @@ export const MembersList = ({
 	adminMode = false,
 	currentUserId,
 	myPermission = "",
+	readOnly = false,
 }: MembersProps) => {
 	const [userData, setUserData] = useState<MemberUser[]>([]);
 	const [totalMembers, setTotalMembers] = useState<number>(0);
@@ -282,7 +290,9 @@ export const MembersList = ({
 		selectableUsers.length > 0 &&
 		selectableUsers.every((u) => selectedIds.has(u.id));
 	const someSelected = selectableUsers.some((u) => selectedIds.has(u.id));
-	const colCount = (type === "MODEL" ? 6 : 3) + (!isAddMember ? 2 : 0) + 1;
+	const showSelectionAndActions = !isAddMember && !readOnly;
+	const colCount =
+		(type === "MODEL" ? 6 : 3) + (showSelectionAndActions ? 2 : 0) + 1;
 
 	function toggleSelectAll() {
 		if (allSelected) {
@@ -319,13 +329,14 @@ export const MembersList = ({
 	return (
 		<>
 			<div className="flex h-full w-full flex-col" id={membersListId}>
-				{!isAddMember && selectedIds.size > 0 && (
+				{showSelectionAndActions && selectedIds.size > 0 && (
 					<div className="flex items-center justify-between border border-destructive/30 bg-destructive/5 px-3 py-2">
 						<span className="font-medium text-sm">
 							{selectedIds.size} user
 							{selectedIds.size !== 1 ? "s" : ""} selected
 						</span>
 						<Button
+							type="button"
 							variant="destructive"
 							size="sm"
 							onClick={() => {
@@ -347,10 +358,10 @@ export const MembersList = ({
 					</div>
 				)}
 				<div className="max-h-[400px] w-full overflow-y-auto">
-					<Table wrapperClassName="overflow-x-clip">
+					<Table wrapperClassName="overflow-x-auto">
 						<TableHeader className="sticky top-0 z-10 bg-background">
 							<TableRow>
-								{!isAddMember && (
+								{showSelectionAndActions && (
 									<TableHead className="w-10">
 										<Checkbox
 											checked={
@@ -376,7 +387,7 @@ export const MembersList = ({
 									</>
 								)}
 								<TableHead>Permission Date</TableHead>
-								{!isAddMember && (
+								{showSelectionAndActions && (
 									<TableHead className="w-px whitespace-nowrap">
 										Actions
 									</TableHead>
@@ -387,7 +398,7 @@ export const MembersList = ({
 							{userDataFiltered.length > 0 ? (
 								userDataFiltered.map((user) => (
 									<TableRow
-										key={`members-row-${user.email}`}
+										key={`members-row-${user.type}-${user.id}`}
 										data-state={
 											selectedIds.has(user.id)
 												? "selected"
@@ -401,7 +412,7 @@ export const MembersList = ({
 												: undefined
 										}
 									>
-										{!isAddMember && (
+										{showSelectionAndActions && (
 											<TableCell className="w-10">
 												<Checkbox
 													checked={
@@ -467,100 +478,111 @@ export const MembersList = ({
 											</span>
 										</TableCell>
 										<TableCell>
-											<DropdownMenu>
-												<DropdownMenuTrigger
-													asChild
-													disabled={
-														!canEditMembers ||
-														(user.permission ===
-															"OWNER" &&
-															(!canActOnOwners ||
+											{readOnly ? (
+												<span className="text-sm">
+													{returnAccessType(
+														user.permission,
+													)}
+												</span>
+											) : (
+												<DropdownMenu>
+													<DropdownMenuTrigger
+														asChild
+														disabled={
+															!canEditMembers ||
+															(user.permission ===
+																"OWNER" &&
+																(!canActOnOwners ||
 																!isMultipleOwnerUserAvailable)) ||
 														(allSelected &&
 															user.permission ===
 																"OWNER" &&
 															user.id ===
 																currentUserId)
-													}
-												>
-													<Button
-														variant="outline"
-														size="default"
-														className="w-[120px]"
-														disabled={
-															!canEditMembers ||
-															(user.permission ===
-																"OWNER" &&
-																(!canActOnOwners ||
+														}
+													>
+														<Button
+															type="button"
+															variant="outline"
+															size="default"
+															className="w-[120px]"
+															disabled={
+																!canEditMembers ||
+																(user.permission ===
+																	"OWNER" &&
+																	(!canActOnOwners ||
 																	!isMultipleOwnerUserAvailable)) ||
 															(allSelected &&
 																user.permission ===
 																	"OWNER" &&
 																user.id ===
 																	currentUserId)
-														}
-													>
-														<span>
-															{returnAccessType(
-																user.permission,
-															)}
-														</span>
-														<ChevronDown className="ml-auto h-4 w-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent>
-													<DropdownMenuRadioGroup>
-														<DropdownMenuCheckboxItem
-															checked={
-																returnAccessType(
-																	user.permission,
-																) === "Viewer"
-															}
-															onCheckedChange={() =>
-																updateUserPermission(
-																	user,
-																	"READ_ONLY",
-																)
 															}
 														>
-															Viewer
-														</DropdownMenuCheckboxItem>
-														<DropdownMenuCheckboxItem
-															checked={
-																returnAccessType(
+															<span>
+																{returnAccessType(
 																	user.permission,
-																) === "Editor"
-															}
-															onCheckedChange={() =>
-																updateUserPermission(
-																	user,
-																	"EDIT",
-																)
-															}
-														>
-															Editor
-														</DropdownMenuCheckboxItem>
-														{canShowOwnerOption && (
+																)}
+															</span>
+															<ChevronDown className="ml-auto h-4 w-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent>
+														<DropdownMenuRadioGroup>
 															<DropdownMenuCheckboxItem
 																checked={
 																	returnAccessType(
 																		user.permission,
 																	) ===
-																	"Owner"
+																	"Viewer"
 																}
 																onCheckedChange={() =>
 																	updateUserPermission(
 																		user,
-																		"OWNER",
+																		"READ_ONLY",
 																	)
 																}
 															>
-																Owner
+																Viewer
 															</DropdownMenuCheckboxItem>
-														)}
-													</DropdownMenuRadioGroup>
-												</DropdownMenuContent>
-											</DropdownMenu>
+															<DropdownMenuCheckboxItem
+																checked={
+																	returnAccessType(
+																		user.permission,
+																	) ===
+																	"Editor"
+																}
+																onCheckedChange={() =>
+																	updateUserPermission(
+																		user,
+																		"EDIT",
+																	)
+																}
+															>
+																Editor
+															</DropdownMenuCheckboxItem>
+															{canShowOwnerOption && (
+																<DropdownMenuCheckboxItem
+																	checked={
+																		returnAccessType(
+																			user.permission,
+																		) ===
+																		"Owner"
+																	}
+																	onCheckedChange={() =>
+																		updateUserPermission(
+																			user,
+																			"OWNER",
+																		)
+																	}
+																>
+																	Owner
+																</DropdownMenuCheckboxItem>
+															)}
+														</DropdownMenuRadioGroup>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											)}
 										</TableCell>
 										{type === "MODEL" &&
 											(() => {
@@ -602,10 +624,11 @@ export const MembersList = ({
 												{user.date_added ?? "—"}
 											</span>
 										</TableCell>
-										{!isAddMember && (
+										{showSelectionAndActions && (
 											<TableCell>
 												<div className="flex items-center gap-1">
 													<Button
+														type="button"
 														variant="outline"
 														size="icon-sm"
 														className="border-none"
@@ -628,6 +651,7 @@ export const MembersList = ({
 														<Pencil className="h-4 w-4" />
 													</Button>
 													<Button
+														type="button"
 														variant="outline"
 														size="icon-sm"
 														className="border-none"
@@ -704,7 +728,7 @@ export const MembersList = ({
 					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2 pr-1">
 						{usersToDelete.map((u) => (
 							<div
-								key={u.id}
+								key={`${u.type}-${u.id}`}
 								className="flex items-center gap-3 rounded-md border bg-muted/40 px-3 py-2.5"
 							>
 								<Avatar className="h-9 w-9 items-center justify-center bg-muted text-muted-foreground text-sm">

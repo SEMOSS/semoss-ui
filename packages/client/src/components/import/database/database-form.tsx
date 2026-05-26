@@ -1,10 +1,11 @@
 /** biome-ignore-all lint/a11y/noStaticElementInteractions: legacy form layout relies on non-interactive wrappers with delegated events */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: legacy form layout relies on delegated keyboard handling */
+
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
 import { console as getPixelConsole } from "@semoss/sdk/react";
+import { PairedFileUpload, type PairedFileUploadRow } from "@semoss/shared";
 import {
 	Button,
 	Checkbox,
@@ -33,11 +34,14 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
-import DataSelection from "./data-selection";
-import ExcelDataSelection from "./excel-data-selection";
-import { MetaModelConnections } from "./meta-model-connections";
-import { MetaModelType } from "./meta-model-type";
-import TableViewSelector from "./table-view-model";
+import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
+import { computeOptions, computeVisibility } from "../shared/import-form.utils";
+import DataSelection from "./flat-table-column-editor";
+import ExcelDataSelection from "./flat-table-column-editor-excel";
+import TableViewSelector from "./jdbc-table-selector";
+import { MetaModelType } from "./metamodel-editor-csv";
+import { MetaModelConnections } from "./metamodel-editor-jdbc";
 
 const hasParameterizedValue = (str: string) => /<([^>]+)>/.test(str);
 const CONSOLE_POLL_INTERVAL_MS = 1000;
@@ -60,13 +64,14 @@ export const DatabaseForm = ({
 	selectedTab,
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
 }) => {
 	const [step, setStep] = useState<
-		"fileupload" | "table" | "metaModel" | "propFile" | "connections"
-	>("fileupload");
+		"fileUpload" | "table" | "metaModel" | "connections"
+	>("fileUpload");
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [parsedData, setParsedData] = useState<ParsedResult[]>([]);
@@ -86,20 +91,16 @@ export const DatabaseForm = ({
 	const [connectionViewModel, setConnectionViewModel] =
 		useState<boolean>(false);
 	const [formData, setFormData] = useState({});
-	const fileInputRef = useRef<HTMLInputElement>(null);
+	const [pairedFiles, setPairedFiles] = useState<PairedFileUploadRow[]>([]);
+	const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
 	const updateStepBasedOnMetaModel = (METAMODEL_TYPE) => {
-		if (
-			METAMODEL_TYPE === "asFlatTable" ||
-			METAMODEL_TYPE === "fromScratch"
-		) {
+		if (METAMODEL_TYPE === "asFlatTable") {
 			setStep("table");
 		} else if (METAMODEL_TYPE === "asSuggestedMetaModel") {
 			setStep("metaModel");
-		} else if (METAMODEL_TYPE === "frompropFile") {
-			setStep("propFile");
 		} else {
-			setStep("fileupload");
+			setStep("fileUpload");
 		}
 	};
 
@@ -107,6 +108,7 @@ export const DatabaseForm = ({
 		control,
 		handleSubmit,
 		watch,
+		getValues,
 		setValue,
 		setFocus,
 		formState,
@@ -134,38 +136,56 @@ export const DatabaseForm = ({
 	const [loadingMessage, setLoadingMessage] = useState("Loading...");
 	const [loadingLogMessages, setLoadingLogMessages] = useState<string[]>([]);
 	const [openLoadingLog, setOpenLoadingLog] = useState(false);
-	const databaseType = watch("DATABASE_TYPE");
+	const metamodelType = watch("METAMODEL_TYPE");
 
+	// Collect all field keys referenced by showWhen / optionsWhen rules
+	const watchKeys = useMemo(
+		() => [
+			...new Set(
+				fields.flatMap(
+					(f: {
+						showWhen?: unknown;
+						optionsWhen?: { field: string }[];
+					}) => [
+						...(f.showWhen
+							? (Array.isArray(f.showWhen)
+									? f.showWhen
+									: [f.showWhen]
+								).map((r: { field: string }) => r.field)
+							: []),
+						...(f.optionsWhen ?? []).map((r) => r.field),
+					],
+				),
+			),
+		],
+		[fields],
+	);
+	const watchedValues = Object.fromEntries(
+		(watchKeys as string[]).map((k) => [k, watch(k)]),
+	);
+
+	// Clear pairedFiles when leaving fromPropFile mode
 	useEffect(() => {
-		setResolvedFields((prev) =>
-			prev.map((f) => {
-				if (f.key === "METAMODEL_TYPE") {
-					if (databaseType?.toLowerCase() === "r") {
-						return {
-							...f,
-							options: {
-								...f.options,
-								options: f.options.options.filter(
-									(opt) => opt.value === "asFlatTable",
-								),
-							},
-						};
-					}
-					return {
-						...f,
-						options: {
-							...f.options,
-							options:
-								fields.find(
-									(orig) => orig.key === "METAMODEL_TYPE",
-								)?.options.options || f.options.options,
-						},
-					};
-				}
-				return f;
-			}),
-		);
-	}, [databaseType, fields]);
+		if (metamodelType !== "fromPropFile") setPairedFiles([]);
+	}, [metamodelType]);
+
+	// Auto-correct select values that are no longer in the available options
+	// biome-ignore lint/correctness/useExhaustiveDependencies: getValues/setValue are stable react-hook-form refs
+	useEffect(() => {
+		for (const f of fields) {
+			if (!f.optionsWhen) continue;
+			const available = computeOptions(f, watchedValues);
+			const current = getValues(f.key);
+			if (
+				!available.some(
+					(o: { value: string }) => o.value === current,
+				) &&
+				available[0]
+			) {
+				setValue(f.key, available[0].value);
+			}
+		}
+	}, [watchedValues, fields]);
 
 	const grouped = defaultFields.reduce((acc, f) => {
 		if (!acc[f.category]) acc[f.category] = [];
@@ -181,7 +201,7 @@ export const DatabaseForm = ({
 			setFormData(formData);
 			const pixel = `
             ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(formData)}]);
-           
+
         `;
 			try {
 				const response = await monolithStore.runQuery(pixel);
@@ -203,15 +223,108 @@ export const DatabaseForm = ({
 			setLoading(false);
 			return;
 		}
+
+		if (formData.dbDriver) {
+			if (formData.UPLOAD_MODE === "empty") {
+				// Create an empty database without uploading a file
+				try {
+					const meta = {
+						...(formData.DATABASE_DESCRIPTION && {
+							description: formData.DATABASE_DESCRIPTION,
+						}),
+						...(formData.DATABASE_TAG && {
+							tag: formData.DATABASE_TAG,
+						}),
+					};
+					const pixel = `databaseVar = CreateEmptyRdbmsDatabase(database=[${JSON.stringify(formData.NAME)}], rdbmsType=[${JSON.stringify(formData.dbDriver)}], username=[${JSON.stringify(formData.USERNAME ?? "")}], password=[${JSON.stringify(formData.PASSWORD ?? "")}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
+					const response = await monolithStore.runQuery(pixel);
+					if (response.errors?.length > 0) {
+						toast.error(response.errors.join(""));
+						setLoading(false);
+						return;
+					}
+					const engineOutput = response.pixelReturn[0].output as {
+						engine_id?: string;
+						database_id?: string;
+					};
+					const engineId =
+						engineOutput.engine_id || engineOutput.database_id;
+					toast.success("Successfully created database.");
+					navigate(`/engine/database/${engineId}`);
+				} catch {
+					toast.error(
+						"An error occurred while creating the database.",
+					);
+				}
+				setLoading(false);
+				return;
+			}
+
+			// File upload path: upload the file then run the external JDBC flow
+			if (!formData.FILE_UPLOAD?.length) {
+				toast.error("Please upload a file.");
+				setLoading(false);
+				return;
+			}
+			try {
+				const uploadedFiles = await uploadFile(
+					formData.FILE_UPLOAD,
+					configStore.store.insightID,
+				);
+				if (
+					!uploadedFiles ||
+					!Array.isArray(uploadedFiles) ||
+					uploadedFiles.length === 0
+				) {
+					toast.error("Upload failed or returned invalid response.");
+					setLoading(false);
+					return;
+				}
+				const { fileLocation } = uploadedFiles[0];
+				// Build clean connection details: replace FILE_UPLOAD with the uploaded file path
+				const {
+					FILE_UPLOAD: _removed,
+					UPLOAD_MODE: _mode,
+					...rest
+				} = formData;
+				const connectionData = { ...rest, hostname: fileLocation };
+				setFormData(connectionData);
+				setFormValues(connectionData);
+				const pixel = `ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(connectionData)}]);`;
+				const response = await monolithStore.runQuery(pixel);
+				const { output, operationType } = response.pixelReturn[0];
+				if (operationType.includes("ERROR")) {
+					toast.error(output as string);
+					setLoading(false);
+					return;
+				}
+				setConnectionViewModel(true);
+				setConnectionValues(
+					(response?.pixelReturn?.[0]
+						?.output as ConnectionValuesType) || null,
+				);
+			} catch {
+				toast.error("Error during file upload or database connection.");
+			}
+			setLoading(false);
+			return;
+		}
+		if (formData.METAMODEL_TYPE === "fromPropFile") {
+			// uploads handled inside the fromPropFile branch below
+		}
 		try {
-			const uploadedFilesResponse = await uploadFile(
-				formData.FILE_UPLOAD,
-				configStore.store.insightID,
-			);
+			const uploadedFilesResponse =
+				formData.METAMODEL_TYPE === "fromPropFile"
+					? []
+					: await uploadFile(
+							formData.FILE_UPLOAD,
+							configStore.store.insightID,
+						);
 
 			if (
-				!uploadedFilesResponse ||
-				!Array.isArray(uploadedFilesResponse)
+				formData.METAMODEL_TYPE !== "fromPropFile" &&
+				(!uploadedFilesResponse ||
+					!Array.isArray(uploadedFilesResponse))
 			) {
 				toast.error("Upload failed or returned invalid response.");
 				setValue("DATABASE_TYPE", formData.DATABASE_TYPE);
@@ -221,10 +334,7 @@ export const DatabaseForm = ({
 
 			let pixelExpressions: string[] = [];
 
-			if (
-				formData.METAMODEL_TYPE === "asFlatTable" ||
-				formData.METAMODEL_TYPE === "fromScratch"
-			) {
+			if (formData.METAMODEL_TYPE === "asFlatTable") {
 				if (title === "Excel") {
 					pixelExpressions = uploadedFilesResponse.map(
 						(file) =>
@@ -241,9 +351,104 @@ export const DatabaseForm = ({
 					(file) =>
 						`PredictMetamodel(filePath=["${file.fileLocation}"], delimiter=["${formData.DELIMITER}"], rowCount=[false])`,
 				);
-			} else if (formData.METAMODEL_TYPE === "frompropFile") {
-				toast.error("Prop File is not implemented.");
-				setLoading(false);
+			} else if (formData.METAMODEL_TYPE === "excelLoaderSheetFormat") {
+				try {
+					const filePath = uploadedFilesResponse[0].fileLocation;
+					const customBaseURI =
+						formData.CUSTOM_BASE_URI ||
+						"http://semoss.org/ontologies";
+					const meta = {
+						...(formData.DATABASE_DESCRIPTION && {
+							description: formData.DATABASE_DESCRIPTION,
+						}),
+						...(formData.DATABASE_TAG && {
+							tag: formData.DATABASE_TAG,
+						}),
+					};
+					const pixel = `databaseVar = RdfLoaderSheetUpload(database=[${JSON.stringify(formData.DATABASE_NAME)}], filePath=["${filePath}"], customBaseURI=[${JSON.stringify(customBaseURI)}]);SetDatabaseMetadata(database=[databaseVar], meta=[${JSON.stringify(meta)}]);SyncDatabaseWithLocalMaster(database=[databaseVar]);`;
+					const response = await runPixelWithConsole(pixel);
+					if (response.errors?.length > 0) {
+						toast.error(response.errors.join(""));
+						return;
+					}
+					const out = response.pixelReturn[0].output as {
+						engine_id?: string;
+						database_id?: string;
+					};
+					toast.success("Successfully created database.");
+					navigate(
+						`/engine/database/${out.engine_id || out.database_id}`,
+					);
+				} catch {
+					toast.error("An error occurred during Excel RDF upload.");
+				} finally {
+					setLoading(false);
+				}
+				return;
+			} else if (formData.METAMODEL_TYPE === "fromPropFile") {
+				const validPairs = pairedFiles.filter((r) => r.dataFile);
+				if (validPairs.length === 0) {
+					toast.error("Please upload at least one data file.");
+					setLoading(false);
+					return;
+				}
+				try {
+					const parsedResults: ParsedResult[] = [];
+					const names: string[] = [];
+					let firstCsvPath: string | undefined;
+
+					for (const pair of validPairs) {
+						const [csvUpload, propUpload] = await Promise.all([
+							uploadFile(
+								[pair.dataFile as File],
+								configStore.store.insightID,
+							),
+							pair.propFile
+								? uploadFile(
+										[pair.propFile as File],
+										configStore.store.insightID,
+									)
+								: Promise.resolve(null),
+						]);
+						if (!csvUpload?.length) {
+							toast.error(
+								`Failed to upload ${(pair.dataFile as File).name}.`,
+							);
+							setLoading(false);
+							return;
+						}
+						const csvPath = csvUpload[0].fileLocation;
+						const propPath = propUpload?.[0]?.fileLocation;
+						if (!firstCsvPath) firstCsvPath = csvPath;
+
+						const pixel = propPath
+							? `ParseMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false], propFile=["${propPath}"])`
+							: `PredictMetamodel(filePath=["${csvPath}"], delimiter=["${formData.DELIMITER ?? ","}"], rowCount=[false])`;
+						const response = await monolithStore.runQuery(pixel);
+						if (response.errors?.length > 0) {
+							toast.error(response.errors.join(""));
+							setLoading(false);
+							return;
+						}
+						parsedResults.push(
+							response?.pixelReturn?.[0]?.output as ParsedResult,
+						);
+						const name = csvPath.split(/[/\\]/).pop() || "";
+						names.push(name);
+					}
+
+					setFilePath(firstCsvPath);
+					setTableName(names.map((n) => n.replace(/\.[^.]+$/, "")));
+					setExcelFileName(names);
+					setParsedData(parsedResults);
+					setStep("metaModel");
+				} catch {
+					toast.error(
+						"An error occurred while processing the files.",
+					);
+				} finally {
+					setLoading(false);
+				}
 				return;
 			} else {
 				pixelExpressions = uploadedFilesResponse.map(
@@ -257,7 +462,10 @@ export const DatabaseForm = ({
 
 			for (const pixelString of pixelExpressions) {
 				const response = await monolithStore.runQuery(pixelString);
-				const output = response?.pixelReturn?.[0]?.output;
+				const output = response?.pixelReturn?.[0]?.output as {
+					engine_id?: string;
+					database_id?: string;
+				} & ParsedResult;
 				const pixelExpression =
 					response?.pixelReturn?.[0]?.pixelExpression;
 				const filePathMatch = pixelExpression?.match(
@@ -272,7 +480,7 @@ export const DatabaseForm = ({
 					fileNames.push(name);
 				}
 				setFilePath(filePathFromExpression);
-				parsedResults.push(output);
+				parsedResults.push(output as ParsedResult);
 				if (title === "ZIP") {
 					// engine_id is the current key; database_id is the legacy fallback
 					navigate(
@@ -286,7 +494,11 @@ export const DatabaseForm = ({
 			setTableName(tableName);
 			setExcelFileName(fileNames);
 			setParsedData(parsedResults);
-			updateStepBasedOnMetaModel(formData.METAMODEL_TYPE);
+			if (formData.DATABASE_TYPE === "rdf") {
+				setStep("metaModel");
+			} else {
+				updateStepBasedOnMetaModel(formData.METAMODEL_TYPE);
+			}
 		} catch {
 			toast.error("An error occurred during upload.");
 		} finally {
@@ -413,7 +625,13 @@ export const DatabaseForm = ({
 
 				const assignmentPrefix = index === 0 ? `databaseVar = ` : ``;
 
-				const command = `${assignmentPrefix}RdbmsCsvUpload(
+				const isRdf = formValuesLocal.DATABASE_TYPE === "rdf";
+				const uploadReactor = isRdf ? "RdfCsvUpload" : "RdbmsCsvUpload";
+				const customBaseURIParam = isRdf
+					? `, customBaseURI=[${JSON.stringify(formValuesLocal.CUSTOM_BASE_URI || "http://semoss.org/ontologies")}]`
+					: "";
+
+				const command = `${assignmentPrefix}${uploadReactor}(
           database=${databaseParam},
           filePath=["${String(filePath ?? "")}"],
           delimiter=["${String(formValuesLocal.DELIMITER ?? "")}"],
@@ -422,7 +640,7 @@ export const DatabaseForm = ({
           newHeaders=[${JSON.stringify(newHeaders)}],
           additionalDataTypes=[${JSON.stringify(additionalDataTypes)}],
           descriptionMap=[${JSON.stringify(descriptionMap)}],
-          logicalNamesMap=[${JSON.stringify(logicalNamesMap)}],
+          logicalNamesMap=[${JSON.stringify(logicalNamesMap)}]${customBaseURIParam},
           existing=${existingParam}
         );`;
 
@@ -447,7 +665,10 @@ export const DatabaseForm = ({
 				return;
 			}
 
-			const engineOutput = response.pixelReturn[0].output;
+			const engineOutput = response.pixelReturn[0].output as {
+				engine_id?: string;
+				database_id?: string;
+			};
 			// engine_id is the current key; database_id is the legacy fallback
 			const engineId = engineOutput.engine_id || engineOutput.database_id;
 
@@ -482,12 +703,15 @@ export const DatabaseForm = ({
 		pixelStatements += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
 		try {
 			const response = await runPixelWithConsole(pixelStatements);
-			const { output } = response.pixelReturn[0];
+			const output = response.pixelReturn[0].output as {
+				engine_id?: string;
+				database_id?: string;
+			};
 			if (response.errors?.length > 0) {
 				toast.error(response.errors.join(""));
 				return;
 			}
-			toast.success("Successfully Created Database");
+			toast.success("Successfully created database");
 			// engine_id is the current key; database_id is the legacy fallback
 			navigate(
 				`/engine/database/${output.engine_id || output.database_id}`,
@@ -524,7 +748,10 @@ export const DatabaseForm = ({
 
 		try {
 			const response = await runPixelWithConsole(pixel);
-			const { output } = response.pixelReturn[0];
+			const output = response.pixelReturn[0].output as {
+				engine_id?: string;
+				database_id?: string;
+			};
 			if (response.errors?.length > 0) {
 				toast.error(response.errors.join(""));
 				return;
@@ -547,7 +774,7 @@ export const DatabaseForm = ({
 	};
 
 	const handleCancel = () => {
-		setStep("fileupload");
+		setStep("fileUpload");
 	};
 
 	const submitExternalConnectionUpload = async (formValues) => {
@@ -556,7 +783,8 @@ export const DatabaseForm = ({
 				([key]) =>
 					key !== "NAME" &&
 					key !== "DATABASE_DESCRIPTION" &&
-					key !== "DATABASE_TAGS" &&
+					key !== "DATABASE_TAG" &&
+					key !== "FILE_UPLOAD" &&
 					key !== "relationships" &&
 					key !== "tables" &&
 					key !== "positions",
@@ -577,7 +805,10 @@ export const DatabaseForm = ({
 		const pixel = `newDbInfo=RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues.NAME}"], metamodel=[{"relationships":${JSON.stringify(formValues.relationships)},"tables":${JSON.stringify(formValues.tables)}}]);SetDatabaseMetadata(database=[newDbInfo],meta=[${JSON.stringify(meta)}]);SaveOwlPositions(database=[newDbInfo],positionMap=[${JSON.stringify(formValues.positions)}]);SyncDatabaseWithLocalMaster(database=[newDbInfo]);`;
 		try {
 			const response = await runPixelWithConsole(pixel);
-			const { output } = response.pixelReturn[0];
+			const output = response.pixelReturn[0].output as {
+				engine_id?: string;
+				database_id?: string;
+			};
 			if (response.errors?.length > 0) {
 				toast.error(response.errors.join(""));
 				return;
@@ -656,7 +887,7 @@ export const DatabaseForm = ({
 			const operationType = response.pixelReturn[0].operationType;
 
 			if (operationType.includes("ERROR")) {
-				toast.error(output);
+				toast.error(output as string);
 				return;
 			}
 
@@ -673,7 +904,11 @@ export const DatabaseForm = ({
 									...f,
 									options: {
 										...f.options,
-										options: output.map((opt) => ({
+										options: (
+											output as {
+												[key: string]: string;
+											}[]
+										).map((opt) => ({
 											display:
 												opt[f.options.optionDisplay],
 											value: opt[f.options.optionValue],
@@ -723,11 +958,11 @@ export const DatabaseForm = ({
 		const operationType = response.pixelReturn[0].operationType;
 
 		if (operationType.includes("ERROR")) {
-			toast.error(output);
+			toast.error(output as string);
 			return false;
 		}
 
-		if (output.exists) {
+		if ((output as { exists?: boolean }).exists) {
 			setFocus(field.key);
 			setIsValidDatabaseName(true);
 			return false;
@@ -737,64 +972,37 @@ export const DatabaseForm = ({
 		return true;
 	};
 
-	const checkForDisplayRulesSet = (field, value) => {
-		const selectedDefaultField = resolvedFields.find(
-			(f) => f.key === field.name,
-		);
-		if (selectedDefaultField?.displayRules?.hideOtherFields) {
-			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-				const optionValue = fth.value;
-				setResolvedFields((prev) =>
-					prev.map((f) =>
-						f.key === fth.key
-							? { ...f, hidden: optionValue.includes(value) }
-							: f,
-					),
-				);
-			});
-		}
-	};
-
-	// NEW: Helper functions for incremental file upload
+	// Helper functions for incremental file upload
 	const onFileUpload = (
 		files: File | File[],
 		fieldOnChange: (value: File[]) => void,
+		currentFiles: File[],
 	) => {
 		const fileArray = Array.isArray(files) ? files : [files];
-
-		// Get current files from form
-		const currentFiles = watch("FILE_UPLOAD") || [];
 		const existingFileNames = currentFiles.map((f: File) => f.name);
 		const newFiles = fileArray.filter(
 			(f) => !existingFileNames.includes(f.name),
 		);
-		const combined = [...currentFiles, ...newFiles];
-
-		// Update form value with validation
-		fieldOnChange(combined);
+		fieldOnChange([...currentFiles, ...newFiles]);
 	};
 
 	const removeFile = (
 		index: number,
 		fieldOnChange: (value: File[]) => void,
+		currentFiles: File[],
 	) => {
-		const currentFiles = watch("FILE_UPLOAD") || [];
-		const updated = currentFiles.filter((_, i) => i !== index);
-
-		// Update form value with validation
-		fieldOnChange(updated);
+		fieldOnChange(currentFiles.filter((_, i) => i !== index));
 	};
 
 	const handleFileChange = (
 		e: React.ChangeEvent<HTMLInputElement>,
 		fieldOnChange: (value: File[]) => void,
+		currentFiles: File[],
 	) => {
 		const files = e.target.files;
 		if (files && files?.length > 0) {
-			const fileArray = Array.from(files);
-			onFileUpload(fileArray, fieldOnChange);
+			onFileUpload(Array.from(files), fieldOnChange, currentFiles);
 		}
-		// Reset input value to allow re-selecting the same file
 		e.target.value = "";
 	};
 
@@ -806,13 +1014,13 @@ export const DatabaseForm = ({
 	const handleDrop = (
 		e: React.DragEvent<HTMLDivElement>,
 		fieldOnChange: (value: File[]) => void,
+		currentFiles: File[],
 	) => {
 		e.preventDefault();
 		e.stopPropagation();
 		const files = e.dataTransfer.files;
 		if (files && files?.length > 0) {
-			const fileArray = Array.from(files);
-			onFileUpload(fileArray, fieldOnChange);
+			onFileUpload(Array.from(files), fieldOnChange, currentFiles);
 		}
 	};
 
@@ -822,13 +1030,15 @@ export const DatabaseForm = ({
 			name={val.key}
 			control={control}
 			rules={{
-				required: val?.required,
+				required:
+					val?.required && computeVisibility(val, watchedValues),
 				pattern: val.rules?.pattern,
 				validate:
 					val.type === "file-upload" || val.type === "zip-upload"
 						? (value) => {
 								if (
 									val.required &&
+									computeVisibility(val, watchedValues) &&
 									(!value || value.length === 0)
 								) {
 									return "File upload is required";
@@ -842,7 +1052,11 @@ export const DatabaseForm = ({
 					case "text":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -955,7 +1169,11 @@ export const DatabaseForm = ({
 					case "number":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -991,7 +1209,11 @@ export const DatabaseForm = ({
 					case "select":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -1007,7 +1229,6 @@ export const DatabaseForm = ({
 									value={field.value}
 									onValueChange={(value) => {
 										field.onChange(value);
-										checkForDisplayRulesSet(field, value);
 									}}
 									disabled={val.disabled}
 								>
@@ -1021,15 +1242,17 @@ export const DatabaseForm = ({
 										/>
 									</SelectTrigger>
 									<SelectContent>
-										{val?.options?.options?.map((opt) => (
-											<SelectItem
-												key={opt.value}
-												value={opt.value}
-												data-testid={`database-form-option-${val.key}-${opt.value}`}
-											>
-												{opt.display}
-											</SelectItem>
-										))}
+										{computeOptions(val, watchedValues).map(
+											(opt) => (
+												<SelectItem
+													key={opt.value}
+													value={opt.value}
+													data-testid={`database-form-option-${val.key}-${opt.value}`}
+												>
+													{opt.display}
+												</SelectItem>
+											),
+										)}
 									</SelectContent>
 								</Select>
 								{error && (
@@ -1048,13 +1271,19 @@ export const DatabaseForm = ({
 					case "radio":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel>{val.label}</FieldLabel>
 								<RadioGroup
 									value={field.value || ""}
-									onValueChange={field.onChange}
+									onValueChange={(value) => {
+										field.onChange(value);
+									}}
 									className="flex flex-wrap gap-4"
 									data-testid={`database-form-input-${val.key}`}
 								>
@@ -1089,7 +1318,11 @@ export const DatabaseForm = ({
 					case "zip-upload":
 						return (
 							<div
-								className="flex flex-col gap-2"
+								className={
+									computeVisibility(val, watchedValues)
+										? "flex flex-col gap-2"
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<P>
@@ -1104,15 +1337,21 @@ export const DatabaseForm = ({
 								<div
 									className="flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-input border-dashed bg-secondary p-6 transition-colors hover:border-primary hover:bg-accent"
 									onClick={() =>
-										fileInputRef.current?.click()
+										fileInputRefs.current[val.key]?.click()
 									}
 									onDragOver={handleDragOver}
 									onDrop={(e) =>
-										handleDrop(e, field.onChange)
+										handleDrop(
+											e,
+											field.onChange,
+											field.value || [],
+										)
 									}
 								>
 									<input
-										ref={fileInputRef}
+										ref={(el) => {
+											fileInputRefs.current[val.key] = el;
+										}}
 										type="file"
 										accept={
 											val.options?.extensions?.join(
@@ -1122,7 +1361,11 @@ export const DatabaseForm = ({
 										multiple={val.type === "file-upload"}
 										className="hidden"
 										onChange={(e) =>
-											handleFileChange(e, field.onChange)
+											handleFileChange(
+												e,
+												field.onChange,
+												field.value || [],
+											)
 										}
 										disabled={val.disabled}
 										data-testid={`database-form-input-${val.key}`}
@@ -1147,11 +1390,11 @@ export const DatabaseForm = ({
 											{field.value.length} file(s)
 											selected:
 										</P>
-										<div className="flex max-h-[200px] flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
+										<div className="flex max-h-[200px] max-w-full flex-col gap-1 overflow-auto rounded-md border border-border bg-muted/30 p-2">
 											{field.value.map((file, index) => (
 												<div
 													key={`${file.name}-${index}`}
-													className="flex items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
+													className="flex min-w-0 items-center justify-between gap-2 rounded-md bg-background px-3 py-2 transition-colors hover:bg-accent"
 													data-testid={`uploaded-file-item-${index}`}
 												>
 													<div className="flex min-w-0 flex-1 items-center gap-2">
@@ -1179,6 +1422,8 @@ export const DatabaseForm = ({
 															removeFile(
 																index,
 																field.onChange,
+																field.value ||
+																	[],
 															);
 														}}
 														className="size-8 flex-shrink-0 hover:bg-destructive/10 hover:text-destructive"
@@ -1207,9 +1452,9 @@ export const DatabaseForm = ({
 						return (
 							<div
 								className={
-									val.hidden
-										? "hidden"
-										: "flex flex-row items-center gap-2"
+									computeVisibility(val, watchedValues)
+										? "flex flex-row items-center gap-2"
+										: "hidden"
 								}
 								data-testid={`database-form-field-${val.key}`}
 							>
@@ -1246,7 +1491,11 @@ export const DatabaseForm = ({
 					case "tags":
 						return (
 							<Field
-								className={val.hidden ? "hidden" : ""}
+								className={
+									computeVisibility(val, watchedValues)
+										? ""
+										: "hidden"
+								}
 								data-testid={`database-form-field-${val.key}`}
 							>
 								<FieldLabel htmlFor={val.key}>
@@ -1418,9 +1667,24 @@ export const DatabaseForm = ({
 	}
 
 	function transformStructure(dbObject) {
-		const result = {
+		const result: {
+			headers: string[];
+			dataTypes: Record<string, string>;
+			physicalTypes: Record<string, string>;
+			cleanHeaders: string[];
+			relation: {
+				relName: string;
+				fromTable: string;
+				fromCol?: string;
+				toTable: string;
+				toCol?: string;
+			}[];
+			nodeProp: Record<string, string[]>;
+			positions: Record<string, { left: number; top: number }>;
+		} = {
 			headers: [],
 			dataTypes: {},
+			physicalTypes: {},
 			cleanHeaders: [],
 			relation: [],
 			nodeProp: {},
@@ -1429,8 +1693,10 @@ export const DatabaseForm = ({
 
 		dbObject.tables.forEach((table) => {
 			table.columns.forEach((col, i) => {
-				result.dataTypes[col] =
-					table.type[i]?.toLowerCase() || "string";
+				result.dataTypes[col] = table.type[i] || "";
+				if (table.raw_type?.[i]) {
+					result.physicalTypes[col] = table.raw_type[i];
+				}
 			});
 
 			result.nodeProp[table.table] = table.columns;
@@ -1439,6 +1705,7 @@ export const DatabaseForm = ({
 
 		if (dbObject.relationships && dbObject.relationships?.length > 0) {
 			result.relation = dbObject.relationships.map((r) => ({
+				relName: `${r.fromCol ?? r.fromTable}.${r.toCol ?? r.toTable}`,
 				fromTable: r.fromTable,
 				fromCol: r.fromCol,
 				toTable: r.toTable,
@@ -1465,9 +1732,9 @@ export const DatabaseForm = ({
 	const hasBothOptions = hasTableOptions && hasViewOptions;
 	const hasSingleOptionType = hasTableOptions !== hasViewOptions;
 	const connectionDialogClassName = hasBothOptions
-		? "h-[92dvh] max-h-[980px] w-[96vw] max-w-[1500px] overflow-hidden p-0"
+		? "flex h-[92dvh] max-h-[980px] w-[96vw] max-w-[1500px] flex-col overflow-hidden p-0"
 		: hasSingleOptionType
-			? "h-[90dvh] max-h-[920px] w-[96vw] max-w-[980px] overflow-hidden p-0"
+			? "flex h-[90dvh] max-h-[920px] w-[96vw] max-w-[980px] flex-col overflow-hidden p-0"
 			: "max-h-[520px] w-[96vw] max-w-[640px] overflow-hidden p-0";
 
 	const handleApply = async (output) => {
@@ -1485,12 +1752,12 @@ export const DatabaseForm = ({
 		try {
 			const response = await monolithStore.runQuery(pixel);
 			const { output, operationType } = response.pixelReturn[0];
-			const parsedOutput = transformStructure(output);
-			setParsedData([parsedOutput]);
 			if (operationType.includes("ERROR")) {
-				toast.error(output);
+				toast.error(output as string);
 				return;
 			}
+			const parsedOutput = transformStructure(output);
+			setParsedData([parsedOutput]);
 			setStep("connections");
 		} catch {
 			toast.error("An error occurred while processing the request.");
@@ -1501,22 +1768,19 @@ export const DatabaseForm = ({
 
 	return (
 		<>
-			{step === "fileupload" && (
+			{step === "fileUpload" && (
 				<form
 					onSubmit={handleSubmit(onFormSubmit)}
 					data-testid="database-form"
 					className="my-4"
 					autoComplete="off"
 				>
-					<div className="mb-6">
-						<H4 data-testid="database-form-title">{title}</H4>
-						<Muted
-							className="mt-1 text-base"
-							data-testid="database-form-description"
-						>
-							{description}
-						</Muted>
-					</div>
+					<EngineFormHeader
+						testIdPrefix="database"
+						icon={icon}
+						title={title}
+						description={description}
+					/>
 
 					{Object.keys(grouped).map((category) => (
 						<div
@@ -1539,10 +1803,40 @@ export const DatabaseForm = ({
 											"No description available."}
 									</Muted>
 								</div>
-								<div className="flex flex-[2] flex-col gap-2 py-2">
+								<div className="flex min-w-0 flex-[2] flex-col gap-2 py-2">
 									{grouped[category].map((f) =>
 										renderControllerField(f),
 									)}
+									{category === "File Upload" &&
+										metamodelType === "fromPropFile" && (
+											<PairedFileUpload
+												columns={[
+													{
+														key: "dataFile",
+														label: "Data File",
+														extensions:
+															resolvedFields.find(
+																(f: {
+																	key: string;
+																}) =>
+																	f.key ===
+																	"FILE_UPLOAD",
+															)?.options
+																?.extensions ?? [
+																".csv",
+															],
+														required: true,
+													},
+													{
+														key: "propFile",
+														label: "Prop File",
+														extensions: [".json"],
+													},
+												]}
+												value={pairedFiles}
+												onChange={setPairedFiles}
+											/>
+										)}
 								</div>
 							</div>
 							<Separator />
@@ -1585,7 +1879,7 @@ export const DatabaseForm = ({
 													settings
 												</Muted>
 											</div>
-											<div className="flex flex-[2] flex-col gap-2">
+											<div className="flex min-w-0 flex-[2] flex-col gap-2">
 												{advancedFields.map((f) =>
 													renderControllerField(f),
 												)}
@@ -1645,10 +1939,12 @@ export const DatabaseForm = ({
 						submitMetamodelPixel(payload, formValues)
 					}
 					onCancel={handleCancel}
+					isRdf={
+						(formValues as { DATABASE_TYPE?: string })
+							.DATABASE_TYPE === "rdf"
+					}
 				/>
 			)}
-
-			{step === "propFile" && <div>Prop file logic UI goes here</div>}
 
 			{step === "connections" && parsedData && parsedData?.length > 0 && (
 				<MetaModelConnections

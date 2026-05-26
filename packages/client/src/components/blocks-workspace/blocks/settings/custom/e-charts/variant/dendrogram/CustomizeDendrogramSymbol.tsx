@@ -14,7 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 
 export const CustomizeDendrogramSymbol = observer(
 	<_D extends BlockDef = BlockDef>({ id }: { id: string }) => {
