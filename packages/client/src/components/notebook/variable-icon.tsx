@@ -7,6 +7,7 @@ import {
 	type LucideIcon,
 	Notebook,
 	PanelsTopLeft,
+	ShieldCheck,
 	Sigma,
 } from "lucide-react";
 import type { Variable, VariableType } from "@semoss/renderer";
@@ -30,6 +31,7 @@ export interface EnginesByType {
 	storages: EngineRecord[];
 	functions: EngineRecord[];
 	vectors: EngineRecord[];
+	guardrails: EngineRecord[];
 }
 
 const LUCIDE_TYPE_ICONS: Record<string, LucideIcon> = {
@@ -41,6 +43,7 @@ const LUCIDE_TYPE_ICONS: Record<string, LucideIcon> = {
 	query: Notebook,
 	cell: PanelsTopLeft,
 	block: Blocks,
+	guardrail: ShieldCheck,
 };
 
 const VARIABLE_TYPE_ICONS: Record<string, string> = {
@@ -55,7 +58,8 @@ const isEngineType = (type: string): boolean =>
 	type === "database" ||
 	type === "vector" ||
 	type === "storage" ||
-	type === "function";
+	type === "function" ||
+	type === "guardrail";
 
 /**
  * Constant-typed variables store their value directly on `variable.value`.

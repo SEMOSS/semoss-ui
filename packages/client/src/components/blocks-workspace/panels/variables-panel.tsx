@@ -56,6 +56,7 @@ export const VariablesPanel = observer(
 			storages: [],
 			functions: [],
 			vectors: [],
+			guardrails: [],
 		});
 		const [filterWord, setFilterWord] = useState("");
 		const [expandedItems, setExpandedItems] = useState<
@@ -135,6 +136,9 @@ export const VariablesPanel = observer(
 				),
 				vectors: cleanedEngines.filter(
 					(e) => e.engine_type === "VECTOR",
+				),
+				guardrails: cleanedEngines.filter(
+					(e) => e.engine_type === "GUARDRAIL",
 				),
 			};
 

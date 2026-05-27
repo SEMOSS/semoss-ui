@@ -237,12 +237,27 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				engineType: m.engine_type,
 				engineSubtype: m.engine_subtype,
 			}));
+		} else if (variableType === "guardrail") {
+			return engines.guardrails.map((m) => ({
+				value: m.engine_id,
+				label: m.engine_name,
+				subtitle: m.engine_id,
+				engineType: m.engine_type,
+				engineSubtype: m.engine_subtype,
+			}));
 		}
 		return [];
 	}, [variableType, inputBlocks, queries, cells, engines]);
 
 	const isEngineType = (type: string) =>
-		["model", "database", "storage", "function", "vector"].includes(type);
+		[
+			"model",
+			"database",
+			"storage",
+			"function",
+			"vector",
+			"guardrail",
+		].includes(type);
 	const isPointerType = (type: string) =>
 		["block", "query", "cell", "LLM Comparison"].includes(type);
 
