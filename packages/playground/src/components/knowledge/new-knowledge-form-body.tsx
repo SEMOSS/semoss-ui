@@ -241,7 +241,7 @@ export const NewKnowledgeFormBody = observer(
 											<TooltipTrigger asChild>
 												<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border bg-muted">
 													<FileIcon className="size-6 text-muted-foreground" />
-													<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
+													<div className="absolute end-0 top-0 z-10 hidden group-hover:inline-flex">
 														<Button
 															variant="ghost"
 															size="icon-sm"

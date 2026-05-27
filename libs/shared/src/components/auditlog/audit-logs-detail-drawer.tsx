@@ -59,13 +59,13 @@ const JSONTreeView = ({
 	const isEmpty = Object.keys(data as object).length === 0;
 
 	return (
-		<div className={isChild ? "ml-[3px]" : "ml-0"}>
+		<div className={isChild ? "ms-[3px]" : "ms-0"}>
 			<div className="flex items-center">
 				{isChild && (
 					// biome-ignore lint/a11y/noStaticElementInteractions: <need events to be handled>
 					// biome-ignore lint/a11y/useKeyWithClickEvents: <need onclick event, onkey events may not be appropriate>
 					<div
-						className="mr-1 inline-flex cursor-pointer items-center px-1 [&>svg]:h-4 [&>svg]:w-4"
+						className="me-1 inline-flex cursor-pointer items-center px-1 [&>svg]:h-4 [&>svg]:w-4"
 						onClick={toggleExpand}
 					>
 						{isExpanded ? (
@@ -91,7 +91,7 @@ const JSONTreeView = ({
 			{isExpanded && (
 				<div>
 					{Object.entries(data).map(([key, value]) => (
-						<div key={key} className="ml-4">
+						<div key={key} className="ms-4">
 							{!isArray && (
 								<>
 									<span style={{ color: "#0471F0" }}>
@@ -234,7 +234,7 @@ export const AuditLogsDetailDrawer = (props) => {
 	return (
 		<div
 			ref={drawerRef}
-			className="top-20 right-0 flex h-full min-w-[500px] flex-col bg-white"
+			className="end-0 top-20 flex h-full min-w-[500px] flex-col bg-white"
 		>
 			<div className="flex items-center justify-between border-b bg-[#F5F9FE] px-3 py-2">
 				<span className="font-normal text-base text-primary leading-normal">
