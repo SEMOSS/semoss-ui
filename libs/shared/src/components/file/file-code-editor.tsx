@@ -390,149 +390,190 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	};
 
 	return (
-		<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
-			{/* Toolbar */}
-			<div className="flex w-full shrink-0 items-center justify-between gap-1 border-border border-b px-1.5 py-0.5">
-				<div className="flex items-center gap-1">
-					{language === "json" && jsonErrors.length > 0 && (
-						<button
-							type="button"
-							className="flex items-center gap-1 rounded px-1 py-0.5 text-destructive text-xs hover:bg-destructive/10"
-							onClick={() => setErrorsExpanded((v) => !v)}
-						>
-							<AlertCircleIcon className="size-3" />
-							{jsonErrors.length} error
-							{jsonErrors.length > 1 ? "s" : ""}
-							{errorsExpanded ? (
-								<ChevronDownIcon className="size-3" />
-							) : (
-								<ChevronUpIcon className="size-3" />
-							)}
-						</button>
-					)}
-					{language === "json" &&
-						jsonErrors.length === 0 &&
-						getFile.status === "SUCCESS" && (
-							<span className="text-success text-xs">
-								Valid JSON
-							</span>
+		<>
+			<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
+				{/* Toolbar */}
+				<div className="flex w-full shrink-0 items-center justify-between gap-1 border-border border-b px-1.5 py-0.5">
+					<div className="flex items-center gap-1">
+						{language === "json" && jsonErrors.length > 0 && (
+							<button
+								type="button"
+								className="flex items-center gap-1 rounded px-1 py-0.5 text-destructive text-xs hover:bg-destructive/10"
+								onClick={() => setErrorsExpanded((v) => !v)}
+							>
+								<AlertCircleIcon className="size-3" />
+								{jsonErrors.length} error
+								{jsonErrors.length > 1 ? "s" : ""}
+								{errorsExpanded ? (
+									<ChevronDownIcon className="size-3" />
+								) : (
+									<ChevronUpIcon className="size-3" />
+								)}
+							</button>
 						)}
+						{language === "json" &&
+							jsonErrors.length === 0 &&
+							getFile.status === "SUCCESS" && (
+								<span className="text-success text-xs">
+									Valid JSON
+								</span>
+							)}
+					</div>
+					<div className="flex items-center gap-1">
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									disabled={
+										isLoading ||
+										getFile.status !== "SUCCESS"
+									}
+									onClick={() => getFile.refresh()}
+								>
+									<RefreshCwIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Refresh</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									disabled={
+										isLoading ||
+										getFile.status !== "SUCCESS"
+									}
+									onClick={() => saveFile()}
+								>
+									<SaveIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Save (Ctrl+S)</TooltipContent>
+						</Tooltip>
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<Button
+									variant="ghost"
+									size="icon-sm"
+									disabled={
+										isLoading ||
+										getFile.status !== "SUCCESS"
+									}
+									onClick={() => downloadFile()}
+								>
+									<DownloadIcon className="size-3" />
+								</Button>
+							</TooltipTrigger>
+							<TooltipContent>Download (Ctrl+D)</TooltipContent>
+						</Tooltip>
+					</div>
 				</div>
-				<div className="flex items-center gap-1">
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								disabled={
-									isLoading || getFile.status !== "SUCCESS"
-								}
-								onClick={() => getFile.refresh()}
-							>
-								<RefreshCwIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Refresh</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								disabled={
-									isLoading || getFile.status !== "SUCCESS"
-								}
-								onClick={() => saveFile()}
-							>
-								<SaveIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Save (Ctrl+S)</TooltipContent>
-					</Tooltip>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								disabled={
-									isLoading || getFile.status !== "SUCCESS"
-								}
-								onClick={() => downloadFile()}
-							>
-								<DownloadIcon className="size-3" />
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Download (Ctrl+D)</TooltipContent>
-					</Tooltip>
-				</div>
-			</div>
-			<Suspense
-				fallback={
-					<div className="flex h-full w-full items-center justify-center">
-						<Spinner />
-					</div>
-				}
-			>
-				{getFile.status === "LOADING" && isLoading && (
-					<div className="flex h-full w-full items-center justify-center">
-						<Spinner />
-					</div>
-				)}
-				{getFile.status === "ERROR" && (
-					<div className="flex h-full w-full items-center justify-center">
-						<Muted className="text-destructive">
-							{getFile.error?.message || "Failed to load files"}
-						</Muted>
-					</div>
-				)}
-				{getFile.status === "SUCCESS" && (
-					<MonacoEditor
-						width={"100%"}
-						height={"100%"}
-						value={getFile.status === "SUCCESS" ? getFile.data : ""}
-						language={language}
-						options={{
-							readOnly: getFile.status !== "SUCCESS",
-							accessibilitySupport: "off",
-						}}
-						onChange={(value) => {
-							const nextValue = value ?? "";
-							onChange(nextValue, nextValue !== getFile.data);
-						}}
-						onMount={onMount}
-					/>
-				)}
-			</Suspense>
-			{language === "json" && jsonErrors.length > 0 && errorsExpanded && (
-				<div className="max-h-[140px] w-full shrink-0 overflow-y-auto border-border border-t bg-destructive/5">
-					{jsonErrors.map((err) => (
-						<button
-							key={`${err.startLineNumber}-${err.startColumn}-${err.message}`}
-							type="button"
-							className="flex w-full items-start gap-2 px-3 py-1 text-start text-xs hover:bg-destructive/10"
-							onClick={() => {
-								editorRef.current?.revealLineInCenter(
-									err.startLineNumber,
-								);
-								editorRef.current?.setPosition({
-									lineNumber: err.startLineNumber,
-									column: err.startColumn,
-								});
-								editorRef.current?.focus();
+				<Suspense
+					fallback={
+						<div className="flex h-full w-full items-center justify-center">
+							<Spinner />
+						</div>
+					}
+				>
+					{getFile.status === "LOADING" && isLoading && (
+						<div className="flex h-full w-full items-center justify-center">
+							<Spinner />
+						</div>
+					)}
+					{getFile.status === "ERROR" && (
+						<div className="flex h-full w-full items-center justify-center">
+							<Muted className="text-destructive">
+								{getFile.error?.message ||
+									"Failed to load files"}
+							</Muted>
+						</div>
+					)}
+					{getFile.status === "SUCCESS" && (
+						<MonacoEditor
+							width={"100%"}
+							height={"100%"}
+							value={
+								getFile.status === "SUCCESS" ? getFile.data : ""
+							}
+							language={language}
+							options={{
+								readOnly: getFile.status !== "SUCCESS",
+								accessibilitySupport: "off",
 							}}
-						>
-							<AlertCircleIcon className="mt-0.5 size-3 shrink-0 text-destructive" />
-							<span className="text-destructive">
-								Line {err.startLineNumber}, Col{" "}
-								{err.startColumn}:
-							</span>
-							<span className="text-foreground">
-								{err.message}
-							</span>
-						</button>
-					))}
-				</div>
-			)}
-		</div>
+							onChange={(value) => {
+								const nextValue = value ?? "";
+								onChange(nextValue, nextValue !== getFile.data);
+							}}
+							onMount={onMount}
+						/>
+					)}
+				</Suspense>
+				{language === "json" &&
+					jsonErrors.length > 0 &&
+					errorsExpanded && (
+						<div className="max-h-[140px] w-full shrink-0 overflow-y-auto border-border border-t bg-destructive/5">
+							{jsonErrors.map((err) => (
+								<button
+									key={`${err.startLineNumber}-${err.startColumn}-${err.message}`}
+									type="button"
+									className="flex w-full items-start gap-2 px-3 py-1 text-start text-xs hover:bg-destructive/10"
+									onClick={() => {
+										editorRef.current?.revealLineInCenter(
+											err.startLineNumber,
+										);
+										editorRef.current?.setPosition({
+											lineNumber: err.startLineNumber,
+											column: err.startColumn,
+										});
+										editorRef.current?.focus();
+									}}
+								>
+									<AlertCircleIcon className="mt-0.5 size-3 shrink-0 text-destructive" />
+									<span className="text-destructive">
+										Line {err.startLineNumber}, Col{" "}
+										{err.startColumn}:
+									</span>
+									<span className="text-foreground">
+										{err.message}
+									</span>
+								</button>
+							))}
+						</div>
+					)}
+			</div>
+			{
+				// TODO : Implement Run Engine Functionality once backend is ready
+				/* <div className="mt-4 overflow-hidden rounded-2xl border border-border shadow-sm">
+    <div className="flex items-center justify-between bg-muted/40 px-4 py-1.5">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Results
+        </span>
+        <Button
+            variant="outline"
+            size="sm"
+           // onClick={() => setResultValue("")}
+            className="h-8 gap-1.5"
+        >
+            <CachedRounded className="h-4 w-4" />
+            <span>Clear</span>
+        </Button>
+    </div>
+    <div className="p-4">
+        <Textarea
+            placeholder="Enter Input Here"
+            className="min-h-[60px] rounded-lg"
+            rows={2}
+           // value={resultValue}
+           // onChange={(e) => setResultValue(e.target.value)}
+        />
+        <p className="mt-2 text-xs text-muted-foreground">
+            If your code takes input, add it in the above box before running.
+        </p>
+    </div>
+</div> */
+			}
+		</>
 	);
 };

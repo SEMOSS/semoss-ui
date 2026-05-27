@@ -121,6 +121,51 @@ export const EngineWorkspace: React.FC<EngineWorkspaceProps> = observer(
 
 		useTabBarScroll(containerRef);
 
+		// TODO : Implement Run Engine Functionality once backend is ready
+		// 	const runEngine = async () => {
+		// 	setIsLoading(true);
+
+		// 	try {
+		// 		const { errors, pixelReturn } = await monolithStore.runQuery<
+		// 			[true]
+		// 		>(
+		// 			`CreateEngineFromTemplate(engine=['${engineId}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
+		// 		);
+
+		// 		const { operationType, output } = pixelReturn[0];
+		// 		const result: any = output;
+
+		// 		if (operationType.includes("ERROR")) {
+		// 			throw new Error(result);
+		// 		}
+
+		// 		if (errors.length > 0) {
+		// 			throw new Error(errors.join(""));
+		// 		}
+
+		//   const reacter = await monolithStore.runQuery<
+		// 			[true]
+		// 		>(
+		// 			`ExecuteFunctionEngine(engine=['${output}'], map=[{"route":"", "file_path":"", "engine_id":""}])`,
+		// 		);
+		//   console.log(reacter,"testing")
+
+		// 		setResultValue(result);
+
+		// 		notification.add({
+		// 			color: "success",
+		// 			message: "Successfully saved the changes!",
+		// 		});
+		// 	} catch (e: any) {
+		// 		notification.add({
+		// 			color: "error",
+		// 			message: e.message,
+		// 		});
+		// 	} finally {
+		// 		setIsLoading(false);
+		// 	}
+		// };
+
 		return (
 			<div
 				ref={containerRef}
