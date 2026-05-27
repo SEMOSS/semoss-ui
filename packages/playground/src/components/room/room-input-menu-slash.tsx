@@ -174,13 +174,13 @@ const RoomInputMenuSlashInner: React.FC<RoomInputMenuSlashProps> = ({
 								}}
 							>
 								{item.type === "VECTOR" ? (
-									<BookOpenIcon className="mr-2 size-4" />
+									<BookOpenIcon className="me-2 size-4" />
 								) : (
-									<HammerIcon className="mr-2 size-4" />
+									<HammerIcon className="me-2 size-4" />
 								)}
 								{item.name}
 								<CheckIcon
-									className={`ml-auto ${selectedMCPs[item.id] ? "opacity-100" : "opacity-0"}`}
+									className={`ms-auto ${selectedMCPs[item.id] ? "opacity-100" : "opacity-0"}`}
 								/>
 							</CommandItem>
 						))}

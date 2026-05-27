@@ -37,7 +37,7 @@ export const ResponseMessageToolStreaming: React.FC<ResponseMessageToolStreaming
 				<div className="flex items-center">
 					<button
 						type="button"
-						className="flex min-w-0 flex-1 items-center gap-3 p-2 text-left"
+						className="flex min-w-0 flex-1 items-center gap-3 p-2 text-start"
 						onClick={() => setIsOpen((prev) => !prev)}
 					>
 						<div className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-muted text-muted-foreground">
