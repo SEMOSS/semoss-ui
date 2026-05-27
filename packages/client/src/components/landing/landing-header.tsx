@@ -40,7 +40,7 @@ const CARDS = [
 
 interface LandingHeaderProps {
 	/** Trigger creation of a new app */
-	onCreate: (type: "blocks" | "code" | "agent") => void;
+	onCreate: (type: "blocks" | "code" | "agent" | "insight") => void;
 }
 
 export const LandingHeader: React.FC<LandingHeaderProps> = ({

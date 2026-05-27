@@ -65,10 +65,55 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 		if (listeners.preProcess) {
 			listeners.preProcess();
 		}
-	}, []);
+	}, [listeners.preProcess]);
+
+	useEffect(() => {
+		// Normalize value when multiple changes
+		if (!data.multiple && Array.isArray(data.value)) {
+			// If switched from multiple to single, take first value
+			setData("value", data.value[0] || "");
+		} else if (data.multiple && !Array.isArray(data.value)) {
+			// If switched from single to multiple, wrap in array
+			setData("value", data.value ? [data.value] : []);
+		}
+	}, [data.multiple, data.value, setData]);
 
 	const stringifiedOptions: string[] = useMemo(() => {
 		if (!data.options) return [];
+		    // Check if options has the data.values structure (tabular format)
+    	if (
+        	typeof data.options === "object" &&
+        	"data" in data.options &&
+        	data.options.data &&
+        	typeof data.options.data === "object" &&
+        	"values" in data.options.data &&
+        	Array.isArray(data.options.data.values) &&
+        	"headers" in data.options.data &&
+        	Array.isArray(data.options.data.headers)
+    	) {
+        	// Handle tabular data format
+        	const { values, headers } = data.options.data as {
+            	values: unknown[][];
+            	headers: string[];
+        	};
+
+        	if (headers.length === 1) {
+            	// Single column - extract as simple array and stringify
+            	return values.map((row: unknown[]) => {
+                	const val = row[0];
+                return typeof val !== "string" ? JSON.stringify(val) : val;
+            });
+        }
+        // Multiple columns - convert rows to objects and stringify
+        return values.map((row: unknown[]) => {
+            const obj: Record<string, unknown> = {};
+            headers.forEach((header, idx) => {
+                obj[header] = row[idx];
+            });
+            return JSON.stringify(obj);
+        });
+    }
+		
 		if (!Array.isArray(data.options)) {
 			if (typeof data.options === "string") {
 				let opts = (data.options as string).trim();

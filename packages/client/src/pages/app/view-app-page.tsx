@@ -97,6 +97,14 @@ export const ViewAppPage = observer(() => {
 	if (!workspace) {
 		return <AppViewLoadingState />;
 	}
+	const tags = workspace?.metadata?.tag || [];
+	const isInsightApp = Array.isArray(workspace?.metadata?.tag)
+		? tags.includes("Insight")
+		: tags === "Insight";
+
+	const toEditURL: string = isInsightApp
+		? `../../../app/${appId}/insight/edit`
+		: `../../../app/${appId}/edit`;
 
 	return (
 		<>
@@ -162,7 +170,7 @@ export const ViewAppPage = observer(() => {
 					<Button
 						variant="default"
 						size="sm"
-						onClick={() => navigate(`../../../app/${appId}/edit`)}
+						onClick={() => navigate(toEditURL)}
 						data-testid={"viewAppPage-edit-btn"}
 					>
 						<Pencil className="mr-1 size-4" />

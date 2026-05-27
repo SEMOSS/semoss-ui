@@ -770,7 +770,14 @@ export class StateStore {
 			!cleaned.endsWith("}}") &&
 			!cleaned.startsWith("$")
 		) {
-			return expression;
+			// Fallback: allow direct variable references without {{ }}.
+			// Example: "myVar" or "myVar.path".
+			const directPointer = cleaned.split(".")[0];
+			if (directPointer && this._store.variables[directPointer]) {
+				cleaned = `{{${cleaned}}}`;
+			} else {
+				return expression;
+			}
 		}
 
 		// Special Parsing for Iterators
@@ -921,10 +928,17 @@ export class StateStore {
 
 			// if it is not a string, convert to a string
 			if (typeof v !== "string") {
+				// Handle arrays specially for SQL compatibility
+				if (Array.isArray(v)) {
+					// Convert array to SQL-compatible comma-separated quoted values
+					return v
+						.map((item) => `'${String(item).replace(/'/g, "''")}'`)
+						.join(",");
+				}
 				return JSON.stringify(v);
 			}
 
-			return v;
+			return `${v.replace(/'/g, "''")}`;
 		});
 	};
 

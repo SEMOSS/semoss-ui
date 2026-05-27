@@ -5,6 +5,7 @@ import {
 	QuerySelectionSettings,
 	SelectInputSettings,
 } from "../../settings";
+import { RequiredBlocksSettings } from "../../settings/shared/RequiredBlocksSettings";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import {
 	buildDimensionsSection,
@@ -61,6 +62,16 @@ export const config: BlockSettingsConfig = {
 									display: "Reset",
 								},
 							]}
+						/>
+					),
+				},
+				{
+					description: "Required Blocks",
+					render: ({ id }) => (
+						<RequiredBlocksSettings
+							id={id}
+							label="Required Blocks"
+							path="requiredBlocks"
 						/>
 					),
 				},

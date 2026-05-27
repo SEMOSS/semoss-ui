@@ -8,7 +8,7 @@ export const NewPromptBuilderAppPage = () => {
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<NewAppStep>
+			<NewAppStep tool="Prompt">
 				<PromptBuilder />
 			</NewAppStep>
 		</>

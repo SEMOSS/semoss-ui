@@ -43,7 +43,7 @@ interface QueryInputSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	label: string;
 	/**
-	 * Default path map by default {}
+	 * Default path map by default Record<string, Option>
 	 */
 	defaultPathMap?: Record<string, Option>;
 	/**
@@ -138,11 +138,11 @@ export const QueryInputSettings = observer(
 		// track the modal
 		const [open, setOpen] = useState(false);
 		// Track the input ref to grab the cursor position
-		const inputRef = useRef(null);
-		const suggestionRef = useRef(null);
-		const measureRef = useRef(null);
+		const inputRef = useRef<HTMLInputElement>(null);
+		const suggestionRef = useRef<HTMLDivElement>(null);
+		const measureRef = useRef<HTMLSpanElement>(null);
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {
@@ -193,8 +193,8 @@ export const QueryInputSettings = observer(
 
 		// biome-ignore lint/correctness/useExhaustiveDependencies: TODO
 		const optionMap = useMemo<Record<string, Option>>(() => {
-			const pathMap = {};
-			const variabilizedList = [];
+			const pathMap: Record<string, Option> = {};
+			const variabilizedList: string[] = [];
 
 			// iterate over the variables
 			Object.entries(state.variables).forEach(
@@ -202,7 +202,30 @@ export const QueryInputSettings = observer(
 					const alias = keyValue[0];
 					const variable = keyValue[1];
 
-					const ref = state.getVariable(variable.to, variable.type);
+					// Skip variables with missing required properties
+					if (!variable.to || !variable.type) {
+						return;
+					}
+
+					// Skip variables that aren't valid blockTypes for this component
+					if (
+						variable.type !== "block" &&
+						variable.type !== "cell" &&
+						variable.type !== "query"
+					) {
+						return;
+					}
+
+					let ref: Variable | unknown;
+					try {
+						ref = state.getVariable(variable.to, variable.type);
+					} catch (error) {
+						console.warn(
+							`Failed to get variable reference for "${alias}"`,
+							{ variable, error },
+						);
+						return;
+					}
 
 					// check if the variable is variabilized
 					if (
@@ -238,7 +261,7 @@ export const QueryInputSettings = observer(
 								pathMap[`${alias}.${f}`] = {
 									id: `${alias}.${f}`,
 									path: `${alias}.${f}`,
-									type: typeof q[f], // TODO: get value
+									type: typeof q[f as keyof NotebookState], // TODO: get value
 									display: `${alias}.${f}`,
 									blockType: "query-prop",
 									variabilized: true,
@@ -258,7 +281,7 @@ export const QueryInputSettings = observer(
 								pathMap[`${alias}.${f}`] = {
 									id: `${alias}.${f}`,
 									path: `${alias}.${f}`,
-									type: typeof c[f], // TODO: get value
+									type: typeof c[f as keyof CellState], // TODO: get value
 									display: `${alias}.${f}`,
 									blockType: "cell-prop",
 									variabilized: true,
@@ -315,16 +338,18 @@ export const QueryInputSettings = observer(
 						};
 
 						const q = state.getNotebook(alias);
-						for (const f in q._exposed) {
-							pathMap[`${alias}.${f}`] = {
-								id: `${alias}.${f}`,
-								path: `${alias}.${f}`,
-								type: typeof q[f], // TODO: get value
-								display: `${alias}.${f}`,
-								blockType: "query-prop",
-								variabilized: true,
-								groupAlias: groupAliasMapper("query-prop"),
-							};
+						if (q) {
+							for (const f in q._exposed) {
+								pathMap[`${alias}.${f}`] = {
+									id: `${alias}.${f}`,
+									path: `${alias}.${f}`,
+									type: typeof q[f as keyof NotebookState], // TODO: get value
+									display: `${alias}.${f}`,
+									blockType: "query-prop",
+									variabilized: true,
+									groupAlias: groupAliasMapper("query-prop"),
+								};
+							}
 						}
 					}
 					// iterate over the un-variabilized cells
@@ -346,14 +371,19 @@ export const QueryInputSettings = observer(
 									};
 
 									const q = state.getNotebook(alias);
-									const c = q.getCell(cellAlias);
+									if (q) {
+										const c = q.getCell(cellAlias);
 
-									for (const f in c._exposed) {
-										pathMap[`${alias}.${cellAlias}.${f}`] =
-											{
+										for (const f in c._exposed) {
+											pathMap[
+												`${alias}.${cellAlias}.${f}`
+											] = {
 												id: `${alias}.${cellAlias}.${f}`,
 												path: `${alias}.${cellAlias}.${f}`,
-												type: typeof c[f], // TODO: get value
+												type:
+													typeof c[
+														f as keyof CellState
+													],
 												display: `${alias}.${cellAlias}.${f}`,
 												blockType: "cell-prop",
 												variabilized: true,
@@ -362,6 +392,7 @@ export const QueryInputSettings = observer(
 														"cell-prop",
 													),
 											};
+										}
 									}
 								}
 							},
@@ -382,9 +413,9 @@ export const QueryInputSettings = observer(
 		 * @name handleVariablize
 		 * Adds a new variable to the state
 		 */
-		const handleVariablize = (option: Option) => {
+		const handleVariablize = async (option: Option) => {
 			// add variable
-			const success = state.dispatch({
+			const success = await state.dispatch({
 				message: ActionMessages.ADD_VARIABLE,
 				payload: {
 					id:
@@ -421,8 +452,8 @@ export const QueryInputSettings = observer(
 			const cursorPosition = inputRef?.current
 				? inputRef.current?.selectionStart
 				: null;
-			const leftText = value.substring(0, cursorPosition);
-			const rightText = value.substring(cursorPosition);
+			const leftText = value.substring(0, cursorPosition ?? 0);
+			const rightText = value.substring(cursorPosition ?? 0);
 			const option = optionMap?.[val];
 			const valf =
 				option.blockType === "cell"
@@ -478,8 +509,8 @@ export const QueryInputSettings = observer(
 			: "";
 
 		const cursorIndex = inputRef?.current?.selectionStart ?? null;
-		const textBeforeCursor = value.substring(0, cursorIndex);
-		const textAfterCursor = value.substring(cursorIndex);
+		const textBeforeCursor = value.substring(0, cursorIndex as number);
+		const textAfterCursor = value.substring(cursorIndex as number);
 
 		const calculateTextWidth = () => {
 			if (!measureRef.current) return 0;

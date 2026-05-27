@@ -30,6 +30,10 @@ import {
 	type EchartVisualizationBlockDef,
 } from "./echart-visualization-block";
 import {
+	config as FlexLayoutBlockConfig,
+	type FlexLayoutBlockDef,
+} from "./flex-layout-block";
+import {
 	config as FlipCardBlockConfig,
 	type FlipCardBlockDef,
 } from "./flip-card-block";
@@ -132,6 +136,7 @@ export type DefaultBlockDefinitions =
 	| DividerBlockDef
 	| EchartVisualizationBlockDef
 	| FlipCardBlockDef
+	| FlexLayoutBlockDef
 	| GridBlockDef
 	| HTMLBlockDef
 	| IconBlockDef
@@ -178,6 +183,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[DividerBlockConfig.widget]: DividerBlockConfig,
 	[EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
 	[FlipCardBlockConfig.widget]: FlipCardBlockConfig,
+	[FlexLayoutBlockConfig.widget]: FlexLayoutBlockConfig,
 	[GridBlockConfig.widget]: GridBlockConfig,
 	[IconBlockConfig.widget]: IconBlockConfig,
 	[IframeBlockConfig.widget]: IframeBlockConfig,
@@ -247,6 +253,7 @@ export {
 	PDFViewerBlockConfig,
 	TimePickerBlockConfig,
 	FlipCardBlockConfig,
+	FlexLayoutBlockConfig,
 	VisualizationFilterBlockConfig,
 	GridDynamicFrameBlockConfig,
 	TabBlockConfig,

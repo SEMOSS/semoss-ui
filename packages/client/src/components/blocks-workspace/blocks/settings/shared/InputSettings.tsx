@@ -69,7 +69,7 @@ export const InputSettings = observer(
 		const [value, setValue] = useState("");
 
 		// track the ref to debounce the input
-		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 		// get the value of the input (wrapped in usememo because of path prop)
 		const computedValue = useMemo(() => {

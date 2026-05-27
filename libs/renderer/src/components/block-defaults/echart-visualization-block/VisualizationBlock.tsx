@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef } from "react";
+import { Typography } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import type { PathValue } from "../../../types";
@@ -77,7 +78,7 @@ export const VisualizationBlock: BlockComponent = observer(
 			if (listeners.preProcess) {
 				listeners.preProcess();
 			}
-		}, []);
+		}, [listeners.preProcess]);
 
 		// biome-ignore lint/correctness/noUnusedFunctionParameters: path required for type safety
 		//biome-ignore lint/suspicious/noExplicitAny: data and path's value can't be predicted

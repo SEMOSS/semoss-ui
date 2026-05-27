@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import { InputSettings, QuerySelectionSettings } from "../../settings";
 import { InputModalSettings } from "../../settings/shared/InputModalSettings";
 import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";
+import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
@@ -82,7 +83,7 @@ export const config: BlockSettingsConfig = {
 				{
 					description: "Disabled",
 					render: ({ id }) => (
-						<InputSettings
+						<SwitchSettings
 							id={id}
 							label="Disabled"
 							path="disabled"
@@ -92,7 +93,7 @@ export const config: BlockSettingsConfig = {
 				{
 					description: "Required",
 					render: ({ id }) => (
-						<InputSettings
+						<SwitchSettings
 							id={id}
 							label="Required"
 							path="required"

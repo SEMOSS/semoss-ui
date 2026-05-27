@@ -101,7 +101,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	}, [data, id]);
 
 	const { state } = useBlocks();
-	const updateField = (field, value) => {
+	const updateField = (field: string, value: any) => {
 		setLocalState((prev) => ({
 			...prev,
 			[field]: value,
@@ -124,24 +124,11 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 		if (field === "displayType") {
 			setLocalState((prev) => ({
 				...prev,
-				/**
-				 * Set the displayType to the new value.
-				 */
 				displayType: updatedValue,
-				/**
-				 * Reset the filterLabel field to an empty string.
-				 */
 				filterLabel: "",
-				/**
-				 * Reset the sliderSensitivity field to an empty string.
-				 */
 				sliderSensitivity: "",
 			}));
 		} else {
-			/**
-			 * If the field that was changed is not the displayType, then
-			 * we can just update the field with the new value.
-			 */
 			updateField(field, updatedValue);
 		}
 	};
@@ -155,13 +142,10 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	 * @returns A function that takes a boolean and updates the local state.
 	 */
 	const handleSwitchChange = (field: string) => (isChecked: boolean) => {
-		setLocalState((prevState) => {
-			const updatedState = {
-				...prevState,
-			};
-			updatedState[field] = isChecked;
-			return updatedState;
-		});
+		setLocalState((prevState) => ({
+			...prevState,
+			[field]: isChecked,
+		}));
 	};
 
 	const isApplyDisabled =
@@ -169,6 +153,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 
 	/**
 	 * Updates the block's data store with the current local state
+	 * Fetches list options from the frame for the selected column
 	 */
 	const handleUpdate = async (): Promise<void> => {
 		if (!localState.frame || !localState.column) {
@@ -187,42 +172,58 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 					}
 				)?.data?.values;
 
+				// If no values, set empty list (frame might be empty or query might have issues)
+				const options = values?.length
+					? values.map((item: any) => String(item[0]))
+					: [];
+
+				const filterLabel = `Filter of ${localState.column || localState.filterLabel}`;
+
+				setLocalState((prev) => ({
+					...prev,
+					listOptions: options,
+					selectedValues: [],
+					filterLabel: filterLabel,
+				}));
+
+				// Update all block data fields from local state
+				setData("displayType", localState.displayType);
+				setData("frame", localState.frame);
+				setData("column", localState.column);
+				setData("filterLabel", filterLabel);
+				setData("sliderSensitivity", localState.sliderSensitivity);
+				setData("listOptions", options);
+				setData("selectedValues", []);
+				setData("showPanelTitle", localState.showPanelTitle);
+				setData("searchable", localState.searchable);
+				setData("multipleSelection", localState.multipleSelection);
+				setData("color", localState.color);
+				setData("size", localState.size);
+
+				// Show warning if no values found
 				if (!values?.length) {
-					setLocalState((prev) => ({ ...prev, listOptions: [] }));
-
-					toast.error(
-						"Invalid response or errors found while fetching options.",
+					console.warn(
+						"No values found for column. Frame might be empty or query has issues.",
 					);
-					return;
 				}
-
-				const options = values.map((item: any) => String(item[0]));
-
-				setLocalState((prev) => {
-					const updatedState = {
-						...prev,
-						listOptions: options,
-						selectedValues: [],
-						filterLabel: `Filter of ${localState.column || localState.filterLabel}`,
-					};
-
-					Object.entries(updatedState).forEach(([key, value]) => {
-						setData(key, value);
-					});
-
-					return updatedState;
-				});
 			}
 		} catch (error) {
 			console.error("Error during handleUpdate:", error);
+			toast.error(
+				"Error fetching column values. Check frame and column selection.",
+			);
 		}
 	};
 
 	/**
-	 * Resets the current local state
+	 * Resets the current local state and block data
 	 */
 	const handleReset = () => {
 		setLocalState(initialState);
+		// Also reset block data to reflect in preview
+		Object.entries(initialState).forEach(([key, value]) => {
+			setData(key, value);
+		});
 	};
 
 	const handleToggle = (value: string) => () => {
@@ -390,18 +391,11 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 									</p>
 									<Input
 										className="w-full"
-										value={
-											(localState.column
-												? `Filter of ${localState.column}`
-												: "") || localState.filterLabel
-										}
-										onChange={() =>
+										value={localState.filterLabel}
+										onChange={(e) =>
 											updateField(
 												"filterLabel",
-												(localState.column
-													? `Filter of ${localState.column}`
-													: "") ||
-													localState.filterLabel,
+												e.target.value,
 											)
 										}
 									/>
@@ -419,7 +413,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 										onChange={(e) =>
 											updateField(
 												"sliderSensitivity",
-												e.target.value,
+												Number(e.target.value),
 											)
 										}
 									/>
@@ -476,7 +470,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 									Allow Multiple Selection
 								</p>
 							</div>
-							<div className="absolute right-0 bottom-4 left-0 z-[1000] mt-2 flex w-full items-center justify-end gap-2 pr-2">
+							<div className="sticky bottom-0 mt-4 flex w-full items-center justify-end gap-2 border-border border-t bg-background px-4 pt-4">
 								<Button variant="ghost" onClick={handleReset}>
 									Reset
 								</Button>

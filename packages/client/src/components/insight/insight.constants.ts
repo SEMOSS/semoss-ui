@@ -1,0 +1,6 @@
+// Insight Builder Steps
+export const INSIGHT_BUILDER_QUERY_STEP = 1;
+export const INSIGHT_BUILDER_COMPONENT_STEP = 2;
+export const INSIGHT_BUILDER_LAYOUT_STEP = 3;
+export const INSIGHT_BUILDER_APP_STEP = 4;
+export const INSIGHT_BUILDER_SETTINGS_STEP = 5;
