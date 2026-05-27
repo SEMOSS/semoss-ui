@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./LLMCell";
+export * from "./llm-cell";

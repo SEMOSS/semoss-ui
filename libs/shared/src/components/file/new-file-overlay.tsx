@@ -503,7 +503,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 																</span>
 															</div>
 															{fileIsZip && (
-																<label className="ml-auto flex items-center gap-2 whitespace-nowrap pl-2">
+																<label className="ms-auto flex items-center gap-2 whitespace-nowrap ps-2">
 																	<input
 																		type="checkbox"
 																		checked={

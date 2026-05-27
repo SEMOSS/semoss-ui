@@ -444,7 +444,7 @@ export const ToolsDefaultView = observer(
 														)}
 														:
 													</span>
-													<span className="ml-2 text-muted-foreground">
+													<span className="ms-2 text-muted-foreground">
 														{app}
 													</span>
 												</div>
@@ -455,7 +455,7 @@ export const ToolsDefaultView = observer(
 														)}
 														:
 													</span>
-													<span className="ml-2 text-muted-foreground">
+													<span className="ms-2 text-muted-foreground">
 														{
 															scriptForBrowserAutomation
 														}
@@ -555,7 +555,7 @@ export const ToolsDefaultView = observer(
 								{t("extension.stepsTitle")}
 							</p>
 							{/* biome-ignore lint/nursery/useSortedClasses: order is correct */}
-							<ol className="ml-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
+							<ol className="ms-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
 								<li>{t("extension.step1")}</li>
 								<li>{t("extension.step2")}</li>
 								<li>{t("extension.step3")}</li>
@@ -591,7 +591,7 @@ export const ToolsDefaultView = observer(
 							>
 								{extensionCheckRetrying ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										<Loader2 className="me-2 h-4 w-4 animate-spin" />
 										{t("extension.checking")}
 									</>
 								) : (

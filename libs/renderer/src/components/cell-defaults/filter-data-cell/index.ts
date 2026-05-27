@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./FilterDataCell";
+export * from "./filter-data-cell";

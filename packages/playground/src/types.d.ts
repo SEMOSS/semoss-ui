@@ -66,6 +66,9 @@ export interface MCP {
 	/** Name of the mcp */
 	name: string;
 
+	/** Engine subtype (e.g. POSTGRES, OPEN_AI) — used to pick the avatar icon */
+	subtype?: string;
+
 	/** Description of the mcp */
 	description?: string;
 

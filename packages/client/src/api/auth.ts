@@ -727,6 +727,96 @@ export const getAllUsers = async (
 	return finalResponse;
 };
 
+export const getAllAPIUsers = async (
+	admin: boolean,
+	searchTerm?: string,
+	offset?: number,
+	limit?: number,
+) => {
+	let getAllAPIUsersURL = `${Env.MODULE}/api/auth/`;
+	let getNumAPIUsersURL = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		getAllAPIUsersURL += "admin/";
+		getNumAPIUsersURL += "admin/";
+	} else {
+		return;
+	}
+
+	const encodedSearch = encodeURIComponent(searchTerm || "");
+	getAllAPIUsersURL += `user/getAllAPIUsers?filterWord=${encodedSearch}&offset=${offset}&limit=${limit}`;
+
+	const response = await get<
+		{
+			id: string;
+			type: string;
+			name?: string;
+			email?: string;
+			username?: string;
+		}[]
+	>(getAllAPIUsersURL).catch((error) => {
+		throw Error(error);
+	});
+
+	const buildCountUrl = (filterWord?: string) => {
+		let url = `${getNumAPIUsersURL}user/getNumAPIUsers`;
+		if (filterWord !== undefined) {
+			url += `?filterWord=${encodeURIComponent(filterWord)}`;
+		}
+		return url;
+	};
+
+	const totalCountResponse = await get<number>(buildCountUrl("")).catch(
+		(error) => {
+			throw Error(error);
+		},
+	);
+	if (!totalCountResponse) {
+		throw Error("No Response to get Service Accounts");
+	}
+
+	const totalUsers = Number(totalCountResponse.data ?? 0);
+	const trimmedSearch = searchTerm?.trim() ?? "";
+	let filteredUsers = totalUsers;
+
+	if (trimmedSearch.length > 0) {
+		const filteredCountResponse = await get<number>(
+			buildCountUrl(trimmedSearch),
+		).catch((error) => {
+			throw Error(error);
+		});
+		if (!filteredCountResponse) {
+			throw Error("No Response to get Service Accounts");
+		}
+		filteredUsers = Number(filteredCountResponse.data ?? 0);
+	}
+
+	if (!response) {
+		throw Error("No Response to get Service Accounts");
+	}
+
+	return {
+		users: response.data,
+		totalUsers,
+		filteredUsers,
+	};
+};
+
+export const createAPIUser = async (name: string) => {
+	const url = `${Env.MODULE}/api/auth/createAPIUser`;
+
+	const response = await post<Record<string, string>>(
+		url,
+		processPostData({
+			name: name,
+		}),
+		{},
+	).catch((error) => {
+		throw Error(error);
+	});
+
+	return response.data;
+};
+
 export const deleteMember = async (
 	admin: boolean,
 	userId: string,

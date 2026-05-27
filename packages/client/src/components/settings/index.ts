@@ -3,6 +3,7 @@ export * from "./engine-qa-sidebar";
 export * from "./file-table";
 export * from "./members-table";
 export * from "./pending-members-table";
+export * from "./service-accounts-table";
 export * from "./settings.types";
 export * from "./settings-tiles";
 export * from "./update-smss";

@@ -7,6 +7,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "@semoss/i18n";
 import { Button } from "@semoss/ui/next";
 import { useRoot, useTour } from "@/hooks";
 
@@ -17,62 +18,30 @@ interface TourStep {
 	placement?: "top" | "bottom" | "left" | "right";
 }
 
-const TOUR_STEPS: TourStep[] = [
-	{
-		title: "Welcome!",
-		content: "Let's take a quick tour to get you started.",
-	},
-	{
-		target: "tour-input",
-		title: "Start a conversation",
-		content: "Type your question here and press Enter.",
-		placement: "top",
-	},
-	{
-		target: "tour-input-menu",
-		title: "Attach & configure",
-		content:
-			"Add files, agents, knowledge libraries, and tools to enhance your conversation.",
-		placement: "top",
-	},
-	{
-		target: "tour-model",
-		title: "Model",
-		content: "Select which AI model powers your conversation.",
-		placement: "top",
-	},
-	{
-		target: "tour-record",
-		title: "Record",
-		content: "Click to speak, your voice will be converted to text.",
-		placement: "top",
-	},
-	{
-		target: "tour-new-chat",
-		title: "New chat",
-		content: "Start a fresh conversation anytime.",
-		placement: "right",
-	},
+// Static step definitions (target + placement). Title/content are
+// translated at render time from the `tour` namespace via the step `key`.
+interface TourStepDef {
+	key: string;
+	target?: string;
+	placement?: "top" | "bottom" | "left" | "right";
+}
+
+const TOUR_STEP_DEFS: TourStepDef[] = [
+	{ key: "welcome" },
+	{ key: "input", target: "tour-input", placement: "top" },
+	{ key: "inputMenu", target: "tour-input-menu", placement: "top" },
+	{ key: "model", target: "tour-model", placement: "top" },
+	{ key: "record", target: "tour-record", placement: "top" },
+	{ key: "newChat", target: "tour-new-chat", placement: "right" },
 	// customSteps from theme are inserted here (after tour-new-chat)
 	{
+		key: "chatHistory",
 		target: "tour-chat-history",
-		title: "Chat History",
-		content: "Continue, favorite, edit, or delete past conversations.",
 		placement: "right",
 	},
-	{
-		target: "tour-search",
-		title: "Search",
-		content: "Quickly find previous chats from your chat history.",
-		placement: "right",
-	},
+	{ key: "search", target: "tour-search", placement: "right" },
 	// trailingCustomSteps from theme are inserted here (after tour-search)
-	{
-		target: "tour-take-tour",
-		title: "Take a tour",
-		content: "Replay this walkthrough anytime.",
-		placement: "right",
-	},
+	{ key: "takeTour", target: "tour-take-tour", placement: "right" },
 ];
 
 const CARD_WIDTH = 320;
@@ -146,6 +115,7 @@ function getCardStyle(
 }
 
 export const LandingTour: React.FC = observer(() => {
+	const { t } = useTranslation("tour");
 	const { isOpen, stopTour } = useTour();
 	const { root } = useRoot();
 	const [step, setStep] = useState(0);
@@ -156,15 +126,23 @@ export const LandingTour: React.FC = observer(() => {
 		const custom = root.theme.tour?.customSteps ?? [];
 		const trailing = root.theme.tour?.trailingCustomSteps ?? [];
 		const overrides = root.theme.tour?.stepOverrides ?? {};
-		const base = TOUR_STEPS.filter((s) => {
+		// Theme overrides are keyed by the step target (or "welcome").
+		// Translation keys live under `steps.<key>.title|content`.
+		const base = TOUR_STEP_DEFS.filter((s) => {
 			const id = s.target ?? "welcome";
 			return !excluded.has(id);
-		}).map((s) => {
+		}).map<TourStep>((s) => {
 			const id = s.target ?? "welcome";
+			const translated: TourStep = {
+				target: s.target,
+				placement: s.placement,
+				title: t(`steps.${s.key}.title`),
+				content: t(`steps.${s.key}.content`),
+			};
 			const ov = overrides[id];
-			return ov ? { ...s, ...ov } : s;
+			return ov ? { ...translated, ...ov } : translated;
 		});
-		const mapStep = (s: (typeof custom)[number]) => ({
+		const mapStep = (s: (typeof custom)[number]): TourStep => ({
 			target: `nav-${s.navItemPath}`,
 			title: s.title,
 			content: s.content,
@@ -188,6 +166,7 @@ export const LandingTour: React.FC = observer(() => {
 			...withCustom.slice(adjustedTrailingAt),
 		];
 	}, [
+		t,
 		root.theme.tour?.excludedSteps,
 		root.theme.tour?.customSteps,
 		root.theme.tour?.trailingCustomSteps,
@@ -294,7 +273,7 @@ export const LandingTour: React.FC = observer(() => {
 						<button
 							type="button"
 							onClick={stopTour}
-							aria-label="Close tour"
+							aria-label={t("controls.closeTour")}
 							className="mt-0.5 shrink-0 text-muted-foreground transition-colors hover:text-foreground"
 						>
 							<XIcon className="size-4" />
@@ -318,7 +297,7 @@ export const LandingTour: React.FC = observer(() => {
 								onClick={stopTour}
 								className="text-muted-foreground hover:text-foreground"
 							>
-								Skip
+								{t("controls.skip")}
 							</Button>
 							{!isFirst && (
 								<Button
@@ -326,21 +305,21 @@ export const LandingTour: React.FC = observer(() => {
 									size="sm"
 									onClick={() => setStep((s) => s - 1)}
 								>
-									<ChevronLeftIcon className="size-4" />
-									Back
+									<ChevronLeftIcon className="rtl:-scale-x-100 size-4" />
+									{t("controls.back")}
 								</Button>
 							)}
 							{isLast ? (
 								<Button size="sm" onClick={stopTour}>
-									Done
+									{t("controls.done")}
 								</Button>
 							) : (
 								<Button
 									size="sm"
 									onClick={() => setStep((s) => s + 1)}
 								>
-									Next
-									<ChevronRightIcon className="size-4" />
+									{t("controls.next")}
+									<ChevronRightIcon className="rtl:-scale-x-100 size-4" />
 								</Button>
 							)}
 						</div>
