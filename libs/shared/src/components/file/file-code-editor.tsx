@@ -44,12 +44,16 @@ interface FileCodeEditorProps {
 	 * @returns
 	 */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** Optional content rendered at the start of the toolbar row */
+	leadingToolbar?: React.ReactNode;
 }
 
 export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	leadingToolbar,
 }) => {
 	const insight = useInsight();
 	const [isLoading, setIsLoading] = useState(false);
@@ -394,6 +398,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			{/* Toolbar */}
 			<div className="flex w-full shrink-0 items-center justify-between gap-1 border-border border-b px-1.5 py-0.5">
 				<div className="flex items-center gap-1">
+					{leadingToolbar}
 					{language === "json" && jsonErrors.length > 0 && (
 						<button
 							type="button"
