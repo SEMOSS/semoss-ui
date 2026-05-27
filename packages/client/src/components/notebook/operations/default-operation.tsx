@@ -9,6 +9,8 @@ interface DefaultOperationProps {
 	expandAll?: boolean;
 	/** Hide the JSON viewer's built-in expand-all toggle. */
 	hideJsonToggle?: boolean;
+	/** Reserve fully-expanded height in the JSON viewer (modal contexts). */
+	fixedJsonHeight?: boolean;
 }
 
 /**
@@ -16,7 +18,7 @@ interface DefaultOperationProps {
  */
 export const DefaultOperation = observer(
 	(props: DefaultOperationProps): JSX.Element => {
-		const { output, expandAll, hideJsonToggle } = props;
+		const { output, expandAll, hideJsonToggle, fixedJsonHeight } = props;
 
 		if (typeof output === "string" || typeof output === "object") {
 			const value = isOutputJSON(output);
@@ -26,6 +28,7 @@ export const DefaultOperation = observer(
 						value={value}
 						expandAll={expandAll}
 						hideToggle={hideJsonToggle}
+						fixedHeight={fixedJsonHeight}
 					/>
 				);
 			} else {

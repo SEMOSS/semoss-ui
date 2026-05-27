@@ -408,7 +408,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showScrollup && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute top-4 right-4 z-50">
+							<span className="absolute end-4 top-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
@@ -429,7 +429,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				{showScrolldown && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute right-4 bottom-4 z-50">
+							<span className="absolute end-4 bottom-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}
