@@ -47,7 +47,16 @@ export const addProject = async (
 
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {});
+	}>(url, postData, {}).catch((error) => {
+		const errorMessage =
+			error?.response?.data?.errorMessage ||
+			error?.response?.data?.ERROR_MESSAGE ||
+			error?.response?.data?.message ||
+			error?.message ||
+			"Failed to add project permission.";
+
+		throw Error(errorMessage);
+	});
 	return response;
 };
 

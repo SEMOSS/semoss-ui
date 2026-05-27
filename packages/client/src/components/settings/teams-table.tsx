@@ -37,6 +37,11 @@ interface TeamRow {
 	dateAdded: string;
 }
 
+interface TeamsTableProps {
+	type?: "ENGINE" | "PROJECT";
+	id?: string;
+}
+
 const parseGroupsResponse = (result: unknown) => {
 	if (Array.isArray(result)) {
 		return {
@@ -54,19 +59,22 @@ const parseGroupsResponse = (result: unknown) => {
 		const hasTotal = typeof payload.totalGroups === "number";
 		return {
 			groups,
-			totalGroups: hasTotal ? payload.totalGroups : groups.length,
+			totalGroups: hasTotal
+				? (payload.totalGroups ?? groups.length)
+				: groups.length,
 			hasTotal,
 		};
 	}
 	return { groups: [] as RawTeam[], totalGroups: 0, hasTotal: false };
 };
 
-export const TeamsTable = ({ type, id }) => {
+export const TeamsTable = ({ type, id }: TeamsTableProps) => {
 	const [teams, setTeams] = useState<TeamRow[]>([]);
 	const [totalTeams, setTotalTeams] = useState(0);
 	const [isLoading, setIsLoading] = useState(false);
 	const [usesServerPagination, setUsesServerPagination] = useState(false);
 	const [addModal, setAddModal] = useState(false);
+	const [refreshToken, setRefreshToken] = useState(0);
 	const {
 		page,
 		rowsPerPage,
@@ -84,6 +92,7 @@ export const TeamsTable = ({ type, id }) => {
 
 	useEffect(() => {
 		if (!type || !id) return;
+		const currentRefreshToken = refreshToken;
 		const fetchTeams = async () => {
 			setIsLoading(true);
 			try {
@@ -159,11 +168,13 @@ export const TeamsTable = ({ type, id }) => {
 				setTotalTeams(0);
 				setUsesServerPagination(false);
 			} finally {
-				setIsLoading(false);
+				if (currentRefreshToken === refreshToken) {
+					setIsLoading(false);
+				}
 			}
 		};
 		fetchTeams();
-	}, [id, rowsPerPage, type, offset]);
+	}, [id, rowsPerPage, type, offset, refreshToken]);
 
 	const visibleTeams = usesServerPagination
 		? teams
@@ -172,14 +183,29 @@ export const TeamsTable = ({ type, id }) => {
 	return (
 		<div className="rounded-xl">
 			<AddTeamModal
-				type={type}
 				open={addModal}
-				onClose={() => setAddModal(false)}
+				showTeamModeSwitch={true}
+				showMembersField={true}
+				showPermissionField={type === "PROJECT" || type === "ENGINE"}
+				projectId={type === "PROJECT" ? String(id) : undefined}
+				engineId={type === "ENGINE" ? String(id) : undefined}
+				onClose={(team) => {
+					setAddModal(false);
+					if (team?.id) {
+						setPage(0);
+						setRefreshToken((previous) => previous + 1);
+					}
+				}}
 			/>
 			<div className="rounded-xl border border-border">
-				<div className="flex items-center self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
+				<div className="flex items-center justify-between self-stretch rounded-t-xl bg-background shadow-[0px_-1px_0px_0px_rgba(0,0,0,0.12)_inset]">
 					<div className="flex items-center gap-2.5 p-3 px-6 py-3">
 						<H4>Teams</H4>
+					</div>
+					<div className="px-6 py-3">
+						<Button onClick={() => setAddModal(true)}>
+							Add Team
+						</Button>
 					</div>
 				</div>
 				<div className="overflow-x-auto">
