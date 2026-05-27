@@ -352,7 +352,7 @@ export const MembersList = ({
 								setUsersToDelete(users);
 							}}
 						>
-							<Trash2 className="mr-1.5 h-4 w-4" />
+							<Trash2 className="me-1.5 h-4 w-4" />
 							Delete Selected
 						</Button>
 					</div>
@@ -524,7 +524,7 @@ export const MembersList = ({
 																	user.permission,
 																)}
 															</span>
-															<ChevronDown className="ml-auto h-4 w-4" />
+															<ChevronDown className="ms-auto h-4 w-4" />
 														</Button>
 													</DropdownMenuTrigger>
 													<DropdownMenuContent>
@@ -706,7 +706,7 @@ export const MembersList = ({
 						</TableBody>
 					</Table>
 				</div>
-				<p className="mt-2 text-right text-muted-foreground text-sm">
+				<p className="mt-2 text-end text-muted-foreground text-sm">
 					{userData.length} of {totalMembers}{" "}
 					{totalMembers === 1 ? "member" : "members"}
 				</p>
@@ -725,7 +725,7 @@ export const MembersList = ({
 						Remove member access from this resource. This action
 						cannot be undone.
 					</DialogDescription>
-					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2 pr-1">
+					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2 pe-1">
 						{usersToDelete.map((u) => (
 							<div
 								key={`${u.type}-${u.id}`}

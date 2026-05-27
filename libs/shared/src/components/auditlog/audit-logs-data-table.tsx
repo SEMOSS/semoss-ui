@@ -493,7 +493,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								variant="outline"
 								onClick={handleClearAllFilters}
 							>
-								<X className="mr-2 h-4 w-4" />
+								<X className="me-2 h-4 w-4" />
 								Clear All Filters
 							</Button>
 						)}
@@ -505,7 +505,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									onChange={(e) =>
 										setSearchQuery(e.target.value)
 									}
-									className="w-96 pl-10"
+									className="w-96 ps-10"
 								/>
 								<InputGroupAddon>
 									<Search />
@@ -515,7 +515,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										<Button
 											variant="ghost"
 											size="icon"
-											className="absolute top-2 right-2"
+											className="absolute end-2 top-2"
 											onClick={() => setSearchQuery("")}
 										>
 											<X className="h-4 w-4" />
@@ -764,7 +764,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							onPaginationChange(page - 1, rowsPerPage)
 						}
 					>
-						<ChevronLeft />
+						<ChevronLeft className="rtl:-scale-x-100" />
 					</Button>
 					<Button
 						variant="ghost"
@@ -776,7 +776,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							onPaginationChange(page + 1, rowsPerPage)
 						}
 					>
-						<ChevronRight />
+						<ChevronRight className="rtl:-scale-x-100" />
 					</Button>
 				</div>
 			</div>

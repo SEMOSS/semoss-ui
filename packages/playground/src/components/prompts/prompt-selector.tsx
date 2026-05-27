@@ -232,7 +232,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 								>
 									<div className="w-32 truncate">{title}</div>
 									<Button
-										className="ml-1"
+										className="ms-1"
 										type="button"
 										variant="ghost"
 										size="icon-sm"

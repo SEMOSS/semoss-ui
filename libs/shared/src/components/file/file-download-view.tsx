@@ -82,7 +82,7 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 						size="sm"
 						onClick={() => setShowRaw(false)}
 					>
-						<DownloadIcon className="mr-1.5 size-3" />
+						<DownloadIcon className="me-1.5 size-3" />
 						Back to download
 					</Button>
 				</div>
@@ -109,7 +109,7 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 				onClick={downloadFile}
 				disabled={isLoading}
 			>
-				<DownloadIcon className="mr-1.5 size-4" />
+				<DownloadIcon className="me-1.5 size-4" />
 				{isLoading ? "Downloading..." : "Download"}
 			</Button>
 			<Button
@@ -118,7 +118,7 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 				size="sm"
 				onClick={() => setShowRaw(true)}
 			>
-				<CodeIcon className="mr-1.5 size-3" />
+				<CodeIcon className="me-1.5 size-3" />
 				View raw content
 			</Button>
 		</div>

@@ -1,11 +1,21 @@
 import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
-import { LANGUAGES } from "./constants";
+import { getLanguageDirection, LANGUAGES } from "./constants";
 import { coreResources } from "./resources/core";
 import { playgroundResources } from "./resources/playground";
 
 export const defaultNS = "common";
+
+// Mirror i18next's active language onto <html lang> and <html dir> so RTL
+// scripts (Arabic, Hebrew, Persian, Urdu) get correct bidi behavior and
+// screen readers announce the right locale.
+const syncHtmlLangAndDir = (language: string) => {
+	if (typeof document === "undefined") return;
+	const html = document.documentElement;
+	html.lang = language;
+	html.dir = getLanguageDirection(language);
+};
 
 export class I18nBuilder {
 	/** Register i18n instance */
@@ -50,5 +60,8 @@ export class I18nBuilder {
 					useSuspense: false,
 				},
 			});
+
+		syncHtmlLangAndDir(this.i18n.language);
+		this.i18n.on("languageChanged", syncHtmlLangAndDir);
 	}
 }

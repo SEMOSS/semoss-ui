@@ -305,7 +305,7 @@ export const LandingTour: React.FC = observer(() => {
 									size="sm"
 									onClick={() => setStep((s) => s - 1)}
 								>
-									<ChevronLeftIcon className="size-4" />
+									<ChevronLeftIcon className="rtl:-scale-x-100 size-4" />
 									{t("controls.back")}
 								</Button>
 							)}
@@ -319,7 +319,7 @@ export const LandingTour: React.FC = observer(() => {
 									onClick={() => setStep((s) => s + 1)}
 								>
 									{t("controls.next")}
-									<ChevronRightIcon className="size-4" />
+									<ChevronRightIcon className="rtl:-scale-x-100 size-4" />
 								</Button>
 							)}
 						</div>
