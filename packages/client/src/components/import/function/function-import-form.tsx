@@ -132,10 +132,49 @@ export const FunctionForm = ({
 		});
 
 		setLoading(true);
-		let pixel = `CreateRestFunctionEngine(function=["${
-			formData.NAME
-		}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
-		if (FILE !== "") {
+		let pixel = "";
+		if (title === "PYTHON") {
+			const requiredParams =
+				formData.FUNCTION_REQUIRED_PARAMETERS !== ""
+					? JSON.stringify([
+							formData.FUNCTION_REQUIRED_PARAMETERS,
+						]).replace(/"/g, '\\"')
+					: "[]";
+			const functionParams = JSON.stringify([
+				{
+					parameterName: formData.FUNCTION_PARAMETERS,
+					parameterType: "String",
+					parameterDescription:
+						formData.FUNCTION_REQUIRED_PARAMETERS_DESCRIPTION || "",
+				},
+			]).replace(/"/g, '\\"');
+			const fileName = formData.PYTHON_FILE_NAME
+				? formData.PYTHON_FILE_NAME
+				: "main.py";
+			const content = formData.CONTENT
+				? formData.CONTENT
+				: "Test Function Content";
+
+			pixel = `
+CreatePythonFunctionEngine(
+    function=["${formData.NAME}"],
+    content=["${content}"],
+    functionDetails=[{
+        "FUNCTION_NAME":"${formData.NAME}",
+        "FUNCTION_DESCRIPTION":"${formData.FUNCTION_DESCRIPTION || ""}",
+        "FUNCTION_TYPE":"LOCAL_PYTHON",
+        "FUNCTION_REQUIRED_PARAMETERS":"${requiredParams}",
+        "FUNCTION_PARAMETERS":"${functionParams}",
+        "PYTHON_FILE_NAME":"${fileName}"
+    }]
+);
+		`;
+		} else {
+			pixel = `CreateRestFunctionEngine(function=["${
+				formData.NAME
+			}"],functionDetails=[${JSON.stringify(newFormData)}]);`;
+		}
+		if (FILE !== "" && title !== "PYTHON") {
 			try {
 				const uploadedFiles = await uploadFile(
 					[FILE],
@@ -1121,6 +1160,38 @@ export const FunctionForm = ({
 							</Field>
 						);
 					}
+					case "textarea":
+						return (
+							<Field className={val.hidden ? "hidden" : ""}>
+								<FieldLabel htmlFor={val.key}>
+									{val.label}
+									{val?.required && (
+										<span className="text-destructive">
+											*
+										</span>
+									)}
+								</FieldLabel>
+								<Textarea
+									{...field}
+									id={val.key}
+									rows={4}
+									disabled={val.disabled}
+									aria-invalid={!!error}
+									data-testid={`function-form-input-${val.key}`}
+								/>
+								{error ? (
+									<FieldDescription className="text-destructive">
+										{getHelperText(error, val)}
+									</FieldDescription>
+								) : (
+									val.helperText && (
+										<FieldDescription>
+											{val.helperText}
+										</FieldDescription>
+									)
+								)}
+							</Field>
+						);
 					default:
 						return null;
 				}
@@ -1135,6 +1206,13 @@ export const FunctionForm = ({
 			</div>
 		);
 	}
+	const getHelperText = (error, val) => {
+		if (!error) return val.helperText || "";
+		if (error.type === "checkField" && val.rules?.custom?.message) {
+			return val.rules.custom.message;
+		}
+		return error.message;
+	};
 
 	return (
 		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="function-form">
