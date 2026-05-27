@@ -47,7 +47,6 @@ export const LOGICAL_DATA_TYPES: LogicalDataType[] = [
 	"TIMESTAMP",
 ];
 
-
 interface ImportEditMetamodelProps {
 	open: boolean;
 	onClose: () => void;
@@ -82,20 +81,17 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 	isEdit = true,
 	readOnly = false,
 }) => {
-	const typesList = useMemo(
-		() => types ?? LOGICAL_DATA_TYPES,
-		[types],
-	);
+	const typesList = useMemo(() => types ?? LOGICAL_DATA_TYPES, [types]);
 
 	type LogicalNameItem = { id: string; name: string };
 
 	const resolveType = (raw: string) =>
 		typesList.includes(raw) ? raw : typesList[0];
 
-	const [singleNameVal, setSingleNameVal] = useState<string>(initialName ?? "");
-	const [typeVal, setTypeVal] = useState<string>(
-		resolveType(initialType),
+	const [singleNameVal, setSingleNameVal] = useState<string>(
+		initialName ?? "",
 	);
+	const [typeVal, setTypeVal] = useState<string>(resolveType(initialType));
 	const [activeTab, setActiveTab] = useState<string>("edit");
 	const [logicalNames, setLogicalNames] = useState<LogicalNameItem[]>([]);
 	const [newLogicalName, setNewLogicalName] = useState<string>("");
@@ -236,7 +232,9 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 			</Field>
 
 			<Field>
-				<FieldLabel className="mb-1.5 text-sm">Logical Data Type</FieldLabel>
+				<FieldLabel className="mb-1.5 text-sm">
+					Logical Data Type
+				</FieldLabel>
 				<Select
 					value={typeVal || typesList[0]}
 					onValueChange={(value) => setTypeVal(value)}
@@ -260,7 +258,9 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 
 			{initialRawType && (
 				<Field>
-					<FieldLabel className="mb-1.5 text-sm">Physical Data Type</FieldLabel>
+					<FieldLabel className="mb-1.5 text-sm">
+						Physical Data Type
+					</FieldLabel>
 					<Input
 						value={initialRawType}
 						readOnly
@@ -327,7 +327,9 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 								</FieldLabel>
 								<Textarea
 									value={description}
-									onChange={(e) => setDescription(e.target.value)}
+									onChange={(e) =>
+										setDescription(e.target.value)
+									}
 									placeholder="Enter description"
 									rows={4}
 									className="min-h-[100px] w-full resize-y"
@@ -337,7 +339,10 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 							</Field>
 						</TabsContent>
 
-						<TabsContent value="logical-names" className="mt-4 space-y-3">
+						<TabsContent
+							value="logical-names"
+							className="mt-4 space-y-3"
+						>
 							<div className="max-h-[200px] overflow-auto rounded-md border border-border">
 								<Table>
 									<TableHeader className="sticky top-0 bg-muted/50">
@@ -372,13 +377,15 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 														{item.name}
 													</TableCell>
 													{!readOnly && (
-														<TableCell className="border-border border-l py-1 text-center">
+														<TableCell className="border-border border-s py-1 text-center">
 															<Button
 																variant="ghost"
 																size="icon"
 																className="size-8"
 																onClick={() =>
-																	handleRemoveLogicalName(item.id)
+																	handleRemoveLogicalName(
+																		item.id,
+																	)
 																}
 																data-testid={`engineMetadata-logicalname-${item.id}-remove`}
 															>
@@ -400,12 +407,17 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 											placeholder="Add logical name"
 											value={newLogicalName}
 											onChange={(e) => {
-												setNewLogicalName(e.target.value);
+												setNewLogicalName(
+													e.target.value,
+												);
 												if (logicalNameError)
 													setLogicalNameError("");
 											}}
 											onKeyDown={(e) => {
-												if (e.key === "Enter" && newLogicalName.trim()) {
+												if (
+													e.key === "Enter" &&
+													newLogicalName.trim()
+												) {
 													handleAddLogicalName();
 												}
 											}}
@@ -434,7 +446,7 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 						</TabsContent>
 					</Tabs>
 				) : (
-					<>{EditForm}</>
+					EditForm
 				)}
 
 				<DialogFooter>
@@ -458,7 +470,9 @@ export const ImportEditMetamodel: React.FC<ImportEditMetamodelProps> = ({
 							<Button
 								variant="default"
 								onClick={handleSave}
-								disabled={!singleNameVal.trim() || !!columnNameError}
+								disabled={
+									!singleNameVal.trim() || !!columnNameError
+								}
 								data-testid="engineMetadata-save-btn"
 							>
 								Save

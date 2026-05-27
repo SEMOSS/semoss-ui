@@ -93,10 +93,12 @@ export const NotebookCell = observer(
 		const { workspace } = useWorkspace();
 
 		const [showRaw, setShowRaw] = useState(false);
+		const [showRawLogging, setShowRawLogging] = useState(false);
 		const [showConsole, setShowConsole] = useState(false);
 		const [showLoggingModal, setShowLoggingModal] = useState(false);
 		const [showOutputModal, setShowOutputModal] = useState(false);
-		const [expandAllOutput, setExpandAllOutput] = useState(false);
+		const [expandAllOutput, setExpandAllOutput] = useState(true);
+		const [expandAllLogging, setExpandAllLogging] = useState(true);
 
 		const [renameOpen, setRenameOpen] = useState(false);
 
@@ -481,6 +483,21 @@ export const NotebookCell = observer(
 			return { lines, bytes };
 		}, [rawOutput]);
 
+		const loggingStats = useMemo(() => {
+			const joined = cell.messages.join("\n");
+			const lines = joined ? joined.split("\n").length : 0;
+			const bytes = joined ? new TextEncoder().encode(joined).length : 0;
+			return { lines, bytes };
+			// cell.messages is a MobX-observable array mutated in place via
+			// .push, so its reference is stable — depend on .length so this
+			// re-runs whenever a new message arrives.
+		}, [cell.messages, cell.messages.length]);
+
+		const loggingHasJson = useMemo(
+			() => cell.messages.some((m) => isOutputJSON(m) != null),
+			[cell.messages, cell.messages.length],
+		);
+
 		const formatBytes = (bytes: number) => {
 			if (bytes < 1024) return `${bytes} bytes`;
 			if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -586,13 +603,19 @@ export const NotebookCell = observer(
 						{showConsole && (
 							<div className="flex items-center gap-1">
 								<Button
-									title="Expand"
-									variant="ghost"
+									title={
+										showRawLogging
+											? "Show formatted"
+											: "Show raw"
+									}
+									variant={
+										showRawLogging ? "secondary" : "ghost"
+									}
 									size="sm"
-									className="h-7 px-2 text-muted-foreground"
-									onClick={() => setShowLoggingModal(true)}
+									className="h-7 px-2 text-xs"
+									onClick={() => setShowRawLogging((v) => !v)}
 								>
-									<Maximize2 className="size-3" />
+									{showRawLogging ? "Formatted" : "Raw"}
 								</Button>
 								<Button
 									title="Copy logs"
@@ -607,12 +630,27 @@ export const NotebookCell = observer(
 								>
 									<Copy className="size-3" />
 								</Button>
+								<Button
+									title="Expand"
+									variant="ghost"
+									size="sm"
+									className="h-7 px-2 text-muted-foreground"
+									onClick={() => setShowLoggingModal(true)}
+								>
+									<Maximize2 className="size-3" />
+								</Button>
 							</div>
 						)}
 					</div>
 					{showConsole && (
 						<div className="max-h-[200px] overflow-y-auto rounded bg-muted/30 px-2 py-1">
-							<NotebookCellConsole messages={cell.messages} />
+							{showRawLogging ? (
+								<pre className="whitespace-pre-wrap break-all font-mono text-xs">
+									{cell.messages.join("\n")}
+								</pre>
+							) : (
+								<NotebookCellConsole messages={cell.messages} />
+							)}
 						</div>
 					)}
 				</div>
@@ -1130,31 +1168,112 @@ export const NotebookCell = observer(
 					open={showLoggingModal}
 					onOpenChange={(o) => !o && setShowLoggingModal(false)}
 				>
-					<DialogContent className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]">
+					<DialogContent
+						showCloseButton={false}
+						className="flex max-h-[85vh] w-[80vw] max-w-[80vw] flex-col sm:max-w-[80vw]"
+					>
 						<DialogHeader>
-							<div className="flex items-center justify-between gap-2 pr-8">
-								<DialogTitle>
-									Logging ({cell.messages.length})
-								</DialogTitle>
-								<Button
-									title="Copy logs"
-									variant="ghost"
-									size="sm"
-									className="h-7 px-2 text-muted-foreground"
-									onClick={() =>
-										copyTextToClipboard(
-											cell.messages.join("\n"),
-										)
-									}
-								>
-									<Copy className="size-3" />
-								</Button>
+							<DialogTitle className="sr-only">
+								Logging
+							</DialogTitle>
+							<div className="flex items-center justify-between gap-2">
+								<div className="flex min-w-0 items-center gap-2">
+									<span className="font-medium text-foreground text-sm">
+										Logging ({cell.messages.length})
+									</span>
+								</div>
+								<div className="flex items-center gap-1">
+									<Button
+										title={
+											showRawLogging
+												? "Show formatted"
+												: "Show raw"
+										}
+										variant={
+											showRawLogging
+												? "secondary"
+												: "ghost"
+										}
+										size="sm"
+										className="h-7 px-2 text-xs"
+										onClick={() =>
+											setShowRawLogging((v) => !v)
+										}
+									>
+										{showRawLogging ? "Formatted" : "Raw"}
+									</Button>
+									<Button
+										title="Copy logs"
+										variant="ghost"
+										size="sm"
+										className="h-7 px-2 text-muted-foreground"
+										onClick={() =>
+											copyTextToClipboard(
+												cell.messages.join("\n"),
+											)
+										}
+									>
+										<Copy className="size-3" />
+									</Button>
+									<DialogClose asChild>
+										<Button
+											title="Close"
+											variant="ghost"
+											size="sm"
+											className="h-7 px-2 text-muted-foreground"
+										>
+											<X className="size-3" />
+										</Button>
+									</DialogClose>
+								</div>
 							</div>
 						</DialogHeader>
-						<div className="flex-1 overflow-hidden rounded bg-muted/30">
-							<div className="h-full overflow-y-auto px-3 py-2">
-								<NotebookCellConsole messages={cell.messages} />
+						<div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded bg-muted/30">
+							<div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+								{showRawLogging ? (
+									<pre className="whitespace-pre-wrap break-all font-mono text-xs">
+										{cell.messages.join("\n")}
+									</pre>
+								) : (
+									<NotebookCellConsole
+										messages={cell.messages}
+										expandAll={expandAllLogging}
+										hideJsonToggle
+										fixedHeight
+									/>
+								)}
 							</div>
+						</div>
+						<div className="flex w-full flex-row items-center justify-between gap-2 px-1 pt-1 text-muted-foreground text-xs">
+							<span className="font-mono">
+								{loggingStats.lines}{" "}
+								{loggingStats.lines === 1 ? "line" : "lines"}
+								{" · "}
+								{formatBytes(loggingStats.bytes)}
+							</span>
+							{!showRawLogging && loggingHasJson && (
+								<button
+									type="button"
+									aria-label={
+										expandAllLogging
+											? "Collapse all JSON nodes"
+											: "Expand all JSON nodes"
+									}
+									className="inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+									onClick={() =>
+										setExpandAllLogging((v) => !v)
+									}
+								>
+									{expandAllLogging ? (
+										<ChevronsDownUp className="size-3" />
+									) : (
+										<ChevronsUpDown className="size-3" />
+									)}
+									{expandAllLogging
+										? "Collapse all"
+										: "Expand all"}
+								</button>
+							)}
 						</div>
 					</DialogContent>
 				</Dialog>
@@ -1250,6 +1369,7 @@ export const NotebookCell = observer(
 															expandAllOutput
 														}
 														hideJsonToggle
+														fixedJsonHeight
 														cellData={{
 															cellId: cell.id.toString(),
 															queryId:

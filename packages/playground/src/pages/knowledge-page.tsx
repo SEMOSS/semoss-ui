@@ -483,7 +483,7 @@ export const DocumentLibrary = () => {
 													{centerFilter.length === 0
 														? "Tags"
 														: `Tags (${centerFilter.length})`}
-													<ChevronDown className="ml-1 h-4 w-4" />
+													<ChevronDown className="ms-1 h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
 											<PopoverContent
@@ -529,7 +529,7 @@ export const DocumentLibrary = () => {
 																			checked={centerFilter.includes(
 																				center,
 																			)}
-																			className="mr-2"
+																			className="me-2"
 																		/>
 																		{center}
 																	</CommandItem>
@@ -571,7 +571,7 @@ export const DocumentLibrary = () => {
 													{sortBy === "name"
 														? "Sort: Name"
 														: "Sort: Date"}
-													<ChevronDown className="ml-1 h-4 w-4" />
+													<ChevronDown className="ms-1 h-4 w-4" />
 												</Button>
 											</PopoverTrigger>
 											<PopoverContent
@@ -627,13 +627,13 @@ export const DocumentLibrary = () => {
 				</Card>
 
 				{filteredItems.length > 0 ? (
-					<div className="max-h-[70vh] overflow-y-auto pr-1">
+					<div className="max-h-[70vh] overflow-y-auto pe-1">
 						<div className="flex flex-col gap-2 max-w-3xl">
 							{filteredItems.map((item, index) => (
 								<button
 									type="button"
 									key={item.engine_name || item.id || index}
-									className="text-left w-full"
+									className="text-start w-full"
 									onClick={() =>
 										navigate(`/knowledge/${item.id}`)
 									}
@@ -665,7 +665,7 @@ export const DocumentLibrary = () => {
 												</div>
 											</div>
 											{item.dateCreated && (
-												<p className="w-44 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+												<p className="w-44 shrink-0 text-end text-xs text-muted-foreground tabular-nums">
 													{formatDateTime(
 														item.dateCreated,
 													)}

@@ -370,7 +370,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		preview.textContent =
 			count > 1 ? `Move ${count} items` : `Move ${dragItems[0]?.name}`;
 		preview.className =
-			"fixed -top-96 left-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
+			"fixed -top-96 start-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
 		document.body.appendChild(preview);
 		dataTransfer.setDragImage(preview, 12, 12);
 		window.setTimeout(() => preview.remove(), 0);
@@ -498,7 +498,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				<div
 					data-testid={`${itemTestId}-row`}
 					className={[
-						"group flex min-h-7 min-w-full flex-row items-center rounded-md pr-2 transition-colors",
+						"group flex min-h-7 min-w-full flex-row items-center rounded-md pe-2 transition-colors",
 						effectiveIsContextActive
 							? "bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset"
 							: "",
@@ -520,7 +520,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					title={`Path: ${item.path}${item.lastModified ? `\nLast Modified: ${item.lastModified}` : ""}`}
 				>
 					{/* Column 1 — Name */}
-					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pr-2">
+					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pe-2">
 						{isRenaming ? (
 							<input
 								data-testid={`${itemTestId}-rename-input`}
@@ -552,7 +552,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							<button
 								data-testid={`${itemTestId}-name-button`}
 								type="button"
-								className="min-w-0 truncate bg-transparent p-0 text-left text-sm"
+								className="min-w-0 truncate bg-transparent p-0 text-start text-sm"
 								onDoubleClick={(e) => {
 									if (!canRename || isDirectory) return;
 									e.stopPropagation();
@@ -588,7 +588,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					{/* Column 2: Date */}
 					<div
 						data-testid={`${itemTestId}-date`}
-						className="shrink-0 overflow-hidden truncate px-2 text-right text-[11px] text-muted-foreground"
+						className="shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
 						style={{ width: "var(--date-col-width, 170px)" }}
 					>
 						{macDate ?? ""}

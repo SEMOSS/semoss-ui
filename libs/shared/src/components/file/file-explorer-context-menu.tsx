@@ -387,7 +387,7 @@ export const FileExplorerContextMenu: React.FC<
 						role="menuitem"
 						disabled={entry.disabled}
 						className={[
-							"flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors",
+							"flex w-full items-center gap-2 px-3 py-1.5 text-start text-sm transition-colors",
 							"focus:bg-accent focus:outline-none",
 							entry.disabled
 								? "cursor-not-allowed text-muted-foreground/50"

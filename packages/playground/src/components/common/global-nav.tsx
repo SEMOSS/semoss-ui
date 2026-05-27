@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noArrayIndexKey: TODO
 import dayjs from "dayjs";
 import {
 	ComputerIcon,
@@ -144,12 +143,12 @@ export const GlobalNav = observer(() => {
 		() => -1,
 		(response) => response,
 		{},
-		// Re-fetch when the chat store's roomCounter increments
-		// (new chat, rename, delete elsewhere). The reset useEffect
-		// below relies on MobX observability which is fragile inside
-		// effect deps — wiring the counter directly into the iterator
-		// deps is the source of truth.
-		[chat.keys.roomCounter],
+		// No roomCounter dependency here — the useEffect below already
+		// calls reset() when roomCounter increments, and reset() preserves
+		// the current data while refetching (no blank flash). Putting
+		// roomCounter in the useIteratorPixel deps would call setAllData([])
+		// instead, which is the source of the sidebar flicker.
+		[],
 	);
 
 	const getRooms = useIteratorPixel<
@@ -185,9 +184,9 @@ export const GlobalNav = observer(() => {
 		{
 			limit: 25,
 		},
-		// Re-fetch on search change OR when the chat store's
-		// roomCounter increments (rename / delete elsewhere in app).
-		[debouncedSearch, chat.keys.roomCounter],
+		// Re-fetch only on search change — counter-based refreshes are handled
+		// by the useEffect below, which calls reset() and preserves data.
+		[debouncedSearch],
 	);
 
 	/**
@@ -424,14 +423,13 @@ export const GlobalNav = observer(() => {
 									asChild
 									isActive={!!matchPath("/new", pathname)}
 									tooltip={{
-										children:
-											"New Chat - Start a fresh conversation anytime.",
+										children: t("nav.newChat.tooltip"),
 										hidden: false,
 									}}
 								>
 									<Link to={"/new"} aria-label={"New Chat"}>
 										<SquarePenIcon />
-										{t("new")}
+										{t("nav.newChat.label")}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -444,7 +442,7 @@ export const GlobalNav = observer(() => {
 											!!matchPath("/agent", pathname)
 										}
 										tooltip={{
-											children: "Agents",
+											children: t("nav.agents.tooltip"),
 											hidden: false,
 										}}
 									>
@@ -453,7 +451,7 @@ export const GlobalNav = observer(() => {
 											aria-label={"agent"}
 										>
 											<ComputerIcon />
-											{t("agents")}
+											{t("nav.agents.label")}
 										</Link>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
@@ -464,17 +462,13 @@ export const GlobalNav = observer(() => {
 									asChild
 									isActive={!!matchPath("/chats", pathname)}
 									tooltip={{
-										children: t("allChats", {
-											defaultValue: "All chats",
-										}),
+										children: t("nav.allChats.tooltip"),
 										hidden: false,
 									}}
 								>
 									<Link to={"/chats"} aria-label={"chats"}>
 										<MessagesSquareIcon />
-										{t("allChats", {
-											defaultValue: "All chats",
-										})}
+										{t("nav.allChats.label")}
 									</Link>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
@@ -547,7 +541,7 @@ export const GlobalNav = observer(() => {
 						return (
 							<SidebarGroup
 								key={bucket}
-								className="pl-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden"
+								className="ps-4 transition-all duration-200 ease-in-out group-data-[collapsible=icon]:hidden"
 							>
 								<SidebarGroupLabel className="truncate font-medium text-muted-foreground text-xs leading-normal">
 									{bucket}
@@ -638,7 +632,10 @@ export const GlobalNav = observer(() => {
 																		"Select room"
 																	}
 																>
-																	<span className="truncate font-medium text-sm leading-tight">
+																	<span
+																		dir="auto"
+																		className="truncate font-medium text-sm leading-tight"
+																	>
 																		{name}
 																	</span>
 																	{date && (
@@ -689,7 +686,7 @@ export const GlobalNav = observer(() => {
 																		}}
 																	>
 																		<StarIcon
-																			className={`mr-2 size-4 ${
+																			className={`me-2 size-4 ${
 																				isFavorite
 																					? "fill-yellow-500 text-yellow-500"
 																					: ""
@@ -714,7 +711,7 @@ export const GlobalNav = observer(() => {
 																			);
 																		}}
 																	>
-																		<PencilIcon className="mr-2 size-4" />
+																		<PencilIcon className="me-2 size-4" />
 																		{t(
 																			"actions.rename",
 																		)}
@@ -769,8 +766,11 @@ export const GlobalNav = observer(() => {
 																						e.message,
 																					);
 																				}
-																			} finally {
-																				// remove from deleted set after attempting deletion to allow re-render if deletion failed
+																				// Deletion failed — restore the room in the list.
+																				// On the success path we intentionally leave the
+																				// roomId in deletedSet until the refetch lands, so
+																				// the room doesn't briefly reappear between the
+																				// reset() call and the new data arriving.
 																				setDeletedSet(
 																					(
 																						prev,
@@ -789,7 +789,7 @@ export const GlobalNav = observer(() => {
 																		}}
 																		className="text-destructive focus:text-destructive"
 																	>
-																		<TrashIcon className="mr-2 size-4" />
+																		<TrashIcon className="me-2 size-4" />
 																		{t(
 																			"actions.delete",
 																		)}
@@ -833,7 +833,7 @@ export const GlobalNav = observer(() => {
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							{helpOpen && (
-								<div className="absolute bottom-full left-0 z-50 w-full rounded-md border bg-popover p-1 shadow-md">
+								<div className="absolute start-0 bottom-full z-50 w-full rounded-md border bg-popover p-1 shadow-md">
 									<SidebarMenu>
 										{root.theme.sidebar.footerItems.map(
 											(item) => (
