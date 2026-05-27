@@ -175,7 +175,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 											agentEditable ? (
 												<button
 													type="button"
-													className="group flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-left text-card-foreground hover:bg-muted/50"
+													className="group flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-start text-card-foreground hover:bg-muted/50"
 													onClick={() =>
 														setMCPOverlay({
 															type: "AGENT",
@@ -192,7 +192,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 													</span>
 												</button>
 											) : (
-												<div className="flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-left text-card-foreground">
+												<div className="flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-start text-card-foreground">
 													<ComputerIcon className="size-4" />
 													<span className="flex-1 truncate text-sm">
 														{options.workspace
@@ -279,7 +279,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 														<Badge
 															key={mcp.id}
 															variant="outline"
-															className="disabled: mr-2 border border-primary text-primary text-xs"
+															className="disabled: me-2 border border-primary text-primary text-xs"
 														>
 															{t(
 																"common:badges.fromAgent",
@@ -398,7 +398,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 														<Badge
 															key={mcp.id}
 															variant="outline"
-															className="disabled: mr-2 border border-primary text-primary text-xs"
+															className="disabled: me-2 border border-primary text-primary text-xs"
 														>
 															{t(
 																"common:badges.fromAgent",

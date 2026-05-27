@@ -1,570 +1,177 @@
 // Shared engine/subtype image lookup used outside import pages.
 // Keep in sync with import constants mappings where needed.
+//
+// Asset files are referenced by filename only; the bundler emits each one as
+// its own chunk via `import.meta.glob`, so consumers only download icons they
+// actually render.
 
-import AMAZON_S3 from "../assets/img/AMAZON_S3.png";
-import APACHE_JENA from "../assets/img/APACHE_JENA.svg";
-import ASTER from "../assets/img/ASTER.png";
-import ATHENA from "../assets/img/ATHENA.png";
-import AWS_POLLY from "../assets/img/AWS_POLLY.png";
-import AWS_TEXTRACT from "../assets/img/AWS_TEXTRACT.png";
-import AWS_TRANSCRIBE from "../assets/img/AWS_TRANSCRIBE.png";
-import AZURE_BLOB from "../assets/img/AZURE_BLOB.svg";
-import AZURE_OPEN_AI from "../assets/img/AZURE_OPEN_AI.svg";
-import BEDROCK from "../assets/img/BEDROCK.svg";
-import BIGQUERY from "../assets/img/BIGQUERY.png";
-import BRAIN from "../assets/img/BRAIN.png";
-import CASSANDRA from "../assets/img/CASSANDRA.svg";
-import CEPH from "../assets/img/CEPH.png";
-import CHROMADB from "../assets/img/CHROMADB.png";
-import CLAUDE from "../assets/img/CLAUDE_AI.svg";
-import CLICKHOUSE from "../assets/img/CLICKHOUSE.png";
-import CSV from "../assets/img/CSV.svg";
-import DATABRICKS from "../assets/img/DATABRICKS.png";
-import DATASTAX from "../assets/img/DATASTAX.png";
-import DB2 from "../assets/img/DB2.png";
-import DERBY from "../assets/img/DERBY.png";
-import DETOXIFY from "../assets/img/DETOXIFY.png";
-import DREAMHOST from "../assets/img/DREAMHOST.png";
-import DROPBOX from "../assets/img/DROPBOX.png";
-import ELASTIC_SEARCH from "../assets/img/ELASTIC_SEARCH.svg";
-import EXCEL from "../assets/img/EXCEL.png";
-import FALCON from "../assets/img/FALCON_AI.png";
-import FLAN from "../assets/img/FLAN.jpg";
-import GEMINI from "../assets/img/GEMINI_COLOR.svg";
-import GLINER from "../assets/img/GLINER.png";
-import GOOGLE_CLOUD from "../assets/img/GOOGLE_CLOUD_STORAGE.svg";
-import GOOGLE_DRIVE from "../assets/img/GOOGLE_DRIVE.png";
-import GOOGLE_OCR from "../assets/img/GOOGLE_OCR.png";
-import GOOGLE_SPEECH_TO_TEXT from "../assets/img/GOOGLE_SPEECH_TO_TEXT.png";
-import H2_DB from "../assets/img/H2_DB.png";
-import HIVE from "../assets/img/HIVE.jpg";
-import HUGGINGFACE from "../assets/img/HUGGINGFACE_COLOR.svg";
-import IMPALA from "../assets/img/IMPALA.png";
-import LOCAL_FILE_SYSTEM from "../assets/img/LOCAL_FILE_SYSTEM.png";
-import MARIA_DB from "../assets/img/MARIA_DB.png";
-import META from "../assets/img/META_COLOR.svg";
-import MICROSOFT from "../assets/img/MICROSOFT.png";
-import MILVUS from "../assets/img/MILVUS.png";
-import MINIO from "../assets/img/MINIO.png";
-import MOSAIC from "../assets/img/MOSAIC.png";
-import MYSQL from "../assets/img/MYSQL.svg";
-import NEMO from "../assets/img/NEMO.png";
-import NEO4J from "../assets/img/NEO4J.png";
-import NETWORK_FILE_SYSTEM from "../assets/img/NETWORK_FILE_SYSTEM.png";
-import ONEDRIVE from "../assets/img/ONEDRIVE.png";
-import OPEN_AI from "../assets/img/OPEN_AI.svg";
-import OPEN_SEARCH from "../assets/img/OPEN_SEARCH.png";
-import ORACLE from "../assets/img/ORACLE.svg";
-import ORCA from "../assets/img/ORCA.png";
-import PERPLEXITY from "../assets/img/PERPLEXITY.svg";
-import PHOENIX from "../assets/img/PHOENIX.png";
-import PINECONE from "../assets/img/PINECONE.png";
-import POSTGRES from "../assets/img/POSTGRES.svg";
-import PYTHON from "../assets/img/PYTHON.svg";
-import RDF4J from "../assets/img/RDF4J.svg";
-import REDSHIFT from "../assets/img/REDSHIFT.png";
-import REPLIT from "../assets/img/REPLIT_CODE.png";
-import REST_API from "../assets/img/REST-API.svg";
-import SAP_HANA from "../assets/img/SAP_HANA.png";
-import SEMOSS from "../assets/img/SEMOSS_BLUE_LOGO.svg";
-import SFTP from "../assets/img/SFTP.png";
-import SNOWFLAKE from "../assets/img/SNOWFLAKE.png";
-import SQL_SERVER from "../assets/img/SQL_SERVER.png";
-import SQLITE from "../assets/img/SQLITE.svg";
-import STABILITY_AI from "../assets/img/STABILITY_AI.png";
-import TERADATA from "../assets/img/TERADATA.png";
-import TIBCO from "../assets/img/TIBCO.png";
-import TINKER from "../assets/img/TINKER.png";
-import TRINO from "../assets/img/TRINO.jpg";
-import TSV from "../assets/img/TSV.svg";
-import WEVIATE from "../assets/img/WEVIATE.png";
-import ZIP from "../assets/img/ZIP.png";
+const ENGINE_ICON_LOADERS = import.meta.glob(
+	"../assets/img/*.{png,svg,jpg,jpeg,gif}",
+	{ query: "?url", import: "default" },
+) as Record<string, () => Promise<string>>;
 
-export const ENGINE_IMAGES = {
+const ENGINE_ICON_BASE_PATH = "../assets/img/";
+
+export const ENGINE_ICON_FALLBACK_FILE = "BRAIN.png";
+
+export const loadEngineIcon = async (
+	filename: string,
+): Promise<string | null> => {
+	const loader = ENGINE_ICON_LOADERS[`${ENGINE_ICON_BASE_PATH}${filename}`];
+	if (!loader) return null;
+
+	try {
+		return await loader();
+	} catch {
+		return null;
+	}
+};
+
+interface EngineImageEntry {
+	name: string;
+	icon: string;
+}
+
+export const ENGINE_IMAGES: Record<string, EngineImageEntry[]> = {
 	MODEL: [
 		// Stable provider/brand keys (keep alphabetical)
-		{
-			name: "AZURE_OPEN_AI",
-			icon: AZURE_OPEN_AI,
-		},
-		{
-			name: "BEDROCK",
-			icon: BEDROCK,
-		},
-		{
-			name: "BRAIN",
-			icon: BRAIN,
-		},
-		{
-			name: "CLAUDE",
-			icon: CLAUDE,
-		},
-		{
-			name: "GEMINI",
-			icon: GEMINI,
-		},
-		{
-			name: "HUGGINGFACE",
-			icon: HUGGINGFACE,
-		},
-		{
-			name: "META",
-			icon: META,
-		},
-		{
-			name: "NEMO",
-			icon: NEMO,
-		},
-		{
-			name: "OPEN_AI",
-			icon: OPEN_AI,
-		},
-		{
-			name: "PERPLEXITY",
-			icon: PERPLEXITY,
-		},
-		{
-			name: "TEXT_EMBEDDINGS",
-			icon: HUGGINGFACE,
-		},
-		{
-			name: "TEXT_GENERATION",
-			icon: HUGGINGFACE,
-		},
-		{
-			name: "VERTEX",
-			icon: GEMINI,
-		},
+		{ name: "AZURE_OPEN_AI", icon: "AZURE_OPEN_AI.svg" },
+		{ name: "BEDROCK", icon: "BEDROCK.svg" },
+		{ name: "BRAIN", icon: "BRAIN.png" },
+		{ name: "CLAUDE", icon: "CLAUDE_AI.svg" },
+		{ name: "GEMINI", icon: "GEMINI_COLOR.svg" },
+		{ name: "HUGGINGFACE", icon: "HUGGINGFACE_COLOR.svg" },
+		{ name: "META", icon: "META_COLOR.svg" },
+		{ name: "NEMO", icon: "NEMO.png" },
+		{ name: "OPEN_AI", icon: "OPEN_AI.svg" },
+		{ name: "PERPLEXITY", icon: "PERPLEXITY.svg" },
+		{ name: "TEXT_EMBEDDINGS", icon: "HUGGINGFACE_COLOR.svg" },
+		{ name: "TEXT_GENERATION", icon: "HUGGINGFACE_COLOR.svg" },
+		{ name: "VERTEX", icon: "GEMINI_COLOR.svg" },
 		// Self-hosted / long-tail brand keys (keep alphabetical)
-		{
-			name: "FALCON",
-			icon: FALCON,
-		},
-		{
-			name: "FLAN_T5_LARGE",
-			icon: FLAN,
-		},
-		{
-			name: "MOSAIC_ML",
-			icon: MOSAIC,
-		},
-		{
-			name: "ORCA",
-			icon: ORCA,
-		},
-		{
-			name: "REPLIT_CODE_MODEL",
-			icon: REPLIT,
-		},
-		{
-			name: "STABLITY_AI",
-			icon: STABILITY_AI,
-		},
+		{ name: "FALCON", icon: "FALCON_AI.png" },
+		{ name: "FLAN_T5_LARGE", icon: "FLAN.jpg" },
+		{ name: "MOSAIC_ML", icon: "MOSAIC.png" },
+		{ name: "ORCA", icon: "ORCA.png" },
+		{ name: "REPLIT_CODE_MODEL", icon: "REPLIT_CODE.png" },
+		{ name: "STABLITY_AI", icon: "STABILITY_AI.png" },
 	],
 	FUNCTION: [
-		{
-			name: "AWS_POLLY",
-			icon: AWS_POLLY,
-		},
-		{
-			name: "AWS_TEXTRACT",
-			icon: AWS_TEXTRACT,
-		},
-		{
-			name: "AWS_TEXTRACT_CUSTOM_EMBEDDINGS",
-			icon: AWS_TEXTRACT,
-		},
-		{
-			name: "AWS_TRANSCRIBE",
-			icon: AWS_TRANSCRIBE,
-		},
+		{ name: "AWS_POLLY", icon: "AWS_POLLY.png" },
+		{ name: "AWS_TEXTRACT", icon: "AWS_TEXTRACT.png" },
+		{ name: "AWS_TEXTRACT_CUSTOM_EMBEDDINGS", icon: "AWS_TEXTRACT.png" },
+		{ name: "AWS_TRANSCRIBE", icon: "AWS_TRANSCRIBE.png" },
 		{
 			name: "AWS_TRANSCRIBE_CUSTOM_EMBEDDINGS",
-			icon: AWS_TRANSCRIBE,
+			icon: "AWS_TRANSCRIBE.png",
 		},
-		{
-			name: "AWS_Transcribe",
-			icon: AWS_TRANSCRIBE,
-		},
+		{ name: "AWS_Transcribe", icon: "AWS_TRANSCRIBE.png" },
 		{
 			name: "AZURE_DOCUMENT_INTELLIGENCE_CUSTOM_EMBEDDINGS",
-			icon: REST_API,
+			icon: "REST-API.svg",
 		},
-		{
-			name: "AZUREOCR",
-			icon: REST_API,
-		},
-		{
-			name: "GOOGLE_OCR",
-			icon: GOOGLE_OCR,
-		},
-		{
-			name: "GOOGLE_OCR_CUSTOM_EMBEDDINGS",
-			icon: GOOGLE_OCR,
-		},
-		{
-			name: "GOOGLE_SPEECH_TO_TEXT",
-			icon: GOOGLE_SPEECH_TO_TEXT,
-		},
-		{
-			name: "IMAGE_DESCRIPTION",
-			icon: BRAIN,
-		},
-		{
-			name: "LOCAL_PYTHON",
-			icon: PYTHON,
-		},
-		{
-			name: "LOCAL_PYTHON_CUSTOM_EMBEDDINGS",
-			icon: PYTHON,
-		},
-		{
-			name: "OPENAI_TRANSCRIBE",
-			icon: OPEN_AI,
-		},
-		{
-			name: "REST",
-			icon: REST_API,
-		},
-		{
-			name: "ZIP",
-			icon: ZIP,
-		},
+		{ name: "AZUREOCR", icon: "REST-API.svg" },
+		{ name: "GOOGLE_OCR", icon: "GOOGLE_OCR.png" },
+		{ name: "GOOGLE_OCR_CUSTOM_EMBEDDINGS", icon: "GOOGLE_OCR.png" },
+		{ name: "GOOGLE_SPEECH_TO_TEXT", icon: "GOOGLE_SPEECH_TO_TEXT.png" },
+		{ name: "IMAGE_DESCRIPTION", icon: "BRAIN.png" },
+		{ name: "LOCAL_PYTHON", icon: "PYTHON.svg" },
+		{ name: "LOCAL_PYTHON_CUSTOM_EMBEDDINGS", icon: "PYTHON.svg" },
+		{ name: "OPENAI_TRANSCRIBE", icon: "OPEN_AI.svg" },
+		{ name: "REST", icon: "REST-API.svg" },
+		{ name: "ZIP", icon: "ZIP.svg" },
 	],
 	GUARDRAIL: [
-		{
-			name: "DETOXIFY",
-			icon: DETOXIFY,
-		},
-		{
-			name: "DETOXIFY",
-			icon: DETOXIFY,
-		},
-		{
-			name: "EMBEDDED_DETOXIFY",
-			icon: DETOXIFY,
-		},
-		{
-			name: "EMBEDDED_GLINER",
-			icon: GLINER,
-		},
-		{
-			name: "EMBEDDED_LAKERA_GUARD",
-			icon: BRAIN,
-		},
+		{ name: "DETOXIFY", icon: "PYTHON.svg" },
+		{ name: "EMBEDDED_DETOXIFY", icon: "PYTHON.svg" },
+		{ name: "EMBEDDED_GLINER", icon: "HUGGINGFACE_COLOR.svg" },
+		{ name: "EMBEDDED_LAKERA_GUARD", icon: "BRAIN.png" },
 		{
 			name: "EMBEDDED_MICROSOFT_CONTENT_MODERATION",
-			icon: MICROSOFT,
+			icon: "MICROSOFT.png",
 		},
-		{
-			name: "EMBEDDED_NVIDIA_NEMO",
-			icon: NEMO,
-		},
-		{
-			name: "EMBEDDED_OPENAI_MODERATION",
-			icon: OPEN_AI,
-		},
-		{
-			name: "EMBEDDED_PERSPECTIVE_API",
-			icon: BRAIN,
-		},
-		{
-			name: "EMBEDDED_PROMPTGUARD_META",
-			icon: META,
-		},
-		{
-			name: "EMBEDDED_REBUFF",
-			icon: BRAIN,
-		},
-		{
-			name: "GLINER",
-			icon: GLINER,
-		},
-		{
-			name: "GLINER",
-			icon: GLINER,
-		},
+		{ name: "EMBEDDED_NVIDIA_NEMO", icon: "NEMO.png" },
+		{ name: "EMBEDDED_OPENAI_MODERATION", icon: "OPEN_AI.svg" },
+		{ name: "EMBEDDED_PERSPECTIVE_API", icon: "BRAIN.png" },
+		{ name: "EMBEDDED_PROMPTGUARD_META", icon: "META_COLOR.svg" },
+		{ name: "EMBEDDED_REBUFF", icon: "BRAIN.png" },
+		{ name: "GLINER", icon: "HUGGINGFACE_COLOR.svg" },
 	],
 	VECTOR: [
-		{
-			name: "AWS_S3",
-			icon: AMAZON_S3,
-		},
-		{
-			name: "AZURE_AI_SEARCH",
-			icon: MICROSOFT,
-		},
-		{
-			name: "CHROMA",
-			icon: CHROMADB,
-		},
-		{
-			name: "ELASTIC_SEARCH",
-			icon: ELASTIC_SEARCH,
-		},
-		{
-			name: "FAISS",
-			icon: META,
-		},
-		{
-			name: "MILVUS",
-			icon: MILVUS,
-		},
-		{
-			name: "OPEN_SEARCH",
-			icon: OPEN_SEARCH,
-		},
-		{
-			name: "PGVECTOR",
-			icon: POSTGRES,
-		},
-		{
-			name: "PINECONE",
-			icon: PINECONE,
-		},
-		{
-			name: "PROXY",
-			icon: REST_API,
-		},
-		{
-			name: "WEAVIATE",
-			icon: WEVIATE,
-		},
-		{
-			name: "ZIP",
-			icon: ZIP,
-		},
+		{ name: "AWS_S3", icon: "AMAZON_S3.png" },
+		{ name: "AZURE_AI_SEARCH", icon: "MICROSOFT.png" },
+		{ name: "CHROMA", icon: "CHROMADB.png" },
+		{ name: "ELASTIC_SEARCH", icon: "ELASTIC_SEARCH.svg" },
+		{ name: "FAISS", icon: "META_COLOR.svg" },
+		{ name: "MILVUS", icon: "MILVUS.png" },
+		{ name: "OPEN_SEARCH", icon: "OPEN_SEARCH.png" },
+		{ name: "PGVECTOR", icon: "POSTGRES.svg" },
+		{ name: "PINECONE", icon: "PINECONE.png" },
+		{ name: "PROXY", icon: "REST-API.svg" },
+		{ name: "WEAVIATE", icon: "WEVIATE.png" },
+		{ name: "ZIP", icon: "ZIP.svg" },
 	],
 	DATABASE: [
-		{
-			name: "APACHE_JENA",
-			icon: APACHE_JENA,
-		},
-		{
-			name: "ASTER_DB",
-			icon: ASTER,
-		},
-		{
-			name: "ATHENA",
-			icon: ATHENA,
-		},
-		{
-			name: "BIG_QUERY",
-			icon: BIGQUERY,
-		},
-		{
-			name: "CASSANDRA",
-			icon: CASSANDRA,
-		},
-		{
-			name: "CLICKHOUSE",
-			icon: CLICKHOUSE,
-		},
-		{
-			name: "CSV",
-			icon: CSV,
-		},
-		{
-			name: "DATABRICKS",
-			icon: DATABRICKS,
-		},
-		{
-			name: "DATASTAX",
-			icon: DATASTAX,
-		},
-		{
-			name: "DB2",
-			icon: DB2,
-		},
-		{
-			name: "DERBY",
-			icon: DERBY,
-		},
-		{
-			name: "ELASTIC_SEARCH",
-			icon: ELASTIC_SEARCH,
-		},
-		{
-			name: "EXCEL",
-			icon: EXCEL,
-		},
-		{
-			name: "H2",
-			icon: H2_DB,
-		},
-		{
-			name: "H2_DB",
-			icon: H2_DB,
-		},
-		{
-			name: "HIVE",
-			icon: HIVE,
-		},
-		{
-			name: "IMPALA",
-			icon: IMPALA,
-		},
-		{
-			name: "JENA",
-			icon: APACHE_JENA,
-		},
-		{
-			name: "JENA_TDB",
-			icon: APACHE_JENA,
-		},
-		{
-			name: "MARIA_DB",
-			icon: MARIA_DB,
-		},
-		{
-			name: "MYSQL",
-			icon: MYSQL,
-		},
-		{
-			name: "NEO4J",
-			icon: NEO4J,
-		},
-		{
-			name: "OPEN_SEARCH",
-			icon: OPEN_SEARCH,
-		},
-		{
-			name: "ORACLE",
-			icon: ORACLE,
-		},
-		{
-			name: "PHOENIX",
-			icon: PHOENIX,
-		},
-		{
-			name: "POSTGRES",
-			icon: POSTGRES,
-		},
-		{
-			name: "RDF4J",
-			icon: RDF4J,
-		},
-		{
-			name: "REDSHIFT",
-			icon: REDSHIFT,
-		},
-		{
-			name: "SAP_HANA",
-			icon: SAP_HANA,
-		},
-		{
-			name: "SEMOSS",
-			icon: SEMOSS,
-		},
-		{
-			name: "SESAME",
-			icon: RDF4J,
-		},
-		{
-			name: "SNOWFLAKE",
-			icon: SNOWFLAKE,
-		},
-		{
-			name: "SQL_SERVER",
-			icon: SQL_SERVER,
-		},
-		{
-			name: "SQLITE",
-			icon: SQLITE,
-		},
-		{
-			name: "SQLITE",
-			icon: SQLITE,
-		},
-		{
-			name: "TERADATA",
-			icon: TERADATA,
-		},
-		{
-			name: "TIBCO",
-			icon: TIBCO,
-		},
-		{
-			name: "TINKER",
-			icon: TINKER,
-		},
-		{
-			name: "TRINO",
-			icon: TRINO,
-		},
-		{
-			name: "TSV",
-			icon: TSV,
-		},
-		{
-			name: "ZIP",
-			icon: ZIP,
-		},
+		{ name: "APACHE_JENA", icon: "APACHE_JENA.svg" },
+		{ name: "ASTER_DB", icon: "ASTER.png" },
+		{ name: "ATHENA", icon: "ATHENA.svg" },
+		{ name: "BIG_QUERY", icon: "BIGQUERY.svg" },
+		{ name: "CASSANDRA", icon: "CASSANDRA.svg" },
+		{ name: "CLICKHOUSE", icon: "CLICKHOUSE.svg" },
+		{ name: "CSV", icon: "CSV.svg" },
+		{ name: "DATABRICKS", icon: "DATABRICKS.svg" },
+		{ name: "DATASTAX", icon: "DATASTAX.png" },
+		{ name: "DB2", icon: "DB2.png" },
+		{ name: "DERBY", icon: "DERBY.png" },
+		{ name: "ELASTIC_SEARCH", icon: "ELASTIC_SEARCH.svg" },
+		{ name: "EXCEL", icon: "EXCEL.svg" },
+		{ name: "H2", icon: "H2_DB.png" },
+		{ name: "H2_DB", icon: "H2_DB.png" },
+		{ name: "HIVE", icon: "HIVE.svg" },
+		{ name: "IMPALA", icon: "IMPALA.svg" },
+		{ name: "JENA", icon: "APACHE_JENA.svg" },
+		{ name: "JENA_TDB", icon: "APACHE_JENA.svg" },
+		{ name: "MARIA_DB", icon: "MARIA_DB.svg" },
+		{ name: "MYSQL", icon: "MYSQL.svg" },
+		{ name: "NEO4J", icon: "NEO4J.svg" },
+		{ name: "OPEN_SEARCH", icon: "OPEN_SEARCH.png" },
+		{ name: "ORACLE", icon: "ORACLE.svg" },
+		{ name: "PHOENIX", icon: "PHOENIX.png" },
+		{ name: "POSTGRES", icon: "POSTGRES.svg" },
+		{ name: "RDF4J", icon: "RDF4J.svg" },
+		{ name: "REDSHIFT", icon: "REDSHIFT.svg" },
+		{ name: "SAP_HANA", icon: "SAP_HANA.svg" },
+		{ name: "SEMOSS", icon: "SEMOSS_BLUE_LOGO.svg" },
+		{ name: "SESAME", icon: "RDF4J.svg" },
+		{ name: "SNOWFLAKE", icon: "SNOWFLAKE.svg" },
+		{ name: "SQL_SERVER", icon: "SQL_SERVER.svg" },
+		{ name: "SQLITE", icon: "SQLITE.svg" },
+		{ name: "TERADATA", icon: "TERADATA.png" },
+		{ name: "TIBCO", icon: "TIBCO.png" },
+		{ name: "TINKER", icon: "TINKER.png" },
+		{ name: "TRINO", icon: "TRINO.jpg" },
+		{ name: "TSV", icon: "TSV.svg" },
+		{ name: "ZIP", icon: "ZIP.svg" },
 	],
 	STORAGE: [
-		{
-			name: "AMAZON_S3",
-			icon: AMAZON_S3,
-		},
-		{
-			name: "AMAZON_S3_NATIVE",
-			icon: AMAZON_S3,
-		},
-		{
-			name: "CEPH",
-			icon: CEPH,
-		},
-		{
-			name: "DREAMHOST",
-			icon: DREAMHOST,
-		},
-		{
-			name: "DROPBOX",
-			icon: DROPBOX,
-		},
+		{ name: "AMAZON_S3", icon: "AMAZON_S3.png" },
+		{ name: "AMAZON_S3_NATIVE", icon: "AMAZON_S3.png" },
+		{ name: "CEPH", icon: "CEPH.png" },
+		{ name: "DREAMHOST", icon: "DREAMHOST.png" },
+		{ name: "DROPBOX", icon: "DROPBOX.png" },
 		{
 			name: "GOOGLE_CLOUD_NATIVE_STORAGE",
-			icon: GOOGLE_CLOUD,
+			icon: "GOOGLE_CLOUD_STORAGE.svg",
 		},
-		{
-			name: "GOOGLE_CLOUD_STORAGE",
-			icon: GOOGLE_CLOUD,
-		},
-		{
-			name: "GOOGLE_DRIVE_STORAGE",
-			icon: GOOGLE_DRIVE,
-		},
-		{
-			name: "LOCAL_FILE_SYSTEM",
-			icon: LOCAL_FILE_SYSTEM,
-		},
-		{
-			name: "MICROSOFT_AZURE_BLOB_STORAGE",
-			icon: AZURE_BLOB,
-		},
-		{
-			name: "MICROSOFT_AZURE_NATIVE_BLOB_STORAGE",
-			icon: AZURE_BLOB,
-		},
-		{
-			name: "MICROSOFT_ONEDRIVE",
-			icon: ONEDRIVE,
-		},
-		{
-			name: "MINIO",
-			icon: MINIO,
-		},
-		{
-			name: "NETWORK_FILE_SYSTEM",
-			icon: NETWORK_FILE_SYSTEM,
-		},
-		{
-			name: "SFTP",
-			icon: SFTP,
-		},
-		{
-			name: "ZIP",
-			icon: ZIP,
-		},
+		{ name: "GOOGLE_CLOUD_STORAGE", icon: "GOOGLE_CLOUD_STORAGE.svg" },
+		{ name: "GOOGLE_DRIVE_STORAGE", icon: "GOOGLE_DRIVE.png" },
+		{ name: "LOCAL_FILE_SYSTEM", icon: "LOCAL_FILE_SYSTEM.png" },
+		{ name: "MICROSOFT_AZURE_BLOB_STORAGE", icon: "AZURE_BLOB.svg" },
+		{ name: "MICROSOFT_AZURE_NATIVE_BLOB_STORAGE", icon: "AZURE_BLOB.svg" },
+		{ name: "MICROSOFT_ONEDRIVE", icon: "ONEDRIVE.png" },
+		{ name: "MINIO", icon: "MINIO.png" },
+		{ name: "NETWORK_FILE_SYSTEM", icon: "NETWORK_FILE_SYSTEM.png" },
+		{ name: "SFTP", icon: "SFTP.png" },
+		{ name: "ZIP", icon: "ZIP.svg" },
 	],
 };
