@@ -233,7 +233,7 @@ export const EngineSelect = ({
 					aria-expanded={open}
 					disabled={disabled}
 					className={cn(
-						"ml-auto max-w-64 justify-start overflow-hidden hover:bg-accent",
+						"ms-auto max-w-64 justify-start overflow-hidden hover:bg-accent",
 						className,
 					)}
 				>
@@ -303,7 +303,7 @@ export const EngineSelect = ({
 						<span className="min-w-0 truncate">
 							{name || "Select"}
 						</span>
-						<ChevronDown className="inline-block! ml-auto size-4 shrink-0 opacity-70" />
+						<ChevronDown className="inline-block! ms-auto size-4 shrink-0 opacity-70" />
 					</div>
 				</Button>
 			</PopoverTrigger>
@@ -361,7 +361,7 @@ export const EngineSelect = ({
 													engine.engine_subtype
 												}
 												alt={`${displayName} icon`}
-												className="mr-2 size-6 shrink-0 object-contain"
+												className="me-2 size-6 shrink-0 object-contain"
 											/>
 										)}
 										<div className="flex flex-1 flex-col truncate">
@@ -392,7 +392,7 @@ export const EngineSelect = ({
 										{value === engineId && (
 											<CheckIcon
 												strokeWidth={3}
-												className="ml-2 size-4 shrink-0 text-primary"
+												className="ms-2 size-4 shrink-0 text-primary"
 											/>
 										)}
 									</CommandItem>

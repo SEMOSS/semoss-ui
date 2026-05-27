@@ -318,7 +318,7 @@ export const MCPSelector = observer(
 										aria-label={`Remove ${item.name}`}
 										disabled={disabled}
 										onClick={() => onSelect(item)}
-										className="-mr-0.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+										className="-me-0.5 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
 									>
 										<XIcon className="size-4" />
 									</button>

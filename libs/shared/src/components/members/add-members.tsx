@@ -313,7 +313,7 @@ export const AddMembersOverlay = ({
 									<button
 										key={`${item.type}-${item.id}`}
 										type="button"
-										className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent"
+										className="flex w-full items-center justify-between px-3 py-2 text-start text-sm hover:bg-accent"
 										onClick={() => toggleUserSelected(item)}
 									>
 										<span className="flex items-center gap-2">
@@ -396,7 +396,7 @@ export const AddMembersOverlay = ({
 													className="shrink-0"
 												>
 													{u.permission}
-													<ChevronDown className="ml-1 h-4 w-4" />
+													<ChevronDown className="ms-1 h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
 											<DropdownMenuContent>
@@ -490,7 +490,7 @@ export const AddMembersOverlay = ({
 						<div className="flex flex-col gap-3 rounded border border-border p-3">
 							<button
 								type="button"
-								className="flex items-center gap-1.5 text-left font-medium text-sm"
+								className="flex items-center gap-1.5 text-start font-medium text-sm"
 								onClick={() =>
 									setRestrictionsOpen((prev) => !prev)
 								}
@@ -498,7 +498,7 @@ export const AddMembersOverlay = ({
 								{restrictionsOpen ? (
 									<ChevronDown className="h-4 w-4 shrink-0" />
 								) : (
-									<ChevronRight className="h-4 w-4 shrink-0" />
+									<ChevronRight className="rtl:-scale-x-100 h-4 w-4 shrink-0" />
 								)}
 								Model Limit Restrictions (for all selected
 								users)

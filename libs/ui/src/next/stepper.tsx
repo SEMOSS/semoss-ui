@@ -178,7 +178,7 @@ function StepperStepContent({
 			data-slot="step-content"
 			className={cn(
 				"transition-all",
-				orientation === "vertical" && "ml-4 pb-4 pl-6",
+				orientation === "vertical" && "ms-4 ps-6 pb-4",
 				className,
 			)}
 			{...props}

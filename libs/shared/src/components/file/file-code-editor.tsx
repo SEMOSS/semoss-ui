@@ -496,7 +496,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 						<button
 							key={`${err.startLineNumber}-${err.startColumn}-${err.message}`}
 							type="button"
-							className="flex w-full items-start gap-2 px-3 py-1 text-left text-xs hover:bg-destructive/10"
+							className="flex w-full items-start gap-2 px-3 py-1 text-start text-xs hover:bg-destructive/10"
 							onClick={() => {
 								editorRef.current?.revealLineInCenter(
 									err.startLineNumber,

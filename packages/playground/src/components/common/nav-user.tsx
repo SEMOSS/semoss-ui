@@ -80,14 +80,14 @@ export const NavUser = () => {
 							{theme === "dark" ? (
 								<>
 									Dark
-									<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 										BETA
 									</span>
 								</>
 							) : theme === "system" ? (
 								<>
 									System
-									<span className="ml-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									<span className="ms-1 self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 										BETA
 									</span>
 								</>
@@ -110,7 +110,7 @@ export const NavUser = () => {
 								>
 									<MoonIcon />
 									Dark
-									<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 										BETA
 									</span>
 								</DropdownMenuCheckboxItem>
@@ -120,7 +120,7 @@ export const NavUser = () => {
 								>
 									<MonitorIcon />
 									System
-									<span className="ml-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
+									<span className="ms-auto self-center rounded border px-1 py-0.5 font-semibold text-[9px] leading-none">
 										BETA
 									</span>
 								</DropdownMenuCheckboxItem>

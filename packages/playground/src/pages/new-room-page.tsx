@@ -674,7 +674,7 @@ export const NewRoomPage = observer(() => {
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<Button
-													className="absolute top-2 right-2 z-10"
+													className="absolute end-2 top-2 z-10"
 													variant="ghost"
 													size="icon-sm"
 													onClick={() => {
