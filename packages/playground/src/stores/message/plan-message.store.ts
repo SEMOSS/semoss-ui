@@ -6,13 +6,13 @@ import {
 	runInAction,
 } from "mobx";
 import type {
-	InputToolExecPixelMessage,
+	InputPixelMessage,
 	PixelMessage,
 	Plan,
 	PlanStep,
-	ResponseTextPixelMessage,
-	ResponseToolPixelMessage,
+	ResponsePixelMessage,
 } from "@/types";
+import type { ToolStore } from "../tool";
 import { AbstractMessageStore } from "./abstract-message.store";
 import type { InputMessageStore } from "./input-message.store";
 import type { ResponseMessageStore } from "./response-message.store";
@@ -23,6 +23,11 @@ import { createMessageStore } from "./utility";
  */
 export class PlanMessageStore extends AbstractMessageStore {
 	readonly type = "PLAN";
+
+	/**
+	 * Parts associated with the message
+	 */
+	parts: never[] = [];
 
 	/**
 	 * Text associated with the message
@@ -54,14 +59,13 @@ export class PlanMessageStore extends AbstractMessageStore {
 
 	constructor(
 		room: AbstractMessageStore["room"],
-		message: ResponseTextPixelMessage,
+		message: ResponsePixelMessage,
 	) {
 		super(room, message);
 
 		makeObservable(this, {
 			plan: observable,
 			step: computed,
-			sync: action,
 			addStep: action,
 			updateStep: action,
 			removeStep: action,
@@ -71,7 +75,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 			failStepExecution: action,
 		});
 
-		// sync the message (must be after makeObservable so sync action is registered)
+		// sync the message
 		this.sync(message);
 	}
 
@@ -85,22 +89,29 @@ export class PlanMessageStore extends AbstractMessageStore {
 	/**
 	 * Sync store properties from the pixel message
 	 */
-	sync = (message: PixelMessage) => {
+	sync(message: PixelMessage) {
+		super.sync(message);
+
 		// type guard + specifics
-		if (message.type === "RESPONSE_TEXT") {
-			try {
-				this.plan = JSON.parse(message.content);
-			} catch {
-				console.error("ERROR Parsing Plan");
+		try {
+			const part = message.parts[0];
+			if (!part) {
+				throw new Error("No message part found for PlanMessageStore");
 			}
-		} else {
-			throw new Error(
-				`Invalid message object passed to ResponseMessageStore.update: ${JSON.stringify(message)}`,
-			);
+
+			if (part.type !== "TEXT") {
+				throw new Error(
+					`Invalid message part type for PlanMessageStore: ${part.type}`,
+				);
+			}
+
+			this.plan = JSON.parse(part.text);
+		} catch (e) {
+			console.error("Failed to sync PlanMessageStore with message", e);
 		}
 
 		// cast the types
-		message = message as ResponseTextPixelMessage;
+		message = message as ResponsePixelMessage;
 
 		// set the id
 		this.id = message.messageId;
@@ -110,7 +121,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 			id: message.modelId,
 			name: message.ornaments?.modelName || "AI",
 		};
-	};
+	}
 
 	/***
 	 * Add a new step to the plan
@@ -172,20 +183,37 @@ export class PlanMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
+		// get the text
+		const text = inputMessage.parts.reduce((acc, part) => {
+			if (part.type === "TEXT") {
+				return acc + part.text;
+			}
+
+			return "";
+		}, "");
+
+		const media = inputMessage.parts.reduce((acc, part) => {
+			if (part.type === "MEDIA") {
+				acc.push(part.mediaInfo.fileLocation);
+			}
+
+			return acc;
+		}, []);
+
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<
 			[
 				{
-					inputMessage: PixelMessage;
-					responseMessage: PixelMessage;
+					inputMessage: InputPixelMessage;
+					responseMessage: ResponsePixelMessage;
 				},
 			]
 		>(`AskCOTRoom(
 engine=["${room.model.app_id}"],
 roomId=["${room.roomId}"],
-command=["<encode>${inputMessage.text}</encode>"],
+command=["<encode>${text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.mediaInputs.length ? `image=${JSON.stringify(inputMessage.mediaInputs.map((info) => info.fileLocation))},` : "image=[],"}
+${media.length ? `image=${JSON.stringify(media)},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
@@ -218,8 +246,8 @@ paramValues=[${JSON.stringify({
 		const response = await room.runRoomPixel<
 			[
 				{
-					inputMessage: PixelMessage;
-					responseMessage: PixelMessage;
+					inputMessage: InputPixelMessage;
+					responseMessage: ResponsePixelMessage;
 				},
 			]
 		>(
@@ -523,9 +551,9 @@ stepNumber=["${step.step_number}"]
 	 */
 	saveToolExecution = async (
 		message: ResponseMessageStore,
-		tool: ResponseMessageStore["tools"][number],
+		tool: ToolStore,
 		toolResponse: string,
-		toolStatus: "success" | "error" | "cancelled",
+		toolStatus: "success" | "error" | "cancelled" | "paused" = "success",
 		executedParameters: Record<string, unknown>,
 	) => {
 		const step = this.step;
@@ -550,13 +578,15 @@ stepNumber=["${step.step_number}"]
 		// save the response
 		runInAction(() => {
 			tool.response = toolResponse;
-			tool.executedParameters = executedParameters;
+			tool.parameters = executedParameters;
 			if (toolStatus === "success") {
 				tool.status = "SUCCESS";
 			} else if (toolStatus === "cancelled") {
 				tool.status = "CANCELLED";
 			} else if (toolStatus === "error") {
 				tool.status = "ERROR";
+			} else if (toolStatus === "paused") {
+				tool.status = "PAUSED";
 			}
 		});
 
@@ -564,8 +594,8 @@ stepNumber=["${step.step_number}"]
 		const response = await room.runRoomPixel<
 			[
 				{
-					toolExecution: InputToolExecPixelMessage;
-					toolResponse: ResponseToolPixelMessage;
+					toolExecution: InputPixelMessage;
+					toolResponse: ResponsePixelMessage;
 				},
 			]
 		>(
@@ -574,7 +604,7 @@ engine=["${room.model.app_id}"],
 roomId = ["${room.roomId}"],
 toolId = ["${tool.json.id}"],
 toolName=["${tool.json.name}"],
-toolPredictedArguments=["<encode>${JSON.stringify(tool.json.parameters)}</encode>"],
+toolPredictedArguments=["<encode>${JSON.stringify(tool.parameters)}</encode>"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify({})}],
 ${message.id ? `parentMessageId=["${message.id}"]` : ""},

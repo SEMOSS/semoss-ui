@@ -1,0 +1,58 @@
+{
+	"embedDocuments": {
+		"title": "Embed Documents into Existing Store",
+		"description": "Select a knowledge store and upload documents to embed.",
+		"knowledgeSource": "Knowledge Store",
+		"documents": "Documents",
+		"selectFiles": "Click to select files or drag and drop",
+		"embedButton": "Embed Documents",
+		"embedding": "Embedding...",
+		"removeFile": "Remove file",
+		"selectPlaceholder": "Select a knowledge store"
+	},
+	"selector": {
+		"search": "Search",
+		"createKnowledgeSource": "Create Knowledge Store",
+		"viewDetails": "View Details",
+		"noToolboxesFound": "No toolboxes found",
+		"noKnowledgeFound": "No knowledge found",
+		"noAgentsFound": "No agents found"
+	},
+	"overlay": {
+		"title": "Configure your chat",
+		"description": "Pick a saved agent, or assemble your own knowledge and toolboxes.",
+		"tabAgent": "Agent",
+		"tabKnowledge": "Knowledge",
+		"tabToolbox": "Toolboxes"
+	},
+	"tools": {
+		"enterValues": "Enter comma-separated values",
+		"selectField": "Select {{field}}",
+		"enterField": "Enter {{field}}"
+	},
+	"messages": {
+		"selectKnowledgeSource": "Please select a knowledge store",
+		"selectDocument": "Please select at least one document",
+		"embedSuccess": "Documents embedded successfully",
+		"embedFailed": "Failed to embed documents",
+		"loadFailed": "Failed to load knowledge stores.",
+		"noSources": "No knowledge stores found."
+	},
+	"buttons": {
+		"cancel": "Cancel",
+		"embed": "Embed",
+		"save": "Save",
+		"close": "Close"
+	},
+	"permission": {
+		"accessRequested": "Access requested",
+		"requestAccess": "Request access",
+		"noAccess": "No access",
+		"requestAccessButton": "Request Access",
+		"tooltipNoAccess": "You don't have access to this {{type}}. Please request access from the owner.",
+		"tooltipMissingDependencies": "You don't have access to all dependencies of this {{type}}, so functionality may be limited. Open in the platform for more information.",
+		"tooltipOpen": "Open this {{type}} in the platform",
+		"typeToolbox": "toolbox",
+		"typeKnowledge": "knowledge store"
+	}
+}

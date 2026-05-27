@@ -1,7 +1,19 @@
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: React Flow node containers manage pointer events at the graph level */
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: React Flow node containers are not keyboard-focusable interactive controls */
 import { Handle, type Node, type NodeProps, Position } from "@xyflow/react";
-import { Edit, Key, Table2Icon } from "lucide-react";
+import {
+	CalendarDays,
+	Clock3,
+	Edit,
+	Hash,
+	Key,
+	type LucideIcon,
+	Pencil,
+	Sigma,
+	Table2Icon,
+	ToggleLeft,
+	Type as TypeIcon,
+} from "lucide-react";
 import React from "react";
 import { Button, Card, CardContent, cn, P } from "@semoss/ui/next";
 import { useMetamodel } from "@/hooks";
@@ -15,6 +27,7 @@ type MetamodelNodeProps = NodeProps<
 			columnId: string;
 			name: string;
 			type: string;
+			rawType?: string;
 			description?: string;
 			logicalNames?: string[];
 		}) => void;
@@ -23,10 +36,21 @@ type MetamodelNodeProps = NodeProps<
 			name: string;
 			description?: string;
 		}) => void;
+		openViewColumnMetadata?: (payload: {
+			nodeId: string;
+			tableName: string;
+			columnId: string;
+			name: string;
+			type: string;
+			physicalType?: string;
+			description?: string;
+			logicalNames?: string[];
+		}) => void;
 		properties: {
 			id: string;
 			name: string;
 			type: string;
+			physicalType?: string;
 			isPrimary?: boolean;
 			isForeign?: boolean;
 			fkTarget?: string | { table: string; column: string } | null;
@@ -49,9 +73,121 @@ type MetamodelNodeProps = NodeProps<
 	}>
 >;
 
+const normalizeSearchValue = (value: string) =>
+	value.toLowerCase().replace(/[\s_]+/g, "");
+
+const toDisplayName = (value: string) =>
+	value.toLowerCase().replaceAll(" ", "_");
+
+const toSearchToken = (value: string) =>
+	value.trim().toLowerCase().replaceAll(" ", "_");
+
+type SupportedDataType =
+	| "BOOLEAN"
+	| "INT"
+	| "DOUBLE"
+	| "STRING"
+	| "DATE"
+	| "TIMESTAMP";
+
+const DATA_TYPE_ICON_BY_TYPE: Record<SupportedDataType, LucideIcon> = {
+	BOOLEAN: ToggleLeft,
+	INT: Hash,
+	DOUBLE: Sigma,
+	STRING: TypeIcon,
+	DATE: CalendarDays,
+	TIMESTAMP: Clock3,
+};
+
+const normalizeSupportedDataType = (
+	value?: string,
+): SupportedDataType | null => {
+	if (!value) {
+		return null;
+	}
+
+	switch (value.toUpperCase()) {
+		case "BOOLEAN":
+		case "BOOL":
+			return "BOOLEAN";
+		case "INT":
+		case "INTEGER":
+		case "BIGINT":
+		case "SMALLINT":
+			return "INT";
+		case "DOUBLE":
+		case "FLOAT":
+		case "NUMERIC":
+		case "DECIMAL":
+			return "DOUBLE";
+		case "STRING":
+		case "VARCHAR":
+		case "CHAR":
+		case "TEXT":
+			return "STRING";
+		case "DATE":
+			return "DATE";
+		case "TIMESTAMP":
+		case "DATETIME":
+			return "TIMESTAMP";
+		default:
+			return null;
+	}
+};
+
+const renderHighlightedLabel = (
+	value: string,
+	searchToken: string,
+	normalizedSearchTerm: string,
+) => {
+	const displayValue = toDisplayName(value);
+	if (!searchToken) {
+		return displayValue;
+	}
+
+	const matchIndex = displayValue.indexOf(searchToken);
+	if (matchIndex >= 0) {
+		const before = displayValue.slice(0, matchIndex);
+		const match = displayValue.slice(
+			matchIndex,
+			matchIndex + searchToken.length,
+		);
+		const after = displayValue.slice(matchIndex + searchToken.length);
+
+		return (
+			<>
+				{before}
+				<span className="rounded bg-yellow-200 text-foreground">
+					{match}
+				</span>
+				{after}
+			</>
+		);
+	}
+
+	if (
+		normalizedSearchTerm.length > 0 &&
+		normalizeSearchValue(displayValue).includes(normalizedSearchTerm)
+	) {
+		return (
+			<span className="rounded bg-yellow-200 text-foreground">
+				{displayValue}
+			</span>
+		);
+	}
+
+	return displayValue;
+};
+
 const _MetamodelNode = (props: MetamodelNodeProps) => {
 	const { id, data } = props;
-	const { selectedNodeId, onSelectNodeId } = useMetamodel();
+	const { selectedNodeId, onSelectNodeId, searchTerm = "" } = useMetamodel();
+
+	const normalizedSearchTerm = normalizeSearchValue(searchTerm.trim());
+	const searchToken = toSearchToken(searchTerm);
+	const isTableMatch =
+		normalizedSearchTerm.length > 0 &&
+		normalizeSearchValue(data.name).includes(normalizedSearchTerm);
 
 	const handleEditColumn = (e: React.MouseEvent, col) => {
 		e.stopPropagation();
@@ -61,6 +197,23 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 			columnId: col?.id,
 			name: col?.name,
 			type: col?.type,
+			rawType: col?.rawType,
+			description: col?.description,
+			logicalNames: col?.logicalNames,
+		});
+	};
+
+	const handleViewColumnMetadata = (e: React.MouseEvent, col) => {
+		e.stopPropagation();
+		e.preventDefault();
+
+		data?.openViewColumnMetadata?.({
+			nodeId: id,
+			tableName: data?.name,
+			columnId: col?.id,
+			name: col?.name,
+			type: col?.type,
+			physicalType: col?.physicalType,
 			description: col?.description,
 			logicalNames: col?.logicalNames,
 		});
@@ -72,7 +225,8 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 		<Card
 			className={cn(
 				"inline-flex min-w-[280px] flex-col items-start gap-0 rounded-xl border bg-card p-0 shadow-md transition-shadow",
-				isSelected && "border-primary/30 shadow-primary/20 shadow-xl",
+				isSelected &&
+					"border-primary shadow-primary/25 shadow-xl ring-2 ring-primary/30",
 			)}
 			onClick={() => {
 				onSelectNodeId(id);
@@ -97,10 +251,17 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 					</div>
 
 					<P
-						className="flex-1 font-normal text-foreground text-sm"
+						className={cn(
+							"flex-1 font-normal text-foreground text-sm",
+							isTableMatch && "font-medium",
+						)}
 						data-testid={`metamodel-node-${id}-title`}
 					>
-						{data.name.toLowerCase().replaceAll(" ", "_")}
+						{renderHighlightedLabel(
+							data.name,
+							searchToken,
+							normalizedSearchTerm,
+						)}
 					</P>
 				</div>
 
@@ -138,6 +299,16 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 			{/* Table Content */}
 			<CardContent className="w-full p-0">
 				{data.properties?.map((p, index) => {
+					const isColumnMatch =
+						normalizedSearchTerm.length > 0 &&
+						normalizeSearchValue(p.name).includes(
+							normalizedSearchTerm,
+						);
+					const normalizedType = normalizeSupportedDataType(p.type);
+					const DataTypeIcon = normalizedType
+						? DATA_TYPE_ICON_BY_TYPE[normalizedType]
+						: null;
+
 					return (
 						<div key={p.id}>
 							<div
@@ -167,12 +338,17 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 								{/* Column Name and FK Target */}
 								<div className="flex min-w-0 flex-1 flex-col gap-0.5">
 									<P
-										className="truncate text-foreground text-sm"
+										className={cn(
+											"truncate text-foreground text-sm",
+											isColumnMatch && "font-medium",
+										)}
 										data-testid={`metamodel-node-${id}-property-${p.id}-name`}
 									>
-										{p.name
-											.toLowerCase()
-											.replaceAll(" ", "_")}
+										{renderHighlightedLabel(
+											p.name,
+											searchToken,
+											normalizedSearchTerm,
+										)}
 									</P>
 									{p.isForeign && p.fkTarget && (
 										<P
@@ -187,14 +363,35 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 								</div>
 
 								{/* Column Type - Fixed width */}
-								<div className="flex w-16 flex-shrink-0 items-center justify-end">
-									<P
-										className="font-medium text-blue-500 text-xs"
-										data-testid={`metamodel-node-${id}-property-${p.id}-type`}
-									>
-										{p.type ? p.type.toLowerCase() : ""}
-									</P>
+								<div
+									className="flex w-8 flex-shrink-0 items-center justify-end"
+									data-testid={`metamodel-node-${id}-property-${p.id}-type`}
+									title={normalizedType ?? undefined}
+								>
+									{DataTypeIcon ? (
+										<DataTypeIcon className="size-4 text-muted-foreground" />
+									) : null}
 								</div>
+
+								{data.openViewColumnMetadata ? (
+									<div className="flex w-7 flex-shrink-0 items-center justify-center">
+										<Button
+											variant="ghost"
+											size="icon"
+											className="h-6 w-6"
+											onMouseDown={(e) =>
+												e.stopPropagation()
+											}
+											onClick={(e) =>
+												handleViewColumnMetadata(e, p)
+											}
+											title="View column metadata"
+											data-testid={`metamodel-node-${id}-property-${p.id}-metadata-btn`}
+										>
+											<Pencil className="size-3.5" />
+										</Button>
+									</div>
+								) : null}
 
 								{/* Edit Button - Fixed width */}
 								{data.isEditable && (

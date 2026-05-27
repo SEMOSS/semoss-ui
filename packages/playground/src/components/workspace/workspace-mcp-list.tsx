@@ -1,19 +1,20 @@
-import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { useMemo } from "react";
-import { Button, Card, CardContent, Muted, ScrollArea } from "@semoss/ui/next";
-import { mcpToPlatformUrl } from "@/components";
-import type { Workspace } from "@/types";
+import { useTranslation } from "@semoss/i18n";
+import { useInsight, usePixel } from "@semoss/sdk/react";
+import { Muted, ScrollArea, toast } from "@semoss/ui/next";
+import type { ProjectDependency } from "@/types";
+import { MCPCard } from "../mcp";
 
-interface WorkspaceMCPListProps {
+export interface WorkspaceMCPListProps {
 	/**
 	 * Type of mcp
 	 */
 	type: "TOOLBOX" | "KNOWLEDGE";
 
 	/**
-	 * MCPs associated with the workspace
+	 * WorkspaceId
 	 */
-	mcp: Workspace["mcp"];
+	workspaceId: string;
 
 	/**
 	 * Search the mcps by name
@@ -28,55 +29,139 @@ interface WorkspaceMCPListProps {
  */
 export const WorkspaceMCPList = ({
 	type,
-	mcp = [],
+	workspaceId,
 	search,
 }: WorkspaceMCPListProps) => {
+	const { t } = useTranslation("workspace");
+	const { actions } = useInsight();
+
+	const getDependencies = usePixel<{
+		engines: ProjectDependency[];
+		dependencies: string[]; // Top-level dependency IDs
+	}>(
+		workspaceId
+			? `GetProjectDependencies(project=["${workspaceId}"]);`
+			: "",
+		{
+			onError: (_d, e) => {
+				toast.error(
+					t("mcp.failedToLoad") +
+						`: ${e instanceof Error ? e.message : "Unknown error"}`,
+				);
+			},
+		},
+	);
+
 	const searchedMCP = useMemo(() => {
-		if (!search) {
-			return mcp;
-		}
-		return mcp.filter((m) =>
-			m.name.toLowerCase().includes(search.toLowerCase()),
+		// Filter engines to get only top-level dependencies
+		const topLevelIds = getDependencies.data?.dependencies || [];
+		const allEngines = getDependencies.data?.engines || [];
+		const topLevelDeps = allEngines.filter((engine) =>
+			topLevelIds.includes(engine.engine_id),
 		);
-	}, [mcp, search]);
+		const dataWithType = topLevelDeps.filter((m) =>
+			type === "TOOLBOX"
+				? m.engine_type !== "VECTOR"
+				: m.engine_type === "VECTOR",
+		);
+		if (!search) {
+			return dataWithType;
+		}
+		return dataWithType.filter(
+			(m) =>
+				m.engine_id.toLowerCase().includes(search.toLowerCase()) ||
+				m.engine_name.toLowerCase().includes(search.toLowerCase()),
+		);
+	}, [getDependencies.data, search, type]);
 
 	if (searchedMCP.length === 0) {
 		return (
-			<div className="flex h-full w-full items-center justify-center">
+			<div className="flex min-h-32 w-full items-center justify-center p-6">
 				<Muted>
-					No {type === "TOOLBOX" ? "toolboxes" : "knowledge"} found
+					{type === "TOOLBOX"
+						? t("mcp.noToolboxes")
+						: t("mcp.noKnowledge")}
 				</Muted>
 			</div>
 		);
 	}
 
+	const getEffectivePermission = (
+		m: ProjectDependency,
+	):
+		| "READ_ONLY"
+		| "REQUESTED"
+		| "DISCOVERABLE"
+		| "FULLY_PRIVATE"
+		| "EDIT"
+		| "OWNER" => {
+		if (m.permission_name) {
+			return m.permission_name;
+		} else if (m.engine_global) {
+			return "READ_ONLY";
+		} else if (m.engine_discoverable) {
+			if (typeof m.access_permission === "number") {
+				return "REQUESTED";
+			} else {
+				return "DISCOVERABLE";
+			}
+		}
+		return "FULLY_PRIVATE";
+	};
+
+	const handleRequestAccess = async (m: ProjectDependency) => {
+		try {
+			const response = await actions.run(
+				m.engine_type === "PROJECT"
+					? `RequestProject(project=${JSON.stringify(
+							m.engine_id,
+						)}, permission=${JSON.stringify("READ_ONLY")})`
+					: `RequestEngine(engine=${JSON.stringify(m.engine_id)}, permission=${JSON.stringify("READ_ONLY")})`,
+			);
+			if (
+				response.pixelReturn.some((r) =>
+					r.operationType.some((op) => op === "ERROR"),
+				)
+			) {
+				throw new Error("Failed to request access");
+			}
+			toast.success(t("mcp.requestedSuccess", { name: m.engine_name }));
+			getDependencies.refresh();
+		} catch {
+			toast.error(t("mcp.requestedFailed"));
+		}
+	};
+
 	return (
 		<ScrollArea className="h-full w-full">
-			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-3">
-				{searchedMCP.map((m) => (
-					<Card key={m.id} className="col-span-1">
-						<CardContent>
-							<div className="space-between flex flex-row">
-								<div className="flex-1 space-y-1.5">
-									<div className="line-clamp-2 h-8 font-semibold text-base text-card-foreground leading-none">
-										{m.name}
-									</div>
-									<div className="truncate text-muted-foreground text-sm">
-										{m.type}
-									</div>
-								</div>
-								<Button variant="ghost" size="icon" asChild>
-									<a
-										target="_blank"
-										href={mcpToPlatformUrl(m)}
-									>
-										<SquareArrowOutUpRightIcon />
-									</a>
-								</Button>
-							</div>
-						</CardContent>
-					</Card>
-				))}
+			<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+				{searchedMCP.map((m) => {
+					const effectivePermission = getEffectivePermission(m);
+
+					const missingSubDependencies =
+						m.can_view_dependencies === false;
+					return (
+						<MCPCard
+							key={m.engine_id}
+							m={{
+								id: m.engine_id,
+								name: m.engine_name,
+								type: m.engine_type,
+								subtype: m.engine_subtype,
+								description: m.description,
+								tags: m.tags?.split(",") || [],
+								// MCPCard renders the effective permission via
+								// the prop below; m.permission is unused here
+								// but required by the MCP type.
+								permission: "READ_ONLY",
+							}}
+							type={type}
+							effectivePermission={effectivePermission}
+							missingSubDependencies={missingSubDependencies}
+							handleRequestAccess={() => handleRequestAccess(m)}
+						/>
+					);
+				})}
 			</div>
 		</ScrollArea>
 	);

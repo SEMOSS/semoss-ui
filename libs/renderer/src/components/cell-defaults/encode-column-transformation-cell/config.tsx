@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	EncodeColumnTransformationCell,
 	type EncodeColumnTransformationCellDef,
-} from "./EncodeColumnTransformationCell";
+} from "./encode-column-transformation-cell";
 
 // export the config for the block
 export const EncodeColumnTransformationCellConfig: CellConfig<EncodeColumnTransformationCellDef> =

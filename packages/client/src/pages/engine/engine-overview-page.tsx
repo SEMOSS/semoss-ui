@@ -1,11 +1,19 @@
 import { observer } from "mobx-react-lite";
-import { Badge, H4, Markdown, P } from "@semoss/ui/next";
-import { DatabaseStatistics } from "@/components/database/DatabaseStatistics";
+import { Badge, H4, Markdown, P, Separator } from "@semoss/ui/next";
 import { useEngine, useRootStore } from "@/hooks";
-import { removeUnderscores } from "@/utility";
+
+const formatMetaLabel = (value: string) => {
+	return value
+		.replace(/[_-]+/g, " ")
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+};
 
 export const EngineOverviewPage = observer(() => {
-	const { type, active } = useEngine();
+	const { active } = useEngine();
 	const { configStore } = useRootStore();
 
 	// filter metakeys to the ones we want
@@ -29,14 +37,20 @@ export const EngineOverviewPage = observer(() => {
 		),
 	};
 
+	const hasMetaSections = engineMetaKeys.some(
+		(k) =>
+			active.metadata[k.metakey] !== undefined &&
+			Array.isArray(active.metadata[k.metakey]),
+	);
+
 	return (
 		<div className="relative z-0">
-			<section className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
+			<section className="mb-1 pb-2 last:mb-0">
 				<H4 className="mb-2" data-testid="engine-overview-header">
 					Details
 				</H4>
 				{active.metadata.markdown ? (
-					<div className="overflow-scroll">
+					<div>
 						<Markdown
 							data-testid="engine-overview-markdown"
 							components={markdownComponents}
@@ -46,10 +60,11 @@ export const EngineOverviewPage = observer(() => {
 					</div>
 				) : (
 					<div className="text-muted-foreground">
-						No Markdown available
+						No description available
 					</div>
 				)}
 			</section>
+			{hasMetaSections && <Separator className="mb-3" />}
 			{engineMetaKeys.map((k) => {
 				if (
 					active.metadata[k.metakey] === undefined ||
@@ -63,7 +78,9 @@ export const EngineOverviewPage = observer(() => {
 						key={k.metakey}
 						className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0"
 					>
-						<H4 className="mb-2">{removeUnderscores(k.metakey)}</H4>
+						<H4 className="mb-2">
+							{formatMetaLabel(String(k.metakey))}
+						</H4>
 						{k.display_options === "multi-checklist" ||
 						k.display_options === "multi-select" ||
 						k.display_options === "multi-typeahead" ||
@@ -90,12 +107,6 @@ export const EngineOverviewPage = observer(() => {
 					</section>
 				);
 			})}
-			{type === "DATABASE" && (
-				<section className="mb-1 border-border border-b pb-2 last:mb-0 last:border-b-0">
-					<H4 className="mb-2">Statistics</H4>
-					<DatabaseStatistics id={active.id} />
-				</section>
-			)}
 		</div>
 	);
 });

@@ -1,0 +1,164 @@
+{
+	"welcomeTitle": "एजेंट मैनेजर में स्वागत है",
+	"welcomeDescription": "अपनी विशिष्ट आवश्यकताओं को पूरा करने और आपकी प्रक्रियाओं में सहजता से एकीकृत होने के लिए डिज़ाइन किए गए कस्टम AI एजेंट का अन्वेषण करें।",
+	"form": {
+		"nameLabel": "नाम",
+		"descriptionLabel": "विवरण",
+		"instructionsLabel": "निर्देश",
+		"knowledgeLabel": "ज्ञान",
+		"toolboxLabel": "टूलबॉक्स",
+		"promptsLabel": "प्रॉम्प्ट लाइब्रेरी"
+	},
+	"actions": {
+		"create": "बनाएं",
+		"save": "सहेजें",
+		"createAgent": "एक एजेंट बनाएं",
+		"edit": "संपादित करें",
+		"delete": "हटाएं",
+		"newChat": "नई चैट"
+	},
+	"card": {
+		"deleteConfirmTitle": "क्या आपको यकीन है?",
+		"deleteConfirmDescription": "यह क्रिया अपरिवर्तनीय है। यह {{name}} वर्कस्पेस को स्थायी रूप से हटा देगा।",
+		"createdAgo": "{{when}} बनाया गया"
+	},
+	"sharing": {
+		"title": "सदस्य जोड़ें",
+		"description": "इस एजेंट तक पहुंचने और उस पर सहयोग करने के लिए सदस्यों को आमंत्रित करें।",
+		"searchPlaceholder": "उपयोगकर्ता खोजें...",
+		"searchUsers": "उपयोगकर्ता खोजें...",
+		"noUsersFound": "कोई उपयोगकर्ता नहीं मिला",
+		"hasAccess": "पहुंच है",
+		"pendingInvite": "लंबित आमंत्रण",
+		"membersToAdd": "जोड़ने के लिए सदस्य",
+		"emptyState": "इस वर्कस्पेस को साझा करने के लिए उपयोगकर्ता जोड़ें",
+		"buttonAdding": "जोड़ा जा रहा है...",
+		"buttonAdd": "सदस्य जोड़ें"
+	},
+	"members": {
+		"autoSaveHint": "सदस्य जोड़ना, हटाना और अनुमति परिवर्तन स्वचालित रूप से सहेजे जाते हैं।",
+		"heading": "किसके पास पहुंच है",
+		"you": "(आप)",
+		"owner": "मालिक",
+		"editor": "संपादक",
+		"readOnly": "केवल पढ़ने के लिए",
+		"removeAccess": "पहुंच हटाएं",
+		"removeSelfTitle": "एजेंट से खुद को हटाएं",
+		"removeSelfDescription": "आप इस एजेंट तक अपनी पहुंच हटाने वाले हैं। पहुंच फिर से प्राप्त करने के लिए आपको फिर से आमंत्रित करने की आवश्यकता होगी। इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"removeUserTitle": "एजेंट पहुंच हटाएं",
+		"removeUserDescription": "क्या आप वाकई {{name}} की इस एजेंट तक पहुंच हटाना चाहते हैं? इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"changePermissionTitle": "अपनी अनुमति बदलें",
+		"changePermissionDescription": "आप अपनी स्वयं की अनुमति {{oldPermission}} से {{newPermission}} में बदलने वाले हैं। यह प्रभावित करेगा कि आप इस एजेंट में कौन सी क्रियाएं कर सकते हैं।",
+		"changePermissionButton": "अनुमति बदलें"
+	},
+	"mcp": {
+		"noToolboxes": "कोई टूलबॉक्स नहीं मिला",
+		"noKnowledge": "कोई ज्ञान लाइब्रेरी नहीं मिली",
+		"failedToLoad": "वर्कस्पेस संसाधन लोड करने में विफल",
+		"requestedSuccess": "{{name}} तक पहुंच का अनुरोध किया गया",
+		"requestedFailed": "पहुंच का अनुरोध करने में विफल"
+	},
+	"chat": {
+		"noChats": "कोई चैट नहीं मिली",
+		"error": "त्रुटि:",
+		"selectRoom": "रूम चुनें",
+		"newChat": "नई चैट",
+		"delete": "हटाएं",
+		"cancel": "रद्द करें",
+		"deleteSuccess": "चैट हटा दी गई",
+		"deleteFailed": "चैट हटाने में विफल",
+		"deleteConfirmTitle": "चैट हटाएं?",
+		"deleteConfirmDescription": "यह \"{{name}}\" को स्थायी रूप से हटा देगा। इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"rename": "नाम बदलें",
+		"renameSave": "सहेजें",
+		"renameEmpty": "चैट का नाम खाली नहीं हो सकता",
+		"renameSuccess": "चैट का नाम बदला गया",
+		"renameFailed": "चैट का नाम बदलने में विफल",
+		"pin": "पसंदीदा में जोड़ें",
+		"unpin": "पसंदीदा से हटाएं",
+		"pinFailed": "चैट को पसंदीदा बनाने में विफल",
+		"unpinFailed": "चैट को पसंदीदा से हटाने में विफल",
+		"dayToday": "आज",
+		"dayYesterday": "कल",
+		"daysAgo": "{{count}} दिन पहले"
+	},
+	"images": {
+		"agentIllustration": "एजेंट चित्रण"
+	},
+	"messages": {
+		"noResults": "कोई परिणाम नहीं मिला",
+		"userAlreadyAdded": "उपयोगकर्ता पहले से जोड़ा गया",
+		"fetchUsersFailed": "उपयोगकर्ताओं को प्राप्त करने में विफल",
+		"addAtLeastOne": "कृपया कम से कम एक उपयोगकर्ता जोड़ें",
+		"addMembersSuccess": "{{count}} सदस्य सफलतापूर्वक जोड़ा गया",
+		"addMembersSuccess_plural": "{{count}} सदस्य सफलतापूर्वक जोड़े गए",
+		"addMembersFailed": "सदस्य जोड़ने में विफल",
+		"permissionUpdated": "अनुमति सफलतापूर्वक अपडेट की गई",
+		"permissionUpdateFailed": "अनुमति अपडेट करने में विफल",
+		"userRemoved": "उपयोगकर्ता सफलतापूर्वक हटाया गया",
+		"userRemoveFailed": "उपयोगकर्ता को हटाने में विफल",
+		"fetchPermissionsFailed": "उपयोगकर्ता अनुमतियां प्राप्त करने में विफल"
+	},
+	"breadcrumbs": {
+		"home": "होम",
+		"agent": "एजेंट",
+		"loading": "लोड हो रहा है",
+		"edit": "संपादित करें",
+		"new": "नया",
+		"room": "रूम"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "मेरी चैट",
+			"knowledge": "ज्ञान",
+			"toolbox": "टूलबॉक्स",
+			"prompts": "प्रॉम्प्ट",
+			"members": "सदस्य"
+		},
+		"about": {
+			"title": "परिचय",
+			"noInstructions": "कोई निर्देश कॉन्फ़िगर नहीं किए गए हैं।"
+		},
+		"recentChats": {
+			"title": "पिछली चैट जारी रखें"
+		},
+		"failedToDelete": "एजेंट हटाने में विफल",
+		"failedToLoad": "एजेंट लोड करने में विफल: {{error}}"
+	},
+	"edit": {
+		"title": "एजेंट संपादित करें",
+		"subtitle": "अपने एजेंट के विवरण अपडेट करें",
+		"errorTitle": "एजेंट लोड करने में त्रुटि",
+		"errorDescription": "एजेंट विवरण लोड करने में विफल",
+		"failedToLoad": "वर्कस्पेस लोड करने में विफल: {{error}}"
+	},
+	"new": {
+		"title": "नया एजेंट",
+		"subtitle": "शुरू करने के लिए एक नया एजेंट बनाएं"
+	},
+	"prompts": {
+		"noPrompts": "कोई प्रॉम्प्ट नहीं मिला",
+		"searchPlaceholder": "प्रॉम्प्ट खोजें..."
+	},
+	"chats": {
+		"title": "सभी चैट",
+		"subtitle": "अपनी चैट ब्राउज़ करें, खोजें और साफ़ करें।",
+		"selectAll": "सभी चुनें",
+		"selectChat": "चैट {{name}} चुनें",
+		"selectedCount": "{{count}} चुनी गई",
+		"totalCount": "{{count}} चैट",
+		"deleteSelected": "{{count}} चुनी गई हटाएं",
+		"bulkDeleteConfirmTitle": "{{count}} चैट हटाएं?",
+		"bulkDeleteConfirmDescription": "यह {{count}} चैट को स्थायी रूप से हटा देगा। इस क्रिया को पूर्ववत नहीं किया जा सकता।",
+		"bulkDeleteSuccess": "{{count}} चैट हटा दी गईं",
+		"bulkDeletePartialFail": "{{total}} में से {{failed}} चैट हटाने में विफल"
+	},
+	"instructions": {
+		"expand": "विस्तृत करें",
+		"viewTitle": "निर्देश",
+		"viewDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाला सिस्टम प्रॉम्प्ट।",
+		"editTitle": "निर्देश संपादित करें",
+		"editDescription": "इस एजेंट के व्यवहार को निर्देशित करने वाले सिस्टम प्रॉम्प्ट को अपडेट करें।",
+		"charCount": "{{count}} वर्ण"
+	}
+}

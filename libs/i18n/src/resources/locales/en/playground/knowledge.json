@@ -1,0 +1,69 @@
+{
+	"title": "Knowledge Stores",
+	"aboutTitle": "About Knowledge Stores",
+	"whatIsKnowledgeStore": "What's a Knowledge Store?",
+	"ragDescription": "RAG (Retrieval-Augmented Generation) chat enhances AI conversations by grounding responses in trusted data. Choose from the libraries below to receive a response referencing those documents specifically.",
+	"subtitle": "Search, filter, and create new knowledge stores.",
+	"newSource": {
+		"title": "New Knowledge Store",
+		"description": "Upload documents to create a new knowledge store"
+	},
+	"form": {
+		"nameLabel": "Name",
+		"descriptionLabel": "Description",
+		"embeddingLabel": "Embedding",
+		"filesLabel": "Files",
+		"descriptionPlaceholder": "Enter Description"
+	},
+	"tabs": {
+		"all": "All",
+		"global": "Global Stores",
+		"mine": "My Stores"
+	},
+	"filters": {
+		"allCenters": "All Centers/Offices",
+		"all": "All"
+	},
+	"actions": {
+		"createSource": "Create Knowledge Store",
+		"viewDocuments": "View documents",
+		"newChat": "New Chat"
+	},
+	"messages": {
+		"noDescription": "No description",
+		"noLibrariesFound": "No document libraries found matching your criteria.",
+		"loadingDocuments": "Loading documents…",
+		"noDocuments": "No documents found."
+	},
+	"documents": {
+		"title": "Documents",
+		"description": "Files currently associated with this knowledge store."
+	},
+	"embedDocuments": {
+		"title": "Embed Documents into Existing Source",
+		"description": "Upload documents to embed into this knowledge store.",
+		"documents": "Documents",
+		"selectFiles": "Click to select files or drag and drop",
+		"embedButton": "Embed Documents",
+		"embedding": "Embedding...",
+		"removeFile": "Remove file"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "Please select a knowledge store",
+		"selectDocument": "Please select at least one document",
+		"embedSuccess": "Documents embedded successfully",
+		"embedFailed": "Failed to embed documents"
+	},
+	"breadcrumbs": {
+		"home": "Home",
+		"knowledgeStores": "Knowledge Stores",
+		"loading": "Loading"
+	},
+	"detail": {
+		"knowledge": "Knowledge",
+		"embedDocuments": "Embed documents",
+		"newKnowledgeCreated": "A new knowledge store was created. You can now select it to embed additional documents.",
+		"documentsDescription": "Documents currently embedded in this knowledge store.",
+		"failedToLoadDocuments": "Failed to load documents."
+	}
+}

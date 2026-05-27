@@ -4,8 +4,8 @@ export const getDefaultFormValues = (
 	message: ActionMessages,
 ): ListenerActions => {
 	const formConfigs = {
-		[ActionMessages.RUN_QUERY]: {
-			message: ActionMessages.RUN_QUERY,
+		[ActionMessages.RUN_NOTEBOOK]: {
+			message: ActionMessages.RUN_NOTEBOOK,
 			payload: { queryId: "" },
 		},
 		[ActionMessages.RUN_CELL]: {
@@ -26,7 +26,7 @@ export const getDefaultFormValues = (
 		},
 	};
 
-	return formConfigs[message] || formConfigs[ActionMessages.RUN_QUERY];
+	return formConfigs[message] || formConfigs[ActionMessages.RUN_NOTEBOOK];
 };
 
 export const validateForm = (
@@ -35,7 +35,7 @@ export const validateForm = (
 	payload: any,
 ): boolean => {
 	switch (message) {
-		case ActionMessages.RUN_QUERY:
+		case ActionMessages.RUN_NOTEBOOK:
 			return !!payload.queryId;
 		case ActionMessages.RUN_CELL:
 			return !!payload.queryId && !!payload.cellId;

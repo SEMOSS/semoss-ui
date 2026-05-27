@@ -1,0 +1,10 @@
+{
+	"knowledge": {
+		"createSuccess": "Almacén de conocimiento \"{{name}}\" creado exitosamente",
+		"createError": "No se pudo crear el almacén de conocimiento"
+	},
+	"workspace": {
+		"saveError": "No se pudo guardar el agente",
+		"deleteError": "No se pudo eliminar el espacio de trabajo"
+	}
+}

@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./GridDynamicFrameBlock";
+export * from "./grid-dynamic-frame-block";

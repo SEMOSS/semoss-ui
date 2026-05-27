@@ -1,0 +1,106 @@
+{
+	"welcome": "Welcome, {{name}}",
+	"settings": {
+		"title": "Room Settings",
+		"description": "Update room settings and modify the behavior of the chat",
+		"open": "Open Room Settings",
+		"close": "Close Room Settings",
+		"edit": "Edit Room Settings"
+	},
+	"form": {
+		"modelLabel": "Model",
+		"instructionsLabel": "Instructions",
+		"agentLabel": "Agent",
+		"knowledgeLabel": "Knowledge",
+		"toolboxLabel": "Toolboxes",
+		"maxTokenLabel": "Max Token",
+		"temperatureLabel": "Temperature"
+	},
+	"modes": {
+		"ask": "Ask",
+		"plan": "Plan"
+	},
+	"workspace": {
+		"publishTooltip": "Publish as Agent",
+		"publishTitle": "Publish Agent",
+		"publishDescription": "Publish a new agent with the current room configuration, including instructions and MCPs.",
+		"nameLabel": "Name *",
+		"namePlaceholder": "Enter agent name",
+		"descriptionLabel": "Description",
+		"descriptionPlaceholder": "Enter agent description",
+		"cancelButton": "Cancel",
+		"publishingButton": "Publishing...",
+		"publishButton": "Publish Agent",
+		"nameRequired": "Agent name is required",
+		"publishSuccess": "Agent created successfully",
+		"publishError": "Failed to create agent: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "Enter text",
+		"thinking": "Thinking...",
+		"menuPrompt": "How can I help you today?",
+		"openSettings": "Add files, agents, and more",
+		"recordLabel": "Record the Model",
+		"stopRecording": "Stop Recording",
+		"record": "Record",
+		"askLabel": "Ask the AI",
+		"thinkingTooltip": "Thinking",
+		"enterQuestion": "Please enter a question",
+		"completeTool": "Please complete the tool(s) to proceed",
+		"ask": "Ask",
+		"errorProcessing": "Error processing chat",
+		"pauseTools": "Pause tools",
+		"pauseToolsTooltip": "Pause all tool execution until after the next message"
+	},
+	"content": {
+		"scrollToTop": "Scroll to top",
+		"scrollToBottom": "Scroll to bottom"
+	},
+	"inlineTool": {
+		"openInSidebar": "Open in Sidebar",
+		"minimize": "Minimize",
+		"maximize": "Maximize",
+		"close": "Close"
+	},
+	"fileExplorer": {
+		"copyPath": "Copy Path",
+		"download": "Download",
+		"delete": "Delete",
+		"copyFailed": "Failed to copy to clipboard"
+	},
+	"menuToolbox": {
+		"addToolbox": "Add Toolboxes"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "Add Knowledge"
+	},
+	"menuWorkspace": {
+		"selectAgent": "Select Agent",
+		"searchPlaceholder": "Search agents",
+		"notFound": "Not Found"
+	},
+	"menuUpload": {
+		"attachDocument": "Add Documents"
+	},
+	"menuFileExplorer": {
+		"name": "File Explorer",
+		"open": "Open File Explorer",
+		"close": "Close File Explorer"
+	},
+	"errors": {
+		"createRoom": "An error occurred while creating the room. Error: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",
+		"descriptionMedium": "This conversation is getting long. If it continues, the model will start forgetting earlier messages. Consider starting a new chat soon.",
+		"descriptionHigh": "This conversation is nearly full. The model will soon start forgetting earlier messages. Consider starting a new chat.",
+		"descriptionExceeded": "This conversation has exceeded its limit. The model is now forgetting earlier messages when generating responses. Start a new chat for best results.",
+		"memoryUsedTitle": "Memory used:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Search knowledge and toolboxes",
+		"noResults": "No matching items found",
+		"noItemsAvailable": "No knowledge or toolboxes available"
+	}
+}

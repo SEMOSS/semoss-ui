@@ -46,12 +46,8 @@ export default defineConfig({
 		isProduction && terser(),
 	],
 	external: [
-		"@emotion/react",
-		"@emotion/styled",
-		"@mui/icons-material",
-		"@mui/material",
 		/@semoss\/sdk/,
-		"@semoss/ui",
+		/@semoss\/ui/,
 		"@semoss/shared",
 		"mobx",
 		"mobx-react-lite",

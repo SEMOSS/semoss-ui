@@ -1,0 +1,63 @@
+{
+	"search": "Buscar",
+	"takeTour": "Tomar un Tour",
+	"nav": {
+		"newChat": {
+			"label": "Nuevo",
+			"tooltip": "Nuevo Chat - Inicia una nueva conversación en cualquier momento."
+		},
+		"agents": {
+			"label": "Agentes",
+			"tooltip": "Agentes"
+		},
+		"allChats": {
+			"label": "Todos los chats",
+			"tooltip": "Todos los chats"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agentes/Espacios de trabajo - Accede a tus espacios de trabajo o crea nuevos agentes de IA."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Biblioteca de Conocimiento - Explora, crea, comparte y administra tus bibliotecas de documentos."
+		},
+		"toolbox": {
+			"tooltip": "Caja de Herramientas - Conoce las capacidades extendidas de Elsa con potentes herramientas adicionales."
+		},
+		"promptLibrary": {
+			"tooltip": "Biblioteca de Prompts - Explora, crea y utiliza prompts guardados."
+		}
+	},
+	"buckets": {
+		"favorites": "Favoritos",
+		"today": "Hoy",
+		"yesterday": "Ayer",
+		"fewDaysAgo": "Hace unos días",
+		"lastWeek": "Última semana",
+		"thisMonth": "Este mes",
+		"lastMonth": "Último mes",
+		"older": "Más antiguo"
+	},
+	"messages": {
+		"errorLoadingRooms": "Error al cargar las salas",
+		"noRoomsFound": "No se encontraron salas",
+		"untitled": "Sin título"
+	},
+	"actions": {
+		"favorite": "Favorito",
+		"unfavorite": "Quitar de favoritos",
+		"rename": "Renombrar",
+		"delete": "Eliminar",
+		"openInline": "Abrir en línea",
+		"minimize": "Minimizar",
+		"maximize": "Maximizar",
+		"close": "Cerrar"
+	},
+	"toasts": {
+		"failedToPin": "Error al fijar la sala",
+		"failedToUnpin": "Error al desfijar la sala",
+		"roomNameEmpty": "El nombre de la sala no puede estar vacío",
+		"roomRenamedSuccess": "Sala renombrada exitosamente",
+		"failedToRename": "Error al renombrar la sala",
+		"roomDeletedSuccess": "Sala eliminada exitosamente"
+	}
+}

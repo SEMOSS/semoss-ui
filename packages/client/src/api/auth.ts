@@ -1,4 +1,4 @@
-import { Env, get, post } from "@semoss/sdk/react";
+import { CSRF, Env, get, post } from "@semoss/sdk/react";
 
 export const config = async () => {
 	// get the response
@@ -192,6 +192,74 @@ export const loginLDAP = async (
 	return status;
 };
 
+export const setupResetPassword = async (
+	email: string,
+	type: "NATIVE" | "LDAP" | "LINOTP",
+	subject: string,
+	url?: string,
+): Promise<{ success: boolean; message?: string }> => {
+	await ensureCsrfToken();
+
+	const postData: Record<string, string> = {
+		email: email,
+		type: type,
+		subject: subject,
+	};
+
+	if (url) {
+		postData.url = url;
+	}
+
+	const response = await post<{ success: boolean; message?: string }>(
+		`${Env.MODULE}/api/auth/user/setupResetPassword`,
+		postData,
+	).catch((error) => {
+		const errorMessage =
+			error?.response?.data?.errorMessage ||
+			error?.response?.data?.ERROR_MESSAGE ||
+			error?.response?.data?.message ||
+			error?.message ||
+			"Failed to request a password reset.";
+
+		throw Error(errorMessage);
+	});
+
+	if (!response) {
+		throw Error("No response while requesting password reset.");
+	}
+
+	return response.data;
+};
+
+const ensureCsrfToken = async () => {
+	// CSRF is disabled by configuration, no token needed.
+	if (!CSRF.isEnabled && !Env.CSRF) {
+		return;
+	}
+
+	// Token already cached.
+	if (CSRF.token) {
+		return;
+	}
+
+	const response = await fetch(`${Env.MODULE}/api/config/fetchCsrf`, {
+		headers: {
+			"X-CSRF-Token": "fetch",
+		},
+	});
+
+	CSRF.token =
+		response.headers.get("X-CSRF-Token") ||
+		response.headers.get("x-csrf-token") ||
+		"";
+
+	if (!CSRF.token) {
+		throw Error(
+			"Unable to initialize security token for password reset. Please refresh and try again.",
+		);
+	}
+};
+
 export const registerUser = async (
 	name: string,
 	username: string,
@@ -381,34 +449,6 @@ export const addInsightUserPermissions = async (
 		url += "admin/";
 	}
 	url += "insight/addInsightUserPermissions";
-
-	const response = await post<{
-		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	});
-	return response;
-	// figure out whether we want to do .catch here
-};
-
-export const removeInsightUserPermissions = async (
-	admin: boolean,
-	id: string,
-	users: unknown[],
-	projectId,
-) => {
-	let url = `${Env.MODULE}/api/auth/`;
-	const postData = {
-		projectId: projectId,
-		insightId: id,
-		ids: JSON.stringify(users),
-	};
-	if (admin) {
-		url += "admin/";
-	}
-	url += "project/removeProjectUserPermissions";
 
 	const response = await post<{
 		success: boolean;
@@ -642,19 +682,139 @@ export const getAllUsers = async (
 	>(getAllUsersURL).catch((error) => {
 		throw Error(error);
 	});
-	getNumUsersURL += "user/getNumUsers";
-	const count = await get<number>(getNumUsersURL).catch((error) => {
-		throw Error(error);
-	});
+	const buildCountUrl = (filterWord?: string) => {
+		let url = `${getNumUsersURL}user/getNumUsers`;
+		if (filterWord !== undefined) {
+			url += `?filterWord=${encodeURIComponent(filterWord)}`;
+		}
+		return url;
+	};
+	const trimmedSearch = searchTerm?.trim() ?? "";
+	let totalUsers: number | undefined;
+	let filteredUsers = 0;
+
+	if (trimmedSearch.length === 0) {
+		const totalCountResponse = await get<number>(buildCountUrl("")).catch(
+			(error) => {
+				throw Error(error);
+			},
+		);
+		if (!totalCountResponse) {
+			throw Error("No Response to get Members");
+		}
+		totalUsers = Number(totalCountResponse.data ?? 0);
+		filteredUsers = totalUsers;
+	} else {
+		const filteredCountResponse = await get<number>(
+			buildCountUrl(trimmedSearch),
+		).catch((error) => {
+			throw Error(error);
+		});
+		if (!filteredCountResponse) {
+			throw Error("No Response to get Members");
+		}
+		filteredUsers = Number(filteredCountResponse.data ?? 0);
+	}
 	// there was no response, that is an error
-	if (!response || !count) {
+	if (!response) {
 		throw Error("No Response to get Members");
 	}
 	const finalResponse = {
 		users: response.data,
-		totalUsers: searchTerm !== "" ? response.data.length : count.data,
+		totalUsers,
+		filteredUsers,
 	};
 	return finalResponse;
+};
+
+export const getAllAPIUsers = async (
+	admin: boolean,
+	searchTerm?: string,
+	offset?: number,
+	limit?: number,
+) => {
+	let getAllAPIUsersURL = `${Env.MODULE}/api/auth/`;
+	let getNumAPIUsersURL = `${Env.MODULE}/api/auth/`;
+	if (admin) {
+		getAllAPIUsersURL += "admin/";
+		getNumAPIUsersURL += "admin/";
+	} else {
+		return;
+	}
+
+	const encodedSearch = encodeURIComponent(searchTerm || "");
+	getAllAPIUsersURL += `user/getAllAPIUsers?filterWord=${encodedSearch}&offset=${offset}&limit=${limit}`;
+
+	const response = await get<
+		{
+			id: string;
+			type: string;
+			name?: string;
+			email?: string;
+			username?: string;
+		}[]
+	>(getAllAPIUsersURL).catch((error) => {
+		throw Error(error);
+	});
+
+	const buildCountUrl = (filterWord?: string) => {
+		let url = `${getNumAPIUsersURL}user/getNumAPIUsers`;
+		if (filterWord !== undefined) {
+			url += `?filterWord=${encodeURIComponent(filterWord)}`;
+		}
+		return url;
+	};
+
+	const totalCountResponse = await get<number>(buildCountUrl("")).catch(
+		(error) => {
+			throw Error(error);
+		},
+	);
+	if (!totalCountResponse) {
+		throw Error("No Response to get Service Accounts");
+	}
+
+	const totalUsers = Number(totalCountResponse.data ?? 0);
+	const trimmedSearch = searchTerm?.trim() ?? "";
+	let filteredUsers = totalUsers;
+
+	if (trimmedSearch.length > 0) {
+		const filteredCountResponse = await get<number>(
+			buildCountUrl(trimmedSearch),
+		).catch((error) => {
+			throw Error(error);
+		});
+		if (!filteredCountResponse) {
+			throw Error("No Response to get Service Accounts");
+		}
+		filteredUsers = Number(filteredCountResponse.data ?? 0);
+	}
+
+	if (!response) {
+		throw Error("No Response to get Service Accounts");
+	}
+
+	return {
+		users: response.data,
+		totalUsers,
+		filteredUsers,
+	};
+};
+
+export const createAPIUser = async (name: string) => {
+	const url = `${Env.MODULE}/api/auth/createAPIUser`;
+
+	const response = await post<Record<string, string>>(
+		url,
+		processPostData({
+			name: name,
+		}),
+		{},
+	).catch((error) => {
+		throw Error(error);
+	});
+
+	return response.data;
 };
 
 export const deleteMember = async (
@@ -861,6 +1021,24 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 		throw Error(error);
 	});
 	return response.data;
+};
+
+export const setUserDefaultModel = async (
+	metaKey: string,
+	metaValue: string,
+) => {
+	const url = `${Env.MODULE}/api/auth/user/setUserMetadata`;
+	const response = await post<boolean>(
+		url,
+		{
+			metaKey,
+			metaValue,
+		},
+		{},
+	).catch((e) => {
+		throw Error(e);
+	});
+	return response;
 };
 
 const processPostData = (data: unknown) => {

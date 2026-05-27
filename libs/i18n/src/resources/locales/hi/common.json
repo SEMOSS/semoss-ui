@@ -1,0 +1,69 @@
+{
+	"buttons": {
+		"save": "सहेजें",
+		"cancel": "रद्द करें",
+		"create": "बनाएं",
+		"back": "वापस",
+		"close": "बंद करें",
+		"confirm": "पुष्टि करें",
+		"upload": "अपलोड करें",
+		"search": "खोजें"
+	},
+	"labels": {
+		"name": "नाम",
+		"description": "विवरण",
+		"type": "प्रकार",
+		"model": "मॉडल",
+		"instructions": "निर्देश",
+		"temperature": "टेम्परेचर",
+		"maxToken": "अधिकतम टोकन"
+	},
+	"placeholders": {
+		"enterName": "नाम दर्ज करें",
+		"enterDescription": "विवरण दर्ज करें",
+		"enterInstructions": "निर्देश दर्ज करें",
+		"updateInstructions": "निर्देश अपडेट करें",
+		"updateTokenLength": "टोकन लंबाई अपडेट करें",
+		"uploadFiles": "फ़ाइलें अपलोड करें",
+		"search": "खोजें...",
+		"enterPromptLibraryTag": "प्रॉम्प्ट लाइब्रेरी टैग दर्ज करें"
+	},
+	"actions": {
+		"addKnowledge": "ज्ञान जोड़ें",
+		"addToolbox": "टूलबॉक्स जोड़ें",
+		"deleteMCP": "MCP हटाएं"
+	},
+	"badges": {
+		"fromAgent": "एजेंट से"
+	},
+	"messages": {
+		"noKnowledgeFound": "कोई ज्ञान नहीं मिला",
+		"noToolboxFound": "कोई टूलबॉक्स नहीं मिला"
+	},
+	"tooltips": {
+		"cannotDeleteWorkspaceMCPs": "वर्कस्पेस MCP हटाए नहीं जा सकते",
+		"cannotDeleteAgentMCPs": "एजेंट MCP हटाए नहीं जा सकते"
+	},
+	"plan": {
+		"newStep": "नया चरण",
+		"editStep": "चरण संपादित करें",
+		"selectType": "प्रकार चुनें",
+		"selectMcp": "MCP चुनें",
+		"selectTool": "टूल चुनें",
+		"tool": "टूल",
+		"ai": "AI",
+		"prompt": "प्रॉम्प्ट",
+		"promptPlaceholder": "AI के लिए निर्देश दर्ज करें",
+		"instructionsPlaceholder": "उपयोगकर्ता की प्रतिक्रिया को संसाधित करने के लिए AI के लिए निर्देश"
+	},
+	"navigation": {
+		"logOut": "लॉग आउट",
+		"acknowledge": "स्वीकार करें"
+	},
+	"pagination": {
+		"rowsPerPage": "प्रति पेज पंक्तियाँ:"
+	},
+	"images": {
+		"logoAlt": "लोगो"
+	}
+}

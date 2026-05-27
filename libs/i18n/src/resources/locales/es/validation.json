@@ -1,0 +1,7 @@
+{
+	"required": "{{field}} es obligatorio",
+	"nameRequired": "Por favor ingrese un nombre para el almacén de conocimiento",
+	"embeddingRequired": "Por favor seleccione un motor de incrustación",
+	"filesRequired": "Por favor seleccione al menos un documento",
+	"descriptionRequired": "Por favor ingrese una descripción"
+}

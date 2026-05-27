@@ -1,0 +1,63 @@
+{
+	"search": "Search",
+	"takeTour": "Take a Tour",
+	"nav": {
+		"newChat": {
+			"label": "New",
+			"tooltip": "New Chat - Start a fresh conversation anytime."
+		},
+		"agents": {
+			"label": "Agents",
+			"tooltip": "Agents"
+		},
+		"allChats": {
+			"label": "All chats",
+			"tooltip": "All chats"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agents/Workspaces - Access your workspaces or create new AI agents."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Knowledge Library - Browse, create, share and manage your document libraries."
+		},
+		"toolbox": {
+			"tooltip": "Toolbox - Learn about Elsa's extended capabilities with powerful add-on tools."
+		},
+		"promptLibrary": {
+			"tooltip": "Prompt Library - Browse, create and use saved prompts."
+		}
+	},
+	"buckets": {
+		"favorites": "Favorites",
+		"today": "Today",
+		"yesterday": "Yesterday",
+		"fewDaysAgo": "Few Days Ago",
+		"lastWeek": "Last Week",
+		"thisMonth": "This Month",
+		"lastMonth": "Last Month",
+		"older": "Older"
+	},
+	"messages": {
+		"errorLoadingRooms": "Error loading rooms",
+		"noRoomsFound": "No rooms found",
+		"untitled": "Untitled"
+	},
+	"actions": {
+		"favorite": "Favorite",
+		"unfavorite": "Unfavorite",
+		"rename": "Rename",
+		"delete": "Delete",
+		"openInline": "Open in-line",
+		"minimize": "Minimize",
+		"maximize": "Maximize",
+		"close": "Close"
+	},
+	"toasts": {
+		"failedToPin": "Failed to pin room",
+		"failedToUnpin": "Failed to unpin room",
+		"roomNameEmpty": "Room name cannot be empty",
+		"roomRenamedSuccess": "Room renamed successfully",
+		"failedToRename": "Failed to rename room",
+		"roomDeletedSuccess": "Room deleted successfully"
+	}
+}

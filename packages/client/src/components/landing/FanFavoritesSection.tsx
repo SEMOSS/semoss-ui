@@ -1,4 +1,6 @@
-import { Button, Stack, styled, Typography } from "@semoss/ui";
+import { H4, Muted } from "@semoss/ui/next";
+import BI from "@/assets/img/BI.png";
+import Terminal from "@/assets/img/Terminal.png";
 import { type AppMetadata, AppTileCard } from "../app";
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
@@ -53,37 +55,16 @@ const TERMINAL_APP: AppMetadata = {
 	description: "Execute commands and see a response",
 };
 
-const StyledSeeAllButton = styled(Button)(({ theme }) => ({
-	justifyContent: "flex-end",
-	color: theme.palette.text.primary,
-	fontWeight: 500,
-	"&.MuiButtonBase-root: hover": {
-		backgroundColor: "#F5F5F5",
-	},
-}));
-
 export const FanFavoritesSection = () => {
 	return (
-		<Stack gap={1}>
-			<Stack
-				direction={"row"}
-				justifyContent={"space-between"}
-				alignItems={"baseline"}
-				width={"100%"}
-			>
-				<Typography variant={"body1"}>
+		<div className="flex w-full flex-col gap-3">
+			<div className="flex-col gap-1">
+				<H4 className="font-bold text-foreground">
 					Try these fan favorites
-				</Typography>
-				{/* <StyledSeeAllButton
-          type="button"
-          size="small"
-          variant="text"
-          color="secondary"
-        >
-          See All
-        </StyledSeeAllButton> */}
-			</Stack>
-			<Stack direction={"row"} gap={3}>
+				</H4>
+				<Muted>Explore popular apps built by the community.</Muted>
+			</div>
+			<div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2">
 				<AppTileCard
 					app={BUSINESS_INTELLIGENCE_APP}
 					background="#BADEFF"
@@ -92,6 +73,8 @@ export const FanFavoritesSection = () => {
 					appType={"BI"}
 					isLoading={false}
 					showSkeleton={false}
+					variant="fillerCard"
+					cardImgSrc={BI}
 				/>
 				<AppTileCard
 					app={TERMINAL_APP}
@@ -101,8 +84,10 @@ export const FanFavoritesSection = () => {
 					appType={"TERMINAL"}
 					isLoading={false}
 					showSkeleton={false}
+					variant="fillerCard"
+					cardImgSrc={Terminal}
 				/>
-			</Stack>
-		</Stack>
+			</div>
+		</div>
 	);
 };

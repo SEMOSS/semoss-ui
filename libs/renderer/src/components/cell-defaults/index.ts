@@ -35,10 +35,9 @@ import {
 import { LLMCellConfig, type LLMCellDef } from "./llm-cell";
 import { MCPToolCellConfig, type MCPToolCellDef } from "./mcp-tool-cell";
 import {
-	QueryImportCellConfig,
-	type QueryImportCellDef,
-} from "./query-import-cell";
-import { SendEmailCellConfig, type SendEmailCellDef } from "./send-email-cell";
+	NotebookImportCellConfig,
+	type NotebookImportCellDef,
+} from "./notebook-import-cell";
 import type { TransformationCellDef } from "./shared";
 import { TextToSqlCellConfig, type TextToSqlCellDef } from "./text-to-sql-cell";
 import {
@@ -70,8 +69,7 @@ export type DefaultCellDefinitions =
 	| JoinTransformationCellDef
 	| LLMCellDef
 	| MCPToolCellDef
-	| QueryImportCellDef
-	| SendEmailCellDef
+	| NotebookImportCellDef
 	| TextToSqlCellDef
 	| TransformationCellDef
 	| TimestampTransformationCellDef
@@ -81,7 +79,7 @@ export type DefaultCellDefinitions =
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[CodeCellConfig.widget]: CodeCellConfig,
-	[QueryImportCellConfig.widget]: QueryImportCellConfig,
+	[NotebookImportCellConfig.widget]: NotebookImportCellConfig,
 	[FilterDataCellConfig.widget]: FilterDataCellConfig,
 	[UnFilterDataCellConfig.widget]: UnFilterDataCellConfig,
 	[DataImportCellConfig.widget]: DataImportCellConfig,
@@ -104,7 +102,6 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 		EncodeColumnTransformationCellConfig,
 	[CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
 	[LLMCellConfig.widget]: LLMCellConfig,
-	[SendEmailCellConfig.widget]: SendEmailCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
@@ -115,7 +112,7 @@ const filteredOtherCells: Partial<CellRegistry<DefaultCellDefinitions>> = {};
 Object.entries(DefaultCells).forEach(([key, value]) => {
 	const val = value;
 
-	if (val.parameters && val.parameters.transformation) {
+	if (val.parameters?.transformation) {
 		filteredTransformations[key] = value;
 	}
 });
@@ -123,7 +120,7 @@ Object.entries(DefaultCells).forEach(([key, value]) => {
 Object.entries(DefaultCells).forEach(([key, value]) => {
 	const val = value;
 
-	if (val.parameters && val.parameters.others) {
+	if (val.parameters?.others) {
 		filteredTransformations[key] = value;
 	}
 });

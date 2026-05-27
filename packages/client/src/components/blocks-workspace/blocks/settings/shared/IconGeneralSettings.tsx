@@ -1,7 +1,13 @@
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { CircleHelp } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Stack, Switch, Tooltip, Typography } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import {
+	Muted,
+	Switch,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { InputSettings, SelectInputSettings } from "../shared";
 
 const badgeColorOptions = [
@@ -39,39 +45,23 @@ export const IconGeneralSettings = ({ id }: { id: string }) => {
 	return (
 		<>
 			{/* Toggle field */}
-			<Stack
-				sx={{
-					flexDirection: "row",
-					alignItems: "center",
-					gap: 2,
-					mt: 1,
-				}}
-			>
-				<Stack
-					direction="row"
-					alignItems="center"
-					spacing={0.5}
-					width="100%"
-				>
-					<Typography variant="body2">Show Badge</Typography>
-					<Tooltip
-						title="Toggle to display or hide the badge on the icon"
-						arrow
-					>
-						<HelpOutlineIcon
-							color="action"
-							sx={{ fontSize: 15, ml: "5px" }}
-						/>
+			<div className="mt-2 flex flex-row items-center gap-2">
+				<div className="flex w-full flex-row items-center gap-0.5">
+					<Muted>Show Badge</Muted>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<CircleHelp
+								style={{ marginLeft: "5px" }}
+								className="size-4"
+							/>
+						</TooltipTrigger>
+						<TooltipContent>
+							Toggle to display or hide the badge on the icon
+						</TooltipContent>
 					</Tooltip>
-				</Stack>
-				<Switch
-					value={showBadge}
-					checked={showBadge}
-					onChange={toggleShowBadge}
-					size="small"
-					color="primary"
-				/>
-			</Stack>
+				</div>
+				<Switch checked={showBadge} onCheckedChange={toggleShowBadge} />
+			</div>
 			{/* Render badge settings if showBadge is true */}
 			{showBadge && (
 				<>

@@ -1,105 +1,106 @@
 //Drag and Drop Data
 
-import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
+import { Terminal } from "lucide-react";
 //Add Storage
-import AMAZON_S3 from "@/assets/img/Amazon_S3.png";
-import Amazon_Titan from "@/assets/img/Amazon_Titan.png";
+import AMAZON_S3 from "@/assets/img/AMAZON_S3.png";
+import APACHE_JENA from "@/assets/img/APACHE_JENA.svg";
 //Connect to an External Database
 import ASTER from "@/assets/img/ASTER.png";
-import ATHENA from "@/assets/img/ATHENA.png";
+import ATHENA from "@/assets/img/ATHENA.svg";
 import AWS_COMPREHEND from "@/assets/img/AWS_COMPREHEND.png";
 import AWS_POLLY from "@/assets/img/AWS_POLLY.png";
 import AWS_TEXTRACT from "@/assets/img/AWS_TEXTRACT.png";
 import AWS_TRANSCRIBE from "@/assets/img/AWS_TRANSCRIBE.png";
-import AZURE_BLOB from "@/assets/img/AZURE_BLOB.png";
+import AZURE_BLOB from "@/assets/img/AZURE_BLOB.svg";
+//Commercial Models
+import AZURE_OPEN_AI from "@/assets/img/AZURE_OPEN_AI.svg";
 import AZURE_SPEECH_TO_TEXT from "@/assets/img/AZURE_SPEECH_TO_TEXT.png";
-import BERT from "@/assets/img/BERT.png";
-import BIGQUERY from "@/assets/img/BIGQUERY.png";
-import BLOCKS from "@/assets/img/Blocks.svg";
-import BLOCKS_SELECTED from "@/assets/img/Blocks_Selected.svg";
+import BEDROCK from "@/assets/img/BEDROCK.svg";
+import BIGQUERY from "@/assets/img/BIGQUERY.svg";
+import BLOCKS from "@/assets/img/BLOCKS.svg";
+import BLOCKS_SELECTED from "@/assets/img/BLOCKS_SELECTED.svg";
 //Local Models
 import BRAIN from "@/assets/img/BRAIN.png";
-import CASSANDRA from "@/assets/img/CASSANDRA.png";
+import CASSANDRA from "@/assets/img/CASSANDRA.svg";
 import CEPH from "@/assets/img/CEPH.png";
 import CHROMADB from "@/assets/img/CHROMADB.png";
-import CLAUDE from "@/assets/img/CLAUDE_AI.png";
-import CLICKHOUSE from "@/assets/img/CLICKHOUSE.png";
+import CLAUDE from "@/assets/img/CLAUDE_AI.svg";
+import CLICKHOUSE from "@/assets/img/CLICKHOUSE.svg";
 import CSV from "@/assets/img/CSV.svg";
-import DATABRICKS from "@/assets/img/DATABRICKS.png";
+import DATABRICKS from "@/assets/img/DATABRICKS.svg";
 import DATASTAX from "@/assets/img/DATASTAX.png";
 import DB2 from "@/assets/img/DB2.png";
 import DERBY from "@/assets/img/DERBY.png";
-import DOLLY from "@/assets/img/DOLLY_AI.jpg";
 import DREAMHOST from "@/assets/img/DREAMHOST.png";
-import DROPBOX from "@/assets/img/dropbox.png";
+import DROPBOX from "@/assets/img/DROPBOX.png";
 import ELASTIC_SEARCH from "@/assets/img/ELASTIC_SEARCH.svg";
-import ELEUTHER from "@/assets/img/ELEUTHER_AI.png";
-import EXCEL from "@/assets/img/EXCEL.png";
+import EXCEL from "@/assets/img/EXCEL.svg";
 import FALCON from "@/assets/img/FALCON_AI.png";
-import FILES from "@/assets/img/Files.svg";
-import FILES_SELECTED from "@/assets/img/Files_Selected.svg";
+import FILES from "@/assets/img/FILES.svg";
+import FILES_SELECTED from "@/assets/img/FILES_SELECTED.svg";
 import FLAN from "@/assets/img/FLAN.jpg";
-import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.png";
+import GEMINI from "@/assets/img/GEMINI_COLOR.svg";
+import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.svg";
 import GOOGLE_DRIVE from "@/assets/img/GOOGLE_DRIVE.png";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
 import H2_DB from "@/assets/img/H2_DB.png";
-import HIVE from "@/assets/img/HIVE.jpg";
-import IMPALA from "@/assets/img/IMPALA.png";
-import LAYERS from "@/assets/img/Layers.svg";
-import LAYERS_SELECTED from "@/assets/img/Layers_Selected.svg";
+import HIVE from "@/assets/img/HIVE.svg";
+import GLINER from "@/assets/img/HUGGINGFACE_COLOR.svg";
+import HUGGINGFACE from "@/assets/img/HUGGINGFACE_COLOR.svg";
+import IMPALA from "@/assets/img/IMPALA.svg";
+import LAYERS from "@/assets/img/LAYERS.svg";
+import LAYERS_SELECTED from "@/assets/img/LAYERS_SELECTED.svg";
 import LOCAL_FILE_SYSTEM from "@/assets/img/LOCAL_FILE_SYSTEM.png";
-import MARIA_DB from "@/assets/img/MARIA_DB.png";
-import META from "@/assets/img/META.png";
+import MARIA_DB from "@/assets/img/MARIA_DB.svg";
+import META from "@/assets/img/META_COLOR.svg";
+//Vector
+import MICROSOFT from "@/assets/img/MICROSOFT.png";
 import MILVUS from "@/assets/img/MILVUS.png";
 import MINIO from "@/assets/img/MINIO.png";
 import MOSAIC from "@/assets/img/MOSAIC.png";
-import MYSQL from "@/assets/img/MYSQL.png";
+import MYSQL from "@/assets/img/MYSQL.svg";
 import NEMO from "@/assets/img/NEMO.png";
-import NEO4J from "@/assets/img/NEO4J.png";
+import NEO4J from "@/assets/img/NEO4J.svg";
 import NETWORK_FILE_SYSTEM from "@/assets/img/NETWORK_FILE_SYSTEM.png";
-import NOTEBOOK from "@/assets/img/Notebook.svg";
-import NOTEBOOK_SELECTED from "@/assets/img/Notebook_Selected.svg";
+import NOTEBOOK from "@/assets/img/NOTEBOOK.svg";
+import NOTEBOOK_SELECTED from "@/assets/img/NOTEBOOK_SELECTED.svg";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
-//Commercial Models
-import {
-	default as AZURE_OPEN_AI,
-	default as OPEN_AI,
-} from "@/assets/img/OPEN_AI.png";
+import OPEN_AI from "@/assets/img/OPEN_AI.svg";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
-import ORACLE from "@/assets/img/ORACLE.png";
+import ORACLE from "@/assets/img/ORACLE.svg";
 //Embedded Models
 import ORCA from "@/assets/img/ORCA.png";
+import PERPLEXITY from "@/assets/img/PERPLEXITY.svg";
 import PHOENIX from "@/assets/img/PHOENIX.png";
 import PINECONE from "@/assets/img/PINECONE.png";
-import POSTGRES from "@/assets/img/POSTGRES.png";
-import REDSHIFT from "@/assets/img/REDSHIFT.png";
+import POSTGRES from "@/assets/img/POSTGRES.svg";
+import DETOXIFY from "@/assets/img/PYTHON.svg";
+import PYTHON from "@/assets/img/PYTHON.svg";
+import RDF4J from "@/assets/img/RDF4J.svg";
+import REDSHIFT from "@/assets/img/REDSHIFT.svg";
 import REPLIT from "@/assets/img/REPLIT_CODE.png";
 // Functions
-import RESTAPI from "@/assets/img/rest-api.svg";
-import SAP_HANA from "@/assets/img/SAP_HANA.png";
+import REST_API from "@/assets/img/REST-API.svg";
+import SAP_HANA from "@/assets/img/SAP_HANA.svg";
 import SEMOSS from "@/assets/img/SEMOSS_BLUE_LOGO.svg";
-import SETTINGS_SELECTED from "@/assets/img/Setting_Selected.svg";
+import SETTINGS_SELECTED from "@/assets/img/SETTING_SELECTED.svg";
 //Sidebar icons
-import SETTINGS from "@/assets/img/Settings.svg";
+import SETTINGS from "@/assets/img/SETTINGS.svg";
 import SFTP from "@/assets/img/SFTP.png";
-import SNOWFLAKE from "@/assets/img/SNOWFLAKE.png";
-import SQL_SERVER from "@/assets/img/SQL_SERVER.png";
-import SQLITE from "@/assets/img/SQLITE.png";
+import SNOWFLAKE from "@/assets/img/SNOWFLAKE.svg";
+import SQL_SERVER from "@/assets/img/SQL_SERVER.svg";
+import SQLITE from "@/assets/img/SQLITE.svg";
 import STABILITY_AI from "@/assets/img/STABILITY_AI.png";
 import TERADATA from "@/assets/img/TERADATA.png";
 import TIBCO from "@/assets/img/TIBCO.png";
 import TINKER from "@/assets/img/TINKER.png";
 import TRINO from "@/assets/img/TRINO.jpg";
 import TSV from "@/assets/img/TSV.svg";
-import VARIABLES from "@/assets/img/Variable.svg";
-import VARIABLES_SELECTED from "@/assets/img/Variables_Selected.svg";
-import VERTEX from "@/assets/img/VERTEX_AI.png";
-import VICUNA from "@/assets/img/VICUNA.jpg";
+import VARIABLES from "@/assets/img/VARIABLE.svg";
+import VARIABLES_SELECTED from "@/assets/img/VARIABLES_SELECTED.svg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
-import ZIP from "@/assets/img/ZIP.png";
-//Vector
-import MICROSOFT from "@/assets/loginProviders/microsoft.png";
+import ZIP from "@/assets/img/ZIP.svg";
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -162,5558 +163,15 @@ export type EngineFields = {
 			pixel?: string; // Pixel to populate options for select
 		};
 		disabled: boolean;
-		rules: Record<string, any>; // react hook form
+		rules: Record<string, unknown>; // react hook form
 		pixel?: string; // used to populate default value
 	}[];
 }[];
 
 // TODO: Type out Connection Options
 export const CONNECTION_OPTIONS = {
-	MODEL: {
-		"Commercially Hosted": {
-			OpenAI: [
-				{
-					name: "GPT-3.5",
-					disable: false,
-					icon: OPEN_AI,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Open AI Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "gpt-3.5-turbo",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "gpt-3.5-turbo",
-										value: "gpt-3.5-turbo",
-									},
-									{
-										display: "gpt-4-32k",
-										value: "gpt-4-32k",
-									},
-								],
-							},
-							disabled: true,
-							hidden: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "chat-completion",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat-completion",
-										value: "chat-completion",
-									},
-									{
-										display: "completion",
-										value: "completion",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "GPT-4",
-					disable: false,
-					icon: OPEN_AI,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Open AI Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "gpt-4-32k",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "gpt-4-32k",
-										value: "gpt-4-32k",
-									},
-								],
-							},
-							disabled: true,
-							hidden: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "chat-completion",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat-completion",
-										value: "chat-completion",
-									},
-									{
-										display: "completion",
-										value: "completion",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "Text-Davinci",
-					disable: false,
-					icon: OPEN_AI,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Open AI Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "text-davinci",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "text-davinci",
-										value: "text-davinci",
-									},
-								],
-							},
-							disabled: true,
-							hidden: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"from genai_client import OpenAiEmbedder;${VAR_NAME} = OpenAiEmbedder(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "DALL E",
-					disable: false,
-					icon: OPEN_AI,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Open AI Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "dall e",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "dall e",
-										value: "dall e",
-									},
-								],
-							},
-							disabled: true,
-							hidden: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "chat-completion",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat-completion",
-										value: "chat-completion",
-									},
-									{
-										display: "completion",
-										value: "completion",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-			],
-			Azure: [
-				{
-					name: "Azure Open AI",
-					disable: false,
-					icon: AZURE_OPEN_AI,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Azure Open AI Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "DEPLOYMENT_NAME",
-							label: "Deployment Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "ENDPOINT",
-							label: "Azure Endpoint",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "chat-completion",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat-completion",
-										value: "chat-completion",
-									},
-									{
-										display: "completion",
-										value: "completion",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "Azure Open AI ADA Embedder",
-					disable: false,
-					icon: AZURE_OPEN_AI,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: "CheckEngineName ( [VALUE] ) ;",
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "TAG",
-							label: "Tag",
-							defaultValue: "embeddings",
-							options: {
-								component: "text-field",
-							},
-							disabled: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "text-embedding-ada-002",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "text-embedding-ada-002",
-										value: "text-embedding-ada-002",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Azure Open AI API Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "ENDPOINT",
-							label: "Azure Endpoint",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "API_VERSION",
-							label: "API version",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_KEY}', api_version = '${API_VERSION}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: true },
-							defaultValue: "4000",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-			],
-			"AWS Bedrock": [
-				{
-					name: "Claude",
-					disable: false,
-					icon: CLAUDE,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: "This field is required",
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "BEDROCK",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Bedrock",
-										value: "BEDROCK",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "AWS_REGION",
-							label: "Aws Region",
-							defaultValue: "us-east-1",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "AWS_ACCESS_KEY",
-							label: "Aws Access Key",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "AWS_SECRET_KEY",
-							label: "Aws Secret Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "chat-completion",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat-completion",
-										value: "chat-completion",
-									},
-									{
-										display: "completion",
-										value: "completion",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-			],
-			"Google GCP": [
-				{
-					name: "Palm Bison",
-					disable: false,
-					icon: VERTEX,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "VERTEX",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Vertex",
-										value: "VERTEX",
-									},
-								],
-							},
-							disabled: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "text-bison",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "GCP_REGION",
-							label: "GCP Region",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "text",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat",
-										value: "chat",
-									},
-									{
-										display: "code",
-										value: "code",
-									},
-									{
-										display: "codechat",
-										value: "codechat",
-									},
-									{
-										display: "generative",
-										value: "generative",
-									},
-									{
-										display: "text",
-										value: "text",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "Palm Chat Bison",
-					disable: false,
-					icon: VERTEX,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "VERTEX",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Vertex",
-										value: "VERTEX",
-									},
-								],
-							},
-							disabled: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "text-bison",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "GCP_REGION",
-							label: "GCP Region",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "text",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat",
-										value: "chat",
-									},
-									{
-										display: "code",
-										value: "code",
-									},
-									{
-										display: "codechat",
-										value: "codechat",
-									},
-									{
-										display: "generative",
-										value: "generative",
-									},
-									{
-										display: "text",
-										value: "text",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "Palm Code Bison",
-					disable: false,
-					icon: VERTEX,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "VERTEX",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Vertex",
-										value: "VERTEX",
-									},
-								],
-							},
-							disabled: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "text-bison",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "GCP_REGION",
-							label: "GCP Region",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "text",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat",
-										value: "chat",
-									},
-									{
-										display: "code",
-										value: "code",
-									},
-									{
-										display: "codechat",
-										value: "codechat",
-									},
-									{
-										display: "generative",
-										value: "generative",
-									},
-									{
-										display: "text",
-										value: "text",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "Gemini",
-					disable: false,
-					icon: VERTEX,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: "CheckEngineName ( [VALUE] ) ;",
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "VERTEX",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Vertex",
-										value: "VERTEX",
-									},
-								],
-							},
-							disabled: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue: "gemini-1.5-pro-002",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "gemini-1.5-pro-002",
-										value: "gemini-1.5-pro-002",
-									},
-									{
-										display: "gemini-2.0-flash-001",
-										value: "gemini-2.0-flash-001",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "GCP_REGION",
-							label: "GCP Region",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "generative",
-							options: {
-								component: "text-field",
-							},
-							disabled: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "FILE",
-							label: "Upload Service Account File",
-							defaultValue: null,
-							options: {
-								component: "file-upload",
-							},
-							disabled: true,
-							secondary: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', service_account_credentials = ${SERVICE_ACCOUNT_CREDENTIALS}, region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-			],
-			"NVIDIA NIM Models": [
-				{
-					name: "embed-qa-4",
-					disable: false,
-					icon: NEMO,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Open AI Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue:
-								"mistralai/mixtral-8x7b-instruct-v0.1",
-							options: {
-								component: "select",
-								options: [
-									{
-										display:
-											"mistralai/mixtral-8x7b-instruct-v0.1",
-										value: "mistralai/mixtral-8x7b-instruct-v0.1",
-									},
-								],
-							},
-							disabled: true,
-							hidden: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "chat-completion",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat-completion",
-										value: "chat-completion",
-									},
-									{
-										display: "completion",
-										value: "completion",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-				{
-					name: "rerank-qa-mistral-4b",
-					disable: false,
-					icon: NEMO,
-					fields: [
-						{
-							fieldName: "NAME",
-							label: "Catalog Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: {
-								required: true,
-								pattern: {
-									value: /^[\w\-\s]+$/,
-									message:
-										"Catalog names can only contain alphanumeric characters and dashes.",
-								},
-								custom: {
-									value: 'CheckEngineName ( "[VALUE]") ;',
-									message:
-										"This Catalog name has already been used, please try another.",
-								},
-							},
-						},
-						{
-							fieldName: "MODEL_TYPE",
-							label: "Type",
-							defaultValue: "OPEN_AI",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "Open AI",
-										value: "OPEN_AI",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "OPEN_AI_KEY",
-							label: "Open AI Key",
-							defaultValue: "",
-							options: {
-								component: "password",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MODEL",
-							label: "Model",
-							defaultValue:
-								"mistralai/mixtral-8x7b-instruct-v0.1",
-							options: {
-								component: "select",
-								options: [
-									{
-										display:
-											"mistralai/mixtral-8x7b-instruct-v0.1",
-										value: "mistralai/mixtral-8x7b-instruct-v0.1",
-									},
-								],
-							},
-							disabled: true,
-							hidden: true,
-							rules: { required: true },
-						},
-						{
-							fieldName: "VAR_NAME",
-							label: "Variable Name",
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "CHAT_TYPE",
-							label: "Chat Type",
-							defaultValue: "chat-completion",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "chat-completion",
-										value: "chat-completion",
-									},
-									{
-										display: "completion",
-										value: "completion",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							defaultValue:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_CONVERSATION_HISTORY",
-							label: "Keep Conversation History",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "KEEP_INPUT_OUTPUT",
-							label: "Record Questions and Responses",
-							defaultValue: "false",
-							options: {
-								component: "select",
-								options: [
-									{
-										display: "true",
-										value: "true",
-									},
-									{
-										display: "false",
-										value: "false",
-									},
-								],
-							},
-							disabled: false,
-							rules: { required: true },
-						},
-						{
-							fieldName: "MAX_TOKENS",
-							label: "Max Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-						{
-							fieldName: "MAX_INPUT_TOKENS",
-							label: "Max Input Tokens",
-							rules: { required: false },
-							defaultValue: "",
-							options: {
-								component: "text-field",
-							},
-							disabled: false,
-						},
-					],
-				},
-			],
-		},
-		"Locally Hosted": [
-			{
-				name: "Bert",
-				disable: false,
-				icon: BERT,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Bert",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Dolly",
-				disable: false,
-				icon: DOLLY,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Dolly",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Eleuther GPTJ",
-				disable: false,
-				icon: ELEUTHER,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Eleuther GPTJ",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Falcon",
-				disable: false,
-				icon: FALCON,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Falcon",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Flan T5 Large",
-				disable: false,
-				icon: FLAN,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Flan T5 Large",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Flan T5 XXL",
-				disable: false,
-				icon: FLAN,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Flan T5 XXL",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Guanaco",
-				disable: false,
-				icon: BRAIN,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Guanaco",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Llama2 7B",
-				disable: false,
-				icon: META,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "meta-llama/Llama-2-7b",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Llama2 13B",
-				disable: false,
-				icon: META,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "meta-llama/Llama-2-13b",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Llama2 70B",
-				disable: false,
-				icon: META,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "meta-llama/Llama-2-70b",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Mosaic ML",
-				disable: false,
-				icon: MOSAIC,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Mosaic ML",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Replit code model – 3b",
-				disable: false,
-				icon: REPLIT,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Replit code model – 3b",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "StableBeluga2",
-				disable: false,
-				icon: BRAIN,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "StableBeluga2",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Vicuna",
-				disable: false,
-				icon: VICUNA,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Vicuna",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Wizard 13B",
-				disable: false,
-				icon: BRAIN,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Wizard 13B",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Wizard Coder",
-				disable: false,
-				icon: BRAIN,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "WizardLM/WizardCoder-15B-V1.0",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Text Generation",
-									value: "TEXT_GENERATION",
-								},
-								{
-									display: "vLLM (Fast Chat)",
-									value: "FAST_CHAT",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-		],
-		Embedded: [
-			{
-				name: "NeMo",
-				disable: true,
-				icon: NEMO,
-				fields: [],
-			},
-			{
-				name: "Orca",
-				disable: false,
-				icon: ORCA,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "Orca",
-						options: {
-							component: "text-field",
-						},
-						disabled: true,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Embedded",
-									value: "EMBEDDED",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "AWS TITAN TEXT EMBEDDINGS",
-				disable: true,
-				icon: Amazon_Titan,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "AWS_TITAN_TEXT_EMBEDDINGS",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "AWS TITAN TEXT EMBEDDINGS",
-									value: "AWS_TITAN_TEXT_EMBEDDINGS",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "amazon.titan-embed-text-v2:0",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "AWS_REGION",
-						label: "Aws Region",
-						defaultValue: "us-east-1",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "AWS_ACCESS_KEY",
-						label: "Aws Access Key",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "AWS_SECRET_KEY",
-						label: "Aws Secret Key",
-						defaultValue: "",
-						options: {
-							component: "password",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-				],
-			},
-			{
-				name: "Stablity AI",
-				disable: true,
-				icon: STABILITY_AI,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: true,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Embedded",
-									value: "EMBEDDED",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-			{
-				name: "Replit Code Model",
-				disable: true,
-				icon: REPLIT,
-				fields: [
-					{
-						fieldName: "NAME",
-						label: "Catalog Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: {
-							required: true,
-							pattern: {
-								value: /^[\w\-\s]+$/,
-								message:
-									"Catalog names can only contain alphanumeric characters and dashes.",
-							},
-							custom: {
-								value: 'CheckEngineName ( "[VALUE]") ;',
-								message:
-									"This Catalog name has already been used, please try another.",
-							},
-						},
-					},
-					{
-						fieldName: "MODEL",
-						label: "Model",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: true,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MODEL_TYPE",
-						label: "Type",
-						defaultValue: "",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "Embedded",
-									value: "EMBEDDED",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "ENDPOINT",
-						label: "Endpoint",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "VAR_NAME",
-						label: "Variable Name",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "CHAT_TYPE",
-						label: "Chat Type",
-						defaultValue: "chat-completion",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "chat-completion",
-									value: "chat-completion",
-								},
-								{
-									display: "completion",
-									value: "completion",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "INIT_MODEL_ENGINE",
-						label: "Init Script",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_CONVERSATION_HISTORY",
-						label: "Keep Conversation History",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "KEEP_INPUT_OUTPUT",
-						label: "Record Questions and Responses",
-						defaultValue: "false",
-						options: {
-							component: "select",
-							options: [
-								{
-									display: "true",
-									value: "true",
-								},
-								{
-									display: "false",
-									value: "false",
-								},
-							],
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "MAX_TOKENS",
-						label: "Max Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-					{
-						fieldName: "MAX_INPUT_TOKENS",
-						label: "Max Input Tokens",
-						rules: { required: false },
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-					},
-				],
-			},
-		],
-		"File Uploads": [
-			{
-				name: "ZIP",
-				disable: false,
-				icon: ZIP,
-				fields: [
-					{
-						fieldName: "ZIP",
-						label: "Zip File",
-						defaultValue: null,
-						options: {
-							component: "file-upload",
-						},
-						disabled: true,
-						rules: { required: true },
-					},
-				],
-			},
-		],
-	},
+	// Model connection options were moved to components/import/model/model-import.constants.ts
+	// to support the new shadcn model import flow.
 	FUNCTION: {
 		Function: [
 			{
@@ -6100,7 +558,7 @@ export const CONNECTION_OPTIONS = {
 			{
 				name: "Azure Document Intelligence",
 				disable: false,
-				icon: RESTAPI,
+				icon: REST_API,
 				fields: [
 					{
 						fieldName: "FUNCTION_TYPE",
@@ -6413,7 +871,7 @@ export const CONNECTION_OPTIONS = {
 			{
 				name: "REST",
 				disable: false,
-				icon: RESTAPI,
+				icon: REST_API,
 				fields: [
 					{
 						fieldName: "FUNCTION_TYPE",
@@ -6626,8 +1084,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -6964,8 +1422,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -7195,8 +1653,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -7526,8 +1984,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -7723,8 +2181,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -8010,8 +2468,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -8397,8 +2855,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -8648,8 +3106,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -8881,8 +3339,8 @@ export const CONNECTION_OPTIONS = {
 							component: "select",
 							options: [],
 							pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
-							optionDisplay: "database_name",
-							optionValue: "database_id",
+							optionDisplay: "engine_name",
+							optionValue: "engine_id",
 						},
 						disabled: false,
 						rules: { required: true },
@@ -10054,7 +4512,7 @@ export const CONNECTION_OPTIONS = {
 				],
 			},
 			{
-				name: "DATABRICKS",
+				name: "Databricks",
 				disable: false,
 				icon: DATABRICKS,
 				fields: [
@@ -15141,194 +9599,253 @@ export const CONNECTION_OPTIONS = {
 
 export const ENGINE_IMAGES = {
 	MODEL: [
+		// Stable provider/brand keys (keep alphabetical)
+		{
+			name: "AZURE_OPEN_AI",
+			icon: AZURE_OPEN_AI,
+		},
+		{
+			name: "BEDROCK",
+			icon: BEDROCK,
+		},
+		{
+			name: "BRAIN",
+			icon: BRAIN,
+		},
+		{
+			name: "CLAUDE",
+			icon: CLAUDE,
+		},
+		{
+			name: "GEMINI",
+			icon: GEMINI,
+		},
+		{
+			name: "HUGGINGFACE",
+			icon: HUGGINGFACE,
+		},
+		{
+			name: "META",
+			icon: META,
+		},
+		{
+			name: "NEMO",
+			icon: NEMO,
+		},
 		{
 			name: "OPEN_AI",
 			icon: OPEN_AI,
 		},
 		{
-			name: "GPT-3.5",
-			icon: OPEN_AI,
+			name: "PERPLEXITY",
+			icon: PERPLEXITY,
 		},
 		{
-			name: "GPT-4",
-			icon: OPEN_AI,
+			name: "TEXT_EMBEDDINGS",
+			icon: HUGGINGFACE,
 		},
 		{
-			name: "Text-Davinci",
-			icon: OPEN_AI,
+			name: "TEXT_GENERATION",
+			icon: HUGGINGFACE,
 		},
 		{
-			name: "DALL E",
-			icon: OPEN_AI,
+			name: "VERTEX",
+			icon: GEMINI,
 		},
+		// Self-hosted / long-tail brand keys (keep alphabetical)
 		{
-			name: "Azure Open AI",
-
-			icon: AZURE_OPEN_AI,
-		},
-		{
-			name: "Claude",
-			icon: CLAUDE,
-		},
-		{
-			name: "Palm Bison",
-			icon: VERTEX,
-		},
-		{
-			name: "Palm Chat Bison",
-			icon: VERTEX,
-		},
-		{
-			name: "Palm Code Bison",
-			icon: VERTEX,
-		},
-		{
-			name: "Wizard 13B",
-			icon: BRAIN,
-		},
-		{
-			name: "Llama2 7B",
-			icon: META,
-		},
-		{
-			name: "Llama2 13B",
-			icon: META,
-		},
-		{
-			name: "Llama2 70B",
-			icon: META,
-		},
-		{
-			name: "Falcon",
+			name: "FALCON",
 			icon: FALCON,
 		},
 		{
-			name: "StableBeluga2",
-			icon: BRAIN,
+			name: "FLAN_T5_LARGE",
+			icon: FLAN,
 		},
 		{
-			name: "Guanaco",
-			icon: BRAIN,
-		},
-		{
-			name: "Vicuna",
-			icon: VICUNA,
-		},
-		{
-			name: "Mosaic ML",
+			name: "MOSAIC_ML",
 			icon: MOSAIC,
 		},
 		{
-			name: "Dolly",
-			icon: DOLLY,
-		},
-		{
-			name: "Replit code model – 3b",
-			icon: REPLIT,
-		},
-		{
-			name: "Flan T5 Large",
-			icon: FLAN,
-		},
-		{
-			name: "Flan T5 XXL",
-			icon: FLAN,
-		},
-		{
-			name: "Bert",
-			icon: BERT,
-		},
-		{
-			name: "Eleuther GPTJ",
-			icon: ELEUTHER,
-		},
-		{
-			name: "Wizard Coder",
-			icon: BRAIN,
-		},
-		{
-			name: "NeMo",
-			icon: NEMO,
-		},
-		{
-			name: "Orca",
+			name: "ORCA",
 			icon: ORCA,
 		},
 		{
-			name: "AWS_TITAN_TEXT_EMBEDDINGS",
-			icon: Amazon_Titan,
-		},
-		{
-			name: "Stablity AI",
-			icon: STABILITY_AI,
-		},
-		{
-			name: "Replit Code Model",
+			name: "REPLIT_CODE_MODEL",
 			icon: REPLIT,
 		},
 		{
-			name: "NeMo",
-			icon: NEMO,
-		},
-		{
-			name: "ZIP",
-			icon: ZIP,
+			name: "STABLITY_AI",
+			icon: STABILITY_AI,
 		},
 	],
 	FUNCTION: [
 		{
+			name: "AWS_POLLY",
+			icon: AWS_POLLY,
+		},
+		{
+			name: "AWS_TEXTRACT",
+			icon: AWS_TEXTRACT,
+		},
+		{
+			name: "AWS_TEXTRACT_CUSTOM_EMBEDDINGS",
+			icon: AWS_TEXTRACT,
+		},
+		{
+			name: "AWS_TRANSCRIBE",
+			icon: AWS_TRANSCRIBE,
+		},
+		{
+			name: "AWS_TRANSCRIBE_CUSTOM_EMBEDDINGS",
+			icon: AWS_TRANSCRIBE,
+		},
+		{
+			name: "AWS_Transcribe",
+			icon: AWS_TRANSCRIBE,
+		},
+		{
+			name: "AZURE_DOCUMENT_INTELLIGENCE_CUSTOM_EMBEDDINGS",
+			icon: REST_API,
+		},
+		{
+			name: "AZUREOCR",
+			icon: REST_API,
+		},
+		{
+			name: "GOOGLE_OCR",
+			icon: GOOGLE_OCR,
+		},
+		{
+			name: "GOOGLE_OCR_CUSTOM_EMBEDDINGS",
+			icon: GOOGLE_OCR,
+		},
+		{
+			name: "GOOGLE_SPEECH_TO_TEXT",
+			icon: GOOGLE_SPEECH_TO_TEXT,
+		},
+		{
+			name: "IMAGE_DESCRIPTION",
+			icon: BRAIN,
+		},
+		{
+			name: "LOCAL_PYTHON",
+			icon: PYTHON,
+		},
+		{
+			name: "LOCAL_PYTHON_CUSTOM_EMBEDDINGS",
+			icon: PYTHON,
+		},
+		{
+			name: "OPENAI_TRANSCRIBE",
+			icon: OPEN_AI,
+		},
+		{
 			name: "REST",
-			icon: RESTAPI,
+			icon: REST_API,
 		},
 		{
 			name: "ZIP",
 			icon: ZIP,
 		},
+	],
+	GUARDRAIL: [
 		{
-			name: "AZUREOCR",
-			icon: RESTAPI,
+			name: "DETOXIFY",
+			icon: DETOXIFY,
 		},
 		{
-			name: "AWS - Image Text Extraction",
-			icon: AWS_TEXTRACT,
+			name: "DETOXIFY",
+			icon: DETOXIFY,
 		},
 		{
-			name: "AWS POLLY",
-			icon: AWS_POLLY,
+			name: "EMBEDDED_DETOXIFY",
+			icon: DETOXIFY,
 		},
 		{
-			name: "AWS Transcribe",
-			icon: AWS_TRANSCRIBE,
+			name: "EMBEDDED_GLINER",
+			icon: GLINER,
 		},
 		{
-			name: "Google Speech To Text",
-			icon: GOOGLE_SPEECH_TO_TEXT,
+			name: "EMBEDDED_LAKERA_GUARD",
+			icon: BRAIN,
 		},
 		{
-			name: "Google OCR",
-			icon: GOOGLE_OCR,
+			name: "EMBEDDED_MICROSOFT_CONTENT_MODERATION",
+			icon: MICROSOFT,
+		},
+		{
+			name: "EMBEDDED_NVIDIA_NEMO",
+			icon: NEMO,
+		},
+		{
+			name: "EMBEDDED_OPENAI_MODERATION",
+			icon: OPEN_AI,
+		},
+		{
+			name: "EMBEDDED_PERSPECTIVE_API",
+			icon: BRAIN,
+		},
+		{
+			name: "EMBEDDED_PROMPTGUARD_META",
+			icon: META,
+		},
+		{
+			name: "EMBEDDED_REBUFF",
+			icon: BRAIN,
+		},
+		{
+			name: "GLINER",
+			icon: GLINER,
+		},
+		{
+			name: "GLINER",
+			icon: GLINER,
 		},
 	],
 	VECTOR: [
+		{
+			name: "AWS_S3",
+			icon: AMAZON_S3,
+		},
+		{
+			name: "AZURE_AI_SEARCH",
+			icon: MICROSOFT,
+		},
+		{
+			name: "CHROMA",
+			icon: CHROMADB,
+		},
+		{
+			name: "ELASTIC_SEARCH",
+			icon: ELASTIC_SEARCH,
+		},
 		{
 			name: "FAISS",
 			icon: META,
 		},
 		{
-			name: "WEAVIATE",
-			icon: WEVIATE,
+			name: "MILVUS",
+			icon: MILVUS,
 		},
 		{
-			name: "PINECONE",
-			icon: PINECONE,
+			name: "OPEN_SEARCH",
+			icon: OPEN_SEARCH,
 		},
 		{
 			name: "PGVECTOR",
 			icon: POSTGRES,
 		},
 		{
-			name: "OPEN_SEARCH",
-			icon: OPEN_SEARCH,
+			name: "PINECONE",
+			icon: PINECONE,
+		},
+		{
+			name: "PROXY",
+			icon: REST_API,
+		},
+		{
+			name: "WEAVIATE",
+			icon: WEVIATE,
 		},
 		{
 			name: "ZIP",
@@ -15337,36 +9854,8 @@ export const ENGINE_IMAGES = {
 	],
 	DATABASE: [
 		{
-			name: "ZIP",
-			icon: ZIP,
-		},
-		{
-			name: "CSV",
-			icon: CSV,
-		},
-		{
-			name: "EXCEL",
-			icon: EXCEL,
-		},
-		{
-			name: "TSV",
-			icon: TSV,
-		},
-		{
-			name: "SQLITE",
-			icon: SQLITE,
-		},
-		{
-			name: "H2_DB",
-			icon: H2_DB,
-		},
-		{
-			name: "NEO4J",
-			icon: NEO4J,
-		},
-		{
-			name: "TINKER",
-			icon: TINKER,
+			name: "APACHE_JENA",
+			icon: APACHE_JENA,
 		},
 		{
 			name: "ASTER_DB",
@@ -15389,6 +9878,10 @@ export const ENGINE_IMAGES = {
 			icon: CLICKHOUSE,
 		},
 		{
+			name: "CSV",
+			icon: CSV,
+		},
+		{
 			name: "DATABRICKS",
 			icon: DATABRICKS,
 		},
@@ -15409,7 +9902,15 @@ export const ENGINE_IMAGES = {
 			icon: ELASTIC_SEARCH,
 		},
 		{
+			name: "EXCEL",
+			icon: EXCEL,
+		},
+		{
 			name: "H2",
+			icon: H2_DB,
+		},
+		{
+			name: "H2_DB",
 			icon: H2_DB,
 		},
 		{
@@ -15421,12 +9922,24 @@ export const ENGINE_IMAGES = {
 			icon: IMPALA,
 		},
 		{
+			name: "JENA",
+			icon: APACHE_JENA,
+		},
+		{
+			name: "JENA_TDB",
+			icon: APACHE_JENA,
+		},
+		{
 			name: "MARIA_DB",
 			icon: MARIA_DB,
 		},
 		{
 			name: "MYSQL",
 			icon: MYSQL,
+		},
+		{
+			name: "NEO4J",
+			icon: NEO4J,
 		},
 		{
 			name: "OPEN_SEARCH",
@@ -15445,6 +9958,10 @@ export const ENGINE_IMAGES = {
 			icon: POSTGRES,
 		},
 		{
+			name: "RDF4J",
+			icon: RDF4J,
+		},
+		{
 			name: "REDSHIFT",
 			icon: REDSHIFT,
 		},
@@ -15455,6 +9972,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "SEMOSS",
 			icon: SEMOSS,
+		},
+		{
+			name: "SESAME",
+			icon: RDF4J,
 		},
 		{
 			name: "SNOWFLAKE",
@@ -15469,6 +9990,10 @@ export const ENGINE_IMAGES = {
 			icon: SQLITE,
 		},
 		{
+			name: "SQLITE",
+			icon: SQLITE,
+		},
+		{
 			name: "TERADATA",
 			icon: TERADATA,
 		},
@@ -15477,13 +10002,29 @@ export const ENGINE_IMAGES = {
 			icon: TIBCO,
 		},
 		{
+			name: "TINKER",
+			icon: TINKER,
+		},
+		{
 			name: "TRINO",
 			icon: TRINO,
+		},
+		{
+			name: "TSV",
+			icon: TSV,
+		},
+		{
+			name: "ZIP",
+			icon: ZIP,
 		},
 	],
 	STORAGE: [
 		{
 			name: "AMAZON_S3",
+			icon: AMAZON_S3,
+		},
+		{
+			name: "AMAZON_S3_NATIVE",
 			icon: AMAZON_S3,
 		},
 		{
@@ -15497,6 +10038,10 @@ export const ENGINE_IMAGES = {
 		{
 			name: "DROPBOX",
 			icon: DROPBOX,
+		},
+		{
+			name: "GOOGLE_CLOUD_NATIVE_STORAGE",
+			icon: GOOGLE_CLOUD,
 		},
 		{
 			name: "GOOGLE_CLOUD_STORAGE",
@@ -15515,16 +10060,20 @@ export const ENGINE_IMAGES = {
 			icon: AZURE_BLOB,
 		},
 		{
+			name: "MICROSOFT_AZURE_NATIVE_BLOB_STORAGE",
+			icon: AZURE_BLOB,
+		},
+		{
 			name: "MICROSOFT_ONEDRIVE",
 			icon: ONEDRIVE,
 		},
 		{
-			name: "NETWORK_FILE_SYSTEM",
-			icon: NETWORK_FILE_SYSTEM,
-		},
-		{
 			name: "MINIO",
 			icon: MINIO,
+		},
+		{
+			name: "NETWORK_FILE_SYSTEM",
+			icon: NETWORK_FILE_SYSTEM,
 		},
 		{
 			name: "SFTP",
@@ -15568,7 +10117,7 @@ export const SIDEBAR_MENU = {
 			icon: {
 				default: NOTEBOOK,
 				active: NOTEBOOK_SELECTED,
-				component: TerminalRoundedIcon,
+				component: Terminal,
 				tooltip: "Terminal",
 			},
 		},

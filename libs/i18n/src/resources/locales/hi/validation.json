@@ -1,0 +1,7 @@
+{
+	"required": "{{field}} आवश्यक है",
+	"nameRequired": "कृपया ज्ञान भंडार के लिए एक नाम दर्ज करें",
+	"embeddingRequired": "कृपया एक एम्बेडिंग इंजन चुनें",
+	"filesRequired": "कृपया कम से कम एक दस्तावेज़ चुनें",
+	"descriptionRequired": "कृपया एक विवरण दर्ज करें"
+}

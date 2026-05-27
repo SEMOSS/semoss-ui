@@ -1,0 +1,69 @@
+{
+	"title": "ナレッジストア",
+	"aboutTitle": "ナレッジストアについて",
+	"whatIsKnowledgeStore": "ナレッジストアとは?",
+	"ragDescription": "RAG(検索拡張生成)チャットは、信頼できるデータに基づいた応答を提供することで、AI会話を強化します。以下のライブラリから選択して、特定のドキュメントを参照した応答を受け取ることができます。",
+	"subtitle": "ナレッジストアを検索、フィルタ、作成します。",
+	"newSource": {
+		"title": "新しいナレッジストア",
+		"description": "ドキュメントをアップロードして新しいナレッジストアを作成"
+	},
+	"form": {
+		"nameLabel": "名前",
+		"descriptionLabel": "説明",
+		"embeddingLabel": "埋め込み",
+		"filesLabel": "ファイル",
+		"descriptionPlaceholder": "説明を入力"
+	},
+	"tabs": {
+		"all": "すべて",
+		"global": "グローバルストア",
+		"mine": "マイストア"
+	},
+	"filters": {
+		"allCenters": "すべてのセンター/オフィス",
+		"all": "すべて"
+	},
+	"actions": {
+		"createSource": "ナレッジストアを作成",
+		"viewDocuments": "ドキュメントを表示",
+		"newChat": "新しいチャット"
+	},
+	"messages": {
+		"noDescription": "説明がありません",
+		"noLibrariesFound": "条件に一致するドキュメントライブラリが見つかりません。",
+		"loadingDocuments": "ドキュメントを読み込み中…",
+		"noDocuments": "ドキュメントが見つかりません。"
+	},
+	"documents": {
+		"title": "ドキュメント",
+		"description": "このナレッジストアに現在関連付けられているファイル。"
+	},
+	"embedDocuments": {
+		"title": "既存ソースにドキュメントを埋め込む",
+		"description": "このナレッジストアに埋め込むドキュメントをアップロードします。",
+		"documents": "ドキュメント",
+		"selectFiles": "クリックしてファイルを選択するか、ドラッグ＆ドロップ",
+		"embedButton": "ドキュメントを埋め込む",
+		"embedding": "埋め込み中...",
+		"removeFile": "ファイルを削除"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "ナレッジストアを選択してください",
+		"selectDocument": "少なくとも1つのドキュメントを選択してください",
+		"embedSuccess": "ドキュメントを正常に埋め込みました",
+		"embedFailed": "ドキュメントの埋め込みに失敗しました"
+	},
+	"breadcrumbs": {
+		"home": "ホーム",
+		"knowledgeStores": "ナレッジストア",
+		"loading": "読み込み中"
+	},
+	"detail": {
+		"knowledge": "ナレッジ",
+		"embedDocuments": "ドキュメントを埋め込む",
+		"newKnowledgeCreated": "新しいナレッジストアが作成されました。追加のドキュメントを埋め込むために選択できます。",
+		"documentsDescription": "このナレッジストアに現在埋め込まれているドキュメント。",
+		"failedToLoadDocuments": "ドキュメントの読み込みに失敗しました。"
+	}
+}

@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import { PageBlock, type PageBlockDef } from "./PageBlock";
+import { PageBlock, type PageBlockDef } from "./page-block";
 
 export const DefaultStyles: CSSProperties = {
 	display: "flex",

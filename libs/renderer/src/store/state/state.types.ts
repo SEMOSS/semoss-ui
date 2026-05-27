@@ -1,12 +1,12 @@
 import type React from "react";
 import type { CellState } from "./cell.state";
-import type { QueryStateConfig } from "./query.state";
+import type { NotebookStateConfig } from "./notebook.state";
 import type {
 	DispatchEventAction,
 	DispatchOpenEventAction,
 	ModifyVariableAction,
 	RunCellAction,
-	RunQueryAction,
+	RunNotebookAction,
 } from "./state.actions";
 
 export type SerializedState = {
@@ -14,7 +14,7 @@ export type SerializedState = {
 	version: string;
 
 	/** Queries rendered in the insight */
-	queries: Record<string, QueryStateConfig>;
+	queries: Record<string, NotebookStateConfig>;
 
 	/** Blocks rendered in the insight */
 	blocks: Record<string, Block>;
@@ -54,20 +54,20 @@ export type Variable =
 			type: Exclude<VariableType, "cell">; // Exclude 'cell' from VariableType for this case
 			to?: string;
 			cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
-			value?: any;
+			value?: unknown;
 	  }
 	| {
 			to: string;
 			type: "cell"; // Specific case when type is 'cell'
 			cellId: string;
-			value?: any;
+			value?: unknown;
 	  };
 
 export type VariableWithId =
 	| ({
 			type: Exclude<VariableType, "cell">;
 			to?: string;
-			value?: any;
+			value?: unknown;
 			cellId?: string;
 	  } & { id: string })
 	| ({
@@ -252,7 +252,7 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
  * Listener Actions
  */
 export type ListenerActions =
-	| RunQueryAction
+	| RunNotebookAction
 	| DispatchEventAction
 	| RunCellAction
 	| DispatchOpenEventAction

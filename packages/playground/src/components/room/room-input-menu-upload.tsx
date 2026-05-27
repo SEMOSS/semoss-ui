@@ -1,5 +1,6 @@
-import { FileUpIcon } from "lucide-react";
+import { PaperclipIcon } from "lucide-react";
 import type React from "react";
+import { useTranslation } from "@semoss/i18n";
 import { DropdownMenuItem } from "@semoss/ui/next";
 
 interface RoomInputMenuUploadProps {
@@ -14,6 +15,8 @@ export const RoomInputMenuUpload: React.FC<RoomInputMenuUploadProps> = ({
 	fileRef,
 	onSelect = () => null,
 }) => {
+	const { t } = useTranslation("room");
+
 	return (
 		<DropdownMenuItem
 			onSelect={() => {
@@ -22,8 +25,8 @@ export const RoomInputMenuUpload: React.FC<RoomInputMenuUploadProps> = ({
 				onSelect();
 			}}
 		>
-			<FileUpIcon />
-			<span className="flex-1">Attach Document</span>
+			<PaperclipIcon />
+			<span className="flex-1">{t("menuUpload.attachDocument")}</span>
 		</DropdownMenuItem>
 	);
 };

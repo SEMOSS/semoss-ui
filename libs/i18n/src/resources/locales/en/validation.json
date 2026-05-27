@@ -1,0 +1,7 @@
+{
+	"required": "{{field}} is required",
+	"nameRequired": "Please enter a name for the knowledge store",
+	"embeddingRequired": "Please select an embedding engine",
+	"filesRequired": "Please select at least one document",
+	"descriptionRequired": "Please enter a description"
+}

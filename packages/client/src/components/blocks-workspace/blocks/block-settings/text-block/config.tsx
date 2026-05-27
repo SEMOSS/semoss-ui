@@ -1,4 +1,4 @@
-import { TextFields } from "@mui/icons-material";
+import { Type } from "lucide-react";
 import type { CSSProperties } from "react";
 import { QueryInputSettings } from "../../settings";
 import { ShowLoadingSettings } from "../../settings/shared/ShowLoadingSettings";
@@ -21,7 +21,7 @@ export const DefaultStyles: CSSProperties = {
 // export the config for the block
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
-	icon: TextFields,
+	icon: Type,
 	contentMenu: [
 		{
 			name: "General",
@@ -29,7 +29,12 @@ export const config: BlockSettingsConfig = {
 				{
 					description: "Text",
 					render: ({ id }) => (
-						<QueryInputSettings id={id} label="Text" path="text" />
+						<QueryInputSettings
+							id={id}
+							label="Text"
+							path="text"
+							spellCheck={true}
+						/>
 					),
 				},
 				{

@@ -1,6 +1,8 @@
-import BarChartIcon from "@mui/icons-material/BarChart";
-import BubbleChartIcon from "@mui/icons-material/BubbleChart";
-import DashboardIcon from "@mui/icons-material/Dashboard";
+import {
+	BarChart2 as BarChartIcon,
+	CircleDot as BubbleChartIcon,
+	LayoutDashboard as DashboardIcon,
+} from "lucide-react";
 import AreaIcon from "../../../../../../assets/block-settings/img/AreaIcon.svg";
 import BoxIcon from "../../../../../../assets/block-settings/img/Box.svg";
 import BulletIcon from "../../../../../../assets/block-settings/img/Bullet.svg";
@@ -1410,7 +1412,7 @@ export const VisualMapConstant = {
 						initialTreeDepth: -1,
 					},
 				],
-				["_state"]: {
+				_state: {
 					dimensions: [],
 					facet: [],
 				},

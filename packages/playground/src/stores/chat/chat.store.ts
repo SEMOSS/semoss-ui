@@ -7,7 +7,6 @@ import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -20,7 +19,7 @@ interface ChatStoreInterface {
 	 */
 	models: {
 		/** The current model */
-		selected: Engine | null;
+		selected: Engine;
 
 		/** The current context window */
 		contextWindow?: number;
@@ -40,6 +39,24 @@ interface ChatStoreInterface {
 		 */
 		roomCounter: number;
 	};
+
+	/**
+	 * Preloaded embedded paths
+	 * path -> url
+	 */
+	embeddedPageMap: Record<
+		string,
+		| ThemeMap["playground"]["sidebar"]["headerItems"][number]
+		| ThemeMap["playground"]["sidebar"]["footerItems"][number]
+	>;
+
+	/**
+	 * Current user info
+	 */
+	user: {
+		id: string;
+		name: string;
+	};
 }
 
 /**
@@ -48,22 +65,45 @@ interface ChatStoreInterface {
 export class ChatStore {
 	private _theme: ThemeMap["playground"];
 	private _actions: Insight["actions"];
-	private _error: Insight["error"];
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
 		models: {
-			selected: null,
+			selected: {
+				engine_id: DEFAUlT_MODEL_ID,
+				engine_name: DEFAUlT_MODEL_NAME,
+			} as Engine,
 			contextWindow: undefined,
 		},
 		rooms: {},
 		keys: {
 			roomCounter: 0,
 		},
+		user: {
+			id: "",
+			name: "",
+		},
+		embeddedPageMap: {},
 	};
 
 	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
 		this._theme = theme;
 		this._actions = actions;
+		this._store.embeddedPageMap = [
+			...theme.sidebar.headerItems,
+			...theme.sidebar.footerItems,
+		]
+			.filter((item) => item.embed && item.url)
+			.reduce(
+				(acc, item) => {
+					acc[item.path] = item;
+					return acc;
+				},
+				{} as Record<
+					string,
+					| ThemeMap["playground"]["sidebar"]["headerItems"][number]
+					| ThemeMap["playground"]["sidebar"]["footerItems"][number]
+				>,
+			);
 
 		// make it observable
 		makeAutoObservable(this);
@@ -94,28 +134,77 @@ export class ChatStore {
 	}
 
 	/**
+	 * Get the current user
+	 */
+	get user() {
+		return this._store.user;
+	}
+
+	/**
+	 * Get the map of preloaded embed paths
+	 */
+	get embeddedPageMap() {
+		return this._store.embeddedPageMap;
+	}
+
+	/**
 	 * Initialize the store
 	 */
 	initialize = async (): Promise<void> => {
 		try {
-			// set as initialized
-			Promise.all([
-				// get the default model info
-				this.getDefaultModel(),
-			]).finally(() => {
+			Promise.all([this.getDefaultModel(), this.getUser()]).finally(
+				() => {
+					runInAction(() => {
+						this._store.isInitialized = true;
+					});
+				},
+			);
+		} catch (e) {
+			console.error(e);
+		}
+	};
+
+	getUser = async (): Promise<void> => {
+		try {
+			const result = await this._actions.run<
+				[Record<string, { id: string; name: string }>]
+			>(`META | GetUserInfo();`);
+
+			if (!result) return;
+
+			const user = Object.values(result.pixelReturn[0].output)[0];
+			if (user) {
 				runInAction(() => {
-					this._store.isInitialized = true;
+					this._store.user = { id: user.id, name: user.name };
 				});
-			});
+			}
 		} catch (e) {
 			console.error(e);
 		}
 	};
 
 	/**
+	 * Register a pre-created RoomStore in the local cache so it is
+	 * discoverable by loadRoom after navigation.  Used by consumers that
+	 * need a real insight before the first message is sent (e.g. the
+	 * file-explorer on the new-room page).
+	 */
+	registerRoom = (room: RoomStore): void => {
+		runInAction(() => {
+			this._store.rooms[room.roomId] = room;
+		});
+	};
+
+	/**
 	 * Create a new room
 	 */
-	createRoom = async (mode: "planning" | "chat"): Promise<RoomStore> => {
+	createRoom = async (
+		mode: "planning" | "chat",
+		prompt: string,
+		files: File[],
+		options: RoomStore["options"],
+		workspaceId?: string,
+	): Promise<RoomStore> => {
 		// create the room in a new insight
 		const { errors, pixelReturn, insightId } = await runPixel<
 			[
@@ -123,7 +212,10 @@ export class ChatStore {
 					roomId: string;
 				},
 			]
-		>(`CreatePlaygroundRoom();`, "new");
+		>(
+			`CreatePlaygroundRoom(${workspaceId ? `workspaceId=${JSON.stringify(workspaceId)}` : ""})`,
+			"new",
+		);
 
 		// throw errors
 		if (errors.length > 0) {
@@ -145,8 +237,14 @@ export class ChatStore {
 		// set the mode
 		room.setMode(mode);
 
+		// set default name
+		room.setMetadata({ name: prompt.substring(0, 15) });
+
 		// initialize the room
 		await room.initialize();
+
+		// set the options
+		await room.updateRoomOptions(options);
 
 		runInAction(() => {
 			// save it to the cache
@@ -154,6 +252,14 @@ export class ChatStore {
 
 			// increment the roomCounter to force re-render of the nav
 			this._store.keys.roomCounter++;
+		});
+
+		// ask the room
+		room.askMessage(prompt, files).then(() => {
+			runInAction(() => {
+				// increment the roomCounter to force re-render of the nav
+				this._store.keys.roomCounter++;
+			});
 		});
 
 		// return the room
@@ -165,14 +271,24 @@ export class ChatStore {
 	 * @param roomId - Room to remove
 	 */
 	closeRoom = async (roomId: string): Promise<void> => {
+		const room = this._store.rooms[roomId];
+		const insightId = room?.insightId;
+
 		// wait for the pixel to run
 		await this._actions.run<[boolean]>(
 			`RemoveUserRoom(roomId=["${roomId}"]);`,
 		);
 
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
+		// only drop if the room was opened and has a real insightId
+		if (insightId && insightId !== "new") {
+			try {
+				await runPixel<[Record<string, unknown>]>(
+					"DropInsight()",
+					insightId,
+				);
+			} catch (e) {
+				console.warn(e);
+			}
 		}
 
 		runInAction(() => {
@@ -180,6 +296,29 @@ export class ChatStore {
 			delete this._store.rooms[roomId];
 
 			// increment the roomCounter to force re-render of the nav
+			this._store.keys.roomCounter++;
+		});
+	};
+
+	/**
+	 * Rename a room. Runs the RenameRoom pixel, updates the cached
+	 * room's metadata, and bumps the roomCounter so any room lists
+	 * elsewhere in the app (sidebar, chats page, per-agent timeline)
+	 * refetch and stay in sync.
+	 */
+	renameRoom = async (roomId: string, name: string): Promise<void> => {
+		const trimmed = name.trim();
+		if (!trimmed) {
+			throw new Error("Room name cannot be empty");
+		}
+		await this._actions.run<[boolean]>(
+			`META | RenameRoom(roomId=["${roomId}"], name=["<encode>${trimmed}</encode>"]);`,
+		);
+		runInAction(() => {
+			const cached = this._store.rooms[roomId];
+			if (cached) {
+				cached.setMetadata({ name: trimmed });
+			}
 			this._store.keys.roomCounter++;
 		});
 	};
@@ -200,12 +339,17 @@ export class ChatStore {
 		// initialize the room
 		await room.initialize();
 
+		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
+		// This happens if CreateRoom succeeds but the first AskPlayground call fails
+		if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
+			throw new Error("Room not found");
+		}
+
 		runInAction(() => {
 			// save it to the cache
 			this._store.rooms[roomId] = room;
-
-			// increment the roomCounter to force re-render of the nav
-			this._store.keys.roomCounter++;
+			// No roomCounter increment here — loading an existing room doesn't
+			// change the list, so there's no reason to trigger a re-fetch.
 		});
 
 		// return the room
@@ -228,7 +372,7 @@ export class ChatStore {
 			);
 		}
 
-		this.loadEngineContextWindow(model.app_id);
+		this.loadEngineContextWindow(model.engine_id);
 	};
 
 	private loadEngineContextWindow = async (engineId: string) => {
@@ -237,15 +381,10 @@ export class ChatStore {
 		});
 
 		const { pixelReturn } = await this._actions.run<[number | undefined]>(
-			`GetContextWindow(${JSON.stringify(engineId)});`,
+			`META | GetContextWindow(${JSON.stringify(engineId)});`,
 		);
 
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
-		}
-
-		if (this.models.selected?.app_id === engineId) {
+		if (this.models.selected?.engine_id === engineId) {
 			runInAction(() => {
 				this._store.models.contextWindow = pixelReturn[0].output;
 			});
@@ -256,20 +395,18 @@ export class ChatStore {
 	 * Add a new workspace
 	 */
 	addWorkspace = async (
-		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+		data: Pick<
+			Workspace,
+			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
-
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
 
 			return pixelReturn[0].output;
 		} catch (e) {
@@ -282,19 +419,22 @@ export class ChatStore {
 	 */
 	editWorkspace = async (
 		workspaceId: string,
-		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+		data: Pick<
+			Workspace,
+			"name" | "system_prompt" | "description" | "mcp" | "prompts"
+		>,
 	): Promise<string> => {
 		try {
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)}, name=${JSON.stringify(data.name)}, description="<encode>${data.description}</encode>", systemPrompt="<encode>${data.system_prompt}</encode>", mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
-			if (this._error || !pixelReturn[0].output) {
-				throw new Error(this._error.message);
+			if (!pixelReturn[0].output) {
+				throw new Error();
 			}
 
 			return workspaceId;
@@ -308,10 +448,6 @@ export class ChatStore {
 			await this._actions.run(
 				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
 			);
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
 
 			return;
 		} catch (e) {
@@ -327,29 +463,26 @@ export class ChatStore {
 	 */
 	private getDefaultModel = async (): Promise<void> => {
 		const defaultModelId =
-			this._theme.defaultRoomSettings.model?.app_id || DEFAUlT_MODEL_ID;
+			this._theme.defaultRoomSettings?.model?.engine_id ||
+			DEFAUlT_MODEL_ID;
 		const defaultModelName =
-			this._theme.defaultRoomSettings.model?.app_name ||
+			this._theme.defaultRoomSettings?.model?.engine_display_name ||
+			this._theme.defaultRoomSettings?.model?.engine_name ||
 			DEFAUlT_MODEL_NAME;
 		// model selection is not enabled, set it to the default
-		if (!ENABLE_MODEL_SELECT) {
+		if (!this._theme.featureFlags?.enableModelSelect) {
 			this.setSelectedModel({
-				app_id: defaultModelId,
-				app_name: defaultModelName,
-				app_type: "MODEL",
+				engine_id: defaultModelId,
+				engine_name: defaultModelName,
+				engine_type: "MODEL",
 			});
 			return;
 		}
 
 		// initially limit to 10 models
 		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
 		);
-
-		// throw errors
-		if (this._error) {
-			throw new Error(this._error.message);
-		}
 
 		runInAction(() => {
 			// get the output
@@ -361,7 +494,7 @@ export class ChatStore {
 			// set to default if it is an option
 			if (defaultModelId) {
 				for (const m of output) {
-					if (m.app_id === defaultModelId) {
+					if (m.engine_id === defaultModelId) {
 						this.setSelectedModel(m);
 						isSelected = true;
 						break;
@@ -375,9 +508,15 @@ export class ChatStore {
 					if (localStorage) {
 						const storedItem = localStorage.getItem(MODEL_KEY);
 						if (storedItem) {
-							const storedModel = JSON.parse(storedItem);
+							const storedModel = JSON.parse(storedItem) as
+								| string
+								| Engine;
+							const storedModelId =
+								typeof storedModel === "string"
+									? storedModel
+									: storedModel?.engine_id || "";
 							for (const m of output) {
-								if (storedModel === m.app_id) {
+								if (storedModelId === m.engine_id) {
 									this.setSelectedModel(m);
 									isSelected = true;
 									break;

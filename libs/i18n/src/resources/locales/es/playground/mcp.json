@@ -1,0 +1,58 @@
+{
+	"embedDocuments": {
+		"title": "Insertar documentos en almacén existente",
+		"description": "Selecciona un almacén de conocimiento y sube documentos para insertar.",
+		"knowledgeSource": "Almacén de conocimiento",
+		"documents": "Documentos",
+		"selectFiles": "Haz clic para seleccionar archivos o arrastra y suelta",
+		"embedButton": "Insertar documentos",
+		"embedding": "Insertando...",
+		"removeFile": "Eliminar archivo",
+		"selectPlaceholder": "Selecciona un almacén de conocimiento"
+	},
+	"selector": {
+		"search": "Buscar",
+		"createKnowledgeSource": "Crear almacén de conocimiento",
+		"viewDetails": "Ver detalles",
+		"noToolboxesFound": "No se encontraron cajas de herramientas",
+		"noKnowledgeFound": "No se encontró conocimiento",
+		"noAgentsFound": "No se encontraron agentes"
+	},
+	"overlay": {
+		"title": "Configura tu chat",
+		"description": "Elige un agente guardado, o ensambla tu propio conocimiento y cajas de herramientas.",
+		"tabAgent": "Agente",
+		"tabKnowledge": "Conocimiento",
+		"tabToolbox": "Cajas de herramientas"
+	},
+	"tools": {
+		"enterValues": "Ingresa valores separados por comas",
+		"selectField": "Seleccionar {{field}}",
+		"enterField": "Ingresar {{field}}"
+	},
+	"messages": {
+		"selectKnowledgeSource": "Por favor, selecciona un almacén de conocimiento",
+		"selectDocument": "Por favor, selecciona al menos un documento",
+		"embedSuccess": "Documentos insertados con éxito",
+		"embedFailed": "Error al insertar documentos",
+		"loadFailed": "Error al cargar almacenes de conocimiento.",
+		"noSources": "No se encontraron almacenes de conocimiento."
+	},
+	"buttons": {
+		"cancel": "Cancelar",
+		"embed": "Insertar",
+		"save": "Guardar",
+		"close": "Cerrar"
+	},
+	"permission": {
+		"accessRequested": "Acceso solicitado",
+		"requestAccess": "Solicitar acceso",
+		"noAccess": "Sin acceso",
+		"requestAccessButton": "Solicitar Acceso",
+		"tooltipNoAccess": "No tienes acceso a este {{type}}. Por favor, solicita acceso al propietario.",
+		"tooltipMissingDependencies": "No tienes acceso a todas las dependencias de este {{type}}, por lo que la funcionalidad puede ser limitada. Ábrelo en la plataforma para más información.",
+		"tooltipOpen": "Abrir este {{type}} en la plataforma",
+		"typeToolbox": "caja de herramientas",
+		"typeKnowledge": "almacén de conocimiento"
+	}
+}

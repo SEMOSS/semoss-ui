@@ -1,81 +1,20 @@
-import CheckIcon from "@mui/icons-material/Check";
-import Chip from "@mui/material/Chip";
-import ClickAwayListener from "@mui/material/ClickAwayListener";
-import { styled } from "@mui/material/styles";
+import { Check, X } from "lucide-react";
 import type * as React from "react";
-import { useMemo, useState } from "react";
-import { Box, Button } from "@semoss/ui";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@semoss/ui/next";
 import type { FilterComponentProps } from "../filter";
 import FilterIconComponent from "./FilterIconComponent";
-
-const Root = styled("div")(({ theme }) => ({
-	color: theme.palette.text.primary,
-	fontSize: 14,
-	width: "100%",
-}));
-
-const InputArea = styled("div")(({ theme }) => ({
-	width: "100%",
-	border: `1px solid ${theme.palette.divider}`,
-	backgroundColor: theme.palette.background.paper,
-	borderRadius: 4,
-	padding: 2,
-	display: "flex",
-	flexWrap: "wrap",
-	alignItems: "center",
-	"&:focus-within": {
-		borderColor: theme.palette.primary.main,
-		boxShadow: `0 0 0 2px ${theme.palette.primary.light}33`,
-	},
-}));
-
-const DropdownList = styled("ul")(({ theme }) => ({
-	position: "absolute",
-	width: "100%",
-	maxHeight: 220,
-	overflowY: "auto",
-	background: theme.palette.background.paper,
-	border: `1px solid ${theme.palette.divider}`,
-	borderRadius: 4,
-	boxShadow: theme.shadows[2],
-	margin: 0,
-	padding: 0,
-	listStyle: "none",
-	zIndex: 1305,
-}));
-
-const DropdownItem = styled("li")(({ theme }) => ({
-	fontFamily: "Inter, sans-serif",
-	display: "flex",
-	alignItems: "center",
-	padding: "6px 12px",
-	cursor: "pointer",
-	"&:hover": {
-		background: theme.palette.action.hover,
-	},
-	zIndex: theme.zIndex.modal + 1,
-}));
-
-const SearchInput = styled("input")({
-	border: "none",
-	outline: "none",
-	flex: 1,
-	fontSize: 14,
-	background: "transparent",
-	padding: "8.5px 14px",
-});
 
 const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 	mode,
 	listOptions = [],
 	onApply,
 	onReset,
-	color = "primary",
-	size = "medium",
 }) => {
 	const [inputValue, setInputValue] = useState("");
 	const [selected, setSelected] = useState<string[]>([]);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const containerRef = useRef<HTMLDivElement>(null);
 
 	const filteredOptions = useMemo(
 		() =>
@@ -85,13 +24,19 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 		[inputValue, listOptions],
 	);
 
-	const handleInputFocus = () => setDropdownOpen(true);
-
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setInputValue(e.target.value);
-		// Ensure dropdown stays open while typing
-		setDropdownOpen(true);
-	};
+	useEffect(() => {
+		const handleClickOutside = (e: globalThis.MouseEvent) => {
+			if (
+				containerRef.current &&
+				!containerRef.current.contains(e.target as Node)
+			) {
+				setDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () =>
+			document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	const handleToggleOption = (option: string) => {
 		setSelected((prev) =>
@@ -99,7 +44,6 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 				? prev.filter((item) => item !== option)
 				: [...prev, option],
 		);
-		// Keep dropdown open after selection
 		setDropdownOpen(true);
 	};
 
@@ -108,7 +52,7 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 	};
 
 	const handleApply = () => {
-		onApply(selected, mode);
+		onApply(selected, mode ?? "multiselect");
 	};
 
 	const handleReset = () => {
@@ -117,93 +61,60 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 		if (onReset) onReset();
 	};
 
-	const handleClickAway = () => {
-		setDropdownOpen(false);
-	};
-
 	return (
-		<Box
-			sx={{
-				width: "100%",
-				border: "1px solid #ccc",
-				borderRadius: 1,
-				p: 2,
-				display: "flex",
-				flexDirection: "column",
-				gap: 2,
-			}}
-		>
-			<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+		<div className="flex w-full flex-col gap-4 rounded-md border border-border p-4">
+			<div className="flex items-center gap-2">
 				<FilterIconComponent handleReset={handleReset} />
-			</Box>
-			<Root>
-				<Box sx={{ position: "relative" }}>
-					<ClickAwayListener onClickAway={handleClickAway}>
-						<div>
-							<InputArea>
-								{selected.map((option) => (
-									<Chip
-										key={option}
-										label={option}
-										onDelete={() =>
-											handleRemoveChip(option)
-										}
-										sx={{ m: 0.5 }}
-									/>
-								))}
-								<SearchInput
-									value={inputValue}
-									onChange={handleInputChange}
-									onFocus={handleInputFocus}
-									placeholder="Search or select options..."
-								/>
-							</InputArea>
-							{dropdownOpen && (
-								<DropdownList>
-									{filteredOptions.map((option) => (
-										<DropdownItem
-											key={option}
-											onMouseDown={() =>
-												handleToggleOption(option)
-											}
-										>
-											<span style={{ flex: 1 }}>
-												{option}
-											</span>
-											{selected.includes(option) && (
-												<CheckIcon
-													fontSize="small"
-													color="primary"
-												/>
-											)}
-										</DropdownItem>
-									))}
-								</DropdownList>
-							)}
-						</div>
-					</ClickAwayListener>
-				</Box>
-			</Root>
-			<Box
-				sx={{
-					display: "flex",
-					justifyContent: "flex-end",
-					mt: 2,
-					alignItems: "center",
-					borderTop: "1px solid #ddd",
-					pt: 2,
-				}}
-			>
-				<Button
-					variant="contained"
-					onClick={handleApply}
-					color={color}
-					size={size}
-				>
-					Apply
-				</Button>
-			</Box>
-		</Box>
+			</div>
+			<div ref={containerRef} className="relative w-full">
+				<div className="flex w-full flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1 focus-within:ring-1 focus-within:ring-ring">
+					{selected.map((option) => (
+						<span
+							key={option}
+							className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 font-medium text-secondary-foreground text-xs"
+						>
+							{option}
+							<button
+								type="button"
+								onClick={() => handleRemoveChip(option)}
+								className="ml-0.5 rounded-full hover:bg-secondary-foreground/20"
+							>
+								<X className="size-3" />
+							</button>
+						</span>
+					))}
+					<input
+						value={inputValue}
+						onChange={(e) => {
+							setInputValue(e.target.value);
+							setDropdownOpen(true);
+						}}
+						onFocus={() => setDropdownOpen(true)}
+						placeholder="Search or select options..."
+						className="min-w-[120px] flex-1 border-none bg-transparent px-2 py-1.5 text-sm outline-none"
+					/>
+				</div>
+				{dropdownOpen && (
+					<ul className="absolute top-full z-[1305] m-0 mt-1 max-h-[220px] w-full list-none overflow-y-auto rounded-md border border-border bg-background p-0 shadow-md">
+						{filteredOptions.map((option) => (
+							<li
+								key={option}
+								className="flex cursor-pointer items-center px-3 py-1.5 text-sm hover:bg-muted"
+								onMouseDown={() => handleToggleOption(option)}
+							>
+								<span className="flex-1">{option}</span>
+								{selected.includes(option) && (
+									<Check className="size-4 text-primary" />
+								)}
+							</li>
+						))}
+					</ul>
+				)}
+			</div>
+			<div className="mt-4 flex items-center justify-end border-border border-t pt-4">
+				<Button onClick={handleApply}>Apply</Button>
+			</div>
+		</div>
 	);
 };
 

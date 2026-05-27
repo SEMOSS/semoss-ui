@@ -1,7 +1,6 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
-
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import CloseIcon from "@mui/icons-material/Close";
+/** biome-ignore-all lint/suspicious/noExplicitAny: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+import { ChevronDown, X as CloseIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
 	type BlockComponent,
@@ -10,100 +9,26 @@ import {
 	useFrameHeaders,
 } from "@semoss/renderer";
 import {
-	Autocomplete,
-	Box,
 	Button,
 	Checkbox,
-	ClickAwayListener,
-	List,
-	Stack,
+	Input,
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Switch,
-	styled,
-	TextField,
-	ToggleTabsGroup,
-	Typography,
-	useNotification,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+	toast,
+} from "@semoss/ui/next";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { SizeSettings } from "../../shared";
-
-const StyledStack = styled(Stack)(() => ({
-	">.MuiBox-root": {
-		width: "90%",
-		margin: "auto",
-	},
-}));
-
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-	minHeight: "42px",
-	color: theme.palette.secondary.light,
-	borderRadius: theme.shape.borderRadius,
-	alignItems: "center",
-	padding: "0px 3px",
-	width: "100%",
-	margin: "0 auto",
-	display: "flex",
-	justifyContent: "space-between",
-	">.MuiTabs-scroller": {
-		display: "flex",
-		justifyContent: "space-around",
-		".MuiTabs-flexContainer": {
-			flex: 1,
-		},
-
-		">.MuiTabs-flexContainer": {
-			width: "100%",
-			justifyContent: "space-around",
-		},
-	},
-}));
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-	height: "38px",
-	padding: "8px 16px",
-
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-		width: "30%",
-		padding: "4px 8px",
-	},
-	"&.Mui-selected": {
-		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-	},
-}));
-
-const StyledContainer = styled("div")(() => ({
-	height: "100%",
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	alignSelf: "stretch",
-}));
-
-const StyledSubSection = styled("div")(() => ({
-	display: "flex",
-	padding: "8px 16px",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "8px",
-	alignSelf: "stretch",
-}));
-
-const StyleHorizontalSection = styled("div")(() => ({
-	display: "flex",
-	padding: "8px 16px",
-	alignItems: "center",
-	gap: "8px",
-	alignSelf: "stretch",
-}));
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.text.secondary,
-	fontSize: "14px",
-	fontWeight: 400,
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-	alignSelf: "stretch",
-}));
 
 const DATA = {
 	displayType: ["Checklist", "Dropdown", "Multiselect", "Slider"],
@@ -119,11 +44,10 @@ const DATA = {
 	],
 	sizes: ["small", "medium", "large"],
 };
+
 export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const { data, setData } = useBlockSettings(id);
 	const [selectedTab, setSelectedTab] = useState("Data");
-
-	// Initial state for the local state of the component
 	const initialState: Record<string, any> = {
 		showPanelTitle: false,
 		searchable: false,
@@ -141,25 +65,17 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 
 	const [localState, setLocalState] =
 		useState<Record<string, any>>(initialState);
-	const notification = useNotification();
 	const getFrames = useBlocksPixel<string[]>("GetFrames();", { data: [] });
 	const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
 	const [checked, setChecked] = useState<string[]>([]);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
-	const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 	const closeDropdown = () => setDropdownOpen(false);
-
-	// At the top of your component, after localState is defined:
 	const frames = Array.isArray(localState.frame)
 		? localState.frame
 		: localState.frame
 			? [localState.frame]
 			: [];
-
-	// Use a single hook call for the first selected frame (or empty string if none)
 	const frameHeader = useFrameHeaders(frames[0] || "");
-
-	// Merge all column names (aliases) from the selected frame, removing duplicates
 	const columnNames = useMemo(() => {
 		const allHeaders = frameHeader?.data?.list || [];
 		const uniqueAliases = Array.from(
@@ -167,8 +83,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 		);
 		return uniqueAliases;
 	}, [frameHeader?.data?.list]);
-
-	// Effect to initialize local state from block data
 	useEffect(() => {
 		setLocalState({
 			showPanelTitle: !!data.showPanelTitle,
@@ -187,9 +101,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	}, [data, id]);
 
 	const { state } = useBlocks();
-	// This function updates a specific field in the local state of the component.
-	// It takes two parameters: `field`, which is the name of the field to update,
-	// and `value`, which is the new value to assign to that field.
 	const updateField = (field, value) => {
 		setLocalState((prev) => ({
 			...prev,
@@ -201,14 +112,10 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	 * Handles changes to fields in the local state of the component.
 	 *
 	 * @param field The name of the field that was changed.
-	 * @param _ The event object from the onChange event.
 	 * @param value The new value of the field.
 	 */
-	const handleOnChange = (field) => (_, value) => {
-		let updatedValue = value;
-		if (value === null || value === undefined) {
-			updatedValue = "";
-		}
+	const handleSelectChange = (field: string) => (value: string) => {
+		const updatedValue = value ?? "";
 
 		/**
 		 * If the field that was changed is the displayType, then
@@ -242,23 +149,20 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	/**
 	 * This function is a higher order function that takes a field name
 	 * and returns a function that will update the local state with
-	 * the new value of that field.
+	 * the new value of that field (for Switch components using onCheckedChange).
 	 *
 	 * @param field The name of the field to update in the local state.
-	 * @returns A function that takes an event object and updates the local state.
+	 * @returns A function that takes a boolean and updates the local state.
 	 */
-	const handleSwitchChange =
-		(field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-			const checked = event.target.checked;
-
-			setLocalState((prevState) => {
-				const updatedState = {
-					...prevState,
-				};
-				updatedState[field] = checked;
-				return updatedState;
-			});
-		};
+	const handleSwitchChange = (field: string) => (isChecked: boolean) => {
+		setLocalState((prevState) => {
+			const updatedState = {
+				...prevState,
+			};
+			updatedState[field] = isChecked;
+			return updatedState;
+		});
+	};
 
 	const isApplyDisabled =
 		!localState.displayType || !localState.frame || !localState.column;
@@ -286,11 +190,9 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 				if (!values?.length) {
 					setLocalState((prev) => ({ ...prev, listOptions: [] }));
 
-					notification.add({
-						color: "error",
-						message:
-							"Invalid response or errors found while fetching options.",
-					});
+					toast.error(
+						"Invalid response or errors found while fetching options.",
+					);
 					return;
 				}
 
@@ -342,386 +244,326 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	};
 
 	return (
-		<StyledStack>
-			<StyledToggleTabsGroup
-				variant="fullWidth"
-				value={selectedTab}
-				style={{
-					width: "100% !important",
-				}}
-				onChange={(e: React.SyntheticEvent, val: string) => {
-					setSelectedTab(val);
-				}}
-			>
-				<StyledToggleTabsGroupItem label="Data" value={"Data"} />
-				<StyledToggleTabsGroupItem label="Tools" value={"Tools"} />
-			</StyledToggleTabsGroup>
-			<StyledContainer>
-				{selectedTab === "Data" && (
-					<>
-						<StyledSubSection>
-							<StyledTypography variant="body2">
-								Select Display Type
-							</StyledTypography>
-							<Autocomplete
-								options={DATA.displayType}
-								value={localState.displayType}
-								onChange={handleOnChange("displayType")}
-								size="small"
-								fullWidth
-								multiple={false}
-								renderInput={(params) => (
-									<TextField {...params} size="small" />
-								)}
-							/>
-						</StyledSubSection>
-						<StyledSubSection>
-							<StyledTypography variant="body2">
-								Select Frame
-							</StyledTypography>
-
-							<ClickAwayListener onClickAway={closeDropdown}>
-								<Box
-									sx={{ position: "relative", width: "100%" }}
+		<div className="flex w-full flex-col">
+			<Tabs value={selectedTab} onValueChange={setSelectedTab}>
+				<TabsList className="w-full">
+					<TabsTrigger value="Data" className="flex-1">
+						Data
+					</TabsTrigger>
+					<TabsTrigger value="Tools" className="flex-1">
+						Tools
+					</TabsTrigger>
+				</TabsList>
+				<div className="flex h-full flex-col items-start self-stretch">
+					<TabsContent value="Data" className="w-full">
+						<div className="flex flex-col">
+							<div className="flex flex-col items-start gap-2 self-stretch px-4 py-2">
+								<p className="self-stretch text-muted-foreground text-sm">
+									Select Display Type
+								</p>
+								<Select
+									value={localState.displayType || undefined}
+									onValueChange={handleSelectChange(
+										"displayType",
+									)}
 								>
-									<Box
-										sx={{
-											display: "flex",
-											alignItems: "center",
-											gap: 1,
-										}}
-									>
-										<Box
-											onClick={toggleDropdown}
-											sx={{
-												border: "1px solid #ccc",
-												borderRadius: 1,
-												px: 1.5,
-												py: 1,
-												display: "flex",
-												justifyContent: "space-between",
-												alignItems: "center",
-												cursor: "pointer",
-												minHeight: "40px",
-												flex: 1,
-											}}
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Select display type" />
+									</SelectTrigger>
+									<SelectContent>
+										{DATA.displayType.map((type) => (
+											<SelectItem key={type} value={type}>
+												{type}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex flex-col items-start gap-2 self-stretch px-4 py-2">
+								<p className="self-stretch text-muted-foreground text-sm">
+									Select Frame
+								</p>
+								<Popover
+									open={dropdownOpen}
+									onOpenChange={setDropdownOpen}
+								>
+									<PopoverTrigger asChild>
+										{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
+										{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
+										<div
+											className="flex min-h-[40px] w-full cursor-pointer items-center justify-between rounded border border-gray-300 px-3 py-2"
+											onClick={() =>
+												setDropdownOpen((prev) => !prev)
+											}
 										>
-											<Typography variant="body2">
-												{"Frames"}
-											</Typography>
-											<Box
-												sx={{
-													display: "flex",
-													alignItems: "center",
-													gap: 1,
-												}}
-											>
-												<ArrowDropDownIcon />
+											<span className="text-sm">
+												Frames
+											</span>
+											<div className="flex items-center gap-2">
+												<ChevronDown className="size-4" />
 												<CloseIcon
-													fontSize="small"
+													className="size-4"
 													onClick={(e) => {
 														e.stopPropagation();
 														setChecked([]);
 														closeDropdown();
 													}}
-													sx={{ cursor: "pointer" }}
+													style={{
+														cursor: "pointer",
+													}}
 												/>
-											</Box>
-										</Box>
-									</Box>
-
-									{dropdownOpen && (
-										<Box
-											sx={{
-												position: "relative",
-												maxHeight: "100%",
-												overflow: "visible",
-												mt: 1,
-												width: "100%",
-												backgroundColor: "#fff",
-												border: "1px solid #ccc",
-												borderRadius: 1,
-												boxShadow:
-													"0 2px 8px rgba(0,0,0,0.15)",
-											}}
-										>
-											<List
-												sx={{
-													maxHeight: 200,
-													overflowY: "auto",
-												}}
-												dense
+											</div>
+										</div>
+									</PopoverTrigger>
+									<PopoverContent
+										className="w-[var(--radix-popover-trigger-width)] p-0"
+										align="start"
+									>
+										<div className="flex max-h-[200px] flex-col overflow-y-auto">
+											{/* biome-ignore lint/a11y/noStaticElementInteractions: visual item */}
+											{/* biome-ignore lint/a11y/useKeyWithClickEvents: visual item */}
+											<div
+												className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-accent"
+												onClick={handleToggle(
+													"Select All",
+												)}
 											>
-												<List.Item
-													key="select-all"
+												<Checkbox
+													checked={
+														localState.frame
+															.length ===
+														options.length
+													}
+												/>
+												<span className="text-sm">
+													Select All
+												</span>
+											</div>
+											{options.map((option) => (
+												// biome-ignore lint/a11y/noStaticElementInteractions: visual item
+												// biome-ignore lint/a11y/useKeyWithClickEvents: visual item
+												<div
+													key={option}
+													className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-accent"
 													onClick={handleToggle(
-														"Select All",
+														option,
 													)}
 												>
-													<List.ItemIcon>
-														<Checkbox
-															checked={
-																localState.frame
-																	.length ===
-																options.length
-															}
-														/>
-													</List.ItemIcon>
-													<List.ItemText primary="Select All" />
-												</List.Item>
-
-												{options.map((option) => (
-													<List.Item
-														key={option}
-														onClick={handleToggle(
+													<Checkbox
+														checked={localState.frame.includes(
 															option,
 														)}
-													>
-														<List.ItemIcon>
-															<Checkbox
-																checked={localState.frame.includes(
-																	option,
-																)}
-															/>
-														</List.ItemIcon>
-														<List.ItemText
-															primary={option}
-														/>
-													</List.Item>
-												))}
-											</List>
-										</Box>
-									)}
-								</Box>
-							</ClickAwayListener>
-						</StyledSubSection>
-						<StyledSubSection>
-							<StyledTypography variant="body2">
-								Select Column
-							</StyledTypography>
-							<Autocomplete
-								options={columnNames}
-								value={localState.column}
-								onChange={handleOnChange("column")}
-								size="small"
-								fullWidth={true}
-								multiple={false}
-								renderInput={(params) => (
-									<TextField {...params} size="small" />
-								)}
-							/>
-						</StyledSubSection>
-						{localState.displayType === "Dropdown" && (
-							<StyledSubSection>
-								<StyledTypography variant="body2">
-									Display Filter Label
-								</StyledTypography>
-								<TextField
-									size="small"
-									fullWidth
-									value={
-										(localState.column
-											? `Filter of ${localState.column}`
-											: "") || localState.filterLabel
-									}
-									onChange={(e) =>
-										updateField(
-											"filterLabel",
+													/>
+													<span className="text-sm">
+														{option}
+													</span>
+												</div>
+											))}
+										</div>
+									</PopoverContent>
+								</Popover>
+							</div>
+							<div className="flex flex-col items-start gap-2 self-stretch px-4 py-2">
+								<p className="self-stretch text-muted-foreground text-sm">
+									Select Column
+								</p>
+								<Select
+									value={localState.column || undefined}
+									onValueChange={handleSelectChange("column")}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Select column" />
+									</SelectTrigger>
+									<SelectContent>
+										{columnNames.map((col) => (
+											<SelectItem key={col} value={col}>
+												{col}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							{localState.displayType === "Dropdown" && (
+								<div className="flex flex-col items-start gap-2 self-stretch px-4 py-2">
+									<p className="self-stretch text-muted-foreground text-sm">
+										Display Filter Label
+									</p>
+									<Input
+										className="w-full"
+										value={
 											(localState.column
 												? `Filter of ${localState.column}`
-												: "") || localState.filterLabel,
-										)
-									}
+												: "") || localState.filterLabel
+										}
+										onChange={() =>
+											updateField(
+												"filterLabel",
+												(localState.column
+													? `Filter of ${localState.column}`
+													: "") ||
+													localState.filterLabel,
+											)
+										}
+									/>
+								</div>
+							)}
+							{localState.displayType === "Slider" && (
+								<div className="flex flex-col items-start gap-2 self-stretch px-4 py-2">
+									<p className="self-stretch text-muted-foreground text-sm">
+										Slider Sensitivity
+									</p>
+									<Input
+										className="w-full"
+										type="number"
+										value={localState.sliderSensitivity}
+										onChange={(e) =>
+											updateField(
+												"sliderSensitivity",
+												e.target.value,
+											)
+										}
+									/>
+								</div>
+							)}
+							<div className="flex items-center gap-2 self-stretch px-4 py-2">
+								<Switch
+									checked={localState.showPanelTitle}
+									onCheckedChange={handleSwitchChange(
+										"showPanelTitle",
+									)}
 								/>
-							</StyledSubSection>
-						)}
-
-						{localState.displayType === "Slider" && (
-							<StyledSubSection>
-								<StyledTypography variant="body2">
-									Slider Sensitivity
-								</StyledTypography>
-								<TextField
-									size="small"
-									fullWidth
-									type="number"
-									value={localState.sliderSensitivity}
-									onChange={(e) =>
-										updateField(
-											"sliderSensitivity",
-											e.target.value,
-										)
-									}
+								<p className="self-center text-muted-foreground text-sm">
+									Show Panel Title
+								</p>
+							</div>
+							<div
+								className="flex items-center gap-2 self-stretch px-4 py-2"
+								style={{
+									display:
+										localState.displayType === "Slider"
+											? "none"
+											: "flex",
+								}}
+							>
+								<Switch
+									checked={localState.searchable}
+									onCheckedChange={handleSwitchChange(
+										"searchable",
+									)}
 								/>
-							</StyledSubSection>
-						)}
-						<StyleHorizontalSection>
-							<Switch
-								checked={localState.showPanelTitle}
-								onChange={handleSwitchChange("showPanelTitle")}
-								size="medium"
-								color="secondary"
-							/>
-							<StyledTypography
-								variant="body2"
-								sx={{ alignSelf: "center" }}
-							>
-								Show Panel Title
-							</StyledTypography>
-						</StyleHorizontalSection>
-						<StyleHorizontalSection
-							style={{
-								display:
-									localState.displayType === "Slider"
-										? "none"
-										: "flex",
-							}}
-						>
-							<Switch
-								checked={localState.searchable}
-								onChange={handleSwitchChange("searchable")}
-								size="medium"
-								color="secondary"
-							/>
-							<StyledTypography
-								variant="body2"
-								sx={{ alignSelf: "center" }}
-							>
-								Searchable
-							</StyledTypography>
-						</StyleHorizontalSection>
-						<StyleHorizontalSection
-							style={{
-								display:
-									localState.displayType === "Multiselect" ||
-									localState.displayType === "Slider"
-										? "none"
-										: "flex",
-							}}
-						>
-							<Switch
-								checked={localState.multipleSelection}
-								onChange={handleSwitchChange(
-									"multipleSelection",
-								)}
-								size="medium"
-								color="secondary"
-							/>
-							<StyledTypography
-								variant="body2"
-								sx={{ alignSelf: "center" }}
-							>
-								Allow Multiple Selection
-							</StyledTypography>
-						</StyleHorizontalSection>
-						<Box
-							sx={{
-								display: "flex",
-								justifyContent: "flex-end",
-								mt: 2,
-								alignItems: "center",
-								width: "100%",
-								gap: 2,
-								pr: 2,
-								position: "absolute",
-								bottom: 16,
-								left: 0,
-								right: 0,
-								zIndex: 1000,
-							}}
-						>
-							<Button
-								variant="text"
-								onClick={handleReset}
-								sx={{ color: "secondary" }}
-							>
-								Reset
-							</Button>
-							<Button
-								variant="contained"
-								onClick={handleUpdate}
-								disabled={isApplyDisabled}
-							>
-								Update
-							</Button>
-						</Box>
-					</>
-				)}
-				{selectedTab === "Tools" && (
-					<>
-						<Box
-							sx={{
-								width: "100%",
-								padding: "8px 16px",
-								color: "#666666",
-							}}
-						>
-							<SizeSettings
-								id={id}
-								label="Height"
-								path="style.height"
-							/>
-						</Box>
-						<Box
-							sx={{
-								width: "100%",
-								padding: "8px 16px",
-								color: "#666666",
-							}}
-						>
-							<SizeSettings
-								id={id}
-								label="Width"
-								path="style.width"
-							/>
-						</Box>
-						<StyledSubSection>
-							<StyledTypography variant="body2">
-								Select Button Color
-							</StyledTypography>
-							<Autocomplete
-								options={DATA.colors}
-								value={localState.color || null}
-								onChange={(event, value) => {
-									setData("color", value);
-									setLocalState((prev) => ({
-										...prev,
-										color: value,
-									}));
+								<p className="self-center text-muted-foreground text-sm">
+									Searchable
+								</p>
+							</div>
+							<div
+								className="flex items-center gap-2 self-stretch px-4 py-2"
+								style={{
+									display:
+										localState.displayType ===
+											"Multiselect" ||
+										localState.displayType === "Slider"
+											? "none"
+											: "flex",
 								}}
-								size="small"
-								fullWidth={true}
-								multiple={false}
-								renderInput={(params) => (
-									<TextField {...params} size="small" />
-								)}
-							/>
-						</StyledSubSection>
-						<StyledSubSection>
-							<StyledTypography variant="body2">
-								Select Button Size
-							</StyledTypography>
-							<Autocomplete
-								options={DATA.sizes}
-								value={localState.size || null}
-								onChange={(event, value) => {
-									setData("size", value);
-									setLocalState((prev) => ({
-										...prev,
-										size: value,
-									}));
-								}}
-								size="small"
-								fullWidth={true}
-								multiple={false}
-								renderInput={(params) => (
-									<TextField {...params} size="small" />
-								)}
-							/>
-						</StyledSubSection>
-					</>
-				)}
-			</StyledContainer>
-		</StyledStack>
+							>
+								<Switch
+									checked={localState.multipleSelection}
+									onCheckedChange={handleSwitchChange(
+										"multipleSelection",
+									)}
+								/>
+								<p className="self-center text-muted-foreground text-sm">
+									Allow Multiple Selection
+								</p>
+							</div>
+							<div className="absolute right-0 bottom-4 left-0 z-[1000] mt-2 flex w-full items-center justify-end gap-2 pr-2">
+								<Button variant="ghost" onClick={handleReset}>
+									Reset
+								</Button>
+								<Button
+									onClick={handleUpdate}
+									disabled={isApplyDisabled}
+								>
+									Update
+								</Button>
+							</div>
+						</div>
+					</TabsContent>
+					<TabsContent value="Tools" className="w-full">
+						<div className="flex flex-col">
+							<div className="w-full px-4 py-2 text-[#666666]">
+								<SizeSettings
+									id={id}
+									label="Height"
+									path="style.height"
+								/>
+							</div>
+							<div className="w-full px-4 py-2 text-[#666666]">
+								<SizeSettings
+									id={id}
+									label="Width"
+									path="style.width"
+								/>
+							</div>
+							<div className="flex flex-col items-start gap-2 self-stretch px-4 py-2">
+								<p className="self-stretch text-muted-foreground text-sm">
+									Select Button Color
+								</p>
+								<Select
+									value={localState.color || undefined}
+									onValueChange={(value) => {
+										setData("color", value);
+										setLocalState((prev) => ({
+											...prev,
+											color: value,
+										}));
+									}}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Select color" />
+									</SelectTrigger>
+									<SelectContent>
+										{DATA.colors.map((color) => (
+											<SelectItem
+												key={color}
+												value={color}
+											>
+												{color}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+							<div className="flex flex-col items-start gap-2 self-stretch px-4 py-2">
+								<p className="self-stretch text-muted-foreground text-sm">
+									Select Button Size
+								</p>
+								<Select
+									value={localState.size || undefined}
+									onValueChange={(value) => {
+										setData("size", value);
+										setLocalState((prev) => ({
+											...prev,
+											size: value,
+										}));
+									}}
+								>
+									<SelectTrigger className="w-full">
+										<SelectValue placeholder="Select size" />
+									</SelectTrigger>
+									<SelectContent>
+										{DATA.sizes.map((size) => (
+											<SelectItem key={size} value={size}>
+												{size}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							</div>
+						</div>
+					</TabsContent>
+				</div>
+			</Tabs>
+		</div>
 	);
 };

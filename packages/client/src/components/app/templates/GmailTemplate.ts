@@ -1,12 +1,12 @@
-import { ActionMessages } from "@semoss/renderer";
-import GOOGLE from "@/assets/img/google.png";
+import QUERY from "@/assets/img/DragDrop.png";
+import { TEMPLATE_ACTION_MESSAGES } from "./action-messages";
 import type { Template } from "./templates.types";
 
 export const GmailTemplate: Template = {
 	name: "Gmail",
 	description:
 		"This is a template app that performs gmail operations using the Gmail API.",
-	image: GOOGLE,
+	image: QUERY,
 	author: "SYSTEM",
 	lastUpdatedDate: new Date().toISOString(),
 	tags: [],
@@ -77,6 +77,7 @@ export const GmailTemplate: Template = {
 							"text--1",
 							"container--1",
 							"container--2",
+							"container--18",
 						],
 						name: "content",
 					},
@@ -98,21 +99,21 @@ export const GmailTemplate: Template = {
 						type: "async",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "6",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "1",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "2",
@@ -138,7 +139,7 @@ export const GmailTemplate: Template = {
 					},
 					text: "Gmail",
 					variant: "h1",
-					show: "true",
+					show: "{{getUserData.isSuccessful}}",
 					loading: false,
 					loadType: "Skeleton",
 				},
@@ -195,7 +196,7 @@ export const GmailTemplate: Template = {
 						flexWrap: "wrap",
 						alignItems: "center",
 					},
-					show: "true",
+					show: "{{getUserData.isSuccessful}}",
 					loading: false,
 					loadType: "Skeleton",
 					boxShadowParts: {
@@ -263,7 +264,7 @@ export const GmailTemplate: Template = {
 						gap: "8px",
 						flexWrap: "wrap",
 					},
-					show: "true",
+					show: "{{getUserData.isSuccessful}}",
 					loading: false,
 					loadType: "Skeleton",
 					boxShadowParts: {
@@ -302,7 +303,7 @@ export const GmailTemplate: Template = {
 					showExpandIcon: false,
 					activeTab: 1,
 					show: "true",
-					tabLabels: ["All Mails", "Unread Mails", "Sent Mails"],
+					tabLabels: ["All Mails", "Unread Mails"],
 					tabOrientation: "horizontal",
 					variant: "standard",
 					showTabIndicator: true,
@@ -325,10 +326,6 @@ export const GmailTemplate: Template = {
 					"2": {
 						name: "2",
 						children: ["iteration--2"],
-					},
-					"3": {
-						name: "3",
-						children: ["iteration--3"],
 					},
 				},
 				communityBlockMapping: {},
@@ -432,7 +429,7 @@ export const GmailTemplate: Template = {
 					text: "$getAllMails.subject",
 					variant: "p",
 					show: "true",
-					loading: false,
+					loading: "{{getAllMails.isLoading}}",
 					loadType: "Skeleton",
 				},
 				listeners: {
@@ -454,7 +451,7 @@ export const GmailTemplate: Template = {
 				data: {
 					style: {},
 					label: "Read",
-					loading: false,
+					loading: "{{getAllMails.isLoading}}",
 					disabled: false,
 					variant: "outlined",
 					color: "primary",
@@ -466,7 +463,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "selectedMailId",
 									value: "$getAllMails.id",
@@ -474,7 +472,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "true",
@@ -501,7 +500,7 @@ export const GmailTemplate: Template = {
 				data: {
 					style: {},
 					label: "Delete",
-					loading: false,
+					loading: "{{getAllMails.isLoading}}",
 					disabled: false,
 					variant: "outlined",
 					color: "error",
@@ -513,7 +512,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "selectedMailId",
 									value: "$getAllMails.id",
@@ -521,7 +521,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									blockId: "",
 									variable: "deleteModal",
@@ -554,7 +555,7 @@ export const GmailTemplate: Template = {
 					text: "$getUnreadMails.subject",
 					variant: "p",
 					show: "true",
-					loading: false,
+					loading: "{{getUnreadMails.isLoading}}",
 					loadType: "Skeleton",
 				},
 				listeners: {
@@ -576,7 +577,7 @@ export const GmailTemplate: Template = {
 				data: {
 					style: {},
 					label: "Read",
-					loading: false,
+					loading: "{{getUnreadMails.isLoading}}",
 					disabled: false,
 					variant: "outlined",
 					color: "primary",
@@ -588,7 +589,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "selectedMailId",
 									value: "$getUnreadMails.id",
@@ -596,7 +598,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "true",
@@ -677,7 +680,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "true",
@@ -720,7 +724,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "false",
@@ -1012,7 +1017,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "false",
@@ -1051,14 +1057,15 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "4",
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "composeModal",
 									value: "false",
@@ -1097,7 +1104,7 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "3",
@@ -1109,7 +1116,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "false",
@@ -1596,7 +1604,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "mailDetailsModal",
 									value: "false",
@@ -1733,7 +1742,7 @@ export const GmailTemplate: Template = {
 						slots: {
 							children: {
 								name: "children",
-								children: ["text--5", "button--3", "button--4"],
+								children: ["text--5", "button--3"],
 							},
 						},
 						communityBlockMapping: {},
@@ -1917,14 +1926,14 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "1",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "2",
@@ -1966,7 +1975,8 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									blockId: "",
 									variable: "deleteModal",
@@ -2120,7 +2130,8 @@ export const GmailTemplate: Template = {
 						type: "async",
 						order: [
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									blockId: "",
 									variable: "selectedMailId",
@@ -2128,7 +2139,8 @@ export const GmailTemplate: Template = {
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "deleteModal",
 									value: "false",
@@ -2167,28 +2179,29 @@ export const GmailTemplate: Template = {
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "5",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "1",
 								},
 							},
 							{
-								message: ActionMessages.RUN_CELL,
+								message: TEMPLATE_ACTION_MESSAGES.RUN_CELL,
 								payload: {
 									queryId: "data",
 									cellId: "2",
 								},
 							},
 							{
-								message: ActionMessages.MODIFY_VARIABLE,
+								message:
+									TEMPLATE_ACTION_MESSAGES.MODIFY_VARIABLE,
 								payload: {
 									variable: "deleteModal",
 									value: "false",
@@ -2197,6 +2210,79 @@ export const GmailTemplate: Template = {
 							},
 						],
 					},
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {},
+				communityBlockMapping: {},
+			},
+			"container--18": {
+				id: "container--18",
+				widget: "container",
+				parent: {
+					id: "page-1",
+					slot: "content",
+				},
+				data: {
+					style: {
+						display: "flex",
+						flexDirection: "column",
+						padding: "24px",
+						gap: "16px",
+						flexWrap: "wrap",
+						alignItems: "center",
+						justifyContent: "center",
+						marginTop: "48px",
+					},
+					show: "{{getUserData.isError}}",
+					loading: false,
+					loadType: "Skeleton",
+					boxShadowParts: {
+						offsetX: "",
+						offsetY: "",
+						blurRadius: "",
+						spreadRadius: "",
+						color: "",
+					},
+				},
+				listeners: {
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
+				slots: {
+					children: {
+						name: "children",
+						children: ["text--16"],
+					},
+				},
+				communityBlockMapping: {},
+			},
+			"text--16": {
+				id: "text--16",
+				widget: "text",
+				parent: {
+					id: "container--18",
+					slot: "children",
+				},
+				data: {
+					style: {
+						padding: "4px",
+						whiteSpace: "pre-line",
+						textOverflow: "ellipsis",
+						textAlign: "center",
+						fontSize: "18px",
+					},
+					text: "Please login with Google",
+					variant: "h5",
+					show: "true",
+					loading: false,
+					loadType: "Skeleton",
+				},
+				listeners: {
 					preProcess: {
 						type: "sync",
 						order: [],

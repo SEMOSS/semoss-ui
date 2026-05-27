@@ -1,5 +1,5 @@
 import type { CellStateConfig } from "./cell.state";
-import type { QueryStateConfig } from "./query.state";
+import type { NotebookStateConfig } from "./notebook.state";
 import type {
 	BlockJSON,
 	ListenerActions,
@@ -31,21 +31,27 @@ export enum ActionMessages {
 	REMOVE_DYNAMIC_SLOT = "REMOVE_DYNAMIC_SLOT",
 	/**
 	 * Notebook
+	 *
+	 * NOTE: enum *values* (right-hand side) stay as "NEW_QUERY" etc. for
+	 * backward compatibility with saved app JSON — see
+	 * docs/query-notebook-rename.md. Member *names* (left-hand side) are
+	 * pure TypeScript identifiers and have been updated to the new
+	 * "Notebook" vocabulary.
 	 */
-	SET_QUERY = "SET_QUERY",
-	NEW_QUERY = "NEW_QUERY",
+	SET_NOTEBOOK = "SET_QUERY",
+	NEW_NOTEBOOK = "NEW_QUERY",
 	NEW_CELL = "NEW_CELL",
 	MOVE_CELL = "MOVE_CELL",
-	DELETE_QUERY = "DELETE_QUERY",
+	DELETE_NOTEBOOK = "DELETE_QUERY",
 	DELETE_CELL = "DELETE_CELL",
-	UPDATE_QUERY = "UPDATE_QUERY",
+	UPDATE_NOTEBOOK = "UPDATE_QUERY",
 	UPDATE_CELL = "UPDATE_CELL",
 	MAKE_CELL_MCP = "MAKE_CELL_MCP",
 	/**
 	 * Events
 	 */
 	RUN_CELL = "RUN_CELL",
-	RUN_QUERY = "RUN_QUERY",
+	RUN_NOTEBOOK = "RUN_QUERY",
 	DISPATCH_EVENT = "DISPATCH_EVENT",
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
@@ -60,10 +66,10 @@ export type Actions =
 	| SetBlockDataAction
 	| DeleteBlockDataAction
 	| SetListenerAction
-	| NewQueryAction
-	| DeleteQueryAction
-	| UpdateQueryAction
-	| RunQueryAction
+	| NewNotebookAction
+	| DeleteNotebookAction
+	| UpdateNotebookAction
+	| RunNotebookAction
 	| NewCellAction
 	| MoveCellAction
 	| DeleteCellAction
@@ -249,24 +255,24 @@ export interface RemoveDynamicSlotAction extends Action {
  * Notebook
  */
 
-export interface NewQueryAction extends Action {
-	message: ActionMessages.NEW_QUERY;
+export interface NewNotebookAction extends Action {
+	message: ActionMessages.NEW_NOTEBOOK;
 	payload: {
 		queryId: string;
-		config: Omit<QueryStateConfig, "id">;
+		config: Omit<NotebookStateConfig, "id">;
 		isCommunity?: boolean; // Optional flag to indicate if the query is community-based
 	};
 }
 
-export interface DeleteQueryAction extends Action {
-	message: ActionMessages.DELETE_QUERY;
+export interface DeleteNotebookAction extends Action {
+	message: ActionMessages.DELETE_NOTEBOOK;
 	payload: {
 		queryId: string;
 	};
 }
 
-export interface UpdateQueryAction extends Action {
-	message: ActionMessages.UPDATE_QUERY;
+export interface UpdateNotebookAction extends Action {
+	message: ActionMessages.UPDATE_NOTEBOOK;
 	payload: {
 		queryId: string;
 		path: string | null;
@@ -321,6 +327,7 @@ export interface MakeCellMCPAction extends Action {
 			params: {};
 			// What if you want to go back and see code you originally made, meaning you dont want to write out a new cell you just want to go back and edit
 			originalParams: Record<string, unknown>;
+			paramType: string;
 		};
 	};
 }
@@ -345,8 +352,8 @@ export interface DispatchEventAction extends Action {
 	};
 }
 
-export interface RunQueryAction extends Action {
-	message: ActionMessages.RUN_QUERY;
+export interface RunNotebookAction extends Action {
+	message: ActionMessages.RUN_NOTEBOOK;
 	payload: {
 		queryId: string;
 	};

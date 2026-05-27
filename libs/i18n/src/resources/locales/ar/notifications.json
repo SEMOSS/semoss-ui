@@ -1,0 +1,10 @@
+{
+	"knowledge": {
+		"createSuccess": "تم إنشاء مخزن المعرفة \"{{name}}\" بنجاح",
+		"createError": "فشل في إنشاء مخزن المعرفة"
+	},
+	"workspace": {
+		"saveError": "فشل في حفظ الوكيل",
+		"deleteError": "فشل في حذف مساحة العمل"
+	}
+}

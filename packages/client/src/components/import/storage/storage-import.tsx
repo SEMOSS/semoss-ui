@@ -1,10 +1,10 @@
-/** biome-ignore-all lint/a11y/useKeyWithClickEvents: <explanation> */
-/** biome-ignore-all lint/a11y/noStaticElementInteractions: <explanation> */
-import { FileUploadOutlined } from "@mui/icons-material";
-import { Search } from "lucide-react";
+/** biome-ignore-all lint/a11y/useKeyWithClickEvents: TODO */
+/** biome-ignore-all lint/a11y/noStaticElementInteractions: TODO */
+// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
+
+import { Search, Upload } from "lucide-react";
 import type React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -25,6 +25,7 @@ import {
 } from "@semoss/ui/next";
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import { STORAGE_CONNECTIONS, type Storage } from "./storage-import.constants";
 import { StorageForm } from "./storage-import-form";
 import { StorageTitleCard } from "./storage-title-card";
@@ -35,9 +36,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("0");
-	const [selectedDatabase, setSelectedDatabase] = useState<Storage | null>(
-		null,
-	);
+	const [selectedEngine, setSelectedEngine] = useState<Storage | null>(null);
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +53,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 			(key) => key !== "description",
 		);
 	}, []);
+	const hasMultipleTabs = tabLabels.length > 1;
 
 	const DatabasesForTab = useMemo(() => {
 		const currentTabIndex = Number.parseInt(selectedTab, 10);
@@ -86,7 +86,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 			}
 
 			const pixelExpressions = uploadedFiles.map(
-				(file) =>
+				() =>
 					`UploadEngine(filePath=["${uploadedFiles[0].fileLocation}"], engineTypes=["STORAGE"])`,
 			);
 
@@ -132,7 +132,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 	};
 
 	const renderBreadcrumbs = () => (
-		<div className="mb-4">
+		<div className="mb-6">
 			<Breadcrumb data-testid="breadcrumbs">
 				<BreadcrumbList>
 					<BreadcrumbItem>
@@ -152,13 +152,13 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							onClick={() => {
-								if (selectedDatabase) {
-									setSelectedDatabase(null);
+								if (selectedEngine) {
+									setSelectedEngine(null);
 								}
 							}}
 							data-testid="breadcrumb-page"
 							className={
-								selectedDatabase
+								selectedEngine
 									? "cursor-pointer text-muted-foreground hover:text-foreground"
 									: "cursor-default text-foreground"
 							}
@@ -166,7 +166,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 							Connect to Storage Database
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					{selectedDatabase && (
+					{selectedEngine && (
 						<>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
@@ -174,7 +174,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 									data-testid="breadcrumb-selected-storage"
 									className="text-foreground"
 								>
-									{selectedDatabase.name}
+									{selectedEngine.name}
 								</span>
 							</BreadcrumbItem>
 						</>
@@ -186,7 +186,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 
 	const renderDatabaseGrid = (Databases: Storage[]) => (
 		<div
-			className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6"
+			className="flex flex-col gap-2 sm:flex-row sm:flex-wrap"
 			data-testid="storage-grid"
 		>
 			{Databases.filter((v) =>
@@ -195,7 +195,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 				<StorageTitleCard
 					key={v.id}
 					storage={v}
-					onSelect={() => setSelectedDatabase(v)}
+					onSelect={() => setSelectedEngine(v)}
 				/>
 			))}
 		</div>
@@ -215,7 +215,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 				onOpenChange={setIsFileUploadModalOpen}
 			>
 				<DialogContent
-					className="w-[600px]"
+					className="w-[calc(100vw-2rem)] max-w-[600px] sm:w-[600px]"
 					data-testid="storage-zip-upload-modal"
 				>
 					<div className="flex h-full w-full flex-col gap-4">
@@ -250,7 +250,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							) : (
 								<div className="text-center">
-									<FileUploadOutlined className="mb-2 h-12 w-12 text-muted-foreground" />
+									<Upload className="mb-2 h-12 w-12 text-muted-foreground" />
 									<P className="font-medium text-foreground">
 										Drop your file here or click to browse
 									</P>
@@ -260,13 +260,13 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 								</div>
 							)}
 						</div>
-						<div className="flex flex-row justify-end gap-2">
+						<div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 							<Button
 								size="sm"
 								variant="ghost"
 								onClick={() => setIsFileUploadModalOpen(false)}
 								data-testid="storage-upload-close-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Close
 							</Button>
@@ -276,7 +276,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 								disabled={!filedata}
 								onClick={() => onSubmit(filedata)}
 								data-testid="storage-upload-submit-button"
-								className="rounded-xl"
+								className="w-full rounded-xl sm:w-auto"
 							>
 								Upload
 							</Button>
@@ -285,13 +285,14 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 				</DialogContent>
 			</Dialog>
 
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="storage-form-wrapper">
 					<StorageForm
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add storage to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add storage to catalog`}
+						icon={selectedEngine.icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>
@@ -314,7 +315,7 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 					</div>
 
 					{/* Search Bar and Upload Button */}
-					<div className="flex w-full items-center gap-3">
+					<div className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center">
 						<div className="relative flex-1">
 							<Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
 							<Input
@@ -331,41 +332,47 @@ export const StorageImport: React.FC<{ name: string }> = ({ name }) => {
 							variant="outline"
 							onClick={() => handleFileUpload(true)}
 							data-testid="storage-upload-file-button"
-							className="h-10 rounded-lg leading-[0.75]"
+							className="h-10 w-full rounded-lg leading-[0.75] sm:w-auto"
 						>
-							<FileUploadOutlined fontSize="medium" />
+							<Upload className="size-5" />
 						</Button>
 					</div>
 
 					{/* Tabs Section - Using shadcn Tabs component */}
 					<div className="w-full">
-						<Tabs
-							value={selectedTab}
-							onValueChange={setSelectedTab}
-							data-testid="tabs"
-						>
-							<TabsList className="inline-flex items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+						{hasMultipleTabs ? (
+							<Tabs
+								value={selectedTab}
+								onValueChange={setSelectedTab}
+								data-testid="tabs"
+							>
+								<TabsList className="inline-flex w-full items-center justify-start overflow-x-auto rounded-lg bg-muted p-1 text-muted-foreground sm:w-auto sm:justify-center">
+									{tabLabels.map((label, index) => (
+										<TabsTrigger
+											key={label}
+											value={index.toString()}
+											className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md px-2.5 py-1 font-medium text-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
+											data-testid={`tab-${label.toLowerCase()}`}
+										>
+											{label}
+										</TabsTrigger>
+									))}
+								</TabsList>
 								{tabLabels.map((label, index) => (
-									<TabsTrigger
+									<TabsContent
 										key={label}
 										value={index.toString()}
-										className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-2.5 py-1 font-medium text-sm ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow"
-										data-testid={`tab-${label.toLowerCase()}`}
+										className="mt-6"
 									>
-										{label}
-									</TabsTrigger>
+										{renderDatabaseGrid(DatabasesForTab)}
+									</TabsContent>
 								))}
-							</TabsList>
-							{tabLabels.map((label, index) => (
-								<TabsContent
-									key={label}
-									value={index.toString()}
-									className="mt-6"
-								>
-									{renderDatabaseGrid(DatabasesForTab)}
-								</TabsContent>
-							))}
-						</Tabs>
+							</Tabs>
+						) : (
+							<div className="mt-6">
+								{renderDatabaseGrid(DatabasesForTab)}
+							</div>
+						)}
 					</div>
 				</div>
 			)}

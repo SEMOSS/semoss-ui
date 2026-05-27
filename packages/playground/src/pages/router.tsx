@@ -1,9 +1,12 @@
 import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
+import { DocumentLibrary } from "@/pages/knowledge-page";
 import { AuthenticatedLayout } from "./authenticated-layout";
+import { ChatsPage } from "./chats-page";
 import { EditWorkspacePage } from "./edit-workspace-page";
 import { EmbedPage } from "./embed-page";
 import { ErrorPage } from "./error-page";
 import { InitializedLayout } from "./initialized-layout";
+import { KnowledgeDetailPage } from "./knowledge-detail-page";
 import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
 import { NewRoomPage } from "./new-room-page";
@@ -41,24 +44,37 @@ const router = createHashRouter(
 											element: <RoomPage />,
 										},
 										{
-											path: "embed/:path",
+											path: "chats",
+											element: <ChatsPage />,
+										},
+										{
+											path: "embed/*",
 											element: <EmbedPage />,
 										},
 										{
-											path: "workspace",
+											path: "agent",
 											element: <WorkspacePage />,
 										},
+
 										{
-											path: "workspace/new",
+											path: "agent/new",
 											element: <NewWorkspacePage />,
 										},
 										{
-											path: "workspace/:workspaceId",
+											path: "agent/:workspaceId",
 											element: <WorkspaceDetailPage />,
 										},
 										{
-											path: "workspace/:workspaceId/edit",
+											path: "agent/:workspaceId/edit",
 											element: <EditWorkspacePage />,
+										},
+										{
+											path: "knowledge",
+											element: <DocumentLibrary />,
+										},
+										{
+											path: "knowledge/:knowledgeId",
+											element: <KnowledgeDetailPage />,
 										},
 										{
 											path: "*",

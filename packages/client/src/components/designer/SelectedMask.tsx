@@ -1,55 +1,50 @@
-import { DragIndicator } from "@mui/icons-material";
+import { GripVertical } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
-import { Stack, styled, Typography, useNotification } from "@semoss/ui";
+import { toast } from "@semoss/ui/next";
 import { useDesigner } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
 import { BlockSettingsRegistry } from "../blocks-workspace/blocks";
 
-const StyledContainer = styled("div")(({ theme }) => ({
+const containerStyle: React.CSSProperties = {
 	position: "absolute",
 	top: "0",
 	right: "0",
 	bottom: "0",
 	left: "0",
-	zIndex: "20",
+	zIndex: 20,
 	pointerEvents: "none",
 	userSelect: "none",
 	outlineWidth: "2px",
 	outlineStyle: "solid",
-	outlineColor: theme.palette.primary.main,
-}));
+	outlineColor: "var(--primary)",
+};
 
-const StyledTitle = styled("div")(({ theme }) => ({
+const titleStyle: React.CSSProperties = {
 	display: "inline-flex",
 	alignItems: "center",
 	position: "absolute",
-	top: theme.spacing(-3),
-	left: `-1px`,
-	height: theme.spacing(3),
-	paddingLeft: theme.spacing(1),
-	paddingRight: theme.spacing(1),
+	top: "-24px",
+	left: "-1px",
+	height: "24px",
+	paddingLeft: "8px",
+	paddingRight: "8px",
 	pointerEvents: "auto",
 	cursor: "grab",
-	backgroundColor: theme.palette.primary.main,
-	color: theme.palette.common.white,
+	backgroundColor: "var(--primary)",
+	color: "white",
 	whiteSpace: "nowrap",
-}));
+};
 
 interface SelectedMaskProps {
 	/** Element to bind the mask to */
 	screenEle: HTMLDivElement;
 }
 
-/**
- * Show the information of a selected block
- */
 export const SelectedMask = observer((props: SelectedMaskProps) => {
 	const { screenEle } = props;
-	const notification = useNotification();
 
-	// create the state
 	const [size, setSize] = useState<{
 		top: number;
 		left: number;
@@ -58,19 +53,15 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 	} | null>(null);
 	const [local, setLocal] = useState(false);
 
-	// get the store
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
 
-	// get the block
 	const block = state.getBlock(designer.selected);
 	const variableName = state.getAlias(designer.selected);
 
-	// check if it is draggable
 	const isDraggable =
 		block && BlockSettingsRegistry[block.widget] && block.widget !== "page";
 
-	// check if all blocks are draggable
 	const areAllBlocksDraggable = (): boolean => {
 		return designer.selectedBlocks.every((id) => {
 			const block = state.getBlock(id);
@@ -82,21 +73,16 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 		});
 	};
 
-	/**
-	 * Handle the mousedown on the block.
-	 */
 	const handleMouseDown = () => {
 		if (designer.selectedBlocks.length > 1) {
 			if (!areAllBlocksDraggable()) {
 				return;
 			}
-			// Handle drag for multiple selected blocks
 			designer.activateDrag(
 				designer.selectedBlocks
 					.map((id) => state.getBlock(id).widget)
 					.join(","),
 				(parent) => {
-					// Ensure none of the selected blocks are children of the parent
 					return !designer.selectedBlocks.some((id) =>
 						state.containsBlock(id, parent),
 					);
@@ -108,53 +94,38 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 				),
 			);
 
-			// Clear the hovered block
 			designer.setHovered("");
-
-			// Set as inactive
 			setLocal(true);
 		} else {
-			// Existing logic for single block drag
 			if (!isDraggable) {
 				return;
 			}
-			// set the dragged
 			designer.activateDrag(
 				block.widget,
 				(parent) => {
-					// if the parent block is a child of the selected, we cannot add
 					if (state.containsBlock(designer.selected, parent)) {
 						return false;
 					}
-
 					return true;
 				},
 				block.id,
 				BlockSettingsRegistry[block.widget].icon,
 			);
 
-			// Clear the hovered block
 			designer.setHovered("");
-
-			// Set as inactive
 			setLocal(true);
 		}
 	};
 
-	/**
-	 * Handle the mouseup event on the document
-	 */
 	const handleDocumentMouseUp = useCallback(() => {
 		if (!designer.drag.active) {
 			return;
 		}
-		// apply the action
 		const placeholderAction = designer.drag.placeholderAction;
 
 		if (placeholderAction) {
 			if (designer.selectedBlocks.length > 1) {
-				// Handle multiple block movements
-				let lastSiblingId = placeholderAction.id; // Start with the placeholder ID
+				let lastSiblingId = placeholderAction.id;
 				designer.selectedBlocks.forEach((id) => {
 					const sw = state.getBlock(placeholderAction.id);
 
@@ -162,17 +133,15 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 						placeholderAction.type === "before" ||
 						placeholderAction.type === "after"
 					) {
-						const siblingWidget = state.getBlock(lastSiblingId); // Use the last sibling ID
+						const siblingWidget = state.getBlock(lastSiblingId);
 
 						if (siblingWidget.parent) {
 							const parent = state.getBlock(sw.parent.id);
 							if (parent.widget === "iteration") {
 								if (parent.slots.children.children.length) {
-									notification.add({
-										color: "error",
-										message:
-											"Please delete block within iterator before adding another child",
-									});
+									toast.error(
+										"Please delete block within iterator before adding another child",
+									);
 									designer.deactivateDrag();
 									return;
 								}
@@ -193,7 +162,6 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 								},
 							});
 
-							// Update the lastSiblingId to the current block
 							lastSiblingId = id;
 						}
 					} else if (placeholderAction.type === "replace") {
@@ -222,7 +190,6 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 					}
 				});
 			} else {
-				// Existing logic for single block movement
 				const sw = state.getBlock(placeholderAction.id);
 
 				if (
@@ -235,11 +202,9 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 						const parent = state.getBlock(sw.parent.id);
 						if (parent.widget === "iteration") {
 							if (parent.slots.children.children.length) {
-								notification.add({
-									color: "error",
-									message:
-										"Please delete block within iterator before adding another child",
-								});
+								toast.error(
+									"Please delete block within iterator before adding another child",
+								);
 								designer.deactivateDrag();
 								return;
 							}
@@ -283,13 +248,8 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 			}
 		}
 
-		// Clear the drag
 		designer.deactivateDrag();
-
-		// Clear the hovered block
 		designer.setHovered("");
-
-		// Set as active
 		setLocal(false);
 	}, [
 		designer.selected,
@@ -300,37 +260,32 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 		designer,
 	]);
 
-	// reposition the mask
 	const repositionMask = () => {
-		// Use designer.selected or fallback to the first ID in designer.selectedIds
 		const selectedId = designer.selected || designer.selectedBlocks[0];
 		if (!selectedId) {
 			return;
 		}
 
 		const blockEle = getBlockElement(selectedId);
-
 		if (!blockEle) {
 			return;
 		}
 
-		// Calculate and set the size
 		const updated = getRelativeSize(blockEle, screenEle);
 		setSize(updated);
 	};
 
-	// update the mask when the screen is resized
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only listener
 	useEffect(() => {
 		window.addEventListener("resize", repositionMask);
 	}, []);
 
-	// block resized is a custom event emitted by SizeSettings
-	// so we know to updated the mask when width/height changes
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only listener
 	useEffect(() => {
 		window.addEventListener("blockResized", repositionMask);
 	}, []);
 
-	// get the root, watch changes, and reposition the mask
+	// biome-ignore lint/correctness/useExhaustiveDependencies: repositionMask is stable
 	useLayoutEffect(() => {
 		const observer = new MutationObserver(() => {
 			repositionMask();
@@ -341,13 +296,11 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 			childList: true,
 		});
 
-		// reposition it
 		repositionMask();
 
 		return () => observer.disconnect();
 	}, [designer.selected]);
 
-	// add the mouse up listener when dragged
 	useEffect(() => {
 		if (!designer.drag.active || !local) {
 			return;
@@ -361,22 +314,31 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 	}, [designer.drag.active, local, handleDocumentMouseUp]);
 
 	if (!size) {
-		return <></>;
+		return null;
 	}
+
+	const handleRename = (id: string): string => {
+		const block = state.getBlock(id);
+		if (block?.data?.id) {
+			return block.data.id as string;
+		}
+		return id;
+	};
 
 	if (designer.selectedBlocks.length > 1) {
 		return (
 			<>
-				{designer.selectedBlocks.map((id, index) => {
+				{designer.selectedBlocks.map((id, _index) => {
 					const blockElement = getBlockElement(id);
 					if (!blockElement) return null;
 
 					const blockSize = getRelativeSize(blockElement, screenEle);
 
 					return (
-						<StyledContainer
+						<div
 							key={id}
 							style={{
+								...containerStyle,
 								top: `${blockSize.top}px`,
 								left: `${blockSize.left}px`,
 								height: `${blockSize.height}px`,
@@ -384,28 +346,32 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 								opacity: designer.drag.active ? 0 : 1,
 							}}
 						>
-							<StyledTitle onMouseDown={handleMouseDown}>
-								<Stack direction={"row"}>
-									<Typography variant={"body2"}>
-										{variableName ? variableName : id}
-									</Typography>
-								</Stack>
+							{/* biome-ignore lint/a11y/noStaticElementInteractions: drag handle — keyboard drag not applicable */}
+							<div
+								style={titleStyle}
+								onMouseDown={handleMouseDown}
+							>
+								<span className="text-sm">
+									{variableName
+										? variableName
+										: String(
+												handleRename(designer.selected),
+											)}
+								</span>
 								{areAllBlocksDraggable() && (
-									<DragIndicator
-										fontSize="inherit"
-										sx={{ marginLeft: "2px" }}
-									/>
+									<GripVertical className="ml-0.5 size-4" />
 								)}
-							</StyledTitle>
-						</StyledContainer>
+							</div>
+						</div>
 					);
 				})}
 			</>
 		);
 	} else {
 		return (
-			<StyledContainer
+			<div
 				style={{
+					...containerStyle,
 					top: `${size.top}px`,
 					left: `${size.left}px`,
 					height: `${size.height}px`,
@@ -413,20 +379,16 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 					opacity: designer.drag.active ? 0 : 1,
 				}}
 			>
-				<StyledTitle onMouseDown={handleMouseDown}>
-					<Stack direction={"row"}>
-						<Typography variant={"body2"}>
-							{variableName ? variableName : designer.selected}
-						</Typography>
-					</Stack>
-					{isDraggable && (
-						<DragIndicator
-							fontSize="inherit"
-							sx={{ marginLeft: "2px" }}
-						/>
-					)}
-				</StyledTitle>
-			</StyledContainer>
+				{/* biome-ignore lint/a11y/noStaticElementInteractions: drag handle — keyboard drag not applicable */}
+				<div style={titleStyle} onMouseDown={handleMouseDown}>
+					<span className="text-sm">
+						{variableName
+							? variableName
+							: String(handleRename(designer.selected))}
+					</span>
+					{isDraggable && <GripVertical className="ml-0.5 size-4" />}
+				</div>
+			</div>
 		);
 	}
 });

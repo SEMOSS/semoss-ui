@@ -1,0 +1,7 @@
+{
+	"required": "{{field}} مطلوب",
+	"nameRequired": "الرجاء إدخال اسم لمخزن المعرفة",
+	"embeddingRequired": "الرجاء اختيار محرك تضمين",
+	"filesRequired": "الرجاء اختيار مستند واحد على الأقل",
+	"descriptionRequired": "الرجاء إدخال وصف"
+}

@@ -1,0 +1,56 @@
+{
+	"messages": {
+		"placeholder": "Escriba un mensaje...",
+		"sending": "Enviando...",
+		"error": "No se pudo enviar el mensaje"
+	},
+	"attachments": {
+		"addFile": "Añadir archivo",
+		"removeFile": "Eliminar archivo"
+	},
+	"response": {
+		"agent": "Agente",
+		"previousMessage": "Mensaje anterior",
+		"nextMessage": "Siguiente mensaje",
+		"rewriteMessage": "Reescribir mensaje",
+		"goodResponse": "Buena respuesta",
+		"poorResponse": "Mala respuesta",
+		"copyResponse": "Copiar respuesta",
+		"copyCode": "Copiar código",
+		"feedbackPlaceholder": "Agregar un comentario (opcional)",
+		"feedbackCancel": "Cancelar",
+		"feedbackSubmit": "Enviar",
+		"fastForwardToEnd": "Avanzar al final",
+		"completeToolsAsk_one": "Por favor, completa la herramienta para continuar.",
+		"completeToolsAsk_other": "Por favor, completa las herramientas para continuar.",
+		"completeToolsAuto_one": "Por favor, espera a que la herramienta se complete.",
+		"completeToolsAuto_other": "Por favor, espera a que las herramientas se completen.",
+		"emptyResponse": "Respuesta vacía."
+	},
+	"input": {
+		"copyMessage": "Copiar mensaje"
+	},
+	"plan": {
+		"heading": "Aquí está el plan que he creado. Siéntete libre de modificarlo según sea necesario.",
+		"fixStep": "Corregir paso",
+		"edit": "Editar",
+		"delete": "Eliminar",
+		"addTask": "Agregar tarea",
+		"confirmPlan": "Confirmar plan"
+	},
+	"notifications": {
+		"feedbackSuccess": "¡Gracias por tus comentarios!",
+		"rewriteSuccess": "Mensaje reescrito con éxito",
+		"copySuccess": "Copiado al portapapeles con éxito",
+		"noCopyContent": "No hay contenido para copiar",
+		"planStepRemoved": "Paso {{stepNumber}} eliminado del plan con éxito"
+	},
+	"gracefulErrors": {
+		"errorDefault": "No se pudo procesar la solicitud. Verifique su conexión, copie su mensaje y actualice la página.",
+		"tokenLimit": "Su chat fue demasiado largo para manejar. Por favor, inicie un nuevo chat con un mensaje más corto o cargue menos contenido de documento.",
+		"overloaded": "Este modelo no está disponible en este momento. Por favor, pruebe con un modelo diferente.",
+		"resourceExhausted": "Este modelo está experimentando una alta carga en este momento. Por favor, pruebe con un modelo diferente.",
+		"inactivity": "Su sesión ha expirado por inactividad. Por favor, actualice la página para continuar usando el chat.",
+		"modelNoLongerAvailable": "Este modelo ya no está disponible. Si es necesario, copie/pegue la conversación actual en un nuevo chat para continuar."
+	}
+}

@@ -1,0 +1,69 @@
+{
+	"buttons": {
+		"save": "Save",
+		"cancel": "Cancel",
+		"create": "Create",
+		"back": "Back",
+		"close": "Close",
+		"confirm": "Confirm",
+		"upload": "Upload",
+		"search": "Search"
+	},
+	"labels": {
+		"name": "Name",
+		"description": "Description",
+		"type": "Type",
+		"model": "Model",
+		"instructions": "Instructions",
+		"temperature": "Temperature",
+		"maxToken": "Max Token"
+	},
+	"placeholders": {
+		"enterName": "Enter Name",
+		"enterDescription": "Enter Description",
+		"enterInstructions": "Enter Instructions",
+		"updateInstructions": "Update Instructions",
+		"updateTokenLength": "Update token length",
+		"uploadFiles": "Upload Files",
+		"search": "Search...",
+		"enterPromptLibraryTag": "Enter Prompt Library Tag"
+	},
+	"actions": {
+		"addKnowledge": "Add Knowledge",
+		"addToolbox": "Add Toolboxes",
+		"deleteMCP": "Delete MCP"
+	},
+	"badges": {
+		"fromAgent": "From Agent"
+	},
+	"messages": {
+		"noKnowledgeFound": "No Knowledge Found",
+		"noToolboxFound": "No Toolboxes Found"
+	},
+	"tooltips": {
+		"cannotDeleteWorkspaceMCPs": "Cannot delete workspace MCPs",
+		"cannotDeleteAgentMCPs": "Cannot delete agent MCPs"
+	},
+	"plan": {
+		"newStep": "New Step",
+		"editStep": "Edit Step",
+		"selectType": "Select type",
+		"selectMcp": "Select MCP",
+		"selectTool": "Select Tool",
+		"tool": "Tool",
+		"ai": "AI",
+		"prompt": "Prompt",
+		"promptPlaceholder": "Enter the instructions for the AI",
+		"instructionsPlaceholder": "Instructions for the ai to process the user's feedback"
+	},
+	"navigation": {
+		"logOut": "Log out",
+		"acknowledge": "Acknowledge"
+	},
+	"pagination": {
+		"rowsPerPage": "Rows per page:"
+	},
+	"images": {
+		"logoAlt": "logo"
+	}
+}

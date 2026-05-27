@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	Button,
 	ButtonGroup,
@@ -42,6 +43,7 @@ interface PlanMessageProps {
 
 export const PlanMessage: React.FC<PlanMessageProps> = observer(
 	({ message, isLast }) => {
+		const { t } = useTranslation("chat");
 		const [editStep, setEditStep] = useState<PlanStep | null>(null);
 		const [isAddStepOpen, setIsAddStepOpen] = useState(false);
 
@@ -65,7 +67,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 				message.removeStep(step_number);
 
 				toast.success(
-					`Successfully removed step ${step_number} from plan`,
+					t("notifications.planStepRemoved", {
+						stepNumber: step_number,
+					}),
 				);
 			} catch (e) {
 				toast.error(e.message);
@@ -88,17 +92,16 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 			<div className="w-full overflow-hidden">
 				<div className="group flex flex-row items-center gap-2">
 					<ListEndIcon className="size-4" />
-					<span className="mr-0.5 font-medium text-base">
+					<span className="me-0.5 font-medium text-base">
 						{message.model.name}
 					</span>
 				</div>
 				<p className="normal mt-2 mb-3 text-base text-foreground leading-normal">
-					Here is the plan that I have created. Feel free to modify it
-					as needed.
+					{t("plan.heading")}
 				</p>
 				{message.plan.steps.length > 0 && (
 					<div className="flex flex-col">
-						<div className="rounded-t-md border-input border-t border-r border-l bg-primary-foreground px-3 py-4">
+						<div className="rounded-t-md border-input border-s border-e border-t bg-primary-foreground px-3 py-4">
 							Plan
 						</div>
 						{message.plan.steps.map((s) => {
@@ -109,7 +112,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 							return (
 								<Collapsible
 									key={s.step_number}
-									className="border-input border-t border-r border-l px-3 py-4 last:rounded-b-md last:border-b"
+									className="border-input border-s border-e border-t px-3 py-4 last:rounded-b-md last:border-b"
 								>
 									<CollapsibleTrigger
 										className="flex w-full overflow-hidden [&[data-state=open]>svg[data-rotate=true]]:rotate-90"
@@ -117,11 +120,11 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 									>
 										<div className="flex flex-row items-center gap-2">
 											<ChevronRightIcon
-												className="size-4"
+												className="rtl:-scale-x-100 size-4"
 												data-rotate={true}
 											/>
 											<div
-												className="flex-1 truncate text-left text-sm"
+												className="flex-1 truncate text-start text-sm"
 												title={s.step_name}
 											>
 												{s.step_name}
@@ -151,7 +154,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 																</Button>
 															</TooltipTrigger>
 															<TooltipContent>
-																Fix Step
+																{t(
+																	"plan.fixStep",
+																)}
 															</TooltipContent>
 														</Tooltip>
 													)}
@@ -160,7 +165,6 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 															asChild
 														>
 															<Button
-																className=""
 																size="icon-sm"
 																variant="ghost"
 																onClick={(e) =>
@@ -182,7 +186,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 																		);
 																	}}
 																>
-																	Edit
+																	{t(
+																		"plan.edit",
+																	)}
 																</DropdownMenuItem>
 																<DropdownMenuItem
 																	onClick={(
@@ -194,7 +200,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 																		);
 																	}}
 																>
-																	Delete
+																	{t(
+																		"plan.delete",
+																	)}
 																</DropdownMenuItem>
 															</DropdownMenuGroup>
 														</DropdownMenuContent>
@@ -206,7 +214,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 									<CollapsibleContent className="group flex flex-row py-2">
 										<Separator
 											orientation="vertical"
-											className="mr-6 ml-2 h-auto!"
+											className="ms-2 me-6 h-auto!"
 										/>
 
 										<div className="flex flex-1 flex-col gap-2.5 overflow-hidden">
@@ -224,7 +232,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 														}}
 													>
 														<ShieldXIcon />
-														Fix Step
+														{t("plan.fixStep")}
 													</Button>
 												</div>
 											)}
@@ -251,15 +259,15 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 						{isLast && (
 							<button
 								type="button"
-								className="flex w-full flex-row items-center gap-2 border-input border-t border-r border-l px-3 py-4 last:rounded-b-md last:border-b hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
+								className="flex w-full flex-row items-center gap-2 border-input border-s border-e border-t px-3 py-4 last:rounded-b-md last:border-b hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50"
 								onClick={() => setIsAddStepOpen(true)}
 							>
 								<PlusIcon className="size-4" />
 								<div
-									className="flex-1 truncate text-left font-medium text-muted-foreground text-sm leading-normal"
+									className="flex-1 truncate text-start font-medium text-muted-foreground text-sm leading-normal"
 									title={"Add a new step to the plan"}
 								>
-									Add Task
+									{t("plan.addTask")}
 								</div>
 							</button>
 						)}
@@ -275,7 +283,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 								acceptPlan();
 							}}
 						>
-							Confirm Plan
+							{t("plan.confirmPlan")}
 						</Button>
 					</div>
 				)}

@@ -1,6 +1,7 @@
 import { SquareArrowOutUpRightIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useRoot } from "@/hooks";
 import type { MCP } from "@/types";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
@@ -14,6 +15,7 @@ interface InputMessageBadgeProps {
 
 export const InputMessageBadge: React.FC<InputMessageBadgeProps> = observer(
 	({ mcp }) => {
+		const { root } = useRoot();
 		return (
 			<span
 				title={`${mcp.type} - ${mcp.id}`}
@@ -23,12 +25,14 @@ export const InputMessageBadge: React.FC<InputMessageBadgeProps> = observer(
 			>
 				{mcp.name}
 
-				<a
-					target="_blank"
-					href={`${PLATFORM_URL}/#/${mcp.type === "PROJECT" ? "app" : "engine"}/${mcp.id}`}
-				>
-					<SquareArrowOutUpRightIcon className="size-2.5" />
-				</a>
+				{root.theme.featureFlags?.showPlatformLinks && (
+					<a
+						target="_blank"
+						href={`${PLATFORM_URL}/#/${mcp.type === "PROJECT" ? "app" : "engine"}/${mcp.id}`}
+					>
+						<SquareArrowOutUpRightIcon className="size-2.5" />
+					</a>
+				)}
 			</span>
 		);
 	},

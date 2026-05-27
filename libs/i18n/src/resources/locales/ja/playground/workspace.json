@@ -1,0 +1,164 @@
+{
+	"welcomeTitle": "エージェントマネージャーへようこそ",
+	"welcomeDescription": "お客様固有のニーズに合わせて設計され、プロセスにシームレスに統合されるカスタムAIエージェントをご覧ください。",
+	"form": {
+		"nameLabel": "名前",
+		"descriptionLabel": "説明",
+		"instructionsLabel": "指示",
+		"knowledgeLabel": "ナレッジ",
+		"toolboxLabel": "ツールボックス",
+		"promptsLabel": "プロンプトライブラリ"
+	},
+	"actions": {
+		"create": "作成",
+		"save": "保存",
+		"createAgent": "エージェントを作成",
+		"edit": "編集",
+		"delete": "削除",
+		"newChat": "新しいチャット"
+	},
+	"card": {
+		"deleteConfirmTitle": "本当によろしいですか？",
+		"deleteConfirmDescription": "この操作は元に戻せません。{{name}}ワークスペースが完全に削除されます。",
+		"createdAgo": "作成: {{when}}"
+	},
+	"sharing": {
+		"title": "メンバーを追加",
+		"description": "このエージェントにアクセスして共同作業するメンバーを招待します。",
+		"searchPlaceholder": "ユーザーを検索...",
+		"searchUsers": "ユーザーを検索...",
+		"noUsersFound": "ユーザーが見つかりません",
+		"hasAccess": "アクセス権あり",
+		"pendingInvite": "招待保留中",
+		"membersToAdd": "追加するメンバー",
+		"emptyState": "このワークスペースを共有するユーザーを追加",
+		"buttonAdding": "追加中...",
+		"buttonAdd": "メンバーを追加"
+	},
+	"members": {
+		"autoSaveHint": "メンバーの追加・削除、権限の変更は自動的に保存されます。",
+		"heading": "アクセス権を持つユーザー",
+		"you": "(あなた)",
+		"owner": "オーナー",
+		"editor": "編集者",
+		"readOnly": "読み取り専用",
+		"removeAccess": "アクセス権を削除",
+		"removeSelfTitle": "エージェントから自分を削除",
+		"removeSelfDescription": "このエージェントへのアクセス権を削除しようとしています。アクセス権を再取得するには、再度招待される必要があります。この操作は元に戻せません。",
+		"removeUserTitle": "エージェントのアクセス権を削除",
+		"removeUserDescription": "{{name}}のこのエージェントへのアクセス権を本当に削除しますか？この操作は元に戻せません。",
+		"changePermissionTitle": "権限を変更",
+		"changePermissionDescription": "自分の権限を{{oldPermission}}から{{newPermission}}に変更しようとしています。これはこのエージェントで実行できるアクションに影響します。",
+		"changePermissionButton": "権限を変更"
+	},
+	"mcp": {
+		"noToolboxes": "ツールボックスが見つかりません",
+		"noKnowledge": "ナレッジライブラリが見つかりません",
+		"failedToLoad": "ワークスペースリソースの読み込みに失敗しました",
+		"requestedSuccess": "{{name}}へのアクセスをリクエストしました",
+		"requestedFailed": "アクセスのリクエストに失敗しました"
+	},
+	"chat": {
+		"noChats": "チャットが見つかりません",
+		"error": "エラー:",
+		"selectRoom": "ルームを選択",
+		"newChat": "新しいチャット",
+		"delete": "削除",
+		"cancel": "キャンセル",
+		"deleteSuccess": "チャットを削除しました",
+		"deleteFailed": "チャットの削除に失敗しました",
+		"deleteConfirmTitle": "チャットを削除しますか？",
+		"deleteConfirmDescription": "「{{name}}」を完全に削除します。この操作は元に戻せません。",
+		"rename": "名前を変更",
+		"renameSave": "保存",
+		"renameEmpty": "チャット名は空にできません",
+		"renameSuccess": "チャットの名前を変更しました",
+		"renameFailed": "チャットの名前変更に失敗しました",
+		"pin": "お気に入りに追加",
+		"unpin": "お気に入りから削除",
+		"pinFailed": "お気に入りの登録に失敗しました",
+		"unpinFailed": "お気に入りの解除に失敗しました",
+		"dayToday": "今日",
+		"dayYesterday": "昨日",
+		"daysAgo": "{{count}}日前"
+	},
+	"images": {
+		"agentIllustration": "エージェントのイラスト"
+	},
+	"messages": {
+		"noResults": "結果が見つかりません",
+		"userAlreadyAdded": "ユーザーは既に追加されています",
+		"fetchUsersFailed": "ユーザーの取得に失敗しました",
+		"addAtLeastOne": "少なくとも1人のユーザーを追加してください",
+		"addMembersSuccess": "{{count}}人のメンバーを正常に追加しました",
+		"addMembersSuccess_plural": "{{count}}人のメンバーを正常に追加しました",
+		"addMembersFailed": "メンバーの追加に失敗しました",
+		"permissionUpdated": "権限を正常に更新しました",
+		"permissionUpdateFailed": "権限の更新に失敗しました",
+		"userRemoved": "ユーザーを正常に削除しました",
+		"userRemoveFailed": "ユーザーの削除に失敗しました",
+		"fetchPermissionsFailed": "ユーザー権限の取得に失敗しました"
+	},
+	"breadcrumbs": {
+		"home": "ホーム",
+		"agent": "エージェント",
+		"loading": "読み込み中",
+		"edit": "編集",
+		"new": "新規",
+		"room": "ルーム"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "マイチャット",
+			"knowledge": "ナレッジ",
+			"toolbox": "ツールボックス",
+			"prompts": "プロンプト",
+			"members": "メンバー"
+		},
+		"about": {
+			"title": "概要",
+			"noInstructions": "指示は設定されていません。"
+		},
+		"recentChats": {
+			"title": "前のチャットを続ける"
+		},
+		"failedToDelete": "エージェントの削除に失敗しました",
+		"failedToLoad": "エージェントの読み込みに失敗しました: {{error}}"
+	},
+	"edit": {
+		"title": "エージェントを編集",
+		"subtitle": "エージェントの詳細を更新",
+		"errorTitle": "エージェントの読み込みエラー",
+		"errorDescription": "エージェントの詳細の読み込みに失敗しました",
+		"failedToLoad": "ワークスペースの読み込みに失敗しました: {{error}}"
+	},
+	"new": {
+		"title": "新しいエージェント",
+		"subtitle": "新しいエージェントを作成して始めましょう"
+	},
+	"prompts": {
+		"noPrompts": "プロンプトが見つかりません",
+		"searchPlaceholder": "プロンプトを検索..."
+	},
+	"chats": {
+		"title": "すべてのチャット",
+		"subtitle": "チャットの閲覧・検索・整理ができます。",
+		"selectAll": "すべて選択",
+		"selectChat": "チャット「{{name}}」を選択",
+		"selectedCount": "{{count}} 件選択",
+		"totalCount": "{{count}} 件のチャット",
+		"deleteSelected": "{{count}} 件を削除",
+		"bulkDeleteConfirmTitle": "{{count}} 件のチャットを削除しますか？",
+		"bulkDeleteConfirmDescription": "{{count}} 件のチャットを完全に削除します。この操作は元に戻せません。",
+		"bulkDeleteSuccess": "{{count}} 件のチャットを削除しました",
+		"bulkDeletePartialFail": "{{total}} 件中 {{failed}} 件の削除に失敗しました"
+	},
+	"instructions": {
+		"expand": "展開",
+		"viewTitle": "指示",
+		"viewDescription": "このエージェントの動作を導くシステムプロンプト。",
+		"editTitle": "指示を編集",
+		"editDescription": "このエージェントの動作を導くシステムプロンプトを更新します。",
+		"charCount": "{{count}} 文字"
+	}
+}

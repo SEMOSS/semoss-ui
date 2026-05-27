@@ -9,8 +9,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { Autocomplete, TextField } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings } from "@/hooks/useBlockSettings";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 interface SelectSettingsProps<D extends BlockDef = BlockDef> {
@@ -50,9 +49,10 @@ export const SelectSettings = observer(
 		multiple = true,
 	}: SelectSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
+		// biome-ignore lint/correctness/noUnusedVariables: used in JSX or callback
 		const { state } = useBlocks();
 		//  track the value
-		const [value, setValue] = useState([]);
+		const [value, setValue] = useState<string[]>([]);
 
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -83,20 +83,22 @@ export const SelectSettings = observer(
 		/**
 		 * Sync the data on change
 		 */
-		const onChange = (value: string[]) => {
+		const onChange = (newValue: string[]) => {
 			// set the value
-			setValue(value);
+			setValue(newValue);
 
 			// clear out he old timeout
 			if (timeoutRef.current) {
 				clearTimeout(timeoutRef.current);
-				timeoutRef.current = null;
 			}
 
 			timeoutRef.current = setTimeout(() => {
 				try {
 					// set the value
-					setData(path, value as PathValue<D["data"], typeof path>);
+					setData(
+						path,
+						newValue as PathValue<D["data"], typeof path>,
+					);
 				} catch (e) {
 					console.log(e);
 				}
@@ -105,25 +107,39 @@ export const SelectSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<Autocomplete
-					fullWidth
-					multiple={multiple}
-					value={value}
-					options={options}
-					getOptionLabel={(option) => option}
-					onChange={(_, value) => {
-						onChange(value);
-					}}
-					freeSolo={false}
-					renderInput={(params) => (
-						<TextField
-							{...params}
-							placeholder="Select extensions"
-							size="small"
-							variant="outlined"
-						/>
-					)}
-				/>
+				{multiple ? (
+					<select
+						multiple
+						className="w-full rounded border border-input p-1 text-sm"
+						value={value}
+						onChange={(e) => {
+							const selected = Array.from(
+								e.target.selectedOptions,
+								(opt) => opt.value,
+							);
+							onChange(selected);
+						}}
+					>
+						{options.map((opt) => (
+							<option key={opt} value={opt}>
+								{opt}
+							</option>
+						))}
+					</select>
+				) : (
+					<select
+						className="w-full rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+						value={value[0] ?? ""}
+						onChange={(e) => onChange([e.target.value])}
+					>
+						<option value="">Select extensions</option>
+						{options.map((opt) => (
+							<option key={opt} value={opt}>
+								{opt}
+							</option>
+						))}
+					</select>
+				)}
 			</BaseSettingSection>
 		);
 	},

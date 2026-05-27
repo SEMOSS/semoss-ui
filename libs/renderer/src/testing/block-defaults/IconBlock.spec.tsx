@@ -33,8 +33,6 @@ describe("icon block", () => {
 
 		const icon = container.querySelector("[data-block='icon']");
 		expect(icon).toBeInTheDocument();
-
-		// screen.debug();
 	});
 
 	it("shows default icon", async () => {
@@ -42,11 +40,11 @@ describe("icon block", () => {
 			blocks: blocks,
 		});
 
-		const icon = container.querySelector("[data-block='icon']");
-		const iconType = icon.querySelector(
-			"[data-testid='InsertEmoticonOutlinedIcon']",
-		);
+		const icon = container.querySelector(
+			"[data-block='icon']",
+		) as HTMLElement;
+		const svgIcon = icon.querySelector("svg");
 
-		expect(iconType).toBeInTheDocument();
+		expect(svgIcon).toBeInTheDocument();
 	});
 });

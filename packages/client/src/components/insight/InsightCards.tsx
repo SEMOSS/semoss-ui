@@ -1,91 +1,38 @@
-import { AccessTimeFilled, MoreVert } from "@mui/icons-material";
-import React from "react";
-import {
-	Avatar,
-	Box,
-	Button,
-	ButtonGroup,
-	Card,
-	Icon,
-	IconButton,
-	styled,
-	Typography,
-} from "@semoss/ui";
+import { Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@semoss/ui/next";
 import { SEMOSS } from "@/assets/img/SEMOSS";
-
-const StyledTileCard = styled(Card)(({ theme }) => ({
-	boxShadow:
-		"0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
-	"&:hover": {
-		cursor: "pointer",
-	},
-	overflow: "hidden",
-	height: theme.spacing(25),
-	display: "flex",
-	flexDirection: "column",
-}));
-
-const StyledCardContent = styled(Card.Content)(() => ({
-	overflow: "hidden",
-	textOverflow: "ellipsis",
-}));
-
-const StyledCardActions = styled(Card.Actions)(() => ({
-	marginTop: "auto",
-}));
-
-const StyledTileCardActionsLeft = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "center",
-	gap: theme.spacing(1),
-}));
-
-const StyledTileCardActionsUserCount = styled("div")(({ theme }) => ({
-	display: "flex",
-	width: "100%",
-	alignItems: "center",
-	gap: theme.spacing(1),
-}));
 
 export const InsightTileCard = (props) => {
 	const { name, description, modifiedDate, onClick } = props;
 
 	return (
-		<StyledTileCard
+		<Card
+			className="flex cursor-pointer flex-col overflow-hidden shadow-sm transition-shadow hover:shadow-md"
+			style={{ height: "200px" }}
 			onClick={() => {
 				onClick();
 			}}
 		>
-			<Card.Header
-				title={name}
-				titleTypographyProps={{ variant: "subtitle1" }}
-				avatar={<SEMOSS />}
-			></Card.Header>
-			<StyledCardContent sx={{ marginTop: -2 }}>
-				<Typography variant="caption">
+			<CardHeader className="flex flex-row items-center gap-2 pb-0">
+				<SEMOSS />
+				<CardTitle className="font-medium text-sm">{name}</CardTitle>
+			</CardHeader>
+			<CardContent className="-mt-2 overflow-hidden text-ellipsis">
+				<p className="text-muted-foreground text-xs">
 					{description ? description : "No description available"}
-				</Typography>
-			</StyledCardContent>
+				</p>
+			</CardContent>
 
-			<StyledCardActions>
-				{/* <StyledTileCardActionsUserCount>
-                    <Typography>20 Users - 2 Data Sources</Typography>
-                </StyledTileCardActionsUserCount> */}
-				<StyledTileCardActionsLeft>
-					<AccessTimeFilled />
-					<Typography variant="caption">
-						{modifiedDate ? modifiedDate : "7/19/2023 · 10:00AM"}
-					</Typography>
-				</StyledTileCardActionsLeft>
-				{/* <IconButton>
-                    <MoreVert />
-                </IconButton> */}
-			</StyledCardActions>
-		</StyledTileCard>
+			<div className="mt-auto flex items-center gap-2 px-6 pb-4">
+				<Clock className="size-4" />
+				<p className="text-muted-foreground text-xs">
+					{modifiedDate ? modifiedDate : "7/19/2023 · 10:00AM"}
+				</p>
+			</div>
+		</Card>
 	);
 };
 
-export const InsightLandscapeCard = (props) => {
+export const InsightLandscapeCard = (_props) => {
 	return <div>Landscape</div>;
 };

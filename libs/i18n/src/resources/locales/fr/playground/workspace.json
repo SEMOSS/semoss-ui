@@ -1,0 +1,164 @@
+{
+	"welcomeTitle": "Bienvenue dans le gestionnaire d'agents",
+	"welcomeDescription": "Explorez des agents IA personnalisés conçus pour répondre à vos besoins uniques et s'intégrer parfaitement dans vos processus.",
+	"form": {
+		"nameLabel": "Nom",
+		"descriptionLabel": "Description",
+		"instructionsLabel": "Instructions",
+		"knowledgeLabel": "Connaissances",
+		"toolboxLabel": "Boîtes à outils",
+		"promptsLabel": "Bibliothèque d'invites"
+	},
+	"actions": {
+		"create": "Créer",
+		"save": "Enregistrer",
+		"createAgent": "Créer un agent",
+		"edit": "Modifier",
+		"delete": "Supprimer",
+		"newChat": "Nouveau Chat"
+	},
+	"card": {
+		"deleteConfirmTitle": "Êtes-vous sûr ?",
+		"deleteConfirmDescription": "Cette action est irréversible. Cela supprimera définitivement l'espace de travail {{name}}.",
+		"createdAgo": "Créé {{when}}"
+	},
+	"sharing": {
+		"title": "Ajouter des membres",
+		"description": "Inviter des membres à accéder et collaborer sur cet agent.",
+		"searchPlaceholder": "Rechercher un utilisateur...",
+		"searchUsers": "Rechercher des utilisateurs...",
+		"noUsersFound": "Aucun utilisateur trouvé",
+		"hasAccess": "A accès",
+		"pendingInvite": "Invitation en attente",
+		"membersToAdd": "Membres à ajouter",
+		"emptyState": "Ajouter des utilisateurs pour partager cet espace de travail",
+		"buttonAdding": "Ajout en cours...",
+		"buttonAdd": "Ajouter des Membres"
+	},
+	"members": {
+		"autoSaveHint": "Les ajouts, suppressions de membres et les modifications d'autorisations sont enregistrés automatiquement.",
+		"heading": "Qui a accès",
+		"you": "(Vous)",
+		"owner": "Propriétaire",
+		"editor": "Éditeur",
+		"readOnly": "Lecture seule",
+		"removeAccess": "Supprimer l'accès",
+		"removeSelfTitle": "Vous retirer de l'agent",
+		"removeSelfDescription": "Vous êtes sur le point de supprimer votre accès à cet agent. Vous devrez être réinvité pour retrouver l'accès. Cette action ne peut pas être annulée.",
+		"removeUserTitle": "Supprimer l'accès à l'agent",
+		"removeUserDescription": "Êtes-vous sûr de vouloir supprimer l'accès de {{name}} à cet agent ? Cette action ne peut pas être annulée.",
+		"changePermissionTitle": "Changer votre permission",
+		"changePermissionDescription": "Vous êtes sur le point de changer votre propre permission de {{oldPermission}} à {{newPermission}}. Cela affectera les actions que vous pouvez effectuer dans cet agent.",
+		"changePermissionButton": "Changer la permission"
+	},
+	"mcp": {
+		"noToolboxes": "Aucune boîte à outils trouvée",
+		"noKnowledge": "Aucune bibliothèque de connaissances trouvée",
+		"failedToLoad": "Échec du chargement des ressources de l'espace de travail",
+		"requestedSuccess": "Accès demandé à {{name}}",
+		"requestedFailed": "Échec de la demande d'accès"
+	},
+	"chat": {
+		"noChats": "Aucun chat trouvé",
+		"error": "Erreur :",
+		"selectRoom": "Sélectionner une salle",
+		"newChat": "Nouveau chat",
+		"delete": "Supprimer",
+		"cancel": "Annuler",
+		"deleteSuccess": "Chat supprimé",
+		"deleteFailed": "Échec de la suppression du chat",
+		"deleteConfirmTitle": "Supprimer le chat ?",
+		"deleteConfirmDescription": "Cela supprimera définitivement « {{name}} ». Cette action est irréversible.",
+		"rename": "Renommer",
+		"renameSave": "Enregistrer",
+		"renameEmpty": "Le nom du chat ne peut pas être vide",
+		"renameSuccess": "Chat renommé",
+		"renameFailed": "Échec du renommage du chat",
+		"pin": "Ajouter aux favoris",
+		"unpin": "Retirer des favoris",
+		"pinFailed": "Échec de l'ajout aux favoris",
+		"unpinFailed": "Échec du retrait des favoris",
+		"dayToday": "Aujourd'hui",
+		"dayYesterday": "Hier",
+		"daysAgo": "Il y a {{count}} jours"
+	},
+	"images": {
+		"agentIllustration": "Illustration de l'agent"
+	},
+	"messages": {
+		"noResults": "Aucun résultat trouvé",
+		"userAlreadyAdded": "Utilisateur déjà ajouté",
+		"fetchUsersFailed": "Échec de la récupération des utilisateurs",
+		"addAtLeastOne": "Veuillez ajouter au moins un utilisateur",
+		"addMembersSuccess": "{{count}} membre ajouté avec succès",
+		"addMembersSuccess_plural": "{{count}} membres ajoutés avec succès",
+		"addMembersFailed": "Échec de l'ajout des membres",
+		"permissionUpdated": "Permission mise à jour avec succès",
+		"permissionUpdateFailed": "Échec de la mise à jour de la permission",
+		"userRemoved": "Utilisateur supprimé avec succès",
+		"userRemoveFailed": "Échec de la suppression de l'utilisateur",
+		"fetchPermissionsFailed": "Échec de la récupération des permissions utilisateur"
+	},
+	"breadcrumbs": {
+		"home": "Accueil",
+		"agent": "Agent",
+		"loading": "Chargement",
+		"edit": "Modifier",
+		"new": "Nouveau",
+		"room": "Salle"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "Mes discussions",
+			"knowledge": "Connaissances",
+			"toolbox": "Boîtes à outils",
+			"prompts": "Invites",
+			"members": "Membres"
+		},
+		"about": {
+			"title": "À propos",
+			"noInstructions": "Aucune instruction configurée."
+		},
+		"recentChats": {
+			"title": "Continuer une discussion précédente"
+		},
+		"failedToDelete": "Échec de la suppression de l'agent",
+		"failedToLoad": "Échec du chargement de l'agent : {{error}}"
+	},
+	"edit": {
+		"title": "Modifier l'agent",
+		"subtitle": "Mettre à jour les détails de votre agent",
+		"errorTitle": "Erreur de chargement de l'agent",
+		"errorDescription": "Échec du chargement des détails de l'agent",
+		"failedToLoad": "Échec du chargement de l'espace de travail : {{error}}"
+	},
+	"new": {
+		"title": "Nouvel agent",
+		"subtitle": "Créer un nouvel agent pour commencer"
+	},
+	"prompts": {
+		"noPrompts": "Aucune invite trouvée",
+		"searchPlaceholder": "Rechercher des invites..."
+	},
+	"chats": {
+		"title": "Toutes les discussions",
+		"subtitle": "Parcourez, recherchez et nettoyez vos discussions.",
+		"selectAll": "Tout sélectionner",
+		"selectChat": "Sélectionner la discussion {{name}}",
+		"selectedCount": "{{count}} sélectionnée(s)",
+		"totalCount": "{{count}} discussions",
+		"deleteSelected": "Supprimer les {{count}} sélectionnée(s)",
+		"bulkDeleteConfirmTitle": "Supprimer {{count}} discussions ?",
+		"bulkDeleteConfirmDescription": "Cela supprimera définitivement {{count}} discussions. Cette action est irréversible.",
+		"bulkDeleteSuccess": "{{count}} discussions supprimées",
+		"bulkDeletePartialFail": "Échec de la suppression de {{failed}} discussion(s) sur {{total}}"
+	},
+	"instructions": {
+		"expand": "Agrandir",
+		"viewTitle": "Instructions",
+		"viewDescription": "L'invite système qui guide le comportement de cet agent.",
+		"editTitle": "Modifier les instructions",
+		"editDescription": "Mettez à jour l'invite système qui guide le comportement de cet agent.",
+		"charCount": "{{count}} caractères"
+	}
+}

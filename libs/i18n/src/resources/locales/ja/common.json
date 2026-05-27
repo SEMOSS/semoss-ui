@@ -1,0 +1,69 @@
+{
+	"buttons": {
+		"save": "保存",
+		"cancel": "キャンセル",
+		"create": "作成",
+		"back": "戻る",
+		"close": "閉じる",
+		"confirm": "確認",
+		"upload": "アップロード",
+		"search": "検索"
+	},
+	"labels": {
+		"name": "名前",
+		"description": "説明",
+		"type": "タイプ",
+		"model": "モデル",
+		"instructions": "指示",
+		"temperature": "温度",
+		"maxToken": "最大トークン"
+	},
+	"placeholders": {
+		"enterName": "名前を入力",
+		"enterDescription": "説明を入力",
+		"enterInstructions": "指示を入力",
+		"updateInstructions": "指示を更新",
+		"updateTokenLength": "トークン長を更新",
+		"uploadFiles": "ファイルをアップロード",
+		"search": "検索...",
+		"enterPromptLibraryTag": "プロンプトライブラリタグを入力"
+	},
+	"actions": {
+		"addKnowledge": "ナレッジを追加",
+		"addToolbox": "ツールボックスを追加",
+		"deleteMCP": "MCPを削除"
+	},
+	"badges": {
+		"fromAgent": "エージェントから"
+	},
+	"messages": {
+		"noKnowledgeFound": "ナレッジが見つかりません",
+		"noToolboxFound": "ツールボックスが見つかりません"
+	},
+	"tooltips": {
+		"cannotDeleteWorkspaceMCPs": "ワークスペースのMCPは削除できません",
+		"cannotDeleteAgentMCPs": "エージェントのMCPは削除できません"
+	},
+	"plan": {
+		"newStep": "新しいステップ",
+		"editStep": "ステップを編集",
+		"selectType": "タイプを選択",
+		"selectMcp": "MCPを選択",
+		"selectTool": "ツールを選択",
+		"tool": "ツール",
+		"ai": "AI",
+		"prompt": "プロンプト",
+		"promptPlaceholder": "AIへの指示を入力",
+		"instructionsPlaceholder": "ユーザーのフィードバックを処理するためのAIへの指示"
+	},
+	"navigation": {
+		"logOut": "ログアウト",
+		"acknowledge": "了承"
+	},
+	"pagination": {
+		"rowsPerPage": "ページあたりの行数:"
+	},
+	"images": {
+		"logoAlt": "ロゴ"
+	}
+}

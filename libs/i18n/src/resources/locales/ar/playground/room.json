@@ -1,0 +1,106 @@
+{
+	"welcome": "مرحباً، {{name}}",
+	"settings": {
+		"title": "إعدادات الغرفة",
+		"description": "تحديث إعدادات الغرفة وتعديل سلوك الدردشة",
+		"open": "فتح إعدادات الغرفة",
+		"close": "إغلاق إعدادات الغرفة",
+		"edit": "تعديل إعدادات الغرفة"
+	},
+	"form": {
+		"modelLabel": "النموذج",
+		"instructionsLabel": "التعليمات",
+		"agentLabel": "الوكيل",
+		"knowledgeLabel": "المعرفة",
+		"toolboxLabel": "صناديق الأدوات",
+		"maxTokenLabel": "الحد الأقصى للرموز",
+		"temperatureLabel": "درجة الحرارة"
+	},
+	"modes": {
+		"ask": "اسأل",
+		"plan": "خطة"
+	},
+	"workspace": {
+		"publishTooltip": "نشر كوكيل",
+		"publishTitle": "نشر الوكيل",
+		"publishDescription": "نشر وكيل جديد بتكوين الغرفة الحالي، بما في ذلك التعليمات وMCPs.",
+		"nameLabel": "الاسم *",
+		"namePlaceholder": "أدخل اسم الوكيل",
+		"descriptionLabel": "الوصف",
+		"descriptionPlaceholder": "أدخل وصف الوكيل",
+		"cancelButton": "إلغاء",
+		"publishingButton": "جارٍ النشر...",
+		"publishButton": "نشر الوكيل",
+		"nameRequired": "اسم الوكيل مطلوب",
+		"publishSuccess": "تم إنشاء الوكيل بنجاح",
+		"publishError": "فشل إنشاء الوكيل: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "أدخل النص",
+		"thinking": "جارٍ التفكير...",
+		"menuPrompt": "كيف يمكنني مساعدتك اليوم؟",
+		"openSettings": "إضافة ملفات ووكلاء والمزيد",
+		"recordLabel": "تسجيل النموذج",
+		"stopRecording": "إيقاف التسجيل",
+		"record": "تسجيل",
+		"askLabel": "اسأل الذكاء الاصطناعي",
+		"thinkingTooltip": "جارٍ التفكير",
+		"enterQuestion": "الرجاء إدخال سؤال",
+		"completeTool": "يرجى إكمال الأداة (الأدوات) للمتابعة",
+		"ask": "اسأل",
+		"errorProcessing": "خطأ في معالجة الدردشة",
+		"pauseTools": "إيقاف الأدوات مؤقتاً",
+		"pauseToolsTooltip": "إيقاف تنفيذ جميع الأدوات مؤقتاً حتى بعد الرسالة التالية"
+	},
+	"content": {
+		"scrollToTop": "انتقل إلى الأعلى",
+		"scrollToBottom": "انتقل إلى الأسفل"
+	},
+	"inlineTool": {
+		"openInSidebar": "فتح في الشريط الجانبي",
+		"minimize": "تصغير",
+		"maximize": "تكبير",
+		"close": "إغلاق"
+	},
+	"fileExplorer": {
+		"copyPath": "نسخ المسار",
+		"download": "تنزيل",
+		"delete": "حذف",
+		"copyFailed": "فشل النسخ إلى الحافظة"
+	},
+	"menuToolbox": {
+		"addToolbox": "إضافة صناديق أدوات"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "إضافة معرفة"
+	},
+	"menuWorkspace": {
+		"selectAgent": "اختر وكيل",
+		"searchPlaceholder": "البحث عن وكلاء",
+		"notFound": "غير موجود"
+	},
+	"menuUpload": {
+		"attachDocument": "إضافة مستندات"
+	},
+	"menuFileExplorer": {
+		"name": "مستكشف الملفات",
+		"open": "فتح مستكشف الملفات",
+		"close": "إغلاق مستكشف الملفات"
+	},
+	"errors": {
+		"createRoom": "حدث خطأ أثناء إنشاء الغرفة. الخطأ: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "جميع المحادثات لها حد. ستؤدي المحادثات الطويلة جدًا في نهاية المطاف إلى نسيان النموذج للرسائل السابقة.",
+		"descriptionMedium": "تطول هذه المحادثة. إذا استمرت، سيبدأ النموذج في نسيان الرسائل السابقة. فكر في بدء دردشة جديدة قريبًا.",
+		"descriptionHigh": "هذه المحادثة على وشك الامتلاء. سيبدأ النموذج قريبًا في نسيان الرسائل السابقة. فكر في بدء دردشة جديدة.",
+		"descriptionExceeded": "تجاوزت هذه المحادثة حدها. يقوم النموذج الآن بنسيان الرسائل السابقة عند توليد الردود. ابدأ دردشة جديدة للحصول على أفضل النتائج.",
+		"memoryUsedTitle": "الذاكرة المستخدمة:",
+		"memoryUsedValue": "{{used}} / {{total}} رمز ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "البحث في المعرفة وصناديق الأدوات",
+		"noResults": "لم يتم العثور على عناصر مطابقة",
+		"noItemsAvailable": "لا توجد معرفة أو صناديق أدوات متاحة"
+	}
+}

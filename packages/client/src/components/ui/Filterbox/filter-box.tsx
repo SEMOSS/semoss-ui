@@ -1,21 +1,29 @@
-import { ChevronDown, ChevronUp, Search as SearchIcon } from "lucide-react";
-import { useEffect, useReducer, useState } from "react";
+import {
+	ChevronDown,
+	ChevronUp,
+	Search as SearchIcon,
+	SlidersHorizontal,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
-	Avatar,
-	AvatarFallback,
+	Badge,
 	Button,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 	Input,
-	Separator,
 } from "@semoss/ui/next";
 import { usePixel, useRootStore } from "@/hooks";
-import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
+import {
+	formatToDataTestId,
+	getTagColorPalette,
+	removeUnderscores,
+	toTitleCase,
+} from "@/utility";
 
 export interface FilterboxProps {
-	/** Determined to get metakeys for Engines/App */
+	/** Determined to get filter keys for Engines/App */
 	type:
 		| "PROJECT"
 		| "MODEL"
@@ -29,25 +37,14 @@ export interface FilterboxProps {
 	filteredCatalogIds?: string[];
 	filterBoxRefresh?: boolean;
 	onfilterBoxRefreshCompleted?: () => void;
+	applyOnMount?: boolean;
+	showHeader?: boolean;
+	hideHeaderToggleFrom?: "md" | "lg";
+	colorizeValues?: boolean;
+	colorizeSelectedOnly?: boolean;
 }
 
-const initialState = {
-	favoritedDbs: [],
-	databases: [],
-	filterSearch: "",
-};
-
-const reducer = (state, action) => {
-	switch (action.type) {
-		case "field": {
-			return {
-				...state,
-				[action.field]: action.value,
-			};
-		}
-	}
-	return state;
-};
+const COLLAPSED_ITEM_LIMIT = 8;
 
 export const Filterbox = (props: FilterboxProps) => {
 	const {
@@ -56,32 +53,31 @@ export const Filterbox = (props: FilterboxProps) => {
 		filteredCatalogIds = [],
 		filterBoxRefresh = false,
 		onfilterBoxRefreshCompleted = () => {},
+		applyOnMount = true,
+		showHeader = true,
+		hideHeaderToggleFrom,
+		colorizeValues = false,
+		colorizeSelectedOnly = false,
 	} = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	const [state, dispatch] = useReducer(reducer, initialState);
-	const { filterSearch } = state;
-	const [showCollapsible, setShowCollapsible] = useState({});
-
-	const tagColors = [
-		"blue",
-		"orange",
-		"teal",
-		"purple",
-		"yellow",
-		"pink",
-		"violet",
-		"olive",
-	];
+	const [filterSearch, setFilterSearch] = useState("");
+	const [showCollapsible, setShowCollapsible] = useState<
+		Record<string, boolean>
+	>({});
+	const [expandedSections, setExpandedSections] = useState<
+		Record<string, boolean>
+	>({});
+	const [headerOpen, setHeaderOpen] = useState(true);
+	const [isDesktopFilterLayout, setIsDesktopFilterLayout] = useState(false);
 
 	const list =
 		type === "PROJECT"
 			? configStore.store.config.projectMetaKeys
 			: configStore.store.config.databaseMetaKeys;
 
-	// get a list of the keys
-	const metaKeyList = list.filter((k) => {
+	const fieldList = list.filter((k) => {
 		return (
 			k.display_options === "single-checklist" ||
 			k.display_options === "multi-checklist" ||
@@ -93,27 +89,23 @@ export const Filterbox = (props: FilterboxProps) => {
 		);
 	});
 
-	// get metakeys to the ones we want
-	const metaKeys = metaKeyList.map((k) => {
+	const fieldKeys = fieldList.map((k) => {
 		if (!k.display_values) {
 			return k.metakey;
 		}
 		return null;
 	});
 
-	// Filter out nulls
-	metaKeys.filter((v) => v);
+	fieldKeys.filter((v) => v);
 
-	// track the options
 	const [filterOptions, setFilterOptions] = useState<
 		Record<string, { value: string; count: number }[]>
 	>({});
 
-	// track which filters are opened their selected value, and search term
 	const [filterVisibility, setFilterVisibility] = useState<
 		Record<string, { open: boolean; value: string[]; search: string }>
 	>(() => {
-		return metaKeyList.reduce((prev, current) => {
+		return fieldList.reduce((prev, current) => {
 			prev[current.metakey] = {
 				open: false,
 				value: [],
@@ -123,7 +115,21 @@ export const Filterbox = (props: FilterboxProps) => {
 			return prev;
 		}, {});
 	});
-	const [filterByVisibility, setFilterByVisibility] = useState(true);
+
+	const appliedParamsRef = useRef<string | null>(null);
+	const skipParamSyncRef = useRef(false);
+	const refreshHandledRef = useRef(false);
+	const allowedKeys = useMemo(() => {
+		return new Set(fieldList.map((field) => field.metakey));
+	}, [fieldList]);
+
+	// Count total active filters
+	const totalActiveFilters = useMemo(() => {
+		return Object.values(filterVisibility).reduce(
+			(sum, fv) => sum + fv.value.length,
+			0,
+		);
+	}, [filterVisibility]);
 
 	const getCatalogFilters = usePixel<
 		{
@@ -132,17 +138,17 @@ export const Filterbox = (props: FilterboxProps) => {
 			count: number;
 		}[]
 	>(
-		metaKeys.length > 0
+		fieldKeys.length > 0
 			? type === "PROJECT"
 				? `GetProjectMetaValues(metaKeys=${JSON.stringify(
-						metaKeys.filter((mk) => mk),
+						fieldKeys.filter((mk) => mk),
 					)}${
 						filteredCatalogIds.length > 0
 							? `, projectIdList = ${JSON.stringify(filteredCatalogIds)}`
 							: ""
 					}) ;`
 				: `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
-						metaKeys.filter((mk) => mk),
+						fieldKeys.filter((mk) => mk),
 					)}${
 						filteredCatalogIds.length > 0
 							? `, engineIdList = ${JSON.stringify(filteredCatalogIds)}`
@@ -150,33 +156,137 @@ export const Filterbox = (props: FilterboxProps) => {
 					}) ;`
 			: "",
 	);
-	//Refresh the pixel call, if any tagrefresh is needed
+
 	useEffect(() => {
-		if (filterBoxRefresh && filteredCatalogIds.length === 0) {
+		if (!hideHeaderToggleFrom || typeof window === "undefined") {
+			setIsDesktopFilterLayout(false);
+			return;
+		}
+
+		const query =
+			hideHeaderToggleFrom === "md"
+				? "(min-width: 768px)"
+				: "(min-width: 1024px)";
+		const mediaQuery = window.matchMedia(query);
+		const updateMatch = (event: MediaQueryListEvent | MediaQueryList) => {
+			setIsDesktopFilterLayout(event.matches);
+		};
+
+		updateMatch(mediaQuery);
+
+		if (mediaQuery.addEventListener) {
+			mediaQuery.addEventListener("change", updateMatch);
+		} else {
+			mediaQuery.addListener(updateMatch);
+		}
+
+		return () => {
+			if (mediaQuery.removeEventListener) {
+				mediaQuery.removeEventListener("change", updateMatch);
+			} else {
+				mediaQuery.removeListener(updateMatch);
+			}
+		};
+	}, [hideHeaderToggleFrom]);
+
+	useEffect(() => {
+		if (isDesktopFilterLayout) {
+			setHeaderOpen(true);
+		}
+	}, [isDesktopFilterLayout]);
+
+	useEffect(() => {
+		if (!filterBoxRefresh) {
+			refreshHandledRef.current = false;
+			return;
+		}
+
+		if (refreshHandledRef.current) {
+			return;
+		}
+
+		refreshHandledRef.current = true;
+
+		if (filteredCatalogIds.length === 0) {
 			getCatalogFilters.refresh();
 		}
+
 		onfilterBoxRefreshCompleted();
-	}, [filterBoxRefresh]);
+	}, [
+		filterBoxRefresh,
+		filteredCatalogIds.length,
+		getCatalogFilters.refresh,
+		onfilterBoxRefreshCompleted,
+	]);
 
 	// Apply the URL's query params to the filters' state on component mount.
 	useEffect(() => {
-		if (searchParams.size > 0) {
-			searchParams.forEach((value, key) => {
-				setSelectedFilters(key, { value, count: 0 });
-			});
+		if (skipParamSyncRef.current) {
+			skipParamSyncRef.current = false;
+			return;
 		}
-		handleFiltersSideEffects();
-	}, []);
 
-	/**
-	 * @desc Catalog filters
-	 */
+		const paramsString = searchParams.toString();
+
+		if (paramsString.length === 0) {
+			if (applyOnMount && appliedParamsRef.current !== "") {
+				onChange({});
+				appliedParamsRef.current = "";
+			}
+			return;
+		}
+
+		const constructedFilters: Record<string, string[]> = {};
+		searchParams.forEach((value, key) => {
+			if (!allowedKeys.has(key)) {
+				return;
+			}
+			if (!constructedFilters[key]) {
+				constructedFilters[key] = [];
+			}
+			if (!constructedFilters[key].includes(value)) {
+				constructedFilters[key].push(value);
+			}
+		});
+
+		if (Object.keys(constructedFilters).length === 0) {
+			return;
+		}
+
+		setFilterVisibility((prevVisibility) => {
+			let changed = false;
+			const nextVisibility = { ...prevVisibility };
+			Object.entries(constructedFilters).forEach(([key, values]) => {
+				const existing = prevVisibility[key];
+				if (!existing) {
+					return;
+				}
+				const same =
+					existing.value.length === values.length &&
+					values.every((value) => existing.value.includes(value));
+				if (!same) {
+					changed = true;
+					nextVisibility[key] = {
+						...existing,
+						value: values,
+					};
+				}
+			});
+
+			return changed ? nextVisibility : prevVisibility;
+		});
+
+		if (applyOnMount && appliedParamsRef.current !== paramsString) {
+			onChange(constructedFilters);
+			appliedParamsRef.current = paramsString;
+		}
+	}, [searchParams, allowedKeys, applyOnMount, onChange]);
+
 	useEffect(() => {
 		if (getCatalogFilters.status !== "SUCCESS") {
 			return;
 		}
 
-		// format the catalog data into a map
 		const updated = getCatalogFilters.data.reduce((prev, current) => {
 			if (!prev[current.METAKEY]) {
 				prev[current.METAKEY] = [];
@@ -184,13 +294,11 @@ export const Filterbox = (props: FilterboxProps) => {
 			prev[current.METAKEY].push({
 				value: current.METAVALUE,
 				count: current.count,
-				color: setFieldOptionColor(current.METAVALUE),
 			});
 			return prev;
 		}, {});
 
-		// add metakeys that don't get options from projects/engines but stored in config call
-		const metaKeysWithOpts = list.filter((k) => {
+		const fieldKeysWithOptions = list.filter((k) => {
 			return (
 				k.display_options === "single-checklist" ||
 				k.display_options === "multi-checklist" ||
@@ -202,13 +310,12 @@ export const Filterbox = (props: FilterboxProps) => {
 			);
 		});
 
-		metaKeysWithOpts.forEach((filter) => {
+		fieldKeysWithOptions.forEach((filter) => {
 			if (filter.display_values) {
 				const split = filter.display_values.split(",");
 				const formatted = split.map((val) => ({ value: val }));
 				updated[filter.metakey] = formatted;
 			}
-			// Initialize filter metakey collapsibles to be open
 			setShowCollapsible((set) => ({
 				...set,
 				[filter.metakey]: true,
@@ -225,18 +332,17 @@ export const Filterbox = (props: FilterboxProps) => {
 			{} as Record<string, string[]>,
 		);
 
-		// 1) Clean up filterVisibility: remove selected values that no longer exist
 		setFilterVisibility((prevVisibility) => {
 			const newVisibility = { ...prevVisibility };
-			Object.entries(prevVisibility).forEach(([metaKey, metaVal]) => {
-				const validValues = validMap[metaKey] || [];
-				const filteredValues = metaVal.value.filter((val) =>
+			Object.entries(prevVisibility).forEach(([fieldKey, fieldValue]) => {
+				const validValues = validMap[fieldKey] || [];
+				const filteredValues = fieldValue.value.filter((val) =>
 					validValues.includes(val),
 				);
 
-				if (filteredValues.length !== metaVal.value.length) {
-					newVisibility[metaKey] = {
-						...metaVal,
+				if (filteredValues.length !== fieldValue.value.length) {
+					newVisibility[fieldKey] = {
+						...fieldValue,
 						value: filteredValues,
 					};
 				}
@@ -244,312 +350,391 @@ export const Filterbox = (props: FilterboxProps) => {
 			return newVisibility;
 		});
 
-		// 2) Clean up searchParams: preserve order, keys, and other valid keys (tag, domain, etc.)
 		if (searchParams.size > 0) {
-			const keys = Array.from(new Set(searchParams.keys())); // unique keys in original order
+			const keys = Array.from(new Set(searchParams.keys()));
 			const newParams = new URLSearchParams();
 			let hasInvalid = false;
 
 			for (const key of keys) {
-				const values = searchParams.getAll(key); // current values in original order
+				const values = searchParams.getAll(key);
 				const validValues = validMap[key] || [];
-
-				// keep only values still valid (preserve order from `values`)
 				const filtered = values.filter((v) => validValues.includes(v));
-
-				// append filtered values in their original order (avoid duplicates)
 				for (const v of filtered) {
 					if (!newParams.getAll(key).includes(v)) {
 						newParams.append(key, v);
 					}
 				}
-
-				// detect if any value was removed for this key
 				if (filtered.length !== values.length) {
 					hasInvalid = true;
 				}
 			}
 
-			// update URL only if something changed
 			if (hasInvalid) {
 				setSearchParams(newParams, { replace: true });
 			}
 		}
 
 		setFilterOptions(updated);
-	}, [getCatalogFilters.status, getCatalogFilters.data, filteredCatalogIds]);
-	/**
-	 *
-	 * @param opt - option for the field color
-	 * @returns color
-	 */
-	const setFieldOptionColor = (opt: string): string => {
-		return tagColors[
-			opt
-				.split("")
-				.map((x) => x.charCodeAt(0))
-				.reduce((a, b) => a + b, 0) % 8
-		];
-	};
+	}, [
+		getCatalogFilters.status,
+		getCatalogFilters.data,
+		list,
+		searchParams,
+		setSearchParams,
+	]);
 
 	/**
-	 * @name setSelectedFilters
-	 * @desc sets filter value for each filter (tag, domain, etc.)
+	 * Immutable filter toggle: builds next state, then applies all side effects.
 	 */
-	const setSelectedFilters = (
-		filterLabel: string,
-		filter: { value: string; count: number },
-	) => {
-		const newValue = filterVisibility[filterLabel].value;
-		const index = newValue.indexOf(filter.value);
+	const toggleFilter = useCallback(
+		(filterLabel: string, filterValue: string) => {
+			setFilterVisibility((prev) => {
+				const current = prev[filterLabel];
+				if (!current) return prev;
 
-		if (index === -1) {
-			newValue.push(filter.value);
-		} else {
-			newValue.splice(index, 1);
-		}
-		setFilterVisibility({ ...filterVisibility });
-	};
+				const index = current.value.indexOf(filterValue);
+				const nextValue =
+					index === -1
+						? [...current.value, filterValue]
+						: current.value.filter((v) => v !== filterValue);
+
+				const nextVisibility = {
+					...prev,
+					[filterLabel]: { ...current, value: nextValue },
+				};
+
+				// Build constructed filters and apply side effects
+				const constructedFilters: Record<string, string[]> = {};
+				Object.entries(nextVisibility).forEach(([key, fv]) => {
+					if (fv.value.length) {
+						constructedFilters[key] = [...fv.value];
+					}
+				});
+
+				onChange(constructedFilters);
+
+				skipParamSyncRef.current = true;
+				const nextParams = new URLSearchParams();
+				Object.entries(constructedFilters).forEach(([key, values]) => {
+					values.forEach((val) => {
+						nextParams.append(key, String(val));
+					});
+				});
+				setSearchParams(nextParams);
+
+				return nextVisibility;
+			});
+		},
+		[onChange, setSearchParams],
+	);
 
 	/**
-	 * @name handleFiltersSideEffects
-	 * @desc handles what actions/effects are needed when the filters are changed
+	 * Clear all active filters
 	 */
-	const handleFiltersSideEffects = () => {
-		const constructedFilters = {};
-
-		Object.entries(filterVisibility).forEach((obj) => {
-			if (obj[1].value.length) {
-				constructedFilters[obj[0]] = obj[1].value;
-			}
+	const clearAllFilters = useCallback(() => {
+		setFilterVisibility((prev) => {
+			const nextVisibility = { ...prev };
+			Object.keys(nextVisibility).forEach((key) => {
+				nextVisibility[key] = { ...nextVisibility[key], value: [] };
+			});
+			return nextVisibility;
 		});
-		// Pass filters to parent
-		onChange(constructedFilters);
-		// Update query params in the URL
-		setSearchParams(constructedFilters);
-	};
 
-	return (
-		<div className="flex h-fit w-[352px] flex-col bg-card shadow-[0px_5px_22px_0px_rgba(0,0,0,0.06)]">
-			<div className="w-full">
-				<Collapsible
-					open={filterByVisibility}
-					onOpenChange={setFilterByVisibility}
-				>
-					<div className="flex items-center justify-between p-4">
-						<h6 className="flex-1 font-semibold text-lg">
-							Filter By
-						</h6>
-						<CollapsibleTrigger asChild>
-							<Button
-								variant="ghost"
-								size="icon-sm"
-								onClick={() =>
-									setFilterByVisibility(!filterByVisibility)
+		onChange({});
+
+		skipParamSyncRef.current = true;
+		setSearchParams(new URLSearchParams());
+	}, [onChange, setSearchParams]);
+
+	const getValuePillStyle = useCallback(
+		(value: string, isSelected: boolean) => {
+			if (!colorizeValues) {
+				return undefined;
+			}
+
+			const palette = getTagColorPalette(value);
+
+			if (isSelected) {
+				return {
+					backgroundColor: palette.backgroundColor,
+					color: palette.color,
+					borderColor: palette.borderColor,
+				};
+			}
+
+			if (colorizeSelectedOnly) {
+				return undefined;
+			}
+
+			return {
+				color: palette.color,
+				borderColor: palette.borderColor,
+			};
+		},
+		[colorizeSelectedOnly, colorizeValues],
+	);
+
+	const filterBody = (
+		<div className="flex flex-col gap-1 pb-3">
+			{/* Search input */}
+			{Object.entries(filterOptions).length ? (
+				<div className={showHeader ? "mx-3 mt-1" : "mx-3 mt-4"}>
+					<div className="relative">
+						<SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-3.5 text-muted-foreground" />
+						<Input
+							placeholder="Search filters..."
+							value={filterSearch}
+							onChange={(e) => setFilterSearch(e.target.value)}
+							className="h-8 w-full rounded-lg border-none bg-muted/50 pr-3 pl-9 text-xs placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-ring"
+							data-testid="filterbox-search"
+						/>
+					</div>
+				</div>
+			) : null}
+
+			{/* Filter sections */}
+			{type !== "BROWSETEMPLATES" &&
+				Object.entries(filterOptions).map(([key, options], i) => {
+					const totalSections = Object.entries(filterOptions).length;
+					const activeCount =
+						filterVisibility[key]?.value.length || 0;
+					const isExpanded = expandedSections[key] || false;
+
+					// Sort: selected items first, then by search match
+					const filteredOptions = options.filter((opt) =>
+						opt.value
+							.toLowerCase()
+							.includes(filterSearch.toLowerCase()),
+					);
+
+					const selectedOptions = filteredOptions.filter((opt) =>
+						filterVisibility[key]?.value.includes(opt.value),
+					);
+					const unselectedOptions = filteredOptions.filter(
+						(opt) =>
+							!filterVisibility[key]?.value.includes(opt.value),
+					);
+
+					// Always show selected first, then unselected up to limit
+					const visibleUnselected = isExpanded
+						? unselectedOptions
+						: unselectedOptions.slice(
+								0,
+								Math.max(
+									0,
+									COLLAPSED_ITEM_LIMIT -
+										selectedOptions.length,
+								),
+							);
+
+					const hasMore =
+						unselectedOptions.length > visibleUnselected.length;
+
+					return (
+						<div key={key} className="px-3 pt-1">
+							<Collapsible
+								open={showCollapsible[key]}
+								onOpenChange={(open) =>
+									setShowCollapsible((prev) => ({
+										...prev,
+										[key]: open,
+									}))
 								}
 							>
-								{filterByVisibility ? (
-									<ChevronUp className="size-4" />
-								) : (
-									<ChevronDown className="size-4" />
-								)}
-							</Button>
-						</CollapsibleTrigger>
-					</div>
-
-					<CollapsibleContent>
-						{/* Is there any filters */}
-						{Object.entries(filterOptions).length ? (
-							<div className="mx-2 mt-2">
-								<div className="relative">
-									<SearchIcon className="-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground" />
-									<Input
-										placeholder="Search by..."
-										value={filterSearch}
-										onChange={(e) => {
-											dispatch({
-												type: "field",
-												field: "filterSearch",
-												value: e.target.value,
-											});
-										}}
-										className="w-full border-none pl-9"
-										data-testid="filterbox-search"
-									/>
-								</div>
-							</div>
-						) : null}
-
-						{type !== "BROWSETEMPLATES" &&
-							Object.entries(filterOptions).map((entries, i) => {
-								const totalFilters =
-									Object.entries(filterOptions).length;
-								const list = entries[1];
-								let shownListItems = 0; // for show more
-								return (
-									<div key={entries[0]} className="px-6 py-2">
-										<Collapsible
-											open={showCollapsible[entries[0]]}
-											onOpenChange={(open) =>
-												setShowCollapsible((prev) => ({
-													...prev,
-													[entries[0]]: open,
-												}))
-											}
-										>
-											<CollapsibleTrigger asChild>
-												<Button
-													type="button"
-													variant="default"
-													className="flex w-full items-center justify-between bg-transparent p-2 text-(--foreground) hover:bg-accent"
-												>
-													<h6 className="font-semibold text-base">
-														{toTitleCase(
-															removeUnderscores(
-																entries[0],
-															),
-														)}
-													</h6>
-													{showCollapsible[
-														entries[0]
-													] ? (
-														<ChevronUp className="size-4" />
-													) : (
-														<ChevronDown className="size-4" />
-													)}
-												</Button>
-											</CollapsibleTrigger>
-
-											<CollapsibleContent>
-												{list.map((filterOption) => {
-													if (
-														shownListItems > 4 &&
-														!filterVisibility[
-															entries[0]
-														].open
-													) {
-														return null;
-													}
-													if (
-														filterOption.value
-															.toLowerCase()
-															.includes(
-																filterSearch.toLowerCase(),
-															)
-													) {
-														shownListItems += 1;
-														const isSelected =
-															filterVisibility[
-																entries[0]
-															].value.indexOf(
-																filterOption.value,
-															) > -1;
-
-														return (
-															<Button
-																type="button"
-																variant="ghost"
-																key={
-																	filterOption.value
-																}
-																className={`mb-2 flex w-full items-center justify-between bg-transparent px-4 py-2 font-medium text-(--sidebar-foreground) text-sm hover:bg-(--accent) ${
-																	isSelected
-																		? "bg-(--accent) font-medium"
-																		: ""
-																}`}
-																onClick={() => {
-																	dispatch({
-																		type: "field",
-																		field: "databases",
-																		value: [],
-																	});
-
-																	setSelectedFilters(
-																		entries[0],
-																		filterOption,
-																	);
-																	handleFiltersSideEffects();
-																}}
-																aria-label={
-																	isSelected
-																		? `Unfilter ${filterOption.value}`
-																		: `Filter ${filterOption.value}`
-																}
-															>
-																<span
-																	className={`text-(--sidebar-foreground) text-sm ${isSelected ? "font-medium" : "font-normal"}`}
-																	data-testid={formatToDataTestId(
-																		`filterbox-${filterOption.value}-filterBtn`,
-																	)}
-																>
-																	{
-																		filterOption.value
-																	}
-																</span>
-
-																{filterOption.count && (
-																	<Avatar className="size-4">
-																		<AvatarFallback className="bg-secondary font-medium text-foreground text-xs">
-																			{
-																				filterOption.count
-																			}
-																		</AvatarFallback>
-																	</Avatar>
-																)}
-															</Button>
-														);
-													}
-													return null;
-												})}
-												{shownListItems > 4 && (
-													<Button
-														type="button"
-														variant="ghost"
-														className="text-(--primary) hover:bg-transparent hover:text-(--primary)"
-														onClick={() => {
-															const visibleFilters =
-																{
-																	...filterVisibility,
-																};
-															visibleFilters[
-																entries[0]
-															] = {
-																open:
-																	!visibleFilters[
-																		entries[0]
-																	].open,
-																value: visibleFilters[
-																	entries[0]
-																].value,
-																search: visibleFilters[
-																	entries[0]
-																].search,
-															};
-															setFilterVisibility(
-																visibleFilters,
-															);
-														}}
-													>
-														Show{" "}
-														{filterVisibility[
-															entries[0]
-														].open
-															? "Less"
-															: "More"}
-													</Button>
+								<CollapsibleTrigger asChild>
+									<Button
+										type="button"
+										variant="ghost"
+										className="flex h-8 w-full items-center justify-between rounded-md px-2 py-1 hover:bg-accent/50 has-[>svg]:px-2"
+									>
+										<span className="flex items-center gap-2">
+											<span className="font-medium text-[13px] text-foreground">
+												{toTitleCase(
+													removeUnderscores(key),
 												)}
-											</CollapsibleContent>
-										</Collapsible>
-										{i + 1 !== totalFilters && (
-											<div className="w-full">
-												<Separator />
-											</div>
+											</span>
+											{activeCount > 0 && (
+												<Badge
+													variant="secondary"
+													className="h-5 min-w-5 rounded-full px-1.5 font-medium text-[10px] leading-none [font-variant-numeric:tabular-nums]"
+												>
+													{activeCount}
+												</Badge>
+											)}
+										</span>
+										{showCollapsible[key] ? (
+											<ChevronUp className="size-3.5 text-muted-foreground" />
+										) : (
+											<ChevronDown className="size-3.5 text-muted-foreground" />
 										)}
+									</Button>
+								</CollapsibleTrigger>
+
+								<CollapsibleContent>
+									<div className="flex flex-wrap gap-1.5 px-1 pt-2 pb-1">
+										{/* Selected pills always shown */}
+										{selectedOptions.map((opt) => (
+											<button
+												type="button"
+												key={opt.value}
+												onClick={() =>
+													toggleFilter(key, opt.value)
+												}
+												aria-pressed={true}
+												aria-label={`Remove ${opt.value} filter`}
+												className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-medium text-primary text-xs transition-all duration-200 hover:bg-primary/20 active:scale-95"
+												style={getValuePillStyle(
+													opt.value,
+													true,
+												)}
+												data-testid={formatToDataTestId(
+													`filterbox-${opt.value}-filterBtn`,
+												)}
+											>
+												<span>{opt.value}</span>
+												{opt.count != null && (
+													<span className="text-[10px] text-primary/60">
+														{opt.count}
+													</span>
+												)}
+											</button>
+										))}
+
+										{/* Unselected pills */}
+										{visibleUnselected.map((opt) => (
+											<button
+												type="button"
+												key={opt.value}
+												onClick={() =>
+													toggleFilter(key, opt.value)
+												}
+												aria-pressed={false}
+												aria-label={`Filter by ${opt.value}`}
+												className="inline-flex items-center gap-1.5 rounded-full border border-border bg-transparent px-2.5 py-1 text-foreground text-xs transition-all duration-200 hover:border-foreground/30 hover:bg-accent active:scale-95"
+												style={getValuePillStyle(
+													opt.value,
+													false,
+												)}
+												data-testid={formatToDataTestId(
+													`filterbox-${opt.value}-filterBtn`,
+												)}
+											>
+												<span>{opt.value}</span>
+												{opt.count != null && (
+													<span className="text-[10px] opacity-70">
+														{opt.count}
+													</span>
+												)}
+											</button>
+										))}
 									</div>
-								);
-							})}
-					</CollapsibleContent>
-				</Collapsible>
+
+									{/* Show more / Show less */}
+									{(hasMore || isExpanded) && (
+										<Button
+											type="button"
+											variant="ghost"
+											className="mt-0.5 h-auto px-2 py-1 font-normal text-primary text-xs hover:bg-transparent hover:text-primary/80"
+											onClick={() => {
+												setExpandedSections((prev) => ({
+													...prev,
+													[key]: !prev[key],
+												}));
+											}}
+										>
+											{isExpanded
+												? "Show less"
+												: `+${unselectedOptions.length - visibleUnselected.length} more`}
+										</Button>
+									)}
+								</CollapsibleContent>
+							</Collapsible>
+
+							{i + 1 !== totalSections && (
+								<div className="mx-1 mt-2 h-px bg-border/50" />
+							)}
+						</div>
+					);
+				})}
+		</div>
+	);
+
+	return (
+		<div className="filterbox-scroll flex w-full flex-col overflow-y-auto overflow-x-hidden rounded-xl border border-border/50 bg-card shadow-sm md:max-h-[calc(100vh-220px)] md:w-[352px]">
+			<div className="w-full">
+				{showHeader ? (
+					<Collapsible
+						open={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? true
+								: headerOpen
+						}
+						onOpenChange={
+							hideHeaderToggleFrom && isDesktopFilterLayout
+								? undefined
+								: setHeaderOpen
+						}
+					>
+						<div
+							className={`flex items-center px-4 pt-4 pb-2 ${
+								hideHeaderToggleFrom && isDesktopFilterLayout
+									? "justify-start"
+									: "justify-between"
+							}`}
+						>
+							<div className="flex items-center gap-2">
+								<SlidersHorizontal className="size-4 text-muted-foreground" />
+								<h6 className="font-semibold text-foreground text-sm">
+									Filters
+								</h6>
+								{totalActiveFilters > 0 && (
+									<Badge
+										variant="default"
+										className="h-5 min-w-5 rounded-full px-1.5 text-[10px] leading-none [font-variant-numeric:tabular-nums]"
+									>
+										{totalActiveFilters}
+									</Badge>
+								)}
+								{totalActiveFilters > 0 && (
+									<Button
+										type="button"
+										variant="ghost"
+										className="h-auto px-2 py-1 font-medium text-primary text-xs hover:text-primary/80"
+										onClick={clearAllFilters}
+										data-testid="filterbox-clear-all"
+									>
+										Clear all
+									</Button>
+								)}
+							</div>
+							{!(
+								hideHeaderToggleFrom && isDesktopFilterLayout
+							) ? (
+								<CollapsibleTrigger asChild>
+									<Button
+										variant="ghost"
+										size="icon-sm"
+										className="size-7 rounded-md"
+										aria-label={
+											headerOpen
+												? "Collapse filters"
+												: "Expand filters"
+										}
+									>
+										{headerOpen ? (
+											<ChevronUp className="size-3.5" />
+										) : (
+											<ChevronDown className="size-3.5" />
+										)}
+									</Button>
+								</CollapsibleTrigger>
+							) : null}
+						</div>
+						<CollapsibleContent>{filterBody}</CollapsibleContent>
+					</Collapsible>
+				) : (
+					filterBody
+				)}
 			</div>
 		</div>
 	);

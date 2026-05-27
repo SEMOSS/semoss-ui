@@ -4,9 +4,10 @@ import {
 	SearchIcon,
 	UploadIcon,
 } from "lucide-react";
-import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { STATE_VERSION, type Variable } from "@semoss/renderer";
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import type { Variable } from "@semoss/renderer";
+import { STATE_VERSION } from "@semoss/renderer/version";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -29,11 +30,12 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import DragAndDropImage from "@/assets/img/DragDrop.png";
-import { AddAppModal, NewAppModal, TEMPLATES } from "@/components/app";
+import { AddAppModal, NewAppModal } from "@/components/app";
+import type { Template } from "@/components/app/templates";
 import { LandingHeader } from "@/components/landing";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
 import {
 	BASE_APP_QUERIES,
 	BASE_APP_VARIABLES,
@@ -45,8 +47,15 @@ export const CreateAppPage = () => {
 
 	const { configStore } = useRootStore();
 	const [search, setSearch] = useState<string>("");
+	const [templates, setTemplates] = useState<Template[]>([]);
+	const [isTemplatesLoading, setIsTemplatesLoading] = useState<boolean>(true);
 
 	const cleanedSearch = search.trim().toLowerCase();
+	const filteredTemplates = templates.filter(
+		(template) =>
+			template.name.toLowerCase().indexOf(cleanedSearch) !== -1 ||
+			template.description.toLowerCase().indexOf(cleanedSearch) !== -1,
+	);
 
 	const [isUploadOpen, setIsUploadOpen] = useState(false);
 	const [newAppOptions, setNewAppOptions] = useState<
@@ -68,6 +77,33 @@ export const CreateAppPage = () => {
 		navigate(`/app/${appId}/edit`);
 	};
 
+	useEffect(() => {
+		let isMounted = true;
+
+		const loadTemplates = async () => {
+			try {
+				const { TEMPLATES } = await import(
+					"@/components/app/templates"
+				);
+				if (!isMounted) {
+					return;
+				}
+
+				setTemplates(TEMPLATES);
+			} finally {
+				if (isMounted) {
+					setIsTemplatesLoading(false);
+				}
+			}
+		};
+
+		loadTemplates();
+
+		return () => {
+			isMounted = false;
+		};
+	}, []);
+
 	const isRestricted = !configStore.isEngineOperationAvailable(
 		"PROJECT",
 		"add",
@@ -82,7 +118,7 @@ export const CreateAppPage = () => {
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex flex-col items-start gap-2">
+			<div className="flex w-full flex-col items-start gap-2">
 				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
@@ -130,7 +166,7 @@ export const CreateAppPage = () => {
 					/>
 				) : null}
 
-				<div className="flex flex-col gap-4">
+				<div className="flex w-full flex-col gap-4">
 					<div className="flex flex-row items-center justify-between gap-2">
 						<H2>Create App</H2>
 						<Button
@@ -188,20 +224,28 @@ export const CreateAppPage = () => {
 							</div>
 
 							<div className="grid w-full grid-cols-1 gap-4 p-2 md:grid-cols-3">
-								{TEMPLATES.filter(
-									(t) =>
-										t.name.indexOf(cleanedSearch) !== -1 ||
-										t.description.indexOf(cleanedSearch) !==
-											-1,
-								).map((template) => (
+								{isTemplatesLoading ? (
+									<div className="col-span-full p-4 text-muted-foreground text-sm">
+										Loading templates...
+									</div>
+								) : null}
+
+								{!isTemplatesLoading &&
+								filteredTemplates.length === 0 ? (
+									<div className="col-span-full p-4 text-muted-foreground text-sm">
+										No templates match your search.
+									</div>
+								) : null}
+
+								{filteredTemplates.map((template) => (
 									<Card
 										key={template.name}
-										className="relative mx-auto w-full max-w-sm pt-0"
+										className="relative w-full pt-0"
 									>
 										<div className="relative w-full overflow-hidden rounded-t-xl bg-accent">
 											<div className="absolute inset-0 z-10 bg-black/50" />
 											<img
-												src={DragAndDropImage}
+												src={template.image}
 												alt={template.name}
 												className="aspect-video w-full object-cover"
 											/>

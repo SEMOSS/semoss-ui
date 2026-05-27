@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.1.1/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
@@ -114,6 +114,11 @@
 		}
 	},
 	"overrides": [
+		{
+			"includes": ["**/src/assets/img/**", "**/src/assets/loginProviders/**"],
+			"linter": { "enabled": false },
+			"formatter": { "enabled": false }
+		},
 		{
 			"includes": ["**/*.test.{js,ts,jsx,tsx}", "**/*.spec.{js,ts,jsx,tsx}"],
 			"linter": {

@@ -1,0 +1,106 @@
+{
+	"welcome": "Bienvenido, {{name}}",
+	"settings": {
+		"title": "Configuración de la sala",
+		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
+		"open": "Abrir Configuración de la Sala",
+		"close": "Cerrar Configuración de la Sala",
+		"edit": "Editar Configuración de la Sala"
+	},
+	"form": {
+		"modelLabel": "Modelo",
+		"instructionsLabel": "Instrucciones",
+		"agentLabel": "Agente",
+		"knowledgeLabel": "Conocimiento",
+		"toolboxLabel": "Cajas de herramientas",
+		"maxTokenLabel": "Token máximo",
+		"temperatureLabel": "Temperatura"
+	},
+	"modes": {
+		"ask": "Preguntar",
+		"plan": "Planificar"
+	},
+	"workspace": {
+		"publishTooltip": "Publicar como agente",
+		"publishTitle": "Publicar agente",
+		"publishDescription": "Publica un nuevo agente con la configuración actual de la sala, incluyendo instrucciones y MCPs.",
+		"nameLabel": "Nombre *",
+		"namePlaceholder": "Ingresa el nombre del agente",
+		"descriptionLabel": "Descripción",
+		"descriptionPlaceholder": "Ingresa la descripción del agente",
+		"cancelButton": "Cancelar",
+		"publishingButton": "Publicando...",
+		"publishButton": "Publicar agente",
+		"nameRequired": "El nombre del agente es obligatorio",
+		"publishSuccess": "Agente creado con éxito",
+		"publishError": "Error al crear el agente: {{error}}"
+	},
+	"input": {
+		"ariaPlaceholder": "Ingresa texto",
+		"thinking": "Pensando...",
+		"menuPrompt": "¿Cómo puedo ayudarte hoy?",
+		"openSettings": "Agregar archivos, agentes y más",
+		"recordLabel": "Grabar al modelo",
+		"stopRecording": "Detener grabación",
+		"record": "Grabar",
+		"askLabel": "Preguntar a la IA",
+		"thinkingTooltip": "Pensando",
+		"enterQuestion": "Por favor, ingresa una pregunta",
+		"completeTool": "Por favor, completa las herramientas para continuar",
+		"ask": "Preguntar",
+		"errorProcessing": "Error al procesar el chat",
+		"pauseTools": "Pausar herramientas",
+		"pauseToolsTooltip": "Pausar toda la ejecución de herramientas hasta después del siguiente mensaje"
+	},
+	"content": {
+		"scrollToTop": "Ir al inicio",
+		"scrollToBottom": "Ir al final"
+	},
+	"inlineTool": {
+		"openInSidebar": "Abrir en barra lateral",
+		"minimize": "Minimizar",
+		"maximize": "Maximizar",
+		"close": "Cerrar"
+	},
+	"fileExplorer": {
+		"copyPath": "Copiar ruta",
+		"download": "Descargar",
+		"delete": "Eliminar",
+		"copyFailed": "Error al copiar al portapapeles"
+	},
+	"menuToolbox": {
+		"addToolbox": "Agregar cajas de herramientas"
+	},
+	"menuKnowledge": {
+		"addKnowledge": "Agregar conocimiento"
+	},
+	"menuWorkspace": {
+		"selectAgent": "Seleccionar agente",
+		"searchPlaceholder": "Buscar agentes",
+		"notFound": "No encontrado"
+	},
+	"menuUpload": {
+		"attachDocument": "Agregar Documentos"
+	},
+	"menuFileExplorer": {
+		"name": "Explorador de Archivos",
+		"open": "Abrir Explorador de Archivos",
+		"close": "Cerrar Explorador de Archivos"
+	},
+	"errors": {
+		"createRoom": "Ocurrió un error al crear la sala. Error: {{message}}"
+	},
+	"contextWindow": {
+		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",
+		"descriptionMedium": "Esta conversación se está alargando. Si continúa, el modelo comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat pronto.",
+		"descriptionHigh": "Esta conversación está casi llena. El modelo pronto comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat.",
+		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores al generar respuestas. Inicia un nuevo chat para obtener mejores resultados.",
+		"memoryUsedTitle": "Memoria usada:",
+		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
+	},
+	"menuMcp": {
+		"searchPlaceholder": "Buscar conocimiento y cajas de herramientas",
+		"noResults": "No se encontraron elementos coincidentes",
+		"noItemsAvailable": "No hay conocimiento o cajas de herramientas disponibles"
+	}
+}

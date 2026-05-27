@@ -1,45 +1,56 @@
-import html2canvas from "html2canvas";
-import { Stack, styled, Typography } from "@semoss/ui";
 import { formatToDataTestId } from "@/utility";
 
 export interface BlockCardContentProps {
 	name?: string;
 	image?: string;
+	width?: string | number;
+	height?: string | number;
+	paddingX?: number;
+	paddingY?: number;
 }
 
 export const blockCardWidth = "133px";
-
-const StyledTypography = styled(Typography)(({ theme }) => ({
-	color: theme.palette.secondary.dark,
-	userSelect: "none",
-}));
+export const blockCardHeight = "106px";
 
 export const BlockCardContent = (props: BlockCardContentProps) => {
-	const { name = "", image } = props;
+	const {
+		name = "",
+		image,
+		width = blockCardWidth,
+		height = blockCardHeight,
+		paddingX = 1,
+		paddingY = 1.5,
+	} = props;
 
 	return (
-		<Stack
-			marginX={1}
-			marginY={1.5}
-			width={blockCardWidth}
-			height="106px"
-			alignItems="center"
-			justifyContent="center"
-			data-testId={formatToDataTestId(
+		<div
+			className="flex flex-col items-center justify-center"
+			style={{
+				width,
+				height,
+				paddingLeft: `${paddingX * 8}px`,
+				paddingRight: `${paddingX * 8}px`,
+				paddingTop: `${paddingY * 8}px`,
+				paddingBottom: `${paddingY * 8}px`,
+			}}
+			data-testid={formatToDataTestId(
 				`blockMenuCardContent-card-${name}`,
 			)}
 		>
 			{image ? (
-				<img draggable={false} src={image} width="100%" height="100%" />
+				<img
+					draggable={false}
+					src={image}
+					width="100%"
+					height="100%"
+					alt=""
+					aria-hidden="true"
+				/>
 			) : (
-				<StyledTypography
-					variant="body2"
-					fontWeight="medium"
-					align="center"
-				>
+				<span className="select-none text-center font-medium text-muted-foreground text-sm">
 					{name}
-				</StyledTypography>
+				</span>
 			)}
-		</Stack>
+		</div>
 	);
 };

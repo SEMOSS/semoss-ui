@@ -1,0 +1,57 @@
+{
+	"status": {
+		"failed": "विफल",
+		"cancelled": "रद्द किया गया",
+		"completed": "पूर्ण",
+		"ready": "तैयार",
+		"autoExecute": "स्वतः निष्पादित हो रहा है",
+		"paused": "रोका गया",
+		"queued": "स्वतः निष्पादन की प्रतीक्षा में"
+	},
+	"actions": {
+		"cancel": "रद्द करें",
+		"expand": "विस्तार करें",
+		"collapse": "संकुचित करें",
+		"openInSidebar": "साइडबार में खोलें",
+		"closeInSidebar": "साइडबार बंद करें",
+		"openInline": "इनलाइन खोलें"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} + {{count}} और",
+		"labelOpen": "निष्पादित टूल ({{count}})",
+		"summaryCompleted": "{{count}} पूर्ण",
+		"summaryError": "{{count}} विफल",
+		"summaryCancelled": "{{count}} रद्द",
+		"summaryPaused": "{{count}} रोका गया"
+	},
+	"form": {
+		"result": "परिणाम",
+		"schemaLoadFailed": "टूल स्कीमा लोड करने में विफल",
+		"schemaLoadFailedDescription": "टूल कॉन्फ़िगरेशन प्राप्त नहीं किया जा सका। कृपया बाद में पुनः प्रयास करें।",
+		"schemaLoading": "टूल स्कीमा लोड हो रहा है...",
+		"noParameters": "कोई पैरामीटर आवश्यक नहीं",
+		"showParameters": "पैरामीटर दिखाएं ({{count}})",
+		"hideParameters": "पैरामीटर छुपाएं ({{count}})",
+		"showOptionalFields": "वैकल्पिक फ़ील्ड दिखाएं ({{count}})",
+		"hideOptionalFields": "वैकल्पिक फ़ील्ड छुपाएं ({{count}})",
+		"execute": "टूल चलाएं",
+		"executing": "चल रहा है..."
+	},
+	"playwright": {
+		"details": "Playwright स्क्रिप्ट विवरण",
+		"projectId": "प्रोजेक्ट ID",
+		"recordedFile": "रिकॉर्ड किया गया फ़ाइल"
+	},
+	"extension": {
+		"required": "ब्राउज़र एक्सटेंशन आवश्यक है",
+		"notResponding": "ब्राउज़र एक्सटेंशन प्रतिक्रिया नहीं दे रहा है। Playwright स्क्रिप्ट चलाने के लिए, कृपया सुनिश्चित करें कि SEMOSS Chrome एक्सटेंशन इंस्टॉल है और साइड पैनल खुला है।",
+		"stepsTitle": "एक्सटेंशन खोलने के चरण:",
+		"step1": "अपने ब्राउज़र टूलबार में SEMOSS एक्सटेंशन आइकन देखें (पज़ल पीस आइकन)",
+		"step2": "साइड पैनल खोलने के लिए एक्सटेंशन आइकन पर क्लिक करें",
+		"step3": "पैनल के पूरी तरह लोड होने की प्रतीक्षा करें",
+		"step4": "जारी रखने के लिए नीचे \"पुनः प्रयास करें\" पर क्लिक करें",
+		"cancel": "रद्द करें",
+		"retry": "पुनः प्रयास करें",
+		"checking": "जाँच हो रही है..."
+	}
+}
