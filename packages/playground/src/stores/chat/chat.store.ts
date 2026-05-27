@@ -243,8 +243,17 @@ export class ChatStore {
 		// initialize the room
 		await room.initialize();
 
+		// Merge BE default tools (loaded via initialize) with FE-provided options,
+		// so default tools set in CreateRoomReactor are not overwritten.
+		const mergedMcp = [
+			...room.options.mcp,
+			...options.mcp.filter(
+				(m) => !room.options.mcp.some((r) => r.id === m.id),
+			),
+		];
+
 		// set the options
-		await room.updateRoomOptions(options);
+		await room.updateRoomOptions({ ...options, mcp: mergedMcp });
 
 		runInAction(() => {
 			// save it to the cache

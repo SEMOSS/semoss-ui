@@ -222,7 +222,20 @@ export const NewRoomPage = observer(() => {
 				// only RoomInput drag/drop/paste attachments are passed here.
 				preCreatedRoom.setMode(mode === "plan" ? "planning" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
-				await preCreatedRoom.updateRoomOptions(options);
+				// Merge BE default tools (loaded via initialize) with FE-provided options
+				const mergedMcp = [
+					...preCreatedRoom.options.mcp,
+					...options.mcp.filter(
+						(m) =>
+							!preCreatedRoom.options.mcp.some(
+								(r) => r.id === m.id,
+							),
+					),
+				];
+				await preCreatedRoom.updateRoomOptions({
+					...options,
+					mcp: mergedMcp,
+				});
 				preCreatedRoom.askMessage(prompt, files).then(() => {
 					runInAction(() => {
 						chat.keys.roomCounter++;
