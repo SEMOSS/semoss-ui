@@ -11,3 +11,4 @@ export * from "./constants";
 export { clientResources } from "./resources/client";
 export { coreResources } from "./resources/core";
 export { playgroundResources } from "./resources/playground";
+export { terminalResources } from "./resources/terminal";
