@@ -7,6 +7,7 @@
     "dev": "turbo run dev",
     "dev:client": "turbo run dev --filter=@semoss/client...",
     "dev:playground": "turbo run dev --filter=@semoss/playground...",
+    "dev:terminal": "turbo run dev --filter=@semoss/terminal...",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "test": "turbo run test",

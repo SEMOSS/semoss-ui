@@ -149,7 +149,7 @@ export const WorkspaceCard = observer(
 							</span>
 						</Button>
 						{(canEdit || canDelete) && (
-							<div className="-mr-2 ml-auto flex shrink-0 items-center gap-0">
+							<div className="-me-2 ms-auto flex shrink-0 items-center gap-0">
 								{canEdit && (
 									<Tooltip>
 										<TooltipTrigger asChild>

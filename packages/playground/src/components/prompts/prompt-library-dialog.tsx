@@ -178,7 +178,7 @@ export const PromptLibraryDialog: React.FC<PromptLibraryDialogProps> = ({
 												onClick={() =>
 													handlePromptSelect(prompt)
 												}
-												className="flex flex-col gap-1 rounded-lg border bg-card p-3 text-left shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+												className="flex flex-col gap-1 rounded-lg border bg-card p-3 text-start shadow-xs transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
 											>
 												<span className="line-clamp-2 font-medium text-sm leading-snug">
 													{prompt.title}

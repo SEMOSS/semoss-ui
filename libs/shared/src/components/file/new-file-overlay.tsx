@@ -220,6 +220,11 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						path,
 						data.files,
 					);
+				} else if (mode.type === "USER") {
+					uploadResponse = await insight.actions.uploadUser(
+						path,
+						data.files,
+					);
 				} else {
 					throw new Error("Unknown mode type");
 				}
@@ -245,11 +250,13 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 							let unzipPixel = "";
 							if (mode.type === "APP") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.app}"])`;
+								unzipPixel = `UnzipAppAssetFile(project=["${mode.app}"], filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "ENGINE") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.engine}"])`;
+								unzipPixel = `UnzipEngineAssetFile(engine=["${mode.engine}"], filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "INSIGHT") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"])`;
+								unzipPixel = `UnzipInsightAssetFile(filePath=["${uploadedPath}"])`;
+							} else if (mode.type === "USER") {
+								unzipPixel = `UnzipUserAssetFile(filePath=["${uploadedPath}"])`;
 							}
 
 							await insight.actions.run(unzipPixel);
@@ -291,6 +298,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					pixel = `NewEngineAssetsFile(engine=["${mode.engine}"], filePath=["${path}${data.name}"]);`;
 				} else if (mode.type === "INSIGHT") {
 					pixel = `NewInsightAssetsFile(filePath=["${path}${data.name}"]);`;
+				} else if (mode.type === "USER") {
+					pixel = `NewUserAssetsFile(filePath=["${path}${data.name}"]);`;
 				}
 
 				// run it
@@ -309,6 +318,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					pixel = `NewEngineAssetsDirectory(engine=["${mode.engine}"], filePath=["${path}${data.name}"]);`;
 				} else if (mode.type === "INSIGHT") {
 					pixel = `NewInsightAssetsDirectory(filePath=["${path}${data.name}"]);`;
+				} else if (mode.type === "USER") {
+					pixel = `NewUserAssetsDirectory(filePath=["${path}${data.name}"]);`;
 				}
 
 				// run it
@@ -503,7 +514,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 																</span>
 															</div>
 															{fileIsZip && (
-																<label className="ml-auto flex items-center gap-2 whitespace-nowrap pl-2">
+																<label className="ms-auto flex items-center gap-2 whitespace-nowrap ps-2">
 																	<input
 																		type="checkbox"
 																		checked={

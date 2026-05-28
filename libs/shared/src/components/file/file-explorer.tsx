@@ -230,6 +230,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		} else {
 			getFilesPixel = `BrowseInsightAssets(filePath=["${path}"]);`;
 		}
+	} else if (mode.type === "USER") {
+		if (debouncedSearch) {
+			getFilesPixel = `SearchUserAssets(filePath=["${searchType === "all" ? "" : path}"], search=["${debouncedSearch}"]);`;
+		} else {
+			getFilesPixel = `BrowseUserAssets(filePath=["${path}"]);`;
+		}
 	}
 
 	const getFiles = usePixel<unknown[]>(
@@ -274,6 +280,8 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				await insight.actions.uploadEngine(mode.engine, path, files);
 			} else if (mode.type === "INSIGHT") {
 				await insight.actions.uploadInsight(path, files);
+			} else if (mode.type === "USER") {
+				await insight.actions.uploadUser(path, files);
 			}
 
 			// refresh the files
@@ -424,6 +432,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		if (mode.type === "INSIGHT") {
 			return `RenameInsightAsset(filePath=["${oldPath}"], newValue=["${newPath}"]);`;
 		}
+		if (mode.type === "USER") {
+			return `RenameUserAsset(filePath=["${oldPath}"], newValue=["${newPath}"]);`;
+		}
 		return "";
 	};
 
@@ -437,6 +448,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		if (mode.type === "INSIGHT") {
 			return `CopyInsightAsset(filePath="${oldPath}", newValue="${newPath}");`;
 		}
+		if (mode.type === "USER") {
+			return `CopyUserAsset(filePath="${oldPath}", newValue="${newPath}");`;
+		}
 		return "";
 	};
 
@@ -449,6 +463,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 		if (mode.type === "INSIGHT") {
 			return `DeleteInsightAssets(filePath=["${itemPath}"]);`;
+		}
+		if (mode.type === "USER") {
+			return `DeleteUserAssets(filePath=["${itemPath}"]);`;
 		}
 		return "";
 	};
@@ -706,6 +723,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		if (mode.type === "INSIGHT") {
 			return `DownloadInsightAsset(filePath=["${itemPath}"]);`;
 		}
+		if (mode.type === "USER") {
+			return `DownloadUserAsset(filePath=["${itemPath}"]);`;
+		}
 		return "";
 	};
 
@@ -935,7 +955,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 								disabled={crumbs.length <= 1}
 								title={path}
 							>
-								<div className="min-w-12 max-w-64 truncate text-left text-sm">
+								<div className="min-w-12 max-w-64 truncate text-start text-sm">
 									{crumbs[0]}
 								</div>
 								{crumbs.length > 1 && (
@@ -1060,7 +1080,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 				{moveDropCount > 0 && (
 					<div
 						data-testid="file-explorer-root-drop-indicator"
-						className="pointer-events-none absolute right-3 bottom-3 z-10 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-foreground text-xs shadow-md"
+						className="pointer-events-none absolute end-3 bottom-3 z-10 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-foreground text-xs shadow-md"
 					>
 						Drop to move {moveDropLabel} into {path}
 					</div>
@@ -1111,7 +1131,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 					</div>
 					<span
 						style={{ width: dateColWidth }}
-						className="overflow-hidden truncate px-2 text-right font-medium"
+						className="overflow-hidden truncate px-2 text-end font-medium"
 					>
 						Date Modified
 					</span>

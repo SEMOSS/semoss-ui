@@ -468,19 +468,6 @@ export const EngineFileExplorer: React.FC<EngineFileExplorerProps> = observer(
 						});
 					}
 
-					if (!isStorageViewer && item.path.endsWith(".zip")) {
-						secondaryActions.push({
-							name: "Unzip",
-							action: async () => {
-								const pixel = `UnzipFile(filePath=["${item.path}"], space=["${engine}"])`;
-
-								await insight.actions.run(pixel);
-
-								refresh();
-							},
-						});
-					}
-
 					if (!isStorageViewer) {
 						secondaryActions.push({
 							name: "Delete",

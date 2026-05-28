@@ -223,9 +223,53 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const [renameValue, setRenameValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const canRename = mode.type !== "STORAGE";
-	const visibleSecondaryActions = secondaryActions.filter(
-		(action): action is FileExplorerSecondaryAction => action !== null,
-	);
+	const visibleSecondaryActions = useMemo(() => {
+		const visible = secondaryActions.filter(
+			(action): action is FileExplorerSecondaryAction => action !== null,
+		);
+
+		// Built-in Unzip for every mode that supports it. Consumers can still
+		// inject their own "Unzip" via the secondaryActions prop to override
+		// (e.g. to attach side effects like closing related tabs).
+		const isZip =
+			item.type !== "directory" &&
+			item.path.toLowerCase().endsWith(".zip");
+		const hasUnzip = visible.some(
+			(action) => action.name.toLowerCase() === "unzip",
+		);
+		if (isZip && !hasUnzip) {
+			let unzipPixel: string | null = null;
+			if (mode.type === "APP") {
+				unzipPixel = `UnzipAppAssetFile(project=["${mode.app}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "ENGINE") {
+				unzipPixel = `UnzipEngineAssetFile(engine=["${mode.engine}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "INSIGHT") {
+				unzipPixel = `UnzipInsightAssetFile(filePath=["${item.path}"])`;
+			} else if (mode.type === "USER") {
+				unzipPixel = `UnzipUserAssetFile(filePath=["${item.path}"])`;
+			}
+			if (unzipPixel) {
+				const pixel = unzipPixel;
+				visible.push({
+					name: "Unzip",
+					action: async () => {
+						try {
+							await insight.actions.run(pixel);
+							refresh();
+						} catch (e) {
+							toast.error(
+								getFileOperationErrorMessage(
+									"Failed to unzip file",
+									e,
+								),
+							);
+						}
+					},
+				});
+			}
+		}
+		return visible;
+	}, [secondaryActions, item.type, item.path, mode, insight, refresh]);
 
 	useEffect(() => {
 		if (!isRenaming) return;
@@ -274,6 +318,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				pixel = `RenameEngineAsset(engine=["${mode.engine}"], filePath=["${item.path}"], newValue=["${newPath}"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `RenameInsightAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `RenameUserAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
 			}
 			if (pixel) {
 				await insight.actions.run(pixel);
@@ -300,6 +346,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			getChildrenPixel = `ListStoragePathDetails(storage=["${mode.storage}"], storagePath=["${item.path}"]);`;
 		} else if (mode.type === "INSIGHT") {
 			getChildrenPixel = `BrowseInsightAssets(filePath=["${item.path}"]);`;
+		} else if (mode.type === "USER") {
+			getChildrenPixel = `BrowseUserAssets(filePath=["${item.path}"]);`;
 		}
 	}
 
@@ -370,7 +418,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		preview.textContent =
 			count > 1 ? `Move ${count} items` : `Move ${dragItems[0]?.name}`;
 		preview.className =
-			"fixed -top-96 left-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
+			"fixed -top-96 start-0 rounded-md border border-primary/30 bg-background px-2 py-1 text-xs font-medium text-foreground shadow-md";
 		document.body.appendChild(preview);
 		dataTransfer.setDragImage(preview, 12, 12);
 		window.setTimeout(() => preview.remove(), 0);
@@ -498,7 +546,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				<div
 					data-testid={`${itemTestId}-row`}
 					className={[
-						"group flex min-h-7 min-w-full flex-row items-center rounded-md pr-2 transition-colors",
+						"group flex min-h-7 min-w-full flex-row items-center rounded-md pe-2 transition-colors",
 						effectiveIsContextActive
 							? "bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset"
 							: "",
@@ -520,7 +568,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					title={`Path: ${item.path}${item.lastModified ? `\nLast Modified: ${item.lastModified}` : ""}`}
 				>
 					{/* Column 1 — Name */}
-					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pr-2">
+					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pe-2">
 						{isRenaming ? (
 							<input
 								data-testid={`${itemTestId}-rename-input`}
@@ -552,7 +600,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 							<button
 								data-testid={`${itemTestId}-name-button`}
 								type="button"
-								className="min-w-0 truncate bg-transparent p-0 text-left text-sm"
+								className="min-w-0 truncate bg-transparent p-0 text-start text-sm"
 								onDoubleClick={(e) => {
 									if (!canRename || isDirectory) return;
 									e.stopPropagation();
@@ -588,7 +636,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					{/* Column 2: Date */}
 					<div
 						data-testid={`${itemTestId}-date`}
-						className="shrink-0 overflow-hidden truncate px-2 text-right text-[11px] text-muted-foreground"
+						className="shrink-0 overflow-hidden truncate px-2 text-end text-[11px] text-muted-foreground"
 						style={{ width: "var(--date-col-width, 170px)" }}
 					>
 						{macDate ?? ""}
