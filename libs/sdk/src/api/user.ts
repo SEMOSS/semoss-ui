@@ -2,16 +2,16 @@ import { Env } from "../env";
 import { post } from "../utility";
 
 /**
- * Upload file(s) to an insight
- * @param insightId
+ * Upload file(s) to the current user's user space
  * @param path
  * @param files
+ * @param insightId
  * @returns
  */
-export const uploadInsight = async (
-	insightId: string | null,
+export const uploadUser = async (
 	path: string,
 	files: File | File[],
+	insightId: string | null,
 ) => {
 	const fd: FormData = new FormData();
 	if (Array.isArray(files)) {
@@ -29,7 +29,7 @@ export const uploadInsight = async (
 			fileLocation: string;
 		}[]
 	>(
-		`${Env.MODULE}/api/uploadFile/baseUpload?insightId=${insightId}&path=${encodeURIComponent(path)}&userSpace=false`,
+		`${Env.MODULE}/api/uploadFile/userAssetsUpload?insightId=${insightId}&path=${encodeURIComponent(path)}`,
 		fd,
 		{},
 	);
