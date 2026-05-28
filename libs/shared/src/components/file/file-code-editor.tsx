@@ -6,13 +6,8 @@ import {
 	RefreshCwIcon,
 	SaveIcon,
 } from "lucide-react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
-import {
-	MONACO_CONFIG,
-	MONACO_EXT_LANGUAGE_MAPPING,
-	MonacoEditor,
-} from "@semoss/shared/monaco";
 import {
 	Button,
 	Muted,
@@ -22,26 +17,17 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import {
+	MONACO_CONFIG,
+	MONACO_EXT_LANGUAGE_MAPPING,
+	MonacoEditor,
+} from "../monaco";
 import type { FileMode } from "./file.types";
 import {
 	getFileEditorPathScope,
 	useFileEditorPathRef,
 } from "./file-editor-path-events";
 import { getFileOperationErrorMessage } from "./file-explorer.utils";
-
-function useAsyncImport<T>(importer: () => Promise<T>): T | undefined {
-	const [mod, setMod] = useState<T>();
-	useEffect(() => {
-		let mounted = true;
-		importer().then((m) => {
-			if (mounted) setMod(m);
-		});
-		return () => {
-			mounted = false;
-		};
-	}, [importer]);
-	return mod;
-}
 
 // const MonacoEditor = lazy(() =>
 // 	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
@@ -128,6 +114,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	// the document element's class list since ThemeProvider drives `.dark`
 	// there — this catches "system"-mode users whose OS preference flips
 	// between light/dark as well as explicit Light/Dark toggles.
+	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping needed dependencies
 	useEffect(() => {
 		const root =
 			typeof document !== "undefined" ? document.documentElement : null;
