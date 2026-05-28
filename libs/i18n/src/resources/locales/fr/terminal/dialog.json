@@ -5,7 +5,9 @@
 		"rawResponse": "Réponse brute",
 		"copy": "Copier",
 		"copied": "Copié",
-		"copyFailed": "Échec de la copie du code"
+		"copyFailed": "Échec de la copie du code",
+		"fetchFailed": "Échec de la récupération de l'utilisation (aucune réponse)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) a renvoyé une erreur."
 	},
 	"save": {
 		"title": "Enregistrer",

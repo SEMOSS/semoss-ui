@@ -670,7 +670,7 @@ export const TerminalConsole = () => {
 			<div
 				ref={splitHandle}
 				className="h-1.5 cursor-ns-resize border-border border-y bg-muted hover:bg-primary/30"
-				title="Drag to resize"
+				title={t("dragToResize")}
 			/>
 
 			<div

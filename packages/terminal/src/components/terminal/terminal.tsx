@@ -4,12 +4,11 @@ import {
 	Suspense,
 	useCallback,
 	useEffect,
-	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { useTranslation } from "@semoss/i18n";
+import { getLanguageDirection, useTranslation } from "@semoss/i18n";
 import { FileExplorer, FlexLayout, getFileIconComponent } from "@semoss/shared";
 import type { SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
@@ -62,6 +61,7 @@ const REPL_TABSET_ID = "REPL_TABSET";
  */
 const buildInitialModel = (
 	t: (key: string) => string,
+	borderLocation: "left" | "right" = "left",
 ): FlexLayout.IJsonModel => ({
 	global: {
 		rootOrientationVertical: true,
@@ -71,7 +71,12 @@ const buildInitialModel = (
 	borders: [
 		{
 			type: "border",
-			location: "left",
+			// `borderLocation` reflects the user's reading direction at boot:
+			// `"left"` for LTR, `"right"` for RTL. The FlexLayout container
+			// itself stays `dir="ltr"` (so its splitter drag math works), so
+			// switching the location here is how we get the Files panel onto
+			// the visual leading edge in Arabic.
+			location: borderLocation,
 			size: 300,
 			// -1 → no tab selected → border starts collapsed. The user
 			// expands it by clicking the "Files" strip on the edge.
@@ -173,21 +178,44 @@ const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => {
 
 export const Terminal = () => {
 	const terminal = useTerminal();
-	const { t } = useTranslation("chrome");
+	const { t, i18n } = useTranslation("chrome");
+	// FlexLayout-react ships LTR-only positioning and splitter drag math
+	// (`e.clientX - startX` applied without flipping for writing direction).
+	// In RTL the visual layout reverses but the math doesn't, so dragging
+	// the splitter feels inverted and can pin the panel at a boundary you
+	// can't drag back from. Fence FlexLayout into LTR and re-establish the
+	// user's reading direction inside each pane (see `factory` below).
+	const paneDir = getLanguageDirection(i18n.language);
 
 	const [helpOpen, setHelpOpen] = useState(false);
 
-	const modelRef = useRef<FlexLayout.Model | null>(null);
-	const model = useMemo(() => {
-		if (!modelRef.current) {
-			modelRef.current = FlexLayout.Model.fromJson(buildInitialModel(t));
-		}
-		return modelRef.current;
-		// Build-once: the model is mutated by FlexLayout actions, not rebuilt
-		// on locale change. The effect below keeps the static tab labels
-		// (Files / Terminal) in sync by running renameTab when `t` changes.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	// Model lives in state so we can swap it out when the user changes
+	// language mid-session — see the paneDir effect below for the round-trip
+	// rebuild that moves the Files border to the other side without losing
+	// open file tabs.
+	const [model, setModel] = useState<FlexLayout.Model>(() =>
+		FlexLayout.Model.fromJson(
+			buildInitialModel(t, paneDir === "rtl" ? "right" : "left"),
+		),
+	);
+
+	// When the user switches language, rebuild the model from its own
+	// serialized JSON with the border location flipped to match the new
+	// reading direction. `toJson()` → `fromJson()` preserves tab state, IDs,
+	// sizes, and active selections — so open file tabs survive the swap.
+	const lastBorderLocationRef = useRef<"left" | "right">(
+		paneDir === "rtl" ? "right" : "left",
+	);
+	useEffect(() => {
+		const wanted: "left" | "right" = paneDir === "rtl" ? "right" : "left";
+		if (lastBorderLocationRef.current === wanted) return;
+		lastBorderLocationRef.current = wanted;
+		setModel((current) => {
+			const json = current.toJson();
+			if (json.borders?.[0]) json.borders[0].location = wanted;
+			return FlexLayout.Model.fromJson(json);
+		});
+	}, [paneDir]);
 
 	// Keep the static tab labels in sync with the active language. File-editor
 	// tabs are renamed elsewhere (their name is the on-disk filename and isn't
@@ -324,23 +352,27 @@ export const Terminal = () => {
 		return () => terminal.registerOpenFile(() => {});
 	}, [terminal, openFileTab]);
 
-	// Find FlexLayout's left-border toolbar slot so we can portal the
+	// Find FlexLayout's border toolbar slot so we can portal the
 	// Help + User strip into it. We re-query on mutation since FlexLayout
-	// can recreate the border DOM on layout changes.
+	// can recreate the border DOM on layout changes. Slot class follows the
+	// border's location (`*_left` vs `*_right`), which we mirror to the
+	// user's reading direction.
 	useEffect(() => {
 		const container = flexLayoutContainerRef.current;
 		if (!container) return;
+		const toolbarClass =
+			paneDir === "rtl"
+				? ".flexlayout__border_toolbar_right"
+				: ".flexlayout__border_toolbar_left";
 		const findToolbar = () => {
-			const el = container.querySelector<HTMLElement>(
-				".flexlayout__border_toolbar_left",
-			);
+			const el = container.querySelector<HTMLElement>(toolbarClass);
 			setBorderToolbarEl((prev) => (prev === el ? prev : el));
 		};
 		findToolbar();
 		const observer = new MutationObserver(findToolbar);
 		observer.observe(container, { childList: true, subtree: true });
 		return () => observer.disconnect();
-	}, []);
+	}, [paneDir]);
 
 	const handleItemSelect = useCallback(
 		(item: FileExplorerItem) => {
@@ -368,31 +400,40 @@ export const Terminal = () => {
 	const factory = useCallback(
 		(node: FlexLayout.TabNode) => {
 			const component = node.getComponent();
+			// FlexLayout's outer container is forced to `dir="ltr"` (see the
+			// container below) so its splitter drag math works. Re-establish
+			// the user's reading direction inside each rendered pane so the
+			// FileExplorer columns, REPL prompt, etc. still flip in Arabic.
+			const wrap = (children: React.ReactNode) => (
+				<div dir={paneDir} className="h-full w-full">
+					{children}
+				</div>
+			);
 			if (component === "file-explorer") {
-				return (
+				return wrap(
 					<FileExplorerPane
 						mode={terminal.fileMode}
 						onItemSelect={handleItemSelect}
-					/>
+					/>,
 				);
 			}
 			if (component === "file-editor") {
-				return (
+				return wrap(
 					<Suspense fallback={<PaneLoader />}>
 						<TerminalFile node={node} />
-					</Suspense>
+					</Suspense>,
 				);
 			}
 			if (component === "repl") {
-				return (
+				return wrap(
 					<Suspense fallback={<PaneLoader />}>
 						<TerminalConsole />
-					</Suspense>
+					</Suspense>,
 				);
 			}
 			return null;
 		},
-		[handleItemSelect, openHelp, terminal.fileMode],
+		[handleItemSelect, openHelp, paneDir, terminal.fileMode],
 	);
 
 	if (!terminal.open) return null;
@@ -455,6 +496,11 @@ export const Terminal = () => {
 
 				<div
 					ref={flexLayoutContainerRef}
+					// Fence FlexLayout into LTR — its splitter / border-resize
+					// drag math is hardcoded for left-to-right (see paneDir
+					// comment above). Pane content opts back into the user's
+					// direction via the factory wrapper.
+					dir="ltr"
 					className="terminal-flex-layout flexlayout__theme_smss relative min-h-0 flex-1 overflow-hidden"
 				>
 					<FlexLayout.Layout
@@ -474,7 +520,15 @@ export const Terminal = () => {
 					/>
 					{borderToolbarEl &&
 						createPortal(
-							<SidebarFooter onHelpClick={openHelp} />,
+							// SidebarFooter is portaled into FlexLayout's
+							// (now LTR) toolbar slot, so the tooltip side
+							// math + dropdown alignment land correctly. The
+							// menu contents (theme/language/logout) still
+							// read RTL because their own children inherit
+							// from `<html dir>`.
+							<div dir={paneDir}>
+								<SidebarFooter onHelpClick={openHelp} />
+							</div>,
 							borderToolbarEl,
 						)}
 				</div>

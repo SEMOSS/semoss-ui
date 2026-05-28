@@ -5,7 +5,9 @@
 		"rawResponse": "Respuesta sin procesar",
 		"copy": "Copiar",
 		"copied": "Copiado",
-		"copyFailed": "Error al copiar el código"
+		"copyFailed": "Error al copiar el código",
+		"fetchFailed": "Error al obtener el uso (sin respuesta)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) devolvió un error."
 	},
 	"save": {
 		"title": "Guardar",
