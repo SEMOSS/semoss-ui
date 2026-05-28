@@ -1,0 +1,957 @@
+<!doctype html>
+<html>
+ <head>
+  <script id="semoss-env" type="application/json">{"APP": "b12d7bd5-7338-445d-9b11-ef1f3322d52b","MODULE": "/Monolith"}</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playwright Recorded Scripts</title>
+  <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .header {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+        }
+
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group select:disabled {
+            color: #9ca3af;
+            cursor: not-allowed;
+            background: #f7f7f7;
+        }
+
+        .script-info {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #4a5568;
+            min-width: 130px;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #718096;
+            font-size: 14px;
+            word-break: break-all;
+            flex: 1;
+        }
+
+        .success-message {
+            background: #f0fff4;
+            border: 2px solid #9ae6b4;
+            color: #22543d;
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .error-message {
+            background: #fff5f5;
+            border: 2px solid #fc8181;
+            color: #742a2a;
+            padding: 16px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: #4299e1;
+            color: white;
+            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.4);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #3182ce;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(66, 153, 225, 0.5);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 12px;
+            padding: 0;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            padding: 24px 24px 20px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .modal-title-wrapper {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .modal-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .modal-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 16px;
+        }
+
+        .modal-close:hover {
+            color: #4a5568;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-message {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .modal-steps {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .modal-steps-title {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .modal-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .modal-steps li {
+            color: #4a5568;
+            font-size: 14px;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .modal-steps li:last-child {
+            margin-bottom: 0;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .modal-btn-cancel {
+            background: white;
+            color: #4a5568;
+            border: 1px solid #e2e8f0;
+        }
+
+        .modal-btn-cancel:hover:not(:disabled) {
+            background: #f7fafc;
+        }
+
+        .modal-btn-primary {
+            background: #4299e1;
+            color: white;
+        }
+
+        .modal-btn-primary:hover:not(:disabled) {
+            background: #3182ce;
+        }
+    </style>
+ </head>
+ <body>
+  <div class="container">
+   <!-- Header -->
+   <div class="header">
+    <h1>Playwright Recorded Scripts</h1>
+    <p>Select and execute browser automation scripts</p>
+   </div><!-- Script Details Card -->
+   <div class="card">
+    <h2>Script Details</h2><!-- Script Selector -->
+    <div class="form-group">
+     <label for="scriptSelector">Select Script</label> <select id="scriptSelector" disabled> <option value="">Loading scripts...</option> </select>
+    </div><!-- Success Message (shown after completion) -->
+    <div id="successMessage" class="success-message hidden">
+     Successfully fetched Playwright script: <span id="successScriptName"></span>
+    </div><!-- Error Message (shown after failure) -->
+    <div id="errorMessage" class="error-message hidden">
+     <span id="errorScriptName"></span> failed due to some error. Check the execution log.
+    </div><!-- Script Info Display -->
+    <div id="scriptInfo" class="script-info hidden">
+     <div class="info-row">
+      <span class="info-label">Title:</span> <span class="info-value" id="scriptTitle">-</span>
+     </div>
+     <div class="info-row">
+      <span class="info-label">Project ID:</span> <span class="info-value" id="scriptProjectId">-</span>
+     </div>
+     <div class="info-row">
+      <span class="info-label">Recorded File:</span> <span class="info-value" id="scriptFileName">-</span>
+     </div>
+    </div><!-- Execute Button -->
+    <button id="executeBtn" class="btn btn-primary" disabled>Execute Tool</button>
+   </div>
+  </div><!-- Browser Extension Required Modal -->
+  <div id="extensionModal" class="modal-overlay hidden">
+   <div class="modal">
+    <div class="modal-header">
+     <div class="modal-title-wrapper">
+      <div class="modal-icon">
+       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" stroke="#e53e3e"></circle> <line x1="12" y1="8" x2="12" y2="12" stroke="#e53e3e"></line> <line x1="12" y1="16" x2="12.01" y2="16" stroke="#e53e3e"></line>
+       </svg>
+      </div>
+      <h3 class="modal-title">Browser Extension Required</h3>
+     </div>
+     <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body">
+     <p class="modal-message">The browser extension is not responding. To execute Playwright scripts, please ensure the SEMOSS Chrome Extension is installed and the side panel is open.</p>
+     <div class="modal-steps">
+      <div class="modal-steps-title">
+       Steps to open the extension:
+      </div>
+      <ol>
+       <li>Look for the SEMOSS extension icon in your browser toolbar (puzzle piece icon)</li>
+       <li>Click the extension icon to open the side panel</li>
+       <li>Wait for the panel to load completely</li>
+       <li>Click "Retry" below to continue</li>
+      </ol>
+     </div>
+    </div>
+    <div class="modal-footer">
+     <button class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
+     <button class="modal-btn modal-btn-primary" id="modalRetry">Retry</button>
+    </div>
+   </div>
+  </div>
+  <script>
+        try {
+            // ── Config ────────────────────────────────────────────────────────────
+            const semossEnv = JSON.parse(document.getElementById('semoss-env').textContent);
+            const MODULE = semossEnv.MODULE || '/Monolith';
+            const APP_ID = semossEnv.APP;
+            const PROJECT_ID = APP_ID;
+            const PIXEL_URL = window.location.origin + MODULE + '/api/engine/runPixel';
+
+            console.log('=== Playwright Script UI ===');
+            console.log('Project ID (from APP):', PROJECT_ID);
+
+            // ── State ─────────────────────────────────────────────────────────────
+            let insightId = null;
+            let playwrightScripts = [];
+
+            const state = {
+                selectedScript: null,
+                executing: false,
+                extensionIsOpen: false
+            };
+
+            // DOM Elements
+            const elements = {
+                scriptSelector: document.getElementById('scriptSelector'),
+                scriptInfo: document.getElementById('scriptInfo'),
+                scriptTitle: document.getElementById('scriptTitle'),
+                scriptProjectId: document.getElementById('scriptProjectId'),
+                scriptFileName: document.getElementById('scriptFileName'),
+                successMessage: document.getElementById('successMessage'),
+                successScriptName: document.getElementById('successScriptName'),
+                errorMessage: document.getElementById('errorMessage'),
+                errorScriptName: document.getElementById('errorScriptName'),
+                executeBtn: document.getElementById('executeBtn'),
+                extensionModal: document.getElementById('extensionModal'),
+                modalClose: document.getElementById('modalClose'),
+                modalCancel: document.getElementById('modalCancel'),
+                modalRetry: document.getElementById('modalRetry')
+            };
+
+            // ── Pixel runner ──────────────────────────────────────────────────────
+            async function runPixel(expression) {
+                const res = await fetch(PIXEL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ expression: expression, insightId: insightId }),
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            }
+
+            // ── Context init ──────────────────────────────────────────────────────
+            async function initializeContext() {
+                try {
+                    const res = await fetch(PIXEL_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ expression: 'SetContext("' + APP_ID + '");' }),
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        insightId = data.insightID;
+                        console.log('✓ Context initialized:', insightId);
+                    }
+                } catch (err) {
+                    console.error('✗ Context init failed:', err);
+                }
+            }
+
+            // ── Load scripts using ListPlaywrightScripts reactor ──────────────────
+            async function fetchPlaywrightScripts() {
+                try {
+                    if (!insightId) await initializeContext();
+
+                    console.log('→ Calling ListPlaywrightScripts reactor...');
+                    const data = await runPixel('ListPlaywrightScripts(project=["' + PROJECT_ID + '"])');
+
+                    const fileNames = data?.pixelReturn?.[0]?.output ?? [];
+
+                    if (fileNames.length === 0) {
+                        throw new Error('No scripts found');
+                    }
+
+                    console.log('✓ Loaded', fileNames.length, 'scripts');
+                    populateDropdown(fileNames);
+
+                } catch (err) {
+                    console.error('✗ Error fetching scripts:', err);
+                    elements.scriptSelector.innerHTML = '<option value="">Failed to load scripts</option>';
+                }
+            }
+
+            // ── Populate dropdown ─────────────────────────────────────────────────
+            function populateDropdown(fileNames) {
+                const scripts = fileNames.map(function (fileName) {
+                    return {
+                        title: formatTitle(fileName),
+                        fileName: fileName,
+                        projectID: PROJECT_ID
+                    };
+                });
+
+                playwrightScripts = scripts;
+
+                let optionsHTML = '<option value="">-- Select a script --</option>';
+                scripts.forEach(function (script, index) {
+                    optionsHTML += '<option value="' + index + '">' + script.title + '</option>';
+                });
+
+                elements.scriptSelector.innerHTML = optionsHTML;
+                elements.scriptSelector.disabled = false;
+            }
+
+            // ── Format filename to title ──────────────────────────────────────────
+            function formatTitle(fileName) {
+                const base = fileName.replace(/-\d{4}-\d{2}-\d{2}\.json$/, '');
+                return base.replace(/_/g, ' ').replace(/\b\w/g, function (char) { return char.toUpperCase(); });
+            }
+
+            // ── Auto-select script by filename ────────────────────────────────────
+            function autoSelectScript(fileName) {
+                if (!fileName) return;
+
+                // Wait for scripts to load if not already loaded
+                if (playwrightScripts.length === 0) {
+                    console.log('⏳ Waiting for scripts to load before auto-selecting...');
+                    setTimeout(function () { autoSelectScript(fileName); }, 500);
+                    return;
+                }
+
+                // Find matching script
+                var scriptIndex = playwrightScripts.findIndex(function (script) {
+                    return script.fileName === fileName;
+                });
+
+                if (scriptIndex !== -1) {
+                    console.log('✓ Auto-selecting script:', fileName);
+                    elements.scriptSelector.value = scriptIndex;
+                    // Trigger change event to display details
+                    var event = new Event('change');
+                    elements.scriptSelector.dispatchEvent(event);
+                } else {
+                    console.warn('⚠ Script not found for auto-select:', fileName);
+                }
+            }
+
+            // Listen for messages
+            window.addEventListener('message', function (event) {
+                console.log('[PORTAL] 📨 Received message:', event.data?.type, 'from origin:', event.origin);
+                console.log('[PORTAL] 📨 Full message data:', event.data);
+
+                if (event.origin !== window.location.origin) {
+                    console.log('[PORTAL] ⚠️ Origin mismatch! event.origin:', event.origin, 'window.location.origin:', window.location.origin);
+                    return;
+                }
+
+                if (event.data && event.data.type === 'SMSS_EXTENSION_OPENED') {
+                    console.log('[PORTAL] ✓ Extension opened');
+                    state.extensionIsOpen = true;
+                }
+
+                if (event.data && event.data.type === 'SMSS_EXTENSION_CLOSED') {
+                    console.log('[PORTAL] ✗ Extension closed');
+                    state.extensionIsOpen = false;
+                }
+
+                if (event.data && event.data.type === 'SMSS_EXTENSION_PONG') {
+                    console.log('[PORTAL] ✓ Extension PONG received');
+                    state.extensionIsOpen = true;
+                }
+
+                // Listen for auto-select request from playground
+                if (event.data && event.data.type === 'AUTO_SELECT_SCRIPT') {
+                    console.log('[PORTAL] ✓ Auto-select request:', event.data.fileName);
+                    autoSelectScript(event.data.fileName);
+                }
+
+                // Listen for execution completion from extension
+                if (event.data && event.data.type === 'PLAYWRIGHT_SCRIPT_COMPLETED') {
+                    console.log('[PORTAL] ✓ Extension completed script execution');
+                    const scriptName = event.data.fileName || state.selectedScript?.fileName || 'Unknown script';
+                    const successMessage = event.data.message || 'Script executed successfully';
+
+                    // Send to playground to call processTool
+                    window.parent.postMessage({
+                        type: 'SMSS_SAVE_TOOL_EXECUTION',
+                        toolResponse: successMessage,
+                        toolStatus: 'success',
+                        executedParameters: {
+                            fileName: scriptName,
+                            projectID: state.selectedScript?.projectID,
+                            recordedFile: state.selectedScript?.fileName
+                        }
+                    }, window.location.origin);
+
+                    onExecutionComplete(scriptName, true);
+                }
+
+                // Listen for execution errors from extension
+                if (event.data && event.data.type === 'PLAYWRIGHT_SCRIPT_ERROR') {
+                    console.error('[PORTAL] ✗ Extension execution error:', event.data.error);
+                    const scriptName = event.data.fileName || state.selectedScript?.fileName || 'Unknown script';
+                    const errorMessage = event.data.error || 'Unknown error';
+
+                    // Send to playground to call processTool
+                    window.parent.postMessage({
+                        type: 'SMSS_SAVE_TOOL_EXECUTION',
+                        toolResponse: errorMessage,
+                        toolStatus: 'error',
+                        executedParameters: {
+                            fileName: scriptName,
+                            projectID: state.selectedScript?.projectID,
+                            recordedFile: state.selectedScript?.fileName
+                        }
+                    }, window.location.origin);
+
+                    onExecutionComplete(scriptName, false);
+                }
+            });
+
+            // Check if extension is available
+            function checkExtensionAvailable() {
+                return new Promise(function (resolve) {
+                    console.log('[PORTAL] 🔍 Checking extension availability (always verify with PING)...');
+
+                    var timeoutId = null;
+                    var resolved = false;
+
+                    function handlePong(event) {
+                        console.log('[PORTAL] 📨 handlePong received message:', event.data?.type, 'from origin:', event.origin);
+                        if (event.origin !== window.location.origin) return;
+                        if (event.data && event.data.type === 'SMSS_EXTENSION_PONG') {
+                            if (!resolved) {
+                                console.log('[PORTAL] ✅ PONG received! Resolving as available.');
+                                resolved = true;
+                                if (timeoutId) clearTimeout(timeoutId);
+                                window.removeEventListener('message', handlePong);
+                                state.extensionIsOpen = true;
+                                resolve(true);
+                            }
+                        }
+                    }
+
+                    window.addEventListener('message', handlePong);
+
+                    timeoutId = setTimeout(function () {
+                        if (!resolved) {
+                            console.log('[PORTAL] ⏱️ PING timeout - no PONG received within 1000ms');
+                            resolved = true;
+                            window.removeEventListener('message', handlePong);
+                            state.extensionIsOpen = false;  // Update state when timeout
+                            resolve(false);
+                        }
+                    }, 1000);
+
+                    console.log('[PORTAL] 📤 Sending PING...');
+                    console.log('[PORTAL] window.location.origin:', window.location.origin);
+                    console.log('[PORTAL] Target origin: * (wildcard)');
+                    window.parent.postMessage({ type: 'SMSS_EXTENSION_PING', timestamp: Date.now() }, window.location.origin);
+                    console.log('[PORTAL] ✅ PING sent via window.parent.postMessage');
+                });
+            }
+
+            // Handle script selection
+            function handleScriptSelection(event) {
+                const value = event.target.value;
+                elements.successMessage.classList.add('hidden');
+                elements.errorMessage.classList.add('hidden');
+
+                if (value && value !== '') {
+                    const scriptIndex = parseInt(value);
+                    const script = playwrightScripts[scriptIndex];
+
+                    if (script) {
+                        elements.scriptInfo.classList.remove('hidden');
+                        elements.scriptTitle.textContent = script.title;
+                        elements.scriptProjectId.textContent = script.projectID;
+                        elements.scriptFileName.textContent = script.fileName;
+                        state.selectedScript = script;
+                        elements.executeBtn.disabled = false;
+                    }
+                } else {
+                    elements.scriptInfo.classList.add('hidden');
+                    state.selectedScript = null;
+                    elements.executeBtn.disabled = true;
+                }
+            }
+
+            // Handle execute button
+            async function handleExecute() {
+                console.log('[PORTAL] 🖱️ Execute button clicked');
+                console.log('[PORTAL] state.executing:', state.executing);
+                console.log('[PORTAL] state.selectedScript:', state.selectedScript);
+
+                // Check extension availability FIRST (always verify before proceeding)
+                console.log('[PORTAL] Calling checkExtensionAvailable()...');
+                const extensionAvailable = await checkExtensionAvailable();
+                console.log('[PORTAL] Extension check result:', extensionAvailable);
+
+                if (!extensionAvailable) {
+                    console.log('[PORTAL] ❌ Extension not available - showing modal');
+                    showExtensionModal();
+                    return;
+                }
+
+                // Then check if already executing
+                if (state.executing) {
+                    console.log('[PORTAL] ⏸️ Already executing, ignoring click');
+                    return;
+                }
+
+                console.log('[PORTAL] ✅ Extension available - executing script');
+                executeScript();
+            }
+
+            // Handle retry button
+            async function handleRetry() {
+                console.log('[PORTAL] 🔄 Retry button clicked');
+                elements.modalRetry.disabled = true;
+                elements.modalRetry.innerHTML = '<span class="loading"></span>Checking...';
+
+                const extensionAvailable = await checkExtensionAvailable();
+
+                elements.modalRetry.disabled = false;
+                elements.modalRetry.textContent = 'Retry';
+
+                if (extensionAvailable) {
+                    console.log('[PORTAL] ✅ Extension now available - hiding modal');
+                    hideExtensionModal();
+                    executeScript();
+                } else {
+                    console.log('[PORTAL] ❌ Extension still not available');
+                }
+            }
+
+            function showExtensionModal() {
+                console.log('[PORTAL] 📋 Showing extension required modal');
+                elements.extensionModal.classList.remove('hidden');
+            }
+
+            function hideExtensionModal() {
+                console.log('[PORTAL] ✖️ Hiding extension required modal');
+                elements.extensionModal.classList.add('hidden');
+            }
+
+            async function executeScript() {
+                if (state.executing || !state.selectedScript) return;
+
+                console.log('[PORTAL] → Script execution started');
+                console.log('[PORTAL] Script details:', state.selectedScript);
+
+                // Notify playground to reset tool status for re-execution
+                window.parent.postMessage({
+                    type: 'SMSS_START_TOOL_EXECUTION'
+                }, window.location.origin);
+
+                state.executing = true;
+                elements.executeBtn.disabled = true;
+                elements.executeBtn.innerHTML = '<span class="loading"></span>Fetching script...';
+
+                try {
+                    // Fetch script content from backend using GetAllSteps
+                    const SEMOSS_URL = window.location.origin + MODULE;
+
+                    console.log('[PORTAL] 🔄 Getting session ID...');
+
+                    // First get a session ID
+                    const sessionResponse = await fetch(SEMOSS_URL + '/api/engine/runPixel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ expression: 'Session();' })
+                    });
+
+                    if (!sessionResponse.ok) {
+                        throw new Error('Failed to get session ID');
+                    }
+
+                    const sessionData = await sessionResponse.json();
+                    const sessionId = sessionData.pixelReturn?.[0]?.output;
+
+                    if (!sessionId) {
+                        throw new Error('No session ID returned');
+                    }
+
+                    console.log('[PORTAL] 📋 Session ID:', sessionId);
+                    console.log('[PORTAL] 🔄 Fetching script via GetAllSteps...');
+
+                    elements.executeBtn.innerHTML = '<span class="loading"></span>Loading script...';
+
+                    // Now fetch the script using GetAllSteps
+                    const scriptResponse = await fetch(SEMOSS_URL + '/api/engine/runPixel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            expression: 'GetAllSteps(project=["' + state.selectedScript.projectID + '"], sessionId=["' + sessionId + '"], fileName=["' + state.selectedScript.fileName + '"]);'
+                        })
+                    });
+
+                    if (!scriptResponse.ok) {
+                        throw new Error('Failed to fetch script content');
+                    }
+
+                    const scriptData = await scriptResponse.json();
+                    console.log('[PORTAL] 📋 GetAllSteps response:', scriptData);
+
+                    let scriptContent = scriptData.pixelReturn?.[0]?.output;
+                    console.log('[PORTAL] 📋 Raw script content:', scriptContent);
+
+                    if (!scriptContent) {
+                        throw new Error('No script content returned');
+                    }
+
+                    console.log('[PORTAL] ✅ Script fetched successfully');
+
+                    // Parse the script content if it's a string
+                    if (typeof scriptContent === "string") {
+                        try {
+                            scriptContent = JSON.parse(scriptContent);
+                        } catch (e) {
+                            console.error('[PORTAL] ⚠️ Failed to parse script JSON:', e);
+                        }
+                    }
+
+                    // Parse nested steps if needed
+                    if (scriptContent && typeof scriptContent.steps === "string") {
+                        try {
+                            scriptContent.steps = JSON.parse(scriptContent.steps);
+                        } catch (e) {
+                            console.error('[PORTAL] ⚠️ Failed to parse steps JSON:', e);
+                        }
+                    }
+
+                    elements.executeBtn.innerHTML = '<span class="loading"></span>Executing...';
+
+                    // Send script content to extension
+                    const messagePayload = {
+                        type: 'EXECUTE_PLAYWRIGHT_SCRIPT',
+                        payload: {
+                            fileName: state.selectedScript.fileName,
+                            projectID: state.selectedScript.projectID,
+                            title: state.selectedScript.title,
+                            scriptContent: scriptContent // Include full script content
+                        }
+                    };
+
+                    console.log('[PORTAL] 📤 Sending script to extension with full content');
+                    window.parent.postMessage(messagePayload, window.location.origin);
+                    console.log('[PORTAL] ✅ Execution message sent');
+
+                } catch (error) {
+                    console.error('[PORTAL] ❌ Error fetching script:', error);
+                    resetExecutionState();
+                    alert('Failed to fetch script: ' + (error.message || 'Unknown error'));
+                }
+            }
+
+            function resetExecutionState() {
+                console.log('[PORTAL] 🔄 Resetting execution state');
+                state.executing = false;
+                elements.executeBtn.disabled = false;
+                elements.executeBtn.textContent = 'Execute Tool';
+            }
+
+            function onExecutionComplete(scriptName, isSuccess) {
+                console.log('[PORTAL] ' + (isSuccess ? '✓' : '✗') + ' Script execution ' + (isSuccess ? 'completed' : 'failed') + ':', scriptName);
+                resetExecutionState();
+                elements.scriptInfo.classList.add('hidden');
+
+                if (isSuccess) {
+                    // Show success message
+                    elements.errorMessage.classList.add('hidden');
+                    elements.successMessage.classList.remove('hidden');
+                    elements.successScriptName.textContent = scriptName;
+                } else {
+                    // Show error message
+                    elements.successMessage.classList.add('hidden');
+                    elements.errorMessage.classList.remove('hidden');
+                    elements.errorScriptName.textContent = scriptName;
+                }
+            }
+
+            // Initialize
+            async function init() {
+                console.log('[PORTAL] 🚀 Initializing...');
+
+                // Event listeners
+                elements.scriptSelector.addEventListener('change', handleScriptSelection);
+                elements.executeBtn.addEventListener('click', handleExecute);
+                elements.modalClose.addEventListener('click', hideExtensionModal);
+                elements.modalCancel.addEventListener('click', hideExtensionModal);
+                elements.modalRetry.addEventListener('click', handleRetry);
+
+                console.log('[PORTAL] ✅ Event listeners attached');
+
+                // Load scripts
+                await initializeContext();
+                await fetchPlaywrightScripts();
+                // Extension check removed - will verify when user clicks Execute to avoid race condition
+
+                console.log('[PORTAL] ✅ Initialization complete');
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+        } catch (error) {
+            console.error('Fatal error:', error);
+            document.body.innerHTML = '<div style="color: white; padding: 40px; text-align: center;">' +
+                '<h1>Error Loading Application</h1><p>' + error.message + '</p></div>';
+        }
+    </script>
+ </body>
+</html>

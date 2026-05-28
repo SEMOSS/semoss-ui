@@ -9,7 +9,8 @@
 		"storage",
 		"debugger",
 		"scripting",
-		"sidePanel"
+		"sidePanel",
+		"downloads"
 	],
 	"host_permissions": ["http://*/*", "https://*/*"],
 	"icons": {
@@ -38,6 +39,12 @@
 			"matches": ["<all_urls>"],
 			"js": ["src/content/index.ts"],
 			"run_at": "document_idle"
+		}
+	],
+	"web_accessible_resources": [
+		{
+			"resources": ["main-bridge.js"],
+			"matches": ["<all_urls>"]
 		}
 	],
 	"devtools_page": "src/devtools/index.html"

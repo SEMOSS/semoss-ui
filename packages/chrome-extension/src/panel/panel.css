@@ -32,7 +32,7 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.panel-title {
+.panel-header h1 {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
@@ -60,113 +60,6 @@ body {
   padding: 20px;
   overflow-y: auto;
   background: #fafbfc;
-}
-
-.execution-log-wrapper {
-  width: 100%;
-}
-
-.execution-log-card {
-  width: 100%;
-  min-height: calc(100vh - 180px);
-  max-height: calc(100vh - 180px);
-  overflow-y: auto;
-  padding: 18px !important;
-  gap: 10px !important;
-  border-color: rgba(15, 23, 42, 0.12) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.execution-log-title {
-  margin: 0 0 6px 0;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.execution-log-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.execution-log-item {
-  border: 1px solid #d6dce5;
-  border-radius: 9px;
-  padding: 8px 12px;
-  background: #f8fafc;
-  transition: all 0.2s ease;
-}
-
-.execution-log-item:hover {
-  transform: translateX(2px);
-  border-color: #c3cddd;
-  background: #f1f5f9;
-}
-
-.execution-log-item--error {
-  border-color: rgba(211, 47, 47, 0.35);
-  background: rgba(211, 47, 47, 0.05);
-}
-
-.execution-log-item--error:hover {
-  border-color: rgba(211, 47, 47, 0.7);
-  background: rgba(211, 47, 47, 0.1);
-}
-
-.execution-log-item--success {
-  border-color: rgba(46, 125, 50, 0.35);
-  background: rgba(46, 125, 50, 0.05);
-}
-
-.execution-log-item--success:hover {
-  border-color: rgba(46, 125, 50, 0.7);
-  background: rgba(46, 125, 50, 0.1);
-}
-
-.execution-log-item--check {
-  border-color: rgba(76, 175, 80, 0.32);
-  background: rgba(76, 175, 80, 0.05);
-}
-
-.execution-log-item--check:hover {
-  border-color: rgba(76, 175, 80, 0.55);
-  background: rgba(76, 175, 80, 0.1);
-}
-
-.execution-log-item--input {
-  border-color: rgba(25, 118, 210, 0.3);
-  background: rgba(25, 118, 210, 0.05);
-}
-
-.execution-log-item--input:hover {
-  border-color: rgba(25, 118, 210, 0.55);
-  background: rgba(25, 118, 210, 0.1);
-}
-
-.execution-log-line {
-  font-size: 13px;
-  line-height: 1.55;
-  color: #1f2937;
-  letter-spacing: 0.01em;
-}
-
-.execution-log-line--strong {
-  font-weight: 500;
-}
-
-.execution-log-item--error .execution-log-line {
-  color: #b71c1c;
-}
-
-.execution-log-item--success .execution-log-line {
-  color: #1b5e20;
-}
-
-.execution-log-item--check .execution-log-line {
-  color: #2e7d32;
 }
 
 .mode-switcher {
@@ -278,9 +171,12 @@ body {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.8;
   }
@@ -410,6 +306,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -430,6 +327,7 @@ body {
     transform: translateY(30px) scale(0.95);
     opacity: 0;
   }
+
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
@@ -451,13 +349,18 @@ body {
   line-height: 1.5;
 }
 
-.user-input-field {
-  width: 100%;
-  font-size: 15px;
+/* TextField component from @semoss/ui - force full width */
+.user-input-dialog .MuiTextField-root {
+  width: 100% !important;
   margin-bottom: 0;
 }
 
-.user-input-field:focus-within {
+.user-input-dialog .MuiInputBase-root {
+  width: 100%;
+  font-size: 15px;
+}
+
+.user-input-dialog .MuiInputBase-root:focus-within {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -469,11 +372,14 @@ body {
 }
 
 /* Override Material-UI Button width constraints */
-.user-input-dialog .submit-btn {
+.user-input-dialog .MuiButton-root {
   min-width: auto;
+}
+
+.user-input-dialog .submit-btn {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: white !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -634,6 +540,7 @@ body {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -697,6 +604,7 @@ body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -786,6 +694,60 @@ body {
   border: 1px solid #bae6fd;
 }
 
+/* Override notification error and success colors to white text */
+/* Target @semoss/ui Notification component with error and success colors */
+[data-color="error"],
+[data-color="success"],
+.MuiAlert-standardError,
+.MuiAlert-filledError,
+.MuiAlert-standardSuccess,
+.MuiAlert-filledSuccess,
+.notification-error,
+.notification-success,
+.semoss-notification[data-color="error"],
+.semoss-notification[data-color="success"] {
+  color: #ffffff !important;
+}
+
+/* Make sure all text elements within error and success notifications are white */
+[data-color="error"] *,
+[data-color="success"] *,
+.MuiAlert-standardError *,
+.MuiAlert-filledError *,
+.MuiAlert-standardSuccess *,
+.MuiAlert-filledSuccess *,
+.notification-error *,
+.notification-success *,
+.semoss-notification[data-color="error"] *,
+.semoss-notification[data-color="success"] * {
+  color: #ffffff !important;
+}
+
+/* Make error and success notification icons white */
+[data-color="error"] .MuiSvgIcon-root,
+[data-color="success"] .MuiSvgIcon-root,
+.MuiAlert-standardError .MuiSvgIcon-root,
+.MuiAlert-filledError .MuiSvgIcon-root,
+.MuiAlert-standardSuccess .MuiSvgIcon-root,
+.MuiAlert-filledSuccess .MuiSvgIcon-root,
+.notification-error .MuiSvgIcon-root,
+.notification-success .MuiSvgIcon-root,
+.semoss-notification[data-color="error"] .MuiSvgIcon-root,
+.semoss-notification[data-color="success"] .MuiSvgIcon-root,
+[data-color="error"] svg,
+[data-color="success"] svg,
+.MuiAlert-standardError svg,
+.MuiAlert-filledError svg,
+.MuiAlert-standardSuccess svg,
+.MuiAlert-filledSuccess svg,
+.notification-error svg,
+.notification-success svg,
+.semoss-notification[data-color="error"] svg,
+.semoss-notification[data-color="success"] svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+}
+
 .playground-current strong,
 .playground-submitted strong {
   display: block;
@@ -855,9 +817,12 @@ body {
 }
 
 @keyframes pulse-border {
-  0%, 100% {
+
+  0%,
+  100% {
     border-color: #6ee7b7;
   }
+
   50% {
     border-color: #10b981;
   }
