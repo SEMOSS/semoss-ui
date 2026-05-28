@@ -4,6 +4,7 @@
   "sideEffects": ["**/*.css"],
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./flexlayout.css": "./src/components/flex-layout/flexlayout.css",
     ".": "./src/index.ts",
     "./api": "./src/api/index.ts",
     "./assets/img/*": "./src/assets/img/*"
