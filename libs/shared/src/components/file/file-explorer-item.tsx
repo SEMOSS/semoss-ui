@@ -223,9 +223,53 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 	const [renameValue, setRenameValue] = useState("");
 	const inputRef = useRef<HTMLInputElement>(null);
 	const canRename = mode.type !== "STORAGE";
-	const visibleSecondaryActions = secondaryActions.filter(
-		(action): action is FileExplorerSecondaryAction => action !== null,
-	);
+	const visibleSecondaryActions = useMemo(() => {
+		const visible = secondaryActions.filter(
+			(action): action is FileExplorerSecondaryAction => action !== null,
+		);
+
+		// Built-in Unzip for every mode that supports it. Consumers can still
+		// inject their own "Unzip" via the secondaryActions prop to override
+		// (e.g. to attach side effects like closing related tabs).
+		const isZip =
+			item.type !== "directory" &&
+			item.path.toLowerCase().endsWith(".zip");
+		const hasUnzip = visible.some(
+			(action) => action.name.toLowerCase() === "unzip",
+		);
+		if (isZip && !hasUnzip) {
+			let unzipPixel: string | null = null;
+			if (mode.type === "APP") {
+				unzipPixel = `UnzipAppAssetFile(project=["${mode.app}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "ENGINE") {
+				unzipPixel = `UnzipEngineAssetFile(engine=["${mode.engine}"], filePath=["${item.path}"])`;
+			} else if (mode.type === "INSIGHT") {
+				unzipPixel = `UnzipInsightAssetFile(filePath=["${item.path}"])`;
+			} else if (mode.type === "USER") {
+				unzipPixel = `UnzipUserAssetFile(filePath=["${item.path}"])`;
+			}
+			if (unzipPixel) {
+				const pixel = unzipPixel;
+				visible.push({
+					name: "Unzip",
+					action: async () => {
+						try {
+							await insight.actions.run(pixel);
+							refresh();
+						} catch (e) {
+							toast.error(
+								getFileOperationErrorMessage(
+									"Failed to unzip file",
+									e,
+								),
+							);
+						}
+					},
+				});
+			}
+		}
+		return visible;
+	}, [secondaryActions, item.type, item.path, mode, insight, refresh]);
 
 	useEffect(() => {
 		if (!isRenaming) return;
