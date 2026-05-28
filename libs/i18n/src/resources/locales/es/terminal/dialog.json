@@ -1,0 +1,50 @@
+{
+	"help": {
+		"title": "Ayuda de la Terminal",
+		"emptyMessage": "No se devolvieron ejemplos de uso estructurados para {{type}}.",
+		"rawResponse": "Respuesta sin procesar",
+		"copy": "Copiar",
+		"copied": "Copiado",
+		"copyFailed": "Error al copiar el código"
+	},
+	"save": {
+		"title": "Guardar",
+		"fields": {
+			"name": "Nombre:",
+			"comment": "Comentario:"
+		},
+		"buttons": {
+			"save": "Guardar",
+			"cancel": "Cancelar"
+		},
+		"comment": "Guardando a las {{timestamp}}",
+		"errors": {
+			"nameRequired": "El archivo necesita un nombre.",
+			"commentRequired": "Incluye un comentario que describa tus cambios.",
+			"saveFailed": "Error al guardar el recurso.",
+			"unknown": "Error al guardar"
+		}
+	},
+	"upload": {
+		"title": "Subir",
+		"fields": {
+			"selectFile": "Seleccionar archivo:",
+			"comment": "Comentario:"
+		},
+		"dropzone": {
+			"drag": "Arrastra y suelta archivos",
+			"or": "o sube"
+		},
+		"buttons": {
+			"upload": "Subir",
+			"cancel": "Cancelar",
+			"remove": "Quitar"
+		},
+		"comment": "Subiendo a las {{timestamp}}",
+		"errors": {
+			"filesRequired": "Selecciona archivos para subir.",
+			"commentRequired": "Incluye un comentario que describa los archivos recién añadidos.",
+			"unknown": "Error al subir"
+		}
+	}
+}

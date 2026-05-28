@@ -1,0 +1,85 @@
+@import "@semoss/ui/globals.css";
+@import "@semoss/shared/globals.css";
+/* FlexLayout's base + SMSS-theme styles. Imported directly so the
+   bundler can't tree-shake them out of the production CSS bundle —
+   the side-effect TS imports in libs/shared/.../flex-layout/index.ts
+   were getting dropped, leaving the layout with no sizing rules and
+   tab content rendering at 0px height. */
+@import "flexlayout-react/style/light.css";
+@import "@semoss/shared/flexlayout.css";
+
+@source "./**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+        Cantarell, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Subtle divider between Monaco's line-number gutter and the editor
+   content area in the REPL input. Uses the theme's border token so it
+   reads correctly in both light + dark mode. */
+.terminal-repl-editor .monaco-editor .margin {
+    border-right: 1px solid var(--border);
+}
+
+/* Terminal-specific FlexLayout tweaks. Move the maximize button to the
+   left of each tabset's tab strip (the SMSS theme defaults it to the
+   right, with reserved room-sidebar-controls padding the terminal
+   doesn't have). Scoped to `.terminal-flex-layout` so this doesn't bleed
+   into the client/playground which share the SMSS theme. */
+.terminal-flex-layout .flexlayout__tab_toolbar {
+    order: -1;
+    margin-right: 4px;
+}
+.terminal-flex-layout .flexlayout__tabset_tabbar_outer_top {
+    padding-right: 0;
+}
+
+/* The base `.flexlayout__layout` block hardcodes color variables (text,
+   icon, splitter, etc.) regardless of the .dark class, so things stayed
+   bright in dark mode. Re-bind them to design-system tokens so they
+   follow the active theme. Scoped to `.terminal-flex-layout` so we
+   don't touch client/playground. */
+.terminal-flex-layout .flexlayout__layout {
+    --color-text: var(--foreground);
+    --color-icon: var(--muted-foreground);
+    /* Splitter (pane divider) defaults to a near-white that glows against
+       a dark UI; map to the muted border color in both themes. */
+    --color-splitter: var(--border);
+    --color-splitter-hover: var(--muted-foreground);
+    --color-splitter-drag: var(--primary);
+}
+
+/* Help + User strip pinned below the FlexLayout "Files" border tab. We
+   keep it fully transparent + borderless so the underlying FlexLayout
+   strip (the left border the icons sit on top of) shows through and the
+   two read as a single continuous column. */
+.terminal-sidebar-footer {
+    background: transparent;
+    border: none;
+}
+/* UserMenu's @semoss/ui Button trigger is 32px (size-8) by default — too
+   wide for the 31px FlexLayout strip. Force it to 28px to match the Help
+   button it sits next to. */
+.terminal-sidebar-footer [data-slot="dropdown-menu-trigger"] {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+/* (Maximized-state highlight removed — relied on contrast between
+   selected and inactive tabs, which falls apart when there's only one
+   tab and the user can't tell maximize is on. FlexLayout's maximize
+   icon already toggles to a restore icon, which is the cue.) */

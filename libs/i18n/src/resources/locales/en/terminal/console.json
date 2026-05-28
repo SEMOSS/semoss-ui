@@ -1,0 +1,29 @@
+{
+	"context": {
+		"switchTo": "Switch to {{context}}"
+	},
+	"run": {
+		"button": "Run",
+		"tooltip": "Run (Ctrl+Enter)"
+	},
+	"emptyState": {
+		"prefix": "Type a command above and press",
+		"and": "+",
+		"suffix": "to execute. Output will appear here."
+	},
+	"copyAll": {
+		"button": "Copy All Steps",
+		"tooltip": "Copy every submitted step to the clipboard",
+		"success": "Recipe successfully copied to clipboard",
+		"error": "Recipe unsuccessfully copied to clipboard"
+	},
+	"actions": {
+		"enteredRMode": "You have entered R Mode.",
+		"enteredPythonMode": "You have entered Python Mode."
+	},
+	"results": {
+		"successNoOutput": "✓ Ran successfully (no output)",
+		"insightNotReady": "Insight not ready",
+		"unknownError": "Unknown error"
+	}
+}

@@ -65,5 +65,115 @@
 	},
 	"images": {
 		"logoAlt": "ロゴ"
+	},
+	"fileExplorer": {
+		"search": "検索",
+		"name": "名前",
+		"dateModified": "更新日",
+		"pathLabel": "パス: {{path}}",
+		"lastModifiedLabel": "最終更新: {{date}}",
+		"dateFormat": {
+			"justNow": "たった今",
+			"minutesAgoShort": "{{count}}分前",
+			"minutesAgo": "{{count}}分前",
+			"hoursAgoShort": "{{count}}時間前",
+			"hoursAgo": "{{count}}時間前",
+			"yesterday": "昨日",
+			"yesterdayAt": "昨日 {{time}}",
+			"dayAt": "{{day}} {{time}}",
+			"dateAt": "{{date}} {{time}}",
+			"dateAndTime": "{{date}}, {{time}}"
+		},
+		"refreshTooltip": "{{path}} を更新",
+		"createTooltip": "{{path}} に作成",
+		"searchAll": "すべて",
+		"searchOnly": "「{{name}}」のみ",
+		"searchAllAria": "すべて検索",
+		"searchCurrentAria": "現在のディレクトリのみ検索",
+		"searchCurrentTitle": "{{path}} のみで検索",
+		"moveDropHint": "ドロップして {{label}} を {{path}} に移動",
+		"contextMenu": {
+			"copyPath": "パスをコピー",
+			"copy": "コピー",
+			"cut": "切り取り",
+			"pasteHere": "ここに貼り付け",
+			"rename": "名前を変更",
+			"download": "ダウンロード",
+			"delete": "削除",
+			"newFile": "新規ファイル",
+			"newFolder": "新規フォルダ",
+			"ariaLabel": "ファイル操作"
+		},
+		"overlay": {
+			"title": "ファイルまたはディレクトリを作成",
+			"description": "次のパスに新しいファイルまたはディレクトリをアップロードまたは作成: {{path}}",
+			"fields": {
+				"action": "アクション",
+				"fileName": "ファイル名",
+				"directoryName": "ディレクトリ名",
+				"uploadFileZip": "ファイル/ZIP をアップロード"
+			},
+			"placeholders": {
+				"selectAction": "アクションを選択",
+				"fileName": "ファイル名を入力",
+				"directoryName": "ディレクトリ名を入力"
+			},
+			"actions": {
+				"upload": "ファイルをアップロード",
+				"newFile": "新規ファイル",
+				"newDirectory": "新規ディレクトリ"
+			},
+			"dropzone": {
+				"dragAndDrop": "ファイルをここにドラッグ＆ドロップ",
+				"orClickToBrowse": "またはクリックして参照",
+				"uploadIconAlt": "アップロードアイコン"
+			},
+			"files": {
+				"selectedCount_one": "{{count}} 件のファイルを選択:",
+				"selectedCount_other": "{{count}} 件のファイルを選択:",
+				"unzip": "解凍",
+				"unzipTitle": "アップロード後にこの ZIP を展開"
+			},
+			"buttons": {
+				"cancel": "キャンセル",
+				"upload": "アップロード",
+				"create": "作成"
+			},
+			"toasts": {
+				"selectAtLeastOne": "アップロードするファイルを少なくとも 1 つ選択してください",
+				"enterFileName": "ファイル名を入力してください",
+				"enterDirectoryName": "ディレクトリ名を入力してください",
+				"uploadSuccess": "ファイルのアップロードに成功しました",
+				"uploadWithExtractSuccess": "{{count}} 件のファイルをアップロード、{{extractedCount}} 個の ZIP を展開しました",
+				"extractionsFailed": "{{count}} 件の展開に失敗: {{errors}}",
+				"fileCreated": "ファイルを作成しました",
+				"directoryCreated": "ディレクトリを作成しました",
+				"anError": "エラーが発生しました"
+			}
+		}
+	},
+	"cellOutput": {
+		"panels": {
+			"logs": "ログ",
+			"result": "結果",
+			"error": "エラー"
+		},
+		"running": "実行中…",
+		"format": {
+			"formatted": "整形済み",
+			"raw": "生データ"
+		},
+		"copy": {
+			"command": "コマンドをコピー",
+			"logs": "ログをコピー",
+			"output": "出力をコピー",
+			"copied": "コピーしました！"
+		},
+		"popout": "ポップアウト",
+		"expandAll": "すべて展開",
+		"collapseAll": "すべて折りたたむ",
+		"close": "閉じる",
+		"lines_one": "{{count}} 行",
+		"lines_other": "{{count}} 行"
 	}
 }
