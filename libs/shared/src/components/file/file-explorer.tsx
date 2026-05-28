@@ -164,6 +164,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 	const handleDividerMouseDown = (e: ReactMouseEvent<HTMLDivElement>) => {
 		e.preventDefault();
+		// Read the effective writing direction from the resizer's own
+		// ancestor chain so the column-resize math flips automatically when
+		// the page (or a parent pane) is RTL — otherwise dragging right
+		// shrinks the date column in LTR but grows it in RTL.
+		const isRtl =
+			(e.currentTarget as HTMLElement)
+				.closest("[dir]")
+				?.getAttribute("dir") === "rtl" ||
+			getComputedStyle(e.currentTarget as HTMLElement).direction ===
+				"rtl";
 		dividerDragRef.current = {
 			startX: e.clientX,
 			startWidth: dateColWidth,
@@ -174,7 +184,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		const onMouseMove = (ev: globalThis.MouseEvent) => {
 			const currentDrag = dividerDragRef.current;
 			if (!currentDrag) return;
-			const delta = ev.clientX - currentDrag.startX;
+			// In LTR the date column is on the trailing (right) side, so
+			// dragging the divider right (positive delta) narrows it. In RTL
+			// the date column sits on the leading (left) side instead, and
+			// the math inverts.
+			const signed = isRtl ? -1 : 1;
+			const delta = (ev.clientX - currentDrag.startX) * signed;
 			setDateColWidth((_) =>
 				Math.max(100, Math.min(280, currentDrag.startWidth - delta)),
 			);
@@ -291,13 +306,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			// refresh the files
 			getFiles.refresh();
 			toast.success(
-				files.length > 1
-					? "Successfully uploaded files"
-					: "Successfully uploaded file",
+				t("fileExplorer.toasts.uploadSuccess", { count: files.length }),
 			);
 		} catch (e) {
 			toast.error(
-				getFileOperationErrorMessage("Failed to upload file", e),
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.uploadFailed"),
+					e,
+				),
 			);
 			console.error(e);
 		} finally {
@@ -539,15 +555,20 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			if (movedItems.length > 0) {
 				onItemsMoved?.(movedItems);
 				toast.success(
-					movedItems.length > 1
-						? "Successfully moved items"
-						: "Successfully moved item",
+					t("fileExplorer.toasts.moveSuccess", {
+						count: movedItems.length,
+					}),
 				);
 			}
 			refreshDirectories(Array.from(affectedDirectories));
 			return true;
 		} catch (e) {
-			toast.error(getFileOperationErrorMessage("Failed to move item", e));
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.moveFailed"),
+					e,
+				),
+			);
 			console.error(e);
 			return false;
 		}
@@ -588,19 +609,28 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 			if (copiedItems.length > 0) {
 				toast.success(
-					copiedItems.length > 1
-						? "Successfully copied items"
-						: "Successfully copied item",
+					t("fileExplorer.toasts.copySuccess", {
+						count: copiedItems.length,
+					}),
 				);
 			}
 
 			if (failedItems.length > 0) {
-				toast.error(`Failed to copy: ${failedItems.join(", ")}`);
+				toast.error(
+					t("fileExplorer.toasts.copyFailedItems", {
+						items: failedItems.join(", "),
+					}),
+				);
 			}
 
 			return copiedItems.length > 0;
 		} catch (e) {
-			toast.error(getFileOperationErrorMessage("Failed to copy item", e));
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.copyFailed"),
+					e,
+				),
+			);
 			console.error(e);
 			return false;
 		}
@@ -669,19 +699,26 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			if (deletedItems.length > 0) {
 				onItemsDeleted?.(deletedItems);
 				toast.success(
-					deletedItems.length > 1
-						? "Successfully deleted items"
-						: "Successfully deleted item",
+					t("fileExplorer.toasts.deleteSuccess", {
+						count: deletedItems.length,
+					}),
 				);
 			}
 			refreshDirectories(Array.from(affectedDirectories));
 
 			if (failedItems.length > 0) {
-				toast.error(`Failed to delete: ${failedItems.join(", ")}`);
+				toast.error(
+					t("fileExplorer.toasts.deleteFailedItems", {
+						items: failedItems.join(", "),
+					}),
+				);
 			}
 		} catch (e) {
 			toast.error(
-				getFileOperationErrorMessage("Failed to delete item", e),
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.deleteFailed"),
+					e,
+				),
 			);
 			console.error(e);
 		}
@@ -710,9 +747,14 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	const handleCopyPath = async (item: FileItem) => {
 		try {
 			await copyTextToClipboard(item.path);
-			toast.success("Copied path");
+			toast.success(t("fileExplorer.toasts.copyPathSuccess"));
 		} catch (e) {
-			toast.error(getFileOperationErrorMessage("Failed to copy path", e));
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.copyPathFailed"),
+					e,
+				),
+			);
 			console.error(e);
 		}
 	};
@@ -780,10 +822,15 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			} else {
 				await download(insight.insightId, fileKey);
 			}
-			toast.success("Successfully downloaded item");
+			toast.success(
+				t("fileExplorer.toasts.downloadSuccess", { count: 1 }),
+			);
 		} catch (e) {
 			toast.error(
-				getFileOperationErrorMessage("Failed to download item", e),
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.downloadFailed"),
+					e,
+				),
 			);
 			console.error(e);
 		}
@@ -810,14 +857,18 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
 		if (downloadedCount > 0) {
 			toast.success(
-				downloadedCount > 1
-					? "Successfully downloaded items"
-					: "Successfully downloaded item",
+				t("fileExplorer.toasts.downloadSuccess", {
+					count: downloadedCount,
+				}),
 			);
 		}
 
 		if (failedItems.length > 0) {
-			toast.error(`Failed to download: ${failedItems.join(", ")}`);
+			toast.error(
+				t("fileExplorer.toasts.downloadFailedItems", {
+					items: failedItems.join(", "),
+				}),
+			);
 		}
 	};
 
@@ -957,7 +1008,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							<DropdownMenuTrigger
 								data-testid="file-explorer-path-dropdown-trigger"
 								className="flex flex-1 items-center gap-1.5"
-								aria-label="Toggle menu"
+								aria-label={t("fileExplorer.toggleMenu")}
 								disabled={crumbs.length <= 1}
 								title={path}
 							>
@@ -1109,15 +1160,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									data-testid="file-explorer-bulk-shortcuts-button"
 									variant="ghost"
 									size="icon-sm"
-									aria-label="Bulk selection shortcuts"
+									aria-label={t(
+										"fileExplorer.bulkShortcutsAria",
+									)}
 									className="shrink-0"
 								>
 									<CircleHelpIcon className="size-3" />
 								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
-								Ctrl/Cmd+click selects multiple items.
-								Ctrl/Cmd+A selects all visible items.
+								{t("fileExplorer.bulkShortcutsTooltip")}
 							</TooltipContent>
 						</Tooltip>
 					</div>
@@ -1125,7 +1177,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						data-testid="file-explorer-date-column-resizer"
 						role="slider"
 						aria-orientation="vertical"
-						aria-label="Resize date column"
+						aria-label={t("fileExplorer.resizeDateColumn")}
 						aria-valuemin={100}
 						aria-valuemax={280}
 						aria-valuenow={dateColWidth}
@@ -1133,9 +1185,23 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						className="group flex cursor-col-resize items-center self-stretch px-2 focus:outline-none"
 						onMouseDown={handleDividerMouseDown}
 						onKeyDown={(e) => {
-							if (e.key === "ArrowLeft") {
+							// Match the mouse handler: in RTL the column is
+							// on the leading edge, so arrow-key direction is
+							// inverted relative to LTR.
+							const target = e.currentTarget as HTMLElement;
+							const isRtl =
+								target.closest("[dir]")?.getAttribute("dir") ===
+									"rtl" ||
+								getComputedStyle(target).direction === "rtl";
+							const grow = isRtl
+								? e.key === "ArrowRight"
+								: e.key === "ArrowLeft";
+							const shrink = isRtl
+								? e.key === "ArrowLeft"
+								: e.key === "ArrowRight";
+							if (grow) {
 								setDateColWidth((w) => Math.min(280, w + 8));
-							} else if (e.key === "ArrowRight") {
+							} else if (shrink) {
 								setDateColWidth((w) => Math.max(100, w - 8));
 							}
 						}}
@@ -1161,7 +1227,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						<div className="flex items-center justify-center py-4">
 							<Muted className="text-destructive">
 								{getFiles.error?.message ||
-									"Failed to load files"}
+									t("fileExplorer.failedToLoadFiles")}
 							</Muted>
 						</div>
 					)}

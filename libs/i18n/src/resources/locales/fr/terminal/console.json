@@ -11,6 +11,7 @@
 		"and": "+",
 		"suffix": "pour l'exécuter. La sortie apparaîtra ici."
 	},
+	"dragToResize": "Glisser pour redimensionner",
 	"copyAll": {
 		"button": "Copier toutes les étapes",
 		"tooltip": "Copier chaque étape soumise dans le presse-papiers",
