@@ -5,7 +5,9 @@
 		"rawResponse": "الاستجابة الخام",
 		"copy": "نسخ",
 		"copied": "تم النسخ",
-		"copyFailed": "فشل نسخ الكود"
+		"copyFailed": "فشل نسخ الكود",
+		"fetchFailed": "فشل في جلب الاستخدام (لا توجد استجابة)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) أرجع خطأ."
 	},
 	"save": {
 		"title": "حفظ",

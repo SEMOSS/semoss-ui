@@ -11,6 +11,7 @@
 		"and": "+",
 		"suffix": "para ejecutar. La salida aparecerá aquí."
 	},
+	"dragToResize": "Arrastra para redimensionar",
 	"copyAll": {
 		"button": "Copiar Todos los Pasos",
 		"tooltip": "Copiar cada paso enviado al portapapeles",

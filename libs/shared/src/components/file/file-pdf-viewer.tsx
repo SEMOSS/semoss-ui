@@ -1,3 +1,4 @@
+import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import { Muted, Spinner } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
@@ -12,6 +13,7 @@ interface FilePdfViewerProps {
 
 export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
 	const insight = useInsight();
+	const { t } = useTranslation("common");
 	const targetInsightId =
 		mode.type === "INSIGHT"
 			? mode.insightId || insight.insightId
@@ -40,7 +42,8 @@ export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
 			{getFile.status === "ERROR" && (
 				<div className="flex flex-1 items-center justify-center py-4">
 					<Muted className="text-destructive">
-						{getFile.error?.message || "Failed to load files"}
+						{getFile.error?.message ||
+							t("fileExplorer.failedToLoadFiles")}
 					</Muted>
 				</div>
 			)}
@@ -52,7 +55,7 @@ export const FilePdfViewer: React.FC<FilePdfViewerProps> = ({ mode, path }) => {
 					data={`data:application/pdf;base64,${getFile.data}`}
 					type="application/pdf"
 				>
-					<Muted>Your browser doesn't support PDF viewing.</Muted>
+					<Muted>{t("fileExplorer.pdfNotSupported")}</Muted>
 				</object>
 			)}
 		</div>

@@ -83,7 +83,7 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 			if (!resp) {
 				setErrorByType((prev) => ({
 					...prev,
-					[activeType]: "Failed to fetch usage (no response)",
+					[activeType]: t("help.fetchFailed"),
 				}));
 				setUsageByType((prev) => ({
 					...prev,
@@ -91,11 +91,11 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 				}));
 				return;
 			}
-			if (resp.operationType.some((t) => t.indexOf("ERROR") > -1)) {
+			if (resp.operationType.some((op) => op.indexOf("ERROR") > -1)) {
 				const err =
 					typeof resp.output === "string"
 						? resp.output
-						: `GetEngineUsage(type=["${activeType}"]) returned an error.`;
+						: t("help.usageReturnedError", { type: activeType });
 				setErrorByType((prev) => ({ ...prev, [activeType]: err }));
 				setUsageByType((prev) => ({
 					...prev,

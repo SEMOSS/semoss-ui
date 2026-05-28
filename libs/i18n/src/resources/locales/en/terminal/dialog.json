@@ -5,7 +5,9 @@
 		"rawResponse": "Raw response",
 		"copy": "Copy",
 		"copied": "Copied",
-		"copyFailed": "Failed to copy code"
+		"copyFailed": "Failed to copy code",
+		"fetchFailed": "Failed to fetch usage (no response)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) returned an error."
 	},
 	"save": {
 		"title": "Save",
