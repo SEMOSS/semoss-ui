@@ -25,6 +25,10 @@ export const getFileEditorPathScope = (
 		return `STORAGE:${mode.storage}`;
 	}
 
+	if (mode.type === "USER") {
+		return "USER";
+	}
+
 	return `INSIGHT:${mode.insightId || fallbackInsightId || ""}`;
 };
 
