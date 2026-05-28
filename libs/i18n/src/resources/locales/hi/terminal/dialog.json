@@ -5,7 +5,9 @@
 		"rawResponse": "कच्ची प्रतिक्रिया",
 		"copy": "कॉपी करें",
 		"copied": "कॉपी किया गया",
-		"copyFailed": "कोड कॉपी करने में विफल"
+		"copyFailed": "कोड कॉपी करने में विफल",
+		"fetchFailed": "उपयोग प्राप्त करने में विफल (कोई प्रतिक्रिया नहीं)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) ने त्रुटि लौटाई।"
 	},
 	"save": {
 		"title": "सहेजें",

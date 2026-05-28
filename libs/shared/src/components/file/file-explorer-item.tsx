@@ -282,7 +282,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 						} catch (e) {
 							toast.error(
 								getFileOperationErrorMessage(
-									"Failed to unzip file",
+									t("fileExplorer.toasts.unzipFailed"),
 									e,
 								),
 							);
@@ -348,10 +348,15 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				await insight.actions.run(pixel);
 				onAfterRename?.(item.path, newPath);
 				refresh();
-				toast.success("Successfully renamed");
+				toast.success(t("fileExplorer.toasts.renameSuccess"));
 			}
 		} catch (e) {
-			toast.error(getFileOperationErrorMessage("Failed to rename", e));
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.renameFailed"),
+					e,
+				),
+			);
 			console.error(e);
 		} finally {
 			setIsRenaming(false);
