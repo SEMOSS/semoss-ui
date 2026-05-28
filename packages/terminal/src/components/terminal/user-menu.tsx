@@ -1,14 +1,28 @@
-import { CircleUserRound, LogOut } from "lucide-react";
+import {
+	CircleUserRound,
+	LogOutIcon,
+	MonitorIcon,
+	MoonIcon,
+	SunIcon,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Env, useInsight } from "@semoss/sdk/react";
 import {
 	Avatar,
 	AvatarFallback,
 	Button,
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
+	DropdownMenu,
+	DropdownMenuCheckboxItem,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuPortal,
+	DropdownMenuSeparator,
+	DropdownMenuSub,
+	DropdownMenuSubContent,
+	DropdownMenuSubTrigger,
+	DropdownMenuTrigger,
 	Spinner,
+	useTheme,
 } from "@semoss/ui/next";
 import { runPixel } from "../../utility/pixel";
 
@@ -24,17 +38,22 @@ interface VersionInfo {
 }
 
 /**
- * Top-right account button. Mirrors the client's <LogoutPopover>: round user
- * avatar trigger → popover with name + email + Logout. User info is pulled
- * via `GetUserInfo()` which returns a `{ [provider]: {...} }` map; we pick
- * SAML → NATIVE → first key (same precedence the client uses).
+ * Account dropdown — mirrors the playground's NavUser (theme submenu +
+ * logout) plus the client's LogoutPopover (user header + version footer).
+ *
+ * - User info: `GetUserInfo()` pixel; provider precedence SAML → NATIVE →
+ *   first key (same as the client).
+ * - Theme: `useTheme()` from @semoss/ui/next; sub-menu with Light / Dark /
+ *   System options identical to the playground.
+ * - Version + build datetime: `GET ${MODULE}/api/config` (same endpoint the
+ *   client reads in monolith.store).
  */
 export const UserMenu = () => {
 	const { actions, isAuthorized } = useInsight();
+	const { theme, setTheme } = useTheme();
 	const [user, setUser] = useState<UserInfo>({});
 	const [version, setVersion] = useState<VersionInfo | null>(null);
 	const [loggingOut, setLoggingOut] = useState(false);
-	const [open, setOpen] = useState(false);
 
 	// Fetch the current user once authorized
 	useEffect(() => {
@@ -104,7 +123,6 @@ export const UserMenu = () => {
 	}, [isAuthorized]);
 
 	const handleLogout = async () => {
-		setOpen(false);
 		setLoggingOut(true);
 		try {
 			await actions.logout();
@@ -124,14 +142,19 @@ export const UserMenu = () => {
 				</div>
 			)}
 
-			<Popover open={open} onOpenChange={setOpen}>
-				<PopoverTrigger asChild>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
 					<Button variant="ghost" size="icon-sm" aria-label="Account">
 						<CircleUserRound className="size-4" />
 					</Button>
-				</PopoverTrigger>
-				<PopoverContent align="end" sideOffset={6} className="w-64 p-0">
-					<div className="flex items-center gap-3 border-border border-b px-4 py-3">
+				</DropdownMenuTrigger>
+				<DropdownMenuContent
+					align="end"
+					sideOffset={6}
+					className="w-60 p-0"
+				>
+					{/* User identity header (read-only) */}
+					<div className="flex items-center gap-3 border-border border-b px-3 py-3">
 						<Avatar>
 							<AvatarFallback>{initial}</AvatarFallback>
 						</Avatar>
@@ -146,16 +169,64 @@ export const UserMenu = () => {
 							)}
 						</div>
 					</div>
-					<div className="px-4 py-3">
-						<Button
-							variant="default"
-							className="w-full"
+
+					<div className="p-1">
+						{/* Theme submenu (playground pattern) */}
+						<DropdownMenuSub>
+							<DropdownMenuSubTrigger>
+								{theme === "dark" ? (
+									<MoonIcon />
+								) : theme === "system" ? (
+									<MonitorIcon />
+								) : (
+									<SunIcon />
+								)}
+								{theme === "dark"
+									? "Dark"
+									: theme === "system"
+										? "System"
+										: "Light"}
+							</DropdownMenuSubTrigger>
+							<DropdownMenuPortal>
+								<DropdownMenuSubContent>
+									<DropdownMenuCheckboxItem
+										checked={theme === "light"}
+										onCheckedChange={() =>
+											setTheme("light")
+										}
+									>
+										<SunIcon />
+										Light
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "dark"}
+										onCheckedChange={() => setTheme("dark")}
+									>
+										<MoonIcon />
+										Dark
+									</DropdownMenuCheckboxItem>
+									<DropdownMenuCheckboxItem
+										checked={theme === "system"}
+										onCheckedChange={() =>
+											setTheme("system")
+										}
+									>
+										<MonitorIcon />
+										System
+									</DropdownMenuCheckboxItem>
+								</DropdownMenuSubContent>
+							</DropdownMenuPortal>
+						</DropdownMenuSub>
+
+						<DropdownMenuSeparator />
+
+						<DropdownMenuItem
 							onClick={handleLogout}
 							disabled={loggingOut}
 						>
-							<LogOut className="size-4" />
-							Logout
-						</Button>
+							<LogOutIcon />
+							Log out
+						</DropdownMenuItem>
 					</div>
 
 					{version && (version.version || version.datetime) && (
@@ -172,8 +243,8 @@ export const UserMenu = () => {
 							)}
 						</div>
 					)}
-				</PopoverContent>
-			</Popover>
+				</DropdownMenuContent>
+			</DropdownMenu>
 		</>
 	);
 };

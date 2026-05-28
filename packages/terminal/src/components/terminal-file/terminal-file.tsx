@@ -190,7 +190,7 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 	}, [actions, config, ext, isModified, node, terminal]);
 
 	return (
-		<div className="flex h-full flex-col bg-white">
+		<div className="flex h-full flex-col bg-background">
 			<div className="relative min-h-0 flex-1">
 				<FileEditor
 					mode={config.mode}
@@ -207,8 +207,8 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 					// to the wrong scope or execute against the wrong Python
 					// environment, so we fence it off until the user switches
 					// back.
-					<div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-[1px]">
-						<div className="max-w-sm rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 text-sm shadow-sm">
+					<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-[1px]">
+						<div className="max-w-sm rounded-md border border-amber-400/60 bg-amber-100/80 px-4 py-3 text-amber-900 text-sm shadow-sm dark:border-amber-500/40 dark:bg-amber-950/60 dark:text-amber-200">
 							<div className="mb-1 font-semibold">
 								Scope changed
 							</div>
@@ -224,8 +224,8 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 				)}
 			</div>
 
-			<div className="flex h-10 items-center gap-2 border-zinc-200 border-t bg-zinc-50 px-2">
-				<div className="ml-auto inline-flex overflow-hidden rounded border border-zinc-300">
+			<div className="flex h-10 items-center gap-2 border-border border-t bg-muted px-2">
+				<div className="ml-auto inline-flex overflow-hidden rounded border border-border">
 					{(
 						[
 							["pixel", "Pixel"],
@@ -237,10 +237,10 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 						<Tooltip key={extOpt} label={`Switch to ${label}`}>
 							<button
 								type="button"
-								className={`flex items-center justify-center border-zinc-300 border-r px-2 py-1 last:border-r-0 disabled:opacity-40 ${
+								className={`flex items-center justify-center border-border border-r px-2 py-1 last:border-r-0 disabled:opacity-40 ${
 									ext === extOpt
-										? "bg-blue-100 text-blue-800"
-										: "bg-white text-zinc-600 hover:bg-zinc-100"
+										? "bg-primary/15 text-primary"
+										: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 								}`}
 								onClick={() => setExt(extOpt)}
 								disabled={!active}
@@ -261,7 +261,7 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 				>
 					<button
 						type="button"
-						className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-40"
+						className="rounded bg-primary px-3 py-1 text-primary-foreground text-sm hover:bg-primary/90 disabled:opacity-40"
 						onClick={runFile}
 						disabled={!active}
 					>

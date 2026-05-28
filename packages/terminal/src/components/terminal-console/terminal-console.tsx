@@ -7,6 +7,7 @@ import {
 } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import { MonacoEditor } from "@semoss/shared";
+import { useTheme } from "@semoss/ui/next";
 import { CopyIcon, Logo } from "../../assets/logos";
 import type {
 	ConsoleContext,
@@ -61,8 +62,30 @@ const monacoLanguageForContext = (context: ConsoleContext): string => {
 export const TerminalConsole = () => {
 	const terminal = useTerminal();
 	const { actions, insightId, isAuthorized } = useInsight();
+	const { theme } = useTheme();
 	const insightIdRef = useRef(insightId);
 	insightIdRef.current = insightId;
+
+	// Track the resolved theme (light/dark) so Monaco picks the right
+	// editor theme when the user is on "system" and toggles their OS theme.
+	const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() =>
+		document.documentElement.classList.contains("dark") ? "dark" : "light",
+	);
+	useEffect(() => {
+		const root = document.documentElement;
+		const sync = () =>
+			setResolvedTheme(
+				root.classList.contains("dark") ? "dark" : "light",
+			);
+		sync();
+		const observer = new MutationObserver(sync);
+		observer.observe(root, {
+			attributes: true,
+			attributeFilter: ["class"],
+		});
+		return () => observer.disconnect();
+	}, [theme]);
+	const monacoTheme = resolvedTheme === "dark" ? "vs-dark" : "vs";
 
 	const [state, setStateValue] = useState<ConsoleState>({
 		context: "Pixel",
@@ -539,7 +562,7 @@ export const TerminalConsole = () => {
 	}, [terminal]);
 
 	return (
-		<div className="absolute inset-0 flex flex-col overflow-hidden bg-white">
+		<div className="absolute inset-0 flex flex-col overflow-hidden bg-background">
 			<div
 				className="terminal-repl-editor relative"
 				style={{
@@ -559,7 +582,7 @@ export const TerminalConsole = () => {
 						value={input}
 						onChange={(v) => setInput(v ?? "")}
 						language={monacoLanguageForContext(state.context)}
-						theme="vs"
+						theme={monacoTheme}
 						height="100%"
 						width="100%"
 						options={{
@@ -602,16 +625,16 @@ export const TerminalConsole = () => {
 			{/* Upper toolbar — input-affecting controls live with the editor.
                 Persona switcher + Submit clustered together on the right so
                 "I'm submitting in <persona>" reads as one visual group. */}
-			<div className="flex h-10 items-center gap-2 border-zinc-200 border-t bg-zinc-50 px-2">
-				<div className="ml-auto inline-flex overflow-hidden rounded border border-zinc-300">
+			<div className="flex h-10 items-center gap-2 border-border border-t bg-muted px-2">
+				<div className="ml-auto inline-flex overflow-hidden rounded border border-border">
 					{(["Pixel", "R", "Python", "Shell"] as const).map((c) => (
 						<Tooltip key={c} label={`Switch to ${c}`}>
 							<button
 								type="button"
-								className={`flex items-center justify-center border-zinc-300 border-r px-2 py-1 last:border-r-0 ${
+								className={`flex items-center justify-center border-border border-r px-2 py-1 last:border-r-0 ${
 									state.context === c
-										? "bg-blue-100 text-blue-800"
-										: "bg-white text-zinc-600 hover:bg-zinc-100"
+										? "bg-primary/15 text-primary"
+										: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 								}`}
 								onClick={() => applyContext(c)}
 							>
@@ -624,7 +647,7 @@ export const TerminalConsole = () => {
 				<Tooltip label="Run (Ctrl+Enter)" align="end">
 					<button
 						type="button"
-						className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700"
+						className="rounded bg-primary px-3 py-1 text-primary-foreground text-sm hover:bg-primary/90"
 						onClick={execute}
 					>
 						Run
@@ -636,23 +659,23 @@ export const TerminalConsole = () => {
                 the output transcript below. */}
 			<div
 				ref={splitHandle}
-				className="h-1.5 cursor-ns-resize border-zinc-200 border-y bg-zinc-100 hover:bg-blue-300/40"
+				className="h-1.5 cursor-ns-resize border-border border-y bg-muted hover:bg-primary/30"
 				title="Drag to resize"
 			/>
 
 			<div
 				ref={transcriptEleRef}
-				className="min-h-0 flex-1 overflow-y-auto font-mono text-[13px] text-zinc-900 leading-relaxed"
+				className="min-h-0 flex-1 overflow-y-auto bg-background font-mono text-[13px] text-foreground leading-relaxed"
 				data-section="transcript"
 			>
 				{history.length === 0 ? (
-					<div className="px-3 py-2 text-zinc-400">
-						Type a pixel command above and press{" "}
-						<kbd className="rounded border border-zinc-300 bg-zinc-100 px-1">
+					<div className="px-3 py-2 text-muted-foreground">
+						Type a command above and press{" "}
+						<kbd className="rounded border border-border bg-muted px-1 text-foreground">
 							Ctrl
 						</kbd>{" "}
 						+{" "}
-						<kbd className="rounded border border-zinc-300 bg-zinc-100 px-1">
+						<kbd className="rounded border border-border bg-muted px-1 text-foreground">
 							Enter
 						</kbd>{" "}
 						to execute. Output will appear here.
@@ -669,14 +692,14 @@ export const TerminalConsole = () => {
                 wasn't actually wired into the rendering pipeline anymore;
                 per-row Raw/Formatted toggles + the JsonViewer cover those
                 needs now. */}
-			<div className="flex h-9 items-center gap-1 border-zinc-200 border-t bg-zinc-50 px-2">
+			<div className="flex h-9 items-center gap-1 border-border border-t bg-muted px-2">
 				<Tooltip
 					label="Copy every submitted step to the clipboard"
 					align="start"
 				>
 					<button
 						type="button"
-						className="flex items-center gap-1.5 rounded px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-200"
+						className="flex items-center gap-1.5 rounded px-2 py-1 text-muted-foreground text-xs hover:bg-accent hover:text-accent-foreground"
 						onClick={copyRecipe}
 					>
 						<CopyIcon className="h-3.5 w-3.5" />

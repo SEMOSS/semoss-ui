@@ -75,15 +75,15 @@ export const UploadModal = () => {
 			className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30"
 			role="dialog"
 		>
-			<div className="w-full min-w-[420px] max-w-[600px] rounded-md bg-white shadow-2xl">
-				<div className="border-zinc-200 border-b px-5 py-4 font-semibold text-lg">
+			<div className="w-full min-w-[420px] max-w-[600px] rounded-md bg-background text-foreground shadow-2xl">
+				<div className="border-border border-b px-5 py-4 font-semibold text-lg">
 					Upload
 				</div>
 				<div className="flex flex-col gap-3 px-5 py-4">
 					<section
 						aria-label="File drop zone"
 						className={`flex flex-col gap-2 rounded border-2 border-dashed p-4 ${
-							dragging ? "border-blue-500" : "border-zinc-300"
+							dragging ? "border-primary" : "border-border"
 						}`}
 						onDragOver={(e) => {
 							e.preventDefault();
@@ -98,11 +98,11 @@ export const UploadModal = () => {
 					>
 						<span className="text-sm">Select File:</span>
 						{terminal.upload.files.length === 0 ? (
-							<div className="flex flex-col items-center gap-2 text-zinc-500">
+							<div className="flex flex-col items-center gap-2 text-muted-foreground">
 								<div>Drag and drop files</div>
 								<button
 									type="button"
-									className="rounded border border-blue-600 px-3 py-1 text-blue-600 text-sm hover:bg-blue-50"
+									className="rounded border border-primary px-3 py-1 text-primary text-sm hover:bg-primary/10"
 									onClick={() => inputRef.current?.click()}
 								>
 									or upload
@@ -119,7 +119,7 @@ export const UploadModal = () => {
 							terminal.upload.files.map((file, idx) => (
 								<div
 									key={`${file.name}-${idx}`}
-									className="flex items-center justify-between gap-2 rounded bg-zinc-100 px-2 py-1.5"
+									className="flex items-center justify-between gap-2 rounded bg-muted px-2 py-1.5"
 								>
 									<span
 										className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap"
@@ -129,7 +129,7 @@ export const UploadModal = () => {
 									</span>
 									<button
 										type="button"
-										className="rounded border border-blue-600 px-2 py-0.5 text-blue-600 text-xs hover:bg-blue-50"
+										className="rounded border border-primary px-2 py-0.5 text-primary text-xs hover:bg-primary/10"
 										onClick={() => removeFile(idx)}
 									>
 										Remove
@@ -147,14 +147,14 @@ export const UploadModal = () => {
 							onChange={(e) =>
 								terminal.setUpload({ comment: e.target.value })
 							}
-							className="rounded border border-zinc-300 px-2 py-1.5 text-sm"
+							className="rounded border border-border bg-background px-2 py-1.5 text-foreground text-sm"
 						/>
 					</label>
 				</div>
-				<div className="flex justify-end gap-2 border-zinc-200 border-t px-5 py-3">
+				<div className="flex justify-end gap-2 border-border border-t px-5 py-3">
 					<button
 						type="button"
-						className="rounded px-3 py-1 text-blue-600 hover:bg-blue-50 disabled:opacity-40"
+						className="rounded px-3 py-1 text-primary hover:bg-primary/10 disabled:opacity-40"
 						onClick={terminal.closeUpload}
 						disabled={submitting}
 					>
@@ -162,7 +162,7 @@ export const UploadModal = () => {
 					</button>
 					<button
 						type="button"
-						className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700 disabled:opacity-40"
+						className="rounded bg-primary px-3 py-1 text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
 						onClick={submit}
 						disabled={submitting}
 					>

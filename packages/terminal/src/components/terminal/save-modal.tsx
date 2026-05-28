@@ -86,8 +86,8 @@ export const SaveModal = () => {
 			className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30"
 			role="dialog"
 		>
-			<div className="w-full min-w-[420px] max-w-[600px] rounded-md bg-white shadow-2xl">
-				<div className="border-zinc-200 border-b px-5 py-4 font-semibold text-lg">
+			<div className="w-full min-w-[420px] max-w-[600px] rounded-md bg-background text-foreground shadow-2xl">
+				<div className="border-border border-b px-5 py-4 font-semibold text-lg">
 					Save
 				</div>
 				<div className="flex flex-col gap-3 px-5 py-4">
@@ -101,7 +101,7 @@ export const SaveModal = () => {
 							onChange={(e) =>
 								terminal.setSave({ name: e.target.value })
 							}
-							className="rounded border border-zinc-300 px-2 py-1.5 text-sm disabled:bg-zinc-100"
+							className="rounded border border-border bg-background px-2 py-1.5 text-foreground text-sm disabled:bg-muted disabled:text-muted-foreground"
 						/>
 					</label>
 					<label className="flex flex-col gap-1 text-sm">
@@ -112,14 +112,14 @@ export const SaveModal = () => {
 							onChange={(e) =>
 								terminal.setSave({ comment: e.target.value })
 							}
-							className="rounded border border-zinc-300 px-2 py-1.5 text-sm"
+							className="rounded border border-border bg-background px-2 py-1.5 text-foreground text-sm"
 						/>
 					</label>
 				</div>
-				<div className="flex justify-end gap-2 border-zinc-200 border-t px-5 py-3">
+				<div className="flex justify-end gap-2 border-border border-t px-5 py-3">
 					<button
 						type="button"
-						className="rounded px-3 py-1 text-blue-600 hover:bg-blue-50 disabled:opacity-40"
+						className="rounded px-3 py-1 text-primary hover:bg-primary/10 disabled:opacity-40"
 						onClick={terminal.closeSave}
 						disabled={submitting}
 					>
@@ -127,7 +127,7 @@ export const SaveModal = () => {
 					</button>
 					<button
 						type="button"
-						className="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700 disabled:opacity-40"
+						className="rounded bg-primary px-3 py-1 text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
 						onClick={submit}
 						disabled={
 							submitting ||

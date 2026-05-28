@@ -114,14 +114,14 @@ export const ScopePicker = () => {
 	}, [scope, selectedApp?.project_id]);
 
 	return (
-		<div className="flex flex-col gap-1.5 border-zinc-200 border-b bg-zinc-50 p-2">
-			<div className="inline-flex overflow-hidden rounded border border-zinc-300">
+		<div className="flex flex-col gap-1.5 border-border border-b bg-muted p-2">
+			<div className="inline-flex overflow-hidden rounded border border-border">
 				<button
 					type="button"
-					className={`flex-1 border-zinc-300 border-r px-2 py-1 text-xs ${
+					className={`flex-1 border-border border-r px-2 py-1 text-xs ${
 						scope === "INSIGHT"
-							? "bg-blue-100 text-blue-800"
-							: "bg-white text-zinc-600 hover:bg-zinc-100"
+							? "bg-primary/15 text-primary"
+							: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 					}`}
 					onClick={() => setScope("INSIGHT")}
 				>
@@ -129,10 +129,10 @@ export const ScopePicker = () => {
 				</button>
 				<button
 					type="button"
-					className={`flex-1 border-zinc-300 border-r px-2 py-1 text-xs ${
+					className={`flex-1 border-border border-r px-2 py-1 text-xs ${
 						scope === "APP"
-							? "bg-blue-100 text-blue-800"
-							: "bg-white text-zinc-600 hover:bg-zinc-100"
+							? "bg-primary/15 text-primary"
+							: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 					}`}
 					onClick={() => {
 						setScope("APP");
@@ -145,8 +145,8 @@ export const ScopePicker = () => {
 					type="button"
 					className={`flex-1 px-2 py-1 text-xs ${
 						scope === "USER"
-							? "bg-blue-100 text-blue-800"
-							: "bg-white text-zinc-600 hover:bg-zinc-100"
+							? "bg-primary/15 text-primary"
+							: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 					}`}
 					onClick={() => setScope("USER")}
 				>
@@ -158,8 +158,8 @@ export const ScopePicker = () => {
 				<div className="relative" ref={pickerWrapRef}>
 					<button
 						type="button"
-						className={`flex w-full items-center gap-2 rounded border border-zinc-300 bg-white px-2 py-1.5 text-left text-xs hover:bg-zinc-50 ${
-							pickerOpen ? "border-blue-400" : ""
+						className={`flex w-full items-center gap-2 rounded border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground ${
+							pickerOpen ? "border-ring" : ""
 						}`}
 						onClick={() => setPickerOpen((v) => !v)}
 					>
@@ -170,32 +170,32 @@ export const ScopePicker = () => {
 									className="size-6 shrink-0 rounded text-[10px]"
 								/>
 								<div className="flex min-w-0 flex-1 flex-col">
-									<span className="truncate font-medium text-zinc-900">
+									<span className="truncate font-medium text-foreground">
 										{selectedApp.project_name}
 									</span>
-									<span className="truncate text-[10px] text-zinc-500">
+									<span className="truncate text-[10px] text-muted-foreground">
 										{selectedApp.project_id}
 									</span>
 								</div>
 							</>
 						) : (
-							<span className="flex-1 text-zinc-500">
+							<span className="flex-1 text-muted-foreground">
 								Select a project…
 							</span>
 						)}
-						<span className="text-zinc-400">▾</span>
+						<span className="text-muted-foreground">▾</span>
 					</button>
 
 					{pickerOpen && (
-						<div className="absolute top-full right-0 left-0 z-20 mt-1 rounded border border-zinc-300 bg-white shadow-md">
-							<div className="border-zinc-200 border-b p-1.5">
+						<div className="absolute top-full right-0 left-0 z-20 mt-1 rounded border border-border bg-popover text-popover-foreground shadow-md">
+							<div className="border-border border-b p-1.5">
 								<input
 									ref={searchInputRef}
 									type="text"
 									placeholder="Search projects…"
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
-									className="w-full rounded border border-zinc-300 px-2 py-1 text-xs focus:border-blue-400 focus:outline-none"
+									className="w-full rounded border border-border bg-background px-2 py-1 text-foreground text-xs focus:border-ring focus:outline-none"
 								/>
 							</div>
 
@@ -217,12 +217,12 @@ export const ScopePicker = () => {
 								}}
 							>
 								{loading && apps.length === 0 && (
-									<div className="px-2 py-3 text-center text-xs text-zinc-400">
+									<div className="px-2 py-3 text-center text-muted-foreground text-xs">
 										Loading projects…
 									</div>
 								)}
 								{!loading && apps.length === 0 && (
-									<div className="px-2 py-3 text-center text-xs text-zinc-400">
+									<div className="px-2 py-3 text-center text-muted-foreground text-xs">
 										{debouncedSearch
 											? `No projects match "${debouncedSearch}"`
 											: "No projects found"}
@@ -232,10 +232,10 @@ export const ScopePicker = () => {
 									<button
 										type="button"
 										key={app.project_id}
-										className={`flex w-full items-center gap-2 border-zinc-100 border-b px-2 py-2 text-left text-xs last:border-b-0 hover:bg-zinc-50 ${
+										className={`flex w-full items-center gap-2 border-border border-b px-2 py-2 text-left text-xs last:border-b-0 hover:bg-accent hover:text-accent-foreground ${
 											selectedApp?.project_id ===
 											app.project_id
-												? "bg-blue-50"
+												? "bg-primary/10"
 												: ""
 										}`}
 										onClick={() => {
@@ -259,22 +259,22 @@ export const ScopePicker = () => {
 											className="size-6 shrink-0 rounded text-[10px]"
 										/>
 										<div className="flex min-w-0 flex-1 flex-col">
-											<span className="truncate font-medium text-zinc-900">
+											<span className="truncate font-medium text-foreground">
 												{app.project_name}
 											</span>
-											<span className="truncate text-[10px] text-zinc-500">
+											<span className="truncate text-[10px] text-muted-foreground">
 												{app.project_id}
 											</span>
 										</div>
 									</button>
 								))}
 								{loading && apps.length > 0 && (
-									<div className="px-2 py-2 text-center text-[11px] text-zinc-400">
+									<div className="px-2 py-2 text-center text-[11px] text-muted-foreground">
 										Loading more…
 									</div>
 								)}
 								{!loading && !hasMore && apps.length > 0 && (
-									<div className="px-2 py-2 text-center text-[11px] text-zinc-400">
+									<div className="px-2 py-2 text-center text-[11px] text-muted-foreground">
 										End of list
 									</div>
 								)}

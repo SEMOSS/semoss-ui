@@ -21,7 +21,7 @@ export const TranscriptRow = ({ step }: TranscriptRowProps) => {
 		(typeof step.type === "string" && step.type.indexOf("ERROR") > -1);
 
 	return (
-		<div className="border-zinc-100 border-b">
+		<div className="border-border border-b">
 			<CellOutputBlock
 				prompt={{
 					icon: (

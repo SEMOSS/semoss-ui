@@ -22,9 +22,10 @@ body,
 }
 
 /* Subtle divider between Monaco's line-number gutter and the editor
-   content area in the REPL input. */
+   content area in the REPL input. Uses the theme's border token so it
+   reads correctly in both light + dark mode. */
 .terminal-repl-editor .monaco-editor .margin {
-    border-right: 1px solid #e4e4e7;
+    border-right: 1px solid var(--border);
 }
 
 /* Terminal-specific FlexLayout tweaks. Move the maximize button to the
@@ -40,6 +41,21 @@ body,
     padding-right: 0;
 }
 
+/* The base `.flexlayout__layout` block hardcodes color variables (text,
+   icon, splitter, etc.) regardless of the .dark class, so things stayed
+   bright in dark mode. Re-bind them to design-system tokens so they
+   follow the active theme. Scoped to `.terminal-flex-layout` so we
+   don't touch client/playground. */
+.terminal-flex-layout .flexlayout__layout {
+    --color-text: var(--foreground);
+    --color-icon: var(--muted-foreground);
+    /* Splitter (pane divider) defaults to a near-white that glows against
+       a dark UI; map to the muted border color in both themes. */
+    --color-splitter: var(--border);
+    --color-splitter-hover: var(--muted-foreground);
+    --color-splitter-drag: var(--primary);
+}
+
 /* Help + User strip pinned below the FlexLayout "Files" border tab. We
    keep it fully transparent + borderless so the underlying FlexLayout
    strip (the left border the icons sit on top of) shows through and the
@@ -51,7 +67,7 @@ body,
 /* UserMenu's @semoss/ui Button trigger is 32px (size-8) by default — too
    wide for the 31px FlexLayout strip. Force it to 28px to match the Help
    button it sits next to. */
-.terminal-sidebar-footer [data-slot="popover-trigger"] {
+.terminal-sidebar-footer [data-slot="dropdown-menu-trigger"] {
     width: 1.75rem;
     height: 1.75rem;
 }

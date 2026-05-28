@@ -45,8 +45,8 @@ const TerminalFile = lazy(() =>
 );
 
 const PaneLoader = () => (
-	<div className="flex h-full w-full items-center justify-center">
-		<div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-500" />
+	<div className="flex h-full w-full items-center justify-center bg-background">
+		<div className="h-5 w-5 animate-spin rounded-full border-2 border-border border-t-primary" />
 	</div>
 );
 
@@ -130,7 +130,7 @@ interface FileExplorerPaneProps {
  * stay visible even when the border is collapsed (see SidebarFooter below).
  */
 const FileExplorerPane = ({ mode, onItemSelect }: FileExplorerPaneProps) => (
-	<div className="flex h-full flex-col bg-white">
+	<div className="flex h-full flex-col bg-background">
 		<ScopePicker />
 		<div className="relative min-h-0 flex-1">
 			<FileExplorer mode={mode} onItemSelect={onItemSelect} />
@@ -154,7 +154,7 @@ const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => (
 		<Tooltip label="Help" side="top" align="start">
 			<button
 				type="button"
-				className="flex h-7 w-7 items-center justify-center rounded text-zinc-600 hover:bg-zinc-100"
+				className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 				onClick={onHelpClick}
 				aria-label="Help"
 			>
@@ -380,10 +380,10 @@ export const Terminal = () => {
 		terminal.location === "workspace" || terminal.location === "popup";
 
 	return (
-		<div className="absolute inset-0 bg-zinc-100 text-zinc-800">
+		<div className="absolute inset-0 bg-background text-foreground">
 			<div className="absolute inset-0 flex flex-col">
 				{showHeader && (
-					<div className="z-[2] flex h-9 flex-none items-center overflow-hidden border-zinc-200 border-b bg-white px-3">
+					<div className="z-[2] flex h-9 flex-none items-center overflow-hidden border-border border-b bg-muted px-3">
 						<div className="flex flex-1 items-center gap-3">
 							{terminal.title && (
 								<span className="min-w-[100px] overflow-hidden text-ellipsis whitespace-nowrap font-medium">
@@ -392,7 +392,7 @@ export const Terminal = () => {
 							)}
 						</div>
 						<div className="flex items-center gap-2">
-							<div className="inline-flex overflow-hidden rounded border border-zinc-300">
+							<div className="inline-flex overflow-hidden rounded border border-border">
 								{(
 									[
 										["inline", "⮞", "Inline"],
@@ -404,10 +404,10 @@ export const Terminal = () => {
 									<button
 										key={v}
 										type="button"
-										className={`border-zinc-300 border-r px-2 py-1 text-sm last:border-r-0 ${
+										className={`border-border border-r px-2 py-1 text-sm last:border-r-0 ${
 											terminal.view === v
-												? "bg-blue-100 text-blue-800"
-												: "bg-white text-zinc-600 hover:bg-zinc-100"
+												? "bg-primary/15 text-primary"
+												: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 										}`}
 										onClick={() => terminal.setView(v)}
 										title={title}
@@ -418,7 +418,7 @@ export const Terminal = () => {
 							</div>
 							<button
 								type="button"
-								className="rounded px-2 py-1 text-red-600 hover:bg-red-50"
+								className="rounded px-2 py-1 text-destructive hover:bg-destructive/10"
 								onClick={closeTerminal}
 								title="Close Terminal"
 							>
