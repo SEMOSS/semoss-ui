@@ -221,10 +221,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						data.files,
 					);
 				} else if (mode.type === "USER") {
-					// no dedicated User upload helper — use the generic
-					// insight upload route; backend resolves the scope from
-					// the session.
-					uploadResponse = await insight.actions.uploadInsight(
+					uploadResponse = await insight.actions.uploadUser(
 						path,
 						data.files,
 					);
@@ -253,13 +250,13 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 							let unzipPixel = "";
 							if (mode.type === "APP") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.app}"])`;
+								unzipPixel = `UnzipAppAssetFile(project=["${mode.app}"], filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "ENGINE") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.engine}"])`;
+								unzipPixel = `UnzipEngineAssetFile(engine=["${mode.engine}"], filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "INSIGHT") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"])`;
+								unzipPixel = `UnzipInsightAssetFile(filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "USER") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["user"])`;
+								unzipPixel = `UnzipUserAssetFile(filePath=["${uploadedPath}"])`;
 							}
 
 							await insight.actions.run(unzipPixel);

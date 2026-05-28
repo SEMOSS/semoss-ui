@@ -281,10 +281,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			} else if (mode.type === "INSIGHT") {
 				await insight.actions.uploadInsight(path, files);
 			} else if (mode.type === "USER") {
-				// no `uploadUser` helper in the SDK yet — fall back to the
-				// generic insight upload route; the backend resolves the
-				// scope from the current session.
-				await insight.actions.uploadInsight(path, files);
+				await insight.actions.uploadUser(path, files);
 			}
 
 			// refresh the files
