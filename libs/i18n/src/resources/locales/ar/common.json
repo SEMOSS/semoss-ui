@@ -65,5 +65,115 @@
 	},
 	"images": {
 		"logoAlt": "الشعار"
+	},
+	"fileExplorer": {
+		"search": "بحث",
+		"name": "الاسم",
+		"dateModified": "تاريخ التعديل",
+		"pathLabel": "المسار: {{path}}",
+		"lastModifiedLabel": "آخر تعديل: {{date}}",
+		"dateFormat": {
+			"justNow": "الآن",
+			"minutesAgoShort": "قبل {{count}} د",
+			"minutesAgo": "قبل {{count}} دقيقة",
+			"hoursAgoShort": "قبل {{count}} س",
+			"hoursAgo": "قبل {{count}} ساعة",
+			"yesterday": "أمس",
+			"yesterdayAt": "أمس في {{time}}",
+			"dayAt": "{{day}} في {{time}}",
+			"dateAt": "{{date}} في {{time}}",
+			"dateAndTime": "{{date}}، {{time}}"
+		},
+		"refreshTooltip": "تحديث {{path}}",
+		"createTooltip": "إنشاء في {{path}}",
+		"searchAll": "الكل",
+		"searchOnly": "فقط \"{{name}}\"",
+		"searchAllAria": "بحث في الكل",
+		"searchCurrentAria": "البحث في المجلد الحالي فقط",
+		"searchCurrentTitle": "البحث فقط في {{path}}",
+		"moveDropHint": "إفلات لنقل {{label}} إلى {{path}}",
+		"contextMenu": {
+			"copyPath": "نسخ المسار",
+			"copy": "نسخ",
+			"cut": "قص",
+			"pasteHere": "لصق هنا",
+			"rename": "إعادة تسمية",
+			"download": "تنزيل",
+			"delete": "حذف",
+			"newFile": "ملف جديد",
+			"newFolder": "مجلد جديد",
+			"ariaLabel": "إجراءات الملف"
+		},
+		"overlay": {
+			"title": "إنشاء ملف أو مجلد",
+			"description": "ارفع أو أنشئ ملفاً أو مجلداً جديداً في المسار: {{path}}",
+			"fields": {
+				"action": "الإجراء",
+				"fileName": "اسم الملف",
+				"directoryName": "اسم المجلد",
+				"uploadFileZip": "رفع ملف/ZIP"
+			},
+			"placeholders": {
+				"selectAction": "اختر إجراءً",
+				"fileName": "أدخل اسم الملف",
+				"directoryName": "أدخل اسم المجلد"
+			},
+			"actions": {
+				"upload": "رفع الملفات",
+				"newFile": "ملف جديد",
+				"newDirectory": "مجلد جديد"
+			},
+			"dropzone": {
+				"dragAndDrop": "اسحب الملفات وأفلتها هنا",
+				"orClickToBrowse": "أو انقر للاستعراض",
+				"uploadIconAlt": "أيقونة الرفع"
+			},
+			"files": {
+				"selectedCount_one": "تم اختيار {{count}} ملف:",
+				"selectedCount_other": "تم اختيار {{count}} ملفات:",
+				"unzip": "فك الضغط",
+				"unzipTitle": "استخرج هذا الـ ZIP بعد الرفع"
+			},
+			"buttons": {
+				"cancel": "إلغاء",
+				"upload": "رفع",
+				"create": "إنشاء"
+			},
+			"toasts": {
+				"selectAtLeastOne": "يرجى اختيار ملف واحد على الأقل للرفع",
+				"enterFileName": "يرجى إدخال اسم للملف",
+				"enterDirectoryName": "يرجى إدخال اسم للمجلد",
+				"uploadSuccess": "تم رفع الملف(الملفات) بنجاح",
+				"uploadWithExtractSuccess": "تم رفع {{count}} ملف(ملفات) بنجاح، وتم استخراج {{extractedCount}} ZIP",
+				"extractionsFailed": "فشل {{count}} استخراج: {{errors}}",
+				"fileCreated": "تم إنشاء الملف بنجاح",
+				"directoryCreated": "تم إنشاء المجلد بنجاح",
+				"anError": "حدث خطأ"
+			}
+		}
+	},
+	"cellOutput": {
+		"panels": {
+			"logs": "السجلات",
+			"result": "النتيجة",
+			"error": "خطأ"
+		},
+		"running": "جارٍ التشغيل…",
+		"format": {
+			"formatted": "منسّق",
+			"raw": "خام"
+		},
+		"copy": {
+			"command": "نسخ الأمر",
+			"logs": "نسخ السجلات",
+			"output": "نسخ المخرجات",
+			"copied": "تم النسخ!"
+		},
+		"popout": "نافذة منبثقة",
+		"expandAll": "توسيع الكل",
+		"collapseAll": "طي الكل",
+		"close": "إغلاق",
+		"lines_one": "{{count}} سطر",
+		"lines_other": "{{count}} أسطر"
 	}
 }

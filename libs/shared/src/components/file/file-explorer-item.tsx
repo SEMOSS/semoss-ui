@@ -1,5 +1,6 @@
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -36,8 +37,19 @@ type FileExplorerSecondaryAction = {
  *   numeric+time     "1/23/26, 10:55 PM" 18 chars 142px   → threshold 150px
  *   short+time       "Sep 30, 2026 at 10:55 PM" 24 chars 184px → threshold 195px
  *   long+time        "September 30, 2026 at 10:55 PM" 30 chars 226px → threshold 235px
+ *
+ * The `t` translator is passed in so phrases like "Yesterday at {time}" and
+ * weekday names use the user's active locale rather than hardcoded English.
+ * `locale` is `i18n.language` and feeds `Intl.DateTimeFormat` for the
+ * numeric/month-name pieces so date numerals also match (e.g. ٢٥/١٢/٢٦ in
+ * Arabic).
  */
-const formatMacDate = (raw: string | undefined, width = 170): string | null => {
+const formatMacDate = (
+	raw: string | undefined,
+	width = 170,
+	t: (key: string, opts?: Record<string, unknown>) => string,
+	locale: string,
+): string | null => {
 	if (!raw) return null;
 	const date = new Date(raw);
 	if (Number.isNaN(date.getTime())) return null;
@@ -52,7 +64,7 @@ const formatMacDate = (raw: string | undefined, width = 170): string | null => {
 	const diffDays = Math.round(
 		(today.getTime() - fileDay.getTime()) / 86400000,
 	);
-	const time = date.toLocaleTimeString("en-US", {
+	const time = date.toLocaleTimeString(locale, {
 		hour: "numeric",
 		minute: "2-digit",
 		hour12: true,
@@ -63,47 +75,57 @@ const formatMacDate = (raw: string | undefined, width = 170): string | null => {
 		const diffMs = now.getTime() - date.getTime();
 		const diffMins = Math.floor(diffMs / 60000);
 		const diffHours = Math.floor(diffMins / 60);
-		if (diffMins < 1) return "Just now";
+		if (diffMins < 1) return t("fileExplorer.dateFormat.justNow");
 		if (diffMins < 60)
-			return width < 150 ? `${diffMins}m ago` : `${diffMins} min ago`;
-		return width < 150 ? `${diffHours}h ago` : `${diffHours} hr ago`;
+			return width < 150
+				? t("fileExplorer.dateFormat.minutesAgoShort", {
+						count: diffMins,
+					})
+				: t("fileExplorer.dateFormat.minutesAgo", { count: diffMins });
+		return width < 150
+			? t("fileExplorer.dateFormat.hoursAgoShort", { count: diffHours })
+			: t("fileExplorer.dateFormat.hoursAgo", { count: diffHours });
 	}
 	if (diffDays === 1)
-		return width < 150 ? "Yesterday" : `Yesterday at ${time}`;
+		return width < 150
+			? t("fileExplorer.dateFormat.yesterday")
+			: t("fileExplorer.dateFormat.yesterdayAt", { time });
 	if (diffDays < 7) {
-		const day = date.toLocaleDateString("en-US", { weekday: "short" });
-		return width < 150 ? day : `${day} at ${time}`;
+		const day = date.toLocaleDateString(locale, { weekday: "short" });
+		return width < 150
+			? day
+			: t("fileExplorer.dateFormat.dayAt", { day, time });
 	}
 
 	// Absolute thresholds — guarantee worst-case fits without truncation
 	if (width < 150)
-		return date.toLocaleDateString("en-US", {
+		return date.toLocaleDateString(locale, {
 			month: "numeric",
 			day: "numeric",
 			year: "2-digit",
 		});
 	if (width < 195) {
-		const d = date.toLocaleDateString("en-US", {
+		const d = date.toLocaleDateString(locale, {
 			month: "numeric",
 			day: "numeric",
 			year: "2-digit",
 		});
-		return `${d}, ${time}`;
+		return t("fileExplorer.dateFormat.dateAndTime", { date: d, time });
 	}
 	if (width < 235) {
-		const d = date.toLocaleDateString("en-US", {
+		const d = date.toLocaleDateString(locale, {
 			month: "short",
 			day: "numeric",
 			year: "numeric",
 		});
-		return `${d} at ${time}`;
+		return t("fileExplorer.dateFormat.dateAt", { date: d, time });
 	}
-	const d = date.toLocaleDateString("en-US", {
+	const d = date.toLocaleDateString(locale, {
 		month: "long",
 		day: "numeric",
 		year: "numeric",
 	});
-	return `${d} at ${time}`;
+	return t("fileExplorer.dateFormat.dateAt", { date: d, time });
 };
 
 interface FileExplorerItemProps extends React.HTMLAttributes<HTMLLIElement> {
@@ -213,6 +235,7 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 }) => {
 	const treeView = useTreeView<FileItem>();
 	const insight = useInsight();
+	const { t, i18n } = useTranslation("common");
 	const isDirectory = item.type === "directory";
 	const isExpanded = treeView.expanded.includes(item.path);
 	const itemTestId = `file-explorer-item-${getFileExplorerTestIdSegment(item.path)}`;
@@ -381,7 +404,12 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 		onDirectoryRefreshRegister,
 	]);
 
-	const macDate = formatMacDate(item.lastModified, dateColWidth);
+	const macDate = formatMacDate(
+		item.lastModified,
+		dateColWidth,
+		t,
+		i18n.language,
+	);
 
 	const FileIcon = isDirectory ? null : getFileIconComponent(item.name);
 
@@ -546,7 +574,14 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				<div
 					data-testid={`${itemTestId}-row`}
 					className={[
-						"group flex min-h-7 min-w-full flex-row items-center rounded-md pe-2 transition-colors",
+						// `rtl:flex-row-reverse` mirrors the header's column
+						// order in RTL. The header (in file-explorer.tsx)
+						// flips correctly via writing-direction inheritance,
+						// but inside TreeViewItem the row label doesn't —
+						// likely because nested Radix wrappers swallow the
+						// direction context. Explicit reverse keeps Name and
+						// Date aligned with the header in both directions.
+						"group flex min-h-7 min-w-full flex-row items-center rounded-md pe-2 transition-colors rtl:flex-row-reverse",
 						effectiveIsContextActive
 							? "bg-accent text-accent-foreground ring-1 ring-primary/30 ring-inset"
 							: "",
@@ -565,7 +600,15 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 					]
 						.filter(Boolean)
 						.join(" ")}
-					title={`Path: ${item.path}${item.lastModified ? `\nLast Modified: ${item.lastModified}` : ""}`}
+					title={
+						item.lastModified
+							? `${t("fileExplorer.pathLabel", {
+									path: item.path,
+								})}\n${t("fileExplorer.lastModifiedLabel", {
+									date: item.lastModified,
+								})}`
+							: t("fileExplorer.pathLabel", { path: item.path })
+					}
 				>
 					{/* Column 1 — Name */}
 					<div className="flex min-w-[80px] flex-1 items-center gap-2 overflow-hidden pe-2">
