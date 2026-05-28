@@ -15,6 +15,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { Env } from "@semoss/sdk";
 import { download, useInsight, usePixel } from "@semoss/sdk/react";
 import {
@@ -136,6 +137,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 	onVisibleItemsChange,
 }) => {
 	const insight = useInsight();
+	// `common` namespace is part of coreResources — loaded by every I18nBuilder
+	// type (playground/terminal/etc.), so this is safe to use from libs/shared.
+	const { t } = useTranslation("common");
 
 	const [path, setPath] = useState<string>(
 		initialPath ? initialPath.replace(/\/$/, "") || "/" : "/",
@@ -945,7 +949,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									<RefreshCwIcon className="size-3" />
 								</Button>
 							</TooltipTrigger>
-							<TooltipContent>Refresh {path}</TooltipContent>
+							<TooltipContent>
+								{t("fileExplorer.refreshTooltip", { path })}
+							</TooltipContent>
 						</Tooltip>
 						<DropdownMenu>
 							<DropdownMenuTrigger
@@ -1000,7 +1006,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							<InputGroupInput
 								data-testid="file-explorer-search-input"
 								type="search"
-								placeholder="Search"
+								placeholder={t("fileExplorer.search")}
 								value={search}
 								onChange={(e) => {
 									setSearch(e.target.value);
@@ -1037,7 +1043,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
-									Create at {path}
+									{t("fileExplorer.createTooltip", { path })}
 								</TooltipContent>
 							</Tooltip>
 						)}
@@ -1056,18 +1062,22 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 							<ToggleGroupItem
 								data-testid="file-explorer-search-all-toggle"
 								value="all"
-								aria-label="Search all"
-								title="Search all"
+								aria-label={t("fileExplorer.searchAllAria")}
+								title={t("fileExplorer.searchAllAria")}
 							>
-								All
+								{t("fileExplorer.searchAll")}
 							</ToggleGroupItem>
 							<ToggleGroupItem
 								data-testid="file-explorer-search-current-toggle"
 								value="current"
-								aria-label="Search only current directory"
-								title={`Search only in ${path}`}
+								aria-label={t("fileExplorer.searchCurrentAria")}
+								title={t("fileExplorer.searchCurrentTitle", {
+									path,
+								})}
 							>
-								Only &quot;{crumbs[0]}&quot;
+								{t("fileExplorer.searchOnly", {
+									name: crumbs[0],
+								})}
 							</ToggleGroupItem>
 						</ToggleGroup>
 					</div>
@@ -1082,13 +1092,16 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						data-testid="file-explorer-root-drop-indicator"
 						className="pointer-events-none absolute end-3 bottom-3 z-10 rounded-md border border-primary/30 bg-background/95 px-3 py-2 text-foreground text-xs shadow-md"
 					>
-						Drop to move {moveDropLabel} into {path}
+						{t("fileExplorer.moveDropHint", {
+							label: moveDropLabel,
+							path,
+						})}
 					</div>
 				)}
 				<div className="flex select-none items-center border-b px-2 pb-0.5 text-[11px] text-muted-foreground">
 					<div className="flex min-w-[80px] flex-1 items-center gap-1 overflow-hidden">
 						<span className="overflow-hidden truncate font-medium">
-							Name
+							{t("fileExplorer.name")}
 						</span>
 						<Tooltip>
 							<TooltipTrigger asChild>
@@ -1133,7 +1146,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 						style={{ width: dateColWidth }}
 						className="overflow-hidden truncate px-2 text-end font-medium"
 					>
-						Date Modified
+						{t("fileExplorer.dateModified")}
 					</span>
 				</div>
 

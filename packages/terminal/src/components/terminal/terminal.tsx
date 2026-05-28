@@ -9,6 +9,7 @@ import {
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "@semoss/i18n";
 import { FileExplorer, FlexLayout, getFileIconComponent } from "@semoss/shared";
 import type { SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
@@ -59,7 +60,9 @@ const REPL_TABSET_ID = "REPL_TABSET";
  * opens their first file, and is auto-removed when its last tab closes
  * (via `tabSetEnableDeleteWhenEmpty`).
  */
-const buildInitialModel = (): FlexLayout.IJsonModel => ({
+const buildInitialModel = (
+	t: (key: string) => string,
+): FlexLayout.IJsonModel => ({
 	global: {
 		rootOrientationVertical: true,
 		tabEnableRename: false,
@@ -77,7 +80,7 @@ const buildInitialModel = (): FlexLayout.IJsonModel => ({
 				{
 					id: "FILE_EXPLORER",
 					type: "tab",
-					name: "Files",
+					name: t("tabs.files"),
 					component: "file-explorer",
 					enableClose: false,
 					enableDrag: false,
@@ -102,7 +105,7 @@ const buildInitialModel = (): FlexLayout.IJsonModel => ({
 					{
 						id: "REPL",
 						type: "tab",
-						name: "Terminal",
+						name: t("tabs.terminal"),
 						component: "repl",
 						enableClose: false,
 						enableDrag: false,
@@ -149,34 +152,56 @@ interface SidebarFooterProps {
  * border's background/divider styling automatically and read as part of
  * the Files strip — visible whether the border is expanded or collapsed.
  */
-const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => (
-	<div className="terminal-sidebar-footer flex flex-col items-center gap-1 py-1.5">
-		<Tooltip label="Help" side="top" align="start">
-			<button
-				type="button"
-				className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-				onClick={onHelpClick}
-				aria-label="Help"
-			>
-				<HelpCircle className="h-4 w-4" />
-			</button>
-		</Tooltip>
-		<UserMenu />
-	</div>
-);
+const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => {
+	const { t } = useTranslation("chrome");
+	return (
+		<div className="terminal-sidebar-footer flex flex-col items-center gap-1 py-1.5">
+			<Tooltip label={t("actions.help")} side="right" align="center">
+				<button
+					type="button"
+					className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+					onClick={onHelpClick}
+					aria-label={t("actions.help")}
+				>
+					<HelpCircle className="h-4 w-4" />
+				</button>
+			</Tooltip>
+			<UserMenu />
+		</div>
+	);
+};
 
 export const Terminal = () => {
 	const terminal = useTerminal();
+	const { t } = useTranslation("chrome");
 
 	const [helpOpen, setHelpOpen] = useState(false);
 
 	const modelRef = useRef<FlexLayout.Model | null>(null);
 	const model = useMemo(() => {
 		if (!modelRef.current) {
-			modelRef.current = FlexLayout.Model.fromJson(buildInitialModel());
+			modelRef.current = FlexLayout.Model.fromJson(buildInitialModel(t));
 		}
 		return modelRef.current;
+		// Build-once: the model is mutated by FlexLayout actions, not rebuilt
+		// on locale change. The effect below keeps the static tab labels
+		// (Files / Terminal) in sync by running renameTab when `t` changes.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
+
+	// Keep the static tab labels in sync with the active language. File-editor
+	// tabs are renamed elsewhere (their name is the on-disk filename and isn't
+	// localized), so we only touch the two anchor tabs here.
+	useEffect(() => {
+		const rename = (id: string, name: string) => {
+			const node = model.getNodeById(id);
+			if (node && node.getName() !== name) {
+				model.doAction(FlexLayout.Actions.renameTab(id, name));
+			}
+		};
+		rename("FILE_EXPLORER", t("tabs.files"));
+		rename("REPL", t("tabs.terminal"));
+	}, [model, t]);
 
 	// Track the most-recent file-editor tabset id so subsequent file opens
 	// add tabs into the same pane instead of spawning a new one each time.
@@ -395,12 +420,12 @@ export const Terminal = () => {
 							<div className="inline-flex overflow-hidden rounded border border-border">
 								{(
 									[
-										["inline", "⮞", "Inline"],
-										["overlay", "▢", "Overlay"],
-										["side", "⬓", "Side"],
-										["popup", "↗", "Pop out"],
+										["inline", "⮞", "views.inline"],
+										["overlay", "▢", "views.overlay"],
+										["side", "⬓", "views.side"],
+										["popup", "↗", "views.popup"],
 									] as const
-								).map(([v, icon, title]) => (
+								).map(([v, icon, titleKey]) => (
 									<button
 										key={v}
 										type="button"
@@ -410,7 +435,7 @@ export const Terminal = () => {
 												: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 										}`}
 										onClick={() => terminal.setView(v)}
-										title={title}
+										title={t(titleKey)}
 									>
 										{icon}
 									</button>
@@ -420,7 +445,7 @@ export const Terminal = () => {
 								type="button"
 								className="rounded px-2 py-1 text-destructive hover:bg-destructive/10"
 								onClick={closeTerminal}
-								title="Close Terminal"
+								title={t("actions.closeTerminal")}
 							>
 								✕
 							</button>

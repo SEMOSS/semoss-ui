@@ -1,0 +1,29 @@
+{
+	"context": {
+		"switchTo": "Passer à {{context}}"
+	},
+	"run": {
+		"button": "Exécuter",
+		"tooltip": "Exécuter (Ctrl+Entrée)"
+	},
+	"emptyState": {
+		"prefix": "Tapez une commande ci-dessus et appuyez sur",
+		"and": "+",
+		"suffix": "pour l'exécuter. La sortie apparaîtra ici."
+	},
+	"copyAll": {
+		"button": "Copier toutes les étapes",
+		"tooltip": "Copier chaque étape soumise dans le presse-papiers",
+		"success": "Recette copiée avec succès dans le presse-papiers",
+		"error": "Échec de la copie de la recette dans le presse-papiers"
+	},
+	"actions": {
+		"enteredRMode": "Vous êtes entré en mode R.",
+		"enteredPythonMode": "Vous êtes entré en mode Python."
+	},
+	"results": {
+		"successNoOutput": "✓ Exécuté avec succès (aucune sortie)",
+		"insightNotReady": "L'aperçu n'est pas prêt",
+		"unknownError": "Erreur inconnue"
+	}
+}

@@ -1,5 +1,6 @@
 import type * as monacoType from "monaco-editor";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import {
 	getPixelAsyncResult,
 	console as getPixelConsole,
@@ -63,6 +64,7 @@ export const TerminalConsole = () => {
 	const terminal = useTerminal();
 	const { actions, insightId, isAuthorized } = useInsight();
 	const { theme } = useTheme();
+	const { t } = useTranslation("console");
 	const insightIdRef = useRef(insightId);
 	insightIdRef.current = insightId;
 
@@ -189,7 +191,7 @@ export const TerminalConsole = () => {
 			if (!targetInsightId) {
 				updateStep(stepIdx, {
 					type: "ERROR",
-					output: "Insight not ready",
+					output: t("results.insightNotReady"),
 					pending: false,
 				});
 				return;
@@ -256,14 +258,25 @@ export const TerminalConsole = () => {
 				const last = results[results.length - 1];
 				const opType = (last?.operationType?.[0] as string) || "";
 				const output = unwrapPixelOutput(last);
+				const formatted = formatOutputForDisplay(
+					output,
+					opType,
+					stateRef.current,
+				);
+				// CODE_EXECUTION pixels (Py/R/Command) with no return value
+				// and no stdout produce an empty output — render nothing,
+				// which looks like the command never ran. Substitute a
+				// success marker so the user gets confirmation.
+				const isErrorType =
+					opType === "ERROR" || opType === "INVALID_SYNTAX";
+				const finalOutput =
+					!formatted && !isErrorType
+						? t("results.successNoOutput")
+						: formatted;
 
 				updateStep(stepIdx, {
 					type: opType,
-					output: formatOutputForDisplay(
-						output,
-						opType,
-						stateRef.current,
-					),
+					output: finalOutput,
 					messages: collected.slice(),
 					lastStatus,
 					pending: false,
@@ -276,12 +289,12 @@ export const TerminalConsole = () => {
 							? err.message
 							: typeof err === "string"
 								? err
-								: "Unknown error",
+								: t("results.unknownError"),
 					pending: false,
 				});
 			}
 		},
-		[appendStep, updateStep],
+		[appendStep, t, updateStep],
 	);
 
 	const applyContext = useCallback((context: ConsoleContext) => {
@@ -312,7 +325,7 @@ export const TerminalConsole = () => {
 					type: "ACTION",
 					context,
 					input: trimmed,
-					output: "You have entered R Mode.",
+					output: t("actions.enteredRMode"),
 				});
 			} else if (
 				trimmed === "p" ||
@@ -327,7 +340,7 @@ export const TerminalConsole = () => {
 					type: "ACTION",
 					context,
 					input: trimmed,
-					output: "You have entered Python Mode.",
+					output: t("actions.enteredPythonMode"),
 				});
 			} else if (trimmed === "multi") {
 				setState({ executeOnEnter: !stateRef.current.executeOnEnter });
@@ -344,7 +357,7 @@ export const TerminalConsole = () => {
 		editorRef.current?.focus();
 
 		await runPixelWithLogs(raw, pixel, context);
-	}, [appendStep, applyContext, runPixelWithLogs]);
+	}, [appendStep, applyContext, runPixelWithLogs, t]);
 
 	// history recall: Up at row 0 / Down at last row pulls the previous /
 	// next submitted command into the editor. We also switch the console
@@ -549,17 +562,11 @@ export const TerminalConsole = () => {
 			.join("\n");
 		try {
 			await navigator.clipboard.writeText(content);
-			terminal.alert(
-				"success",
-				"Recipe successfully copied to clipboard",
-			);
+			terminal.alert("success", t("copyAll.success"));
 		} catch {
-			terminal.alert(
-				"error",
-				"Recipe unsuccessfully copied to clipboard",
-			);
+			terminal.alert("error", t("copyAll.error"));
 		}
-	}, [terminal]);
+	}, [t, terminal]);
 
 	return (
 		<div className="absolute inset-0 flex flex-col overflow-hidden bg-background">
@@ -628,7 +635,10 @@ export const TerminalConsole = () => {
 			<div className="flex h-10 items-center gap-2 border-border border-t bg-muted px-2">
 				<div className="ml-auto inline-flex overflow-hidden rounded border border-border">
 					{(["Pixel", "R", "Python", "Shell"] as const).map((c) => (
-						<Tooltip key={c} label={`Switch to ${c}`}>
+						<Tooltip
+							key={c}
+							label={t("context.switchTo", { context: c })}
+						>
 							<button
 								type="button"
 								className={`flex items-center justify-center border-border border-r px-2 py-1 last:border-r-0 ${
@@ -644,13 +654,13 @@ export const TerminalConsole = () => {
 					))}
 				</div>
 
-				<Tooltip label="Run (Ctrl+Enter)" align="end">
+				<Tooltip label={t("run.tooltip")} align="end">
 					<button
 						type="button"
 						className="rounded bg-primary px-3 py-1 text-primary-foreground text-sm hover:bg-primary/90"
 						onClick={execute}
 					>
-						Run
+						{t("run.button")}
 					</button>
 				</Tooltip>
 			</div>
@@ -665,20 +675,27 @@ export const TerminalConsole = () => {
 
 			<div
 				ref={transcriptEleRef}
-				className="min-h-0 flex-1 overflow-y-auto bg-background font-mono text-[13px] text-foreground leading-relaxed"
+				// Light mode: tint the transcript with `bg-muted/40` so it
+				// reads as a distinct surface from the editor pane above
+				// (Monaco's `vs` theme is pure white, matches our
+				// `bg-background`, and the two panes blur together).
+				// Dark mode already has good contrast because Monaco's
+				// `vs-dark` ships its own shade — so explicitly fall back to
+				// `bg-background` there to preserve the current look.
+				className="min-h-0 flex-1 overflow-y-auto bg-muted/70 font-mono text-[13px] text-foreground leading-relaxed dark:bg-background"
 				data-section="transcript"
 			>
 				{history.length === 0 ? (
 					<div className="px-3 py-2 text-muted-foreground">
-						Type a command above and press{" "}
+						{t("emptyState.prefix")}{" "}
 						<kbd className="rounded border border-border bg-muted px-1 text-foreground">
 							Ctrl
 						</kbd>{" "}
-						+{" "}
+						{t("emptyState.and")}{" "}
 						<kbd className="rounded border border-border bg-muted px-1 text-foreground">
 							Enter
 						</kbd>{" "}
-						to execute. Output will appear here.
+						{t("emptyState.suffix")}
 					</div>
 				) : (
 					history.map((step) => (
@@ -693,17 +710,14 @@ export const TerminalConsole = () => {
                 per-row Raw/Formatted toggles + the JsonViewer cover those
                 needs now. */}
 			<div className="flex h-9 items-center gap-1 border-border border-t bg-muted px-2">
-				<Tooltip
-					label="Copy every submitted step to the clipboard"
-					align="start"
-				>
+				<Tooltip label={t("copyAll.tooltip")} align="start">
 					<button
 						type="button"
 						className="flex items-center gap-1.5 rounded px-2 py-1 text-muted-foreground text-xs hover:bg-accent hover:text-accent-foreground"
 						onClick={copyRecipe}
 					>
 						<CopyIcon className="h-3.5 w-3.5" />
-						Copy All Steps
+						{t("copyAll.button")}
 					</button>
 				</Tooltip>
 			</div>
