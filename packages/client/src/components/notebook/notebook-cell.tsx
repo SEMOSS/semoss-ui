@@ -598,7 +598,7 @@ export const NotebookCell = observer(
 							<ChevronRight
 								className={`size-3 transition-transform ${showConsole ? "rotate-90" : ""}`}
 							/>
-							Logging ({cell.messages.length})
+							Logs ({cell.messages.length})
 						</Button>
 						{showConsole && (
 							<div className="flex items-center gap-1">

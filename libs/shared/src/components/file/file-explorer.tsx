@@ -230,6 +230,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		} else {
 			getFilesPixel = `BrowseInsightAssets(filePath=["${path}"]);`;
 		}
+	} else if (mode.type === "USER") {
+		if (debouncedSearch) {
+			getFilesPixel = `SearchUserAssets(filePath=["${searchType === "all" ? "" : path}"], search=["${debouncedSearch}"]);`;
+		} else {
+			getFilesPixel = `BrowseUserAssets(filePath=["${path}"]);`;
+		}
 	}
 
 	const getFiles = usePixel<unknown[]>(
@@ -273,6 +279,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 			} else if (mode.type === "ENGINE") {
 				await insight.actions.uploadEngine(mode.engine, path, files);
 			} else if (mode.type === "INSIGHT") {
+				await insight.actions.uploadInsight(path, files);
+			} else if (mode.type === "USER") {
+				// no `uploadUser` helper in the SDK yet — fall back to the
+				// generic insight upload route; the backend resolves the
+				// scope from the current session.
 				await insight.actions.uploadInsight(path, files);
 			}
 
@@ -424,6 +435,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		if (mode.type === "INSIGHT") {
 			return `RenameInsightAsset(filePath=["${oldPath}"], newValue=["${newPath}"]);`;
 		}
+		if (mode.type === "USER") {
+			return `RenameUserAsset(filePath=["${oldPath}"], newValue=["${newPath}"]);`;
+		}
 		return "";
 	};
 
@@ -437,6 +451,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		if (mode.type === "INSIGHT") {
 			return `CopyInsightAsset(filePath="${oldPath}", newValue="${newPath}");`;
 		}
+		if (mode.type === "USER") {
+			return `CopyUserAsset(filePath="${oldPath}", newValue="${newPath}");`;
+		}
 		return "";
 	};
 
@@ -449,6 +466,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 		if (mode.type === "INSIGHT") {
 			return `DeleteInsightAssets(filePath=["${itemPath}"]);`;
+		}
+		if (mode.type === "USER") {
+			return `DeleteUserAssets(filePath=["${itemPath}"]);`;
 		}
 		return "";
 	};
@@ -705,6 +725,9 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 		}
 		if (mode.type === "INSIGHT") {
 			return `DownloadInsightAsset(filePath=["${itemPath}"]);`;
+		}
+		if (mode.type === "USER") {
+			return `DownloadUserAsset(filePath=["${itemPath}"]);`;
 		}
 		return "";
 	};
