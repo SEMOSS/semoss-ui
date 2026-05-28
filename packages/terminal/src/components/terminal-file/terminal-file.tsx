@@ -1,0 +1,274 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useInsight } from "@semoss/sdk/react";
+import { FileEditor, FlexLayout } from "@semoss/shared";
+import { toast } from "@semoss/ui/next";
+import { Logo } from "../../assets/logos";
+import type { ConsoleContext, FileMode } from "../../types";
+import { modeKey } from "../../utility/file-mode";
+import { runPixel } from "../../utility/pixel";
+import { useTerminal } from "../terminal/terminal-context";
+import { Tooltip } from "../tooltip";
+
+type Ext = "pixel" | "r" | "py" | "shell";
+
+const extToContext = (ext: Ext): ConsoleContext => {
+	if (ext === "r") return "R";
+	if (ext === "py") return "Python";
+	if (ext === "shell") return "Shell";
+	return "Pixel";
+};
+
+const inferExt = (name: string): Ext => {
+	const e = (name.split(".").pop() || "").toLowerCase();
+	if (e === "r") return "r";
+	if (e === "py") return "py";
+	if (e === "pixel") return "pixel";
+	if (e === "sh" || e === "shell") return "shell";
+	return "pixel";
+};
+
+/**
+ * Build the "Run" pixel — always sends the file's content inline. No Source
+ * variants; the persona just wraps the content appropriately.
+ */
+const buildRunPixel = (ext: Ext, content: string): string => {
+	if (ext === "r") return `R("<encode>${content}</encode>")`;
+	if (ext === "py") return `Py("<encode>${content}</encode>")`;
+	if (ext === "pixel") return content;
+	if (ext === "shell") {
+		const escaped = content.replace(/"/g, '\\"');
+		return `Command("${escaped}")`;
+	}
+	return "";
+};
+
+/**
+ * Pixel used to fetch the on-disk content of a file in the tab's scope.
+ * Matches what FileCodeEditor uses internally so we ask the backend in the
+ * same way it does.
+ */
+const buildFetchContentPixel = (mode: FileMode, path: string): string => {
+	if (mode.type === "APP") {
+		return `GetAppAssets(filePath=["${path}"], project=["${mode.app}"]);`;
+	}
+	if (mode.type === "ENGINE") {
+		return `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
+	}
+	if (mode.type === "USER") {
+		return `GetUserAssets(filePath=["${path}"]);`;
+	}
+	return `GetInsightAssets(filePath=["${path}"]);`;
+};
+
+export interface FileEditorTabConfig {
+	path: string;
+	mode: FileMode;
+	/** Display name without the modified-indicator asterisk. Stored in
+	 * config so renames via FlexLayout.Actions.renameTab don't lose it. */
+	baseName: string;
+	/** Human-readable project name when `mode.type === "APP"`, captured at
+	 * open time so the scope-changed banner can show name + id rather than
+	 * just the opaque id. */
+	appName?: string;
+	/** Ext (language) the tab should run as. Initially inferred from the
+	 * filename; users can switch via the toolbar. */
+	ext: Ext;
+}
+
+const scopeLabel = (config: FileEditorTabConfig) => {
+	const m = config.mode;
+	if (m.type === "APP") {
+		return config.appName
+			? `App · ${config.appName} · ${m.app}`
+			: `App · ${m.app}`;
+	}
+	if (m.type === "ENGINE") return `Engine · ${m.engine}`;
+	if (m.type === "STORAGE") return `Storage · ${m.storage}`;
+	if (m.type === "USER") return "User";
+	return "Insight";
+};
+
+interface TerminalFileProps {
+	/** The FlexLayout tab node this pane is mounted in. We read the path /
+	 * mode / appName from its config and write back name (with asterisk) +
+	 * ext via FlexLayout actions. */
+	node: FlexLayout.TabNode;
+}
+
+/**
+ * Per-tab file editor pane. One instance per file editor tab — FlexLayout
+ * keeps inactive tabs mounted (hidden via CSS) so each editor preserves its
+ * state across tab switches.
+ */
+export const TerminalFile = ({ node }: TerminalFileProps) => {
+	const terminal = useTerminal();
+	const { actions } = useInsight();
+
+	const config = node.getConfig() as FileEditorTabConfig;
+	const [ext, setExtState] = useState<Ext>(
+		config.ext ?? inferExt(config.baseName),
+	);
+	const [content, setContent] = useState("");
+	const [isModified, setIsModified] = useState(false);
+	const contentRef = useRef(content);
+	contentRef.current = content;
+
+	// Mirror the asterisk back onto the FlexLayout tab name whenever the
+	// editor reports a modified state change. Without this, the tab title
+	// would show just the filename even when the buffer has unsaved edits.
+	useEffect(() => {
+		const model = node.getModel();
+		const next = isModified ? `${config.baseName}*` : config.baseName;
+		if (node.getName() !== next) {
+			model.doAction(FlexLayout.Actions.renameTab(node.getId(), next));
+		}
+	}, [isModified, config.baseName, node]);
+
+	const setExt = useCallback(
+		(nextExt: Ext) => {
+			setExtState(nextExt);
+			// persist on the tab config so the choice survives tab switches /
+			// is recovered if we ever serialize the layout
+			node.getModel().doAction(
+				FlexLayout.Actions.updateNodeAttributes(node.getId(), {
+					config: { ...config, ext: nextExt },
+				}),
+			);
+		},
+		[config, node],
+	);
+
+	const active = modeKey(config.mode) === modeKey(terminal.fileMode);
+
+	const runFile = useCallback(async () => {
+		// content is only populated by FileEditor's onChange — which doesn't
+		// fire on initial load. For a tab the user hasn't typed in, fetch the
+		// on-disk content first.
+		let body = contentRef.current;
+		if (!isModified && !body) {
+			const fetchPixel = buildFetchContentPixel(config.mode, config.path);
+			const resp = await runPixel<string>(actions, fetchPixel);
+			if (
+				!resp ||
+				resp.operationType.some((t) => t.indexOf("ERROR") > -1)
+			) {
+				terminal.alert("error", `Failed to load ${config.baseName}`);
+				return;
+			}
+			body =
+				typeof resp.output === "string"
+					? resp.output
+					: String(resp.output ?? "");
+		}
+
+		const pixel = buildRunPixel(ext, body);
+		if (!pixel) {
+			terminal.alert(
+				"warn",
+				`${config.baseName} could not be run. Please validate the script.`,
+			);
+			return;
+		}
+
+		// Route through the REPL transcript so the user can see the output
+		// (FileEditor doesn't surface pixel results on its own).
+		terminal.submitToConsole(pixel, {
+			displayInput: body,
+			context: extToContext(ext),
+		});
+
+		// If a non-REPL tabset is currently maximized, the REPL is hidden
+		// from view — the user just kicked off a run with no visible output.
+		// Nudge them to un-maximize. (A maximized REPL is fine; output is
+		// front-and-center there.)
+		const maximized = node.getModel().getMaximizedTabset();
+		if (maximized && maximized.getId() !== "REPL_TABSET") {
+			toast.info("Output will appear in the Terminal pane", {
+				description: "Restore the layout to see the run output.",
+			});
+		}
+	}, [actions, config, ext, isModified, node, terminal]);
+
+	return (
+		<div className="flex h-full flex-col bg-white">
+			<div className="relative min-h-0 flex-1">
+				<FileEditor
+					mode={config.mode}
+					path={config.path}
+					onChange={(value, modifiedFlag) => {
+						setContent(value);
+						setIsModified(modifiedFlag);
+					}}
+				/>
+				{!active && (
+					// Pointer-events overlay blocks edits / clicks on the
+					// FileEditor when the active scope no longer matches the
+					// tab's captured scope. Save/Run in this state would write
+					// to the wrong scope or execute against the wrong Python
+					// environment, so we fence it off until the user switches
+					// back.
+					<div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-[1px]">
+						<div className="max-w-sm rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 text-sm shadow-sm">
+							<div className="mb-1 font-semibold">
+								Scope changed
+							</div>
+							<div className="text-xs leading-snug">
+								This file was opened in{" "}
+								<span className="font-medium">
+									{scopeLabel(config)}
+								</span>
+								. Switch back to that scope to edit or run it.
+							</div>
+						</div>
+					</div>
+				)}
+			</div>
+
+			<div className="flex h-10 items-center gap-2 border-zinc-200 border-t bg-zinc-50 px-2">
+				<div className="ml-auto inline-flex overflow-hidden rounded border border-zinc-300">
+					{(
+						[
+							["pixel", "Pixel"],
+							["r", "R"],
+							["py", "Python"],
+							["shell", "Shell"],
+						] as const
+					).map(([extOpt, label]) => (
+						<Tooltip key={extOpt} label={`Switch to ${label}`}>
+							<button
+								type="button"
+								className={`flex items-center justify-center border-zinc-300 border-r px-2 py-1 last:border-r-0 disabled:opacity-40 ${
+									ext === extOpt
+										? "bg-blue-100 text-blue-800"
+										: "bg-white text-zinc-600 hover:bg-zinc-100"
+								}`}
+								onClick={() => setExt(extOpt)}
+								disabled={!active}
+							>
+								<Logo name={extOpt} className="h-4 w-4" />
+							</button>
+						</Tooltip>
+					))}
+				</div>
+
+				<Tooltip
+					label={
+						active
+							? "Run (Ctrl+Enter)"
+							: "Switch back to this file's scope to run"
+					}
+					align="end"
+				>
+					<button
+						type="button"
+						className="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-40"
+						onClick={runFile}
+						disabled={!active}
+					>
+						Run
+					</button>
+				</Tooltip>
+			</div>
+		</div>
+	);
+};

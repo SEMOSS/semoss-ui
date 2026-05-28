@@ -1,0 +1,62 @@
+@import "@semoss/ui/globals.css";
+@import "@semoss/shared/globals.css";
+
+@source "./**/*.{ts,tsx}";
+
+html,
+body,
+#root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family:
+        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+        Cantarell, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+/* Subtle divider between Monaco's line-number gutter and the editor
+   content area in the REPL input. */
+.terminal-repl-editor .monaco-editor .margin {
+    border-right: 1px solid #e4e4e7;
+}
+
+/* Terminal-specific FlexLayout tweaks. Move the maximize button to the
+   left of each tabset's tab strip (the SMSS theme defaults it to the
+   right, with reserved room-sidebar-controls padding the terminal
+   doesn't have). Scoped to `.terminal-flex-layout` so this doesn't bleed
+   into the client/playground which share the SMSS theme. */
+.terminal-flex-layout .flexlayout__tab_toolbar {
+    order: -1;
+    margin-right: 4px;
+}
+.terminal-flex-layout .flexlayout__tabset_tabbar_outer_top {
+    padding-right: 0;
+}
+
+/* Help + User strip pinned below the FlexLayout "Files" border tab. We
+   keep it fully transparent + borderless so the underlying FlexLayout
+   strip (the left border the icons sit on top of) shows through and the
+   two read as a single continuous column. */
+.terminal-sidebar-footer {
+    background: transparent;
+    border: none;
+}
+/* UserMenu's @semoss/ui Button trigger is 32px (size-8) by default — too
+   wide for the 31px FlexLayout strip. Force it to 28px to match the Help
+   button it sits next to. */
+.terminal-sidebar-footer [data-slot="popover-trigger"] {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+/* (Maximized-state highlight removed — relied on contrast between
+   selected and inactive tabs, which falls apart when there's only one
+   tab and the user can't tell maximize is on. FlexLayout's maximize
+   icon already toggles to a restore icon, which is the cue.) */

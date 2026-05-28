@@ -77,6 +77,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
 	} else if (mode.type === "INSIGHT" && targetInsightId) {
 		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
+	} else if (mode.type === "USER") {
+		getFilePixel = `GetUserAssets(filePath=["${path}"]);`;
 	}
 
 	const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
@@ -313,6 +315,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				pixel = `SaveEngineAssets(engine=["${mode.engine}"], filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `SaveInsightAssets(filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `SaveUserAssets(filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
 			}
 
 			if (!pixel) {
@@ -357,6 +361,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				pixel = `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${currentPath}"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `DownloadInsightAsset(filePath=["${currentPath}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `DownloadUserAsset(filePath=["${currentPath}"]);`;
 			}
 
 			if (!pixel) {
