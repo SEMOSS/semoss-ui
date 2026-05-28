@@ -1,0 +1,29 @@
+{
+	"context": {
+		"switchTo": "التبديل إلى {{context}}"
+	},
+	"run": {
+		"button": "تشغيل",
+		"tooltip": "تشغيل (Ctrl+Enter)"
+	},
+	"emptyState": {
+		"prefix": "اكتب أمراً أعلاه واضغط",
+		"and": "+",
+		"suffix": "للتنفيذ. ستظهر المخرجات هنا."
+	},
+	"copyAll": {
+		"button": "نسخ جميع الخطوات",
+		"tooltip": "نسخ كل خطوة مُرسلة إلى الحافظة",
+		"success": "تم نسخ الوصفة إلى الحافظة بنجاح",
+		"error": "فشل نسخ الوصفة إلى الحافظة"
+	},
+	"actions": {
+		"enteredRMode": "لقد دخلت إلى وضع R.",
+		"enteredPythonMode": "لقد دخلت إلى وضع Python."
+	},
+	"results": {
+		"successNoOutput": "✓ تم التشغيل بنجاح (بدون مخرجات)",
+		"insightNotReady": "الرؤية غير جاهزة",
+		"unknownError": "خطأ غير معروف"
+	}
+}

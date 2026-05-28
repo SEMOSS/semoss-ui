@@ -43,6 +43,8 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 				pixel = `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${path}"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `DownloadInsightAsset(filePath=["${path}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `DownloadUserAsset(filePath=["${path}"]);`;
 			}
 
 			if (!pixel) {
