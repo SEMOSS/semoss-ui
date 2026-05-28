@@ -8,8 +8,6 @@
     "start": "vite"
   },
   "dependencies": {
-    "@emotion/react": "^11.11.1",
-    "@emotion/styled": "^11.11.0",
     "@medv/finder": "^2.1.0",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
