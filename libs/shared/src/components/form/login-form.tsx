@@ -46,15 +46,8 @@ export function LoginForm() {
 	const isNative = Object.hasOwn(availableProvidersMap, "native");
 
 	const [error, setError] = useState("");
-	const [isLoading, setIsLoading] = useState(false);
-
-	if (isLoading) {
-		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<Spinner />
-			</div>
-		);
-	}
+	const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+	const isLoading = loadingProvider !== null;
 
 	return (
 		<form className="flex flex-col gap-6">
@@ -75,6 +68,7 @@ export function LoginForm() {
 								placeholder="Username"
 								value={username}
 								onChange={(e) => setUsername(e.target.value)}
+								disabled={isLoading}
 								required
 							/>
 						</Field>
@@ -86,22 +80,22 @@ export function LoginForm() {
 								placeholder="Password"
 								onChange={(e) => setPassword(e.target.value)}
 								type="password"
+								disabled={isLoading}
 								required
 							/>
 						</Field>
 						<Field>
 							<Button
 								type="submit"
+								disabled={isLoading}
 								onClick={() => {
-									// turn on loading
-									setIsLoading(true);
-
 									if (!username || !password) {
 										setError(
 											"Username and Password is Required",
 										);
 										return;
 									}
+									setLoadingProvider("native");
 
 									actions
 										.login({
@@ -116,11 +110,13 @@ export function LoginForm() {
 											setError(error.message);
 										})
 										.finally(() => {
-											// turn off loading
-											setIsLoading(false);
+											setLoadingProvider(null);
 										});
 								}}
 							>
+								{loadingProvider === "native" && (
+									<Spinner className="size-4" />
+								)}
 								Login
 							</Button>
 						</Field>
@@ -139,9 +135,9 @@ export function LoginForm() {
 							<Button
 								key={p.provider}
 								variant="outline"
+								disabled={isLoading}
 								onClick={async () => {
-									// turn on loading
-									setIsLoading(true);
+									setLoadingProvider(p.provider);
 
 									await actions
 										.login({
@@ -149,16 +145,14 @@ export function LoginForm() {
 											provider: p.provider,
 										})
 										.then(() => {
-											// turn off loading
-											setIsLoading(false);
+											setLoadingProvider(null);
 
 											toast.success(
 												`Successfully logged in`,
 											);
 										})
 										.catch((e) => {
-											// turn off loading
-											setIsLoading(false);
+											setLoadingProvider(null);
 
 											setError(e.message);
 
@@ -167,10 +161,14 @@ export function LoginForm() {
 								}}
 								className="w-full gap-2"
 							>
-								<LoginProviderIcon
-									provider={p.provider}
-									className="h-4 w-4 shrink-0 object-contain"
-								/>
+								{loadingProvider === p.provider ? (
+									<Spinner className="size-4" />
+								) : (
+									<LoginProviderIcon
+										provider={p.provider}
+										className="h-4 w-4 shrink-0 object-contain"
+									/>
+								)}
 								{p.name}
 							</Button>
 						</Field>

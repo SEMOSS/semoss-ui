@@ -274,6 +274,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 				pixel = `RenameEngineAsset(engine=["${mode.engine}"], filePath=["${item.path}"], newValue=["${newPath}"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `RenameInsightAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `RenameUserAsset(filePath=["${item.path}"], newValue=["${newPath}"]);`;
 			}
 			if (pixel) {
 				await insight.actions.run(pixel);
@@ -300,6 +302,8 @@ export const FileExplorerItem: React.FC<FileExplorerItemProps> = ({
 			getChildrenPixel = `ListStoragePathDetails(storage=["${mode.storage}"], storagePath=["${item.path}"]);`;
 		} else if (mode.type === "INSIGHT") {
 			getChildrenPixel = `BrowseInsightAssets(filePath=["${item.path}"]);`;
+		} else if (mode.type === "USER") {
+			getChildrenPixel = `BrowseUserAssets(filePath=["${item.path}"]);`;
 		}
 	}
 

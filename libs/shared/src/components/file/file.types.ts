@@ -17,6 +17,15 @@ export type FileMode =
 	| {
 			type: "INSIGHT";
 			insightId?: string;
+	  }
+	| {
+			// User-home-scoped asset tree. Reactors mirror the INSIGHT family
+			// but against the current user's space (BrowseUserAssets,
+			// GetUserAssets, SaveUserAssets, DownloadUserAsset,
+			// DeleteUserAssets, RenameUserAsset, CopyUserAsset,
+			// SearchUserAssets). Currently only surfaced by `@semoss/terminal`'s
+			// ScopePicker — the client doesn't expose a User tab.
+			type: "USER";
 	  };
 
 /**
