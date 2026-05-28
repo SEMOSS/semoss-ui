@@ -25,11 +25,12 @@
 		"updateInstructions": "تحديث التعليمات",
 		"updateTokenLength": "تحديث طول الرموز",
 		"uploadFiles": "رفع الملفات",
-		"search": "بحث..."
+		"search": "بحث...",
+		"enterPromptLibraryTag": "أدخل علامة مكتبة الموجهات"
 	},
 	"actions": {
 		"addKnowledge": "إضافة معرفة",
-		"addToolbox": "إضافة صندوق أدوات",
+		"addToolbox": "إضافة صناديق أدوات",
 		"deleteMCP": "حذف MCP"
 	},
 	"badges": {
@@ -37,7 +38,7 @@
 	},
 	"messages": {
 		"noKnowledgeFound": "لم يتم العثور على معرفة",
-		"noToolboxFound": "لم يتم العثور على صندوق أدوات"
+		"noToolboxFound": "لم يتم العثور على صناديق أدوات"
 	},
 	"tooltips": {
 		"cannotDeleteWorkspaceMCPs": "لا يمكن حذف MCPs الخاصة بمساحة العمل",

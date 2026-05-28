@@ -33,6 +33,7 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
@@ -52,6 +53,7 @@ export interface ParsedResult {
 export const VectorForm = ({
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -759,10 +761,12 @@ export const VectorForm = ({
 
 	return (
 		<form onSubmit={handleSubmit(onFormSubmit)} data-testid="vector-form">
-			<H4 data-testid="vector-form-title">{title}</H4>
-			<Muted className="mt-1" data-testid="vector-form-description">
-				{description}
-			</Muted>
+			<EngineFormHeader
+				testIdPrefix="vector"
+				icon={icon}
+				title={title}
+				description={description}
+			/>
 			<div className="mt-8 mb-8" data-testid="vector-form-box">
 				<div className="flex flex-col gap-4">
 					{Object.keys(grouped).map((category) => (
