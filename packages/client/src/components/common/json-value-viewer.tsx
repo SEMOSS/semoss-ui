@@ -16,6 +16,13 @@ interface JsonValueViewerProps {
 	expandAll?: boolean;
 	/** Hide the built-in absolute-positioned expand-all toggle. */
 	hideToggle?: boolean;
+	/**
+	 * Reserve a stable height equal to the fully-expanded layout so the viewer
+	 * doesn't grow/shrink as sections are toggled. Caps at 60vh and scrolls
+	 * beyond. When false (default), the viewer grows with its current content
+	 * and relies on the parent container for overflow.
+	 */
+	fixedHeight?: boolean;
 }
 
 interface JsonTreeNodeProps {
@@ -50,7 +57,9 @@ const JsonTreeNode = ({
 }: JsonTreeNodeProps) => {
 	const hasChildren = isObjectValue(value);
 	const isCircular = hasChildren && parentRefs.includes(value);
-	const [isExpanded, setIsExpanded] = useState(!isChild);
+	const [isExpanded, setIsExpanded] = useState(
+		!isChild || expandAll === true,
+	);
 
 	useEffect(() => {
 		if (expandAll !== undefined && hasChildren && isChild) {
@@ -143,10 +152,36 @@ const hasNestedObject = (value: unknown): boolean => {
 	return Object.values(value).some(isObjectValue);
 };
 
+// Matches the viewer's `text-[13px] leading-[1.4]` rendering.
+export const JSON_VIEWER_LINE_HEIGHT_PX = 18.2;
+const LINE_HEIGHT_PX = JSON_VIEWER_LINE_HEIGHT_PX;
+
+export const countExpandedJsonLines = (
+	value: unknown,
+	seen: Set<object> = new Set(),
+): number => {
+	if (!isObjectValue(value)) return 1;
+	if (seen.has(value)) return 1;
+	const entries = Object.entries(value);
+	if (entries.length === 0) return 1;
+	const nextSeen = new Set(seen);
+	nextSeen.add(value);
+	let total = 2;
+	for (const [, child] of entries) {
+		if (isObjectValue(child) && Object.entries(child).length > 0) {
+			total += 1 + countExpandedJsonLines(child, nextSeen);
+		} else {
+			total += 1;
+		}
+	}
+	return total;
+};
+
 export const JsonValueViewer = ({
 	value,
 	expandAll: controlledExpandAll,
 	hideToggle,
+	fixedHeight,
 }: JsonValueViewerProps) => {
 	const [internalExpandAll, setInternalExpandAll] = useState<
 		boolean | undefined
@@ -156,6 +191,10 @@ export const JsonValueViewer = ({
 	const setExpandAll = setInternalExpandAll;
 	const showToggle = useMemo(() => hasNestedObject(value), [value]);
 	const renderToggle = showToggle && !hideToggle && !isControlled;
+	const expandedHeightPx = useMemo(
+		() => Math.ceil(countExpandedJsonLines(value) * LINE_HEIGHT_PX),
+		[value],
+	);
 
 	if (value === null || typeof value === "undefined") {
 		return (
@@ -188,7 +227,14 @@ export const JsonValueViewer = ({
 					)}
 				</button>
 			)}
-			<div className="max-h-[275px] overflow-auto font-mono text-[13px] text-foreground leading-[1.4]">
+			<div
+				className="overflow-auto font-mono text-[13px] text-foreground leading-[1.4]"
+				style={
+					fixedHeight
+						? { height: `min(60vh, ${expandedHeightPx}px)` }
+						: undefined
+				}
+			>
 				<JsonTreeNode
 					value={value}
 					parentRefs={[]}

@@ -79,7 +79,7 @@ export const FanFavoritesSection = () => {
 				<AppTileCard
 					app={TERMINAL_APP}
 					background="#BADEFF"
-					href="../../legacy/dist/#!/embed-terminal"
+					href="../../terminal/dist/"
 					systemApp={true}
 					appType={"TERMINAL"}
 					isLoading={false}
