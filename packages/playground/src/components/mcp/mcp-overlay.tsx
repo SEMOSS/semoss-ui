@@ -267,7 +267,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 										{/* Absolutely positioned so the centered label
 										    doesn't shift when the indicator appears. */}
 										{workspaceDraft ? (
-											<CheckIcon className="absolute right-2.5 size-3.5 text-primary" />
+											<CheckIcon className="absolute end-2.5 size-3.5 text-primary" />
 										) : null}
 									</TabsTrigger>
 								)}
@@ -277,7 +277,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 								>
 									<BookOpenIcon className="size-4" />
 									{t("overlay.tabKnowledge")}
-									<Badge variant="outline" className="ml-1">
+									<Badge variant="outline" className="ms-1">
 										{knowledge.length}
 									</Badge>
 								</TabsTrigger>
@@ -287,7 +287,7 @@ export const MCPOverlay: React.FC<MCPOverlayProps> = ({
 								>
 									<HammerIcon className="size-4" />
 									{t("overlay.tabToolbox")}
-									<Badge variant="outline" className="ml-1">
+									<Badge variant="outline" className="ms-1">
 										{toolbox.length}
 									</Badge>
 								</TabsTrigger>

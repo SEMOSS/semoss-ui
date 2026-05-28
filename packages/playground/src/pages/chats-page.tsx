@@ -11,7 +11,7 @@ import {
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
@@ -85,10 +85,10 @@ export const ChatsPage = observer(() => {
 		(response) => (response.length < 25 ? -1 : Infinity),
 		(response) => response,
 		{ limit: 25 },
-		// roomCounter is incremented by the chat store whenever a chat
-		// is created / renamed / deleted; re-fetching here keeps the
-		// "All chats" list in sync across pages without a manual refresh.
-		[debouncedSearch, chat.keys.roomCounter],
+		// Re-fetch only on search change — counter-based refreshes are
+		// handled by the useEffect below, which calls reset() and
+		// preserves current data instead of clearing it first.
+		[debouncedSearch],
 	);
 
 	const { setScroll } = useInfiniteScroll({
@@ -114,6 +114,19 @@ export const ChatsPage = observer(() => {
 		() => setSelectedIds(new Set(visibleRooms.map((r) => r.ROOM_ID))),
 		[visibleRooms],
 	);
+
+	// Re-fetch when roomCounter increments (create / rename / delete from
+	// anywhere in the app) without clearing the list first. reset()
+	// preserves current data while the refetch runs, avoiding a blank flash.
+	const didInitialMount = useRef(false);
+	useEffect(() => {
+		chat.keys.roomCounter;
+		if (!didInitialMount.current) {
+			didInitialMount.current = true;
+			return;
+		}
+		getRooms.reset();
+	}, [getRooms.reset, chat.keys.roomCounter]);
 
 	// Keyboard shortcuts: Esc clears the current selection;
 	// Cmd/Ctrl+A selects all visible chats (only when focus isn't
@@ -244,7 +257,7 @@ export const ChatsPage = observer(() => {
 		>
 			<div className="mx-auto flex w-full max-w-5xl flex-col gap-6 @3xl:px-12 @md:px-6 px-4 pt-8 pb-4">
 				{/* Sticky header */}
-				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+				<div className="-mx-4 -mt-8 @md:-mx-6 @3xl:-mx-12 sticky top-0 z-20 flex flex-row items-center gap-3 border-border border-b bg-background/95 @3xl:px-12 @md:px-6 px-4 py-4 backdrop-blur supports-backdrop-filter:bg-background/80">
 					<div className="min-w-0 flex-1">
 						<div className="truncate font-semibold @md:text-2xl text-foreground text-xl leading-tight">
 							{t("workspace:chats.title", {
@@ -433,7 +446,7 @@ export const ChatsPage = observer(() => {
 													toggleSelectOne(r.ROOM_ID);
 												}
 											}}
-											className="relative z-[1] flex shrink-0 cursor-pointer items-center @md:gap-3 gap-2 py-2.5 @md:pr-2 pr-1 @md:pl-3 pl-2"
+											className="relative z-1 flex shrink-0 cursor-pointer items-center @md:gap-3 gap-2 py-2.5 @md:ps-3 ps-2 @md:pe-2 pe-1"
 										>
 											<Checkbox
 												checked={isSelected}
@@ -462,9 +475,10 @@ export const ChatsPage = observer(() => {
 										</div>
 
 										{/* Name + date — link covers this area for navigation */}
-										<div className="pointer-events-none relative z-[1] flex min-w-0 flex-1 flex-col py-2.5">
+										<div className="pointer-events-none relative z-1 flex min-w-0 flex-1 flex-col py-2.5">
 											<div className="flex min-w-0 items-center gap-1.5">
 												<div
+													dir="auto"
 													className="truncate font-semibold text-foreground text-sm leading-tight"
 													title={r.ROOM_NAME}
 												>
@@ -494,7 +508,7 @@ export const ChatsPage = observer(() => {
 										    to the stretched Link and navigate to the
 										    room. The rename Button re-enables events
 										    on itself via `pointer-events-auto`. */}
-										<div className="pointer-events-none relative z-[1] flex shrink-0 items-center gap-1 @md:pr-3 pr-2">
+										<div className="pointer-events-none relative z-1 flex shrink-0 items-center gap-1 @md:pe-3 pe-2">
 											<Tooltip>
 												<TooltipTrigger asChild>
 													<Button
@@ -521,7 +535,7 @@ export const ChatsPage = observer(() => {
 													{t("workspace:chat.rename")}
 												</TooltipContent>
 											</Tooltip>
-											<ArrowRightIcon className="size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
+											<ArrowRightIcon className="rtl:-scale-x-100 size-4 shrink-0 text-muted-foreground transition-colors group-hover/row:text-foreground" />
 										</div>
 									</div>
 								);
@@ -543,7 +557,7 @@ export const ChatsPage = observer(() => {
 			    the selection. */}
 			{hasSelection && (
 				<div className="-translate-x-1/2 fade-in-0 slide-in-from-bottom-4 fixed bottom-6 left-1/2 z-30 animate-in">
-					<div className="flex items-center gap-1 rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-card/80">
+					<div className="flex items-center gap-1 rounded-full border border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur supports-backdrop-filter:bg-card/80">
 						<span className="px-3 font-medium text-foreground text-sm">
 							{t("workspace:chats.selectedCount", {
 								count: selectedIds.size,

@@ -220,6 +220,14 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						path,
 						data.files,
 					);
+				} else if (mode.type === "USER") {
+					// no dedicated User upload helper — use the generic
+					// insight upload route; backend resolves the scope from
+					// the session.
+					uploadResponse = await insight.actions.uploadInsight(
+						path,
+						data.files,
+					);
 				} else {
 					throw new Error("Unknown mode type");
 				}
@@ -250,6 +258,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.engine}"])`;
 							} else if (mode.type === "INSIGHT") {
 								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"])`;
+							} else if (mode.type === "USER") {
+								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["user"])`;
 							}
 
 							await insight.actions.run(unzipPixel);
@@ -291,6 +301,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					pixel = `NewEngineAssetsFile(engine=["${mode.engine}"], filePath=["${path}${data.name}"]);`;
 				} else if (mode.type === "INSIGHT") {
 					pixel = `NewInsightAssetsFile(filePath=["${path}${data.name}"]);`;
+				} else if (mode.type === "USER") {
+					pixel = `NewUserAssetsFile(filePath=["${path}${data.name}"]);`;
 				}
 
 				// run it
@@ -309,6 +321,8 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					pixel = `NewEngineAssetsDirectory(engine=["${mode.engine}"], filePath=["${path}${data.name}"]);`;
 				} else if (mode.type === "INSIGHT") {
 					pixel = `NewInsightAssetsDirectory(filePath=["${path}${data.name}"]);`;
+				} else if (mode.type === "USER") {
+					pixel = `NewUserAssetsDirectory(filePath=["${path}${data.name}"]);`;
 				}
 
 				// run it
@@ -503,7 +517,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 																</span>
 															</div>
 															{fileIsZip && (
-																<label className="ml-auto flex items-center gap-2 whitespace-nowrap pl-2">
+																<label className="ms-auto flex items-center gap-2 whitespace-nowrap ps-2">
 																	<input
 																		type="checkbox"
 																		checked={

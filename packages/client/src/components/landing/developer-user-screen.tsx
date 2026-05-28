@@ -16,7 +16,7 @@ import {
 	BASE_APP_VARIABLES,
 	BASE_PAGE_BLOCKS,
 } from "../../pages/app/app.constants";
-import { FanFavoritesSection } from "./FanFavoritesSection";
+import { FanFavoritesSection } from "./fan-favorites-section";
 import { LandingHeader } from "./landing-header";
 
 export const DeveloperUserScreen = observer(() => {
