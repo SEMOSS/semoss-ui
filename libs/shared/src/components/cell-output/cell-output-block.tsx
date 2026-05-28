@@ -263,10 +263,9 @@ export const CellOutputBlock = ({
 						/>
 					) : (
 						<div
-							className={
-								"whitespace-pre-wrap break-all" +
-								(error ? "text-destructive" : "text-foreground")
-							}
+							className={`whitespace-pre-wrap break-all ${
+								error ? "text-destructive" : "text-foreground"
+							}`}
 						>
 							{output}
 						</div>
@@ -395,10 +394,9 @@ export const CellOutputBlock = ({
 						/>
 					) : (
 						<pre
-							className={
-								"whitespace-pre-wrap break-all font-mono text-sm" +
-								(error ? "text-destructive" : "text-foreground")
-							}
+							className={`whitespace-pre-wrap break-all font-mono text-sm ${
+								error ? "text-destructive" : "text-foreground"
+							}`}
 						>
 							{output}
 						</pre>

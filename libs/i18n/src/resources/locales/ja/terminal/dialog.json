@@ -5,7 +5,9 @@
 		"rawResponse": "生のレスポンス",
 		"copy": "コピー",
 		"copied": "コピーしました",
-		"copyFailed": "コードのコピーに失敗しました"
+		"copyFailed": "コードのコピーに失敗しました",
+		"fetchFailed": "使用方法の取得に失敗しました（応答なし）",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) がエラーを返しました。"
 	},
 	"save": {
 		"title": "保存",
