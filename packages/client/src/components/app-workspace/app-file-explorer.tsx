@@ -558,20 +558,6 @@ export const AppFileExplorer: React.FC<AppFileExplorerProps> = observer(
 											},
 										}
 									: null,
-								item.path.endsWith(".zip")
-									? {
-											name: "Unzip",
-											action: async () => {
-												const pixel = `UnzipFile(filePath=["${item.path}"], space=["${app}"])`;
-
-												await insight.actions.run(
-													pixel,
-												);
-
-												refresh();
-											},
-										}
-									: null,
 								{
 									name: "Delete",
 									action: async (item) => {
