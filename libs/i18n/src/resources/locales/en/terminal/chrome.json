@@ -1,0 +1,40 @@
+{
+	"branding": "Terminal",
+	"tabs": {
+		"files": "Files",
+		"terminal": "Terminal"
+	},
+	"views": {
+		"inline": "Inline",
+		"overlay": "Overlay",
+		"side": "Side",
+		"popup": "Pop out"
+	},
+	"actions": {
+		"closeTerminal": "Close Terminal",
+		"help": "Help"
+	},
+	"scope": {
+		"insight": "Insight",
+		"app": "App",
+		"user": "User",
+		"selectProject": "Select a project…",
+		"searchProjects": "Search projects…",
+		"loadingProjects": "Loading projects…",
+		"loadingMore": "Loading more…",
+		"endOfList": "End of list",
+		"noProjectsMatch": "No projects match \"{{query}}\"",
+		"noProjectsFound": "No projects found"
+	},
+	"userMenu": {
+		"accountAria": "Account",
+		"loggingOut": "Logging out",
+		"defaultUser": "User",
+		"theme": {
+			"light": "Light",
+			"dark": "Dark",
+			"system": "System"
+		},
+		"logOut": "Log out"
+	}
+}

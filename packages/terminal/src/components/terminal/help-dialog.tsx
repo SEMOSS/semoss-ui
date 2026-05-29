@@ -6,6 +6,7 @@ import {
 	useEffect,
 	useState,
 } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	CodeContainer,
@@ -55,6 +56,7 @@ interface HelpDialogProps {
  */
 export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 	const { actions } = useInsight();
+	const { t } = useTranslation("dialog");
 	const [activeType, setActiveType] = useState<EngineType>("MODEL");
 	// cache fetched data per type so re-selecting a tab is instant
 	const [usageByType, setUsageByType] = useState<
@@ -81,7 +83,7 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 			if (!resp) {
 				setErrorByType((prev) => ({
 					...prev,
-					[activeType]: "Failed to fetch usage (no response)",
+					[activeType]: t("help.fetchFailed"),
 				}));
 				setUsageByType((prev) => ({
 					...prev,
@@ -89,11 +91,11 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 				}));
 				return;
 			}
-			if (resp.operationType.some((t) => t.indexOf("ERROR") > -1)) {
+			if (resp.operationType.some((op) => op.indexOf("ERROR") > -1)) {
 				const err =
 					typeof resp.output === "string"
 						? resp.output
-						: `GetEngineUsage(type=["${activeType}"]) returned an error.`;
+						: t("help.usageReturnedError", { type: activeType });
 				setErrorByType((prev) => ({ ...prev, [activeType]: err }));
 				setUsageByType((prev) => ({
 					...prev,
@@ -123,7 +125,7 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 				}}
 			>
 				<DialogHeader className="border-border border-b px-5 py-3">
-					<DialogTitle>Terminal Help</DialogTitle>
+					<DialogTitle>{t("help.title")}</DialogTitle>
 				</DialogHeader>
 
 				<Tabs
@@ -132,31 +134,34 @@ export const HelpDialog = ({ open, onOpenChange }: HelpDialogProps) => {
 					className="flex min-h-0 flex-1 flex-col"
 				>
 					<TabsList className="mx-5 mt-3 self-start">
-						{ENGINE_TYPES.map((t) => (
-							<TabsTrigger key={t} value={t}>
-								{t.charAt(0) + t.slice(1).toLowerCase()}
+						{ENGINE_TYPES.map((et) => (
+							<TabsTrigger key={et} value={et}>
+								{et.charAt(0) + et.slice(1).toLowerCase()}
 							</TabsTrigger>
 						))}
 					</TabsList>
 
-					{ENGINE_TYPES.map((t) => (
+					{ENGINE_TYPES.map((et) => (
 						<TabsContent
-							key={t}
-							value={t}
+							key={et}
+							value={et}
 							className="min-h-0 flex-1 overflow-y-auto px-5 pb-5"
 						>
-							{loadingType === t && (
+							{loadingType === et && (
 								<div className="flex h-full items-center justify-center">
 									<Spinner />
 								</div>
 							)}
-							{loadingType !== t && errorByType[t] && (
+							{loadingType !== et && errorByType[et] && (
 								<div className="mt-4 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-destructive text-sm">
-									{errorByType[t]}
+									{errorByType[et]}
 								</div>
 							)}
-							{loadingType !== t && usageByType[t] && (
-								<UsagePane fetched={usageByType[t]} type={t} />
+							{loadingType !== et && usageByType[et] && (
+								<UsagePane
+									fetched={usageByType[et]}
+									type={et}
+								/>
 							)}
 						</TabsContent>
 					))}
@@ -173,6 +178,7 @@ const UsagePane = ({
 	fetched: FetchedUsage | undefined;
 	type: EngineType;
 }) => {
+	const { t } = useTranslation("dialog");
 	if (!fetched) return null;
 	const usage = fetched.usage;
 	const entries = usage ? Object.entries(usage) : [];
@@ -224,12 +230,12 @@ const UsagePane = ({
 	return (
 		<div className="flex flex-col gap-3 py-4">
 			<p className="text-muted-foreground text-sm">
-				No structured usage examples were returned for {type}.
+				{t("help.emptyMessage", { type })}
 			</p>
 			{hasRaw && (
 				<div className="overflow-hidden rounded-md border border-border">
 					<div className="border-border border-b bg-muted px-3 py-1.5 text-muted-foreground text-xs">
-						Raw response
+						{t("help.rawResponse")}
 					</div>
 					<pre className="overflow-x-auto whitespace-pre-wrap break-all bg-muted/30 p-3 font-mono text-foreground text-xs">
 						{safeStringify(fetched.raw)}
@@ -298,6 +304,7 @@ const safeStringify = (value: unknown): string => {
  * cheat sheet renders identically in the client and the terminal.
  */
 const CodeBlockWithCopy = ({ children }: { children: ReactNode }) => {
+	const { t } = useTranslation("dialog");
 	const [copied, setCopied] = useState(false);
 
 	const extractCodeDetails = (node: ReactNode) => {
@@ -336,7 +343,7 @@ const CodeBlockWithCopy = ({ children }: { children: ReactNode }) => {
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		} catch {
-			toast.error("Failed to copy code");
+			toast.error(t("help.copyFailed"));
 		}
 	};
 
@@ -355,11 +362,11 @@ const CodeBlockWithCopy = ({ children }: { children: ReactNode }) => {
 				>
 					{copied ? (
 						<>
-							<Check className="size-3" /> Copied
+							<Check className="size-3" /> {t("help.copied")}
 						</>
 					) : (
 						<>
-							<Copy className="size-3" /> Copy
+							<Copy className="size-3" /> {t("help.copy")}
 						</>
 					)}
 				</button>

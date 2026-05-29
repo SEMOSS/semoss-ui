@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "@semoss/i18n";
 import type { FileItem } from "./file.types";
 import { getFileExplorerTestIdSegment } from "./file-explorer.utils";
 import type { NewFileAction } from "./new-file-overlay";
@@ -86,6 +87,7 @@ export const FileExplorerContextMenu: React.FC<
 	onDownloadItems,
 	onNew,
 }) => {
+	const { t } = useTranslation("common");
 	const menuRef = useRef<HTMLDivElement>(null);
 	const focusedIndexRef = useRef<number>(-1);
 
@@ -131,7 +133,7 @@ export const FileExplorerContextMenu: React.FC<
 	if (isOnItem && canMutateFiles) {
 		entries.push({
 			key: "copy-path",
-			label: "Copy path",
+			label: t("fileExplorer.contextMenu.copyPath"),
 			icon: <CopyIcon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			action: async () => {
@@ -148,7 +150,7 @@ export const FileExplorerContextMenu: React.FC<
 
 		entries.push({
 			key: "copy",
-			label: "Copy",
+			label: t("fileExplorer.contextMenu.copy"),
 			icon: <CopyIcon className="size-4 shrink-0" />,
 			action: () => {
 				if (isBulkAction) {
@@ -163,7 +165,7 @@ export const FileExplorerContextMenu: React.FC<
 
 		entries.push({
 			key: "cut",
-			label: "Cut",
+			label: t("fileExplorer.contextMenu.cut"),
 			icon: <ScissorsIcon className="size-4 shrink-0" />,
 			action: () => {
 				if (isBulkAction) {
@@ -180,7 +182,7 @@ export const FileExplorerContextMenu: React.FC<
 	if (canMutateFiles) {
 		entries.push({
 			key: "paste",
-			label: "Paste here",
+			label: t("fileExplorer.contextMenu.pasteHere"),
 			icon: <ClipboardPasteIcon className="size-4 shrink-0" />,
 			disabled: clipboard === null || isBulkAction,
 			dividerBefore: isOnItem,
@@ -195,7 +197,7 @@ export const FileExplorerContextMenu: React.FC<
 	if (isOnItem && canMutateFiles) {
 		entries.push({
 			key: "rename",
-			label: "Rename",
+			label: t("fileExplorer.contextMenu.rename"),
 			icon: <PencilIcon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			dividerBefore: true,
@@ -210,7 +212,7 @@ export const FileExplorerContextMenu: React.FC<
 	if (isOnItem) {
 		entries.push({
 			key: "download",
-			label: "Download",
+			label: t("fileExplorer.contextMenu.download"),
 			icon: <DownloadIcon className="size-4 shrink-0" />,
 			action: async () => {
 				onClose();
@@ -252,7 +254,7 @@ export const FileExplorerContextMenu: React.FC<
 	if (isOnItem && canMutateFiles) {
 		entries.push({
 			key: "delete",
-			label: "Delete",
+			label: t("fileExplorer.contextMenu.delete"),
 			icon: <Trash2Icon className="size-4 shrink-0" />,
 			destructive: true,
 			dividerBefore: true,
@@ -276,7 +278,7 @@ export const FileExplorerContextMenu: React.FC<
 	if (canMutateFiles) {
 		entries.push({
 			key: "new-file",
-			label: "New file",
+			label: t("fileExplorer.contextMenu.newFile"),
 			icon: <FilePlus2Icon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			dividerBefore: true,
@@ -288,7 +290,7 @@ export const FileExplorerContextMenu: React.FC<
 
 		entries.push({
 			key: "new-folder",
-			label: "New folder",
+			label: t("fileExplorer.contextMenu.newFolder"),
 			icon: <FolderPlusIcon className="size-4 shrink-0" />,
 			disabled: isBulkAction,
 			action: () => {
@@ -367,7 +369,7 @@ export const FileExplorerContextMenu: React.FC<
 			data-testid="file-explorer-context-menu"
 			ref={menuRef}
 			role="menu"
-			aria-label="File actions"
+			aria-label={t("fileExplorer.contextMenu.ariaLabel")}
 			style={{ left, top }}
 			className="fixed z-[9999] min-w-48 overflow-hidden rounded-md border border-border bg-popover py-1 shadow-lg"
 			onClick={(e) => e.stopPropagation()}

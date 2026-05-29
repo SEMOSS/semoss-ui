@@ -1,5 +1,6 @@
 import {
 	CheckIcon,
+	ChevronRight as ChevronRightIcon,
 	Copy as CopyIcon,
 	Minus as MinusIcon,
 	Plus as PlusIcon,
@@ -7,6 +8,7 @@ import {
 	X as XIcon,
 } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { JsonViewer } from "./json-viewer";
 
@@ -60,6 +62,9 @@ export const CellOutputBlock = ({
 	pending = false,
 	error = false,
 }: CellOutputBlockProps) => {
+	// `common` namespace is part of coreResources (loaded by every
+	// I18nBuilder type), so this works from libs/shared without coupling.
+	const { t } = useTranslation("common");
 	const [rawOutput, setRawOutput] = useState(false);
 	const [rawLogsMode, setRawLogsMode] = useState(false);
 	const [popoutSection, setPopoutSection] = useState<
@@ -112,17 +117,22 @@ export const CellOutputBlock = ({
 					<span className="flex-1 whitespace-pre-wrap break-all text-foreground">
 						{prompt.text}
 					</span>
-					<CopyButton value={prompt.text} label="Copy command" />
+					<CopyButton
+						value={prompt.text}
+						label={t("cellOutput.copy.command")}
+					/>
 				</div>
 			)}
 
 			{messageLines.length > 0 && (
 				<Panel
-					label="Logs"
-					meta={`${messageLines.length} line${
-						messageLines.length === 1 ? "" : "s"
-					} · ${formatBytes(rawLogsText)}`}
+					label={t("cellOutput.panels.logs")}
+					meta={`${t("cellOutput.lines", {
+						count: messageLines.length,
+					})} · ${formatBytes(rawLogsText)}`}
 					accent="zinc"
+					collapsible
+					defaultCollapsed
 					headerExtras={
 						<>
 							<RawToggle
@@ -147,7 +157,7 @@ export const CellOutputBlock = ({
 										? rawLogsText
 										: messageLines.join("\n")
 								}
-								label="Copy logs"
+								label={t("cellOutput.copy.logs")}
 							/>
 							<PopoutButton
 								onClick={() => setPopoutSection("logs")}
@@ -200,16 +210,20 @@ export const CellOutputBlock = ({
 			{pending && !output && (
 				<div className="mt-1.5 ml-6 flex items-center gap-2 text-muted-foreground italic">
 					<span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
-					Running…
+					{t("cellOutput.running")}
 				</div>
 			)}
 
 			{output && (
 				<Panel
-					label={error ? "Error" : "Result"}
-					meta={`${countLines(output)} line${
-						countLines(output) === 1 ? "" : "s"
-					} · ${formatBytes(output)}`}
+					label={
+						error
+							? t("cellOutput.panels.error")
+							: t("cellOutput.panels.result")
+					}
+					meta={`${t("cellOutput.lines", {
+						count: countLines(output),
+					})} · ${formatBytes(output)}`}
 					accent={error ? "red" : "blue"}
 					headerExtras={
 						<>
@@ -231,7 +245,10 @@ export const CellOutputBlock = ({
 									}}
 								/>
 							)}
-							<CopyButton value={output} label="Copy output" />
+							<CopyButton
+								value={output}
+								label={t("cellOutput.copy.output")}
+							/>
 							<PopoutButton
 								onClick={() => setPopoutSection("result")}
 							/>
@@ -246,10 +263,9 @@ export const CellOutputBlock = ({
 						/>
 					) : (
 						<div
-							className={
-								"whitespace-pre-wrap break-all" +
-								(error ? "text-destructive" : "text-foreground")
-							}
+							className={`whitespace-pre-wrap break-all ${
+								error ? "text-destructive" : "text-foreground"
+							}`}
 						>
 							{output}
 						</div>
@@ -259,8 +275,10 @@ export const CellOutputBlock = ({
 
 			{popoutSection === "logs" && (
 				<PopoutModal
-					title="Logs"
-					meta={`${messageLines.length} lines · ${formatBytes(rawLogsText)}`}
+					title={t("cellOutput.panels.logs")}
+					meta={`${t("cellOutput.lines", {
+						count: messageLines.length,
+					})} · ${formatBytes(rawLogsText)}`}
 					actions={
 						<>
 							<RawToggle
@@ -285,7 +303,7 @@ export const CellOutputBlock = ({
 										? rawLogsText
 										: messageLines.join("\n")
 								}
-								label="Copy logs"
+								label={t("cellOutput.copy.logs")}
 							/>
 						</>
 					}
@@ -332,8 +350,14 @@ export const CellOutputBlock = ({
 
 			{popoutSection === "result" && (
 				<PopoutModal
-					title={error ? "Error" : "Result"}
-					meta={`${countLines(output)} lines · ${formatBytes(output)}`}
+					title={
+						error
+							? t("cellOutput.panels.error")
+							: t("cellOutput.panels.result")
+					}
+					meta={`${t("cellOutput.lines", {
+						count: countLines(output),
+					})} · ${formatBytes(output)}`}
 					actions={
 						<>
 							{!error && outputValue !== null && (
@@ -354,7 +378,10 @@ export const CellOutputBlock = ({
 									}}
 								/>
 							)}
-							<CopyButton value={output} label="Copy output" />
+							<CopyButton
+								value={output}
+								label={t("cellOutput.copy.output")}
+							/>
 						</>
 					}
 					onClose={() => setPopoutSection(null)}
@@ -367,10 +394,9 @@ export const CellOutputBlock = ({
 						/>
 					) : (
 						<pre
-							className={
-								"whitespace-pre-wrap break-all font-mono text-sm" +
-								(error ? "text-destructive" : "text-foreground")
-							}
+							className={`whitespace-pre-wrap break-all font-mono text-sm ${
+								error ? "text-destructive" : "text-foreground"
+							}`}
 						>
 							{output}
 						</pre>
@@ -391,48 +417,93 @@ interface PanelProps {
 	accent: "blue" | "red" | "zinc";
 	headerExtras?: ReactNode;
 	children: ReactNode;
+	/**
+	 * When true, renders a chevron on the leading edge of the header and
+	 * collapses the body on click. Used by the Logs panel so verbose
+	 * stdout/stderr starts hidden and the Result panel reads cleanly.
+	 */
+	collapsible?: boolean;
+	/** Initial state when `collapsible` is enabled. Defaults to expanded. */
+	defaultCollapsed?: boolean;
 }
 
+// Panel's leading edge aligns with the prompt-row logo (the row uses `px-3`,
+// so 12px / `ms-3` lines the panel up with the icon). Trailing edge keeps a
+// matching `me-3` gap from the transcript scroll edge. Accent stripe
+// (`border-s-4`) sits on the reading-leading edge in both LTR and RTL.
 const ACCENT_STYLES = {
 	blue: {
 		wrapper:
-			"mt-2 ml-6 mr-3 overflow-hidden rounded-md border border-l-4 border-border border-l-primary bg-background",
+			"mt-2 ms-3 me-3 overflow-hidden rounded-md border border-s-4 border-border border-s-primary bg-background",
 		header: "border-border bg-primary/10 text-primary",
 	},
 	red: {
 		wrapper:
-			"mt-2 ml-6 mr-3 overflow-hidden rounded-md border border-l-4 border-destructive/30 border-l-destructive bg-destructive/5",
+			"mt-2 ms-3 me-3 overflow-hidden rounded-md border border-s-4 border-destructive/30 border-s-destructive bg-destructive/5",
 		header: "border-destructive/30 bg-destructive/10 text-destructive",
 	},
 	zinc: {
 		wrapper:
-			"mt-2 ml-6 mr-3 overflow-hidden rounded-md border border-l-4 border-border border-l-muted-foreground/60 bg-muted/40",
+			"mt-2 ms-3 me-3 overflow-hidden rounded-md border border-s-4 border-border border-s-muted-foreground/60 bg-muted/40",
 		header: "border-border bg-background text-muted-foreground",
 	},
 } as const;
 
-const Panel = ({ label, meta, accent, headerExtras, children }: PanelProps) => {
+const Panel = ({
+	label,
+	meta,
+	accent,
+	headerExtras,
+	children,
+	collapsible = false,
+	defaultCollapsed = false,
+}: PanelProps) => {
 	const styles = ACCENT_STYLES[accent];
+	const [collapsed, setCollapsed] = useState(
+		collapsible ? defaultCollapsed : false,
+	);
+	const toggle = () => {
+		if (collapsible) setCollapsed((c) => !c);
+	};
 	return (
 		<div className={styles.wrapper}>
 			<div
-				className={
-					"flex items-center gap-2 border-b px-2.5 py-1" +
-					styles.header
-				}
+				className={`flex items-center gap-2 px-2.5 py-1 ${
+					collapsed ? "" : "border-b"
+				} ${styles.header}`}
 			>
-				<span className="font-semibold text-[10px] uppercase tracking-wider">
-					{label}
-				</span>
-				{meta && (
-					<span className="font-normal text-[10px] opacity-70">
-						{meta}
-					</span>
+				{collapsible && (
+					<button
+						type="button"
+						onClick={toggle}
+						aria-expanded={!collapsed}
+						aria-label={label}
+						className="-ms-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded hover:bg-current/10"
+					>
+						<ChevronRightIcon
+							className={`h-3 w-3 transition-transform ${collapsed ? "rtl:-rotate-180" : "rotate-90"}`}
+						/>
+					</button>
 				)}
+				<button
+					type="button"
+					onClick={toggle}
+					disabled={!collapsible}
+					className={`flex items-center gap-2 ${collapsible ? "cursor-pointer" : "cursor-default"}`}
+				>
+					<span className="font-semibold text-[10px] uppercase tracking-wider">
+						{label}
+					</span>
+					{meta && (
+						<span className="font-normal text-[10px] opacity-70">
+							{meta}
+						</span>
+					)}
+				</button>
 				<span className="flex-1" />
 				{headerExtras}
 			</div>
-			<div className="px-2.5 py-1.5">{children}</div>
+			{!collapsed && <div className="px-2.5 py-1.5">{children}</div>}
 		</div>
 	);
 };
@@ -442,6 +513,7 @@ const Panel = ({ label, meta, accent, headerExtras, children }: PanelProps) => {
 // ---------------------------------------------------------------------------
 
 const CopyButton = ({ value, label }: { value: string; label: string }) => {
+	const { t } = useTranslation("common");
 	const [copied, setCopied] = useState(false);
 	const copy = async () => {
 		try {
@@ -453,8 +525,8 @@ const CopyButton = ({ value, label }: { value: string; label: string }) => {
 	};
 	useEffect(() => {
 		if (!copied) return;
-		const t = setTimeout(() => setCopied(false), 1500);
-		return () => clearTimeout(t);
+		const timer = setTimeout(() => setCopied(false), 1500);
+		return () => clearTimeout(timer);
 	}, [copied]);
 	return (
 		<Tooltip>
@@ -472,26 +544,31 @@ const CopyButton = ({ value, label }: { value: string; label: string }) => {
 					)}
 				</button>
 			</TooltipTrigger>
-			<TooltipContent>{copied ? "Copied!" : label}</TooltipContent>
+			<TooltipContent>
+				{copied ? t("cellOutput.copy.copied") : label}
+			</TooltipContent>
 		</Tooltip>
 	);
 };
 
-const PopoutButton = ({ onClick }: { onClick: () => void }) => (
-	<Tooltip>
-		<TooltipTrigger asChild>
-			<button
-				type="button"
-				className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-				onClick={onClick}
-				aria-label="Popout"
-			>
-				<PopoutIcon className="h-3.5 w-3.5" />
-			</button>
-		</TooltipTrigger>
-		<TooltipContent>Popout</TooltipContent>
-	</Tooltip>
-);
+const PopoutButton = ({ onClick }: { onClick: () => void }) => {
+	const { t } = useTranslation("common");
+	return (
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<button
+					type="button"
+					className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+					onClick={onClick}
+					aria-label={t("cellOutput.popout")}
+				>
+					<PopoutIcon className="h-3.5 w-3.5" />
+				</button>
+			</TooltipTrigger>
+			<TooltipContent>{t("cellOutput.popout")}</TooltipContent>
+		</Tooltip>
+	);
+};
 
 const RawToggle = ({
 	raw,
@@ -499,34 +576,41 @@ const RawToggle = ({
 }: {
 	raw: boolean;
 	onToggle: () => void;
-}) => (
-	<div className="inline-flex overflow-hidden rounded border border-current/30 font-medium text-[10px]">
-		<button
-			type="button"
-			className={
-				"px-1.5 py-0" +
-				(!raw ? "bg-current/15" : "bg-transparent hover:bg-current/10")
-			}
-			onClick={() => {
-				if (raw) onToggle();
-			}}
-		>
-			FORMATTED
-		</button>
-		<button
-			type="button"
-			className={
-				"border-current/30 border-l px-1.5 py-0" +
-				(raw ? "bg-current/15" : "bg-transparent hover:bg-current/10")
-			}
-			onClick={() => {
-				if (!raw) onToggle();
-			}}
-		>
-			RAW
-		</button>
-	</div>
-);
+}) => {
+	const { t } = useTranslation("common");
+	return (
+		<div className="inline-flex overflow-hidden rounded border border-current/30 font-medium text-[10px]">
+			<button
+				type="button"
+				className={
+					"px-1.5 py-0" +
+					(!raw
+						? "bg-current/15"
+						: "bg-transparent hover:bg-current/10")
+				}
+				onClick={() => {
+					if (raw) onToggle();
+				}}
+			>
+				{t("cellOutput.format.formatted")}
+			</button>
+			<button
+				type="button"
+				className={
+					"border-current/30 border-l px-1.5 py-0" +
+					(raw
+						? "bg-current/15"
+						: "bg-transparent hover:bg-current/10")
+				}
+				onClick={() => {
+					if (!raw) onToggle();
+				}}
+			>
+				{t("cellOutput.format.raw")}
+			</button>
+		</div>
+	);
+};
 
 const ExpandAllToggle = ({
 	onExpand,
@@ -534,36 +618,39 @@ const ExpandAllToggle = ({
 }: {
 	onExpand: () => void;
 	onCollapse: () => void;
-}) => (
-	<div className="inline-flex overflow-hidden rounded border border-current/30">
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<button
-					type="button"
-					className="flex items-center px-1 py-0.5 hover:bg-current/10"
-					onClick={onExpand}
-					aria-label="Expand all"
-				>
-					<PlusIcon className="h-3 w-3" />
-				</button>
-			</TooltipTrigger>
-			<TooltipContent>Expand all</TooltipContent>
-		</Tooltip>
-		<Tooltip>
-			<TooltipTrigger asChild>
-				<button
-					type="button"
-					className="flex items-center border-current/30 border-l px-1 py-0.5 hover:bg-current/10"
-					onClick={onCollapse}
-					aria-label="Collapse all"
-				>
-					<MinusIcon className="h-3 w-3" />
-				</button>
-			</TooltipTrigger>
-			<TooltipContent>Collapse all</TooltipContent>
-		</Tooltip>
-	</div>
-);
+}) => {
+	const { t } = useTranslation("common");
+	return (
+		<div className="inline-flex overflow-hidden rounded border border-current/30">
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<button
+						type="button"
+						className="flex items-center px-1 py-0.5 hover:bg-current/10"
+						onClick={onExpand}
+						aria-label={t("cellOutput.expandAll")}
+					>
+						<PlusIcon className="h-3 w-3" />
+					</button>
+				</TooltipTrigger>
+				<TooltipContent>{t("cellOutput.expandAll")}</TooltipContent>
+			</Tooltip>
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<button
+						type="button"
+						className="flex items-center border-current/30 border-l px-1 py-0.5 hover:bg-current/10"
+						onClick={onCollapse}
+						aria-label={t("cellOutput.collapseAll")}
+					>
+						<MinusIcon className="h-3 w-3" />
+					</button>
+				</TooltipTrigger>
+				<TooltipContent>{t("cellOutput.collapseAll")}</TooltipContent>
+			</Tooltip>
+		</div>
+	);
+};
 
 // ---------------------------------------------------------------------------
 // PopoutModal — viewport-sized modal that re-renders panel content bigger
@@ -585,6 +672,7 @@ const PopoutModal = ({
 	children: ReactNode;
 	onClose: () => void;
 }) => {
+	const { t } = useTranslation("common");
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
 			if (e.key === "Escape") onClose();
@@ -631,7 +719,7 @@ const PopoutModal = ({
 						type="button"
 						className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
 						onClick={onClose}
-						aria-label="Close"
+						aria-label={t("cellOutput.close")}
 					>
 						<XIcon className="h-4 w-4" />
 					</button>

@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { uploadInsight } from "@semoss/sdk";
 import { useInsight } from "@semoss/sdk/react";
 import { runPixel } from "../../utility/pixel";
@@ -7,9 +8,22 @@ import { useTerminal } from "./terminal-context";
 export const UploadModal = () => {
 	const terminal = useTerminal();
 	const { actions, insightId } = useInsight();
+	const { t } = useTranslation("dialog");
 	const inputRef = useRef<HTMLInputElement | null>(null);
 	const [dragging, setDragging] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
+
+	// Seed the locale-aware default comment when the dialog first opens.
+	useEffect(() => {
+		if (terminal.upload.open && !terminal.upload.comment) {
+			terminal.setUpload({
+				comment: t("upload.comment", {
+					timestamp: new Date().toLocaleString(),
+				}),
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [terminal.upload.open]);
 
 	if (!terminal.upload.open) return null;
 
@@ -29,14 +43,11 @@ export const UploadModal = () => {
 
 	const submit = async () => {
 		if (terminal.upload.files.length === 0) {
-			terminal.alert("warn", "Please select files to upload.");
+			terminal.alert("warn", t("upload.errors.filesRequired"));
 			return;
 		}
 		if (!terminal.upload.comment) {
-			terminal.alert(
-				"warn",
-				"Please include a comment to describe your newly added file(s).",
-			);
+			terminal.alert("warn", t("upload.errors.commentRequired"));
 			return;
 		}
 		setSubmitting(true);
@@ -63,7 +74,7 @@ export const UploadModal = () => {
 		} catch (err) {
 			terminal.alert(
 				"error",
-				err instanceof Error ? err.message : "Upload failed",
+				err instanceof Error ? err.message : t("upload.errors.unknown"),
 			);
 		} finally {
 			setSubmitting(false);
@@ -77,11 +88,11 @@ export const UploadModal = () => {
 		>
 			<div className="w-full min-w-[420px] max-w-[600px] rounded-md bg-background text-foreground shadow-2xl">
 				<div className="border-border border-b px-5 py-4 font-semibold text-lg">
-					Upload
+					{t("upload.title")}
 				</div>
 				<div className="flex flex-col gap-3 px-5 py-4">
 					<section
-						aria-label="File drop zone"
+						aria-label={t("upload.fields.selectFile")}
 						className={`flex flex-col gap-2 rounded border-2 border-dashed p-4 ${
 							dragging ? "border-primary" : "border-border"
 						}`}
@@ -96,16 +107,18 @@ export const UploadModal = () => {
 							onFiles(e.dataTransfer.files);
 						}}
 					>
-						<span className="text-sm">Select File:</span>
+						<span className="text-sm">
+							{t("upload.fields.selectFile")}
+						</span>
 						{terminal.upload.files.length === 0 ? (
 							<div className="flex flex-col items-center gap-2 text-muted-foreground">
-								<div>Drag and drop files</div>
+								<div>{t("upload.dropzone.drag")}</div>
 								<button
 									type="button"
 									className="rounded border border-primary px-3 py-1 text-primary text-sm hover:bg-primary/10"
 									onClick={() => inputRef.current?.click()}
 								>
-									or upload
+									{t("upload.dropzone.or")}
 								</button>
 								<input
 									ref={inputRef}
@@ -132,7 +145,7 @@ export const UploadModal = () => {
 										className="rounded border border-primary px-2 py-0.5 text-primary text-xs hover:bg-primary/10"
 										onClick={() => removeFile(idx)}
 									>
-										Remove
+										{t("upload.buttons.remove")}
 									</button>
 								</div>
 							))
@@ -140,7 +153,7 @@ export const UploadModal = () => {
 					</section>
 
 					<label className="flex flex-col gap-1 text-sm">
-						<span>Comment:</span>
+						<span>{t("upload.fields.comment")}</span>
 						<input
 							type="text"
 							value={terminal.upload.comment}
@@ -158,7 +171,7 @@ export const UploadModal = () => {
 						onClick={terminal.closeUpload}
 						disabled={submitting}
 					>
-						Cancel
+						{t("upload.buttons.cancel")}
 					</button>
 					<button
 						type="button"
@@ -166,7 +179,7 @@ export const UploadModal = () => {
 						onClick={submit}
 						disabled={submitting}
 					>
-						Upload
+						{t("upload.buttons.upload")}
 					</button>
 				</div>
 			</div>

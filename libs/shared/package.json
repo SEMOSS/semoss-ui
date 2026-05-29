@@ -14,6 +14,7 @@
     "@iconify-icons/vscode-icons": "^1.1.18",
     "@iconify/react": "^5.2.0",
     "@monaco-editor/react": "^4.5.1",
+    "@semoss/i18n": "workspace:*",
     "@semoss/sdk": "workspace:*",
     "@semoss/ui": "workspace:*",
     "echarts": "^5.5.1",

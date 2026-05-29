@@ -1,5 +1,6 @@
 import type React from "react";
 import { useId, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
@@ -87,6 +88,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 	onClose = () => null,
 }) => {
 	const insight = useInsight();
+	const { t } = useTranslation("common");
 	const fileInputId = useId();
 	const [data, setData] = useState<NewFileData>(() =>
 		getInitialData(initialAction),
@@ -190,7 +192,9 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 			let pixel = "";
 			if (data.action === "upload") {
 				if (data.files.length === 0) {
-					toast.error("Please select at least one file to upload");
+					toast.error(
+						t("fileExplorer.overlay.toasts.selectAtLeastOne"),
+					);
 					return;
 				}
 
@@ -221,10 +225,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						data.files,
 					);
 				} else if (mode.type === "USER") {
-					// no dedicated User upload helper — use the generic
-					// insight upload route; backend resolves the scope from
-					// the session.
-					uploadResponse = await insight.actions.uploadInsight(
+					uploadResponse = await insight.actions.uploadUser(
 						path,
 						data.files,
 					);
@@ -253,13 +254,13 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 							let unzipPixel = "";
 							if (mode.type === "APP") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.app}"])`;
+								unzipPixel = `UnzipAppAssetFile(project=["${mode.app}"], filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "ENGINE") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["${mode.engine}"])`;
+								unzipPixel = `UnzipEngineAssetFile(engine=["${mode.engine}"], filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "INSIGHT") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"])`;
+								unzipPixel = `UnzipInsightAssetFile(filePath=["${uploadedPath}"])`;
 							} else if (mode.type === "USER") {
-								unzipPixel = `UnzipFile(filePath=["${uploadedPath}"], space=["user"])`;
+								unzipPixel = `UnzipUserAssetFile(filePath=["${uploadedPath}"])`;
 							}
 
 							await insight.actions.run(unzipPixel);
@@ -276,22 +277,33 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 				if (extractedCount > 0 || extractionErrors.length === 0) {
 					if (extractedCount > 0) {
 						toast.success(
-							`Successfully uploaded ${data.files.length} file(s)${extractedCount > 0 ? `, extracted ${extractedCount} ZIP(s)` : ""}`,
+							t(
+								"fileExplorer.overlay.toasts.uploadWithExtractSuccess",
+								{
+									count: data.files.length,
+									extractedCount,
+								},
+							),
 						);
 					} else {
-						toast.success("Successfully uploaded file(s)");
+						toast.success(
+							t("fileExplorer.overlay.toasts.uploadSuccess"),
+						);
 					}
 				}
 
 				// Show errors if any extractions failed
 				if (extractionErrors.length > 0) {
 					toast.error(
-						`${extractionErrors.length} extraction(s) failed: ${extractionErrors.join("; ")}`,
+						t("fileExplorer.overlay.toasts.extractionsFailed", {
+							count: extractionErrors.length,
+							errors: extractionErrors.join("; "),
+						}),
 					);
 				}
 			} else if (data.action === "add_file") {
 				if (!data.name.trim()) {
-					toast.error("Please enter a name for the file");
+					toast.error(t("fileExplorer.overlay.toasts.enterFileName"));
 					return;
 				}
 
@@ -308,10 +320,12 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 				// run it
 				await insight.actions.run(pixel);
 
-				toast.success("Successfully created file");
+				toast.success(t("fileExplorer.overlay.toasts.fileCreated"));
 			} else if (data.action === "add_directory") {
 				if (!data.name.trim()) {
-					toast.error("Please enter a name for the directory");
+					toast.error(
+						t("fileExplorer.overlay.toasts.enterDirectoryName"),
+					);
 					return;
 				}
 
@@ -328,7 +342,9 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 				// run it
 				await insight.actions.run(pixel);
 
-				toast.success("Successfully created directory");
+				toast.success(
+					t("fileExplorer.overlay.toasts.directoryCreated"),
+				);
 			} else {
 				throw new Error("Unknown action");
 			}
@@ -338,7 +354,11 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 			onClose(true);
 		} catch (e) {
-			toast.error(e instanceof Error ? e.message : "An error occurred");
+			toast.error(
+				e instanceof Error
+					? e.message
+					: t("fileExplorer.overlay.toasts.anError"),
+			);
 			console.error(e);
 		} finally {
 			setIsLoading(false);
@@ -352,9 +372,9 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 				className="sm:max-w-2xl"
 			>
 				<DialogHeader>
-					<DialogTitle>Create File or Directory</DialogTitle>
+					<DialogTitle>{t("fileExplorer.overlay.title")}</DialogTitle>
 					<DialogDescription>
-						Upload or create a new file or directory at path: {path}
+						{t("fileExplorer.overlay.description", { path })}
 					</DialogDescription>
 				</DialogHeader>
 				<form
@@ -366,7 +386,9 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					<FieldSet>
 						<FieldGroup>
 							<Field>
-								<FieldLabel>Action</FieldLabel>
+								<FieldLabel>
+									{t("fileExplorer.overlay.fields.action")}
+								</FieldLabel>
 								<Select
 									value={data.action}
 									onValueChange={(value) => {
@@ -389,19 +411,33 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 									}}
 								>
 									<SelectTrigger>
-										<SelectValue placeholder="Select action" />
+										<SelectValue
+											placeholder={t(
+												"fileExplorer.overlay.placeholders.selectAction",
+											)}
+										/>
 									</SelectTrigger>
 									<SelectContent>
 										<SelectGroup>
-											<SelectLabel>Action</SelectLabel>
+											<SelectLabel>
+												{t(
+													"fileExplorer.overlay.fields.action",
+												)}
+											</SelectLabel>
 											<SelectItem value="upload">
-												Upload Files
+												{t(
+													"fileExplorer.overlay.actions.upload",
+												)}
 											</SelectItem>
 											<SelectItem value="add_file">
-												New File
+												{t(
+													"fileExplorer.overlay.actions.newFile",
+												)}
 											</SelectItem>
 											<SelectItem value="add_directory">
-												New Directory
+												{t(
+													"fileExplorer.overlay.actions.newDirectory",
+												)}
 											</SelectItem>
 										</SelectGroup>
 									</SelectContent>
@@ -412,7 +448,11 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 						<FieldGroup>
 							{data.action === "upload" && (
 								<Field>
-									<FieldLabel>Upload File/Zip</FieldLabel>
+									<FieldLabel>
+										{t(
+											"fileExplorer.overlay.fields.uploadFileZip",
+										)}
+									</FieldLabel>
 									{/* biome-ignore lint/a11y/useSemanticElements: div required for drag-and-drop functionality */}
 									<div
 										role="button"
@@ -458,9 +498,15 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 												stroke="currentColor"
 												viewBox="0 0 24 24"
 												role="img"
-												aria-label="Upload icon"
+												aria-label={t(
+													"fileExplorer.overlay.dropzone.uploadIconAlt",
+												)}
 											>
-												<title>Upload icon</title>
+												<title>
+													{t(
+														"fileExplorer.overlay.dropzone.uploadIconAlt",
+													)}
+												</title>
 												<path
 													strokeLinecap="round"
 													strokeLinejoin="round"
@@ -470,10 +516,14 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 											</svg>
 											<div>
 												<p className="font-medium">
-													Drag and drop files here
+													{t(
+														"fileExplorer.overlay.dropzone.dragAndDrop",
+													)}
 												</p>
 												<p className="text-muted-foreground text-sm">
-													or click to browse
+													{t(
+														"fileExplorer.overlay.dropzone.orClickToBrowse",
+													)}
 												</p>
 											</div>
 										</div>
@@ -481,8 +531,13 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 									{data.files.length > 0 && (
 										<div className="mt-2 space-y-1">
 											<Muted className="font-medium text-xs">
-												{data.files.length} file(s)
-												selected:
+												{t(
+													"fileExplorer.overlay.files.selectedCount",
+													{
+														count: data.files
+															.length,
+													},
+												)}
 											</Muted>
 											<div className="max-h-24 space-y-1 overflow-y-auto">
 												{data.files.map((file) => {
@@ -528,11 +583,15 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 																				fileKey,
 																			)
 																		}
-																		title="Extract this ZIP after upload"
+																		title={t(
+																			"fileExplorer.overlay.files.unzipTitle",
+																		)}
 																		className="cursor-pointer"
 																	/>
 																	<span className="text-muted-foreground text-xs hover:text-foreground">
-																		Unzip
+																		{t(
+																			"fileExplorer.overlay.files.unzip",
+																		)}
 																	</span>
 																</label>
 															)}
@@ -547,9 +606,15 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 							{data.action === "add_file" && (
 								<Field>
-									<FieldLabel>File Name</FieldLabel>
+									<FieldLabel>
+										{t(
+											"fileExplorer.overlay.fields.fileName",
+										)}
+									</FieldLabel>
 									<Input
-										placeholder={"Enter File Name"}
+										placeholder={t(
+											"fileExplorer.overlay.placeholders.fileName",
+										)}
 										value={data.name}
 										onChange={(e) =>
 											setData((prev) => ({
@@ -563,9 +628,15 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 
 							{data.action === "add_directory" && (
 								<Field>
-									<FieldLabel>Directory Name</FieldLabel>
+									<FieldLabel>
+										{t(
+											"fileExplorer.overlay.fields.directoryName",
+										)}
+									</FieldLabel>
 									<Input
-										placeholder={"Enter Directory Name"}
+										placeholder={t(
+											"fileExplorer.overlay.placeholders.directoryName",
+										)}
 										value={data.name}
 										onChange={(e) =>
 											setData((prev) => ({
@@ -587,7 +658,7 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 							resetForm();
 						}}
 					>
-						Cancel
+						{t("fileExplorer.overlay.buttons.cancel")}
 					</Button>
 					<Button
 						variant="default"
@@ -596,12 +667,10 @@ export const NewFileOverlay: React.FC<NewFileOverlayProps> = ({
 					>
 						{isLoading ? (
 							<Spinner />
+						) : data.action === "upload" ? (
+							t("fileExplorer.overlay.buttons.upload")
 						) : (
-							<>
-								{data.action === "upload" && "Upload"}
-								{data.action === "add_file" && "Create"}
-								{data.action === "add_directory" && "Create"}
-							</>
+							t("fileExplorer.overlay.buttons.create")
 						)}
 					</Button>
 				</DialogFooter>

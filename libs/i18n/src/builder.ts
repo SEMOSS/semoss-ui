@@ -4,6 +4,7 @@ import { initReactI18next } from "react-i18next";
 import { getLanguageDirection, LANGUAGES } from "./constants";
 import { coreResources } from "./resources/core";
 import { playgroundResources } from "./resources/playground";
+import { terminalResources } from "./resources/terminal";
 
 export const defaultNS = "common";
 
@@ -21,12 +22,14 @@ export class I18nBuilder {
 	/** Register i18n instance */
 	i18n: typeof i18n;
 
-	constructor(type: "playground") {
+	constructor(type: "playground" | "terminal") {
 		this.i18n = i18n;
 
 		let resources = coreResources;
 		if (type === "playground") {
 			resources = playgroundResources;
+		} else if (type === "terminal") {
+			resources = terminalResources;
 		}
 
 		if (!resources) {
