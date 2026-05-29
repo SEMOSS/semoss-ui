@@ -7,6 +7,7 @@ import {
 	SaveIcon,
 } from "lucide-react";
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -58,6 +59,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	leadingToolbar,
 }) => {
 	const insight = useInsight();
+	const { t } = useTranslation("common");
 	const [isLoading, setIsLoading] = useState(false);
 	const targetInsightId =
 		mode.type === "INSIGHT"
@@ -384,9 +386,14 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			// trigger onChange
 			onChange(content, false);
 
-			toast.success("Successfully saved file");
+			toast.success(t("fileExplorer.toasts.saveSuccess"));
 		} catch (e) {
-			toast.error(getFileOperationErrorMessage("Error saving file", e));
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.saveFailed"),
+					e,
+				),
+			);
 
 			console.error(e);
 		} finally {
@@ -436,10 +443,13 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			// download the file
 			await download(targetInsightId, fileKey);
-			toast.success("Successfully downloaded file");
+			toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
 		} catch (e) {
 			toast.error(
-				getFileOperationErrorMessage("Error downloading file", e),
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.downloadFileFailed"),
+					e,
+				),
 			);
 
 			console.error(e);
@@ -541,7 +551,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				{getFile.status === "ERROR" && (
 					<div className="flex h-full w-full items-center justify-center">
 						<Muted className="text-destructive">
-							{getFile.error?.message || "Failed to load files"}
+							{getFile.error?.message ||
+								t("fileExplorer.failedToLoadFiles")}
 						</Muted>
 					</div>
 				)}

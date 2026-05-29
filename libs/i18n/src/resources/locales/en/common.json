@@ -65,5 +65,156 @@
 	},
 	"images": {
 		"logoAlt": "logo"
+	},
+	"fileExplorer": {
+		"search": "Search",
+		"name": "Name",
+		"dateModified": "Date Modified",
+		"pathLabel": "Path: {{path}}",
+		"lastModifiedLabel": "Last Modified: {{date}}",
+		"bulkShortcutsAria": "Bulk selection shortcuts",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+click selects multiple items. Ctrl/Cmd+A selects all visible items.",
+		"toggleMenu": "Toggle menu",
+		"resizeDateColumn": "Resize date column",
+		"failedToLoadFiles": "Failed to load files",
+		"pdfNotSupported": "Your browser doesn't support PDF viewing.",
+		"binaryView": {
+			"backToDownload": "Back to download",
+			"downloading": "Downloading...",
+			"download": "Download",
+			"viewRawContent": "View raw content"
+		},
+		"toasts": {
+			"uploadSuccess_one": "Successfully uploaded file",
+			"uploadSuccess_other": "Successfully uploaded files",
+			"uploadFailed": "Failed to upload file",
+			"moveSuccess_one": "Successfully moved item",
+			"moveSuccess_other": "Successfully moved items",
+			"moveFailed": "Failed to move item",
+			"copySuccess_one": "Successfully copied item",
+			"copySuccess_other": "Successfully copied items",
+			"copyFailed": "Failed to copy item",
+			"copyFailedItems": "Failed to copy: {{items}}",
+			"deleteSuccess_one": "Successfully deleted item",
+			"deleteSuccess_other": "Successfully deleted items",
+			"deleteFailed": "Failed to delete item",
+			"deleteFailedItems": "Failed to delete: {{items}}",
+			"copyPathSuccess": "Copied path",
+			"copyPathFailed": "Failed to copy path",
+			"downloadSuccess_one": "Successfully downloaded item",
+			"downloadSuccess_other": "Successfully downloaded items",
+			"downloadFailed": "Failed to download item",
+			"downloadFailedItems": "Failed to download: {{items}}",
+			"renameSuccess": "Successfully renamed",
+			"renameFailed": "Failed to rename",
+			"unzipFailed": "Failed to unzip file",
+			"saveSuccess": "Successfully saved file",
+			"saveFailed": "Error saving file",
+			"downloadFileSuccess": "Successfully downloaded file",
+			"downloadFileFailed": "Error downloading file"
+		},
+		"dateFormat": {
+			"justNow": "Just now",
+			"minutesAgoShort": "{{count}}m ago",
+			"minutesAgo": "{{count}} min ago",
+			"hoursAgoShort": "{{count}}h ago",
+			"hoursAgo": "{{count}} hr ago",
+			"yesterday": "Yesterday",
+			"yesterdayAt": "Yesterday at {{time}}",
+			"dayAt": "{{day}} at {{time}}",
+			"dateAt": "{{date}} at {{time}}",
+			"dateAndTime": "{{date}}, {{time}}"
+		},
+		"refreshTooltip": "Refresh {{path}}",
+		"createTooltip": "Create at {{path}}",
+		"searchAll": "All",
+		"searchOnly": "Only \"{{name}}\"",
+		"searchAllAria": "Search all",
+		"searchCurrentAria": "Search only current directory",
+		"searchCurrentTitle": "Search only in {{path}}",
+		"moveDropHint": "Drop to move {{label}} into {{path}}",
+		"contextMenu": {
+			"copyPath": "Copy path",
+			"copy": "Copy",
+			"cut": "Cut",
+			"pasteHere": "Paste here",
+			"rename": "Rename",
+			"download": "Download",
+			"delete": "Delete",
+			"newFile": "New file",
+			"newFolder": "New folder",
+			"ariaLabel": "File actions"
+		},
+		"overlay": {
+			"title": "Create File or Directory",
+			"description": "Upload or create a new file or directory at path: {{path}}",
+			"fields": {
+				"action": "Action",
+				"fileName": "File Name",
+				"directoryName": "Directory Name",
+				"uploadFileZip": "Upload File/Zip"
+			},
+			"placeholders": {
+				"selectAction": "Select action",
+				"fileName": "Enter File Name",
+				"directoryName": "Enter Directory Name"
+			},
+			"actions": {
+				"upload": "Upload Files",
+				"newFile": "New File",
+				"newDirectory": "New Directory"
+			},
+			"dropzone": {
+				"dragAndDrop": "Drag and drop files here",
+				"orClickToBrowse": "or click to browse",
+				"uploadIconAlt": "Upload icon"
+			},
+			"files": {
+				"selectedCount_one": "{{count}} file selected:",
+				"selectedCount_other": "{{count}} files selected:",
+				"unzip": "Unzip",
+				"unzipTitle": "Extract this ZIP after upload"
+			},
+			"buttons": {
+				"cancel": "Cancel",
+				"upload": "Upload",
+				"create": "Create"
+			},
+			"toasts": {
+				"selectAtLeastOne": "Please select at least one file to upload",
+				"enterFileName": "Please enter a name for the file",
+				"enterDirectoryName": "Please enter a name for the directory",
+				"uploadSuccess": "Successfully uploaded file(s)",
+				"uploadWithExtractSuccess": "Successfully uploaded {{count}} file(s), extracted {{extractedCount}} ZIP(s)",
+				"extractionsFailed": "{{count}} extraction(s) failed: {{errors}}",
+				"fileCreated": "Successfully created file",
+				"directoryCreated": "Successfully created directory",
+				"anError": "An error occurred"
+			}
+		}
+	},
+	"cellOutput": {
+		"panels": {
+			"logs": "Logs",
+			"result": "Result",
+			"error": "Error"
+		},
+		"running": "Running…",
+		"format": {
+			"formatted": "FORMATTED",
+			"raw": "RAW"
+		},
+		"copy": {
+			"command": "Copy command",
+			"logs": "Copy logs",
+			"output": "Copy output",
+			"copied": "Copied!"
+		},
+		"popout": "Popout",
+		"expandAll": "Expand all",
+		"collapseAll": "Collapse all",
+		"close": "Close",
+		"lines_one": "{{count}} line",
+		"lines_other": "{{count}} lines"
 	}
 }

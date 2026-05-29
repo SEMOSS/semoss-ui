@@ -1,0 +1,52 @@
+{
+	"help": {
+		"title": "Terminal Help",
+		"emptyMessage": "No structured usage examples were returned for {{type}}.",
+		"rawResponse": "Raw response",
+		"copy": "Copy",
+		"copied": "Copied",
+		"copyFailed": "Failed to copy code",
+		"fetchFailed": "Failed to fetch usage (no response)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) returned an error."
+	},
+	"save": {
+		"title": "Save",
+		"fields": {
+			"name": "Name:",
+			"comment": "Comment:"
+		},
+		"buttons": {
+			"save": "Save",
+			"cancel": "Cancel"
+		},
+		"comment": "Saving at {{timestamp}}",
+		"errors": {
+			"nameRequired": "File needs a name.",
+			"commentRequired": "Please include a comment to describe your changes.",
+			"saveFailed": "Failed to save asset.",
+			"unknown": "Save failed"
+		}
+	},
+	"upload": {
+		"title": "Upload",
+		"fields": {
+			"selectFile": "Select File:",
+			"comment": "Comment:"
+		},
+		"dropzone": {
+			"drag": "Drag and drop files",
+			"or": "or upload"
+		},
+		"buttons": {
+			"upload": "Upload",
+			"cancel": "Cancel",
+			"remove": "Remove"
+		},
+		"comment": "Uploading at {{timestamp}}",
+		"errors": {
+			"filesRequired": "Please select files to upload.",
+			"commentRequired": "Please include a comment to describe your newly added file(s).",
+			"unknown": "Upload failed"
+		}
+	}
+}
