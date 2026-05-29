@@ -290,7 +290,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 															variant="ghost"
 															size="icon-sm"
 															color=""
-															className="invisible group-hover:visible"
+															className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
 															onClick={() =>
 																handleDeleteMCP(
 																	mcp,
@@ -408,7 +408,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 														<Button
 															variant="ghost"
 															size="icon-sm"
-															className="invisible group-hover:visible"
+															className="opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
 															onClick={() =>
 																handleDeleteMCP(
 																	mcp,

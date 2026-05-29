@@ -700,7 +700,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														<Button
 															variant="destructive"
 															size="icon"
-															className="absolute end-1 top-1 size-5 opacity-0 transition-opacity group-hover:opacity-100"
+															className="absolute end-1 top-1 size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
 															aria-label={`Remove ${file.name}`}
 															onClick={() => {
 																setFiles(
@@ -861,7 +861,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								if (
 									tag === "input" ||
 									tag === "textarea" ||
-									target.isContentEditable
+									target.isContentEditable ||
+									target.closest("button") ||
+									target.closest('[role="button"]') ||
+									target.closest('[role="combobox"]')
 								) {
 									return;
 								}

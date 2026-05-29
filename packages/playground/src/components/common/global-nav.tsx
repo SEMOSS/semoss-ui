@@ -656,7 +656,7 @@ export const GlobalNav = observer(() => {
 																	<Button
 																		variant="ghost"
 																		size="icon-sm"
-																		className="invisible group-hover/room:visible"
+																		className="opacity-0 transition-opacity focus-visible:opacity-100 group-focus-within/room:opacity-100 group-hover/room:opacity-100"
 																		onClick={(
 																			e,
 																		) => {
