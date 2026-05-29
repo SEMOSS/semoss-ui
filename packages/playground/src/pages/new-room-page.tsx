@@ -437,7 +437,7 @@ export const NewRoomPage = observer(() => {
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
 						src={landingSrc}
-						alt="Background"
+						alt=""
 						className="absolute inset-0 h-full w-full select-none object-cover"
 					/>
 					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
