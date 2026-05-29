@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import type { SelectedFile } from "../../types";
 import { runPixel } from "../../utility/pixel";
@@ -7,6 +8,7 @@ import { useTerminal } from "./terminal-context";
 export const SaveModal = () => {
 	const terminal = useTerminal();
 	const { actions } = useInsight();
+	const { t } = useTranslation("dialog");
 	const [submitting, setSubmitting] = useState(false);
 	const nameInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -16,18 +18,28 @@ export const SaveModal = () => {
 		}
 	}, [terminal.save.open, terminal.save.selected.new]);
 
+	// Seed the locale-aware default comment when the dialog first opens.
+	// The context leaves the field empty so the dialog can localize it here.
+	useEffect(() => {
+		if (terminal.save.open && !terminal.save.comment) {
+			terminal.setSave({
+				comment: t("save.comment", {
+					timestamp: new Date().toLocaleString(),
+				}),
+			});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [terminal.save.open]);
+
 	if (!terminal.save.open) return null;
 
 	const submit = async () => {
 		if (!terminal.save.name) {
-			terminal.alert("warn", "File needs a name.");
+			terminal.alert("warn", t("save.errors.nameRequired"));
 			return;
 		}
 		if (!terminal.save.comment) {
-			terminal.alert(
-				"warn",
-				"Please include a comment to describe your changes.",
-			);
+			terminal.alert("warn", t("save.errors.commentRequired"));
 			return;
 		}
 
@@ -51,9 +63,11 @@ export const SaveModal = () => {
 			);
 			if (
 				!saveResp ||
-				saveResp.operationType.some((t) => t.indexOf("ERROR") > -1)
+				saveResp.operationType.some(
+					(opType) => opType.indexOf("ERROR") > -1,
+				)
 			) {
-				terminal.alert("error", "Failed to save asset.");
+				terminal.alert("error", t("save.errors.saveFailed"));
 				return;
 			}
 
@@ -74,7 +88,7 @@ export const SaveModal = () => {
 		} catch (err) {
 			terminal.alert(
 				"error",
-				err instanceof Error ? err.message : "Save failed",
+				err instanceof Error ? err.message : t("save.errors.unknown"),
 			);
 		} finally {
 			setSubmitting(false);
@@ -88,11 +102,11 @@ export const SaveModal = () => {
 		>
 			<div className="w-full min-w-[420px] max-w-[600px] rounded-md bg-background text-foreground shadow-2xl">
 				<div className="border-border border-b px-5 py-4 font-semibold text-lg">
-					Save
+					{t("save.title")}
 				</div>
 				<div className="flex flex-col gap-3 px-5 py-4">
 					<label className="flex flex-col gap-1 text-sm">
-						<span>Name:</span>
+						<span>{t("save.fields.name")}</span>
 						<input
 							ref={nameInputRef}
 							type="text"
@@ -105,7 +119,7 @@ export const SaveModal = () => {
 						/>
 					</label>
 					<label className="flex flex-col gap-1 text-sm">
-						<span>Comment:</span>
+						<span>{t("save.fields.comment")}</span>
 						<input
 							type="text"
 							value={terminal.save.comment}
@@ -123,7 +137,7 @@ export const SaveModal = () => {
 						onClick={terminal.closeSave}
 						disabled={submitting}
 					>
-						Cancel
+						{t("save.buttons.cancel")}
 					</button>
 					<button
 						type="button"
@@ -135,7 +149,7 @@ export const SaveModal = () => {
 							!terminal.save.comment
 						}
 					>
-						Save
+						{t("save.buttons.save")}
 					</button>
 				</div>
 			</div>

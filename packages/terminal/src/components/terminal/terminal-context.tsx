@@ -177,10 +177,13 @@ export const TerminalProvider = ({
 		const name = selected.new
 			? `${selected.name}.${selected.ext}`
 			: selected.name;
+		// The modal seeds the locale-aware default comment in a useEffect on
+		// open — leaving it empty here keeps the dialog text out of the
+		// non-React context layer.
 		setSaveState({
 			open: true,
 			name,
-			comment: `Saving at ${new Date().toLocaleString("en-US")}`,
+			comment: "",
 			selected,
 		});
 	}, []);
@@ -193,7 +196,7 @@ export const TerminalProvider = ({
 		setUploadState({
 			open: true,
 			files: [],
-			comment: `Uploading at ${new Date().toLocaleString("en-US")}`,
+			comment: "",
 		});
 	}, []);
 
