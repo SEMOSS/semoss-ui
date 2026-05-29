@@ -1,7 +1,25 @@
 import { useEffect } from "react";
 
-export function useThemeTitle(theme) {
+let activePageTitle: string | undefined;
+
+export function useThemeTitle(theme, pageTitle?: string) {
 	useEffect(() => {
-		if (theme?.name) document.title = theme.name;
-	}, [theme?.name]);
+		const appName = theme?.name;
+
+		if (pageTitle) {
+			activePageTitle = pageTitle;
+			document.title = appName ? `${pageTitle} - ${appName}` : pageTitle;
+
+			return () => {
+				if (activePageTitle === pageTitle) {
+					activePageTitle = undefined;
+					if (appName) document.title = appName;
+				}
+			};
+		}
+
+		if (!activePageTitle && appName) {
+			document.title = appName;
+		}
+	}, [theme?.name, pageTitle]);
 }

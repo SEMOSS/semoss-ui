@@ -1,5 +1,6 @@
 {
 	"welcome": "Welcome, {{name}}",
+	"pageTitle": "New Chat",
 	"settings": {
 		"title": "Room Settings",
 		"description": "Update room settings and modify the behavior of the chat",

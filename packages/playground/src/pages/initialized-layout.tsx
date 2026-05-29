@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
+import { useHtmlLang } from "@/hooks/use-html-lang";
 import { ErrorPage } from "./error-page";
 import { RootLayout } from "./root-layout";
 
@@ -9,6 +10,7 @@ import { RootLayout } from "./root-layout";
  */
 export const InitializedLayout = () => {
 	const { isInitialized, error } = useInsight();
+	useHtmlLang();
 
 	if (error) {
 		// Show an error page if there was an error during initialization

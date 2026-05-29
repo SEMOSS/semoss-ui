@@ -12,6 +12,7 @@ import {
 } from "@semoss/ui/next";
 import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useThemeTitle } from "@/hooks/use-theme-title";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
 /**
@@ -66,6 +67,8 @@ export const RoomPage = observer(() => {
 			},
 		],
 	});
+
+	useThemeTitle(root.theme, room?.metadata?.name);
 
 	/**
 	 * Effects

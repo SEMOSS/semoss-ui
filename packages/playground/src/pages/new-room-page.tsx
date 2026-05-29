@@ -39,6 +39,7 @@ import {
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useThemeTitle } from "@/hooks/use-theme-title";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
 
@@ -68,6 +69,8 @@ export const NewRoomPage = observer(() => {
 			},
 		],
 	});
+
+	useThemeTitle(root.theme, t("room:pageTitle"));
 
 	const { chat } = useChat();
 	const navigate = useNavigate();
