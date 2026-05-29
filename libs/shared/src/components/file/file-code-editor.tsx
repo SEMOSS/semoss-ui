@@ -1,4 +1,3 @@
-import type { OnMount } from "@monaco-editor/react";
 import {
 	AlertCircleIcon,
 	ChevronDownIcon,
@@ -7,7 +6,6 @@ import {
 	RefreshCwIcon,
 	SaveIcon,
 } from "lucide-react";
-import type * as monaco from "monaco-editor";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
@@ -31,6 +29,10 @@ import {
 	useFileEditorPathRef,
 } from "./file-editor-path-events";
 import { getFileOperationErrorMessage } from "./file-explorer.utils";
+
+// const MonacoEditor = lazy(() =>
+// 	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+// );
 
 interface FileCodeEditorProps {
 	/** Mode of file editor */
@@ -66,11 +68,16 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	const pathScope = getFileEditorPathScope(mode, targetInsightId);
 
 	const currentPathRef = useFileEditorPathRef(path, pathScope);
-	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+	// If you need MONACO_CONFIG and MONACO_EXT_LANGUAGE_MAPPING, import them dynamically as well:
+	const useMonacoConfig = MONACO_CONFIG; // useAsyncImport(() => import("@semoss/shared/monaco").then((mod) => mod.MONACO_CONFIG));
+	const useMonacoExtMapping = MONACO_EXT_LANGUAGE_MAPPING; // useAsyncImport(() => import("@semoss/shared/monaco").then((mod) => mod.MONACO_EXT_LANGUAGE_MAPPING));
+	type OnMount = import("@monaco-editor/react").OnMount;
+
+	const editorRef = useRef(null); // useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
 	const monacoRef = useRef<typeof monaco | null>(null);
 	const wordWrapRef = useRef<boolean>(false);
 	const decorationsRef = useRef<string[]>([]);
-	const [jsonErrors, setJsonErrors] = useState<monaco.editor.IMarker[]>([]);
+	const [jsonErrors, setJsonErrors] = useState([]);
 	const [errorsExpanded, setErrorsExpanded] = useState(true);
 
 	let getFilePixel = "";
@@ -88,7 +95,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 	// get the language
 	const ext = path.split(".").pop()?.toLowerCase() || "";
-	const language = MONACO_EXT_LANGUAGE_MAPPING[ext] || "plaintext";
+	const language = useMonacoExtMapping?.[ext] || "plaintext";
 
 	/**
 	 * Pick the right Monaco theme for the current app theme. Dark mode forces
@@ -109,6 +116,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	// the document element's class list since ThemeProvider drives `.dark`
 	// there — this catches "system"-mode users whose OS preference flips
 	// between light/dark as well as explicit Light/Dark toggles.
+	//biome-ignore lint/correctness/useExhaustiveDependencies: keeping needed dependencies
 	useEffect(() => {
 		const root =
 			typeof document !== "undefined" ? document.documentElement : null;
@@ -140,7 +148,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		monacoRef.current = monaco;
 
 		// update the theme
-		const config = MONACO_CONFIG[language];
+		const config = useMonacoConfig?.[language];
 
 		if (config) {
 			// set the language tokens
@@ -348,7 +356,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				throw new Error("Error missing editor instance");
 			}
 
-			const content = editor.getValue();
+			const content = editor?.getValue();
 			const currentPath = currentPathRef.current;
 
 			let pixel = "";

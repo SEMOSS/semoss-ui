@@ -1,11 +1,8 @@
 import { Check, Copy, RotateCcw } from "lucide-react";
 import type React from "react";
 import { Suspense, useState } from "react";
-import {
-	MonacoEditor,
-	registerSparqlLanguage,
-	SPARQL_THEME_LIGHT,
-} from "@semoss/shared";
+import { registerSparqlLanguage, SPARQL_THEME_LIGHT } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, cn, P } from "@semoss/ui/next";
 
 interface SPARQLQueryEditorProps {

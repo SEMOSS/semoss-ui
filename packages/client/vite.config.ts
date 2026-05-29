@@ -34,8 +34,17 @@ export default defineConfig(({ mode }) => {
 					find: /^@\/assets\/loginProviders\//,
 					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/loginProviders")}/`,
 				},
+
 				{ find: "@", replacement: resolve(__dirname, "./src") },
+				{
+					find: "monaco-editor",
+					replacement: resolve(
+						__dirname,
+						"../../libs/shared/node_modules/monaco-editor",
+					),
+				},
 			],
+			dedupe: ["react", "react-dom", "monaco-editor"],
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
@@ -96,9 +105,19 @@ export default defineConfig(({ mode }) => {
 						) {
 							return "vendor-mobx";
 						}
+						if (
+							id.includes("/node_modules/@mui/") ||
+							id.includes("/node_modules/@emotion/")
+						) {
+							return "vendor-mui";
+						}
+						if (id.includes("monaco-editor")) return "monaco";
 					},
 				},
 			},
+		},
+		optimizeDeps: {
+			exclude: ["monaco-editor"],
 		},
 		server: {
 			port: 5173,

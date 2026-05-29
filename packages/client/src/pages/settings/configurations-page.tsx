@@ -3,7 +3,7 @@
 import { ChevronDown, Search } from "lucide-react";
 import type React from "react";
 import { Suspense, useEffect, useReducer, useRef, useState } from "react";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Input,

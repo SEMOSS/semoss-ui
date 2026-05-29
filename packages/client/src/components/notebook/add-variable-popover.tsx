@@ -15,7 +15,8 @@ import {
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
-import { EngineSubtypeIcon, MonacoEditor } from "@semoss/shared";
+import { EngineSubtypeIcon } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Alert,
 	AlertDescription,
@@ -76,6 +77,7 @@ interface AddVariablePopoverProps {
 	 */
 	engines: EnginesByType;
 }
+
 export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 	const { open, onClose, variable, engines } = props;
 	const { state } = useBlocks();

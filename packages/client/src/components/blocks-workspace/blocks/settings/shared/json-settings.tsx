@@ -12,7 +12,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import { Button, Small } from "@semoss/ui/next";
 import { useBlockSettings } from "@/hooks/useBlockSettings";
 

@@ -7,7 +7,7 @@ import {
 	AuditLogsDataTable,
 	AuditLogsTimeline,
 	type EventData,
-} from "@semoss/shared";
+} from "@semoss/shared/auditlog";
 import { Button, Skeleton, toast } from "@semoss/ui/next";
 import { useUserRootStore } from "@/hooks/useUserRootStore";
 

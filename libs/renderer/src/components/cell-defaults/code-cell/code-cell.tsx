@@ -1,8 +1,7 @@
 import { Code } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { MonacoDiffEditor, MonacoEditor } from "@semoss/shared";
 import {
 	Button,
 	Markdown,
@@ -52,6 +51,13 @@ const StyledContent = ({ children }: { children: React.ReactNode }) => (
 
 let completionItemProviders = {};
 const EditorLanguages = { py: "python", pixel: "pixel", r: "r" };
+
+const MonacoEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoEditor),
+);
+const MonacoDiffEditor = lazy(() =>
+	import("@semoss/shared/monaco").then((module) => module.MonacoDiffEditor),
+);
 const EditorLineHeight = 19;
 
 export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {

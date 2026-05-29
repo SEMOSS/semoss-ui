@@ -4,13 +4,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
 	AppCatalogAvatar,
+	EngineSubtypeIcon,
+	EntityHeader,
+} from "@semoss/shared";
+import {
 	AuditLogFilter,
 	AuditLogsDataTable,
 	AuditLogsTimeline,
-	EngineSubtypeIcon,
-	EntityHeader,
 	type EventData,
-} from "@semoss/shared";
+} from "@semoss/shared/auditlog";
 import { Button, Skeleton, toast } from "@semoss/ui/next";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";

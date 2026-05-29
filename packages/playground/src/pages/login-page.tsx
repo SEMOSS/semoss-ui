@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
-import { LoginForm } from "@semoss/shared";
+import { LoginForm } from "@semoss/shared/form";
 import { useTheme } from "@semoss/ui/next";
 import loginImage from "@/assets/img/login.svg";
 import loginImageDark from "@/assets/img/login-darkmode.png";

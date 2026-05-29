@@ -1,8 +1,15 @@
-import type * as Monaco from "monaco-editor";
+import { getMonaco } from "./monaco-editor-import";
+
+// import type * as Monaco from "monaco-editor";
 
 const COMPLETION_ITEM_KIND_FUNCTION = 1;
 const COMPLETION_ITEM_KIND_SNIPPET = 27;
 const COMPLETION_ITEM_INSERT_AS_SNIPPET = 4;
+
+let monaco: unknown;
+getMonaco().then((m) => {
+	monaco = m;
+});
 
 type MONACO_LANGUAGES =
 	| "text"
@@ -69,9 +76,9 @@ export const MONACO_EXT_LANGUAGE_MAPPING: Record<string, MONACO_LANGUAGES> = {
 export const MONACO_CONFIG: Record<
 	string,
 	{
-		monarchTokensProvider?: Monaco.languages.IMonarchLanguage;
-		completionItemProvider?: Monaco.languages.CompletionItemProvider;
-		theme?: Monaco.editor.IStandaloneThemeData;
+		monarchTokensProvider?: unknown;
+		completionItemProvider?: unknown;
+		theme?: unknown;
 	}
 > = {
 	java: {
@@ -267,6 +274,7 @@ export const MONACO_CONFIG: Record<
 							label: "public class",
 							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"public class ${1:ClassName} {",
 								"    public static void main(String[] args) {",
 								"        $0",
@@ -323,7 +331,9 @@ export const MONACO_CONFIG: Record<
 							label: "for loop",
 							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"for ${1:item} in ${2:iterable}:",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${0:# do something}",
 							].join("\n"),
 							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
@@ -333,7 +343,9 @@ export const MONACO_CONFIG: Record<
 							label: "if-else",
 							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"if ${1:condition}:",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${0:# do something}",
 								"else:",
 								"    # handle else",
@@ -345,7 +357,9 @@ export const MONACO_CONFIG: Record<
 							label: "def function",
 							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"def ${1:function_name}(${2:args}):",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${0:pass}",
 							].join("\n"),
 							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
@@ -355,8 +369,11 @@ export const MONACO_CONFIG: Record<
 							label: "class",
 							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"class ${1:ClassName}:",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    def __init__(self, ${2:args}):",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"        ${0:pass}",
 							].join("\n"),
 							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
@@ -366,7 +383,9 @@ export const MONACO_CONFIG: Record<
 							label: "while loop",
 							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"while ${1:condition}:",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${0:# do something}",
 							].join("\n"),
 							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
@@ -441,10 +460,13 @@ export const MONACO_CONFIG: Record<
 							kind: COMPLETION_ITEM_KIND_FUNCTION,
 							insertText: [
 								"useEffect(() => {",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"    ${1:// effect}",
 								"    return () => {",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"        ${2:// cleanup}",
 								"    };",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"}, [${3:dependencies}]);",
 							].join("\n"),
 							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,
@@ -454,6 +476,7 @@ export const MONACO_CONFIG: Record<
 							label: "React Functional Component",
 							kind: COMPLETION_ITEM_KIND_SNIPPET,
 							insertText: [
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"const ${1:ComponentName} = () => {",
 								"    return (",
 								"        <div>",
@@ -462,6 +485,7 @@ export const MONACO_CONFIG: Record<
 								"    );",
 								"};",
 								"",
+								//biome-ignore lint/suspicious/noTemplateCurlyInString: this is intentional for the snippet
 								"export default ${1:ComponentName};",
 							].join("\n"),
 							insertTextRules: COMPLETION_ITEM_INSERT_AS_SNIPPET,

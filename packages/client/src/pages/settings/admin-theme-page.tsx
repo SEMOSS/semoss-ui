@@ -18,7 +18,7 @@ import {
 } from "react";
 import { Navigate } from "react-router-dom";
 import type { ThemeMap } from "@semoss/shared";
-import { MonacoEditor } from "@semoss/shared";
+import { MonacoEditor } from "@semoss/shared/monaco";
 import {
 	Button,
 	Field,

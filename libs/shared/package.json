@@ -7,7 +7,10 @@
     "./flexlayout.css": "./src/components/flex-layout/flexlayout.css",
     ".": "./src/index.ts",
     "./api": "./src/api/index.ts",
-    "./assets/img/*": "./src/assets/img/*"
+    "./assets/img/*": "./src/assets/img/*",
+    "./monaco": "./src/components/monaco/index.ts",
+    "./auditlog": "./src/components/auditlog/index.ts",
+    "./form": {"import":"./src/form.ts", "require":"./src/form.ts"}
   },
   "license": "MIT",
   "dependencies": {
