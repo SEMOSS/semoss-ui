@@ -45,6 +45,8 @@ export const FileMarkdownEditor: React.FC<FileMarkdownEditorProps> = ({
 		getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
 	} else if (mode.type === "INSIGHT" && targetInsightId) {
 		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
+	} else if (mode.type === "USER") {
+		getFilePixel = `GetUserAssets(filePath=["${path}"]);`;
 	}
 
 	// Only fetch when we actually need the preview content (preview tab active
