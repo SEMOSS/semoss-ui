@@ -424,7 +424,7 @@ export const NewRoomPage = observer(() => {
 	}, [preCreatedRoom, chat]);
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden">
+		<main className="flex h-full w-full flex-col overflow-hidden">
 			{root.theme.banner ? (
 				<div
 					ref={bannerRef}
@@ -755,6 +755,6 @@ export const NewRoomPage = observer(() => {
 					</>
 				)}
 			</ResizablePanelGroup>
-		</div>
+		</main>
 	);
 });

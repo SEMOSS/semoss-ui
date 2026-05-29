@@ -144,7 +144,7 @@ export const RoomPage = observer(() => {
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
-			<div className="flex h-full w-full flex-col overflow-hidden">
+			<main className="flex h-full w-full flex-col overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"
@@ -165,7 +165,7 @@ export const RoomPage = observer(() => {
 						</>
 					)}
 				</ResizablePanelGroup>
-			</div>
+			</main>
 		</InsightProvider>
 	);
 });
