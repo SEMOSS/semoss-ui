@@ -14,6 +14,7 @@ import {
 	Avatar,
 	AvatarFallback,
 	AvatarImage,
+	Button,
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
@@ -48,7 +49,10 @@ export const NavUser = () => {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<div className="flex cursor-pointer items-center gap-2 rounded-lg px-1 py-1 hover:bg-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
+				<Button
+					variant="ghost"
+					className="flex h-auto w-full justify-start rounded-lg px-1 py-1 font-normal group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+				>
 					<Avatar className="h-8 w-8 shrink-0 rounded-lg">
 						<AvatarImage src={""} alt={userName} />
 						<AvatarFallback className="rounded-lg bg-primary/10">
@@ -58,7 +62,7 @@ export const NavUser = () => {
 					<span className="truncate text-sm group-data-[collapsible=icon]:hidden">
 						{userName}
 					</span>
-				</div>
+				</Button>
 			</DropdownMenuTrigger>
 
 			<DropdownMenuContent
