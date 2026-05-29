@@ -1052,7 +1052,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 												href={
 													app.project_name === "BI"
 														? "../../../"
-														: "../../../#!/embed-terminal"
+														: "../../terminal/dist/"
 												}
 												systemApp={true}
 												layout="responsive"

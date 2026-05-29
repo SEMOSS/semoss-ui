@@ -1,0 +1,40 @@
+{
+	"branding": "टर्मिनल",
+	"tabs": {
+		"files": "फ़ाइलें",
+		"terminal": "टर्मिनल"
+	},
+	"views": {
+		"inline": "इनलाइन",
+		"overlay": "ओवरले",
+		"side": "साइड",
+		"popup": "पॉप आउट"
+	},
+	"actions": {
+		"closeTerminal": "टर्मिनल बंद करें",
+		"help": "सहायता"
+	},
+	"scope": {
+		"insight": "अंतर्दृष्टि",
+		"app": "ऐप",
+		"user": "उपयोगकर्ता",
+		"selectProject": "एक प्रोजेक्ट चुनें…",
+		"searchProjects": "प्रोजेक्ट खोजें…",
+		"loadingProjects": "प्रोजेक्ट लोड हो रहे हैं…",
+		"loadingMore": "अधिक लोड हो रहा है…",
+		"endOfList": "सूची का अंत",
+		"noProjectsMatch": "\"{{query}}\" से मेल खाने वाला कोई प्रोजेक्ट नहीं",
+		"noProjectsFound": "कोई प्रोजेक्ट नहीं मिला"
+	},
+	"userMenu": {
+		"accountAria": "खाता",
+		"loggingOut": "लॉग आउट हो रहा है",
+		"defaultUser": "उपयोगकर्ता",
+		"theme": {
+			"light": "लाइट",
+			"dark": "डार्क",
+			"system": "सिस्टम"
+		},
+		"logOut": "लॉग आउट"
+	}
+}
