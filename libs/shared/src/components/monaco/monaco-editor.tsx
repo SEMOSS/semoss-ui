@@ -1,6 +1,4 @@
-import type { DiffEditorProps, EditorProps } from "@monaco-editor/react";
-import { lazy } from "react";
-import { useTheme } from "@semoss/ui/next";
+import { createElement, lazy } from "react";
 
 type MonacoReactModule = typeof import("@monaco-editor/react");
 
@@ -10,9 +8,6 @@ type MonacoEnvironment = {
 
 let monacoReactModulePromise: Promise<MonacoReactModule> | null = null;
 let monacoSetupPromise: Promise<void> | null = null;
-
-const getMonacoTheme = (resolvedTheme: "dark" | "light") =>
-	resolvedTheme === "dark" ? "vs-dark" : "vs";
 
 const loadMonacoReact = () => {
 	if (!monacoReactModulePromise) {
@@ -84,36 +79,38 @@ const ensureMonacoSetup = async () => {
 	return monacoSetupPromise;
 };
 
-const MonacoEditorBase = lazy(() =>
-	ensureMonacoSetup()
-		.then(() => loadMonacoReact())
-		.then((mod) => ({ default: mod.Editor })),
-);
+// Wrap the @monaco-editor/react Editor so its wrapper div always renders with
+// `dir="ltr"`. Monaco assumes left-to-right for code (the textarea, line
+// numbers, completion popups, hit-testing of mouse clicks all break under
+// `dir="rtl"`). Forcing LTR at the wrapper keeps the editor usable inside an
+// RTL page (Arabic/Hebrew). Callers can still override via `wrapperProps`.
+type EditorProps = React.ComponentProps<MonacoReactModule["Editor"]>;
+type DiffEditorProps = React.ComponentProps<MonacoReactModule["DiffEditor"]>;
 
-const MonacoDiffEditorBase = lazy(() =>
-	ensureMonacoSetup()
-		.then(() => loadMonacoReact())
-		.then((mod) => ({ default: mod.DiffEditor })),
-);
-
-export const MonacoEditor = ({ theme, ...props }: EditorProps) => {
-	const { resolvedTheme } = useTheme();
-
-	return (
-		<MonacoEditorBase
-			{...props}
-			theme={theme ?? getMonacoTheme(resolvedTheme)}
-		/>
-	);
+const withLtrWrapper = <P extends { wrapperProps?: Record<string, unknown> }>(
+	Component: React.ComponentType<P>,
+) => {
+	const Wrapped: React.FC<P> = (props) =>
+		createElement(Component, {
+			...props,
+			wrapperProps: { dir: "ltr", ...(props.wrapperProps ?? {}) },
+		});
+	Wrapped.displayName = `WithLtr(${Component.displayName ?? Component.name ?? "Component"})`;
+	return Wrapped;
 };
 
-export const MonacoDiffEditor = ({ theme, ...props }: DiffEditorProps) => {
-	const { resolvedTheme } = useTheme();
+export const MonacoEditor = lazy(() =>
+	ensureMonacoSetup()
+		.then(() => loadMonacoReact())
+		.then((mod) => ({
+			default: withLtrWrapper<EditorProps>(mod.Editor),
+		})),
+);
 
-	return (
-		<MonacoDiffEditorBase
-			{...props}
-			theme={theme ?? getMonacoTheme(resolvedTheme)}
-		/>
-	);
-};
+export const MonacoDiffEditor = lazy(() =>
+	ensureMonacoSetup()
+		.then(() => loadMonacoReact())
+		.then((mod) => ({
+			default: withLtrWrapper<DiffEditorProps>(mod.DiffEditor),
+		})),
+);
