@@ -72,17 +72,32 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isPaused: boolean = false;
 
+	/**
+	 * Whether this conversation is compacted above this message
+	 */
+	conversationCompactedAbove: boolean = false;
+
+	/**
+	 * Whether this message's conversation is currently being compacted
+	 */
+	isCompacting: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
 	) {
 		super(room, message);
 
+		// if prune, compaction happened
+		this.conversationCompactedAbove ||= message.pruneToolsAbove;
+
 		makeObservable(this, {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
+			conversationCompactedAbove: observable,
+			isCompacting: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -90,6 +105,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			setConversationCompactedAbove: action,
+			setIsCompacting: action,
 			toggleIsPaused: action,
 		});
 
@@ -200,7 +217,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
-					acc.push(part.mediaInfo.fileLocation);
+					acc.push(part.mediaInfo.fileLocation as string);
 				}
 
 				return acc;
@@ -313,6 +330,20 @@ paramValues=[${JSON.stringify({
 				this.parts.push(part);
 			}
 		}
+	};
+
+	/*
+	 * Set whether this conversation is compacted above this message
+	 */
+	setConversationCompactedAbove = (compacted: boolean) => {
+		this.conversationCompactedAbove = compacted;
+	};
+
+	/*
+	 * Set whether this message's conversation is currently being compacted
+	 */
+	setIsCompacting = (compacting: boolean) => {
+		this.isCompacting = compacting;
 	};
 
 	/**
@@ -460,6 +491,7 @@ paramValues=[${JSON.stringify({
 					room.model.engine_name ||
 					"",
 			},
+			pruneToolsAbove: false,
 		});
 
 		// Update room options with current modelId before running message
