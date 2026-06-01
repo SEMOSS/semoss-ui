@@ -3,9 +3,12 @@
 	"settings": {
 		"title": "Configuración de la sala",
 		"description": "Actualizar la configuración de la sala y modificar el comportamiento del chat",
-		"open": "Abrir Configuración de la Sala",
-		"close": "Cerrar Configuración de la Sala",
-		"edit": "Editar Configuración de la Sala"
+		"open": "Abrir Configuración",
+		"close": "Cerrar",
+		"edit": "Editar configuración",
+		"compact": "Compactar mensajes de herramientas",
+		"compactSuccess": "Mensajes de herramientas compactados correctamente",
+		"compactError": "Error al compactar los mensajes de herramientas"
 	},
 	"form": {
 		"modelLabel": "Modelo",
@@ -92,9 +95,9 @@
 	},
 	"contextWindow": {
 		"descriptionLow": "Todas las conversaciones tienen un límite. Las conversaciones muy largas eventualmente harán que el modelo olvide mensajes anteriores.",
-		"descriptionMedium": "Esta conversación se está alargando. Si continúa, el modelo comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat pronto.",
-		"descriptionHigh": "Esta conversación está casi llena. El modelo pronto comenzará a olvidar mensajes anteriores. Considera iniciar un nuevo chat.",
-		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores al generar respuestas. Inicia un nuevo chat para obtener mejores resultados.",
+		"descriptionMedium": "Esta conversación se está alargando. Si continúa, el modelo comenzará a olvidar mensajes anteriores. Considera compactar esta conversación o iniciar un nuevo chat pronto.",
+		"descriptionHigh": "Esta conversación está casi llena. El modelo pronto comenzará a olvidar mensajes anteriores. Compacta esta conversación o inicia un nuevo chat para continuar con el contexto completo.",
+		"descriptionExceeded": "Esta conversación ha superado su límite. El modelo ahora está olvidando mensajes anteriores. Compacta esta conversación o inicia un nuevo chat para obtener mejores resultados.",
 		"memoryUsedTitle": "Memoria usada:",
 		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
 	},

@@ -246,6 +246,9 @@ interface RoomInputProps {
 
 	/** Room store for prompt optimizer */
 	room: RoomStore;
+
+	/** Callback to compact conversation; passed through to EngineSelect context tooltip */
+	onCompact?: () => void;
 }
 
 // ============================================================================
@@ -284,6 +287,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		tokensUsed,
 		tokensMax,
 		room,
+		onCompact,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -392,34 +396,77 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					? (tokensUsed / tokensMax) * 100
 					: undefined;
 
-			if (contextUsedPercent === undefined) return null;
+			if (contextUsedPercent === undefined && !onCompact) return null;
 
-			// Pick the appropriate description based on usage tier
 			const descriptionKey =
-				contextUsedPercent >= 100
-					? "contextWindow.descriptionExceeded"
-					: contextUsedPercent < 50
-						? "contextWindow.descriptionLow"
-						: contextUsedPercent < 75
-							? "contextWindow.descriptionMedium"
-							: "contextWindow.descriptionHigh";
+				contextUsedPercent !== undefined
+					? contextUsedPercent >= 100
+						? "contextWindow.descriptionExceeded"
+						: contextUsedPercent < 50
+							? "contextWindow.descriptionLow"
+							: contextUsedPercent < 75
+								? "contextWindow.descriptionMedium"
+								: "contextWindow.descriptionHigh"
+					: null;
 
 			return (
 				<div className="w-full space-y-1">
-					<p className="w-full">{t(descriptionKey)}</p>
-					<p className="flex w-full items-baseline justify-between gap-3">
-						<span>{t("contextWindow.memoryUsedTitle")}</span>
-						<span className="whitespace-nowrap text-end tabular-nums">
-							{t("contextWindow.memoryUsedValue", {
-								used: formatTokens(tokensUsed),
-								total: formatTokens(tokensMax),
-								percent: contextUsedPercent.toFixed(1),
-							})}
-						</span>
-					</p>
+					{contextUsedPercent !== undefined && descriptionKey && (
+						<>
+							<p className="w-full">{t(descriptionKey)}</p>
+							<p className="flex w-full items-baseline justify-between gap-3">
+								<span>
+									{t("contextWindow.memoryUsedTitle")}
+								</span>
+								<span className="whitespace-nowrap text-end tabular-nums">
+									{t("contextWindow.memoryUsedValue", {
+										used: formatTokens(tokensUsed),
+										total: formatTokens(tokensMax),
+										percent: contextUsedPercent.toFixed(1),
+									})}
+								</span>
+							</p>
+						</>
+					)}
+					{onCompact && (
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span className="mt-2 w-full">
+									<Button
+										size="sm"
+										variant="outline"
+										className="w-full text-foreground"
+										disabled={
+											isLoading || hasOutstandingTools
+										}
+										onClick={(e) => {
+											e.stopPropagation();
+											onCompact();
+										}}
+									>
+										{t("settings.compact")}
+									</Button>
+								</span>
+							</TooltipTrigger>
+							{(isLoading || hasOutstandingTools) && (
+								<TooltipContent>
+									{isLoading
+										? t("input.thinkingTooltip")
+										: t("input.completeTool")}
+								</TooltipContent>
+							)}
+						</Tooltip>
+					)}
 				</div>
 			);
-		}, [tokensUsed, tokensMax, t]);
+		}, [
+			tokensUsed,
+			tokensMax,
+			onCompact,
+			t,
+			isLoading,
+			hasOutstandingTools,
+		]);
 
 		// ========================================================================
 		// Speech Recognition Setup
@@ -499,11 +546,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				recognitionRef.current?.stop();
 			};
 		}, []);
-
-		// Disable editor during loading to prevent user input
-		useEffect(() => {
-			editorRef.current?.setEditable(!isLoading);
-		}, [isLoading]);
 
 		useEffect(() => {
 			if (!initialValue) return;
@@ -774,8 +816,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											aria-placeholder={t(
 												"input.ariaPlaceholder",
 											)}
-											aria-disabled={isLoading}
-											disabled={isLoading}
 											placeholder={<div />}
 											onPaste={(e) => {
 												const clipboardFiles =
@@ -889,7 +929,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													<Button
 														variant="ghost"
 														size="icon-sm"
-														disabled={isLoading}
 														aria-label={t(
 															"input.openSettings",
 														)}
@@ -1021,7 +1060,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											?.enableModelSelect && (
 											<EngineSelect
 												className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-												disabled={isLoading}
 												name={
 													model?.engine_display_name ||
 													model?.app_name ||
@@ -1053,7 +1091,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													className="bg-background"
 													variant="ghost"
 													size="icon-sm"
-													disabled={isLoading}
 													aria-label="Open prompt library"
 													onClick={() =>
 														setIsPromptLibraryOpen(
@@ -1078,9 +1115,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													"input.recordLabel",
 												)}
 												size="icon-sm"
-												disabled={
-													!canListen || isLoading
-												}
+												disabled={!canListen}
 												onClick={() => {
 													if (isListening) {
 														recognitionRef.current?.stop();
@@ -1110,10 +1145,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										<PromptOptimizer
 											input={inputText}
 											setInput={setInputFromOptimizer}
-											disabled={Boolean(
-												isLoading ||
-													hasOutstandingTools,
-											)}
+											disabled={hasOutstandingTools}
 											modelId={
 												model?.engine_id || undefined
 											}

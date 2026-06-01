@@ -107,6 +107,7 @@ export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
 	parentMessageId?: string;
+	summaryLeafMessageId?: string;
 	visible: boolean;
 	platform_generated: boolean;
 	modelId: string;
@@ -123,6 +124,7 @@ export interface AbstractPixelMessage {
 	ornaments: {
 		modelName?: string;
 	};
+	pruneToolsAbove: boolean;
 }
 
 export interface InputPixelMessage extends AbstractPixelMessage {
