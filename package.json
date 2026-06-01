@@ -37,7 +37,9 @@
   },
   "pnpm": {
     "overrides": {
-      "flatted": "3.4.2"
+      "flatted": "3.4.2",
+      "@crxjs/vite-plugin>rollup": "2.80.0",
+      "archiver-utils>lodash": "4.18.1"
     }
   }
 }
