@@ -948,6 +948,8 @@ export class RoomStore {
 			throw new Error("Prompt is required");
 		}
 
+		this.setIsLoading(true);
+
 		// upload the files
 		let uploaded: {
 			fileName: string;
