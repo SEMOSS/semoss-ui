@@ -22,6 +22,7 @@ import {
 } from "@/stores";
 import type {
 	Engine,
+	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
 	PixelMessageMediaPart,
@@ -514,6 +515,7 @@ export class RoomStore {
 									"",
 							},
 							modelType: "",
+							pruneToolsAbove: false,
 						} as ResponsePixelMessage)
 					: new ResponseMessageStore(this, {
 							io: "OUTPUT",
@@ -536,12 +538,14 @@ export class RoomStore {
 									this._store.model?.engine_name ||
 									"",
 							},
+							pruneToolsAbove: false,
 						} as ResponsePixelMessage);
 
 			const messages: Record<
 				string,
 				{
 					parentMessageId: string;
+					summaryLeafMessageId: string;
 					message:
 						| InputMessageStore
 						| ResponseMessageStore
@@ -564,6 +568,8 @@ export class RoomStore {
 				// store it
 				messages[message.id] = {
 					parentMessageId: pixelMessage.parentMessageId || "",
+					summaryLeafMessageId:
+						pixelMessage.summaryLeafMessageId || "",
 					message: message,
 				};
 			}
@@ -576,7 +582,16 @@ export class RoomStore {
 				if (parent) {
 					parent.message.addChild(m.message);
 				} else {
-					root.addChild(m.message);
+					// This could be a message that was compacted, check for summaryLeafMessageId
+					const pseudoParent = messages[m.summaryLeafMessageId];
+					if (pseudoParent) {
+						pseudoParent.message.addChild(m.message);
+						(
+							pseudoParent.message as ResponseMessageStore
+						).setConversationCompactedAbove?.(true);
+					} else {
+						root.addChild(m.message);
+					}
 				}
 			}
 
@@ -1013,6 +1028,7 @@ export class RoomStore {
 				modelName:
 					this.model.engine_display_name || this.model.engine_name,
 			},
+			pruneToolsAbove: false,
 		});
 
 		// get the parent message
@@ -1224,6 +1240,97 @@ export class RoomStore {
 			if (showLoading) {
 				this.setIsLoading(false);
 			}
+		}
+	};
+
+	/**
+	 * Compact the messages in the room
+	 */
+	compactMessages = async () => {
+		// Find the last response message in the chain
+		let cur: AbstractMessageStore | null = this.tail;
+		while (cur !== null) {
+			if (cur instanceof ResponseMessageStore) break;
+			cur = cur.parent;
+		}
+
+		if (!cur) throw new Error();
+
+		const curResponse = cur as ResponseMessageStore;
+
+		curResponse.setIsCompacting(true);
+
+		type SummaryResponse = {
+			type: "SUMMARY";
+			inputMessage: InputPixelMessage;
+			responseMessage: ResponsePixelMessage;
+			success: boolean;
+			error?: string;
+		};
+
+		type ToolPruneResponse = {
+			type: "TOOL_PRUNE";
+			success: boolean;
+			inputMessage: InputPixelMessage;
+			responseMessage: ResponsePixelMessage;
+			error?: string;
+		};
+
+		try {
+			const response = await this.runRoomPixel<
+				(SummaryResponse | ToolPruneResponse)[][]
+			>(
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+				true,
+			);
+
+			const { output } = response.pixelReturn[0];
+
+			if (!response || response.errors.length || !output)
+				throw new Error();
+
+			if (output.length === 0) {
+				return "skipped" as const;
+			}
+
+			curResponse.setConversationCompactedAbove(true);
+
+			let success = false;
+
+			output.forEach((compactionMethod) => {
+				if (!compactionMethod.success) {
+					console.warn(
+						compactionMethod.error ||
+							"Unknown error during compaction",
+					);
+					return;
+				}
+				success = true;
+				if (
+					compactionMethod.type === "SUMMARY" ||
+					compactionMethod.type === "TOOL_PRUNE"
+				) {
+					const { inputMessage, responseMessage } = compactionMethod;
+					const inputStore = new InputMessageStore(
+						this,
+						inputMessage,
+					);
+					const responseStore = new ResponseMessageStore(
+						this,
+						responseMessage,
+					);
+					inputStore.addChild(responseStore);
+					curResponse.addChild(inputStore);
+				}
+			});
+
+			if (!success) {
+				throw new Error();
+			}
+
+			return "compacted" as const;
+		} finally {
+			curResponse.setIsCompacting(false);
 		}
 	};
 }
