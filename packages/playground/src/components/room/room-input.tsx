@@ -811,8 +811,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											aria-placeholder={t(
 												"input.ariaPlaceholder",
 											)}
-											aria-disabled={isLoading}
-											disabled={isLoading}
 											placeholder={<div />}
 											onPaste={(e) => {
 												const clipboardFiles =
@@ -926,7 +924,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													<Button
 														variant="ghost"
 														size="icon-sm"
-														disabled={isLoading}
 														aria-label={t(
 															"input.openSettings",
 														)}
@@ -1058,7 +1055,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											?.enableModelSelect && (
 											<EngineSelect
 												className="h-8 gap-0.5 px-2 py-1 text-xs [&>svg]:hidden"
-												disabled={isLoading}
 												name={
 													model?.engine_display_name ||
 													model?.app_name ||
@@ -1090,7 +1086,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													className="bg-background"
 													variant="ghost"
 													size="icon-sm"
-													disabled={isLoading}
 													aria-label="Open prompt library"
 													onClick={() =>
 														setIsPromptLibraryOpen(
@@ -1115,9 +1110,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 													"input.recordLabel",
 												)}
 												size="icon-sm"
-												disabled={
-													!canListen || isLoading
-												}
+												disabled={!canListen}
 												onClick={() => {
 													if (isListening) {
 														recognitionRef.current?.stop();
@@ -1147,10 +1140,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										<PromptOptimizer
 											input={inputText}
 											setInput={setInputFromOptimizer}
-											disabled={Boolean(
-												isLoading ||
-													hasOutstandingTools,
-											)}
+											disabled={hasOutstandingTools}
 											modelId={
 												model?.engine_id || undefined
 											}
