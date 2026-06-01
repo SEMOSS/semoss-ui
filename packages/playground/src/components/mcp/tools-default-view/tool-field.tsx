@@ -272,15 +272,21 @@ export const ToolField = ({
 					<Textarea
 						id={fieldName}
 						value={
-							(Array.isArray(value)
-								? value.join(", ")
-								: value) as string
+							Array.isArray(value)
+								? JSON.stringify(value, null, 2)
+								: (value as string)
 						}
-						onChange={(e) =>
-							onChange(
-								e.target.value.split(",").map((s) => s.trim()),
-							)
-						}
+						onChange={(e) => {
+							try {
+								onChange(JSON.parse(e.target.value));
+							} catch {
+								onChange(
+									e.target.value
+										.split(",")
+										.map((s) => s.trim()),
+								);
+							}
+						}}
 						placeholder={t("tools.enterValues")}
 						rows={2}
 						className="w-full"
