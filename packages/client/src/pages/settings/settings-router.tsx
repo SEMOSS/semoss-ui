@@ -16,6 +16,7 @@ import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
 import { ProjectSettingsPage } from "./project-settings-page";
 import { RDFMapPage } from "./rdf-map-page";
 import { RoomTokenLimitsPage } from "./room-token-limits-page";
+import { ServiceAccountsSettingsPage } from "./service-accounts-settings-page";
 import { SETTINGS_ROUTES } from "./settings.constants";
 import { SettingsIndexPage } from "./settings-index-page";
 import { SettingsLayout } from "./settings-layout";
@@ -31,6 +32,7 @@ const SETTINGS_COMPONETS = {
 	insight: InsightSettingsPage,
 	"insight/:id/:projectId": InsightSettingsDetailPage,
 	members: MemberSettingsPage,
+	"service-accounts": ServiceAccountsSettingsPage,
 	"social-properties": ConfigurationsPage,
 	"admin-query": AdminQueryPage,
 	"admin-theme": AdminThemePage,

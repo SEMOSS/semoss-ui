@@ -65,6 +65,11 @@ interface MembersProps {
 	adminMode?: boolean;
 	currentUserId?: string;
 	myPermission?: string;
+	/**
+	 * Read-only mode: hides bulk-select, the checkbox column, the
+	 * per-row Actions, and renders permission as static text.
+	 */
+	readOnly?: boolean;
 }
 
 const formatValue = (input?: string) => {
@@ -91,6 +96,7 @@ export const MembersList = ({
 	adminMode = false,
 	currentUserId,
 	myPermission = "",
+	readOnly = false,
 }: MembersProps) => {
 	const [userData, setUserData] = useState<MemberUser[]>([]);
 	const [totalMembers, setTotalMembers] = useState<number>(0);
@@ -285,13 +291,9 @@ export const MembersList = ({
 		selectableUsers.length > 0 &&
 		selectableUsers.every((u) => selectedIds.has(u.id));
 	const someSelected = selectableUsers.some((u) => selectedIds.has(u.id));
+	const showSelectionAndActions = !isAddMember && !readOnly;
 	const colCount =
-		3 +
-		(type === "MODEL" || type === "PROJECT" || type === "WORKSPACE"
-			? 5
-			: 0) +
-		(!isAddMember ? 2 : 0) +
-		1;
+		(type === "MODEL" ? 6 : 3) + (showSelectionAndActions ? 2 : 0) + 1;
 
 	function toggleSelectAll() {
 		if (allSelected) {
@@ -313,13 +315,14 @@ export const MembersList = ({
 	return (
 		<>
 			<div className="flex h-full w-full flex-col" id={membersListId}>
-				{!isAddMember && selectedIds.size > 0 && (
+				{showSelectionAndActions && selectedIds.size > 0 && (
 					<div className="flex items-center justify-between border border-destructive/30 bg-destructive/5 px-3 py-2">
 						<span className="font-medium text-sm">
 							{selectedIds.size} user
 							{selectedIds.size !== 1 ? "s" : ""} selected
 						</span>
 						<Button
+							type="button"
 							variant="destructive"
 							size="sm"
 							onClick={() => {
@@ -329,7 +332,7 @@ export const MembersList = ({
 								setUsersToDelete(users);
 							}}
 						>
-							<Trash2 className="mr-1.5 h-4 w-4" />
+							<Trash2 className="me-1.5 h-4 w-4" />
 							Delete Selected
 						</Button>
 					</div>
@@ -338,7 +341,7 @@ export const MembersList = ({
 					<Table wrapperClassName="overflow-x-auto">
 						<TableHeader className="sticky top-0 z-10 bg-background">
 							<TableRow>
-								{!isAddMember && (
+								{showSelectionAndActions && (
 									<TableHead className="w-10">
 										<Checkbox
 											checked={
@@ -368,7 +371,7 @@ export const MembersList = ({
 									</>
 								)}
 								<TableHead>Permission Date</TableHead>
-								{!isAddMember && (
+								{showSelectionAndActions && (
 									<TableHead className="w-px whitespace-nowrap">
 										Actions
 									</TableHead>
@@ -393,7 +396,7 @@ export const MembersList = ({
 												: undefined
 										}
 									>
-										{!isAddMember && (
+										{showSelectionAndActions && (
 											<TableCell className="w-10">
 												<Checkbox
 													checked={selectedIds.has(
@@ -444,20 +447,16 @@ export const MembersList = ({
 											</span>
 										</TableCell>
 										<TableCell>
-											<DropdownMenu>
-												<DropdownMenuTrigger
-													asChild
-													disabled={
-														!canEditMembers ||
-														(user.permission ===
-															"OWNER" &&
-															!canActOnOwners)
-													}
-												>
-													<Button
-														variant="outline"
-														size="default"
-														className="w-[120px]"
+											{readOnly ? (
+												<span className="text-sm">
+													{returnAccessType(
+														user.permission,
+													)}
+												</span>
+											) : (
+												<DropdownMenu>
+													<DropdownMenuTrigger
+														asChild
 														disabled={
 															!canEditMembers ||
 															(user.permission ===
@@ -465,67 +464,82 @@ export const MembersList = ({
 																!canActOnOwners)
 														}
 													>
-														<span>
-															{returnAccessType(
-																user.permission,
-															)}
-														</span>
-														<ChevronDown className="ml-auto h-4 w-4" />
-													</Button>
-												</DropdownMenuTrigger>
-												<DropdownMenuContent>
-													<DropdownMenuRadioGroup>
-														<DropdownMenuCheckboxItem
-															checked={
-																returnAccessType(
-																	user.permission,
-																) === "Viewer"
-															}
-															onCheckedChange={() =>
-																updateUserPermission(
-																	user,
-																	"READ_ONLY",
-																)
+														<Button
+															type="button"
+															variant="outline"
+															size="default"
+															className="w-[120px]"
+															disabled={
+																!canEditMembers ||
+																(user.permission ===
+																	"OWNER" &&
+																	!canActOnOwners)
 															}
 														>
-															Viewer
-														</DropdownMenuCheckboxItem>
-														<DropdownMenuCheckboxItem
-															checked={
-																returnAccessType(
+															<span>
+																{returnAccessType(
 																	user.permission,
-																) === "Editor"
-															}
-															onCheckedChange={() =>
-																updateUserPermission(
-																	user,
-																	"EDIT",
-																)
-															}
-														>
-															Editor
-														</DropdownMenuCheckboxItem>
-														{canShowOwnerOption && (
+																)}
+															</span>
+															<ChevronDown className="ms-auto h-4 w-4" />
+														</Button>
+													</DropdownMenuTrigger>
+													<DropdownMenuContent>
+														<DropdownMenuRadioGroup>
 															<DropdownMenuCheckboxItem
 																checked={
 																	returnAccessType(
 																		user.permission,
 																	) ===
-																	"Owner"
+																	"Viewer"
 																}
 																onCheckedChange={() =>
 																	updateUserPermission(
 																		user,
-																		"OWNER",
+																		"READ_ONLY",
 																	)
 																}
 															>
-																Owner
+																Viewer
 															</DropdownMenuCheckboxItem>
-														)}
-													</DropdownMenuRadioGroup>
-												</DropdownMenuContent>
-											</DropdownMenu>
+															<DropdownMenuCheckboxItem
+																checked={
+																	returnAccessType(
+																		user.permission,
+																	) ===
+																	"Editor"
+																}
+																onCheckedChange={() =>
+																	updateUserPermission(
+																		user,
+																		"EDIT",
+																	)
+																}
+															>
+																Editor
+															</DropdownMenuCheckboxItem>
+															{canShowOwnerOption && (
+																<DropdownMenuCheckboxItem
+																	checked={
+																		returnAccessType(
+																			user.permission,
+																		) ===
+																		"Owner"
+																	}
+																	onCheckedChange={() =>
+																		updateUserPermission(
+																			user,
+																			"OWNER",
+																		)
+																	}
+																>
+																	Owner
+																</DropdownMenuCheckboxItem>
+															)}
+														</DropdownMenuRadioGroup>
+													</DropdownMenuContent>
+												</DropdownMenu>
+											)}
 										</TableCell>
 										{(type === "MODEL" ||
 											type === "PROJECT" ||
@@ -587,10 +601,11 @@ export const MembersList = ({
 												{user.date_added ?? "—"}
 											</span>
 										</TableCell>
-										{!isAddMember && (
+										{showSelectionAndActions && (
 											<TableCell>
 												<div className="flex items-center gap-1">
 													<Button
+														type="button"
 														variant="outline"
 														size="icon-sm"
 														className="border-none"
@@ -607,6 +622,7 @@ export const MembersList = ({
 														<Pencil className="h-4 w-4" />
 													</Button>
 													<Button
+														type="button"
 														variant="outline"
 														size="icon-sm"
 														className="border-none"
@@ -655,7 +671,7 @@ export const MembersList = ({
 						</TableBody>
 					</Table>
 				</div>
-				<p className="mt-2 text-right text-muted-foreground text-sm">
+				<p className="mt-2 text-end text-muted-foreground text-sm">
 					{userData.length} of {totalMembers}{" "}
 					{totalMembers === 1 ? "member" : "members"}
 				</p>
@@ -674,7 +690,7 @@ export const MembersList = ({
 						Remove member access from this resource. This action
 						cannot be undone.
 					</DialogDescription>
-					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2 pr-1">
+					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2 pe-1">
 						{usersToDelete.map((u) => (
 							<div
 								key={`${u.type}-${u.id}`}

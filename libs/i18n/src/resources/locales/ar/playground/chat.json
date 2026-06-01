@@ -17,11 +17,15 @@
 		"poorResponse": "استجابة ضعيفة",
 		"copyResponse": "نسخ الاستجابة",
 		"copyCode": "نسخ الكود",
+		"feedbackPlaceholder": "أضف تعليقًا (اختياري)",
+		"feedbackCancel": "إلغاء",
+		"feedbackSubmit": "إرسال",
 		"fastForwardToEnd": "التقدم السريع إلى النهاية",
 		"completeToolsAsk_one": "يرجى إكمال الأداة للمتابعة.",
 		"completeToolsAsk_other": "يرجى إكمال الأدوات للمتابعة.",
 		"completeToolsAuto_one": "يرجى الانتظار حتى تكتمل الأداة.",
-		"completeToolsAuto_other": "يرجى الانتظار حتى تكتمل الأدوات."
+		"completeToolsAuto_other": "يرجى الانتظار حتى تكتمل الأدوات.",
+		"emptyResponse": "استجابة فارغة."
 	},
 	"input": {
 		"copyMessage": "نسخ الرسالة"

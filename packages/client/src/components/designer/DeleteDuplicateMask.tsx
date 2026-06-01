@@ -25,12 +25,12 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
+import DuplicateIcon from "@/assets/img/Duplicate.svg";
 import { useDesigner, useRootStore } from "@/hooks";
 import { getBlockElement, getRelativeSize } from "@/stores";
-import { getDependencyCells } from "@/utility/dependencyScanner";
-import DuplicateIcon from "../../assets/img/Duplicate.svg";
+import { getDependencyCells } from "@/utility/dependency-scanner";
 import { DependencyPromptModal } from "../blocks-workspace";
-import { AddClientBlockModal } from "./AddClientBlockModal";
+import { AddClientBlockModal } from "./add-client-block-modal";
 import { QuickMenu } from "./QuickMenu";
 
 const STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH = 48;

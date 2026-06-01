@@ -4,26 +4,14 @@ export interface JobBuilder {
 	name: string;
 	pixel: string;
 	tags: string[];
-	basicTz: string;
 	cronExpression: string;
 	cronTz: string;
-	smtpHost: string | null;
-	smtpPort: string | null;
-	subject: string | null;
-	jobType: string | null;
-	to: string[];
-	cc: string[];
-	bcc: string[];
-	from: string | null;
-	message: string | null;
-	username: string | null;
-	password: string | null;
+	triggerOnLoad: boolean;
 }
 
 export interface PixelReturnJob {
 	jobName: string;
 	cronExpression: string;
-	uiState: string;
 	jobId: string;
 	PREV_FIRE_TIME: string;
 	NEXT_FIRE_TIME: string;
@@ -33,72 +21,12 @@ export interface PixelReturnJob {
 	recipeParameters: string;
 	jobTags: string;
 	cronTz: string;
-	smtpHost: string;
-	smtpPort: string;
-	subject: string;
-	jobType: string;
-	to: string;
-	cc: string;
-	bcc: string;
-	from: string;
-	message: string;
-	username: string;
-	password: string;
-}
-
-export interface JobUIState {
-	jobType: string;
-	jobName: string;
-	cronExpression: string;
-	cronTimeZone: string;
-	recipe: string;
-	recipeParameters: string;
-	hour: number;
-	minute: string;
-	ampm: "AM" | "PM";
-	frequency: {
-		computer: number;
-		human: string;
-	};
-	dayOfWeek:
-		| "Sunday"
-		| "Monday"
-		| "Tuesday"
-		| "Wednesday"
-		| "Thursday"
-		| "Friday"
-		| "Saturday";
-	dayOfMonth: number;
-	monthOfyear:
-		| "January"
-		| "February"
-		| "March"
-		| "April"
-		| "May"
-		| "June"
-		| "July"
-		| "August"
-		| "September"
-		| "October"
-		| "November"
-		| "December";
-	jobTypeTemplate: object;
-	onLoad: boolean;
-	jobTags: string[];
-	fileName: string;
-	filePath: string;
-	export_template: string;
-	exportAudit: string;
-	placeholderData: Array<any>;
-	selectedApp: string | null;
-	customCron?: boolean;
+	TRIGGER_ON_LOAD?: boolean | string;
 }
 
 export interface Job {
 	id: string;
 	name: string;
-	type: string;
-	basicTz: string;
 	cronExpression: string;
 	timeZone: string;
 	tags: string[];
@@ -108,17 +36,7 @@ export interface Job {
 	isActive: boolean;
 	group: string;
 	pixel: string;
-	smtpHost: string;
-	smtpPort: string;
-	subject: string;
-	jobType: string;
-	to: string[];
-	cc: string[];
-	bcc: string[];
-	from: string;
-	message: string;
-	username: string;
-	password: string;
+	triggerOnLoad: boolean;
 }
 
 export interface HistoryJob {
@@ -139,20 +57,6 @@ export interface HistoryPaginationProps {
 	rowsPerPage?: number;
 	search?: string;
 	reload?: boolean;
-}
-
-export interface SendEmailJob {
-	smtpHost: string;
-	smtpPort: string;
-	subject: string;
-	jobType: string;
-	to: string;
-	cc: string;
-	bcc: string;
-	from: string;
-	message: string;
-	username: string;
-	password: string;
 }
 
 export type Frequencies = "Daily" | "Weekly" | "Monthly" | "Yearly";
@@ -180,8 +84,6 @@ export type Month =
 	| "November"
 	| "December";
 
-export type JobTypes = "Custom Job" | "Send Email";
-
 export type MonthsDef = {
 	month: Month;
 	value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
@@ -197,3 +99,32 @@ export type CronValidation = {
 	error: boolean;
 	errorMessage: string | null;
 };
+
+export interface SchedulerStats {
+	activeJobs?: number;
+	pausedJobs?: number;
+	overdueJobs?: number;
+	nextRunAt?: string | null;
+	totalRuns?: number;
+	failures?: number;
+	successRate?: number;
+	avgDurationMs?: number;
+	p95DurationMs?: number;
+	worstJob?: {
+		jobId: string;
+		name: string;
+		consecutiveFailures: number;
+	} | null;
+}
+
+export type CronMode = "standard" | "dropdown" | "expression";
+
+export interface ParsedCron {
+	mode: CronMode;
+	frequency?: Frequencies;
+	minute: string;
+	hour: string;
+	dayOfMonth: string;
+	month: string;
+	dayOfWeek: string;
+}

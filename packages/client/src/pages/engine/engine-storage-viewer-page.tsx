@@ -36,7 +36,7 @@ export const EngineStorageViewerPage = () => {
 				};
 
 		const newModel = FlexLayout.Model.fromJson({
-			global: { tabSetEnableDeleteWhenEmpty: false },
+			global: { tabSetEnableDeleteWhenEmpty: true },
 			borders: [
 				{
 					type: "border",

@@ -41,6 +41,13 @@ interface MembersProps {
 	isOwner?: boolean;
 	adminMode?: boolean;
 	currentUserId?: string;
+	/**
+	 * Read-only mode:
+	 *   - hides the "Add Members" button
+	 *   - hides per-row Actions (edit/delete) and bulk selection
+	 *   - renders the Permission column as static text (no dropdown)
+	 */
+	readOnly?: boolean;
 }
 
 function formatNum(val: string): string {
@@ -60,6 +67,7 @@ export const MembersTable = ({
 	isOwner = false,
 	adminMode = false,
 	currentUserId,
+	readOnly = false,
 }: MembersProps) => {
 	const [openAddMembers, setOpenAddMembers] = useState<boolean>(false);
 	const [listRefreshKey, setListRefreshKey] = useState<number>(0);
@@ -74,7 +82,7 @@ export const MembersTable = ({
 
 	useEffect(() => {
 		runPixel<[Record<string, { id: string; name: string; email: string }>]>(
-			"META | GetUserInfo()",
+			"META | GetUserInfo();",
 		)
 			.then((result) => {
 				if (!result) return;
@@ -195,7 +203,7 @@ export const MembersTable = ({
 	return (
 		<div className="w-full">
 			{/* Header Section */}
-			<div className="flex flex-column gap-[10px] rounded-xl rounded-br-none rounded-bl-none border-gray-200 border-b bg-muted p-4 align-start">
+			<div className="flex flex-column gap-[10px] rounded-xl rounded-ee-none rounded-es-none border-gray-200 border-b bg-muted p-4 align-start">
 				<div className="flex h-[36px] w-full flex-column gap-2">
 					<InputGroup className="flex h-auto gap-1 self-stretch bg-background px-2 py-1 align-center">
 						<InputGroupInput
@@ -207,20 +215,22 @@ export const MembersTable = ({
 							<Search />
 						</InputGroupAddon>
 					</InputGroup>
-					{(adminMode ||
-						myPermission === "OWNER" ||
-						myPermission === "EDIT") && (
-						<Button
-							size="sm"
-							className="flex h-auto flex-column gap-2 align-center"
-							onClick={() => setOpenAddMembers(true)}
-						>
-							<div className="flex flex-column items-center gap-2">
-								<Plus />
-								<span>Add Members</span>
-							</div>
-						</Button>
-					)}
+					{!readOnly &&
+						(adminMode ||
+							myPermission === "OWNER" ||
+							myPermission === "EDIT") && (
+							<Button
+								type="button"
+								size="sm"
+								className="flex h-auto flex-column gap-2 align-center"
+								onClick={() => setOpenAddMembers(true)}
+							>
+								<div className="flex flex-column items-center gap-2">
+									<Plus />
+									<span>Add Members</span>
+								</div>
+							</Button>
+						)}
 				</div>
 			</div>
 
@@ -235,6 +245,7 @@ export const MembersTable = ({
 				adminMode={adminMode}
 				currentUserId={effectiveCurrentUserId}
 				myPermission={myPermission}
+				readOnly={readOnly}
 			/>
 
 			{/** Add members overlay */}

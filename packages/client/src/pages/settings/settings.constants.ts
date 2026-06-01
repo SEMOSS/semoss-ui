@@ -168,7 +168,7 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Jobs",
 		path: "jobs",
-		description: "Search by job name or filter using job tags",
+		description: "Manage and schedule cron jobs for the platform",
 		icon: mdiTabletCellphone,
 		history: ["jobs"],
 		admin: true,
@@ -188,6 +188,14 @@ export const SETTINGS_ROUTES: {
 		description: "View and edit permissions for teams",
 		icon: mdiDatabase,
 		history: ["team-permissions"],
+		admin: true,
+	},
+	{
+		title: "Service Accounts",
+		path: "service-accounts",
+		description: "Create and manage service accounts for system access.",
+		icon: mdiAccountGroup,
+		history: ["settings/"],
 		admin: true,
 	},
 	{

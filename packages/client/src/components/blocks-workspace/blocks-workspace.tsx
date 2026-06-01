@@ -21,7 +21,7 @@ import { DesignerStore, type WorkspaceOptions } from "@/stores";
 import { TerminalPanel, WorkspaceManager } from "../../components/workspace";
 import { DesignerContext } from "../../contexts";
 import { MCPJsonEditor } from "../shared";
-import { GraphPanel } from "../workspace/panels/GraphPanel";
+import { GraphPanel } from "../workspace/panels/graph-panel";
 import { BlocksWorkspaceDev } from "./BlocksWorkspaceDev";
 import { BlocksWorkspaceActions } from "./blocks-workspace-actions";
 import { DEFAULT_MENU } from "./menus/default-menu";
@@ -76,19 +76,19 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 					},
 					{
 						type: "tab",
-						id: "filexplorer",
-						name: "Files",
-						component: "app-file-explorer",
-						config: {},
-						helpText: "Files",
-					},
-					{
-						type: "tab",
 						id: "notebook-explorer",
 						name: "Notebooks",
 						component: "notebook-explorer",
 						config: {},
 						helpText: "Notebooks",
+					},
+					{
+						type: "tab",
+						id: "filexplorer",
+						name: "Files",
+						component: "app-file-explorer",
+						config: {},
+						helpText: "Files",
 					},
 					{
 						type: "tab",
@@ -344,7 +344,7 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "blocks") {
 			return (
 				<BlocksMenuPanel
-					title={"Add Blocks"}
+					title={"Blocks"}
 					items={DEFAULT_MENU}
 					name={component}
 				/>
@@ -366,7 +366,9 @@ export const BlocksWorkspace: React.FC = observer(() => {
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "notebook-explorer") {
-			return <NotebookExplorerPanel title={"Notebook"} layout={layout} />;
+			return (
+				<NotebookExplorerPanel title={"Notebooks"} layout={layout} />
+			);
 		} else if (component === "notebook-viewer") {
 			return <NotebookViewerPanel id={config.id} />;
 		} else if (component === "terminal") {

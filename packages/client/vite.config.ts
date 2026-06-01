@@ -25,7 +25,17 @@ export default defineConfig(({ mode }) => {
 			// visualizer({ open: true, filename: "dist/stats.html", gzipSize: true }),
 		],
 		resolve: {
-			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
+			alias: [
+				{
+					find: /^@\/assets\/img\//,
+					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/img")}/`,
+				},
+				{
+					find: /^@\/assets\/loginProviders\//,
+					replacement: `${resolve(__dirname, "../../libs/shared/src/assets/loginProviders")}/`,
+				},
+				{ find: "@", replacement: resolve(__dirname, "./src") },
+			],
 		},
 		define: {
 			"import.meta.env.MODULE": JSON.stringify(MODULE),
@@ -50,7 +60,7 @@ export default defineConfig(({ mode }) => {
 						}
 						if (
 							id.includes(
-								"/src/shared/constants/engine-images.constants.ts",
+								"/libs/shared/src/constants/engine-images.constants.ts",
 							) ||
 							id.includes(
 								"/src/shared/constants/sidebar-menu.constants.ts",
