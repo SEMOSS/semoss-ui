@@ -666,6 +666,9 @@ importers:
       '@mdi/js':
         specifier: ^6.9.96
         version: 6.9.96
+      '@semoss/i18n':
+        specifier: workspace:*
+        version: link:../../libs/i18n
       '@semoss/renderer':
         specifier: workspace:*
         version: link:../../libs/renderer
