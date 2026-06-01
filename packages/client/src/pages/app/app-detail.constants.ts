@@ -2,6 +2,7 @@ import type { AppDetailPermission } from "@/contexts/AppDetailContext";
 import { AppAccessControlPage } from "./app-access-control-page";
 import { AppCommitsPage } from "./app-commits-page";
 import { AppDependenciesPage } from "./app-dependencies-page";
+import { UsageLimitsTab } from "./app-detail-tabs/usage-limits-tab";
 import { AppFilesPage } from "./app-files-page";
 import { AppMcpUsagePage } from "./app-mcp-usage-page";
 import { AppOverviewPage } from "./app-overview-page";
@@ -60,6 +61,12 @@ export const APP_DETAIL_TABS: AppDetailTab[] = [
 		name: "Access Control",
 		path: "access-control",
 		component: AppAccessControlPage,
+		restrict: ["author", "editor"],
+	},
+	{
+		name: "Usage Limits",
+		path: "usage-limits",
+		component: UsageLimitsTab,
 		restrict: ["author", "editor"],
 	},
 	{
