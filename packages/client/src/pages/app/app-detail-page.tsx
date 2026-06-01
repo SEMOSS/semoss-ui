@@ -64,6 +64,7 @@ import { CommitsTab } from "./app-detail-tabs/commits-tab";
 import { Dependencies } from "./app-detail-tabs/dependencies-tab";
 import { Overview } from "./app-detail-tabs/overview-tab";
 import { SettingsTab } from "./app-detail-tabs/settings-tab";
+import { UsageLimitsTab } from "./app-detail-tabs/usage-limits-tab";
 import { AppFileManagerPage } from "./app-file-manager-page";
 
 const modelDependencies = (
@@ -551,6 +552,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"Commits",
 			"Settings",
 			"Access Control",
+			"Usage Limits",
 			"Files",
 			"SMSS",
 		],
@@ -560,6 +562,7 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 			"MCP Usage",
 			"Commits",
 			"Access Control",
+			"Usage Limits",
 			"Files",
 		],
 		readOnly: ["Overview", "Dependencies", "MCP Usage"],
@@ -859,6 +862,11 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 											Access Control
 										</TabsTrigger>
 									)}
+									{visibleTabs.includes("Usage Limits") && (
+										<TabsTrigger value="Usage Limits">
+											Usage Limits
+										</TabsTrigger>
+									)}
 									{visibleTabs.includes("Files") &&
 										showNav && (
 											<TabsTrigger value="Files">
@@ -1103,6 +1111,16 @@ export const AppDetailPage = (props: AppDetailsProps) => {
 								appId={appId}
 								fetchUserSpecificData={fetchUserSpecificData}
 								permission={permission}
+							/>
+						)}
+						{selectedTab === "Usage Limits" && (
+							<UsageLimitsTab
+								appId={appId}
+								appName={
+									appInfo?.project_display_name ||
+									appInfo?.project_name ||
+									"App"
+								}
 							/>
 						)}
 						{selectedTab === "Files" && showNav && (
