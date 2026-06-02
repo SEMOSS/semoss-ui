@@ -209,6 +209,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								!isLast ||
 								!message.isThinking) && (
 								<Markdown
+									dir="auto"
 									components={components}
 									className="[&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
@@ -223,6 +224,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 					<>
 						{fencedHtmlData?.preFenceProse && (
 							<Markdown
+								dir="auto"
 								components={components}
 								className="[&>*:first-child]:mt-0"
 								urlTransform={urlTransform}
@@ -247,6 +249,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								!isLast ||
 								!message.isThinking) && (
 								<Markdown
+									dir="auto"
 									components={components}
 									className="[&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
@@ -259,6 +262,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 					</>
 				) : (
 					<Markdown
+						dir="auto"
 						components={components}
 						className="[&>*:first-child]:mt-0"
 						urlTransform={urlTransform}
@@ -269,7 +273,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 				{isAnyTyping && (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span className="absolute right-4 bottom-4 z-50">
+							<span className="absolute end-4 bottom-4 z-50">
 								<Button
 									size="icon-sm"
 									variant={"outline"}

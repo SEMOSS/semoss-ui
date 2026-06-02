@@ -31,6 +31,7 @@ import {
 } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
+import { EngineFormHeader } from "../shared/engine-form-header";
 import { computeVisibility } from "../shared/import-form.utils";
 
 export interface ParsedResult {
@@ -50,6 +51,7 @@ export interface ParsedResult {
 export const GuardrailForm = ({
 	title,
 	description,
+	icon,
 	fields,
 	advanced,
 	categoryDescription,
@@ -1089,15 +1091,12 @@ export const GuardrailForm = ({
 			data-testid="guardrail-form"
 			className="my-4"
 		>
-			<div className="mb-6">
-				<H4 data-testid="guardrail-form-title">{title}</H4>
-				<Muted
-					className="mt-1 text-base"
-					data-testid="guardrail-form-description"
-				>
-					{description}
-				</Muted>
-			</div>
+			<EngineFormHeader
+				testIdPrefix="guardrail"
+				icon={icon}
+				title={title}
+				description={description}
+			/>
 
 			<div className="mt-4 mb-8" data-testid="guardrail-form-box">
 				<div className="flex flex-col gap-4">

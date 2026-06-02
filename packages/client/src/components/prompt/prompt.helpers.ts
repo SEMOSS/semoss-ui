@@ -1,7 +1,7 @@
 import {
 	ActionMessages,
 	type Block,
-	type QueryStateConfig,
+	type NotebookStateConfig,
 	type SerializedState,
 } from "@semoss/renderer";
 import type { MonolithStore } from "@/stores";
@@ -111,7 +111,7 @@ function getSelectInputBlock(
 export function getBlockForInput(
 	token: Token,
 	inputType: string,
-	inputTypeMeta: any,
+	inputTypeMeta: { options?: string[] } | null | undefined,
 ): Block | null {
 	switch (inputType) {
 		case INPUT_TYPE_TEXT:
@@ -210,10 +210,10 @@ function getDatabaseQuery() {
     return f"Use the following list of objects representing each row in table to inform your answer: {result_df.to_dict(orient='records')}. The are the headers for the table are: {list(result_df.columns)}"`;
 }
 
-export function getQueryForPrompt(
+export function getNotebookForPrompt(
 	tokens: Token[],
 	inputTypes: object,
-): Record<string, QueryStateConfig> {
+): Record<string, NotebookStateConfig> {
 	const prompt = getInputFormatPrompt(tokens, inputTypes);
 
 	// filter out custom input types
@@ -332,7 +332,7 @@ export function getQueryForPrompt(
 		.map((customInputTokenIndex) => {
 			return `"{{${getIdForInput(
 				customInputTypes[customInputTokenIndex].type,
-				parseInt(customInputTokenIndex),
+				parseInt(customInputTokenIndex, 10),
 			)}.value}}"`;
 		})
 		.join(", ")})`;
@@ -393,7 +393,7 @@ export function getQueryForPrompt(
 		});
 	}
 
-	const queryJson: Record<string, QueryStateConfig> = {
+	const queryJson: Record<string, NotebookStateConfig> = {
 		[PROMPT_QUERY_DEFINITION_ID]: {
 			id: PROMPT_QUERY_DEFINITION_ID,
 			cells: queryDefinitionCells,
@@ -457,7 +457,7 @@ export async function setBlocksAndOpenUIBuilder(
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_QUERY,
+								message: ActionMessages.RUN_NOTEBOOK,
 								payload: {
 									queryId: PROMPT_QUERY_DEFINITION_ID,
 								},
@@ -599,7 +599,7 @@ export async function setBlocksAndOpenUIBuilder(
 						type: "sync",
 						order: [
 							{
-								message: ActionMessages.RUN_QUERY,
+								message: ActionMessages.RUN_NOTEBOOK,
 								payload: {
 									queryId: PROMPT_QUERY_ID,
 								},
@@ -690,7 +690,7 @@ export async function setBlocksAndOpenUIBuilder(
 		...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
 	];
 
-	state.queries = getQueryForPrompt(
+	state.notebooks = getNotebookForPrompt(
 		builder.inputs.value as Token[],
 		builder.inputTypes.value as object,
 	);

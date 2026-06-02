@@ -115,9 +115,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);
-	const [selectedDatabase, setSelectedDatabase] = useState<database | null>(
-		null,
-	);
+	const [selectedEngine, setSelectedEngine] = useState<database | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -234,13 +232,13 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					<BreadcrumbItem>
 						<BreadcrumbLink
 							onClick={() => {
-								if (selectedDatabase) {
-									setSelectedDatabase(null);
+								if (selectedEngine) {
+									setSelectedEngine(null);
 								}
 							}}
 							data-testid="breadcrumb-page"
 							className={
-								selectedDatabase
+								selectedEngine
 									? "cursor-pointer text-muted-foreground hover:text-foreground"
 									: "cursor-default text-foreground"
 							}
@@ -248,7 +246,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 							Connect To Database
 						</BreadcrumbLink>
 					</BreadcrumbItem>
-					{selectedDatabase && (
+					{selectedEngine && (
 						<>
 							<BreadcrumbSeparator />
 							<BreadcrumbItem>
@@ -256,7 +254,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 									data-testid="breadcrumb-selected-database"
 									className="text-foreground"
 								>
-									{selectedDatabase.name}
+									{selectedEngine.name}
 								</span>
 							</BreadcrumbItem>
 						</>
@@ -277,7 +275,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				<DatabaseCard
 					key={v.name}
 					database={v}
-					onSelect={() => setSelectedDatabase(v)}
+					onSelect={() => setSelectedEngine(v)}
 				/>
 			))}
 		</div>
@@ -364,14 +362,15 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="database-form-wrapper">
 					<DatabaseForm
 						selectedTab={tabLabels[selectedTab]}
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add database to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add database to catalog`}
+						icon={selectedEngine.icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>

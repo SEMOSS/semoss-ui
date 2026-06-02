@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	TimestampTransformationCell,
 	type TimestampTransformationCellDef,
-} from "./TimestampTransformationCell";
+} from "./timestamp-transformation-cell";
 
 export const TimestampTransformationCellConfig: CellConfig<TimestampTransformationCellDef> =
 	{

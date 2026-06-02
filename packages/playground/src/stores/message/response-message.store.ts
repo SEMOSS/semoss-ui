@@ -19,6 +19,7 @@ import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
 import { PlanMessageStore } from "./plan-message.store";
+import { applyToolStreamChunk } from "./tool-stream";
 
 /**
  * Response Message Store
@@ -71,17 +72,32 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isPaused: boolean = false;
 
+	/**
+	 * Whether this conversation is compacted above this message
+	 */
+	conversationCompactedAbove: boolean = false;
+
+	/**
+	 * Whether this message's conversation is currently being compacted
+	 */
+	isCompacting: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
 	) {
 		super(room, message);
 
+		// if prune, compaction happened
+		this.conversationCompactedAbove ||= message.pruneToolsAbove;
+
 		makeObservable(this, {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
+			conversationCompactedAbove: observable,
+			isCompacting: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -89,6 +105,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			setConversationCompactedAbove: action,
+			setIsCompacting: action,
 			toggleIsPaused: action,
 		});
 
@@ -108,10 +126,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// set the parts
 		this.parts = message.parts;
 
-		// sync the tools
+		// sync the tools — server tools (e.g. provider-side web_search) deliver
+		// both the call and result in the same response message, so we sync both
+		// part types here.
 		for (const part of message.parts) {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
+			} else if (part.type === "TOOL_RESULT") {
+				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
 		}
 
@@ -195,11 +217,15 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
-					acc.push(part.mediaInfo.fileLocation);
+					acc.push(part.mediaInfo.fileLocation as string);
 				}
 
 				return acc;
 			}, [] as string[]);
+
+			// per-stream map from tool delta `index` → wire `id`, used to associate
+			// arguments/name deltas with the ToolStore created on the opening chunk
+			const toolStreamIndexToId: Record<number, string> = {};
 
 			// wait for the pixel to run with streaming
 			const response = await room.runRoomPixelStreaming<
@@ -240,7 +266,11 @@ paramValues=[${JSON.stringify({
 								});
 							}
 						} else if (chunk.stream_type === "tool") {
-							//noop
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}
@@ -300,6 +330,20 @@ paramValues=[${JSON.stringify({
 				this.parts.push(part);
 			}
 		}
+	};
+
+	/*
+	 * Set whether this conversation is compacted above this message
+	 */
+	setConversationCompactedAbove = (compacted: boolean) => {
+		this.conversationCompactedAbove = compacted;
+	};
+
+	/*
+	 * Set whether this message's conversation is currently being compacted
+	 */
+	setIsCompacting = (compacting: boolean) => {
+		this.isCompacting = compacting;
 	};
 
 	/**
@@ -447,6 +491,7 @@ paramValues=[${JSON.stringify({
 					room.model.engine_name ||
 					"",
 			},
+			pruneToolsAbove: false,
 		});
 
 		// Update room options with current modelId before running message
@@ -670,6 +715,9 @@ paramValues=[${JSON.stringify({
 			// turn on thinking
 			responseMessage.isThinking = true;
 
+			// per-stream map from tool delta `index` → wire `id` for the post-exec stream
+			const toolStreamIndexToId: Record<number, string> = {};
+
 			// wait for the pixel to run
 			const response = await room.runRoomPixelStreaming<
 				[PartialResponse | TotalResponse]
@@ -703,7 +751,11 @@ toolParameterValues=[${JSON.stringify(executedParameters ?? {})}]
 								});
 							}
 						} else if (chunk.stream_type === "tool") {
-							//noop
+							applyToolStreamChunk(
+								responseMessage,
+								toolStreamIndexToId,
+								chunk.data,
+							);
 						} else {
 							console.error(`Unknown stream type`, chunk);
 						}
