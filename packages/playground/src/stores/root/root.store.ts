@@ -86,7 +86,7 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
-			allowedUrlPrefixes: ["docubridge://"],
+			allowedUrlPrefixes: [],
 			defaultTools: [],
 			gracefulErrors: [],
 			featureFlags: {
