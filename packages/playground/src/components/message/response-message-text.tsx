@@ -9,6 +9,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
@@ -30,6 +31,7 @@ interface ResponseMessageTextProps {
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
 		const { t } = useTranslation("chat");
+		const { root } = useRoot();
 
 		// ── Standalone-HTML detection ────────────────────────────────────────────
 		// Sticky: once the response opens with <!DOCTYPE (no code fence), stay in
@@ -180,6 +182,12 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 
 		const urlTransform = (url: string) => {
 			if (url.startsWith("room://")) return url;
+			if (
+				root.theme.allowedUrlPrefixes?.some((prefix) =>
+					url.startsWith(prefix),
+				)
+			)
+				return url;
 			if (/^(https?:|mailto:|#)/.test(url)) return url;
 			return "";
 		};
