@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./UpdateRowTransformationCell";
+export * from "./update-row-transformation-cell";

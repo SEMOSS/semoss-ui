@@ -66,6 +66,9 @@ export interface MCP {
 	/** Name of the mcp */
 	name: string;
 
+	/** Engine subtype (e.g. POSTGRES, OPEN_AI) — used to pick the avatar icon */
+	subtype?: string;
+
 	/** Description of the mcp */
 	description?: string;
 
@@ -104,6 +107,7 @@ export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
 	parentMessageId?: string;
+	summaryLeafMessageId?: string;
 	visible: boolean;
 	platform_generated: boolean;
 	modelId: string;
@@ -120,6 +124,7 @@ export interface AbstractPixelMessage {
 	ornaments: {
 		modelName?: string;
 	};
+	pruneToolsAbove: boolean;
 }
 
 export interface InputPixelMessage extends AbstractPixelMessage {
@@ -139,6 +144,7 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		| PixelMessageThinkingPart
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
+		| PixelMessageToolResultPart
 	)[];
 	ornaments: {
 		modelName?: string;
@@ -187,6 +193,10 @@ export interface PixelMessageToolCallPart {
 		original_name: string;
 		title: string;
 		description: string;
+		// Set by the backend when the model provider executed the tool itself
+		// (e.g. web_search). Server tools lack the MCP `_meta`
+		// block and their TOOL_RESULT lands in the same response message.
+		server_tool?: boolean;
 		_meta: {
 			SMSS_ENGINE_NAME: string;
 			SMSS_ENGINE_ID: string;
@@ -198,6 +208,7 @@ export interface PixelMessageToolCallPart {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
+				autoOpen?: boolean;
 			};
 		};
 	};
@@ -287,6 +298,7 @@ export interface MCPTool {
 			loadingMessage?: string;
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
+			autoOpen?: boolean;
 		};
 	};
 }

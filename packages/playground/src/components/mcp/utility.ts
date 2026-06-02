@@ -1,4 +1,62 @@
-import type { App, Engine, MCP } from "@/types";
+import {
+	Archive,
+	Bolt,
+	Bot,
+	BoxIcon,
+	Database,
+	LayoutGrid,
+	type LucideIcon,
+	Sigma,
+} from "lucide-react";
+import type { App, Engine, MCP, MCPConfig } from "@/types";
+
+/**
+ * Map each MCP type to its standard lucide icon. Mirrors the catalog
+ * sidebar in `packages/client/src/components/shared/app-sidebar.tsx`
+ * so the same engine concepts share a visual across products.
+ */
+export const getMcpTypeIcon = (type: MCPConfig["type"]): LucideIcon => {
+	switch (type) {
+		case "PROJECT":
+			return LayoutGrid;
+		case "STORAGE":
+			return Archive;
+		case "DATABASE":
+			return Database;
+		case "FUNCTION":
+			return Sigma;
+		case "MODEL":
+			return Bot;
+		case "VECTOR":
+			return Bolt;
+		default:
+			return BoxIcon;
+	}
+};
+
+/**
+ * Knowledge MCPs are backed by a VECTOR engine. Everything else is toolbox.
+ */
+export const isKnowledgeMcp = (mcp: Pick<MCPConfig, "type">): boolean =>
+	mcp.type === "VECTOR";
+
+/**
+ * Split a mixed MCP list into its knowledge and toolbox subsets.
+ */
+export const splitMcpByType = (
+	mcps: MCPConfig[],
+): { knowledge: MCPConfig[]; toolbox: MCPConfig[] } => {
+	const knowledge: MCPConfig[] = [];
+	const toolbox: MCPConfig[] = [];
+	for (const mcp of mcps) {
+		if (isKnowledgeMcp(mcp)) {
+			knowledge.push(mcp);
+		} else {
+			toolbox.push(mcp);
+		}
+	}
+	return { knowledge, toolbox };
+};
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -17,6 +75,7 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 			type: tool.engine_type,
 			id: tool.engine_id,
 			name: tool.engine_name,
+			subtype: tool.engine_subtype,
 			description: tool.description || "",
 			tags: [], // Tags are not provided in the current response
 			permission:
@@ -58,7 +117,7 @@ export const mcpToPlatformUrl = (
 	const id = "id" in mcp ? mcp.id : mcp.engine_id;
 	const type = "type" in mcp ? mcp.type : mcp.engine_type;
 	if (type === "PROJECT") {
-		return `${PLATFORM_URL}/#/app/${id}`;
+		return `${PLATFORM_URL}/#/app/${id}/mcp-usage`;
 	}
-	return `${PLATFORM_URL}/#/engine/${type.toLowerCase()}/${id}`;
+	return `${PLATFORM_URL}/#/engine/${type.toLowerCase()}/${id}/mcp-usage`;
 };

@@ -45,9 +45,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("Connections");
-	const [selectedDatabase, setSelectedDatabase] = useState<vector | null>(
-		null,
-	);
+	const [selectedEngine, setSelectedEngine] = useState<vector | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
 	const [filedata, setFiledata] = useState(null);
@@ -164,7 +162,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 				<BreadcrumbSeparator>/</BreadcrumbSeparator>
 
 				<BreadcrumbItem>
-					{selectedDatabase === null ? (
+					{selectedEngine === null ? (
 						<BreadcrumbPage>
 							Connect to Vector Database
 						</BreadcrumbPage>
@@ -172,7 +170,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 						<BreadcrumbLink
 							className="cursor-pointer"
 							onClick={() => {
-								setSelectedDatabase(null);
+								setSelectedEngine(null);
 							}}
 						>
 							Connect to Vector Database
@@ -180,14 +178,14 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 					)}
 				</BreadcrumbItem>
 
-				{selectedDatabase && (
+				{selectedEngine && (
 					<>
 						<BreadcrumbSeparator>
 							<ChevronRight />
 						</BreadcrumbSeparator>
 						<BreadcrumbItem>
 							<BreadcrumbPage>
-								{selectedDatabase.name}
+								{selectedEngine.name}
 							</BreadcrumbPage>
 						</BreadcrumbItem>
 					</>
@@ -211,7 +209,7 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 						display: v.name,
 					}}
 					onModelSelect={() => {
-						setSelectedDatabase(v);
+						setSelectedEngine(v);
 					}}
 				/>
 			))}
@@ -297,13 +295,14 @@ export const VectorImport: React.FC<{ name: string }> = ({ name }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="vector-form-wrapper">
 					<VectorForm
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add vector to catalog`}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add vector to catalog`}
+						icon={selectedEngine.icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>

@@ -86,6 +86,7 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
+			allowedUrlPrefixes: [],
 			defaultTools: [],
 			gracefulErrors: [],
 			featureFlags: {
@@ -103,6 +104,7 @@ export class RootStore {
 				showKnowledgeMenu: true,
 				showToolboxMenu: true,
 				showPlatformLinks: true,
+				enableFeedbackText: true,
 			},
 		},
 	};
@@ -303,6 +305,9 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			allowedUrlPrefixes:
+				theme?.allowedUrlPrefixes ||
+				this._store.theme.allowedUrlPrefixes,
 			defaultEmbedderId:
 				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
 			defaultTools: [
