@@ -30,6 +30,9 @@ interface RoomOptionsFormProps {
 	/** Model of the room */
 	model: RoomStore["model"];
 
+	/** Engine ID of the user's profile default model, for showing the "Default" badge */
+	profileDefaultModelId?: string;
+
 	/** Update model on change */
 	onModelChange: (model: RoomStore["model"]) => void;
 
@@ -50,6 +53,7 @@ interface RoomOptionsFormProps {
 export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 	({
 		model,
+		profileDefaultModelId = "",
 		onModelChange = () => null,
 		options,
 		onOptionsChange = () => null,
@@ -104,8 +108,18 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 						<FieldGroup>
 							{root.theme.featureFlags?.enableModelSelect && (
 								<Field>
-									<FieldLabel>
+									<FieldLabel className="flex items-center gap-2">
 										{t("room:form.modelLabel")}
+										{profileDefaultModelId &&
+											model?.engine_id ===
+												profileDefaultModelId && (
+												<Badge
+													variant="outline"
+													className="border-primary text-primary text-xs"
+												>
+													{t("common:badges.default")}
+												</Badge>
+											)}
 									</FieldLabel>
 									<div className="rounded-md border border-input bg-transparent px-1 py-1 shadow-xs dark:bg-input/30">
 										<EngineSelect

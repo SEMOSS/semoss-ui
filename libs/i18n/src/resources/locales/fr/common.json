@@ -34,7 +34,8 @@
 		"deleteMCP": "Supprimer MCP"
 	},
 	"badges": {
-		"fromAgent": "De l'agent"
+		"fromAgent": "De l'agent",
+		"default": "Par défaut"
 	},
 	"messages": {
 		"noKnowledgeFound": "Aucune connaissance trouvée",

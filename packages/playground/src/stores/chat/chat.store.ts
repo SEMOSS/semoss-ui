@@ -1,7 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { type Insight, runPixel } from "@semoss/sdk/react";
 import type { ThemeMap } from "@semoss/shared";
-import { MODEL_KEY } from "@/constants";
 import type { Engine, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
@@ -24,6 +23,12 @@ interface ChatStoreInterface {
 		/** The current context window */
 		contextWindow?: number;
 	};
+
+	/**
+	 * Engine ID of the model set as default in the user's profile (Settings > My Profile).
+	 * Empty string if no profile default is set.
+	 */
+	profileDefaultModelId: string;
 
 	/**
 	 * Cached rooms
@@ -83,6 +88,7 @@ export class ChatStore {
 			name: "",
 		},
 		embeddedPageMap: {},
+		profileDefaultModelId: "",
 	};
 
 	constructor(theme: ThemeMap["playground"], actions: Insight["actions"]) {
@@ -145,6 +151,13 @@ export class ChatStore {
 	 */
 	get embeddedPageMap() {
 		return this._store.embeddedPageMap;
+	}
+
+	/**
+	 * Get the engine ID of the user's profile default model
+	 */
+	get profileDefaultModelId() {
+		return this._store.profileDefaultModelId;
 	}
 
 	/**
@@ -364,14 +377,6 @@ export class ChatStore {
 			this._store.models.selected = model;
 		});
 
-		// save to local storage
-		if (localStorage) {
-			localStorage.setItem(
-				MODEL_KEY,
-				JSON.stringify(this.models.selected),
-			);
-		}
-
 		this.loadEngineContextWindow(model.engine_id);
 	};
 
@@ -479,19 +484,44 @@ export class ChatStore {
 			return;
 		}
 
-		// initially limit to 10 models
-		const { pixelReturn } = await this._actions.run<[Engine[]]>(
-			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
-		);
+		// fetch available models and user profile preferences in parallel
+		const [modelsResult, userInfoResult] = await Promise.allSettled([
+			this._actions.run<[Engine[]]>(
+				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+			),
+			this._actions.run<
+				[Record<string, { meta?: Record<string, unknown> }>]
+			>(`GetUserInfo();`),
+		]);
+
+		if (modelsResult.status !== "fulfilled") {
+			return;
+		}
+
+		// extract the user's profile default text-generation model (set via My Profile page)
+		let profileDefaultModelId = "";
+		if (userInfoResult.status === "fulfilled") {
+			try {
+				const userOutput = userInfoResult.value.pixelReturn[0].output;
+				const providerData = Object.values(userOutput)[0];
+				const metaValue = providerData?.meta?.["text-generation-model"];
+				profileDefaultModelId = Array.isArray(metaValue)
+					? (metaValue[0] as string) || ""
+					: typeof metaValue === "string"
+						? metaValue
+						: "";
+			} catch {}
+		}
 
 		runInAction(() => {
-			// get the output
-			const { output } = pixelReturn[0];
+			this._store.profileDefaultModelId = profileDefaultModelId;
+		});
 
-			// track if it was set from one of the options
+		runInAction(() => {
+			const { output } = modelsResult.value.pixelReturn[0];
 			let isSelected = false;
 
-			// set to default if it is an option
+			// 1. theme/admin-enforced default
 			if (defaultModelId) {
 				for (const m of output) {
 					if (m.engine_id === defaultModelId) {
@@ -502,34 +532,20 @@ export class ChatStore {
 				}
 			}
 
-			// check with local storage and try to set if it is one of them
-			try {
-				if (!isSelected) {
-					if (localStorage) {
-						const storedItem = localStorage.getItem(MODEL_KEY);
-						if (storedItem) {
-							const storedModel = JSON.parse(storedItem) as
-								| string
-								| Engine;
-							const storedModelId =
-								typeof storedModel === "string"
-									? storedModel
-									: storedModel?.engine_id || "";
-							for (const m of output) {
-								if (storedModelId === m.engine_id) {
-									this.setSelectedModel(m);
-									isSelected = true;
-									break;
-								}
-							}
-						}
+			// 2. user's profile default (set via Settings > My Profile)
+			if (!isSelected && profileDefaultModelId) {
+				for (const m of output) {
+					if (m.engine_id === profileDefaultModelId) {
+						this.setSelectedModel(m);
+						isSelected = true;
+						break;
 					}
 				}
-			} catch {}
+			}
 
+			// 3. first available model
 			if (!isSelected && output.length > 0) {
 				this.setSelectedModel(output[0]);
-				isSelected = true;
 			}
 		});
 	};

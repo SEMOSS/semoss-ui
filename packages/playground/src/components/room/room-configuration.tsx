@@ -18,6 +18,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				<RoomOptionsForm
 					model={room.model}
 					options={room.options}
+					profileDefaultModelId={chat.profileDefaultModelId}
 					onModelChange={(model) => {
 						if (model) {
 							room.setModel(model);
