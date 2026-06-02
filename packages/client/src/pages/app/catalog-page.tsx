@@ -57,6 +57,7 @@ const CATALOG_CONFIG = {
 		createLabel: "Create New App",
 		createPath: "/app/new",
 		basePath: "/app",
+		pixelFilter: "onlyPortals=[true]",
 		searchPlaceholder: "Search apps...",
 		searchAriaLabel: "Search apps",
 		myTab: "My Apps",
@@ -77,6 +78,7 @@ const CATALOG_CONFIG = {
 		createLabel: "Create New Skill",
 		createPath: "/skill/new",
 		basePath: "/skill",
+		pixelFilter: 'type="SKILL"',
 		searchPlaceholder: "Search skills...",
 		searchAriaLabel: "Search skills",
 		myTab: "My Skills",
@@ -97,6 +99,7 @@ const CATALOG_CONFIG = {
 		createLabel: "Create New Agent",
 		createPath: "/agent/new",
 		basePath: "/agent",
+		pixelFilter: 'type="WORKSPACE"',
 		searchPlaceholder: "Search agents...",
 		searchAriaLabel: "Search agents",
 		myTab: "My Agents",
@@ -441,7 +444,7 @@ export const CatalogPage = observer(
 					metaKeysWithDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], onlyPortals=[true], limit=[${limit}], offset=[${offset}]);`;
+				)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], ${config.pixelFilter}, limit=[${limit}], offset=[${offset}]);`;
 			},
 			(response) => (response.length < APP_PAGE_LIMIT ? -1 : Infinity),
 			(response) => response,
@@ -468,7 +471,7 @@ export const CatalogPage = observer(
 					metaKeysWithDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], onlyFavorites=[true], limit=[${limit}], offset=[${offset}]);`;
+				)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], ${config.pixelFilter}, limit=[${limit}], offset=[${offset}]);`;
 			},
 			(response) => {
 				if (response.length < APP_PAGE_LIMIT) {
