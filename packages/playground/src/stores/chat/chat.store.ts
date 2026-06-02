@@ -165,32 +165,57 @@ export class ChatStore {
 	 */
 	initialize = async (): Promise<void> => {
 		try {
-			Promise.all([this.getDefaultModel(), this.getUser()]).finally(
-				() => {
-					runInAction(() => {
-						this._store.isInitialized = true;
-					});
-				},
-			);
+			// getUser must complete first so profileDefaultModelId is set
+			// before getDefaultModel runs its model selection logic
+			await this.getUser();
+			await this.getDefaultModel();
 		} catch (e) {
 			console.error(e);
+		} finally {
+			runInAction(() => {
+				this._store.isInitialized = true;
+			});
 		}
 	};
 
 	getUser = async (): Promise<void> => {
 		try {
 			const result = await this._actions.run<
-				[Record<string, { id: string; name: string }>]
+				[
+					Record<
+						string,
+						{
+							id: string;
+							name: string;
+							meta?: Record<string, unknown>;
+						}
+					>,
+				]
 			>(`META | GetUserInfo();`);
 
 			if (!result) return;
 
-			const user = Object.values(result.pixelReturn[0].output)[0];
-			if (user) {
-				runInAction(() => {
-					this._store.user = { id: user.id, name: user.name };
-				});
-			}
+			const providerData = Object.values(result.pixelReturn[0].output)[0];
+			if (!providerData) return;
+
+			runInAction(() => {
+				this._store.user = {
+					id: providerData.id,
+					name: providerData.name,
+				};
+			});
+
+			// extract the profile default text-generation model set via Settings > My Profile
+			const metaValue = providerData.meta?.["text-generation-model"];
+			const profileDefaultModelId = Array.isArray(metaValue)
+				? (metaValue[0] as string) || ""
+				: typeof metaValue === "string"
+					? metaValue
+					: "";
+
+			runInAction(() => {
+				this._store.profileDefaultModelId = profileDefaultModelId;
+			});
 		} catch (e) {
 			console.error(e);
 		}
@@ -484,41 +509,14 @@ export class ChatStore {
 			return;
 		}
 
-		// fetch available models and user profile preferences in parallel
-		const [modelsResult, userInfoResult] = await Promise.allSettled([
-			this._actions.run<[Engine[]]>(
-				`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
-			),
-			this._actions.run<
-				[Record<string, { meta?: Record<string, unknown> }>]
-			>(`GetUserInfo();`),
-		]);
-
-		if (modelsResult.status !== "fulfilled") {
-			return;
-		}
-
-		// extract the user's profile default text-generation model (set via My Profile page)
-		let profileDefaultModelId = "";
-		if (userInfoResult.status === "fulfilled") {
-			try {
-				const userOutput = userInfoResult.value.pixelReturn[0].output;
-				const providerData = Object.values(userOutput)[0];
-				const metaValue = providerData?.meta?.["text-generation-model"];
-				profileDefaultModelId = Array.isArray(metaValue)
-					? (metaValue[0] as string) || ""
-					: typeof metaValue === "string"
-						? metaValue
-						: "";
-			} catch {}
-		}
+		const { pixelReturn } = await this._actions.run<[Engine[]]>(
+			`META | MyEngines(metaKeys=[], metaFilters=[{"tag":"text-generation"}], engineTypes=["MODEL"]);`,
+		);
 
 		runInAction(() => {
-			this._store.profileDefaultModelId = profileDefaultModelId;
-		});
-
-		runInAction(() => {
-			const { output } = modelsResult.value.pixelReturn[0];
+			const { output } = pixelReturn[0];
+			// profileDefaultModelId is already set by getUser(), which runs before this
+			const profileDefaultModelId = this._store.profileDefaultModelId;
 			let isSelected = false;
 
 			// 1. theme/admin-enforced default
