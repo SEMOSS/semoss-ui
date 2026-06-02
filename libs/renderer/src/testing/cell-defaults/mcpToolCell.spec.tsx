@@ -81,7 +81,7 @@ const createMCPToolCellStore = (overrides?: {
 		},
 	});
 
-	const mcpCell = store.queries["query-1"].cells[
+	const mcpCell = store.notebooks["query-1"].cells[
 		"1"
 	] as CellState<MCPToolCellDef>;
 	return { store, mcpCell };
