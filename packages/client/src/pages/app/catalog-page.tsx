@@ -57,6 +57,7 @@ const CATALOG_CONFIG = {
 		createLabel: "Create New App",
 		createPath: "/app/new",
 		basePath: "/app",
+		itemSubPath: "view",
 		pixelFilter: "onlyPortals=[true]",
 		searchPlaceholder: "Search apps...",
 		searchAriaLabel: "Search apps",
@@ -78,6 +79,7 @@ const CATALOG_CONFIG = {
 		createLabel: "Create New Skill",
 		createPath: "/skill/new",
 		basePath: "/skill",
+		itemSubPath: "edit",
 		pixelFilter: 'type="SKILL"',
 		searchPlaceholder: "Search skills...",
 		searchAriaLabel: "Search skills",
@@ -99,6 +101,7 @@ const CATALOG_CONFIG = {
 		createLabel: "Create New Agent",
 		createPath: "/agent/new",
 		basePath: "/agent",
+		itemSubPath: "edit",
 		pixelFilter: 'type="WORKSPACE"',
 		searchPlaceholder: "Search agents...",
 		searchAriaLabel: "Search agents",
@@ -1078,10 +1081,10 @@ export const CatalogPage = observer(
 													systemApp={false}
 													layout="responsive"
 													variant={cardVariant}
-													href={`#${config.basePath}/${app.project_id}/view`}
+													href={`#${config.basePath}/${app.project_id}/${config.itemSubPath}`}
 													onAction={() =>
 														navigate(
-															`${config.basePath}/${app.project_id}/view`,
+															`${config.basePath}/${app.project_id}/${config.itemSubPath}`,
 														)
 													}
 													appType={app.project_type}
@@ -1181,16 +1184,21 @@ export const CatalogPage = observer(
 														mode !== "Mine"
 													}
 													href={
-														mode === "Discoverable"
+														mode ===
+															"Discoverable" &&
+														config.itemSubPath ===
+															"view"
 															? `#${config.basePath}/${app.project_id}`
-															: `#${config.basePath}/${app.project_id}/view`
+															: `#${config.basePath}/${app.project_id}/${config.itemSubPath}`
 													}
 													onAction={() => {
 														navigate(
 															mode ===
-																"Discoverable"
+																"Discoverable" &&
+																config.itemSubPath ===
+																	"view"
 																? `${config.basePath}/${app.project_id}`
-																: `${config.basePath}/${app.project_id}/view`,
+																: `${config.basePath}/${app.project_id}/${config.itemSubPath}`,
 														);
 													}}
 													appType={app.project_type}
