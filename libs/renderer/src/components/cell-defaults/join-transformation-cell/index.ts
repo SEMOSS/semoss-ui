@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./JoinTransformationCell";
+export * from "./join-transformation-cell";

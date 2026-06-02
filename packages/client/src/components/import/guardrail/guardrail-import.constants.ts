@@ -1,5 +1,5 @@
-import Detoxify from "@/assets/img/DETOXIFY.png";
-import Gliner from "@/assets/img/GLINER.png";
+import Gliner from "@/assets/img/HUGGINGFACE_COLOR.svg";
+import Detoxify from "@/assets/img/PYTHON.svg";
 export const GUARDRAIL_CONNECTION = {
 	description: {
 		General:

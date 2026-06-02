@@ -86,12 +86,12 @@ export const MultilineCode = createComponent<HTMLPreElement>(
 
 export const List = createComponent<HTMLUListElement>(
 	"ul",
-	"inline-flex list-disc flex-col items-start gap-2 my-6 ml-6 font-normal font-sans text-base text-foreground",
+	"inline-flex list-disc flex-col items-start gap-2 my-6 ms-6 font-normal font-sans text-base text-foreground",
 	"List",
 );
 
 export const Quote = createComponent<HTMLQuoteElement>(
 	"blockquote",
-	"flex items-center gap-2 self-stretch border-border border-l-2 ml-6 text-base text-foreground italic leading-normal",
+	"flex items-center gap-2 self-stretch border-border border-s-2 ms-6 text-base text-foreground italic leading-normal",
 	"Quote",
 );

@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./LogsBlock";
+export * from "./logs-block";

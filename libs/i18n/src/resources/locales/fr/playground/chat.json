@@ -17,11 +17,15 @@
 		"poorResponse": "Mauvaise réponse",
 		"copyResponse": "Copier la réponse",
 		"copyCode": "Copier le code",
+		"feedbackPlaceholder": "Ajouter un commentaire (facultatif)",
+		"feedbackCancel": "Annuler",
+		"feedbackSubmit": "Envoyer",
 		"fastForwardToEnd": "Aller à la fin",
 		"completeToolsAsk_one": "Veuillez compléter l'outil pour continuer.",
 		"completeToolsAsk_other": "Veuillez compléter les outils pour continuer.",
 		"completeToolsAuto_one": "Veuillez attendre que l'outil se termine.",
-		"completeToolsAuto_other": "Veuillez attendre que les outils se terminent."
+		"completeToolsAuto_other": "Veuillez attendre que les outils se terminent.",
+		"emptyResponse": "Réponse vide."
 	},
 	"input": {
 		"copyMessage": "Copier le message"

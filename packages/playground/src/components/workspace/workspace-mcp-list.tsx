@@ -76,7 +76,7 @@ export const WorkspaceMCPList = ({
 
 	if (searchedMCP.length === 0) {
 		return (
-			<div className="flex h-full w-full items-center justify-center">
+			<div className="flex min-h-32 w-full items-center justify-center p-6">
 				<Muted>
 					{type === "TOOLBOX"
 						? t("mcp.noToolboxes")
@@ -147,8 +147,13 @@ export const WorkspaceMCPList = ({
 								id: m.engine_id,
 								name: m.engine_name,
 								type: m.engine_type,
+								subtype: m.engine_subtype,
 								description: m.description,
 								tags: m.tags?.split(",") || [],
+								// MCPCard renders the effective permission via
+								// the prop below; m.permission is unused here
+								// but required by the MCP type.
+								permission: "READ_ONLY",
 							}}
 							type={type}
 							effectivePermission={effectivePermission}
