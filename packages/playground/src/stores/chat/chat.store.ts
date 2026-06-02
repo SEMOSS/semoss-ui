@@ -7,6 +7,8 @@ import { RoomStore } from "../room";
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
 const DEFAUlT_MODEL_NAME = import.meta.env.VITE_DEFAUlT_MODEL_NAME || "";
 
+const SESSION_MODEL_KEY = "smss-playground-session-model";
+
 interface ChatStoreInterface {
 	/**
 	 *  Track if the chat is initialized
@@ -61,6 +63,7 @@ interface ChatStoreInterface {
 	user: {
 		id: string;
 		name: string;
+		lastLogin?: string;
 	};
 }
 
@@ -187,6 +190,7 @@ export class ChatStore {
 						{
 							id: string;
 							name: string;
+							lastLogin?: string;
 							meta?: Record<string, unknown>;
 						}
 					>,
@@ -202,6 +206,7 @@ export class ChatStore {
 				this._store.user = {
 					id: providerData.id,
 					name: providerData.name,
+					lastLogin: providerData.lastLogin,
 				};
 			});
 
@@ -402,6 +407,11 @@ export class ChatStore {
 			this._store.models.selected = model;
 		});
 
+		sessionStorage.setItem(
+			SESSION_MODEL_KEY,
+			JSON.stringify({ model, lastLogin: this._store.user.lastLogin }),
+		);
+
 		this.loadEngineContextWindow(model.engine_id);
 	};
 
@@ -530,7 +540,36 @@ export class ChatStore {
 				}
 			}
 
-			// 2. user's profile default (set via Settings > My Profile)
+			// 2. last model selected in this login session (survives refresh, resets on new login)
+			if (!isSelected) {
+				try {
+					const sessionItem =
+						sessionStorage.getItem(SESSION_MODEL_KEY);
+					if (sessionItem) {
+						const { model: sessionModel, lastLogin: storedLogin } =
+							JSON.parse(sessionItem) as {
+								model: Engine;
+								lastLogin?: string;
+							};
+						const currentLogin = this._store.user.lastLogin;
+						if (
+							storedLogin &&
+							currentLogin &&
+							storedLogin === currentLogin
+						) {
+							for (const m of output) {
+								if (m.engine_id === sessionModel.engine_id) {
+									this.setSelectedModel(m);
+									isSelected = true;
+									break;
+								}
+							}
+						}
+					}
+				} catch {}
+			}
+
+			// 3. user's profile default — used on fresh login when no session model exists
 			if (!isSelected && profileDefaultModelId) {
 				for (const m of output) {
 					if (m.engine_id === profileDefaultModelId) {
@@ -541,7 +580,7 @@ export class ChatStore {
 				}
 			}
 
-			// 3. first available model
+			// 4. first available model
 			if (!isSelected && output.length > 0) {
 				this.setSelectedModel(output[0]);
 			}
