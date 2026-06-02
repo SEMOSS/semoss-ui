@@ -5,7 +5,7 @@ import { Blocks } from "../../components/blocks";
 import {
 	EncodeColumnTransformationCell,
 	type EncodeColumnTransformationCellDef,
-} from "../../components/cell-defaults/encode-column-transformation-cell/EncodeColumnTransformationCell";
+} from "../../components/cell-defaults/encode-column-transformation-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK pixel calls in ColumnTransformationField
@@ -119,7 +119,7 @@ const createStoreWithCells = (overrides?: {
 	});
 
 	if (targetCellExecuted) {
-		const targetCell = store.queries["query-1"].cells[targetCellId];
+		const targetCell = store.notebooks["query-1"].cells[targetCellId];
 		if (targetCell) {
 			targetCell._update("operation", ["FORMATTED_DATA_SET"]);
 			if (targetCellOutput !== undefined) {
@@ -128,7 +128,7 @@ const createStoreWithCells = (overrides?: {
 		}
 	}
 
-	const encodeCell = store.queries["query-1"].cells[
+	const encodeCell = store.notebooks["query-1"].cells[
 		"2"
 	] as CellState<EncodeColumnTransformationCellDef>;
 
