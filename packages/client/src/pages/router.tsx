@@ -88,6 +88,11 @@ const SkillEditPage = lazy(() =>
 const AgentPage = lazy(() =>
 	import("./agent/agent-page").then((m) => ({ default: m.AgentPage })),
 );
+const CreateAgentPage = lazy(() =>
+	import("./agent/create-agent-page").then((m) => ({
+		default: m.CreateAgentPage,
+	})),
+);
 const AgentEditPage = lazy(() =>
 	import("./agent/agent-edit-page").then((m) => ({
 		default: m.AgentEditPage,
@@ -186,6 +191,7 @@ export const Router = observer(() => {
 						</Route>
 						<Route path="agent/*">
 							<Route index element={<AgentPage />} />
+							<Route path="new" element={<CreateAgentPage />} />
 							<Route
 								path=":appId/edit/*"
 								element={<AgentEditPage />}

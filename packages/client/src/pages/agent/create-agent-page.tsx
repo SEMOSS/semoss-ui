@@ -1,0 +1,355 @@
+import { ChevronRight, UploadIcon } from "lucide-react";
+import { useId, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+	Button,
+	Field,
+	FieldLabel,
+	H2,
+	H4,
+	Input,
+	Muted,
+	P,
+	Progress,
+	Separator,
+	Textarea,
+	toast,
+} from "@semoss/ui/next";
+import {
+	KnowledgeSelector,
+	PromptSelector,
+	ToolboxSelector,
+} from "@/components/agent";
+import { AddAppModal } from "@/components/app";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useRootStore } from "@/hooks";
+import { useNavigate } from "@/hooks/useNavigate";
+
+type KnowledgeItem = {
+	id: string;
+	name: string;
+	type: "VECTOR";
+};
+
+type ToolboxItem = {
+	id: string;
+	name: string;
+	type: "PROJECT";
+};
+
+type CreateAgentForm = {
+	name: string;
+	description: string;
+	instructions: string;
+	knowledge: KnowledgeItem[];
+	toolboxes: ToolboxItem[];
+	prompts: string[];
+};
+
+export const CreateAgentPage = () => {
+	const navigate = useNavigate();
+	const { monolithStore } = useRootStore();
+	const [isUploadOpen, setIsUploadOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const nameId = useId();
+	const descId = useId();
+	const instructionsId = useId();
+
+	const {
+		control,
+		handleSubmit,
+		formState: { isValid },
+	} = useForm<CreateAgentForm>({
+		mode: "onChange",
+		defaultValues: {
+			name: "",
+			description: "",
+			instructions: "",
+			knowledge: [],
+			toolboxes: [],
+			prompts: [],
+		},
+	});
+
+	const navigateAgent = (appId: string) => {
+		if (!appId) return;
+		navigate(`/agent/${appId}/edit`);
+	};
+
+	const onSubmit = async (data: CreateAgentForm) => {
+		try {
+			setIsLoading(true);
+
+			// Combine knowledge and toolboxes into mcp array
+			const mcp = [...data.knowledge, ...data.toolboxes];
+
+			const { errors, pixelReturn } = await monolithStore.runQuery<
+				[string]
+			>(
+				`AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.instructions)}, mcp=${JSON.stringify(mcp)}, prompts=${JSON.stringify(data.prompts)});`,
+			);
+
+			if (errors.length > 0) throw new Error(errors.join(","));
+
+			const agentId = pixelReturn[0].output;
+			if (!agentId) throw new Error("Error creating agent");
+
+			navigateAgent(agentId);
+		} catch (e) {
+			console.error(e);
+			toast.error((e as Error).message || "Error creating agent");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	return (
+		<>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<div className="flex w-full flex-col items-start gap-6">
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to="../" className="text-inherit">
+									Agents
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator>
+							<ChevronRight />
+						</BreadcrumbSeparator>
+						<BreadcrumbItem>
+							<BreadcrumbPage>New</BreadcrumbPage>
+						</BreadcrumbItem>
+					</BreadcrumbList>
+				</Breadcrumb>
+
+				<div className="flex w-full flex-row items-start justify-between gap-4">
+					<div className="flex flex-col gap-1">
+						<H2>Create Agent</H2>
+						<P className="text-muted-foreground">
+							Define a reusable agent with specific capabilities
+						</P>
+					</div>
+					<Button
+						variant="outline"
+						onClick={() => setIsUploadOpen(true)}
+					>
+						<UploadIcon />
+						Upload
+					</Button>
+				</div>
+
+				{isUploadOpen && (
+					<AddAppModal
+						type="agent"
+						open={isUploadOpen}
+						handleClose={(appId) => {
+							if (appId) navigateAgent(appId);
+							setIsUploadOpen(false);
+						}}
+					/>
+				)}
+
+				<form
+					className="w-full"
+					onSubmit={handleSubmit(onSubmit)}
+					autoComplete="off"
+				>
+					{/* About Section */}
+					<div className="mb-4 flex flex-col gap-4">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+							<div className="flex flex-1 flex-col gap-1">
+								<H4 className="font-semibold text-base tracking-tight">
+									About
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Basic information about your agent
+								</Muted>
+							</div>
+
+							<div className="flex flex-2 flex-col gap-3">
+								<Controller
+									name="name"
+									control={control}
+									rules={{ required: true }}
+									render={({ field }) => (
+										<Field>
+											<FieldLabel htmlFor={nameId}>
+												Name{" "}
+												<span className="text-destructive">
+													*
+												</span>
+											</FieldLabel>
+											<Input
+												id={nameId}
+												placeholder="My Agent"
+												{...field}
+											/>
+										</Field>
+									)}
+								/>
+
+								<Controller
+									name="description"
+									control={control}
+									render={({ field }) => (
+										<Field>
+											<FieldLabel htmlFor={descId}>
+												Description
+											</FieldLabel>
+											<Input
+												id={descId}
+												placeholder="A short description..."
+												{...field}
+											/>
+										</Field>
+									)}
+								/>
+
+								<Controller
+									name="instructions"
+									control={control}
+									render={({ field }) => (
+										<Field>
+											<FieldLabel
+												htmlFor={instructionsId}
+											>
+												Instructions
+											</FieldLabel>
+											<Textarea
+												id={instructionsId}
+												placeholder="Define the agent's behavior, role, and instructions..."
+												rows={6}
+												className="max-h-96"
+												{...field}
+											/>
+										</Field>
+									)}
+								/>
+							</div>
+						</div>
+						<Separator />
+					</div>
+
+					{/* Knowledge Section */}
+					<div className="mb-4 flex flex-col gap-4">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+							<div className="flex flex-1 flex-col gap-1">
+								<H4 className="font-semibold text-base tracking-tight">
+									Knowledge
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Add knowledge sources for your agent
+								</Muted>
+							</div>
+
+							<div className="flex flex-2 flex-col gap-3">
+								<Controller
+									name="knowledge"
+									control={control}
+									render={({ field }) => (
+										<Field>
+											<KnowledgeSelector
+												value={field.value}
+												onChange={field.onChange}
+												disabled={isLoading}
+												className="h-96"
+											/>
+										</Field>
+									)}
+								/>
+							</div>
+						</div>
+						<Separator />
+					</div>
+
+					{/* Toolboxes Section */}
+					<div className="mb-4 flex flex-col gap-4">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+							<div className="flex flex-1 flex-col gap-1">
+								<H4 className="font-semibold text-base tracking-tight">
+									Toolboxes
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Add tools and capabilities to your agent
+								</Muted>
+							</div>
+
+							<div className="flex flex-2 flex-col gap-3">
+								<Controller
+									name="toolboxes"
+									control={control}
+									render={({ field }) => (
+										<Field>
+											<ToolboxSelector
+												value={field.value}
+												onChange={field.onChange}
+												disabled={isLoading}
+												className="h-96"
+											/>
+										</Field>
+									)}
+								/>
+							</div>
+						</div>
+						<Separator />
+					</div>
+
+					{/* Prompts Section */}
+					<div className="mb-4 flex flex-col gap-4">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+							<div className="flex flex-1 flex-col gap-1">
+								<H4 className="font-semibold text-base tracking-tight">
+									Prompts
+								</H4>
+								<Muted className="text-muted-foreground text-sm leading-6">
+									Pre-configured prompts for your agent
+								</Muted>
+							</div>
+
+							<div className="flex flex-2 flex-col gap-3">
+								<Controller
+									name="prompts"
+									control={control}
+									render={({ field }) => (
+										<Field>
+											<PromptSelector
+												value={field.value}
+												onChange={field.onChange}
+												disabled={isLoading}
+												className="h-96"
+											/>
+										</Field>
+									)}
+								/>
+							</div>
+						</div>
+						<Separator />
+					</div>
+
+					<div className="flex justify-end">
+						<Button
+							type="submit"
+							disabled={!isValid || isLoading}
+							className="w-full sm:w-auto"
+						>
+							Create Agent
+						</Button>
+					</div>
+					{isLoading && <Progress className="h-1" />}
+				</form>
+			</div>
+		</>
+	);
+};

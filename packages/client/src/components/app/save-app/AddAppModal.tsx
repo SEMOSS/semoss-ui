@@ -54,6 +54,11 @@ const MODAL_CONFIG = {
 		errorMessage:
 			"There was an error creating your skill. Please check your zip file and try again.",
 	},
+	agent: {
+		title: "Upload agent from my computer",
+		errorMessage:
+			"There was an error creating your agent. Please check your zip file and try again.",
+	},
 } as const;
 
 interface AddAppProps {

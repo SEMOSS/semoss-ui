@@ -53,7 +53,7 @@ export type CatalogType = "app" | "skill" | "agent";
 const CATALOG_CONFIG = {
 	app: {
 		title: "Apps",
-		description: "Manage and discover applications",
+		description: "Manage and discover applications.",
 		createLabel: "Create New App",
 		createPath: "/app/new",
 		basePath: "/app",
@@ -76,7 +76,7 @@ const CATALOG_CONFIG = {
 	},
 	skill: {
 		title: "Skills",
-		description: "Manage and discover skills",
+		description: "Manage and discover skills.",
 		createLabel: "Create New Skill",
 		createPath: "/skill/new",
 		basePath: "/skill",
@@ -99,7 +99,7 @@ const CATALOG_CONFIG = {
 	},
 	agent: {
 		title: "Agents",
-		description: "Manage and discover agents",
+		description: "Manage and discover agents.",
 		createLabel: "Create New Agent",
 		createPath: "/agent/new",
 		basePath: "/agent",
