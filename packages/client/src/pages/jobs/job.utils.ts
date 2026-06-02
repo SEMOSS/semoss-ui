@@ -1,16 +1,14 @@
-import {
-	DaysOfWeek,
-	JobTypeCustomJob,
-	JobTypeSendEmail,
-	Months,
-} from "./job.constants";
-import type { JobBuilder, SendEmailJob } from "./job.types";
+import { DaysOfWeek, Months } from "./job.constants";
+import type { Frequencies, ParsedCron } from "./job.types";
 
 export function getHumanReadableCronExpression(cronExpression: string) {
 	const cronValues = cronExpression.split(" ");
 	if (cronValues.length < 6) {
 		return "Invalid cron syntax";
-	} else if (isNaN(Number(cronValues[1])) || isNaN(Number(cronValues[2]))) {
+	} else if (
+		Number.isNaN(Number(cronValues[1])) ||
+		Number.isNaN(Number(cronValues[2]))
+	) {
 		return cronExpression;
 	}
 
@@ -63,7 +61,7 @@ export function convertTimetoDate(time) {
 		dd = String(today.getDate()).padStart(2, "0"),
 		mm = String(today.getMonth() + 1).padStart(2, "0"),
 		yyyy = today.getFullYear(),
-		currentDate = yyyy + "-" + mm + "-" + dd,
+		currentDate = `${yyyy}-${mm}-${dd}`,
 		jobDate = time.split(" ")[0],
 		jobTime = time.split(" ")[1].split(":"),
 		jobHour = Number(jobTime[0]),
@@ -74,15 +72,14 @@ export function convertTimetoDate(time) {
 	if (jobDate === currentDate) {
 		runDateString += "Today at ";
 	} else {
-		runDateString += jobDate + " at ";
+		runDateString += `${jobDate} at `;
 	}
 
 	if (jobHour > 12)
-		runDateString +=
-			(jobHour - 12).toString() + ":" + jobMin.toString() + "pm";
-	else if (jobHour === 12) runDateString += "12" + ":" + jobMin + "pm";
-	else if (jobHour === 0) runDateString += "12" + ":" + jobMin + "am";
-	else runDateString += jobHour.toString() + ":" + jobMin + "am";
+		runDateString += `${(jobHour - 12).toString()}:${jobMin.toString()}pm`;
+	else if (jobHour === 12) runDateString += `12:${jobMin}pm`;
+	else if (jobHour === 0) runDateString += `12:${jobMin}am`;
+	else runDateString += `${jobHour.toString()}:${jobMin}am`;
 
 	return runDateString;
 }
@@ -90,10 +87,10 @@ export function convertTimetoDate(time) {
 export function convertDeltaToRuntimeString(duration) {
 	// padding for leading zeros
 	function _pad(number: number) {
-		let tempNumStr = number + "";
+		let tempNumStr = `${number}`;
 
 		for (let i = tempNumStr.length; i < 3; i++) {
-			tempNumStr = "0" + tempNumStr;
+			tempNumStr = `0${tempNumStr}`;
 		}
 
 		return tempNumStr;
@@ -103,47 +100,164 @@ export function convertDeltaToRuntimeString(duration) {
 	const minutes = Math.floor((duration / (1000 * 60)) % 60);
 	const hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
 
-	const hoursStr = hours < 10 ? "0" + hours : hours;
-	const minutesStr = minutes < 10 ? "0" + minutes : minutes;
-	const secondsStr = seconds < 10 ? "0" + seconds : seconds;
+	const hoursStr = hours < 10 ? `0${hours}` : hours;
+	const minutesStr = minutes < 10 ? `0${minutes}` : minutes;
+	const secondsStr = seconds < 10 ? `0${seconds}` : seconds;
 
 	// always have milliseconds a let size
 	while (milliseconds.length < 3) {
-		milliseconds = milliseconds + "0";
+		milliseconds = `${milliseconds}0`;
 	}
 	milliseconds = milliseconds.substring(0, 3);
-	return hoursStr + ":" + minutesStr + ":" + secondsStr + "." + milliseconds;
+	return `${hoursStr}:${minutesStr}:${secondsStr}.${milliseconds}`;
 }
 
-export function convertSendEmailRecipeToJob(recipe: string): SendEmailJob {
-	if (!recipe.includes("SendEmail")) {
-		return;
+const DEFAULT_PARSED: ParsedCron = {
+	mode: "expression",
+	minute: "0",
+	hour: "12",
+	dayOfMonth: "*",
+	month: "*",
+	dayOfWeek: "?",
+};
+
+const isInt = (val: string, min: number, max: number) => {
+	if (!/^\d+$/.test(val)) return false;
+	const n = parseInt(val, 10);
+	return n >= min && n <= max;
+};
+
+const isWildcard = (val: string) => val === "*" || val === "?";
+
+export function parseCron(cron: string): ParsedCron {
+	if (!cron || typeof cron !== "string") {
+		return { ...DEFAULT_PARSED };
 	}
-	const recipeMatches: RegExpMatchArray = recipe.match(/(?<=\().*/g);
-	if (recipeMatches.length === 0) {
-		return;
+	const parts = cron.trim().split(/\s+/);
+	if (parts.length < 6) {
+		return { ...DEFAULT_PARSED };
 	}
-	let cleanedRecipe: string = recipeMatches[0];
-	cleanedRecipe = cleanedRecipe.replaceAll(/[([\];)]/g, "");
-	cleanedRecipe = cleanedRecipe.replaceAll(",,", ",");
-	cleanedRecipe = cleanedRecipe.replaceAll("=", "':");
-	cleanedRecipe = cleanedRecipe.replaceAll("', ", "', '");
-	cleanedRecipe = cleanedRecipe.replaceAll("'", '"');
-	cleanedRecipe = `{"${cleanedRecipe}}`;
-	try {
-		const job: SendEmailJob = JSON.parse(cleanedRecipe);
-		return job;
-	} catch (_e) {
-		// skip a bad email job
-		return;
+	const [, minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+
+	const validTime = isInt(minute, 0, 59) && isInt(hour, 0, 23);
+
+	if (validTime) {
+		let frequency: Frequencies | undefined;
+		if (isWildcard(dayOfMonth) && month === "*" && isWildcard(dayOfWeek)) {
+			frequency = "Daily";
+		} else if (
+			isWildcard(dayOfMonth) &&
+			month === "*" &&
+			isInt(dayOfWeek, 0, 6)
+		) {
+			frequency = "Weekly";
+		} else if (
+			isInt(dayOfMonth, 1, 31) &&
+			month === "*" &&
+			isWildcard(dayOfWeek)
+		) {
+			frequency = "Monthly";
+		} else if (
+			isInt(dayOfMonth, 1, 31) &&
+			isInt(month, 1, 12) &&
+			isWildcard(dayOfWeek)
+		) {
+			frequency = "Yearly";
+		}
+
+		if (frequency) {
+			return {
+				mode: "standard",
+				frequency,
+				minute,
+				hour,
+				dayOfMonth,
+				month,
+				dayOfWeek,
+			};
+		}
 	}
+
+	const dropdownEligible =
+		isInt(minute, 0, 59) &&
+		isInt(hour, 0, 23) &&
+		(isWildcard(dayOfMonth) || isInt(dayOfMonth, 1, 31)) &&
+		(month === "*" || isInt(month, 1, 12)) &&
+		(isWildcard(dayOfWeek) || isInt(dayOfWeek, 0, 6));
+
+	if (dropdownEligible) {
+		return {
+			mode: "dropdown",
+			minute,
+			hour,
+			dayOfMonth,
+			month,
+			dayOfWeek,
+		};
+	}
+
+	return {
+		mode: "expression",
+		minute,
+		hour,
+		dayOfMonth,
+		month,
+		dayOfWeek,
+	};
 }
 
-export function getEncodeByJobType(builder: JobBuilder) {
-	switch (builder.jobType) {
-		case JobTypeCustomJob:
-			return builder.pixel;
-		case JobTypeSendEmail:
-			return `SendEmail(smtpHost=['${builder.smtpHost}'], smtpPort=['${builder.smtpPort}'], subject=['${builder.subject}'], to=['${builder.to}'], cc=['${builder.cc}'], bcc=['${builder.bcc}'], from=['${builder.from}'], message=['${builder.message}'], username=['${builder.username}'], password=['${builder.password}']);`;
+export function buildCron(parts: {
+	minute: string;
+	hour: string;
+	dayOfMonth: string;
+	month: string;
+	dayOfWeek: string;
+}): string {
+	return `0 ${parts.minute} ${parts.hour} ${parts.dayOfMonth} ${parts.month} ${parts.dayOfWeek}`;
+}
+
+export function buildStandardCron(
+	frequency: Frequencies,
+	hour: string,
+	minute: string,
+	options: {
+		dayOfWeek?: string;
+		dayOfMonth?: string;
+		month?: string;
+	} = {},
+): string {
+	switch (frequency) {
+		case "Daily":
+			return buildCron({
+				minute,
+				hour,
+				dayOfMonth: "*",
+				month: "*",
+				dayOfWeek: "?",
+			});
+		case "Weekly":
+			return buildCron({
+				minute,
+				hour,
+				dayOfMonth: "?",
+				month: "*",
+				dayOfWeek: options.dayOfWeek ?? "0",
+			});
+		case "Monthly":
+			return buildCron({
+				minute,
+				hour,
+				dayOfMonth: options.dayOfMonth ?? "1",
+				month: "*",
+				dayOfWeek: "?",
+			});
+		case "Yearly":
+			return buildCron({
+				minute,
+				hour,
+				dayOfMonth: options.dayOfMonth ?? "1",
+				month: options.month ?? "1",
+				dayOfWeek: "?",
+			});
 	}
 }

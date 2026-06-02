@@ -1,4 +1,4 @@
-import { HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
+import { ComputerIcon, HammerIcon, PlusIcon, TrashIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
 import { useState } from "react";
@@ -21,7 +21,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay } from "@/components";
+import { MCPOverlay, splitMcpByType } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
@@ -38,6 +38,13 @@ interface RoomOptionsFormProps {
 
 	/** Update options on change */
 	onOptionsChange: (options: Partial<RoomStore["options"]>) => void;
+
+	/**
+	 * Whether the user can pick/change the agent from this form. Defaults to
+	 * `false` — agents are baked in at room creation, so the existing-room
+	 * settings panel is read-only. Pass `true` from new-room contexts.
+	 */
+	agentEditable?: boolean;
 }
 
 export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
@@ -46,6 +53,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		onModelChange = () => null,
 		options,
 		onOptionsChange = () => null,
+		agentEditable = false,
 	}) => {
 		const { t } = useTranslation(["room", "common"]);
 		const { root } = useRoot();
@@ -54,24 +62,22 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 		 * State
 		 */
 		const [mCPOverlay, setMCPOverlay] = useState<{
-			type: "KNOWLEDGE" | "TOOLBOX";
+			type: "AGENT" | "KNOWLEDGE" | "TOOLBOX";
 			isOpen: boolean;
 		}>({
 			type: "KNOWLEDGE",
 			isOpen: false,
 		});
 
-		// All MCPs are in the mcp array (workspace MCPs have fromWorkspace flag)
-		const knowledge =
-			options?.mcp?.filter((mcp) => mcp.type === "VECTOR") || [];
-		const toolbox =
-			options?.mcp?.filter((mcp) => mcp.type !== "VECTOR") || [];
+		// All MCPs live in the same array; workspace-inherited MCPs carry a
+		// `fromWorkspace` flag and cannot be removed here — the room only
+		// inherits them, so removal happens in the workspace form instead.
+		const { knowledge, toolbox } = splitMcpByType(options?.mcp ?? []);
 
 		/**
 		 * Functions
 		 */
 		const handleDeleteMCP = (mcp: MCPConfig) => {
-			// Don't allow deletion of workspace MCPs
 			if (mcp.fromWorkspace) {
 				return;
 			}
@@ -141,6 +147,82 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									}}
 								/>
 							</Field>
+							{(agentEditable || options?.workspace) && (
+								<Field>
+									<FieldLabel
+										onClick={
+											agentEditable
+												? (
+														event: MouseEvent<HTMLLabelElement>,
+													) => {
+														event.preventDefault();
+														event.stopPropagation();
+
+														setMCPOverlay({
+															type: "AGENT",
+															isOpen: true,
+														});
+													}
+												: undefined
+										}
+									>
+										<div className="flex-1">
+											{t("room:form.agentLabel")}
+										</div>
+									</FieldLabel>
+									<div className="space-y-2">
+										{options?.workspace ? (
+											agentEditable ? (
+												<button
+													type="button"
+													className="group flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-start text-card-foreground hover:bg-muted/50"
+													onClick={() =>
+														setMCPOverlay({
+															type: "AGENT",
+															isOpen: true,
+														})
+													}
+												>
+													<ComputerIcon className="size-4" />
+													<span className="flex-1 truncate text-sm">
+														{options.workspace
+															.name ||
+															options.workspace
+																.workspace_id}
+													</span>
+												</button>
+											) : (
+												<div className="flex h-10 w-full items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-start text-card-foreground">
+													<ComputerIcon className="size-4" />
+													<span className="flex-1 truncate text-sm">
+														{options.workspace
+															.name ||
+															options.workspace
+																.workspace_id}
+													</span>
+												</div>
+											)
+										) : (
+											<button
+												type="button"
+												className="w-full cursor-pointer rounded-md border border-border bg-card py-4 text-center text-card-foreground"
+												onClick={() =>
+													setMCPOverlay({
+														type: "AGENT",
+														isOpen: true,
+													})
+												}
+											>
+												<span className="text-muted-foreground text-xs">
+													{t(
+														"room:menuWorkspace.selectAgent",
+													)}
+												</span>
+											</button>
+										)}
+									</div>
+								</Field>
+							)}
 							<Field>
 								<FieldLabel
 									onClick={(
@@ -197,7 +279,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 														<Badge
 															key={mcp.id}
 															variant="outline"
-															className="disabled: mr-2 border border-primary text-primary text-xs"
+															className="disabled: me-2 border border-primary text-primary text-xs"
 														>
 															{t(
 																"common:badges.fromAgent",
@@ -316,7 +398,7 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 														<Badge
 															key={mcp.id}
 															variant="outline"
-															className="disabled: mr-2 border border-primary text-primary text-xs"
+															className="disabled: me-2 border border-primary text-primary text-xs"
 														>
 															{t(
 																"common:badges.fromAgent",
@@ -379,26 +461,24 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 							</Field>
 							<MCPOverlay
 								open={mCPOverlay.isOpen}
-								type={mCPOverlay.type}
-								values={
-									mCPOverlay.type === "TOOLBOX"
-										? toolbox
-										: knowledge
-								}
-								onClose={(mcp) => {
-									if (mcp) {
-										// Merge updated MCPs with the other type
-										const otherTypeMCPs =
-											mCPOverlay.type === "TOOLBOX"
-												? knowledge
-												: toolbox;
-
-										onOptionsChange({
-											mcp: [...otherTypeMCPs, ...mcp],
-										});
+								defaultTab={mCPOverlay.type}
+								values={options?.mcp ?? []}
+								workspace={options?.workspace ?? null}
+								agentEditable={agentEditable}
+								onClose={(next) => {
+									if (next) {
+										const updates: Partial<
+											RoomStore["options"]
+										> = { mcp: next.mcp };
+										if (
+											agentEditable &&
+											"workspace" in next
+										) {
+											updates.workspace =
+												next.workspace ?? undefined;
+										}
+										onOptionsChange(updates);
 									}
-
-									// close it
 									setMCPOverlay({
 										isOpen: false,
 										type: "KNOWLEDGE",

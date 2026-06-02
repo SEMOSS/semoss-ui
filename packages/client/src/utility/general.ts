@@ -111,12 +111,8 @@ import ai_server
 
 # pass in your access and secret keys to authenticate
 server_connection=ai_server.ServerClient(
-    access_key="${
-		accessKey ? accessKey : "<your access key>"
-	}",             # example: "d0033d40-ea83-4083-96ce-17a01451f831"
-    secret_key="${
-		secretKey ? secretKey : "<your access key>"
-	}",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
+    access_key="${accessKey ? accessKey : "<your access key>"}",
+    secret_key="${secretKey ? secretKey : "<your secret key>"}",
     base="${Env.MODULE}/api"
 )`;
 	} else {

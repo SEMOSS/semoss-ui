@@ -1,2 +1,2 @@
-export * from "./CodeCell";
+export * from "./code-cell";
 export * from "./config";

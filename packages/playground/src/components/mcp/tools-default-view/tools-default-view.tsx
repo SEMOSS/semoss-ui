@@ -351,6 +351,29 @@ export const ToolsDefaultView = observer(
 							/>
 						</div>
 					)}
+					{toolFailed && tool.response && (
+						<div className="flex flex-col space-y-2">
+							<Label
+								htmlFor="tool-response"
+								className="shrink-0 font-semibold text-destructive"
+							>
+								{t(
+									`status.${
+										tool.status === "ERROR"
+											? "failed"
+											: tool.status === "CANCELLED"
+												? "cancelled"
+												: "paused"
+									}`,
+								)}
+							</Label>
+							<Textarea
+								readOnly
+								className="w-full flex-1 resize-none border-destructive text-destructive"
+								value={tool.response}
+							/>
+						</div>
+					)}
 					{getMCP.status === "ERROR" ? (
 						<div className="flex flex-col items-center justify-center gap-2 py-12 text-center">
 							<div className="text-destructive">
@@ -420,7 +443,7 @@ export const ToolsDefaultView = observer(
 														)}
 														:
 													</span>
-													<span className="ml-2 text-muted-foreground">
+													<span className="ms-2 text-muted-foreground">
 														{app}
 													</span>
 												</div>
@@ -431,7 +454,7 @@ export const ToolsDefaultView = observer(
 														)}
 														:
 													</span>
-													<span className="ml-2 text-muted-foreground">
+													<span className="ms-2 text-muted-foreground">
 														{
 															scriptForBrowserAutomation
 														}
@@ -531,7 +554,7 @@ export const ToolsDefaultView = observer(
 								{t("extension.stepsTitle")}
 							</p>
 							{/* biome-ignore lint/nursery/useSortedClasses: order is correct */}
-							<ol className="ml-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
+							<ol className="ms-2 list-inside list-decimal space-y-2 text-sm text-muted-foreground">
 								<li>{t("extension.step1")}</li>
 								<li>{t("extension.step2")}</li>
 								<li>{t("extension.step3")}</li>
@@ -567,7 +590,7 @@ export const ToolsDefaultView = observer(
 							>
 								{extensionCheckRetrying ? (
 									<>
-										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										<Loader2 className="me-2 h-4 w-4 animate-spin" />
 										{t("extension.checking")}
 									</>
 								) : (

@@ -29,7 +29,7 @@ export const uploadInsight = async (
 			fileLocation: string;
 		}[]
 	>(
-		`${Env.MODULE}/api/uploadFile/baseUpload?insightId=${insightId}&path=${encodeURIComponent(path)}`,
+		`${Env.MODULE}/api/uploadFile/baseUpload?insightId=${insightId}&path=${encodeURIComponent(path)}&userSpace=false`,
 		fd,
 		{},
 	);

@@ -45,11 +45,11 @@ export const ResponseMessageToolMenu = ({
 						type="button"
 						size={label ? "sm" : "icon"}
 						variant="ghost"
-						className="mr-2 shrink-0 gap-1.5"
+						className="me-2 shrink-0 gap-1.5"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{label && (
-							<span className="pr-1 font-normal text-muted-foreground text-sm">
+							<span className="pe-1 font-normal text-muted-foreground text-sm">
 								{label}
 							</span>
 						)}
@@ -58,7 +58,7 @@ export const ResponseMessageToolMenu = ({
 				) : (
 					<button
 						type="button"
-						className="flex shrink-0 cursor-pointer items-center gap-2 self-stretch rounded-r-lg px-4.5 hover:bg-accent"
+						className="flex shrink-0 cursor-pointer items-center gap-2 self-stretch rounded-e-lg px-4.5 hover:bg-accent"
 						onClick={(e) => e.stopPropagation()}
 					>
 						{label && (

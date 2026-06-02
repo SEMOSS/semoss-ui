@@ -141,6 +141,12 @@ export interface ThemeMap {
 		allowedFileTypes?: string[];
 
 		/**
+		 * Additional URL prefixes (e.g. custom protocols) allowed in markdown link rendering.
+		 * Defaults to ["docubridge://"].
+		 */
+		allowedUrlPrefixes?: string[];
+
+		/**
 		 * Default embedding engine UUID to use when allowEmbeddingOptions is false.
 		 */
 		defaultEmbedderId?: string;
@@ -267,6 +273,8 @@ export interface ThemeMap {
 			showToolboxMenu?: boolean;
 			/** Whether to show external links to the SEMOSS platform. Defaults to true. */
 			showPlatformLinks?: boolean;
+			/** Whether to show a text input for feedback comments when rating a response. Defaults to false. */
+			enableFeedbackText?: boolean;
 		};
 	};
 }

@@ -3,10 +3,10 @@
 	"aboutTitle": "About Knowledge Stores",
 	"whatIsKnowledgeStore": "What's a Knowledge Store?",
 	"ragDescription": "RAG (Retrieval-Augmented Generation) chat enhances AI conversations by grounding responses in trusted data. Choose from the libraries below to receive a response referencing those documents specifically.",
-	"subtitle": "Search, filter, and create new knowledge sources.",
+	"subtitle": "Search, filter, and create new knowledge stores.",
 	"newSource": {
-		"title": "New Knowledge Source",
-		"description": "Upload documents to create a new knowledge source"
+		"title": "New Knowledge Store",
+		"description": "Upload documents to create a new knowledge store"
 	},
 	"form": {
 		"nameLabel": "Name",
@@ -25,7 +25,7 @@
 		"all": "All"
 	},
 	"actions": {
-		"createSource": "Create Knowledge Source",
+		"createSource": "Create Knowledge Store",
 		"viewDocuments": "View documents",
 		"newChat": "New Chat"
 	},
@@ -37,11 +37,11 @@
 	},
 	"documents": {
 		"title": "Documents",
-		"description": "Files currently associated with this knowledge source."
+		"description": "Files currently associated with this knowledge store."
 	},
 	"embedDocuments": {
 		"title": "Embed Documents into Existing Source",
-		"description": "Upload documents to embed into this knowledge source.",
+		"description": "Upload documents to embed into this knowledge store.",
 		"documents": "Documents",
 		"selectFiles": "Click to select files or drag and drop",
 		"embedButton": "Embed Documents",
@@ -49,7 +49,7 @@
 		"removeFile": "Remove file"
 	},
 	"embedMessages": {
-		"selectKnowledgeSource": "Please select a knowledge source",
+		"selectKnowledgeSource": "Please select a knowledge store",
 		"selectDocument": "Please select at least one document",
 		"embedSuccess": "Documents embedded successfully",
 		"embedFailed": "Failed to embed documents"
@@ -62,8 +62,8 @@
 	"detail": {
 		"knowledge": "Knowledge",
 		"embedDocuments": "Embed documents",
-		"newKnowledgeCreated": "A new knowledge source was created. You can now select it to embed additional documents.",
-		"documentsDescription": "Documents currently embedded in this knowledge source.",
+		"newKnowledgeCreated": "A new knowledge store was created. You can now select it to embed additional documents.",
+		"documentsDescription": "Documents currently embedded in this knowledge store.",
 		"failedToLoadDocuments": "Failed to load documents."
 	}
 }

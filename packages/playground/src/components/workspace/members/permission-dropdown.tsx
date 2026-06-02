@@ -42,17 +42,17 @@ export const PermissionDropdown = ({
 				<SelectValue />
 			</SelectTrigger>
 			{/* Position checkmark on left side of menu items */}
-			<SelectContent className="[&_span:first-child]:right-auto [&_span:first-child]:left-2">
+			<SelectContent className="[&_span:first-child]:start-2 [&_span:first-child]:end-auto">
 				{/* Only owners can promote users to owner */}
 				{!hideOwnerOption && (
-					<SelectItem value="OWNER" className="pr-2 pl-8">
+					<SelectItem value="OWNER" className="ps-8 pe-2">
 						{t("members.owner")}
 					</SelectItem>
 				)}
-				<SelectItem value="EDIT" className="pr-2 pl-8">
+				<SelectItem value="EDIT" className="ps-8 pe-2">
 					{t("members.editor")}
 				</SelectItem>
-				<SelectItem value="READ_ONLY" className="pr-2 pl-8">
+				<SelectItem value="READ_ONLY" className="ps-8 pe-2">
 					{t("members.readOnly")}
 				</SelectItem>
 				{!hideDeleteOption && (
@@ -60,7 +60,7 @@ export const PermissionDropdown = ({
 						<SelectSeparator />
 						<SelectItem
 							value="delete"
-							className="pr-2 text-destructive focus:text-destructive"
+							className="pe-2 text-destructive focus:text-destructive"
 						>
 							<Trash2 className="size-4 text-destructive" />
 							{t("members.removeAccess")}

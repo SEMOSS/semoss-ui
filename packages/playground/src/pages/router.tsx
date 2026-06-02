@@ -1,6 +1,7 @@
 import { createHashRouter, Navigate, RouterProvider } from "react-router-dom";
 import { DocumentLibrary } from "@/pages/knowledge-page";
 import { AuthenticatedLayout } from "./authenticated-layout";
+import { ChatsPage } from "./chats-page";
 import { EditWorkspacePage } from "./edit-workspace-page";
 import { EmbedPage } from "./embed-page";
 import { ErrorPage } from "./error-page";
@@ -41,6 +42,10 @@ const router = createHashRouter(
 										{
 											path: "room/:roomId",
 											element: <RoomPage />,
+										},
+										{
+											path: "chats",
+											element: <ChatsPage />,
 										},
 										{
 											path: "embed/*",

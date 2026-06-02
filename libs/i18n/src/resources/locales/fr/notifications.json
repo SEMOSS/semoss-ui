@@ -1,7 +1,7 @@
 {
 	"knowledge": {
-		"createSuccess": "Source de connaissances \"{{name}}\" créée avec succès",
-		"createError": "Échec de la création de la source de connaissances"
+		"createSuccess": "Base de connaissances \"{{name}}\" créée avec succès",
+		"createError": "Échec de la création de la base de connaissances"
 	},
 	"workspace": {
 		"saveError": "Échec de l'enregistrement de l'agent",

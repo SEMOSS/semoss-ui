@@ -136,9 +136,12 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 		>
 			<div
 				className={cn(
-					"flex w-full cursor-pointer items-center gap-1 rounded py-1 pr-2 transition-colors hover:bg-muted",
+					"flex w-full cursor-pointer items-center gap-1 rounded py-1 pe-2 transition-colors hover:bg-muted",
 				)}
-				style={{ paddingLeft: depth * 16 + 8 }}
+				// `paddingInlineStart` flips with writing direction so the
+				// nested-item indent ends up on the leading edge in both LTR
+				// and RTL (vs. `paddingLeft` which is physical).
+				style={{ paddingInlineStart: depth * 16 + 8 }}
 			>
 				{hasChildren ? (
 					<button
@@ -158,7 +161,7 @@ const TreeViewItem = React.forwardRef(function TreeViewItem<T>(
 						) : isExpanded ? (
 							<ChevronDownIcon className="size-4" />
 						) : (
-							<ChevronRightIcon className="size-4" />
+							<ChevronRightIcon className="rtl:-scale-x-100 size-4" />
 						)}
 					</button>
 				) : leadingIcon ? (

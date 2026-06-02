@@ -23,4 +23,5 @@ export const createMessageStore = (
 
 		return new ResponseMessageStore(room, pixelMessage);
 	}
+	throw new Error(`Unknown message type: ${pixelMessage}`);
 };
