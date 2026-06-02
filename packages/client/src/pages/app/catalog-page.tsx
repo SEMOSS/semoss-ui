@@ -72,6 +72,7 @@ const CATALOG_CONFIG = {
 		emptySearch: "No apps found matching your search.",
 		toastFavorite: (fav: boolean) =>
 			`App ${fav ? "bookmarked" : "unbookmarked"}`,
+		showSystemTab: true,
 	},
 	skill: {
 		title: "Skills",
@@ -94,6 +95,7 @@ const CATALOG_CONFIG = {
 		emptySearch: "No skills found matching your search.",
 		toastFavorite: (fav: boolean) =>
 			`Skill ${fav ? "bookmarked" : "unbookmarked"}`,
+		showSystemTab: false,
 	},
 	agent: {
 		title: "Agents",
@@ -116,6 +118,7 @@ const CATALOG_CONFIG = {
 		emptySearch: "No agents found matching your search.",
 		toastFavorite: (fav: boolean) =>
 			`Agent ${fav ? "bookmarked" : "unbookmarked"}`,
+		showSystemTab: false,
 	},
 } as const;
 
@@ -1059,13 +1062,15 @@ export const CatalogPage = observer(
 											>
 												{config.discoverableTab}
 											</TabsTrigger>
-											<TabsTrigger
-												value="System"
-												data-testid="appCatalogPage-systemApps-btn"
-												className={TAB_CLASS}
-											>
-												{config.systemTab}
-											</TabsTrigger>
+											{config.showSystemTab && (
+												<TabsTrigger
+													value="System"
+													data-testid="appCatalogPage-systemApps-btn"
+													className={TAB_CLASS}
+												>
+													{config.systemTab}
+												</TabsTrigger>
+											)}
 										</TabsList>
 									</Tabs>
 								</div>
