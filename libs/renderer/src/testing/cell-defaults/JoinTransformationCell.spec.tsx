@@ -5,7 +5,7 @@ import { Blocks } from "../../components/blocks";
 import {
 	JoinTransformationCell,
 	type JoinTransformationCellDef,
-} from "../../components/cell-defaults/join-transformation-cell/JoinTransformationCell";
+} from "../../components/cell-defaults/join-transformation-cell";
 import { type CellState, type Registry, StateStore } from "../../store";
 
 // Mock useBlocksPixel to avoid SDK pixel calls in MultiCellColumnTransformationField
@@ -156,14 +156,14 @@ const createStoreWithCells = (overrides?: {
 	});
 
 	if (bothCellsExecuted) {
-		const cellA = store.queries["query-1"].cells[fromTargetCellId];
+		const cellA = store.notebooks["query-1"].cells[fromTargetCellId];
 		if (cellA) {
 			cellA._update("operation", ["FORMATTED_DATA_SET"]);
 			if (targetCellOutput !== undefined) {
 				cellA._update("output", targetCellOutput);
 			}
 		}
-		const cellB = store.queries["query-1"].cells[toTargetCellId];
+		const cellB = store.notebooks["query-1"].cells[toTargetCellId];
 		if (cellB) {
 			cellB._update("operation", ["FORMATTED_DATA_SET"]);
 			if (targetCellOutput !== undefined) {
@@ -172,7 +172,7 @@ const createStoreWithCells = (overrides?: {
 		}
 	}
 
-	const joinCell = store.queries["query-1"].cells[
+	const joinCell = store.notebooks["query-1"].cells[
 		"3"
 	] as CellState<JoinTransformationCellDef>;
 
