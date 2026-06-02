@@ -75,6 +75,11 @@ const SettingsRouter = lazy(() =>
 const SkillPage = lazy(() =>
 	import("./skill/skill-page").then((m) => ({ default: m.SkillPage })),
 );
+const CreateSkillPage = lazy(() =>
+	import("./skill/create-skill-page").then((m) => ({
+		default: m.CreateSkillPage,
+	})),
+);
 const SkillEditPage = lazy(() =>
 	import("./skill/skill-edit-page").then((m) => ({
 		default: m.SkillEditPage,
@@ -169,6 +174,7 @@ export const Router = observer(() => {
 						<Route path="settings/*" element={<SettingsRouter />} />
 						<Route path="skill/*">
 							<Route index element={<SkillPage />} />
+							<Route path="new" element={<CreateSkillPage />} />
 							<Route
 								path=":appId/edit/*"
 								element={<SkillEditPage />}
