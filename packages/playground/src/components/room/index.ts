@@ -1,3 +1,4 @@
+export * from "./room-compaction-indicator";
 export * from "./room-content";
 export * from "./room-inline-tool";
 export * from "./room-input";

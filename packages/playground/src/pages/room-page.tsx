@@ -78,6 +78,11 @@ export const RoomPage = observer(() => {
 	// load the room
 	useEffect(() => {
 		const loadRoom = async () => {
+			// if chat isn't initialized yet, wait for it to initialize
+			if (!chat.isInitialized) {
+				return;
+			}
+
 			// Reset room state when roomId changes to prevent stale content flash
 			setRoom(null);
 			try {
@@ -105,7 +110,13 @@ export const RoomPage = observer(() => {
 		};
 
 		loadRoom();
-	}, [roomId, navigate, chat.loadRoom, chat.setSelectedModel]);
+	}, [
+		roomId,
+		navigate,
+		chat.loadRoom,
+		chat.setSelectedModel,
+		chat.isInitialized,
+	]);
 
 	const navbarActions = useMemo<React.ReactNode>(() => {
 		if (room?.options) {
