@@ -28,7 +28,8 @@ export const App = () => {
 			}
 
 			const env = JSON.parse(
-				document.getElementById("semoss-env")?.textContent || null,
+				document.getElementById("semoss-env")?.textContent ||
+					JSON.stringify(null),
 			) as {
 				MODULE: string;
 			};

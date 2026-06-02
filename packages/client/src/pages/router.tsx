@@ -67,6 +67,12 @@ const SettingsRouter = lazy(() =>
 		default: m.SettingsRouter,
 	})),
 );
+const SkillPage = lazy(() =>
+	import("./skill/skill-page").then((m) => ({ default: m.SkillPage })),
+);
+const AgentPage = lazy(() =>
+	import("./agent/agent-page").then((m) => ({ default: m.AgentPage })),
+);
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
@@ -145,6 +151,8 @@ export const Router = observer(() => {
 						<Route path="engine/*" element={<EngineRouter />} />
 						<Route path="prompt/*" element={<PromptRouter />} />
 						<Route path="settings/*" element={<SettingsRouter />} />
+						<Route path="skill/*" element={<SkillPage />} />
+						<Route path="agent/*" element={<AgentPage />} />
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
 				</Route>
