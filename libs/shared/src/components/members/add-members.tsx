@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, X } from "lucide-react";
+import { ChevronDown, X } from "lucide-react";
 import {
 	type ChangeEvent,
 	type KeyboardEvent,
@@ -22,13 +22,6 @@ import {
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
 	DropdownMenuTrigger,
-	Input,
-	Label,
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
 	toast,
 } from "@semoss/ui/next";
 import { returnAccessType } from "./common";
@@ -63,16 +56,6 @@ interface AddMembersOverlayProps {
 	adminMode?: boolean;
 }
 
-function formatNum(val: string): string {
-	const digits = val.replace(/[^0-9]/g, "");
-	if (!digits) return "";
-	return Number(digits).toLocaleString();
-}
-
-function parseNum(val: string): string {
-	return val.replace(/[^0-9]/g, "");
-}
-
 export const AddMembersOverlay = ({
 	id,
 	type,
@@ -91,13 +74,7 @@ export const AddMembersOverlay = ({
 	const fetchVersionRef = useRef(0);
 	const isFetchingRef = useRef(false);
 	const [isSearching, setIsSearching] = useState<boolean>(false);
-	const [maxTokens, setMaxTokens] = useState<string>("");
-	const [maxInputTokens, setMaxInputTokens] = useState<string>("");
-	const [maxOutputTokens, setMaxOutputTokens] = useState<string>("");
-	const [maxResponseTime, setMaxResponseTime] = useState<string>("");
-	const [frequency, setFrequency] = useState<string>("DAY");
 	const [userPermission, setUserPermission] = useState<string>("");
-	const [restrictionsOpen, setRestrictionsOpen] = useState<boolean>(true);
 	const isProject = type === "PROJECT" || type === "WORKSPACE";
 	const isOwner = adminMode || userPermission === "OWNER";
 
@@ -164,33 +141,13 @@ export const AddMembersOverlay = ({
 		if (selectedUsers.length === 0) return;
 
 		const userpermissions = selectedUsers.map((m) => {
-			const base = {
+			return {
 				userid: m.id,
 				permission: returnAccessType(m.permission, true),
 				email: m.email,
 				name: m.name,
 				type: m.type,
 				username: m.username,
-			};
-			if (type !== "MODEL" && type !== "PROJECT" && type !== "WORKSPACE")
-				return base;
-			const hasAnyLimit = maxTokens || maxInputTokens || maxOutputTokens;
-			const hasComputeTime = !!maxResponseTime;
-			if (!hasAnyLimit && !hasComputeTime) return base;
-			return {
-				...base,
-				usageRestriction: hasAnyLimit ? "token" : "compute",
-				usageFrequency: frequency,
-				...(maxTokens && { maxTokens: Number(maxTokens) }),
-				...(maxInputTokens && {
-					maxInputTokens: Number(maxInputTokens),
-				}),
-				...(maxOutputTokens && {
-					maxOutputTokens: Number(maxOutputTokens),
-				}),
-				...(maxResponseTime && {
-					maxResponseTime: Number(maxResponseTime),
-				}),
 			};
 		});
 
@@ -218,11 +175,6 @@ export const AddMembersOverlay = ({
 	function resetState() {
 		setSelectedUsers([]);
 		setSearchKey("");
-		setMaxTokens("");
-		setMaxInputTokens("");
-		setMaxOutputTokens("");
-		setMaxResponseTime("");
-		setFrequency("DAY");
 		setOffset(0);
 		setHasMore(true);
 		setUserPermission("");
@@ -492,141 +444,6 @@ export const AddMembersOverlay = ({
 							))}
 						</div>
 					</div>
-
-					{/* MODEL / PROJECT token limit fields */}
-					{(type === "MODEL" ||
-						type === "PROJECT" ||
-						type === "WORKSPACE") && (
-						<div className="flex flex-col gap-3 rounded border border-border p-3">
-							<button
-								type="button"
-								className="flex items-center gap-1.5 text-start font-medium text-sm"
-								onClick={() =>
-									setRestrictionsOpen((prev) => !prev)
-								}
-							>
-								{restrictionsOpen ? (
-									<ChevronDown className="h-4 w-4 shrink-0" />
-								) : (
-									<ChevronRight className="rtl:-scale-x-100 h-4 w-4 shrink-0" />
-								)}
-								Token Limits (for all selected users)
-							</button>
-							{restrictionsOpen && (
-								<div className="flex flex-col gap-3">
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Combined Token Limit{" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(maxTokens)}
-											onChange={(e) =>
-												setMaxTokens(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Input Token Limit (Prompt){" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(maxInputTokens)}
-											onChange={(e) =>
-												setMaxInputTokens(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Output Token Limit (Response){" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(maxOutputTokens)}
-											onChange={(e) =>
-												setMaxOutputTokens(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Max Compute Time (seconds){" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(maxResponseTime)}
-											onChange={(e) =>
-												setMaxResponseTime(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-									{(maxTokens ||
-										maxInputTokens ||
-										maxOutputTokens ||
-										maxResponseTime) && (
-										<div className="flex flex-col gap-1.5">
-											<Label>Frequency</Label>
-											<Select
-												value={frequency}
-												onValueChange={setFrequency}
-											>
-												<SelectTrigger className="w-full">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="DAY">
-														Daily
-													</SelectItem>
-													<SelectItem value="WEEK">
-														Weekly
-													</SelectItem>
-													<SelectItem value="MONTH">
-														Monthly
-													</SelectItem>
-													<SelectItem value="YEAR">
-														Yearly
-													</SelectItem>
-													<SelectItem value="ALL_TIME">
-														All time
-													</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-									)}
-								</div>
-							)}
-						</div>
-					)}
 				</div>
 				{/* end scrollable middle section */}
 

@@ -1,4 +1,10 @@
-export type TimePeriod = "HOUR" | "DAY" | "WEEK" | "MONTH" | "ALL_TIME";
+export type TimePeriod =
+	| "HOUR"
+	| "DAY"
+	| "WEEK"
+	| "MONTH"
+	| "YEAR"
+	| "ALL_TIME";
 
 export interface ExceptionEntry {
 	entityId: string;
