@@ -22,11 +22,6 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import {
-	KnowledgeSelector,
-	PromptSelector,
-	ToolboxSelector,
-} from "@/components/agent";
 import { AddAppModal } from "@/components/app";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
@@ -255,20 +250,7 @@ export const CreateAgentPage = () => {
 							</div>
 
 							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="knowledge"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<KnowledgeSelector
-												value={field.value}
-												onChange={field.onChange}
-												disabled={isLoading}
-												className="h-96"
-											/>
-										</Field>
-									)}
-								/>
+								<Muted>TODO: Knowledge selector</Muted>
 							</div>
 						</div>
 						<Separator />
@@ -287,20 +269,7 @@ export const CreateAgentPage = () => {
 							</div>
 
 							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="toolboxes"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<ToolboxSelector
-												value={field.value}
-												onChange={field.onChange}
-												disabled={isLoading}
-												className="h-96"
-											/>
-										</Field>
-									)}
-								/>
+								<Muted>TODO: Toolbox selector</Muted>
 							</div>
 						</div>
 						<Separator />
@@ -319,20 +288,7 @@ export const CreateAgentPage = () => {
 							</div>
 
 							<div className="flex flex-2 flex-col gap-3">
-								<Controller
-									name="prompts"
-									control={control}
-									render={({ field }) => (
-										<Field>
-											<PromptSelector
-												value={field.value}
-												onChange={field.onChange}
-												disabled={isLoading}
-												className="h-96"
-											/>
-										</Field>
-									)}
-								/>
+								<Muted>TODO: Prompt selector</Muted>
 							</div>
 						</div>
 						<Separator />
