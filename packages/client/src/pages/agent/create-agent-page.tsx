@@ -2,6 +2,7 @@ import { ChevronRight, UploadIcon } from "lucide-react";
 import { useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import { type MCPConfig, MCPSelector, PromptSelector } from "@semoss/shared";
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -26,25 +27,14 @@ import { AddAppModal } from "@/components/app";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
-
-type KnowledgeItem = {
-	id: string;
-	name: string;
-	type: "VECTOR";
-};
-
-type ToolboxItem = {
-	id: string;
-	name: string;
-	type: "PROJECT";
-};
+import { mcpToPlatformUrl, promptToPlatformUrl } from "@/utility";
 
 type CreateAgentForm = {
 	name: string;
 	description: string;
 	instructions: string;
-	knowledge: KnowledgeItem[];
-	toolboxes: ToolboxItem[];
+	knowledge: MCPConfig[];
+	toolboxes: MCPConfig[];
 	prompts: string[];
 };
 
@@ -250,7 +240,20 @@ export const CreateAgentPage = () => {
 							</div>
 
 							<div className="flex flex-2 flex-col gap-3">
-								<Muted>TODO: Knowledge selector</Muted>
+								<Controller
+									name="knowledge"
+									control={control}
+									render={({ field }) => (
+										<MCPSelector
+											type="KNOWLEDGE"
+											values={field.value}
+											onChange={field.onChange}
+											className="h-112"
+											enableKnowledgeMCP={true}
+											getPlatformUrl={mcpToPlatformUrl}
+										/>
+									)}
+								/>
 							</div>
 						</div>
 						<Separator />
@@ -269,7 +272,20 @@ export const CreateAgentPage = () => {
 							</div>
 
 							<div className="flex flex-2 flex-col gap-3">
-								<Muted>TODO: Toolbox selector</Muted>
+								<Controller
+									name="toolboxes"
+									control={control}
+									render={({ field }) => (
+										<MCPSelector
+											type="TOOLBOX"
+											values={field.value}
+											onChange={field.onChange}
+											className="h-112"
+											enableKnowledgeMCP={true}
+											getPlatformUrl={mcpToPlatformUrl}
+										/>
+									)}
+								/>
 							</div>
 						</div>
 						<Separator />
@@ -288,7 +304,18 @@ export const CreateAgentPage = () => {
 							</div>
 
 							<div className="flex flex-2 flex-col gap-3">
-								<Muted>TODO: Prompt selector</Muted>
+								<Controller
+									name="prompts"
+									control={control}
+									render={({ field }) => (
+										<PromptSelector
+											values={field.value}
+											onChange={field.onChange}
+											className="h-112"
+											getPlatformUrl={promptToPlatformUrl}
+										/>
+									)}
+								/>
 							</div>
 						</div>
 						<Separator />

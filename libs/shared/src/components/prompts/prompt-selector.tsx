@@ -1,5 +1,4 @@
 import { SearchIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
@@ -26,8 +25,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { Prompt } from "@/types";
-import { promptToPlatformUrl } from "./utility";
+import type { Prompt } from "../../types";
 
 interface PromptSelectorProps {
 	/** Selected prompt IDs */
@@ -41,16 +39,23 @@ interface PromptSelectorProps {
 
 	/** Extra classes appended to the outer wrapper (e.g. for sizing) */
 	className?: string;
+
+	/**
+	 * Optional callback to generate an external platform URL for each Prompt.
+	 * When provided, an external link icon is shown next to each prompt.
+	 */
+	getPlatformUrl?: (prompt: Prompt) => string;
 }
 
 /**
  * Renders the PromptSelector component for selecting prompts
  */
-const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
+export const PromptSelector: React.FC<PromptSelectorProps> = ({
 	values,
 	disabled,
 	onChange,
 	className,
+	getPlatformUrl,
 }) => {
 	const { t } = useTranslation("workspace");
 	const [search, setSearch] = useState<string>("");
@@ -194,23 +199,25 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 											}}
 										/>
 									</Field>
-									<div className="flex w-full flex-row justify-end px-4 pb-4">
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<a
-													target="_blank"
-													href={promptToPlatformUrl(
-														prompt,
-													)}
-												>
-													<SquareArrowOutUpRightIcon className="size-4" />
-												</a>
-											</TooltipTrigger>
-											<TooltipContent>
-												{t("prompts.viewDetails")}
-											</TooltipContent>
-										</Tooltip>
-									</div>
+									{getPlatformUrl && (
+										<div className="flex w-full flex-row justify-end px-4 pb-4">
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<a
+														target="_blank"
+														href={getPlatformUrl(
+															prompt,
+														)}
+													>
+														<SquareArrowOutUpRightIcon className="size-4" />
+													</a>
+												</TooltipTrigger>
+												<TooltipContent>
+													{t("prompts.viewDetails")}
+												</TooltipContent>
+											</Tooltip>
+										</div>
+									)}
 								</FieldLabel>
 							);
 						})}
@@ -254,5 +261,3 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 		</div>
 	);
 };
-
-export const PromptSelector = observer(PromptSelectorInner);

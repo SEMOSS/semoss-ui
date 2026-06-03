@@ -4,6 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
+import { engineProjectToMCP, type MCP, type MCPConfig } from "@semoss/shared";
 import {
 	Command,
 	CommandEmpty,
@@ -15,10 +16,9 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import { engineProjectToMCP } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { App, Engine, MCP, MCPConfig } from "@/types";
+import type { App, Engine } from "@/types";
 
 interface RoomInputMenuSlashProps {
 	/** Room options containing MCP configurations */

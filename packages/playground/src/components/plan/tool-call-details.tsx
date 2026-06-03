@@ -2,6 +2,7 @@ import type React from "react";
 import { useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { usePixel } from "@semoss/sdk/react";
+import { engineProjectToMCP, type MCP } from "@semoss/shared";
 import {
 	Field,
 	FieldLabel,
@@ -13,8 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { engineProjectToMCP } from "@/components";
-import type { App, Engine, MCP, MCPTool, PlanStep } from "@/types";
+import type { App, Engine, MCPTool, PlanStep } from "@/types";
 
 type ToolCallDetails = Extract<PlanStep["details"], { stepType: "tool_call" }>;
 

@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useInsight, usePixel } from "@semoss/sdk/react";
+import { MCPCard } from "@semoss/shared";
 import { Muted, ScrollArea, toast } from "@semoss/ui/next";
+import { useRoot } from "@/hooks";
 import type { ProjectDependency } from "@/types";
-import { MCPCard } from "../mcp";
+import { mcpToPlatformUrl } from "@/utility/mcp-utils";
 
 export interface WorkspaceMCPListProps {
 	/**
@@ -34,6 +36,7 @@ export const WorkspaceMCPList = ({
 }: WorkspaceMCPListProps) => {
 	const { t } = useTranslation("workspace");
 	const { actions } = useInsight();
+	const { root } = useRoot();
 
 	const getDependencies = usePixel<{
 		engines: ProjectDependency[];
@@ -159,6 +162,11 @@ export const WorkspaceMCPList = ({
 							effectivePermission={effectivePermission}
 							missingSubDependencies={missingSubDependencies}
 							handleRequestAccess={() => handleRequestAccess(m)}
+							getPlatformUrl={
+								root.theme.featureFlags?.showPlatformLinks
+									? mcpToPlatformUrl
+									: undefined
+							}
 						/>
 					);
 				})}
