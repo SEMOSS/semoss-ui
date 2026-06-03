@@ -116,39 +116,44 @@ export function TokenLimitsPanel({
 	const groupedUserLimits = useMemo<GroupedLimitEntity[]>(
 		() =>
 			Array.from(
-				members.reduce((map, member) => {
-					const existing = map.get(member.id) ?? {
-						id: member.id,
-						name: member.name || member.id,
-						details: [
-							{ label: "ID", value: member.id },
-							{ label: "Email", value: member.email || "N/A" },
-							{ label: "Login", value: member.type || "N/A" },
-						],
-						rows: [] as GroupedLimitRow[],
-						option: memberOptions.find(
-							(option) => option.id === member.id,
-						),
-					};
+				members
+					.reduce((map, member) => {
+						const existing = map.get(member.id) ?? {
+							id: member.id,
+							name: member.name || member.id,
+							details: [
+								{ label: "ID", value: member.id },
+								{
+									label: "Email",
+									value: member.email || "N/A",
+								},
+								{ label: "Login", value: member.type || "N/A" },
+							],
+							rows: [] as GroupedLimitRow[],
+							option: memberOptions.find(
+								(option) => option.id === member.id,
+							),
+						};
 
-					const values = getMemberLimitValues(member);
-					const hasAny =
-						values.maxTokens > 0 ||
-						values.maxInputTokens > 0 ||
-						values.maxOutputTokens > 0;
-					if (hasAny) {
-						existing.rows.push({
-							id: buildRowId(member.id, values.period),
-							period: values.period,
-							combinedLimit: values.maxTokens,
-							inputLimit: values.maxInputTokens,
-							outputLimit: values.maxOutputTokens,
-							isActive: true,
-						});
-					}
-					map.set(member.id, existing);
-					return map;
-				}, new Map<string, GroupedLimitEntity>()),
+						const values = getMemberLimitValues(member);
+						const hasAny =
+							values.maxTokens > 0 ||
+							values.maxInputTokens > 0 ||
+							values.maxOutputTokens > 0;
+						if (hasAny) {
+							existing.rows.push({
+								id: buildRowId(member.id, values.period),
+								period: values.period,
+								combinedLimit: values.maxTokens,
+								inputLimit: values.maxInputTokens,
+								outputLimit: values.maxOutputTokens,
+								isActive: true,
+							});
+						}
+						map.set(member.id, existing);
+						return map;
+					}, new Map<string, GroupedLimitEntity>())
+					.values(),
 			)
 				.map((entry) => ({
 					...entry,
