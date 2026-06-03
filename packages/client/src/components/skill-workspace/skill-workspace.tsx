@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { useEffect, useRef } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
@@ -67,9 +68,43 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 	},
 };
 
+const SKILL_MD_TAB_ID = "SKILL_MD";
+
 export const SkillWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
 	const insight = useInsight();
+	const skillMdOpened = useRef(false);
+
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model || skillMdOpened.current) return;
+		skillMdOpened.current = true;
+
+		if (model.getNodeById(SKILL_MD_TAB_ID)) return;
+
+		const tabsetId =
+			model.getActiveTabset()?.getId() ??
+			model.getRoot().getChildren()[0]?.getId() ??
+			"";
+		if (!tabsetId) return;
+
+		model.doAction(
+			FlexLayout.Actions.addNode(
+				{
+					id: SKILL_MD_TAB_ID,
+					type: "tab",
+					name: "SKILL.md",
+					component: "app-file-editor",
+					config: { name: "SKILL.md", path: "/skill/SKILL.md" },
+					enableClose: false,
+				},
+				tabsetId,
+				FlexLayout.DockLocation.CENTER,
+				-1,
+				true,
+			),
+		);
+	}, [workspace.model]);
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
