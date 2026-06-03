@@ -217,7 +217,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 						</InputGroupAddon>
 					</InputGroup>
 				</div>
-				{type === "KNOWLEDGE" && (
+				{type === "KNOWLEDGE" && onRequestCreateKnowledge && (
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<Button
@@ -225,9 +225,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 								onClick={(event) => {
 									event.preventDefault();
 									event.stopPropagation();
-									if (onRequestCreateKnowledge) {
-										onRequestCreateKnowledge();
-									}
+									onRequestCreateKnowledge();
 								}}
 								disabled={disabled}
 							>

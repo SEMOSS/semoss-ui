@@ -100,7 +100,7 @@ export const CreateAgentPage = () => {
 			<NavbarLeft>
 				<NavbarHeader />
 			</NavbarLeft>
-			<div className="flex w-full flex-col items-start gap-6">
+			<div className="flex w-full flex-col items-start gap-6 pb-8">
 				<Breadcrumb>
 					<BreadcrumbList>
 						<BreadcrumbItem>
@@ -178,7 +178,7 @@ export const CreateAgentPage = () => {
 											</FieldLabel>
 											<Input
 												id={nameId}
-												placeholder="My Agent"
+												placeholder="Enter agent name"
 												{...field}
 											/>
 										</Field>
@@ -195,7 +195,7 @@ export const CreateAgentPage = () => {
 											</FieldLabel>
 											<Input
 												id={descId}
-												placeholder="A short description..."
+												placeholder="Enter description"
 												{...field}
 											/>
 										</Field>
@@ -214,7 +214,7 @@ export const CreateAgentPage = () => {
 											</FieldLabel>
 											<Textarea
 												id={instructionsId}
-												placeholder="Define the agent's behavior, role, and instructions..."
+												placeholder="Define the agent's behavior, role, and instructions"
 												rows={6}
 												className="max-h-96"
 												{...field}

@@ -57,7 +57,7 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 	className,
 	getPlatformUrl,
 }) => {
-	const { t } = useTranslation("workspace");
+	const { t } = useTranslation("prompts");
 	const [search, setSearch] = useState<string>("");
 
 	const debouncedSearch = useDebouncedValue(search, 500);
@@ -134,7 +134,7 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 			<div className="flex w-full shrink-0 flex-row gap-2 border-border bg-muted p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
-						placeholder={t("prompts.searchPlaceholder")}
+						placeholder={t("selector.searchPlaceholder")}
 						value={search}
 						disabled={disabled || getPrompts.isLoading}
 						onChange={(e) => setSearch(e.target.value)}
@@ -156,7 +156,7 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 				)}
 				{!getPrompts.isLoading && getPrompts.data.length === 0 && (
 					<div className="flex h-24 w-full items-center justify-center">
-						<Muted>{t("prompts.noPrompts")}</Muted>
+						<Muted>{t("selector.noPrompts")}</Muted>
 					</div>
 				)}
 				{!getPrompts.isLoading && getPrompts.data.length !== 0 && (
@@ -213,7 +213,7 @@ export const PromptSelector: React.FC<PromptSelectorProps> = ({
 													</a>
 												</TooltipTrigger>
 												<TooltipContent>
-													{t("prompts.viewDetails")}
+													{t("selector.viewDetails")}
 												</TooltipContent>
 											</Tooltip>
 										</div>

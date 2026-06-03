@@ -86,11 +86,11 @@ export const MCPCard = ({
 	const permissionLabel = ((): string => {
 		switch (effectivePermission) {
 			case "OWNER":
-				return t("workspace:members.owner");
+				return t("permission.owner");
 			case "EDIT":
-				return t("workspace:members.editor");
+				return t("permission.editor");
 			case "READ_ONLY":
-				return t("workspace:members.readOnly");
+				return t("permission.readOnly");
 			case "REQUESTED":
 				return t("permission.accessRequested");
 			case "DISCOVERABLE":
