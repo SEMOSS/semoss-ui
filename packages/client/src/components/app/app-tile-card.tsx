@@ -29,6 +29,8 @@ import { useNavigate } from "@/hooks/useNavigate";
 import { formatToDataTestId, getTagBadgeStyle } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
+export type AppTileCardEntityType = "app" | "skill" | "agent";
+
 interface AppTileCardProps {
 	app: AppMetadata;
 	background?: string;
@@ -293,6 +295,13 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 	const isRow = variant === "row";
 	const isFillerCard = variant === "fillerCard";
 	const canEdit = app?.user_permission != null && app.user_permission < 2;
+
+	const entityType: AppTileCardEntityType =
+		appType === "SKILL"
+			? "skill"
+			: appType === "WORKSPACE"
+				? "agent"
+				: "app";
 
 	// Style classes
 	const cardWidthClass = isRow
@@ -926,12 +935,24 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 													<DropdownMenuItem
 														onClick={handleClone}
 													>
-														Clone App
+														Clone{" "}
+														{entityType === "skill"
+															? "Skill"
+															: entityType ===
+																	"agent"
+																? "Agent"
+																: "App"}
 													</DropdownMenuItem>
 													<DropdownMenuItem
 														onClick={handleDelete}
 													>
-														Delete App
+														Delete{" "}
+														{entityType === "skill"
+															? "Skill"
+															: entityType ===
+																	"agent"
+																? "Agent"
+																: "App"}
 													</DropdownMenuItem>
 												</>
 											)}
@@ -949,12 +970,14 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					appId={app.project_id}
 					appName={displayName}
 					onDelete={onDelete}
+					entityType={entityType}
 				/>
 				{isCloneModalOpen && (
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
 						handleClose={handleCloneModalClose}
+						entityType={entityType}
 					/>
 				)}
 			</div>
@@ -1043,12 +1066,22 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 												<DropdownMenuItem
 													onClick={handleClone}
 												>
-													Clone App
+													Clone{" "}
+													{entityType === "skill"
+														? "Skill"
+														: entityType === "agent"
+															? "Agent"
+															: "App"}
 												</DropdownMenuItem>
 												<DropdownMenuItem
 													onClick={handleDelete}
 												>
-													Delete App
+													Delete{" "}
+													{entityType === "skill"
+														? "Skill"
+														: entityType === "agent"
+															? "Agent"
+															: "App"}
 												</DropdownMenuItem>
 											</>
 										)}
@@ -1185,12 +1218,14 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 					appId={app.project_id}
 					appName={displayName}
 					onDelete={onDelete}
+					entityType={entityType}
 				/>
 				{isCloneModalOpen && (
 					<AddAppCloneModal
 						open={isCloneModalOpen}
 						appId={app.project_id}
 						handleClose={handleCloneModalClose}
+						entityType={entityType}
 					/>
 				)}
 			</div>
@@ -1337,12 +1372,22 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 											<DropdownMenuItem
 												onClick={handleClone}
 											>
-												Clone App
+												Clone{" "}
+												{entityType === "skill"
+													? "Skill"
+													: entityType === "agent"
+														? "Agent"
+														: "App"}
 											</DropdownMenuItem>
 											<DropdownMenuItem
 												onClick={handleDelete}
 											>
-												Delete App
+												Delete{" "}
+												{entityType === "skill"
+													? "Skill"
+													: entityType === "agent"
+														? "Agent"
+														: "App"}
 											</DropdownMenuItem>
 										</>
 									)}
