@@ -26,6 +26,7 @@ import {
 import {
 	createDraftFromValues,
 	DEFAULT_LIMIT_DRAFT,
+	hasAnyTokenLimitValue,
 	PERIODS,
 	useTokenLimitsData,
 } from "./use-token-limits-data";
@@ -50,6 +51,52 @@ const sortRows = (rows: GroupedLimitRow[]) =>
 	[...rows].sort(
 		(a, b) => PERIODS.indexOf(a.period) - PERIODS.indexOf(b.period),
 	);
+
+const parseNullableNumber = (value: string) => {
+	if (value.trim() === "") {
+		return null;
+	}
+	const parsed = Number.parseInt(value, 10);
+	return Number.isNaN(parsed) ? null : parsed;
+};
+
+const mergeDraftLimits = (
+	limits: TokenLimitEntry[],
+	drafts: Record<string, TokenLimitEntry>,
+) => limits.map((limit) => drafts[limit.id] ?? limit);
+
+const mergeGroupedEntities = (
+	entities: GroupedLimitEntity[],
+	localRowsByEntityId: Record<string, GroupedLimitRow[]>,
+	localEntityById: Record<string, Omit<GroupedLimitEntity, "rows">>,
+) =>
+	Object.values(
+		entities.reduce<Record<string, GroupedLimitEntity>>((acc, entity) => {
+			const localRows = localRowsByEntityId[entity.id] ?? [];
+			acc[entity.id] = {
+				...entity,
+				rows: sortRows([...entity.rows, ...localRows]),
+			};
+			return acc;
+		}, {}),
+	)
+		.concat(
+			Object.entries(localRowsByEntityId)
+				.filter(
+					([entityId, rows]) =>
+						rows.length > 0 &&
+						!entities.some((entity) => entity.id === entityId),
+				)
+				.map(([entityId, rows]) => ({
+					...(localEntityById[entityId] ?? {
+						id: entityId,
+						name: entityId,
+						details: [],
+					}),
+					rows: sortRows(rows),
+				})),
+		)
+		.sort((a, b) => a.name.localeCompare(b.name));
 
 export function TokenLimitsPanel({
 	entityType,
@@ -81,7 +128,8 @@ export function TokenLimitsPanel({
 		removeDefaultTeamLimit,
 		savePlatformLimit,
 		removePlatformLimit,
-		saveUserLimitRows,
+		saveUserLimitRow,
+		removeUserLimitRow,
 		saveTeamLimitRow,
 		removeTeamLimitRow,
 	} = useTokenLimitsData({ entityType, entityId });
@@ -95,6 +143,21 @@ export function TokenLimitsPanel({
 		useState<TokenLimitEntry | null>(null);
 	const [newPlatformRow, setNewPlatformRow] =
 		useState<TokenLimitEntry | null>(null);
+	const [defaultUserDraftsById, setDefaultUserDraftsById] = useState<
+		Record<string, TokenLimitEntry>
+	>({});
+	const [defaultTeamDraftsById, setDefaultTeamDraftsById] = useState<
+		Record<string, TokenLimitEntry>
+	>({});
+	const [platformDraftsById, setPlatformDraftsById] = useState<
+		Record<string, TokenLimitEntry>
+	>({});
+	const [localUserRowsById, setLocalUserRowsById] = useState<
+		Record<string, GroupedLimitRow[]>
+	>({});
+	const [localTeamRowsById, setLocalTeamRowsById] = useState<
+		Record<string, GroupedLimitRow[]>
+	>({});
 
 	const defaultUserPeriods = useMemo(
 		() => defaultUserLimits.map((limit) => limit.period),
@@ -128,10 +191,7 @@ export function TokenLimitsPanel({
 						};
 
 						const values = getMemberLimitValues(member);
-						const hasAny =
-							values.maxTokens > 0 ||
-							values.maxInputTokens > 0 ||
-							values.maxOutputTokens > 0;
+						const hasAny = hasAnyTokenLimitValue(values);
 						if (hasAny) {
 							existing.rows.push({
 								id: buildRowId(member.id, values.period),
@@ -179,10 +239,7 @@ export function TokenLimitsPanel({
 						};
 
 						const values = getTeamLimitValues(team);
-						const hasAny =
-							values.maxTokens > 0 ||
-							values.maxInputTokens > 0 ||
-							values.maxOutputTokens > 0;
+						const hasAny = hasAnyTokenLimitValue(values);
 						if (hasAny) {
 							existing.rows.push({
 								id: buildRowId(team.ID, values.period),
@@ -208,14 +265,6 @@ export function TokenLimitsPanel({
 		[teamGroups, teamOptions, getTeamLimitValues],
 	);
 
-	const userRowsById = useMemo(
-		() => new Map(groupedUserLimits.map((group) => [group.id, group.rows])),
-		[groupedUserLimits],
-	);
-	const teamRowsById = useMemo(
-		() => new Map(groupedTeamLimits.map((group) => [group.id, group.rows])),
-		[groupedTeamLimits],
-	);
 	const remainingDefaultUserPeriods = useMemo(
 		() => PERIODS.filter((period) => !defaultUserPeriods.includes(period)),
 		[defaultUserPeriods],
@@ -231,6 +280,132 @@ export function TokenLimitsPanel({
 					!platformLimits.some((row) => row.period === period),
 			),
 		[platformLimits],
+	);
+
+	useEffect(() => {
+		setDefaultUserDraftsById((prev) =>
+			Object.fromEntries(
+				Object.entries(prev).filter(([id]) =>
+					defaultUserLimits.some((limit) => limit.id === id),
+				),
+			),
+		);
+	}, [defaultUserLimits]);
+
+	useEffect(() => {
+		setDefaultTeamDraftsById((prev) =>
+			Object.fromEntries(
+				Object.entries(prev).filter(([id]) =>
+					defaultTeamLimits.some((limit) => limit.id === id),
+				),
+			),
+		);
+	}, [defaultTeamLimits]);
+
+	useEffect(() => {
+		setPlatformDraftsById((prev) =>
+			Object.fromEntries(
+				Object.entries(prev).filter(([id]) =>
+					platformLimits.some((limit) => limit.id === id),
+				),
+			),
+		);
+	}, [platformLimits]);
+
+	const displayedDefaultUserLimits = useMemo(
+		() => mergeDraftLimits(defaultUserLimits, defaultUserDraftsById),
+		[defaultUserDraftsById, defaultUserLimits],
+	);
+	const displayedDefaultTeamLimits = useMemo(
+		() => mergeDraftLimits(defaultTeamLimits, defaultTeamDraftsById),
+		[defaultTeamDraftsById, defaultTeamLimits],
+	);
+	const displayedPlatformLimits = useMemo(
+		() => mergeDraftLimits(platformLimits, platformDraftsById),
+		[platformDraftsById, platformLimits],
+	);
+
+	const localUserEntityById = useMemo(
+		() =>
+			Object.fromEntries(
+				memberOptions.map((member) => [
+					member.id,
+					{
+						id: member.id,
+						name: member.name || member.id,
+						details: [
+							{ label: "ID", value: member.id },
+							{ label: "Email", value: member.email || "N/A" },
+							{
+								label: "Login",
+								value: member.loginType || "N/A",
+							},
+						],
+						option: member,
+					},
+				]),
+			),
+		[memberOptions],
+	);
+	const localTeamEntityById = useMemo(
+		() =>
+			Object.fromEntries(
+				teamOptions.map((team) => [
+					team.id,
+					{
+						id: team.id,
+						name: team.name || team.id,
+						details: [
+							{ label: "Type", value: team.teamType || "N/A" },
+							{
+								label: "Permission",
+								value: team.permission || "N/A",
+							},
+						],
+						option: team,
+					},
+				]),
+			),
+		[teamOptions],
+	);
+
+	const displayedGroupedUserLimits = useMemo(
+		() =>
+			mergeGroupedEntities(
+				groupedUserLimits,
+				localUserRowsById,
+				localUserEntityById,
+			),
+		[groupedUserLimits, localUserEntityById, localUserRowsById],
+	);
+	const displayedGroupedTeamLimits = useMemo(
+		() =>
+			mergeGroupedEntities(
+				groupedTeamLimits,
+				localTeamRowsById,
+				localTeamEntityById,
+			),
+		[groupedTeamLimits, localTeamEntityById, localTeamRowsById],
+	);
+	const userRowsById = useMemo(
+		() =>
+			new Map(
+				displayedGroupedUserLimits.map((group) => [
+					group.id,
+					group.rows,
+				]),
+			),
+		[displayedGroupedUserLimits],
+	);
+	const teamRowsById = useMemo(
+		() =>
+			new Map(
+				displayedGroupedTeamLimits.map((group) => [
+					group.id,
+					group.rows,
+				]),
+			),
+		[displayedGroupedTeamLimits],
 	);
 
 	if (loading) {
@@ -298,9 +473,9 @@ export function TokenLimitsPanel({
 											createDraftFromValues(
 												{
 													period: nextPeriod,
-													maxTokens: 100000,
-													maxInputTokens: 60000,
-													maxOutputTokens: 40000,
+													maxTokens: null,
+													maxInputTokens: null,
+													maxOutputTokens: null,
 													isActive: true,
 												},
 												"platform-new",
@@ -333,7 +508,7 @@ export function TokenLimitsPanel({
 										/>
 									</EditableLimitRow>
 								)}
-								{platformLimits.map((limit) => {
+								{displayedPlatformLimits.map((limit) => {
 									const usage =
 										platformUsageByPeriod[limit.period];
 									const isSaving = savingPlatformIds.has(
@@ -343,21 +518,41 @@ export function TokenLimitsPanel({
 										<PlatformLimitEditorRow
 											key={limit.id}
 											limit={limit}
+											sourceLimit={
+												platformLimits.find(
+													(source) =>
+														source.id === limit.id,
+												) ?? limit
+											}
 											usage={usage}
-											usedPeriods={platformLimits.map(
+											usedPeriods={displayedPlatformLimits.map(
 												(row) => row.period,
 											)}
 											disabled={isSaving}
+											onChange={(next) =>
+												setPlatformDraftsById(
+													(prev) => ({
+														...prev,
+														[limit.id]: next,
+													}),
+												)
+											}
 											onDelete={() =>
 												removePlatformLimit(
-													limit.period,
+													(
+														platformLimits.find(
+															(source) =>
+																source.id ===
+																limit.id,
+														) ?? limit
+													).period,
 												)
 											}
 											onSave={savePlatformLimit}
 										/>
 									);
 								})}
-								{platformLimits.length === 0 &&
+								{displayedPlatformLimits.length === 0 &&
 									!newPlatformRow && (
 										<p className="py-4 text-center text-muted-foreground text-sm">
 											No platform model limits configured.
@@ -374,7 +569,7 @@ export function TokenLimitsPanel({
 				description={`Apply default token limits for users on this ${entityTypeLabel}, one row per time period.`}
 				open={userSectionOpen}
 				onOpenChange={setUserSectionOpen}
-				limits={defaultUserLimits}
+				limits={displayedDefaultUserLimits}
 				newLimit={newDefaultUserRow}
 				setNewLimit={setNewDefaultUserRow}
 				remainingPeriods={remainingDefaultUserPeriods}
@@ -389,6 +584,13 @@ export function TokenLimitsPanel({
 				}
 				onSaveLimit={saveDefaultUserLimit}
 				onDeleteLimit={removeDefaultUserLimit}
+				onChangeLimit={(id, next) =>
+					setDefaultUserDraftsById((prev) => ({
+						...prev,
+						[id]: next,
+					}))
+				}
+				sourceLimits={defaultUserLimits}
 				isSaving={savingDefaultLimit}
 				emptyMessage="No default user limits configured."
 			/>
@@ -397,7 +599,7 @@ export function TokenLimitsPanel({
 				title="Per-User Limits"
 				description={`Group and manage per-user limits for this ${entityTypeLabel}.`}
 				entityLabel="User"
-				entities={groupedUserLimits}
+				entities={displayedGroupedUserLimits}
 				entityOptions={memberOptions.filter((option) => {
 					const existingRows = userRowsById.get(option.id) ?? [];
 					return existingRows.length < PERIODS.length;
@@ -405,6 +607,7 @@ export function TokenLimitsPanel({
 				emptyMessage="No per-user limits configured."
 				multiPeriod
 				savingIds={savingUserIds}
+				supportsActive={false}
 				renderEntityDetails={(user) => (
 					<div>
 						<div className="font-medium text-sm">{user.name}</div>
@@ -422,43 +625,65 @@ export function TokenLimitsPanel({
 									(row) => row.period === period,
 								),
 						) ?? "DAY";
-					const nextRows = sortRows([
-						...existingRows,
-						{
-							id: buildRowId(user.id, nextPeriod),
-							period: nextPeriod,
-							savedPeriod: nextPeriod,
-							combinedLimit:
-								defaultUserLimits.find(
-									(limit) => limit.period === nextPeriod,
-								)?.maxTokens ??
-								defaultUserLimits[0]?.maxTokens ??
-								100000,
-							inputLimit:
-								defaultUserLimits.find(
-									(limit) => limit.period === nextPeriod,
-								)?.maxInputTokens ??
-								defaultUserLimits[0]?.maxInputTokens ??
-								60000,
-							outputLimit:
-								defaultUserLimits.find(
-									(limit) => limit.period === nextPeriod,
-								)?.maxOutputTokens ??
-								defaultUserLimits[0]?.maxOutputTokens ??
-								40000,
-							isActive: true,
-						},
-					]);
-					saveUserLimitRows(user.id, nextRows);
+					setLocalUserRowsById((prev) => ({
+						...prev,
+						[user.id]: sortRows([
+							...(prev[user.id] ?? []),
+							{
+								id: buildRowId(user.id, nextPeriod),
+								period: nextPeriod,
+								combinedLimit: null,
+								inputLimit: null,
+								outputLimit: null,
+								isActive: true,
+							},
+						]),
+					}));
 				}}
-				onSaveRows={(entityUserId, rows) =>
-					saveUserLimitRows(entityUserId, rows)
-				}
+				onSaveSingleRow={async (entityUserId, row) => {
+					const success = await saveUserLimitRow(entityUserId, {
+						entityId: entityUserId,
+						entityName: entityUserId,
+						entityDetails: [],
+						combinedLimit: row.combinedLimit,
+						inputLimit: row.inputLimit,
+						outputLimit: row.outputLimit,
+						period: row.period,
+						savedPeriod: row.savedPeriod,
+						isActive: true,
+					});
+					if (success) {
+						setLocalUserRowsById((prev) => ({
+							...prev,
+							[entityUserId]: (prev[entityUserId] ?? []).filter(
+								(existing) => existing.id !== row.id,
+							),
+						}));
+					}
+				}}
 				onRemoveEntityRow={(entityUserId, rowId) => {
-					const nextRows = (
-						userRowsById.get(entityUserId) ?? []
-					).filter((row) => row.id !== rowId);
-					saveUserLimitRows(entityUserId, nextRows);
+					const localRow = (
+						localUserRowsById[entityUserId] ?? []
+					).find((row) => row.id === rowId);
+					if (localRow) {
+						setLocalUserRowsById((prev) => ({
+							...prev,
+							[entityUserId]: (prev[entityUserId] ?? []).filter(
+								(row) => row.id !== rowId,
+							),
+						}));
+						return;
+					}
+					const row = (userRowsById.get(entityUserId) ?? []).find(
+						(existing) => existing.id === rowId,
+					);
+					if (!row) {
+						return;
+					}
+					removeUserLimitRow(
+						entityUserId,
+						row.savedPeriod ?? row.period,
+					);
 				}}
 			/>
 
@@ -467,7 +692,7 @@ export function TokenLimitsPanel({
 				description={`Apply default token limits for teams on this ${entityTypeLabel}, one row per time period.`}
 				open={teamSectionOpen}
 				onOpenChange={setTeamSectionOpen}
-				limits={defaultTeamLimits}
+				limits={displayedDefaultTeamLimits}
 				newLimit={newDefaultTeamRow}
 				setNewLimit={setNewDefaultTeamRow}
 				remainingPeriods={remainingDefaultTeamPeriods}
@@ -482,6 +707,13 @@ export function TokenLimitsPanel({
 				}
 				onSaveLimit={saveDefaultTeamLimit}
 				onDeleteLimit={removeDefaultTeamLimit}
+				onChangeLimit={(id, next) =>
+					setDefaultTeamDraftsById((prev) => ({
+						...prev,
+						[id]: next,
+					}))
+				}
+				sourceLimits={defaultTeamLimits}
 				isSaving={savingDefaultTeamLimit}
 				emptyMessage="No default team limits configured."
 			/>
@@ -490,7 +722,7 @@ export function TokenLimitsPanel({
 				title="Per-Team Limits"
 				description={`Group and manage per-team limits for this ${entityTypeLabel}.`}
 				entityLabel="Team"
-				entities={groupedTeamLimits}
+				entities={displayedGroupedTeamLimits}
 				entityOptions={teamOptions.filter((option) => {
 					const existingRows = teamRowsById.get(option.id) ?? [];
 					return existingRows.length < PERIODS.length;
@@ -498,6 +730,7 @@ export function TokenLimitsPanel({
 				emptyMessage="No per-team limits configured."
 				multiPeriod
 				savingIds={savingTeamIds}
+				supportsActive={false}
 				renderEntityDetails={(team) => (
 					<div>
 						<div className="font-medium text-sm">{team.name}</div>
@@ -516,24 +749,23 @@ export function TokenLimitsPanel({
 									(row) => row.period === period,
 								),
 						) ?? "DAY";
-					const defaultForPeriod =
-						defaultTeamLimits.find(
-							(limit) => limit.period === nextPeriod,
-						) ?? defaultTeamLimits[0];
-					saveTeamLimitRow(team.id, {
-						entityId: team.id,
-						entityName: team.name,
-						entityDetails: [],
-						combinedLimit: defaultForPeriod?.maxTokens ?? 100000,
-						inputLimit: defaultForPeriod?.maxInputTokens ?? 60000,
-						outputLimit: defaultForPeriod?.maxOutputTokens ?? 40000,
-						period: nextPeriod,
-						savedPeriod: nextPeriod,
-						isActive: true,
-					});
+					setLocalTeamRowsById((prev) => ({
+						...prev,
+						[team.id]: sortRows([
+							...(prev[team.id] ?? []),
+							{
+								id: buildRowId(team.id, nextPeriod),
+								period: nextPeriod,
+								combinedLimit: null,
+								inputLimit: null,
+								outputLimit: null,
+								isActive: true,
+							},
+						]),
+					}));
 				}}
-				onSaveSingleRow={(teamId, row) =>
-					saveTeamLimitRow(teamId, {
+				onSaveSingleRow={async (teamId, row) => {
+					const success = await saveTeamLimitRow(teamId, {
 						entityId: teamId,
 						entityName: teamId,
 						entityDetails: [],
@@ -542,17 +774,37 @@ export function TokenLimitsPanel({
 						outputLimit: row.outputLimit,
 						period: row.period,
 						savedPeriod: row.savedPeriod,
-						isActive: row.isActive,
-					})
-				}
+						isActive: true,
+					});
+					if (success) {
+						setLocalTeamRowsById((prev) => ({
+							...prev,
+							[teamId]: (prev[teamId] ?? []).filter(
+								(existing) => existing.id !== row.id,
+							),
+						}));
+					}
+				}}
 				onRemoveEntityRow={(teamId, rowId) => {
+					const localRow = (localTeamRowsById[teamId] ?? []).find(
+						(row) => row.id === rowId,
+					);
+					if (localRow) {
+						setLocalTeamRowsById((prev) => ({
+							...prev,
+							[teamId]: (prev[teamId] ?? []).filter(
+								(row) => row.id !== rowId,
+							),
+						}));
+						return;
+					}
 					const row = (teamRowsById.get(teamId) ?? []).find(
 						(existing) => existing.id === rowId,
 					);
 					if (!row) {
 						return;
 					}
-					removeTeamLimitRow(teamId, row.period);
+					removeTeamLimitRow(teamId, row.savedPeriod ?? row.period);
 				}}
 			/>
 		</div>
@@ -571,6 +823,8 @@ const DefaultLimitsSection = ({
 	onCreateLimit,
 	onSaveLimit,
 	onDeleteLimit,
+	onChangeLimit,
+	sourceLimits,
 	isSaving,
 	emptyMessage,
 }: {
@@ -585,6 +839,8 @@ const DefaultLimitsSection = ({
 	onCreateLimit: (period: TimePeriod) => TokenLimitEntry;
 	onSaveLimit: (limit: TokenLimitEntry) => void;
 	onDeleteLimit: (period: TimePeriod) => void;
+	onChangeLimit: (id: string, next: TokenLimitEntry) => void;
+	sourceLimits: TokenLimitEntry[];
 	isSaving: boolean;
 	emptyMessage: string;
 }) => (
@@ -633,10 +889,12 @@ const DefaultLimitsSection = ({
 						{newLimit && (
 							<DefaultLimitEditorRow
 								limit={newLimit}
+								sourceLimit={newLimit}
 								usedPeriods={limits.map(
 									(limit) => limit.period,
 								)}
 								disabled={isSaving}
+								onChange={setNewLimit}
 								onSave={(draft) => {
 									onSaveLimit(draft);
 									setNewLimit(null);
@@ -648,10 +906,27 @@ const DefaultLimitsSection = ({
 							<DefaultLimitEditorRow
 								key={limit.id}
 								limit={limit}
+								sourceLimit={
+									sourceLimits.find(
+										(source) => source.id === limit.id,
+									) ?? limit
+								}
 								usedPeriods={limits.map((row) => row.period)}
 								disabled={isSaving}
+								onChange={(next) =>
+									onChangeLimit(limit.id, next)
+								}
 								onSave={onSaveLimit}
-								onDelete={() => onDeleteLimit(limit.period)}
+								onDelete={() =>
+									onDeleteLimit(
+										(
+											sourceLimits.find(
+												(source) =>
+													source.id === limit.id,
+											) ?? limit
+										).period,
+									)
+								}
 							/>
 						))}
 					</div>
@@ -681,11 +956,11 @@ const LimitFields = ({
 			<Label className="whitespace-nowrap text-xs">Combined:</Label>
 			<Input
 				type="number"
-				value={limit.maxTokens}
+				value={limit.maxTokens ?? ""}
 				onChange={(e) =>
 					onChange({
 						...limit,
-						maxTokens: parseInt(e.target.value, 10) || 0,
+						maxTokens: parseNullableNumber(e.target.value),
 					})
 				}
 				disabled={disabled}
@@ -696,11 +971,11 @@ const LimitFields = ({
 			<Label className="whitespace-nowrap text-xs">Input:</Label>
 			<Input
 				type="number"
-				value={limit.maxInputTokens ?? 0}
+				value={limit.maxInputTokens ?? ""}
 				onChange={(e) =>
 					onChange({
 						...limit,
-						maxInputTokens: parseInt(e.target.value, 10) || 0,
+						maxInputTokens: parseNullableNumber(e.target.value),
 					})
 				}
 				disabled={disabled}
@@ -711,11 +986,11 @@ const LimitFields = ({
 			<Label className="whitespace-nowrap text-xs">Output:</Label>
 			<Input
 				type="number"
-				value={limit.maxOutputTokens ?? 0}
+				value={limit.maxOutputTokens ?? ""}
 				onChange={(e) =>
 					onChange({
 						...limit,
-						maxOutputTokens: parseInt(e.target.value, 10) || 0,
+						maxOutputTokens: parseNullableNumber(e.target.value),
 					})
 				}
 				disabled={disabled}
@@ -802,13 +1077,16 @@ const PlatformRowFields = ({
 
 const PlatformLimitEditorRow = ({
 	limit,
+	sourceLimit,
 	usage,
 	usedPeriods,
 	disabled,
+	onChange,
 	onDelete,
 	onSave,
 }: {
 	limit: TokenLimitEntry;
+	sourceLimit: TokenLimitEntry;
 	usage?: {
 		tokensUsed: number;
 		inputTokensUsed: number;
@@ -816,67 +1094,55 @@ const PlatformLimitEditorRow = ({
 	};
 	usedPeriods: TimePeriod[];
 	disabled?: boolean;
+	onChange: (limit: TokenLimitEntry) => void;
 	onDelete: () => void;
 	onSave: (limit: TokenLimitEntry) => void;
-}) => {
-	const [draft, setDraft] = useState(limit);
-
-	useEffect(() => {
-		setDraft(limit);
-	}, [limit]);
-
-	return (
-		<EditableLimitRow
-			onDelete={onDelete}
-			onSave={() => onSave(draft)}
-			isDirty={isDirty(draft)}
-		>
-			<PlatformRowFields
-				limit={draft}
-				onChange={setDraft}
-				disabled={disabled}
-				usage={usage}
-				usedPeriods={usedPeriods}
-			/>
-		</EditableLimitRow>
-	);
-};
+}) => (
+	<EditableLimitRow
+		onDelete={onDelete}
+		onSave={() => onSave(limit)}
+		isDirty={isDirty(limit) || limit.period !== sourceLimit.period}
+	>
+		<PlatformRowFields
+			limit={limit}
+			onChange={onChange}
+			disabled={disabled}
+			usage={usage}
+			usedPeriods={usedPeriods}
+		/>
+	</EditableLimitRow>
+);
 
 const DefaultLimitEditorRow = ({
 	limit,
+	sourceLimit,
 	usedPeriods,
 	disabled,
+	onChange,
 	onDelete,
 	onSave,
 }: {
 	limit: TokenLimitEntry;
+	sourceLimit: TokenLimitEntry;
 	usedPeriods: TimePeriod[];
 	disabled?: boolean;
+	onChange: (limit: TokenLimitEntry) => void;
 	onDelete: () => void;
 	onSave: (limit: TokenLimitEntry) => void;
-}) => {
-	const [draft, setDraft] = useState(limit);
-
-	useEffect(() => {
-		setDraft(limit);
-	}, [limit]);
-
-	return (
-		<EditableLimitRow
-			onDelete={onDelete}
-			onSave={() => onSave(draft)}
-			isDirty={isDirty(draft)}
-		>
-			<LimitFields
-				limit={draft}
-				onChange={setDraft}
-				disabled={disabled}
-				availablePeriods={PERIODS.filter(
-					(period) =>
-						period === draft.period ||
-						!usedPeriods.includes(period),
-				)}
-			/>
-		</EditableLimitRow>
-	);
-};
+}) => (
+	<EditableLimitRow
+		onDelete={onDelete}
+		onSave={() => onSave(limit)}
+		isDirty={isDirty(limit) || limit.period !== sourceLimit.period}
+	>
+		<LimitFields
+			limit={limit}
+			onChange={onChange}
+			disabled={disabled}
+			availablePeriods={PERIODS.filter(
+				(period) =>
+					period === limit.period || !usedPeriods.includes(period),
+			)}
+		/>
+	</EditableLimitRow>
+);

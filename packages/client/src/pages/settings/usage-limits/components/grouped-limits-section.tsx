@@ -27,9 +27,9 @@ export interface GroupedLimitRow {
 	id: string;
 	period: TimePeriod;
 	savedPeriod?: TimePeriod;
-	combinedLimit: number;
-	inputLimit: number;
-	outputLimit: number;
+	combinedLimit: number | null;
+	inputLimit: number | null;
+	outputLimit: number | null;
 	isActive: boolean;
 }
 
@@ -48,30 +48,49 @@ interface AddableOption {
 }
 
 const PERIODS = Object.keys(TIME_PERIOD_LABELS) as TimePeriod[];
+const DIALOG_ROWS_PER_PAGE = 8;
+
+const parseNullableNumber = (value: string) => {
+	if (value.trim() === "") {
+		return null;
+	}
+	const parsed = Number.parseInt(value, 10);
+	return Number.isNaN(parsed) ? null : parsed;
+};
+
+const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
+
+const isRowDirty = (
+	source: GroupedLimitRow,
+	draft: GroupedLimitRow,
+	supportsActive: boolean,
+) =>
+	draft.period !== source.period ||
+	draft.combinedLimit !== source.combinedLimit ||
+	draft.inputLimit !== source.inputLimit ||
+	draft.outputLimit !== source.outputLimit ||
+	(supportsActive && draft.isActive !== source.isActive);
 
 const GroupedLimitEditorRow = ({
 	row,
+	sourceRow,
+	onChange,
 	onSave,
 	onDelete,
 	disabled,
 	availablePeriods = PERIODS,
+	supportsActive = true,
 }: {
 	row: GroupedLimitRow;
-	onSave: (next: GroupedLimitRow) => void;
+	sourceRow: GroupedLimitRow;
+	onChange: (next: GroupedLimitRow) => void;
+	onSave: () => void;
 	onDelete: () => void;
 	disabled?: boolean;
 	availablePeriods?: TimePeriod[];
+	supportsActive?: boolean;
 }) => {
-	const [draft, setDraft] = useState(row);
-	useEffect(() => {
-		setDraft(row);
-	}, [row]);
-	const isDirty =
-		draft.period !== row.period ||
-		draft.combinedLimit !== row.combinedLimit ||
-		draft.inputLimit !== row.inputLimit ||
-		draft.outputLimit !== row.outputLimit ||
-		draft.isActive !== row.isActive;
+	const dirty = isRowDirty(sourceRow, row, supportsActive);
 
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
@@ -79,12 +98,12 @@ const GroupedLimitEditorRow = ({
 				<Label className="whitespace-nowrap text-xs">Combined:</Label>
 				<Input
 					type="number"
-					value={draft.combinedLimit}
+					value={row.combinedLimit ?? ""}
 					onChange={(e) =>
-						setDraft((prev) => ({
-							...prev,
-							combinedLimit: parseInt(e.target.value, 10) || 0,
-						}))
+						onChange({
+							...row,
+							combinedLimit: parseNullableNumber(e.target.value),
+						})
 					}
 					disabled={disabled}
 					className="h-8 w-24"
@@ -94,12 +113,12 @@ const GroupedLimitEditorRow = ({
 				<Label className="whitespace-nowrap text-xs">Input:</Label>
 				<Input
 					type="number"
-					value={draft.inputLimit}
+					value={row.inputLimit ?? ""}
 					onChange={(e) =>
-						setDraft((prev) => ({
-							...prev,
-							inputLimit: parseInt(e.target.value, 10) || 0,
-						}))
+						onChange({
+							...row,
+							inputLimit: parseNullableNumber(e.target.value),
+						})
 					}
 					disabled={disabled}
 					className="h-8 w-24"
@@ -109,12 +128,12 @@ const GroupedLimitEditorRow = ({
 				<Label className="whitespace-nowrap text-xs">Output:</Label>
 				<Input
 					type="number"
-					value={draft.outputLimit}
+					value={row.outputLimit ?? ""}
 					onChange={(e) =>
-						setDraft((prev) => ({
-							...prev,
-							outputLimit: parseInt(e.target.value, 10) || 0,
-						}))
+						onChange({
+							...row,
+							outputLimit: parseNullableNumber(e.target.value),
+						})
 					}
 					disabled={disabled}
 					className="h-8 w-24"
@@ -123,9 +142,9 @@ const GroupedLimitEditorRow = ({
 			<div className="flex items-center gap-2">
 				<Label className="text-xs">Period:</Label>
 				<Select
-					value={draft.period}
+					value={row.period}
 					onValueChange={(value: TimePeriod) =>
-						setDraft((prev) => ({ ...prev, period: value }))
+						onChange({ ...row, period: value })
 					}
 				>
 					<SelectTrigger className="h-8 w-28">
@@ -140,23 +159,25 @@ const GroupedLimitEditorRow = ({
 					</SelectContent>
 				</Select>
 			</div>
-			<div className="flex items-center gap-2">
-				<Label className="text-xs">Active:</Label>
-				<Switch
-					checked={draft.isActive}
-					onCheckedChange={(checked) =>
-						setDraft((prev) => ({ ...prev, isActive: checked }))
-					}
-					disabled={disabled}
-				/>
-			</div>
+			{supportsActive && (
+				<div className="flex items-center gap-2">
+					<Label className="text-xs">Active:</Label>
+					<Switch
+						checked={row.isActive}
+						onCheckedChange={(checked) =>
+							onChange({ ...row, isActive: checked })
+						}
+						disabled={disabled}
+					/>
+				</div>
+			)}
 			<div className="ml-auto flex items-center gap-1">
-				{isDirty && (
+				{dirty && (
 					<Button
 						variant="ghost"
 						size="icon"
 						className="text-primary"
-						onClick={() => onSave(draft)}
+						onClick={onSave}
 						disabled={disabled}
 						title="Save row"
 					>
@@ -255,6 +276,7 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 	multiPeriod,
 	savingIds,
 	renderEntityDetails,
+	supportsActive = true,
 }: {
 	title: string;
 	description: string;
@@ -269,11 +291,70 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 	multiPeriod: boolean;
 	savingIds: Set<string>;
 	renderEntityDetails: (entity: TOption) => ReactNode;
+	supportsActive?: boolean;
 }) {
 	const [open, setOpen] = useState(true);
 	const [showAddDialog, setShowAddDialog] = useState(false);
 	const [selectedEntityId, setSelectedEntityId] = useState("");
 	const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+	const [draftRowsByEntityId, setDraftRowsByEntityId] = useState<
+		Record<string, Record<string, GroupedLimitRow>>
+	>({});
+	const [dialogSearchTerm, setDialogSearchTerm] = useState("");
+	const [dialogPage, setDialogPage] = useState(0);
+
+	useEffect(() => {
+		setDraftRowsByEntityId((prev) => {
+			const entityIds = new Set(entities.map((entity) => entity.id));
+			let changed = false;
+			const next: Record<string, Record<string, GroupedLimitRow>> = {};
+
+			Object.entries(prev).forEach(([entityId, rowDrafts]) => {
+				if (!entityIds.has(entityId)) {
+					changed = true;
+					return;
+				}
+				const entity = entities.find((item) => item.id === entityId);
+				if (!entity) {
+					changed = true;
+					return;
+				}
+				const rowIds = new Set(entity.rows.map((row) => row.id));
+				const filteredDrafts = Object.fromEntries(
+					Object.entries(rowDrafts).filter(([rowId]) =>
+						rowIds.has(rowId),
+					),
+				);
+				if (
+					Object.keys(filteredDrafts).length !==
+					Object.keys(rowDrafts).length
+				) {
+					changed = true;
+				}
+				if (Object.keys(filteredDrafts).length > 0) {
+					next[entityId] = filteredDrafts;
+				}
+			});
+
+			return changed ? next : prev;
+		});
+	}, [entities]);
+
+	const entityById = useMemo(
+		() => new Map(entities.map((entity) => [entity.id, entity])),
+		[entities],
+	);
+
+	const visibleEntitiesWithDrafts = useMemo(
+		() =>
+			entities.map((entity) => ({
+				...entity,
+				rows: entity.rows.map(
+					(row) => draftRowsByEntityId[entity.id]?.[row.id] ?? row,
+				),
+			})),
+		[entities, draftRowsByEntityId],
+	);
 
 	const {
 		page,
@@ -284,19 +365,80 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 		endRow,
 		totalPages,
 	} = useServerPagination({
-		totalCount: entities.length,
+		totalCount: visibleEntitiesWithDrafts.length,
 		initialRowsPerPage: 5,
 		pageIndexBase: 0,
 	});
 
 	const visibleEntities = useMemo(
 		() =>
-			entities.slice(
+			visibleEntitiesWithDrafts.slice(
 				page * rowsPerPage,
 				page * rowsPerPage + rowsPerPage,
 			),
-		[entities, page, rowsPerPage],
+		[page, rowsPerPage, visibleEntitiesWithDrafts],
 	);
+
+	const filteredEntityOptions = useMemo(() => {
+		const normalizedSearch = normalizeSearchValue(dialogSearchTerm);
+		if (!normalizedSearch) {
+			return entityOptions;
+		}
+		return entityOptions.filter((entity) =>
+			`${entity.name} ${entity.id}`
+				.toLowerCase()
+				.includes(normalizedSearch),
+		);
+	}, [dialogSearchTerm, entityOptions]);
+
+	const dialogTotalPages = Math.max(
+		1,
+		Math.ceil(filteredEntityOptions.length / DIALOG_ROWS_PER_PAGE),
+	);
+	const pagedEntityOptions = useMemo(
+		() =>
+			filteredEntityOptions.slice(
+				dialogPage * DIALOG_ROWS_PER_PAGE,
+				dialogPage * DIALOG_ROWS_PER_PAGE + DIALOG_ROWS_PER_PAGE,
+			),
+		[dialogPage, filteredEntityOptions],
+	);
+
+	useEffect(() => {
+		if (dialogPage > dialogTotalPages - 1) {
+			setDialogPage(Math.max(0, dialogTotalPages - 1));
+		}
+	}, [dialogPage, dialogTotalPages]);
+
+	const updateDraftRow = (
+		entityId: string,
+		rowId: string,
+		next: GroupedLimitRow,
+	) => {
+		setDraftRowsByEntityId((prev) => ({
+			...prev,
+			[entityId]: {
+				...(prev[entityId] ?? {}),
+				[rowId]: next,
+			},
+		}));
+	};
+
+	const clearDraftRow = (entityId: string, rowId: string) => {
+		setDraftRowsByEntityId((prev) => {
+			const entityDrafts = { ...(prev[entityId] ?? {}) };
+			delete entityDrafts[rowId];
+			if (Object.keys(entityDrafts).length === 0) {
+				const next = { ...prev };
+				delete next[entityId];
+				return next;
+			}
+			return {
+				...prev,
+				[entityId]: entityDrafts,
+			};
+		});
+	};
 
 	return (
 		<section className="rounded-xl border">
@@ -333,13 +475,15 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 					</div>
 				</div>
 				<CollapsibleContent className="px-4 py-4">
-					{entities.length === 0 ? (
+					{visibleEntitiesWithDrafts.length === 0 ? (
 						<p className="py-4 text-center text-muted-foreground text-sm">
 							{emptyMessage}
 						</p>
 					) : (
 						<div className="flex flex-col gap-3">
 							{visibleEntities.map((entity) => {
+								const sourceEntity =
+									entityById.get(entity.id) ?? entity;
 								const entityOpen = expanded[entity.id] ?? true;
 								const saving = savingIds.has(entity.id);
 								return (
@@ -413,63 +557,101 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 											</div>
 											<CollapsibleContent className="border-t px-3 py-3">
 												<div className="flex flex-col gap-2">
-													{entity.rows.map((row) => (
-														<GroupedLimitEditorRow
-															key={row.id}
-															row={row}
-															disabled={saving}
-															availablePeriods={
-																multiPeriod
-																	? PERIODS.filter(
-																			(
-																				period,
-																			) =>
-																				period ===
-																					row.period ||
-																				!entity.rows.some(
-																					(
-																						existing,
-																					) =>
-																						existing.period ===
-																						period,
-																				),
-																		)
-																	: PERIODS
-															}
-															onSave={(
-																nextRow,
-															) => {
-																if (
-																	multiPeriod &&
-																	onSaveRows
-																) {
-																	onSaveRows?.(
-																		entity.id,
-																		entity.rows.map(
-																			(
-																				existing,
-																			) =>
-																				existing.id ===
-																				row.id
-																					? nextRow
-																					: existing,
-																		),
-																	);
-																	return;
-																}
-																onSaveSingleRow?.(
-																	entity.id,
-																	nextRow,
-																);
-															}}
-															onDelete={() => {
-																onRemoveEntityRow(
-																	entity.id,
+													{entity.rows.map((row) => {
+														const sourceRow =
+															sourceEntity.rows.find(
+																(existing) =>
+																	existing.id ===
 																	row.id,
-																);
-															}}
-														/>
-													))}
+															) ?? row;
+														return (
+															<GroupedLimitEditorRow
+																key={row.id}
+																row={row}
+																sourceRow={
+																	sourceRow
+																}
+																disabled={
+																	saving
+																}
+																supportsActive={
+																	supportsActive
+																}
+																availablePeriods={
+																	multiPeriod
+																		? PERIODS.filter(
+																				(
+																					period,
+																				) =>
+																					period ===
+																						row.period ||
+																					!entity.rows.some(
+																						(
+																							existing,
+																						) =>
+																							existing.id !==
+																								row.id &&
+																							existing.period ===
+																								period,
+																					),
+																			)
+																		: PERIODS
+																}
+																onChange={(
+																	nextRow,
+																) =>
+																	updateDraftRow(
+																		entity.id,
+																		row.id,
+																		nextRow,
+																	)
+																}
+																onSave={() => {
+																	const draftRow =
+																		draftRowsByEntityId[
+																			entity
+																				.id
+																		]?.[
+																			row
+																				.id
+																		] ??
+																		row;
+																	if (
+																		multiPeriod &&
+																		onSaveRows
+																	) {
+																		onSaveRows(
+																			entity.id,
+																			sourceEntity.rows.map(
+																				(
+																					existing,
+																				) =>
+																					existing.id ===
+																					row.id
+																						? draftRow
+																						: existing,
+																			),
+																		);
+																		return;
+																	}
+																	onSaveSingleRow?.(
+																		entity.id,
+																		draftRow,
+																	);
+																}}
+																onDelete={() => {
+																	clearDraftRow(
+																		entity.id,
+																		row.id,
+																	);
+																	onRemoveEntityRow(
+																		entity.id,
+																		row.id,
+																	);
+																}}
+															/>
+														);
+													})}
 												</div>
 											</CollapsibleContent>
 										</div>
@@ -484,7 +666,7 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 								setRowsPerPage={setRowsPerPage}
 								startRow={startRow}
 								endRow={endRow}
-								totalCount={entities.length}
+								totalCount={visibleEntitiesWithDrafts.length}
 							/>
 						</div>
 					)}
@@ -497,6 +679,8 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 					setShowAddDialog(next);
 					if (!next) {
 						setSelectedEntityId("");
+						setDialogSearchTerm("");
+						setDialogPage(0);
 					}
 				}}
 			>
@@ -504,21 +688,80 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 					<DialogHeader>
 						<DialogTitle>Add {entityLabel} Limit</DialogTitle>
 					</DialogHeader>
-					<div className="flex max-h-64 flex-col gap-2 overflow-y-auto py-2">
-						{entityOptions.map((entity) => (
-							<button
-								type="button"
-								key={entity.id}
-								className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent ${
-									selectedEntityId === entity.id
-										? "border-primary bg-accent"
-										: ""
-								}`}
-								onClick={() => setSelectedEntityId(entity.id)}
-							>
-								{renderEntityDetails(entity)}
-							</button>
-						))}
+					<div className="flex flex-col gap-3 py-2">
+						<Input
+							placeholder={`Search ${entityLabel.toLowerCase()}s...`}
+							value={dialogSearchTerm}
+							onChange={(e) => {
+								setDialogSearchTerm(e.target.value);
+								setDialogPage(0);
+							}}
+						/>
+						<div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+							{pagedEntityOptions.length === 0 ? (
+								<p className="py-6 text-center text-muted-foreground text-sm">
+									No {entityLabel.toLowerCase()}s found.
+								</p>
+							) : (
+								pagedEntityOptions.map((entity) => (
+									<button
+										type="button"
+										key={entity.id}
+										className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-accent ${
+											selectedEntityId === entity.id
+												? "border-primary bg-accent"
+												: ""
+										}`}
+										onClick={() =>
+											setSelectedEntityId(entity.id)
+										}
+									>
+										{renderEntityDetails(entity)}
+									</button>
+								))
+							)}
+						</div>
+						<div className="flex items-center justify-between text-xs">
+							<span className="text-muted-foreground">
+								Showing{" "}
+								{filteredEntityOptions.length === 0
+									? 0
+									: dialogPage * DIALOG_ROWS_PER_PAGE + 1}
+								-
+								{Math.min(
+									filteredEntityOptions.length,
+									(dialogPage + 1) * DIALOG_ROWS_PER_PAGE,
+								)}{" "}
+								of {filteredEntityOptions.length}
+							</span>
+							<div className="flex items-center gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() =>
+										setDialogPage((prev) => prev - 1)
+									}
+									disabled={dialogPage <= 0}
+								>
+									Previous
+								</Button>
+								<div className="min-w-14 text-center">
+									{dialogPage + 1} / {dialogTotalPages}
+								</div>
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() =>
+										setDialogPage((prev) => prev + 1)
+									}
+									disabled={
+										dialogPage >= dialogTotalPages - 1
+									}
+								>
+									Next
+								</Button>
+							</div>
+						</div>
 					</div>
 					<DialogFooter>
 						<Button

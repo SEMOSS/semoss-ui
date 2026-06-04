@@ -9,9 +9,9 @@ import type { ExceptionEntry, TimePeriod, TokenLimitEntry } from "../types";
 
 interface LimitValues {
 	period: TimePeriod;
-	maxTokens: number;
-	maxInputTokens: number;
-	maxOutputTokens: number;
+	maxTokens: number | null;
+	maxInputTokens: number | null;
+	maxOutputTokens: number | null;
 	isActive: boolean;
 }
 
@@ -56,9 +56,9 @@ interface ModelPlatformUsageLimit {
 
 const DEFAULT_LIMIT_VALUES: LimitValues = {
 	period: "DAY",
-	maxTokens: 100000,
-	maxInputTokens: 60000,
-	maxOutputTokens: 40000,
+	maxTokens: null,
+	maxInputTokens: null,
+	maxOutputTokens: null,
 	isActive: true,
 };
 
@@ -99,6 +99,16 @@ export const createDraftFromValues = (
 		isActive: values.isActive,
 	},
 });
+
+export const hasAnyTokenLimitValue = ({
+	maxTokens,
+	maxInputTokens,
+	maxOutputTokens,
+}: Pick<LimitValues, "maxTokens" | "maxInputTokens" | "maxOutputTokens">) =>
+	maxTokens != null || maxInputTokens != null || maxOutputTokens != null;
+
+const serializeNullableLimit = (value: number | null) =>
+	value == null ? "" : value;
 
 const parseGroupsResponse = (result: unknown) => {
 	if (Array.isArray(result)) {
@@ -168,9 +178,9 @@ export const useTokenLimitsData = ({
 		return PERIODS.includes(upper) ? upper : "DAY";
 	}, []);
 
-	const parseLimit = useCallback((value?: number | null): number => {
+	const parseLimit = useCallback((value?: number | null): number | null => {
 		if (value == null || Number.isNaN(value) || value < 0) {
-			return 0;
+			return null;
 		}
 		return value;
 	}, []);
@@ -373,17 +383,17 @@ export const useTokenLimitsData = ({
 			const period = mapFrequency(row.usageFrequency);
 			usageIndex[period] = {
 				engineId: row.engineId,
-				maxTokens: parseLimit(row.maxTokens),
-				maxInputTokens: parseLimit(row.maxInputTokens),
-				maxOutputTokens: parseLimit(row.maxOutputTokens),
+				maxTokens: parseLimit(row.maxTokens) ?? 0,
+				maxInputTokens: parseLimit(row.maxInputTokens) ?? 0,
+				maxOutputTokens: parseLimit(row.maxOutputTokens) ?? 0,
 				maxResponseTime:
 					typeof row.maxResponseTime === "number"
 						? row.maxResponseTime
 						: 0,
 				isActive: row.isActive !== false,
-				tokensUsed: parseLimit(row.tokensUsed),
-				inputTokensUsed: parseLimit(row.inputTokensUsed),
-				outputTokensUsed: parseLimit(row.outputTokensUsed),
+				tokensUsed: parseLimit(row.tokensUsed) ?? 0,
+				inputTokensUsed: parseLimit(row.inputTokensUsed) ?? 0,
+				outputTokensUsed: parseLimit(row.outputTokensUsed) ?? 0,
 				computeTimeUsed:
 					typeof row.computeTimeUsed === "number"
 						? row.computeTimeUsed
@@ -432,9 +442,9 @@ export const useTokenLimitsData = ({
 				[entityIdKey]: entityId,
 				usageFrequency: draft.period,
 				existingUsageFrequency: draft._saved.period,
-				maxTokens: draft.maxTokens,
-				maxInputTokens: draft.maxInputTokens ?? 0,
-				maxOutputTokens: draft.maxOutputTokens ?? 0,
+				maxTokens: serializeNullableLimit(draft.maxTokens),
+				maxInputTokens: serializeNullableLimit(draft.maxInputTokens),
+				maxOutputTokens: serializeNullableLimit(draft.maxOutputTokens),
 				isActive: draft.isActive,
 				restrictPerModel: false,
 			});
@@ -480,9 +490,9 @@ export const useTokenLimitsData = ({
 				[entityIdKey]: entityId,
 				usageFrequency: draft.period,
 				existingUsageFrequency: draft._saved.period,
-				maxTokens: draft.maxTokens,
-				maxInputTokens: draft.maxInputTokens ?? 0,
-				maxOutputTokens: draft.maxOutputTokens ?? 0,
+				maxTokens: serializeNullableLimit(draft.maxTokens),
+				maxInputTokens: serializeNullableLimit(draft.maxInputTokens),
+				maxOutputTokens: serializeNullableLimit(draft.maxOutputTokens),
 				isActive: draft.isActive,
 			});
 			await fetchDefaultTeamLimits();
@@ -525,9 +535,13 @@ export const useTokenLimitsData = ({
 				{
 					engineId: entityId,
 					usageFrequency: limit.period,
-					maxTokens: limit.maxTokens,
-					maxInputTokens: limit.maxInputTokens ?? 0,
-					maxOutputTokens: limit.maxOutputTokens ?? 0,
+					maxTokens: serializeNullableLimit(limit.maxTokens),
+					maxInputTokens: serializeNullableLimit(
+						limit.maxInputTokens,
+					),
+					maxOutputTokens: serializeNullableLimit(
+						limit.maxOutputTokens,
+					),
 					maxResponseTime: -1,
 					isActive: limit.isActive,
 				},
@@ -590,16 +604,17 @@ export const useTokenLimitsData = ({
 							userid: base.id,
 							permission: base.permission,
 							type: base.type,
-							usageRestriction:
-								row.combinedLimit > 0 ||
-								row.inputLimit > 0 ||
-								row.outputLimit > 0
-									? "token"
-									: null,
+							usageRestriction: hasAnyTokenLimitValue({
+								maxTokens: row.combinedLimit,
+								maxInputTokens: row.inputLimit,
+								maxOutputTokens: row.outputLimit,
+							})
+								? "token"
+								: null,
 							usageFrequency: row.period,
-							maxTokens: row.combinedLimit || 0,
-							maxInputTokens: row.inputLimit || 0,
-							maxOutputTokens: row.outputLimit || 0,
+							maxTokens: row.combinedLimit,
+							maxInputTokens: row.inputLimit,
+							maxOutputTokens: row.outputLimit,
 							maxResponseTime: null,
 						}))
 					: [
@@ -625,9 +640,11 @@ export const useTokenLimitsData = ({
 			);
 			await fetchMemberLimits();
 			toast.success("User limits saved");
+			return true;
 		} catch (e) {
 			console.error("Failed to update user token limits", e);
 			toast.error("Failed to update user limits");
+			return false;
 		} finally {
 			setSavingUserIds((prev) => {
 				const next = new Set(prev);
@@ -635,6 +652,76 @@ export const useTokenLimitsData = ({
 				return next;
 			});
 		}
+	};
+
+	const saveUserLimitRow = async (
+		memberId: string,
+		row: ExceptionEntry & { savedPeriod?: TimePeriod },
+	) => {
+		const base = members.find((member) => member.id === memberId);
+		if (!base) {
+			toast.error("Unable to find member to update");
+			return false;
+		}
+
+		const persistedRows = members
+			.filter((member) => member.id === memberId)
+			.map((member) => {
+				const values = getMemberLimitValues(member);
+				if (!hasAnyTokenLimitValue(values)) {
+					return null;
+				}
+				return {
+					entityId: member.id,
+					entityName: member.name || member.id,
+					entityDetails: [],
+					combinedLimit: values.maxTokens,
+					inputLimit: values.maxInputTokens,
+					outputLimit: values.maxOutputTokens,
+					period: values.period,
+					savedPeriod: values.period,
+					isActive: true,
+				};
+			})
+			.filter(Boolean) as (ExceptionEntry & {
+			savedPeriod?: TimePeriod;
+		})[];
+
+		const targetSavedPeriod = row.savedPeriod;
+		const nextRows = persistedRows
+			.filter((memberRow) => memberRow.savedPeriod !== targetSavedPeriod)
+			.concat(row)
+			.sort(
+				(a, b) => PERIODS.indexOf(a.period) - PERIODS.indexOf(b.period),
+			);
+
+		return saveUserLimitRows(memberId, nextRows);
+	};
+
+	const removeUserLimitRow = async (memberId: string, period: TimePeriod) => {
+		const persistedRows = (
+			members
+				.filter((member) => member.id === memberId)
+				.map((member) => {
+					const values = getMemberLimitValues(member);
+					if (!hasAnyTokenLimitValue(values)) {
+						return null;
+					}
+					return {
+						entityId: member.id,
+						entityName: member.name || member.id,
+						entityDetails: [],
+						combinedLimit: values.maxTokens,
+						inputLimit: values.maxInputTokens,
+						outputLimit: values.maxOutputTokens,
+						period: values.period,
+						isActive: true,
+					};
+				})
+				.filter(Boolean) as ExceptionEntry[]
+		).filter((memberRow) => memberRow.period !== period);
+
+		return saveUserLimitRows(memberId, persistedRows);
 	};
 
 	const saveTeamLimitRow = async (
@@ -652,26 +739,24 @@ export const useTokenLimitsData = ({
 			const endpoint = isModel
 				? `${Env.MODULE}/api/auth/group/engine/setGroupAppTokenLimit`
 				: `${Env.MODULE}/api/auth/group/project/setGroupProjectTokenLimit`;
-			const hasAnyLimit =
-				row.combinedLimit > 0 ||
-				row.inputLimit > 0 ||
-				row.outputLimit > 0;
 			await post(endpoint, {
 				groupId: team.ID,
 				type: team.TYPE,
 				[entityIdKey]: entityId,
 				usageFrequency: row.period,
 				existingUsageFrequency: row.savedPeriod ?? row.period,
-				maxTokens: hasAnyLimit ? row.combinedLimit : 0,
-				maxInputTokens: hasAnyLimit ? row.inputLimit : 0,
-				maxOutputTokens: hasAnyLimit ? row.outputLimit : 0,
+				maxTokens: serializeNullableLimit(row.combinedLimit),
+				maxInputTokens: serializeNullableLimit(row.inputLimit),
+				maxOutputTokens: serializeNullableLimit(row.outputLimit),
 				maxResponseTime: null,
 			});
 			await fetchTeamLimits();
 			toast.success("Team limit saved");
+			return true;
 		} catch (e) {
 			console.error("Failed to update team token limit", e);
 			toast.error("Failed to update team limit");
+			return false;
 		} finally {
 			setSavingTeamIds((prev) => {
 				const next = new Set(prev);
@@ -701,9 +786,11 @@ export const useTokenLimitsData = ({
 			});
 			await fetchTeamLimits();
 			toast.success("Team limit removed");
+			return true;
 		} catch (e) {
 			console.error("Failed to remove team token limit", e);
 			toast.error("Failed to remove team limit");
+			return false;
 		} finally {
 			setSavingTeamIds((prev) => {
 				const next = new Set(prev);
@@ -776,7 +863,9 @@ export const useTokenLimitsData = ({
 		removeDefaultTeamLimit,
 		savePlatformLimit,
 		removePlatformLimit,
+		saveUserLimitRow,
 		saveUserLimitRows,
+		removeUserLimitRow,
 		saveTeamLimitRow,
 		removeTeamLimitRow,
 	};

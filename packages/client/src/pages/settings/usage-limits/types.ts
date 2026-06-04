@@ -10,9 +10,9 @@ export interface ExceptionEntry {
 	entityId: string;
 	entityName: string;
 	entityDetails: { label: string; value: string }[];
-	combinedLimit: number;
-	inputLimit: number;
-	outputLimit: number;
+	combinedLimit: number | null;
+	inputLimit: number | null;
+	outputLimit: number | null;
 	period: TimePeriod;
 	isActive: boolean;
 }
@@ -20,15 +20,15 @@ export interface ExceptionEntry {
 export interface TokenLimitEntry {
 	id: string;
 	period: TimePeriod;
-	maxTokens: number;
-	maxInputTokens?: number;
-	maxOutputTokens?: number;
+	maxTokens: number | null;
+	maxInputTokens: number | null;
+	maxOutputTokens: number | null;
 	isActive: boolean;
 	_saved: {
 		period: TimePeriod;
-		maxTokens: number;
-		maxInputTokens?: number;
-		maxOutputTokens?: number;
+		maxTokens: number | null;
+		maxInputTokens: number | null;
+		maxOutputTokens: number | null;
 		isActive: boolean;
 	};
 }
