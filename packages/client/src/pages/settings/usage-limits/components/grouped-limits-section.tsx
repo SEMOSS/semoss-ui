@@ -26,6 +26,7 @@ import type { TimePeriod } from "../types";
 export interface GroupedLimitRow {
 	id: string;
 	period: TimePeriod;
+	savedPeriod?: TimePeriod;
 	combinedLimit: number;
 	inputLimit: number;
 	outputLimit: number;
@@ -439,7 +440,8 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 																nextRow,
 															) => {
 																if (
-																	multiPeriod
+																	multiPeriod &&
+																	onSaveRows
 																) {
 																	onSaveRows?.(
 																		entity.id,

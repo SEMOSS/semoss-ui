@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Env, get, post } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import {
@@ -139,10 +139,12 @@ export const useTokenLimitsData = ({
 	const [loading, setLoading] = useState(true);
 	const [members, setMembers] = useState<MemberPermissionUser[]>([]);
 	const [teamGroups, setTeamGroups] = useState<TeamPermissionGroup[]>([]);
-	const [defaultUserLimit, setDefaultUserLimit] =
-		useState<TokenLimitEntry | null>(null);
-	const [defaultTeamLimit, setDefaultTeamLimit] =
-		useState<TokenLimitEntry | null>(null);
+	const [defaultUserLimits, setDefaultUserLimits] = useState<
+		TokenLimitEntry[]
+	>([]);
+	const [defaultTeamLimits, setDefaultTeamLimits] = useState<
+		TokenLimitEntry[]
+	>([]);
 	const [platformLimits, setPlatformLimits] = useState<TokenLimitEntry[]>([]);
 	const [platformUsageByPeriod, setPlatformUsageByPeriod] = useState<
 		Record<TimePeriod, Omit<ModelPlatformUsageLimit, "usageFrequency">>
@@ -159,8 +161,6 @@ export const useTokenLimitsData = ({
 	const [savingDefaultTeamLimit, setSavingDefaultTeamLimit] = useState(false);
 	const [savingUserIds, setSavingUserIds] = useState<Set<string>>(new Set());
 	const [savingTeamIds, setSavingTeamIds] = useState<Set<string>>(new Set());
-	const defaultUserLimitRef = useRef<TokenLimitEntry | null>(null);
-	const defaultTeamLimitRef = useRef<TokenLimitEntry | null>(null);
 
 	const mapFrequency = useCallback((value?: string | null): TimePeriod => {
 		if (!value) return "DAY";
@@ -198,6 +198,45 @@ export const useTokenLimitsData = ({
 		[mapFrequency, parseLimit],
 	);
 
+	const toTokenLimitEntries = useCallback(
+		(
+			payload:
+				| {
+						usageFrequency?: string | null;
+						maxTokens?: number | null;
+						maxInputTokens?: number | null;
+						maxOutputTokens?: number | null;
+						isActive?: boolean | null;
+				  }
+				| {
+						usageFrequency?: string | null;
+						maxTokens?: number | null;
+						maxInputTokens?: number | null;
+						maxOutputTokens?: number | null;
+						isActive?: boolean | null;
+				  }[]
+				| null
+				| undefined,
+			idPrefix: string,
+		) => {
+			const rows = Array.isArray(payload)
+				? payload
+				: payload
+					? [payload]
+					: [];
+			return rows
+				.map((limit) => {
+					const period = mapFrequency(limit.usageFrequency);
+					return toTokenLimitEntry(limit, `${idPrefix}-${period}`);
+				})
+				.sort(
+					(a, b) =>
+						PERIODS.indexOf(a.period) - PERIODS.indexOf(b.period),
+				);
+		},
+		[mapFrequency, toTokenLimitEntry],
+	);
+
 	const getMemberLimitValues = useCallback(
 		(member: MemberPermissionUser): LimitValues => ({
 			period: mapFrequency(member.usage_frequency),
@@ -220,59 +259,65 @@ export const useTokenLimitsData = ({
 		[mapFrequency, parseLimit],
 	);
 
-	const fetchDefaultUserLimit = useCallback(async () => {
+	const fetchDefaultUserLimits = useCallback(async () => {
 		try {
 			const url = isModel
 				? `${Env.MODULE}/api/auth/engine/getEngineDefaultTokenLimit?engineId=${encodeURIComponent(entityId)}`
 				: `${Env.MODULE}/api/auth/project/getProjectDefaultTokenLimit?projectId=${encodeURIComponent(entityId)}`;
-			const response = await get<{
-				usageFrequency?: string | null;
-				maxTokens?: number | null;
-				maxInputTokens?: number | null;
-				maxOutputTokens?: number | null;
-				isActive?: boolean | null;
-			} | null>(url);
-			const raw = response?.data;
-			if (!raw) {
-				setDefaultUserLimit(null);
-				defaultUserLimitRef.current = null;
-				return;
-			}
-			const mapped = toTokenLimitEntry(raw, "default-user-limit");
-			setDefaultUserLimit(mapped);
-			defaultUserLimitRef.current = mapped;
+			const response = await get<
+				| {
+						usageFrequency?: string | null;
+						maxTokens?: number | null;
+						maxInputTokens?: number | null;
+						maxOutputTokens?: number | null;
+						isActive?: boolean | null;
+				  }
+				| {
+						usageFrequency?: string | null;
+						maxTokens?: number | null;
+						maxInputTokens?: number | null;
+						maxOutputTokens?: number | null;
+						isActive?: boolean | null;
+				  }[]
+				| null
+			>(url);
+			setDefaultUserLimits(
+				toTokenLimitEntries(response?.data, "default-user-limit"),
+			);
 		} catch {
-			setDefaultUserLimit(null);
-			defaultUserLimitRef.current = null;
+			setDefaultUserLimits([]);
 		}
-	}, [entityId, isModel, toTokenLimitEntry]);
+	}, [entityId, isModel, toTokenLimitEntries]);
 
-	const fetchDefaultTeamLimit = useCallback(async () => {
+	const fetchDefaultTeamLimits = useCallback(async () => {
 		try {
 			const url = isModel
 				? `${Env.MODULE}/api/auth/engine/getEngineDefaultTeamTokenLimit?engineId=${encodeURIComponent(entityId)}`
 				: `${Env.MODULE}/api/auth/project/getProjectDefaultTeamTokenLimit?projectId=${encodeURIComponent(entityId)}`;
-			const response = await get<{
-				usageFrequency?: string | null;
-				maxTokens?: number | null;
-				maxInputTokens?: number | null;
-				maxOutputTokens?: number | null;
-				isActive?: boolean | null;
-			} | null>(url);
-			const raw = response?.data;
-			if (!raw) {
-				setDefaultTeamLimit(null);
-				defaultTeamLimitRef.current = null;
-				return;
-			}
-			const mapped = toTokenLimitEntry(raw, "default-team-limit");
-			setDefaultTeamLimit(mapped);
-			defaultTeamLimitRef.current = mapped;
+			const response = await get<
+				| {
+						usageFrequency?: string | null;
+						maxTokens?: number | null;
+						maxInputTokens?: number | null;
+						maxOutputTokens?: number | null;
+						isActive?: boolean | null;
+				  }
+				| {
+						usageFrequency?: string | null;
+						maxTokens?: number | null;
+						maxInputTokens?: number | null;
+						maxOutputTokens?: number | null;
+						isActive?: boolean | null;
+				  }[]
+				| null
+			>(url);
+			setDefaultTeamLimits(
+				toTokenLimitEntries(response?.data, "default-team-limit"),
+			);
 		} catch {
-			setDefaultTeamLimit(null);
-			defaultTeamLimitRef.current = null;
+			setDefaultTeamLimits([]);
 		}
-	}, [entityId, isModel, toTokenLimitEntry]);
+	}, [entityId, isModel, toTokenLimitEntries]);
 
 	const fetchMemberLimits = useCallback(async () => {
 		const url = `${Env.MODULE}/api/auth/${entityPath}/${getUsersEndpoint}?${entityIdKey}=${encodeURIComponent(entityId)}&limit=1000&offset=0`;
@@ -351,8 +396,8 @@ export const useTokenLimitsData = ({
 	const refreshData = useCallback(async () => {
 		setLoading(true);
 		try {
-			await fetchDefaultUserLimit();
-			await fetchDefaultTeamLimit();
+			await fetchDefaultUserLimits();
+			await fetchDefaultTeamLimits();
 			await fetchMemberLimits();
 			await fetchTeamLimits();
 			if (isModel) {
@@ -365,8 +410,8 @@ export const useTokenLimitsData = ({
 			setLoading(false);
 		}
 	}, [
-		fetchDefaultTeamLimit,
-		fetchDefaultUserLimit,
+		fetchDefaultTeamLimits,
+		fetchDefaultUserLimits,
 		fetchMemberLimits,
 		fetchPlatformLimits,
 		fetchTeamLimits,
@@ -386,13 +431,14 @@ export const useTokenLimitsData = ({
 			await post(url, {
 				[entityIdKey]: entityId,
 				usageFrequency: draft.period,
+				existingUsageFrequency: draft._saved.period,
 				maxTokens: draft.maxTokens,
 				maxInputTokens: draft.maxInputTokens ?? 0,
 				maxOutputTokens: draft.maxOutputTokens ?? 0,
 				isActive: draft.isActive,
 				restrictPerModel: false,
 			});
-			await fetchDefaultUserLimit();
+			await fetchDefaultUserLimits();
 			await fetchMemberLimits();
 			toast.success("Default user limits saved");
 		} catch (e) {
@@ -403,14 +449,17 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const removeDefaultUserLimit = async () => {
+	const removeDefaultUserLimit = async (period: TimePeriod) => {
 		setSavingDefaultLimit(true);
 		try {
 			const url = isModel
 				? `${Env.MODULE}/api/auth/engine/removeEngineDefaultTokenLimit`
 				: `${Env.MODULE}/api/auth/project/removeProjectDefaultTokenLimit`;
-			await post(url, { [entityIdKey]: entityId });
-			await fetchDefaultUserLimit();
+			await post(url, {
+				[entityIdKey]: entityId,
+				usageFrequency: period,
+			});
+			await fetchDefaultUserLimits();
 			await fetchMemberLimits();
 			toast.success("Default user limits deleted");
 		} catch (e) {
@@ -430,12 +479,13 @@ export const useTokenLimitsData = ({
 			await post(url, {
 				[entityIdKey]: entityId,
 				usageFrequency: draft.period,
+				existingUsageFrequency: draft._saved.period,
 				maxTokens: draft.maxTokens,
 				maxInputTokens: draft.maxInputTokens ?? 0,
 				maxOutputTokens: draft.maxOutputTokens ?? 0,
 				isActive: draft.isActive,
 			});
-			await fetchDefaultTeamLimit();
+			await fetchDefaultTeamLimits();
 			await fetchTeamLimits();
 			toast.success("Default team limits saved");
 		} catch (e) {
@@ -446,14 +496,17 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const removeDefaultTeamLimit = async () => {
+	const removeDefaultTeamLimit = async (period: TimePeriod) => {
 		setSavingDefaultTeamLimit(true);
 		try {
 			const url = isModel
 				? `${Env.MODULE}/api/auth/engine/removeEngineDefaultTeamTokenLimit`
 				: `${Env.MODULE}/api/auth/project/removeProjectDefaultTeamTokenLimit`;
-			await post(url, { [entityIdKey]: entityId });
-			await fetchDefaultTeamLimit();
+			await post(url, {
+				[entityIdKey]: entityId,
+				usageFrequency: period,
+			});
+			await fetchDefaultTeamLimits();
 			await fetchTeamLimits();
 			toast.success("Default team limits deleted");
 		} catch (e) {
@@ -584,7 +637,10 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const saveTeamLimitRow = async (teamId: string, row: ExceptionEntry) => {
+	const saveTeamLimitRow = async (
+		teamId: string,
+		row: ExceptionEntry & { savedPeriod?: TimePeriod },
+	) => {
 		const team = teamGroups.find((group) => group.ID === teamId);
 		if (!team) {
 			toast.error("Unable to find team to update");
@@ -594,8 +650,8 @@ export const useTokenLimitsData = ({
 		setSavingTeamIds((prev) => new Set(prev).add(teamId));
 		try {
 			const endpoint = isModel
-				? `${Env.MODULE}/api/auth/group/engine/editGroupAppPermission`
-				: `${Env.MODULE}/api/auth/group/project/editGroupProjectPermission`;
+				? `${Env.MODULE}/api/auth/group/engine/setGroupAppTokenLimit`
+				: `${Env.MODULE}/api/auth/group/project/setGroupProjectTokenLimit`;
 			const hasAnyLimit =
 				row.combinedLimit > 0 ||
 				row.inputLimit > 0 ||
@@ -604,19 +660,50 @@ export const useTokenLimitsData = ({
 				groupId: team.ID,
 				type: team.TYPE,
 				[entityIdKey]: entityId,
-				permission: permissionToString(team.PERMISSION),
-				usageRestriction: hasAnyLimit ? "token" : "",
-				usageFrequency: hasAnyLimit ? row.period : "",
-				maxTokens: hasAnyLimit ? row.combinedLimit : "",
-				maxInputTokens: hasAnyLimit ? row.inputLimit : "",
-				maxOutputTokens: hasAnyLimit ? row.outputLimit : "",
-				maxResponseTime: "",
+				usageFrequency: row.period,
+				existingUsageFrequency: row.savedPeriod ?? row.period,
+				maxTokens: hasAnyLimit ? row.combinedLimit : 0,
+				maxInputTokens: hasAnyLimit ? row.inputLimit : 0,
+				maxOutputTokens: hasAnyLimit ? row.outputLimit : 0,
+				maxResponseTime: null,
 			});
 			await fetchTeamLimits();
 			toast.success("Team limit saved");
 		} catch (e) {
 			console.error("Failed to update team token limit", e);
 			toast.error("Failed to update team limit");
+		} finally {
+			setSavingTeamIds((prev) => {
+				const next = new Set(prev);
+				next.delete(teamId);
+				return next;
+			});
+		}
+	};
+
+	const removeTeamLimitRow = async (teamId: string, period: TimePeriod) => {
+		const team = teamGroups.find((group) => group.ID === teamId);
+		if (!team) {
+			toast.error("Unable to find team to update");
+			return;
+		}
+
+		setSavingTeamIds((prev) => new Set(prev).add(teamId));
+		try {
+			const endpoint = isModel
+				? `${Env.MODULE}/api/auth/group/engine/removeGroupAppTokenLimit`
+				: `${Env.MODULE}/api/auth/group/project/removeGroupProjectTokenLimit`;
+			await post(endpoint, {
+				groupId: team.ID,
+				type: team.TYPE,
+				[entityIdKey]: entityId,
+				usageFrequency: period,
+			});
+			await fetchTeamLimits();
+			toast.success("Team limit removed");
+		} catch (e) {
+			console.error("Failed to remove team token limit", e);
+			toast.error("Failed to remove team limit");
 		} finally {
 			setSavingTeamIds((prev) => {
 				const next = new Set(prev);
@@ -646,12 +733,19 @@ export const useTokenLimitsData = ({
 
 	const teamOptions = useMemo(
 		() =>
-			teamGroups.map((team) => ({
-				id: team.ID,
-				name: team.ID,
-				teamType: team.TYPE || "",
-				permission: permissionToString(team.PERMISSION),
-			})),
+			Array.from(
+				new Map(
+					teamGroups.map((team) => [
+						team.ID,
+						{
+							id: team.ID,
+							name: team.ID,
+							teamType: team.TYPE || "",
+							permission: permissionToString(team.PERMISSION),
+						},
+					]),
+				).values(),
+			),
 		[teamGroups],
 	);
 
@@ -659,8 +753,8 @@ export const useTokenLimitsData = ({
 		loading,
 		members,
 		teamGroups,
-		defaultUserLimit,
-		defaultTeamLimit,
+		defaultUserLimits,
+		defaultTeamLimits,
 		platformLimits,
 		platformUsageByPeriod,
 		savingPlatformIds,
@@ -684,5 +778,6 @@ export const useTokenLimitsData = ({
 		removePlatformLimit,
 		saveUserLimitRows,
 		saveTeamLimitRow,
+		removeTeamLimitRow,
 	};
 };
