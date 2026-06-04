@@ -15,7 +15,7 @@ import {
 	Spinner,
 	Switch,
 } from "@semoss/ui/next";
-import { TIME_PERIOD_LABELS } from "../constants";
+import { TIME_PERIOD_LABELS, UI_TIME_PERIODS } from "../constants";
 import type { TimePeriod, TokenLimitEntry } from "../types";
 import { EditableLimitRow } from "./editable-limit-row";
 import {
@@ -266,16 +266,22 @@ export function TokenLimitsPanel({
 	);
 
 	const remainingDefaultUserPeriods = useMemo(
-		() => PERIODS.filter((period) => !defaultUserPeriods.includes(period)),
+		() =>
+			UI_TIME_PERIODS.filter(
+				(period) => !defaultUserPeriods.includes(period),
+			),
 		[defaultUserPeriods],
 	);
 	const remainingDefaultTeamPeriods = useMemo(
-		() => PERIODS.filter((period) => !defaultTeamPeriods.includes(period)),
+		() =>
+			UI_TIME_PERIODS.filter(
+				(period) => !defaultTeamPeriods.includes(period),
+			),
 		[defaultTeamPeriods],
 	);
 	const remainingPlatformPeriods = useMemo(
 		() =>
-			PERIODS.filter(
+			UI_TIME_PERIODS.filter(
 				(period) =>
 					!platformLimits.some((row) => row.period === period),
 			),
@@ -496,9 +502,14 @@ export function TokenLimitsPanel({
 								{newPlatformRow && (
 									<EditableLimitRow
 										onDelete={() => setNewPlatformRow(null)}
-										onSave={() => {
-											savePlatformLimit(newPlatformRow);
-											setNewPlatformRow(null);
+										onSave={async () => {
+											const success =
+												await savePlatformLimit(
+													newPlatformRow,
+												);
+											if (success) {
+												setNewPlatformRow(null);
+											}
 										}}
 										isDirty
 									>
@@ -548,7 +559,24 @@ export function TokenLimitsPanel({
 													).period,
 												)
 											}
-											onSave={savePlatformLimit}
+											onSave={async (next) => {
+												const success =
+													await savePlatformLimit(
+														next,
+													);
+												if (success) {
+													setPlatformDraftsById(
+														(prev) => {
+															const {
+																[limit.id]:
+																	_removed,
+																...rest
+															} = prev;
+															return rest;
+														},
+													);
+												}
+											}}
 										/>
 									);
 								})}
@@ -590,6 +618,12 @@ export function TokenLimitsPanel({
 						[id]: next,
 					}))
 				}
+				onClearDraft={(id) =>
+					setDefaultUserDraftsById((prev) => {
+						const { [id]: _removed, ...rest } = prev;
+						return rest;
+					})
+				}
 				sourceLimits={defaultUserLimits}
 				isSaving={savingDefaultLimit}
 				emptyMessage="No default user limits configured."
@@ -602,7 +636,10 @@ export function TokenLimitsPanel({
 				entities={displayedGroupedUserLimits}
 				entityOptions={memberOptions.filter((option) => {
 					const existingRows = userRowsById.get(option.id) ?? [];
-					return existingRows.length < PERIODS.length;
+					const selectableRows = existingRows.filter(
+						(row) => row.period !== "MONTH",
+					);
+					return selectableRows.length < UI_TIME_PERIODS.length;
 				})}
 				emptyMessage="No per-user limits configured."
 				multiPeriod
@@ -618,10 +655,13 @@ export function TokenLimitsPanel({
 				)}
 				onAddEntity={(user) => {
 					const existingRows = userRowsById.get(user.id) ?? [];
+					const selectableRows = existingRows.filter(
+						(row) => row.period !== "MONTH",
+					);
 					const nextPeriod =
-						PERIODS.find(
+						UI_TIME_PERIODS.find(
 							(period) =>
-								!existingRows.some(
+								!selectableRows.some(
 									(row) => row.period === period,
 								),
 						) ?? "DAY";
@@ -713,6 +753,12 @@ export function TokenLimitsPanel({
 						[id]: next,
 					}))
 				}
+				onClearDraft={(id) =>
+					setDefaultTeamDraftsById((prev) => {
+						const { [id]: _removed, ...rest } = prev;
+						return rest;
+					})
+				}
 				sourceLimits={defaultTeamLimits}
 				isSaving={savingDefaultTeamLimit}
 				emptyMessage="No default team limits configured."
@@ -725,7 +771,10 @@ export function TokenLimitsPanel({
 				entities={displayedGroupedTeamLimits}
 				entityOptions={teamOptions.filter((option) => {
 					const existingRows = teamRowsById.get(option.id) ?? [];
-					return existingRows.length < PERIODS.length;
+					const selectableRows = existingRows.filter(
+						(row) => row.period !== "MONTH",
+					);
+					return selectableRows.length < UI_TIME_PERIODS.length;
 				})}
 				emptyMessage="No per-team limits configured."
 				multiPeriod
@@ -742,10 +791,13 @@ export function TokenLimitsPanel({
 				)}
 				onAddEntity={(team) => {
 					const existingRows = teamRowsById.get(team.id) ?? [];
+					const selectableRows = existingRows.filter(
+						(row) => row.period !== "MONTH",
+					);
 					const nextPeriod =
-						PERIODS.find(
+						UI_TIME_PERIODS.find(
 							(period) =>
-								!existingRows.some(
+								!selectableRows.some(
 									(row) => row.period === period,
 								),
 						) ?? "DAY";
@@ -824,6 +876,7 @@ const DefaultLimitsSection = ({
 	onSaveLimit,
 	onDeleteLimit,
 	onChangeLimit,
+	onClearDraft,
 	sourceLimits,
 	isSaving,
 	emptyMessage,
@@ -837,9 +890,10 @@ const DefaultLimitsSection = ({
 	setNewLimit: (next: TokenLimitEntry | null) => void;
 	remainingPeriods: TimePeriod[];
 	onCreateLimit: (period: TimePeriod) => TokenLimitEntry;
-	onSaveLimit: (limit: TokenLimitEntry) => void;
+	onSaveLimit: (limit: TokenLimitEntry) => Promise<boolean>;
 	onDeleteLimit: (period: TimePeriod) => void;
 	onChangeLimit: (id: string, next: TokenLimitEntry) => void;
+	onClearDraft: (id: string) => void;
 	sourceLimits: TokenLimitEntry[];
 	isSaving: boolean;
 	emptyMessage: string;
@@ -895,9 +949,11 @@ const DefaultLimitsSection = ({
 								)}
 								disabled={isSaving}
 								onChange={setNewLimit}
-								onSave={(draft) => {
-									onSaveLimit(draft);
-									setNewLimit(null);
+								onSave={async (draft) => {
+									const success = await onSaveLimit(draft);
+									if (success) {
+										setNewLimit(null);
+									}
 								}}
 								onDelete={() => setNewLimit(null)}
 							/>
@@ -916,7 +972,12 @@ const DefaultLimitsSection = ({
 								onChange={(next) =>
 									onChangeLimit(limit.id, next)
 								}
-								onSave={onSaveLimit}
+								onSave={async (next) => {
+									const success = await onSaveLimit(next);
+									if (success) {
+										onClearDraft(limit.id);
+									}
+								}}
 								onDelete={() =>
 									onDeleteLimit(
 										(
@@ -944,7 +1005,7 @@ const LimitFields = ({
 	limit,
 	onChange,
 	disabled,
-	availablePeriods = PERIODS,
+	availablePeriods = UI_TIME_PERIODS,
 }: {
 	limit: TokenLimitEntry;
 	onChange: (next: TokenLimitEntry) => void;
@@ -1058,7 +1119,7 @@ const PlatformRowFields = ({
 			limit={limit}
 			onChange={onChange}
 			disabled={disabled}
-			availablePeriods={PERIODS.filter(
+			availablePeriods={UI_TIME_PERIODS.filter(
 				(period) =>
 					period === limit.period || !usedPeriods?.includes(period),
 			)}
@@ -1096,11 +1157,13 @@ const PlatformLimitEditorRow = ({
 	disabled?: boolean;
 	onChange: (limit: TokenLimitEntry) => void;
 	onDelete: () => void;
-	onSave: (limit: TokenLimitEntry) => void;
+	onSave: (limit: TokenLimitEntry) => Promise<boolean>;
 }) => (
 	<EditableLimitRow
 		onDelete={onDelete}
-		onSave={() => onSave(limit)}
+		onSave={() => {
+			void onSave(limit);
+		}}
 		isDirty={isDirty(limit) || limit.period !== sourceLimit.period}
 	>
 		<PlatformRowFields
@@ -1128,11 +1191,13 @@ const DefaultLimitEditorRow = ({
 	disabled?: boolean;
 	onChange: (limit: TokenLimitEntry) => void;
 	onDelete: () => void;
-	onSave: (limit: TokenLimitEntry) => void;
+	onSave: (limit: TokenLimitEntry) => Promise<boolean>;
 }) => (
 	<EditableLimitRow
 		onDelete={onDelete}
-		onSave={() => onSave(limit)}
+		onSave={() => {
+			void onSave(limit);
+		}}
 		isDirty={isDirty(limit) || limit.period !== sourceLimit.period}
 	>
 		<LimitFields

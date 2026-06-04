@@ -451,9 +451,11 @@ export const useTokenLimitsData = ({
 			await fetchDefaultUserLimits();
 			await fetchMemberLimits();
 			toast.success("Default user limits saved");
+			return true;
 		} catch (e) {
 			console.error("Failed to save default user limits", e);
 			toast.error("Failed to save default user limits");
+			return false;
 		} finally {
 			setSavingDefaultLimit(false);
 		}
@@ -498,9 +500,11 @@ export const useTokenLimitsData = ({
 			await fetchDefaultTeamLimits();
 			await fetchTeamLimits();
 			toast.success("Default team limits saved");
+			return true;
 		} catch (e) {
 			console.error("Failed to save default team limits", e);
 			toast.error("Failed to save default team limits");
+			return false;
 		} finally {
 			setSavingDefaultTeamLimit(false);
 		}
@@ -548,9 +552,11 @@ export const useTokenLimitsData = ({
 			);
 			await fetchPlatformLimits();
 			toast.success("Platform model limit saved");
+			return true;
 		} catch (e) {
 			console.error("Failed to save model platform limit", e);
 			toast.error("Failed to save model platform limit");
+			return false;
 		} finally {
 			setSavingPlatformIds((prev) => {
 				const next = new Set(prev);

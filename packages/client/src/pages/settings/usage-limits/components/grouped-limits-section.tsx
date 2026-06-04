@@ -20,7 +20,7 @@ import {
 	Switch,
 } from "@semoss/ui/next";
 import { useServerPagination } from "@/hooks";
-import { TIME_PERIOD_LABELS } from "../constants";
+import { TIME_PERIOD_LABELS, UI_TIME_PERIODS } from "../constants";
 import type { TimePeriod } from "../types";
 
 export interface GroupedLimitRow {
@@ -47,7 +47,8 @@ interface AddableOption {
 	[key: string]: unknown;
 }
 
-const PERIODS = Object.keys(TIME_PERIOD_LABELS) as TimePeriod[];
+const ALL_PERIODS = Object.keys(TIME_PERIOD_LABELS) as TimePeriod[];
+const PERIODS = UI_TIME_PERIODS;
 const DIALOG_ROWS_PER_PAGE = 8;
 
 const parseNullableNumber = (value: string) => {
@@ -91,6 +92,14 @@ const GroupedLimitEditorRow = ({
 	supportsActive?: boolean;
 }) => {
 	const dirty = isRowDirty(sourceRow, row, supportsActive);
+	const periodOptions = useMemo(() => {
+		const nextPeriods = availablePeriods.includes(row.period)
+			? availablePeriods
+			: [...availablePeriods, row.period];
+		return [...nextPeriods].sort(
+			(a, b) => ALL_PERIODS.indexOf(a) - ALL_PERIODS.indexOf(b),
+		);
+	}, [availablePeriods, row.period]);
 
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
@@ -151,7 +160,7 @@ const GroupedLimitEditorRow = ({
 						<SelectValue />
 					</SelectTrigger>
 					<SelectContent>
-						{availablePeriods.map((period) => (
+						{periodOptions.map((period) => (
 							<SelectItem key={period} value={period}>
 								{TIME_PERIOD_LABELS[period]}
 							</SelectItem>
