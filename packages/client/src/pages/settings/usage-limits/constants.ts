@@ -5,6 +5,7 @@ export const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
 	DAY: "Per Day",
 	WEEK: "Per Week",
 	MONTH: "Per Month",
+	YEAR: "Per Year",
 	ALL_TIME: "All Time",
 };
 

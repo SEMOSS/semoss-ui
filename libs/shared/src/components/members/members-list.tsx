@@ -72,18 +72,6 @@ interface MembersProps {
 	readOnly?: boolean;
 }
 
-const formatValue = (input?: string) => {
-	if (!input) return "—";
-	const mappings: Record<string, string> = {
-		DAY: "Daily",
-		WEEK: "Weekly",
-		MONTH: "Monthly",
-		YEAR: "Yearly",
-		ALL_TIME: "All time",
-	};
-	return mappings[input.toUpperCase()] ?? input;
-};
-
 export const MembersList = ({
 	id,
 	type,
@@ -201,30 +189,6 @@ export const MembersList = ({
 			userid: user.id,
 			permission,
 		};
-		if (type === "MODEL" || type === "PROJECT" || type === "WORKSPACE") {
-			const hasAnyLimit =
-				user.max_tokens != null ||
-				user.max_input_tokens != null ||
-				user.max_output_tokens != null;
-			const hasComputeTime = user.max_response_time != null;
-			if (hasAnyLimit) {
-				payload.usageRestriction = "token";
-				payload.usageFrequency = user.usage_frequency;
-				if (user.max_tokens != null)
-					payload.maxTokens = user.max_tokens;
-				if (user.max_input_tokens != null)
-					payload.maxInputTokens = user.max_input_tokens;
-				if (user.max_output_tokens != null)
-					payload.maxOutputTokens = user.max_output_tokens;
-			}
-			if (hasComputeTime) {
-				if (!hasAnyLimit) {
-					payload.usageRestriction = "compute";
-					payload.usageFrequency = user.usage_frequency;
-				}
-				payload.maxResponseTime = user.max_response_time;
-			}
-		}
 		const response = await post(url, {
 			[isProject ? "projectId" : "engineId"]: id,
 			userpermissions: [payload],
@@ -292,8 +256,7 @@ export const MembersList = ({
 		selectableUsers.every((u) => selectedIds.has(u.id));
 	const someSelected = selectableUsers.some((u) => selectedIds.has(u.id));
 	const showSelectionAndActions = !isAddMember && !readOnly;
-	const colCount =
-		(type === "MODEL" ? 6 : 3) + (showSelectionAndActions ? 2 : 0) + 1;
+	const colCount = 4 + (showSelectionAndActions ? 2 : 0);
 
 	function toggleSelectAll() {
 		if (allSelected) {
@@ -359,17 +322,6 @@ export const MembersList = ({
 								<TableHead>Name</TableHead>
 								<TableHead>Login Type</TableHead>
 								<TableHead>Permission</TableHead>
-								{(type === "MODEL" ||
-									type === "PROJECT" ||
-									type === "WORKSPACE") && (
-									<>
-										<TableHead>Combined Limit</TableHead>
-										<TableHead>Input Limit</TableHead>
-										<TableHead>Output Limit</TableHead>
-										<TableHead>Compute Time</TableHead>
-										<TableHead>Frequency</TableHead>
-									</>
-								)}
 								<TableHead>Permission Date</TableHead>
 								{showSelectionAndActions && (
 									<TableHead className="w-px whitespace-nowrap">
@@ -541,61 +493,6 @@ export const MembersList = ({
 												</DropdownMenu>
 											)}
 										</TableCell>
-										{(type === "MODEL" ||
-											type === "PROJECT" ||
-											type === "WORKSPACE") &&
-											(() => {
-												const combinedLimit =
-													user.max_tokens != null
-														? user.max_tokens.toLocaleString()
-														: "—";
-												const inputLimit =
-													user.max_input_tokens !=
-													null
-														? user.max_input_tokens.toLocaleString()
-														: "—";
-												const outputLimit =
-													user.max_output_tokens !=
-													null
-														? user.max_output_tokens.toLocaleString()
-														: "—";
-												const computeTime =
-													user.max_response_time !=
-													null
-														? user.max_response_time.toLocaleString()
-														: "—";
-												return (
-													<>
-														<TableCell>
-															<span className="text-sm">
-																{combinedLimit}
-															</span>
-														</TableCell>
-														<TableCell>
-															<span className="text-sm">
-																{inputLimit}
-															</span>
-														</TableCell>
-														<TableCell>
-															<span className="text-sm">
-																{outputLimit}
-															</span>
-														</TableCell>
-														<TableCell>
-															<span className="text-sm">
-																{computeTime}
-															</span>
-														</TableCell>
-														<TableCell>
-															<span className="text-sm">
-																{formatValue(
-																	user.usage_frequency,
-																)}
-															</span>
-														</TableCell>
-													</>
-												);
-											})()}
 										<TableCell>
 											<span className="text-muted-foreground text-sm">
 												{user.date_added ?? "—"}

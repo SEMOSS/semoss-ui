@@ -9,7 +9,6 @@ import {
 	DialogDescription,
 	DialogFooter,
 	DialogTitle,
-	Input,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
@@ -48,16 +47,6 @@ interface MembersProps {
 	 *   - renders the Permission column as static text (no dropdown)
 	 */
 	readOnly?: boolean;
-}
-
-function formatNum(val: string): string {
-	const digits = val.replace(/[^0-9]/g, "");
-	if (!digits) return "";
-	return Number(digits).toLocaleString();
-}
-
-function parseNum(val: string): string {
-	return val.replace(/[^0-9]/g, "");
 }
 
 export const MembersTable = ({
@@ -109,21 +98,10 @@ export const MembersTable = ({
 	// Edit dialog state
 	const [editUser, setEditUser] = useState<MemberUser | null>(null);
 	const [editPermission, setEditPermission] = useState<string>("READ_ONLY");
-	const [editMaxTokens, setEditMaxTokens] = useState<string>("");
-	const [editMaxInputTokens, setEditMaxInputTokens] = useState<string>("");
-	const [editMaxOutputTokens, setEditMaxOutputTokens] = useState<string>("");
-	const [editMaxResponseTime, setEditMaxResponseTime] = useState<string>("");
-	const [editFrequency, setEditFrequency] = useState<string>("DAY");
-	const [resetConfirm, setResetConfirm] = useState<boolean>(false);
 
 	const openEditDialog = (user: MemberUser) => {
 		setEditUser(user);
 		setEditPermission(user.permission ?? "READ_ONLY");
-		setEditMaxTokens(user.max_tokens?.toString() ?? "");
-		setEditMaxInputTokens(user.max_input_tokens?.toString() ?? "");
-		setEditMaxOutputTokens(user.max_output_tokens?.toString() ?? "");
-		setEditMaxResponseTime(user.max_response_time?.toString() ?? "");
-		setEditFrequency(user.usage_frequency ?? "DAY");
 	};
 
 	const saveUserEdit = async () => {
@@ -137,28 +115,6 @@ export const MembersTable = ({
 			permission: editPermission,
 		};
 
-		if (type === "MODEL" || type === "PROJECT" || type === "WORKSPACE") {
-			const hasAnyLimit =
-				editMaxTokens || editMaxInputTokens || editMaxOutputTokens;
-			const hasComputeTime = !!editMaxResponseTime;
-			if (hasAnyLimit) {
-				payload.usageRestriction = "token";
-				payload.usageFrequency = editFrequency;
-				if (editMaxTokens) payload.maxTokens = Number(editMaxTokens);
-				if (editMaxInputTokens)
-					payload.maxInputTokens = Number(editMaxInputTokens);
-				if (editMaxOutputTokens)
-					payload.maxOutputTokens = Number(editMaxOutputTokens);
-			}
-			if (hasComputeTime) {
-				if (!hasAnyLimit) {
-					payload.usageRestriction = "compute";
-					payload.usageFrequency = editFrequency;
-				}
-				payload.maxResponseTime = Number(editMaxResponseTime);
-			}
-		}
-
 		const response = await post<{ success: boolean }>(url, {
 			[isEngine ? "engineId" : "projectId"]: id,
 			userpermissions: [payload],
@@ -170,32 +126,6 @@ export const MembersTable = ({
 		if (response?.data?.success) {
 			toast.success("User updated successfully.");
 			setEditUser(null);
-			setListRefreshKey((prev) => prev + 1);
-		}
-	};
-
-	const resetUserUsage = async () => {
-		if (!editUser) return;
-		const isEngine = type !== "PROJECT" && type !== "WORKSPACE";
-		const authBase = `${Env.MODULE}/api/auth${adminMode ? "/admin" : ""}`;
-		const endpoint = isEngine
-			? "engine/resetEngineUserTokenUsage"
-			: "project/resetProjectUserTokenUsage";
-
-		const response = await post<{ success: boolean }>(
-			`${authBase}/${endpoint}`,
-			{
-				[isEngine ? "engineId" : "projectId"]: id,
-				userId: editUser.id,
-			},
-		).catch((error: Error) => {
-			toast.error(error?.message || "Error resetting token usage.");
-			return null;
-		});
-
-		if (response?.data?.success) {
-			toast.success("Token usage has been reset for this user.");
-			setResetConfirm(false);
 			setListRefreshKey((prev) => prev + 1);
 		}
 	};
@@ -316,186 +246,7 @@ export const MembersTable = ({
 									</SelectContent>
 								</Select>
 							</div>
-
-							{(type === "MODEL" ||
-								type === "PROJECT" ||
-								type === "WORKSPACE") && (
-								<>
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Combined Token Limit{" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(editMaxTokens)}
-											onChange={(e) =>
-												setEditMaxTokens(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Input Token Limit (Prompt){" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(
-												editMaxInputTokens,
-											)}
-											onChange={(e) =>
-												setEditMaxInputTokens(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Output Token Limit (Response){" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(
-												editMaxOutputTokens,
-											)}
-											onChange={(e) =>
-												setEditMaxOutputTokens(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-
-									<div className="flex flex-col gap-1.5">
-										<Label>
-											Max Compute Time (seconds){" "}
-											<span className="text-muted-foreground">
-												(optional)
-											</span>
-										</Label>
-										<Input
-											type="text"
-											inputMode="numeric"
-											placeholder="No limit"
-											value={formatNum(
-												editMaxResponseTime,
-											)}
-											onChange={(e) =>
-												setEditMaxResponseTime(
-													parseNum(e.target.value),
-												)
-											}
-										/>
-									</div>
-
-									{(editMaxTokens ||
-										editMaxInputTokens ||
-										editMaxOutputTokens ||
-										editMaxResponseTime) && (
-										<div className="flex flex-col gap-1.5">
-											<Label>
-												Reset Frequency{" "}
-												<span className="text-muted-foreground">
-													(usage resets each period)
-												</span>
-											</Label>
-											<Select
-												value={editFrequency}
-												onValueChange={setEditFrequency}
-											>
-												<SelectTrigger className="w-full">
-													<SelectValue />
-												</SelectTrigger>
-												<SelectContent>
-													<SelectItem value="DAY">
-														Daily
-													</SelectItem>
-													<SelectItem value="WEEK">
-														Weekly
-													</SelectItem>
-													<SelectItem value="MONTH">
-														Monthly
-													</SelectItem>
-													<SelectItem value="YEAR">
-														Yearly
-													</SelectItem>
-													<SelectItem value="ALL_TIME">
-														All time
-													</SelectItem>
-												</SelectContent>
-											</Select>
-										</div>
-									)}
-								</>
-							)}
 						</div>
-						{(type === "MODEL" ||
-							type === "PROJECT" ||
-							type === "WORKSPACE") && (
-							<div className="flex flex-col gap-2 rounded-md border border-orange-300 border-dashed bg-orange-50 p-3">
-								<div className="flex items-center justify-between">
-									<div className="flex flex-col">
-										<span className="font-medium text-orange-800 text-xs">
-											Reset Token Usage
-										</span>
-										<span className="text-muted-foreground text-xs">
-											Zero out this user's accumulated
-											token count
-										</span>
-									</div>
-									{!resetConfirm ? (
-										<Button
-											variant="outline"
-											size="sm"
-											className="border-orange-300 text-orange-700 hover:bg-orange-100"
-											onClick={() =>
-												setResetConfirm(true)
-											}
-										>
-											Reset
-										</Button>
-									) : (
-										<div className="flex gap-2">
-											<Button
-												variant="ghost"
-												size="sm"
-												onClick={() =>
-													setResetConfirm(false)
-												}
-											>
-												Cancel
-											</Button>
-											<Button
-												variant="destructive"
-												size="sm"
-												onClick={resetUserUsage}
-											>
-												Confirm Reset
-											</Button>
-										</div>
-									)}
-								</div>
-							</div>
-						)}
 						<DialogFooter>
 							<Button
 								variant="ghost"

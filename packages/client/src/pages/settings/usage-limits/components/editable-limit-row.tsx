@@ -1,4 +1,5 @@
 import { Save, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { Button } from "@semoss/ui/next";
 
 export function EditableLimitRow({
@@ -7,7 +8,7 @@ export function EditableLimitRow({
 	onSave,
 	isDirty,
 }: {
-	children: React.ReactNode;
+	children: ReactNode;
 	onDelete: () => void;
 	onSave: () => void;
 	isDirty: boolean;
