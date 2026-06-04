@@ -198,6 +198,7 @@ export const SkillWorkspace: React.FC = observer(() => {
 		<WorkspaceManager
 			navbarActions={<CodeWorkspaceActions />}
 			options={DEFAULT_OPTIONS}
+			settingsTabName="Skill Settings"
 			factory={FACTORY}
 			onAction={handleAction}
 		/>

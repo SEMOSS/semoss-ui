@@ -27,7 +27,7 @@ const WORKSPACE_TAB_ICON_BY_COMPONENT: Record<string, LucideIcon> = {
 	"notebook-viewer": NotebookTabs,
 };
 
-const renderTabIcon = (Icon: LucideIcon) => (
+const renderTabIcon = (Icon: React.ComponentType<{ className?: string }>) => (
 	<Icon className={TAB_ICON_CLASS_NAME} />
 );
 
@@ -52,6 +52,9 @@ type WorkspaceManagerProps = {
 	/** Options to load into the workspace */
 	options: WorkspaceOptions;
 
+	/** Label for the settings tab opened in the center panel */
+	settingsTabName?: string;
+
 	/** Factor method */
 	factory: (
 		node: FlexLayout.TabNode,
@@ -63,7 +66,13 @@ type WorkspaceManagerProps = {
 };
 
 export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
-	({ navbarActions, options, factory = () => null, onAction }) => {
+	({
+		navbarActions,
+		options,
+		settingsTabName = "App Settings",
+		factory = () => null,
+		onAction,
+	}) => {
 		const { workspace } = useWorkspace();
 		const layoutRef = useRef<FlexLayout.Layout | null>(null);
 		const containerRef = useRef<HTMLDivElement | null>(null);
@@ -135,12 +144,13 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 								true,
 							),
 						);
+					} else {
+						model.doAction(
+							FlexLayout.Actions.selectTab(
+								(selectedNode as FlexLayout.TabNode).getId(),
+							),
+						);
 					}
-
-					const selectedNodeId = selectedNode.getId();
-					model.doAction(
-						FlexLayout.Actions.selectTab(selectedNodeId),
-					);
 				}
 			};
 			window.addEventListener("OPEN_EVENT", handler as EventListener);
@@ -177,11 +187,11 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 				workspace.updateLayout(layout);
 			} catch (e) {
 				console.error(e);
-				throw new e();
+				throw e;
 			}
 		};
 
-		const updateModel = (action) => {
+		const updateModel = (action: FlexLayout.Action) => {
 			if (!model) return;
 
 			const isSettingsTab = action.data.tabNode === "settings";
@@ -231,7 +241,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						settingsNode?.getConfig()?.isSettingsActive;
 
 					if (isAlreadyActive) {
-						const existingId = findTabIdByName("AppSettings");
+						const existingId = findTabIdByName(settingsTabName);
 						if (existingId) {
 							model.doAction(
 								FlexLayout.Actions.selectTab(existingId),
@@ -248,14 +258,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 						model.getRoot().getChildren()[0]?.getId() ||
 						"";
 
-					let existingId = findTabIdByName("AppSettings");
+					let existingId = findTabIdByName(settingsTabName);
 
 					if (!existingId) {
 						model.doAction(
 							FlexLayout.Actions.addNode(
 								{
 									type: "tab",
-									name: "AppSettings",
+									name: settingsTabName,
 									component: "settingsPanel",
 									config: {},
 									enableClose: true,
@@ -266,7 +276,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 								true,
 							),
 						);
-						existingId = findTabIdByName("AppSettings");
+						existingId = findTabIdByName(settingsTabName);
 					}
 
 					if (existingId) {
@@ -363,7 +373,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 										factory={(node) => {
 											return factory(
 												node,
-												layoutRef.current,
+												layoutRef.current as FlexLayout.Layout,
 											);
 										}}
 										icons={{
@@ -387,7 +397,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											renderValues,
 										) => {
 											const tabIcon = getWorkspaceTabIcon(
-												tabNode.getComponent(),
+												tabNode.getComponent() as string,
 												tabNode.getName(),
 											);
 
@@ -469,9 +479,14 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 													</Tooltip>
 												);
 											} else if (item?.icon) {
+												const imgIcon =
+													item.icon as unknown as {
+														active: string;
+														default: string;
+													};
 												const iconSrc = isSelected
-													? item.icon.active
-													: item.icon.default;
+													? imgIcon.active
+													: imgIcon.default;
 												renderValues.content = (
 													<img
 														src={iconSrc}
@@ -484,7 +499,7 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 											return renderValues;
 										}}
 									/>
-									<div className="absolute bottom-9 left-[5px] z-[1] flex w-8 flex-col justify-center">
+									<div className="absolute bottom-9 left-[5px] z-1 flex w-8 flex-col justify-center">
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<button

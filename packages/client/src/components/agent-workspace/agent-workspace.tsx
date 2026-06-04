@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { useEffect, useRef } from "react";
 import { useInsight } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { AppFileEditor } from "@/components/app-workspace/app-file-editor";
@@ -9,6 +10,7 @@ import type { WorkspaceOptions } from "../../stores";
 import { CodeWorkspaceActions } from "../code-workspace/code-workspace-actions";
 import { MCPJsonEditor } from "../shared";
 import { TerminalPanel, WorkspaceManager } from "../workspace";
+import { AgentEditor } from "./agent-editor";
 
 const DEFAULT_BORDER_SIZE = 300;
 
@@ -70,6 +72,38 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 export const AgentWorkspace: React.FC = observer(() => {
 	const { workspace } = useWorkspace();
 	const insight = useInsight();
+	const agentTabOpened = useRef(false);
+
+	useEffect(() => {
+		const model = workspace.model;
+		if (!model || agentTabOpened.current) return;
+		agentTabOpened.current = true;
+
+		if (model.getNodeById("AGENT")) return;
+
+		const tabsetId =
+			model.getActiveTabset()?.getId() ??
+			model.getRoot().getChildren()[0]?.getId() ??
+			"";
+		if (!tabsetId) return;
+
+		model.doAction(
+			FlexLayout.Actions.addNode(
+				{
+					id: "AGENT",
+					type: "tab",
+					name: "Agent",
+					component: "agent-editor",
+					config: {},
+					enableClose: false,
+				},
+				tabsetId,
+				FlexLayout.DockLocation.CENTER,
+				-1,
+				true,
+			),
+		);
+	}, [workspace.model]);
 
 	const FACTORY: React.ComponentProps<typeof WorkspaceManager>["factory"] = (
 		node,
@@ -78,7 +112,9 @@ export const AgentWorkspace: React.FC = observer(() => {
 		const component = node.getComponent();
 		const config = node.getConfig();
 
-		if (component === "app-file-explorer") {
+		if (component === "agent-editor") {
+			return <AgentEditor />;
+		} else if (component === "app-file-explorer") {
 			return (
 				<AppFileExplorer
 					node={node}
@@ -163,6 +199,7 @@ export const AgentWorkspace: React.FC = observer(() => {
 		<WorkspaceManager
 			navbarActions={<CodeWorkspaceActions />}
 			options={DEFAULT_OPTIONS}
+			settingsTabName="Agent Settings"
 			factory={FACTORY}
 			onAction={handleAction}
 		/>
