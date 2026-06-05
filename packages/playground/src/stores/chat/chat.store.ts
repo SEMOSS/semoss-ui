@@ -76,10 +76,7 @@ export class ChatStore {
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
 		models: {
-			selected: {
-				engine_id: DEFAUlT_MODEL_ID,
-				engine_name: DEFAUlT_MODEL_NAME,
-			} as Engine,
+			selected: null as unknown as Engine,
 			contextWindow: undefined,
 		},
 		rooms: {},
