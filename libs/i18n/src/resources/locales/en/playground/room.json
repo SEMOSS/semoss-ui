@@ -4,9 +4,16 @@
 	"settings": {
 		"title": "Room Settings",
 		"description": "Update room settings and modify the behavior of the chat",
-		"open": "Open Room Settings",
-		"close": "Close Room Settings",
-		"edit": "Edit Room Settings"
+		"open": "Open Settings",
+		"close": "Close",
+		"edit": "Edit Settings",
+		"compact": "Compact Conversation",
+		"compactSuccess": "Conversation compacted successfully",
+		"compactSkipped": "Nothing to compact — conversation is already concise",
+		"compactError": "Failed to compact conversation",
+		"compacting": "Compacting conversation...",
+		"compactedAbove": "Conversation compacted",
+		"compactedAboveTooltip": "Earlier messages were summarized to reduce context size"
 	},
 	"form": {
 		"modelLabel": "Model",
@@ -93,9 +100,9 @@
 	},
 	"contextWindow": {
 		"descriptionLow": "All conversations have a limit. Very long conversations will eventually cause the model to forget earlier messages.",
-		"descriptionMedium": "This conversation is getting long. If it continues, the model will start forgetting earlier messages. Consider starting a new chat soon.",
-		"descriptionHigh": "This conversation is nearly full. The model will soon start forgetting earlier messages. Consider starting a new chat.",
-		"descriptionExceeded": "This conversation has exceeded its limit. The model is now forgetting earlier messages when generating responses. Start a new chat for best results.",
+		"descriptionMedium": "This conversation is getting long. If it continues, the model will start forgetting earlier messages. Consider compacting this conversation or starting a new chat soon.",
+		"descriptionHigh": "This conversation is nearly full. The model will soon start forgetting earlier messages. Compact this conversation or start a new chat to continue with full context.",
+		"descriptionExceeded": "This conversation has exceeded its limit. The model is now forgetting earlier messages. Compact this conversation or start a new chat for best results.",
 		"memoryUsedTitle": "Memory used:",
 		"memoryUsedValue": "{{used}} / {{total}} tokens ({{percent}}%)"
 	},
