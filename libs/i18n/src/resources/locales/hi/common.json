@@ -34,8 +34,7 @@
 		"deleteMCP": "MCP हटाएं"
 	},
 	"badges": {
-		"fromAgent": "एजेंट से",
-		"default": "डिफ़ॉल्ट"
+		"fromAgent": "एजेंट से"
 	},
 	"messages": {
 		"noKnowledgeFound": "कोई ज्ञान नहीं मिला",

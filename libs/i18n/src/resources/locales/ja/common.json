@@ -34,8 +34,7 @@
 		"deleteMCP": "MCPを削除"
 	},
 	"badges": {
-		"fromAgent": "エージェントから",
-		"default": "デフォルト"
+		"fromAgent": "エージェントから"
 	},
 	"messages": {
 		"noKnowledgeFound": "ナレッジが見つかりません",

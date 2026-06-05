@@ -34,8 +34,7 @@
 		"deleteMCP": "حذف MCP"
 	},
 	"badges": {
-		"fromAgent": "من الوكيل",
-		"default": "افتراضي"
+		"fromAgent": "من الوكيل"
 	},
 	"messages": {
 		"noKnowledgeFound": "لم يتم العثور على معرفة",
