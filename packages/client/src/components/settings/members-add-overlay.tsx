@@ -1,6 +1,6 @@
 import { Edit, Eye, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useDebouncedValue } from "@semoss/sdk/react";
+import { runPixel, useDebouncedValue } from "@semoss/sdk/react";
 import {
 	addProjectUserPermissions,
 	editProjectUserPermissions,
@@ -64,6 +64,37 @@ const validSetting = (value: unknown) => {
 
 const AUTOCOMPLETE_OFFSET = 0;
 const AUTOCOMPLETE_LIMIT = 10;
+
+const pixelValue = (value: string | number | boolean) => {
+	if (typeof value === "string") {
+		return JSON.stringify(value);
+	}
+	return String(value);
+};
+
+const buildPixel = (
+	reactorName: string,
+	params: Record<string, string | number | boolean | null | undefined>,
+) => {
+	const args = Object.entries(params)
+		.filter(([, value]) => value !== null && value !== undefined)
+		.map(
+			([key, value]) =>
+				`${key}=[${pixelValue(value as string | number | boolean)}]`,
+		)
+		.join(", ");
+	return `${reactorName}(${args});`;
+};
+
+const runTokenLimitReactor = async (
+	reactorName: string,
+	params: Record<string, string | number | boolean | null | undefined>,
+) => {
+	const response = await runPixel(buildPixel(reactorName, params));
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join("\n"));
+	}
+};
 
 interface MembersAddOverlayProps {
 	/**
@@ -168,6 +199,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		compute: "Compute time",
 	};
 	const frequencyTypes: Record<string, string> = {
+		HOUR: "Hourly",
 		DAY: "Daily",
 		WEEK: "Weekly",
 		MONTH: "Monthly",
@@ -291,6 +323,36 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		setOffset((prev) => prev + AUTOCOMPLETE_LIMIT);
 	}, []);
 
+	const saveModelUserLimits = async (members: Pick<User, "id">[]) => {
+		if (restriction === "null") {
+			return;
+		}
+		if (!frequency) {
+			throw new Error("Frequency is required when setting model limits");
+		}
+		await Promise.all(
+			members.map((member) =>
+				runTokenLimitReactor("SetEngineUserTokenLimit", {
+					engineId: id,
+					userId: member.id,
+					usageFrequency: frequency,
+					existingUsageFrequency: frequency,
+					maxTokens:
+						restriction === "token" && maxTokens
+							? Number(maxTokens)
+							: -1,
+					maxInputTokens: -1,
+					maxOutputTokens: -1,
+					maxResponseTime:
+						restriction === "compute" && maxTime
+							? Number(maxTime)
+							: -1,
+					isActive: true,
+				}),
+			),
+		);
+	};
+
 	/**
 	 * Update the selected users
 	 * @param members
@@ -302,41 +364,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		try {
 			// construct requests for post data
 			const requests = members.map((m) => {
-				let json: Record<string, unknown> = {
+				const json: Record<string, unknown> = {
 					userid: m.id,
 					permission: validSetting(selectedRole)
 						? permissionPriorityMapper(selectedRole)?.permission
 						: selectedRole,
 				};
 
-				// FOR MODELS
-				if (restriction !== "null") {
-					json = {
-						...json,
-						usageRestriction: restriction,
-					};
-				}
-
-				if (frequency) {
-					json = {
-						...json,
-						usageFrequency: frequency,
-					};
-				}
-
-				if (restriction === "token") {
-					json = {
-						...json,
-						maxTokens: Number(maxTokens),
-					};
-				}
-
-				if (restriction === "compute") {
-					json = {
-						...json,
-						maxResponseTime: Number(maxTime),
-					};
-				}
 				return json;
 			});
 
@@ -380,6 +414,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					? response
 					: response?.data?.success
 			) {
+				if (type === "MODEL" && restriction !== "null") {
+					await saveModelUserLimits(members);
+				}
 				toast.success("Successfully updated user permissions");
 				success = true;
 				onChange();
@@ -414,15 +451,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						name: m.name,
 						type: m.type,
 						username: m.username,
-						usageRestriction:
-							restriction === "null" ? null : restriction,
-						usageFrequency: frequency,
-						...(restriction === "token" && {
-							maxTokens: Number(maxTokens),
-						}),
-						...(restriction === "compute" && {
-							maxResponseTime: Number(maxTime),
-						}),
 					};
 				});
 			} else {
@@ -475,6 +503,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					? response
 					: response?.data?.success
 			) {
+				if (type === "MODEL" && restriction !== "null") {
+					await saveModelUserLimits(selectedMembers);
+				}
 				toast.success("Successfully added member permissions");
 				success = true;
 			} else {

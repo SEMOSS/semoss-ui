@@ -1,17 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Env, get, post } from "@semoss/sdk/react";
+import { Env, get, post, runPixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
 import {
 	getGroupsWithAccessToEngine,
 	getGroupsWithAccessToProject,
 } from "@/api/teams";
-import type { ExceptionEntry, TimePeriod, TokenLimitEntry } from "../types";
+import type { TimePeriod, TokenLimitEntry } from "../types";
 
 interface LimitValues {
 	period: TimePeriod;
 	maxTokens: number | null;
 	maxInputTokens: number | null;
 	maxOutputTokens: number | null;
+	isActive: boolean;
+}
+
+interface EditablePrincipalLimitRow {
+	period: TimePeriod;
+	savedPeriod?: TimePeriod;
+	combinedLimit: number | null;
+	inputLimit: number | null;
+	outputLimit: number | null;
 	isActive: boolean;
 }
 
@@ -54,6 +63,33 @@ interface ModelPlatformUsageLimit {
 	computeTimeUsed: number;
 }
 
+interface PrincipalUserTokenLimit {
+	userId: string;
+	engineId?: string;
+	projectId?: string;
+	usageFrequency?: string | null;
+	maxTokens?: number | null;
+	maxInputTokens?: number | null;
+	maxOutputTokens?: number | null;
+	maxResponseTime?: number | null;
+	restrictPerModel?: boolean | null;
+	isActive?: boolean | null;
+}
+
+interface PrincipalTeamTokenLimit {
+	groupId: string;
+	groupType: string;
+	engineId?: string;
+	projectId?: string;
+	usageFrequency?: string | null;
+	maxTokens?: number | null;
+	maxInputTokens?: number | null;
+	maxOutputTokens?: number | null;
+	maxResponseTime?: number | null;
+	restrictPerModel?: boolean | null;
+	isActive?: boolean | null;
+}
+
 const DEFAULT_LIMIT_VALUES: LimitValues = {
 	period: "DAY",
 	maxTokens: null,
@@ -79,6 +115,40 @@ export const DEFAULT_LIMIT_DRAFT: TokenLimitEntry = {
 	maxOutputTokens: 40000,
 	isActive: true,
 	_saved: { ...DEFAULT_LIMIT_VALUES },
+};
+
+const ALL_ENGINES_SENTINEL = "__ALL__";
+
+const pixelValue = (value: string | number | boolean) => {
+	if (typeof value === "string") {
+		return JSON.stringify(value);
+	}
+	return String(value);
+};
+
+const buildPixel = (
+	reactorName: string,
+	params: Record<string, string | number | boolean | null | undefined>,
+) => {
+	const args = Object.entries(params)
+		.filter(([, value]) => value !== null && value !== undefined)
+		.map(
+			([key, value]) =>
+				`${key}=[${pixelValue(value as string | number | boolean)}]`,
+		)
+		.join(", ");
+	return `${reactorName}(${args});`;
+};
+
+const runTokenLimitReactor = async <T>(
+	reactorName: string,
+	params: Record<string, string | number | boolean | null | undefined>,
+): Promise<T> => {
+	const response = await runPixel<[T]>(buildPixel(reactorName, params));
+	if (response.errors.length > 0) {
+		throw new Error(response.errors.join("\n"));
+	}
+	return response.pixelReturn[0]?.output as T;
 };
 
 export const createDraftFromValues = (
@@ -109,6 +179,9 @@ export const hasAnyTokenLimitValue = ({
 
 const serializeNullableLimit = (value: number | null) =>
 	value == null ? "" : value;
+
+const serializeReactorLimit = (value: number | null) =>
+	value == null ? -1 : value;
 
 const parseGroupsResponse = (result: unknown) => {
 	if (Array.isArray(result)) {
@@ -141,14 +214,16 @@ export const useTokenLimitsData = ({
 	const entityIdKey = entityType === "MODEL" ? "engineId" : "projectId";
 	const getUsersEndpoint =
 		entityType === "MODEL" ? "getEngineUsers" : "getProjectUsers";
-	const editUsersEndpoint =
-		entityType === "MODEL"
-			? "editEngineUserPermissions"
-			: "editProjectUserPermissions";
 
 	const [loading, setLoading] = useState(true);
 	const [members, setMembers] = useState<MemberPermissionUser[]>([]);
 	const [teamGroups, setTeamGroups] = useState<TeamPermissionGroup[]>([]);
+	const [userTokenLimits, setUserTokenLimits] = useState<
+		PrincipalUserTokenLimit[]
+	>([]);
+	const [teamTokenLimits, setTeamTokenLimits] = useState<
+		PrincipalTeamTokenLimit[]
+	>([]);
 	const [defaultUserLimits, setDefaultUserLimits] = useState<
 		TokenLimitEntry[]
 	>([]);
@@ -247,28 +322,6 @@ export const useTokenLimitsData = ({
 		[mapFrequency, toTokenLimitEntry],
 	);
 
-	const getMemberLimitValues = useCallback(
-		(member: MemberPermissionUser): LimitValues => ({
-			period: mapFrequency(member.usage_frequency),
-			maxTokens: parseLimit(member.max_tokens),
-			maxInputTokens: parseLimit(member.max_input_tokens),
-			maxOutputTokens: parseLimit(member.max_output_tokens),
-			isActive: true,
-		}),
-		[mapFrequency, parseLimit],
-	);
-
-	const getTeamLimitValues = useCallback(
-		(team: TeamPermissionGroup): LimitValues => ({
-			period: mapFrequency(team.USAGEFREQUENCY),
-			maxTokens: parseLimit(team.MAXTOKENS),
-			maxInputTokens: parseLimit(team.MAX_INPUT_TOKENS),
-			maxOutputTokens: parseLimit(team.MAX_OUTPUT_TOKENS),
-			isActive: true,
-		}),
-		[mapFrequency, parseLimit],
-	);
-
 	const fetchDefaultUserLimits = useCallback(async () => {
 		try {
 			const url = isModel
@@ -331,17 +384,45 @@ export const useTokenLimitsData = ({
 
 	const fetchMemberLimits = useCallback(async () => {
 		const url = `${Env.MODULE}/api/auth/${entityPath}/${getUsersEndpoint}?${entityIdKey}=${encodeURIComponent(entityId)}&limit=1000&offset=0`;
-		const response = await get<{ members?: MemberPermissionUser[] }>(url);
+		const [response, limits] = await Promise.all([
+			get<{ members?: MemberPermissionUser[] }>(url),
+			runTokenLimitReactor<PrincipalUserTokenLimit[]>(
+				isModel
+					? "GetEngineUserTokenLimits"
+					: "GetProjectUserTokenLimits",
+				isModel
+					? { engineId: entityId }
+					: {
+							projectId: entityId,
+							scopedEngineId: ALL_ENGINES_SENTINEL,
+						},
+			),
+		]);
 		setMembers(
 			Array.isArray(response?.data?.members) ? response.data.members : [],
 		);
-	}, [entityId, entityIdKey, entityPath, getUsersEndpoint]);
+		setUserTokenLimits(Array.isArray(limits) ? limits : []);
+	}, [entityId, entityIdKey, entityPath, getUsersEndpoint, isModel]);
 
 	const fetchTeamLimits = useCallback(async () => {
-		const response = isModel
-			? await getGroupsWithAccessToEngine(entityId, 1000, 0)
-			: await getGroupsWithAccessToProject(entityId, 1000, 0);
+		const [response, limits] = await Promise.all([
+			isModel
+				? getGroupsWithAccessToEngine(entityId, 1000, 0)
+				: getGroupsWithAccessToProject(entityId, 1000, 0),
+			runTokenLimitReactor<PrincipalTeamTokenLimit[]>(
+				isModel
+					? "GetEngineTeamTokenLimits"
+					: "GetProjectTeamTokenLimits",
+				isModel
+					? { engineId: entityId }
+					: {
+							projectId: entityId,
+							scopedEngineId: ALL_ENGINES_SENTINEL,
+						},
+			),
+		]);
 		setTeamGroups(parseGroupsResponse(response));
+		setTeamTokenLimits(Array.isArray(limits) ? limits : []);
 	}, [entityId, isModel]);
 
 	const fetchPlatformLimits = useCallback(async () => {
@@ -591,65 +672,64 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const saveUserLimitRows = async (
+	const saveUserLimitRow = async (
 		memberId: string,
-		rows: ExceptionEntry[],
+		row: EditablePrincipalLimitRow,
 	) => {
-		const memberRows = members.filter((m) => m.id === memberId);
-		const base = memberRows[0];
+		const base = members.find((member) => member.id === memberId);
 		if (!base) {
 			toast.error("Unable to find member to update");
-			return;
+			return false;
 		}
 
 		setSavingUserIds((prev) => new Set(prev).add(memberId));
 		try {
-			const payloadRows =
-				rows.length > 0
-					? rows.map((row) => ({
-							userid: base.id,
-							permission: base.permission,
-							type: base.type,
-							usageRestriction: hasAnyTokenLimitValue({
-								maxTokens: row.combinedLimit,
-								maxInputTokens: row.inputLimit,
-								maxOutputTokens: row.outputLimit,
-							})
-								? "token"
-								: null,
+			await runTokenLimitReactor(
+				isModel
+					? "SetEngineUserTokenLimit"
+					: "SetProjectUserTokenLimit",
+				isModel
+					? {
+							engineId: entityId,
+							userId: base.id,
 							usageFrequency: row.period,
-							maxTokens: row.combinedLimit,
-							maxInputTokens: row.inputLimit,
-							maxOutputTokens: row.outputLimit,
-							maxResponseTime: null,
-						}))
-					: [
-							{
-								userid: base.id,
-								permission: base.permission,
-								type: base.type,
-								usageRestriction: null,
-								usageFrequency: null,
-								maxTokens: null,
-								maxInputTokens: null,
-								maxOutputTokens: null,
-								maxResponseTime: null,
-							},
-						];
-
-			await post(
-				`${Env.MODULE}/api/auth/${entityPath}/${editUsersEndpoint}`,
-				{
-					[entityIdKey]: entityId,
-					userpermissions: payloadRows,
-				},
+							existingUsageFrequency:
+								row.savedPeriod ?? row.period,
+							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxInputTokens: serializeReactorLimit(
+								row.inputLimit,
+							),
+							maxOutputTokens: serializeReactorLimit(
+								row.outputLimit,
+							),
+							maxResponseTime: -1,
+							isActive: row.isActive,
+						}
+					: {
+							projectId: entityId,
+							userId: base.id,
+							scopedEngineId: ALL_ENGINES_SENTINEL,
+							usageFrequency: row.period,
+							existingUsageFrequency:
+								row.savedPeriod ?? row.period,
+							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxInputTokens: serializeReactorLimit(
+								row.inputLimit,
+							),
+							maxOutputTokens: serializeReactorLimit(
+								row.outputLimit,
+							),
+							maxResponseTime: -1,
+							restrictPerModel: false,
+							isActive: row.isActive,
+						},
 			);
 			await fetchMemberLimits();
-			toast.success("User limits saved");
+			toast.success("User limit saved");
 			return true;
 		} catch (e) {
 			console.error("Failed to update user token limits", e);
-			toast.error("Failed to update user limits");
+			toast.error("Failed to update user limit");
 			return false;
 		} finally {
 			setSavingUserIds((prev) => {
@@ -660,79 +740,51 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const saveUserLimitRow = async (
-		memberId: string,
-		row: ExceptionEntry & { savedPeriod?: TimePeriod },
-	) => {
+	const removeUserLimitRow = async (memberId: string, period: TimePeriod) => {
 		const base = members.find((member) => member.id === memberId);
 		if (!base) {
 			toast.error("Unable to find member to update");
 			return false;
 		}
 
-		const persistedRows = members
-			.filter((member) => member.id === memberId)
-			.map((member) => {
-				const values = getMemberLimitValues(member);
-				if (!hasAnyTokenLimitValue(values)) {
-					return null;
-				}
-				return {
-					entityId: member.id,
-					entityName: member.name || member.id,
-					entityDetails: [],
-					combinedLimit: values.maxTokens,
-					inputLimit: values.maxInputTokens,
-					outputLimit: values.maxOutputTokens,
-					period: values.period,
-					savedPeriod: values.period,
-					isActive: true,
-				};
-			})
-			.filter(Boolean) as (ExceptionEntry & {
-			savedPeriod?: TimePeriod;
-		})[];
-
-		const targetSavedPeriod = row.savedPeriod;
-		const nextRows = persistedRows
-			.filter((memberRow) => memberRow.savedPeriod !== targetSavedPeriod)
-			.concat(row)
-			.sort(
-				(a, b) => PERIODS.indexOf(a.period) - PERIODS.indexOf(b.period),
+		setSavingUserIds((prev) => new Set(prev).add(memberId));
+		try {
+			await runTokenLimitReactor(
+				isModel
+					? "RemoveEngineUserTokenLimit"
+					: "RemoveProjectUserTokenLimit",
+				isModel
+					? {
+							engineId: entityId,
+							userId: base.id,
+							usageFrequency: period,
+						}
+					: {
+							projectId: entityId,
+							userId: base.id,
+							scopedEngineId: ALL_ENGINES_SENTINEL,
+							usageFrequency: period,
+						},
 			);
-
-		return saveUserLimitRows(memberId, nextRows);
-	};
-
-	const removeUserLimitRow = async (memberId: string, period: TimePeriod) => {
-		const persistedRows = (
-			members
-				.filter((member) => member.id === memberId)
-				.map((member) => {
-					const values = getMemberLimitValues(member);
-					if (!hasAnyTokenLimitValue(values)) {
-						return null;
-					}
-					return {
-						entityId: member.id,
-						entityName: member.name || member.id,
-						entityDetails: [],
-						combinedLimit: values.maxTokens,
-						inputLimit: values.maxInputTokens,
-						outputLimit: values.maxOutputTokens,
-						period: values.period,
-						isActive: true,
-					};
-				})
-				.filter(Boolean) as ExceptionEntry[]
-		).filter((memberRow) => memberRow.period !== period);
-
-		return saveUserLimitRows(memberId, persistedRows);
+			await fetchMemberLimits();
+			toast.success("User limit removed");
+			return true;
+		} catch (e) {
+			console.error("Failed to remove user token limit", e);
+			toast.error("Failed to remove user limit");
+			return false;
+		} finally {
+			setSavingUserIds((prev) => {
+				const next = new Set(prev);
+				next.delete(memberId);
+				return next;
+			});
+		}
 	};
 
 	const saveTeamLimitRow = async (
 		teamId: string,
-		row: ExceptionEntry & { savedPeriod?: TimePeriod },
+		row: EditablePrincipalLimitRow,
 	) => {
 		const team = teamGroups.find((group) => group.ID === teamId);
 		if (!team) {
@@ -742,20 +794,48 @@ export const useTokenLimitsData = ({
 
 		setSavingTeamIds((prev) => new Set(prev).add(teamId));
 		try {
-			const endpoint = isModel
-				? `${Env.MODULE}/api/auth/group/engine/setGroupAppTokenLimit`
-				: `${Env.MODULE}/api/auth/group/project/setGroupProjectTokenLimit`;
-			await post(endpoint, {
-				groupId: team.ID,
-				type: team.TYPE,
-				[entityIdKey]: entityId,
-				usageFrequency: row.period,
-				existingUsageFrequency: row.savedPeriod ?? row.period,
-				maxTokens: serializeNullableLimit(row.combinedLimit),
-				maxInputTokens: serializeNullableLimit(row.inputLimit),
-				maxOutputTokens: serializeNullableLimit(row.outputLimit),
-				maxResponseTime: null,
-			});
+			await runTokenLimitReactor(
+				isModel
+					? "SetEngineTeamTokenLimit"
+					: "SetProjectTeamTokenLimit",
+				isModel
+					? {
+							groupId: team.ID,
+							groupType: team.TYPE,
+							engineId: entityId,
+							usageFrequency: row.period,
+							existingUsageFrequency:
+								row.savedPeriod ?? row.period,
+							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxInputTokens: serializeReactorLimit(
+								row.inputLimit,
+							),
+							maxOutputTokens: serializeReactorLimit(
+								row.outputLimit,
+							),
+							maxResponseTime: -1,
+							isActive: row.isActive,
+						}
+					: {
+							groupId: team.ID,
+							groupType: team.TYPE,
+							projectId: entityId,
+							scopedEngineId: ALL_ENGINES_SENTINEL,
+							usageFrequency: row.period,
+							existingUsageFrequency:
+								row.savedPeriod ?? row.period,
+							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxInputTokens: serializeReactorLimit(
+								row.inputLimit,
+							),
+							maxOutputTokens: serializeReactorLimit(
+								row.outputLimit,
+							),
+							maxResponseTime: -1,
+							restrictPerModel: false,
+							isActive: row.isActive,
+						},
+			);
 			await fetchTeamLimits();
 			toast.success("Team limit saved");
 			return true;
@@ -781,15 +861,25 @@ export const useTokenLimitsData = ({
 
 		setSavingTeamIds((prev) => new Set(prev).add(teamId));
 		try {
-			const endpoint = isModel
-				? `${Env.MODULE}/api/auth/group/engine/removeGroupAppTokenLimit`
-				: `${Env.MODULE}/api/auth/group/project/removeGroupProjectTokenLimit`;
-			await post(endpoint, {
-				groupId: team.ID,
-				type: team.TYPE,
-				[entityIdKey]: entityId,
-				usageFrequency: period,
-			});
+			await runTokenLimitReactor(
+				isModel
+					? "RemoveEngineTeamTokenLimit"
+					: "RemoveProjectTeamTokenLimit",
+				isModel
+					? {
+							groupId: team.ID,
+							groupType: team.TYPE,
+							engineId: entityId,
+							usageFrequency: period,
+						}
+					: {
+							groupId: team.ID,
+							groupType: team.TYPE,
+							projectId: entityId,
+							scopedEngineId: ALL_ENGINES_SENTINEL,
+							usageFrequency: period,
+						},
+			);
 			await fetchTeamLimits();
 			toast.success("Team limit removed");
 			return true;
@@ -846,6 +936,8 @@ export const useTokenLimitsData = ({
 		loading,
 		members,
 		teamGroups,
+		userTokenLimits,
+		teamTokenLimits,
 		defaultUserLimits,
 		defaultTeamLimits,
 		platformLimits,
@@ -858,8 +950,6 @@ export const useTokenLimitsData = ({
 		mapFrequency,
 		parseLimit,
 		toTokenLimitEntry,
-		getMemberLimitValues,
-		getTeamLimitValues,
 		memberOptions,
 		teamOptions,
 		refreshData,
@@ -870,7 +960,6 @@ export const useTokenLimitsData = ({
 		savePlatformLimit,
 		removePlatformLimit,
 		saveUserLimitRow,
-		saveUserLimitRows,
 		removeUserLimitRow,
 		saveTeamLimitRow,
 		removeTeamLimitRow,

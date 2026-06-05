@@ -37,6 +37,20 @@ interface TokenLimitsPanelProps {
 	entityName: string;
 }
 
+interface UserLimitOption {
+	id: string;
+	name: string;
+	email: string;
+	loginType: string;
+}
+
+interface TeamLimitOption {
+	id: string;
+	name: string;
+	teamType: string;
+	permission: string;
+}
+
 const buildRowId = (entityId: string, period: TimePeriod) =>
 	`${entityId}::${period}`;
 
@@ -109,6 +123,8 @@ export function TokenLimitsPanel({
 		loading,
 		members,
 		teamGroups,
+		userTokenLimits,
+		teamTokenLimits,
 		defaultUserLimits,
 		defaultTeamLimits,
 		platformLimits,
@@ -118,8 +134,6 @@ export function TokenLimitsPanel({
 		savingDefaultTeamLimit,
 		savingUserIds,
 		savingTeamIds,
-		getMemberLimitValues,
-		getTeamLimitValues,
 		memberOptions,
 		teamOptions,
 		saveDefaultUserLimit,
@@ -168,16 +182,27 @@ export function TokenLimitsPanel({
 		[defaultTeamLimits],
 	);
 
-	const groupedUserLimits = useMemo<GroupedLimitEntity[]>(
+	const groupedUserLimits = useMemo<GroupedLimitEntity<UserLimitOption>[]>(
 		() =>
 			Array.from(
-				members
-					.reduce((map, member) => {
-						const existing = map.get(member.id) ?? {
-							id: member.id,
-							name: member.name || member.id,
+				userTokenLimits
+					.reduce((map, limit) => {
+						const member = members.find(
+							(candidate) => candidate.id === limit.userId,
+						);
+						if (!member) {
+							return map;
+						}
+						const period = PERIODS.includes(
+							limit.usageFrequency?.toUpperCase() as TimePeriod,
+						)
+							? (limit.usageFrequency?.toUpperCase() as TimePeriod)
+							: "DAY";
+						const existing = map.get(limit.userId) ?? {
+							id: limit.userId,
+							name: member.name || limit.userId,
 							details: [
-								{ label: "ID", value: member.id },
+								{ label: "ID", value: limit.userId },
 								{
 									label: "Email",
 									value: member.email || "N/A",
@@ -186,26 +211,41 @@ export function TokenLimitsPanel({
 							],
 							rows: [] as GroupedLimitRow[],
 							option: memberOptions.find(
-								(option) => option.id === member.id,
+								(option) => option.id === limit.userId,
 							),
 						};
 
-						const values = getMemberLimitValues(member);
+						const values = {
+							maxTokens:
+								limit.maxTokens != null && limit.maxTokens >= 0
+									? limit.maxTokens
+									: null,
+							maxInputTokens:
+								limit.maxInputTokens != null &&
+								limit.maxInputTokens >= 0
+									? limit.maxInputTokens
+									: null,
+							maxOutputTokens:
+								limit.maxOutputTokens != null &&
+								limit.maxOutputTokens >= 0
+									? limit.maxOutputTokens
+									: null,
+						};
 						const hasAny = hasAnyTokenLimitValue(values);
 						if (hasAny) {
 							existing.rows.push({
-								id: buildRowId(member.id, values.period),
-								period: values.period,
-								savedPeriod: values.period,
+								id: buildRowId(limit.userId, period),
+								period,
+								savedPeriod: period,
 								combinedLimit: values.maxTokens,
 								inputLimit: values.maxInputTokens,
 								outputLimit: values.maxOutputTokens,
-								isActive: true,
+								isActive: limit.isActive !== false,
 							});
 						}
-						map.set(member.id, existing);
+						map.set(limit.userId, existing);
 						return map;
-					}, new Map<string, GroupedLimitEntity>())
+					}, new Map<string, GroupedLimitEntity<UserLimitOption>>())
 					.values(),
 			)
 				.map((entry) => ({
@@ -214,17 +254,30 @@ export function TokenLimitsPanel({
 				}))
 				.filter((entry) => entry.rows.length > 0)
 				.sort((a, b) => a.name.localeCompare(b.name)),
-		[members, memberOptions, getMemberLimitValues],
+		[members, memberOptions, userTokenLimits],
 	);
 
-	const groupedTeamLimits = useMemo<GroupedLimitEntity[]>(
+	const groupedTeamLimits = useMemo<GroupedLimitEntity<TeamLimitOption>[]>(
 		() =>
 			Array.from(
-				teamGroups
-					.reduce((map, team) => {
-						const existing = map.get(team.ID) ?? {
-							id: team.ID,
-							name: team.ID,
+				teamTokenLimits
+					.reduce((map, limit) => {
+						const team = teamGroups.find(
+							(candidate) =>
+								candidate.ID === limit.groupId &&
+								candidate.TYPE === limit.groupType,
+						);
+						if (!team) {
+							return map;
+						}
+						const period = PERIODS.includes(
+							limit.usageFrequency?.toUpperCase() as TimePeriod,
+						)
+							? (limit.usageFrequency?.toUpperCase() as TimePeriod)
+							: "DAY";
+						const existing = map.get(limit.groupId) ?? {
+							id: limit.groupId,
+							name: limit.groupId,
 							details: [
 								{ label: "Type", value: team.TYPE || "N/A" },
 								{
@@ -234,26 +287,41 @@ export function TokenLimitsPanel({
 							],
 							rows: [] as GroupedLimitRow[],
 							option: teamOptions.find(
-								(option) => option.id === team.ID,
+								(option) => option.id === limit.groupId,
 							),
 						};
 
-						const values = getTeamLimitValues(team);
+						const values = {
+							maxTokens:
+								limit.maxTokens != null && limit.maxTokens >= 0
+									? limit.maxTokens
+									: null,
+							maxInputTokens:
+								limit.maxInputTokens != null &&
+								limit.maxInputTokens >= 0
+									? limit.maxInputTokens
+									: null,
+							maxOutputTokens:
+								limit.maxOutputTokens != null &&
+								limit.maxOutputTokens >= 0
+									? limit.maxOutputTokens
+									: null,
+						};
 						const hasAny = hasAnyTokenLimitValue(values);
 						if (hasAny) {
 							existing.rows.push({
-								id: buildRowId(team.ID, values.period),
-								period: values.period,
-								savedPeriod: values.period,
+								id: buildRowId(limit.groupId, period),
+								period,
+								savedPeriod: period,
 								combinedLimit: values.maxTokens,
 								inputLimit: values.maxInputTokens,
 								outputLimit: values.maxOutputTokens,
-								isActive: true,
+								isActive: limit.isActive !== false,
 							});
 						}
-						map.set(team.ID, existing);
+						map.set(limit.groupId, existing);
 						return map;
-					}, new Map<string, GroupedLimitEntity>())
+					}, new Map<string, GroupedLimitEntity<TeamLimitOption>>())
 					.values(),
 			)
 				.map((entry) => ({
@@ -262,7 +330,7 @@ export function TokenLimitsPanel({
 				}))
 				.filter((entry) => entry.rows.length > 0)
 				.sort((a, b) => a.name.localeCompare(b.name)),
-		[teamGroups, teamOptions, getTeamLimitValues],
+		[teamGroups, teamOptions, teamTokenLimits],
 	);
 
 	const remainingDefaultUserPeriods = useMemo(
@@ -604,8 +672,15 @@ export function TokenLimitsPanel({
 				onCreateLimit={(period) =>
 					createDraftFromValues(
 						{
-							...DEFAULT_LIMIT_DRAFT._saved,
 							period,
+							maxTokens: DEFAULT_LIMIT_DRAFT._saved.maxTokens,
+							maxInputTokens:
+								DEFAULT_LIMIT_DRAFT._saved.maxInputTokens ??
+								60000,
+							maxOutputTokens:
+								DEFAULT_LIMIT_DRAFT._saved.maxOutputTokens ??
+								40000,
+							isActive: DEFAULT_LIMIT_DRAFT._saved.isActive,
 						},
 						`default-user-limit-${period}`,
 					)
@@ -682,9 +757,6 @@ export function TokenLimitsPanel({
 				}}
 				onSaveSingleRow={async (entityUserId, row) => {
 					const success = await saveUserLimitRow(entityUserId, {
-						entityId: entityUserId,
-						entityName: entityUserId,
-						entityDetails: [],
 						combinedLimit: row.combinedLimit,
 						inputLimit: row.inputLimit,
 						outputLimit: row.outputLimit,
@@ -739,8 +811,15 @@ export function TokenLimitsPanel({
 				onCreateLimit={(period) =>
 					createDraftFromValues(
 						{
-							...DEFAULT_LIMIT_DRAFT._saved,
 							period,
+							maxTokens: DEFAULT_LIMIT_DRAFT._saved.maxTokens,
+							maxInputTokens:
+								DEFAULT_LIMIT_DRAFT._saved.maxInputTokens ??
+								60000,
+							maxOutputTokens:
+								DEFAULT_LIMIT_DRAFT._saved.maxOutputTokens ??
+								40000,
+							isActive: DEFAULT_LIMIT_DRAFT._saved.isActive,
 						},
 						`default-team-limit-${period}`,
 					)
@@ -818,9 +897,6 @@ export function TokenLimitsPanel({
 				}}
 				onSaveSingleRow={async (teamId, row) => {
 					const success = await saveTeamLimitRow(teamId, {
-						entityId: teamId,
-						entityName: teamId,
-						entityDetails: [],
 						combinedLimit: row.combinedLimit,
 						inputLimit: row.inputLimit,
 						outputLimit: row.outputLimit,
