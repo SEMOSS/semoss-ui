@@ -37,6 +37,11 @@ const NewPromptBuilderAppPage = lazy(() =>
 		default: m.NewPromptBuilderAppPage,
 	})),
 );
+const NotebookAppPage = lazy(() =>
+	import("./app/NotebookAppPage").then((m) => ({
+		default: m.NotebookAppPage,
+	})),
+);
 const ViewAppPage = lazy(() =>
 	import("./app/view-app-page").then((m) => ({ default: m.ViewAppPage })),
 );
@@ -95,6 +100,7 @@ export const Router = observer(() => {
 			<Routes>
 				<Route path="/" element={<AuthenticatedLayout />}>
 					<Route path="s/:appId/*" element={<SharePage />} />
+					<Route path="notebook" element={<NotebookAppPage />} />
 					<Route path="*" element={<PageLayout />}>
 						<Route index element={<LandingPage />} />
 						<Route path="app/*">
