@@ -477,7 +477,7 @@ export const CatalogPage = observer(
 					metaKeysWithDescription,
 				)}, metaFilters=[${JSON.stringify(
 					metaFilters,
-				)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], ${config.pixelFilter}, limit=[${limit}], offset=[${offset}]);`;
+				)}], filterWord=["${search}"], sort=[{"${sortKey}" : "${sortOrder}"}], ${config.pixelFilter}, onlyFavorites=[true], limit=[${limit}], offset=[${offset}]);`;
 			},
 			(response) => {
 				if (response.length < APP_PAGE_LIMIT) {
