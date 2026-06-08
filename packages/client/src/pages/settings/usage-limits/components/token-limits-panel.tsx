@@ -711,10 +711,7 @@ export function TokenLimitsPanel({
 				entities={displayedGroupedUserLimits}
 				entityOptions={memberOptions.filter((option) => {
 					const existingRows = userRowsById.get(option.id) ?? [];
-					const selectableRows = existingRows.filter(
-						(row) => row.period !== "MONTH",
-					);
-					return selectableRows.length < UI_TIME_PERIODS.length;
+					return existingRows.length < UI_TIME_PERIODS.length;
 				})}
 				emptyMessage="No per-user limits configured."
 				multiPeriod
@@ -730,13 +727,10 @@ export function TokenLimitsPanel({
 				)}
 				onAddEntity={(user) => {
 					const existingRows = userRowsById.get(user.id) ?? [];
-					const selectableRows = existingRows.filter(
-						(row) => row.period !== "MONTH",
-					);
 					const nextPeriod =
 						UI_TIME_PERIODS.find(
 							(period) =>
-								!selectableRows.some(
+								!existingRows.some(
 									(row) => row.period === period,
 								),
 						) ?? "DAY";
@@ -850,10 +844,7 @@ export function TokenLimitsPanel({
 				entities={displayedGroupedTeamLimits}
 				entityOptions={teamOptions.filter((option) => {
 					const existingRows = teamRowsById.get(option.id) ?? [];
-					const selectableRows = existingRows.filter(
-						(row) => row.period !== "MONTH",
-					);
-					return selectableRows.length < UI_TIME_PERIODS.length;
+					return existingRows.length < UI_TIME_PERIODS.length;
 				})}
 				emptyMessage="No per-team limits configured."
 				multiPeriod
@@ -870,13 +861,10 @@ export function TokenLimitsPanel({
 				)}
 				onAddEntity={(team) => {
 					const existingRows = teamRowsById.get(team.id) ?? [];
-					const selectableRows = existingRows.filter(
-						(row) => row.period !== "MONTH",
-					);
 					const nextPeriod =
 						UI_TIME_PERIODS.find(
 							(period) =>
-								!selectableRows.some(
+								!existingRows.some(
 									(row) => row.period === period,
 								),
 						) ?? "DAY";

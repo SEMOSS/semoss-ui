@@ -10,9 +10,9 @@ export const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
 };
 
 export const UI_TIME_PERIODS: TimePeriod[] = [
-	"HOUR",
 	"DAY",
 	"WEEK",
+	"MONTH",
 	"YEAR",
 	"ALL_TIME",
 ];

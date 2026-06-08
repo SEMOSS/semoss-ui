@@ -59,6 +59,8 @@ const parseNullableNumber = (value: string) => {
 	return Number.isNaN(parsed) ? null : parsed;
 };
 
+const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, "");
+
 const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
 
 const isRowDirty = (
@@ -66,6 +68,7 @@ const isRowDirty = (
 	draft: GroupedLimitRow,
 	supportsActive: boolean,
 ) =>
+	source.savedPeriod == null ||
 	draft.period !== source.period ||
 	draft.combinedLimit !== source.combinedLimit ||
 	draft.inputLimit !== source.inputLimit ||
@@ -92,6 +95,15 @@ const GroupedLimitEditorRow = ({
 	supportsActive?: boolean;
 }) => {
 	const dirty = isRowDirty(sourceRow, row, supportsActive);
+	const [combinedValue, setCombinedValue] = useState(
+		row.combinedLimit == null ? "" : String(row.combinedLimit),
+	);
+	const [inputValue, setInputValue] = useState(
+		row.inputLimit == null ? "" : String(row.inputLimit),
+	);
+	const [outputValue, setOutputValue] = useState(
+		row.outputLimit == null ? "" : String(row.outputLimit),
+	);
 	const periodOptions = useMemo(() => {
 		const nextPeriods = availablePeriods.includes(row.period)
 			? availablePeriods
@@ -101,19 +113,37 @@ const GroupedLimitEditorRow = ({
 		);
 	}, [availablePeriods, row.period]);
 
+	useEffect(() => {
+		setCombinedValue(
+			row.combinedLimit == null ? "" : String(row.combinedLimit),
+		);
+	}, [row.combinedLimit]);
+
+	useEffect(() => {
+		setInputValue(row.inputLimit == null ? "" : String(row.inputLimit));
+	}, [row.inputLimit]);
+
+	useEffect(() => {
+		setOutputValue(row.outputLimit == null ? "" : String(row.outputLimit));
+	}, [row.outputLimit]);
+
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
 			<div className="flex items-center gap-2">
 				<Label className="whitespace-nowrap text-xs">Combined:</Label>
 				<Input
-					type="number"
-					value={row.combinedLimit ?? ""}
-					onChange={(e) =>
+					type="text"
+					inputMode="numeric"
+					pattern="[0-9]*"
+					value={combinedValue}
+					onChange={(e) => {
+						const nextValue = sanitizeNumericInput(e.target.value);
+						setCombinedValue(nextValue);
 						onChange({
 							...row,
-							combinedLimit: parseNullableNumber(e.target.value),
-						})
-					}
+							combinedLimit: parseNullableNumber(nextValue),
+						});
+					}}
 					disabled={disabled}
 					className="h-8 w-24"
 				/>
@@ -121,14 +151,18 @@ const GroupedLimitEditorRow = ({
 			<div className="flex items-center gap-2">
 				<Label className="whitespace-nowrap text-xs">Input:</Label>
 				<Input
-					type="number"
-					value={row.inputLimit ?? ""}
-					onChange={(e) =>
+					type="text"
+					inputMode="numeric"
+					pattern="[0-9]*"
+					value={inputValue}
+					onChange={(e) => {
+						const nextValue = sanitizeNumericInput(e.target.value);
+						setInputValue(nextValue);
 						onChange({
 							...row,
-							inputLimit: parseNullableNumber(e.target.value),
-						})
-					}
+							inputLimit: parseNullableNumber(nextValue),
+						});
+					}}
 					disabled={disabled}
 					className="h-8 w-24"
 				/>
@@ -136,14 +170,18 @@ const GroupedLimitEditorRow = ({
 			<div className="flex items-center gap-2">
 				<Label className="whitespace-nowrap text-xs">Output:</Label>
 				<Input
-					type="number"
-					value={row.outputLimit ?? ""}
-					onChange={(e) =>
+					type="text"
+					inputMode="numeric"
+					pattern="[0-9]*"
+					value={outputValue}
+					onChange={(e) => {
+						const nextValue = sanitizeNumericInput(e.target.value);
+						setOutputValue(nextValue);
 						onChange({
 							...row,
-							outputLimit: parseNullableNumber(e.target.value),
-						})
-					}
+							outputLimit: parseNullableNumber(nextValue),
+						});
+					}}
 					disabled={disabled}
 					className="h-8 w-24"
 				/>

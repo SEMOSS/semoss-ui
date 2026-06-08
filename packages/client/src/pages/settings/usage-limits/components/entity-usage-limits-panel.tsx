@@ -33,7 +33,7 @@ interface EntityUsageLimitsPanelProps {
  */
 export function EntityUsageLimitsPanel({
 	entityType,
-	entityId,
+	entityId: _entityId,
 	entityName,
 }: EntityUsageLimitsPanelProps) {
 	const { users, teams } = useMockLimitsData();
@@ -113,7 +113,7 @@ export function EntityUsageLimitsPanel({
 	// Add limit dialogs
 	const [showUserAddDialog, setShowUserAddDialog] = useState(false);
 	const [showTeamAddDialog, setShowTeamAddDialog] = useState(false);
-	const [newPeriod, setNewPeriod] = useState<TimePeriod>("HOUR");
+	const [newPeriod, setNewPeriod] = useState<TimePeriod>("DAY");
 	const [newMaxTokens, setNewMaxTokens] = useState("100000");
 	const [newMaxInput, setNewMaxInput] = useState("60000");
 	const [newMaxOutput, setNewMaxOutput] = useState("40000");

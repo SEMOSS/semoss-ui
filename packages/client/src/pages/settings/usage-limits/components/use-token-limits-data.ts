@@ -107,6 +107,8 @@ export const PERIODS = [
 	"ALL_TIME",
 ] as TimePeriod[];
 
+const UI_PERIODS = PERIODS.filter((period) => period !== "HOUR");
+
 export const DEFAULT_LIMIT_DRAFT: TokenLimitEntry = {
 	id: "default-limit",
 	period: "DAY",
@@ -253,6 +255,11 @@ export const useTokenLimitsData = ({
 		return PERIODS.includes(upper) ? upper : "DAY";
 	}, []);
 
+	const isUiPeriod = useCallback(
+		(period: TimePeriod) => UI_PERIODS.includes(period),
+		[],
+	);
+
 	const parseLimit = useCallback((value?: number | null): number | null => {
 		if (value == null || Number.isNaN(value) || value < 0) {
 			return null;
@@ -314,12 +321,13 @@ export const useTokenLimitsData = ({
 					const period = mapFrequency(limit.usageFrequency);
 					return toTokenLimitEntry(limit, `${idPrefix}-${period}`);
 				})
+				.filter((limit) => isUiPeriod(limit.period))
 				.sort(
 					(a, b) =>
 						PERIODS.indexOf(a.period) - PERIODS.indexOf(b.period),
 				);
 		},
-		[mapFrequency, toTokenLimitEntry],
+		[isUiPeriod, mapFrequency, toTokenLimitEntry],
 	);
 
 	const fetchDefaultUserLimits = useCallback(async () => {
@@ -401,8 +409,20 @@ export const useTokenLimitsData = ({
 		setMembers(
 			Array.isArray(response?.data?.members) ? response.data.members : [],
 		);
-		setUserTokenLimits(Array.isArray(limits) ? limits : []);
-	}, [entityId, entityIdKey, entityPath, getUsersEndpoint, isModel]);
+		setUserTokenLimits(
+			(Array.isArray(limits) ? limits : []).filter((limit) =>
+				isUiPeriod(mapFrequency(limit.usageFrequency)),
+			),
+		);
+	}, [
+		entityId,
+		entityIdKey,
+		entityPath,
+		getUsersEndpoint,
+		isModel,
+		isUiPeriod,
+		mapFrequency,
+	]);
 
 	const fetchTeamLimits = useCallback(async () => {
 		const [response, limits] = await Promise.all([
@@ -422,14 +442,20 @@ export const useTokenLimitsData = ({
 			),
 		]);
 		setTeamGroups(parseGroupsResponse(response));
-		setTeamTokenLimits(Array.isArray(limits) ? limits : []);
-	}, [entityId, isModel]);
+		setTeamTokenLimits(
+			(Array.isArray(limits) ? limits : []).filter((limit) =>
+				isUiPeriod(mapFrequency(limit.usageFrequency)),
+			),
+		);
+	}, [entityId, isModel, isUiPeriod, mapFrequency]);
 
 	const fetchPlatformLimits = useCallback(async () => {
 		if (!isModel) return;
 		const url = `${Env.MODULE}/api/auth/engine/getModelPlatformTokenUsage?engineId=${encodeURIComponent(entityId)}`;
 		const response = await get<ModelPlatformUsageLimit[]>(url);
-		const rows = Array.isArray(response?.data) ? response.data : [];
+		const rows = (
+			Array.isArray(response?.data) ? response.data : []
+		).filter((row) => isUiPeriod(mapFrequency(row.usageFrequency)));
 
 		setPlatformLimits(
 			rows.map((row) => {
@@ -482,7 +508,7 @@ export const useTokenLimitsData = ({
 			};
 		});
 		setPlatformUsageByPeriod(usageIndex);
-	}, [entityId, isModel, mapFrequency, parseLimit]);
+	}, [entityId, isModel, isUiPeriod, mapFrequency, parseLimit]);
 
 	const refreshData = useCallback(async () => {
 		setLoading(true);
