@@ -1,9 +1,7 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
-import { AuditLogPage } from "@/components/audit-log-page";
-// import { useRootStore } from "@/hooks";
-// import { AuditLogsDashboard } from "./AuditLogsDashboard";
+import { AuditLogPage } from "@/components/audit-logs-page";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import { LoginPage } from "./LoginPage";
 import { RootLayout } from "./RootLayout";
@@ -28,19 +26,8 @@ export const Router = () => {
 			<HashRouter>
 				<Routes>
 					<Route path="/" element={<AuthenticatedLayout />}>
-						{/* <Route path="*" element={<MainLayout />}> */}
-						<Route
-							index
-							element={<AuditLogPage catalogName="Apps" />}
-						/>
-						{/* </Route> */}
+						<Route index element={<AuditLogPage />} />
 					</Route>
-					{/*{showCookieNotice && (
-                        <Route path="/cookie-notice" element={<CookieNotice />} />
-                    )}
-                    {showPrivacyNotice && (
-                        <Route path="/privacy-notice" element={<PrivacyNotice />} />
-                    )} */}
 					<Route path="/login" element={<LoginPage />}></Route>
 				</Routes>
 			</HashRouter>

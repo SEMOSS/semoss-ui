@@ -611,13 +611,16 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 		},
 		[favorite, isFavorite],
 	);
-
 	const handleViewDashboard = useCallback(
 		(e: React.MouseEvent) => {
 			e.stopPropagation();
-			navigate(`/app/${app.project_id}/dashboard`);
+			navigate(`/app/${app.project_id}/auditlogs`, {
+				state: {
+					displayName: app.project_display_name || app.project_name,
+				},
+			});
 		},
-		[navigate, app.project_id],
+		[navigate, app.project_id, app.project_display_name, app.project_name],
 	);
 
 	const handleCopyId = useCallback(
@@ -919,7 +922,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 											<DropdownMenuItem
 												onClick={handleViewDashboard}
 											>
-												View Dashboard
+												View Audit Logs
 											</DropdownMenuItem>
 											{canEdit && (
 												<>
@@ -1036,7 +1039,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<DropdownMenuItem
 											onClick={handleViewDashboard}
 										>
-											View Dashboard
+											View Audit Logs
 										</DropdownMenuItem>
 										{canEdit && (
 											<>
@@ -1330,7 +1333,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 									<DropdownMenuItem
 										onClick={handleViewDashboard}
 									>
-										View Dashboard
+										View Audit Logs
 									</DropdownMenuItem>
 									{canEdit && (
 										<>

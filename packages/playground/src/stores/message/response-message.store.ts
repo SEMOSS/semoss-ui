@@ -600,6 +600,15 @@ paramValues=[${JSON.stringify({
 					typeof rawOutput === "string"
 						? rawOutput
 						: JSON.stringify(rawOutput);
+
+				if (
+					this.room.shouldOpenFileExplorerForToolResult(
+						tool.json.name,
+						rawOutput,
+					)
+				) {
+					this.room.openFileExplorerSidebar();
+				}
 			} catch (e) {
 				// If RunMCPTool fails, we want to save the error message as the tool response, and set the tool status to error
 				output = (e as Error).message;

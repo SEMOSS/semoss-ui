@@ -1,304 +1,498 @@
-// biome-ignore-all lint/correctness/useExhaustiveDependencies: TODO
-import { RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
 import {
-	AppCatalogAvatar,
-	AuditLogFilter,
-	AuditLogsDataTable,
-	AuditLogsTimeline,
-	EngineSubtypeIcon,
-	EntityHeader,
-	type EventData,
+	type AuditLog,
+	buildSearchPayload,
+	ChartPanel,
+	EventHistory,
+	FilterRow,
+	getUserProjectPermission,
+	type SearchCategory,
+	type SearchToken,
 } from "@semoss/shared";
-import { Button, Skeleton, toast } from "@semoss/ui/next";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@semoss/ui/next";
+import { getUserEnginePermission } from "@/api/engines";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
 
-interface AuditLogsDashboardProps {
-	catalogName: string;
-}
+const ROWS_PER_PAGE = 10;
 
-interface AuditLogsFilterData {
-	engineType: string;
-	engineId: string;
-	duration: string;
-	customDateRange: {
-		from: Date | null;
-		to: Date | null;
-	};
-	SelectedDuration: {
-		label: string;
-		value: string;
-		dateRangeType: string;
-		dateRangeValue: number;
-	};
-}
+const ENGINE_TYPES = [
+	"APP",
+	"MODEL",
+	"DATABASE",
+	"VECTOR",
+	"FUNCTION",
+	"STORAGE",
+	"GUARDRAIL",
+];
 
-interface AppMetadataResponse {
-	project_display_name?: string;
-	project_name?: string;
-}
+const DASHBOARD_DURATIONS = [
+	{ label: "Today", value: "today", dateRangeType: "DAY", dateRangeValue: 1 },
+	{
+		label: "Last 7 Days",
+		value: "7days",
+		dateRangeType: "WEEK",
+		dateRangeValue: 1,
+	},
+	{
+		label: "Last 30 Days",
+		value: "30days",
+		dateRangeType: "MONTH",
+		dateRangeValue: 1,
+	},
+	{
+		label: "Custom",
+		value: "custom",
+		dateRangeType: "CUSTOM",
+		dateRangeValue: 1,
+	},
+] as const;
 
-interface EngineMetadataResponse {
-	engine_display_name?: string;
-	engine_name?: string;
-	engine_type?: string;
-	engine_subtype?: string;
-}
-
-type ContextEntity =
-	| {
-			kind: "app";
-			id: string;
-			name: string;
-	  }
-	| {
-			kind: "engine";
-			id: string;
-			name: string;
-			engineType: string;
-			engineSubtype?: string;
-	  };
+type DurationValue = (typeof DASHBOARD_DURATIONS)[number]["value"];
 
 /**
- * A component for displaying the audit logs dashboard for a given catalog.
- *
- * @param {string} catalogName - The name of the catalog.
- * @returns {JSX.Element} - A JSX element containing the audit logs dashboard.
- */
+ * A function to format a timestamp into a date and time string.
+ * @param {string | number | null } timeStamp - The timestamp to be formatted.
+ * @returns {{date: string, time: string}} - An object containing the date and time strings.
+ * */
+export const TimeDateFormatter = (timeStamp: string | number | null) => {
+	if (!timeStamp) {
+		return { date: "", time: "" };
+	}
+
+	try {
+		const tempDate = new Date(timeStamp);
+
+		if (Number.isNaN(tempDate.getTime())) {
+			return { date: "", time: "" };
+		}
+
+		const formattedDate = tempDate.toLocaleTimeString("en-US", {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+			hour12: true,
+		});
+
+		try {
+			const [datePart, timePart] = formattedDate.split(", ");
+			const date = datePart || "";
+			const time = timePart ? timePart.split(" ")[0] : "";
+			return { date, time };
+		} catch (_formatError) {
+			return { date: "", time: "" };
+		}
+	} catch (_dateError) {
+		return { date: "", time: "" };
+	}
+};
+
 export const AuditLogsDashboard = ({
 	catalogName,
-}: AuditLogsDashboardProps) => {
-	const { configStore, monolithStore } = useRootStore();
-	const { appId, engineId } = useParams();
-	const [logs, setLogs] = useState<EventData[]>([]);
+}: {
+	catalogName: string;
+}) => {
+	const { monolithStore } = useRootStore();
+	const location = useLocation();
+	const params = useParams<{ appId?: string; engineId?: string }>();
+	const catalogId = catalogName === "Apps" ? params.appId : params.engineId;
+	const routeDisplayName =
+		(location.state as { displayName?: string } | null)?.displayName ?? "";
+	const [chartTab, setChartTab] = useState<"bar" | "timeline">("timeline");
+	const [chartPage, setChartPage] = useState(0);
+	const [searchTokens, setSearchTokens] = useState<SearchToken[]>([]);
+	const [searchFreeText, setSearchFreeText] = useState("");
+	const [selected, setSelected] = useState<AuditLog | null>(null);
+
+	const [logs, setLogs] = useState<AuditLog[]>([]);
 	const [page, setPage] = useState(0);
-	const [rowsPerPage, setRowsPerPage] = useState(50);
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
-	const [contextEntityDetails, setContextEntityDetails] =
-		useState<ContextEntity | null>(null);
-	const hasSkippedInitialFilterFetchRef = useRef(false);
-	const filteredData = useRef<AuditLogsFilterData>({
+	const [selectedUser, setSelectedUser] = useState("");
+	const [userOptions, setUserOptions] = useState<
+		{ value: string; label: string }[]
+	>([]);
+	const [isOwner, setIsOwner] = useState(false);
+
+	const todayStr = new Date().toISOString().split("T")[0];
+	const [dateFrom, setDateFrom] = useState(todayStr);
+	const [dateTo, setDateTo] = useState(todayStr);
+	const [durationValue, setDurationValue] = useState<DurationValue>("today");
+
+	const filteredData = useRef({
 		engineType: "",
 		engineId: "",
-		duration: "",
-		customDateRange: { from: null, to: null },
-		SelectedDuration: {
-			label: "",
-			value: "",
-			dateRangeType: "",
-			dateRangeValue: 1,
-		},
+		selectedUser: "",
+		customDateRange: { from: new Date(), to: new Date() },
+		SelectedDuration:
+			DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
 	});
-	const routeContextEntity = useMemo<ContextEntity | null>(() => {
-		if (appId) {
-			return {
-				kind: "app",
-				id: appId,
-				name: "App",
-			};
-		}
 
-		if (engineId) {
-			return {
-				kind: "engine",
-				id: engineId,
-				name: catalogName,
-				engineType: catalogName.toUpperCase(),
-			};
-		}
+	const searchRef = useRef<{
+		tokens: SearchToken[];
+		freeText: string;
+	}>({
+		tokens: [],
+		freeText: "",
+	});
 
-		return null;
-	}, [appId, engineId, catalogName]);
-	const contextEntity = contextEntityDetails || routeContextEntity;
-	const isContextualDashboard = Boolean(routeContextEntity);
+	const fetchLogs = useCallback(
+		async (limit: number, offset: number) => {
+			setLoading(true);
+			try {
+				const date = new Date();
+				const yyyy = date.getFullYear();
+				const mm = String(date.getMonth() + 1).padStart(2, "0");
+				const dd = String(date.getDate()).padStart(2, "0");
+				const hh = String(date.getHours()).padStart(2, "0");
+				const min = String(date.getMinutes()).padStart(2, "0");
+				const ss = String(date.getSeconds()).padStart(2, "0");
+
+				const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+				const SelectedDuration = filteredData.current.SelectedDuration;
+
+				const startDate = filteredData.current?.customDateRange?.from
+					? new Date(
+							new Date(
+								filteredData.current.customDateRange.from,
+							).setUTCHours(0, 0, 0, 0),
+						)
+					: null;
+				const endDate = filteredData.current?.customDateRange?.to
+					? new Date(
+							new Date(
+								filteredData.current.customDateRange.to,
+							).setUTCHours(23, 59, 59, 999),
+						)
+					: null;
+
+				const customPart =
+					SelectedDuration.dateRangeType === "CUSTOM" &&
+					startDate &&
+					endDate
+						? `,"startDate":"${startDate.toISOString()}","endDate":"${endDate.toISOString()}"`
+						: "";
+
+				const searchPayload = buildSearchPayload(
+					searchRef.current.tokens,
+					searchRef.current.freeText,
+				);
+
+				if (searchPayload?.search?.engineType) {
+					searchPayload.search.engineType =
+						searchPayload.search.engineType.map((v) =>
+							v === "APP" ? "PROJECT" : v,
+						);
+				}
+
+				let searchPart = "";
+				if (searchPayload) {
+					if (searchPayload.search) {
+						searchPart += `,"search":${JSON.stringify(searchPayload.search)}`;
+					}
+					if (searchPayload.others) {
+						searchPart += `,"others":"${searchPayload.others}"`;
+					}
+					if (searchPayload.roomId) {
+						searchPart += `,"roomId":"${searchPayload.roomId}"`;
+					}
+				}
+
+				const response = await monolithStore.runQuery(
+					`AuditLogReport(paramValues=[{"filterUserId": "${filteredData.current.selectedUser}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}","dateRangeType":"${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue":${SelectedDuration.dateRangeValue}${customPart}${searchPart}}]);`,
+				);
+				const { operationType } = response.pixelReturn[0];
+				if (operationType.indexOf("ERROR") > -1)
+					throw new Error(
+						`API Error: ${response.pixelReturn[0].output}`,
+					);
+
+				const responseData = response.pixelReturn[0].output;
+
+				let logsArray: AuditLog[] = [];
+				let count = 0;
+
+				if (Array.isArray(responseData)) {
+					logsArray = responseData as AuditLog[];
+					count = responseData.length;
+				} else if (
+					responseData &&
+					typeof responseData === "object" &&
+					"logs" in responseData &&
+					Array.isArray(responseData.logs)
+				) {
+					logsArray = responseData.logs as AuditLog[];
+					count =
+						("totalCount" in responseData
+							? (
+									responseData as {
+										totalCount: number;
+									}
+								).totalCount
+							: null) ?? responseData.logs.length;
+				}
+
+				setLogs(logsArray);
+				setTotalCount(count);
+				setSelected(logsArray[0] ?? null);
+			} catch (error) {
+				setLogs([]);
+				setSelected(null);
+				console.error("Error fetching logs:", error);
+			} finally {
+				setLoading(false);
+			}
+		},
+		[catalogId, catalogName, monolithStore],
+	);
+
+	const fetchUserList = useCallback(
+		async (id: string, isApp: boolean) => {
+			if (!id) {
+				setUserOptions([]);
+				setIsOwner(false);
+				return;
+			}
+			try {
+				let permission: string;
+				if (isApp) {
+					permission = await getUserProjectPermission(id);
+				} else {
+					const enginePerm = await getUserEnginePermission(id);
+					permission = enginePerm.permission;
+				}
+
+				if (permission !== "OWNER") {
+					setIsOwner(false);
+					setUserOptions([]);
+					return;
+				}
+
+				setIsOwner(true);
+
+				const resp = await monolithStore.runQuery(
+					`GetAuditLogReportUsers(engine=["${id}"]);`,
+				);
+				const data = resp.pixelReturn[0].output;
+				if (Array.isArray(data)) {
+					setUserOptions(
+						data.map(
+							(u: {
+								id: string;
+								name: string;
+								type: string;
+							}) => ({
+								value: u.id,
+								label: `${u.name} [${u.id}]`,
+							}),
+						),
+					);
+				} else {
+					setUserOptions([]);
+				}
+			} catch (err) {
+				console.error("Error fetching user list:", err);
+				setIsOwner(false);
+				setUserOptions([]);
+			}
+		},
+		[monolithStore],
+	);
+
+	const fetchCategoryOptions = useCallback(
+		async (
+			category: SearchCategory,
+			offset: number,
+			limit: number,
+			searchText?: string,
+		): Promise<string[]> => {
+			if (category === "roomId") return [];
+			try {
+				const { selectedUser: sUser } = filteredData.current;
+				const tokens = searchRef.current.tokens;
+				const isApp = catalogName === "Apps";
+
+				const params: Record<string, string> = {
+					filterUserId: sUser,
+					projectId: isApp ? catalogId || "" : "",
+					engineId: isApp ? "" : catalogId || "",
+					limit: String(limit),
+					offset: String(offset),
+				};
+
+				if (category !== "engineType") {
+					params.filterName = category;
+				}
+
+				for (const token of tokens) {
+					if (
+						token.category === "methodName" &&
+						category !== "methodName"
+					) {
+						params.methodName = token.values.join(",");
+					} else if (
+						token.category === "engineType" &&
+						category !== "engineType"
+					) {
+						params.engineType = token.values
+							.map((v) => (v === "APP" ? "PROJECT" : v))
+							.join(",");
+					}
+				}
+
+				if (searchText) {
+					const categoryFieldMap: Record<string, string> = {
+						methodName: "methodName",
+						engineType: "engineType",
+						roomId: "roomId",
+					};
+					const field = categoryFieldMap[category];
+					if (field) {
+						params[field] =
+							category === "engineType" && searchText === "APP"
+								? "PROJECT"
+								: searchText;
+					}
+				}
+
+				const paramStr = Object.entries(params)
+					.map(([k, v]) => `"${k}":"${v}"`)
+					.join(",");
+
+				const pixel = `GetAuditLogReportFilterOptionList(paramValues=[{${paramStr}}]);`;
+				const response = await monolithStore.runQuery(pixel);
+				const data = response.pixelReturn[0].output;
+
+				if (Array.isArray(data)) {
+					const values = data
+						.map((item: unknown) => {
+							// array-of-arrays response: [["askRoom"], ["callTool"], ...]
+							if (Array.isArray(item)) {
+								return item[0];
+							}
+							// legacy object response for engineType
+							if (item && typeof item === "object") {
+								const fieldMap: Record<string, string> = {
+									methodName: "methodName",
+									engineType: "engineType",
+									roomId: "roomId",
+								};
+								const field = fieldMap[category];
+								return field
+									? (item as Record<string, string>)[field]
+									: item;
+							}
+							return item;
+						})
+						.filter(
+							(v: unknown): v is string =>
+								typeof v === "string" && v.length > 0,
+						);
+					return [...new Set(values)];
+				}
+				return [];
+			} catch (err) {
+				console.error("Error fetching category options:", err);
+				return [];
+			}
+		},
+		[catalogId, catalogName, monolithStore],
+	);
+
+	const handleUserChange = useCallback(
+		(uid: string) => {
+			setSelectedUser(uid);
+			setChartPage(0);
+			filteredData.current.selectedUser = uid;
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
+
+	const handleDateChange = useCallback(
+		(from: string, to: string, preset?: string) => {
+			setDateFrom(from);
+			setDateTo(to);
+			setChartPage(0);
+			const duration =
+				DASHBOARD_DURATIONS.find((d) => d.value === preset) ??
+				DASHBOARD_DURATIONS[0];
+			setDurationValue(duration.value);
+			filteredData.current.customDateRange = {
+				from: from ? new Date(from) : new Date(),
+				to: to ? new Date(to) : new Date(),
+			};
+			filteredData.current.SelectedDuration = duration;
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
+
+	const handleRefresh = useCallback(() => {
+		setDateFrom(todayStr);
+		setDateTo(todayStr);
+		setDurationValue("today");
+		setChartPage(0);
+		setSearchTokens([]);
+		setSearchFreeText("");
+		setSelectedUser("");
+		filteredData.current = {
+			engineType: "",
+			engineId: "",
+			selectedUser: "",
+			customDateRange: { from: new Date(), to: new Date() },
+			SelectedDuration:
+				DASHBOARD_DURATIONS[0] as (typeof DASHBOARD_DURATIONS)[number],
+		};
+		searchRef.current = { tokens: [], freeText: "" };
+		setPage(0);
+		fetchLogs(ROWS_PER_PAGE, 0);
+	}, [todayStr, fetchLogs]);
+
+	const handleSearch = useCallback(
+		(tokens: SearchToken[], freeText: string) => {
+			setSearchTokens(tokens);
+			setSearchFreeText(freeText);
+			searchRef.current = { tokens, freeText };
+			setPage(0);
+			fetchLogs(ROWS_PER_PAGE, 0);
+		},
+		[fetchLogs],
+	);
+
+	// Stable noop callbacks so FilterRow memo is not broken
+	const noopEngineTypeChange = useCallback(() => {}, []);
+	const noopEngineChange = useCallback(() => {}, []);
+
+	const categoryOptions = useMemo(() => ({ engineType: ENGINE_TYPES }), []);
 
 	useEffect(() => {
-		let cancelled = false;
-
-		const fetchContextEntity = async () => {
-			if (appId) {
-				try {
-					const appResponse = await monolithStore.runQuery(
-						`GetProjectMetadata(project="${appId}", metaKeys=${JSON.stringify([["project_display_name", "project_name"]])})`,
-					);
-					const { operationType, output } =
-						appResponse.pixelReturn[0];
-					if (operationType.indexOf("ERROR") > -1) {
-						if (!cancelled) setContextEntityDetails(null);
-						return;
-					}
-
-					const appMetadata = output as AppMetadataResponse;
-					if (!cancelled) {
-						setContextEntityDetails({
-							kind: "app",
-							id: appId,
-							name:
-								appMetadata.project_display_name ||
-								appMetadata.project_name ||
-								"App",
-						});
-					}
-				} catch (error) {
-					if (!cancelled) setContextEntityDetails(null);
-					console.error("Error fetching app metadata:", error);
-				}
-				return;
-			}
-
-			if (engineId) {
-				try {
-					const engineResponse = await monolithStore.runQuery(
-						`GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify([["engine_display_name", "engine_name", "engine_type", "engine_subtype"]])});`,
-					);
-					const { operationType, output } =
-						engineResponse.pixelReturn[0];
-					if (operationType.indexOf("ERROR") > -1) {
-						if (!cancelled) setContextEntityDetails(null);
-						return;
-					}
-
-					const engineMetadata = output as EngineMetadataResponse;
-					if (!cancelled) {
-						setContextEntityDetails({
-							kind: "engine",
-							id: engineId,
-							name:
-								engineMetadata.engine_display_name ||
-								engineMetadata.engine_name ||
-								catalogName,
-							engineType:
-								engineMetadata.engine_type ||
-								catalogName.toUpperCase(),
-							engineSubtype: engineMetadata.engine_subtype,
-						});
-					}
-				} catch (error) {
-					if (!cancelled) setContextEntityDetails(null);
-					console.error("Error fetching engine metadata:", error);
-				}
-				return;
-			}
-
-			setContextEntityDetails(null);
-		};
-
-		fetchContextEntity();
-
-		return () => {
-			cancelled = true;
-		};
-	}, [appId, engineId, monolithStore, catalogName]);
-
-	/**
-	 * Fetches the audit logs from the API.
-	 */
-	const fetchLogs = async (limit: number, offset: number) => {
-		setLoading(true);
-		try {
-			const date = new Date();
-			const yyyy = date.getFullYear();
-			const mm = String(date.getMonth() + 1).padStart(2, "0");
-			const dd = String(date.getDate()).padStart(2, "0");
-			const hh = String(date.getHours()).padStart(2, "0");
-			const min = String(date.getMinutes()).padStart(2, "0");
-			const ss = String(date.getSeconds()).padStart(2, "0");
-
-			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
-			const routeCatalogId = appId || engineId || "";
-			const catalogId = routeCatalogId || filteredData.current.engineId;
-			const SelectedDuration = filteredData.current.SelectedDuration;
-			const selectedEngineType =
-				filteredData.current.engineType.toUpperCase();
-			const useProjectId =
-				Boolean(appId) ||
-				(!engineId &&
-					(selectedEngineType === "APP" || catalogName === "Apps"));
-			const catalogIdKey = useProjectId ? "projectId" : "engineId";
-
-			if (!catalogId) {
-				setLogs([]);
-				setTotalCount(0);
-				return;
-			}
-
-			const customStartDate = filteredData.current.customDateRange.from;
-			const customEndDate = filteredData.current.customDateRange.to;
-			const hasCustomDateRange =
-				SelectedDuration.dateRangeType === "CUSTOM" &&
-				customStartDate &&
-				customEndDate;
-			let customDateRangeParams = "";
-
-			if (hasCustomDateRange) {
-				const startDate = new Date(customStartDate);
-				const endDate = new Date(customEndDate);
-
-				startDate.setUTCHours(0, 0, 0, 0);
-				endDate.setUTCHours(23, 59, 59, 999);
-
-				customDateRangeParams = `,"startDate": "${startDate.toISOString()}", "endDate": "${endDate.toISOString()}"`;
-			}
-
-			const response = await monolithStore.runQuery(
-				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogIdKey}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}", "dateRangeType": "${SelectedDuration.dateRangeType || "DAY"}","dateRangeValue": ${SelectedDuration.dateRangeValue}${customDateRangeParams}}]);`,
-			);
-			const { operationType } = response.pixelReturn[0];
-			if (operationType.indexOf("ERROR") > -1)
-				throw new Error(`API Error: ${response.pixelReturn[0].output}`);
-
-			const responseData = response.pixelReturn[0].output;
-			setLogs(
-				(
-					responseData as unknown as {
-						logs: EventData[];
-						totalCount: number;
-					}
-				)?.logs ||
-					(responseData as unknown as EventData[]) ||
-					[],
-			);
-			setTotalCount(
-				(responseData as unknown as { totalCount: number })
-					?.totalCount ||
-					(responseData as unknown as EventData[])?.length ||
-					0,
-			);
-		} catch (error) {
-			setLogs([]);
-			toast.error(`Error fetching logs: ${error}`);
-			console.error("Error fetching logs:", error);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	/**
-	 * Handles pagination change.
-	 */
-	const handlePaginationChange = (
-		newPage: number,
-		newRowsPerPage: number,
-	) => {
-		const offset = newPage * newRowsPerPage;
-		setPage(newPage);
-		setRowsPerPage(newRowsPerPage);
-		fetchLogs(newRowsPerPage, offset);
-	};
+		searchRef.current = { tokens: searchTokens, freeText: searchFreeText };
+	}, [searchTokens, searchFreeText]);
 
 	useEffect(() => {
 		if (catalogName) {
-			setLogs([]);
-			fetchLogs(rowsPerPage, page * rowsPerPage);
+			fetchLogs(ROWS_PER_PAGE, page * ROWS_PER_PAGE);
 		}
 		const contentElement = document.querySelector(
 			'[data-home-container="true"]',
 		) as HTMLElement | null;
 		if (contentElement) {
-			contentElement.style.padding = "32px";
+			contentElement.style.padding = "25px";
+			contentElement.style.paddingTop = "10px";
 			contentElement.style.maxWidth = "none";
 		}
 
@@ -308,35 +502,62 @@ export const AuditLogsDashboard = ({
 				contentElement.style.maxWidth = "";
 			}
 		};
-	}, [catalogName, appId, engineId]);
+	}, [catalogName, page, fetchLogs]);
 
-	/**
-	 * Updates the filtered data state and refetches logs.
-	 */
-	const updateLogs = (filterData: AuditLogsFilterData) => {
-		filteredData.current = {
-			...filterData,
-		};
-		if (isContextualDashboard && !hasSkippedInitialFilterFetchRef.current) {
-			hasSkippedInitialFilterFetchRef.current = true;
-			return;
+	useEffect(() => {
+		if (catalogId) {
+			fetchUserList(catalogId, catalogName === "Apps");
 		}
-		fetchLogs(rowsPerPage, page * rowsPerPage);
-	};
+	}, [catalogId, catalogName, fetchUserList]);
 
-	const dashboardControls = (
-		<div className="flex flex-row items-center gap-4">
-			<AuditLogFilter
-				updateLogs={updateLogs}
-				insightId={configStore.store.insightID}
-				parent={isContextualDashboard ? "client" : null}
-			/>
-			<Button onClick={() => fetchLogs(rowsPerPage, page * rowsPerPage)}>
-				<RefreshCw className="mr-2 size-4" />
-				Refresh
-			</Button>
-		</div>
+	const { avgLat, successPct, failCount } = useMemo(() => {
+		const successCount = logs.filter((l) => l.status).length;
+		const errors = logs.length - successCount;
+		const avg =
+			Array.isArray(logs) && logs.length > 0
+				? (
+						logs.reduce((s, l) => s + l.latency, 0) / logs.length
+					).toFixed(1)
+				: "0";
+		const pct = logs.length
+			? Math.round((successCount / logs.length) * 100)
+			: 0;
+		return { avgLat: avg, successPct: pct, failCount: errors };
+	}, [logs]);
+
+	const totalPages = Math.ceil(totalCount / ROWS_PER_PAGE);
+
+	const searchFiltered = logs;
+
+	const sessions = useMemo(() => {
+		const map = new Map<string, AuditLog[]>();
+		searchFiltered.forEach((l) => {
+			const arr = map.get(l.sessionId) ?? [];
+			arr.push(l);
+			map.set(l.sessionId, arr);
+		});
+		return Array.from(map.entries());
+	}, [searchFiltered]);
+
+	const catalogDisplayName = routeDisplayName || catalogId || "";
+
+	const engineNames = useMemo(
+		() =>
+			catalogId
+				? [
+						{
+							value: catalogId,
+							label: catalogDisplayName || catalogName,
+						},
+					]
+				: [],
+		[catalogId, catalogDisplayName, catalogName],
 	);
+
+	const backPath =
+		catalogName === "Apps"
+			? "/app"
+			: `/engine/${catalogName.toLowerCase()}`;
 
 	return (
 		<>
@@ -345,66 +566,95 @@ export const AuditLogsDashboard = ({
 					<NavbarHeader />
 				</NavbarLeft>
 			)}
-			<div className="flex flex-col gap-4">
-				{contextEntity ? (
-					<div className="flex w-full flex-col gap-4 py-2">
-						<h6 className="font-semibold text-xl">
-							{catalogName} Insight Dashboard
-						</h6>
-						<EntityHeader
-							icon={
-								contextEntity.kind === "app" ? (
-									<AppCatalogAvatar
-										name={contextEntity.name || "App"}
-										className="h-full w-full rounded-lg text-xl"
-									/>
-								) : (
-									<EngineSubtypeIcon
-										engineType={contextEntity.engineType}
-										engineSubtype={
-											contextEntity.engineSubtype
-										}
-										alt={contextEntity.name}
-										className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
-									/>
-								)
-							}
-							name={contextEntity.name}
-							id={contextEntity.id}
-							size="compact"
-							copyLabel={
-								contextEntity.kind === "app"
-									? "Copy App ID"
-									: "Copy Engine ID"
-							}
-							actions={dashboardControls}
-						/>
+			<div>
+				<Breadcrumb className="ml-2">
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<BreadcrumbLink asChild>
+								<Link to={backPath}>
+									{catalogName === "Apps"
+										? "App"
+										: catalogName}
+								</Link>
+							</BreadcrumbLink>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<BreadcrumbPage>
+								{catalogDisplayName || catalogId}
+							</BreadcrumbPage>
+						</BreadcrumbItem>
+						{engineNames.length > 0 && (
+							<>
+								<BreadcrumbSeparator />
+								<BreadcrumbItem>
+									<BreadcrumbPage>Audit Logs</BreadcrumbPage>
+								</BreadcrumbItem>
+							</>
+						)}
+					</BreadcrumbList>
+				</Breadcrumb>
+
+				<div className="m-2 flex min-h-0 w-full flex-1 flex-col gap-2">
+					<FilterRow
+						totalCount={totalCount}
+						successPct={successPct}
+						failCount={failCount}
+						avgLat={avgLat}
+						engineType={catalogName === "Apps" ? "APP" : ""}
+						engineId={catalogId || ""}
+						engineNames={engineNames}
+						hasFilters={!!catalogId}
+						dateFrom={dateFrom}
+						dateTo={dateTo}
+						dateRangePreset={durationValue}
+						userOptions={userOptions}
+						selectedUser={selectedUser}
+						showUserFilter={isOwner}
+						showEngineFilter={false}
+						onEngineTypeChange={noopEngineTypeChange}
+						onEngineChange={noopEngineChange}
+						onDateChange={handleDateChange}
+						onUserChange={handleUserChange}
+						onRefresh={handleRefresh}
+					/>
+
+					<div className="grid flex-1 grid-cols-1 gap-2 lg:grid-cols-[65fr_35fr]">
+						<div className="order-1 lg:order-1">
+							<ChartPanel
+								logs={logs}
+								loading={loading}
+								selected={selected}
+								chartTab={chartTab}
+								chartPage={chartPage}
+								onSelectLog={setSelected}
+								onSetChartTab={setChartTab}
+								onSetChartPage={setChartPage}
+							/>
+						</div>
+						<div className="order-2 lg:order-2">
+							<EventHistory
+								loading={loading}
+								logs={logs}
+								searchFiltered={searchFiltered}
+								sessions={sessions}
+								totalCount={totalCount}
+								totalPages={totalPages}
+								selected={selected}
+								searchTokens={searchTokens}
+								searchFreeText={searchFreeText}
+								page={page}
+								onSelectLog={setSelected}
+								onTokensChange={setSearchTokens}
+								onFreeTextChange={setSearchFreeText}
+								onSearch={handleSearch}
+								onPageChange={setPage}
+								categoryOptions={categoryOptions}
+								onFetchCategoryOptions={fetchCategoryOptions}
+							/>
+						</div>
 					</div>
-				) : (
-					<div className="flex w-full items-center py-2">
-						<h6 className="font-semibold text-xl">
-							{catalogName} Insight Dashboard
-						</h6>
-						<div className="ml-auto">{dashboardControls}</div>
-					</div>
-				)}
-				{loading ? (
-					<div className="flex flex-col gap-4">
-						<Skeleton className="h-[400px] w-full" />
-						<Skeleton className="h-[400px] w-full" />
-					</div>
-				) : (
-					<>
-						<AuditLogsTimeline logs={logs} />
-						<AuditLogsDataTable
-							logs={logs}
-							totalCount={totalCount}
-							page={page}
-							rowsPerPage={rowsPerPage}
-							onPaginationChange={handlePaginationChange}
-						/>
-					</>
-				)}
+				</div>
 			</div>
 		</>
 	);

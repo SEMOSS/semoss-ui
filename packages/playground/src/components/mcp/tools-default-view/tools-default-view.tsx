@@ -216,6 +216,7 @@ export const ToolsDefaultView = observer(
 			setIsSubmitting(true);
 			let success = false;
 			let output = "";
+			let shouldOpenFileExplorer = false;
 			try {
 				// Check if this is a Playwright script execution
 				if (scriptForBrowserAutomation) {
@@ -267,12 +268,22 @@ export const ToolsDefaultView = observer(
 						typeof rawOutput === "string"
 							? rawOutput
 							: JSON.stringify(rawOutput);
+					shouldOpenFileExplorer =
+						room.shouldOpenFileExplorerForToolResult(
+							tool?.json.name,
+							rawOutput,
+						);
 					success = true;
 				}
 			} catch (error) {
 				output = (error as Error).toString();
 				success = false;
 			}
+
+			if (success && shouldOpenFileExplorer) {
+				room.openFileExplorerSidebar();
+			}
+
 			const m = room.getMessage(message);
 			// Only process the tool response if the tool is still open
 			if (m && m instanceof ResponseMessageStore && tool.isOpen) {

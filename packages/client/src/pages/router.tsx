@@ -136,7 +136,7 @@ export const Router = observer(() => {
 								element={<EditAppPage />}
 							/>
 							<Route
-								path=":appId/dashboard/*"
+								path=":appId/auditlogs/*"
 								element={
 									<AuditLogsDashboard catalogName={"Apps"} />
 								}

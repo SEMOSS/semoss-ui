@@ -68,7 +68,7 @@ export const EngineRouter = observer(() => {
 								/>
 							</Route>
 							<Route
-								path=":engineId/dashboard"
+								path=":engineId/auditlogs"
 								element={
 									<AuditLogsDashboard catalogName={r.name} />
 								}
