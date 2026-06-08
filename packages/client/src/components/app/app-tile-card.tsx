@@ -664,6 +664,31 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 	const infoHref = `/app/${app.project_id}`;
 
+	const dropdownMenuContent = (
+		<DropdownMenuContent align="end">
+			<DropdownMenuItem onClick={handleViewDashboard}>
+				View Dashboard
+			</DropdownMenuItem>
+			{canEdit && (
+				<>
+					{entityType !== "agent" && (
+						<DropdownMenuItem onClick={handleClone}>
+							Clone {entityType === "skill" ? "Skill" : "App"}
+						</DropdownMenuItem>
+					)}
+					<DropdownMenuItem onClick={handleDelete}>
+						Delete{" "}
+						{entityType === "skill"
+							? "Skill"
+							: entityType === "agent"
+								? "Agent"
+								: "App"}
+					</DropdownMenuItem>
+				</>
+			)}
+		</DropdownMenuContent>
+	);
+
 	// Show skeleton
 	if (loading || showSkeleton) {
 		if (isRow) {
@@ -924,39 +949,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 												<MoreVertical className="size-4" />
 											</Button>
 										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end">
-											<DropdownMenuItem
-												onClick={handleViewDashboard}
-											>
-												View Dashboard
-											</DropdownMenuItem>
-											{canEdit && (
-												<>
-													<DropdownMenuItem
-														onClick={handleClone}
-													>
-														Clone{" "}
-														{entityType === "skill"
-															? "Skill"
-															: entityType ===
-																	"agent"
-																? "Agent"
-																: "App"}
-													</DropdownMenuItem>
-													<DropdownMenuItem
-														onClick={handleDelete}
-													>
-														Delete{" "}
-														{entityType === "skill"
-															? "Skill"
-															: entityType ===
-																	"agent"
-																? "Agent"
-																: "App"}
-													</DropdownMenuItem>
-												</>
-											)}
-										</DropdownMenuContent>
+										{dropdownMenuContent}
 									</DropdownMenu>
 								)}
 							</div>
@@ -1055,37 +1048,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 											<MoreVertical className="size-4" />
 										</Button>
 									</DropdownMenuTrigger>
-									<DropdownMenuContent align="end">
-										<DropdownMenuItem
-											onClick={handleViewDashboard}
-										>
-											View Dashboard
-										</DropdownMenuItem>
-										{canEdit && (
-											<>
-												<DropdownMenuItem
-													onClick={handleClone}
-												>
-													Clone{" "}
-													{entityType === "skill"
-														? "Skill"
-														: entityType === "agent"
-															? "Agent"
-															: "App"}
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onClick={handleDelete}
-												>
-													Delete{" "}
-													{entityType === "skill"
-														? "Skill"
-														: entityType === "agent"
-															? "Agent"
-															: "App"}
-												</DropdownMenuItem>
-											</>
-										)}
-									</DropdownMenuContent>
+									{dropdownMenuContent}
 								</DropdownMenu>
 							)}
 						</div>
@@ -1361,37 +1324,7 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 										<MoreVertical className="size-4" />
 									</Button>
 								</DropdownMenuTrigger>
-								<DropdownMenuContent align="end">
-									<DropdownMenuItem
-										onClick={handleViewDashboard}
-									>
-										View Dashboard
-									</DropdownMenuItem>
-									{canEdit && (
-										<>
-											<DropdownMenuItem
-												onClick={handleClone}
-											>
-												Clone{" "}
-												{entityType === "skill"
-													? "Skill"
-													: entityType === "agent"
-														? "Agent"
-														: "App"}
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={handleDelete}
-											>
-												Delete{" "}
-												{entityType === "skill"
-													? "Skill"
-													: entityType === "agent"
-														? "Agent"
-														: "App"}
-											</DropdownMenuItem>
-										</>
-									)}
-								</DropdownMenuContent>
+								{dropdownMenuContent}
 							</DropdownMenu>
 						)}
 					</div>
