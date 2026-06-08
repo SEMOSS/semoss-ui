@@ -675,11 +675,9 @@ export function TokenLimitsPanel({
 							period,
 							maxTokens: DEFAULT_LIMIT_DRAFT._saved.maxTokens,
 							maxInputTokens:
-								DEFAULT_LIMIT_DRAFT._saved.maxInputTokens ??
-								60000,
+								DEFAULT_LIMIT_DRAFT._saved.maxInputTokens,
 							maxOutputTokens:
-								DEFAULT_LIMIT_DRAFT._saved.maxOutputTokens ??
-								40000,
+								DEFAULT_LIMIT_DRAFT._saved.maxOutputTokens,
 							isActive: DEFAULT_LIMIT_DRAFT._saved.isActive,
 						},
 						`default-user-limit-${period}`,
@@ -716,7 +714,7 @@ export function TokenLimitsPanel({
 				emptyMessage="No per-user limits configured."
 				multiPeriod
 				savingIds={savingUserIds}
-				supportsActive={false}
+				supportsActive
 				renderEntityDetails={(user) => (
 					<div>
 						<div className="font-medium text-sm">{user.name}</div>
@@ -756,7 +754,7 @@ export function TokenLimitsPanel({
 						outputLimit: row.outputLimit,
 						period: row.period,
 						savedPeriod: row.savedPeriod,
-						isActive: true,
+						isActive: row.isActive,
 					});
 					if (success) {
 						setLocalUserRowsById((prev) => ({
