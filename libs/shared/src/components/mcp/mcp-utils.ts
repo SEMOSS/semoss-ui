@@ -46,7 +46,7 @@ export const engineProjectToMCP = (tool: Engine | App): MCP => {
 		return {
 			type: tool.engine_type,
 			id: tool.engine_id,
-			name: tool.engine_name,
+			name: tool.engine_display_name || tool.engine_name,
 			subtype: tool.engine_subtype,
 			description: tool.description || "",
 			tags: [], // Tags are not provided in the current response
