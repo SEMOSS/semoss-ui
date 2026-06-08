@@ -338,21 +338,36 @@ export const WorkspaceManager: React.FC<WorkspaceManagerProps> = observer(
 					<NavbarHeader logo={null} />
 					<div className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">
 						<div className="flex items-center gap-1">
-							<Link
-								to={`/app/${workspace.metadata.project_id}/view`}
-								className="flex items-center text-inherit no-underline"
-							>
+							{workspace.type === "SKILL" ||
+							workspace.type === "WORKSPACE" ? (
 								<div
 									title={workspace?.metadata?.project_name}
-									className="max-w-[10ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+									className="max-w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
 								>
 									{workspace?.metadata?.project_name}
 								</div>
-							</Link>
-							<span className="text-muted-foreground text-sm">
-								{" /"}&nbsp;
-							</span>
-							<span className="text-sm">Editing</span>
+							) : (
+								<>
+									<Link
+										to={`/app/${workspace.metadata.project_id}/view`}
+										className="flex items-center text-inherit no-underline"
+									>
+										<div
+											title={
+												workspace?.metadata
+													?.project_name
+											}
+											className="max-w-[30ch] truncate text-ellipsis font-normal text-[16px] leading-[175%]"
+										>
+											{workspace?.metadata?.project_name}
+										</div>
+									</Link>
+									<span className="text-muted-foreground text-sm">
+										/
+									</span>
+									<span className="text-sm">Editing</span>
+								</>
+							)}
 						</div>
 					</div>
 				</NavbarLeft>
