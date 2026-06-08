@@ -66,6 +66,12 @@
 	"images": {
 		"logoAlt": "logo"
 	},
+	"fileDrag": {
+		"title": "Déposez des fichiers ici pour les joindre au message",
+		"modalTitle": "Ajouter des documents",
+		"browse": "Parcourir",
+		"done": "Terminé"
+	},
 	"fileExplorer": {
 		"search": "Rechercher",
 		"name": "Nom",

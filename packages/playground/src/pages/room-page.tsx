@@ -10,7 +10,13 @@ import {
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
-import { RoomContent, RoomSidebar, SaveWorkspaceDialog } from "@/components";
+import {
+	FileDragOverlay,
+	RoomContent,
+	RoomSidebar,
+	SaveWorkspaceDialog,
+} from "@/components";
+import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
@@ -158,7 +164,10 @@ export const RoomPage = observer(() => {
 					className="w-full flex-1 overflow-hidden"
 				>
 					<ResizablePanel className="h-full w-full flex-1 overflow-hidden p-2">
-						<RoomContent room={room} />
+						<FileDragProvider>
+							<FileDragOverlay />
+							<RoomContent room={room} />
+						</FileDragProvider>
 					</ResizablePanel>
 					{room.sidebar.isOpen && (
 						<>
