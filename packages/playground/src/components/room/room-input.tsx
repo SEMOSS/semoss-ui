@@ -57,6 +57,7 @@ import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Engine, MCPConfig, Workspace } from "@/types";
+import { formatTokens } from "@/utility";
 import { PromptOptimizer } from "../../components/prompt/PromptOptimizer";
 
 type WorkspaceRef = Pick<Workspace, "workspace_id"> &
@@ -77,16 +78,6 @@ try {
  * Format token counts for display
  * Converts large numbers to readable format (e.g., 1500 -> 1.5k, 2000000 -> 2.0M)
  */
-const formatTokens = (tokens: number | undefined) => {
-	if (tokens === undefined) return "0";
-	if (tokens >= 1000000) {
-		return `${(tokens / 1000000).toFixed(1)}M`;
-	}
-	if (tokens >= 1000) {
-		return `${(tokens / 1000).toFixed(1)}k`;
-	}
-	return tokens.toString();
-};
 
 // ============================================================================
 // TypeScript Interfaces

@@ -25,6 +25,20 @@ export const RootLayout = ({ children }: PropsWithChildren) => {
 			} catch (_e) {}
 
 			store.initialize(theme);
+
+			// Local-only: re-apply local overrides from theme.local.json so they
+			// win over the backend theme. See CLAUDE.md.
+			const LOCAL_THEME_RAW = import.meta.env.VITE_THEME;
+			if (LOCAL_THEME_RAW) {
+				try {
+					const localTheme = JSON.parse(LOCAL_THEME_RAW) as Partial<
+						ThemeMap["playground"]
+					>;
+					store.initialize(localTheme);
+				} catch (_e) {}
+			}
+
+			return store;
 		}
 
 		return store;

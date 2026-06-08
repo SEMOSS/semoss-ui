@@ -82,6 +82,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isCompacting: boolean = false;
 
+	/** Token count immediately before this compaction (0 = no data, e.g. restored from DB) */
+	compactionTokensBefore: number = 0;
+
+	/** Token count immediately after this compaction (0 = no data) */
+	compactionTokensAfter: number = 0;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
@@ -98,6 +104,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isPaused: observable,
 			conversationCompactedAbove: observable,
 			isCompacting: observable,
+			compactionTokensBefore: observable,
+			compactionTokensAfter: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -107,6 +115,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			saveToolExecution: action,
 			setConversationCompactedAbove: action,
 			setIsCompacting: action,
+			setCompactionSnapshot: action,
 			toggleIsPaused: action,
 		});
 
@@ -344,6 +353,11 @@ paramValues=[${JSON.stringify({
 	 */
 	setIsCompacting = (compacting: boolean) => {
 		this.isCompacting = compacting;
+	};
+
+	setCompactionSnapshot = (before: number, after: number) => {
+		this.compactionTokensBefore = before;
+		this.compactionTokensAfter = after;
 	};
 
 	/**

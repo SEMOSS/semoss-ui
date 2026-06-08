@@ -54,6 +54,13 @@ export const toInitials = (str: string | undefined) => {
 	).toUpperCase();
 };
 
+export const formatTokens = (tokens: number | undefined): string => {
+	if (tokens === undefined) return "0";
+	if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
+	if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}k`;
+	return tokens.toString();
+};
+
 export const setFavicon = (href: string) => {
 	// Remove existing icon links
 	document

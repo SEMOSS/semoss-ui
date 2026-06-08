@@ -134,6 +134,42 @@ export interface ThemeMap {
 			model?: Engine;
 			temperature?: number;
 			tokenLength?: number;
+			/**
+			 * Auto-compaction thresholds. When any (or all, if mode="all") threshold is
+			 * reached, the UI surfaces a warning or blocking prompt to compact.
+			 */
+			autoCompaction?: {
+				/** Trigger at this fraction of the context window, e.g. 0.8 = 80% */
+				contextWindowPercent?: number;
+				/** Trigger after N turns since the last compaction (or room start) */
+				messagesSinceCompaction?: number;
+				/** Trigger after N total input tokens billed since the last compaction */
+				accumulatedInputTokensSinceCompaction?: number;
+				/**
+				 * Sliding-scale message threshold driven by context window fill %.
+				 * Each tier defines the message limit to apply when context usage
+				 * is >= contextPercent. Tiers are evaluated highest-first; the first
+				 * matching tier wins.
+				 *
+				 * Example (the default recommendation):
+				 *   [
+				 *     { contextPercent: 0.75, messages: 5  },  // 75%+ CW used
+				 *     { contextPercent: 0.50, messages: 10 },  // 50–75% CW used
+				 *     { contextPercent: 0.00, messages: 20 },  // < 50% CW used
+				 *   ]
+				 *
+				 * Requires chat.models.contextWindow to be available (model must be selected).
+				 * Falls back gracefully — no ratio is added when contextWindow is unknown.
+				 */
+				messageThresholdByContextUsage?: Array<{
+					contextPercent: number;
+					messages: number;
+				}>;
+				/** "any" fires when any threshold is hit (default); "all" requires all */
+				mode?: "any" | "all";
+				/** Show a warning at this fraction of each threshold, e.g. 0.9 */
+				warningThreshold?: number;
+			};
 		};
 
 		/**

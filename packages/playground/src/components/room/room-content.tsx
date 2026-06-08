@@ -1,11 +1,12 @@
 import {
+	ArchiveIcon,
 	MoveDownIcon,
 	MoveUpIcon,
 	Settings2Icon,
 	TriangleAlertIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { MCPToolResponse } from "@semoss/sdk";
 import {
@@ -55,6 +56,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	const [showScrollup, setShowScrollup] = useState(false);
 	const [showScrolldown, setShowScrolldown] = useState(false);
 	const [isScrollLocked, setIsScrollLocked] = useState(false);
+	const [autoCompactCountdown, setAutoCompactCountdown] = useState<
+		number | null
+	>(null);
 
 	/**
 	 * Functions
@@ -88,6 +92,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 			toast.error(t("settings.compactError"));
 		}
 	};
+
+	// Stable ref so the countdown timeout always calls the current handler
+	const handleCompactRef = useRef(handleCompactMessages);
+	handleCompactRef.current = handleCompactMessages;
 
 	/**
 	 * Handle tool add (add-only for slash menu)
@@ -315,6 +323,92 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		room.latestResponseMessage.isThinking ||
 		isAutoExecutingTools;
 
+	// Compute compaction status from store signals + context window.
+	// Runs inside observer so MobX tracks all observable accesses automatically.
+	const compactionStatus = (() => {
+		const config = room.theme.defaultRoomSettings?.autoCompaction;
+		if (!config || !room.isInitialized) return null;
+
+		const {
+			contextWindowPercent,
+			messagesSinceCompaction: msgThreshold,
+			accumulatedInputTokensSinceCompaction: tokenThreshold,
+			messageThresholdByContextUsage,
+			mode = "any",
+			warningThreshold = 0.9,
+		} = config;
+
+		// Ratios: how far along each threshold we are (1.0 = at threshold)
+		const ratios: number[] = [];
+
+		if (contextWindowPercent !== undefined && chat.models.contextWindow) {
+			ratios.push(
+				room.tokensUsed /
+					(chat.models.contextWindow * contextWindowPercent),
+			);
+		}
+		if (msgThreshold !== undefined) {
+			ratios.push(room.messagesSinceCompaction / msgThreshold);
+		}
+		if (tokenThreshold !== undefined) {
+			ratios.push(room.accumulatedInputTokens / tokenThreshold);
+		}
+		// Tiered message threshold: find the highest-matching tier by CW usage
+		if (
+			messageThresholdByContextUsage?.length &&
+			chat.models.contextWindow
+		) {
+			const ctxUsage = room.tokensUsed / chat.models.contextWindow;
+			const tier = [...messageThresholdByContextUsage]
+				.sort((a, b) => b.contextPercent - a.contextPercent)
+				.find((t) => ctxUsage >= t.contextPercent);
+			if (tier) {
+				ratios.push(room.messagesSinceCompaction / tier.messages);
+			}
+		}
+
+		if (ratios.length === 0) return null;
+
+		const triggered =
+			mode === "all"
+				? ratios.every((r) => r >= 1)
+				: ratios.some((r) => r >= 1);
+		const warned =
+			mode === "all"
+				? ratios.every((r) => r >= warningThreshold)
+				: ratios.some((r) => r >= warningThreshold);
+
+		if (triggered) return "trigger" as const;
+		if (warned) return "warn" as const;
+		return null;
+	})();
+
+	// Auto-compact: when trigger fires, count down 3s then compact automatically.
+	// Cleans up (cancels) if the room starts loading mid-countdown or status drops.
+	useEffect(() => {
+		if (compactionStatus !== "trigger" || showLoadingState) {
+			setAutoCompactCountdown(null);
+			return;
+		}
+
+		setAutoCompactCountdown(3);
+
+		const tick = setInterval(() => {
+			setAutoCompactCountdown((prev) =>
+				prev !== null && prev > 1 ? prev - 1 : prev,
+			);
+		}, 1000);
+
+		const fire = setTimeout(() => {
+			handleCompactRef.current();
+		}, 3000);
+
+		return () => {
+			clearInterval(tick);
+			clearTimeout(fire);
+		};
+	}, [compactionStatus, showLoadingState]);
+
 	return (
 		<div className="flex h-full w-full flex-col bg-background transition-all duration-200 ease-in-out">
 			<div className="relative w-full flex-1 overflow-hidden">
@@ -450,6 +544,46 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 				)}
 			</div>
 			<div className="mx-auto flex w-full max-w-[1120px] shrink-0 flex-col px-4 py-4 sm:px-8 lg:px-16">
+				{compactionStatus && (
+					<div
+						className={`mb-3 flex items-center gap-3 rounded-md border px-3 py-2 text-sm ${
+							compactionStatus === "trigger"
+								? "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+								: "border-yellow-500/30 bg-yellow-500/8 text-yellow-700 dark:text-yellow-400"
+						}`}
+					>
+						<ArchiveIcon
+							className={`h-4 w-4 shrink-0 ${compactionStatus === "trigger" ? "animate-pulse" : ""}`}
+						/>
+						<div className="flex-1">
+							<span className="font-medium">
+								{compactionStatus === "trigger"
+									? t("autoCompaction.triggerTitle", {
+											seconds: autoCompactCountdown ?? 3,
+										})
+									: t("autoCompaction.warnTitle")}
+							</span>
+							<span className="ml-1.5 opacity-80">
+								{compactionStatus === "trigger"
+									? t("autoCompaction.triggerDescription")
+									: t("autoCompaction.warnDescription")}
+							</span>
+						</div>
+						<Button
+							type="button"
+							size="sm"
+							variant={
+								compactionStatus === "trigger"
+									? "default"
+									: "outline"
+							}
+							disabled={showLoadingState}
+							onClick={handleCompactMessages}
+						>
+							{t("autoCompaction.compactNow")}
+						</Button>
+					</div>
+				)}
 				<RoomInput
 					predefinedPrompts={room.options.predefinedPrompts}
 					className="max-h-56 min-h-24"

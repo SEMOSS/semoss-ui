@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig, loadEnv } from "vite";
 import svgr from "vite-plugin-svgr";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 export default defineConfig(({ mode }) => {
@@ -12,6 +13,13 @@ export default defineConfig(({ mode }) => {
 
 	const MODULE = env.MODULE;
 	const ENDPOINT = env.ENDPOINT;
+
+	// Local-only: read theme.local.json (gitignored) and bake into VITE_THEME.
+	// Falls back to env.VITE_THEME if the file is missing.
+	const themeFile = resolve(__dirname, "theme.local.json");
+	const THEME = existsSync(themeFile)
+		? readFileSync(themeFile, "utf-8").trim()
+		: env.VITE_THEME || "{}";
 
 	return {
 		base: "./",
@@ -31,9 +39,7 @@ export default defineConfig(({ mode }) => {
 			"import.meta.env.SECRET_KEY": isProduction
 				? undefined
 				: JSON.stringify(env.SECRET_KEY),
-			"import.meta.env.VITE_THEME": JSON.stringify(
-				env.VITE_THEME || "{}",
-			),
+			"import.meta.env.VITE_THEME": JSON.stringify(THEME),
 		},
 		build: {
 			minify: isProduction,

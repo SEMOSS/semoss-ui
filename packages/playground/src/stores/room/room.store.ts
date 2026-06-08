@@ -153,6 +153,16 @@ interface RoomStoreInterface {
  */
 export class RoomStore {
 	private _theme: ThemeMap["playground"];
+
+	/** True once initialize() has finished loading — gates auto-compaction reactions */
+	isInitialized: boolean = false;
+
+	/** Running sum of INPUT token counts billed since the last compaction (or room start) */
+	accumulatedInputTokens: number = 0;
+
+	/** Cumulative total of all INPUT tokens ever billed to this room. Never resets. */
+	totalRoomTokens: number = 0;
+
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
@@ -395,6 +405,29 @@ export class RoomStore {
 		}
 
 		return tokensUsed;
+	}
+
+	/**
+	 * Number of user turns (INPUT messages) since the last compaction marker,
+	 * or since the room started if the conversation has never been compacted.
+	 * Walks history in reverse and stops at the first ResponseMessageStore
+	 * with conversationCompactedAbove === true.
+	 */
+	get messagesSinceCompaction(): number {
+		let count = 0;
+		for (let i = this.history.length - 1; i >= 0; i--) {
+			const msg = this.history[i];
+			if (
+				msg instanceof ResponseMessageStore &&
+				msg.conversationCompactedAbove
+			) {
+				break;
+			}
+			if (msg instanceof InputMessageStore) {
+				count++;
+			}
+		}
+		return count;
 	}
 
 	/**
@@ -669,6 +702,34 @@ export class RoomStore {
 
 				// store it
 				this._store.root = root;
+			});
+
+			// Compute accumulated and total input tokens from restored history.
+			// Walk the full history in reverse: totalRoomTokens sums every INPUT
+			// message ever; accumulatedInputTokens stops at the last compaction marker.
+			runInAction(() => {
+				let accumulated = 0;
+				let total = 0;
+				let pastCompaction = false;
+				for (let i = this.history.length - 1; i >= 0; i--) {
+					const msg = this.history[i];
+					if (
+						!pastCompaction &&
+						msg instanceof ResponseMessageStore &&
+						msg.conversationCompactedAbove
+					) {
+						pastCompaction = true;
+					}
+					if (msg instanceof InputMessageStore) {
+						total += msg.tokens;
+						if (!pastCompaction) {
+							accumulated += msg.tokens;
+						}
+					}
+				}
+				this.accumulatedInputTokens = accumulated;
+				this.totalRoomTokens = total;
+				this.isInitialized = true;
 			});
 
 			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
@@ -1042,6 +1103,13 @@ export class RoomStore {
 		// run the message
 		try {
 			await parentMessage.runMessage(inputMessage);
+			// Accumulate the INPUT token count billed for this turn. inputMessage.tokens
+			// was stamped by sync() inside runMessage and holds the cumulative context
+			// sent to the API — this is the actual per-call billing cost.
+			runInAction(() => {
+				this.accumulatedInputTokens += inputMessage.tokens;
+				this.totalRoomTokens += inputMessage.tokens;
+			});
 		} catch (e) {
 			this.plan?.failStepExecution();
 
@@ -1259,6 +1327,7 @@ export class RoomStore {
 		if (!cur) throw new Error();
 
 		const curResponse = cur as ResponseMessageStore;
+		const tokensBefore = this.tokensUsed;
 
 		curResponse.setIsCompacting(true);
 
@@ -1329,6 +1398,21 @@ export class RoomStore {
 			if (!success) {
 				throw new Error();
 			}
+
+			runInAction(() => {
+				// Add tokens billed for the compaction calls themselves.
+				for (const method of output) {
+					if (method.success) {
+						this.totalRoomTokens +=
+							method.inputMessage?.tokens ?? 0;
+					}
+				}
+				this.accumulatedInputTokens = 0;
+				curResponse.setCompactionSnapshot(
+					tokensBefore,
+					this.tokensUsed,
+				);
+			});
 
 			return "compacted" as const;
 		} finally {

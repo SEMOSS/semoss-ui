@@ -5,6 +5,7 @@ import { useTranslation } from "@semoss/i18n";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@semoss/ui/next";
 import { useLoadingMessage } from "@/hooks";
 import type { ResponseMessageStore } from "@/stores";
+import { formatTokens } from "@/utility";
 
 const APPEAR_DELAY_MS = 150;
 
@@ -56,6 +57,19 @@ export const RoomCompactionIndicator: React.FC<RoomCompactionIndicatorProps> =
 										<span>
 											{t("settings.compactedAbove")}
 										</span>
+										{message.compactionTokensBefore > 0 && (
+											<span className="opacity-60">
+												&mdash;{" "}
+												{formatTokens(
+													message.compactionTokensBefore,
+												)}
+												{" → "}
+												{formatTokens(
+													message.compactionTokensAfter,
+												)}{" "}
+												tokens
+											</span>
+										)}
 									</div>
 								</div>
 							</TooltipTrigger>

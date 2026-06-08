@@ -109,5 +109,12 @@
 		"searchPlaceholder": "Search knowledge and toolboxes",
 		"noResults": "No matching items found",
 		"noItemsAvailable": "No knowledge or toolboxes available"
+	},
+	"autoCompaction": {
+		"warnTitle": "Conversation is getting long",
+		"warnDescription": "Approaching the compaction threshold. Compact now to maintain response quality.",
+		"triggerTitle": "Auto-compacting in {{seconds}}s",
+		"triggerDescription": "Threshold reached. Compacting now to maintain response quality.",
+		"compactNow": "Compact Now"
 	}
 }
