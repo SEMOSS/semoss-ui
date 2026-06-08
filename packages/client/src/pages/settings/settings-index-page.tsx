@@ -23,9 +23,6 @@ import type { MouseEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import {
 	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
 	Input,
 	Select,
 	SelectContent,
@@ -39,33 +36,99 @@ import { formatToDataTestId } from "@/utility";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
 const DEFAULT_CARDS = SETTINGS_ROUTES.filter(
-	(r) => !!r.path && r.history.length < 2 && !r.hidden,
+	(r) => !!r.path && (r.history?.length ?? 0) < 2 && !r.hidden,
 );
 
-const SIDEBAR_ICON_CLASS = "size-4";
+const ICON_CLASS = "size-4";
 
-const IconMapper: Record<string, ReactNode> = {
-	"Database Settings": <Database className={SIDEBAR_ICON_CLASS} />,
-	"Model Settings": <Bot className={SIDEBAR_ICON_CLASS} />,
-	"Storage Settings": <Archive className={SIDEBAR_ICON_CLASS} />,
-	"App Settings": <LayoutGrid className={SIDEBAR_ICON_CLASS} />,
-	"Vector Settings": <Bolt className={SIDEBAR_ICON_CLASS} />,
-	"Function Settings": <Sigma className={SIDEBAR_ICON_CLASS} />,
-	"Guardrail Settings": <ShieldCheck className={SIDEBAR_ICON_CLASS} />,
-	"Insight Settings": <FileText className={SIDEBAR_ICON_CLASS} />,
-	"Member Settings": <Users2 className={SIDEBAR_ICON_CLASS} />,
-	Configuration: <Settings className={SIDEBAR_ICON_CLASS} />,
-	"Admin Query": <DatabaseZap className={SIDEBAR_ICON_CLASS} />,
-	"Admin Theme": <Palette className={SIDEBAR_ICON_CLASS} />,
-	"External Connections": <Link2 className={SIDEBAR_ICON_CLASS} />,
-	Teams: <Users2 className={SIDEBAR_ICON_CLASS} />,
-	"Teams Management": <Users2 className={SIDEBAR_ICON_CLASS} />,
-	"Team Permissions": <ShieldUser className={SIDEBAR_ICON_CLASS} />,
-	"Service Accounts": <KeyRound className={SIDEBAR_ICON_CLASS} />,
-	"My Profile": <CircleUserRound className={SIDEBAR_ICON_CLASS} />,
-	Jobs: <Briefcase className={SIDEBAR_ICON_CLASS} />,
-	"View RDF Map": <FileText className={SIDEBAR_ICON_CLASS} />,
-	"LLM Feedback": <ChartBar className={SIDEBAR_ICON_CLASS} />,
+type CardConfig = { icon: ReactNode; color: string; label?: string };
+
+const CardMapper: Record<string, CardConfig> = {
+	"Database Settings": {
+		icon: <Database className={ICON_CLASS} />,
+		color: "#00A593",
+	},
+	"Model Settings": {
+		icon: <Bot className={ICON_CLASS} />,
+		color: "#0471F0",
+	},
+	"Storage Settings": {
+		icon: <Archive className={ICON_CLASS} />,
+		color: "#008674",
+	},
+	"App Settings": {
+		icon: <LayoutGrid className={ICON_CLASS} />,
+		color: "#8340DE",
+		label: "App, Agent, & Skill Settings",
+	},
+	"Vector Settings": {
+		icon: <Bolt className={ICON_CLASS} />,
+		color: "#A855F7",
+	},
+	"Function Settings": {
+		icon: <Sigma className={ICON_CLASS} />,
+		color: "#EC4899",
+	},
+	"Guardrail Settings": {
+		icon: <ShieldCheck className={ICON_CLASS} />,
+		color: "#0471F0",
+	},
+	"Insight Settings": {
+		icon: <FileText className={ICON_CLASS} />,
+		color: "#0094FF",
+	},
+	"Member Settings": {
+		icon: <Users2 className={ICON_CLASS} />,
+		color: "#FFB400",
+	},
+	Configuration: {
+		icon: <Settings className={ICON_CLASS} />,
+		color: "#ED2F77",
+	},
+	"Admin Query": {
+		icon: <DatabaseZap className={ICON_CLASS} />,
+		color: "#558B2F",
+	},
+	"Admin Theme": {
+		icon: <Palette className={ICON_CLASS} />,
+		color: "#8C9EFF",
+	},
+	"External Connections": {
+		icon: <Link2 className={ICON_CLASS} />,
+		color: "#6B7280",
+	},
+	Teams: {
+		icon: <Users2 className={ICON_CLASS} />,
+		color: "#8364B8",
+	},
+	"Teams Management": {
+		icon: <Users2 className={ICON_CLASS} />,
+		color: "#8364B8",
+	},
+	"Team Permissions": {
+		icon: <ShieldUser className={ICON_CLASS} />,
+		color: "#8364B8",
+	},
+	"Service Accounts": {
+		icon: <KeyRound className={ICON_CLASS} />,
+		color: "#6B7280",
+	},
+	"My Profile": {
+		icon: <CircleUserRound className={ICON_CLASS} />,
+		color: "#471F96",
+	},
+	Jobs: {
+		icon: <Briefcase className={ICON_CLASS} />,
+		color: "#3B82F6",
+	},
+	"View RDF Map": {
+		icon: <FileText className={ICON_CLASS} />,
+		color: "#8340DE",
+	},
+	"LLM Feedback": {
+		icon: <ChartBar className={ICON_CLASS} />,
+		color: "#0471F0",
+	},
 };
 
 export const SettingsIndexPage = () => {
@@ -166,21 +229,30 @@ export const SettingsIndexPage = () => {
 							data-testid={formatToDataTestId(
 								`settingsIndexPage-${c.title}-card`,
 							)}
-							className="flex h-full min-h-[112px] w-full cursor-pointer flex-col rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md"
+							className="w-full cursor-pointer rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md"
 						>
-							<CardHeader className="-mt-1 flex flex-row items-center gap-2 space-y-0 px-3.5 pt-0 pb-0">
-								<div className="flex w-7 min-w-0 shrink-0 items-center text-muted-foreground [&_svg]:size-4">
-									{IconMapper[c.title]}
+							<div className="flex flex-col gap-2 px-3.5">
+								<div className="flex items-center gap-2">
+									{CardMapper[c.title] ? (
+										<div
+											className="flex shrink-0 items-center justify-center rounded-md p-1.5 [&_svg]:size-4"
+											style={{
+												backgroundColor: `${CardMapper[c.title].color}1a`,
+												color: CardMapper[c.title]
+													.color,
+											}}
+										>
+											{CardMapper[c.title].icon}
+										</div>
+									) : null}
+									<span className="line-clamp-2 font-semibold text-sm leading-tight tracking-tight">
+										{CardMapper[c.title]?.label ?? c.title}
+									</span>
 								</div>
-								<CardTitle className="line-clamp-2 text-sm leading-tight">
-									{c.title}
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="px-3.5 pt-0 pb-2">
 								<p className="line-clamp-2 text-foreground text-xs leading-snug">
 									{c.description}
 								</p>
-							</CardContent>
+							</div>
 						</Card>
 					);
 				})}
