@@ -33,6 +33,18 @@ export interface TokenLimitEntry {
 	};
 }
 
+export interface ComputeLimitEntry {
+	id: string;
+	period: TimePeriod;
+	maxResponseTime: number | null;
+	isActive: boolean;
+	_saved: {
+		period: TimePeriod;
+		maxResponseTime: number | null;
+		isActive: boolean;
+	};
+}
+
 // --- Database Limits ---
 export interface DatabaseLimitConfig {
 	id: string;

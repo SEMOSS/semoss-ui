@@ -30,6 +30,7 @@ export interface GroupedLimitRow {
 	combinedLimit: number | null;
 	inputLimit: number | null;
 	outputLimit: number | null;
+	responseTimeLimit?: number | null;
 	isActive: boolean;
 }
 
@@ -67,12 +68,15 @@ const isRowDirty = (
 	source: GroupedLimitRow,
 	draft: GroupedLimitRow,
 	supportsActive: boolean,
+	fieldMode: "token" | "compute",
 ) =>
 	source.savedPeriod == null ||
 	draft.period !== source.period ||
-	draft.combinedLimit !== source.combinedLimit ||
-	draft.inputLimit !== source.inputLimit ||
-	draft.outputLimit !== source.outputLimit ||
+	(fieldMode === "compute"
+		? draft.responseTimeLimit !== source.responseTimeLimit
+		: draft.combinedLimit !== source.combinedLimit ||
+			draft.inputLimit !== source.inputLimit ||
+			draft.outputLimit !== source.outputLimit) ||
 	(supportsActive && draft.isActive !== source.isActive);
 
 const GroupedLimitEditorRow = ({
@@ -84,6 +88,7 @@ const GroupedLimitEditorRow = ({
 	disabled,
 	availablePeriods = PERIODS,
 	supportsActive = true,
+	fieldMode = "token",
 }: {
 	row: GroupedLimitRow;
 	sourceRow: GroupedLimitRow;
@@ -93,8 +98,9 @@ const GroupedLimitEditorRow = ({
 	disabled?: boolean;
 	availablePeriods?: TimePeriod[];
 	supportsActive?: boolean;
+	fieldMode?: "token" | "compute";
 }) => {
-	const dirty = isRowDirty(sourceRow, row, supportsActive);
+	const dirty = isRowDirty(sourceRow, row, supportsActive, fieldMode);
 	const [combinedValue, setCombinedValue] = useState(
 		row.combinedLimit == null ? "" : String(row.combinedLimit),
 	);
@@ -103,6 +109,9 @@ const GroupedLimitEditorRow = ({
 	);
 	const [outputValue, setOutputValue] = useState(
 		row.outputLimit == null ? "" : String(row.outputLimit),
+	);
+	const [responseTimeValue, setResponseTimeValue] = useState(
+		row.responseTimeLimit == null ? "" : String(row.responseTimeLimit),
 	);
 	const periodOptions = useMemo(() => {
 		const nextPeriods = availablePeriods.includes(row.period)
@@ -127,65 +136,113 @@ const GroupedLimitEditorRow = ({
 		setOutputValue(row.outputLimit == null ? "" : String(row.outputLimit));
 	}, [row.outputLimit]);
 
+	useEffect(() => {
+		setResponseTimeValue(
+			row.responseTimeLimit == null ? "" : String(row.responseTimeLimit),
+		);
+	}, [row.responseTimeLimit]);
+
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-			<div className="flex items-center gap-2">
-				<Label className="whitespace-nowrap text-xs">Combined:</Label>
-				<Input
-					type="text"
-					inputMode="numeric"
-					pattern="[0-9]*"
-					value={combinedValue}
-					onChange={(e) => {
-						const nextValue = sanitizeNumericInput(e.target.value);
-						setCombinedValue(nextValue);
-						onChange({
-							...row,
-							combinedLimit: parseNullableNumber(nextValue),
-						});
-					}}
-					disabled={disabled}
-					className="h-8 w-24"
-				/>
-			</div>
-			<div className="flex items-center gap-2">
-				<Label className="whitespace-nowrap text-xs">Input:</Label>
-				<Input
-					type="text"
-					inputMode="numeric"
-					pattern="[0-9]*"
-					value={inputValue}
-					onChange={(e) => {
-						const nextValue = sanitizeNumericInput(e.target.value);
-						setInputValue(nextValue);
-						onChange({
-							...row,
-							inputLimit: parseNullableNumber(nextValue),
-						});
-					}}
-					disabled={disabled}
-					className="h-8 w-24"
-				/>
-			</div>
-			<div className="flex items-center gap-2">
-				<Label className="whitespace-nowrap text-xs">Output:</Label>
-				<Input
-					type="text"
-					inputMode="numeric"
-					pattern="[0-9]*"
-					value={outputValue}
-					onChange={(e) => {
-						const nextValue = sanitizeNumericInput(e.target.value);
-						setOutputValue(nextValue);
-						onChange({
-							...row,
-							outputLimit: parseNullableNumber(nextValue),
-						});
-					}}
-					disabled={disabled}
-					className="h-8 w-24"
-				/>
-			</div>
+			{fieldMode === "compute" ? (
+				<div className="flex items-center gap-2">
+					<Label className="whitespace-nowrap text-xs">
+						Response Time (ms):
+					</Label>
+					<Input
+						type="text"
+						inputMode="numeric"
+						pattern="[0-9]*"
+						value={responseTimeValue}
+						onChange={(e) => {
+							const nextValue = sanitizeNumericInput(
+								e.target.value,
+							);
+							setResponseTimeValue(nextValue);
+							onChange({
+								...row,
+								responseTimeLimit:
+									parseNullableNumber(nextValue),
+							});
+						}}
+						disabled={disabled}
+						className="h-8 w-28"
+					/>
+				</div>
+			) : (
+				<>
+					<div className="flex items-center gap-2">
+						<Label className="whitespace-nowrap text-xs">
+							Combined:
+						</Label>
+						<Input
+							type="text"
+							inputMode="numeric"
+							pattern="[0-9]*"
+							value={combinedValue}
+							onChange={(e) => {
+								const nextValue = sanitizeNumericInput(
+									e.target.value,
+								);
+								setCombinedValue(nextValue);
+								onChange({
+									...row,
+									combinedLimit:
+										parseNullableNumber(nextValue),
+								});
+							}}
+							disabled={disabled}
+							className="h-8 w-24"
+						/>
+					</div>
+					<div className="flex items-center gap-2">
+						<Label className="whitespace-nowrap text-xs">
+							Input:
+						</Label>
+						<Input
+							type="text"
+							inputMode="numeric"
+							pattern="[0-9]*"
+							value={inputValue}
+							onChange={(e) => {
+								const nextValue = sanitizeNumericInput(
+									e.target.value,
+								);
+								setInputValue(nextValue);
+								onChange({
+									...row,
+									inputLimit: parseNullableNumber(nextValue),
+								});
+							}}
+							disabled={disabled}
+							className="h-8 w-24"
+						/>
+					</div>
+					<div className="flex items-center gap-2">
+						<Label className="whitespace-nowrap text-xs">
+							Output:
+						</Label>
+						<Input
+							type="text"
+							inputMode="numeric"
+							pattern="[0-9]*"
+							value={outputValue}
+							onChange={(e) => {
+								const nextValue = sanitizeNumericInput(
+									e.target.value,
+								);
+								setOutputValue(nextValue);
+								onChange({
+									...row,
+									outputLimit: parseNullableNumber(nextValue),
+								});
+							}}
+							disabled={disabled}
+							className="h-8 w-24"
+						/>
+					</div>
+				</>
+			)}
 			<div className="flex items-center gap-2">
 				<Label className="text-xs">Period:</Label>
 				<Select
@@ -324,6 +381,7 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 	savingIds,
 	renderEntityDetails,
 	supportsActive = true,
+	fieldMode = "token",
 }: {
 	title: string;
 	description: string;
@@ -339,6 +397,7 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 	savingIds: Set<string>;
 	renderEntityDetails: (entity: TOption) => ReactNode;
 	supportsActive?: boolean;
+	fieldMode?: "token" | "compute";
 }) {
 	const [open, setOpen] = useState(true);
 	const [showAddDialog, setShowAddDialog] = useState(false);
@@ -623,6 +682,9 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 																}
 																supportsActive={
 																	supportsActive
+																}
+																fieldMode={
+																	fieldMode
 																}
 																availablePeriods={
 																	multiPeriod
