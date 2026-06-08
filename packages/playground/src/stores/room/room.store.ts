@@ -1002,52 +1002,61 @@ export class RoomStore {
 			fileLocation: string;
 		}[] = [];
 
-		// upload the files if there are any
-		if (files.length > 0) {
-			const response = await uploadInsight(
-				this._store.insightId,
-				"",
-				files,
-			);
+		try {
+			// upload the files if there are any
+			if (files.length > 0) {
+				const response = await uploadInsight(
+					this._store.insightId,
+					"",
+					files,
+				);
 
-			const uploaded = response.data;
+				const uploaded = response.data;
 
-			const normalizeExt = (value: string) =>
-				value.trim().toLowerCase().replace(/^\./, "");
+				const normalizeExt = (value: string) =>
+					value.trim().toLowerCase().replace(/^\./, "");
 
-			mediaInputs = uploaded.filter((f) => {
-				const allowed = this._theme.allowedFileTypes;
+				mediaInputs = uploaded.filter((f) => {
+					const allowed = this._theme.allowedFileTypes;
 
-				// If not configured (or empty), allow all
-				if (!allowed || allowed.length === 0) return true;
+					// If not configured (or empty), allow all
+					if (!allowed || allowed.length === 0) return true;
 
-				const allowedSet = new Set(allowed.map(normalizeExt));
+					const allowedSet = new Set(allowed.map(normalizeExt));
 
-				const rawExt = f.fileName.split(".").pop() ?? "";
-				const ext = normalizeExt(rawExt);
+					const rawExt = f.fileName.split(".").pop() ?? "";
+					const ext = normalizeExt(rawExt);
 
-				// If there's no extension, it's not allowed (when allow-list is configured)
-				if (!ext) return false;
+					// If there's no extension, it's not allowed (when allow-list is configured)
+					if (!ext) return false;
 
-				return allowedSet.has(ext);
-			});
+					return allowedSet.has(ext);
+				});
 
-			// Append media parts to the already-visible input message
+				// Append media parts to the already-visible input message
+				runInAction(() => {
+					for (const file of mediaInputs) {
+						inputMessage.parts.push({
+							type: "MEDIA",
+							mediaInfo: {
+								base64Data: "",
+								fileFormat: "",
+								fileName: file.fileName,
+								fileLocation: file.fileLocation,
+								mediaInputType: "FILE",
+								mimeType: "",
+							},
+						});
+					}
+				});
+			}
+		} catch (e) {
+			// remove the placeholder messages if the upload fails
 			runInAction(() => {
-				for (const file of mediaInputs) {
-					inputMessage.parts.push({
-						type: "MEDIA",
-						mediaInfo: {
-							base64Data: "",
-							fileFormat: "",
-							fileName: file.fileName,
-							fileLocation: file.fileLocation,
-							mediaInputType: "FILE",
-							mimeType: "",
-						},
-					});
-				}
+				uploadPlaceholder.isThinking = false;
 			});
+			parentMessage.removeChild(inputMessage);
+			throw e;
 		}
 
 		// run the message, reusing the upload placeholder as the streaming response
