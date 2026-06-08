@@ -195,16 +195,6 @@ export const SettingsLayout = observer(() => {
 			: []) as unknown as ["getUserProjectPermission", string],
 	);
 
-	// Fetch project info to determine project_type
-	const projectInfoPixel = usePixel<{ project_type?: string }>(
-		isAppDetail && id
-			? adminMode
-				? `AdminProjectInfo(project='${id}');`
-				: `ProjectInfo(project='${id}');`
-			: "",
-		{ data: {} },
-	);
-
 	const hasCatalogAccess = useMemo(() => {
 		if (engineDetailType && id) {
 			const permission = (
@@ -230,6 +220,16 @@ export const SettingsLayout = observer(() => {
 		userProjectPermissionApi.status,
 		userProjectPermissionApi.data,
 	]);
+
+	// Only fetch project info if we have catalog access (button will be shown)
+	const projectInfoPixel = usePixel<{ project_type?: string }>(
+		isAppDetail && id && hasCatalogAccess
+			? adminMode
+				? `AdminProjectInfo(project='${id}');`
+				: `ProjectInfo(project='${id}');`
+			: "",
+		{ data: {} },
+	);
 
 	const catalogUrl = useMemo(() => {
 		if (engineDetailType && id) {
