@@ -170,7 +170,7 @@ export const RoomTokenLimitsPage = () => {
 				maxOutputTokens: defaultMaxOutput ? defaultMaxOutput : "-1",
 				isActive: String(defaultActive),
 			});
-			toast.success("Default room token limit saved");
+			toast.success("Platform room policy saved");
 			fetchLimits();
 		} catch (e) {
 			console.error("Failed to save default limit", e);
@@ -274,7 +274,7 @@ export const RoomTokenLimitsPage = () => {
 				maxOutputTokens: userMaxOutput ? userMaxOutput : "-1",
 				isActive: String(userActive),
 			});
-			toast.success("User room token limit saved");
+			toast.success("User room override saved");
 			setShowUserDialog(false);
 			fetchLimits();
 		} catch (e) {
@@ -317,8 +317,10 @@ export const RoomTokenLimitsPage = () => {
 
 	// Reset to page 1 when overrides change
 	useEffect(() => {
+		const totalOverrides = userOverrides.length;
+		void totalOverrides;
 		setCurrentPage(1);
-	}, [userOverrides.length]);
+	}, [userOverrides]);
 
 	const paginatedOverrides = useMemo(() => {
 		const start = (currentPage - 1) * rowsPerPage;
@@ -343,11 +345,12 @@ export const RoomTokenLimitsPage = () => {
 			<Card>
 				<CardHeader>
 					<CardTitle className="text-base">
-						Default Room Token Limits
+						Platform Room Token Policy
 					</CardTitle>
 					<p className="text-muted-foreground text-sm">
-						Applied to all users unless overridden. Limits apply to
-						total token usage per room.
+						Applied across rooms for all users unless a
+						user-specific override is configured. Usage is still
+						measured per room.
 					</p>
 				</CardHeader>
 				<CardContent className="flex flex-col gap-4">
@@ -429,7 +432,8 @@ export const RoomTokenLimitsPage = () => {
 							User Overrides
 						</CardTitle>
 						<p className="text-muted-foreground text-sm">
-							Set custom per-room token limits for specific users.
+							Override the platform room policy for specific
+							users.
 						</p>
 					</div>
 					<Button
@@ -447,7 +451,7 @@ export const RoomTokenLimitsPage = () => {
 							<Users className="size-8" />
 							<p className="text-sm">
 								No user-specific overrides configured. All users
-								use the default limits.
+								follow the platform room policy.
 							</p>
 						</div>
 					) : (

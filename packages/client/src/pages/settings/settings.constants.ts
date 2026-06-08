@@ -258,7 +258,8 @@ export const SETTINGS_ROUTES: {
 	{
 		title: "Room Token Limits",
 		path: "room-token-limits",
-		description: "Configure per-room token limits for platform users.",
+		description:
+			"Configure the platform-wide room token policy and optional per-user overrides.",
 		icon: mdiChatProcessingOutline,
 		history: ["settings/"],
 		admin: true,
