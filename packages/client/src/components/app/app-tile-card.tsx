@@ -290,7 +290,6 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 
 	const showBookmark = !systemApp && !isDiscoverable;
 	const showMenu = app.project_created_by !== "SYSTEM";
-	const showInfo = app.project_created_by !== "SYSTEM";
 	const isCatalog = variant === "catalog";
 	const isRow = variant === "row";
 	const isFillerCard = variant === "fillerCard";
@@ -302,6 +301,9 @@ export const AppTileCard = memo((props: AppTileCardProps) => {
 			: appType === "WORKSPACE"
 				? "agent"
 				: "app";
+
+	const showInfo =
+		app.project_created_by !== "SYSTEM" && entityType === "app";
 
 	// Style classes
 	const cardWidthClass = isRow
