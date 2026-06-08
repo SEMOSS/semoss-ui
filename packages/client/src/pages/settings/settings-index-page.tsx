@@ -56,7 +56,7 @@ const CardMapper: Record<string, CardConfig> = {
 		icon: <Archive className={ICON_CLASS} />,
 		color: "#008674",
 	},
-	"App Settings": {
+	"App, Agent, & Skill Settings": {
 		icon: <LayoutGrid className={ICON_CLASS} />,
 		color: "#8340DE",
 		label: "App, Agent, & Skill Settings",
