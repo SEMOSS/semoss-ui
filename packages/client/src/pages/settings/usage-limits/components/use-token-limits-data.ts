@@ -123,9 +123,9 @@ const UI_PERIODS = PERIODS.filter(
 export const DEFAULT_LIMIT_DRAFT: TokenLimitEntry = {
 	id: "default-limit",
 	period: "DAY",
-	maxTokens: 100000,
-	maxInputTokens: 60000,
-	maxOutputTokens: 40000,
+	maxTokens: null,
+	maxInputTokens: null,
+	maxOutputTokens: null,
 	isActive: true,
 	_saved: { ...DEFAULT_LIMIT_VALUES },
 };
