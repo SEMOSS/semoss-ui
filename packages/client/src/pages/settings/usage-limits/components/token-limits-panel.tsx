@@ -16,7 +16,7 @@ import {
 	Switch,
 } from "@semoss/ui/next";
 import { TIME_PERIOD_LABELS, UI_TIME_PERIODS } from "../constants";
-import type { TimePeriod, TokenLimitEntry } from "../types";
+import type { ComputeLimitEntry, TimePeriod, TokenLimitEntry } from "../types";
 import { EditableLimitRow } from "./editable-limit-row";
 import {
 	type GroupedLimitEntity,
@@ -74,25 +74,33 @@ const parseNullableNumber = (value: string) => {
 	return Number.isNaN(parsed) ? null : parsed;
 };
 
-const mergeDraftLimits = (
-	limits: TokenLimitEntry[],
-	drafts: Record<string, TokenLimitEntry>,
+const mergeDraftLimits = <T extends { id: string }>(
+	limits: T[],
+	drafts: Record<string, T>,
 ) => limits.map((limit) => drafts[limit.id] ?? limit);
 
-const mergeGroupedEntities = (
-	entities: GroupedLimitEntity[],
+const isComputeDirty = (limit: ComputeLimitEntry) =>
+	limit.period !== limit._saved.period ||
+	limit.maxResponseTime !== limit._saved.maxResponseTime ||
+	limit.isActive !== limit._saved.isActive;
+
+const mergeGroupedEntities = <TOption,>(
+	entities: GroupedLimitEntity<TOption>[],
 	localRowsByEntityId: Record<string, GroupedLimitRow[]>,
-	localEntityById: Record<string, Omit<GroupedLimitEntity, "rows">>,
+	localEntityById: Record<string, Omit<GroupedLimitEntity<TOption>, "rows">>,
 ) =>
 	Object.values(
-		entities.reduce<Record<string, GroupedLimitEntity>>((acc, entity) => {
-			const localRows = localRowsByEntityId[entity.id] ?? [];
-			acc[entity.id] = {
-				...entity,
-				rows: sortRows([...entity.rows, ...localRows]),
-			};
-			return acc;
-		}, {}),
+		entities.reduce<Record<string, GroupedLimitEntity<TOption>>>(
+			(acc, entity) => {
+				const localRows = localRowsByEntityId[entity.id] ?? [];
+				acc[entity.id] = {
+					...entity,
+					rows: sortRows([...entity.rows, ...localRows]),
+				};
+				return acc;
+			},
+			{},
+		),
 	)
 		.concat(
 			Object.entries(localRowsByEntityId)
@@ -144,6 +152,8 @@ export function TokenLimitsPanel({
 		removePlatformLimit,
 		saveUserLimitRow,
 		removeUserLimitRow,
+		saveUserComputeLimitRow,
+		removeUserComputeLimitRow,
 		saveTeamLimitRow,
 		removeTeamLimitRow,
 	} = useTokenLimitsData({ entityType, entityId });
@@ -170,6 +180,9 @@ export function TokenLimitsPanel({
 		Record<string, GroupedLimitRow[]>
 	>({});
 	const [localTeamRowsById, setLocalTeamRowsById] = useState<
+		Record<string, GroupedLimitRow[]>
+	>({});
+	const [localUserComputeRowsById, setLocalUserComputeRowsById] = useState<
 		Record<string, GroupedLimitRow[]>
 	>({});
 
@@ -332,6 +345,51 @@ export function TokenLimitsPanel({
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[teamGroups, teamOptions, teamTokenLimits],
 	);
+	const groupedUserComputeLimits = useMemo<
+		GroupedLimitEntity<UserLimitOption>[]
+	>(
+		() =>
+			members
+				.filter(
+					(member) =>
+						member.usage_restriction?.toLowerCase() === "compute" &&
+						member.max_response_time != null &&
+						member.max_response_time >= 0,
+				)
+				.map((member) => {
+					const period = PERIODS.includes(
+						member.usage_frequency?.toUpperCase() as TimePeriod,
+					)
+						? (member.usage_frequency?.toUpperCase() as TimePeriod)
+						: "DAY";
+					return {
+						id: member.id,
+						name: member.name || member.id,
+						details: [
+							{ label: "ID", value: member.id },
+							{ label: "Email", value: member.email || "N/A" },
+							{ label: "Login", value: member.type || "N/A" },
+						],
+						rows: [
+							{
+								id: buildRowId(member.id, period),
+								period,
+								savedPeriod: period,
+								combinedLimit: null,
+								inputLimit: null,
+								outputLimit: null,
+								responseTimeLimit: member.max_response_time,
+								isActive: true,
+							},
+						],
+						option: memberOptions.find(
+							(option) => option.id === member.id,
+						),
+					};
+				})
+				.sort((a, b) => a.name.localeCompare(b.name)),
+		[members, memberOptions],
+	);
 
 	const remainingDefaultUserPeriods = useMemo(
 		() =>
@@ -461,6 +519,19 @@ export function TokenLimitsPanel({
 			),
 		[groupedTeamLimits, localTeamEntityById, localTeamRowsById],
 	);
+	const displayedGroupedUserComputeLimits = useMemo(
+		() =>
+			mergeGroupedEntities(
+				groupedUserComputeLimits,
+				localUserComputeRowsById,
+				localUserEntityById,
+			),
+		[
+			groupedUserComputeLimits,
+			localUserComputeRowsById,
+			localUserEntityById,
+		],
+	);
 	const userRowsById = useMemo(
 		() =>
 			new Map(
@@ -480,6 +551,16 @@ export function TokenLimitsPanel({
 				]),
 			),
 		[displayedGroupedTeamLimits],
+	);
+	const userComputeRowsById = useMemo(
+		() =>
+			new Map(
+				displayedGroupedUserComputeLimits.map((group) => [
+					group.id,
+					group.rows,
+				]),
+			),
+		[displayedGroupedUserComputeLimits],
 	);
 
 	if (loading) {
@@ -578,6 +659,7 @@ export function TokenLimitsPanel({
 											if (success) {
 												setNewPlatformRow(null);
 											}
+											return success;
 										}}
 										isDirty
 									>
@@ -644,6 +726,7 @@ export function TokenLimitsPanel({
 														},
 													);
 												}
+												return success;
 											}}
 										/>
 									);
@@ -792,6 +875,93 @@ export function TokenLimitsPanel({
 					);
 				}}
 			/>
+
+			{isModel && (
+				<GroupedLimitsSection
+					title="Per-User Compute Time Limits"
+					description="Manage the user-level compute-time limit stored on the model membership record. This stays separate from token limits, so a user can have token limits, a compute-time limit, or both."
+					entityLabel="User"
+					entities={displayedGroupedUserComputeLimits}
+					entityOptions={memberOptions.filter((option) => {
+						const existingRows =
+							userComputeRowsById.get(option.id) ?? [];
+						return existingRows.length === 0;
+					})}
+					emptyMessage="No per-user compute time limits configured."
+					multiPeriod={false}
+					savingIds={savingUserIds}
+					supportsActive={false}
+					fieldMode="compute"
+					renderEntityDetails={(user) => (
+						<div>
+							<div className="font-medium text-sm">
+								{user.name}
+							</div>
+							<div className="text-muted-foreground text-xs">
+								{user.email || "N/A"} ·{" "}
+								{user.loginType || "N/A"}
+							</div>
+						</div>
+					)}
+					onAddEntity={(user) => {
+						const existingRows =
+							userComputeRowsById.get(user.id) ?? [];
+						if (existingRows.length > 0) {
+							return;
+						}
+						const nextPeriod = "DAY";
+						setLocalUserComputeRowsById((prev) => ({
+							...prev,
+							[user.id]: [
+								{
+									id: buildRowId(user.id, nextPeriod),
+									period: nextPeriod,
+									combinedLimit: null,
+									inputLimit: null,
+									outputLimit: null,
+									responseTimeLimit: null,
+									isActive: true,
+								},
+							],
+						}));
+					}}
+					onSaveSingleRow={async (entityUserId, row) => {
+						const success = await saveUserComputeLimitRow(
+							entityUserId,
+							row,
+						);
+						if (success) {
+							setLocalUserComputeRowsById((prev) => ({
+								...prev,
+								[entityUserId]: (
+									prev[entityUserId] ?? []
+								).filter((existing) => existing.id !== row.id),
+							}));
+						}
+					}}
+					onRemoveEntityRow={(entityUserId, rowId) => {
+						const localRow = (
+							localUserComputeRowsById[entityUserId] ?? []
+						).find((row) => row.id === rowId);
+						if (localRow) {
+							setLocalUserComputeRowsById((prev) => ({
+								...prev,
+								[entityUserId]: (
+									prev[entityUserId] ?? []
+								).filter((row) => row.id !== rowId),
+							}));
+							return;
+						}
+						const row = (
+							userComputeRowsById.get(entityUserId) ?? []
+						).find((existing) => existing.id === rowId);
+						if (!row) {
+							return;
+						}
+						removeUserComputeLimitRow(entityUserId);
+					}}
+				/>
+			)}
 
 			<DefaultLimitsSection
 				title="Default Team Limits"
@@ -1018,6 +1188,7 @@ const DefaultLimitsSection = ({
 									if (success) {
 										setNewLimit(null);
 									}
+									return success;
 								}}
 								onDelete={() => setNewLimit(null)}
 							/>
@@ -1041,6 +1212,7 @@ const DefaultLimitsSection = ({
 									if (success) {
 										onClearDraft(limit.id);
 									}
+									return success;
 								}}
 								onDelete={() =>
 									onDeleteLimit(
@@ -1274,4 +1446,299 @@ const DefaultLimitEditorRow = ({
 			)}
 		/>
 	</EditableLimitRow>
+);
+
+const ComputeLimitFields = ({
+	limit,
+	onChange,
+	disabled,
+	availablePeriods = UI_TIME_PERIODS,
+}: {
+	limit: ComputeLimitEntry;
+	onChange: (next: ComputeLimitEntry) => void;
+	disabled?: boolean;
+	availablePeriods?: TimePeriod[];
+}) => (
+	<>
+		<div className="flex items-center gap-2">
+			<Label className="whitespace-nowrap text-xs">
+				Response Time (ms):
+			</Label>
+			<Input
+				type="number"
+				value={limit.maxResponseTime ?? ""}
+				onChange={(e) =>
+					onChange({
+						...limit,
+						maxResponseTime: parseNullableNumber(e.target.value),
+					})
+				}
+				disabled={disabled}
+				className="h-8 w-32"
+			/>
+		</div>
+		<div className="flex items-center gap-2">
+			<Label className="text-xs">Period:</Label>
+			<Select
+				value={limit.period}
+				onValueChange={(value: TimePeriod) =>
+					onChange({
+						...limit,
+						period: value,
+					})
+				}
+			>
+				<SelectTrigger className="h-8 w-28">
+					<SelectValue />
+				</SelectTrigger>
+				<SelectContent>
+					{availablePeriods.map((period) => (
+						<SelectItem key={period} value={period}>
+							{TIME_PERIOD_LABELS[period]}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+		</div>
+		<div className="flex items-center gap-2">
+			<Label className="text-xs">Active:</Label>
+			<Switch
+				checked={limit.isActive}
+				onCheckedChange={(checked) =>
+					onChange({
+						...limit,
+						isActive: checked,
+					})
+				}
+				disabled={disabled}
+			/>
+		</div>
+	</>
+);
+
+const PlatformComputeRowFields = ({
+	limit,
+	onChange,
+	disabled,
+	usage,
+	usedPeriods,
+}: {
+	limit: ComputeLimitEntry;
+	onChange: (next: ComputeLimitEntry) => void;
+	disabled?: boolean;
+	usage?: {
+		computeTimeUsed: number;
+	};
+	usedPeriods?: TimePeriod[];
+}) => (
+	<>
+		<ComputeLimitFields
+			limit={limit}
+			onChange={onChange}
+			disabled={disabled}
+			availablePeriods={UI_TIME_PERIODS.filter(
+				(period) =>
+					period === limit.period || !usedPeriods?.includes(period),
+			)}
+		/>
+		{usage && (
+			<div className="flex flex-col gap-1 text-muted-foreground text-xs">
+				<div>
+					Used response time: {usage.computeTimeUsed.toLocaleString()}{" "}
+					ms
+				</div>
+			</div>
+		)}
+	</>
+);
+
+const ComputeLimitEditorRow = ({
+	limit,
+	sourceLimit,
+	usedPeriods,
+	disabled,
+	onChange,
+	onDelete,
+	onSave,
+	usage,
+}: {
+	limit: ComputeLimitEntry;
+	sourceLimit: ComputeLimitEntry;
+	usedPeriods: TimePeriod[];
+	disabled?: boolean;
+	onChange: (limit: ComputeLimitEntry) => void;
+	onDelete: () => void;
+	onSave: (limit: ComputeLimitEntry) => Promise<boolean>;
+	usage?: {
+		computeTimeUsed: number;
+	};
+}) => (
+	<EditableLimitRow
+		onDelete={onDelete}
+		onSave={() => {
+			void onSave(limit);
+		}}
+		isDirty={isComputeDirty(limit) || limit.period !== sourceLimit.period}
+	>
+		{usage ? (
+			<PlatformComputeRowFields
+				limit={limit}
+				onChange={onChange}
+				disabled={disabled}
+				usage={usage}
+				usedPeriods={usedPeriods}
+			/>
+		) : (
+			<ComputeLimitFields
+				limit={limit}
+				onChange={onChange}
+				disabled={disabled}
+				availablePeriods={PERIODS.filter(
+					(period) =>
+						period === limit.period ||
+						!usedPeriods.includes(period),
+				)}
+			/>
+		)}
+	</EditableLimitRow>
+);
+
+const _DefaultComputeLimitsSection = ({
+	title,
+	description,
+	open,
+	onOpenChange,
+	limits,
+	newLimit,
+	setNewLimit,
+	remainingPeriods,
+	onCreateLimit,
+	onSaveLimit,
+	onDeleteLimit,
+	onChangeLimit,
+	onClearDraft,
+	sourceLimits,
+	isSaving,
+	emptyMessage,
+}: {
+	title: string;
+	description: string;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+	limits: ComputeLimitEntry[];
+	newLimit: ComputeLimitEntry | null;
+	setNewLimit: (next: ComputeLimitEntry | null) => void;
+	remainingPeriods: TimePeriod[];
+	onCreateLimit: (period: TimePeriod) => ComputeLimitEntry;
+	onSaveLimit: (limit: ComputeLimitEntry) => Promise<boolean>;
+	onDeleteLimit: (period: TimePeriod) => void;
+	onChangeLimit: (id: string, next: ComputeLimitEntry) => void;
+	onClearDraft: (id: string) => void;
+	sourceLimits: ComputeLimitEntry[];
+	isSaving: boolean;
+	emptyMessage: string;
+}) => (
+	<section className="rounded-xl border">
+		<Collapsible open={open} onOpenChange={onOpenChange}>
+			<div className="border-b px-4 py-3">
+				<div className="flex items-start justify-between gap-3">
+					<CollapsibleTrigger asChild>
+						<button
+							type="button"
+							className="flex flex-1 items-start gap-2 text-left"
+						>
+							{open ? (
+								<ChevronDown className="mt-0.5 size-4" />
+							) : (
+								<ChevronRight className="mt-0.5 size-4" />
+							)}
+							<div>
+								<h3 className="font-semibold text-base">
+									{title}
+								</h3>
+								<p className="text-muted-foreground text-sm">
+									{description}
+								</p>
+							</div>
+						</button>
+					</CollapsibleTrigger>
+					<Button
+						size="sm"
+						onClick={() => {
+							const nextPeriod = remainingPeriods[0];
+							if (!nextPeriod) {
+								return;
+							}
+							setNewLimit(onCreateLimit(nextPeriod));
+						}}
+						disabled={!remainingPeriods.length || !!newLimit}
+					>
+						<Plus className="mr-1 size-3" /> Add Limit
+					</Button>
+				</div>
+			</div>
+			<CollapsibleContent className="px-4 py-4">
+				{newLimit || limits.length > 0 ? (
+					<div className="flex flex-col gap-2">
+						{newLimit && (
+							<ComputeLimitEditorRow
+								limit={newLimit}
+								sourceLimit={newLimit}
+								usedPeriods={limits.map(
+									(limit) => limit.period,
+								)}
+								disabled={isSaving}
+								onChange={setNewLimit}
+								onSave={async (draft) => {
+									const success = await onSaveLimit(draft);
+									if (success) {
+										setNewLimit(null);
+									}
+									return success;
+								}}
+								onDelete={() => setNewLimit(null)}
+							/>
+						)}
+						{limits.map((limit) => (
+							<ComputeLimitEditorRow
+								key={limit.id}
+								limit={limit}
+								sourceLimit={
+									sourceLimits.find(
+										(source) => source.id === limit.id,
+									) ?? limit
+								}
+								usedPeriods={limits.map((row) => row.period)}
+								disabled={isSaving}
+								onChange={(next) =>
+									onChangeLimit(limit.id, next)
+								}
+								onSave={async (next) => {
+									const success = await onSaveLimit(next);
+									if (success) {
+										onClearDraft(limit.id);
+									}
+									return success;
+								}}
+								onDelete={() =>
+									onDeleteLimit(
+										(
+											sourceLimits.find(
+												(source) =>
+													source.id === limit.id,
+											) ?? limit
+										).period,
+									)
+								}
+							/>
+						))}
+					</div>
+				) : (
+					<p className="py-4 text-center text-muted-foreground text-sm">
+						{emptyMessage}
+					</p>
+				)}
+			</CollapsibleContent>
+		</Collapsible>
+	</section>
 );
