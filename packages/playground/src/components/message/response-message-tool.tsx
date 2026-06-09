@@ -145,13 +145,14 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				!tool.isOpen &&
 				!isDisabled
 			) {
-				tool.openTool();
+				tool.openTool(isMobile ? "inline" : undefined);
 			}
 		}, [
 			tool,
 			tool.argumentsStreaming,
 			tool.json._meta.SMSS_MCP_UI?.autoOpen,
 			isDisabled,
+			isMobile,
 		]);
 
 		// While the tool call is still streaming in, we don't have title/meta/args

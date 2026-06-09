@@ -216,5 +216,11 @@
 		"close": "إغلاق",
 		"lines_one": "{{count}} سطر",
 		"lines_other": "{{count}} أسطر"
+	},
+	"fileDrag": {
+		"title": "أفلت الملفات هنا لإرفاقها بالرسالة",
+		"modalTitle": "إضافة مستندات",
+		"browse": "تصفح",
+		"done": "تم"
 	}
 }
