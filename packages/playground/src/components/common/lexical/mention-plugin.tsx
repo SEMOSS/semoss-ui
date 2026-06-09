@@ -1,4 +1,5 @@
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import type { LexicalNode } from "lexical";
 import {
 	$createTextNode,
 	$getSelection,
@@ -24,6 +25,8 @@ interface MentionPluginProps {
 		onOpenChange: (isOpen: boolean) => void;
 		menuPosition: { top: number; bottom: number; left: number } | null;
 		addToken: (token: string) => void;
+		/** Insert a Lexical node in place of the trigger + query text */
+		addNode: (node: LexicalNode) => void;
 		onRequestClose: () => void;
 		/** Text typed after the trigger character, for filtering */
 		query: string;
@@ -37,9 +40,14 @@ interface MentionPluginProps {
 
 	/**
 	 * Called when Enter is pressed while the menu is open. The plugin closes
-	 * the menu (removing trigger + query text) after this fires.
+	 * the menu (removing trigger + query text) after this fires unless addNode
+	 * was already called (which resets triggerOffsetRef).
 	 */
-	onAccept?: (query: string, selectedIndex: number) => void;
+	onAccept?: (
+		query: string,
+		selectedIndex: number,
+		addNode: (node: LexicalNode) => void,
+	) => void;
 
 	/**
 	 * Called when Tab is pressed. If it returns a string, that string replaces
@@ -83,6 +91,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	const itemCountRef = useRef(0);
 
 	// Reset selection when the filtered list changes (new query = start from top)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: The effect should only run when the query changes
 	useEffect(() => {
 		setSelectedIndex(0);
 	}, [query]);
@@ -124,6 +133,48 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 
 				const spaceNode = new TextNode(" ");
 				tokenNode.insertAfter(spaceNode);
+
+				if (textAfterCursor) {
+					spaceNode.insertAfter(new TextNode(textAfterCursor));
+				}
+
+				spaceNode.select(1, 1);
+			});
+
+			setIsOpen(false);
+			explicitlyClosedRef.current = false;
+			triggerOffsetRef.current = null;
+		},
+		[editor],
+	);
+
+	/** Insert an arbitrary Lexical node in place of the trigger + query text */
+	const addNode = useCallback(
+		(node: LexicalNode) => {
+			const triggerIdx = triggerOffsetRef.current;
+			if (triggerIdx === null) return;
+
+			editor.update(() => {
+				const selection = $getSelection();
+				if (!$isRangeSelection(selection)) return;
+
+				const anchor = selection.anchor;
+				const anchorNode = anchor.getNode();
+				if (!$isTextNode(anchorNode)) return;
+
+				const textContent = anchorNode.getTextContent();
+				const textBeforeTrigger = textContent.slice(0, triggerIdx);
+				const textAfterCursor = textContent.slice(anchor.offset);
+
+				if (textBeforeTrigger) {
+					anchorNode.setTextContent(textBeforeTrigger);
+					anchorNode.insertAfter(node);
+				} else {
+					anchorNode.replace(node);
+				}
+
+				const spaceNode = new TextNode(" ");
+				node.insertAfter(spaceNode);
 
 				if (textAfterCursor) {
 					spaceNode.insertAfter(new TextNode(textAfterCursor));
@@ -280,7 +331,10 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				onAcceptRef.current?.(
 					queryRef.current,
 					selectedIndexRef.current,
+					addNode,
 				);
+				// addNode resets triggerOffsetRef, so handleRequestClose becomes
+				// a no-op when the caller inserted a node rather than just executing
 				handleRequestClose();
 				return true;
 			},
@@ -329,7 +383,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			removeArrowDown();
 			removeArrowUp();
 		};
-	}, [editor, isOpen, handleRequestClose, replaceQuery]);
+	}, [editor, isOpen, handleRequestClose, replaceQuery, addNode]);
 
 	// Restore editor focus when menu closes
 	useEffect(() => {
@@ -353,6 +407,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			onOpenChange={handleOpenChange}
 			menuPosition={menuPosition}
 			addToken={addToken}
+			addNode={addNode}
 			onRequestClose={handleRequestClose}
 			query={query}
 			selectedIndex={selectedIndex}

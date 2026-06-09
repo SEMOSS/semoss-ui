@@ -39,6 +39,11 @@ interface RoomInputMenuSlashProps {
 	setSelectedIndex: (index: number) => void;
 	/** Removes the slash + query text from the editor and closes the menu */
 	onRequestClose: () => void;
+	/**
+	 * Called when a command is selected by click or keyboard. When provided,
+	 * the caller is responsible for executing the command and closing the menu.
+	 */
+	onCommandSelect?: (cmd: SlashCommand) => void;
 }
 
 // ============================================================================
@@ -59,6 +64,18 @@ const TEST_COMMANDS: SlashCommand[] = ["A", "B", "C", "D", "E", "F"].map(
 		onExecute: () => console.log(`test${letter}`),
 	}),
 );
+
+export const filterSlashCommands = (
+	commands: SlashCommand[],
+	query: string,
+): SlashCommand[] => {
+	const lowerQuery = query.toLowerCase();
+	return commands.filter((cmd) => {
+		if (!cmd.id.toLowerCase().startsWith(lowerQuery)) return false;
+		if (cmd.hiddenInMenu && lowerQuery.length < 1) return false;
+		return true;
+	});
+};
 
 export const buildSlashCommands = (
 	onOpenMcpOverlay: (tab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => void,
@@ -119,14 +136,10 @@ export const RoomInputMenuSlash: React.FC<
 	setItemCount,
 	setSelectedIndex,
 	onRequestClose,
+	onCommandSelect,
 	commands,
 }) => {
-	const lowerQuery = query.toLowerCase();
-	const filtered = commands.filter((cmd) => {
-		if (!cmd.id.startsWith(lowerQuery)) return false;
-		if (cmd.hiddenInMenu && lowerQuery.length < 1) return false;
-		return true;
-	});
+	const filtered = filterSlashCommands(commands, query);
 
 	const listRef = useRef<HTMLDivElement>(null);
 
@@ -167,8 +180,12 @@ export const RoomInputMenuSlash: React.FC<
 									key={cmd.id}
 									value={cmd.id}
 									onSelect={() => {
-										cmd.onExecute();
-										onRequestClose();
+										if (onCommandSelect) {
+											onCommandSelect(cmd);
+										} else {
+											cmd.onExecute();
+											onRequestClose();
+										}
 									}}
 								>
 									<Icon className="mr-2 size-4 shrink-0" />

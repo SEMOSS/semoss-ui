@@ -10,6 +10,8 @@ import {
 	$createParagraphNode,
 	$createTextNode,
 	$getRoot,
+	$isElementNode,
+	$nodesOfType,
 	type LexicalEditor,
 } from "lexical";
 import {
@@ -54,7 +56,13 @@ import {
 import { FilePreviewGrid } from "@/components/common/file-preview-grid";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import {
+	$createSlashCommandNode,
+	$isSlashCommandNode,
+	SlashCommandNode,
+} from "@/components/common/lexical/slash-command-node";
+import {
 	buildSlashCommands,
+	filterSlashCommands,
 	RoomInputMenuSlash,
 } from "@/components/room/room-input-menu-slash";
 import { useFileDrag } from "@/contexts";
@@ -501,11 +509,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		 * - On failure: restores editor content and files for retry
 		 */
 		const promptModel = async () => {
-			// Extract current text from Lexical editor
+			// Extract current text from Lexical editor, converting slash command
+			// chips to their plain-text label so they're included in the message.
 			let userInput = "";
 			editorRef.current?.getEditorState().read(() => {
 				const root = $getRoot();
-				userInput = root.getTextContent();
+				userInput = root
+					.getChildren()
+					.map((paragraph) => {
+						if (!$isElementNode(paragraph))
+							return paragraph.getTextContent();
+						return paragraph
+							.getChildren()
+							.map((node) =>
+								$isSlashCommandNode(node)
+									? node.getLabel()
+									: node.getTextContent(),
+							)
+							.join("");
+					})
+					.join("\n");
 			});
 
 			// Capture files before clearing (for potential restore on error)
@@ -562,7 +585,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					initialConfig={{
 						namespace: "RoomInput",
 						theme: {},
-						nodes: [],
+						nodes: [SlashCommandNode],
 						onError: (error) => {
 							console.error(error);
 						},
@@ -1020,7 +1043,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 								// Track empty state to disable send button
 								const text = root.getTextContent();
-								setIsEmpty(text.trim().length === 0);
+								const hasSlashCommands =
+									$nodesOfType(SlashCommandNode).length > 0;
+								setIsEmpty(
+									text.length === 0 && !hasSlashCommands,
+								);
 								setInputText(text);
 
 								// Check if content is scrollable
@@ -1053,23 +1080,26 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						) && (
 							<MentionPlugin
 								trigger="/"
-								onAccept={(query, selectedIndex) => {
-									const filtered = slashCommands.filter(
-										(cmd) =>
-											cmd.id.startsWith(
-												query.toLowerCase(),
-											),
+								onAccept={(query, selectedIndex, addNode) => {
+									const filtered = filterSlashCommands(
+										slashCommands,
+										query,
 									);
 									const match =
 										filtered[selectedIndex] ?? filtered[0];
-									match?.onExecute();
+									if (!match) return;
+									addNode(
+										$createSlashCommandNode(
+											match.id,
+											match.label,
+										),
+									);
+									match.onExecute();
 								}}
 								onTabComplete={(query, selectedIndex) => {
-									const filtered = slashCommands.filter(
-										(cmd) =>
-											cmd.id.startsWith(
-												query.toLowerCase(),
-											),
+									const filtered = filterSlashCommands(
+										slashCommands,
+										query,
 									);
 									const match =
 										filtered[selectedIndex] ?? filtered[0];
@@ -1078,6 +1108,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								MenuComponent={({
 									isOpen,
 									menuPosition,
+									addNode,
 									onRequestClose,
 									query,
 									selectedIndex,
@@ -1123,6 +1154,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														onRequestClose={
 															onRequestClose
 														}
+														onCommandSelect={(
+															cmd,
+														) => {
+															addNode(
+																$createSlashCommandNode(
+																	cmd.id,
+																	cmd.label,
+																),
+															);
+															cmd.onExecute();
+														}}
 													/>
 												</div>,
 												document.body,
@@ -1150,6 +1192,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						agentEditable={!!onWorkspaceChange}
 						onClose={(next) => {
 							setMcpOverlay((prev) => ({ ...prev, open: false }));
+							editorRef.current?.focus();
 							if (!next) return;
 							onMcpChange(next.mcp);
 							if (onWorkspaceChange && "workspace" in next) {
