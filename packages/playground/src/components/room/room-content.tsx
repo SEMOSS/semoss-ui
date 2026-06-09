@@ -217,17 +217,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 	}, [scrollEle]);
 
-	// Auto-scroll to bottom when messages are added or content grows (streaming), unless user has scrolled away
-	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
+	const isAnyMessageStreaming = room.history.some(
+		(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
+	);
+
+	// Auto-scroll to bottom when content grows (streaming), unless user has scrolled away intentionally
+	// biome-ignore lint/correctness/useExhaustiveDependencies: contentHeight is used as a trigger
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
 			return;
 		}
-
-		// Check if any message is actively streaming
-		const isAnyMessageStreaming = room.history.some(
-			(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
-		);
 
 		// Only auto-scroll if actively streaming to avoid jumping after completion
 		if (!isAnyMessageStreaming) {
@@ -237,7 +236,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		requestAnimationFrame(() => {
 			scrollEle.scrollTop = scrollEle.scrollHeight;
 		});
-	}, [scrollEle, isScrollLocked, room.history.length, contentHeight]);
+	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
 
 	/**
 	 * Set up scroll event listener
