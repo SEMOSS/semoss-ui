@@ -248,10 +248,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		);
 
 		const slashCommands = useMemo(() => {
-			const all = buildSlashCommands(handleOpenMcpOverlay);
+			const all = buildSlashCommands(
+				handleOpenMcpOverlay,
+				onCompact ?? (() => {}),
+			);
 			if (!excludeCommandIds?.length) return all;
 			return all.filter((cmd) => !excludeCommandIds.includes(cmd.id));
-		}, [handleOpenMcpOverlay, excludeCommandIds]);
+		}, [handleOpenMcpOverlay, onCompact, excludeCommandIds]);
 
 		const knowledgeCount = useMemo(
 			() => options.mcp.filter(isKnowledgeMcp).length,
@@ -542,20 +545,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			if (!userInput || isLoading || hasOutstandingTools) {
 				return;
 			}
-
-			// Fire any "fire on send" slash commands present in the editor
-			editorRef.current?.getEditorState().read(() => {
-				for (const paragraph of $getRoot().getChildren()) {
-					if (!$isElementNode(paragraph)) continue;
-					for (const node of paragraph.getChildren()) {
-						if (!$isSlashCommandNode(node)) continue;
-						const cmd = slashCommands.find(
-							(c) => c.id === node.__commandId,
-						);
-						if (cmd?.fireOnSend) cmd.onExecute();
-					}
-				}
-			});
 
 			try {
 				// Optimistically clear editor and files before sending
@@ -1113,13 +1102,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									const match =
 										filtered[selectedIndex] ?? filtered[0];
 									if (!match) return;
-									addNode(() =>
-										$createSlashCommandNode(
-											match.id,
-											match.label,
-										),
-									);
-									if (!match.fireOnSend) match.onExecute();
+									if (!match.noChip) {
+										addNode(() =>
+											$createSlashCommandNode(
+												match.id,
+												match.label,
+											),
+										);
+									}
+									match.onExecute();
 								}}
 								onTabComplete={(query, selectedIndex) => {
 									const filtered = filterSlashCommands(
@@ -1182,14 +1173,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														onCommandSelect={(
 															cmd,
 														) => {
-															addNode(() =>
-																$createSlashCommandNode(
-																	cmd.id,
-																	cmd.label,
-																),
-															);
-															if (!cmd.fireOnSend)
+															if (cmd.noChip) {
 																cmd.onExecute();
+																onRequestClose();
+															} else {
+																addNode(() =>
+																	$createSlashCommandNode(
+																		cmd.id,
+																		cmd.label,
+																	),
+																);
+																cmd.onExecute();
+															}
 														}}
 													/>
 												</div>,

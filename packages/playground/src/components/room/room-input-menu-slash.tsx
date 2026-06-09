@@ -1,7 +1,7 @@
 import {
 	BookOpenIcon,
 	BotIcon,
-	FlaskConicalIcon,
+	ChevronsDownUpIcon,
 	HammerIcon,
 } from "lucide-react";
 import type React from "react";
@@ -26,8 +26,8 @@ export interface SlashCommand {
 	onExecute: () => void;
 	/** If true, the command is hidden until at least 1 character of its id is typed */
 	hiddenInMenu?: boolean;
-	/** If true, onExecute fires when the message is sent rather than when the command is selected */
-	fireOnSend?: boolean;
+	/** If true, selecting the command fires onExecute immediately without inserting a chip */
+	noChip?: boolean;
 }
 
 interface RoomInputMenuSlashProps {
@@ -52,29 +52,6 @@ interface RoomInputMenuSlashProps {
 // Commands
 // ============================================================================
 
-/**
- * Slash commands that open the MCP overlay are defined in room-input.tsx
- * (where handleOpenMcpOverlay is in scope) and injected via buildSlashCommands.
- * Test commands are defined inline here.
- */
-const TEST_COMMANDS: SlashCommand[] = [
-	...["A", "B", "C", "D", "E", "F"].map((letter) => ({
-		id: `test${letter}`,
-		label: `/test${letter}`,
-		description: `Test command ${letter}`,
-		icon: FlaskConicalIcon,
-		onExecute: () => console.log(`test${letter}`),
-	})),
-	{
-		id: "testOnFire",
-		label: "/testOnFire",
-		description: "Fires on send, not on select",
-		icon: FlaskConicalIcon,
-		fireOnSend: true,
-		onExecute: () => console.log("testOnFire: message sent"),
-	},
-];
-
 export const filterSlashCommands = (
 	commands: SlashCommand[],
 	query: string,
@@ -89,6 +66,7 @@ export const filterSlashCommands = (
 
 export const buildSlashCommands = (
 	onOpenMcpOverlay: (tab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => void,
+	onCompact: () => void,
 ): SlashCommand[] => [
 	{
 		id: "knowledge",
@@ -125,7 +103,14 @@ export const buildSlashCommands = (
 		onExecute: () => onOpenMcpOverlay("AGENT"),
 		hiddenInMenu: true,
 	},
-	...TEST_COMMANDS,
+	{
+		id: "compact",
+		label: "/compact",
+		description: "Summarize conversation history to free up context",
+		icon: ChevronsDownUpIcon,
+		noChip: true,
+		onExecute: onCompact,
+	},
 ];
 
 // ============================================================================
