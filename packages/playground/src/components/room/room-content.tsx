@@ -507,6 +507,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
 					onCompact={handleCompactMessages}
+					excludeCommandIds={["agent", "workspace"]}
 				/>
 			</div>
 		</div>

@@ -177,6 +177,9 @@ interface RoomInputProps {
 
 	/** Callback to compact conversation; passed through to EngineSelect context tooltip */
 	onCompact?: () => void;
+
+	/** Command IDs to suppress from the slash menu */
+	excludeCommandIds?: string[];
 }
 
 // ============================================================================
@@ -216,6 +219,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		tokensMax,
 		room,
 		onCompact,
+		excludeCommandIds,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -243,10 +247,11 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			[],
 		);
 
-		const slashCommands = useMemo(
-			() => buildSlashCommands(handleOpenMcpOverlay),
-			[handleOpenMcpOverlay],
-		);
+		const slashCommands = useMemo(() => {
+			const all = buildSlashCommands(handleOpenMcpOverlay);
+			if (!excludeCommandIds?.length) return all;
+			return all.filter((cmd) => !excludeCommandIds.includes(cmd.id));
+		}, [handleOpenMcpOverlay, excludeCommandIds]);
 
 		const knowledgeCount = useMemo(
 			() => options.mcp.filter(isKnowledgeMcp).length,
