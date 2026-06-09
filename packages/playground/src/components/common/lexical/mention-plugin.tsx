@@ -9,6 +9,7 @@ import {
 	KEY_ARROW_DOWN_COMMAND,
 	KEY_ARROW_UP_COMMAND,
 	KEY_ENTER_COMMAND,
+	KEY_ESCAPE_COMMAND,
 	KEY_TAB_COMMAND,
 	TextNode,
 } from "lexical";
@@ -377,11 +378,23 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			COMMAND_PRIORITY_HIGH,
 		);
 
+		const removeEscape = editor.registerCommand(
+			KEY_ESCAPE_COMMAND,
+			(event) => {
+				event?.preventDefault();
+				explicitlyClosedRef.current = true;
+				setIsOpen(false);
+				return true;
+			},
+			COMMAND_PRIORITY_HIGH,
+		);
+
 		return () => {
 			removeEnter();
 			removeTab();
 			removeArrowDown();
 			removeArrowUp();
+			removeEscape();
 		};
 	}, [editor, isOpen, handleRequestClose, replaceQuery, addNode]);
 
