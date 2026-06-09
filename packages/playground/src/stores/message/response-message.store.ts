@@ -163,45 +163,54 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 * initiates tool execution if the response contains tool calls.
 	 *
 	 * @param inputMessage - The user input message to send to the AI model
+	 * @param existingResponse - Optional pre-created response placeholder already wired into the message tree. When provided, skips creating a new ResponseMessageStore and skips the addChild setup calls, streaming directly into the existing placeholder instead.
 	 * @returns Promise resolving to the pixel response containing input and output messages
 	 */
-	runMessage = async (inputMessage: InputMessageStore) => {
+	runMessage = async (
+		inputMessage: InputMessageStore,
+		existingResponse?: ResponseMessageStore,
+	) => {
 		const room = this.room;
 
 		// Create a placeholder response message to show streaming content
-		const responseMessage = new ResponseMessageStore(room, {
-			io: "OUTPUT",
-			messageId: STREAMING_PLACEHOLDER_ID,
-			visible: true,
-			platform_generated: true,
-			modelId: room.model.engine_id,
-			dateCreated: new Date().toISOString(),
-			parts: [
-				{
-					type: "THINKING",
-					thinking: "",
+		const responseMessage =
+			existingResponse ??
+			new ResponseMessageStore(room, {
+				io: "OUTPUT",
+				messageId: STREAMING_PLACEHOLDER_ID,
+				visible: true,
+				platform_generated: true,
+				modelId: room.model.engine_id,
+				dateCreated: new Date().toISOString(),
+				parts: [
+					{
+						type: "THINKING",
+						thinking: "",
+					},
+				],
+				tokens: 0,
+				ornaments: {
+					modelName:
+						room.model.engine_display_name ||
+						room.model.engine_name ||
+						"",
 				},
-			],
-			tokens: 0,
-			ornaments: {
-				modelName:
-					room.model.engine_display_name ||
-					room.model.engine_name ||
-					"",
-			},
-		} as ResponsePixelMessage);
+			} as ResponsePixelMessage);
 
 		try {
-			// connect to the parent
-			this.addChild(inputMessage);
-
 			// build the context if it is there
 			let context = "";
 			if (room.options?.instructions) {
 				context = room.options?.instructions;
 			}
-			// Add placeholder as child of input to show streaming text
-			inputMessage.addChild(responseMessage);
+
+			if (!existingResponse) {
+				// connect to the parent
+				this.addChild(inputMessage);
+
+				// Add placeholder as child of input to show streaming text
+				inputMessage.addChild(responseMessage);
+			}
 
 			// turn on thinking
 			responseMessage.isThinking = true;
