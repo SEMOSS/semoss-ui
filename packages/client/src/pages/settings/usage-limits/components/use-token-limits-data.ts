@@ -1,23 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Env, get, post, runPixel } from "@semoss/sdk/react";
 import { toast } from "@semoss/ui/next";
-import { editEngineUserPermissions } from "@/api/engines";
 import {
 	getGroupsWithAccessToEngine,
 	getGroupsWithAccessToProject,
 } from "@/api/teams";
-import type { ComputeLimitEntry, TimePeriod, TokenLimitEntry } from "../types";
+import type { TimePeriod, TokenLimitEntry } from "../types";
 
 interface LimitValues {
 	period: TimePeriod;
 	maxTokens: number | null;
 	maxInputTokens: number | null;
 	maxOutputTokens: number | null;
-	isActive: boolean;
-}
-
-interface ComputeLimitValues {
-	period: TimePeriod;
 	maxResponseTime: number | null;
 	isActive: boolean;
 }
@@ -104,6 +98,7 @@ const DEFAULT_LIMIT_VALUES: LimitValues = {
 	maxTokens: null,
 	maxInputTokens: null,
 	maxOutputTokens: null,
+	maxResponseTime: null,
 	isActive: true,
 };
 
@@ -126,6 +121,7 @@ export const DEFAULT_LIMIT_DRAFT: TokenLimitEntry = {
 	maxTokens: null,
 	maxInputTokens: null,
 	maxOutputTokens: null,
+	maxResponseTime: null,
 	isActive: true,
 	_saved: { ...DEFAULT_LIMIT_VALUES },
 };
@@ -173,26 +169,13 @@ export const createDraftFromValues = (
 	maxTokens: values.maxTokens,
 	maxInputTokens: values.maxInputTokens,
 	maxOutputTokens: values.maxOutputTokens,
+	maxResponseTime: values.maxResponseTime,
 	isActive: values.isActive,
 	_saved: {
 		period: values.period,
 		maxTokens: values.maxTokens,
 		maxInputTokens: values.maxInputTokens,
 		maxOutputTokens: values.maxOutputTokens,
-		isActive: values.isActive,
-	},
-});
-
-export const createComputeDraftFromValues = (
-	values: ComputeLimitValues,
-	id = "default-compute-limit",
-): ComputeLimitEntry => ({
-	id,
-	period: values.period,
-	maxResponseTime: values.maxResponseTime,
-	isActive: values.isActive,
-	_saved: {
-		period: values.period,
 		maxResponseTime: values.maxResponseTime,
 		isActive: values.isActive,
 	},
@@ -202,10 +185,14 @@ export const hasAnyTokenLimitValue = ({
 	maxTokens,
 	maxInputTokens,
 	maxOutputTokens,
-}: Pick<LimitValues, "maxTokens" | "maxInputTokens" | "maxOutputTokens">) =>
-	maxTokens != null || maxInputTokens != null || maxOutputTokens != null;
-
-export const hasAnyComputeLimitValue = (maxResponseTime: number | null) =>
+	maxResponseTime,
+}: Pick<
+	LimitValues,
+	"maxTokens" | "maxInputTokens" | "maxOutputTokens" | "maxResponseTime"
+>) =>
+	maxTokens != null ||
+	maxInputTokens != null ||
+	maxOutputTokens != null ||
 	maxResponseTime != null;
 
 const serializeNullableLimit = (value: number | null) =>
@@ -229,6 +216,42 @@ const parseGroupsResponse = (result: unknown) => {
 		return Array.isArray(payload.groups) ? payload.groups : [];
 	}
 	return [] as TeamPermissionGroup[];
+};
+
+const normalizeTokenLimitValues = <
+	T extends {
+		maxTokens?: number | null;
+		maxInputTokens?: number | null;
+		maxOutputTokens?: number | null;
+		maxResponseTime?: number | null;
+	},
+>(
+	values: T,
+): T => {
+	if (values.maxResponseTime != null) {
+		return {
+			...values,
+			maxTokens: null,
+			maxInputTokens: null,
+			maxOutputTokens: null,
+		};
+	}
+	if (values.maxTokens != null) {
+		return {
+			...values,
+			maxInputTokens: null,
+			maxOutputTokens: null,
+			maxResponseTime: null,
+		};
+	}
+	if (values.maxInputTokens != null || values.maxOutputTokens != null) {
+		return {
+			...values,
+			maxTokens: null,
+			maxResponseTime: null,
+		};
+	}
+	return values;
 };
 
 export const permissionToString = (permission: string | number | undefined) => {
@@ -261,28 +284,13 @@ export const useTokenLimitsData = ({
 	const [teamTokenLimits, setTeamTokenLimits] = useState<
 		PrincipalTeamTokenLimit[]
 	>([]);
-	const [userComputeLimits, setUserComputeLimits] = useState<
-		PrincipalUserTokenLimit[]
-	>([]);
-	const [teamComputeLimits, setTeamComputeLimits] = useState<
-		PrincipalTeamTokenLimit[]
-	>([]);
 	const [defaultUserLimits, setDefaultUserLimits] = useState<
 		TokenLimitEntry[]
 	>([]);
 	const [defaultTeamLimits, setDefaultTeamLimits] = useState<
 		TokenLimitEntry[]
 	>([]);
-	const [defaultUserComputeLimits, setDefaultUserComputeLimits] = useState<
-		ComputeLimitEntry[]
-	>([]);
-	const [defaultTeamComputeLimits, setDefaultTeamComputeLimits] = useState<
-		ComputeLimitEntry[]
-	>([]);
 	const [platformLimits, setPlatformLimits] = useState<TokenLimitEntry[]>([]);
-	const [platformComputeLimits, setPlatformComputeLimits] = useState<
-		ComputeLimitEntry[]
-	>([]);
 	const [platformUsageByPeriod, setPlatformUsageByPeriod] = useState<
 		Record<TimePeriod, Omit<ModelPlatformUsageLimit, "usageFrequency">>
 	>(
@@ -317,57 +325,6 @@ export const useTokenLimitsData = ({
 		return value;
 	}, []);
 
-	const toComputeLimitEntry = useCallback(
-		(
-			limit: {
-				usageFrequency?: string | null;
-				maxResponseTime?: number | null;
-				isActive?: boolean | null;
-			},
-			id = "default-compute-limit",
-		): ComputeLimitEntry => {
-			const values: ComputeLimitValues = {
-				period: mapFrequency(limit.usageFrequency),
-				maxResponseTime: parseLimit(limit.maxResponseTime),
-				isActive: limit.isActive !== false,
-			};
-			return createComputeDraftFromValues(values, id);
-		},
-		[mapFrequency, parseLimit],
-	);
-
-	const getRestrictionType = useCallback(
-		(limit: {
-			usageRestriction?: string | null;
-			maxTokens?: number | null;
-			maxInputTokens?: number | null;
-			maxOutputTokens?: number | null;
-			maxResponseTime?: number | null;
-		}) => {
-			const explicitRestriction = limit.usageRestriction?.toLowerCase();
-			const maxResponseTime = parseLimit(limit.maxResponseTime);
-			const tokenValues = {
-				maxTokens: parseLimit(limit.maxTokens),
-				maxInputTokens: parseLimit(limit.maxInputTokens),
-				maxOutputTokens: parseLimit(limit.maxOutputTokens),
-			};
-			if (
-				explicitRestriction === "compute" ||
-				hasAnyComputeLimitValue(maxResponseTime)
-			) {
-				return "compute" as const;
-			}
-			if (
-				explicitRestriction === "token" ||
-				hasAnyTokenLimitValue(tokenValues)
-			) {
-				return "token" as const;
-			}
-			return null;
-		},
-		[parseLimit],
-	);
-
 	const toTokenLimitEntry = useCallback(
 		(
 			limit: {
@@ -375,6 +332,7 @@ export const useTokenLimitsData = ({
 				maxTokens?: number | null;
 				maxInputTokens?: number | null;
 				maxOutputTokens?: number | null;
+				maxResponseTime?: number | null;
 				isActive?: boolean | null;
 			},
 			id = "default-limit",
@@ -384,6 +342,7 @@ export const useTokenLimitsData = ({
 				maxTokens: parseLimit(limit.maxTokens),
 				maxInputTokens: parseLimit(limit.maxInputTokens),
 				maxOutputTokens: parseLimit(limit.maxOutputTokens),
+				maxResponseTime: parseLimit(limit.maxResponseTime),
 				isActive: limit.isActive !== false,
 			};
 			return createDraftFromValues(values, id);
@@ -399,6 +358,7 @@ export const useTokenLimitsData = ({
 						maxTokens?: number | null;
 						maxInputTokens?: number | null;
 						maxOutputTokens?: number | null;
+						maxResponseTime?: number | null;
 						isActive?: boolean | null;
 				  }
 				| {
@@ -406,6 +366,7 @@ export const useTokenLimitsData = ({
 						maxTokens?: number | null;
 						maxInputTokens?: number | null;
 						maxOutputTokens?: number | null;
+						maxResponseTime?: number | null;
 						isActive?: boolean | null;
 				  }[]
 				| null
@@ -431,45 +392,6 @@ export const useTokenLimitsData = ({
 		[isUiPeriod, mapFrequency, toTokenLimitEntry],
 	);
 
-	const toComputeLimitEntries = useCallback(
-		(
-			payload:
-				| {
-						usageFrequency?: string | null;
-						usageRestriction?: string | null;
-						maxResponseTime?: number | null;
-						isActive?: boolean | null;
-				  }
-				| {
-						usageFrequency?: string | null;
-						usageRestriction?: string | null;
-						maxResponseTime?: number | null;
-						isActive?: boolean | null;
-				  }[]
-				| null
-				| undefined,
-			idPrefix: string,
-		) => {
-			const rows = Array.isArray(payload)
-				? payload
-				: payload
-					? [payload]
-					: [];
-			return rows
-				.filter((limit) => getRestrictionType(limit) === "compute")
-				.map((limit) => {
-					const period = mapFrequency(limit.usageFrequency);
-					return toComputeLimitEntry(limit, `${idPrefix}-${period}`);
-				})
-				.filter((limit) => isUiPeriod(limit.period))
-				.sort(
-					(a, b) =>
-						PERIODS.indexOf(a.period) - PERIODS.indexOf(b.period),
-				);
-		},
-		[getRestrictionType, isUiPeriod, mapFrequency, toComputeLimitEntry],
-	);
-
 	const fetchDefaultUserLimits = useCallback(async () => {
 		try {
 			const url = isModel
@@ -481,6 +403,7 @@ export const useTokenLimitsData = ({
 						maxTokens?: number | null;
 						maxInputTokens?: number | null;
 						maxOutputTokens?: number | null;
+						maxResponseTime?: number | null;
 						isActive?: boolean | null;
 				  }
 				| {
@@ -488,6 +411,7 @@ export const useTokenLimitsData = ({
 						maxTokens?: number | null;
 						maxInputTokens?: number | null;
 						maxOutputTokens?: number | null;
+						maxResponseTime?: number | null;
 						isActive?: boolean | null;
 				  }[]
 				| null
@@ -495,30 +419,10 @@ export const useTokenLimitsData = ({
 			setDefaultUserLimits(
 				toTokenLimitEntries(response?.data, "default-user-limit"),
 			);
-			setDefaultUserComputeLimits(
-				toComputeLimitEntries(
-					response?.data as
-						| {
-								usageFrequency?: string | null;
-								usageRestriction?: string | null;
-								maxResponseTime?: number | null;
-								isActive?: boolean | null;
-						  }
-						| {
-								usageFrequency?: string | null;
-								usageRestriction?: string | null;
-								maxResponseTime?: number | null;
-								isActive?: boolean | null;
-						  }[]
-						| null,
-					"default-user-compute-limit",
-				),
-			);
 		} catch {
 			setDefaultUserLimits([]);
-			setDefaultUserComputeLimits([]);
 		}
-	}, [entityId, isModel, toComputeLimitEntries, toTokenLimitEntries]);
+	}, [entityId, isModel, toTokenLimitEntries]);
 
 	const fetchDefaultTeamLimits = useCallback(async () => {
 		try {
@@ -531,6 +435,7 @@ export const useTokenLimitsData = ({
 						maxTokens?: number | null;
 						maxInputTokens?: number | null;
 						maxOutputTokens?: number | null;
+						maxResponseTime?: number | null;
 						isActive?: boolean | null;
 				  }
 				| {
@@ -538,6 +443,7 @@ export const useTokenLimitsData = ({
 						maxTokens?: number | null;
 						maxInputTokens?: number | null;
 						maxOutputTokens?: number | null;
+						maxResponseTime?: number | null;
 						isActive?: boolean | null;
 				  }[]
 				| null
@@ -545,30 +451,10 @@ export const useTokenLimitsData = ({
 			setDefaultTeamLimits(
 				toTokenLimitEntries(response?.data, "default-team-limit"),
 			);
-			setDefaultTeamComputeLimits(
-				toComputeLimitEntries(
-					response?.data as
-						| {
-								usageFrequency?: string | null;
-								usageRestriction?: string | null;
-								maxResponseTime?: number | null;
-								isActive?: boolean | null;
-						  }
-						| {
-								usageFrequency?: string | null;
-								usageRestriction?: string | null;
-								maxResponseTime?: number | null;
-								isActive?: boolean | null;
-						  }[]
-						| null,
-					"default-team-compute-limit",
-				),
-			);
 		} catch {
 			setDefaultTeamLimits([]);
-			setDefaultTeamComputeLimits([]);
 		}
-	}, [entityId, isModel, toComputeLimitEntries, toTokenLimitEntries]);
+	}, [entityId, isModel, toTokenLimitEntries]);
 
 	const fetchMemberLimits = useCallback(async () => {
 		const url = `${Env.MODULE}/api/auth/${entityPath}/${getUsersEndpoint}?${entityIdKey}=${encodeURIComponent(entityId)}&limit=1000&offset=0`;
@@ -590,17 +476,8 @@ export const useTokenLimitsData = ({
 			Array.isArray(response?.data?.members) ? response.data.members : [],
 		);
 		setUserTokenLimits(
-			(Array.isArray(limits) ? limits : []).filter(
-				(limit) =>
-					isUiPeriod(mapFrequency(limit.usageFrequency)) &&
-					getRestrictionType(limit) === "token",
-			),
-		);
-		setUserComputeLimits(
-			(Array.isArray(limits) ? limits : []).filter(
-				(limit) =>
-					isUiPeriod(mapFrequency(limit.usageFrequency)) &&
-					getRestrictionType(limit) === "compute",
+			(Array.isArray(limits) ? limits : []).filter((limit) =>
+				isUiPeriod(mapFrequency(limit.usageFrequency)),
 			),
 		);
 	}, [
@@ -608,7 +485,6 @@ export const useTokenLimitsData = ({
 		entityIdKey,
 		entityPath,
 		getUsersEndpoint,
-		getRestrictionType,
 		isModel,
 		isUiPeriod,
 		mapFrequency,
@@ -633,20 +509,11 @@ export const useTokenLimitsData = ({
 		]);
 		setTeamGroups(parseGroupsResponse(response));
 		setTeamTokenLimits(
-			(Array.isArray(limits) ? limits : []).filter(
-				(limit) =>
-					isUiPeriod(mapFrequency(limit.usageFrequency)) &&
-					getRestrictionType(limit) === "token",
+			(Array.isArray(limits) ? limits : []).filter((limit) =>
+				isUiPeriod(mapFrequency(limit.usageFrequency)),
 			),
 		);
-		setTeamComputeLimits(
-			(Array.isArray(limits) ? limits : []).filter(
-				(limit) =>
-					isUiPeriod(mapFrequency(limit.usageFrequency)) &&
-					getRestrictionType(limit) === "compute",
-			),
-		);
-	}, [entityId, getRestrictionType, isModel, isUiPeriod, mapFrequency]);
+	}, [entityId, isModel, isUiPeriod, mapFrequency]);
 
 	const fetchPlatformLimits = useCallback(async () => {
 		if (!isModel) return;
@@ -657,54 +524,31 @@ export const useTokenLimitsData = ({
 		).filter((row) => isUiPeriod(mapFrequency(row.usageFrequency)));
 
 		setPlatformLimits(
-			rows
-				.map((row) => {
-					if (getRestrictionType(row) !== "token") {
-						return null;
-					}
-					const period = mapFrequency(row.usageFrequency);
-					const maxTokens = parseLimit(row.maxTokens);
-					const maxInputTokens = parseLimit(row.maxInputTokens);
-					const maxOutputTokens = parseLimit(row.maxOutputTokens);
-					const isActive = row.isActive !== false;
-					return {
-						id: `platform-${period}`,
+			rows.map((row) => {
+				const period = mapFrequency(row.usageFrequency);
+				const maxTokens = parseLimit(row.maxTokens);
+				const maxInputTokens = parseLimit(row.maxInputTokens);
+				const maxOutputTokens = parseLimit(row.maxOutputTokens);
+				const maxResponseTime = parseLimit(row.maxResponseTime);
+				const isActive = row.isActive !== false;
+				return {
+					id: `platform-${period}`,
+					period,
+					maxTokens,
+					maxInputTokens,
+					maxOutputTokens,
+					maxResponseTime,
+					isActive,
+					_saved: {
 						period,
 						maxTokens,
 						maxInputTokens,
 						maxOutputTokens,
-						isActive,
-						_saved: {
-							period,
-							maxTokens,
-							maxInputTokens,
-							maxOutputTokens,
-							isActive,
-						},
-					};
-				})
-				.filter((row): row is TokenLimitEntry => row !== null),
-		);
-
-		setPlatformComputeLimits(
-			rows
-				.filter((row) => getRestrictionType(row) === "compute")
-				.map((row) => {
-					const period = mapFrequency(row.usageFrequency);
-					const maxResponseTime = parseLimit(row.maxResponseTime);
-					const isActive = row.isActive !== false;
-					return {
-						id: `platform-compute-${period}`,
-						period,
 						maxResponseTime,
 						isActive,
-						_saved: {
-							period,
-							maxResponseTime,
-							isActive,
-						},
-					};
-				}),
+					},
+				};
+			}),
 		);
 
 		const usageIndex = {} as Record<
@@ -712,9 +556,6 @@ export const useTokenLimitsData = ({
 			Omit<ModelPlatformUsageLimit, "usageFrequency">
 		>;
 		rows.forEach((row) => {
-			if (getRestrictionType(row) !== "token") {
-				return;
-			}
 			const period = mapFrequency(row.usageFrequency);
 			usageIndex[period] = {
 				engineId: row.engineId,
@@ -736,14 +577,7 @@ export const useTokenLimitsData = ({
 			};
 		});
 		setPlatformUsageByPeriod(usageIndex);
-	}, [
-		entityId,
-		getRestrictionType,
-		isModel,
-		isUiPeriod,
-		mapFrequency,
-		parseLimit,
-	]);
+	}, [entityId, isModel, isUiPeriod, mapFrequency, parseLimit]);
 
 	const refreshData = useCallback(async () => {
 		setLoading(true);
@@ -777,17 +611,25 @@ export const useTokenLimitsData = ({
 	const saveDefaultUserLimit = async (draft: TokenLimitEntry) => {
 		setSavingDefaultLimit(true);
 		try {
+			const normalizedDraft = normalizeTokenLimitValues(draft);
 			const url = isModel
 				? `${Env.MODULE}/api/auth/engine/setEngineDefaultTokenLimit`
 				: `${Env.MODULE}/api/auth/project/setProjectDefaultTokenLimit`;
 			await post(url, {
 				[entityIdKey]: entityId,
-				usageFrequency: draft.period,
-				existingUsageFrequency: draft._saved.period,
-				maxTokens: serializeNullableLimit(draft.maxTokens),
-				maxInputTokens: serializeNullableLimit(draft.maxInputTokens),
-				maxOutputTokens: serializeNullableLimit(draft.maxOutputTokens),
-				isActive: draft.isActive,
+				usageFrequency: normalizedDraft.period,
+				existingUsageFrequency: normalizedDraft._saved.period,
+				maxTokens: serializeNullableLimit(normalizedDraft.maxTokens),
+				maxInputTokens: serializeNullableLimit(
+					normalizedDraft.maxInputTokens,
+				),
+				maxOutputTokens: serializeNullableLimit(
+					normalizedDraft.maxOutputTokens,
+				),
+				maxResponseTime: serializeNullableResponseTime(
+					normalizedDraft.maxResponseTime ?? null,
+				),
+				isActive: normalizedDraft.isActive,
 				restrictPerModel: false,
 			});
 			await fetchDefaultUserLimits();
@@ -824,52 +666,28 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const saveDefaultUserComputeLimit = async (draft: ComputeLimitEntry) => {
-		setSavingDefaultLimit(true);
-		try {
-			const url = isModel
-				? `${Env.MODULE}/api/auth/engine/setEngineDefaultTokenLimit`
-				: `${Env.MODULE}/api/auth/project/setProjectDefaultTokenLimit`;
-			await post(url, {
-				[entityIdKey]: entityId,
-				usageFrequency: draft.period,
-				existingUsageFrequency: draft._saved.period,
-				maxTokens: "",
-				maxInputTokens: "",
-				maxOutputTokens: "",
-				maxResponseTime: serializeNullableResponseTime(
-					draft.maxResponseTime,
-				),
-				isActive: draft.isActive,
-				restrictPerModel: false,
-			});
-			await fetchDefaultUserLimits();
-			await fetchMemberLimits();
-			toast.success("Default user compute limits saved");
-			return true;
-		} catch (e) {
-			console.error("Failed to save default user compute limits", e);
-			toast.error("Failed to save default user compute limits");
-			return false;
-		} finally {
-			setSavingDefaultLimit(false);
-		}
-	};
-
 	const saveDefaultTeamLimit = async (draft: TokenLimitEntry) => {
 		setSavingDefaultTeamLimit(true);
 		try {
+			const normalizedDraft = normalizeTokenLimitValues(draft);
 			const url = isModel
 				? `${Env.MODULE}/api/auth/engine/setEngineDefaultTeamTokenLimit`
 				: `${Env.MODULE}/api/auth/project/setProjectDefaultTeamTokenLimit`;
 			await post(url, {
 				[entityIdKey]: entityId,
-				usageFrequency: draft.period,
-				existingUsageFrequency: draft._saved.period,
-				maxTokens: serializeNullableLimit(draft.maxTokens),
-				maxInputTokens: serializeNullableLimit(draft.maxInputTokens),
-				maxOutputTokens: serializeNullableLimit(draft.maxOutputTokens),
-				isActive: draft.isActive,
+				usageFrequency: normalizedDraft.period,
+				existingUsageFrequency: normalizedDraft._saved.period,
+				maxTokens: serializeNullableLimit(normalizedDraft.maxTokens),
+				maxInputTokens: serializeNullableLimit(
+					normalizedDraft.maxInputTokens,
+				),
+				maxOutputTokens: serializeNullableLimit(
+					normalizedDraft.maxOutputTokens,
+				),
+				maxResponseTime: serializeNullableResponseTime(
+					normalizedDraft.maxResponseTime ?? null,
+				),
+				isActive: normalizedDraft.isActive,
 			});
 			await fetchDefaultTeamLimits();
 			await fetchTeamLimits();
@@ -905,54 +723,28 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const saveDefaultTeamComputeLimit = async (draft: ComputeLimitEntry) => {
-		setSavingDefaultTeamLimit(true);
-		try {
-			const url = isModel
-				? `${Env.MODULE}/api/auth/engine/setEngineDefaultTeamTokenLimit`
-				: `${Env.MODULE}/api/auth/project/setProjectDefaultTeamTokenLimit`;
-			await post(url, {
-				[entityIdKey]: entityId,
-				usageFrequency: draft.period,
-				existingUsageFrequency: draft._saved.period,
-				maxTokens: "",
-				maxInputTokens: "",
-				maxOutputTokens: "",
-				maxResponseTime: serializeNullableResponseTime(
-					draft.maxResponseTime,
-				),
-				isActive: draft.isActive,
-			});
-			await fetchDefaultTeamLimits();
-			await fetchTeamLimits();
-			toast.success("Default team compute limits saved");
-			return true;
-		} catch (e) {
-			console.error("Failed to save default team compute limits", e);
-			toast.error("Failed to save default team compute limits");
-			return false;
-		} finally {
-			setSavingDefaultTeamLimit(false);
-		}
-	};
-
 	const savePlatformLimit = async (limit: TokenLimitEntry) => {
 		setSavingPlatformIds((prev) => new Set(prev).add(limit.id));
 		try {
+			const normalizedLimit = normalizeTokenLimitValues(limit);
 			await post(
 				`${Env.MODULE}/api/auth/engine/setModelPlatformTokenLimit`,
 				{
 					engineId: entityId,
-					usageFrequency: limit.period,
-					maxTokens: serializeNullableLimit(limit.maxTokens),
+					usageFrequency: normalizedLimit.period,
+					maxTokens: serializeNullableLimit(
+						normalizedLimit.maxTokens,
+					),
 					maxInputTokens: serializeNullableLimit(
-						limit.maxInputTokens,
+						normalizedLimit.maxInputTokens,
 					),
 					maxOutputTokens: serializeNullableLimit(
-						limit.maxOutputTokens,
+						normalizedLimit.maxOutputTokens,
 					),
-					maxResponseTime: -1,
-					isActive: limit.isActive,
+					maxResponseTime: serializeNullableResponseTime(
+						normalizedLimit.maxResponseTime ?? null,
+					),
+					isActive: normalizedLimit.isActive,
 				},
 			);
 			await fetchPlatformLimits();
@@ -996,39 +788,6 @@ export const useTokenLimitsData = ({
 		}
 	};
 
-	const savePlatformComputeLimit = async (limit: ComputeLimitEntry) => {
-		setSavingPlatformIds((prev) => new Set(prev).add(limit.id));
-		try {
-			await post(
-				`${Env.MODULE}/api/auth/engine/setModelPlatformTokenLimit`,
-				{
-					engineId: entityId,
-					usageFrequency: limit.period,
-					maxTokens: "",
-					maxInputTokens: "",
-					maxOutputTokens: "",
-					maxResponseTime: serializeNullableResponseTime(
-						limit.maxResponseTime,
-					),
-					isActive: limit.isActive,
-				},
-			);
-			await fetchPlatformLimits();
-			toast.success("Platform model compute limit saved");
-			return true;
-		} catch (e) {
-			console.error("Failed to save model platform compute limit", e);
-			toast.error("Failed to save model platform compute limit");
-			return false;
-		} finally {
-			setSavingPlatformIds((prev) => {
-				const next = new Set(prev);
-				next.delete(limit.id);
-				return next;
-			});
-		}
-	};
-
 	const saveUserLimitRow = async (
 		memberId: string,
 		row: EditablePrincipalLimitRow,
@@ -1041,6 +800,12 @@ export const useTokenLimitsData = ({
 
 		setSavingUserIds((prev) => new Set(prev).add(memberId));
 		try {
+			const normalizedRow = normalizeTokenLimitValues({
+				maxTokens: row.combinedLimit,
+				maxInputTokens: row.inputLimit,
+				maxOutputTokens: row.outputLimit,
+				maxResponseTime: row.responseTimeLimit ?? null,
+			});
 			await runTokenLimitReactor(
 				isModel
 					? "SetEngineUserTokenLimit"
@@ -1052,14 +817,18 @@ export const useTokenLimitsData = ({
 							usageFrequency: row.period,
 							existingUsageFrequency:
 								row.savedPeriod ?? row.period,
-							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxTokens: serializeReactorLimit(
+								normalizedRow.maxTokens ?? null,
+							),
 							maxInputTokens: serializeReactorLimit(
-								row.inputLimit,
+								normalizedRow.maxInputTokens ?? null,
 							),
 							maxOutputTokens: serializeReactorLimit(
-								row.outputLimit,
+								normalizedRow.maxOutputTokens ?? null,
 							),
-							maxResponseTime: -1,
+							maxResponseTime: serializeReactorResponseTime(
+								normalizedRow.maxResponseTime ?? null,
+							),
 							isActive: row.isActive,
 						}
 					: {
@@ -1069,14 +838,18 @@ export const useTokenLimitsData = ({
 							usageFrequency: row.period,
 							existingUsageFrequency:
 								row.savedPeriod ?? row.period,
-							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxTokens: serializeReactorLimit(
+								normalizedRow.maxTokens ?? null,
+							),
 							maxInputTokens: serializeReactorLimit(
-								row.inputLimit,
+								normalizedRow.maxInputTokens ?? null,
 							),
 							maxOutputTokens: serializeReactorLimit(
-								row.outputLimit,
+								normalizedRow.maxOutputTokens ?? null,
 							),
-							maxResponseTime: -1,
+							maxResponseTime: serializeReactorResponseTime(
+								normalizedRow.maxResponseTime ?? null,
+							),
 							restrictPerModel: false,
 							isActive: row.isActive,
 						},
@@ -1087,131 +860,6 @@ export const useTokenLimitsData = ({
 		} catch (e) {
 			console.error("Failed to update user token limits", e);
 			toast.error("Failed to update user limit");
-			return false;
-		} finally {
-			setSavingUserIds((prev) => {
-				const next = new Set(prev);
-				next.delete(memberId);
-				return next;
-			});
-		}
-	};
-
-	const saveUserComputeLimitRow = async (
-		memberId: string,
-		row: EditablePrincipalLimitRow,
-	) => {
-		if (!isModel) {
-			toast.error(
-				"Per-user compute limits are only supported for models",
-			);
-			return false;
-		}
-
-		const base = members.find((member) => member.id === memberId);
-		if (!base) {
-			toast.error("Unable to find member to update");
-			return false;
-		}
-
-		setSavingUserIds((prev) => new Set(prev).add(memberId));
-		try {
-			const legacyComputeRows = userComputeLimits.filter(
-				(limit) =>
-					limit.userId === memberId &&
-					limit.usageFrequency &&
-					isUiPeriod(mapFrequency(limit.usageFrequency)),
-			);
-			await Promise.all(
-				legacyComputeRows.map((limit) =>
-					runTokenLimitReactor("RemoveEngineUserTokenLimit", {
-						engineId: entityId,
-						userId: memberId,
-						usageFrequency: mapFrequency(limit.usageFrequency),
-					}),
-				),
-			);
-
-			await editEngineUserPermissions(false, entityId, [
-				{
-					userid: base.id,
-					permission: permissionToString(base.permission),
-					usageRestriction:
-						row.responseTimeLimit == null ? null : "compute",
-					usageFrequency:
-						row.responseTimeLimit == null ? null : row.period,
-					maxTokens: null,
-					maxInputTokens: null,
-					maxOutputTokens: null,
-					maxResponseTime: row.responseTimeLimit ?? null,
-				},
-			]);
-			await fetchMemberLimits();
-			toast.success("User compute limit saved");
-			return true;
-		} catch (e) {
-			console.error("Failed to update user compute limits", e);
-			toast.error("Failed to update user compute limit");
-			return false;
-		} finally {
-			setSavingUserIds((prev) => {
-				const next = new Set(prev);
-				next.delete(memberId);
-				return next;
-			});
-		}
-	};
-
-	const removeUserComputeLimitRow = async (memberId: string) => {
-		if (!isModel) {
-			toast.error(
-				"Per-user compute limits are only supported for models",
-			);
-			return false;
-		}
-
-		const base = members.find((member) => member.id === memberId);
-		if (!base) {
-			toast.error("Unable to find member to update");
-			return false;
-		}
-
-		setSavingUserIds((prev) => new Set(prev).add(memberId));
-		try {
-			const legacyComputeRows = userComputeLimits.filter(
-				(limit) =>
-					limit.userId === memberId &&
-					limit.usageFrequency &&
-					isUiPeriod(mapFrequency(limit.usageFrequency)),
-			);
-			await Promise.all(
-				legacyComputeRows.map((limit) =>
-					runTokenLimitReactor("RemoveEngineUserTokenLimit", {
-						engineId: entityId,
-						userId: memberId,
-						usageFrequency: mapFrequency(limit.usageFrequency),
-					}),
-				),
-			);
-
-			await editEngineUserPermissions(false, entityId, [
-				{
-					userid: base.id,
-					permission: permissionToString(base.permission),
-					usageRestriction: null,
-					usageFrequency: null,
-					maxTokens: null,
-					maxInputTokens: null,
-					maxOutputTokens: null,
-					maxResponseTime: null,
-				},
-			]);
-			await fetchMemberLimits();
-			toast.success("User compute limit removed");
-			return true;
-		} catch (e) {
-			console.error("Failed to remove user compute limit", e);
-			toast.error("Failed to remove user compute limit");
 			return false;
 		} finally {
 			setSavingUserIds((prev) => {
@@ -1276,6 +924,12 @@ export const useTokenLimitsData = ({
 
 		setSavingTeamIds((prev) => new Set(prev).add(teamId));
 		try {
+			const normalizedRow = normalizeTokenLimitValues({
+				maxTokens: row.combinedLimit,
+				maxInputTokens: row.inputLimit,
+				maxOutputTokens: row.outputLimit,
+				maxResponseTime: row.responseTimeLimit ?? null,
+			});
 			await runTokenLimitReactor(
 				isModel
 					? "SetEngineTeamTokenLimit"
@@ -1288,14 +942,18 @@ export const useTokenLimitsData = ({
 							usageFrequency: row.period,
 							existingUsageFrequency:
 								row.savedPeriod ?? row.period,
-							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxTokens: serializeReactorLimit(
+								normalizedRow.maxTokens ?? null,
+							),
 							maxInputTokens: serializeReactorLimit(
-								row.inputLimit,
+								normalizedRow.maxInputTokens ?? null,
 							),
 							maxOutputTokens: serializeReactorLimit(
-								row.outputLimit,
+								normalizedRow.maxOutputTokens ?? null,
 							),
-							maxResponseTime: -1,
+							maxResponseTime: serializeReactorResponseTime(
+								normalizedRow.maxResponseTime ?? null,
+							),
 							isActive: row.isActive,
 						}
 					: {
@@ -1306,14 +964,18 @@ export const useTokenLimitsData = ({
 							usageFrequency: row.period,
 							existingUsageFrequency:
 								row.savedPeriod ?? row.period,
-							maxTokens: serializeReactorLimit(row.combinedLimit),
+							maxTokens: serializeReactorLimit(
+								normalizedRow.maxTokens ?? null,
+							),
 							maxInputTokens: serializeReactorLimit(
-								row.inputLimit,
+								normalizedRow.maxInputTokens ?? null,
 							),
 							maxOutputTokens: serializeReactorLimit(
-								row.outputLimit,
+								normalizedRow.maxOutputTokens ?? null,
 							),
-							maxResponseTime: -1,
+							maxResponseTime: serializeReactorResponseTime(
+								normalizedRow.maxResponseTime ?? null,
+							),
 							restrictPerModel: false,
 							isActive: row.isActive,
 						},
@@ -1324,72 +986,6 @@ export const useTokenLimitsData = ({
 		} catch (e) {
 			console.error("Failed to update team token limit", e);
 			toast.error("Failed to update team limit");
-			return false;
-		} finally {
-			setSavingTeamIds((prev) => {
-				const next = new Set(prev);
-				next.delete(teamId);
-				return next;
-			});
-		}
-	};
-
-	const saveTeamComputeLimitRow = async (
-		teamId: string,
-		row: EditablePrincipalLimitRow,
-	) => {
-		const team = teamGroups.find((group) => group.ID === teamId);
-		if (!team) {
-			toast.error("Unable to find team to update");
-			return;
-		}
-
-		setSavingTeamIds((prev) => new Set(prev).add(teamId));
-		try {
-			await runTokenLimitReactor(
-				isModel
-					? "SetEngineTeamTokenLimit"
-					: "SetProjectTeamTokenLimit",
-				isModel
-					? {
-							groupId: team.ID,
-							groupType: team.TYPE,
-							engineId: entityId,
-							usageFrequency: row.period,
-							existingUsageFrequency:
-								row.savedPeriod ?? row.period,
-							maxTokens: -1,
-							maxInputTokens: -1,
-							maxOutputTokens: -1,
-							maxResponseTime: serializeReactorResponseTime(
-								row.responseTimeLimit ?? null,
-							),
-							isActive: row.isActive,
-						}
-					: {
-							groupId: team.ID,
-							groupType: team.TYPE,
-							projectId: entityId,
-							scopedEngineId: ALL_ENGINES_SENTINEL,
-							usageFrequency: row.period,
-							existingUsageFrequency:
-								row.savedPeriod ?? row.period,
-							maxTokens: -1,
-							maxInputTokens: -1,
-							maxOutputTokens: -1,
-							maxResponseTime: serializeReactorResponseTime(
-								row.responseTimeLimit ?? null,
-							),
-							restrictPerModel: false,
-							isActive: row.isActive,
-						},
-			);
-			await fetchTeamLimits();
-			toast.success("Team compute limit saved");
-			return true;
-		} catch (e) {
-			console.error("Failed to update team compute limit", e);
-			toast.error("Failed to update team compute limit");
 			return false;
 		} finally {
 			setSavingTeamIds((prev) => {
@@ -1486,14 +1082,9 @@ export const useTokenLimitsData = ({
 		teamGroups,
 		userTokenLimits,
 		teamTokenLimits,
-		userComputeLimits,
-		teamComputeLimits,
 		defaultUserLimits,
 		defaultTeamLimits,
-		defaultUserComputeLimits,
-		defaultTeamComputeLimits,
 		platformLimits,
-		platformComputeLimits,
 		platformUsageByPeriod,
 		savingPlatformIds,
 		savingDefaultLimit,
@@ -1503,25 +1094,18 @@ export const useTokenLimitsData = ({
 		mapFrequency,
 		parseLimit,
 		toTokenLimitEntry,
-		toComputeLimitEntry,
 		memberOptions,
 		teamOptions,
 		refreshData,
 		saveDefaultUserLimit,
 		removeDefaultUserLimit,
-		saveDefaultUserComputeLimit,
 		saveDefaultTeamLimit,
 		removeDefaultTeamLimit,
-		saveDefaultTeamComputeLimit,
 		savePlatformLimit,
 		removePlatformLimit,
-		savePlatformComputeLimit,
 		saveUserLimitRow,
 		removeUserLimitRow,
-		saveUserComputeLimitRow,
-		removeUserComputeLimitRow,
 		saveTeamLimitRow,
 		removeTeamLimitRow,
-		saveTeamComputeLimitRow,
 	};
 };

@@ -16,7 +16,7 @@ import {
 	Switch,
 } from "@semoss/ui/next";
 import { TIME_PERIOD_LABELS, UI_TIME_PERIODS } from "../constants";
-import type { ComputeLimitEntry, TimePeriod, TokenLimitEntry } from "../types";
+import type { TimePeriod, TokenLimitEntry } from "../types";
 import { EditableLimitRow } from "./editable-limit-row";
 import {
 	type GroupedLimitEntity,
@@ -59,6 +59,7 @@ const isDirty = (limit: TokenLimitEntry) =>
 	limit.maxTokens !== limit._saved.maxTokens ||
 	limit.maxInputTokens !== limit._saved.maxInputTokens ||
 	limit.maxOutputTokens !== limit._saved.maxOutputTokens ||
+	limit.maxResponseTime !== limit._saved.maxResponseTime ||
 	limit.isActive !== limit._saved.isActive;
 
 const sortRows = (rows: GroupedLimitRow[]) =>
@@ -74,15 +75,50 @@ const parseNullableNumber = (value: string) => {
 	return Number.isNaN(parsed) ? null : parsed;
 };
 
+const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, "");
+
+const normalizeTokenLimitEntry = (limit: TokenLimitEntry): TokenLimitEntry => {
+	if (limit.maxResponseTime != null) {
+		return {
+			...limit,
+			maxTokens: null,
+			maxInputTokens: null,
+			maxOutputTokens: null,
+		};
+	}
+	if (limit.maxTokens != null) {
+		return {
+			...limit,
+			maxInputTokens: null,
+			maxOutputTokens: null,
+			maxResponseTime: null,
+		};
+	}
+	if (limit.maxInputTokens != null || limit.maxOutputTokens != null) {
+		return {
+			...limit,
+			maxTokens: null,
+			maxResponseTime: null,
+		};
+	}
+	return limit;
+};
+
+type TokenLimitMode = "TOTAL" | "SPLIT" | "COMPUTE";
+
+const getTokenLimitMode = (limit: TokenLimitEntry): TokenLimitMode => {
+	if (limit.maxResponseTime != null) {
+		return "COMPUTE";
+	}
+	return limit.maxInputTokens != null || limit.maxOutputTokens != null
+		? "SPLIT"
+		: "TOTAL";
+};
+
 const mergeDraftLimits = <T extends { id: string }>(
 	limits: T[],
 	drafts: Record<string, T>,
 ) => limits.map((limit) => drafts[limit.id] ?? limit);
-
-const isComputeDirty = (limit: ComputeLimitEntry) =>
-	limit.period !== limit._saved.period ||
-	limit.maxResponseTime !== limit._saved.maxResponseTime ||
-	limit.isActive !== limit._saved.isActive;
 
 const mergeGroupedEntities = <TOption,>(
 	entities: GroupedLimitEntity<TOption>[],
@@ -152,8 +188,6 @@ export function TokenLimitsPanel({
 		removePlatformLimit,
 		saveUserLimitRow,
 		removeUserLimitRow,
-		saveUserComputeLimitRow,
-		removeUserComputeLimitRow,
 		saveTeamLimitRow,
 		removeTeamLimitRow,
 	} = useTokenLimitsData({ entityType, entityId });
@@ -180,9 +214,6 @@ export function TokenLimitsPanel({
 		Record<string, GroupedLimitRow[]>
 	>({});
 	const [localTeamRowsById, setLocalTeamRowsById] = useState<
-		Record<string, GroupedLimitRow[]>
-	>({});
-	const [localUserComputeRowsById, setLocalUserComputeRowsById] = useState<
 		Record<string, GroupedLimitRow[]>
 	>({});
 
@@ -243,6 +274,11 @@ export function TokenLimitsPanel({
 								limit.maxOutputTokens >= 0
 									? limit.maxOutputTokens
 									: null,
+							maxResponseTime:
+								limit.maxResponseTime != null &&
+								limit.maxResponseTime >= 0
+									? limit.maxResponseTime
+									: null,
 						};
 						const hasAny = hasAnyTokenLimitValue(values);
 						if (hasAny) {
@@ -253,6 +289,7 @@ export function TokenLimitsPanel({
 								combinedLimit: values.maxTokens,
 								inputLimit: values.maxInputTokens,
 								outputLimit: values.maxOutputTokens,
+								responseTimeLimit: values.maxResponseTime,
 								isActive: limit.isActive !== false,
 							});
 						}
@@ -319,6 +356,11 @@ export function TokenLimitsPanel({
 								limit.maxOutputTokens >= 0
 									? limit.maxOutputTokens
 									: null,
+							maxResponseTime:
+								limit.maxResponseTime != null &&
+								limit.maxResponseTime >= 0
+									? limit.maxResponseTime
+									: null,
 						};
 						const hasAny = hasAnyTokenLimitValue(values);
 						if (hasAny) {
@@ -329,6 +371,7 @@ export function TokenLimitsPanel({
 								combinedLimit: values.maxTokens,
 								inputLimit: values.maxInputTokens,
 								outputLimit: values.maxOutputTokens,
+								responseTimeLimit: values.maxResponseTime,
 								isActive: limit.isActive !== false,
 							});
 						}
@@ -345,52 +388,6 @@ export function TokenLimitsPanel({
 				.sort((a, b) => a.name.localeCompare(b.name)),
 		[teamGroups, teamOptions, teamTokenLimits],
 	);
-	const groupedUserComputeLimits = useMemo<
-		GroupedLimitEntity<UserLimitOption>[]
-	>(
-		() =>
-			members
-				.filter(
-					(member) =>
-						member.usage_restriction?.toLowerCase() === "compute" &&
-						member.max_response_time != null &&
-						member.max_response_time >= 0,
-				)
-				.map((member) => {
-					const period = PERIODS.includes(
-						member.usage_frequency?.toUpperCase() as TimePeriod,
-					)
-						? (member.usage_frequency?.toUpperCase() as TimePeriod)
-						: "DAY";
-					return {
-						id: member.id,
-						name: member.name || member.id,
-						details: [
-							{ label: "ID", value: member.id },
-							{ label: "Email", value: member.email || "N/A" },
-							{ label: "Login", value: member.type || "N/A" },
-						],
-						rows: [
-							{
-								id: buildRowId(member.id, period),
-								period,
-								savedPeriod: period,
-								combinedLimit: null,
-								inputLimit: null,
-								outputLimit: null,
-								responseTimeLimit: member.max_response_time,
-								isActive: true,
-							},
-						],
-						option: memberOptions.find(
-							(option) => option.id === member.id,
-						),
-					};
-				})
-				.sort((a, b) => a.name.localeCompare(b.name)),
-		[members, memberOptions],
-	);
-
 	const remainingDefaultUserPeriods = useMemo(
 		() =>
 			UI_TIME_PERIODS.filter(
@@ -519,19 +516,6 @@ export function TokenLimitsPanel({
 			),
 		[groupedTeamLimits, localTeamEntityById, localTeamRowsById],
 	);
-	const displayedGroupedUserComputeLimits = useMemo(
-		() =>
-			mergeGroupedEntities(
-				groupedUserComputeLimits,
-				localUserComputeRowsById,
-				localUserEntityById,
-			),
-		[
-			groupedUserComputeLimits,
-			localUserComputeRowsById,
-			localUserEntityById,
-		],
-	);
 	const userRowsById = useMemo(
 		() =>
 			new Map(
@@ -552,17 +536,6 @@ export function TokenLimitsPanel({
 			),
 		[displayedGroupedTeamLimits],
 	);
-	const userComputeRowsById = useMemo(
-		() =>
-			new Map(
-				displayedGroupedUserComputeLimits.map((group) => [
-					group.id,
-					group.rows,
-				]),
-			),
-		[displayedGroupedUserComputeLimits],
-	);
-
 	if (loading) {
 		return (
 			<div className="flex w-full items-center justify-center py-12">
@@ -582,8 +555,8 @@ export function TokenLimitsPanel({
 				</h2>
 				<p className="text-muted-foreground text-sm">
 					{isModel
-						? `Configure token limits for this ${entityTypeLabel} using platform-wide, default-user, per-user, default-team, and per-team controls.`
-						: `Configure token limits for this ${entityTypeLabel} using default-user, per-user, default-team, and per-team controls.`}
+						? `Configure token and compute-time limits for this ${entityTypeLabel} using platform-wide, default-user, per-user, default-team, and per-team controls.`
+						: `Configure token and compute-time limits for this ${entityTypeLabel} using default-user, per-user, default-team, and per-team controls.`}
 				</p>
 			</div>
 
@@ -610,8 +583,9 @@ export function TokenLimitsPanel({
 												Platform-Wide Limits
 											</h3>
 											<p className="text-muted-foreground text-sm">
-												Total usage limits across all
-												users for this model, by period.
+												Total token or compute-time
+												usage across all users for this
+												model, by period.
 											</p>
 										</div>
 									</button>
@@ -631,6 +605,7 @@ export function TokenLimitsPanel({
 													maxTokens: null,
 													maxInputTokens: null,
 													maxOutputTokens: null,
+													maxResponseTime: null,
 													isActive: true,
 												},
 												"platform-new",
@@ -745,7 +720,7 @@ export function TokenLimitsPanel({
 
 			<DefaultLimitsSection
 				title="Default User Limits"
-				description={`Apply default token limits for users on this ${entityTypeLabel}, one row per time period.`}
+				description={`Apply default token or compute-time limits for users on this ${entityTypeLabel}, one row per time period.`}
 				open={userSectionOpen}
 				onOpenChange={setUserSectionOpen}
 				limits={displayedDefaultUserLimits}
@@ -761,6 +736,8 @@ export function TokenLimitsPanel({
 								DEFAULT_LIMIT_DRAFT._saved.maxInputTokens,
 							maxOutputTokens:
 								DEFAULT_LIMIT_DRAFT._saved.maxOutputTokens,
+							maxResponseTime:
+								DEFAULT_LIMIT_DRAFT._saved.maxResponseTime,
 							isActive: DEFAULT_LIMIT_DRAFT._saved.isActive,
 						},
 						`default-user-limit-${period}`,
@@ -825,6 +802,7 @@ export function TokenLimitsPanel({
 								combinedLimit: null,
 								inputLimit: null,
 								outputLimit: null,
+								responseTimeLimit: null,
 								isActive: true,
 							},
 						]),
@@ -835,6 +813,7 @@ export function TokenLimitsPanel({
 						combinedLimit: row.combinedLimit,
 						inputLimit: row.inputLimit,
 						outputLimit: row.outputLimit,
+						responseTimeLimit: row.responseTimeLimit,
 						period: row.period,
 						savedPeriod: row.savedPeriod,
 						isActive: row.isActive,
@@ -874,96 +853,9 @@ export function TokenLimitsPanel({
 				}}
 			/>
 
-			{isModel && (
-				<GroupedLimitsSection
-					title="Per-User Compute Time Limits"
-					description="Manage the user-level compute-time limit stored on the model membership record. This stays separate from token limits, so a user can have token limits, a compute-time limit, or both."
-					entityLabel="User"
-					entities={displayedGroupedUserComputeLimits}
-					entityOptions={memberOptions.filter((option) => {
-						const existingRows =
-							userComputeRowsById.get(option.id) ?? [];
-						return existingRows.length === 0;
-					})}
-					emptyMessage="No per-user compute time limits configured."
-					multiPeriod={false}
-					savingIds={savingUserIds}
-					supportsActive={false}
-					fieldMode="compute"
-					renderEntityDetails={(user) => (
-						<div>
-							<div className="font-medium text-sm">
-								{user.name}
-							</div>
-							<div className="text-muted-foreground text-xs">
-								{user.email || "N/A"} ·{" "}
-								{user.loginType || "N/A"}
-							</div>
-						</div>
-					)}
-					onAddEntity={(user) => {
-						const existingRows =
-							userComputeRowsById.get(user.id) ?? [];
-						if (existingRows.length > 0) {
-							return;
-						}
-						const nextPeriod = "DAY";
-						setLocalUserComputeRowsById((prev) => ({
-							...prev,
-							[user.id]: [
-								{
-									id: buildRowId(user.id, nextPeriod),
-									period: nextPeriod,
-									combinedLimit: null,
-									inputLimit: null,
-									outputLimit: null,
-									responseTimeLimit: null,
-									isActive: true,
-								},
-							],
-						}));
-					}}
-					onSaveSingleRow={async (entityUserId, row) => {
-						const success = await saveUserComputeLimitRow(
-							entityUserId,
-							row,
-						);
-						if (success) {
-							setLocalUserComputeRowsById((prev) => ({
-								...prev,
-								[entityUserId]: (
-									prev[entityUserId] ?? []
-								).filter((existing) => existing.id !== row.id),
-							}));
-						}
-					}}
-					onRemoveEntityRow={(entityUserId, rowId) => {
-						const localRow = (
-							localUserComputeRowsById[entityUserId] ?? []
-						).find((row) => row.id === rowId);
-						if (localRow) {
-							setLocalUserComputeRowsById((prev) => ({
-								...prev,
-								[entityUserId]: (
-									prev[entityUserId] ?? []
-								).filter((row) => row.id !== rowId),
-							}));
-							return;
-						}
-						const row = (
-							userComputeRowsById.get(entityUserId) ?? []
-						).find((existing) => existing.id === rowId);
-						if (!row) {
-							return;
-						}
-						removeUserComputeLimitRow(entityUserId);
-					}}
-				/>
-			)}
-
 			<DefaultLimitsSection
 				title="Default Team Limits"
-				description={`Apply default token limits for teams on this ${entityTypeLabel}, one row per time period.`}
+				description={`Apply default token or compute-time limits for teams on this ${entityTypeLabel}, one row per time period.`}
 				open={teamSectionOpen}
 				onOpenChange={setTeamSectionOpen}
 				limits={displayedDefaultTeamLimits}
@@ -976,11 +868,11 @@ export function TokenLimitsPanel({
 							period,
 							maxTokens: DEFAULT_LIMIT_DRAFT._saved.maxTokens,
 							maxInputTokens:
-								DEFAULT_LIMIT_DRAFT._saved.maxInputTokens ??
-								60000,
+								DEFAULT_LIMIT_DRAFT._saved.maxInputTokens,
 							maxOutputTokens:
-								DEFAULT_LIMIT_DRAFT._saved.maxOutputTokens ??
-								40000,
+								DEFAULT_LIMIT_DRAFT._saved.maxOutputTokens,
+							maxResponseTime:
+								DEFAULT_LIMIT_DRAFT._saved.maxResponseTime,
 							isActive: DEFAULT_LIMIT_DRAFT._saved.isActive,
 						},
 						`default-team-limit-${period}`,
@@ -1046,6 +938,7 @@ export function TokenLimitsPanel({
 								combinedLimit: null,
 								inputLimit: null,
 								outputLimit: null,
+								responseTimeLimit: null,
 								isActive: true,
 							},
 						]),
@@ -1056,6 +949,7 @@ export function TokenLimitsPanel({
 						combinedLimit: row.combinedLimit,
 						inputLimit: row.inputLimit,
 						outputLimit: row.outputLimit,
+						responseTimeLimit: row.responseTimeLimit,
 						period: row.period,
 						savedPeriod: row.savedPeriod,
 						isActive: true,
@@ -1245,91 +1139,202 @@ const LimitFields = ({
 	onChange: (next: TokenLimitEntry) => void;
 	disabled?: boolean;
 	availablePeriods?: TimePeriod[];
-}) => (
-	<>
-		<div className="flex items-center gap-2">
-			<Label className="whitespace-nowrap text-xs">Combined:</Label>
-			<Input
-				type="number"
-				value={limit.maxTokens ?? ""}
-				onChange={(e) =>
-					onChange({
-						...limit,
-						maxTokens: parseNullableNumber(e.target.value),
-					})
-				}
-				disabled={disabled}
-				className="h-8 w-28"
-			/>
-		</div>
-		<div className="flex items-center gap-2">
-			<Label className="whitespace-nowrap text-xs">Input:</Label>
-			<Input
-				type="number"
-				value={limit.maxInputTokens ?? ""}
-				onChange={(e) =>
-					onChange({
-						...limit,
-						maxInputTokens: parseNullableNumber(e.target.value),
-					})
-				}
-				disabled={disabled}
-				className="h-8 w-28"
-			/>
-		</div>
-		<div className="flex items-center gap-2">
-			<Label className="whitespace-nowrap text-xs">Output:</Label>
-			<Input
-				type="number"
-				value={limit.maxOutputTokens ?? ""}
-				onChange={(e) =>
-					onChange({
-						...limit,
-						maxOutputTokens: parseNullableNumber(e.target.value),
-					})
-				}
-				disabled={disabled}
-				className="h-8 w-28"
-			/>
-		</div>
-		<div className="flex items-center gap-2">
-			<Label className="text-xs">Period:</Label>
-			<Select
-				value={limit.period}
-				onValueChange={(value: TimePeriod) =>
-					onChange({
-						...limit,
-						period: value,
-					})
-				}
-			>
-				<SelectTrigger className="h-8 w-28">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					{availablePeriods.map((period) => (
-						<SelectItem key={period} value={period}>
-							{TIME_PERIOD_LABELS[period]}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-		</div>
-		<div className="flex items-center gap-2">
-			<Label className="text-xs">Active:</Label>
-			<Switch
-				checked={limit.isActive}
-				onCheckedChange={(checked) =>
-					onChange({
-						...limit,
-						isActive: checked,
-					})
-				}
-				disabled={disabled}
-			/>
-		</div>
-	</>
-);
+}) => {
+	const [tokenLimitMode, setTokenLimitMode] = useState<TokenLimitMode>(
+		getTokenLimitMode(limit),
+	);
+
+	useEffect(() => {
+		if (
+			limit.maxTokens != null ||
+			limit.maxInputTokens != null ||
+			limit.maxOutputTokens != null ||
+			limit.maxResponseTime != null
+		) {
+			setTokenLimitMode(
+				limit.maxResponseTime != null
+					? "COMPUTE"
+					: limit.maxInputTokens != null ||
+							limit.maxOutputTokens != null
+						? "SPLIT"
+						: "TOTAL",
+			);
+		}
+	}, [
+		limit.maxTokens,
+		limit.maxInputTokens,
+		limit.maxOutputTokens,
+		limit.maxResponseTime,
+	]);
+
+	const updateNumber = (
+		key:
+			| "maxTokens"
+			| "maxInputTokens"
+			| "maxOutputTokens"
+			| "maxResponseTime",
+		value: string,
+	) => {
+		onChange(
+			normalizeTokenLimitEntry({
+				...limit,
+				[key]: parseNullableNumber(sanitizeNumericInput(value)),
+			}),
+		);
+	};
+
+	return (
+		<>
+			<div className="flex items-center gap-2">
+				<Label className="text-xs">Mode:</Label>
+				<Select
+					value={tokenLimitMode}
+					onValueChange={(value: TokenLimitMode) => {
+						setTokenLimitMode(value);
+						if (value === "TOTAL") {
+							onChange({
+								...limit,
+								maxInputTokens: null,
+								maxOutputTokens: null,
+								maxResponseTime: null,
+							});
+							return;
+						}
+						if (value === "SPLIT") {
+							onChange({
+								...limit,
+								maxTokens: null,
+								maxResponseTime: null,
+							});
+							return;
+						}
+						onChange({
+							...limit,
+							maxTokens: null,
+							maxInputTokens: null,
+							maxOutputTokens: null,
+						});
+					}}
+				>
+					<SelectTrigger className="h-8 w-40">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="TOTAL">Total Tokens</SelectItem>
+						<SelectItem value="SPLIT">Input + Output</SelectItem>
+						<SelectItem value="COMPUTE">Compute Time</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
+			{tokenLimitMode === "COMPUTE" ? (
+				<div className="flex items-center gap-2">
+					<Label className="whitespace-nowrap text-xs">
+						Response Time (ms):
+					</Label>
+					<Input
+						type="text"
+						inputMode="numeric"
+						pattern="[0-9]*"
+						value={limit.maxResponseTime ?? ""}
+						onChange={(e) =>
+							updateNumber("maxResponseTime", e.target.value)
+						}
+						disabled={disabled}
+						className="h-8 w-32"
+					/>
+				</div>
+			) : tokenLimitMode === "TOTAL" ? (
+				<div className="flex items-center gap-2">
+					<Label className="whitespace-nowrap text-xs">
+						Total Tokens:
+					</Label>
+					<Input
+						type="text"
+						inputMode="numeric"
+						pattern="[0-9]*"
+						value={limit.maxTokens ?? ""}
+						onChange={(e) =>
+							updateNumber("maxTokens", e.target.value)
+						}
+						disabled={disabled}
+						className="h-8 w-28"
+					/>
+				</div>
+			) : (
+				<>
+					<div className="flex items-center gap-2">
+						<Label className="whitespace-nowrap text-xs">
+							Input:
+						</Label>
+						<Input
+							type="text"
+							inputMode="numeric"
+							pattern="[0-9]*"
+							value={limit.maxInputTokens ?? ""}
+							onChange={(e) =>
+								updateNumber("maxInputTokens", e.target.value)
+							}
+							disabled={disabled}
+							className="h-8 w-28"
+						/>
+					</div>
+					<div className="flex items-center gap-2">
+						<Label className="whitespace-nowrap text-xs">
+							Output:
+						</Label>
+						<Input
+							type="text"
+							inputMode="numeric"
+							pattern="[0-9]*"
+							value={limit.maxOutputTokens ?? ""}
+							onChange={(e) =>
+								updateNumber("maxOutputTokens", e.target.value)
+							}
+							disabled={disabled}
+							className="h-8 w-28"
+						/>
+					</div>
+				</>
+			)}
+			<div className="flex items-center gap-2">
+				<Label className="text-xs">Period:</Label>
+				<Select
+					value={limit.period}
+					onValueChange={(value: TimePeriod) =>
+						onChange({
+							...limit,
+							period: value,
+						})
+					}
+				>
+					<SelectTrigger className="h-8 w-28">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						{availablePeriods.map((period) => (
+							<SelectItem key={period} value={period}>
+								{TIME_PERIOD_LABELS[period]}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+			</div>
+			<div className="flex items-center gap-2">
+				<Label className="text-xs">Active:</Label>
+				<Switch
+					checked={limit.isActive}
+					onCheckedChange={(checked) =>
+						onChange({
+							...limit,
+							isActive: checked,
+						})
+					}
+					disabled={disabled}
+				/>
+			</div>
+		</>
+	);
+};
 
 const PlatformRowFields = ({
 	limit,
@@ -1345,6 +1350,7 @@ const PlatformRowFields = ({
 		tokensUsed: number;
 		inputTokensUsed: number;
 		outputTokensUsed: number;
+		computeTimeUsed: number;
 	};
 	usedPeriods?: TimePeriod[];
 }) => (
@@ -1364,6 +1370,10 @@ const PlatformRowFields = ({
 				<div>Used input: {usage.inputTokensUsed.toLocaleString()}</div>
 				<div>
 					Used output: {usage.outputTokensUsed.toLocaleString()}
+				</div>
+				<div>
+					Used response time: {usage.computeTimeUsed.toLocaleString()}{" "}
+					ms
 				</div>
 			</div>
 		)}
@@ -1386,6 +1396,7 @@ const PlatformLimitEditorRow = ({
 		tokensUsed: number;
 		inputTokensUsed: number;
 		outputTokensUsed: number;
+		computeTimeUsed: number;
 	};
 	usedPeriods: TimePeriod[];
 	disabled?: boolean;
@@ -1444,299 +1455,4 @@ const DefaultLimitEditorRow = ({
 			)}
 		/>
 	</EditableLimitRow>
-);
-
-const ComputeLimitFields = ({
-	limit,
-	onChange,
-	disabled,
-	availablePeriods = UI_TIME_PERIODS,
-}: {
-	limit: ComputeLimitEntry;
-	onChange: (next: ComputeLimitEntry) => void;
-	disabled?: boolean;
-	availablePeriods?: TimePeriod[];
-}) => (
-	<>
-		<div className="flex items-center gap-2">
-			<Label className="whitespace-nowrap text-xs">
-				Response Time (ms):
-			</Label>
-			<Input
-				type="number"
-				value={limit.maxResponseTime ?? ""}
-				onChange={(e) =>
-					onChange({
-						...limit,
-						maxResponseTime: parseNullableNumber(e.target.value),
-					})
-				}
-				disabled={disabled}
-				className="h-8 w-32"
-			/>
-		</div>
-		<div className="flex items-center gap-2">
-			<Label className="text-xs">Period:</Label>
-			<Select
-				value={limit.period}
-				onValueChange={(value: TimePeriod) =>
-					onChange({
-						...limit,
-						period: value,
-					})
-				}
-			>
-				<SelectTrigger className="h-8 w-28">
-					<SelectValue />
-				</SelectTrigger>
-				<SelectContent>
-					{availablePeriods.map((period) => (
-						<SelectItem key={period} value={period}>
-							{TIME_PERIOD_LABELS[period]}
-						</SelectItem>
-					))}
-				</SelectContent>
-			</Select>
-		</div>
-		<div className="flex items-center gap-2">
-			<Label className="text-xs">Active:</Label>
-			<Switch
-				checked={limit.isActive}
-				onCheckedChange={(checked) =>
-					onChange({
-						...limit,
-						isActive: checked,
-					})
-				}
-				disabled={disabled}
-			/>
-		</div>
-	</>
-);
-
-const PlatformComputeRowFields = ({
-	limit,
-	onChange,
-	disabled,
-	usage,
-	usedPeriods,
-}: {
-	limit: ComputeLimitEntry;
-	onChange: (next: ComputeLimitEntry) => void;
-	disabled?: boolean;
-	usage?: {
-		computeTimeUsed: number;
-	};
-	usedPeriods?: TimePeriod[];
-}) => (
-	<>
-		<ComputeLimitFields
-			limit={limit}
-			onChange={onChange}
-			disabled={disabled}
-			availablePeriods={UI_TIME_PERIODS.filter(
-				(period) =>
-					period === limit.period || !usedPeriods?.includes(period),
-			)}
-		/>
-		{usage && (
-			<div className="flex flex-col gap-1 text-muted-foreground text-xs">
-				<div>
-					Used response time: {usage.computeTimeUsed.toLocaleString()}{" "}
-					ms
-				</div>
-			</div>
-		)}
-	</>
-);
-
-const ComputeLimitEditorRow = ({
-	limit,
-	sourceLimit,
-	usedPeriods,
-	disabled,
-	onChange,
-	onDelete,
-	onSave,
-	usage,
-}: {
-	limit: ComputeLimitEntry;
-	sourceLimit: ComputeLimitEntry;
-	usedPeriods: TimePeriod[];
-	disabled?: boolean;
-	onChange: (limit: ComputeLimitEntry) => void;
-	onDelete: () => void;
-	onSave: (limit: ComputeLimitEntry) => Promise<boolean>;
-	usage?: {
-		computeTimeUsed: number;
-	};
-}) => (
-	<EditableLimitRow
-		onDelete={onDelete}
-		onSave={() => {
-			void onSave(limit);
-		}}
-		isDirty={isComputeDirty(limit) || limit.period !== sourceLimit.period}
-	>
-		{usage ? (
-			<PlatformComputeRowFields
-				limit={limit}
-				onChange={onChange}
-				disabled={disabled}
-				usage={usage}
-				usedPeriods={usedPeriods}
-			/>
-		) : (
-			<ComputeLimitFields
-				limit={limit}
-				onChange={onChange}
-				disabled={disabled}
-				availablePeriods={PERIODS.filter(
-					(period) =>
-						period === limit.period ||
-						!usedPeriods.includes(period),
-				)}
-			/>
-		)}
-	</EditableLimitRow>
-);
-
-const _DefaultComputeLimitsSection = ({
-	title,
-	description,
-	open,
-	onOpenChange,
-	limits,
-	newLimit,
-	setNewLimit,
-	remainingPeriods,
-	onCreateLimit,
-	onSaveLimit,
-	onDeleteLimit,
-	onChangeLimit,
-	onClearDraft,
-	sourceLimits,
-	isSaving,
-	emptyMessage,
-}: {
-	title: string;
-	description: string;
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	limits: ComputeLimitEntry[];
-	newLimit: ComputeLimitEntry | null;
-	setNewLimit: (next: ComputeLimitEntry | null) => void;
-	remainingPeriods: TimePeriod[];
-	onCreateLimit: (period: TimePeriod) => ComputeLimitEntry;
-	onSaveLimit: (limit: ComputeLimitEntry) => Promise<boolean>;
-	onDeleteLimit: (period: TimePeriod) => void;
-	onChangeLimit: (id: string, next: ComputeLimitEntry) => void;
-	onClearDraft: (id: string) => void;
-	sourceLimits: ComputeLimitEntry[];
-	isSaving: boolean;
-	emptyMessage: string;
-}) => (
-	<section className="rounded-xl border">
-		<Collapsible open={open} onOpenChange={onOpenChange}>
-			<div className="border-b px-4 py-3">
-				<div className="flex items-start justify-between gap-3">
-					<CollapsibleTrigger asChild>
-						<button
-							type="button"
-							className="flex flex-1 items-start gap-2 text-left"
-						>
-							{open ? (
-								<ChevronDown className="mt-0.5 size-4" />
-							) : (
-								<ChevronRight className="mt-0.5 size-4" />
-							)}
-							<div>
-								<h3 className="font-semibold text-base">
-									{title}
-								</h3>
-								<p className="text-muted-foreground text-sm">
-									{description}
-								</p>
-							</div>
-						</button>
-					</CollapsibleTrigger>
-					<Button
-						size="sm"
-						onClick={() => {
-							const nextPeriod = remainingPeriods[0];
-							if (!nextPeriod) {
-								return;
-							}
-							setNewLimit(onCreateLimit(nextPeriod));
-						}}
-						disabled={!remainingPeriods.length || !!newLimit}
-					>
-						<Plus className="mr-1 size-3" /> Add Limit
-					</Button>
-				</div>
-			</div>
-			<CollapsibleContent className="px-4 py-4">
-				{newLimit || limits.length > 0 ? (
-					<div className="flex flex-col gap-2">
-						{newLimit && (
-							<ComputeLimitEditorRow
-								limit={newLimit}
-								sourceLimit={newLimit}
-								usedPeriods={limits.map(
-									(limit) => limit.period,
-								)}
-								disabled={isSaving}
-								onChange={setNewLimit}
-								onSave={async (draft) => {
-									const success = await onSaveLimit(draft);
-									if (success) {
-										setNewLimit(null);
-									}
-									return success;
-								}}
-								onDelete={() => setNewLimit(null)}
-							/>
-						)}
-						{limits.map((limit) => (
-							<ComputeLimitEditorRow
-								key={limit.id}
-								limit={limit}
-								sourceLimit={
-									sourceLimits.find(
-										(source) => source.id === limit.id,
-									) ?? limit
-								}
-								usedPeriods={limits.map((row) => row.period)}
-								disabled={isSaving}
-								onChange={(next) =>
-									onChangeLimit(limit.id, next)
-								}
-								onSave={async (next) => {
-									const success = await onSaveLimit(next);
-									if (success) {
-										onClearDraft(limit.id);
-									}
-									return success;
-								}}
-								onDelete={() =>
-									onDeleteLimit(
-										(
-											sourceLimits.find(
-												(source) =>
-													source.id === limit.id,
-											) ?? limit
-										).period,
-									)
-								}
-							/>
-						))}
-					</div>
-				) : (
-					<p className="py-4 text-center text-muted-foreground text-sm">
-						{emptyMessage}
-					</p>
-				)}
-			</CollapsibleContent>
-		</Collapsible>
-	</section>
 );

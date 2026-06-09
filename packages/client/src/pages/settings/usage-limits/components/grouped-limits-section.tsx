@@ -63,20 +63,55 @@ const parseNullableNumber = (value: string) => {
 const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, "");
 
 const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
+type LimitMode = "TOTAL" | "SPLIT" | "COMPUTE";
+
+const getLimitMode = (row: GroupedLimitRow): LimitMode => {
+	if (row.responseTimeLimit != null) {
+		return "COMPUTE";
+	}
+	return row.inputLimit != null || row.outputLimit != null
+		? "SPLIT"
+		: "TOTAL";
+};
+
+const normalizeLimitRow = (row: GroupedLimitRow): GroupedLimitRow => {
+	if (row.responseTimeLimit != null) {
+		return {
+			...row,
+			combinedLimit: null,
+			inputLimit: null,
+			outputLimit: null,
+		};
+	}
+	if (row.combinedLimit != null) {
+		return {
+			...row,
+			inputLimit: null,
+			outputLimit: null,
+			responseTimeLimit: null,
+		};
+	}
+	if (row.inputLimit != null || row.outputLimit != null) {
+		return {
+			...row,
+			combinedLimit: null,
+			responseTimeLimit: null,
+		};
+	}
+	return row;
+};
 
 const isRowDirty = (
 	source: GroupedLimitRow,
 	draft: GroupedLimitRow,
 	supportsActive: boolean,
-	fieldMode: "token" | "compute",
 ) =>
 	source.savedPeriod == null ||
 	draft.period !== source.period ||
-	(fieldMode === "compute"
-		? draft.responseTimeLimit !== source.responseTimeLimit
-		: draft.combinedLimit !== source.combinedLimit ||
-			draft.inputLimit !== source.inputLimit ||
-			draft.outputLimit !== source.outputLimit) ||
+	draft.combinedLimit !== source.combinedLimit ||
+	draft.inputLimit !== source.inputLimit ||
+	draft.outputLimit !== source.outputLimit ||
+	draft.responseTimeLimit !== source.responseTimeLimit ||
 	(supportsActive && draft.isActive !== source.isActive);
 
 const GroupedLimitEditorRow = ({
@@ -88,7 +123,6 @@ const GroupedLimitEditorRow = ({
 	disabled,
 	availablePeriods = PERIODS,
 	supportsActive = true,
-	fieldMode = "token",
 }: {
 	row: GroupedLimitRow;
 	sourceRow: GroupedLimitRow;
@@ -98,9 +132,9 @@ const GroupedLimitEditorRow = ({
 	disabled?: boolean;
 	availablePeriods?: TimePeriod[];
 	supportsActive?: boolean;
-	fieldMode?: "token" | "compute";
 }) => {
-	const dirty = isRowDirty(sourceRow, row, supportsActive, fieldMode);
+	const dirty = isRowDirty(sourceRow, row, supportsActive);
+	const [limitMode, setLimitMode] = useState<LimitMode>(getLimitMode(row));
 	const [combinedValue, setCombinedValue] = useState(
 		row.combinedLimit == null ? "" : String(row.combinedLimit),
 	);
@@ -129,6 +163,28 @@ const GroupedLimitEditorRow = ({
 	}, [row.combinedLimit]);
 
 	useEffect(() => {
+		if (
+			row.combinedLimit != null ||
+			row.inputLimit != null ||
+			row.outputLimit != null ||
+			row.responseTimeLimit != null
+		) {
+			setLimitMode(
+				row.responseTimeLimit != null
+					? "COMPUTE"
+					: row.inputLimit != null || row.outputLimit != null
+						? "SPLIT"
+						: "TOTAL",
+			);
+		}
+	}, [
+		row.combinedLimit,
+		row.inputLimit,
+		row.outputLimit,
+		row.responseTimeLimit,
+	]);
+
+	useEffect(() => {
 		setInputValue(row.inputLimit == null ? "" : String(row.inputLimit));
 	}, [row.inputLimit]);
 
@@ -144,7 +200,48 @@ const GroupedLimitEditorRow = ({
 
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
-			{fieldMode === "compute" ? (
+			<div className="flex items-center gap-2">
+				<Label className="text-xs">Mode:</Label>
+				<Select
+					value={limitMode}
+					onValueChange={(value: LimitMode) => {
+						setLimitMode(value);
+						if (value === "TOTAL") {
+							onChange({
+								...row,
+								inputLimit: null,
+								outputLimit: null,
+								responseTimeLimit: null,
+							});
+							return;
+						}
+						if (value === "SPLIT") {
+							onChange({
+								...row,
+								combinedLimit: null,
+								responseTimeLimit: null,
+							});
+							return;
+						}
+						onChange({
+							...row,
+							combinedLimit: null,
+							inputLimit: null,
+							outputLimit: null,
+						});
+					}}
+				>
+					<SelectTrigger className="h-8 w-40">
+						<SelectValue />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="TOTAL">Total Tokens</SelectItem>
+						<SelectItem value="SPLIT">Input + Output</SelectItem>
+						<SelectItem value="COMPUTE">Compute Time</SelectItem>
+					</SelectContent>
+				</Select>
+			</div>
+			{limitMode === "COMPUTE" ? (
 				<div className="flex items-center gap-2">
 					<Label className="whitespace-nowrap text-xs">
 						Response Time (ms):
@@ -159,42 +256,47 @@ const GroupedLimitEditorRow = ({
 								e.target.value,
 							);
 							setResponseTimeValue(nextValue);
-							onChange({
-								...row,
-								responseTimeLimit:
-									parseNullableNumber(nextValue),
-							});
+							onChange(
+								normalizeLimitRow({
+									...row,
+									responseTimeLimit:
+										parseNullableNumber(nextValue),
+								}),
+							);
 						}}
 						disabled={disabled}
-						className="h-8 w-28"
+						className="h-8 w-32"
+					/>
+				</div>
+			) : limitMode === "TOTAL" ? (
+				<div className="flex items-center gap-2">
+					<Label className="whitespace-nowrap text-xs">
+						Total Tokens:
+					</Label>
+					<Input
+						type="text"
+						inputMode="numeric"
+						pattern="[0-9]*"
+						value={combinedValue}
+						onChange={(e) => {
+							const nextValue = sanitizeNumericInput(
+								e.target.value,
+							);
+							setCombinedValue(nextValue);
+							onChange(
+								normalizeLimitRow({
+									...row,
+									combinedLimit:
+										parseNullableNumber(nextValue),
+								}),
+							);
+						}}
+						disabled={disabled}
+						className="h-8 w-24"
 					/>
 				</div>
 			) : (
 				<>
-					<div className="flex items-center gap-2">
-						<Label className="whitespace-nowrap text-xs">
-							Combined:
-						</Label>
-						<Input
-							type="text"
-							inputMode="numeric"
-							pattern="[0-9]*"
-							value={combinedValue}
-							onChange={(e) => {
-								const nextValue = sanitizeNumericInput(
-									e.target.value,
-								);
-								setCombinedValue(nextValue);
-								onChange({
-									...row,
-									combinedLimit:
-										parseNullableNumber(nextValue),
-								});
-							}}
-							disabled={disabled}
-							className="h-8 w-24"
-						/>
-					</div>
 					<div className="flex items-center gap-2">
 						<Label className="whitespace-nowrap text-xs">
 							Input:
@@ -209,10 +311,13 @@ const GroupedLimitEditorRow = ({
 									e.target.value,
 								);
 								setInputValue(nextValue);
-								onChange({
-									...row,
-									inputLimit: parseNullableNumber(nextValue),
-								});
+								onChange(
+									normalizeLimitRow({
+										...row,
+										inputLimit:
+											parseNullableNumber(nextValue),
+									}),
+								);
 							}}
 							disabled={disabled}
 							className="h-8 w-24"
@@ -232,10 +337,13 @@ const GroupedLimitEditorRow = ({
 									e.target.value,
 								);
 								setOutputValue(nextValue);
-								onChange({
-									...row,
-									outputLimit: parseNullableNumber(nextValue),
-								});
+								onChange(
+									normalizeLimitRow({
+										...row,
+										outputLimit:
+											parseNullableNumber(nextValue),
+									}),
+								);
 							}}
 							disabled={disabled}
 							className="h-8 w-24"
@@ -381,7 +489,6 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 	savingIds,
 	renderEntityDetails,
 	supportsActive = true,
-	fieldMode = "token",
 }: {
 	title: string;
 	description: string;
@@ -397,7 +504,6 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 	savingIds: Set<string>;
 	renderEntityDetails: (entity: TOption) => ReactNode;
 	supportsActive?: boolean;
-	fieldMode?: "token" | "compute";
 }) {
 	const [open, setOpen] = useState(true);
 	const [showAddDialog, setShowAddDialog] = useState(false);
@@ -682,9 +788,6 @@ export function GroupedLimitsSection<TOption extends AddableOption>({
 																}
 																supportsActive={
 																	supportsActive
-																}
-																fieldMode={
-																	fieldMode
 																}
 																availablePeriods={
 																	multiPeriod

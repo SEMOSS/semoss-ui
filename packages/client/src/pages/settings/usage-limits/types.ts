@@ -23,24 +23,14 @@ export interface TokenLimitEntry {
 	maxTokens: number | null;
 	maxInputTokens: number | null;
 	maxOutputTokens: number | null;
+	maxResponseTime?: number | null;
 	isActive: boolean;
 	_saved: {
 		period: TimePeriod;
 		maxTokens: number | null;
 		maxInputTokens: number | null;
 		maxOutputTokens: number | null;
-		isActive: boolean;
-	};
-}
-
-export interface ComputeLimitEntry {
-	id: string;
-	period: TimePeriod;
-	maxResponseTime: number | null;
-	isActive: boolean;
-	_saved: {
-		period: TimePeriod;
-		maxResponseTime: number | null;
+		maxResponseTime?: number | null;
 		isActive: boolean;
 	};
 }
