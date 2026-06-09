@@ -63,39 +63,23 @@ const parseNullableNumber = (value: string) => {
 const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, "");
 
 const normalizeSearchValue = (value: string) => value.trim().toLowerCase();
-type LimitMode = "TOTAL" | "SPLIT" | "COMPUTE";
+type TokenLimitMode = "TOTAL" | "SPLIT";
 
-const getLimitMode = (row: GroupedLimitRow): LimitMode => {
-	if (row.responseTimeLimit != null) {
-		return "COMPUTE";
-	}
-	return row.inputLimit != null || row.outputLimit != null
-		? "SPLIT"
-		: "TOTAL";
-};
+const getTokenLimitMode = (row: GroupedLimitRow): TokenLimitMode =>
+	row.inputLimit != null || row.outputLimit != null ? "SPLIT" : "TOTAL";
 
 const normalizeLimitRow = (row: GroupedLimitRow): GroupedLimitRow => {
-	if (row.responseTimeLimit != null) {
-		return {
-			...row,
-			combinedLimit: null,
-			inputLimit: null,
-			outputLimit: null,
-		};
-	}
 	if (row.combinedLimit != null) {
 		return {
 			...row,
 			inputLimit: null,
 			outputLimit: null,
-			responseTimeLimit: null,
 		};
 	}
 	if (row.inputLimit != null || row.outputLimit != null) {
 		return {
 			...row,
 			combinedLimit: null,
-			responseTimeLimit: null,
 		};
 	}
 	return row;
@@ -134,7 +118,9 @@ const GroupedLimitEditorRow = ({
 	supportsActive?: boolean;
 }) => {
 	const dirty = isRowDirty(sourceRow, row, supportsActive);
-	const [limitMode, setLimitMode] = useState<LimitMode>(getLimitMode(row));
+	const [tokenLimitMode, setTokenLimitMode] = useState<TokenLimitMode>(
+		getTokenLimitMode(row),
+	);
 	const [combinedValue, setCombinedValue] = useState(
 		row.combinedLimit == null ? "" : String(row.combinedLimit),
 	);
@@ -166,23 +152,15 @@ const GroupedLimitEditorRow = ({
 		if (
 			row.combinedLimit != null ||
 			row.inputLimit != null ||
-			row.outputLimit != null ||
-			row.responseTimeLimit != null
+			row.outputLimit != null
 		) {
-			setLimitMode(
-				row.responseTimeLimit != null
-					? "COMPUTE"
-					: row.inputLimit != null || row.outputLimit != null
-						? "SPLIT"
-						: "TOTAL",
+			setTokenLimitMode(
+				row.inputLimit != null || row.outputLimit != null
+					? "SPLIT"
+					: "TOTAL",
 			);
 		}
-	}, [
-		row.combinedLimit,
-		row.inputLimit,
-		row.outputLimit,
-		row.responseTimeLimit,
-	]);
+	}, [row.combinedLimit, row.inputLimit, row.outputLimit]);
 
 	useEffect(() => {
 		setInputValue(row.inputLimit == null ? "" : String(row.inputLimit));
@@ -201,33 +179,22 @@ const GroupedLimitEditorRow = ({
 	return (
 		<div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
 			<div className="flex items-center gap-2">
-				<Label className="text-xs">Mode:</Label>
+				<Label className="text-xs">Tokens:</Label>
 				<Select
-					value={limitMode}
-					onValueChange={(value: LimitMode) => {
-						setLimitMode(value);
+					value={tokenLimitMode}
+					onValueChange={(value: TokenLimitMode) => {
+						setTokenLimitMode(value);
 						if (value === "TOTAL") {
 							onChange({
 								...row,
 								inputLimit: null,
 								outputLimit: null,
-								responseTimeLimit: null,
-							});
-							return;
-						}
-						if (value === "SPLIT") {
-							onChange({
-								...row,
-								combinedLimit: null,
-								responseTimeLimit: null,
 							});
 							return;
 						}
 						onChange({
 							...row,
 							combinedLimit: null,
-							inputLimit: null,
-							outputLimit: null,
 						});
 					}}
 				>
@@ -237,38 +204,10 @@ const GroupedLimitEditorRow = ({
 					<SelectContent>
 						<SelectItem value="TOTAL">Total Tokens</SelectItem>
 						<SelectItem value="SPLIT">Input + Output</SelectItem>
-						<SelectItem value="COMPUTE">Compute Time</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
-			{limitMode === "COMPUTE" ? (
-				<div className="flex items-center gap-2">
-					<Label className="whitespace-nowrap text-xs">
-						Response Time (ms):
-					</Label>
-					<Input
-						type="text"
-						inputMode="numeric"
-						pattern="[0-9]*"
-						value={responseTimeValue}
-						onChange={(e) => {
-							const nextValue = sanitizeNumericInput(
-								e.target.value,
-							);
-							setResponseTimeValue(nextValue);
-							onChange(
-								normalizeLimitRow({
-									...row,
-									responseTimeLimit:
-										parseNullableNumber(nextValue),
-								}),
-							);
-						}}
-						disabled={disabled}
-						className="h-8 w-32"
-					/>
-				</div>
-			) : limitMode === "TOTAL" ? (
+			{tokenLimitMode === "TOTAL" ? (
 				<div className="flex items-center gap-2">
 					<Label className="whitespace-nowrap text-xs">
 						Total Tokens:
@@ -351,6 +290,27 @@ const GroupedLimitEditorRow = ({
 					</div>
 				</>
 			)}
+			<div className="flex items-center gap-2">
+				<Label className="whitespace-nowrap text-xs">
+					Compute Time (ms):
+				</Label>
+				<Input
+					type="text"
+					inputMode="numeric"
+					pattern="[0-9]*"
+					value={responseTimeValue}
+					onChange={(e) => {
+						const nextValue = sanitizeNumericInput(e.target.value);
+						setResponseTimeValue(nextValue);
+						onChange({
+							...row,
+							responseTimeLimit: parseNullableNumber(nextValue),
+						});
+					}}
+					disabled={disabled}
+					className="h-8 w-32"
+				/>
+			</div>
 			<div className="flex items-center gap-2">
 				<Label className="text-xs">Period:</Label>
 				<Select

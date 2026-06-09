@@ -228,27 +228,17 @@ const normalizeTokenLimitValues = <
 >(
 	values: T,
 ): T => {
-	if (values.maxResponseTime != null) {
-		return {
-			...values,
-			maxTokens: null,
-			maxInputTokens: null,
-			maxOutputTokens: null,
-		};
-	}
 	if (values.maxTokens != null) {
 		return {
 			...values,
 			maxInputTokens: null,
 			maxOutputTokens: null,
-			maxResponseTime: null,
 		};
 	}
 	if (values.maxInputTokens != null || values.maxOutputTokens != null) {
 		return {
 			...values,
 			maxTokens: null,
-			maxResponseTime: null,
 		};
 	}
 	return values;

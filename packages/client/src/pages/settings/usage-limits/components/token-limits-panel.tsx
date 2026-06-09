@@ -78,42 +78,28 @@ const parseNullableNumber = (value: string) => {
 const sanitizeNumericInput = (value: string) => value.replace(/[^\d]/g, "");
 
 const normalizeTokenLimitEntry = (limit: TokenLimitEntry): TokenLimitEntry => {
-	if (limit.maxResponseTime != null) {
-		return {
-			...limit,
-			maxTokens: null,
-			maxInputTokens: null,
-			maxOutputTokens: null,
-		};
-	}
 	if (limit.maxTokens != null) {
 		return {
 			...limit,
 			maxInputTokens: null,
 			maxOutputTokens: null,
-			maxResponseTime: null,
 		};
 	}
 	if (limit.maxInputTokens != null || limit.maxOutputTokens != null) {
 		return {
 			...limit,
 			maxTokens: null,
-			maxResponseTime: null,
 		};
 	}
 	return limit;
 };
 
-type TokenLimitMode = "TOTAL" | "SPLIT" | "COMPUTE";
+type TokenLimitMode = "TOTAL" | "SPLIT";
 
-const getTokenLimitMode = (limit: TokenLimitEntry): TokenLimitMode => {
-	if (limit.maxResponseTime != null) {
-		return "COMPUTE";
-	}
-	return limit.maxInputTokens != null || limit.maxOutputTokens != null
+const getTokenLimitMode = (limit: TokenLimitEntry): TokenLimitMode =>
+	limit.maxInputTokens != null || limit.maxOutputTokens != null
 		? "SPLIT"
 		: "TOTAL";
-};
 
 const mergeDraftLimits = <T extends { id: string }>(
 	limits: T[],
@@ -1148,24 +1134,15 @@ const LimitFields = ({
 		if (
 			limit.maxTokens != null ||
 			limit.maxInputTokens != null ||
-			limit.maxOutputTokens != null ||
-			limit.maxResponseTime != null
+			limit.maxOutputTokens != null
 		) {
 			setTokenLimitMode(
-				limit.maxResponseTime != null
-					? "COMPUTE"
-					: limit.maxInputTokens != null ||
-							limit.maxOutputTokens != null
-						? "SPLIT"
-						: "TOTAL",
+				limit.maxInputTokens != null || limit.maxOutputTokens != null
+					? "SPLIT"
+					: "TOTAL",
 			);
 		}
-	}, [
-		limit.maxTokens,
-		limit.maxInputTokens,
-		limit.maxOutputTokens,
-		limit.maxResponseTime,
-	]);
+	}, [limit.maxTokens, limit.maxInputTokens, limit.maxOutputTokens]);
 
 	const updateNumber = (
 		key:
@@ -1186,7 +1163,7 @@ const LimitFields = ({
 	return (
 		<>
 			<div className="flex items-center gap-2">
-				<Label className="text-xs">Mode:</Label>
+				<Label className="text-xs">Tokens:</Label>
 				<Select
 					value={tokenLimitMode}
 					onValueChange={(value: TokenLimitMode) => {
@@ -1196,23 +1173,12 @@ const LimitFields = ({
 								...limit,
 								maxInputTokens: null,
 								maxOutputTokens: null,
-								maxResponseTime: null,
-							});
-							return;
-						}
-						if (value === "SPLIT") {
-							onChange({
-								...limit,
-								maxTokens: null,
-								maxResponseTime: null,
 							});
 							return;
 						}
 						onChange({
 							...limit,
 							maxTokens: null,
-							maxInputTokens: null,
-							maxOutputTokens: null,
 						});
 					}}
 				>
@@ -1222,28 +1188,10 @@ const LimitFields = ({
 					<SelectContent>
 						<SelectItem value="TOTAL">Total Tokens</SelectItem>
 						<SelectItem value="SPLIT">Input + Output</SelectItem>
-						<SelectItem value="COMPUTE">Compute Time</SelectItem>
 					</SelectContent>
 				</Select>
 			</div>
-			{tokenLimitMode === "COMPUTE" ? (
-				<div className="flex items-center gap-2">
-					<Label className="whitespace-nowrap text-xs">
-						Response Time (ms):
-					</Label>
-					<Input
-						type="text"
-						inputMode="numeric"
-						pattern="[0-9]*"
-						value={limit.maxResponseTime ?? ""}
-						onChange={(e) =>
-							updateNumber("maxResponseTime", e.target.value)
-						}
-						disabled={disabled}
-						className="h-8 w-32"
-					/>
-				</div>
-			) : tokenLimitMode === "TOTAL" ? (
+			{tokenLimitMode === "TOTAL" ? (
 				<div className="flex items-center gap-2">
 					<Label className="whitespace-nowrap text-xs">
 						Total Tokens:
@@ -1296,6 +1244,22 @@ const LimitFields = ({
 					</div>
 				</>
 			)}
+			<div className="flex items-center gap-2">
+				<Label className="whitespace-nowrap text-xs">
+					Compute Time (ms):
+				</Label>
+				<Input
+					type="text"
+					inputMode="numeric"
+					pattern="[0-9]*"
+					value={limit.maxResponseTime ?? ""}
+					onChange={(e) =>
+						updateNumber("maxResponseTime", e.target.value)
+					}
+					disabled={disabled}
+					className="h-8 w-32"
+				/>
+			</div>
 			<div className="flex items-center gap-2">
 				<Label className="text-xs">Period:</Label>
 				<Select
