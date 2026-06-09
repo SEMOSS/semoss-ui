@@ -238,6 +238,13 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		});
 	}, [scrollEle, isScrollLocked, contentHeight, isAnyMessageStreaming]);
 
+	// Smooth scroll to bottom when streaming completes
+	useEffect(() => {
+		if (!isAnyMessageStreaming && !isScrollLocked) {
+			scrollToTarget(contentHeight);
+		}
+	}, [isAnyMessageStreaming, isScrollLocked, contentHeight, scrollToTarget]);
+
 	/**
 	 * Set up scroll event listener
 	 */
