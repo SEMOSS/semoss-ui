@@ -24,8 +24,10 @@ export interface SlashCommand {
 	description?: string;
 	icon: React.ComponentType<{ className?: string }>;
 	onExecute: () => void;
-	/** If true, the command is hidden until at least 2 characters of its id are typed */
+	/** If true, the command is hidden until at least 1 character of its id is typed */
 	hiddenInMenu?: boolean;
+	/** If true, onExecute fires when the message is sent rather than when the command is selected */
+	fireOnSend?: boolean;
 }
 
 interface RoomInputMenuSlashProps {
@@ -55,15 +57,23 @@ interface RoomInputMenuSlashProps {
  * (where handleOpenMcpOverlay is in scope) and injected via buildSlashCommands.
  * Test commands are defined inline here.
  */
-const TEST_COMMANDS: SlashCommand[] = ["A", "B", "C", "D", "E", "F"].map(
-	(letter) => ({
+const TEST_COMMANDS: SlashCommand[] = [
+	...["A", "B", "C", "D", "E", "F"].map((letter) => ({
 		id: `test${letter}`,
 		label: `/test${letter}`,
 		description: `Test command ${letter}`,
 		icon: FlaskConicalIcon,
 		onExecute: () => console.log(`test${letter}`),
-	}),
-);
+	})),
+	{
+		id: "testOnFire",
+		label: "/testOnFire",
+		description: "Fires on send, not on select",
+		icon: FlaskConicalIcon,
+		fireOnSend: true,
+		onExecute: () => console.log("testOnFire: message sent"),
+	},
+];
 
 export const filterSlashCommands = (
 	commands: SlashCommand[],

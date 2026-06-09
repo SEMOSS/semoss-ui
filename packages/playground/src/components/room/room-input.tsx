@@ -11,7 +11,6 @@ import {
 	$createTextNode,
 	$getRoot,
 	$isElementNode,
-	$nodesOfType,
 	type LexicalEditor,
 } from "lexical";
 import {
@@ -539,6 +538,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				return;
 			}
 
+			// Fire any "fire on send" slash commands present in the editor
+			editorRef.current?.getEditorState().read(() => {
+				for (const paragraph of $getRoot().getChildren()) {
+					if (!$isElementNode(paragraph)) continue;
+					for (const node of paragraph.getChildren()) {
+						if (!$isSlashCommandNode(node)) continue;
+						const cmd = slashCommands.find(
+							(c) => c.id === node.__commandId,
+						);
+						if (cmd?.fireOnSend) cmd.onExecute();
+					}
+				}
+			});
+
 			try {
 				// Optimistically clear editor and files before sending
 				editorRef.current?.update(() => {
@@ -1043,8 +1056,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 								// Track empty state to disable send button
 								const text = root.getTextContent();
-								const hasSlashCommands =
-									$nodesOfType(SlashCommandNode).length > 0;
+								const hasSlashCommands = root
+									.getChildren()
+									.some(
+										(p) =>
+											$isElementNode(p) &&
+											p
+												.getChildren()
+												.some($isSlashCommandNode),
+									);
 								setIsEmpty(
 									text.length === 0 && !hasSlashCommands,
 								);
@@ -1094,7 +1114,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											match.label,
 										),
 									);
-									match.onExecute();
+									if (!match.fireOnSend) match.onExecute();
 								}}
 								onTabComplete={(query, selectedIndex) => {
 									const filtered = filterSlashCommands(
@@ -1163,7 +1183,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 																	cmd.label,
 																),
 															);
-															cmd.onExecute();
+															if (!cmd.fireOnSend)
+																cmd.onExecute();
 														}}
 													/>
 												</div>,
