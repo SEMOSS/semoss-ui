@@ -18,6 +18,7 @@ import {
 } from "@/components";
 import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useThemeTitle } from "@/hooks/use-theme-title";
 import type { RoomStore } from "@/stores";
 import type { Engine } from "@/types";
 /**
@@ -72,6 +73,8 @@ export const RoomPage = observer(() => {
 			},
 		],
 	});
+
+	useThemeTitle(root.theme, room?.metadata?.name);
 
 	/**
 	 * Effects
@@ -158,7 +161,7 @@ export const RoomPage = observer(() => {
 			options={{ insightId: room.insightId }}
 			destroyOnUnmount={false}
 		>
-			<div className="flex h-full w-full flex-col overflow-hidden">
+			<main className="flex h-full w-full flex-col overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"
@@ -182,7 +185,7 @@ export const RoomPage = observer(() => {
 						</>
 					)}
 				</ResizablePanelGroup>
-			</div>
+			</main>
 		</InsightProvider>
 	);
 });

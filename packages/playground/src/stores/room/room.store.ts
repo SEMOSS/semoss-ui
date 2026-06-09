@@ -477,9 +477,11 @@ export class RoomStore {
 				[
 					PixelMessage[],
 					{ OPTIONS?: RoomStoreInterface["options"] }, // partial because this doesn't work for old rooms
+					unknown,
+					Array<{ ROOM_ID: string; ROOM_NAME: string }>,
 				]
 			>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this._store.roomId)});`,
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)}); SetRoomForInsight(roomId=${JSON.stringify(this._store.roomId)}); META | GetPlaygroundRooms();`,
 				false,
 			);
 
@@ -488,6 +490,18 @@ export class RoomStore {
 			const optionsOutput = response.pixelReturn[1].output as {
 				OPTIONS?: RoomStoreInterface["options"];
 			};
+			const roomsOutput = response.pixelReturn[3]?.output as
+				| Array<{ ROOM_ID: string; ROOM_NAME: string }>
+				| undefined;
+
+			const matchingRoom = roomsOutput?.find(
+				(r) => r.ROOM_ID === this._store.roomId,
+			);
+			if (matchingRoom?.ROOM_NAME) {
+				runInAction(() => {
+					this._store.metadata.name = matchingRoom.ROOM_NAME;
+				});
+			}
 
 			// sync the insight ID
 			runInAction(() => {

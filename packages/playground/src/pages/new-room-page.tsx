@@ -41,6 +41,7 @@ import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
+import { useThemeTitle } from "@/hooks/use-theme-title";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
 
@@ -71,6 +72,8 @@ export const NewRoomPage = observer(() => {
 		],
 	});
 
+	useThemeTitle(root.theme, t("room:pageTitle"));
+
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
@@ -89,6 +92,7 @@ export const NewRoomPage = observer(() => {
 		[root.theme],
 	);
 	const bannerRef = useRef<HTMLDivElement>(null);
+	const settingsCloseButtonRef = useRef<HTMLButtonElement>(null);
 
 	useEffect(() => {
 		if (!bannerRef.current) return;
@@ -110,6 +114,12 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
+
+	useEffect(() => {
+		if (isConfigurationOpen) {
+			settingsCloseButtonRef.current?.focus();
+		}
+	}, [isConfigurationOpen]);
 	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
@@ -423,7 +433,7 @@ export const NewRoomPage = observer(() => {
 	}, [preCreatedRoom, chat]);
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden">
+		<main className="flex h-full w-full flex-col overflow-hidden">
 			{root.theme.banner ? (
 				<div
 					ref={bannerRef}
@@ -438,7 +448,7 @@ export const NewRoomPage = observer(() => {
 						<FileDragOverlay />
 						<img
 							src={landingSrc}
-							alt="Background"
+							alt=""
 							className="absolute inset-0 h-full w-full select-none object-cover"
 						/>
 						<div className="flex h-full flex-col items-center justify-center overflow-auto p-2">
@@ -711,9 +721,13 @@ export const NewRoomPage = observer(() => {
 										<Tooltip>
 											<TooltipTrigger asChild>
 												<Button
+													ref={settingsCloseButtonRef}
 													className="absolute end-2 top-2 z-10"
 													variant="ghost"
 													size="icon-sm"
+													aria-label={t(
+														"room:settings.close",
+													)}
 													onClick={() => {
 														// close it
 														setIsConfgurationOpen(
@@ -789,6 +803,6 @@ export const NewRoomPage = observer(() => {
 					</>
 				)}
 			</ResizablePanelGroup>
-		</div>
+		</main>
 	);
 });

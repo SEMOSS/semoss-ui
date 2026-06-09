@@ -692,7 +692,10 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								if (
 									tag === "input" ||
 									tag === "textarea" ||
-									target.isContentEditable
+									target.isContentEditable ||
+									target.closest("button") ||
+									target.closest('[role="button"]') ||
+									target.closest('[role="combobox"]')
 								) {
 									return;
 								}

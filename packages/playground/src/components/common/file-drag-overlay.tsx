@@ -42,6 +42,7 @@ export const FileDragOverlay = () => {
 				type="file"
 				multiple
 				hidden
+				aria-label="Upload files"
 				onChange={(e) => {
 					if (e.target.files) {
 						addFiles(Array.from(e.target.files));
