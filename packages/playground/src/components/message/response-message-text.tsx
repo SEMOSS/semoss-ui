@@ -1,14 +1,7 @@
-import { SkipForwardIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import {
-	Button,
-	Markdown,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
-} from "@semoss/ui/next";
+import { Markdown } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
 import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
 import type { ResponseMessageStore } from "@/stores";
@@ -94,9 +87,14 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 
 		// ── Typewriters ──────────────────────────────────────────────────────────
 		const typewriter = useMarkdownTypewriter(part.text);
-		const renderedText = typewriter.isTyping
-			? typewriter.rendered
-			: part.text;
+		// When streaming completes, show full text even if typewriter is still animating
+		// This prevents scroll jumping while letting users see all content immediately
+		const renderedText =
+			!message.isThinking && isLast
+				? part.text
+				: typewriter.isTyping
+					? typewriter.rendered
+					: part.text;
 
 		const postTypewriter = useMarkdownTypewriter(postBlockProse);
 		const [postProseStarted, setPostProseStarted] = useState(false);
@@ -175,11 +173,6 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			if (!isLast) postTypewriter.skipToEnd();
 		}, [isLast, postTypewriter.skipToEnd]);
 
-		const isAnyTyping =
-			(typewriter.isTyping || postTypewriter.isTyping) &&
-			!message.isThinking &&
-			isLast;
-
 		const urlTransform = (url: string) => {
 			if (url.startsWith("room://")) return url;
 			if (
@@ -214,9 +207,11 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 									className="[&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
 								>
-									{postTypewriter.isTyping
-										? postTypewriter.rendered
-										: postBlockProse}
+									{!message.isThinking && isLast
+										? postBlockProse
+										: postTypewriter.isTyping
+											? postTypewriter.rendered
+											: postBlockProse}
 								</Markdown>
 							)}
 					</>
@@ -254,9 +249,11 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 									className="[&>*:first-child]:mt-0"
 									urlTransform={urlTransform}
 								>
-									{postTypewriter.isTyping
-										? postTypewriter.rendered
-										: postBlockProse}
+									{!message.isThinking && isLast
+										? postBlockProse
+										: postTypewriter.isTyping
+											? postTypewriter.rendered
+											: postBlockProse}
 								</Markdown>
 							)}
 					</>
@@ -269,30 +266,6 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 					>
 						{renderedText}
 					</Markdown>
-				)}
-				{isAnyTyping && (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<span className="absolute end-4 bottom-4 z-50">
-								<Button
-									size="icon-sm"
-									variant={"outline"}
-									disabled={!part.text}
-									onClick={() => {
-										typewriter.skipToEnd();
-										postTypewriter.skipToEnd();
-									}}
-									aria-label="Fast Forward to End"
-									className="shadow-lg"
-								>
-									<SkipForwardIcon />
-								</Button>
-							</span>
-						</TooltipTrigger>
-						<TooltipContent side="bottom">
-							{t("response.fastForwardToEnd")}
-						</TooltipContent>
-					</Tooltip>
 				)}
 			</>
 		);

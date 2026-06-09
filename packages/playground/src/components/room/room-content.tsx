@@ -29,7 +29,7 @@ import {
 	RoomInputMenuUpload,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
-import type { RoomStore } from "@/stores";
+import { ResponseMessageStore, type RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
 import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
@@ -221,6 +221,16 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	// biome-ignore lint/correctness/useExhaustiveDependencies: room.history.length and contentHeight are used as triggers
 	useEffect(() => {
 		if (!scrollEle || isScrollLocked) {
+			return;
+		}
+
+		// Check if any message is actively streaming
+		const isAnyMessageStreaming = room.history.some(
+			(msg) => msg instanceof ResponseMessageStore && msg.isThinking,
+		);
+
+		// Only auto-scroll if actively streaming to avoid jumping after completion
+		if (!isAnyMessageStreaming) {
 			return;
 		}
 
