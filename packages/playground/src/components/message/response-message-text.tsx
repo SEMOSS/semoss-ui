@@ -47,25 +47,34 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		const newContent = part.text.slice(contentOnMountRef.current.length);
 		const typewriter = useMarkdownTypewriter(newContent);
 
-		// Combine base content with animated new content
+		// Combine base content with animated new content.
+		// Guard includes `rendered.length < newContent.length` to cover the one-render
+		// gap where isTyping is still false but the effect has been queued — this
+		// prevents fenceMatch from seeing the full text before the prose above has
+		// been animated through, which would cause HtmlPreviewBlock to flash in early.
 		const fullRenderedText =
-			message.isThinking && isLast && typewriter.isTyping
+			message.isThinking &&
+			isLast &&
+			newContent.length > 0 &&
+			(typewriter.isTyping ||
+				typewriter.rendered.length < newContent.length)
 				? contentOnMountRef.current + typewriter.rendered
 				: part.text;
 
 		// ── Code-fenced HTML detection ───────────────────────────────────────────
-		// Detect fence position in part.text (expensive regex, cached).
-		// Extract content from fullRenderedText (cheap slicing, respects typewriter).
+		// Run the regex against fullRenderedText so HtmlPreviewBlock only mounts
+		// once the typewriter has actually rendered past the fence — prevents the
+		// HTML block from flashing in before the prose above it finishes animating.
 		const fenceMatch = useMemo(() => {
 			if (isHtmlResponse) return null;
-			const m = FENCED_HTML_RE.exec(part.text);
+			const m = FENCED_HTML_RE.exec(fullRenderedText);
 			if (!m) return null;
 			return {
 				fullMatch: m[0],
 				htmlContent: m[1],
 				index: m.index,
 			};
-		}, [isHtmlResponse, part.text]);
+		}, [isHtmlResponse, fullRenderedText]);
 
 		const fencedHtmlData = useMemo(() => {
 			if (!fenceMatch) return null;
@@ -74,6 +83,8 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 				? fenceMatch.index + fenceMatch.fullMatch.length
 				: -1;
 			return {
+				// fenceMatch is already derived from fullRenderedText, so slicing
+				// directly from it keeps prose in sync with the typewriter position.
 				preFenceProse: fullRenderedText.slice(0, fenceMatch.index),
 				fencedHtmlContent: fenceMatch.htmlContent,
 				fencedHtmlClosed: isClosed,
