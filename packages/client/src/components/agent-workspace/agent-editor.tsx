@@ -206,6 +206,7 @@ export const AgentEditor = () => {
 										className="h-112"
 										enableKnowledgeMCP={true}
 										getPlatformUrl={mcpToPlatformUrl}
+										workspaceId={workspace.appId}
 									/>
 								)}
 							/>
@@ -234,6 +235,7 @@ export const AgentEditor = () => {
 										className="h-112"
 										enableKnowledgeMCP={true}
 										getPlatformUrl={mcpToPlatformUrl}
+										workspaceId={workspace.appId}
 									/>
 								)}
 							/>

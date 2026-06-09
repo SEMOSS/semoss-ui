@@ -338,6 +338,26 @@ export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
 	fromWorkspace?: boolean;
 };
 
+export interface ProjectDependency {
+	engine_type:
+		| "PROJECT"
+		| "STORAGE"
+		| "DATABASE"
+		| "FUNCTION"
+		| "MODEL"
+		| "VECTOR";
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
+	description?: string;
+	engine_discoverable?: boolean;
+	permission_name?: "READ_ONLY" | "EDIT" | "OWNER";
+	engine_global?: boolean;
+	access_permission?: number;
+	tags?: string;
+	can_view_dependencies?: boolean;
+}
+
 export interface Prompt {
 	id: string;
 	createdBy: string;

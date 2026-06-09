@@ -316,6 +316,7 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setKnowledge(next)}
 							className="h-112"
+							workspaceId={workspaceId}
 							enableKnowledgeMCP={
 								root.theme.featureFlags?.enableKnowledgeMCP
 							}
@@ -339,6 +340,7 @@ export const EditWorkspacePage = observer(() => {
 							disabled={isSaving}
 							onChange={(next) => setToolbox(next)}
 							className="h-112"
+							workspaceId={workspaceId}
 							enableKnowledgeMCP={
 								root.theme.featureFlags?.enableKnowledgeMCP
 							}

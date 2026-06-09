@@ -1,7 +1,7 @@
 import { ComputerIcon, PlusIcon, SearchIcon, XIcon } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { useIteratorPixel } from "@semoss/sdk/react";
+import { useIteratorPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	cn,
@@ -19,9 +19,20 @@ import {
 	useInfiniteScroll,
 	useIsMobile,
 } from "@semoss/ui/next";
-import type { App, Engine, MCP, MCPConfig } from "../../types";
+import type {
+	App,
+	Engine,
+	MCP,
+	MCPConfig,
+	ProjectDependency,
+} from "../../types";
 import { MCPCard } from "./mcp-card";
-import { engineProjectToMCP, getMcpTypeIcon } from "./mcp-utils";
+import {
+	engineProjectToMCP,
+	getDepEffectivePermission,
+	getMcpTypeIcon,
+	projectDependencyToMCP,
+} from "./mcp-utils";
 
 interface MCPSelectorProps {
 	/** Type of mcp */
@@ -71,6 +82,10 @@ interface MCPSelectorProps {
 	 * When provided, MCPCards will show an external link icon.
 	 */
 	getPlatformUrl?: (mcp: MCP) => string;
+
+	/** Optional workspace ID — when provided, GetProjectDependencies is fetched
+	 *  and any configured deps the user cannot access are injected into the grid. */
+	workspaceId?: string;
 }
 
 /**
@@ -86,6 +101,7 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	autoFocus = false,
 	enableKnowledgeMCP = true,
 	getPlatformUrl,
+	workspaceId,
 }) => {
 	const { t } = useTranslation("mcp");
 	const isMobile = useIsMobile();
@@ -158,6 +174,15 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 	const isLoading = getEngines.isLoading || getProjects.isLoading;
 	const hasMore = getEngines.hasMore || getProjects.hasMore;
 
+	const getDependencies = usePixel<{
+		engines: ProjectDependency[];
+		dependencies: string[];
+	}>(
+		workspaceId
+			? `GetProjectDependencies(project=["${workspaceId}"]);`
+			: "",
+	);
+
 	/**
 	 * Setup infinite scroll for the command list. Each scroll-to-bottom
 	 * advances whichever sources still have more.
@@ -169,6 +194,25 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 			if (getProjects.hasMore) getProjects.next();
 		},
 	});
+
+	// Inaccessible deps: configured on this workspace but not in the user's
+	// accessible pool (MyEngines/MyProjects). Only computed once the first
+	// page has loaded to avoid false positives during the initial fetch.
+	const isInitialLoading = isLoading && combinedData.length === 0;
+	const accessibleIds = new Set(combinedData.map((m) => m.id));
+
+	const inaccessibleDeps = (() => {
+		if (!getDependencies.data || isInitialLoading) return [];
+		const topLevelIds = new Set(getDependencies.data.dependencies ?? []);
+		return (getDependencies.data.engines ?? [])
+			.filter((dep) => topLevelIds.has(dep.engine_id))
+			.filter((dep) =>
+				type === "KNOWLEDGE"
+					? dep.engine_type === "VECTOR"
+					: dep.engine_type !== "VECTOR",
+			)
+			.filter((dep) => !accessibleIds.has(dep.engine_id));
+	})();
 
 	/**
 	 * Select a mcp
@@ -260,6 +304,25 @@ export const MCPSelector: React.FC<MCPSelectorProps> = ({
 				{combinedData.length !== 0 && (
 					<>
 						<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3">
+							{inaccessibleDeps.map((dep) => {
+								const mcp = projectDependencyToMCP(dep);
+								return (
+									<MCPCard
+										key={dep.engine_id}
+										m={mcp}
+										type={type}
+										selected={!!selected[dep.engine_id]}
+										onClick={() => onSelect(mcp)}
+										effectivePermission={getDepEffectivePermission(
+											dep,
+										)}
+										missingSubDependencies={
+											dep.can_view_dependencies === false
+										}
+										getPlatformUrl={getPlatformUrl}
+									/>
+								);
+							})}
 							{combinedData.map((mcp) => {
 								const selectedEntry = selected[mcp.id];
 								const fromWorkspace =
