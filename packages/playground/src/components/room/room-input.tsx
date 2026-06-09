@@ -1089,7 +1089,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												<div
 													style={{
 														position: "fixed",
-														top: menuPosition.top,
+														...(window.innerHeight -
+															menuPosition.bottom <
+														300
+															? {
+																	bottom:
+																		window.innerHeight -
+																		menuPosition.top +
+																		4,
+																}
+															: {
+																	top:
+																		menuPosition.bottom +
+																		4,
+																}),
 														left: menuPosition.left,
 														zIndex: 50,
 													}}

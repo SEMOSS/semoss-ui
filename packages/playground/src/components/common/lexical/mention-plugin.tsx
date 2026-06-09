@@ -22,7 +22,7 @@ interface MentionPluginProps {
 	MenuComponent: React.ComponentType<{
 		isOpen: boolean;
 		onOpenChange: (isOpen: boolean) => void;
-		menuPosition: { top: number; left: number } | null;
+		menuPosition: { top: number; bottom: number; left: number } | null;
 		addToken: (token: string) => void;
 		onRequestClose: () => void;
 		/** Text typed after the trigger character, for filtering */
@@ -62,6 +62,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 	const [isOpen, setIsOpen] = useState(false);
 	const [menuPosition, setMenuPosition] = useState<{
 		top: number;
+		bottom: number;
 		left: number;
 	} | null>(null);
 	const [query, setQuery] = useState("");
@@ -245,14 +246,17 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 						setIsOpen(true);
 						setQuery(text.slice(triggerIndex + 1, cursorOffset));
 
-						const domSelection = window.getSelection();
-						if (domSelection && domSelection.rangeCount > 0) {
-							const range = domSelection.getRangeAt(0);
-							const rect = range.getBoundingClientRect();
-							setMenuPosition({
-								top: rect.bottom + window.scrollY + 4,
-								left: rect.left + window.scrollX,
-							});
+						if (isNewTrigger) {
+							const domSelection = window.getSelection();
+							if (domSelection && domSelection.rangeCount > 0) {
+								const range = domSelection.getRangeAt(0);
+								const rect = range.getBoundingClientRect();
+								setMenuPosition({
+									top: rect.top,
+									bottom: rect.bottom,
+									left: rect.left,
+								});
+							}
 						}
 					}
 				} else {

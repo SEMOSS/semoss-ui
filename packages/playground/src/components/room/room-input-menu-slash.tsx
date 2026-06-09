@@ -1,4 +1,9 @@
-import { BookOpenIcon, FlaskConicalIcon, HammerIcon } from "lucide-react";
+import {
+	BookOpenIcon,
+	BotIcon,
+	FlaskConicalIcon,
+	HammerIcon,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import {
@@ -16,9 +21,11 @@ import {
 export interface SlashCommand {
 	id: string;
 	label: string;
-	description: string;
+	description?: string;
 	icon: React.ComponentType<{ className?: string }>;
 	onExecute: () => void;
+	/** If true, the command is hidden until at least 2 characters of its id are typed */
+	hiddenInMenu?: boolean;
 }
 
 interface RoomInputMenuSlashProps {
@@ -64,11 +71,32 @@ export const buildSlashCommands = (
 		onExecute: () => onOpenMcpOverlay("KNOWLEDGE"),
 	},
 	{
-		id: "mcp",
-		label: "/mcp",
-		description: "Add toolbox tools to this conversation",
+		id: "toolbox",
+		label: "/toolbox",
+		description: "Add toolboxes to this conversation",
 		icon: HammerIcon,
 		onExecute: () => onOpenMcpOverlay("TOOLBOX"),
+	},
+	{
+		id: "mcp",
+		label: "/mcp",
+		icon: HammerIcon,
+		onExecute: () => onOpenMcpOverlay("TOOLBOX"),
+		hiddenInMenu: true,
+	},
+	{
+		id: "agent",
+		label: "/agent",
+		description: "Select an agent for this conversation",
+		icon: BotIcon,
+		onExecute: () => onOpenMcpOverlay("AGENT"),
+	},
+	{
+		id: "workspace",
+		label: "/workspace",
+		icon: BotIcon,
+		onExecute: () => onOpenMcpOverlay("AGENT"),
+		hiddenInMenu: true,
 	},
 	...TEST_COMMANDS,
 ];
@@ -93,9 +121,12 @@ export const RoomInputMenuSlash: React.FC<
 	onRequestClose,
 	commands,
 }) => {
-	const filtered = commands.filter((cmd) =>
-		cmd.id.startsWith(query.toLowerCase()),
-	);
+	const lowerQuery = query.toLowerCase();
+	const filtered = commands.filter((cmd) => {
+		if (!cmd.id.startsWith(lowerQuery)) return false;
+		if (cmd.hiddenInMenu && lowerQuery.length < 1) return false;
+		return true;
+	});
 
 	const listRef = useRef<HTMLDivElement>(null);
 
