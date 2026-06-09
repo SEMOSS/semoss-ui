@@ -76,7 +76,8 @@ const CATALOG_CONFIG = {
 	},
 	skill: {
 		title: "Skills",
-		description: "Manage and discover skills.",
+		description:
+			"Skills are reusable capabilities that extend agent functionality through specialized tools, integrations, and workflows. Build custom skills to connect to APIs, process data, or automate complex tasks. Browse and discover skills to enhance your agents with pre-built functionality across diverse use cases.",
 		createLabel: "Create New Skill",
 		createPath: "/skill/new",
 		basePath: "/skill",
@@ -99,7 +100,8 @@ const CATALOG_CONFIG = {
 	},
 	agent: {
 		title: "Agents",
-		description: "Manage and discover agents.",
+		description:
+			"Agents are autonomous AI assistants configured with specific skills, knowledge bases, and behavioral guidelines to accomplish complex tasks. Create agents tailored to your workflows, from customer support and data analysis to content generation and research. Manage and deploy intelligent agents that can reason, plan, and execute multi-step processes.",
 		createLabel: "Create New Agent",
 		createPath: "/agent/new",
 		basePath: "/agent",
