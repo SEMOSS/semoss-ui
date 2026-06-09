@@ -1113,7 +1113,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									const match =
 										filtered[selectedIndex] ?? filtered[0];
 									if (!match) return;
-									addNode(
+									addNode(() =>
 										$createSlashCommandNode(
 											match.id,
 											match.label,
@@ -1182,7 +1182,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 														onCommandSelect={(
 															cmd,
 														) => {
-															addNode(
+															addNode(() =>
 																$createSlashCommandNode(
 																	cmd.id,
 																	cmd.label,

@@ -27,7 +27,7 @@ interface MentionPluginProps {
 		menuPosition: { top: number; bottom: number; left: number } | null;
 		addToken: (token: string) => void;
 		/** Insert a Lexical node in place of the trigger + query text */
-		addNode: (node: LexicalNode) => void;
+		addNode: (nodeFactory: () => LexicalNode) => void;
 		onRequestClose: () => void;
 		/** Text typed after the trigger character, for filtering */
 		query: string;
@@ -47,7 +47,7 @@ interface MentionPluginProps {
 	onAccept?: (
 		query: string,
 		selectedIndex: number,
-		addNode: (node: LexicalNode) => void,
+		addNode: (nodeFactory: () => LexicalNode) => void,
 	) => void;
 
 	/**
@@ -151,11 +151,13 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 
 	/** Insert an arbitrary Lexical node in place of the trigger + query text */
 	const addNode = useCallback(
-		(node: LexicalNode) => {
+		(nodeFactory: () => LexicalNode) => {
 			const triggerIdx = triggerOffsetRef.current;
 			if (triggerIdx === null) return;
 
 			editor.update(() => {
+				const node = nodeFactory();
+
 				const selection = $getSelection();
 				if (!$isRangeSelection(selection)) return;
 
