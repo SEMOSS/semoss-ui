@@ -14,6 +14,7 @@ import type {
 	MCP,
 	MCPConfig,
 	ProjectDependency,
+	Prompt,
 } from "../../types";
 
 /**
@@ -122,3 +123,44 @@ export const getDepEffectivePermission = (
 	}
 	return "FULLY_PRIVATE";
 };
+
+export const isKnowledgeMcp = (mcp: Pick<MCPConfig, "type">): boolean =>
+	mcp.type === "VECTOR";
+
+export const splitMcpByType = (
+	mcps: MCPConfig[],
+): { knowledge: MCPConfig[]; toolbox: MCPConfig[] } => {
+	const knowledge: MCPConfig[] = [];
+	const toolbox: MCPConfig[] = [];
+	for (const mcp of mcps) {
+		if (isKnowledgeMcp(mcp)) {
+			knowledge.push(mcp);
+		} else {
+			toolbox.push(mcp);
+		}
+	}
+	return { knowledge, toolbox };
+};
+
+export const createMcpPlatformUrl =
+	(baseUrl: string) =>
+	(
+		mcp:
+			| Pick<MCP, "type" | "id">
+			| {
+					engine_id: string;
+					engine_type: string;
+			  },
+	): string => {
+		const id = "id" in mcp ? mcp.id : mcp.engine_id;
+		const type = "type" in mcp ? mcp.type : mcp.engine_type;
+		if (type === "PROJECT") {
+			return `${baseUrl}/#/app/${id}/mcp-usage`;
+		}
+		return `${baseUrl}/#/engine/${type.toLowerCase()}/${id}/mcp-usage`;
+	};
+
+export const createPromptPlatformUrl =
+	(baseUrl: string) =>
+	(prompt: Pick<Prompt, "id">): string =>
+		`${baseUrl}/#/prompt/${prompt.id}`;
