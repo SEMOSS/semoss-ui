@@ -3,6 +3,7 @@ import { AppAccessControlPage } from "./app-access-control-page";
 import { AppCommitsPage } from "./app-commits-page";
 import { AppDependenciesPage } from "./app-dependencies-page";
 import { AppFilesPage } from "./app-files-page";
+import { AppLogsPage } from "./app-logs-page";
 import { AppMcpUsagePage } from "./app-mcp-usage-page";
 import { AppOverviewPage } from "./app-overview-page";
 import { AppSettingsPage } from "./app-settings-page";
@@ -68,6 +69,12 @@ export const APP_DETAIL_TABS: AppDetailTab[] = [
 		component: AppFilesPage,
 		restrict: ["author", "editor"],
 		requiresNav: true,
+	},
+	{
+		name: "Logs",
+		path: "logs",
+		component: AppLogsPage,
+		restrict: ["author"],
 	},
 	{
 		name: "SMSS",
