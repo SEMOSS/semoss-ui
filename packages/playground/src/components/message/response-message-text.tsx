@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { Markdown } from "@semoss/ui/next";
 import { useRoot } from "@/hooks";
@@ -26,6 +26,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		const { t } = useTranslation("chat");
 		const { root } = useRoot();
 
+		// ── Content tracking for remount ─────────────────────────────────────────
+		// Track content that existed when component mounted so we can skip animating it
+		const contentOnMountRef = useRef(part.text);
+
 		// ── Standalone-HTML detection ────────────────────────────────────────────
 		// Sticky: once the response opens with <!DOCTYPE (no code fence), stay in
 		// standalone-HTML mode for the lifetime of this message.
@@ -38,38 +42,60 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		}
 		const isHtmlResponse = isHtmlResponseRef.current;
 
+		// ── Typewriters ──────────────────────────────────────────────────────────
+		// Animate only new content that arrives after mount
+		const newContent = part.text.slice(contentOnMountRef.current.length);
+		const typewriter = useMarkdownTypewriter(newContent);
+
+		// Combine base content with animated new content
+		const fullRenderedText =
+			message.isThinking && isLast && typewriter.isTyping
+				? contentOnMountRef.current + typewriter.rendered
+				: part.text;
+
 		// ── Code-fenced HTML detection ───────────────────────────────────────────
-		// Detect the first ```html…``` block directly in part.text so that
-		// HtmlPreviewBlock mounts as soon as the fence appears during streaming.
-		const fencedHtmlData = useMemo(() => {
+		// Detect fence position in part.text (expensive regex, cached).
+		// Extract content from fullRenderedText (cheap slicing, respects typewriter).
+		const fenceMatch = useMemo(() => {
 			if (isHtmlResponse) return null;
 			const m = FENCED_HTML_RE.exec(part.text);
 			if (!m) return null;
-			const isClosed = m[0].endsWith("```");
-			const postStart = isClosed ? m.index + m[0].length : -1;
 			return {
-				preFenceProse: part.text.slice(0, m.index),
-				fencedHtmlContent: m[1],
+				fullMatch: m[0],
+				htmlContent: m[1],
+				index: m.index,
+			};
+		}, [isHtmlResponse, part.text]);
+
+		const fencedHtmlData = useMemo(() => {
+			if (!fenceMatch) return null;
+			const isClosed = fenceMatch.fullMatch.endsWith("```");
+			const postStart = isClosed
+				? fenceMatch.index + fenceMatch.fullMatch.length
+				: -1;
+			return {
+				preFenceProse: fullRenderedText.slice(0, fenceMatch.index),
+				fencedHtmlContent: fenceMatch.htmlContent,
 				fencedHtmlClosed: isClosed,
 				postFenceProse:
 					postStart !== -1
-						? part.text.slice(postStart).trimStart()
+						? fullRenderedText.slice(postStart).trimStart()
 						: "",
 			};
-		}, [isHtmlResponse, part.text]);
+		}, [fenceMatch, fullRenderedText]);
 		const hasFencedHtml = !!fencedHtmlData;
 
 		// ── Standalone-HTML split ────────────────────────────────────────────────
 		const htmlEndMatch = isHtmlResponse
-			? /(<\/html\s*>)/i.exec(part.text)
+			? /(<\/html\s*>)/i.exec(fullRenderedText)
 			: null;
 		const htmlPart = isHtmlResponse
 			? htmlEndMatch
-				? part.text.slice(
+				? fullRenderedText.slice(
 						0,
 						htmlEndMatch.index + htmlEndMatch[0].length,
 					)
-				: part.text
+				: fullRenderedText
 			: "";
 		const standaloneHtml = isHtmlResponse ? htmlPart.trim() : null;
 
@@ -77,7 +103,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// Unified: after </html> for standalone, after closing ``` for fenced.
 		const postHtmlProse =
 			isHtmlResponse && htmlEndMatch
-				? part.text
+				? fullRenderedText
 						.slice(htmlEndMatch.index + htmlEndMatch[0].length)
 						.trimStart()
 				: "";
@@ -85,19 +111,16 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			? postHtmlProse
 			: (fencedHtmlData?.postFenceProse ?? "");
 
-		// ── Typewriters ──────────────────────────────────────────────────────────
-		const typewriter = useMarkdownTypewriter(part.text);
-		// When streaming completes, show full text even if typewriter is still animating
-		// This prevents scroll jumping while letting users see all content immediately
-		const renderedText =
-			!message.isThinking && isLast
-				? part.text
-				: typewriter.isTyping
-					? typewriter.rendered
-					: part.text;
-
-		const postTypewriter = useMarkdownTypewriter(postBlockProse);
-		const [postProseStarted, setPostProseStarted] = useState(false);
+		// Track post-prose content on mount for the same reason as main content
+		const postProseOnMountRef = useRef(postBlockProse);
+		const newPostProse = postBlockProse.slice(
+			postProseOnMountRef.current.length,
+		);
+		const postTypewriter = useMarkdownTypewriter(newPostProse);
+		const fullRenderedPostProse =
+			message.isThinking && isLast && postTypewriter.isTyping
+				? postProseOnMountRef.current + postTypewriter.rendered
+				: postBlockProse;
 
 		// ── isPreviewLoading for code-fenced HTML ────────────────────────────────
 		const inlineScriptInFenced =
@@ -115,7 +138,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		const inlineScriptComplete =
 			isHtmlResponse &&
 			/<script(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script\s*>/i.test(
-				part.text,
+				fullRenderedText,
 			);
 		const standaloneIsPreviewLoading =
 			isLast &&
@@ -133,9 +156,12 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		);
 
 		// ── Effects ──────────────────────────────────────────────────────────────
+		// Start main typewriter when streaming and there's new content
 		useEffect(() => {
-			if (message.isThinking && isLast) typewriter.start();
-		}, [message.isThinking, typewriter.start, isLast]);
+			if (message.isThinking && isLast && newContent.length > 0) {
+				typewriter.start();
+			}
+		}, [message.isThinking, typewriter.start, isLast, newContent.length]);
 
 		// No text to animate for standalone-HTML responses.
 		useEffect(() => {
@@ -146,17 +172,14 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			if (!isLast) typewriter.skipToEnd();
 		}, [isLast, typewriter.skipToEnd]);
 
-		// Start post-block prose animation when it first appears during a live stream.
-		// Historical messages (isThinking=false) must NOT start the typewriter.
+		// Start post-block prose animation when there's new post-prose content
 		useEffect(() => {
 			if (
 				isLast &&
 				message.isThinking &&
 				(isHtmlResponse || hasFencedHtml) &&
-				postBlockProse &&
-				!postProseStarted
+				newPostProse.length > 0
 			) {
-				setPostProseStarted(true);
 				postTypewriter.start();
 			}
 		}, [
@@ -164,8 +187,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			message.isThinking,
 			isHtmlResponse,
 			hasFencedHtml,
-			postBlockProse,
-			postProseStarted,
+			newPostProse.length,
 			postTypewriter.start,
 		]);
 
@@ -197,23 +219,16 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							copySuccessMessage={t("notifications.copySuccess")}
 							copyLabel="Copy"
 						/>
-						{postBlockProse &&
-							(postProseStarted ||
-								!isLast ||
-								!message.isThinking) && (
-								<Markdown
-									dir="auto"
-									components={components}
-									className="[&>*:first-child]:mt-0"
-									urlTransform={urlTransform}
-								>
-									{!message.isThinking && isLast
-										? postBlockProse
-										: postTypewriter.isTyping
-											? postTypewriter.rendered
-											: postBlockProse}
-								</Markdown>
-							)}
+						{postBlockProse && (
+							<Markdown
+								dir="auto"
+								components={components}
+								className="[&>*:first-child]:mt-0"
+								urlTransform={urlTransform}
+							>
+								{fullRenderedPostProse}
+							</Markdown>
+						)}
 					</>
 				) : hasFencedHtml ? (
 					<>
@@ -224,11 +239,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								className="[&>*:first-child]:mt-0"
 								urlTransform={urlTransform}
 							>
-								{typewriter.isTyping &&
-								typewriter.rendered.length <
-									(fencedHtmlData?.preFenceProse.length ?? 0)
-									? typewriter.rendered
-									: fencedHtmlData?.preFenceProse}
+								{fencedHtmlData?.preFenceProse}
 							</Markdown>
 						)}
 						<HtmlPreviewBlock
@@ -239,23 +250,16 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							copySuccessMessage={t("notifications.copySuccess")}
 							copyLabel="Copy"
 						/>
-						{postBlockProse &&
-							(postProseStarted ||
-								!isLast ||
-								!message.isThinking) && (
-								<Markdown
-									dir="auto"
-									components={components}
-									className="[&>*:first-child]:mt-0"
-									urlTransform={urlTransform}
-								>
-									{!message.isThinking && isLast
-										? postBlockProse
-										: postTypewriter.isTyping
-											? postTypewriter.rendered
-											: postBlockProse}
-								</Markdown>
-							)}
+						{postBlockProse && (
+							<Markdown
+								dir="auto"
+								components={components}
+								className="[&>*:first-child]:mt-0"
+								urlTransform={urlTransform}
+							>
+								{fullRenderedPostProse}
+							</Markdown>
+						)}
 					</>
 				) : (
 					<Markdown
@@ -264,7 +268,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 						className="[&>*:first-child]:mt-0"
 						urlTransform={urlTransform}
 					>
-						{renderedText}
+						{fullRenderedText}
 					</Markdown>
 				)}
 			</>
