@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 import { parseChunks } from "./response-message-text/parse-chunks";
@@ -38,33 +38,31 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// Index of the chunk currently allowed to animate.
 		const [activeIndex, setActiveIndex] = useState(0);
 
-		// Keep a ref to chunks.length so handleChunkComplete always sees the latest
-		// count even if it was created before new chunks arrived.
-		const chunksLengthRef = useRef(chunks.length);
-		chunksLengthRef.current = chunks.length;
-
 		// Tracks whether onComplete fired before the next chunk existed.
-		// When chunks grow (a new chunk is appended), this ref lets us advance.
-		const pendingAdvanceRef = useRef(false);
+		// When chunks grow (a new chunk is appended), this state lets us advance.
+		const [pendingAdvance, setPendingAdvance] = useState(false);
 
 		// When a new chunk is appended and there's a pending advance, advance now.
 		useEffect(() => {
-			if (pendingAdvanceRef.current && activeIndex < chunks.length - 1) {
-				pendingAdvanceRef.current = false;
+			if (pendingAdvance && activeIndex < chunks.length - 1) {
+				setPendingAdvance(false);
 				setActiveIndex((i) => i + 1);
 			}
-		}, [chunks.length, activeIndex]);
+		}, [pendingAdvance, chunks.length, activeIndex]);
 
 		// Called by each subcomponent when its animation is complete.
-		const handleChunkComplete = useCallback((completedIndex: number) => {
-			if (completedIndex + 1 < chunksLengthRef.current) {
-				setActiveIndex(completedIndex + 1);
-			} else {
-				// The next chunk hasn't appeared yet — set flag so it advances
-				// as soon as a new chunk is appended.
-				pendingAdvanceRef.current = true;
-			}
-		}, []);
+		const handleChunkComplete = useCallback(
+			(completedIndex: number) => {
+				if (completedIndex + 1 < chunks.length) {
+					setActiveIndex(completedIndex + 1);
+				} else {
+					// The next chunk hasn't appeared yet — set flag so it advances
+					// as soon as a new chunk is appended.
+					setPendingAdvance(true);
+				}
+			},
+			[chunks.length],
+		);
 
 		return (
 			<>
