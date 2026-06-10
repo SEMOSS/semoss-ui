@@ -14,7 +14,8 @@
 		"knowledgeLabel": "ナレッジ",
 		"toolboxLabel": "ツールボックス",
 		"maxTokenLabel": "最大トークン",
-		"temperatureLabel": "温度"
+		"temperatureLabel": "温度",
+		"autoCompactThresholdLabel": "自動圧縮しきい値"
 	},
 	"modes": {
 		"ask": "質問",

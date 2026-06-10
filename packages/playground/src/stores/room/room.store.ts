@@ -8,6 +8,7 @@ import {
 } from "@semoss/sdk/react";
 import { FlexLayout, type ThemeMap } from "@semoss/shared";
 import {
+	AUTO_COMPACT_THRESHOLD,
 	STREAMING_PLACEHOLDER_ID,
 	TEMPERATURE,
 	TOKEN_LENGTH,
@@ -121,6 +122,11 @@ interface RoomStoreInterface {
 		temperature: number;
 
 		/*
+		 * Fraction of the model's context window at which the backend auto-compacts.
+		 */
+		autoCompactThreshold: number;
+
+		/*
 		 * Workspace associated with the room
 		 */
 		workspace?: {
@@ -176,6 +182,7 @@ export class RoomStore {
 			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
+			autoCompactThreshold: AUTO_COMPACT_THRESHOLD,
 		},
 		sidebar: {
 			isOpen: false,

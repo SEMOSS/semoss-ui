@@ -528,6 +528,24 @@ export const RoomOptionsForm: React.FC<RoomOptionsFormProps> = observer(
 									}
 								/>
 							</Field>
+
+							<Field>
+								<FieldLabel>
+									{t("room:form.autoCompactThresholdLabel")} (
+									{options.autoCompactThreshold?.toFixed(2)})
+								</FieldLabel>
+								<Slider
+									min={0}
+									max={1}
+									step={0.05}
+									value={[options.autoCompactThreshold]}
+									onValueChange={(value) =>
+										onOptionsChange({
+											autoCompactThreshold: value[0],
+										})
+									}
+								/>
+							</Field>
 						</FieldGroup>
 					</FieldSet>
 				</FieldGroup>

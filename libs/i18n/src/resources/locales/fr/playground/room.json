@@ -14,7 +14,8 @@
 		"knowledgeLabel": "Connaissances",
 		"toolboxLabel": "Boîtes à outils",
 		"maxTokenLabel": "Jeton maximum",
-		"temperatureLabel": "Température"
+		"temperatureLabel": "Température",
+		"autoCompactThresholdLabel": "Seuil de compactage automatique"
 	},
 	"modes": {
 		"ask": "Demander",

@@ -21,7 +21,8 @@
 		"knowledgeLabel": "Knowledge",
 		"toolboxLabel": "Toolboxes",
 		"maxTokenLabel": "Max Token",
-		"temperatureLabel": "Temperature"
+		"temperatureLabel": "Temperature",
+		"autoCompactThresholdLabel": "Auto-Compact Threshold"
 	},
 	"modes": {
 		"ask": "Ask",

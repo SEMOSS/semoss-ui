@@ -14,7 +14,8 @@
 		"knowledgeLabel": "ज्ञान",
 		"toolboxLabel": "टूलबॉक्स",
 		"maxTokenLabel": "अधिकतम टोकन",
-		"temperatureLabel": "टेम्परेचर"
+		"temperatureLabel": "टेम्परेचर",
+		"autoCompactThresholdLabel": "ऑटो-कॉम्पैक्ट थ्रेशोल्ड"
 	},
 	"modes": {
 		"ask": "पूछें",

@@ -7,7 +7,6 @@ import {
 } from "mobx";
 import { download } from "@semoss/sdk/react";
 import {
-	AUTO_COMPACT_THRESHOLD,
 	MCP_EXECUTION_AUTO,
 	STREAMING_PLACEHOLDER_ID,
 	TOOL_CANCELLATION_PROMPT,
@@ -194,7 +193,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		const willAutoCompact =
 			room.contextWindow !== undefined &&
 			room.contextWindow > 0 &&
-			room.tokensUsed / room.contextWindow >= AUTO_COMPACT_THRESHOLD;
+			room.tokensUsed / room.contextWindow >=
+				room.options.autoCompactThreshold;
 
 		// Create a placeholder response message to show streaming content
 		const responseMessage =
@@ -285,6 +285,7 @@ ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: room.options.tokenLength,
 					temperature: room.options.temperature,
+					auto_compact_threshold: room.options.autoCompactThreshold,
 				})}]
 );`,
 				(chunk) => {

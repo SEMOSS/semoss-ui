@@ -38,7 +38,7 @@ import {
 	RoomSidebar,
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { AUTO_COMPACT_THRESHOLD, TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
@@ -158,6 +158,7 @@ export const NewRoomPage = observer(() => {
 				root.theme.defaultRoomSettings?.tokenLength || TOKEN_LENGTH,
 			temperature:
 				root.theme?.defaultRoomSettings?.temperature || TEMPERATURE,
+			autoCompactThreshold: AUTO_COMPACT_THRESHOLD,
 			workspace: undefined,
 			predefinedPrompts: [],
 		});

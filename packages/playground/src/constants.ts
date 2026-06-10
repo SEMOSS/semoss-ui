@@ -12,10 +12,8 @@ export const MCP_DISPLAY_HIDDEN = "hidden";
 
 export const STREAMING_PLACEHOLDER_ID = "STREAMING_PLACEHOLDER_ID";
 
-/**
- * Fraction of the model's context window at which the backend auto-compacts.
- */
-export const AUTO_COMPACT_THRESHOLD = 0.85;
+/** Initial slider value for the per-room auto-compaction threshold. */
+export const AUTO_COMPACT_THRESHOLD = 0.5;
 
 export const LOADING_MESSAGES = [
 	"Thinking through it...",
