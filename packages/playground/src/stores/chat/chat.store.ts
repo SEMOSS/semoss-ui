@@ -229,6 +229,8 @@ export class ChatStore {
 		// set the model
 		room.setModel(this.models.selected);
 
+		this.seedRoomContextWindowFromChat(room);
+
 		// set the mode
 		room.setMode(mode);
 
@@ -334,6 +336,8 @@ export class ChatStore {
 		// initialize the room
 		await room.initialize();
 
+		this.seedRoomContextWindowFromChat(room);
+
 		// If the room has no messages or just the placeholder, it means it is a valid room but it is empty, so we can consider it as not found and throw an error
 		// This happens if CreateRoom succeeds but the first AskPlayground call fails
 		if (!room.tail || room.tail.id === "ROOT_PLACEHOLDER_ID") {
@@ -379,10 +383,37 @@ export class ChatStore {
 			`META | GetContextWindow(${JSON.stringify(engineId)});`,
 		);
 
+		const value = pixelReturn[0].output;
+
 		if (this.models.selected?.engine_id === engineId) {
 			runInAction(() => {
-				this._store.models.contextWindow = pixelReturn[0].output;
+				this._store.models.contextWindow = value;
 			});
+		}
+
+		// Propagate to any cached room running this engine so each room can
+		// predict backend auto-compaction (see response-message.store.ts ->
+		// runMessage). Per-room because rooms can outlive a selected-model change.
+		Object.values(this._store.rooms).forEach((room) => {
+			if (room.model?.engine_id === engineId) {
+				room.setContextWindow(value);
+			}
+		});
+	};
+
+	/**
+	 * Seed a room's contextWindow from the chat's cached value when the room's
+	 * model matches the chat's currently-selected model. Used at room creation
+	 * and load time so the first user message can predict backend auto-compaction
+	 * (see response-message.store.ts -> runMessage).
+	 */
+	private seedRoomContextWindowFromChat = (room: RoomStore): void => {
+		const cached = this._store.models.contextWindow;
+		if (
+			cached !== undefined &&
+			this._store.models.selected?.engine_id === room.model?.engine_id
+		) {
+			room.setContextWindow(cached);
 		}
 	};
 

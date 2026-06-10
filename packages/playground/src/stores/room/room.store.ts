@@ -89,6 +89,13 @@ interface RoomStoreInterface {
 	 */
 	model: Engine;
 
+	/**
+	 * Context window (tokens) of the room's current model. Seeded by ChatStore
+	 * when the engine's context window is loaded. Used to predict backend
+	 * auto-compaction for the live "Compacting..." indicator.
+	 */
+	contextWindow?: number;
+
 	/*
 	 * Options that is passed to the model
 	 */
@@ -422,6 +429,14 @@ export class RoomStore {
 	}
 
 	/**
+	 * Get the context window (tokens) of the room's current model.
+	 * Returns undefined until ChatStore has loaded it for the room's engine.
+	 */
+	get contextWindow(): number | undefined {
+		return this._store.contextWindow;
+	}
+
+	/**
 	 * Get the sidebar information
 	 */
 	get sidebar() {
@@ -443,6 +458,15 @@ export class RoomStore {
 	 */
 	setModel = (model: Engine) => {
 		this._store.model = model;
+	};
+
+	/**
+	 * Set the context window (tokens) for the room's current model. Called by
+	 * ChatStore after it resolves the engine's context window. Used by
+	 * `runMessage` to predict backend auto-compaction.
+	 */
+	setContextWindow = (value: number | undefined) => {
+		this._store.contextWindow = value;
 	};
 
 	/**
@@ -590,6 +614,38 @@ export class RoomStore {
 					} else {
 						root.addChild(m.message);
 					}
+				}
+			}
+
+			// Auto-compaction chip dedup. On reload, two messages can each
+			// carry a chip for the same event: the response that triggered
+			// compaction (autoCompacted=true on the wire) and the prior branch
+			// leaf (flagged by pruneToolsAbove for TOOL_PRUNE, or by the
+			// summaryLeafMessageId pseudo-parent path above for SUMMARY).
+			// Walk up the parent chain from each auto-compacted response and
+			// suppress the first chip-bearing ancestor that isn't itself an
+			// auto-compaction response — keeping one chip per event while
+			// preserving chips for distinct consecutive compactions.
+			for (const mId in messages) {
+				const response = messages[mId].message;
+				if (
+					!(response instanceof ResponseMessageStore) ||
+					!response.autoCompactedAbove
+				) {
+					continue;
+				}
+				let cursor = response.parent;
+				while (cursor) {
+					if (
+						cursor instanceof ResponseMessageStore &&
+						cursor.conversationCompactedAbove
+					) {
+						if (!cursor.autoCompactedAbove) {
+							cursor.setConversationCompactedAbove(false);
+						}
+						break;
+					}
+					cursor = cursor.parent;
 				}
 			}
 
