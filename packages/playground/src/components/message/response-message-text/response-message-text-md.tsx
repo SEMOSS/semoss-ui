@@ -139,7 +139,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 					// No new content to animate and already finalized — complete immediately
 					fireOnComplete();
 				}
-				// eslint-disable-next-line react-hooks/exhaustive-deps
+				// biome-ignore lint/correctness/useExhaustiveDependencies: fireOnComplete and typewriter.start are intentionally omitted — both are stable refs and including them would cause spurious re-triggers on every parent render
 			}, [isActive, newContent.length, isFinalized]);
 
 			// Skip animation for done chunks (e.g. when isLast prop changes)
@@ -159,7 +159,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				// Skip to end — this sets renderedLength = newContent.length and
 				// stops isRunning, which will trigger the caught-up effect below.
 				typewriter.skipToEnd();
-				// eslint-disable-next-line react-hooks/exhaustive-deps
+				// biome-ignore lint/correctness/useExhaustiveDependencies: isActive, newContent.length, and typewriter.skipToEnd are intentionally omitted — this effect must only fire when isFinalized flips, not on every content update; isActive and newContent.length are stable guards that don't change the firing semantics
 			}, [isFinalized]);
 
 			// Fire onComplete when typewriter has caught up AND chunk is finalized.
