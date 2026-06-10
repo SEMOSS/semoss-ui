@@ -386,6 +386,7 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 				event?.preventDefault();
 				explicitlyClosedRef.current = true;
 				setIsOpen(false);
+				editor.focus(() => null, { defaultSelection: "rootEnd" });
 				return true;
 			},
 			COMMAND_PRIORITY_HIGH,
@@ -399,12 +400,6 @@ export const MentionPlugin: React.FC<MentionPluginProps> = ({
 			removeEscape();
 		};
 	}, [editor, isOpen, handleRequestClose, replaceQuery, addNode]);
-
-	// Restore editor focus when menu closes
-	useEffect(() => {
-		if (isOpen) return;
-		editor.focus(() => null, { defaultSelection: "rootEnd" });
-	}, [editor, isOpen]);
 
 	const handleOpenChange = useCallback(
 		(open: boolean) => {

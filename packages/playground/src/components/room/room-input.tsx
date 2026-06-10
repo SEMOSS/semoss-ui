@@ -27,7 +27,6 @@ import {
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "@semoss/i18n";
 import { EngineSelect } from "@semoss/shared";
 import {
@@ -48,20 +47,16 @@ import {
 	FocusPlugin,
 	isKnowledgeMcp,
 	MCPOverlay,
-	MentionPlugin,
 	PromptLibraryDialog,
 	type PromptLibraryItem,
 } from "@/components";
 import { FilePreviewGrid } from "@/components/common/file-preview-grid";
 import { AutoScrollOnPastePlugin } from "@/components/common/lexical/auto-scroll-on-paste-plugin";
 import {
-	$createSlashCommandNode,
 	$isSlashCommandNode,
-	filterSlashCommands,
-	RoomInputMenuSlash,
 	SlashCommandNode,
 	SlashCommandProvider,
-	useSlashCommands,
+	SlashMentionPlugin,
 } from "@/components/common/lexical/slash-command";
 import { useFileDrag } from "@/contexts";
 import { useGracefulErrors, useRoot } from "@/hooks";
@@ -185,101 +180,6 @@ interface RoomInputProps {
 	/** Callback to open the room settings/configuration panel */
 	onOpenSettings?: () => void;
 }
-
-// ============================================================================
-// SlashMentionPlugin
-// ============================================================================
-
-/**
- * Wires MentionPlugin to the slash command system. Must be rendered inside a
- * LexicalComposer wrapped by SlashCommandProvider so it can read the current
- * command list from context via useSlashCommands().
- */
-const SlashMentionPlugin: React.FC<{ disabled?: boolean }> = ({ disabled }) => {
-	const { root } = useRoot();
-	const { commands } = useSlashCommands();
-
-	if (disabled || (root.theme.featureFlags?.hideToolsInIframe && isIframed))
-		return null;
-
-	return (
-		<MentionPlugin
-			trigger="/"
-			onAccept={(query, selectedIndex, addNode) => {
-				const filtered = filterSlashCommands(commands, query);
-				const match = filtered[selectedIndex] ?? filtered[0];
-				if (!match) return;
-				if (!match.noChip) {
-					addNode(() =>
-						$createSlashCommandNode(match.id, match.label),
-					);
-				}
-				match.onExecute();
-			}}
-			onTabComplete={(query, selectedIndex) => {
-				const filtered = filterSlashCommands(commands, query);
-				const match = filtered[selectedIndex] ?? filtered[0];
-				return match?.id;
-			}}
-			MenuComponent={({
-				isOpen,
-				menuPosition,
-				addNode,
-				onRequestClose,
-				query,
-				selectedIndex,
-				setItemCount,
-				setSelectedIndex,
-			}) =>
-				isOpen && menuPosition
-					? createPortal(
-							<div
-								style={{
-									position: "fixed",
-									...(window.innerHeight -
-										menuPosition.bottom <
-									300
-										? {
-												bottom:
-													window.innerHeight -
-													menuPosition.top +
-													4,
-											}
-										: { top: menuPosition.bottom + 4 }),
-									left: menuPosition.left,
-									zIndex: 50,
-								}}
-								className="w-64 overflow-hidden rounded-md border border-border bg-popover shadow-md"
-							>
-								<RoomInputMenuSlash
-									query={query}
-									selectedIndex={selectedIndex}
-									setItemCount={setItemCount}
-									setSelectedIndex={setSelectedIndex}
-									onRequestClose={onRequestClose}
-									onCommandSelect={(cmd) => {
-										if (cmd.noChip) {
-											cmd.onExecute();
-											onRequestClose();
-										} else {
-											addNode(() =>
-												$createSlashCommandNode(
-													cmd.id,
-													cmd.label,
-												),
-											);
-											cmd.onExecute();
-										}
-									}}
-								/>
-							</div>,
-							document.body,
-						)
-					: null
-			}
-		/>
-	);
-};
 
 // ============================================================================
 // Main Component
