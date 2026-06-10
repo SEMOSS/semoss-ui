@@ -25,8 +25,6 @@ import type {
 	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
-	PixelMessageMediaPart,
-	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 	Prompt,
@@ -950,71 +948,8 @@ export class RoomStore {
 
 		this.setIsLoading(true);
 
-		// upload the files
-		let uploaded: {
-			fileName: string;
-			fileLocation: string;
-		}[] = [];
-
-		let mediaInputs: {
-			fileName: string;
-			fileLocation: string;
-		}[] = [];
-
-		// upload the files if there are any
-		if (files.length > 0) {
-			const response = await uploadInsight(
-				this._store.insightId,
-				"",
-				files,
-			);
-
-			// set the new files
-			uploaded = response.data;
-
-			const normalizeExt = (value: string) =>
-				value.trim().toLowerCase().replace(/^\./, "");
-
-			mediaInputs = uploaded.filter((f) => {
-				const allowed = this._theme.allowedFileTypes;
-
-				// If not configured (or empty), allow all
-				if (!allowed || allowed.length === 0) return true;
-
-				const allowedSet = new Set(allowed.map(normalizeExt));
-
-				const rawExt = f.fileName.split(".").pop() ?? "";
-				const ext = normalizeExt(rawExt);
-
-				// If there's no extension, it's not allowed (when allow-list is configured)
-				if (!ext) return false;
-
-				return allowedSet.has(ext);
-			});
-		}
-
-		const parts: (PixelMessageTextPart | PixelMessageMediaPart)[] = [
-			{
-				type: "TEXT",
-				text: prompt,
-				uiText: prompt,
-			},
-		];
-		for (const file of mediaInputs) {
-			parts.push({
-				type: "MEDIA",
-				mediaInfo: {
-					base64Data: "",
-					fileFormat: "",
-					fileName: file.fileName,
-					fileLocation: file.fileLocation,
-					mediaInputType: "FILE",
-					mimeType: "",
-				},
-			});
-		}
-
-		// create the input message
+		// Create the input message immediately so the user's bubble and the
+		// thinking placeholder are visible during the file upload wait
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
 			type: "INPUT_TEXT",
@@ -1024,7 +959,7 @@ export class RoomStore {
 			modelId: this.model?.engine_id,
 			modelType: this.model?.engine_type,
 			dateCreated: new Date().toISOString(),
-			parts: parts,
+			parts: [{ type: "TEXT", text: prompt, uiText: prompt }],
 			tokens: 0,
 			ornaments: {
 				modelName:
@@ -1033,15 +968,100 @@ export class RoomStore {
 			pruneToolsAbove: false,
 		});
 
-		// get the parent message
 		const parentMessage = this.tail;
 		if (parentMessage instanceof InputMessageStore) {
 			throw new Error("Cannot respond to input messages");
 		}
 
-		// run the message
+		const uploadPlaceholder = new ResponseMessageStore(this, {
+			io: "OUTPUT",
+			messageId: STREAMING_PLACEHOLDER_ID,
+			visible: true,
+			platform_generated: true,
+			modelId: this.model.engine_id,
+			dateCreated: new Date().toISOString(),
+			parts: [{ type: "THINKING", thinking: "" }],
+			tokens: 0,
+			ornaments: {
+				modelName:
+					this.model.engine_display_name ||
+					this.model.engine_name ||
+					"",
+			},
+		} as ResponsePixelMessage);
+
+		parentMessage.addChild(inputMessage);
+		inputMessage.addChild(uploadPlaceholder);
+		runInAction(() => {
+			uploadPlaceholder.isThinking = true;
+		});
+
+		// upload the files
+		let mediaInputs: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
 		try {
-			await parentMessage.runMessage(inputMessage);
+			// upload the files if there are any
+			if (files.length > 0) {
+				const response = await uploadInsight(
+					this._store.insightId,
+					"",
+					files,
+				);
+
+				const uploaded = response.data;
+
+				const normalizeExt = (value: string) =>
+					value.trim().toLowerCase().replace(/^\./, "");
+
+				mediaInputs = uploaded.filter((f) => {
+					const allowed = this._theme.allowedFileTypes;
+
+					// If not configured (or empty), allow all
+					if (!allowed || allowed.length === 0) return true;
+
+					const allowedSet = new Set(allowed.map(normalizeExt));
+
+					const rawExt = f.fileName.split(".").pop() ?? "";
+					const ext = normalizeExt(rawExt);
+
+					// If there's no extension, it's not allowed (when allow-list is configured)
+					if (!ext) return false;
+
+					return allowedSet.has(ext);
+				});
+
+				// Append media parts to the already-visible input message
+				runInAction(() => {
+					for (const file of mediaInputs) {
+						inputMessage.parts.push({
+							type: "MEDIA",
+							mediaInfo: {
+								base64Data: "",
+								fileFormat: "",
+								fileName: file.fileName,
+								fileLocation: file.fileLocation,
+								mediaInputType: "FILE",
+								mimeType: "",
+							},
+						});
+					}
+				});
+			}
+		} catch (e) {
+			// remove the placeholder messages if the upload fails
+			runInAction(() => {
+				uploadPlaceholder.isThinking = false;
+			});
+			parentMessage.removeChild(inputMessage);
+			throw e;
+		}
+
+		// run the message, reusing the upload placeholder as the streaming response
+		try {
+			await parentMessage.runMessage(inputMessage, uploadPlaceholder);
 		} catch (e) {
 			this.plan?.failStepExecution();
 
