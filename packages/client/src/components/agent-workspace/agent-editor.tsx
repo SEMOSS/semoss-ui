@@ -12,9 +12,6 @@ import {
 	Separator,
 	Spinner,
 	Textarea,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { useRootStore, useWorkspace } from "@/hooks";
@@ -105,24 +102,20 @@ export const AgentEditor = () => {
 	return (
 		<div className="relative flex h-full w-full flex-col overflow-hidden bg-background">
 			{/* Toolbar */}
-			<div className="flex w-full shrink-0 items-center justify-end gap-1 border-border border-b px-1.5 py-0.5">
-				<Tooltip>
-					<TooltipTrigger asChild>
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							disabled={isLoading || isFetching}
-							onClick={onSave}
-						>
-							{isLoading ? (
-								<Spinner className="size-3" />
-							) : (
-								<SaveIcon className="size-3" />
-							)}
-						</Button>
-					</TooltipTrigger>
-					<TooltipContent>Save</TooltipContent>
-				</Tooltip>
+			<div className="flex w-full shrink-0 items-center justify-end gap-2 border-border border-b px-3 pt-[4px] pb-[7px]">
+				<Button
+					variant="outline"
+					size="sm"
+					disabled={isLoading || isFetching}
+					onClick={onSave}
+				>
+					{isLoading ? (
+						<Spinner className="size-4" />
+					) : (
+						<SaveIcon className="size-4" />
+					)}
+					Save
+				</Button>
 			</div>
 
 			{/* Form */}
