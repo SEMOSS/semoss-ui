@@ -79,7 +79,7 @@ export class SlashCommandNode extends DecoratorNode<JSX.Element> {
 
 	decorate(): JSX.Element {
 		return (
-			<span className="mx-0.5 inline-flex select-none items-center rounded bg-primary/15 px-1.5 py-0.5 font-medium text-primary text-sm">
+			<span className="-my-0.5 mx-0.5 inline-flex select-none items-center rounded bg-primary/15 px-1.5 py-0.5 font-medium text-primary text-sm">
 				{this.__label}
 			</span>
 		);
