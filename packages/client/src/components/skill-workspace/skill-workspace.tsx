@@ -119,6 +119,7 @@ export const SkillWorkspace: React.FC = observer(() => {
 					node={node}
 					layout={layout}
 					app={workspace.appId}
+					initialPath="/skill"
 					onOpenStateChange={workspace.setFileBrowserOpen}
 					onVisibleAssetPathsChange={({ path, paths }) => {
 						workspace.setFileBrowserVisiblePaths(path, paths);
