@@ -247,15 +247,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			[],
 		);
 
-		const slashCommands = useMemo(() => {
-			const all = buildSlashCommands(
-				handleOpenMcpOverlay,
-				onCompact ?? (() => {}),
-			);
-			if (!excludeCommandIds?.length) return all;
-			return all.filter((cmd) => !excludeCommandIds.includes(cmd.id));
-		}, [handleOpenMcpOverlay, onCompact, excludeCommandIds]);
-
 		const knowledgeCount = useMemo(
 			() => options.mcp.filter(isKnowledgeMcp).length,
 			[options.mcp],
@@ -299,6 +290,21 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		// File handling
 		const { files, addFiles, removeFile, clearFiles, setShouldStayOpen } =
 			useFileDrag();
+
+		const slashCommands = useMemo(() => {
+			const all = buildSlashCommands(
+				handleOpenMcpOverlay,
+				onCompact ?? (() => {}),
+				() => setShouldStayOpen(true),
+			);
+			if (!excludeCommandIds?.length) return all;
+			return all.filter((cmd) => !excludeCommandIds.includes(cmd.id));
+		}, [
+			handleOpenMcpOverlay,
+			onCompact,
+			setShouldStayOpen,
+			excludeCommandIds,
+		]);
 
 		// Speech-to-text
 		const [canListen, setCanListen] = useState(false);

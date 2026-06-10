@@ -3,6 +3,7 @@ import {
 	BotIcon,
 	ChevronsDownUpIcon,
 	HammerIcon,
+	PaperclipIcon,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef } from "react";
@@ -67,6 +68,7 @@ export const filterSlashCommands = (
 export const buildSlashCommands = (
 	onOpenMcpOverlay: (tab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => void,
 	onCompact: () => void,
+	onAttachDocument: () => void,
 ): SlashCommand[] => [
 	{
 		id: "knowledge",
@@ -110,6 +112,20 @@ export const buildSlashCommands = (
 		icon: ChevronsDownUpIcon,
 		noChip: true,
 		onExecute: onCompact,
+	},
+	{
+		id: "document",
+		label: "/document",
+		description: "Attach a document to this message",
+		icon: PaperclipIcon,
+		onExecute: onAttachDocument,
+	},
+	{
+		id: "file",
+		label: "/file",
+		icon: PaperclipIcon,
+		onExecute: onAttachDocument,
+		hiddenInMenu: true,
 	},
 ];
 
