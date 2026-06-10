@@ -127,6 +127,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 			// Watches newContent.length so it also fires when the first token arrives
 			// after activation (handles the case where isActive became true while the
 			// tail content was still empty — e.g. right after an HTML fence closes).
+			// biome-ignore lint/correctness/useExhaustiveDependencies: fireOnComplete and typewriter.start are stable (useCallback with empty deps) — omitting them is safe and prevents spurious re-triggers
 			useEffect(() => {
 				if (!isActive) return;
 
@@ -139,7 +140,6 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 					// No new content to animate and already finalized — complete immediately
 					fireOnComplete();
 				}
-				// biome-ignore lint/correctness/useExhaustiveDependencies: fireOnComplete and typewriter.start are intentionally omitted — both are stable refs and including them would cause spurious re-triggers on every parent render
 			}, [isActive, newContent.length, isFinalized]);
 
 			// Skip animation for done chunks (e.g. when isLast prop changes)
@@ -152,6 +152,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 			// When streaming ends (isFinalized becomes true) and the typewriter is
 			// still running, skip it to the end immediately so the full content is
 			// shown at once rather than slowly trickling in after the LLM is done.
+			// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally fires only when isFinalized flips — adding isActive/newContent.length/typewriter.skipToEnd would cause skipToEnd to fire on every token, breaking the typewriter
 			useEffect(() => {
 				if (!isActive) return;
 				if (!isFinalized) return;
@@ -159,7 +160,6 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				// Skip to end — this sets renderedLength = newContent.length and
 				// stops isRunning, which will trigger the caught-up effect below.
 				typewriter.skipToEnd();
-				// biome-ignore lint/correctness/useExhaustiveDependencies: isActive, newContent.length, and typewriter.skipToEnd are intentionally omitted — this effect must only fire when isFinalized flips, not on every content update; isActive and newContent.length are stable guards that don't change the firing semantics
 			}, [isFinalized]);
 
 			// Fire onComplete when typewriter has caught up AND chunk is finalized.
