@@ -34,13 +34,13 @@ export interface ContentChunk {
  *
  * Rules:
  * - Standalone `<!DOCTYPE html` responses (no code fence) → single html chunk.
- * - ` ```html ` fences are scanned manually (no regex global state) to support
- *   multiple HTML blocks per response.
- * - An open fence mid-stream (no closing ` ``` ` yet) is treated as part of
- *   the preceding markdown chunk until it closes, preventing premature html
- *   chunk creation.
+ * - Performs a single forward scan, emitting chunks as boundaries are found.
+ * - As soon as a ` ```html ` opening fence is detected, a new HTML chunk starts
+ *   immediately — partial HTML streams into an HTML chunk, not an MD chunk.
+ * - If no closing ` ``` ` exists yet, the HTML chunk grows with isFinalized: false.
+ * - After a closing fence, scanning resumes — the next segment may be MD, HTML,
+ *   or nothing. Two adjacent HTML blocks produce no MD chunk between them.
  * - Chunk `key` = start offset in original string — stable across re-parses.
- * - `isFinalized`: true for every chunk except the last one while streaming.
  */
 export function parseChunks(
 	text: string,
@@ -61,128 +61,79 @@ export function parseChunks(
 		];
 	}
 
-	// ── Fence scanner ─────────────────────────────────────────────────────────
-	// Find all closed ```html … ``` fences using a manual scan.
-	// An open fence (isStreaming && no closing ```) is intentionally ignored so
-	// the preceding md chunk absorbs the partial fence text.
+	if (!text) return [];
 
-	interface FenceSpan {
-		/** Index of the opening backtick of ` ```html ` */
-		openStart: number;
-		/** Index just after the opening fence line's newline */
-		contentStart: number;
-		/** Index of the closing ` ``` ` */
-		closeStart: number;
-		/** Index just after the closing ` ``` ` */
-		closeEnd: number;
-		/** Inner HTML text */
-		content: string;
-	}
-
-	const fences: FenceSpan[] = [];
-	let scanPos = 0;
-
-	while (scanPos < text.length) {
-		// Look for ```html (case-insensitive)
-		const openIdx = findHtmlFenceOpen(text, scanPos);
-		if (openIdx === -1) break;
-
-		// The opening fence ends at the next newline
-		const newlineIdx = text.indexOf("\n", openIdx);
-		if (newlineIdx === -1) {
-			// Opening fence has no newline yet — still streaming, stop here
-			break;
-		}
-		const contentStart = newlineIdx + 1;
-
-		// Look for closing ```
-		const closeIdx = text.indexOf("```", contentStart);
-		if (closeIdx === -1) {
-			// No closing fence yet — if streaming, leave the rest as md
-			break;
-		}
-
-		const closeEnd = closeIdx + 3;
-		const htmlContent = text.slice(contentStart, closeIdx);
-
-		fences.push({
-			openStart: openIdx,
-			contentStart,
-			closeStart: closeIdx,
-			closeEnd,
-			content: htmlContent,
-		});
-
-		// Advance past this fence
-		scanPos = closeEnd;
-	}
-
-	// ── Chunk assembly ────────────────────────────────────────────────────────
-	if (fences.length === 0) {
-		// Pure markdown (or still-streaming html that hasn't closed yet)
-		if (!text) return [];
-		return [
-			{
-				key: 0,
-				type: "md",
-				content: text,
-				isFinalized: !isStreaming,
-			},
-		];
-	}
-
+	// ── Single forward scan ───────────────────────────────────────────────────
 	const chunks: ContentChunk[] = [];
 	let cursor = 0;
 
-	for (let i = 0; i < fences.length; i++) {
-		const fence = fences[i];
+	while (cursor < text.length) {
+		// Find the next ```html opening fence from the current cursor position
+		const openIdx = findHtmlFenceOpen(text, cursor);
 
-		// Markdown chunk before this fence
-		const preText = text.slice(cursor, fence.openStart);
-		if (preText.length > 0) {
+		if (openIdx === -1) {
+			// No more HTML fences — everything remaining is markdown
+			const tail = text.slice(cursor);
+			if (tail.length > 0) {
+				chunks.push({
+					key: cursor,
+					type: "md",
+					content: tail,
+					isFinalized: !isStreaming,
+				});
+			}
+			break;
+		}
+
+		// Emit any markdown that precedes this opening fence
+		if (openIdx > cursor) {
 			chunks.push({
 				key: cursor,
 				type: "md",
-				content: preText,
-				// Finalized: more chunks follow
+				content: text.slice(cursor, openIdx),
+				// More content follows — this MD chunk is done
 				isFinalized: true,
 			});
 		}
 
-		// HTML chunk
+		// Find the end of the opening fence line (required to locate content start)
+		const newlineIdx = text.indexOf("\n", openIdx);
+		if (newlineIdx === -1) {
+			// Opening fence line hasn't finished streaming yet — nothing more to parse
+			break;
+		}
+		const contentStart = newlineIdx + 1;
+
+		// Look for the closing fence
+		const closeIdx = text.indexOf("```", contentStart);
+
+		if (closeIdx === -1) {
+			// No closing fence yet — emit a live HTML chunk that will keep growing
+			chunks.push({
+				key: openIdx,
+				type: "html",
+				content: text.slice(contentStart),
+				isFinalized: false,
+			});
+			// Can't know what follows until the fence closes — stop here
+			break;
+		}
+
+		// Closing fence found — emit a finalized HTML chunk
+		const closeEnd = closeIdx + 3;
 		chunks.push({
-			key: fence.openStart,
+			key: openIdx,
 			type: "html",
-			content: fence.content,
-			// Finalized: more chunks follow, or streaming has ended
+			content: text.slice(contentStart, closeIdx),
 			isFinalized: true,
 		});
 
-		cursor = fence.closeEnd;
+		// Advance past the closing fence and continue scanning
+		// The next segment could be MD, another ```html, or nothing
+		cursor = closeEnd;
 	}
 
-	// Remaining text after the last fence
-	const tail = text.slice(cursor);
-	if (tail.length > 0) {
-		chunks.push({
-			key: cursor,
-			type: "md",
-			content: tail,
-			// Last chunk — finalized only when not streaming
-			isFinalized: !isStreaming,
-		});
-	}
-
-	// If all chunks were finalized above (no tail), the last chunk in the array
-	// is the last html chunk, which was already marked isFinalized: true because
-	// it has a closed fence. That's correct — streaming may still be delivering
-	// content after the fence, but that will produce new md tail chunks.
-
-	// Handle the edge case where there is NO tail but streaming is still active:
-	// the last html fence just closed, streaming hasn't ended yet. The last html
-	// chunk should be finalized (its fence is closed). isFinalized: true is
-	// already set above, so nothing to fix.
-
+	console.log("[parseChunks]", chunks);
 	return chunks;
 }
 
