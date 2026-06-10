@@ -44,16 +44,6 @@ const CATALOG_ROUTES = [
 		route: "/app",
 	},
 	{
-		text: "Agents",
-		icon: <Computer className="size-4" />,
-		route: "/agent",
-	},
-	{
-		text: "Skills",
-		icon: <Puzzle className="size-4" />,
-		route: "/skill",
-	},
-	{
 		text: "Model",
 		icon: <Bot className="size-4" />,
 		route: "/engine/model",
@@ -77,6 +67,16 @@ const CATALOG_ROUTES = [
 		text: "Storage",
 		icon: <Archive className="size-4" />,
 		route: "/engine/storage",
+	},
+	{
+		text: "Agents",
+		icon: <Computer className="size-4" />,
+		route: "/agent",
+	},
+	{
+		text: "Skills",
+		icon: <Puzzle className="size-4" />,
+		route: "/skill",
 	},
 	{
 		text: "Guardrail",

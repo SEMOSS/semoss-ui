@@ -130,7 +130,12 @@ export const SkillWorkspace: React.FC = observer(() => {
 		} else if (component === "mcpJsonEditor") {
 			return <MCPJsonEditor dataMap={config.data} />;
 		} else if (component === "settingsPanel") {
-			return <AppDetailPage showNav={false} />;
+			return (
+				<AppDetailPage
+					showNav={false}
+					excludeTabs={["dependencies", "mcp-usage"]}
+				/>
+			);
 		} else if (component === "terminal") {
 			return <TerminalPanel />;
 		}
