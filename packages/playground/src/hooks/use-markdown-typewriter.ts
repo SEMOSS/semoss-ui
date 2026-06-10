@@ -139,6 +139,31 @@ export function useMarkdownTypewriter(
 		return content.slice(0, renderedLength);
 	}, [content, renderedLength]);
 
+	// Tab-away handling:
+	// - hidden: snapshot renderedLength at departure (locks in what was shown)
+	// - visible: snap renderedLength forward to absorb everything that streamed
+	//   in while away, then reset timing so only net-new tokens get animated.
+	useEffect(() => {
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "hidden") {
+				setRenderedLength(contentRef.current.length);
+				pendingCharsRef.current = 0;
+			} else if (document.visibilityState === "visible") {
+				// Absorb any content that arrived while the tab was hidden
+				setRenderedLength(contentRef.current.length);
+				lastUpdateRef.current = performance.now();
+				pendingCharsRef.current = 0;
+			}
+		};
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		return () => {
+			document.removeEventListener(
+				"visibilitychange",
+				handleVisibilityChange,
+			);
+		};
+	}, []);
+
 	// requestAnimationFrame-based typewriter for smooth 60fps animation
 	useEffect(() => {
 		if (!isRunning) {
@@ -204,9 +229,9 @@ export function useMarkdownTypewriter(
 	}, []);
 
 	const skipToEnd = useCallback(() => {
-		setRenderedLength(content.length);
+		setRenderedLength(contentRef.current.length);
 		setIsRunning(false);
-	}, [content]);
+	}, []);
 
 	const reset = useCallback(() => {
 		setRenderedLength(0);
@@ -215,7 +240,7 @@ export function useMarkdownTypewriter(
 
 	return {
 		rendered,
-		isTyping: isRunning && renderedLength < content.length,
+		isTyping: isRunning && renderedLength < contentRef.current.length,
 		start,
 		stop,
 		skipToEnd,

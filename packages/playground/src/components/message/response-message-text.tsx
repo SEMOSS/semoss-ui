@@ -1,287 +1,105 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef } from "react";
-import { useTranslation } from "@semoss/i18n";
-import { Markdown } from "@semoss/ui/next";
-import { useRoot } from "@/hooks";
-import { useMarkdownTypewriter } from "@/hooks/use-markdown-typewriter";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
-import { FENCED_HTML_RE } from "./response-message-text/constants";
-import { createMarkdownComponents } from "./response-message-text/create-markdown-components";
-import { HtmlPreviewBlock } from "./response-message-text/html-preview-block";
+import { parseChunks } from "./response-message-text/parse-chunks";
+import { ResponseMessageTextHtml } from "./response-message-text/response-message-text-html";
+import { ResponseMessageTextMd } from "./response-message-text/response-message-text-md";
 
 interface ResponseMessageTextProps {
 	/** Message to render */
 	message: ResponseMessageStore;
 
-	/** Thinking to render */
+	/** Text part to render */
 	part: PixelMessageTextPart;
 
-	/** Is it the last part */
+	/** Is it the last part of the message */
 	isLast: boolean;
 }
 
+/**
+ * Orchestrates sequential chunk animation for a single text part.
+ *
+ * Parses `part.text` into ordered segments of `md` and `html` chunks on every
+ * render. Chunks animate one at a time — each subcomponent calls `onComplete`
+ * when it finishes, advancing `activeIndex` to the next chunk.
+ *
+ * Chunk keys are stable (start offset in text), so React reuses subcomponents
+ * across re-parses rather than remounting them as content grows.
+ */
 export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 	({ message, part, isLast }) => {
-		const { t } = useTranslation("chat");
-		const { root } = useRoot();
+		const isStreaming = message.isThinking && isLast;
 
-		// ── Content tracking for remount ─────────────────────────────────────────
-		// Track content that existed when component mounted so we can skip animating it
-		const contentOnMountRef = useRef(part.text);
+		// Parse text into chunks on every render (pure, cheap function).
+		const chunks = parseChunks(part.text, isStreaming);
 
-		// ── Standalone-HTML detection ────────────────────────────────────────────
-		// Sticky: once the response opens with <!DOCTYPE (no code fence), stay in
-		// standalone-HTML mode for the lifetime of this message.
-		const isHtmlResponseRef = useRef(false);
-		if (!isHtmlResponseRef.current) {
-			const trimmed = part.text.trimStart();
-			if (!trimmed.includes("```") && /^<!DOCTYPE\s/i.test(trimmed)) {
-				isHtmlResponseRef.current = true;
+		// Index of the chunk currently allowed to animate.
+		const [activeIndex, setActiveIndex] = useState(0);
+
+		// Keep a ref to chunks.length so handleChunkComplete always sees the latest
+		// count even if it was created before new chunks arrived.
+		const chunksLengthRef = useRef(chunks.length);
+		chunksLengthRef.current = chunks.length;
+
+		// Tracks whether onComplete fired before the next chunk existed.
+		// When chunks grow (a new chunk is appended), this ref lets us advance.
+		const pendingAdvanceRef = useRef(false);
+
+		// When a new chunk is appended and there's a pending advance, advance now.
+		useEffect(() => {
+			if (pendingAdvanceRef.current && activeIndex < chunks.length - 1) {
+				pendingAdvanceRef.current = false;
+				setActiveIndex((i) => i + 1);
 			}
-		}
-		const isHtmlResponse = isHtmlResponseRef.current;
+		}, [chunks.length, activeIndex]);
 
-		// ── Typewriters ──────────────────────────────────────────────────────────
-		// Animate only new content that arrives after mount
-		const newContent = part.text.slice(contentOnMountRef.current.length);
-		const typewriter = useMarkdownTypewriter(newContent);
-
-		// Combine base content with animated new content.
-		// Guard includes `rendered.length < newContent.length` to cover the one-render
-		// gap where isTyping is still false but the effect has been queued — this
-		// prevents fenceMatch from seeing the full text before the prose above has
-		// been animated through, which would cause HtmlPreviewBlock to flash in early.
-		const fullRenderedText =
-			message.isThinking &&
-			isLast &&
-			newContent.length > 0 &&
-			(typewriter.isTyping ||
-				typewriter.rendered.length < newContent.length)
-				? contentOnMountRef.current + typewriter.rendered
-				: part.text;
-
-		// ── Code-fenced HTML detection ───────────────────────────────────────────
-		// Run the regex against fullRenderedText so HtmlPreviewBlock only mounts
-		// once the typewriter has actually rendered past the fence — prevents the
-		// HTML block from flashing in before the prose above it finishes animating.
-		const fenceMatch = useMemo(() => {
-			if (isHtmlResponse) return null;
-			const m = FENCED_HTML_RE.exec(fullRenderedText);
-			if (!m) return null;
-			return {
-				fullMatch: m[0],
-				htmlContent: m[1],
-				index: m.index,
-			};
-		}, [isHtmlResponse, fullRenderedText]);
-
-		const fencedHtmlData = useMemo(() => {
-			if (!fenceMatch) return null;
-			const isClosed = fenceMatch.fullMatch.endsWith("```");
-			const postStart = isClosed
-				? fenceMatch.index + fenceMatch.fullMatch.length
-				: -1;
-			return {
-				// fenceMatch is already derived from fullRenderedText, so slicing
-				// directly from it keeps prose in sync with the typewriter position.
-				preFenceProse: fullRenderedText.slice(0, fenceMatch.index),
-				fencedHtmlContent: fenceMatch.htmlContent,
-				fencedHtmlClosed: isClosed,
-				postFenceProse:
-					postStart !== -1
-						? fullRenderedText.slice(postStart).trimStart()
-						: "",
-			};
-		}, [fenceMatch, fullRenderedText]);
-		const hasFencedHtml = !!fencedHtmlData;
-
-		// ── Standalone-HTML split ────────────────────────────────────────────────
-		const htmlEndMatch = isHtmlResponse
-			? /(<\/html\s*>)/i.exec(fullRenderedText)
-			: null;
-		const htmlPart = isHtmlResponse
-			? htmlEndMatch
-				? fullRenderedText.slice(
-						0,
-						htmlEndMatch.index + htmlEndMatch[0].length,
-					)
-				: fullRenderedText
-			: "";
-		const standaloneHtml = isHtmlResponse ? htmlPart.trim() : null;
-
-		// ── Post-block prose ─────────────────────────────────────────────────────
-		// Unified: after </html> for standalone, after closing ``` for fenced.
-		const postHtmlProse =
-			isHtmlResponse && htmlEndMatch
-				? fullRenderedText
-						.slice(htmlEndMatch.index + htmlEndMatch[0].length)
-						.trimStart()
-				: "";
-		const postBlockProse = isHtmlResponse
-			? postHtmlProse
-			: (fencedHtmlData?.postFenceProse ?? "");
-
-		// Track post-prose content on mount for the same reason as main content
-		const postProseOnMountRef = useRef(postBlockProse);
-		const newPostProse = postBlockProse.slice(
-			postProseOnMountRef.current.length,
-		);
-		const postTypewriter = useMarkdownTypewriter(newPostProse);
-		const fullRenderedPostProse =
-			message.isThinking && isLast && postTypewriter.isTyping
-				? postProseOnMountRef.current + postTypewriter.rendered
-				: postBlockProse;
-
-		// ── isPreviewLoading for code-fenced HTML ────────────────────────────────
-		const inlineScriptInFenced =
-			hasFencedHtml &&
-			/<script(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script\s*>/i.test(
-				fencedHtmlData?.fencedHtmlContent ?? "",
-			);
-		const fencedIsPreviewLoading =
-			isLast &&
-			message.isThinking &&
-			!(fencedHtmlData?.fencedHtmlClosed ?? false) &&
-			!inlineScriptInFenced;
-
-		// ── isPreviewLoading for standalone HTML ─────────────────────────────────
-		const inlineScriptComplete =
-			isHtmlResponse &&
-			/<script(?![^>]*\bsrc\s*=)[^>]*>[\s\S]*?<\/script\s*>/i.test(
-				fullRenderedText,
-			);
-		const standaloneIsPreviewLoading =
-			isLast &&
-			message.isThinking &&
-			!htmlEndMatch &&
-			!inlineScriptComplete;
-
-		// isPreviewLoading passed to Markdown components (for non-HTML code blocks).
-		const isPreviewLoading =
-			isLast && (message.isThinking || typewriter.isTyping);
-
-		const components = useMemo(
-			() => createMarkdownComponents(message.room, isPreviewLoading),
-			[message.room, isPreviewLoading],
-		);
-
-		// ── Effects ──────────────────────────────────────────────────────────────
-		// Start main typewriter when streaming and there's new content
-		useEffect(() => {
-			if (message.isThinking && isLast && newContent.length > 0) {
-				typewriter.start();
+		// Called by each subcomponent when its animation is complete.
+		const handleChunkComplete = useCallback((completedIndex: number) => {
+			if (completedIndex + 1 < chunksLengthRef.current) {
+				setActiveIndex(completedIndex + 1);
+			} else {
+				// The next chunk hasn't appeared yet — set flag so it advances
+				// as soon as a new chunk is appended.
+				pendingAdvanceRef.current = true;
 			}
-		}, [message.isThinking, typewriter.start, isLast, newContent.length]);
-
-		// No text to animate for standalone-HTML responses.
-		useEffect(() => {
-			if (isHtmlResponse) typewriter.skipToEnd();
-		}, [isHtmlResponse, typewriter.skipToEnd]);
-
-		useEffect(() => {
-			if (!isLast) typewriter.skipToEnd();
-		}, [isLast, typewriter.skipToEnd]);
-
-		// Start post-block prose animation when there's new post-prose content
-		useEffect(() => {
-			if (
-				isLast &&
-				message.isThinking &&
-				(isHtmlResponse || hasFencedHtml) &&
-				newPostProse.length > 0
-			) {
-				postTypewriter.start();
-			}
-		}, [
-			isLast,
-			message.isThinking,
-			isHtmlResponse,
-			hasFencedHtml,
-			newPostProse.length,
-			postTypewriter.start,
-		]);
-
-		useEffect(() => {
-			if (!isLast) postTypewriter.skipToEnd();
-		}, [isLast, postTypewriter.skipToEnd]);
-
-		const urlTransform = (url: string) => {
-			if (url.startsWith("room://")) return url;
-			if (
-				root.theme.allowedUrlPrefixes?.some((prefix) =>
-					url.startsWith(prefix),
-				)
-			)
-				return url;
-			if (/^(https?:|mailto:|#)/.test(url)) return url;
-			return "";
-		};
+		}, []);
 
 		return (
 			<>
-				{standaloneHtml ? (
-					<>
-						<HtmlPreviewBlock
-							html={standaloneHtml}
-							room={message.room}
-							isLoading={standaloneIsPreviewLoading}
-							copyTooltip="Copy"
-							copySuccessMessage={t("notifications.copySuccess")}
-							copyLabel="Copy"
+				{chunks.map((chunk, idx) => {
+					const isActive = idx === activeIndex;
+					const isDone = idx < activeIndex;
+
+					if (chunk.type === "html") {
+						return (
+							<ResponseMessageTextHtml
+								key={chunk.key}
+								html={chunk.content}
+								isFinalized={chunk.isFinalized}
+								isActive={isActive}
+								isDone={isDone}
+								room={message.room}
+								message={message}
+								onComplete={() => handleChunkComplete(idx)}
+							/>
+						);
+					}
+
+					return (
+						<ResponseMessageTextMd
+							key={chunk.key}
+							content={chunk.content}
+							isFinalized={chunk.isFinalized}
+							isActive={isActive}
+							isDone={isDone}
+							message={message}
+							isLast={isLast && idx === chunks.length - 1}
+							onComplete={() => handleChunkComplete(idx)}
 						/>
-						{postBlockProse && (
-							<Markdown
-								dir="auto"
-								components={components}
-								className="[&>*:first-child]:mt-0"
-								urlTransform={urlTransform}
-							>
-								{fullRenderedPostProse}
-							</Markdown>
-						)}
-					</>
-				) : hasFencedHtml ? (
-					<>
-						{fencedHtmlData?.preFenceProse && (
-							<Markdown
-								dir="auto"
-								components={components}
-								className="[&>*:first-child]:mt-0"
-								urlTransform={urlTransform}
-							>
-								{fencedHtmlData?.preFenceProse}
-							</Markdown>
-						)}
-						<HtmlPreviewBlock
-							html={fencedHtmlData?.fencedHtmlContent ?? ""}
-							room={message.room}
-							isLoading={fencedIsPreviewLoading}
-							copyTooltip="Copy"
-							copySuccessMessage={t("notifications.copySuccess")}
-							copyLabel="Copy"
-						/>
-						{postBlockProse && (
-							<Markdown
-								dir="auto"
-								components={components}
-								className="[&>*:first-child]:mt-0"
-								urlTransform={urlTransform}
-							>
-								{fullRenderedPostProse}
-							</Markdown>
-						)}
-					</>
-				) : (
-					<Markdown
-						dir="auto"
-						components={components}
-						className="[&>*:first-child]:mt-0"
-						urlTransform={urlTransform}
-					>
-						{fullRenderedText}
-					</Markdown>
-				)}
+					);
+				})}
 			</>
 		);
 	},
