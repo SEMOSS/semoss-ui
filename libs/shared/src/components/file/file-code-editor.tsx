@@ -422,7 +422,7 @@ export const FileCodeEditor = forwardRef<
 			<div className="relative flex h-full w-full flex-col items-center bg-background [&_.quick-input-widget]:mx-0!">
 				{/* Toolbar */}
 				{!hideToolbar && (
-					<div className="flex w-full shrink-0 items-center justify-between gap-2 border-border border-b px-3 pt-[4px] pb-[7px]">
+					<div className="flex w-full shrink-0 items-center justify-between gap-2 border-border border-b px-3 pt-1.5 pb-2.25">
 						<div className="flex items-center gap-1">
 							{leadingToolbar}
 							{language === "json" && jsonErrors.length > 0 && (
