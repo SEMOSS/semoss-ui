@@ -114,7 +114,7 @@ export const GlobalNav = observer(() => {
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
-	const systemDate = dayjs(system.config.systemDate);
+	const systemDate = dayjs(`${system.config.systemDate}Z`);
 
 	const navigate = useNavigate();
 
