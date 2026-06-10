@@ -4,6 +4,7 @@ import {
 	ChevronsDownUpIcon,
 	HammerIcon,
 	PaperclipIcon,
+	Settings2Icon,
 } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef } from "react";
@@ -69,6 +70,7 @@ export const buildSlashCommands = (
 	onOpenMcpOverlay: (tab: "AGENT" | "TOOLBOX" | "KNOWLEDGE") => void,
 	onCompact: () => void,
 	onAttachDocument: () => void,
+	onOpenSettings: () => void,
 ): SlashCommand[] => [
 	{
 		id: "knowledge",
@@ -125,6 +127,20 @@ export const buildSlashCommands = (
 		label: "/file",
 		icon: PaperclipIcon,
 		onExecute: onAttachDocument,
+		hiddenInMenu: true,
+	},
+	{
+		id: "settings",
+		label: "/settings",
+		description: "Open room configuration",
+		icon: Settings2Icon,
+		onExecute: onOpenSettings,
+	},
+	{
+		id: "room-options",
+		label: "/room-options",
+		icon: Settings2Icon,
+		onExecute: onOpenSettings,
 		hiddenInMenu: true,
 	},
 ];

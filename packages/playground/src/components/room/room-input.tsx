@@ -180,6 +180,9 @@ interface RoomInputProps {
 
 	/** Command IDs to suppress from the slash menu */
 	excludeCommandIds?: string[];
+
+	/** Callback to open the room settings/configuration panel */
+	onOpenSettings?: () => void;
 }
 
 // ============================================================================
@@ -220,6 +223,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		room,
 		onCompact,
 		excludeCommandIds,
+		onOpenSettings,
 	}) => {
 		// ========================================================================
 		// Hooks & State
@@ -296,6 +300,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 				handleOpenMcpOverlay,
 				onCompact ?? (() => {}),
 				() => setShouldStayOpen(true),
+				onOpenSettings ?? (() => {}),
 			);
 			if (!excludeCommandIds?.length) return all;
 			return all.filter((cmd) => !excludeCommandIds.includes(cmd.id));
@@ -303,6 +308,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			handleOpenMcpOverlay,
 			onCompact,
 			setShouldStayOpen,
+			onOpenSettings,
 			excludeCommandIds,
 		]);
 

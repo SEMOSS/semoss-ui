@@ -73,6 +73,19 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 	};
 
 	/**
+	 * Open the room configuration sidebar tab
+	 */
+	const handleOpenSettings = useCallback(() => {
+		room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+			type: "tab",
+			name: "Configuration",
+			component: "room-configuration",
+			config: {},
+			enableClose: true,
+		});
+	}, [room]);
+
+	/**
 	 * Compact messages in the room
 	 */
 	const handleCompactMessages = async () => {
@@ -473,18 +486,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 								<DropdownMenuItem
 									onSelect={(e) => {
 										e.preventDefault();
-
-										// add to the sidebar
-										room.addSidebarNode(
-											ROOM_CONFIGURATION_ID,
-											{
-												type: "tab",
-												name: "Configuration",
-												component: "room-configuration",
-												config: {},
-												enableClose: true,
-											},
-										);
+										handleOpenSettings();
 										onOpenChange(false);
 									}}
 								>
@@ -507,6 +509,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
 					onCompact={handleCompactMessages}
+					onOpenSettings={handleOpenSettings}
 					excludeCommandIds={["agent", "workspace"]}
 				/>
 			</div>

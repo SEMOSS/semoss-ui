@@ -492,6 +492,9 @@ export const NewRoomPage = observer(() => {
 									}}
 									hidePauseButton
 									excludeCommandIds={["compact"]}
+									onOpenSettings={() =>
+										setIsConfgurationOpen(true)
+									}
 									MenuComponent={observer(
 										({
 											onOpenChange,
