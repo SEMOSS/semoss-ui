@@ -32,7 +32,7 @@ const SlashCommandChip = ({
 		// biome-ignore lint/a11y/useKeyWithClickEvents: keyboard nav is handled at the editor level
 		<span
 			className={[
-				"-my-0.5 mx-0.5 inline-flex select-none items-center rounded bg-primary/15 px-1.5 py-0.5 font-medium text-primary text-sm transition-colors",
+				"-mb-0.5 mx-0.5 inline-flex select-none items-center rounded bg-primary/15 px-1.5 py-0.5 font-medium text-primary text-sm transition-colors",
 				clickable ? "cursor-pointer hover:bg-primary/25" : "",
 			]
 				.join(" ")
