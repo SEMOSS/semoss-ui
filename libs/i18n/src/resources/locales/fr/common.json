@@ -65,5 +65,162 @@
 	},
 	"images": {
 		"logoAlt": "logo"
+	},
+	"fileDrag": {
+		"title": "Déposez des fichiers ici pour les joindre au message",
+		"modalTitle": "Ajouter des documents",
+		"browse": "Parcourir",
+		"done": "Terminé"
+	},
+	"fileExplorer": {
+		"search": "Rechercher",
+		"name": "Nom",
+		"dateModified": "Date de modification",
+		"pathLabel": "Chemin : {{path}}",
+		"lastModifiedLabel": "Dernière modification : {{date}}",
+		"bulkShortcutsAria": "Raccourcis de sélection multiple",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+clic sélectionne plusieurs éléments. Ctrl/Cmd+A sélectionne tous les éléments visibles.",
+		"toggleMenu": "Basculer le menu",
+		"resizeDateColumn": "Redimensionner la colonne de date",
+		"failedToLoadFiles": "Échec du chargement des fichiers",
+		"pdfNotSupported": "Votre navigateur ne prend pas en charge l'affichage des PDF.",
+		"binaryView": {
+			"backToDownload": "Retour au téléchargement",
+			"downloading": "Téléchargement…",
+			"download": "Télécharger",
+			"viewRawContent": "Voir le contenu brut"
+		},
+		"toasts": {
+			"uploadSuccess_one": "Fichier téléversé avec succès",
+			"uploadSuccess_other": "Fichiers téléversés avec succès",
+			"uploadFailed": "Échec du téléversement du fichier",
+			"moveSuccess_one": "Élément déplacé avec succès",
+			"moveSuccess_other": "Éléments déplacés avec succès",
+			"moveFailed": "Échec du déplacement de l'élément",
+			"copySuccess_one": "Élément copié avec succès",
+			"copySuccess_other": "Éléments copiés avec succès",
+			"copyFailed": "Échec de la copie de l'élément",
+			"copyFailedItems": "Échec de la copie : {{items}}",
+			"deleteSuccess_one": "Élément supprimé avec succès",
+			"deleteSuccess_other": "Éléments supprimés avec succès",
+			"deleteFailed": "Échec de la suppression de l'élément",
+			"deleteFailedItems": "Échec de la suppression : {{items}}",
+			"copyPathSuccess": "Chemin copié",
+			"copyPathFailed": "Échec de la copie du chemin",
+			"downloadSuccess_one": "Élément téléchargé avec succès",
+			"downloadSuccess_other": "Éléments téléchargés avec succès",
+			"downloadFailed": "Échec du téléchargement de l'élément",
+			"downloadFailedItems": "Échec du téléchargement : {{items}}",
+			"renameSuccess": "Renommé avec succès",
+			"renameFailed": "Échec du renommage",
+			"unzipFailed": "Échec de la décompression du fichier",
+			"saveSuccess": "Fichier enregistré avec succès",
+			"saveFailed": "Erreur lors de l'enregistrement du fichier",
+			"downloadFileSuccess": "Fichier téléchargé avec succès",
+			"downloadFileFailed": "Erreur lors du téléchargement du fichier"
+		},
+		"dateFormat": {
+			"justNow": "À l'instant",
+			"minutesAgoShort": "il y a {{count}} min",
+			"minutesAgo": "il y a {{count}} min",
+			"hoursAgoShort": "il y a {{count}} h",
+			"hoursAgo": "il y a {{count}} h",
+			"yesterday": "Hier",
+			"yesterdayAt": "Hier à {{time}}",
+			"dayAt": "{{day}} à {{time}}",
+			"dateAt": "{{date}} à {{time}}",
+			"dateAndTime": "{{date}}, {{time}}"
+		},
+		"refreshTooltip": "Actualiser {{path}}",
+		"createTooltip": "Créer dans {{path}}",
+		"searchAll": "Tout",
+		"searchOnly": "Uniquement \"{{name}}\"",
+		"searchAllAria": "Rechercher partout",
+		"searchCurrentAria": "Rechercher uniquement dans le répertoire actuel",
+		"searchCurrentTitle": "Rechercher uniquement dans {{path}}",
+		"moveDropHint": "Déposer pour déplacer {{label}} dans {{path}}",
+		"contextMenu": {
+			"copyPath": "Copier le chemin",
+			"copy": "Copier",
+			"cut": "Couper",
+			"pasteHere": "Coller ici",
+			"rename": "Renommer",
+			"download": "Télécharger",
+			"delete": "Supprimer",
+			"newFile": "Nouveau fichier",
+			"newFolder": "Nouveau dossier",
+			"ariaLabel": "Actions sur le fichier"
+		},
+		"overlay": {
+			"title": "Créer un fichier ou un répertoire",
+			"description": "Téléverser ou créer un nouveau fichier ou répertoire au chemin : {{path}}",
+			"fields": {
+				"action": "Action",
+				"fileName": "Nom du fichier",
+				"directoryName": "Nom du répertoire",
+				"uploadFileZip": "Téléverser un fichier/ZIP"
+			},
+			"placeholders": {
+				"selectAction": "Sélectionner une action",
+				"fileName": "Saisir le nom du fichier",
+				"directoryName": "Saisir le nom du répertoire"
+			},
+			"actions": {
+				"upload": "Téléverser des fichiers",
+				"newFile": "Nouveau fichier",
+				"newDirectory": "Nouveau répertoire"
+			},
+			"dropzone": {
+				"dragAndDrop": "Glissez-déposez les fichiers ici",
+				"orClickToBrowse": "ou cliquez pour parcourir",
+				"uploadIconAlt": "Icône de téléversement"
+			},
+			"files": {
+				"selectedCount_one": "{{count}} fichier sélectionné :",
+				"selectedCount_other": "{{count}} fichiers sélectionnés :",
+				"unzip": "Décompresser",
+				"unzipTitle": "Extraire ce ZIP après le téléversement"
+			},
+			"buttons": {
+				"cancel": "Annuler",
+				"upload": "Téléverser",
+				"create": "Créer"
+			},
+			"toasts": {
+				"selectAtLeastOne": "Veuillez sélectionner au moins un fichier à téléverser",
+				"enterFileName": "Veuillez saisir un nom pour le fichier",
+				"enterDirectoryName": "Veuillez saisir un nom pour le répertoire",
+				"uploadSuccess": "Fichier(s) téléversé(s) avec succès",
+				"uploadWithExtractSuccess": "{{count}} fichier(s) téléversé(s) avec succès, {{extractedCount}} ZIP(s) extrait(s)",
+				"extractionsFailed": "{{count}} extraction(s) ont échoué : {{errors}}",
+				"fileCreated": "Fichier créé avec succès",
+				"directoryCreated": "Répertoire créé avec succès",
+				"anError": "Une erreur s'est produite"
+			}
+		}
+	},
+	"cellOutput": {
+		"panels": {
+			"logs": "Journaux",
+			"result": "Résultat",
+			"error": "Erreur"
+		},
+		"running": "En cours…",
+		"format": {
+			"formatted": "FORMATÉ",
+			"raw": "BRUT"
+		},
+		"copy": {
+			"command": "Copier la commande",
+			"logs": "Copier les journaux",
+			"output": "Copier la sortie",
+			"copied": "Copié !"
+		},
+		"popout": "Fenêtre détachée",
+		"expandAll": "Tout développer",
+		"collapseAll": "Tout réduire",
+		"close": "Fermer",
+		"lines_one": "{{count}} ligne",
+		"lines_other": "{{count}} lignes"
 	}
 }

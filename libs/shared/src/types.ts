@@ -41,6 +41,12 @@ export interface ThemeMap {
 		/** Description of the app */
 		description: string;
 
+		/**
+		 * Optional disclaimer shown in the file drag overlay.
+		 * When omitted, the description is hidden entirely.
+		 */
+		fileDragDisclaimer?: string;
+
 		/** Styles of the app */
 		variables: {
 			backgroundColor: string;
@@ -139,6 +145,12 @@ export interface ThemeMap {
 		 * The uploaded files that should be added to the file tool in the room
 		 */
 		allowedFileTypes?: string[];
+
+		/**
+		 * Additional URL prefixes (e.g. custom protocols) allowed in markdown link rendering.
+		 * Defaults to ["docubridge://"].
+		 */
+		allowedUrlPrefixes?: string[];
 
 		/**
 		 * Default embedding engine UUID to use when allowEmbeddingOptions is false.

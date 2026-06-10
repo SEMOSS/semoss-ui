@@ -86,6 +86,7 @@ export class RootStore {
 				tokenLength: TOKEN_LENGTH,
 			},
 			allowedFileTypes: [],
+			allowedUrlPrefixes: [],
 			defaultTools: [],
 			gracefulErrors: [],
 			featureFlags: {
@@ -255,6 +256,9 @@ export class RootStore {
 			name: theme?.name || this._store.theme.name,
 			banner: theme?.banner || this._store.theme.banner,
 			description: theme?.description || this._store.theme.description,
+			fileDragDisclaimer:
+				theme?.fileDragDisclaimer ??
+				this._store.theme.fileDragDisclaimer,
 			variables: {
 				...this._store.theme.variables,
 				...(theme?.variables || {}),
@@ -304,6 +308,9 @@ export class RootStore {
 				theme?.allowedFileTypes ||
 				this._store.theme.allowedFileTypes ||
 				[],
+			allowedUrlPrefixes:
+				theme?.allowedUrlPrefixes ||
+				this._store.theme.allowedUrlPrefixes,
 			defaultEmbedderId:
 				theme?.defaultEmbedderId || this._store.theme.defaultEmbedderId,
 			defaultTools: [

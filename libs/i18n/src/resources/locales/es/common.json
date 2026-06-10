@@ -65,5 +65,162 @@
 	},
 	"images": {
 		"logoAlt": "logo"
+	},
+	"fileDrag": {
+		"title": "Suelta archivos aquí para adjuntar al mensaje",
+		"modalTitle": "Agregar documentos",
+		"browse": "Explorar",
+		"done": "Listo"
+	},
+	"fileExplorer": {
+		"search": "Buscar",
+		"name": "Nombre",
+		"dateModified": "Fecha de modificación",
+		"pathLabel": "Ruta: {{path}}",
+		"lastModifiedLabel": "Última modificación: {{date}}",
+		"bulkShortcutsAria": "Atajos de selección múltiple",
+		"bulkShortcutsTooltip": "Ctrl/Cmd+clic selecciona varios elementos. Ctrl/Cmd+A selecciona todos los elementos visibles.",
+		"toggleMenu": "Alternar menú",
+		"resizeDateColumn": "Redimensionar columna de fecha",
+		"failedToLoadFiles": "Error al cargar los archivos",
+		"pdfNotSupported": "Tu navegador no admite la visualización de PDF.",
+		"binaryView": {
+			"backToDownload": "Volver a la descarga",
+			"downloading": "Descargando…",
+			"download": "Descargar",
+			"viewRawContent": "Ver contenido sin procesar"
+		},
+		"toasts": {
+			"uploadSuccess_one": "Archivo subido correctamente",
+			"uploadSuccess_other": "Archivos subidos correctamente",
+			"uploadFailed": "Error al subir el archivo",
+			"moveSuccess_one": "Elemento movido correctamente",
+			"moveSuccess_other": "Elementos movidos correctamente",
+			"moveFailed": "Error al mover el elemento",
+			"copySuccess_one": "Elemento copiado correctamente",
+			"copySuccess_other": "Elementos copiados correctamente",
+			"copyFailed": "Error al copiar el elemento",
+			"copyFailedItems": "Error al copiar: {{items}}",
+			"deleteSuccess_one": "Elemento eliminado correctamente",
+			"deleteSuccess_other": "Elementos eliminados correctamente",
+			"deleteFailed": "Error al eliminar el elemento",
+			"deleteFailedItems": "Error al eliminar: {{items}}",
+			"copyPathSuccess": "Ruta copiada",
+			"copyPathFailed": "Error al copiar la ruta",
+			"downloadSuccess_one": "Elemento descargado correctamente",
+			"downloadSuccess_other": "Elementos descargados correctamente",
+			"downloadFailed": "Error al descargar el elemento",
+			"downloadFailedItems": "Error al descargar: {{items}}",
+			"renameSuccess": "Renombrado correctamente",
+			"renameFailed": "Error al renombrar",
+			"unzipFailed": "Error al descomprimir el archivo",
+			"saveSuccess": "Archivo guardado correctamente",
+			"saveFailed": "Error al guardar el archivo",
+			"downloadFileSuccess": "Archivo descargado correctamente",
+			"downloadFileFailed": "Error al descargar el archivo"
+		},
+		"dateFormat": {
+			"justNow": "Ahora mismo",
+			"minutesAgoShort": "hace {{count}} min",
+			"minutesAgo": "hace {{count}} min",
+			"hoursAgoShort": "hace {{count}} h",
+			"hoursAgo": "hace {{count}} h",
+			"yesterday": "Ayer",
+			"yesterdayAt": "Ayer a las {{time}}",
+			"dayAt": "{{day}} a las {{time}}",
+			"dateAt": "{{date}} a las {{time}}",
+			"dateAndTime": "{{date}}, {{time}}"
+		},
+		"refreshTooltip": "Actualizar {{path}}",
+		"createTooltip": "Crear en {{path}}",
+		"searchAll": "Todo",
+		"searchOnly": "Solo \"{{name}}\"",
+		"searchAllAria": "Buscar en todo",
+		"searchCurrentAria": "Buscar solo en el directorio actual",
+		"searchCurrentTitle": "Buscar solo en {{path}}",
+		"moveDropHint": "Soltar para mover {{label}} a {{path}}",
+		"contextMenu": {
+			"copyPath": "Copiar ruta",
+			"copy": "Copiar",
+			"cut": "Cortar",
+			"pasteHere": "Pegar aquí",
+			"rename": "Renombrar",
+			"download": "Descargar",
+			"delete": "Eliminar",
+			"newFile": "Nuevo archivo",
+			"newFolder": "Nueva carpeta",
+			"ariaLabel": "Acciones de archivo"
+		},
+		"overlay": {
+			"title": "Crear archivo o directorio",
+			"description": "Subir o crear un nuevo archivo o directorio en la ruta: {{path}}",
+			"fields": {
+				"action": "Acción",
+				"fileName": "Nombre del archivo",
+				"directoryName": "Nombre del directorio",
+				"uploadFileZip": "Subir archivo/ZIP"
+			},
+			"placeholders": {
+				"selectAction": "Seleccionar acción",
+				"fileName": "Introducir nombre del archivo",
+				"directoryName": "Introducir nombre del directorio"
+			},
+			"actions": {
+				"upload": "Subir archivos",
+				"newFile": "Nuevo archivo",
+				"newDirectory": "Nuevo directorio"
+			},
+			"dropzone": {
+				"dragAndDrop": "Arrastra y suelta los archivos aquí",
+				"orClickToBrowse": "o haz clic para explorar",
+				"uploadIconAlt": "Icono de subida"
+			},
+			"files": {
+				"selectedCount_one": "{{count}} archivo seleccionado:",
+				"selectedCount_other": "{{count}} archivos seleccionados:",
+				"unzip": "Descomprimir",
+				"unzipTitle": "Extraer este ZIP después de subirlo"
+			},
+			"buttons": {
+				"cancel": "Cancelar",
+				"upload": "Subir",
+				"create": "Crear"
+			},
+			"toasts": {
+				"selectAtLeastOne": "Selecciona al menos un archivo para subir",
+				"enterFileName": "Introduce un nombre para el archivo",
+				"enterDirectoryName": "Introduce un nombre para el directorio",
+				"uploadSuccess": "Archivos subidos correctamente",
+				"uploadWithExtractSuccess": "Se subieron {{count}} archivo(s) correctamente, se extrajeron {{extractedCount}} ZIP(s)",
+				"extractionsFailed": "{{count}} extracción(es) fallaron: {{errors}}",
+				"fileCreated": "Archivo creado correctamente",
+				"directoryCreated": "Directorio creado correctamente",
+				"anError": "Ocurrió un error"
+			}
+		}
+	},
+	"cellOutput": {
+		"panels": {
+			"logs": "Registros",
+			"result": "Resultado",
+			"error": "Error"
+		},
+		"running": "Ejecutando…",
+		"format": {
+			"formatted": "CON FORMATO",
+			"raw": "EN BRUTO"
+		},
+		"copy": {
+			"command": "Copiar comando",
+			"logs": "Copiar registros",
+			"output": "Copiar salida",
+			"copied": "¡Copiado!"
+		},
+		"popout": "Abrir ventana",
+		"expandAll": "Expandir todo",
+		"collapseAll": "Contraer todo",
+		"close": "Cerrar",
+		"lines_one": "{{count}} línea",
+		"lines_other": "{{count}} líneas"
 	}
 }

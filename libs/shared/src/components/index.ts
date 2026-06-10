@@ -1,5 +1,6 @@
 export * from "./app-catalog-avatar";
 export * from "./auditlog";
+export * from "./cell-output";
 export * from "./column-metadata-modal";
 export * from "./data-type-icon";
 export * from "./engine";
@@ -10,6 +11,7 @@ export * from "./flex-layout";
 export * from "./form";
 export * from "./icon-utils";
 export * from "./import-edit-metamodel";
+export * from "./login-page";
 export * from "./login-provider-icon";
 export * from "./members";
 export * from "./monaco";

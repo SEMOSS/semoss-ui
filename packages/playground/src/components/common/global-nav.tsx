@@ -1,4 +1,3 @@
-// biome-ignore-all lint/suspicious/noArrayIndexKey: TODO
 import dayjs from "dayjs";
 import {
 	ComputerIcon,
@@ -144,12 +143,12 @@ export const GlobalNav = observer(() => {
 		() => -1,
 		(response) => response,
 		{},
-		// Re-fetch when the chat store's roomCounter increments
-		// (new chat, rename, delete elsewhere). The reset useEffect
-		// below relies on MobX observability which is fragile inside
-		// effect deps — wiring the counter directly into the iterator
-		// deps is the source of truth.
-		[chat.keys.roomCounter],
+		// No roomCounter dependency here — the useEffect below already
+		// calls reset() when roomCounter increments, and reset() preserves
+		// the current data while refetching (no blank flash). Putting
+		// roomCounter in the useIteratorPixel deps would call setAllData([])
+		// instead, which is the source of the sidebar flicker.
+		[],
 	);
 
 	const getRooms = useIteratorPixel<
@@ -185,9 +184,9 @@ export const GlobalNav = observer(() => {
 		{
 			limit: 25,
 		},
-		// Re-fetch on search change OR when the chat store's
-		// roomCounter increments (rename / delete elsewhere in app).
-		[debouncedSearch, chat.keys.roomCounter],
+		// Re-fetch only on search change — counter-based refreshes are handled
+		// by the useEffect below, which calls reset() and preserves data.
+		[debouncedSearch],
 	);
 
 	/**
@@ -491,7 +490,7 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
-				className="min-h-[120px] flex-1 overflow-hidden transition-all duration-200 ease-in-out"
+				className="min-h-[120px] flex-1 overflow-hidden pe-2 transition-all duration-200 ease-in-out"
 				data-tour="tour-chat-history"
 			>
 				<ScrollArea
@@ -767,8 +766,11 @@ export const GlobalNav = observer(() => {
 																						e.message,
 																					);
 																				}
-																			} finally {
-																				// remove from deleted set after attempting deletion to allow re-render if deletion failed
+																				// Deletion failed — restore the room in the list.
+																				// On the success path we intentionally leave the
+																				// roomId in deletedSet until the refetch lands, so
+																				// the room doesn't briefly reappear between the
+																				// reset() call and the new data arriving.
 																				setDeletedSet(
 																					(
 																						prev,

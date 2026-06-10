@@ -93,6 +93,7 @@ export const WorkspaceChatList = ({
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [editingName, setEditingName] = useState("");
 	const [isRenaming, setIsRenaming] = useState(false);
+	const [renamedMap, setRenamedMap] = useState<Record<string, string>>({});
 
 	const getWorkspaceRooms = useIteratorPixel<
 		{ total_count: number; rooms: Room[] },
@@ -103,7 +104,7 @@ export const WorkspaceChatList = ({
 		(response) => response.total_count,
 		(response) => response.rooms,
 		{ limit: limit ?? 25 },
-		[debouncedSearch, workspaceId, chat.keys.roomCounter],
+		[debouncedSearch, workspaceId],
 	);
 
 	const { setScroll } = useInfiniteScroll({
@@ -212,7 +213,7 @@ export const WorkspaceChatList = ({
 
 	const handleStartRename = (room: Room) => {
 		setEditingId(room.room_id);
-		setEditingName(room.room_name);
+		setEditingName(renamedMap[room.room_id] ?? room.room_name);
 	};
 
 	const handleCancelRename = () => {
@@ -231,9 +232,9 @@ export const WorkspaceChatList = ({
 		try {
 			await chat.renameRoom(editingId, trimmed);
 			toast.success(t("chat.renameSuccess"));
+			setRenamedMap((prev) => ({ ...prev, [editingId]: trimmed }));
 			setEditingId(null);
 			setEditingName("");
-			getWorkspaceRooms.reset();
 		} catch {
 			toast.error(t("chat.renameFailed"));
 		} finally {
@@ -325,7 +326,20 @@ export const WorkspaceChatList = ({
 													<ChatRow
 														key={room.room_id}
 														t={t}
-														room={room}
+														room={
+															renamedMap[
+																room.room_id
+															]
+																? {
+																		...room,
+																		room_name:
+																			renamedMap[
+																				room
+																					.room_id
+																			],
+																	}
+																: room
+														}
 														isFavorite={pinnedSet.has(
 															room.room_id,
 														)}
@@ -502,7 +516,7 @@ function ChatRow({
 	}
 
 	return (
-		<div className="group/row relative flex items-center gap-2 rounded-lg border border-border bg-card ps-2 pe-3 transition-colors hover:border-border/80 hover:bg-accent/40">
+		<div className="group/row relative flex items-center gap-2 rounded-lg border border-border bg-card py-2 ps-2 pe-3 transition-colors hover:border-border/80 hover:bg-accent/40">
 			{/* Stretched link: makes the whole row clickable */}
 			<Link
 				to={`/room/${room.room_id}`}
@@ -550,7 +564,7 @@ function ChatRow({
 
 			<span
 				dir="auto"
-				className="min-w-0 flex-1 truncate py-2.5 font-semibold text-foreground text-sm"
+				className="min-w-0 flex-1 truncate font-semibold text-foreground text-sm"
 				title={room.room_name}
 			>
 				{room.room_name}
