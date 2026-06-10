@@ -42,10 +42,10 @@ export interface ContentChunk {
  *   or nothing. Two adjacent HTML blocks produce no MD chunk between them.
  * - Chunk `key` = start offset in original string — stable across re-parses.
  */
-export function parseChunks(
+export const parseChunks = (
 	text: string,
 	isStreaming: boolean,
-): ContentChunk[] {
+): ContentChunk[] => {
 	// ── Standalone HTML detection ─────────────────────────────────────────────
 	// If the response opens with <!DOCTYPE (no code fence), treat the whole
 	// text as a single HTML chunk.
@@ -135,7 +135,7 @@ export function parseChunks(
 
 	console.log("[parseChunks]", chunks);
 	return chunks;
-}
+};
 
 // ============================================================
 // HELPERS
@@ -148,7 +148,7 @@ export function parseChunks(
  * Matches: ` ```html ` optionally followed by spaces/tabs, then end of line.
  * Case-insensitive for the "html" part.
  */
-function findHtmlFenceOpen(text: string, from: number): number {
+const findHtmlFenceOpen = (text: string, from: number): number => {
 	let i = from;
 	while (i < text.length) {
 		// Quick pre-check: backtick
@@ -186,4 +186,4 @@ function findHtmlFenceOpen(text: string, from: number): number {
 		i++;
 	}
 	return -1;
-}
+};
