@@ -283,3 +283,54 @@ export const getPixelJobStreaming = async (jobId: string) => {
 
 	return response.data;
 };
+
+/**
+ * Cancel a running async pixel job by firing StopPixelExecution on the backend.
+ * Safe to call even if the job has already completed — the reactor handles that gracefully.
+ *
+ * @param jobId - The job ID returned from runPixelAsync
+ * @param insightId - The insight the job is running under
+ */
+export const cancelPixelJob = async (
+	jobId: string,
+	insightId: string,
+): Promise<void> => {
+	if (!jobId) return;
+	try {
+		await runPixel(`StopPixelExecution(id=["${jobId}"]);`, insightId);
+	} catch {
+		// best-effort — if the job is already done or the call fails, ignore
+	}
+};
+
+/**
+ * Persist a cancelled turn's partial assistant response (plus a hidden
+ * user-note/assistant-ack round-trip) into the room's message history.
+ *
+ * Called by the FE after StopPixelExecution to commit whatever the user
+ * actually saw on screen so the next AskPlayground call has correct context.
+ *
+ * @param engineId        - Model engine the AskPlayground call was using
+ * @param roomId          - The room id
+ * @param userPrompt      - The user's question that was cancelled mid-response
+ * @param partialResponse - The streamed assistant text the FE accumulated
+ *   before the user clicked stop. Pass "" if nothing streamed.
+ * @param parentMessageId - Optional parent message id for the chain
+ * @param insightId       - The insight the call is running under
+ */
+export const recordCancelledTurn = async (
+	engineId: string,
+	roomId: string,
+	userPrompt: string,
+	partialResponse: string,
+	parentMessageId: string | undefined,
+	insightId: string,
+): Promise<void> => {
+	const parentArg = parentMessageId
+		? `, parentMessageId=["${parentMessageId}"]`
+		: "";
+	await runPixel(
+		`RecordCancelledTurn(engine=["${engineId}"], roomId=["${roomId}"], command=["<encode>${userPrompt}</encode>"], partialResponse=["<encode>${partialResponse}</encode>"]${parentArg});`,
+		insightId,
+	);
+};

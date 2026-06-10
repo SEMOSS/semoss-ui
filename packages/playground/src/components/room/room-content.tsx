@@ -531,6 +531,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					toggleToolsPaused={
 						room.latestResponseMessage.toggleIsPaused
 					}
+					onCancelLlm={room.cancelActiveJob}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
 					onCompact={handleCompactMessages}

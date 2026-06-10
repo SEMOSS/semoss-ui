@@ -1,5 +1,18 @@
 import { makeAutoObservable, runInAction } from "mobx";
+
+/**
+ * Thrown when a streaming pixel job is cancelled intentionally via cancelActiveJob().
+ * Callers can catch this specifically to avoid treating a cancel as a real error.
+ */
+export class PixelJobCancelledError extends Error {
+	constructor() {
+		super("Pixel job was cancelled");
+		this.name = "PixelJobCancelledError";
+	}
+}
+
 import {
+	cancelPixelJob,
 	getPixelAsyncResult,
 	getPixelJobStreaming,
 	runPixel,
@@ -48,6 +61,12 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
+
+	/**
+	 * Job ID of the currently in-flight async pixel call (e.g. AskPlayground).
+	 * Set while streaming, cleared when the call completes or is cancelled.
+	 */
+	activeJobId: string | null;
 
 	/**
 	 *  Track if the room has errored
@@ -155,6 +174,7 @@ export class RoomStore {
 		roomId: "",
 		insightId: "new",
 		isLoading: false,
+		activeJobId: null,
 		mode: "chat",
 		metadata: {
 			name: "",
@@ -1203,6 +1223,11 @@ export class RoomStore {
 				throw new Error("No job ID returned from pixel execution");
 			}
 
+			// track so callers can cancel this in-flight call
+			runInAction(() => {
+				this._store.activeJobId = jobId;
+			});
+
 			// Poll for streaming content
 			let isPolling = true;
 
@@ -1226,6 +1251,11 @@ export class RoomStore {
 						isPolling = false;
 					} else if (response.status === "Error") {
 						throw new Error("Streaming job encountered an error");
+					} else if (response.status === "UnknownJob") {
+						// Job was removed from the server — this is the expected
+						// outcome of a user-initiated cancel via cancelActiveJob().
+						// Exit cleanly without fetching the final result.
+						throw new PixelJobCancelledError();
 					}
 
 					if (isPolling) {
@@ -1248,13 +1278,15 @@ export class RoomStore {
 
 			return result;
 		} catch (e) {
-			console.error(e);
+			// Don't surface a user-initiated cancel as a room error
+			if (!(e instanceof PixelJobCancelledError)) {
+				console.error(e);
 
-			if (setErrorOnFail) {
-				// show the error
-				runInAction(() => {
-					this._store.error = e as Error;
-				});
+				if (setErrorOnFail) {
+					runInAction(() => {
+						this._store.error = e as Error;
+					});
+				}
 			}
 
 			throw e;
@@ -1262,7 +1294,28 @@ export class RoomStore {
 			if (showLoading) {
 				this.setIsLoading(false);
 			}
+			runInAction(() => {
+				this._store.activeJobId = null;
+			});
 		}
+	};
+
+	/**
+	 * Cancel the currently in-flight streaming pixel call (e.g. AskPlayground).
+	 * Fires StopPixelExecution on the backend to abort the SSE stream, then
+	 * clears the tracked job ID. No-op if nothing is in flight.
+	 */
+	cancelActiveJob = async (): Promise<void> => {
+		const jobId = this._store.activeJobId;
+		if (!jobId) return;
+		// clear immediately so a second click is a no-op. The partial-response
+		// persistence (RecordCancelledTurn) happens in response-message.store.ts
+		// runMessage's catch block where `text` and the streaming placeholder
+		// are already in scope.
+		runInAction(() => {
+			this._store.activeJobId = null;
+		});
+		await cancelPixelJob(jobId, this._store.insightId);
 	};
 
 	/**

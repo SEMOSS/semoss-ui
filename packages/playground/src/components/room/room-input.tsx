@@ -150,6 +150,10 @@ interface RoomInputProps {
 	/** Hide the pause-on-next-tool button */
 	hidePauseButton?: boolean;
 
+	/** Cancel the in-flight LLM stream (pre-tool-execution). When provided
+	 *  and the LLM is streaming, the stop button cancels the pixel job. */
+	onCancelLlm?: () => void;
+
 	/** Content to render in the footer */
 	footer?: React.ReactNode;
 
@@ -203,6 +207,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		toggleToolsPaused,
 		footer = null,
 		hidePauseButton = false,
+		onCancelLlm,
 		predefinedPrompts = [],
 		initialValue,
 		tokensUsed,
@@ -958,24 +963,45 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 												}
 												disabled={
 													isLoading
-														? hasToolsPaused ||
-															hidePauseButton
+														? hasOutstandingTools
+															? // tools mode: disabled when paused or pause hidden
+																hasToolsPaused ||
+																hidePauseButton
+															: // llm mode: enabled iff a cancel handler is wired
+																!onCancelLlm
 														: isEmpty ||
 															hasOutstandingTools
 												}
 												onClick={() => {
 													if (isLoading) {
-														toggleToolsPaused?.();
+														if (
+															hasOutstandingTools
+														) {
+															// tools are running — pause the tool loop
+															toggleToolsPaused?.();
+														} else {
+															// LLM is streaming — cancel the pixel job
+															onCancelLlm?.();
+														}
 													} else {
 														promptModel();
 													}
 												}}
 											>
 												{isLoading ? (
-													hasToolsPaused ||
-													hidePauseButton ? (
-														<Spinner />
+													hasOutstandingTools ? (
+														// tools mode: spinner when paused/hidden, square otherwise
+														hasToolsPaused ||
+														hidePauseButton ? (
+															<Spinner />
+														) : (
+															<Square
+																className="size-3"
+																fill="currentColor"
+															/>
+														)
 													) : (
+														// llm mode: always show the stop square
 														<Square
 															className="size-3"
 															fill="currentColor"

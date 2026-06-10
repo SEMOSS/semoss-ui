@@ -5,7 +5,7 @@ import {
 	observable,
 	runInAction,
 } from "mobx";
-import { download } from "@semoss/sdk/react";
+import { download, recordCancelledTurn } from "@semoss/sdk/react";
 import {
 	MCP_EXECUTION_AUTO,
 	STREAMING_PLACEHOLDER_ID,
@@ -15,6 +15,7 @@ import {
 	TOOL_PAUSE_PROMPT,
 } from "@/constants";
 import type { ToolStore } from "@/stores";
+import { PixelJobCancelledError } from "@/stores/room/room.store";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
@@ -298,6 +299,53 @@ paramValues=[${JSON.stringify({
 
 			return response;
 		} catch (e) {
+			if (e instanceof PixelJobCancelledError) {
+				// The original AskPlayground call died on the backend without
+				// persisting anything. Take what the FE has on screen (the
+				// streamed partial in responseMessage.parts) and commit it via
+				// RecordCancelledTurn, then reload the room so the FE reflects
+				// the persisted state (correct IDs, hidden note round-trip).
+				const partial = responseMessage.parts
+					.filter(
+						(
+							p,
+						): p is {
+							type: "TEXT";
+							text: string;
+							uiText?: string;
+						} => p.type === "TEXT",
+					)
+					.map((p) => p.text)
+					.join("");
+				// `text` is let-scoped inside the try — recover the prompt from
+				// the inputMessage we already built (in scope here).
+				const userPrompt = inputMessage.parts
+					.filter(
+						(
+							p,
+						): p is {
+							type: "TEXT";
+							text: string;
+							uiText?: string;
+						} => p.type === "TEXT",
+					)
+					.map((p) => p.text)
+					.join("");
+				try {
+					await recordCancelledTurn(
+						room.model.engine_id,
+						room.roomId,
+						userPrompt,
+						partial,
+						this.id !== "ROOT_PLACEHOLDER_ID" ? this.id : undefined,
+						room.insightId,
+					);
+				} catch (recordErr) {
+					console.error("Failed to record cancelled turn", recordErr);
+				}
+				await this.room.initialize();
+				return;
+			}
 			// remove message if we failed
 			this.removeChild(inputMessage);
 
