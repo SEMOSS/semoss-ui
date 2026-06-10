@@ -257,7 +257,7 @@ const Message = ({ message, viewport, onToolClick }) => {
 
 	return (
 		<li
-			className={messageClass + (isTools ? " tools-message" : "")}
+			className={messageClass + (isTools ? "tools-message" : "")}
 			aria-label={`${from === "user" ? "You" : "Bot"}: ${typeof text === "string" ? text.replace(/<[^>]*>/g, "") : "Message"}`}
 			data-timestamp={new Date(timestamp).toISOString()}
 		>
