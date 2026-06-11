@@ -411,6 +411,20 @@ export class RoomStore {
 	}
 
 	/**
+	 * Get the total tokens consumed across ALL messages in the conversation
+	 * (not context window - this is the actual sum of all input + output tokens)
+	 */
+	get totalTokensConsumed(): number {
+		let total = 0;
+		for (const message of this.history) {
+			if (message.tokens) {
+				total += message.tokens;
+			}
+		}
+		return total;
+	}
+
+	/**
 	 * Get the most recent plan
 	 */
 	get plan(): PlanMessageStore | null {

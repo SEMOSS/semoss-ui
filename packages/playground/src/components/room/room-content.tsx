@@ -538,7 +538,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					footer={
 						<RoomStatsBar
 							lastMessageTokens={room.lastMessageTokens}
-							totalTokens={room.tokensUsed}
+							totalTokens={room.totalTokensConsumed}
 						/>
 					}
 				/>
