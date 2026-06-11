@@ -8,4 +8,5 @@ export * from "./room-input-menu-new-file-explorer";
 export * from "./room-input-menu-slash";
 export * from "./room-input-menu-upload";
 export * from "./room-sidebar";
+export * from "./room-stats-bar";
 export * from "./room-workspace-creation";

@@ -27,6 +27,7 @@ import {
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
 	RoomInputMenuUpload,
+	RoomStatsBar,
 } from "@/components";
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -534,6 +535,12 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
 					onCompact={handleCompactMessages}
+					footer={
+						<RoomStatsBar
+							lastMessageTokens={room.lastMessageTokens}
+							totalTokens={room.tokensUsed}
+						/>
+					}
 				/>
 			</div>
 		</div>
