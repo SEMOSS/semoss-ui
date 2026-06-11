@@ -15,6 +15,7 @@ import { MyProfilePage } from "./my-profile-page";
 import { ProjectSettingsDetailsPage } from "./project-settings-details-page";
 import { ProjectSettingsPage } from "./project-settings-page";
 import { RDFMapPage } from "./rdf-map-page";
+import { RoomTokenLimitsPage } from "./room-token-limits-page";
 import { ServiceAccountsSettingsPage } from "./service-accounts-settings-page";
 import { SETTINGS_ROUTES } from "./settings.constants";
 import { SettingsIndexPage } from "./settings-index-page";
@@ -42,6 +43,7 @@ const SETTINGS_COMPONETS = {
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
 	"llm-feedback": LLMFeedbackPage,
+	"room-token-limits": RoomTokenLimitsPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

@@ -5,6 +5,7 @@ import {
 	Briefcase,
 	ChartBar,
 	CircleUserRound,
+	Coins,
 	Database,
 	DatabaseZap,
 	FileText,
@@ -66,6 +67,7 @@ const IconMapper: Record<string, ReactNode> = {
 	Jobs: <Briefcase className={SIDEBAR_ICON_CLASS} />,
 	"View RDF Map": <FileText className={SIDEBAR_ICON_CLASS} />,
 	"LLM Feedback": <ChartBar className={SIDEBAR_ICON_CLASS} />,
+	"Room Token Limits": <Coins className={SIDEBAR_ICON_CLASS} />,
 };
 
 export const SettingsIndexPage = () => {
