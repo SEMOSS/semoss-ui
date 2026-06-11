@@ -5,6 +5,12 @@ import {
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
 	Input,
 	Label,
 	Select,
@@ -202,6 +208,16 @@ export function TokenLimitsPanel({
 	const [localTeamRowsById, setLocalTeamRowsById] = useState<
 		Record<string, GroupedLimitRow[]>
 	>({});
+	const [deleteAction, setDeleteAction] = useState<(() => void) | null>(null);
+
+	const confirmDelete = () => {
+		deleteAction?.();
+		setDeleteAction(null);
+	};
+
+	const requestDelete = (action: () => void) => {
+		setDeleteAction(() => action);
+	};
 
 	const defaultUserPeriods = useMemo(
 		() => defaultUserLimits.map((limit) => limit.period),
@@ -660,14 +676,16 @@ export function TokenLimitsPanel({
 												)
 											}
 											onDelete={() =>
-												removePlatformLimit(
-													(
-														platformLimits.find(
-															(source) =>
-																source.id ===
-																limit.id,
-														) ?? limit
-													).period,
+												requestDelete(() =>
+													removePlatformLimit(
+														(
+															platformLimits.find(
+																(source) =>
+																	source.id ===
+																	limit.id,
+															) ?? limit
+														).period,
+													),
 												)
 											}
 											onSave={async (next) => {
@@ -730,7 +748,9 @@ export function TokenLimitsPanel({
 					)
 				}
 				onSaveLimit={saveDefaultUserLimit}
-				onDeleteLimit={removeDefaultUserLimit}
+				onDeleteLimit={(period) =>
+					requestDelete(() => removeDefaultUserLimit(period))
+				}
 				onChangeLimit={(id, next) =>
 					setDefaultUserDraftsById((prev) => ({
 						...prev,
@@ -832,9 +852,11 @@ export function TokenLimitsPanel({
 					if (!row) {
 						return;
 					}
-					removeUserLimitRow(
-						entityUserId,
-						row.savedPeriod ?? row.period,
+					requestDelete(() =>
+						removeUserLimitRow(
+							entityUserId,
+							row.savedPeriod ?? row.period,
+						),
 					);
 				}}
 			/>
@@ -865,7 +887,9 @@ export function TokenLimitsPanel({
 					)
 				}
 				onSaveLimit={saveDefaultTeamLimit}
-				onDeleteLimit={removeDefaultTeamLimit}
+				onDeleteLimit={(period) =>
+					requestDelete(() => removeDefaultTeamLimit(period))
+				}
 				onChangeLimit={(id, next) =>
 					setDefaultTeamDraftsById((prev) => ({
 						...prev,
@@ -968,9 +992,44 @@ export function TokenLimitsPanel({
 					if (!row) {
 						return;
 					}
-					removeTeamLimitRow(teamId, row.savedPeriod ?? row.period);
+					requestDelete(() =>
+						removeTeamLimitRow(
+							teamId,
+							row.savedPeriod ?? row.period,
+						),
+					);
 				}}
 			/>
+
+			<Dialog
+				open={deleteAction !== null}
+				onOpenChange={(open) => {
+					if (!open) {
+						setDeleteAction(null);
+					}
+				}}
+			>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>Delete Usage Limit</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to delete this usage limit?
+							This action cannot be undone.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="outline"
+							onClick={() => setDeleteAction(null)}
+						>
+							Cancel
+						</Button>
+						<Button variant="destructive" onClick={confirmDelete}>
+							Delete
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }
