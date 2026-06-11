@@ -15,6 +15,7 @@ import { EngineSmssPage } from "./engine-smss-page";
 import { EngineSparqlQueryPage } from "./engine-sparql-query-page";
 import { EngineSqlQueryPage } from "./engine-sql-query-page";
 import { EngineStorageViewerPage } from "./engine-storage-viewer-page";
+import { EngineUsageLimitsPage } from "./engine-usage-limits-page";
 import { EngineUsagePage } from "./engine-usage-page";
 
 export const ENGINE_ROUTES: {
@@ -203,6 +204,12 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Usage Limits",
+				path: "usage-limits",
+				component: EngineUsageLimitsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "Files",
 				path: "files",
 				component: EngineFileManagerPage,
@@ -261,6 +268,12 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
+				name: "Usage Limits",
+				path: "usage-limits",
+				component: EngineUsageLimitsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
 				name: "Files",
 				path: "files",
 				component: EngineFileManagerPage,
@@ -310,6 +323,12 @@ export const ENGINE_ROUTES: {
 				name: "Access Control",
 				path: "access-control",
 				component: EngineSettingsPage,
+				restrict: ["EDIT", "OWNER"],
+			},
+			{
+				name: "Usage Limits",
+				path: "usage-limits",
+				component: EngineUsageLimitsPage,
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
