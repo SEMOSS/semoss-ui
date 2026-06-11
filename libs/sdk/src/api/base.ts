@@ -285,6 +285,19 @@ export const getPixelJobStreaming = async (jobId: string) => {
 };
 
 /**
+ * IDs that are spliced directly into pixel strings must match this shape —
+ * server-issued UUIDs and slugs in practice. Guards against a stray quote or
+ * bracket from a buggy caller breaking the pixel grammar.
+ */
+const PIXEL_ID_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+const assertPixelId = (name: string, value: string): void => {
+	if (!PIXEL_ID_PATTERN.test(value)) {
+		throw new Error(`Invalid ${name} for pixel call: ${value}`);
+	}
+};
+
+/**
  * Cancel a running async pixel job by firing StopPixelExecution on the backend.
  * Safe to call even if the job has already completed — the reactor handles that gracefully.
  *
@@ -296,10 +309,12 @@ export const cancelPixelJob = async (
 	insightId: string,
 ): Promise<void> => {
 	if (!jobId) return;
+	assertPixelId("jobId", jobId);
 	try {
 		await runPixel(`StopPixelExecution(id=["${jobId}"]);`, insightId);
-	} catch {
+	} catch (e) {
 		// best-effort — if the job is already done or the call fails, ignore
+		console.debug("cancelPixelJob: StopPixelExecution failed (ignored)", e);
 	}
 };
 
@@ -326,6 +341,11 @@ export const recordCancelledTurn = async (
 	parentMessageId: string | undefined,
 	insightId: string,
 ): Promise<void> => {
+	assertPixelId("engineId", engineId);
+	assertPixelId("roomId", roomId);
+	if (parentMessageId) {
+		assertPixelId("parentMessageId", parentMessageId);
+	}
 	const parentArg = parentMessageId
 		? `, parentMessageId=["${parentMessageId}"]`
 		: "";

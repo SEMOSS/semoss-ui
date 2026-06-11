@@ -305,32 +305,18 @@ paramValues=[${JSON.stringify({
 				// streamed partial in responseMessage.parts) and commit it via
 				// RecordCancelledTurn, then reload the room so the FE reflects
 				// the persisted state (correct IDs, hidden note round-trip).
-				const partial = responseMessage.parts
-					.filter(
-						(
-							p,
-						): p is {
-							type: "TEXT";
-							text: string;
-							uiText?: string;
-						} => p.type === "TEXT",
-					)
-					.map((p) => p.text)
-					.join("");
-				// `text` is let-scoped inside the try — recover the prompt from
-				// the inputMessage we already built (in scope here).
-				const userPrompt = inputMessage.parts
-					.filter(
-						(
-							p,
-						): p is {
-							type: "TEXT";
-							text: string;
-							uiText?: string;
-						} => p.type === "TEXT",
-					)
-					.map((p) => p.text)
-					.join("");
+				type TextPart = {
+					type: "TEXT";
+					text: string;
+					uiText?: string;
+				};
+				const joinTextParts = (parts: { type: string }[]): string =>
+					parts
+						.filter((p): p is TextPart => p.type === "TEXT")
+						.map((p) => p.text)
+						.join("");
+				const partial = joinTextParts(responseMessage.parts);
+				const userPrompt = joinTextParts(inputMessage.parts);
 				try {
 					await recordCancelledTurn(
 						room.model.engine_id,

@@ -947,91 +947,95 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</div>
 							</div>
 							{/* Send button — pinned bottom-right, sibling of body */}
-							<div className="shrink-0">
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<span data-tour="tour-send">
-											<Button
-												variant="default"
-												size="icon-sm"
-												aria-label={
-													isLoading
-														? t(
-																"input.pauseToolsTooltip",
-															)
-														: t("input.askLabel")
-												}
-												disabled={
-													isLoading
-														? hasOutstandingTools
-															? // tools mode: disabled when paused or pause hidden
-																hasToolsPaused ||
-																hidePauseButton
-															: // llm mode: enabled iff a cancel handler is wired
-																!onCancelLlm
-														: isEmpty ||
-															hasOutstandingTools
-												}
-												onClick={() => {
-													if (isLoading) {
-														if (
-															hasOutstandingTools
-														) {
-															// tools are running — pause the tool loop
-															toggleToolsPaused?.();
-														} else {
-															// LLM is streaming — cancel the pixel job
-															onCancelLlm?.();
+							{(() => {
+								// While loading the button does double duty: pause the
+								// tool loop if tools are queued, otherwise cancel the
+								// in-flight LLM stream.
+								const inToolsMode =
+									isLoading && hasOutstandingTools;
+								const sendDisabled = isLoading
+									? inToolsMode
+										? hasToolsPaused || hidePauseButton
+										: !onCancelLlm
+									: isEmpty || hasOutstandingTools;
+								const handleSendClick = () => {
+									if (!isLoading) {
+										promptModel();
+										return;
+									}
+									if (hasOutstandingTools) {
+										toggleToolsPaused?.();
+									} else {
+										onCancelLlm?.();
+									}
+								};
+								const showSpinner =
+									inToolsMode &&
+									(hasToolsPaused || hidePauseButton);
+								return (
+									<div className="shrink-0">
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span data-tour="tour-send">
+													<Button
+														variant="default"
+														size="icon-sm"
+														aria-label={
+															isLoading
+																? t(
+																		"input.pauseToolsTooltip",
+																	)
+																: t(
+																		"input.askLabel",
+																	)
 														}
-													} else {
-														promptModel();
-													}
-												}}
-											>
-												{isLoading ? (
-													hasOutstandingTools ? (
-														// tools mode: spinner when paused/hidden, square otherwise
-														hasToolsPaused ||
-														hidePauseButton ? (
+														disabled={sendDisabled}
+														onClick={
+															handleSendClick
+														}
+													>
+														{!isLoading ? (
+															<SendIcon />
+														) : showSpinner ? (
 															<Spinner />
 														) : (
 															<Square
 																className="size-3"
 																fill="currentColor"
 															/>
-														)
-													) : (
-														// llm mode: always show the stop square
-														<Square
-															className="size-3"
-															fill="currentColor"
-														/>
-													)
-												) : (
-													<SendIcon />
-												)}
-											</Button>
-										</span>
-									</TooltipTrigger>
-									<TooltipContent>
-										{(() => {
-											if (isLoading) {
-												return hasToolsPaused ||
-													hidePauseButton
-													? t("input.thinkingTooltip")
-													: t(
-															"input.pauseToolsTooltip",
+														)}
+													</Button>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												{(() => {
+													if (isLoading) {
+														return hasToolsPaused ||
+															hidePauseButton
+															? t(
+																	"input.thinkingTooltip",
+																)
+															: t(
+																	"input.pauseToolsTooltip",
+																);
+													} else if (isEmpty) {
+														return t(
+															"input.enterQuestion",
 														);
-											} else if (isEmpty) {
-												return t("input.enterQuestion");
-											} else if (hasOutstandingTools) {
-												return t("input.completeTool");
-											}
-											return t("input.ask");
-										})()}
-									</TooltipContent>
-								</Tooltip>
-							</div>
+													} else if (
+														hasOutstandingTools
+													) {
+														return t(
+															"input.completeTool",
+														);
+													}
+													return t("input.ask");
+												})()}
+											</TooltipContent>
+										</Tooltip>
+									</div>
+								);
+							})()}
 						</div>
 					</div>
 					<OnChangePlugin

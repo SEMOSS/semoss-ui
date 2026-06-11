@@ -1,16 +1,4 @@
 import { makeAutoObservable, runInAction } from "mobx";
-
-/**
- * Thrown when a streaming pixel job is cancelled intentionally via cancelActiveJob().
- * Callers can catch this specifically to avoid treating a cancel as a real error.
- */
-export class PixelJobCancelledError extends Error {
-	constructor() {
-		super("Pixel job was cancelled");
-		this.name = "PixelJobCancelledError";
-	}
-}
-
 import {
 	cancelPixelJob,
 	getPixelAsyncResult,
@@ -44,6 +32,17 @@ import type {
 	ResponsePixelMessage,
 	Workspace,
 } from "@/types";
+
+/**
+ * Thrown when a streaming pixel job is cancelled intentionally via cancelActiveJob().
+ * Callers can catch this specifically to avoid treating a cancel as a real error.
+ */
+export class PixelJobCancelledError extends Error {
+	constructor() {
+		super("Pixel job was cancelled");
+		this.name = "PixelJobCancelledError";
+	}
+}
 
 interface RoomStoreInterface {
 	/**
@@ -1310,8 +1309,7 @@ export class RoomStore {
 		if (!jobId) return;
 		// clear immediately so a second click is a no-op. The partial-response
 		// persistence (RecordCancelledTurn) happens in response-message.store.ts
-		// runMessage's catch block where `text` and the streaming placeholder
-		// are already in scope.
+		// runMessage's PixelJobCancelledError catch.
 		runInAction(() => {
 			this._store.activeJobId = null;
 		});
