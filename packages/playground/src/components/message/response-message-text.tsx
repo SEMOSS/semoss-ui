@@ -73,7 +73,6 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// re-renders as long as chunk count and handleChunkComplete don't change.
 		// This prevents effects in children that dep on `onComplete` from firing
 		// on every streaming token just because the parent re-rendered.
-		// biome-ignore lint/correctness/useExhaustiveDependencies: chunks.length is the right dep — we only need new callbacks when a chunk is added, not when chunk content changes
 		const chunkCallbacks = useMemo(
 			() => chunks.map((_, idx) => () => handleChunkComplete(idx)),
 			[chunks.length, handleChunkComplete],
