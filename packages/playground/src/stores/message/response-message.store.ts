@@ -17,8 +17,8 @@ import {
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
+import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
-import { PlanMessageStore } from "./plan-message.store";
 import { applyToolStreamChunk } from "./tool-stream";
 
 /**
@@ -171,6 +171,13 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		existingResponse?: ResponseMessageStore,
 	) => {
 		const room = this.room;
+
+		// In agent-harness mode the message is run server-side via RunAgent
+		// instead of the streaming AskPlayground flow. See ./agent-harness.
+		if (room.mode === "agent") {
+			await runAgentMessage(this, inputMessage, existingResponse);
+			return;
+		}
 
 		// Create a placeholder response message to show streaming content
 		const responseMessage =
@@ -473,12 +480,9 @@ paramValues=[${JSON.stringify({
 
 		// get the grand parent message
 		const grandParentMessage = parentMessage.parent;
-		if (
-			grandParentMessage instanceof ResponseMessageStore === false &&
-			grandParentMessage instanceof PlanMessageStore === false
-		) {
+		if (grandParentMessage instanceof ResponseMessageStore === false) {
 			throw new Error(
-				"Can only if the parent is a response or plan message",
+				"Can only rewrite if the parent is a response message",
 			);
 		}
 

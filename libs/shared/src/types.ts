@@ -263,7 +263,8 @@ export interface ThemeMap {
 			enableModelSelect?: boolean;
 			enableAgent?: boolean;
 			enableSuggestions?: boolean;
-			enablePlan?: boolean;
+			/** Whether to enable the server-side agent harness mode (RunAgent) in the chat input. */
+			enableAgentHarness?: boolean;
 			enableRewrite?: boolean;
 			enableDarkMode?: boolean;
 			enablePromptOptimizer?: boolean;
