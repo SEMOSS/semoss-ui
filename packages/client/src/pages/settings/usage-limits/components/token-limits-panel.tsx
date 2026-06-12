@@ -919,7 +919,7 @@ export function TokenLimitsPanel({
 				emptyMessage="No per-team limits configured."
 				multiPeriod
 				savingIds={savingTeamIds}
-				supportsActive={false}
+				supportsActive
 				renderEntityDetails={(team) => (
 					<div>
 						<div className="font-medium text-sm">{team.name}</div>
@@ -962,7 +962,7 @@ export function TokenLimitsPanel({
 						responseTimeLimit: row.responseTimeLimit,
 						period: row.period,
 						savedPeriod: row.savedPeriod,
-						isActive: true,
+						isActive: row.isActive,
 					});
 					if (success) {
 						setLocalTeamRowsById((prev) => ({
