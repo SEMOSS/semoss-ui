@@ -444,11 +444,16 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 	}, []);
 
 	// ---- pixel reactor typeahead -----------------------------------------
-	// Fetch the reactor catalog via help() + app-specific reactors when a
-	// project context is active (either from the `projectId` prop passed by
-	// the floating terminal, or from the built-in terminal's ScopePicker
-	// selecting an app via terminal.selectedApp).
+	// The autocomplete catalog is the merge of two independent sources:
+	//   - platform reactors from help() — identical for every project, so it
+	//     is fetched once on auth and never on a context switch.
+	//   - app-specific reactors via GetProjectAvailableReactors — re-fetched
+	//     only when the effective project changes.
+	// Keeping them in separate refs lets the project-dependent fetch re-run
+	// without dragging the project-independent help() call along with it.
 	const reactorsRef = useRef<ReactorSuggestion[]>([]);
+	const platformReactorsRef = useRef<ReactorSuggestion[]>([]);
+	const appReactorsRef = useRef<ReactorSuggestion[]>([]);
 
 	// Effective project: explicit prop wins; fall back to the terminal
 	// context's selectedApp when the file-explorer is in APP scope.
@@ -459,13 +464,26 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 				? terminal.selectedApp?.project_id
 				: undefined;
 
+	// Merge the two sources into the consumed catalog; platform names win.
+	const rebuildReactorCatalog = useCallback(() => {
+		const seen = new Set(platformReactorsRef.current.map((i) => i.name));
+		const merged = [...platformReactorsRef.current];
+		for (const r of appReactorsRef.current) {
+			if (!seen.has(r.name)) {
+				seen.add(r.name);
+				merged.push(r);
+			}
+		}
+		reactorsRef.current = merged;
+	}, []);
+
+	// Platform reactors via help() — fetched once per auth, not per project.
 	useEffect(() => {
 		if (!isAuthorized) return;
 		let cancelled = false;
 		(async () => {
 			try {
-				// 1. Platform reactors via help()
-				const helpResp = await runPixel<string>(actions, `help();`);
+				const helpResp = await runPixel<string>(actions, `Help();`);
 				if (cancelled) return;
 
 				const items: ReactorSuggestion[] = [];
@@ -492,27 +510,9 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 					}
 				}
 
-				// 2. App-specific reactors via GetProjectAvailableReactors
-				if (effectiveProjectId) {
-					const appResp = await runPixel<string[]>(
-						actions,
-						`GetProjectAvailableReactors(project=['${effectiveProjectId}']);`,
-					);
-					if (
-						!cancelled &&
-						appResp &&
-						Array.isArray(appResp.output)
-					) {
-						const existing = new Set(items.map((i) => i.name));
-						for (const name of appResp.output) {
-							if (name && !existing.has(name)) {
-								items.push({ name, meta: "app" });
-							}
-						}
-					}
-				}
-
-				if (!cancelled) reactorsRef.current = items;
+				if (cancelled) return;
+				platformReactorsRef.current = items;
+				rebuildReactorCatalog();
 			} catch {
 				// silently preserve whatever was previously in the catalog
 			}
@@ -520,7 +520,37 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthorized, actions, effectiveProjectId]);
+	}, [isAuthorized, actions, rebuildReactorCatalog]);
+
+	// App-specific reactors — re-fetched only when the project context changes.
+	useEffect(() => {
+		if (!isAuthorized || !effectiveProjectId) {
+			appReactorsRef.current = [];
+			rebuildReactorCatalog();
+			return;
+		}
+		let cancelled = false;
+		(async () => {
+			try {
+				const appResp = await runPixel<string[]>(
+					actions,
+					`GetProjectAvailableReactors(project=['${effectiveProjectId}']);`,
+				);
+				if (cancelled) return;
+				if (appResp && Array.isArray(appResp.output)) {
+					appReactorsRef.current = appResp.output
+						.filter((name) => !!name)
+						.map((name) => ({ name, meta: "app" }));
+					rebuildReactorCatalog();
+				}
+			} catch {
+				// silently preserve whatever was previously in the catalog
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [isAuthorized, actions, effectiveProjectId, rebuildReactorCatalog]);
 
 	// Expose an external submission path so other panes (the file editor's
 	// Run button) can pipe their pixel through this transcript — same async
