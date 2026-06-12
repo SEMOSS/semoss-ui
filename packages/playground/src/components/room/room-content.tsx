@@ -536,10 +536,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					tokensMax={chat.models.contextWindow}
 					onCompact={handleCompactMessages}
 					footer={
-						<RoomStatsBar
-							lastMessageTokens={room.lastMessageTokens}
-							totalTokens={room.totalTokensConsumed}
-						/>
+						<RoomStatsBar totalTokens={room.totalTokensConsumed} />
 					}
 				/>
 			</div>

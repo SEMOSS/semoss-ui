@@ -2,9 +2,6 @@ import { BarChart3Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 
 interface RoomStatsBarProps {
-	/** Tokens used in the most recent message */
-	lastMessageTokens: number;
-
 	/** Total tokens used in the chat */
 	totalTokens: number;
 }
@@ -27,14 +24,12 @@ function formatTokens(count: number): string {
  * Only visible on hover - positioned above the chat input box
  */
 export const RoomStatsBar: React.FC<RoomStatsBarProps> = observer(
-	({ lastMessageTokens, totalTokens }) => {
+	({ totalTokens }) => {
 		return (
 			<div className="group relative">
 				<div className="flex items-center justify-end py-1 pr-2">
-					{/* Stats bar shown on hover - appears to the left */}
+					{/* Stats shown on hover - appears to the left */}
 					<div className="invisible mr-2 flex items-center gap-2 text-muted-foreground text-xs opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
-						<span>💬 Last: {formatTokens(lastMessageTokens)}</span>
-						<span>•</span>
 						<span>📊 Total: {formatTokens(totalTokens)}</span>
 					</div>
 
