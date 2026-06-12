@@ -9,7 +9,7 @@ import {
 import { useInsight } from "@semoss/sdk/react";
 import { MonacoEditor } from "@semoss/shared";
 import { useTheme } from "@semoss/ui/next";
-import { CopyIcon, Logo } from "../../assets/logos";
+import { Logo } from "../../assets/logos";
 import type {
 	ConsoleContext,
 	ConsoleHistoryStep,
@@ -60,7 +60,13 @@ const monacoLanguageForContext = (context: ConsoleContext): string => {
 	return "plaintext";
 };
 
-export const TerminalConsole = () => {
+interface TerminalConsoleProps {
+	/** When set, fetches app-specific reactors via GetProjectAvailableReactors
+	 *  and merges them with the platform catalog from help(). */
+	projectId?: string;
+}
+
+export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 	const terminal = useTerminal();
 	const { actions, insightId, isAuthorized } = useInsight();
 	const { theme } = useTheme();
@@ -116,9 +122,24 @@ export const TerminalConsole = () => {
 		null,
 	);
 	const monacoRef = useRef<typeof monacoType | null>(null);
-	// Tracks whether we've registered the pixel completion provider on the
-	// singleton monaco namespace (multiple <MonacoEditor> mounts share it).
 	const completerRegisteredRef = useRef(false);
+	// Disposables for the completion providers — cleaned up on unmount so
+	// that re-mounting (e.g. after SetContext) doesn't stack stale providers.
+	const completionDisposablesRef = useRef<monacoType.IDisposable[]>([]);
+
+	useEffect(() => {
+		return () => {
+			for (const d of completionDisposablesRef.current) {
+				try {
+					d.dispose();
+				} catch {
+					// ignore if already disposed
+				}
+			}
+			completionDisposablesRef.current = [];
+			completerRegisteredRef.current = false;
+		};
+	}, []);
 
 	// Vertical split between editor (top) and transcript (bottom). The
 	// editor's height percentage = drag-handle Y position within the pane.
@@ -423,40 +444,113 @@ export const TerminalConsole = () => {
 	}, []);
 
 	// ---- pixel reactor typeahead -----------------------------------------
-	// Fetch the reactor catalog once via `help()` and stash it in a ref so
-	// the Monaco completion provider can read it without re-registering.
+	// The autocomplete catalog is the merge of two independent sources:
+	//   - platform reactors from help() — identical for every project, so it
+	//     is fetched once on auth and never on a context switch.
+	//   - app-specific reactors via GetProjectAvailableReactors — re-fetched
+	//     only when the effective project changes.
+	// Keeping them in separate refs lets the project-dependent fetch re-run
+	// without dragging the project-independent help() call along with it.
 	const reactorsRef = useRef<ReactorSuggestion[]>([]);
+	const platformReactorsRef = useRef<ReactorSuggestion[]>([]);
+	const appReactorsRef = useRef<ReactorSuggestion[]>([]);
 
+	// Effective project: explicit prop wins; fall back to the terminal
+	// context's selectedApp when the file-explorer is in APP scope.
+	const effectiveProjectId =
+		projectId !== undefined
+			? projectId
+			: terminal.fileMode.type === "APP"
+				? terminal.selectedApp?.project_id
+				: undefined;
+
+	// Merge the two sources into the consumed catalog; platform names win.
+	const rebuildReactorCatalog = useCallback(() => {
+		const seen = new Set(platformReactorsRef.current.map((i) => i.name));
+		const merged = [...platformReactorsRef.current];
+		for (const r of appReactorsRef.current) {
+			if (!seen.has(r.name)) {
+				seen.add(r.name);
+				merged.push(r);
+			}
+		}
+		reactorsRef.current = merged;
+	}, []);
+
+	// Platform reactors via help() — fetched once per auth, not per project.
 	useEffect(() => {
 		if (!isAuthorized) return;
 		let cancelled = false;
 		(async () => {
-			const resp = await runPixel<string>(actions, `help();`);
-			if (cancelled || !resp) return;
-			if (resp.operationType.some((t) => t.indexOf("ERROR") > -1)) return;
-			const raw =
-				typeof resp.output === "string"
-					? resp.output
-					: String(resp.output ?? "");
-			// collapse runs of 2+ spaces, then split on the now-uniform "  "
-			const tokens = raw.replace(/(\s\s)+/g, "  ").split("  ");
-			const items: ReactorSuggestion[] = [];
-			let category = "";
-			for (const tk of tokens) {
-				const t = tk.trim();
-				if (!t) continue;
-				if (t.endsWith(":")) {
-					category = t.slice(0, -1);
-				} else {
-					items.push({ name: t, meta: category || "pixel" });
+			try {
+				const helpResp = await runPixel<string>(actions, `Help();`);
+				if (cancelled) return;
+
+				const items: ReactorSuggestion[] = [];
+
+				if (
+					helpResp &&
+					Array.isArray(helpResp.operationType) &&
+					!helpResp.operationType.some((t) => t.indexOf("ERROR") > -1)
+				) {
+					const raw =
+						typeof helpResp.output === "string"
+							? helpResp.output
+							: String(helpResp.output ?? "");
+					const tokens = raw.replace(/(\s\s)+/g, "  ").split("  ");
+					let category = "";
+					for (const tk of tokens) {
+						const t = tk.trim();
+						if (!t) continue;
+						if (t.endsWith(":")) {
+							category = t.slice(0, -1);
+						} else {
+							items.push({ name: t, meta: category || "pixel" });
+						}
+					}
 				}
+
+				if (cancelled) return;
+				platformReactorsRef.current = items;
+				rebuildReactorCatalog();
+			} catch {
+				// silently preserve whatever was previously in the catalog
 			}
-			reactorsRef.current = items;
 		})();
 		return () => {
 			cancelled = true;
 		};
-	}, [isAuthorized, actions]);
+	}, [isAuthorized, actions, rebuildReactorCatalog]);
+
+	// App-specific reactors — re-fetched only when the project context changes.
+	useEffect(() => {
+		if (!isAuthorized || !effectiveProjectId) {
+			appReactorsRef.current = [];
+			rebuildReactorCatalog();
+			return;
+		}
+		let cancelled = false;
+		(async () => {
+			try {
+				const appResp = await runPixel<string[]>(
+					actions,
+					`GetProjectAvailableReactors(project=['${effectiveProjectId}']);`,
+				);
+				if (cancelled) return;
+				if (appResp && Array.isArray(appResp.output)) {
+					appReactorsRef.current = appResp.output
+						.filter((name) => !!name)
+						.map((name) => ({ name, meta: "app" }));
+					rebuildReactorCatalog();
+				}
+			} catch {
+				// silently preserve whatever was previously in the catalog
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [isAuthorized, actions, effectiveProjectId, rebuildReactorCatalog]);
 
 	// Expose an external submission path so other panes (the file editor's
 	// Run button) can pipe their pixel through this transcript — same async
@@ -480,8 +574,13 @@ export const TerminalConsole = () => {
 			const KeyMod = monaco.KeyMod;
 			const KeyCode = monaco.KeyCode;
 
-			// Cmd/Ctrl-Enter → Submit
+			// Enter → Submit (only when autocomplete popup is closed)
 			editor.addCommand(KeyMod.CtrlCmd | KeyCode.Enter, () => execute());
+			editor.addCommand(
+				KeyCode.Enter,
+				() => execute(),
+				"!suggestWidgetVisible && !inlineSuggestionVisible",
+			);
 
 			// Cmd/Ctrl-Up / Down → unconditional history recall
 			editor.addCommand(KeyMod.CtrlCmd | KeyCode.UpArrow, () =>
@@ -491,26 +590,28 @@ export const TerminalConsole = () => {
 				historyDown(),
 			);
 
-			// Plain Up / Down → conditional. Recall history only when the
-			// cursor is at the boundary; otherwise fall through to Monaco's
-			// built-in cursor navigation.
-			editor.addCommand(KeyCode.UpArrow, () => {
-				const pos = editor.getPosition();
-				if (pos?.lineNumber === 1) {
-					historyUp();
-				} else {
-					editor.trigger("history", "cursorUp", null);
-				}
-			});
-			editor.addCommand(KeyCode.DownArrow, () => {
-				const pos = editor.getPosition();
-				const total = editor.getModel()?.getLineCount() ?? 1;
-				if (pos?.lineNumber === total) {
-					historyDown();
-				} else {
-					editor.trigger("history", "cursorDown", null);
-				}
-			});
+			// Plain Up / Down → history at boundary, cursor otherwise.
+			// Guard on !suggestWidgetVisible so arrow keys navigate the
+			// autocomplete list instead of jumping to history.
+			editor.addCommand(
+				KeyCode.UpArrow,
+				() => {
+					const pos = editor.getPosition();
+					if (pos?.lineNumber === 1) historyUp();
+					else editor.trigger("history", "cursorUp", null);
+				},
+				"!suggestWidgetVisible",
+			);
+			editor.addCommand(
+				KeyCode.DownArrow,
+				() => {
+					const pos = editor.getPosition();
+					const total = editor.getModel()?.getLineCount() ?? 1;
+					if (pos?.lineNumber === total) historyDown();
+					else editor.trigger("history", "cursorDown", null);
+				},
+				"!suggestWidgetVisible",
+			);
 
 			// Register the reactor catalog completer on the languages we use.
 			// The provider checks the active context so it only fires for
@@ -519,6 +620,12 @@ export const TerminalConsole = () => {
 				completerRegisteredRef.current = true;
 				const provider: monacoType.languages.CompletionItemProvider = {
 					provideCompletionItems: (model, position) => {
+						// Scope to this editor's model — prevents stacked providers
+						// from multiple mounted TerminalConsole instances (e.g. tabs)
+						// each returning suggestions for every Monaco editor.
+						if (editorRef.current?.getModel() !== model) {
+							return { suggestions: [] };
+						}
 						if (stateRef.current.context !== "Pixel") {
 							return { suggestions: [] };
 						}
@@ -545,28 +652,17 @@ export const TerminalConsole = () => {
 					"r",
 					"shell",
 				] as const) {
-					monaco.languages.registerCompletionItemProvider(
-						lang,
-						provider,
+					completionDisposablesRef.current.push(
+						monaco.languages.registerCompletionItemProvider(
+							lang,
+							provider,
+						),
 					);
 				}
 			}
 		},
 		[execute, historyUp, historyDown],
 	);
-
-	const copyRecipe = useCallback(async () => {
-		const content = historyRef.current
-			.filter((s) => s.executed)
-			.map((s) => s.expression)
-			.join("\n");
-		try {
-			await navigator.clipboard.writeText(content);
-			terminal.alert("success", t("copyAll.success"));
-		} catch {
-			terminal.alert("error", t("copyAll.error"));
-		}
-	}, [t, terminal]);
 
 	return (
 		<div className="absolute inset-0 flex flex-col overflow-hidden bg-background">
@@ -629,11 +725,9 @@ export const TerminalConsole = () => {
 				</Suspense>
 			</div>
 
-			{/* Upper toolbar — input-affecting controls live with the editor.
-                Persona switcher + Submit clustered together on the right so
-                "I'm submitting in <persona>" reads as one visual group. */}
-			<div className="flex h-10 items-center gap-2 border-border border-t bg-muted px-2">
-				<div className="ml-auto inline-flex overflow-hidden rounded border border-border">
+			{/* Upper toolbar — context switcher only; Enter submits */}
+			<div className="flex h-9 items-center border-border border-t bg-muted/60 px-2">
+				<div className="ml-auto inline-flex overflow-hidden rounded-md border border-border/70">
 					{(["Pixel", "R", "Python", "Shell"] as const).map((c) => (
 						<Tooltip
 							key={c}
@@ -641,28 +735,18 @@ export const TerminalConsole = () => {
 						>
 							<button
 								type="button"
-								className={`flex items-center justify-center border-border border-r px-2 py-1 last:border-r-0 ${
+								className={`flex items-center justify-center border-border/70 border-r px-2 py-1 last:border-r-0 ${
 									state.context === c
 										? "bg-primary/15 text-primary"
-										: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+										: "bg-background/80 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 								}`}
 								onClick={() => applyContext(c)}
 							>
-								<Logo name={c} className="h-4 w-4" />
+								<Logo name={c} className="h-3.5 w-3.5" />
 							</button>
 						</Tooltip>
 					))}
 				</div>
-
-				<Tooltip label={t("run.tooltip")} align="end">
-					<button
-						type="button"
-						className="rounded bg-primary px-3 py-1 text-primary-foreground text-sm hover:bg-primary/90"
-						onClick={execute}
-					>
-						{t("run.button")}
-					</button>
-				</Tooltip>
 			</div>
 
 			{/* Drag handle separating the input zone (editor + toolbar) from
@@ -686,40 +770,22 @@ export const TerminalConsole = () => {
 				data-section="transcript"
 			>
 				{history.length === 0 ? (
-					<div className="px-3 py-2 text-muted-foreground">
-						{t("emptyState.prefix")}{" "}
-						<kbd className="rounded border border-border bg-muted px-1 text-foreground">
-							Ctrl
-						</kbd>{" "}
-						{t("emptyState.and")}{" "}
-						<kbd className="rounded border border-border bg-muted px-1 text-foreground">
+					<div className="px-3 py-2 text-muted-foreground/70 text-xs">
+						Type a Pixel and press{" "}
+						<kbd className="rounded border border-border bg-muted px-1 text-[11px] text-foreground/80">
 							Enter
 						</kbd>{" "}
-						{t("emptyState.suffix")}
+						to run. Use{" "}
+						<kbd className="rounded border border-border bg-muted px-1 text-[11px] text-foreground/80">
+							↑↓
+						</kbd>{" "}
+						for history.
 					</div>
 				) : (
 					history.map((step) => (
 						<TranscriptRow key={step.id} step={step} />
 					))
 				)}
-			</div>
-
-			{/* Bottom toolbar — passive output controls (Copy recipe). The
-                old settings popover (Raw Output / Row Limit / Word Wrap)
-                wasn't actually wired into the rendering pipeline anymore;
-                per-row Raw/Formatted toggles + the JsonViewer cover those
-                needs now. */}
-			<div className="flex h-9 items-center gap-1 border-border border-t bg-muted px-2">
-				<Tooltip label={t("copyAll.tooltip")} align="start">
-					<button
-						type="button"
-						className="flex items-center gap-1.5 rounded px-2 py-1 text-muted-foreground text-xs hover:bg-accent hover:text-accent-foreground"
-						onClick={copyRecipe}
-					>
-						<CopyIcon className="h-3.5 w-3.5" />
-						{t("copyAll.button")}
-					</button>
-				</Tooltip>
 			</div>
 		</div>
 	);

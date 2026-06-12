@@ -225,6 +225,7 @@ export const CellOutputBlock = ({
 						count: countLines(output),
 					})} · ${formatBytes(output)}`}
 					accent={error ? "red" : "blue"}
+					collapsible
 					headerExtras={
 						<>
 							{!error && outputValue !== null && (
