@@ -1,10 +1,4 @@
-export type TimePeriod =
-	| "HOUR"
-	| "DAY"
-	| "WEEK"
-	| "MONTH"
-	| "YEAR"
-	| "ALL_TIME";
+export type TimePeriod = "DAY" | "WEEK" | "MONTH" | "YEAR" | "ALL_TIME";
 
 export interface TokenLimitEntry {
 	id: string;

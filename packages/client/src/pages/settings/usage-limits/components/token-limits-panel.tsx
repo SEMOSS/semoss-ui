@@ -21,7 +21,7 @@ import {
 	Spinner,
 	Switch,
 } from "@semoss/ui/next";
-import { TIME_PERIOD_LABELS, UI_TIME_PERIODS } from "../constants";
+import { TIME_PERIOD_LABELS, TIME_PERIODS } from "../constants";
 import type { TimePeriod, TokenLimitEntry } from "../types";
 import { EditableLimitRow } from "./editable-limit-row";
 import {
@@ -392,21 +392,21 @@ export function TokenLimitsPanel({
 	);
 	const remainingDefaultUserPeriods = useMemo(
 		() =>
-			UI_TIME_PERIODS.filter(
+			TIME_PERIODS.filter(
 				(period) => !defaultUserPeriods.includes(period),
 			),
 		[defaultUserPeriods],
 	);
 	const remainingDefaultTeamPeriods = useMemo(
 		() =>
-			UI_TIME_PERIODS.filter(
+			TIME_PERIODS.filter(
 				(period) => !defaultTeamPeriods.includes(period),
 			),
 		[defaultTeamPeriods],
 	);
 	const remainingPlatformPeriods = useMemo(
 		() =>
-			UI_TIME_PERIODS.filter(
+			TIME_PERIODS.filter(
 				(period) =>
 					!platformLimits.some((row) => row.period === period),
 			),
@@ -775,7 +775,7 @@ export function TokenLimitsPanel({
 				entities={displayedGroupedUserLimits}
 				entityOptions={memberOptions.filter((option) => {
 					const existingRows = userRowsById.get(option.id) ?? [];
-					return existingRows.length < UI_TIME_PERIODS.length;
+					return existingRows.length < TIME_PERIODS.length;
 				})}
 				emptyMessage="No per-user limits configured."
 				multiPeriod
@@ -792,7 +792,7 @@ export function TokenLimitsPanel({
 				onAddEntity={(user) => {
 					const existingRows = userRowsById.get(user.id) ?? [];
 					const nextPeriod =
-						UI_TIME_PERIODS.find(
+						TIME_PERIODS.find(
 							(period) =>
 								!existingRows.some(
 									(row) => row.period === period,
@@ -914,7 +914,7 @@ export function TokenLimitsPanel({
 				entities={displayedGroupedTeamLimits}
 				entityOptions={teamOptions.filter((option) => {
 					const existingRows = teamRowsById.get(option.id) ?? [];
-					return existingRows.length < UI_TIME_PERIODS.length;
+					return existingRows.length < TIME_PERIODS.length;
 				})}
 				emptyMessage="No per-team limits configured."
 				multiPeriod
@@ -932,7 +932,7 @@ export function TokenLimitsPanel({
 				onAddEntity={(team) => {
 					const existingRows = teamRowsById.get(team.id) ?? [];
 					const nextPeriod =
-						UI_TIME_PERIODS.find(
+						TIME_PERIODS.find(
 							(period) =>
 								!existingRows.some(
 									(row) => row.period === period,
@@ -1178,7 +1178,7 @@ const LimitFields = ({
 	limit,
 	onChange,
 	disabled,
-	availablePeriods = UI_TIME_PERIODS,
+	availablePeriods = TIME_PERIODS,
 }: {
 	limit: TokenLimitEntry;
 	onChange: (next: TokenLimitEntry) => void;
@@ -1382,7 +1382,7 @@ const PlatformRowFields = ({
 			limit={limit}
 			onChange={onChange}
 			disabled={disabled}
-			availablePeriods={UI_TIME_PERIODS.filter(
+			availablePeriods={TIME_PERIODS.filter(
 				(period) =>
 					period === limit.period || !usedPeriods?.includes(period),
 			)}
@@ -1472,7 +1472,7 @@ const DefaultLimitEditorRow = ({
 			limit={limit}
 			onChange={onChange}
 			disabled={disabled}
-			availablePeriods={PERIODS.filter(
+			availablePeriods={TIME_PERIODS.filter(
 				(period) =>
 					period === limit.period || !usedPeriods.includes(period),
 			)}

@@ -5,6 +5,7 @@ import {
 	getGroupsWithAccessToEngine,
 	getGroupsWithAccessToProject,
 } from "@/api/teams";
+import { TIME_PERIODS } from "../constants";
 import type { TimePeriod, TokenLimitEntry } from "../types";
 
 interface LimitValues {
@@ -102,18 +103,7 @@ const DEFAULT_LIMIT_VALUES: LimitValues = {
 	isActive: true,
 };
 
-export const PERIODS = [
-	"HOUR",
-	"DAY",
-	"WEEK",
-	"MONTH",
-	"YEAR",
-	"ALL_TIME",
-] as TimePeriod[];
-
-const UI_PERIODS = PERIODS.filter(
-	(period): period is Exclude<TimePeriod, "HOUR"> => period !== "HOUR",
-) as TimePeriod[];
+export const PERIODS = TIME_PERIODS;
 
 export const DEFAULT_LIMIT_DRAFT: TokenLimitEntry = {
 	id: "default-limit",
@@ -304,7 +294,7 @@ export const useTokenLimitsData = ({
 	}, []);
 
 	const isUiPeriod = useCallback(
-		(period: TimePeriod) => UI_PERIODS.includes(period),
+		(period: TimePeriod) => PERIODS.includes(period),
 		[],
 	);
 

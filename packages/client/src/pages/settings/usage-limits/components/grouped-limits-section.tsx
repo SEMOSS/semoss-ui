@@ -20,7 +20,7 @@ import {
 	Switch,
 } from "@semoss/ui/next";
 import { useServerPagination } from "@/hooks";
-import { TIME_PERIOD_LABELS, UI_TIME_PERIODS } from "../constants";
+import { TIME_PERIOD_LABELS, TIME_PERIODS } from "../constants";
 import type { TimePeriod } from "../types";
 
 export interface GroupedLimitRow {
@@ -49,7 +49,7 @@ interface AddableOption {
 }
 
 const ALL_PERIODS = Object.keys(TIME_PERIOD_LABELS) as TimePeriod[];
-const PERIODS = UI_TIME_PERIODS;
+const PERIODS = TIME_PERIODS;
 const DIALOG_ROWS_PER_PAGE = 8;
 
 const parseNullableNumber = (value: string) => {

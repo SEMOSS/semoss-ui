@@ -1,7 +1,6 @@
 import type { TimePeriod } from "./types";
 
 export const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
-	HOUR: "Per Hour",
 	DAY: "Per Day",
 	WEEK: "Per Week",
 	MONTH: "Per Month",
@@ -9,7 +8,7 @@ export const TIME_PERIOD_LABELS: Record<TimePeriod, string> = {
 	ALL_TIME: "All Time",
 };
 
-export const UI_TIME_PERIODS: TimePeriod[] = [
+export const TIME_PERIODS: TimePeriod[] = [
 	"DAY",
 	"WEEK",
 	"MONTH",

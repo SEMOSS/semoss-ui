@@ -320,12 +320,6 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER"],
 			},
 			{
-				name: "Usage Limits",
-				path: "usage-limits",
-				component: EngineUsageLimitsPage,
-				restrict: ["EDIT", "OWNER"],
-			},
-			{
 				name: "Files",
 				path: "files",
 				component: EngineFileManagerPage,
