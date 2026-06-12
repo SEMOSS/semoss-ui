@@ -51,17 +51,32 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		}, [pendingAdvance, chunks.length, activeIndex]);
 
 		// Called by each subcomponent when its animation is complete.
+		// Guards against duplicate or stale onComplete calls: only advances when
+		// the completed chunk is actually the current active one.
 		const handleChunkComplete = useCallback(
 			(completedIndex: number) => {
-				if (completedIndex + 1 < chunks.length) {
-					setActiveIndex(completedIndex + 1);
-				} else {
-					// The next chunk hasn't appeared yet — set flag so it advances
-					// as soon as a new chunk is appended.
+				setActiveIndex((current) => {
+					if (completedIndex !== current) return current;
+					if (completedIndex + 1 < chunks.length) {
+						return completedIndex + 1;
+					}
+					// The next chunk hasn't appeared yet — set pending flag.
+					// Return current unchanged; the pendingAdvance effect will advance.
 					setPendingAdvance(true);
-				}
+					return current;
+				});
 			},
 			[chunks.length],
+		);
+
+		// Stable per-chunk callbacks — each function identity is preserved across
+		// re-renders as long as chunk count and handleChunkComplete don't change.
+		// This prevents effects in children that dep on `onComplete` from firing
+		// on every streaming token just because the parent re-rendered.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: chunks.length is the right dep — we only need new callbacks when a chunk is added, not when chunk content changes
+		const chunkCallbacks = useMemo(
+			() => chunks.map((_, idx) => () => handleChunkComplete(idx)),
+			[chunks.length, handleChunkComplete],
 		);
 
 		return (
@@ -80,7 +95,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 								isDone={isDone}
 								room={message.room}
 								message={message}
-								onComplete={() => handleChunkComplete(idx)}
+								onComplete={chunkCallbacks[idx]}
 							/>
 						);
 					}
@@ -94,7 +109,7 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 							isDone={isDone}
 							message={message}
 							isLast={isLast && idx === chunks.length - 1}
-							onComplete={() => handleChunkComplete(idx)}
+							onComplete={chunkCallbacks[idx]}
 						/>
 					);
 				})}

@@ -106,28 +106,16 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 
 			// ── Effects ───────────────────────────────────────────────────────────────
 
-			// Per-activation guards — reset together whenever this chunk becomes active
-			const onCompleteCalledRef = useRef(false);
+			// Track whether the typewriter has been started for the current activation.
+			// Reset whenever isActive flips on so a re-activation starts fresh.
 			const typewriterStartedRef = useRef(false);
 			useEffect(() => {
 				if (isActive) {
-					onCompleteCalledRef.current = false;
 					typewriterStartedRef.current = false;
 				}
 			}, [isActive]);
 
-			const fireOnComplete = useCallback(() => {
-				if (!onCompleteCalledRef.current) {
-					onCompleteCalledRef.current = true;
-					onComplete();
-				}
-			}, [onComplete]);
-
-			// Start the typewriter when this chunk becomes active.
-			// Watches newContent.length so it also fires when the first token arrives
-			// after activation (handles the case where isActive became true while the
-			// tail content was still empty — e.g. right after an HTML fence closes).
-			// biome-ignore lint/correctness/useExhaustiveDependencies: fireOnComplete and typewriter.start are stable (useCallback with empty deps) — omitting them is safe and prevents spurious re-triggers
+			// biome-ignore lint/correctness/useExhaustiveDependencies: typewriter.start is stable (useCallback with empty deps) — omitting it is safe and prevents spurious re-triggers
 			useEffect(() => {
 				if (!isActive) return;
 
@@ -138,7 +126,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 					}
 				} else if (isFinalized) {
 					// No new content to animate and already finalized — complete immediately
-					fireOnComplete();
+					onComplete();
 				}
 			}, [isActive, newContent.length, isFinalized]);
 
@@ -164,9 +152,9 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 
 			// Fire onComplete when typewriter has caught up AND chunk is finalized.
 			// Only fires when there is actual new content to animate — the "no new
-			// content" path is handled by the start effect above (fireOnComplete when
-			// isFinalized and newContent is empty), preventing a premature complete
-			// before the typewriter has had a chance to start.
+			// content" path is handled by the start effect above (calling onComplete
+			// directly when isFinalized and newContent is empty), preventing a premature
+			// complete before the typewriter has had a chance to start.
 			useEffect(() => {
 				if (!isActive) return;
 				if (newContent.length === 0) return;
@@ -174,7 +162,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 					!typewriter.isTyping &&
 					typewriter.rendered.length >= newContent.length;
 				if (caughtUp && isFinalized) {
-					fireOnComplete();
+					onComplete();
 				}
 			}, [
 				isActive,
@@ -182,7 +170,7 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				typewriter.rendered.length,
 				newContent.length,
 				isFinalized,
-				fireOnComplete,
+				onComplete,
 			]);
 
 			// ── Render ────────────────────────────────────────────────────────────────

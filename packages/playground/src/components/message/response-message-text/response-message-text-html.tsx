@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "@semoss/i18n";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
 import { HtmlPreviewBlock } from "./html-preview-block";
@@ -40,30 +40,16 @@ export const ResponseMessageTextHtml: React.FC<
 > = ({ html, isActive, isDone, isFinalized, room, onComplete }) => {
 	const { t } = useTranslation("chat");
 
-	// Guard against calling onComplete more than once
-	const onCompleteCalledRef = useRef(false);
-	useEffect(() => {
-		if (isActive) {
-			onCompleteCalledRef.current = false;
-		}
-	}, [isActive]);
-
-	const fireOnComplete = useCallback(() => {
-		if (!onCompleteCalledRef.current) {
-			onCompleteCalledRef.current = true;
-			onComplete();
-		}
-	}, [onComplete]);
-
 	// Fire onComplete as soon as the fence closes (isFinalized becomes true).
 	// HtmlPreviewBlock manages its own internal streaming throttle and iframe
 	// load state — we don't need to wait for the iframe before advancing the
 	// queue. The next md chunk starting while the HTML preview settles is fine.
+	// Duplicate-call protection lives in the parent (handleChunkComplete).
 	useEffect(() => {
 		if (isFinalized && isActive) {
-			fireOnComplete();
+			onComplete();
 		}
-	}, [isFinalized, isActive, fireOnComplete]);
+	}, [isFinalized, isActive, onComplete]);
 
 	// Waiting chunks render nothing until it's their turn
 	if (!isActive && !isDone) {
