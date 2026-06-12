@@ -1,0 +1,30 @@
+{
+	"context": {
+		"switchTo": "Overschakelen naar {{context}}"
+	},
+	"run": {
+		"button": "Uitvoeren",
+		"tooltip": "Uitvoeren (Ctrl+Enter)"
+	},
+	"emptyState": {
+		"prefix": "Typ hierboven een opdracht en druk op",
+		"and": "+",
+		"suffix": "om uit te voeren. De uitvoer verschijnt hier."
+	},
+	"dragToResize": "Sleep om het formaat te wijzigen",
+	"copyAll": {
+		"button": "Alle stappen kopiëren",
+		"tooltip": "Elke ingediende stap naar het klembord kopiëren",
+		"success": "Recept is gekopieerd naar het klembord",
+		"error": "Recept kon niet naar het klembord worden gekopieerd"
+	},
+	"actions": {
+		"enteredRMode": "U bent in de R-modus gegaan.",
+		"enteredPythonMode": "U bent in de Python-modus gegaan."
+	},
+	"results": {
+		"successNoOutput": "✓ Succesvol uitgevoerd (geen uitvoer)",
+		"insightNotReady": "Insight niet gereed",
+		"unknownError": "Onbekende fout"
+	}
+}
