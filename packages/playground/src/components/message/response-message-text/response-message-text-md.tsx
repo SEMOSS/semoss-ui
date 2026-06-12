@@ -137,18 +137,22 @@ export const ResponseMessageTextMd: React.FC<ResponseMessageTextMdProps> =
 				}
 			}, [isDone, typewriter.skipToEnd]);
 
-			// When streaming ends (isFinalized becomes true) and the typewriter is
-			// still running, skip it to the end immediately so the full content is
-			// shown at once rather than slowly trickling in after the LLM is done.
-			// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally fires only when isFinalized flips — adding isActive/newContent.length/typewriter.skipToEnd would cause skipToEnd to fire on every token, breaking the typewriter
+			// Once the entire message has finished streaming, skip the typewriter to
+			// end so the full chunk content is shown immediately rather than slowly
+			// trickling in. We intentionally wait for the whole message (not just
+			// this chunk) to be done — intermediate chunks should animate naturally
+			// at their own pace while the LLM is still producing tokens.
+			const isStreaming = isLast && message.isThinking;
+			// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally fires only when isStreaming flips — adding isActive/newContent.length/typewriter.skipToEnd would cause skipToEnd to fire on every token, breaking the typewriter
 			useEffect(() => {
 				if (!isActive) return;
+				if (isStreaming) return;
 				if (!isFinalized) return;
 				if (newContent.length === 0) return;
 				// Skip to end — this sets renderedLength = newContent.length and
 				// stops isRunning, which will trigger the caught-up effect below.
 				typewriter.skipToEnd();
-			}, [isFinalized]);
+			}, [isStreaming, isFinalized]);
 
 			// Fire onComplete when typewriter has caught up AND chunk is finalized.
 			// Only fires when there is actual new content to animate — the "no new

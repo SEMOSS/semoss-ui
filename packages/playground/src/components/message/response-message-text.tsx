@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ResponseMessageStore } from "@/stores";
 import type { PixelMessageTextPart } from "@/types";
 import { parseChunks } from "./response-message-text/parse-chunks";
@@ -73,6 +73,10 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 		// re-renders as long as chunk count and handleChunkComplete don't change.
 		// This prevents effects in children that dep on `onComplete` from firing
 		// on every streaming token just because the parent re-rendered.
+		// `chunks` itself is a new array every render (parseChunks is pure and
+		// runs fresh each time), so using it as a dep would defeat the purpose —
+		// we only need to regenerate callbacks when the number of chunks changes.
+		// biome-ignore lint/correctness/useExhaustiveDependencies: chunks is intentionally replaced with chunks.length — see comment above
 		const chunkCallbacks = useMemo(
 			() => chunks.map((_, idx) => () => handleChunkComplete(idx)),
 			[chunks.length, handleChunkComplete],
