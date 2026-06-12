@@ -1,1 +1,1 @@
-export * from  "./DependencyPromptModal";
+export * from "./DependencyPromptModal";

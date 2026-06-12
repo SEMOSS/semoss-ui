@@ -10,6 +10,7 @@ import {
 	uploadApp,
 	uploadEngine,
 	uploadInsight,
+	uploadUser,
 } from "../../api";
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
@@ -727,8 +728,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 				);
 			}
 
-			const targetOrigin = new URL(Env.APP).origin;
-
 			window.parent.postMessage(
 				{
 					type: "SMSS_EXEC_TOOL",
@@ -743,7 +742,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 						executedParameters: executedParameters,
 					} satisfies MCPToolResponse,
 				},
-				targetOrigin,
+				"*",
 			);
 		},
 
@@ -953,6 +952,25 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		uploadInsight: async (path: string, files: File | File[]) => {
 			try {
 				return await uploadInsight(this._store.insightId, path, files);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * User
+		 */
+		/**
+		 * Upload file(s) to the current user's user space
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadUser: async (path: string, files: File | File[]) => {
+			try {
+				return await uploadUser(path, files, this._store.insightId);
 			} catch (error) {
 				this.processActionError(error as Error);
 			}

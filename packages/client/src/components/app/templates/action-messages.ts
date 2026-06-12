@@ -6,7 +6,7 @@ import type { ActionMessages } from "@semoss/renderer";
 // literals avoids pulling renderer runtime code into the template modules while
 // still enforcing compile-time compatibility via `ActionMessages.<KEY>` types.
 export const TEMPLATE_ACTION_MESSAGES = {
-	RUN_QUERY: "RUN_QUERY" as ActionMessages.RUN_QUERY,
+	RUN_NOTEBOOK: "RUN_QUERY" as ActionMessages.RUN_NOTEBOOK,
 	RUN_CELL: "RUN_CELL" as ActionMessages.RUN_CELL,
 	MODIFY_VARIABLE: "MODIFY_VARIABLE" as ActionMessages.MODIFY_VARIABLE,
 } as const;

@@ -1,0 +1,52 @@
+{
+	"help": {
+		"title": "مساعدة الطرفية",
+		"emptyMessage": "لم يتم إرجاع أمثلة استخدام منظمة لـ {{type}}.",
+		"rawResponse": "الاستجابة الخام",
+		"copy": "نسخ",
+		"copied": "تم النسخ",
+		"copyFailed": "فشل نسخ الكود",
+		"fetchFailed": "فشل في جلب الاستخدام (لا توجد استجابة)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) أرجع خطأ."
+	},
+	"save": {
+		"title": "حفظ",
+		"fields": {
+			"name": "الاسم:",
+			"comment": "تعليق:"
+		},
+		"buttons": {
+			"save": "حفظ",
+			"cancel": "إلغاء"
+		},
+		"comment": "جاري الحفظ في {{timestamp}}",
+		"errors": {
+			"nameRequired": "يحتاج الملف إلى اسم.",
+			"commentRequired": "يرجى تضمين تعليق يصف تغييراتك.",
+			"saveFailed": "فشل حفظ الأصل.",
+			"unknown": "فشل الحفظ"
+		}
+	},
+	"upload": {
+		"title": "رفع",
+		"fields": {
+			"selectFile": "اختر ملفاً:",
+			"comment": "تعليق:"
+		},
+		"dropzone": {
+			"drag": "اسحب الملفات وأفلتها هنا",
+			"or": "أو ارفع"
+		},
+		"buttons": {
+			"upload": "رفع",
+			"cancel": "إلغاء",
+			"remove": "إزالة"
+		},
+		"comment": "جاري الرفع في {{timestamp}}",
+		"errors": {
+			"filesRequired": "يرجى اختيار ملفات للرفع.",
+			"commentRequired": "يرجى تضمين تعليق يصف الملفات المضافة حديثاً.",
+			"unknown": "فشل الرفع"
+		}
+	}
+}

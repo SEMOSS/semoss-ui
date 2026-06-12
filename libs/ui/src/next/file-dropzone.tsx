@@ -131,7 +131,7 @@ const FileDropzone = React.forwardRef<HTMLDivElement, FileDropzoneProps>(
 									<button
 										type="button"
 										onClick={() => removeFile(f.name)}
-										className="ml-2 shrink-0 rounded p-0.5 hover:bg-accent"
+										className="ms-2 shrink-0 rounded p-0.5 hover:bg-accent"
 										aria-label={`Remove ${f.name}`}
 									>
 										<X className="size-3.5 text-muted-foreground" />

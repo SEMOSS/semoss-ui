@@ -10,8 +10,9 @@
 	"form": {
 		"modelLabel": "Modèle",
 		"instructionsLabel": "Instructions",
+		"agentLabel": "Agent",
 		"knowledgeLabel": "Connaissances",
-		"toolboxLabel": "Boîte à outils",
+		"toolboxLabel": "Boîtes à outils",
 		"maxTokenLabel": "Jeton maximum",
 		"temperatureLabel": "Température"
 	},
@@ -91,9 +92,9 @@
 	},
 	"contextWindow": {
 		"descriptionLow": "Toutes les conversations ont une limite. Les conversations très longues finiront par faire oublier les messages précédents au modèle.",
-		"descriptionMedium": "Cette conversation devient longue. Si elle continue, le modèle commencera à oublier les messages précédents. Envisagez de démarrer un nouveau chat bientôt.",
-		"descriptionHigh": "Cette conversation est presque pleine. Le modèle commencera bientôt à oublier les messages précédents. Envisagez de démarrer un nouveau chat.",
-		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents lors de la génération des réponses. Démarrez un nouveau chat pour de meilleurs résultats.",
+		"descriptionMedium": "Cette conversation devient longue. Si elle continue, le modèle commencera à oublier les messages précédents. Envisagez de compacter cette conversation ou de démarrer un nouveau chat bientôt.",
+		"descriptionHigh": "Cette conversation est presque pleine. Le modèle commencera bientôt à oublier les messages précédents. Compactez cette conversation ou démarrez un nouveau chat pour continuer avec le contexte complet.",
+		"descriptionExceeded": "Cette conversation a dépassé sa limite. Le modèle oublie maintenant les messages précédents. Compactez cette conversation ou démarrez un nouveau chat pour de meilleurs résultats.",
 		"memoryUsedTitle": "Mémoire utilisée :",
 		"memoryUsedValue": "{{used}} / {{total}} jetons ({{percent}}%)"
 	},

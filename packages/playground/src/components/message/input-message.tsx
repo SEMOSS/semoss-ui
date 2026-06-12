@@ -96,7 +96,7 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 
 		return (
 			<>
-				<div className="group ml-auto flex max-w-[750px] flex-col items-end">
+				<div className="group ms-auto flex max-w-[750px] flex-col items-end">
 					<div className="items-start self-stretch rounded-lg bg-accent px-4 py-3 leading-normal">
 						{mediaParts.length > 0 && (
 							<div className="mb-2 flex flex-row gap-2 overflow-x-auto pb-1">
@@ -275,7 +275,8 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 						{textParts.map(({ p, i }) => (
 							<span
 								key={`${message.id}-text-${i}`}
-								className="text-foreground text-small"
+								dir="auto"
+								className="whitespace-pre-wrap text-foreground text-small"
 							>
 								{p.text}
 							</span>

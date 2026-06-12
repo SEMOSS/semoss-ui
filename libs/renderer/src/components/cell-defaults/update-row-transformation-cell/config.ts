@@ -2,7 +2,7 @@ import type { CellConfig } from "../../../store";
 import {
 	UpdateRowTransformationCell,
 	type UpdateRowTransformationCellDef,
-} from "./UpdateRowTransformationCell";
+} from "./update-row-transformation-cell";
 
 export const UpdateRowTransformationCellConfig: CellConfig<UpdateRowTransformationCellDef> =
 	{

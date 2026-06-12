@@ -1,2 +1,2 @@
 export * from "./config";
-export * from "./DateDifferenceTransformationCell";
+export * from "./date-difference-transformation-cell";

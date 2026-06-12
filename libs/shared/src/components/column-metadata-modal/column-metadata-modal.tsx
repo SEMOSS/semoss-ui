@@ -40,16 +40,20 @@ export const ColumnMetadataModal: React.FC<ColumnMetadataModalProps> = ({
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className="space-y-4 overflow-y-auto pr-1">
+				<div className="space-y-4 overflow-y-auto pe-1">
 					<div className="flex flex-wrap items-center gap-2">
 						{tableName && (
 							<Badge variant="outline">Table: {tableName}</Badge>
 						)}
 						{columnName && (
-							<Badge variant="outline">Column: {columnName}</Badge>
+							<Badge variant="outline">
+								Column: {columnName}
+							</Badge>
 						)}
 						{physicalType && (
-							<Badge variant="outline">Physical Type: {physicalType}</Badge>
+							<Badge variant="outline">
+								Physical Type: {physicalType}
+							</Badge>
 						)}
 					</div>
 

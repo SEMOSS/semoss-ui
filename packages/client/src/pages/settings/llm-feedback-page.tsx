@@ -2,18 +2,18 @@ import {
 	CalendarIcon,
 	ChevronLeft,
 	ChevronRight,
+	Copy,
+	Download,
 	Search,
 	X,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
 	Calendar,
-	Dialog,
-	DialogContent,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupButton,
@@ -26,6 +26,11 @@ import {
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
+	Sheet,
+	SheetContent,
+	SheetDescription,
+	SheetHeader,
+	SheetTitle,
 	Spinner,
 	toast,
 } from "@semoss/ui/next";
@@ -33,12 +38,15 @@ import {
 interface LLMFeedback {
 	AGENT_ID: string;
 	PROJECT_ID: string;
+	WORKSPACE_ID: string;
 	USER_ID: string;
+	USER_NAME: string;
 	ENGINE_ID: string;
 	DATE_CREATED: string;
 	MESSAGE_ID: string;
 	MESSAGE_DATA: string;
 	MESSAGE_TEXT: string;
+	PROMPT: string;
 	FEEDBACK_TEXT: string;
 	FEEDBACK_DATE: string;
 	RATING: boolean;
@@ -54,19 +62,10 @@ export const LLMFeedbackPage = () => {
 	}, []);
 
 	const [feedback, setFeedback] = useState<LLMFeedback[]>([]);
-	const [columns, setColumns] = useState<
-		{
-			field: string;
-			headerName: string;
-			flex: number;
-			minWidth: number;
-			renderCell?: (params: { value: unknown }) => ReactNode;
-		}[]
-	>([]);
 	const [count, setCount] = useState<number>(0);
 	const [paginationModel, setPaginationModel] = useState({
 		page: 0,
-		pageSize: 10,
+		pageSize: 50,
 	});
 	const [engineId, setEngineId] = useState<string>("");
 	const [projectId, setProjectId] = useState<string>("");
@@ -77,111 +76,99 @@ export const LLMFeedbackPage = () => {
 	const [endDate, setEndDate] = useState<Date | undefined>(currentDate);
 	const [debouncedUserId, setDebouncedUserId] = useState<string>("");
 	const [isSearching, setIsSearching] = useState(false);
-	const [openMessageModal, setOpenMessageModal] = useState(false);
-	const [selectedMessageData, setSelectedMessageData] = useState<string>("");
+	const [selectedRow, setSelectedRow] = useState<LLMFeedback | null>(null);
+	const [isExporting, setIsExporting] = useState(false);
 
-	const columnDefinitions = [
-		"AGENT_ID",
-		"PROJECT_ID",
-		"USER_ID",
-		"DATE_CREATED",
-		"RATING",
-		"MESSAGE_ID",
-		"MESSAGE_DATA",
-		"FEEDBACK_TEXT",
-		"FEEDBACK_DATE",
-	];
+	const columnDefinitions = useMemo(
+		() => [
+			"AGENT_ID",
+			"PROJECT_ID",
+			"WORKSPACE_ID",
+			"USER_NAME",
+			"DATE_CREATED",
+			"RATING",
+			"MESSAGE_ID",
+			"PROMPT",
+			"MESSAGE_DATA",
+			"FEEDBACK_TEXT",
+			"FEEDBACK_DATE",
+		],
+		[],
+	);
 
-	const renderDataGridColumns = useCallback((feedbackData) => {
-		if (feedbackData.length === 0 || !feedbackData[0]) return;
+	const formatHeader = useCallback(
+		(name: string) =>
+			name
+				.replace(/_/g, " ")
+				.toLowerCase()
+				.replace(/\b\w/g, (char) => char.toUpperCase()),
+		[],
+	);
 
-		const dataGridColumns = columnDefinitions.map((name) => {
-			if (name === "RATING") {
-				return {
-					field: name,
-					headerName: name
-						.replace(/_/g, " ")
-						.toLowerCase()
-						.replace(/\b\w/g, (char) => char.toUpperCase()),
-					flex: 1,
-					minWidth: 100,
-					renderCell: (params) => {
-						const rating = params.value;
-						return (
-							<Badge
-								variant="outline"
-								className={
-									rating === true
-										? "border-green-500 font-normal text-green-600"
-										: "border-red-500 font-normal text-red-600"
-								}
-							>
-								{rating === true ? "Positive" : "Negative"}
-							</Badge>
-						);
-					},
-				};
+	// Per-column max widths so long string fields don't blow up the row height.
+	const columnMaxWidth: Record<string, number> = {
+		AGENT_ID: 140,
+		PROJECT_ID: 140,
+		WORKSPACE_ID: 140,
+		USER_NAME: 140,
+		DATE_CREATED: 170,
+		RATING: 110,
+		MESSAGE_ID: 140,
+		PROMPT: 220,
+		MESSAGE_DATA: 220,
+		FEEDBACK_TEXT: 220,
+		FEEDBACK_DATE: 170,
+	};
+
+	const renderCompactCell = useCallback(
+		(field: string, value: unknown): ReactNode => {
+			if (field === "RATING") {
+				return (
+					<Badge
+						variant="outline"
+						className={
+							value === true
+								? "border-green-500 font-normal text-green-600"
+								: "border-red-500 font-normal text-red-600"
+						}
+					>
+						{value === true ? "Positive" : "Negative"}
+					</Badge>
+				);
 			}
-
-			if (name === "MESSAGE_DATA") {
-				return {
-					field: name,
-					headerName: name
-						.replace(/_/g, " ")
-						.toLowerCase()
-						.replace(/\b\w/g, (char) => char.toUpperCase()),
-					flex: 1,
-					minWidth: 100,
-					renderCell: (params) => {
-						return (
-							<button
-								type="button"
-								className="flex h-full w-full items-center text-left leading-normal"
-								onClick={() => {
-									setSelectedMessageData(params.value);
-									setOpenMessageModal(true);
-								}}
-							>
-								{`"${params.value}"`}
-							</button>
-						);
-					},
-				};
+			if (field === "FEEDBACK_TEXT" && !value) {
+				return (
+					<span className="text-muted-foreground italic">
+						No Feedback Provided
+					</span>
+				);
 			}
+			return String(value ?? "");
+		},
+		[],
+	);
 
-			if (name === "FEEDBACK_TEXT") {
-				return {
-					field: name,
-					headerName: name
-						.replace(/_/g, " ")
-						.toLowerCase()
-						.replace(/\b\w/g, (char) => char.toUpperCase()),
-					flex: 2,
-					minWidth: 100,
-					renderCell: (params) => {
-						return (
-							<div className="flex h-full items-center whitespace-normal break-words italic leading-normal">
-								{params.value
-									? params.value
-									: "No Feedback Provided"}
-							</div>
-						);
-					},
-				};
-			}
+	const prettyFormat = useCallback((value: unknown): string => {
+		if (value === null || value === undefined || value === "") return "";
+		const str = String(value);
+		try {
+			return JSON.stringify(JSON.parse(str), null, 2);
+		} catch {
+			return str;
+		}
+	}, []);
 
-			return {
-				field: name,
-				headerName: name
-					.replace(/_/g, " ")
-					.toLowerCase()
-					.replace(/\b\w/g, (char) => char.toUpperCase()),
-				flex: 1,
-				minWidth: 100,
-			};
-		});
-
-		setColumns(dataGridColumns);
+	const copyToClipboard = useCallback(async (text: string, label: string) => {
+		if (!text) {
+			toast.error(`${label} is empty`);
+			return;
+		}
+		try {
+			await navigator.clipboard.writeText(text);
+			toast.success(`Copied ${label}`);
+		} catch {
+			toast.error(`Failed to copy ${label}`);
+		}
 	}, []);
 
 	useEffect(() => {
@@ -219,28 +206,16 @@ export const LLMFeedbackPage = () => {
 
 	useEffect(() => {
 		if (getFeedback.status === "SUCCESS") {
-			const dataGridRows = getFeedback.data.map((item, index) => {
-				const { USER_NAME: _USER_NAME, ...rest } = item;
-				return {
-					id: index + 1,
-					...rest,
-				};
-			});
+			const dataGridRows = getFeedback.data.map((item, index) => ({
+				id: index + 1,
+				...item,
+			}));
 
 			setFeedback(dataGridRows);
-
-			if (dataGridRows.length > 0) {
-				renderDataGridColumns(dataGridRows);
-			}
 		} else if (getFeedback.status === "ERROR") {
 			toast.error(String(getFeedback.error));
 		}
-	}, [
-		getFeedback.status,
-		getFeedback.data,
-		getFeedback.error,
-		renderDataGridColumns,
-	]);
+	}, [getFeedback.status, getFeedback.data, getFeedback.error]);
 
 	useEffect(() => {
 		if (getCount.status === "SUCCESS") {
@@ -249,6 +224,76 @@ export const LLMFeedbackPage = () => {
 			toast.error(String(getCount.error));
 		}
 	}, [getCount.status, getCount.data, getCount.error]);
+
+	const escapeCsvValue = (value: unknown): string => {
+		if (value === null || value === undefined) return "";
+		const str = String(value);
+		return `"${str.replace(/"/g, '""')}"`;
+	};
+
+	const handleExportToCsv = async () => {
+		if (!startDate || !endDate || count === 0) return;
+
+		setIsExporting(true);
+		try {
+			const exportPixel = `AdminGetLlmFeedback(
+                limit=[${count}],
+                offset=[0]${engineId ? `, engine=["${engineId}"]` : ""}${projectId ? `, project=["${projectId}"]` : ""}${debouncedUserId ? `, userId=["${debouncedUserId}"]` : ""}, startDate=["${startDate.toISOString().split("T")[0]}"], endDate=["${endDate.toISOString().split("T")[0]}"]);`;
+
+			const response = await runPixel(exportPixel);
+			const firstResult = response?.pixelReturn?.[0];
+			const rows = (firstResult?.output as LLMFeedback[]) || [];
+
+			if (rows.length === 0) {
+				toast.error("No data to export");
+				return;
+			}
+
+			const headers = columnDefinitions.map((field) =>
+				field
+					.replace(/_/g, " ")
+					.toLowerCase()
+					.replace(/\b\w/g, (char) => char.toUpperCase()),
+			);
+
+			const csvRows = rows.map((row) =>
+				columnDefinitions
+					.map((field) => {
+						const value = row[field as keyof LLMFeedback];
+						if (field === "RATING") {
+							return escapeCsvValue(
+								value === true ? "Positive" : "Negative",
+							);
+						}
+						return escapeCsvValue(value);
+					})
+					.join(","),
+			);
+
+			const csvContent = [
+				headers.map(escapeCsvValue).join(","),
+				...csvRows,
+			].join("\n");
+
+			const blob = new Blob([csvContent], {
+				type: "text/csv;charset=utf-8;",
+			});
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.href = url;
+			link.download = `llm-feedback-${new Date().toISOString().split("T")[0]}.csv`;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			URL.revokeObjectURL(url);
+
+			toast.success("Exported to CSV");
+		} catch (error) {
+			toast.error(`Failed to export: ${error}`);
+		} finally {
+			setIsExporting(false);
+		}
+	};
 
 	const uniqueEngineIds = useMemo(
 		() =>
@@ -269,7 +314,8 @@ export const LLMFeedbackPage = () => {
 	const isLoading =
 		getFeedback.status === "LOADING" ||
 		getCount.status === "LOADING" ||
-		isSearching;
+		isSearching ||
+		isExporting;
 
 	return (
 		<>
@@ -278,7 +324,11 @@ export const LLMFeedbackPage = () => {
 					<div className="flex flex-col items-center gap-1">
 						<Spinner />
 						<p className="text-sm">
-							{isSearching ? "Searching" : "Loading"}
+							{isExporting
+								? "Exporting"
+								: isSearching
+									? "Searching"
+									: "Loading"}
 						</p>
 						<p className="text-muted-foreground text-xs">
 							LLM Feedback
@@ -386,7 +436,16 @@ export const LLMFeedbackPage = () => {
 							/>
 						</PopoverContent>
 					</Popover>
-					<div className="ml-auto">
+					<div className="ml-auto flex gap-2">
+						<Button
+							variant="outline"
+							className="bg-transparent text-muted-foreground"
+							disabled={isExporting || count === 0 || isLoading}
+							onClick={handleExportToCsv}
+						>
+							<Download className="mr-2 size-4" />
+							Export CSV
+						</Button>
 						<Button
 							variant="outline"
 							className="bg-transparent text-muted-foreground"
@@ -403,34 +462,110 @@ export const LLMFeedbackPage = () => {
 					</div>
 				</div>
 			</div>
-			{openMessageModal && (
-				<Dialog
-					open={openMessageModal}
-					onOpenChange={setOpenMessageModal}
-				>
-					<DialogContent>
-						<div className="flex flex-col gap-4">
-							<h3 className="font-semibold text-lg">
-								Message Data
-							</h3>
-							<p className="whitespace-pre-wrap text-sm">
-								{`"${selectedMessageData}"`}
-							</p>
+			<Sheet
+				open={selectedRow !== null}
+				onOpenChange={(open) => {
+					if (!open) setSelectedRow(null);
+				}}
+			>
+				<SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+					<SheetHeader>
+						<SheetTitle>Feedback Details</SheetTitle>
+						<SheetDescription>
+							{selectedRow?.DATE_CREATED ?? ""}
+						</SheetDescription>
+					</SheetHeader>
+					{selectedRow && (
+						<div className="flex flex-col gap-4 px-4 pb-6">
+							<div className="flex items-center gap-2">
+								<span className="font-medium text-muted-foreground text-xs">
+									Rating
+								</span>
+								<Badge
+									variant="outline"
+									className={
+										selectedRow.RATING === true
+											? "border-green-500 font-normal text-green-600"
+											: "border-red-500 font-normal text-red-600"
+									}
+								>
+									{selectedRow.RATING === true
+										? "Positive"
+										: "Negative"}
+								</Badge>
+							</div>
+							{columnDefinitions
+								.filter((f) => f !== "RATING")
+								.map((field) => {
+									const raw = selectedRow[
+										field as keyof LLMFeedback
+									] as unknown;
+									const isLong =
+										field === "PROMPT" ||
+										field === "MESSAGE_DATA" ||
+										field === "MESSAGE_TEXT" ||
+										field === "FEEDBACK_TEXT";
+									const display = isLong
+										? prettyFormat(raw)
+										: String(raw ?? "");
+									const label = formatHeader(field);
+									return (
+										<div
+											key={field}
+											className="group flex flex-col gap-1"
+										>
+											<div className="flex items-center gap-1.5">
+												<span className="font-medium text-muted-foreground text-xs">
+													{label}
+												</span>
+												<Button
+													variant="ghost"
+													size="icon"
+													className="size-5 opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+													onClick={() =>
+														copyToClipboard(
+															display,
+															label,
+														)
+													}
+													aria-label={`Copy ${label}`}
+												>
+													<Copy className="size-3" />
+												</Button>
+											</div>
+											{isLong ? (
+												<pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-2 font-mono text-xs">
+													{display ||
+														(field ===
+														"FEEDBACK_TEXT"
+															? "No Feedback Provided"
+															: "")}
+												</pre>
+											) : (
+												<span className="break-all text-sm">
+													{display}
+												</span>
+											)}
+										</div>
+									);
+								})}
 						</div>
-					</DialogContent>
-				</Dialog>
-			)}
+					)}
+				</SheetContent>
+			</Sheet>
 			<div className="mt-4 overflow-auto rounded-md border">
 				<table className="w-full text-sm">
 					<thead className="bg-muted/50">
 						<tr>
-							{columns.map((col) => (
+							{columnDefinitions.map((field) => (
 								<th
-									key={col.field}
-									className="px-3 py-2 text-left font-medium text-muted-foreground"
-									style={{ minWidth: col.minWidth }}
+									key={field}
+									className="whitespace-nowrap px-3 py-2 text-left font-medium text-muted-foreground"
+									style={{
+										maxWidth: columnMaxWidth[field],
+									}}
 								>
-									{col.headerName}
+									{formatHeader(field)}
 								</th>
 							))}
 						</tr>
@@ -439,7 +574,7 @@ export const LLMFeedbackPage = () => {
 						{feedback.length === 0 ? (
 							<tr>
 								<td
-									colSpan={columns.length}
+									colSpan={columnDefinitions.length}
 									className="py-8 text-center text-muted-foreground"
 								>
 									No data to display.
@@ -449,19 +584,25 @@ export const LLMFeedbackPage = () => {
 							feedback.map((row) => (
 								<tr
 									key={row.id}
-									className="border-t hover:bg-muted/30"
+									className="cursor-pointer border-t hover:bg-muted/30"
+									onClick={() => setSelectedRow(row)}
 								>
-									{columns.map((col) => (
+									{columnDefinitions.map((field) => (
 										<td
-											key={col.field}
-											className="px-3 py-2"
-											style={{ minWidth: col.minWidth }}
+											key={field}
+											className="px-3 py-2 align-middle"
+											style={{
+												maxWidth: columnMaxWidth[field],
+											}}
 										>
-											{col.renderCell
-												? col.renderCell({
-														value: row[col.field],
-													})
-												: String(row[col.field] ?? "")}
+											<div className="truncate">
+												{renderCompactCell(
+													field,
+													row[
+														field as keyof LLMFeedback
+													],
+												)}
+											</div>
 										</td>
 									))}
 								</tr>
@@ -487,7 +628,7 @@ export const LLMFeedbackPage = () => {
 							<SelectValue />
 						</SelectTrigger>
 						<SelectContent>
-							{[10, 25, 50].map((size) => (
+							{[50, 100, 200].map((size) => (
 								<SelectItem key={size} value={String(size)}>
 									{size}
 								</SelectItem>
