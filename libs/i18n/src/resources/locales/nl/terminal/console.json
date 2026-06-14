@@ -4,7 +4,7 @@
 	},
 	"run": {
 		"button": "Uitvoeren",
-		"tooltip": "Uitvoeren (Ctrl+Enter)"
+		"tooltip": "Uitvoeren (Enter)"
 	},
 	"emptyState": {
 		"prefix": "Typ hierboven een opdracht en druk op",

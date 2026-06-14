@@ -15,6 +15,10 @@
 		"title": "De uitvoer verschijnt in het Terminal-paneel",
 		"description": "Herstel de indeling om de uitvoer van de uitvoering te zien."
 	},
+	"noMode": {
+		"title": "Kies een taal om uit te voeren",
+		"description": "Selecteer Pixel, R, Python of Shell in de werkbalk en voer vervolgens {{name}} uit."
+	},
 	"scopeChanged": {
 		"title": "Bereik gewijzigd",
 		"body": "Dit bestand is geopend in <strong>{{scope}}</strong>. Schakel terug naar dat bereik om het te bewerken of uit te voeren."

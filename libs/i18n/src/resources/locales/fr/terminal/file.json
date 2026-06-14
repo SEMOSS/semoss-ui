@@ -15,6 +15,10 @@
 		"title": "La sortie apparaîtra dans le panneau Terminal",
 		"description": "Restaurez la disposition pour voir le résultat de l'exécution."
 	},
+	"noMode": {
+		"title": "Choisissez un langage à exécuter",
+		"description": "Sélectionnez Pixel, R, Python ou Shell dans la barre d'outils, puis exécutez {{name}}."
+	},
 	"scopeChanged": {
 		"title": "Portée modifiée",
 		"body": "Ce fichier a été ouvert dans <strong>{{scope}}</strong>. Revenez à cette portée pour le modifier ou l'exécuter."
