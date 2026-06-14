@@ -4,7 +4,7 @@
 	},
 	"run": {
 		"button": "تشغيل",
-		"tooltip": "تشغيل (Ctrl+Enter)"
+		"tooltip": "تشغيل (Enter)"
 	},
 	"emptyState": {
 		"prefix": "اكتب أمراً أعلاه واضغط",
