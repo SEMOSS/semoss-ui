@@ -8,7 +8,8 @@ import {
 	SaveIcon,
 } from "lucide-react";
 import type * as monaco from "monaco-editor";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -44,15 +45,31 @@ interface FileCodeEditorProps {
 	 * @returns
 	 */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** Optional content rendered at the start of the toolbar row */
+	leadingToolbar?: React.ReactNode;
+
+	/**
+	 * Optional handler invoked when the user runs the file via Ctrl/Cmd+Enter
+	 * (or the editor context menu). When omitted, no run keybinding is added.
+	 */
+	onRun?: () => void;
 }
 
 export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	leadingToolbar,
+	onRun,
 }) => {
 	const insight = useInsight();
+	const { t } = useTranslation("common");
 	const [isLoading, setIsLoading] = useState(false);
+	// The Monaco run action is wired once on mount; read the latest onRun
+	// through a ref so the keybinding always calls the current handler.
+	const onRunRef = useRef(onRun);
+	onRunRef.current = onRun;
 	const targetInsightId =
 		mode.type === "INSIGHT"
 			? mode.insightId || insight.insightId
@@ -61,6 +78,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 	const currentPathRef = useFileEditorPathRef(path, pathScope);
 	const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
+	const monacoRef = useRef<typeof monaco | null>(null);
 	const wordWrapRef = useRef<boolean>(false);
 	const decorationsRef = useRef<string[]>([]);
 	const [jsonErrors, setJsonErrors] = useState<monaco.editor.IMarker[]>([]);
@@ -73,6 +91,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		getFilePixel = `GetEngineAssets(filePath=["${path}"], engine=["${mode.engine}"]);`;
 	} else if (mode.type === "INSIGHT" && targetInsightId) {
 		getFilePixel = `GetInsightAssets(filePath=["${path}"]);`;
+	} else if (mode.type === "USER") {
+		getFilePixel = `GetUserAssets(filePath=["${path}"]);`;
 	}
 
 	const getFile = usePixel<string>(getFilePixel, {}, targetInsightId);
@@ -82,11 +102,53 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	const language = MONACO_EXT_LANGUAGE_MAPPING[ext] || "plaintext";
 
 	/**
+	 * Pick the right Monaco theme for the current app theme. Dark mode forces
+	 * `vs-dark` so the editor doesn't glow white against a dark UI; in light
+	 * mode we fall back to the language-specific `*-smss-theme` if defined,
+	 * otherwise plain `light`.
+	 */
+	const computeMonacoTheme = (hasLanguageTheme: boolean): string => {
+		const isDark =
+			typeof document !== "undefined" &&
+			document.documentElement.classList.contains("dark");
+		if (isDark) return "vs-dark";
+		if (hasLanguageTheme) return `${language}-smss-theme`;
+		return "light";
+	};
+
+	// Re-apply the Monaco theme whenever the app theme toggles. We watch
+	// the document element's class list since ThemeProvider drives `.dark`
+	// there — this catches "system"-mode users whose OS preference flips
+	// between light/dark as well as explicit Light/Dark toggles.
+	useEffect(() => {
+		const root =
+			typeof document !== "undefined" ? document.documentElement : null;
+		if (!root) return;
+		const apply = () => {
+			const monacoNs = monacoRef.current;
+			if (!monacoNs) return;
+			const config = MONACO_CONFIG[language];
+			monacoNs.editor.setTheme(computeMonacoTheme(!!config?.theme));
+		};
+		apply();
+		const observer = new MutationObserver(apply);
+		observer.observe(root, {
+			attributes: true,
+			attributeFilter: ["class"],
+		});
+		return () => observer.disconnect();
+		// `language` is the only piece of stable per-tab state that affects
+		// which theme we pick; the namespace + dark class are read live.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [language]);
+
+	/**
 	 * Handler called when the editor is mounted
 	 */
 	const onMount: OnMount = (editor, monaco) => {
-		// save the ref
+		// save the refs
 		editorRef.current = editor;
+		monacoRef.current = monaco;
 
 		// update the theme
 		const config = MONACO_CONFIG[language];
@@ -108,19 +170,17 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				);
 			}
 
-			// set the theme
+			// define the language-specific smss theme so light mode can pick
+			// it up; computeMonacoTheme decides whether to use it.
 			if (config.theme) {
 				monaco.editor.defineTheme(
 					`${language}-smss-theme`,
 					config.theme,
 				);
-				monaco.editor.setTheme(`${language}-smss-theme`);
-			} else {
-				monaco.editor.setTheme("light");
 			}
-		} else {
-			monaco.editor.setTheme("light");
 		}
+
+		monaco.editor.setTheme(computeMonacoTheme(!!config?.theme));
 
 		// editor.addAction({
 		// 	contextMenuGroupId: "1_modification",
@@ -187,6 +247,22 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		// 		);
 		// 	},
 		// });
+
+		// Ctrl/Cmd+Enter → run the file. Only registered when the consumer
+		// opts in via onRun (e.g. the terminal's file tab). addAction scopes
+		// the keybinding to this editor, so it never leaks to other editors.
+		if (onRunRef.current) {
+			editor.addAction({
+				contextMenuGroupId: "1_modification",
+				contextMenuOrder: 0,
+				id: "run",
+				label: "Run",
+				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+				run: () => {
+					onRunRef.current?.();
+				},
+			});
+		}
 
 		editor.addAction({
 			contextMenuGroupId: "1_modification",
@@ -309,6 +385,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				pixel = `SaveEngineAssets(engine=["${mode.engine}"], filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `SaveInsightAssets(filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `SaveUserAssets(filePath=["${currentPath}"], content=["<encode>${content}</encode>"]);`;
 			}
 
 			if (!pixel) {
@@ -327,9 +405,14 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			// trigger onChange
 			onChange(content, false);
 
-			toast.success("Successfully saved file");
+			toast.success(t("fileExplorer.toasts.saveSuccess"));
 		} catch (e) {
-			toast.error(getFileOperationErrorMessage("Error saving file", e));
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.saveFailed"),
+					e,
+				),
+			);
 
 			console.error(e);
 		} finally {
@@ -353,6 +436,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				pixel = `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${currentPath}"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `DownloadInsightAsset(filePath=["${currentPath}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `DownloadUserAsset(filePath=["${currentPath}"]);`;
 			}
 
 			if (!pixel) {
@@ -377,10 +462,13 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			// download the file
 			await download(targetInsightId, fileKey);
-			toast.success("Successfully downloaded file");
+			toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
 		} catch (e) {
 			toast.error(
-				getFileOperationErrorMessage("Error downloading file", e),
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.downloadFileFailed"),
+					e,
+				),
 			);
 
 			console.error(e);
@@ -394,6 +482,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			{/* Toolbar */}
 			<div className="flex w-full shrink-0 items-center justify-between gap-1 border-border border-b px-1.5 py-0.5">
 				<div className="flex items-center gap-1">
+					{leadingToolbar}
 					{language === "json" && jsonErrors.length > 0 && (
 						<button
 							type="button"
@@ -481,7 +570,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				{getFile.status === "ERROR" && (
 					<div className="flex h-full w-full items-center justify-center">
 						<Muted className="text-destructive">
-							{getFile.error?.message || "Failed to load files"}
+							{getFile.error?.message ||
+								t("fileExplorer.failedToLoadFiles")}
 						</Muted>
 					</div>
 				)}
@@ -509,7 +599,7 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 						<button
 							key={`${err.startLineNumber}-${err.startColumn}-${err.message}`}
 							type="button"
-							className="flex w-full items-start gap-2 px-3 py-1 text-left text-xs hover:bg-destructive/10"
+							className="flex w-full items-start gap-2 px-3 py-1 text-start text-xs hover:bg-destructive/10"
 							onClick={() => {
 								editorRef.current?.revealLineInCenter(
 									err.startLineNumber,

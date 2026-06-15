@@ -144,7 +144,7 @@ export const EngineUsagePage = () => {
 					<P className="text-muted-foreground text-sm">
 						Click{" "}
 						<a
-							href="../../legacy/dist/#!/embed-terminal"
+							href="../../terminal/dist/"
 							rel="noopener noreferrer"
 							target="_blank"
 							className="text-primary underline underline-offset-4 hover:text-primary/80"

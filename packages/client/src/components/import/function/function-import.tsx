@@ -49,7 +49,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState("0");
-	const [selectedDatabase, setSelectedDatabase] =
+	const [selectedEngine, setSelectedEngine] =
 		useState<functionCatalog | null>(null);
 
 	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
@@ -133,11 +133,11 @@ export const FunctionImport = ({ name }: { name: string }) => {
 				</BreadcrumbItem>
 				<BreadcrumbSeparator>/</BreadcrumbSeparator>
 				<BreadcrumbItem>
-					{selectedDatabase ? (
+					{selectedEngine ? (
 						<BreadcrumbLink
 							className="cursor-pointer"
 							onClick={() => {
-								setSelectedDatabase(null);
+								setSelectedEngine(null);
 							}}
 							data-testid="breadcrumb-page"
 						>
@@ -149,12 +149,12 @@ export const FunctionImport = ({ name }: { name: string }) => {
 						</BreadcrumbPage>
 					)}
 				</BreadcrumbItem>
-				{selectedDatabase && (
+				{selectedEngine && (
 					<>
 						<BreadcrumbSeparator>/</BreadcrumbSeparator>
 						<BreadcrumbItem>
 							<BreadcrumbPage data-testid="breadcrumb-selected-function">
-								{selectedDatabase.name}
+								{selectedEngine.name}
 							</BreadcrumbPage>
 						</BreadcrumbItem>
 					</>
@@ -178,7 +178,7 @@ export const FunctionImport = ({ name }: { name: string }) => {
 						display: v.name,
 					}}
 					onModelSelect={() => {
-						setSelectedDatabase(v);
+						setSelectedEngine(v);
 					}}
 				/>
 			))}
@@ -286,16 +286,15 @@ export const FunctionImport = ({ name }: { name: string }) => {
 					</div>
 				</DialogContent>
 			</Dialog>
-			{selectedDatabase ? (
+			{selectedEngine ? (
 				<div data-testid="function-form-wrapper">
 					<FunctionForm
-						title={selectedDatabase.name}
-						description={`Fill out ${selectedDatabase.name} details in order to add function to catalog`}
-						notice={
-							(selectedDatabase as { notice?: string }).notice
-						}
-						fields={selectedDatabase.fields}
-						advanced={selectedDatabase.advanced}
+						title={selectedEngine.name}
+						description={`Fill out ${selectedEngine.name} details in order to add function to catalog`}
+						notice={(selectedEngine as { notice?: string }).notice}
+						icon={(selectedEngine as { icon?: string }).icon}
+						fields={selectedEngine.fields}
+						advanced={selectedEngine.advanced}
 						categoryDescription={CategoryDescription}
 					/>
 				</div>

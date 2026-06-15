@@ -1,5 +1,8 @@
 import type { CellConfig } from "../../../store";
-import { UnFilterDataCell, type UnFilterDataCellDef } from "./UnFilterDataCell";
+import {
+	UnFilterDataCell,
+	type UnFilterDataCellDef,
+} from "./unfilter-data-cell";
 
 export const UnFilterDataCellConfig: CellConfig<UnFilterDataCellDef> = {
 	name: "UnFilterData",

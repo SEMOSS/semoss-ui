@@ -1,4 +1,10 @@
-import { Copy, MoreVertical, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import {
+	ExternalLink,
+	MoreVertical,
+	Pencil,
+	ShieldCheck,
+	Trash2,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import {
@@ -8,6 +14,12 @@ import {
 	useLocation,
 	useParams,
 } from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
+import {
+	AppCatalogAvatar,
+	EngineSubtypeIcon,
+	EntityHeader,
+} from "@semoss/shared";
 import {
 	Badge,
 	Breadcrumb,
@@ -22,16 +34,13 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 	P,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { deleteTeam, getGroupDetails } from "@/api";
-import { PrivacyPreferenceCenterModal } from "@/components/cookies/PrivacyPreferenceCenterModal";
+import { PrivacyPreferenceCenterModal } from "@/components/cookies/privacy-preference-center-modal";
 import { AddTeamModal, TeamDeleteDialog } from "@/components/teams";
 import { SettingsContext } from "@/contexts";
-import { useRootStore } from "@/hooks";
+import { useAPI, useRootStore } from "@/hooks";
 import { useNavigate } from "@/hooks/useNavigate";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -118,6 +127,116 @@ export const SettingsLayout = observer(() => {
 
 	const isTeamPermissionsDetail =
 		matchedRoute?.path === "team-permissions/:type/:id";
+
+	const isAppDetail = matchedRoute?.path === "app/:id";
+
+	const engineDetailType = useMemo<
+		| "DATABASE"
+		| "MODEL"
+		| "STORAGE"
+		| "VECTOR"
+		| "FUNCTION"
+		| "GUARDRAIL"
+		| null
+	>(() => {
+		if (!matchedRoute || !id) return null;
+		const root = matchedRoute.path.split("/:")[0];
+		switch (root) {
+			case "database":
+				return "DATABASE";
+			case "model":
+				return "MODEL";
+			case "storage":
+				return "STORAGE";
+			case "vector":
+				return "VECTOR";
+			case "function":
+				return "FUNCTION";
+			case "guardrail":
+				return "GUARDRAIL";
+			default:
+				return null;
+		}
+	}, [matchedRoute, id]);
+
+	const engineInfoPixel = usePixel<Record<string, unknown>>(
+		engineDetailType && id
+			? adminMode
+				? `AdminEngineInfo(engine='${id}');`
+				: `EngineInfo(engine='${id}');`
+			: "",
+		{ data: {} },
+	);
+	const engineSubtype =
+		(engineInfoPixel.data?.engine_subtype as string | undefined) || "";
+	const engineInfoForContext = useMemo(
+		() => ({
+			status: engineInfoPixel.status,
+			data: engineInfoPixel.data,
+		}),
+		[engineInfoPixel.status, engineInfoPixel.data],
+	);
+
+	// User-scoped access check used to gate the "View In Catalog" button so admins
+	// who don't actually belong to the engine/app don't get a click-through that
+	// dead-ends at a permission-denied page.
+	// Only fire the permission lookup on the matching detail route; passing an
+	// empty tuple makes useAPI short-circuit (no request, INITIAL status).
+	const userEnginePermissionApi = useAPI(
+		(engineDetailType && id
+			? ["getUserEnginePermission", id]
+			: []) as unknown as ["getUserEnginePermission", string],
+	);
+	const userProjectPermissionApi = useAPI(
+		(isAppDetail && id
+			? ["getUserProjectPermission", id]
+			: []) as unknown as ["getUserProjectPermission", string],
+	);
+	const hasCatalogAccess = useMemo(() => {
+		if (engineDetailType && id) {
+			const permission = (
+				userEnginePermissionApi.data as
+					| { permission?: string }
+					| undefined
+			)?.permission;
+			return userEnginePermissionApi.status === "SUCCESS" && !!permission;
+		}
+		if (isAppDetail && id) {
+			return (
+				userProjectPermissionApi.status === "SUCCESS" &&
+				!!userProjectPermissionApi.data
+			);
+		}
+		return false;
+	}, [
+		engineDetailType,
+		isAppDetail,
+		id,
+		userEnginePermissionApi.status,
+		userEnginePermissionApi.data,
+		userProjectPermissionApi.status,
+		userProjectPermissionApi.data,
+	]);
+	const catalogUrl =
+		engineDetailType && id
+			? `/engine/${engineDetailType.toLowerCase()}/${id}`
+			: isAppDetail && id
+				? `/app/${id}`
+				: null;
+
+	const stateName =
+		state && typeof state === "object" && "name" in state
+			? (state as { name?: string }).name
+			: undefined;
+	// Resolve a friendly display name for the current engine/app detail page;
+	// used both as the breadcrumb label and the h1 (with raw id falling back below).
+	const detailDisplayName = engineDetailType
+		? (engineInfoPixel.data?.engine_display_name as string | undefined) ||
+			(engineInfoPixel.data?.engine_name as string | undefined) ||
+			stateName
+		: isAppDetail
+			? stateName
+			: undefined;
 	const teamId = id ? decodeURIComponent(id) : undefined;
 	const teamType = type ? decodeURIComponent(type) : undefined;
 	const [teamDescription, setTeamDescription] = useState<
@@ -207,14 +326,6 @@ export const SettingsLayout = observer(() => {
 		}
 	};
 
-	/**
-	 * Copy text and add it to the clipboard
-	 * @param text - text to copy
-	 */
-	const copy = (text: string) => {
-		navigator.clipboard.writeText(text);
-	};
-
 	if (!matchedRoute) {
 		return null;
 	}
@@ -235,6 +346,9 @@ export const SettingsLayout = observer(() => {
 			<SettingsContext.Provider
 				value={{
 					adminMode: adminMode,
+					engineInfo: engineDetailType
+						? engineInfoForContext
+						: undefined,
 				}}
 			>
 				<div className="flex flex-col gap-2">
@@ -271,7 +385,7 @@ export const SettingsLayout = observer(() => {
 												const label = link.includes(
 													"<id>",
 												)
-													? id
+													? detailDisplayName || id
 													: isLastItem
 														? matchedRoute.title
 														: linkRoute?.title ||
@@ -333,95 +447,141 @@ export const SettingsLayout = observer(() => {
 							</div>
 						)}
 						<div className="z-[1]">
-							<div className="flex flex-row items-center justify-between">
-								{isTeamPermissionsDetail && id ? (
-									<div className="flex flex-row items-center gap-2">
-										<h1 className="font-semibold text-2xl leading-normal">
-											{id}
-										</h1>
-										{type ? (
-											<Badge
-												variant="outline"
-												className="uppercase"
+							{(() => {
+								const fallbackTitle =
+									matchedRoute.history &&
+									matchedRoute.history.length < 2
+										? matchedRoute.title
+										: stateName || matchedRoute.title;
+								const headerActions = (
+									<>
+										{showPrivacyCenter && (
+											<Button
+												variant="ghost"
+												onClick={() =>
+													setPrivacyCenterOpen(true)
+												}
+												data-testid={
+													"settingsLayout-privacy-btn"
+												}
 											>
-												{String(type).toUpperCase()}
-											</Badge>
-										) : null}
-									</div>
-								) : (
-									<h1 className="font-semibold text-2xl leading-normal">
-										{matchedRoute.history.length < 2
-											? matchedRoute.title
-											: state &&
-													typeof state === "object" &&
-													"name" in state
-												? (state as { name?: string })
-														.name
-												: matchedRoute.title}
-									</h1>
-								)}
+												Privacy Center
+											</Button>
+										)}
+										{catalogUrl && hasCatalogAccess && (
+											<Button
+												asChild
+												variant="outline"
+												size="sm"
+												className="gap-2"
+												data-testid="settingsLayout-view-in-catalog-btn"
+											>
+												<RouterLink to={catalogUrl}>
+													<ExternalLink className="size-4" />
+													View In Catalog
+												</RouterLink>
+											</Button>
+										)}
+										{configStore.store.user.admin && (
+											<Button
+												variant="outline"
+												size="sm"
+												className={`h-8 rounded-full px-3 ${
+													adminMode
+														? "border-green-700/30 bg-green-700/10 text-green-800 hover:bg-green-700/20"
+														: "border-border bg-muted text-foreground hover:bg-muted/80"
+												}`}
+												onClick={() =>
+													setAdminMode(!adminMode)
+												}
+											>
+												<ShieldCheck className="size-4" />
+												{adminMode
+													? "Admin On"
+													: "Admin Off"}
+											</Button>
+										)}
+									</>
+								);
 
-								<div className="flex items-center gap-2">
-									{showPrivacyCenter && (
-										<Button
-											variant="ghost"
-											onClick={() =>
-												setPrivacyCenterOpen(true)
-											}
-											data-testid={
-												"settingsLayout-privacy-btn"
-											}
-										>
-											Privacy Center
-										</Button>
-									)}
+								if (isTeamPermissionsDetail && id) {
+									return (
+										<div className="flex flex-row items-center justify-between">
+											<div className="flex flex-row items-center gap-2">
+												<h1 className="font-semibold text-2xl leading-normal">
+													{id}
+												</h1>
+												{type ? (
+													<Badge
+														variant="outline"
+														className="uppercase"
+													>
+														{String(
+															type,
+														).toUpperCase()}
+													</Badge>
+												) : null}
+											</div>
+											<div className="flex items-center gap-2">
+												{headerActions}
+											</div>
+										</div>
+									);
+								}
 
-									{configStore.store.user.admin && (
-										<Button
-											variant="outline"
-											size="sm"
-											className={`h-8 rounded-full px-3 ${
-												adminMode
-													? "border-green-700/30 bg-green-700/10 text-green-800 hover:bg-green-700/20"
-													: "border-border bg-muted text-foreground hover:bg-muted/80"
-											}`}
-											onClick={() =>
-												setAdminMode(!adminMode)
+								if (engineDetailType && id) {
+									return (
+										<EntityHeader
+											icon={
+												<EngineSubtypeIcon
+													engineType={
+														engineDetailType
+													}
+													engineSubtype={
+														engineSubtype
+													}
+													alt={
+														detailDisplayName || id
+													}
+													className="size-full object-contain drop-shadow-[0_1px_1px_rgba(0,0,0,0.08)]"
+												/>
 											}
-										>
-											<ShieldCheck className="size-4" />
-											{adminMode
-												? "Admin On"
-												: "Admin Off"}
-										</Button>
-									)}
-								</div>
-							</div>
+											name={detailDisplayName || id}
+											id={id}
+											copyLabel="Copy Engine ID"
+											copyTestId="settingsLayout-copy-btn"
+											actions={headerActions}
+										/>
+									);
+								}
+
+								if (isAppDetail && id) {
+									const appName = detailDisplayName || id;
+									return (
+										<EntityHeader
+											icon={
+												<AppCatalogAvatar
+													name={appName}
+													className="h-full w-full rounded-lg text-xl"
+												/>
+											}
+											name={appName}
+											id={id}
+											copyLabel="Copy App ID"
+											copyTestId="settingsLayout-copy-btn"
+											actions={headerActions}
+										/>
+									);
+								}
+
+								return (
+									<EntityHeader
+										name={fallbackTitle || ""}
+										actions={headerActions}
+									/>
+								);
+							})()}
 						</div>
-						{id ? (
-							<div className="flex items-center gap-1">
-								<span className="text-muted-foreground text-sm">
-									{id}
-								</span>
-								<Tooltip>
-									<TooltipTrigger asChild>
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											onClick={() => {
-												copy(id);
-											}}
-											data-testid={
-												"settingsLayout-copy-btn"
-											}
-										>
-											<Copy className="size-4" />
-										</Button>
-									</TooltipTrigger>
-									<TooltipContent>Copy ID</TooltipContent>
-								</Tooltip>
-							</div>
-						) : null}
 						{isTeamPermissionsDetail ? (
 							<>
 								<div className="flex w-full items-start justify-between gap-3">
@@ -467,7 +627,7 @@ export const SettingsLayout = observer(() => {
 								</P>
 							</>
 						) : (
-							<P>{descriptionText}</P>
+							<P className="mt-2">{descriptionText}</P>
 						)}
 					</div>
 					<Outlet />

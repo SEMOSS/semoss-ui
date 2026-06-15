@@ -17,8 +17,8 @@ import {
 import type { ToolStore } from "@/stores";
 import type { InputPixelMessage, ResponsePixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
+import { runAgentMessage } from "./agent-harness";
 import { InputMessageStore } from "./input-message.store";
-import { PlanMessageStore } from "./plan-message.store";
 import { applyToolStreamChunk } from "./tool-stream";
 
 /**
@@ -72,17 +72,32 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isPaused: boolean = false;
 
+	/**
+	 * Whether this conversation is compacted above this message
+	 */
+	conversationCompactedAbove: boolean = false;
+
+	/**
+	 * Whether this message's conversation is currently being compacted
+	 */
+	isCompacting: boolean = false;
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponsePixelMessage,
 	) {
 		super(room, message);
 
+		// if prune, compaction happened
+		this.conversationCompactedAbove ||= message.pruneToolsAbove;
+
 		makeObservable(this, {
 			isThinking: observable,
 			parts: observable,
 			feedback: observable,
 			isPaused: observable,
+			conversationCompactedAbove: observable,
+			isCompacting: observable,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -90,6 +105,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			hasUnfinishedTools: computed,
 			continueToolExecution: action,
 			saveToolExecution: action,
+			setConversationCompactedAbove: action,
+			setIsCompacting: action,
 			toggleIsPaused: action,
 		});
 
@@ -109,10 +126,14 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		// set the parts
 		this.parts = message.parts;
 
-		// sync the tools
+		// sync the tools — server tools (e.g. provider-side web_search) deliver
+		// both the call and result in the same response message, so we sync both
+		// part types here.
 		for (const part of message.parts) {
 			if (part.type === "TOOL_CALL") {
 				this.room.syncTool(part.toolCall.id, this, part);
+			} else if (part.type === "TOOL_RESULT") {
+				this.room.syncTool(part.toolResult.toolCallId, this, part);
 			}
 		}
 
@@ -142,45 +163,61 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 * initiates tool execution if the response contains tool calls.
 	 *
 	 * @param inputMessage - The user input message to send to the AI model
+	 * @param existingResponse - Optional pre-created response placeholder already wired into the message tree. When provided, skips creating a new ResponseMessageStore and skips the addChild setup calls, streaming directly into the existing placeholder instead.
 	 * @returns Promise resolving to the pixel response containing input and output messages
 	 */
-	runMessage = async (inputMessage: InputMessageStore) => {
+	runMessage = async (
+		inputMessage: InputMessageStore,
+		existingResponse?: ResponseMessageStore,
+	) => {
 		const room = this.room;
 
+		// In agent-harness mode the message is run server-side via RunAgent
+		// instead of the streaming AskPlayground flow. See ./agent-harness.
+		if (room.mode === "agent") {
+			await runAgentMessage(this, inputMessage, existingResponse);
+			return;
+		}
+
 		// Create a placeholder response message to show streaming content
-		const responseMessage = new ResponseMessageStore(room, {
-			io: "OUTPUT",
-			messageId: STREAMING_PLACEHOLDER_ID,
-			visible: true,
-			platform_generated: true,
-			modelId: room.model.engine_id,
-			dateCreated: new Date().toISOString(),
-			parts: [
-				{
-					type: "THINKING",
-					thinking: "",
+		const responseMessage =
+			existingResponse ??
+			new ResponseMessageStore(room, {
+				io: "OUTPUT",
+				messageId: STREAMING_PLACEHOLDER_ID,
+				visible: true,
+				platform_generated: true,
+				modelId: room.model.engine_id,
+				dateCreated: new Date().toISOString(),
+				parts: [
+					{
+						type: "THINKING",
+						thinking: "",
+					},
+				],
+				tokens: 0,
+				ornaments: {
+					modelName:
+						room.model.engine_display_name ||
+						room.model.engine_name ||
+						"",
 				},
-			],
-			tokens: 0,
-			ornaments: {
-				modelName:
-					room.model.engine_display_name ||
-					room.model.engine_name ||
-					"",
-			},
-		} as ResponsePixelMessage);
+			} as ResponsePixelMessage);
 
 		try {
-			// connect to the parent
-			this.addChild(inputMessage);
-
 			// build the context if it is there
 			let context = "";
 			if (room.options?.instructions) {
 				context = room.options?.instructions;
 			}
-			// Add placeholder as child of input to show streaming text
-			inputMessage.addChild(responseMessage);
+
+			if (!existingResponse) {
+				// connect to the parent
+				this.addChild(inputMessage);
+
+				// Add placeholder as child of input to show streaming text
+				inputMessage.addChild(responseMessage);
+			}
 
 			// turn on thinking
 			responseMessage.isThinking = true;
@@ -196,7 +233,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 			const media = inputMessage.parts.reduce((acc, part) => {
 				if (part.type === "MEDIA") {
-					acc.push(part.mediaInfo.fileLocation);
+					acc.push(part.mediaInfo.fileLocation as string);
 				}
 
 				return acc;
@@ -309,6 +346,20 @@ paramValues=[${JSON.stringify({
 				this.parts.push(part);
 			}
 		}
+	};
+
+	/*
+	 * Set whether this conversation is compacted above this message
+	 */
+	setConversationCompactedAbove = (compacted: boolean) => {
+		this.conversationCompactedAbove = compacted;
+	};
+
+	/*
+	 * Set whether this message's conversation is currently being compacted
+	 */
+	setIsCompacting = (compacting: boolean) => {
+		this.isCompacting = compacting;
 	};
 
 	/**
@@ -429,12 +480,9 @@ paramValues=[${JSON.stringify({
 
 		// get the grand parent message
 		const grandParentMessage = parentMessage.parent;
-		if (
-			grandParentMessage instanceof ResponseMessageStore === false &&
-			grandParentMessage instanceof PlanMessageStore === false
-		) {
+		if (grandParentMessage instanceof ResponseMessageStore === false) {
 			throw new Error(
-				"Can only if the parent is a response or plan message",
+				"Can only rewrite if the parent is a response message",
 			);
 		}
 
@@ -456,6 +504,7 @@ paramValues=[${JSON.stringify({
 					room.model.engine_name ||
 					"",
 			},
+			pruneToolsAbove: false,
 		});
 
 		// Update room options with current modelId before running message

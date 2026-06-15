@@ -1,19 +1,18 @@
 type GridRowSelectionModel = (string | number)[];
 
 import {
-	AlarmClock,
-	AlertCircle,
-	Filter,
-	Moon,
+	ChevronsDownUp,
+	ChevronsUpDown,
 	Pause,
 	Play,
 	Plus,
+	RefreshCw,
 	Search,
 	Trash,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { debounced, runPixel } from "@semoss/sdk/react";
+import { runPixel, useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Alert,
 	AlertDescription,
@@ -21,7 +20,9 @@ import {
 	Button,
 	Field,
 	FieldContent,
-	Input,
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
 	Tabs,
 	TabsList,
 	TabsTrigger,
@@ -33,22 +34,49 @@ import type {
 	HistoryJob,
 	HistoryPaginationProps,
 	Job,
-	JobUIState,
 	PixelReturnJob,
-	SendEmailJob,
+	SchedulerStats,
 } from "./job.types";
-import {
-	convertDeltaToRuntimeString,
-	convertSendEmailRecipeToJob,
-	convertTimetoDate,
-} from "./job.utils";
-import { JobCard } from "./job-card";
+import { convertDeltaToRuntimeString, convertTimetoDate } from "./job.utils";
 import { JobHistory } from "./job-history";
 import { JobsTable } from "./jobs-table";
+import { KpiCard } from "./kpi-card";
 
 type OutputType = {
 	failed?: string[];
 	success?: string[];
+};
+
+const subTabsListClass =
+	"h-auto w-fit flex-nowrap justify-start gap-1 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden";
+
+const subTabTriggerClass =
+	"!flex-none whitespace-nowrap rounded-full border border-transparent bg-transparent px-3 py-1 text-muted-foreground text-sm shadow-none transition-colors hover:text-foreground data-[state=active]:border-border data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none";
+
+const formatPercent = (rate: number | undefined | null): string => {
+	if (rate == null || !Number.isFinite(rate)) return "—";
+	return `${(rate * 100).toFixed(1)}%`;
+};
+
+const successRateTone = (
+	rate: number | undefined | null,
+): "default" | "success" | "warning" | "destructive" => {
+	if (rate == null || !Number.isFinite(rate)) return "default";
+	if (rate >= 0.95) return "success";
+	if (rate >= 0.8) return "warning";
+	return "destructive";
+};
+
+const formatNextRunIn = (iso: string | null | undefined): string | null => {
+	if (!iso) return null;
+	const ms = new Date(iso).getTime() - Date.now();
+	if (!Number.isFinite(ms) || ms < 0) return null;
+	const min = Math.floor(ms / 60000);
+	if (min < 1) return "<1m";
+	if (min < 60) return `${min}m`;
+	const hr = Math.floor(min / 60);
+	if (hr < 24) return min % 60 === 0 ? `${hr}h` : `${hr}h ${min % 60}m`;
+	return `${Math.floor(hr / 24)}d`;
 };
 
 export function JobsPage() {
@@ -62,26 +90,80 @@ export function JobsPage() {
 	} | null>(null);
 
 	const [searchValue, setSearchValue] = useState("");
+	const debouncedSearchValue = useDebouncedValue(searchValue, 400);
 	const [selectedTable, setSelectedTable] = useState("Jobs");
 	const [selectedJobTab, setSelectedJobTab] = useState("All");
 	const [selectedHistoryTab, setSelectedHistoryTab] = useState("All");
 	const [historyPage, setHistoryPage] = useState<number>(0);
-	const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
+	const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(50);
 	const [historyCount, setHistoryCount] = useState<number>(-1);
-	const [historySearchBuffer, setHistorySearchBuffer] = useState("");
 	const [historySearch, setHistorySearch] = useState("");
-
-	const [searchOpen, setSearchOpen] = useState(false);
-	const [filterOpen, setFilterOpen] = useState(false);
-
-	const searchRef = useRef(null);
 
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [history, setHistory] = useState<HistoryJob[]>([]);
 	const [jobsLoading, setJobsLoading] = useState(false);
 	const [historyLoading, setHistoryLoading] = useState(false);
 
-	const [failedJobCount, setFailedJobCount] = useState(0);
+	const [stats, setStats] = useState<SchedulerStats | null>(null);
+	const [statsLoading, setStatsLoading] = useState(false);
+	const [statsWindow, setStatsWindow] = useState<"24h" | "7d" | "30d">("24h");
+
+	const [jobExpandedRows, setJobExpandedRows] = useState<Set<string>>(
+		new Set(),
+	);
+	const [historyExpandedIndices, setHistoryExpandedIndices] = useState<
+		Set<number>
+	>(new Set());
+
+	const toggleJobExpanded = (id: string) => {
+		setJobExpandedRows((prev) => {
+			const next = new Set(prev);
+			if (next.has(id)) next.delete(id);
+			else next.add(id);
+			return next;
+		});
+	};
+
+	const toggleHistoryExpanded = (idx: number) => {
+		setHistoryExpandedIndices((prev) => {
+			const next = new Set(prev);
+			if (next.has(idx)) next.delete(idx);
+			else next.add(idx);
+			return next;
+		});
+	};
+
+	const allExpanded =
+		selectedTable === "Jobs"
+			? jobs.length > 0 && jobExpandedRows.size === jobs.length
+			: history.length > 0 &&
+				historyExpandedIndices.size === history.length;
+
+	const expandAllDisabled =
+		selectedTable === "Jobs" ? jobs.length === 0 : history.length === 0;
+
+	const handleRefreshTable = () => {
+		if (selectedTable === "Jobs") {
+			getJobs();
+		} else {
+			getHistory({ reload: true, search: debouncedSearchValue });
+		}
+	};
+
+	const tableRefreshLoading =
+		selectedTable === "Jobs" ? jobsLoading : historyLoading;
+
+	const handleToggleAll = () => {
+		if (selectedTable === "Jobs") {
+			setJobExpandedRows(
+				allExpanded ? new Set() : new Set(jobs.map((j) => j.id)),
+			);
+		} else {
+			setHistoryExpandedIndices(
+				allExpanded ? new Set() : new Set(history.map((_, i) => i)),
+			);
+		}
+	};
 	const [rowSelectionModel, setRowSelectionModel] =
 		useState<GridRowSelectionModel>([]);
 
@@ -111,28 +193,11 @@ export function JobsPage() {
 						if (!job.jobGroup || job.jobGroup === "undefined") {
 							return;
 						}
-						let uiState: JobUIState;
-						try {
-							if (job.uiState) {
-								uiState = JSON.parse(job.uiState);
-							}
-						} catch (e) {
-							console.log(e);
-						}
-
-						let sendEmailJob: SendEmailJob;
-						if (job.recipe) {
-							sendEmailJob = convertSendEmailRecipeToJob(
-								job.recipe,
-							);
-						}
 						jobs.push({
 							id: job.jobId,
 							name: job.jobName,
-							type: "Custom",
 							cronExpression: job.cronExpression,
 							timeZone: job.cronTz,
-							basicTz: job.cronTz ?? "", // Add basicTz property
 							tags: (job?.jobTags ?? "")
 								.split(",")
 								.filter((tag) => !!tag),
@@ -142,23 +207,9 @@ export function JobsPage() {
 							isActive: job.NEXT_FIRE_TIME !== "INACTIVE",
 							group: job.jobGroup,
 							pixel: job.recipe,
-							smtpHost: sendEmailJob?.smtpHost,
-							smtpPort: sendEmailJob?.smtpPort,
-							subject: sendEmailJob?.subject,
-							jobType: uiState?.jobType,
-							to: (sendEmailJob?.to ?? "")
-								.split(",")
-								.filter((to) => !!to),
-							cc: (sendEmailJob?.cc ?? "")
-								.split(",")
-								.filter((cc) => !!cc),
-							bcc: (sendEmailJob?.bcc ?? "")
-								.split(",")
-								.filter((bcc) => !!bcc),
-							from: sendEmailJob?.from,
-							message: sendEmailJob?.message,
-							username: sendEmailJob?.username,
-							password: sendEmailJob?.password,
+							triggerOnLoad:
+								job.TRIGGER_ON_LOAD === true ||
+								job.TRIGGER_ON_LOAD === "true",
 						});
 					});
 
@@ -178,8 +229,8 @@ export function JobsPage() {
 			)}, jobGroup=${JSON.stringify(jobGroup)}) `;
 		} else {
 			pixel = "META | RemoveJobFromDB(";
-			pixel += 'jobId=["' + jobId[0] + '"], ';
-			pixel += 'jobGroup=["' + jobGroup[0] + '"]) ';
+			pixel += `jobId=["${jobId[0]}"], `;
+			pixel += `jobGroup=["${jobGroup[0]}"]) `;
 		}
 		monolithStore
 			.runQuery(pixel)
@@ -211,7 +262,7 @@ export function JobsPage() {
 						? setDeleteMultiple(false)
 						: "";
 					getJobs();
-					getFailedJobCount();
+					getStats();
 				} else {
 					throw new Error(response.errors[0]);
 				}
@@ -262,17 +313,25 @@ export function JobsPage() {
 		page: number,
 		rowsPerPage: number,
 		search: string,
+		statusFilter: string,
 	) => {
 		setHistoryLoading(true);
-		let pixel = "META|SchedulerHistory(";
+		const filters: string[] = [];
 		if (search) {
-			pixel += 'filters=[Filter(SMSS_JOB_RECIPES__JOB_NAME ?like "';
-			pixel += search;
-			pixel += '")],';
+			filters.push(
+				`Filter(SMSS_JOB_RECIPES__JOB_NAME ?like "${search}")`,
+			);
 		}
-		pixel += "limit=" + rowsPerPage + ",";
-		pixel += "offset=" + page * rowsPerPage + " ";
-		pixel += ")";
+		if (statusFilter === "Success") {
+			filters.push("Filter(SMSS_AUDIT_TRAIL__SUCCESS == true)");
+		} else if (statusFilter === "Failed") {
+			filters.push("Filter(SMSS_AUDIT_TRAIL__SUCCESS == false)");
+		}
+		let pixel = "META|SchedulerHistory(";
+		if (filters.length) {
+			pixel += `filters=[${filters.join(", ")}],`;
+		}
+		pixel += `limit=${rowsPerPage},offset=${page * rowsPerPage})`;
 
 		return monolithStore
 			.runQuery<
@@ -299,54 +358,52 @@ export function JobsPage() {
 					const headers = {};
 					for (
 						let headerIdx = 0,
-							headerLen = output["data"].headers.length;
+							headerLen = output.data.headers.length;
 						headerIdx < headerLen;
 						headerIdx++
 					) {
-						headers[output["data"].headers[headerIdx]] = headerIdx;
+						headers[output.data.headers[headerIdx]] = headerIdx;
 					}
 
 					for (
-						let valueIdx = 0,
-							valueLen = output["data"].values.length;
+						let valueIdx = 0, valueLen = output.data.values.length;
 						valueIdx < valueLen;
 						valueIdx++
 					) {
 						if (
-							output["data"].values[valueIdx][
-								headers["SUCCESS"]
-							] !== null
+							output.data.values[valueIdx][headers.SUCCESS] !==
+							null
 						) {
 							const job = {
 								jobId: Object.hasOwn(headers, "JOB_ID")
-									? output["data"].values[valueIdx][
-											headers["JOB_ID"]
+									? output.data.values[valueIdx][
+											headers.JOB_ID
 										]
 									: "",
 								jobName: Object.hasOwn(headers, "JOB_NAME")
-									? output["data"].values[valueIdx][
-											headers["JOB_NAME"]
+									? output.data.values[valueIdx][
+											headers.JOB_NAME
 										]
 									: "",
 								jobGroup: Object.hasOwn(headers, "JOB_GROUP")
-									? output["data"].values[valueIdx][
-											headers["JOB_GROUP"]
+									? output.data.values[valueIdx][
+											headers.JOB_GROUP
 										]
 									: "",
 								execStart:
 									Object.hasOwn(headers, "EXECUTION_START") &&
-									output["data"].values[valueIdx][
-										headers["EXECUTION_START"]
+									output.data.values[valueIdx][
+										headers.EXECUTION_START
 									]
 										? convertTimetoDate(
-												output["data"].values[valueIdx][
-													headers["EXECUTION_START"]
+												output.data.values[valueIdx][
+													headers.EXECUTION_START
 												],
 											)
 										: "",
 								execEnd: Object.hasOwn(headers, "EXECUTION_END")
-									? output["data"].values[valueIdx][
-											headers["EXECUTION_END"]
+									? output.data.values[valueIdx][
+											headers.EXECUTION_END
 										]
 									: "",
 								execDelta: Object.hasOwn(
@@ -354,27 +411,27 @@ export function JobsPage() {
 									"EXECUTION_DELTA",
 								)
 									? convertDeltaToRuntimeString(
-											output["data"].values[valueIdx][
-												headers["EXECUTION_DELTA"]
+											output.data.values[valueIdx][
+												headers.EXECUTION_DELTA
 											],
 										)
 									: "",
 								success: Object.hasOwn(headers, "SUCCESS")
 									? JSON.stringify(
-											output["data"].values[valueIdx][
-												headers["SUCCESS"]
+											output.data.values[valueIdx][
+												headers.SUCCESS
 											],
 										) === "true"
 									: false,
 								jobTags: Object.hasOwn(headers, "JOB_TAG")
-									? output["data"].values[valueIdx][
-											headers["JOB_TAG"]
+									? output.data.values[valueIdx][
+											headers.JOB_TAG
 										].split(",")
 									: [],
 								isLatest: Object.hasOwn(headers, "IS_LATEST")
 									? JSON.stringify(
-											output["data"].values[valueIdx][
-												headers["IS_LATEST"]
+											output.data.values[valueIdx][
+												headers.IS_LATEST
 											],
 										) === "true"
 									: false,
@@ -382,8 +439,8 @@ export function JobsPage() {
 									headers,
 									"SCHEDULER_OUTPUT",
 								)
-									? output["data"].values[valueIdx][
-											headers["SCHEDULER_OUTPUT"]
+									? output.data.values[valueIdx][
+											headers.SCHEDULER_OUTPUT
 										]
 									: "No Output.",
 							};
@@ -424,9 +481,10 @@ export function JobsPage() {
 				newPage,
 				newNumOfRows,
 				newSearch,
+				selectedHistoryTab,
 			);
 
-			if (newHistoryData && newHistoryData.length) {
+			if (newHistoryData?.length) {
 				if (newHistoryData.length < newNumOfRows) {
 					setHistoryCount(
 						newPage * newNumOfRows + newHistoryData.length,
@@ -453,98 +511,70 @@ export function JobsPage() {
 		}
 	};
 
-	const getFailedJobCount = () => {
-		const pixel =
-			'META|SchedulerHistory(filters=[Filter(SMSS_AUDIT_TRAIL__SUCCESS == "false")])';
+	const getStats = (window: "24h" | "7d" | "30d" = statsWindow) => {
+		setStatsLoading(true);
+		const pixel = `META|SchedulerStats(window=["${window}"])`;
 		monolithStore
-			.runQuery<
-				[
-					{
-						data: {
-							values: string[][];
-							headers: string[];
-						};
-					},
-				]
-			>(pixel)
+			.runQuery<[SchedulerStats]>(pixel)
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 				if (type.indexOf("ERROR") > -1) {
-					setNotification({
-						type: "error",
-						message:
-							"Something went wrong. Failed job history could not be retrieved.",
-					});
-				} else {
-					const output = response.pixelReturn[0].output;
-					setFailedJobCount(output["data"].values.length);
+					return;
 				}
-			});
+				const output = response.pixelReturn[0].output;
+				if (output && typeof output === "object") {
+					setStats(output);
+				}
+			})
+			.finally(() => setStatsLoading(false));
 	};
 
 	const filteredJobs = useMemo(() => {
-		const searchJobs = jobs.filter((job) => job.name.includes(searchValue));
 		if (selectedJobTab === "Active") {
-			return searchJobs.filter((job) => job.isActive);
+			return jobs.filter((job) => job.isActive);
 		} else if (selectedJobTab === "Inactive") {
-			return searchJobs.filter((job) => !job.isActive);
+			return jobs.filter((job) => !job.isActive);
 		}
-		return searchJobs;
-	}, [jobs, searchValue, selectedJobTab]);
+		return jobs;
+	}, [jobs, selectedJobTab]);
 
 	const selectedPausedJobs = useMemo(() => {
 		return jobs.filter((job) => {
 			return !job.isActive && rowSelectionModel.includes(job.id);
 		});
-	}, [rowSelectionModel]);
+	}, [jobs, rowSelectionModel]);
 
 	const selectedActiveJobs = useMemo(() => {
 		return jobs.filter((job) => {
 			return job.isActive && rowSelectionModel.includes(job.id);
 		});
-	}, [rowSelectionModel]);
+	}, [jobs, rowSelectionModel]);
 
-	const filteredHistory = useMemo(() => {
-		const searchedHistory = history.filter((job) =>
-			job.jobName.includes(searchValue),
-		);
-		if (selectedHistoryTab === "Success") {
-			return searchedHistory.filter((job) => job.success === true);
-		} else if (selectedHistoryTab === "Failed") {
-			return searchedHistory.filter((job) => job.success === false);
-		}
-		return searchedHistory;
-	}, [history, searchValue, selectedHistoryTab]);
-
-	const debouncedGetHistory = debounced(() => {
-		getHistory({ search: historySearchBuffer });
-	}, 400);
-
+	// biome-ignore lint/correctness/useExhaustiveDependencies: load once on mount
 	useEffect(() => {
 		getJobs();
-		getHistory({ reload: true });
-		getFailedJobCount();
 	}, []);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refetch stats when the window selection changes
 	useEffect(() => {
-		debouncedGetHistory();
-	}, [historySearchBuffer, debouncedGetHistory]);
+		getStats(statsWindow);
+	}, [statsWindow]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refetch history when tab, sub-tab, or search changes
 	useEffect(() => {
-		const handleClickOutside = (event) => {
-			if (
-				searchRef.current &&
-				!searchRef.current.contains(event.target)
-			) {
-				setSearchOpen(false);
-			}
-		};
+		if (selectedTable !== "History") return;
+		getHistory({ reload: true, search: debouncedSearchValue });
+	}, [selectedTable, selectedHistoryTab, debouncedSearchValue]);
 
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
-	}, [searchRef]);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset expansion when the jobs list reloads
+	useEffect(() => {
+		setJobExpandedRows(new Set());
+	}, [jobs]);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reset expansion when the history page reloads
+	useEffect(() => {
+		setHistoryExpandedIndices(new Set());
+	}, [history]);
 
 	const deleteMutlipleJobs = () => {
 		setDeleteMultiple(true);
@@ -578,35 +608,106 @@ export function JobsPage() {
 
 			<hr className="border-gray-200" />
 
-			<div className="flex w-1/2 gap-4">
-				<JobCard
-					title="Active Jobs"
-					icon={<AlarmClock />}
-					count={jobs.filter((j) => j.isActive).length}
-					avatarColor={["#C6E4BF", "#66BB6A", "#6D7E6A"]}
-					iconColor="#fff"
-				/>
+			<div className="flex flex-col gap-3">
+				<div className="flex items-center justify-end gap-2">
+					<Tabs
+						value={statsWindow}
+						onValueChange={(v) =>
+							setStatsWindow(v as "24h" | "7d" | "30d")
+						}
+					>
+						<TabsList>
+							<TabsTrigger value="24h">24h</TabsTrigger>
+							<TabsTrigger value="7d">7d</TabsTrigger>
+							<TabsTrigger value="30d">30d</TabsTrigger>
+						</TabsList>
+					</Tabs>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon-sm"
+						title="Refresh stats"
+						onClick={() => getStats(statsWindow)}
+						disabled={statsLoading}
+					>
+						<RefreshCw
+							className={`size-3.5 ${
+								statsLoading ? "animate-spin" : ""
+							}`}
+						/>
+					</Button>
+				</div>
 
-				<JobCard
-					title="Inactive Jobs"
-					icon={<Moon />}
-					count={jobs.filter((j) => !j.isActive).length}
-					avatarColor={["#FFF59D", "#FBC02D"]}
-					iconColor="#fff"
-				/>
+				<div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					<KpiCard
+						label="Active jobs"
+						loading={statsLoading && stats === null}
+						value={
+							stats?.activeJobs ??
+							jobs.filter((j) => j.isActive).length
+						}
+						sub={(() => {
+							const paused =
+								stats?.pausedJobs ??
+								jobs.filter((j) => !j.isActive).length;
+							const overdue = stats?.overdueJobs ?? 0;
+							const nextIn = formatNextRunIn(stats?.nextRunAt);
+							const parts: string[] = [];
+							if (paused > 0) parts.push(`${paused} paused`);
+							if (overdue > 0) parts.push(`${overdue} overdue`);
+							if (nextIn) parts.push(`next in ${nextIn}`);
+							return parts.length ? parts.join(" · ") : null;
+						})()}
+						tone={
+							(stats?.overdueJobs ?? 0) > 0
+								? "warning"
+								: "default"
+						}
+					/>
 
-				<JobCard
-					title="Failed"
-					icon={<AlertCircle />}
-					count={failedJobCount}
-					avatarColor={["#FFCCBC", "#E64A19"]}
-					iconColor="#fff"
-				/>
+					<KpiCard
+						label={`Runs (${statsWindow})`}
+						loading={statsLoading && stats === null}
+						value={stats?.totalRuns ?? "—"}
+					/>
+
+					<KpiCard
+						label={`Success rate (${statsWindow})`}
+						loading={statsLoading && stats === null}
+						value={
+							stats?.totalRuns === 0
+								? "No runs"
+								: formatPercent(stats?.successRate)
+						}
+						tone={
+							stats?.totalRuns === 0
+								? "default"
+								: successRateTone(stats?.successRate)
+						}
+					/>
+
+					<KpiCard
+						label={`Failures (${statsWindow})`}
+						loading={statsLoading && stats === null}
+						value={stats?.failures ?? "—"}
+						tone={
+							(stats?.failures ?? 0) > 0
+								? "destructive"
+								: "default"
+						}
+						sub={
+							stats?.worstJob &&
+							stats.worstJob.consecutiveFailures > 1
+								? `${stats.worstJob.name}: ${stats.worstJob.consecutiveFailures} in a row`
+								: null
+						}
+					/>
+				</div>
 			</div>
 
 			<Field className="rounded-lg border p-4">
-				<FieldContent className="flex flex-col gap-4">
-					<div className="flex items-center justify-between">
+				<FieldContent className="flex flex-col gap-2">
+					<div className="flex flex-wrap items-center justify-between gap-2">
 						<Tabs
 							value={selectedTable}
 							onValueChange={setSelectedTable}
@@ -627,7 +728,7 @@ export function JobsPage() {
 							</TabsList>
 						</Tabs>
 
-						<div className="flex items-center gap-2">
+						<div className="flex flex-wrap items-center gap-2">
 							{selectedTable === "Jobs" && (
 								<>
 									<Button
@@ -657,58 +758,42 @@ export function JobsPage() {
 										<Trash className="mr-1 h-4 w-4" />{" "}
 										Delete
 									</Button>
-
-									<Button
-										size="sm"
-										onClick={() =>
-											navigate(
-												"/settings/jobs/add-new-job",
-											)
-										}
-									>
-										<Plus className="mr-1 h-4 w-4" /> Add
-										New
-									</Button>
 								</>
 							)}
+
+							<Button
+								size="sm"
+								onClick={() =>
+									navigate("/settings/jobs/add-new-job")
+								}
+							>
+								<Plus className="mr-1 h-4 w-4" /> Add New
+							</Button>
 						</div>
 					</div>
 
-					<div className="relative flex w-full items-center justify-between rounded-t-lg p-2">
+					<div className="flex w-full items-center justify-between gap-2">
 						{selectedTable === "Jobs" && (
 							<Tabs
 								value={selectedJobTab}
 								onValueChange={setSelectedJobTab}
-								className="w-full"
 							>
-								<TabsList className="w-full flex-nowrap justify-start gap-10 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+								<TabsList className={subTabsListClass}>
 									<TabsTrigger
 										value="All"
-										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedJobTab === "All"
-												? "data-[state=active]:after:opacity-100"
-												: ""
-										}`}
+										className={subTabTriggerClass}
 									>
 										All
 									</TabsTrigger>
 									<TabsTrigger
 										value="Active"
-										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedJobTab === "Active"
-												? "data-[state=active]:after:opacity-100"
-												: ""
-										}`}
+										className={subTabTriggerClass}
 									>
 										Active
 									</TabsTrigger>
 									<TabsTrigger
 										value="Inactive"
-										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedJobTab === "Inactive"
-												? "data-[state=active]:after:opacity-100"
-												: ""
-										}`}
+										className={subTabTriggerClass}
 									>
 										Inactive
 									</TabsTrigger>
@@ -720,36 +805,23 @@ export function JobsPage() {
 							<Tabs
 								value={selectedHistoryTab}
 								onValueChange={setSelectedHistoryTab}
-								className="w-full"
 							>
-								<TabsList className="w-full flex-nowrap justify-start gap-10 overflow-x-auto rounded-none bg-transparent p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+								<TabsList className={subTabsListClass}>
 									<TabsTrigger
 										value="All"
-										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedHistoryTab === "All"
-												? "data-[state=active]:after:opacity-100"
-												: ""
-										}`}
+										className={subTabTriggerClass}
 									>
 										All
 									</TabsTrigger>
 									<TabsTrigger
 										value="Success"
-										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedHistoryTab === "Success"
-												? "data-[state=active]:after:opacity-100"
-												: ""
-										}`}
+										className={subTabTriggerClass}
 									>
 										Success
 									</TabsTrigger>
 									<TabsTrigger
 										value="Failed"
-										className={`!flex-none !border-0 !bg-transparent !shadow-none hover:!bg-transparent data-[state=active]:!bg-transparent data-[state=active]:!shadow-none data-[state=active]:!text-primary after:-bottom-[1px] relative whitespace-nowrap rounded-none px-1 pb-3 text-sm after:absolute after:right-0 after:left-0 after:h-0.5 after:bg-primary after:opacity-0 ${
-											selectedHistoryTab === "Failed"
-												? "data-[state=active]:after:opacity-100"
-												: ""
-										}`}
+										className={subTabTriggerClass}
 									>
 										Failed
 									</TabsTrigger>
@@ -758,76 +830,58 @@ export function JobsPage() {
 						)}
 
 						<div className="flex items-center gap-2">
-							{!searchOpen && (
-								<Search
-									className="h-4 w-4 cursor-pointer"
-									onClick={() => setSearchOpen(true)}
+							{selectedTable === "History" && (
+								<div className="w-full sm:w-64">
+									<InputGroup>
+										<InputGroupAddon>
+											<Search className="size-4" />
+										</InputGroupAddon>
+										<InputGroupInput
+											value={searchValue}
+											onChange={(
+												e: React.ChangeEvent<HTMLInputElement>,
+											) => setSearchValue(e.target.value)}
+											placeholder="Search history..."
+										/>
+									</InputGroup>
+								</div>
+							)}
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								disabled={expandAllDisabled}
+								onClick={handleToggleAll}
+								className="h-7 px-2 text-muted-foreground text-xs"
+							>
+								{allExpanded ? (
+									<>
+										<ChevronsDownUp className="size-3" />{" "}
+										Collapse all
+									</>
+								) : (
+									<>
+										<ChevronsUpDown className="size-3" />{" "}
+										Expand all
+									</>
+								)}
+							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon-sm"
+								title="Refresh"
+								onClick={handleRefreshTable}
+								disabled={tableRefreshLoading}
+							>
+								<RefreshCw
+									className={`size-3.5 ${
+										tableRefreshLoading
+											? "animate-spin"
+											: ""
+									}`}
 								/>
-							)}
-
-							{searchOpen && (
-								<div ref={searchRef}>
-									<Input
-										value={searchValue}
-										onChange={(e) =>
-											setSearchValue(e.target.value)
-										}
-										placeholder="Search..."
-										className="w-48"
-									/>
-								</div>
-							)}
-
-							<Filter
-								className="h-4 w-4 cursor-pointer"
-								onClick={() => setFilterOpen(!filterOpen)}
-							/>
-
-							{filterOpen && (
-								<div className="absolute top-full right-0 z-50 mt-2 w-52 rounded-md border bg-white p-2 shadow-md">
-									<Button
-										variant="outline"
-										size="sm"
-										className="w-full justify-start"
-										onClick={() => {
-											setSelectedTable("Jobs");
-											setSelectedJobTab("Active");
-											setFilterOpen(false);
-										}}
-									>
-										<AlarmClock className="mr-2 h-4 w-4" />
-										Active Jobs
-									</Button>
-
-									<Button
-										variant="outline"
-										size="sm"
-										className="mt-1 w-full justify-start"
-										onClick={() => {
-											setSelectedTable("Jobs");
-											setSelectedJobTab("Inactive");
-											setFilterOpen(false);
-										}}
-									>
-										<Moon className="mr-2 h-4 w-4" />
-										Inactive Jobs
-									</Button>
-
-									<Button
-										variant="outline"
-										size="sm"
-										className="mt-1 w-full justify-start"
-										onClick={() => {
-											setSelectedTable("History");
-											setSelectedHistoryTab("Failed");
-											setFilterOpen(false);
-										}}
-									>
-										<AlertCircle className="mr-2 h-4 w-4" />
-										Failed Jobs ({failedJobCount})
-									</Button>
-								</div>
-							)}
+							</Button>
 						</div>
 					</div>
 
@@ -841,13 +895,15 @@ export function JobsPage() {
 							showDeleteJobModal={(job: Job) =>
 								setJobToDelete(job)
 							}
-							getFailedJobCount={getFailedJobCount}
+							refreshStats={getStats}
+							expandedRows={jobExpandedRows}
+							onToggleExpanded={toggleJobExpanded}
 						/>
 					)}
 
 					{selectedTable === "History" && (
 						<JobHistory
-							history={filteredHistory}
+							history={history}
 							historyLoading={historyLoading}
 							historyCount={historyCount}
 							historyPage={historyPage}
@@ -856,7 +912,8 @@ export function JobsPage() {
 							onRowsPerPageChange={(rowsPerPage) =>
 								getHistory({ rowsPerPage })
 							}
-							onSearchChange={setHistorySearchBuffer}
+							expandedIndices={historyExpandedIndices}
+							onToggleExpanded={toggleHistoryExpanded}
 						/>
 					)}
 				</FieldContent>

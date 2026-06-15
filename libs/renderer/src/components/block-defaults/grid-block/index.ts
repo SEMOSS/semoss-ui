@@ -1,3 +1,3 @@
 export * from "./config";
-export * from "./GridBlock";
+export * from "./grid-block";
 export * from "./grid-block.types";

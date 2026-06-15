@@ -81,6 +81,7 @@ function Field({
 	...props
 }: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
 	return (
+		// biome-ignore lint/a11y/useSemanticElements: <fieldset> default styles conflict with field layout
 		<div
 			role="group"
 			data-slot="field"
@@ -202,9 +203,10 @@ function FieldError({
 		}
 
 		return (
-			<ul className="ml-4 flex list-disc flex-col gap-1">
+			<ul className="ms-4 flex list-disc flex-col gap-1">
 				{errors.map(
 					(error, index) =>
+						// biome-ignore lint/suspicious/noArrayIndexKey: errors are regenerated wholesale on validation change and never reordered; duplicate messages (e.g. two "required" errors) would collide on a content-based key
 						error?.message && <li key={index}>{error.message}</li>,
 				)}
 			</ul>

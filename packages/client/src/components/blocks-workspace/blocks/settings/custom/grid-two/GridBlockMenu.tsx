@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { type BlockComponent, useBlock } from "@semoss/renderer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@semoss/ui/next";
-import { JsonSettings } from "../../shared/JsonSettings";
+import { JsonSettings } from "../../shared/json-settings";
 import { GridBlockColumnSettings } from "./GridBlockColumnSettings";
 import { GridBlockTool } from "./GridBlockTool";
 
