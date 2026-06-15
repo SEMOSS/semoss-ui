@@ -25,7 +25,7 @@
 	},
 	"modes": {
 		"ask": "Ask",
-		"plan": "Plan"
+		"agent": "Agent Harness"
 	},
 	"workspace": {
 		"publishTooltip": "Publish as Agent",

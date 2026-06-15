@@ -1,0 +1,69 @@
+{
+	"title": "Kennisopslagplaatsen",
+	"aboutTitle": "Over kennisopslagplaatsen",
+	"whatIsKnowledgeStore": "Wat is een kennisopslagplaats?",
+	"ragDescription": "RAG-chat (Retrieval-Augmented Generation) verbetert AI-gesprekken door antwoorden te baseren op betrouwbare gegevens. Kies uit onderstaande bibliotheken om een antwoord te ontvangen dat specifiek naar die documenten verwijst.",
+	"subtitle": "Zoek, filter en maak nieuwe kennisopslagplaatsen aan.",
+	"newSource": {
+		"title": "Nieuwe kennisopslagplaats",
+		"description": "Upload documenten om een nieuwe kennisopslagplaats aan te maken"
+	},
+	"form": {
+		"nameLabel": "Naam",
+		"descriptionLabel": "Beschrijving",
+		"embeddingLabel": "Embedding",
+		"filesLabel": "Bestanden",
+		"descriptionPlaceholder": "Voer een beschrijving in"
+	},
+	"tabs": {
+		"all": "Alle",
+		"global": "Globale opslagplaatsen",
+		"mine": "Mijn opslagplaatsen"
+	},
+	"filters": {
+		"allCenters": "Alle centra/kantoren",
+		"all": "Alle"
+	},
+	"actions": {
+		"createSource": "Kennisopslagplaats aanmaken",
+		"viewDocuments": "Documenten bekijken",
+		"newChat": "Nieuwe chat"
+	},
+	"messages": {
+		"noDescription": "Geen beschrijving",
+		"noLibrariesFound": "Geen documentbibliotheken gevonden die aan uw criteria voldoen.",
+		"loadingDocuments": "Documenten laden…",
+		"noDocuments": "Geen documenten gevonden."
+	},
+	"documents": {
+		"title": "Documenten",
+		"description": "Bestanden die momenteel aan deze kennisopslagplaats zijn gekoppeld."
+	},
+	"embedDocuments": {
+		"title": "Documenten in bestaande bron embedden",
+		"description": "Upload documenten om in deze kennisopslagplaats te embedden.",
+		"documents": "Documenten",
+		"selectFiles": "Klik om bestanden te selecteren of sleep ze hierheen",
+		"embedButton": "Documenten embedden",
+		"embedding": "Embedden...",
+		"removeFile": "Bestand verwijderen"
+	},
+	"embedMessages": {
+		"selectKnowledgeSource": "Selecteer een kennisopslagplaats",
+		"selectDocument": "Selecteer ten minste één document",
+		"embedSuccess": "Documenten succesvol geëmbed",
+		"embedFailed": "Embedden van documenten mislukt"
+	},
+	"breadcrumbs": {
+		"home": "Home",
+		"knowledgeStores": "Kennisopslagplaatsen",
+		"loading": "Laden"
+	},
+	"detail": {
+		"knowledge": "Kennis",
+		"embedDocuments": "Documenten embedden",
+		"newKnowledgeCreated": "Er is een nieuwe kennisopslagplaats aangemaakt. U kunt deze nu selecteren om aanvullende documenten te embedden.",
+		"documentsDescription": "Documenten die momenteel in deze kennisopslagplaats zijn geëmbed.",
+		"failedToLoadDocuments": "Laden van documenten mislukt."
+	}
+}

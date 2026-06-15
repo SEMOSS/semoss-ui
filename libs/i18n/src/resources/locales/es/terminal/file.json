@@ -15,6 +15,10 @@
 		"title": "La salida aparecerá en el panel Terminal",
 		"description": "Restaura el diseño para ver el resultado de la ejecución."
 	},
+	"noMode": {
+		"title": "Elige un lenguaje para ejecutar",
+		"description": "Selecciona Pixel, R, Python o Shell en la barra de herramientas y luego ejecuta {{name}}."
+	},
 	"scopeChanged": {
 		"title": "El alcance ha cambiado",
 		"body": "Este archivo se abrió en <strong>{{scope}}</strong>. Vuelve a ese alcance para editarlo o ejecutarlo."

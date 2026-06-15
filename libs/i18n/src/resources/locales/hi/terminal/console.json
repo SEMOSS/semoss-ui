@@ -4,7 +4,7 @@
 	},
 	"run": {
 		"button": "चलाएँ",
-		"tooltip": "चलाएँ (Ctrl+Enter)"
+		"tooltip": "चलाएँ (Enter)"
 	},
 	"emptyState": {
 		"prefix": "ऊपर एक कमांड टाइप करें और दबाएँ",
