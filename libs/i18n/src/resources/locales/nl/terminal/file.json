@@ -1,0 +1,34 @@
+{
+	"context": {
+		"switchTo": "Overschakelen naar {{context}}"
+	},
+	"run": {
+		"button": "Uitvoeren",
+		"tooltipActive": "Uitvoeren (Ctrl+Enter)",
+		"tooltipInactive": "Schakel terug naar het bereik van dit bestand om het uit te voeren"
+	},
+	"errors": {
+		"loadFailed": "Laden van {{name}} mislukt",
+		"runFailed": "{{name}} kon niet worden uitgevoerd. Controleer het script."
+	},
+	"maximizedToast": {
+		"title": "De uitvoer verschijnt in het Terminal-paneel",
+		"description": "Herstel de indeling om de uitvoer van de uitvoering te zien."
+	},
+	"noMode": {
+		"title": "Kies een taal om uit te voeren",
+		"description": "Selecteer Pixel, R, Python of Shell in de werkbalk en voer vervolgens {{name}} uit."
+	},
+	"scopeChanged": {
+		"title": "Bereik gewijzigd",
+		"body": "Dit bestand is geopend in <strong>{{scope}}</strong>. Schakel terug naar dat bereik om het te bewerken of uit te voeren."
+	},
+	"scopeLabel": {
+		"appWithName": "App · {{name}} · {{id}}",
+		"appIdOnly": "App · {{id}}",
+		"engine": "Engine · {{id}}",
+		"storage": "Opslag · {{name}}",
+		"user": "Gebruiker",
+		"insight": "Insight"
+	}
+}

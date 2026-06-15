@@ -19,14 +19,22 @@ const extToContext = (ext: Ext): ConsoleContext => {
 	return "Pixel";
 };
 
-const inferExt = (name: string): Ext => {
+/**
+ * Map a filename to its runnable language, or `null` when the extension isn't
+ * one we can execute (json, txt, csv, …). A null ext means "no mode": the run
+ * toolbar shows nothing selected and Run prompts the user to pick a language.
+ */
+export const inferExt = (name: string): Ext | null => {
 	const e = (name.split(".").pop() || "").toLowerCase();
 	if (e === "r") return "r";
 	if (e === "py") return "py";
 	if (e === "pixel") return "pixel";
 	if (e === "sh" || e === "shell") return "shell";
-	return "pixel";
+	return null;
 };
+
+const isRunnableExt = (e: string | null | undefined): e is Ext =>
+	e === "pixel" || e === "r" || e === "py" || e === "shell";
 
 /**
  * Build the "Run" pixel — always sends the file's content inline. No Source
@@ -71,9 +79,10 @@ export interface FileEditorTabConfig {
 	 * open time so the scope-changed banner can show name + id rather than
 	 * just the opaque id. */
 	appName?: string;
-	/** Ext (language) the tab should run as. Initially inferred from the
-	 * filename; users can switch via the toolbar. */
-	ext: Ext;
+	/** Ext (language) the tab runs as, or null when the file type isn't
+	 * runnable (no mode selected). Initially inferred from the filename;
+	 * users can switch via the toolbar. */
+	ext: Ext | null;
 }
 
 const scopeLabel = (
@@ -111,8 +120,8 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 	const { t } = useTranslation("file");
 
 	const config = node.getConfig() as FileEditorTabConfig;
-	const [ext, setExtState] = useState<Ext>(
-		config.ext ?? inferExt(config.baseName),
+	const [ext, setExtState] = useState<Ext | null>(
+		isRunnableExt(config.ext) ? config.ext : inferExt(config.baseName),
 	);
 	const [content, setContent] = useState("");
 	const [isModified, setIsModified] = useState(false);
@@ -145,8 +154,22 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 	);
 
 	const active = modeKey(config.mode) === modeKey(terminal.fileMode);
+	const activeRef = useRef(active);
+	activeRef.current = active;
 
 	const runFile = useCallback(async () => {
+		// No runnable language is selected — e.g. a .json/.txt file, or a type
+		// we can't infer a mode for. Running would be a no-op, so prompt the
+		// user to pick Pixel / R / Python / Shell from the toolbar instead.
+		if (!ext) {
+			toast.warning(t("noMode.title"), {
+				description: t("noMode.description", {
+					name: config.baseName,
+				}),
+			});
+			return;
+		}
+
 		// content is only populated by FileEditor's onChange — which doesn't
 		// fire on initial load. For a tab the user hasn't typed in, fetch the
 		// on-disk content first.
@@ -200,6 +223,14 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 		}
 	}, [actions, config, ext, isModified, node, t, terminal]);
 
+	// Ctrl/Cmd+Enter inside the editor runs the file — same path as the Run
+	// button. Fenced off when the tab's scope no longer matches the active
+	// scope (mirrors the disabled button + overlay).
+	const handleRun = useCallback(() => {
+		if (!activeRef.current) return;
+		runFile();
+	}, [runFile]);
+
 	return (
 		<div className="flex h-full flex-col bg-background">
 			<div className="relative min-h-0 flex-1">
@@ -210,6 +241,7 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 						setContent(value);
 						setIsModified(modifiedFlag);
 					}}
+					onRun={handleRun}
 				/>
 				{!active && (
 					// Pointer-events overlay blocks edits / clicks on the
