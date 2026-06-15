@@ -1,0 +1,34 @@
+{
+	"context": {
+		"switchTo": "Passer à {{context}}"
+	},
+	"run": {
+		"button": "Exécuter",
+		"tooltipActive": "Exécuter (Ctrl+Entrée)",
+		"tooltipInactive": "Revenez à la portée de ce fichier pour l'exécuter"
+	},
+	"errors": {
+		"loadFailed": "Échec du chargement de {{name}}",
+		"runFailed": "Impossible d'exécuter {{name}}. Veuillez valider le script."
+	},
+	"maximizedToast": {
+		"title": "La sortie apparaîtra dans le panneau Terminal",
+		"description": "Restaurez la disposition pour voir le résultat de l'exécution."
+	},
+	"noMode": {
+		"title": "Choisissez un langage à exécuter",
+		"description": "Sélectionnez Pixel, R, Python ou Shell dans la barre d'outils, puis exécutez {{name}}."
+	},
+	"scopeChanged": {
+		"title": "Portée modifiée",
+		"body": "Ce fichier a été ouvert dans <strong>{{scope}}</strong>. Revenez à cette portée pour le modifier ou l'exécuter."
+	},
+	"scopeLabel": {
+		"appWithName": "App · {{name}} · {{id}}",
+		"appIdOnly": "App · {{id}}",
+		"engine": "Moteur · {{id}}",
+		"storage": "Stockage · {{name}}",
+		"user": "Utilisateur",
+		"insight": "Aperçu"
+	}
+}

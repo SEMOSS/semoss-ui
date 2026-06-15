@@ -66,7 +66,7 @@ export const ErrorPage = ({ isInnerComponent = false }: ErrorPageProps) => {
 	if (isInnerComponent) {
 		return (
 			<div className="relative h-full w-full overflow-hidden">
-				<div className="absolute top-2 left-2 z-10 flex h-12.5 items-center px-4">
+				<div className="absolute start-2 top-2 z-10 flex h-12.5 items-center px-4">
 					<SidebarTrigger />
 				</div>
 				<ResizablePanelGroup direction="horizontal">

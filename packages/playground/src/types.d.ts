@@ -66,6 +66,9 @@ export interface MCP {
 	/** Name of the mcp */
 	name: string;
 
+	/** Engine subtype (e.g. POSTGRES, OPEN_AI) — used to pick the avatar icon */
+	subtype?: string;
+
 	/** Description of the mcp */
 	description?: string;
 
@@ -104,6 +107,7 @@ export interface AbstractPixelMessage {
 	io: "INPUT" | "OUTPUT";
 	messageId: string;
 	parentMessageId?: string;
+	summaryLeafMessageId?: string;
 	visible: boolean;
 	platform_generated: boolean;
 	modelId: string;
@@ -120,6 +124,7 @@ export interface AbstractPixelMessage {
 	ornaments: {
 		modelName?: string;
 	};
+	pruneToolsAbove: boolean;
 }
 
 export interface InputPixelMessage extends AbstractPixelMessage {
@@ -139,10 +144,10 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 		| PixelMessageThinkingPart
 		| PixelMessageMediaPart
 		| PixelMessageToolCallPart
+		| PixelMessageToolResultPart
 	)[];
 	ornaments: {
 		modelName?: string;
-		PLAYGROUND_MESSAGE_TYPE?: "COT";
 	};
 	feedback?: {
 		rating: boolean;
@@ -187,6 +192,10 @@ export interface PixelMessageToolCallPart {
 		original_name: string;
 		title: string;
 		description: string;
+		// Set by the backend when the model provider executed the tool itself
+		// (e.g. web_search). Server tools lack the MCP `_meta`
+		// block and their TOOL_RESULT lands in the same response message.
+		server_tool?: boolean;
 		_meta: {
 			SMSS_ENGINE_NAME: string;
 			SMSS_ENGINE_ID: string;
@@ -198,6 +207,7 @@ export interface PixelMessageToolCallPart {
 				loadingMessage?: string;
 				displayLocation?: "inline" | "sidebar" | "hidden";
 				resourceURI?: string;
+				autoOpen?: boolean;
 			};
 		};
 	};
@@ -212,55 +222,6 @@ export interface PixelMessageToolResultPart {
 		toolParameterValues: Record<string, unknown>;
 		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
-}
-
-/**
- * Plan
- */
-export interface Plan {
-	user_prompt: string;
-	plan_id: string;
-	steps: PlanStep[];
-}
-
-export interface PlanStep {
-	step_number: number;
-	step_name: string;
-	description: string;
-	type:
-		| "tool_call"
-		| "llm_reasoning"
-		| "human_intervention"
-		| "no_tool_available";
-	status: "pending" | "in_progress" | "completed" | "failed";
-	details:
-		| {
-				stepType: "tool_call";
-				tool_name: string;
-				parameters: Record<string, unknown>;
-				rationaleForStep: string;
-				title: string;
-				_meta: {
-					SMSS_PROJECT_NAME: string;
-					SMSS_PROJECT_ID: string;
-				};
-		  }
-		| {
-				stepType: "llm_reasoning";
-				prompt: string;
-				rationaleForStep: string;
-		  }
-		| {
-				stepType: "human_intervention";
-				required_role: string;
-				instructions: string;
-				rationaleForStep: string;
-		  }
-		| {
-				stepType: "no_tool_available";
-				missing_capability: string;
-				rationaleForStep: string;
-		  };
 }
 
 export interface MCPTool {
@@ -287,6 +248,7 @@ export interface MCPTool {
 			loadingMessage?: string;
 			resourceURI?: string;
 			displayLocation?: "inline" | "sidebar" | "hidden";
+			autoOpen?: boolean;
 		};
 	};
 }

@@ -1,5 +1,6 @@
 import { CodeIcon, DownloadIcon, FileIcon } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { download, runPixel, useInsight } from "@semoss/sdk/react";
 import { Button, Muted, toast } from "@semoss/ui/next";
 import type { FileMode } from "./file.types";
@@ -22,6 +23,7 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 	onChange = () => null,
 }) => {
 	const insight = useInsight();
+	const { t } = useTranslation("common");
 	const [isLoading, setIsLoading] = useState(false);
 	const [showRaw, setShowRaw] = useState(false);
 
@@ -43,6 +45,8 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 				pixel = `DownloadEngineAsset(engine=["${mode.engine}"], filePath=["${path}"]);`;
 			} else if (mode.type === "INSIGHT") {
 				pixel = `DownloadInsightAsset(filePath=["${path}"]);`;
+			} else if (mode.type === "USER") {
+				pixel = `DownloadUserAsset(filePath=["${path}"]);`;
 			}
 
 			if (!pixel) {
@@ -64,7 +68,7 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 			const fileKey = pixelReturn[0].output;
 			await download(targetInsightId, fileKey);
 		} catch (e) {
-			toast.error("Error downloading file");
+			toast.error(t("fileExplorer.toasts.downloadFileFailed"));
 			console.error(e);
 		} finally {
 			setIsLoading(false);
@@ -82,8 +86,8 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 						size="sm"
 						onClick={() => setShowRaw(false)}
 					>
-						<DownloadIcon className="mr-1.5 size-3" />
-						Back to download
+						<DownloadIcon className="me-1.5 size-3" />
+						{t("fileExplorer.binaryView.backToDownload")}
 					</Button>
 				</div>
 				<div className="min-h-0 flex-1">
@@ -109,8 +113,10 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 				onClick={downloadFile}
 				disabled={isLoading}
 			>
-				<DownloadIcon className="mr-1.5 size-4" />
-				{isLoading ? "Downloading..." : "Download"}
+				<DownloadIcon className="me-1.5 size-4" />
+				{isLoading
+					? t("fileExplorer.binaryView.downloading")
+					: t("fileExplorer.binaryView.download")}
 			</Button>
 			<Button
 				type="button"
@@ -118,8 +124,8 @@ export const FileDownloadView: React.FC<FileDownloadViewProps> = ({
 				size="sm"
 				onClick={() => setShowRaw(true)}
 			>
-				<CodeIcon className="mr-1.5 size-3" />
-				View raw content
+				<CodeIcon className="me-1.5 size-3" />
+				{t("fileExplorer.binaryView.viewRawContent")}
 			</Button>
 		</div>
 	);

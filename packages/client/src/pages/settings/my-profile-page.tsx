@@ -1,18 +1,19 @@
 import {
-	Check,
 	ChevronDown,
 	ChevronUp,
 	Copy,
+	Download,
 	Plus,
 	Trash2,
 } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { EngineSubtypeIcon } from "@semoss/shared";
 import {
 	Button,
-	CodeContainer,
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogFooter,
 	DialogHeader,
 	DialogTitle,
@@ -35,6 +36,7 @@ import {
 	editMemberInfo,
 	setUserDefaultModel,
 } from "@/api/auth";
+import { SdkBlock } from "@/components/shared/sdk-block";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { formatDate, getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./change-password-modal";
@@ -47,9 +49,9 @@ interface CreateAccessKeyForm {
 }
 
 interface Engine {
-	app_id: string;
-	app_name: string;
-	app_subtype?: string;
+	engine_id: string;
+	engine_name: string;
+	engine_subtype?: string;
 }
 
 interface EditUserInfoForm {
@@ -59,63 +61,9 @@ interface EditUserInfoForm {
 	USERID?: string | undefined;
 }
 
-const SdkBlock = ({
-	label,
-	code,
-	testId,
-}: {
-	label: string;
-	code: string;
-	testId: string;
-}) => {
-	const [copied, setCopied] = useState(false);
-
-	const handleCopy = async () => {
-		try {
-			await navigator.clipboard.writeText(code);
-			setCopied(true);
-			setTimeout(() => setCopied(false), 2000);
-		} catch {
-			toast.error("Unable to copy code");
-		}
-	};
-
-	return (
-		<div className="overflow-hidden rounded-md border border-border">
-			<div className="flex items-center justify-between border-border border-b bg-muted px-3 py-1.5">
-				<span className="font-mono text-muted-foreground text-xs">
-					{label}
-				</span>
-				<button
-					type="button"
-					onClick={handleCopy}
-					className="ml-auto flex items-center gap-1 rounded px-2 py-0.5 text-muted-foreground text-xs transition-colors hover:bg-background hover:text-foreground"
-					data-testid={testId}
-				>
-					{copied ? (
-						<>
-							<Check className="size-3" />
-							Copied
-						</>
-					) : (
-						<>
-							<Copy className="size-3" />
-							Copy
-						</>
-					)}
-				</button>
-			</div>
-			<div className="overflow-x-auto bg-muted/30">
-				<CodeContainer className="min-w-max whitespace-pre rounded-none bg-transparent p-4 text-sm">
-					{code}
-				</CodeContainer>
-			</div>
-		</div>
-	);
-};
-
 export const MyProfilePage = () => {
 	const modelSelectId = useId();
+	const generateKeyFormId = useId();
 	const { configStore, insightStore } = useRootStore();
 	const { email, id, name } = configStore.store.user;
 	const { isNative } = configStore.store;
@@ -170,7 +118,28 @@ export const MyProfilePage = () => {
 
 	const ACCESSKEY = watch("ACCESSKEY");
 	const SECRETKEY = watch("SECRETKEY");
+	const TOKENNAME = watch("TOKENNAME");
 	const isCreated = !!(ACCESSKEY && SECRETKEY);
+
+	const downloadAccessKeyJson = () => {
+		if (!ACCESSKEY || !SECRETKEY) return;
+		const slug =
+			TOKENNAME.trim()
+				.replace(/[^A-Za-z0-9._-]+/g, "-")
+				.replace(/^-+|-+$/g, "") || "access-key";
+		const blob = new Blob(
+			[JSON.stringify({ ACCESSKEY, SECRETKEY }, null, 2)],
+			{ type: "application/json" },
+		);
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = `${slug}-credentials.json`;
+		document.body.appendChild(anchor);
+		anchor.click();
+		anchor.remove();
+		URL.revokeObjectURL(url);
+	};
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
@@ -178,26 +147,26 @@ export const MyProfilePage = () => {
 	const modals =
 		getModals.status === "SUCCESS" && Array.isArray(getModals.data)
 			? (getModals.data as unknown as Engine[]).filter(
-					(e) => e.app_subtype !== "EMBEDDED",
+					(e) => e.engine_subtype !== "EMBEDDED",
 				)
 			: [];
 
 	useEffect(() => {
 		if (insightStore.defaultTextGenerationModel && modals.length > 0) {
 			const matchingEngine = modals.find(
-				(e) => e.app_id === insightStore.defaultTextGenerationModel,
+				(e) => e.engine_id === insightStore.defaultTextGenerationModel,
 			);
 			if (matchingEngine) {
-				setSelectedTextGenerationDefaultModel(matchingEngine.app_id);
+				setSelectedTextGenerationDefaultModel(matchingEngine.engine_id);
 			}
 		}
 		if (insightStore.defaultCodeGenerationModel && modals.length > 0) {
 			const matchingCodeEngine = modals.find(
-				(e) => e.app_id === insightStore.defaultCodeGenerationModel,
+				(e) => e.engine_id === insightStore.defaultCodeGenerationModel,
 			);
 			if (matchingCodeEngine) {
 				setSelectedCodeGenerationDefaultModel(
-					matchingCodeEngine.app_id,
+					matchingCodeEngine.engine_id,
 				);
 			}
 		}
@@ -241,24 +210,24 @@ export const MyProfilePage = () => {
 	};
 
 	const handleSelectModel = async (
-		selectedAppId: string,
+		selectedEngineId: string,
 		modelType: string,
 	) => {
 		try {
 			if (modelType === "text-generation-model") {
-				setSelectedTextGenerationDefaultModel(selectedAppId);
+				setSelectedTextGenerationDefaultModel(selectedEngineId);
 			} else if (modelType === "code-generation-model") {
-				setSelectedCodeGenerationDefaultModel(selectedAppId);
+				setSelectedCodeGenerationDefaultModel(selectedEngineId);
 			}
-			if (!selectedAppId) return;
+			if (!selectedEngineId) return;
 
 			const selectedEngine = modals.find(
-				(e) => e.app_id === selectedAppId,
+				(e) => e.engine_id === selectedEngineId,
 			);
 			if (!selectedEngine) throw new Error("Selected model not found");
 
-			insightStore.updateUserDefaultModel(modelType, selectedAppId);
-			await setUserDefaultModel(modelType, selectedAppId);
+			insightStore.updateUserDefaultModel(modelType, selectedEngineId);
+			await setUserDefaultModel(modelType, selectedEngineId);
 			toast.success(`Default ${modelType} saved successfully`);
 		} catch (e) {
 			if (e instanceof Error) {
@@ -285,16 +254,29 @@ export const MyProfilePage = () => {
 		}
 	};
 
-	const deleteAccessKey = async (accessKey: string) => {
+	const [accessKeyToDelete, setAccessKeyToDelete] = useState<{
+		ACCESSKEY: string;
+		TOKENNAME?: string;
+	} | null>(null);
+	const [isDeletingAccessKey, setIsDeletingAccessKey] = useState(false);
+
+	const confirmDeleteAccessKey = async () => {
+		if (!accessKeyToDelete) return;
+		setIsDeletingAccessKey(true);
 		try {
-			const response = await deleteUserAccessKeys(accessKey);
+			const response = await deleteUserAccessKeys(
+				accessKeyToDelete.ACCESSKEY,
+			);
 			if (!response) throw new Error("Error deleting key");
 			getUserAccessKeys.refresh();
 			toast.success("Successfully deleted key");
+			setAccessKeyToDelete(null);
 		} catch (e) {
 			if (e instanceof Error) {
 				toast.error(e.message);
 			}
+		} finally {
+			setIsDeletingAccessKey(false);
 		}
 	};
 
@@ -559,16 +541,29 @@ export const MyProfilePage = () => {
 								<SelectContent>
 									{modals.map((engine) => (
 										<SelectItem
-											key={engine.app_id}
-											value={engine.app_id}
-											data-testid={`myProfilePage-model-option-${engine.app_id}`}
+											key={engine.engine_id}
+											value={engine.engine_id}
+											data-testid={`myProfilePage-model-option-${engine.engine_id}`}
 										>
-											<span className="flex w-full flex-col items-start text-left">
-												<span className="text-sm">
-													{engine.app_name}
+											<span className="flex w-full items-center gap-2 text-left">
+												<span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm">
+													<EngineSubtypeIcon
+														engineType="MODEL"
+														engineSubtype={
+															engine.engine_subtype ||
+															""
+														}
+														alt={engine.engine_name}
+														className="size-full object-contain"
+													/>
 												</span>
-												<span className="text-muted-foreground text-xs">
-													id: {engine.app_id}
+												<span className="flex min-w-0 flex-1 flex-col items-start">
+													<span className="font-medium text-sm">
+														{engine.engine_name}
+													</span>
+													<span className="break-all font-mono text-muted-foreground text-xs">
+														{engine.engine_id}
+													</span>
 												</span>
 											</span>
 										</SelectItem>
@@ -602,16 +597,29 @@ export const MyProfilePage = () => {
 								<SelectContent>
 									{modals.map((engine) => (
 										<SelectItem
-											key={`secondary-${engine.app_id}`}
-											value={engine.app_id}
-											data-testid={`myProfilePage-secondary-model-option-${engine.app_id}`}
+											key={`secondary-${engine.engine_id}`}
+											value={engine.engine_id}
+											data-testid={`myProfilePage-secondary-model-option-${engine.engine_id}`}
 										>
-											<span className="flex w-full flex-col items-start text-left">
-												<span className="text-sm">
-													{engine.app_name}
+											<span className="flex w-full items-center gap-2 text-left">
+												<span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-sm">
+													<EngineSubtypeIcon
+														engineType="MODEL"
+														engineSubtype={
+															engine.engine_subtype ||
+															""
+														}
+														alt={engine.engine_name}
+														className="size-full object-contain"
+													/>
 												</span>
-												<span className="text-muted-foreground text-xs">
-													id: {engine.app_id}
+												<span className="flex min-w-0 flex-1 flex-col items-start">
+													<span className="font-medium text-sm">
+														{engine.engine_name}
+													</span>
+													<span className="break-all font-mono text-muted-foreground text-xs">
+														{engine.engine_id}
+													</span>
 												</span>
 											</span>
 										</SelectItem>
@@ -742,9 +750,12 @@ export const MyProfilePage = () => {
 													size="icon"
 													title="Delete"
 													onClick={() =>
-														deleteAccessKey(
-															k.ACCESSKEY,
-														)
+														setAccessKeyToDelete({
+															ACCESSKEY:
+																k.ACCESSKEY,
+															TOKENNAME:
+																k.TOKENNAME,
+														})
 													}
 													data-testid="myProfilePage-access-key-delete-btn"
 												>
@@ -775,17 +786,18 @@ export const MyProfilePage = () => {
 				<DialogContent className="flex max-h-[90vh] max-w-3xl flex-col">
 					<DialogHeader className="shrink-0">
 						<DialogTitle>Generate Key</DialogTitle>
+						<DialogDescription>
+							Create a user key for API access. Do not share
+							tokens with other users.
+						</DialogDescription>
 					</DialogHeader>
-					<div className="min-h-0 flex-1 overflow-y-auto">
+					<div className="min-h-0 flex-1 overflow-y-auto px-1 py-1">
 						<form
+							id={generateKeyFormId}
 							onSubmit={handleSubmit(createAccessKey)}
 							className="my-profile-page__generate-key-form"
 						>
 							<div className="flex flex-col gap-3">
-								<div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-blue-800 text-sm">
-									Note: Your private key will only be
-									generated once
-								</div>
 								<Controller
 									name="TOKENNAME"
 									control={control}
@@ -826,15 +838,9 @@ export const MyProfilePage = () => {
 										</div>
 									)}
 								/>
-								<div>
-									<Button
-										disabled={isCreated}
-										type="submit"
-										variant="outline"
-										data-testid="myProfilePage-generate-btn"
-									>
-										Generate
-									</Button>
+								<div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900 text-sm">
+									One-time credentials are shown only once
+									after creation. Copy and store them now.
 								</div>
 								{isCreated && (
 									<div className="flex flex-col gap-3 rounded bg-background p-2">
@@ -926,9 +932,26 @@ export const MyProfilePage = () => {
 						</form>
 					</div>
 					<DialogFooter className="shrink-0">
-						<Button variant="ghost" onClick={() => closeModel()}>
-							Close
-						</Button>
+						{isCreated ? (
+							<Button
+								variant="default"
+								className="gap-2"
+								onClick={downloadAccessKeyJson}
+								data-testid="myProfilePage-download-key-btn"
+							>
+								<Download className="size-4" />
+								Download JSON
+							</Button>
+						) : (
+							<Button
+								type="submit"
+								form={generateKeyFormId}
+								variant="default"
+								data-testid="myProfilePage-generate-btn"
+							>
+								Create
+							</Button>
+						)}
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
@@ -937,6 +960,51 @@ export const MyProfilePage = () => {
 				open={passwordModal}
 				onClose={() => setPasswordModal(false)}
 			/>
+
+			<Dialog
+				open={Boolean(accessKeyToDelete)}
+				onOpenChange={(open) => {
+					if (!open) setAccessKeyToDelete(null);
+				}}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Delete personal access token</DialogTitle>
+						<DialogDescription>
+							{accessKeyToDelete?.TOKENNAME ? (
+								<>
+									Are you sure you want to delete{" "}
+									<span className="font-medium text-foreground">
+										{accessKeyToDelete.TOKENNAME}
+									</span>
+									? Any clients using this token will lose
+									access. This action cannot be undone.
+								</>
+							) : (
+								"Are you sure you want to delete this token? Any clients using it will lose access. This action cannot be undone."
+							)}
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter>
+						<Button
+							variant="ghost"
+							onClick={() => setAccessKeyToDelete(null)}
+							disabled={isDeletingAccessKey}
+							data-testid="myProfilePage-delete-key-cancel-btn"
+						>
+							Cancel
+						</Button>
+						<Button
+							variant="destructive"
+							onClick={confirmDeleteAccessKey}
+							disabled={isDeletingAccessKey}
+							data-testid="myProfilePage-delete-key-confirm-btn"
+						>
+							{isDeletingAccessKey ? "Deleting..." : "Delete"}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 };

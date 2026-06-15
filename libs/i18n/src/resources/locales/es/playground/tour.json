@@ -1,0 +1,47 @@
+{
+	"steps": {
+		"welcome": {
+			"title": "¡Bienvenido!",
+			"content": "Hagamos un recorrido rápido para empezar."
+		},
+		"input": {
+			"title": "Iniciar una conversación",
+			"content": "Escribe tu pregunta aquí y presiona Enter."
+		},
+		"inputMenu": {
+			"title": "Adjuntar y configurar",
+			"content": "Añade archivos, agentes, bibliotecas de conocimiento y herramientas para enriquecer tu conversación."
+		},
+		"model": {
+			"title": "Modelo",
+			"content": "Selecciona qué modelo de IA impulsa tu conversación."
+		},
+		"record": {
+			"title": "Grabar",
+			"content": "Haz clic para hablar; tu voz se convertirá en texto."
+		},
+		"newChat": {
+			"title": "Nuevo chat",
+			"content": "Inicia una conversación nueva en cualquier momento."
+		},
+		"chatHistory": {
+			"title": "Historial de chats",
+			"content": "Continúa, marca como favoritas, edita o elimina conversaciones anteriores."
+		},
+		"search": {
+			"title": "Buscar",
+			"content": "Encuentra rápidamente chats anteriores en tu historial."
+		},
+		"takeTour": {
+			"title": "Hacer el recorrido",
+			"content": "Reproduce este recorrido cuando quieras."
+		}
+	},
+	"controls": {
+		"closeTour": "Cerrar recorrido",
+		"skip": "Omitir",
+		"back": "Atrás",
+		"next": "Siguiente",
+		"done": "Listo"
+	}
+}

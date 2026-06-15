@@ -1,12 +1,8 @@
 import { ExternalLinkIcon } from "lucide-react";
 import { useIteratorPixel } from "@semoss/sdk/react";
-import type { App } from "@semoss/shared";
+import { type App, AppCatalogAvatar } from "@semoss/shared";
 import { Button, CommandGroup, CommandItem, Spinner } from "@semoss/ui/next";
 import { useNavigate } from "@/hooks/useNavigate";
-import {
-	buildInitials,
-	getAppCatalogAvatarStyle,
-} from "./platform-search-icon-utils";
 
 const LIMIT = 5;
 
@@ -63,8 +59,6 @@ export const PlatformSearchApp = ({
 				const appName =
 					(app as App & { project_display_name?: string })
 						.project_display_name || app.project_name;
-				const initials = buildInitials(appName || "App");
-				const avatarStyle = getAppCatalogAvatarStyle(appName || "App");
 
 				return (
 					<CommandItem
@@ -79,12 +73,10 @@ export const PlatformSearchApp = ({
 							onSelect(app);
 						}}
 					>
-						<div
-							className="flex size-8 shrink-0 items-center justify-center rounded-md font-semibold text-[11px]"
-							style={avatarStyle}
-						>
-							{initials}
-						</div>
+						<AppCatalogAvatar
+							name={appName || "App"}
+							className="size-8 shrink-0 rounded-md text-[11px]"
+						/>
 						<div className="flex flex-1 flex-col truncate">
 							<span className="truncate font-medium text-sm">
 								{appName}

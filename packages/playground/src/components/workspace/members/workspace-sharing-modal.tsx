@@ -270,7 +270,7 @@ export const WorkspaceSharingModal = ({
 													"workspace:sharing.searchPlaceholder",
 												)}
 										</span>
-										<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+										<ChevronsUpDownIcon className="ms-2 size-4 shrink-0 opacity-50" />
 									</Button>
 								</PopoverTrigger>
 								<PopoverContent
@@ -331,14 +331,14 @@ export const WorkspaceSharingModal = ({
 																)}
 															</div>
 															{isInAgent && (
-																<span className="ml-auto text-muted-foreground text-xs">
+																<span className="ms-auto text-muted-foreground text-xs">
 																	{t(
 																		"workspace:sharing.hasAccess",
 																	)}
 																</span>
 															)}
 															{isAlreadyPending && (
-																<span className="ml-auto text-muted-foreground text-xs">
+																<span className="ms-auto text-muted-foreground text-xs">
 																	{t(
 																		"workspace:sharing.pendingInvite",
 																	)}
