@@ -111,10 +111,19 @@
 		"noItemsAvailable": "No knowledge or toolboxes available"
 	},
 	"autoCompaction": {
-		"warnTitle": "Conversation is getting long",
-		"warnDescription": "Approaching the compaction threshold. Compact now to maintain response quality.",
-		"triggerTitle": "Auto-compacting in {{seconds}}s",
-		"triggerDescription": "Threshold reached. Compacting now to maintain response quality.",
-		"compactNow": "Compact Now"
+		"warnTitle": "Your conversation is getting long.",
+		"warnDescription": "Earlier messages will soon be summarized to free up space.",
+		"warnCountdown_one": "{{count}} message until auto-compact",
+		"warnCountdown_other": "{{count}} messages until auto-compact",
+		"triggerTitle": "Conversation limit reached.",
+		"triggerDescription": "Compact your conversation to continue chatting.",
+		"compactNow": "Compact Now",
+		"infoTitle": "What is compaction?",
+		"infoBody": "AI models can only hold so much conversation at once. When a conversation gets long, older messages are condensed into a summary — your recent messages stay intact.",
+		"infoKeepTitle": "What you keep",
+		"infoKeepBody": "The AI retains your goals, decisions, preferences, and key facts from earlier in the conversation.",
+		"infoLoseTitle": "What may be lost",
+		"infoLoseBody": "Very specific details or exact wording from early messages may be generalized.",
+		"infoMarker": "After compaction, a marker appears in the chat showing where it happened."
 	}
 }

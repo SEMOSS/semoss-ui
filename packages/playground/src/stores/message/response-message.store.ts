@@ -82,6 +82,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	isCompacting: boolean = false;
 
+	/**
+	 * Whether the typewriter animation is still running for this message.
+	 * Set by ResponseMessageText so the compaction system can wait for it.
+	 */
+	isTypingAnimation: boolean = false;
+
 	/** Token count immediately before this compaction (0 = no data, e.g. restored from DB) */
 	compactionTokensBefore: number = 0;
 
@@ -106,6 +112,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			isCompacting: observable,
 			compactionTokensBefore: observable,
 			compactionTokensAfter: observable,
+			isTypingAnimation: observable,
+			setTypingAnimation: action,
 			runMessage: action,
 			savePart: action,
 			recordFeedback: action,
@@ -353,6 +361,10 @@ paramValues=[${JSON.stringify({
 	 */
 	setIsCompacting = (compacting: boolean) => {
 		this.isCompacting = compacting;
+	};
+
+	setTypingAnimation = (typing: boolean) => {
+		this.isTypingAnimation = typing;
 	};
 
 	setCompactionSnapshot = (before: number, after: number) => {

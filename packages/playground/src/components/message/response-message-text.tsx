@@ -180,6 +180,14 @@ export const ResponseMessageText: React.FC<ResponseMessageTextProps> = observer(
 			!message.isThinking &&
 			isLast;
 
+		// Keep the store in sync so RoomContent can gate auto-compaction on this.
+		useEffect(() => {
+			message.setTypingAnimation(isAnyTyping);
+			return () => {
+				message.setTypingAnimation(false);
+			};
+		}, [isAnyTyping, message]);
+
 		const urlTransform = (url: string) => {
 			if (url.startsWith("room://")) return url;
 			if (

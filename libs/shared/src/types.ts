@@ -139,6 +139,28 @@ export interface ThemeMap {
 			 * reached, the UI surfaces a warning or blocking prompt to compact.
 			 */
 			autoCompaction?: {
+				/**
+				 * Master on/off switch. Set to false to disable auto-compaction
+				 * entirely (banners, countdown, auto-trigger). Manual compaction
+				 * from the settings menu is unaffected. Defaults to true when the
+				 * config block is present.
+				 */
+				enabled?: boolean;
+
+				/**
+				 * Which compaction method(s) to request from the backend.
+				 * - "auto"        — backend auto-detects: TOOL_PRUNE if tool tokens
+				 *                   exceed 25% of context, otherwise SUMMARY (default)
+				 * - "TOOL_PRUNE"  — strip tool call/result cycles only (cheap, lossless)
+				 * - "SUMMARY"     — LLM-generated summary of older messages (lossy)
+				 * - ["TOOL_PRUNE", "SUMMARY"] — run both in order
+				 */
+				compactionMethod?:
+					| "auto"
+					| "TOOL_PRUNE"
+					| "SUMMARY"
+					| ("TOOL_PRUNE" | "SUMMARY")[];
+
 				/** Trigger at this fraction of the context window, e.g. 0.8 = 80% */
 				contextWindowPercent?: number;
 				/** Trigger after N turns since the last compaction (or room start) */
@@ -146,16 +168,39 @@ export interface ThemeMap {
 				/** Trigger after N total input tokens billed since the last compaction */
 				accumulatedInputTokensSinceCompaction?: number;
 				/**
+				 * Absolute token floor. When tokensUsed is at or below this value,
+				 * no compaction triggers fire regardless of message count or other
+				 * thresholds. Useful for ensuring light conversations are never
+				 * interrupted. e.g. 50000 = always chat freely below 50k tokens.
+				 *
+				 * Works across model sizes:
+				 *   50k on 200k Haiku  = 25% CW
+				 *   50k on 1M GPT-4    =  5% CW
+				 */
+				tokenFloor?: number;
+
+				/**
 				 * Sliding-scale message threshold driven by context window fill %.
 				 * Each tier defines the message limit to apply when context usage
 				 * is >= contextPercent. Tiers are evaluated highest-first; the first
-				 * matching tier wins.
+				 * matching tier wins. Tiers below the lowest contextPercent are never
+				 * reached — omit a 0% entry to disable message-count triggering when
+				 * the context window is minimally used.
 				 *
-				 * Example (the default recommendation):
-				 *   [
-				 *     { contextPercent: 0.75, messages: 5  },  // 75%+ CW used
-				 *     { contextPercent: 0.50, messages: 10 },  // 50–75% CW used
-				 *     { contextPercent: 0.00, messages: 20 },  // < 50% CW used
+				 * Works best when combined with tokenFloor so very short conversations
+				 * never trigger compaction even if they hit a low-% tier.
+				 *
+				 * Values are piecewise-linearly interpolated between the anchors.
+				 * With two anchors this is a straight line; more anchors = piecewise segments.
+				 * Below the lowest anchor: no message-count trigger (floor handles that range).
+				 * Above the highest anchor: clamped to the last anchor's message count.
+				 *
+				 * Example (works across 200k–1M context models):
+				 *   tokenFloor: 50000,
+				 *   messageThresholdByContextUsage: [
+				 *     { contextPercent: 0.05, messages: 25 },  // 5% CW  → 25 msgs
+				 *     { contextPercent: 0.75, messages: 5  },  // 75% CW → 5 msgs
+				 *     // in between: linearly interpolated, e.g. 40% CW → ~15 msgs
 				 *   ]
 				 *
 				 * Requires chat.models.contextWindow to be available (model must be selected).
@@ -165,10 +210,30 @@ export interface ThemeMap {
 					contextPercent: number;
 					messages: number;
 				}>;
+				/**
+				 * Weight applied to each completed tool execution when computing
+				 * effective message count. e.g. 0.25 means 4 tool cycles = 1
+				 * message equivalent. Defaults to 0 (tool cycles not counted).
+				 * Compaction never fires unless at least one real user message
+				 * has been sent since the last compaction.
+				 */
+				toolCycleWeight?: number;
 				/** "any" fires when any threshold is hit (default); "all" requires all */
 				mode?: "any" | "all";
-				/** Show a warning at this fraction of each threshold, e.g. 0.9 */
+				/**
+				 * For percentage-based thresholds (contextWindowPercent,
+				 * accumulatedInputTokensSinceCompaction), show a warning at this
+				 * fraction of the threshold, e.g. 0.75 = warn at 75% of the way there.
+				 */
 				warningThreshold?: number;
+				/**
+				 * For message-count thresholds (messagesSinceCompaction,
+				 * messageThresholdByContextUsage), warn this many messages before
+				 * the limit. A flat buffer gives consistent runway across all tiers —
+				 * e.g. 3 warns at 2 msgs on a 5-limit and at 22 msgs on a 25-limit.
+				 * Defaults to 3.
+				 */
+				warningMessageBuffer?: number;
 			};
 		};
 

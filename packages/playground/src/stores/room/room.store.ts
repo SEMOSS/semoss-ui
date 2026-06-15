@@ -163,6 +163,9 @@ export class RoomStore {
 	/** Cumulative total of all INPUT tokens ever billed to this room. Never resets. */
 	totalRoomTokens: number = 0;
 
+	/** Count of completed tool executions since the last compaction (or room start). Resets on compaction. */
+	toolCyclesSinceCompaction: number = 0;
+
 	private _store: RoomStoreInterface = {
 		roomId: "",
 		insightId: "new",
@@ -423,7 +426,7 @@ export class RoomStore {
 			) {
 				break;
 			}
-			if (msg instanceof InputMessageStore) {
+			if (msg instanceof InputMessageStore && msg.visible) {
 				count++;
 			}
 		}
@@ -722,7 +725,10 @@ export class RoomStore {
 					}
 					if (msg instanceof InputMessageStore) {
 						total += msg.tokens;
-						if (!pastCompaction) {
+						// Only count visible (user-initiated) messages toward the
+						// post-compaction accumulation — hidden compaction summary
+						// inputs should not count as user turns.
+						if (!pastCompaction && msg.visible) {
 							accumulated += msg.tokens;
 						}
 					}
@@ -1166,6 +1172,14 @@ export class RoomStore {
 					executedParameters,
 				);
 			}
+
+			// Count completed tool cycles (success/error both produce a result
+			// that enters context; cancelled/paused do not).
+			if (toolStatus === "success" || toolStatus === "error") {
+				runInAction(() => {
+					this.toolCyclesSinceCompaction++;
+				});
+			}
 		} catch (e) {
 			console.error(e);
 			this.plan?.failStepExecution();
@@ -1348,10 +1362,21 @@ export class RoomStore {
 		};
 
 		try {
+			// Build optional compactionTypes param from theme config.
+			// Omitting it lets the backend auto-detect the best strategy.
+			const method =
+				this._theme.defaultRoomSettings?.autoCompaction
+					?.compactionMethod ?? "auto";
+			let compactionTypesParam = "";
+			if (method !== "auto") {
+				const types = Array.isArray(method) ? method : [method];
+				compactionTypesParam = `, compactionTypes=[${types.map((t) => `"${t}"`).join(", ")}]`;
+			}
+
 			const response = await this.runRoomPixel<
 				(SummaryResponse | ToolPruneResponse)[][]
 			>(
-				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)}${compactionTypesParam});`,
 				true,
 			);
 
@@ -1408,6 +1433,7 @@ export class RoomStore {
 					}
 				}
 				this.accumulatedInputTokens = 0;
+				this.toolCyclesSinceCompaction = 0;
 				curResponse.setCompactionSnapshot(
 					tokensBefore,
 					this.tokensUsed,
