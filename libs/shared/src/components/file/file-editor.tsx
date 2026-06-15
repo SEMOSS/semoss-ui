@@ -24,12 +24,17 @@ interface FileEditorProps {
 
 	/** Callback when the file is changed */
 	onChange?: (content: string, isModified: boolean) => void;
+
+	/** Optional handler invoked when the user runs the file via Ctrl/Cmd+Enter.
+	 * Only applies to the code editor (non-rendered file types aren't runnable). */
+	onRun?: () => void;
 }
 
 export const FileEditor: React.FC<FileEditorProps> = ({
 	mode,
 	path,
 	onChange = () => null,
+	onRun,
 }) => {
 	const ext = path.split(".").pop()?.toLowerCase() || "";
 
@@ -72,6 +77,7 @@ export const FileEditor: React.FC<FileEditorProps> = ({
 					mode={mode}
 					path={path}
 					onChange={onChange}
+					onRun={onRun}
 				/>
 			)}
 		</div>

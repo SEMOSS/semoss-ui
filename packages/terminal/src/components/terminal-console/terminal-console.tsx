@@ -574,44 +574,70 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 			const KeyMod = monaco.KeyMod;
 			const KeyCode = monaco.KeyCode;
 
+			// IMPORTANT: register these as *actions*, not via editor.addCommand.
+			// Monaco's StandaloneKeybindingService is a singleton shared by every
+			// editor on the page, and addCommand keybindings are global — they
+			// would hijack Enter / Ctrl+Enter / arrows in *all* Monaco editors
+			// (e.g. the file editor, where Enter must insert a newline and
+			// Ctrl+Enter must run the file). addAction scopes each keybinding to
+			// this editor via an `editorId` precondition, so the REPL's keys only
+			// fire when the REPL editor is focused.
+			editor.addAction({
+				id: "smss-repl-submit-mod",
+				label: "Run",
+				keybindings: [KeyMod.CtrlCmd | KeyCode.Enter],
+				run: () => execute(),
+			});
 			// Enter → Submit (only when autocomplete popup is closed)
-			editor.addCommand(KeyMod.CtrlCmd | KeyCode.Enter, () => execute());
-			editor.addCommand(
-				KeyCode.Enter,
-				() => execute(),
-				"!suggestWidgetVisible && !inlineSuggestionVisible",
-			);
+			editor.addAction({
+				id: "smss-repl-submit",
+				label: "Run",
+				keybindings: [KeyCode.Enter],
+				keybindingContext:
+					"!suggestWidgetVisible && !inlineSuggestionVisible",
+				run: () => execute(),
+			});
 
 			// Cmd/Ctrl-Up / Down → unconditional history recall
-			editor.addCommand(KeyMod.CtrlCmd | KeyCode.UpArrow, () =>
-				historyUp(),
-			);
-			editor.addCommand(KeyMod.CtrlCmd | KeyCode.DownArrow, () =>
-				historyDown(),
-			);
+			editor.addAction({
+				id: "smss-repl-history-up-mod",
+				label: "History: previous command",
+				keybindings: [KeyMod.CtrlCmd | KeyCode.UpArrow],
+				run: () => historyUp(),
+			});
+			editor.addAction({
+				id: "smss-repl-history-down-mod",
+				label: "History: next command",
+				keybindings: [KeyMod.CtrlCmd | KeyCode.DownArrow],
+				run: () => historyDown(),
+			});
 
 			// Plain Up / Down → history at boundary, cursor otherwise.
 			// Guard on !suggestWidgetVisible so arrow keys navigate the
 			// autocomplete list instead of jumping to history.
-			editor.addCommand(
-				KeyCode.UpArrow,
-				() => {
+			editor.addAction({
+				id: "smss-repl-history-up",
+				label: "History: previous command or cursor up",
+				keybindings: [KeyCode.UpArrow],
+				keybindingContext: "!suggestWidgetVisible",
+				run: () => {
 					const pos = editor.getPosition();
 					if (pos?.lineNumber === 1) historyUp();
 					else editor.trigger("history", "cursorUp", null);
 				},
-				"!suggestWidgetVisible",
-			);
-			editor.addCommand(
-				KeyCode.DownArrow,
-				() => {
+			});
+			editor.addAction({
+				id: "smss-repl-history-down",
+				label: "History: next command or cursor down",
+				keybindings: [KeyCode.DownArrow],
+				keybindingContext: "!suggestWidgetVisible",
+				run: () => {
 					const pos = editor.getPosition();
 					const total = editor.getModel()?.getLineCount() ?? 1;
 					if (pos?.lineNumber === total) historyDown();
 					else editor.trigger("history", "cursorDown", null);
 				},
-				"!suggestWidgetVisible",
-			);
+			});
 
 			// Register the reactor catalog completer on the languages we use.
 			// The provider checks the active context so it only fires for
@@ -725,9 +751,11 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 				</Suspense>
 			</div>
 
-			{/* Upper toolbar — context switcher only; Enter submits */}
-			<div className="flex h-9 items-center border-border border-t bg-muted/60 px-2">
-				<div className="ml-auto inline-flex overflow-hidden rounded-md border border-border/70">
+			{/* Upper toolbar — context switcher + Run, clustered on the right.
+                Styled to match the file editor's toolbar so the two Run
+                buttons read as the same control. Enter also submits. */}
+			<div className="flex h-10 items-center gap-2 border-border border-t bg-muted px-2">
+				<div className="ml-auto inline-flex overflow-hidden rounded border border-border">
 					{(["Pixel", "R", "Python", "Shell"] as const).map((c) => (
 						<Tooltip
 							key={c}
@@ -735,18 +763,28 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 						>
 							<button
 								type="button"
-								className={`flex items-center justify-center border-border/70 border-r px-2 py-1 last:border-r-0 ${
+								className={`flex items-center justify-center border-border border-r px-2 py-1 last:border-r-0 ${
 									state.context === c
 										? "bg-primary/15 text-primary"
-										: "bg-background/80 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+										: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 								}`}
 								onClick={() => applyContext(c)}
 							>
-								<Logo name={c} className="h-3.5 w-3.5" />
+								<Logo name={c} className="h-4 w-4" />
 							</button>
 						</Tooltip>
 					))}
 				</div>
+
+				<Tooltip label={t("run.tooltip")} align="end">
+					<button
+						type="button"
+						className="rounded bg-primary px-3 py-1 text-primary-foreground text-sm hover:bg-primary/90"
+						onClick={execute}
+					>
+						{t("run.button")}
+					</button>
+				</Tooltip>
 			</div>
 
 			{/* Drag handle separating the input zone (editor + toolbar) from
@@ -775,7 +813,11 @@ export const TerminalConsole = ({ projectId }: TerminalConsoleProps) => {
 						<kbd className="rounded border border-border bg-muted px-1 text-[11px] text-foreground/80">
 							Enter
 						</kbd>{" "}
-						to run. Use{" "}
+						to run, or{" "}
+						<kbd className="rounded border border-border bg-muted px-1 text-[11px] text-foreground/80">
+							Shift+Enter
+						</kbd>{" "}
+						for a new line. Use{" "}
 						<kbd className="rounded border border-border bg-muted px-1 text-[11px] text-foreground/80">
 							↑↓
 						</kbd>{" "}

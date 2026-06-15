@@ -578,9 +578,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 									<TooltipTrigger asChild>
 										<Button
 											disabled={
-												!inputMessage?.parent?.parent ||
-												message.room.mode ===
-													"executing"
+												!inputMessage?.parent?.parent
 											}
 											variant="ghost"
 											size="icon"

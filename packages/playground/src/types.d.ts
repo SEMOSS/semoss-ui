@@ -56,47 +56,8 @@ export interface Instructions {
 	context: string;
 }
 
-export interface MCP {
-	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL" | "VECTOR";
-
-	/** Id of the mcp */
-	id: string;
-
-	/** Name of the mcp */
-	name: string;
-
-	/** Engine subtype (e.g. POSTGRES, OPEN_AI) — used to pick the avatar icon */
-	subtype?: string;
-
-	/** Description of the mcp */
-	description?: string;
-
-	/** Tags of the mcp */
-	tags: string[];
-
-	permission: "READ_ONLY" | "EDIT" | "OWNER";
-}
-
-export type MCPConfig = Pick<MCP, "type" | "id" | "name"> & {
-	/** Flag to indicate if this MCP comes from a workspace */
-	fromWorkspace?: boolean;
-};
-
-/**
- * Item from the prompt library
- */
-export interface Prompt {
-	id: string;
-	createdBy: string;
-	dateCreated: string;
-	version: number;
-	intent: string;
-	title: string;
-	context: string;
-	tags: string[];
-	global: boolean;
-}
+// Re-export types from shared to avoid breaking existing imports
+export type { MCP, MCPConfig, Prompt } from "@semoss/shared";
 
 /**
  * Messages from the backend
@@ -148,7 +109,6 @@ export interface ResponsePixelMessage extends AbstractPixelMessage {
 	)[];
 	ornaments: {
 		modelName?: string;
-		PLAYGROUND_MESSAGE_TYPE?: "COT";
 	};
 	feedback?: {
 		rating: boolean;
@@ -223,55 +183,6 @@ export interface PixelMessageToolResultPart {
 		toolParameterValues: Record<string, unknown>;
 		toolStatus: "success" | "error" | "cancelled" | "paused";
 	};
-}
-
-/**
- * Plan
- */
-export interface Plan {
-	user_prompt: string;
-	plan_id: string;
-	steps: PlanStep[];
-}
-
-export interface PlanStep {
-	step_number: number;
-	step_name: string;
-	description: string;
-	type:
-		| "tool_call"
-		| "llm_reasoning"
-		| "human_intervention"
-		| "no_tool_available";
-	status: "pending" | "in_progress" | "completed" | "failed";
-	details:
-		| {
-				stepType: "tool_call";
-				tool_name: string;
-				parameters: Record<string, unknown>;
-				rationaleForStep: string;
-				title: string;
-				_meta: {
-					SMSS_PROJECT_NAME: string;
-					SMSS_PROJECT_ID: string;
-				};
-		  }
-		| {
-				stepType: "llm_reasoning";
-				prompt: string;
-				rationaleForStep: string;
-		  }
-		| {
-				stepType: "human_intervention";
-				required_role: string;
-				instructions: string;
-				rationaleForStep: string;
-		  }
-		| {
-				stepType: "no_tool_available";
-				missing_capability: string;
-				rationaleForStep: string;
-		  };
 }
 
 export interface MCPTool {
