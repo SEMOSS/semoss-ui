@@ -21,7 +21,6 @@ import { SettingsIndexPage } from "./settings-index-page";
 import { SettingsLayout } from "./settings-layout";
 import { TeamSettingsDetailPage } from "./team-settings-detail-page";
 import { TeamsSettingsPage } from "./teams-settings-page";
-import { UsageLimitsPage } from "./usage-limits-page";
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
@@ -43,7 +42,6 @@ const SETTINGS_COMPONETS = {
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
 	"llm-feedback": LLMFeedbackPage,
-	"usage-limits": UsageLimitsPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,
