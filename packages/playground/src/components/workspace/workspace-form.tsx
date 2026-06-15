@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
+import { type MCPConfig, MCPSelector, PromptSelector } from "@semoss/shared";
 import {
 	Button,
 	Field,
@@ -10,9 +11,13 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
-import { MCPSelector, PromptSelector, splitMcpByType } from "@/components";
-import { useChat } from "@/hooks";
-import type { MCPConfig, Workspace } from "@/types";
+import { useChat, useRoot } from "@/hooks";
+import type { Workspace } from "@/types";
+import {
+	mcpToPlatformUrl,
+	promptToPlatformUrl,
+	splitMcpByType,
+} from "@/utility/mcp-utils";
 
 interface WorkspaceFormProps {
 	/**
@@ -58,6 +63,7 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 	 * Library Hooks
 	 */
 	const { chat } = useChat();
+	const { root } = useRoot();
 
 	// Initialize form data from workspace prop
 	useEffect(() => {
@@ -171,6 +177,14 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						disabled={isLoading}
 						onChange={(knowledge) => setKnowledge(knowledge)}
 						className="h-112"
+						enableKnowledgeMCP={
+							root.theme.featureFlags?.enableKnowledgeMCP
+						}
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? mcpToPlatformUrl
+								: undefined
+						}
 					/>
 				</Field>
 				<Field>
@@ -181,6 +195,14 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						disabled={isLoading}
 						onChange={(mcps) => setToolbox(mcps)}
 						className="h-112"
+						enableKnowledgeMCP={
+							root.theme.featureFlags?.enableKnowledgeMCP
+						}
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? mcpToPlatformUrl
+								: undefined
+						}
 					/>
 				</Field>
 				<Field>
@@ -192,6 +214,11 @@ export const WorkspaceForm: React.FC<WorkspaceFormProps> = ({
 						disabled={isLoading}
 						onChange={(values) => setPrompts(values)}
 						className="h-112"
+						getPlatformUrl={
+							root.theme.featureFlags?.showPlatformLinks
+								? promptToPlatformUrl
+								: undefined
+						}
 					/>
 				</Field>
 			</FieldGroup>

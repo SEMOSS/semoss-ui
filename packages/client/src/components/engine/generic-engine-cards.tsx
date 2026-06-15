@@ -465,9 +465,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 							</Button>
 						</TooltipTrigger>
 						<TooltipContent>
-							{isProjectType(type)
-								? "Delete App"
-								: "Delete Engine"}
+							{isProjectType(type) ? "Delete" : "Delete Engine"}
 						</TooltipContent>
 					</Tooltip>
 				)}

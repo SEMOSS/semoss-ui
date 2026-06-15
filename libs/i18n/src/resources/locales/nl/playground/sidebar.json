@@ -1,0 +1,63 @@
+{
+	"search": "Zoeken",
+	"takeTour": "Volg een rondleiding",
+	"nav": {
+		"newChat": {
+			"label": "Nieuw",
+			"tooltip": "Nieuwe chat - Begin op elk moment een nieuw gesprek."
+		},
+		"agents": {
+			"label": "Agents",
+			"tooltip": "Agents"
+		},
+		"allChats": {
+			"label": "Alle chats",
+			"tooltip": "Alle chats"
+		},
+		"agentsWorkspaces": {
+			"tooltip": "Agents/Werkruimtes - Open je werkruimtes of maak nieuwe AI-agents aan."
+		},
+		"knowledgeLibrary": {
+			"tooltip": "Kennisbibliotheek - Blader door, maak, deel en beheer je documentbibliotheken."
+		},
+		"toolbox": {
+			"tooltip": "Toolbox - Ontdek de uitgebreide mogelijkheden van Elsa met krachtige aanvullende tools."
+		},
+		"promptLibrary": {
+			"tooltip": "Promptbibliotheek - Blader door, maak en gebruik opgeslagen prompts."
+		}
+	},
+	"buckets": {
+		"favorites": "Favorieten",
+		"today": "Vandaag",
+		"yesterday": "Gisteren",
+		"fewDaysAgo": "Enkele dagen geleden",
+		"lastWeek": "Vorige week",
+		"thisMonth": "Deze maand",
+		"lastMonth": "Vorige maand",
+		"older": "Ouder"
+	},
+	"messages": {
+		"errorLoadingRooms": "Fout bij het laden van ruimtes",
+		"noRoomsFound": "Geen ruimtes gevonden",
+		"untitled": "Naamloos"
+	},
+	"actions": {
+		"favorite": "Markeren als favoriet",
+		"unfavorite": "Verwijderen uit favorieten",
+		"rename": "Naam wijzigen",
+		"delete": "Verwijderen",
+		"openInline": "In-line openen",
+		"minimize": "Minimaliseren",
+		"maximize": "Maximaliseren",
+		"close": "Sluiten"
+	},
+	"toasts": {
+		"failedToPin": "Vastmaken van ruimte mislukt",
+		"failedToUnpin": "Losmaken van ruimte mislukt",
+		"roomNameEmpty": "Ruimtenaam mag niet leeg zijn",
+		"roomRenamedSuccess": "Naam van ruimte succesvol gewijzigd",
+		"failedToRename": "Naam wijzigen van ruimte mislukt",
+		"roomDeletedSuccess": "Ruimte succesvol verwijderd"
+	}
+}

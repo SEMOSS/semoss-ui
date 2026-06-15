@@ -159,7 +159,7 @@ const EMPTY_PLAYGROUND: ThemeMap["playground"] = {
 	featureFlags: {
 		enableAgent: true,
 		enableModelSelect: true,
-		enablePlan: false,
+		enableAgentHarness: false,
 		enableSuggestions: false,
 		enableRewrite: true,
 		enableDarkMode: true,
@@ -183,7 +183,7 @@ const FEATURE_FLAGS: {
 }[] = [
 	{ key: "enableAgent", label: "Enable Agent" },
 	{ key: "enableModelSelect", label: "Enable Model Select" },
-	{ key: "enablePlan", label: "Enable Plan" },
+	{ key: "enableAgentHarness", label: "Enable Agent Harness" },
 	{ key: "enableSuggestions", label: "Enable Suggestions" },
 	{ key: "enableRewrite", label: "Enable Rewrite" },
 	{ key: "enableDarkMode", label: "Enable Dark Mode" },
