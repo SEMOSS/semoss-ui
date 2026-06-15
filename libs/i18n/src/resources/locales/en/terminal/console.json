@@ -4,7 +4,7 @@
 	},
 	"run": {
 		"button": "Run",
-		"tooltip": "Run (Ctrl+Enter)"
+		"tooltip": "Run (Enter)"
 	},
 	"emptyState": {
 		"prefix": "Type a command above and press",

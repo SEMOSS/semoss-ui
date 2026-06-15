@@ -1,7 +1,7 @@
 import {
+	BotIcon,
 	CheckIcon,
 	ComputerIcon,
-	ListTodoIcon,
 	MessageCircleIcon,
 	Settings2Icon,
 	XIcon,
@@ -110,7 +110,7 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
-	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
+	const [mode, setMode] = useState<"chat" | "agent" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
@@ -207,6 +207,9 @@ export const NewRoomPage = observer(() => {
 			const options = {
 				...tempRoomStore.options,
 				mcp: tempRoomStore.options.mcp,
+				// Persist the agent harness selection so the room stays in agent
+				// mode across reloads.
+				harnessType: mode === "agent" ? "semoss" : undefined,
 			};
 
 			// add workspace id and name
@@ -222,7 +225,7 @@ export const NewRoomPage = observer(() => {
 				// Sync final mode/options, fire askMessage, then navigate.
 				// Files from the file explorer are already in the insight —
 				// only RoomInput drag/drop/paste attachments are passed here.
-				preCreatedRoom.setMode(mode === "plan" ? "planning" : "chat");
+				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
 				await preCreatedRoom.updateRoomOptions(options);
 				preCreatedRoom.askMessage(prompt, files).then(() => {
@@ -235,7 +238,7 @@ export const NewRoomPage = observer(() => {
 			} else {
 				// Standard flow — create room and send first message together.
 				const room = await chat.createRoom(
-					mode === "plan" ? "planning" : "chat",
+					mode === "agent" ? "agent" : "chat",
 					prompt,
 					files,
 					options,
@@ -530,7 +533,7 @@ export const NewRoomPage = observer(() => {
 												/>
 												<DropdownMenuSeparator />
 												{root.theme.featureFlags
-													?.enablePlan && (
+													?.enableAgentHarness && (
 													<>
 														<DropdownMenuItem
 															onSelect={() => {
@@ -554,20 +557,23 @@ export const NewRoomPage = observer(() => {
 														</DropdownMenuItem>
 														<DropdownMenuItem
 															onSelect={() => {
-																setMode("plan");
+																setMode(
+																	"agent",
+																);
 																onOpenChange(
 																	false,
 																);
 															}}
 														>
-															<ListTodoIcon />
+															<BotIcon />
 															<span className="flex-1">
 																{t(
-																	"room:modes.plan",
+																	"room:modes.agent",
 																)}
 															</span>
 
-															{mode === "plan" ? (
+															{mode ===
+															"agent" ? (
 																<div className="px-1">
 																	<CheckIcon />
 																</div>
