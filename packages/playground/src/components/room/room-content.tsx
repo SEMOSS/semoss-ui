@@ -17,10 +17,10 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import {
 	InputMessage,
-	PlanMessage,
 	ResponseMessage,
 	RoomInput,
 	RoomInputMenuFileExplorer,
@@ -30,6 +30,7 @@ import {
 import { useChat, useGracefulErrors } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCPConfig } from "@/types";
+import { RoomCompactionIndicator } from "./room-compaction-indicator";
 import { RoomSuggestions } from "./room-suggestions";
 
 const ROOM_CONFIGURATION_ID = "CONFIGURATION";
@@ -69,6 +70,22 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 		await room.syncRoomOptions();
 
 		return true;
+	};
+
+	/**
+	 * Compact messages in the room
+	 */
+	const handleCompactMessages = async () => {
+		try {
+			const result = await room.compactMessages();
+			if (result === "skipped") {
+				toast.info(t("settings.compactSkipped"));
+			} else {
+				toast.success(t("settings.compactSuccess"));
+			}
+		} catch {
+			toast.error(t("settings.compactError"));
+		}
 	};
 
 	/**
@@ -317,11 +334,23 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 									return null;
 								}
 
+								const showModelName = (() => {
+									// find the most recent ancestor that actually has a model
+									let ancestor = m.parent;
+									while (ancestor) {
+										if (ancestor.modelId) break;
+										ancestor = ancestor.parent;
+									}
+									// If no ancestor has a model, show the model name for this message
+									if (!ancestor) return true;
+									// Only show the model name if it's different from the ancestor's model to reduce clutter
+									return m.modelId !== ancestor.modelId;
+								})();
+
 								return (
 									<React.Fragment key={m.key}>
-										{(m.parent.modelId !== m.modelId ||
-											m.parent.parent === null) && (
-											<div className="relative flex flex-col items-center justify-center">
+										{showModelName && (
+											<div className="relative mb-4 flex flex-col items-center justify-center">
 												<div className="z-10 bg-background px-2 text-muted-foreground text-xs leading-normal">
 													{m.ornaments.modelName}
 												</div>
@@ -340,13 +369,10 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 												message={m}
 											/>
 										)}
-										{m.type === "PLAN" && (
-											<PlanMessage
+
+										{m.type === "OUTPUT" && (
+											<RoomCompactionIndicator
 												message={m}
-												isLast={
-													mIdx ===
-													room.history.length - 1
-												}
 											/>
 										)}
 									</React.Fragment>
@@ -434,10 +460,9 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 						})
 					}
 					MenuComponent={observer(
-						({ onOpenChange, fileRef, onOpenMcpOverlay }) => (
+						({ onOpenChange, onOpenMcpOverlay }) => (
 							<>
 								<RoomInputMenuUpload
-									fileRef={fileRef}
 									onSelect={() => onOpenChange(false)}
 								/>
 								<DropdownMenuSeparator />
@@ -498,6 +523,7 @@ export const RoomContent: React.FC<RoomContentProps> = observer(({ room }) => {
 					}
 					tokensUsed={room.tokensUsed}
 					tokensMax={chat.models.contextWindow}
+					onCompact={handleCompactMessages}
 				/>
 			</div>
 		</div>

@@ -129,29 +129,20 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				: [],
 		);
 
-		// TODO: if the plan is executing, only the execution step is enabled
-		const isDisabled =
-			room.mode === "executing" &&
-			(room.plan?.step?.details.stepType !== "tool_call" ||
-				room.plan?.step?.details.tool_name !== tool.json.name ||
-				room.plan?.step?.details._meta.SMSS_PROJECT_ID !==
-					tool.json._meta.SMSS_PROJECT_ID);
-
 		useEffect(() => {
 			if (
 				!tool.argumentsStreaming &&
 				tool.display !== "hidden" &&
 				tool.json._meta.SMSS_MCP_UI?.autoOpen === true &&
-				!tool.isOpen &&
-				!isDisabled
+				!tool.isOpen
 			) {
-				tool.openTool();
+				tool.openTool(isMobile ? "inline" : undefined);
 			}
 		}, [
 			tool,
 			tool.argumentsStreaming,
 			tool.json._meta.SMSS_MCP_UI?.autoOpen,
-			isDisabled,
+			isMobile,
 		]);
 
 		// While the tool call is still streaming in, we don't have title/meta/args
@@ -166,8 +157,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			(tool.display === "sidebar" ? room.sidebar.isOpen : true);
 
 		const toolState = getToolState(tool, t, toolExecutionMessage);
-
-		const isButtonDisabled = !tool.isOpen && isDisabled;
 
 		// Don't render if hidden
 		if (tool.display === "hidden") {
@@ -199,18 +188,15 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				<div
 					className={cn(
 						"flex flex-col rounded-lg border border-border bg-sidebar",
-						isDisabled && "opacity-50",
-						!isDisabled && isActive && "border-primary",
+						isActive && "border-primary",
 					)}
 				>
 					<div className="flex items-center">
 						<button
 							type="button"
-							disabled={isButtonDisabled}
 							className={cn(
 								"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
 								!toolState.actionType && "pe-0",
-								isButtonDisabled && "cursor-default",
 							)}
 							onClick={handleClick}
 						>
@@ -277,23 +263,18 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			<div
 				className={cn(
 					"flex flex-col rounded-lg border border-border",
-					isDisabled && "opacity-50",
 					toolState.background,
-					!isDisabled && isActive && "border-primary",
-					!isDisabled &&
-						toolState.showHoverAccent &&
-						"hover:bg-accent",
+					isActive && "border-primary",
+					toolState.showHoverAccent && "hover:bg-accent",
 				)}
 			>
 				{/* Top section: button + actions */}
 				<div className="flex items-center">
 					<button
 						type="button"
-						disabled={isButtonDisabled}
 						className={cn(
 							"flex min-w-0 flex-1 items-center gap-3 p-2 text-start",
 							!toolState.actionType && "pe-0",
-							isButtonDisabled && "cursor-default",
 						)}
 						onClick={handleClick}
 					>

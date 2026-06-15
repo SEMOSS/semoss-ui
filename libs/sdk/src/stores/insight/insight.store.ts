@@ -10,10 +10,39 @@ import {
 	uploadApp,
 	uploadEngine,
 	uploadInsight,
+	uploadUser,
 } from "../../api";
 import { Env } from "../../env";
 import type { MCPToolResponse, Script } from "../../types";
 import { UnauthorizedError } from "../../utility";
+
+/**
+ * Module-level cache for the system config. It is static for a page session, so
+ * multiple InsightProviders (e.g. the playground's app-level provider plus a
+ * room-level provider that attaches to an existing insight) can share a single
+ * `/api/config` fetch instead of each re-fetching it. The in-flight promise is
+ * shared so concurrent initializations dedupe to one request.
+ */
+let cachedSystemConfig: Awaited<ReturnType<typeof getSystemConfig>> | null =
+	null;
+let cachedSystemConfigPromise: ReturnType<typeof getSystemConfig> | null = null;
+
+const loadSystemConfig = async () => {
+	if (cachedSystemConfig) {
+		return cachedSystemConfig;
+	}
+	if (!cachedSystemConfigPromise) {
+		cachedSystemConfigPromise = getSystemConfig();
+	}
+	try {
+		cachedSystemConfig = await cachedSystemConfigPromise;
+		return cachedSystemConfig;
+	} catch (e) {
+		// allow a retry on the next initialize if the fetch failed
+		cachedSystemConfigPromise = null;
+		throw e;
+	}
+};
 
 interface InsightStoreInterface {
 	/** insightId of the app */
@@ -373,8 +402,8 @@ export class InsightStore {
 		// reset it
 		this._store.isInitialized = false;
 
-		// get the response
-		const data = await getSystemConfig();
+		// get the response (shared across providers via a module-level cache)
+		const data = await loadSystemConfig();
 
 		let system: InsightStoreInterface["system"] = null;
 		if (data) {
@@ -419,6 +448,11 @@ export class InsightStore {
 		// set as not ready
 		this._store.isReady = false;
 
+		// If an insightId was passed to initialize() we're attaching to an
+		// existing, already-initialized insight (e.g. the playground room insight
+		// the room store created and owns) rather than creating a new one.
+		const isExistingInsight = !!this._store.insightId;
+
 		// load the app reactors (if they exist)
 		let pixel = "";
 		if (this._store.options.appId) {
@@ -438,6 +472,25 @@ export class InsightStore {
 WriteObjectToFile(value="${this._store.options.python.script}", filePath = "temp.py");
 LoadPyFromFile(alias="${alias}", filePath="temp.py");    
             `;
+		}
+
+		// Attaching to an existing insight with no extra setup to run — skip the
+		// otherwise-default `META | init`. The insight is already live, and
+		// actions.run() only needs the insightId to target it, so re-initializing
+		// it here is a redundant round-trip (and would reset its reactor frame out
+		// from under whatever already owns it).
+		if (!pixel && isExistingInsight) {
+			// still bind the insight to the room when running in tool/embed mode
+			if (Env?.TOOL?.roomId && !this._store.options.disableRoom) {
+				await runPixel<[boolean]>(
+					`SetRoomForInsight(roomId=${JSON.stringify(Env.TOOL.roomId)});`,
+					this._store.insightId,
+				);
+			}
+
+			// already initialized — mark ready
+			this._store.isReady = true;
+			return;
 		}
 
 		// default if there is no command to preload
@@ -951,6 +1004,25 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 		uploadInsight: async (path: string, files: File | File[]) => {
 			try {
 				return await uploadInsight(this._store.insightId, path, files);
+			} catch (error) {
+				this.processActionError(error as Error);
+			}
+
+			// throw an error
+			throw new Error("No upload");
+		},
+		/**
+		 * User
+		 */
+		/**
+		 * Upload file(s) to the current user's user space
+		 * @param path
+		 * @param files
+		 * @returns
+		 */
+		uploadUser: async (path: string, files: File | File[]) => {
+			try {
+				return await uploadUser(path, files, this._store.insightId);
 			} catch (error) {
 				this.processActionError(error as Error);
 			}

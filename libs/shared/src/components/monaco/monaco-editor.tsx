@@ -1,4 +1,4 @@
-import { lazy } from "react";
+import { createElement, lazy } from "react";
 
 type MonacoReactModule = typeof import("@monaco-editor/react");
 
@@ -79,14 +79,38 @@ const ensureMonacoSetup = async () => {
 	return monacoSetupPromise;
 };
 
+// Wrap the @monaco-editor/react Editor so its wrapper div always renders with
+// `dir="ltr"`. Monaco assumes left-to-right for code (the textarea, line
+// numbers, completion popups, hit-testing of mouse clicks all break under
+// `dir="rtl"`). Forcing LTR at the wrapper keeps the editor usable inside an
+// RTL page (Arabic/Hebrew). Callers can still override via `wrapperProps`.
+type EditorProps = React.ComponentProps<MonacoReactModule["Editor"]>;
+type DiffEditorProps = React.ComponentProps<MonacoReactModule["DiffEditor"]>;
+
+const withLtrWrapper = <P extends { wrapperProps?: Record<string, unknown> }>(
+	Component: React.ComponentType<P>,
+) => {
+	const Wrapped: React.FC<P> = (props) =>
+		createElement(Component, {
+			...props,
+			wrapperProps: { dir: "ltr", ...(props.wrapperProps ?? {}) },
+		});
+	Wrapped.displayName = `WithLtr(${Component.displayName ?? Component.name ?? "Component"})`;
+	return Wrapped;
+};
+
 export const MonacoEditor = lazy(() =>
 	ensureMonacoSetup()
 		.then(() => loadMonacoReact())
-		.then((mod) => ({ default: mod.Editor })),
+		.then((mod) => ({
+			default: withLtrWrapper<EditorProps>(mod.Editor),
+		})),
 );
 
 export const MonacoDiffEditor = lazy(() =>
 	ensureMonacoSetup()
 		.then(() => loadMonacoReact())
-		.then((mod) => ({ default: mod.DiffEditor })),
+		.then((mod) => ({
+			default: withLtrWrapper<DiffEditorProps>(mod.DiffEditor),
+		})),
 );

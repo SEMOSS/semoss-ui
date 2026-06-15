@@ -1,0 +1,10 @@
+{
+	"knowledge": {
+		"createSuccess": "Kennisopslag \"{{name}}\" is met succes aangemaakt",
+		"createError": "Aanmaken van kennisopslag mislukt"
+	},
+	"workspace": {
+		"saveError": "Opslaan van agent mislukt",
+		"deleteError": "Verwijderen van werkruimte mislukt"
+	}
+}

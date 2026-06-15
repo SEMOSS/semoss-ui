@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { FileEditor, FlexLayout } from "@semoss/shared";
 import { toast } from "@semoss/ui/next";
@@ -18,14 +19,22 @@ const extToContext = (ext: Ext): ConsoleContext => {
 	return "Pixel";
 };
 
-const inferExt = (name: string): Ext => {
+/**
+ * Map a filename to its runnable language, or `null` when the extension isn't
+ * one we can execute (json, txt, csv, …). A null ext means "no mode": the run
+ * toolbar shows nothing selected and Run prompts the user to pick a language.
+ */
+export const inferExt = (name: string): Ext | null => {
 	const e = (name.split(".").pop() || "").toLowerCase();
 	if (e === "r") return "r";
 	if (e === "py") return "py";
 	if (e === "pixel") return "pixel";
 	if (e === "sh" || e === "shell") return "shell";
-	return "pixel";
+	return null;
 };
+
+const isRunnableExt = (e: string | null | undefined): e is Ext =>
+	e === "pixel" || e === "r" || e === "py" || e === "shell";
 
 /**
  * Build the "Run" pixel — always sends the file's content inline. No Source
@@ -70,22 +79,27 @@ export interface FileEditorTabConfig {
 	 * open time so the scope-changed banner can show name + id rather than
 	 * just the opaque id. */
 	appName?: string;
-	/** Ext (language) the tab should run as. Initially inferred from the
-	 * filename; users can switch via the toolbar. */
-	ext: Ext;
+	/** Ext (language) the tab runs as, or null when the file type isn't
+	 * runnable (no mode selected). Initially inferred from the filename;
+	 * users can switch via the toolbar. */
+	ext: Ext | null;
 }
 
-const scopeLabel = (config: FileEditorTabConfig) => {
+const scopeLabel = (
+	config: FileEditorTabConfig,
+	t: (key: string, opts?: Record<string, unknown>) => string,
+) => {
 	const m = config.mode;
 	if (m.type === "APP") {
 		return config.appName
-			? `App · ${config.appName} · ${m.app}`
-			: `App · ${m.app}`;
+			? t("scopeLabel.appWithName", { name: config.appName, id: m.app })
+			: t("scopeLabel.appIdOnly", { id: m.app });
 	}
-	if (m.type === "ENGINE") return `Engine · ${m.engine}`;
-	if (m.type === "STORAGE") return `Storage · ${m.storage}`;
-	if (m.type === "USER") return "User";
-	return "Insight";
+	if (m.type === "ENGINE") return t("scopeLabel.engine", { id: m.engine });
+	if (m.type === "STORAGE")
+		return t("scopeLabel.storage", { name: m.storage });
+	if (m.type === "USER") return t("scopeLabel.user");
+	return t("scopeLabel.insight");
 };
 
 interface TerminalFileProps {
@@ -103,10 +117,11 @@ interface TerminalFileProps {
 export const TerminalFile = ({ node }: TerminalFileProps) => {
 	const terminal = useTerminal();
 	const { actions } = useInsight();
+	const { t } = useTranslation("file");
 
 	const config = node.getConfig() as FileEditorTabConfig;
-	const [ext, setExtState] = useState<Ext>(
-		config.ext ?? inferExt(config.baseName),
+	const [ext, setExtState] = useState<Ext | null>(
+		isRunnableExt(config.ext) ? config.ext : inferExt(config.baseName),
 	);
 	const [content, setContent] = useState("");
 	const [isModified, setIsModified] = useState(false);
@@ -139,8 +154,22 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 	);
 
 	const active = modeKey(config.mode) === modeKey(terminal.fileMode);
+	const activeRef = useRef(active);
+	activeRef.current = active;
 
 	const runFile = useCallback(async () => {
+		// No runnable language is selected — e.g. a .json/.txt file, or a type
+		// we can't infer a mode for. Running would be a no-op, so prompt the
+		// user to pick Pixel / R / Python / Shell from the toolbar instead.
+		if (!ext) {
+			toast.warning(t("noMode.title"), {
+				description: t("noMode.description", {
+					name: config.baseName,
+				}),
+			});
+			return;
+		}
+
 		// content is only populated by FileEditor's onChange — which doesn't
 		// fire on initial load. For a tab the user hasn't typed in, fetch the
 		// on-disk content first.
@@ -150,9 +179,14 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 			const resp = await runPixel<string>(actions, fetchPixel);
 			if (
 				!resp ||
-				resp.operationType.some((t) => t.indexOf("ERROR") > -1)
+				resp.operationType.some(
+					(opType) => opType.indexOf("ERROR") > -1,
+				)
 			) {
-				terminal.alert("error", `Failed to load ${config.baseName}`);
+				terminal.alert(
+					"error",
+					t("errors.loadFailed", { name: config.baseName }),
+				);
 				return;
 			}
 			body =
@@ -165,7 +199,7 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 		if (!pixel) {
 			terminal.alert(
 				"warn",
-				`${config.baseName} could not be run. Please validate the script.`,
+				t("errors.runFailed", { name: config.baseName }),
 			);
 			return;
 		}
@@ -183,11 +217,19 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 		// front-and-center there.)
 		const maximized = node.getModel().getMaximizedTabset();
 		if (maximized && maximized.getId() !== "REPL_TABSET") {
-			toast.info("Output will appear in the Terminal pane", {
-				description: "Restore the layout to see the run output.",
+			toast.info(t("maximizedToast.title"), {
+				description: t("maximizedToast.description"),
 			});
 		}
-	}, [actions, config, ext, isModified, node, terminal]);
+	}, [actions, config, ext, isModified, node, t, terminal]);
+
+	// Ctrl/Cmd+Enter inside the editor runs the file — same path as the Run
+	// button. Fenced off when the tab's scope no longer matches the active
+	// scope (mirrors the disabled button + overlay).
+	const handleRun = useCallback(() => {
+		if (!activeRef.current) return;
+		runFile();
+	}, [runFile]);
 
 	return (
 		<div className="flex h-full flex-col bg-background">
@@ -199,6 +241,7 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 						setContent(value);
 						setIsModified(modifiedFlag);
 					}}
+					onRun={handleRun}
 				/>
 				{!active && (
 					// Pointer-events overlay blocks edits / clicks on the
@@ -210,14 +253,19 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 					<div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-[1px]">
 						<div className="max-w-sm rounded-md border border-amber-400/60 bg-amber-100/80 px-4 py-3 text-amber-900 text-sm shadow-sm dark:border-amber-500/40 dark:bg-amber-950/60 dark:text-amber-200">
 							<div className="mb-1 font-semibold">
-								Scope changed
+								{t("scopeChanged.title")}
 							</div>
 							<div className="text-xs leading-snug">
-								This file was opened in{" "}
-								<span className="font-medium">
-									{scopeLabel(config)}
-								</span>
-								. Switch back to that scope to edit or run it.
+								<Trans
+									i18nKey="scopeChanged.body"
+									ns="file"
+									values={{ scope: scopeLabel(config, t) }}
+									components={{
+										strong: (
+											<span className="font-medium" />
+										),
+									}}
+								/>
 							</div>
 						</div>
 					</div>
@@ -234,7 +282,10 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 							["shell", "Shell"],
 						] as const
 					).map(([extOpt, label]) => (
-						<Tooltip key={extOpt} label={`Switch to ${label}`}>
+						<Tooltip
+							key={extOpt}
+							label={t("context.switchTo", { context: label })}
+						>
 							<button
 								type="button"
 								className={`flex items-center justify-center border-border border-r px-2 py-1 last:border-r-0 disabled:opacity-40 ${
@@ -254,8 +305,8 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 				<Tooltip
 					label={
 						active
-							? "Run (Ctrl+Enter)"
-							: "Switch back to this file's scope to run"
+							? t("run.tooltipActive")
+							: t("run.tooltipInactive")
 					}
 					align="end"
 				>
@@ -265,7 +316,7 @@ export const TerminalFile = ({ node }: TerminalFileProps) => {
 						onClick={runFile}
 						disabled={!active}
 					>
-						Run
+						{t("run.button")}
 					</button>
 				</Tooltip>
 			</div>

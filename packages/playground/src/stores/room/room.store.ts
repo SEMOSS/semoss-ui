@@ -16,16 +16,14 @@ import {
 	type AbstractMessageStore,
 	createMessageStore,
 	InputMessageStore,
-	PlanMessageStore,
 	ResponseMessageStore,
 	ToolStore,
 } from "@/stores";
 import type {
 	Engine,
+	InputPixelMessage,
 	MCPConfig,
 	PixelMessage,
-	PixelMessageMediaPart,
-	PixelMessageTextPart,
 	PixelMessageToolCallPart,
 	PixelMessageToolResultPart,
 	Prompt,
@@ -57,8 +55,10 @@ interface RoomStoreInterface {
 
 	/**
 	 *  Track the mode of the room.
+	 *  - "chat": standard streaming chat (AskPlayground)
+	 *  - "agent": server-side agent harness (RunAgent)
 	 */
-	mode: "planning" | "executing" | "chat";
+	mode: "agent" | "chat";
 
 	/**
 	 * Metadata associated with the room
@@ -78,7 +78,7 @@ interface RoomStoreInterface {
 	/**
 	 * Root message
 	 */
-	root: ResponseMessageStore | PlanMessageStore;
+	root: ResponseMessageStore;
 
 	/**
 	 * Active tools
@@ -126,6 +126,13 @@ interface RoomStoreInterface {
 		 * Predefined prompts that can be used in the room
 		 */
 		predefinedPrompts: Prompt[];
+
+		/*
+		 * Agent harness to run messages through (e.g. "semoss"). When set, the
+		 * room runs in agent mode and messages are sent via RunAgent instead of
+		 * AskPlayground. Persisted so the mode survives a reload.
+		 */
+		harnessType?: string;
 	};
 
 	/**
@@ -162,7 +169,7 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		model: null as unknown as Engine,
-		root: null as unknown as ResponseMessageStore | PlanMessageStore,
+		root: null as unknown as ResponseMessageStore,
 		tools: {},
 		options: {
 			predefinedPrompts: [],
@@ -293,11 +300,7 @@ export class RoomStore {
 	/**
 	 * Get the history of the room based on the active children
 	 */
-	get history(): (
-		| InputMessageStore
-		| ResponseMessageStore
-		| PlanMessageStore
-	)[] {
+	get history(): (InputMessageStore | ResponseMessageStore)[] {
 		let current: AbstractMessageStore = this._store.root;
 
 		const history = [];
@@ -309,8 +312,6 @@ export class RoomStore {
 				} else if (
 					current.activeChild instanceof ResponseMessageStore
 				) {
-					history.push(current.activeChild);
-				} else if (current.activeChild instanceof PlanMessageStore) {
 					history.push(current.activeChild);
 				}
 			}
@@ -397,25 +398,6 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get the most recent plan
-	 */
-	get plan(): PlanMessageStore | null {
-		if (this.mode !== "executing") {
-			return null;
-		}
-
-		// Search through history in reverse order to find the most recent plan
-		for (let i = this.history.length - 1; i >= 0; i--) {
-			const message = this.history[i];
-			if (message.type === "PLAN") {
-				return message as PlanMessageStore;
-			}
-		}
-
-		return null;
-	}
-
-	/**
 	 * Get the options of the room
 	 */
 	get options() {
@@ -434,7 +416,7 @@ export class RoomStore {
 	 * Set the mode
 	 * @param mode - mode of the room
 	 */
-	setMode = (mode: "planning" | "executing" | "chat") => {
+	setMode = (mode: "agent" | "chat") => {
 		this._store.mode = mode;
 	};
 
@@ -496,56 +478,31 @@ export class RoomStore {
 			});
 
 			// create the root
-			const root =
-				this.mode === "chat"
-					? new ResponseMessageStore(this, {
-							io: "OUTPUT",
-							messageId: "ROOT_PLACEHOLDER_ID",
-							visible: false,
-							platform_generated: true,
-							modelId: this._store.model?.engine_id || "",
-							dateCreated: new Date().toISOString(),
-							parts: [],
-							tokens: 0,
-							ornaments: {
-								modelName:
-									this._store.model?.engine_display_name ||
-									this._store.model?.engine_name ||
-									"",
-							},
-							modelType: "",
-						} as ResponsePixelMessage)
-					: new ResponseMessageStore(this, {
-							io: "OUTPUT",
-							messageId: "ROOT_PLACEHOLDER_ID",
-							visible: false,
-							platform_generated: true,
-							modelId: this._store.model?.engine_id || "",
-							dateCreated: new Date().toISOString(),
-							parts: [
-								{
-									type: "TEXT",
-									text: "",
-								},
-							],
-							tokens: 0,
-							ornaments: {
-								PLAYGROUND_MESSAGE_TYPE: "COT",
-								modelName:
-									this._store.model?.engine_display_name ||
-									this._store.model?.engine_name ||
-									"",
-							},
-						} as ResponsePixelMessage);
+			const root = new ResponseMessageStore(this, {
+				io: "OUTPUT",
+				messageId: "ROOT_PLACEHOLDER_ID",
+				visible: false,
+				platform_generated: true,
+				modelId: this._store.model?.engine_id || "",
+				dateCreated: new Date().toISOString(),
+				parts: [],
+				tokens: 0,
+				ornaments: {
+					modelName:
+						this._store.model?.engine_display_name ||
+						this._store.model?.engine_name ||
+						"",
+				},
+				modelType: "",
+				pruneToolsAbove: false,
+			} as ResponsePixelMessage);
 
 			const messages: Record<
 				string,
 				{
 					parentMessageId: string;
-					message:
-						| InputMessageStore
-						| ResponseMessageStore
-						| PlanMessageStore;
+					summaryLeafMessageId: string;
+					message: InputMessageStore | ResponseMessageStore;
 				}
 			> = {};
 
@@ -564,6 +521,8 @@ export class RoomStore {
 				// store it
 				messages[message.id] = {
 					parentMessageId: pixelMessage.parentMessageId || "",
+					summaryLeafMessageId:
+						pixelMessage.summaryLeafMessageId || "",
 					message: message,
 				};
 			}
@@ -576,7 +535,16 @@ export class RoomStore {
 				if (parent) {
 					parent.message.addChild(m.message);
 				} else {
-					root.addChild(m.message);
+					// This could be a message that was compacted, check for summaryLeafMessageId
+					const pseudoParent = messages[m.summaryLeafMessageId];
+					if (pseudoParent) {
+						pseudoParent.message.addChild(m.message);
+						(
+							pseudoParent.message as ResponseMessageStore
+						).setConversationCompactedAbove?.(true);
+					} else {
+						root.addChild(m.message);
+					}
 				}
 			}
 
@@ -651,6 +619,16 @@ export class RoomStore {
 			runInAction(() => {
 				// set the options based on the history
 				this.setOptions(newOptions);
+
+				// Restore agent-harness mode from the persisted options so a
+				// reloaded agent room keeps sending messages via RunAgent. Only
+				// promote to "agent" here — never demote — so that a freshly
+				// created room whose mode was set via setMode() before its
+				// options have been persisted (createRoom runs initialize()
+				// before updateRoomOptions) keeps its explicitly-set mode.
+				if (newOptions.harnessType) {
+					this.setMode("agent");
+				}
 
 				// store it
 				this._store.root = root;
@@ -933,71 +911,10 @@ export class RoomStore {
 			throw new Error("Prompt is required");
 		}
 
-		// upload the files
-		let uploaded: {
-			fileName: string;
-			fileLocation: string;
-		}[] = [];
+		this.setIsLoading(true);
 
-		let mediaInputs: {
-			fileName: string;
-			fileLocation: string;
-		}[] = [];
-
-		// upload the files if there are any
-		if (files.length > 0) {
-			const response = await uploadInsight(
-				this._store.insightId,
-				"",
-				files,
-			);
-
-			// set the new files
-			uploaded = response.data;
-
-			const normalizeExt = (value: string) =>
-				value.trim().toLowerCase().replace(/^\./, "");
-
-			mediaInputs = uploaded.filter((f) => {
-				const allowed = this._theme.allowedFileTypes;
-
-				// If not configured (or empty), allow all
-				if (!allowed || allowed.length === 0) return true;
-
-				const allowedSet = new Set(allowed.map(normalizeExt));
-
-				const rawExt = f.fileName.split(".").pop() ?? "";
-				const ext = normalizeExt(rawExt);
-
-				// If there's no extension, it's not allowed (when allow-list is configured)
-				if (!ext) return false;
-
-				return allowedSet.has(ext);
-			});
-		}
-
-		const parts: (PixelMessageTextPart | PixelMessageMediaPart)[] = [
-			{
-				type: "TEXT",
-				text: prompt,
-				uiText: prompt,
-			},
-		];
-		for (const file of mediaInputs) {
-			parts.push({
-				type: "MEDIA",
-				mediaInfo: {
-					base64Data: "",
-					fileFormat: "",
-					fileName: file.fileName,
-					fileLocation: file.fileLocation,
-					mediaInputType: "FILE",
-					mimeType: "",
-				},
-			});
-		}
-
-		// create the input message
+		// Create the input message immediately so the user's bubble and the
+		// thinking placeholder are visible during the file upload wait
 		const inputMessage = new InputMessageStore(this, {
 			io: "INPUT",
 			type: "INPUT_TEXT",
@@ -1007,28 +924,108 @@ export class RoomStore {
 			modelId: this.model?.engine_id,
 			modelType: this.model?.engine_type,
 			dateCreated: new Date().toISOString(),
-			parts: parts,
+			parts: [{ type: "TEXT", text: prompt, uiText: prompt }],
 			tokens: 0,
 			ornaments: {
 				modelName:
 					this.model.engine_display_name || this.model.engine_name,
 			},
+			pruneToolsAbove: false,
 		});
 
-		// get the parent message
 		const parentMessage = this.tail;
 		if (parentMessage instanceof InputMessageStore) {
 			throw new Error("Cannot respond to input messages");
 		}
 
-		// run the message
-		try {
-			await parentMessage.runMessage(inputMessage);
-		} catch (e) {
-			this.plan?.failStepExecution();
+		const uploadPlaceholder = new ResponseMessageStore(this, {
+			io: "OUTPUT",
+			messageId: STREAMING_PLACEHOLDER_ID,
+			visible: true,
+			platform_generated: true,
+			modelId: this.model.engine_id,
+			dateCreated: new Date().toISOString(),
+			parts: [{ type: "THINKING", thinking: "" }],
+			tokens: 0,
+			ornaments: {
+				modelName:
+					this.model.engine_display_name ||
+					this.model.engine_name ||
+					"",
+			},
+		} as ResponsePixelMessage);
 
+		parentMessage.addChild(inputMessage);
+		inputMessage.addChild(uploadPlaceholder);
+		runInAction(() => {
+			uploadPlaceholder.isThinking = true;
+		});
+
+		// upload the files
+		let mediaInputs: {
+			fileName: string;
+			fileLocation: string;
+		}[] = [];
+
+		try {
+			// upload the files if there are any
+			if (files.length > 0) {
+				const response = await uploadInsight(
+					this._store.insightId,
+					"",
+					files,
+				);
+
+				const uploaded = response.data;
+
+				const normalizeExt = (value: string) =>
+					value.trim().toLowerCase().replace(/^\./, "");
+
+				mediaInputs = uploaded.filter((f) => {
+					const allowed = this._theme.allowedFileTypes;
+
+					// If not configured (or empty), allow all
+					if (!allowed || allowed.length === 0) return true;
+
+					const allowedSet = new Set(allowed.map(normalizeExt));
+
+					const rawExt = f.fileName.split(".").pop() ?? "";
+					const ext = normalizeExt(rawExt);
+
+					// If there's no extension, it's not allowed (when allow-list is configured)
+					if (!ext) return false;
+
+					return allowedSet.has(ext);
+				});
+
+				// Append media parts to the already-visible input message
+				runInAction(() => {
+					for (const file of mediaInputs) {
+						inputMessage.parts.push({
+							type: "MEDIA",
+							mediaInfo: {
+								base64Data: "",
+								fileFormat: "",
+								fileName: file.fileName,
+								fileLocation: file.fileLocation,
+								mediaInputType: "FILE",
+								mimeType: "",
+							},
+						});
+					}
+				});
+			}
+		} catch (e) {
+			// remove the placeholder messages if the upload fails
+			runInAction(() => {
+				uploadPlaceholder.isThinking = false;
+			});
+			parentMessage.removeChild(inputMessage);
 			throw e;
 		}
+
+		// run the message, reusing the upload placeholder as the streaming response
+		await parentMessage.runMessage(inputMessage, uploadPlaceholder);
 	};
 
 	/**
@@ -1062,27 +1059,15 @@ export class RoomStore {
 				return;
 			}
 
-			if (this.mode === "executing") {
-				// save the tool execution
-				await this.plan?.saveToolExecution(
-					message,
-					tool,
-					toolResponse,
-					toolStatus,
-					executedParameters,
-				);
-			} else {
-				// save the response with the tool
-				await message.saveToolExecution(
-					tool,
-					toolResponse,
-					toolStatus,
-					executedParameters,
-				);
-			}
+			// save the response with the tool
+			await message.saveToolExecution(
+				tool,
+				toolResponse,
+				toolStatus,
+				executedParameters,
+			);
 		} catch (e) {
 			console.error(e);
-			this.plan?.failStepExecution();
 		}
 	};
 
@@ -1224,6 +1209,97 @@ export class RoomStore {
 			if (showLoading) {
 				this.setIsLoading(false);
 			}
+		}
+	};
+
+	/**
+	 * Compact the messages in the room
+	 */
+	compactMessages = async () => {
+		// Find the last response message in the chain
+		let cur: AbstractMessageStore | null = this.tail;
+		while (cur !== null) {
+			if (cur instanceof ResponseMessageStore) break;
+			cur = cur.parent;
+		}
+
+		if (!cur) throw new Error();
+
+		const curResponse = cur as ResponseMessageStore;
+
+		curResponse.setIsCompacting(true);
+
+		type SummaryResponse = {
+			type: "SUMMARY";
+			inputMessage: InputPixelMessage;
+			responseMessage: ResponsePixelMessage;
+			success: boolean;
+			error?: string;
+		};
+
+		type ToolPruneResponse = {
+			type: "TOOL_PRUNE";
+			success: boolean;
+			inputMessage: InputPixelMessage;
+			responseMessage: ResponsePixelMessage;
+			error?: string;
+		};
+
+		try {
+			const response = await this.runRoomPixel<
+				(SummaryResponse | ToolPruneResponse)[][]
+			>(
+				`CompactRoomMessages(roomId=${JSON.stringify(this.roomId)}, parentMessageId=${JSON.stringify(cur.id)});`,
+				true,
+			);
+
+			const { output } = response.pixelReturn[0];
+
+			if (!response || response.errors.length || !output)
+				throw new Error();
+
+			if (output.length === 0) {
+				return "skipped" as const;
+			}
+
+			curResponse.setConversationCompactedAbove(true);
+
+			let success = false;
+
+			output.forEach((compactionMethod) => {
+				if (!compactionMethod.success) {
+					console.warn(
+						compactionMethod.error ||
+							"Unknown error during compaction",
+					);
+					return;
+				}
+				success = true;
+				if (
+					compactionMethod.type === "SUMMARY" ||
+					compactionMethod.type === "TOOL_PRUNE"
+				) {
+					const { inputMessage, responseMessage } = compactionMethod;
+					const inputStore = new InputMessageStore(
+						this,
+						inputMessage,
+					);
+					const responseStore = new ResponseMessageStore(
+						this,
+						responseMessage,
+					);
+					inputStore.addChild(responseStore);
+					curResponse.addChild(inputStore);
+				}
+			});
+
+			if (!success) {
+				throw new Error();
+			}
+
+			return "compacted" as const;
+		} finally {
+			curResponse.setIsCompacting(false);
 		}
 	};
 }

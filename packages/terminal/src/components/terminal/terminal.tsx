@@ -4,15 +4,18 @@ import {
 	Suspense,
 	useCallback,
 	useEffect,
-	useMemo,
 	useRef,
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { getLanguageDirection, useTranslation } from "@semoss/i18n";
 import { FileExplorer, FlexLayout, getFileIconComponent } from "@semoss/shared";
 import type { SelectedFile } from "../../types";
 import { modeKey } from "../../utility/file-mode";
-import type { FileEditorTabConfig } from "../terminal-file/terminal-file";
+import {
+	type FileEditorTabConfig,
+	inferExt,
+} from "../terminal-file/terminal-file";
 import { Tooltip } from "../tooltip";
 import { HelpDialog } from "./help-dialog";
 import { SaveModal } from "./save-modal";
@@ -59,7 +62,10 @@ const REPL_TABSET_ID = "REPL_TABSET";
  * opens their first file, and is auto-removed when its last tab closes
  * (via `tabSetEnableDeleteWhenEmpty`).
  */
-const buildInitialModel = (): FlexLayout.IJsonModel => ({
+const buildInitialModel = (
+	t: (key: string) => string,
+	borderLocation: "left" | "right" = "left",
+): FlexLayout.IJsonModel => ({
 	global: {
 		rootOrientationVertical: true,
 		tabEnableRename: false,
@@ -68,7 +74,12 @@ const buildInitialModel = (): FlexLayout.IJsonModel => ({
 	borders: [
 		{
 			type: "border",
-			location: "left",
+			// `borderLocation` reflects the user's reading direction at boot:
+			// `"left"` for LTR, `"right"` for RTL. The FlexLayout container
+			// itself stays `dir="ltr"` (so its splitter drag math works), so
+			// switching the location here is how we get the Files panel onto
+			// the visual leading edge in Arabic.
+			location: borderLocation,
 			size: 300,
 			// -1 → no tab selected → border starts collapsed. The user
 			// expands it by clicking the "Files" strip on the edge.
@@ -77,7 +88,7 @@ const buildInitialModel = (): FlexLayout.IJsonModel => ({
 				{
 					id: "FILE_EXPLORER",
 					type: "tab",
-					name: "Files",
+					name: t("tabs.files"),
 					component: "file-explorer",
 					enableClose: false,
 					enableDrag: false,
@@ -102,7 +113,7 @@ const buildInitialModel = (): FlexLayout.IJsonModel => ({
 					{
 						id: "REPL",
 						type: "tab",
-						name: "Terminal",
+						name: t("tabs.terminal"),
 						component: "repl",
 						enableClose: false,
 						enableDrag: false,
@@ -149,34 +160,79 @@ interface SidebarFooterProps {
  * border's background/divider styling automatically and read as part of
  * the Files strip — visible whether the border is expanded or collapsed.
  */
-const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => (
-	<div className="terminal-sidebar-footer flex flex-col items-center gap-1 py-1.5">
-		<Tooltip label="Help" side="top" align="start">
-			<button
-				type="button"
-				className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-				onClick={onHelpClick}
-				aria-label="Help"
-			>
-				<HelpCircle className="h-4 w-4" />
-			</button>
-		</Tooltip>
-		<UserMenu />
-	</div>
-);
+const SidebarFooter = ({ onHelpClick }: SidebarFooterProps) => {
+	const { t } = useTranslation("chrome");
+	return (
+		<div className="terminal-sidebar-footer flex flex-col items-center gap-1 py-1.5">
+			<Tooltip label={t("actions.help")} side="right" align="center">
+				<button
+					type="button"
+					className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+					onClick={onHelpClick}
+					aria-label={t("actions.help")}
+				>
+					<HelpCircle className="h-4 w-4" />
+				</button>
+			</Tooltip>
+			<UserMenu />
+		</div>
+	);
+};
 
 export const Terminal = () => {
 	const terminal = useTerminal();
+	const { t, i18n } = useTranslation("chrome");
+	// FlexLayout-react ships LTR-only positioning and splitter drag math
+	// (`e.clientX - startX` applied without flipping for writing direction).
+	// In RTL the visual layout reverses but the math doesn't, so dragging
+	// the splitter feels inverted and can pin the panel at a boundary you
+	// can't drag back from. Fence FlexLayout into LTR and re-establish the
+	// user's reading direction inside each pane (see `factory` below).
+	const paneDir = getLanguageDirection(i18n.language);
 
 	const [helpOpen, setHelpOpen] = useState(false);
 
-	const modelRef = useRef<FlexLayout.Model | null>(null);
-	const model = useMemo(() => {
-		if (!modelRef.current) {
-			modelRef.current = FlexLayout.Model.fromJson(buildInitialModel());
-		}
-		return modelRef.current;
-	}, []);
+	// Model lives in state so we can swap it out when the user changes
+	// language mid-session — see the paneDir effect below for the round-trip
+	// rebuild that moves the Files border to the other side without losing
+	// open file tabs.
+	const [model, setModel] = useState<FlexLayout.Model>(() =>
+		FlexLayout.Model.fromJson(
+			buildInitialModel(t, paneDir === "rtl" ? "right" : "left"),
+		),
+	);
+
+	// When the user switches language, rebuild the model from its own
+	// serialized JSON with the border location flipped to match the new
+	// reading direction. `toJson()` → `fromJson()` preserves tab state, IDs,
+	// sizes, and active selections — so open file tabs survive the swap.
+	const lastBorderLocationRef = useRef<"left" | "right">(
+		paneDir === "rtl" ? "right" : "left",
+	);
+	useEffect(() => {
+		const wanted: "left" | "right" = paneDir === "rtl" ? "right" : "left";
+		if (lastBorderLocationRef.current === wanted) return;
+		lastBorderLocationRef.current = wanted;
+		setModel((current) => {
+			const json = current.toJson();
+			if (json.borders?.[0]) json.borders[0].location = wanted;
+			return FlexLayout.Model.fromJson(json);
+		});
+	}, [paneDir]);
+
+	// Keep the static tab labels in sync with the active language. File-editor
+	// tabs are renamed elsewhere (their name is the on-disk filename and isn't
+	// localized), so we only touch the two anchor tabs here.
+	useEffect(() => {
+		const rename = (id: string, name: string) => {
+			const node = model.getNodeById(id);
+			if (node && node.getName() !== name) {
+				model.doAction(FlexLayout.Actions.renameTab(id, name));
+			}
+		};
+		rename("FILE_EXPLORER", t("tabs.files"));
+		rename("REPL", t("tabs.terminal"));
+	}, [model, t]);
 
 	// Track the most-recent file-editor tabset id so subsequent file opens
 	// add tabs into the same pane instead of spawning a new one each time.
@@ -228,11 +284,7 @@ export const Terminal = () => {
 				mode: tabMode,
 				baseName: file.name,
 				appName: tabAppName,
-				ext: (file.name.split(".").pop() || "pixel").toLowerCase() as
-					| "pixel"
-					| "r"
-					| "py"
-					| "shell",
+				ext: inferExt(file.name),
 			};
 			const tabJson: FlexLayout.IJsonTabNode = {
 				id: tabId,
@@ -299,23 +351,27 @@ export const Terminal = () => {
 		return () => terminal.registerOpenFile(() => {});
 	}, [terminal, openFileTab]);
 
-	// Find FlexLayout's left-border toolbar slot so we can portal the
+	// Find FlexLayout's border toolbar slot so we can portal the
 	// Help + User strip into it. We re-query on mutation since FlexLayout
-	// can recreate the border DOM on layout changes.
+	// can recreate the border DOM on layout changes. Slot class follows the
+	// border's location (`*_left` vs `*_right`), which we mirror to the
+	// user's reading direction.
 	useEffect(() => {
 		const container = flexLayoutContainerRef.current;
 		if (!container) return;
+		const toolbarClass =
+			paneDir === "rtl"
+				? ".flexlayout__border_toolbar_right"
+				: ".flexlayout__border_toolbar_left";
 		const findToolbar = () => {
-			const el = container.querySelector<HTMLElement>(
-				".flexlayout__border_toolbar_left",
-			);
+			const el = container.querySelector<HTMLElement>(toolbarClass);
 			setBorderToolbarEl((prev) => (prev === el ? prev : el));
 		};
 		findToolbar();
 		const observer = new MutationObserver(findToolbar);
 		observer.observe(container, { childList: true, subtree: true });
 		return () => observer.disconnect();
-	}, []);
+	}, [paneDir]);
 
 	const handleItemSelect = useCallback(
 		(item: FileExplorerItem) => {
@@ -343,31 +399,40 @@ export const Terminal = () => {
 	const factory = useCallback(
 		(node: FlexLayout.TabNode) => {
 			const component = node.getComponent();
+			// FlexLayout's outer container is forced to `dir="ltr"` (see the
+			// container below) so its splitter drag math works. Re-establish
+			// the user's reading direction inside each rendered pane so the
+			// FileExplorer columns, REPL prompt, etc. still flip in Arabic.
+			const wrap = (children: React.ReactNode) => (
+				<div dir={paneDir} className="h-full w-full">
+					{children}
+				</div>
+			);
 			if (component === "file-explorer") {
-				return (
+				return wrap(
 					<FileExplorerPane
 						mode={terminal.fileMode}
 						onItemSelect={handleItemSelect}
-					/>
+					/>,
 				);
 			}
 			if (component === "file-editor") {
-				return (
+				return wrap(
 					<Suspense fallback={<PaneLoader />}>
 						<TerminalFile node={node} />
-					</Suspense>
+					</Suspense>,
 				);
 			}
 			if (component === "repl") {
-				return (
+				return wrap(
 					<Suspense fallback={<PaneLoader />}>
 						<TerminalConsole />
-					</Suspense>
+					</Suspense>,
 				);
 			}
 			return null;
 		},
-		[handleItemSelect, openHelp, terminal.fileMode],
+		[handleItemSelect, openHelp, paneDir, terminal.fileMode],
 	);
 
 	if (!terminal.open) return null;
@@ -395,12 +460,12 @@ export const Terminal = () => {
 							<div className="inline-flex overflow-hidden rounded border border-border">
 								{(
 									[
-										["inline", "⮞", "Inline"],
-										["overlay", "▢", "Overlay"],
-										["side", "⬓", "Side"],
-										["popup", "↗", "Pop out"],
+										["inline", "⮞", "views.inline"],
+										["overlay", "▢", "views.overlay"],
+										["side", "⬓", "views.side"],
+										["popup", "↗", "views.popup"],
 									] as const
-								).map(([v, icon, title]) => (
+								).map(([v, icon, titleKey]) => (
 									<button
 										key={v}
 										type="button"
@@ -410,7 +475,7 @@ export const Terminal = () => {
 												: "bg-background text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 										}`}
 										onClick={() => terminal.setView(v)}
-										title={title}
+										title={t(titleKey)}
 									>
 										{icon}
 									</button>
@@ -420,7 +485,7 @@ export const Terminal = () => {
 								type="button"
 								className="rounded px-2 py-1 text-destructive hover:bg-destructive/10"
 								onClick={closeTerminal}
-								title="Close Terminal"
+								title={t("actions.closeTerminal")}
 							>
 								✕
 							</button>
@@ -430,6 +495,11 @@ export const Terminal = () => {
 
 				<div
 					ref={flexLayoutContainerRef}
+					// Fence FlexLayout into LTR — its splitter / border-resize
+					// drag math is hardcoded for left-to-right (see paneDir
+					// comment above). Pane content opts back into the user's
+					// direction via the factory wrapper.
+					dir="ltr"
 					className="terminal-flex-layout flexlayout__theme_smss relative min-h-0 flex-1 overflow-hidden"
 				>
 					<FlexLayout.Layout
@@ -449,7 +519,15 @@ export const Terminal = () => {
 					/>
 					{borderToolbarEl &&
 						createPortal(
-							<SidebarFooter onHelpClick={openHelp} />,
+							// SidebarFooter is portaled into FlexLayout's
+							// (now LTR) toolbar slot, so the tooltip side
+							// math + dropdown alignment land correctly. The
+							// menu contents (theme/language/logout) still
+							// read RTL because their own children inherit
+							// from `<html dir>`.
+							<div dir={paneDir}>
+								<SidebarFooter onHelpClick={openHelp} />
+							</div>,
 							borderToolbarEl,
 						)}
 				</div>

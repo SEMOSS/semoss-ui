@@ -1,0 +1,52 @@
+{
+	"help": {
+		"title": "ターミナルヘルプ",
+		"emptyMessage": "{{type}} の構造化された使用例は返されませんでした。",
+		"rawResponse": "生のレスポンス",
+		"copy": "コピー",
+		"copied": "コピーしました",
+		"copyFailed": "コードのコピーに失敗しました",
+		"fetchFailed": "使用方法の取得に失敗しました（応答なし）",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) がエラーを返しました。"
+	},
+	"save": {
+		"title": "保存",
+		"fields": {
+			"name": "名前:",
+			"comment": "コメント:"
+		},
+		"buttons": {
+			"save": "保存",
+			"cancel": "キャンセル"
+		},
+		"comment": "{{timestamp}} に保存中",
+		"errors": {
+			"nameRequired": "ファイルには名前が必要です。",
+			"commentRequired": "変更内容を説明するコメントを含めてください。",
+			"saveFailed": "アセットの保存に失敗しました。",
+			"unknown": "保存に失敗しました"
+		}
+	},
+	"upload": {
+		"title": "アップロード",
+		"fields": {
+			"selectFile": "ファイルを選択:",
+			"comment": "コメント:"
+		},
+		"dropzone": {
+			"drag": "ファイルをドラッグ＆ドロップ",
+			"or": "またはアップロード"
+		},
+		"buttons": {
+			"upload": "アップロード",
+			"cancel": "キャンセル",
+			"remove": "削除"
+		},
+		"comment": "{{timestamp}} にアップロード中",
+		"errors": {
+			"filesRequired": "アップロードするファイルを選択してください。",
+			"commentRequired": "新しく追加したファイルを説明するコメントを含めてください。",
+			"unknown": "アップロードに失敗しました"
+		}
+	}
+}

@@ -114,7 +114,7 @@ export const GlobalNav = observer(() => {
 
 	const [deletedSet, setDeletedSet] = useState(new Set<string>());
 
-	const systemDate = dayjs(system.config.systemDate);
+	const systemDate = dayjs(`${system.config.systemDate}Z`);
 
 	const navigate = useNavigate();
 
@@ -490,7 +490,7 @@ export const GlobalNav = observer(() => {
 				</SidebarMenu>
 			</SidebarHeader>
 			<SidebarContent
-				className="min-h-[120px] flex-1 overflow-hidden transition-all duration-200 ease-in-out"
+				className="min-h-[120px] flex-1 overflow-hidden pe-2 transition-all duration-200 ease-in-out"
 				data-tour="tour-chat-history"
 			>
 				<ScrollArea

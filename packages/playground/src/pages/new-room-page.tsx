@@ -1,7 +1,7 @@
 import {
+	BotIcon,
 	CheckIcon,
 	ComputerIcon,
-	ListTodoIcon,
 	MessageCircleIcon,
 	Settings2Icon,
 	XIcon,
@@ -29,6 +29,7 @@ import {
 import landingImage from "@/assets/img/landing.png";
 import landingDarkImage from "@/assets/img/landing-darkmode.png";
 import {
+	FileDragOverlay,
 	RoomInput,
 	RoomInputMenuFileExplorer,
 	RoomInputMenuMCP,
@@ -38,6 +39,7 @@ import {
 } from "@/components";
 import { RoomOptionsForm } from "@/components/room/room-options-form";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { FileDragProvider } from "@/contexts";
 import { useChat, useGlobalBreadcrumbs, useRoot } from "@/hooks";
 import { RoomStore } from "@/stores";
 import type { MCPConfig, Prompt, Workspace } from "@/types";
@@ -108,7 +110,7 @@ export const NewRoomPage = observer(() => {
 		null,
 	);
 	const submittedRef = useRef(false);
-	const [mode, setMode] = useState<"chat" | "plan" | "workspace">("chat");
+	const [mode, setMode] = useState<"chat" | "agent" | "workspace">("chat");
 	const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
 	const [prompts, setPrompts] = useState<string[]>([]);
 	const previewPrompts = useMemo(
@@ -205,6 +207,9 @@ export const NewRoomPage = observer(() => {
 			const options = {
 				...tempRoomStore.options,
 				mcp: tempRoomStore.options.mcp,
+				// Persist the agent harness selection so the room stays in agent
+				// mode across reloads.
+				harnessType: mode === "agent" ? "semoss" : undefined,
 			};
 
 			// add workspace id and name
@@ -220,7 +225,7 @@ export const NewRoomPage = observer(() => {
 				// Sync final mode/options, fire askMessage, then navigate.
 				// Files from the file explorer are already in the insight —
 				// only RoomInput drag/drop/paste attachments are passed here.
-				preCreatedRoom.setMode(mode === "plan" ? "planning" : "chat");
+				preCreatedRoom.setMode(mode === "agent" ? "agent" : "chat");
 				preCreatedRoom.setMetadata({ name: prompt.substring(0, 15) });
 				await preCreatedRoom.updateRoomOptions(options);
 				preCreatedRoom.askMessage(prompt, files).then(() => {
@@ -233,7 +238,7 @@ export const NewRoomPage = observer(() => {
 			} else {
 				// Standard flow — create room and send first message together.
 				const room = await chat.createRoom(
-					mode === "plan" ? "planning" : "chat",
+					mode === "agent" ? "agent" : "chat",
 					prompt,
 					files,
 					options,
@@ -431,233 +436,271 @@ export const NewRoomPage = observer(() => {
 				/>
 			) : null}
 			<ResizablePanelGroup direction="horizontal" className="flex-1">
-				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
-					<img
-						src={landingSrc}
-						alt="Background"
-						className="absolute inset-0 h-full w-full select-none object-cover"
-					/>
-					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
-						{root.theme.landing ? (
-							<div
-								className="mx-auto flex max-w-xl"
-								// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
-								dangerouslySetInnerHTML={{
-									__html:
-										root.theme?.altLandingKey &&
-										searchParams.has(
-											root.theme.altLandingKey,
-										) &&
-										root.theme.altLanding
-											? root.theme.altLanding
-											: root.theme.landing,
-								}}
-							/>
-						) : (
-							<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
-								<div className="text-center font-semibold text-4xl text-foreground leading-normal">
-									{t("room:welcome", {
-										name: chat.user.name,
-									})}
-								</div>
-								{root.theme.description ? (
-									<div className="text-center text-muted-foreground text-sm leading-normal">
-										{root.theme.description}
+				<ResizablePanel className="relative">
+					<FileDragProvider>
+						<FileDragOverlay />
+						<img
+							src={landingSrc}
+							alt="Background"
+							className="absolute inset-0 h-full w-full select-none object-cover"
+						/>
+						<div className="flex h-full flex-col items-center justify-center overflow-auto p-2">
+							<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
+								{root.theme.landing ? (
+									<div
+										className="mx-auto flex max-w-xl"
+										// biome-ignore lint/security/noDangerouslySetInnerHtml: read from theme db we control
+										dangerouslySetInnerHTML={{
+											__html:
+												root.theme?.altLandingKey &&
+												searchParams.has(
+													root.theme.altLandingKey,
+												) &&
+												root.theme.altLanding
+													? root.theme.altLanding
+													: root.theme.landing,
+										}}
+									/>
+								) : (
+									<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+										<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+											{t("room:welcome", {
+												name: chat.user.name,
+											})}
+										</div>
+										{root.theme.description ? (
+											<div className="text-center text-muted-foreground text-sm leading-normal">
+												{root.theme.description}
+											</div>
+										) : null}
+									</div>
+								)}
+								<RoomInput
+									predefinedPrompts={
+										tempRoomStore.options.predefinedPrompts
+									}
+									className="max-h-64 min-h-48 bg-background"
+									isLoading={isLoading}
+									initialValue={initialPrompt}
+									model={chat.models.selected}
+									room={tempRoomStore}
+									setModel={(m) => {
+										chat.setSelectedModel(m);
+									}}
+									options={tempRoomStore.options}
+									onMcpSelect={handleToolAdd}
+									onMcpChange={(mcp) =>
+										tempRoomStore.setOptions({
+											...tempRoomStore.options,
+											mcp,
+										})
+									}
+									onWorkspaceChange={(next) => {
+										if (next) {
+											setMode("workspace");
+											setSelectedWorkspaceId(
+												next.workspace_id,
+											);
+											tempRoomStore.setOptions({
+												...tempRoomStore.options,
+												workspace: next,
+											});
+										} else {
+											setMode("chat");
+											setSelectedWorkspaceId("");
+											tempRoomStore.setOptions({
+												...tempRoomStore.options,
+												workspace: undefined,
+											});
+										}
+									}}
+									onPrompt={async (prompt, files) => {
+										await createRoom(prompt, files);
+
+										return true;
+									}}
+									hidePauseButton
+									MenuComponent={observer(
+										({
+											onOpenChange,
+											onOpenMcpOverlay,
+										}) => (
+											<>
+												<RoomInputMenuUpload
+													onSelect={() =>
+														onOpenChange(false)
+													}
+												/>
+												<DropdownMenuSeparator />
+												{root.theme.featureFlags
+													?.enableAgentHarness && (
+													<>
+														<DropdownMenuItem
+															onSelect={() => {
+																setMode("chat");
+																onOpenChange(
+																	false,
+																);
+															}}
+														>
+															<MessageCircleIcon />
+															<span className="flex-1">
+																{t(
+																	"room:modes.ask",
+																)}
+															</span>
+															{mode === "chat" ? (
+																<div className="px-1">
+																	<CheckIcon />
+																</div>
+															) : null}
+														</DropdownMenuItem>
+														<DropdownMenuItem
+															onSelect={() => {
+																setMode(
+																	"agent",
+																);
+																onOpenChange(
+																	false,
+																);
+															}}
+														>
+															<BotIcon />
+															<span className="flex-1">
+																{t(
+																	"room:modes.agent",
+																)}
+															</span>
+
+															{mode ===
+															"agent" ? (
+																<div className="px-1">
+																	<CheckIcon />
+																</div>
+															) : null}
+														</DropdownMenuItem>
+													</>
+												)}
+												<DropdownMenuItem
+													onSelect={() => {
+														onOpenMcpOverlay(
+															"AGENT",
+														);
+														onOpenChange(false);
+													}}
+												>
+													<ComputerIcon />
+													<span className="flex-1">
+														{t(
+															"room:menuWorkspace.selectAgent",
+														)}
+													</span>
+													{tempRoomStore.options
+														.workspace ? (
+														<div className="px-1">
+															<CheckIcon />
+														</div>
+													) : null}
+												</DropdownMenuItem>
+												<RoomInputMenuMCP
+													type="KNOWLEDGE"
+													options={
+														tempRoomStore.options
+													}
+													onSelect={() => {
+														onOpenMcpOverlay(
+															"KNOWLEDGE",
+														);
+														onOpenChange(false);
+													}}
+												/>
+												<RoomInputMenuMCP
+													type="TOOLBOX"
+													options={
+														tempRoomStore.options
+													}
+													onSelect={() => {
+														onOpenMcpOverlay(
+															"TOOLBOX",
+														);
+														onOpenChange(false);
+													}}
+												/>
+												<DropdownMenuSeparator />
+												{preCreatedRoom ? (
+													<RoomInputMenuFileExplorer
+														room={preCreatedRoom}
+														onSelect={() =>
+															onOpenChange(false)
+														}
+													/>
+												) : (
+													<RoomInputMenuNewFileExplorer
+														mode={mode}
+														options={
+															tempRoomStore.options
+														}
+														onRoomCreated={(room) =>
+															setPreCreatedRoom(
+																room,
+															)
+														}
+														onSelect={() =>
+															onOpenChange(false)
+														}
+													/>
+												)}
+												<DropdownMenuItem
+													onSelect={(e) => {
+														e.preventDefault();
+														setIsConfgurationOpen(
+															!isConfigurationOpen,
+														);
+													}}
+												>
+													<Settings2Icon />
+													<span className="flex-1">
+														{isConfigurationOpen
+															? t(
+																	"room:settings.close",
+																)
+															: t(
+																	"room:settings.open",
+																)}
+													</span>
+												</DropdownMenuItem>
+											</>
+										),
+									)}
+								/>
+								{tempRoomStore.options.predefinedPrompts
+									.length > 0 ? (
+									<div className="mx-auto flex w-full flex-col items-center gap-3">
+										<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
+											{previewPrompts.map((prompt) => {
+												return (
+													<Button
+														key={prompt.id}
+														variant="outline"
+														className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
+														disabled={isLoading}
+														onClick={() =>
+															createRoom(
+																prompt.context,
+																[],
+															)
+														}
+													>
+														{prompt.title}
+													</Button>
+												);
+											})}
+										</div>
 									</div>
 								) : null}
 							</div>
-						)}
-						<RoomInput
-							predefinedPrompts={
-								tempRoomStore.options.predefinedPrompts
-							}
-							className="max-h-64 min-h-48 bg-background"
-							isLoading={isLoading}
-							initialValue={initialPrompt}
-							model={chat.models.selected}
-							room={tempRoomStore}
-							setModel={(m) => {
-								chat.setSelectedModel(m);
-							}}
-							options={tempRoomStore.options}
-							onMcpSelect={handleToolAdd}
-							onMcpChange={(mcp) =>
-								tempRoomStore.setOptions({
-									...tempRoomStore.options,
-									mcp,
-								})
-							}
-							onWorkspaceChange={(next) => {
-								if (next) {
-									setMode("workspace");
-									setSelectedWorkspaceId(next.workspace_id);
-									tempRoomStore.setOptions({
-										...tempRoomStore.options,
-										workspace: next,
-									});
-								} else {
-									setMode("chat");
-									setSelectedWorkspaceId("");
-									tempRoomStore.setOptions({
-										...tempRoomStore.options,
-										workspace: undefined,
-									});
-								}
-							}}
-							onPrompt={async (prompt, files) => {
-								await createRoom(prompt, files);
-
-								return true;
-							}}
-							hidePauseButton
-							MenuComponent={observer(
-								({
-									onOpenChange,
-									fileRef,
-									onOpenMcpOverlay,
-								}) => (
-									<>
-										<RoomInputMenuUpload
-											fileRef={fileRef}
-											onSelect={() => onOpenChange(false)}
-										/>
-										<DropdownMenuSeparator />
-										{root.theme.featureFlags
-											?.enablePlan && (
-											<>
-												<DropdownMenuItem
-													onSelect={() => {
-														setMode("chat");
-														onOpenChange(false);
-													}}
-												>
-													<MessageCircleIcon />
-													<span className="flex-1">
-														{t("room:modes.ask")}
-													</span>
-													{mode === "chat" ? (
-														<div className="px-1">
-															<CheckIcon />
-														</div>
-													) : null}
-												</DropdownMenuItem>
-												<DropdownMenuItem
-													onSelect={() => {
-														setMode("plan");
-														onOpenChange(false);
-													}}
-												>
-													<ListTodoIcon />
-													<span className="flex-1">
-														{t("room:modes.plan")}
-													</span>
-
-													{mode === "plan" ? (
-														<div className="px-1">
-															<CheckIcon />
-														</div>
-													) : null}
-												</DropdownMenuItem>
-											</>
-										)}
-										<DropdownMenuItem
-											onSelect={() => {
-												onOpenMcpOverlay("AGENT");
-												onOpenChange(false);
-											}}
-										>
-											<ComputerIcon />
-											<span className="flex-1">
-												{t(
-													"room:menuWorkspace.selectAgent",
-												)}
-											</span>
-											{tempRoomStore.options.workspace ? (
-												<div className="px-1">
-													<CheckIcon />
-												</div>
-											) : null}
-										</DropdownMenuItem>
-										<RoomInputMenuMCP
-											type="KNOWLEDGE"
-											options={tempRoomStore.options}
-											onSelect={() => {
-												onOpenMcpOverlay("KNOWLEDGE");
-												onOpenChange(false);
-											}}
-										/>
-										<RoomInputMenuMCP
-											type="TOOLBOX"
-											options={tempRoomStore.options}
-											onSelect={() => {
-												onOpenMcpOverlay("TOOLBOX");
-												onOpenChange(false);
-											}}
-										/>
-										<DropdownMenuSeparator />
-										{preCreatedRoom ? (
-											<RoomInputMenuFileExplorer
-												room={preCreatedRoom}
-												onSelect={() =>
-													onOpenChange(false)
-												}
-											/>
-										) : (
-											<RoomInputMenuNewFileExplorer
-												mode={mode}
-												options={tempRoomStore.options}
-												onRoomCreated={(room) =>
-													setPreCreatedRoom(room)
-												}
-												onSelect={() =>
-													onOpenChange(false)
-												}
-											/>
-										)}
-										<DropdownMenuItem
-											onSelect={(e) => {
-												e.preventDefault();
-												setIsConfgurationOpen(
-													!isConfigurationOpen,
-												);
-											}}
-										>
-											<Settings2Icon />
-											<span className="flex-1">
-												{isConfigurationOpen
-													? t("room:settings.close")
-													: t("room:settings.open")}
-											</span>
-										</DropdownMenuItem>
-									</>
-								),
-							)}
-						/>
-						{tempRoomStore.options.predefinedPrompts.length > 0 ? (
-							<div className="mx-auto flex w-full flex-col items-center gap-3">
-								<div className="flex max-h-34 w-full flex-wrap justify-center gap-2 overflow-hidden">
-									{previewPrompts.map((prompt) => {
-										return (
-											<Button
-												key={prompt.id}
-												variant="outline"
-												className="h-10 gap-2 rounded-md border border-input px-6 py-2 shadow-xs"
-												disabled={isLoading}
-												onClick={() =>
-													createRoom(
-														prompt.context,
-														[],
-													)
-												}
-											>
-												{prompt.title}
-											</Button>
-										);
-									})}
-								</div>
-							</div>
-						) : null}
-					</div>
+						</div>
+					</FileDragProvider>
 				</ResizablePanel>
 				{isConfigurationOpen && (
 					<>

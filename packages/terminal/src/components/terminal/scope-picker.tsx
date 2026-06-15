@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { useInsight } from "@semoss/sdk/react";
 import { AppCatalogAvatar } from "@semoss/shared";
 import type { AppRef, FileMode } from "../../types";
@@ -17,6 +18,7 @@ const DEBOUNCE_MS = 250;
 export const ScopePicker = () => {
 	const terminal = useTerminal();
 	const { actions } = useInsight();
+	const { t } = useTranslation("chrome");
 
 	const [scope, setScope] = useState<"INSIGHT" | "APP" | "USER">(
 		terminal.fileMode.type === "APP"
@@ -30,6 +32,9 @@ export const ScopePicker = () => {
 	const selectedApp = terminal.selectedApp;
 	const setSelectedApp = terminal.setSelectedApp;
 	const [pickerOpen, setPickerOpen] = useState(false);
+	// True while LoadApp is running — disables the trigger button to prevent
+	// double-clicks queuing a second call before the first resolves.
+	const [loadingApp, setLoadingApp] = useState(false);
 
 	// search + pagination state
 	const [search, setSearch] = useState("");
@@ -80,7 +85,10 @@ export const ScopePicker = () => {
 		setLoading(false);
 
 		let next: AppRef[] = [];
-		if (resp && !resp.operationType.some((t) => t.indexOf("ERROR") > -1)) {
+		if (
+			resp &&
+			!resp.operationType.some((opType) => opType.indexOf("ERROR") > -1)
+		) {
 			next = Array.isArray(resp.output) ? resp.output : [];
 		}
 
@@ -125,7 +133,7 @@ export const ScopePicker = () => {
 					}`}
 					onClick={() => setScope("INSIGHT")}
 				>
-					Insight
+					{t("scope.insight")}
 				</button>
 				<button
 					type="button"
@@ -139,7 +147,7 @@ export const ScopePicker = () => {
 						if (!selectedApp) setPickerOpen(true);
 					}}
 				>
-					App
+					{t("scope.app")}
 				</button>
 				<button
 					type="button"
@@ -150,7 +158,7 @@ export const ScopePicker = () => {
 					}`}
 					onClick={() => setScope("USER")}
 				>
-					User
+					{t("scope.user")}
 				</button>
 			</div>
 
@@ -158,12 +166,20 @@ export const ScopePicker = () => {
 				<div className="relative" ref={pickerWrapRef}>
 					<button
 						type="button"
-						className={`flex w-full items-center gap-2 rounded border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground ${
+						disabled={loadingApp}
+						className={`flex w-full items-center gap-2 rounded border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-accent hover:text-accent-foreground disabled:opacity-60 ${
 							pickerOpen ? "border-ring" : ""
 						}`}
-						onClick={() => setPickerOpen((v) => !v)}
+						onClick={() => !loadingApp && setPickerOpen((v) => !v)}
 					>
-						{selectedApp ? (
+						{loadingApp ? (
+							<>
+								<span className="inline-block h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-primary" />
+								<span className="flex-1 text-muted-foreground text-xs">
+									{t("scope.loadingProjects")}
+								</span>
+							</>
+						) : selectedApp ? (
 							<>
 								<AppCatalogAvatar
 									name={selectedApp.project_name}
@@ -180,10 +196,12 @@ export const ScopePicker = () => {
 							</>
 						) : (
 							<span className="flex-1 text-muted-foreground">
-								Select a project…
+								{t("scope.selectProject")}
 							</span>
 						)}
-						<span className="text-muted-foreground">▾</span>
+						{!loadingApp && (
+							<span className="text-muted-foreground">▾</span>
+						)}
 					</button>
 
 					{pickerOpen && (
@@ -192,7 +210,7 @@ export const ScopePicker = () => {
 								<input
 									ref={searchInputRef}
 									type="text"
-									placeholder="Search projects…"
+									placeholder={t("scope.searchProjects")}
 									value={search}
 									onChange={(e) => setSearch(e.target.value)}
 									className="w-full rounded border border-border bg-background px-2 py-1 text-foreground text-xs focus:border-ring focus:outline-none"
@@ -218,14 +236,16 @@ export const ScopePicker = () => {
 							>
 								{loading && apps.length === 0 && (
 									<div className="px-2 py-3 text-center text-muted-foreground text-xs">
-										Loading projects…
+										{t("scope.loadingProjects")}
 									</div>
 								)}
 								{!loading && apps.length === 0 && (
 									<div className="px-2 py-3 text-center text-muted-foreground text-xs">
 										{debouncedSearch
-											? `No projects match "${debouncedSearch}"`
-											: "No projects found"}
+											? t("scope.noProjectsMatch", {
+													query: debouncedSearch,
+												})
+											: t("scope.noProjectsFound")}
 									</div>
 								)}
 								{apps.map((app) => (
@@ -238,19 +258,43 @@ export const ScopePicker = () => {
 												? "bg-primary/10"
 												: ""
 										}`}
-										onClick={() => {
-											setSelectedApp(app);
+										onClick={async () => {
 											setPickerOpen(false);
-											// attach the project so
-											// app-scoped reactors (GetAppAssets,
-											// etc.) have what they need
-											// server-side
-											runPixel(
-												actions,
-												`LoadApp("${app.project_id}");`,
-											).catch(() => {
-												/* errors surface on next call */
-											});
+											setLoadingApp(true);
+											try {
+												// LoadApp initializes the project's
+												// reactor hash server-side — await it
+												// before updating selectedApp so that
+												// TerminalConsole's GetProjectAvailableReactors
+												// call sees a populated hash.
+												const result = await runPixel(
+													actions,
+													`LoadApp("${app.project_id}");`,
+												);
+												// Only update context if LoadApp succeeded
+												if (
+													result &&
+													!result.operationType.some(
+														(t) =>
+															t.indexOf("ERROR") >
+															-1,
+													)
+												) {
+													setSelectedApp(app);
+												} else {
+													terminal.alert(
+														"error",
+														`Failed to load app: ${app.project_name}`,
+													);
+												}
+											} catch {
+												terminal.alert(
+													"error",
+													`Failed to load app: ${app.project_name}`,
+												);
+											} finally {
+												setLoadingApp(false);
+											}
 										}}
 										title={app.project_id}
 									>
@@ -270,12 +314,12 @@ export const ScopePicker = () => {
 								))}
 								{loading && apps.length > 0 && (
 									<div className="px-2 py-2 text-center text-[11px] text-muted-foreground">
-										Loading more…
+										{t("scope.loadingMore")}
 									</div>
 								)}
 								{!loading && !hasMore && apps.length > 0 && (
 									<div className="px-2 py-2 text-center text-[11px] text-muted-foreground">
-										End of list
+										{t("scope.endOfList")}
 									</div>
 								)}
 							</div>

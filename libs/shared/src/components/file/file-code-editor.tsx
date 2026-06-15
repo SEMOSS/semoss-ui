@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type * as monaco from "monaco-editor";
 import { Suspense, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@semoss/i18n";
 import { download, runPixel, useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -47,6 +48,12 @@ interface FileCodeEditorProps {
 
 	/** Optional content rendered at the start of the toolbar row */
 	leadingToolbar?: React.ReactNode;
+
+	/**
+	 * Optional handler invoked when the user runs the file via Ctrl/Cmd+Enter
+	 * (or the editor context menu). When omitted, no run keybinding is added.
+	 */
+	onRun?: () => void;
 }
 
 export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
@@ -54,9 +61,15 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 	path,
 	onChange = () => null,
 	leadingToolbar,
+	onRun,
 }) => {
 	const insight = useInsight();
+	const { t } = useTranslation("common");
 	const [isLoading, setIsLoading] = useState(false);
+	// The Monaco run action is wired once on mount; read the latest onRun
+	// through a ref so the keybinding always calls the current handler.
+	const onRunRef = useRef(onRun);
+	onRunRef.current = onRun;
 	const targetInsightId =
 		mode.type === "INSIGHT"
 			? mode.insightId || insight.insightId
@@ -235,6 +248,22 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 		// 	},
 		// });
 
+		// Ctrl/Cmd+Enter → run the file. Only registered when the consumer
+		// opts in via onRun (e.g. the terminal's file tab). addAction scopes
+		// the keybinding to this editor, so it never leaks to other editors.
+		if (onRunRef.current) {
+			editor.addAction({
+				contextMenuGroupId: "1_modification",
+				contextMenuOrder: 0,
+				id: "run",
+				label: "Run",
+				keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+				run: () => {
+					onRunRef.current?.();
+				},
+			});
+		}
+
 		editor.addAction({
 			contextMenuGroupId: "1_modification",
 			contextMenuOrder: 1,
@@ -376,9 +405,14 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 			// trigger onChange
 			onChange(content, false);
 
-			toast.success("Successfully saved file");
+			toast.success(t("fileExplorer.toasts.saveSuccess"));
 		} catch (e) {
-			toast.error(getFileOperationErrorMessage("Error saving file", e));
+			toast.error(
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.saveFailed"),
+					e,
+				),
+			);
 
 			console.error(e);
 		} finally {
@@ -428,10 +462,13 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 
 			// download the file
 			await download(targetInsightId, fileKey);
-			toast.success("Successfully downloaded file");
+			toast.success(t("fileExplorer.toasts.downloadFileSuccess"));
 		} catch (e) {
 			toast.error(
-				getFileOperationErrorMessage("Error downloading file", e),
+				getFileOperationErrorMessage(
+					t("fileExplorer.toasts.downloadFileFailed"),
+					e,
+				),
 			);
 
 			console.error(e);
@@ -533,7 +570,8 @@ export const FileCodeEditor: React.FC<FileCodeEditorProps> = ({
 				{getFile.status === "ERROR" && (
 					<div className="flex h-full w-full items-center justify-center">
 						<Muted className="text-destructive">
-							{getFile.error?.message || "Failed to load files"}
+							{getFile.error?.message ||
+								t("fileExplorer.failedToLoadFiles")}
 						</Muted>
 					</div>
 				)}
