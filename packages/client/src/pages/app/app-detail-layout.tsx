@@ -94,11 +94,14 @@ interface AppDetailLayoutProps {
 	embedded?: boolean;
 	/** Whether to render the navbar chrome and breadcrumb. Hidden when embedded inside the workspace editor. */
 	showNav?: boolean;
+	/** Tab path segments to hide (e.g. ["dependencies", "mcp-usage"]). */
+	excludeTabs?: string[];
 }
 
 export const AppDetailLayout = ({
 	embedded = false,
 	showNav = true,
+	excludeTabs = [],
 }: AppDetailLayoutProps) => {
 	const { control, setValue, getValues, watch, handleSubmit } =
 		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
@@ -445,13 +448,14 @@ export const AppDetailLayout = ({
 	const visibleTabs = useMemo(() => {
 		return APP_DETAIL_TABS.filter((tab) => {
 			if (tab.requiresNav && !showNav) return false;
+			if (excludeTabs.includes(tab.path)) return false;
 			if (!tab.restrict) return true;
 			if (!permission) return false;
 			return tab.restrict.includes(
 				permission as Exclude<typeof permission, "">,
 			);
 		});
-	}, [permission, showNav]);
+	}, [permission, showNav, excludeTabs]);
 
 	// Determine active tab. In route mode, derive from URL via matchPath.
 	// In embedded mode, derive from selectedTabName local state.

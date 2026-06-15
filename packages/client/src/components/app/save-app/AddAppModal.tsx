@@ -43,9 +43,28 @@ export type AddAppFormStep = {
 	requiredFields: string[];
 };
 
+const MODAL_CONFIG = {
+	app: {
+		title: "Upload app from my computer",
+		errorMessage:
+			"There was an error creating your app. Please check your zip file and try again.",
+	},
+	skill: {
+		title: "Upload skill from my computer",
+		errorMessage:
+			"There was an error creating your skill. Please check your zip file and try again.",
+	},
+	agent: {
+		title: "Upload agent from my computer",
+		errorMessage:
+			"There was an error creating your agent. Please check your zip file and try again.",
+	},
+} as const;
+
 interface AddAppProps {
 	open: boolean;
 	handleClose: (appId?: string) => void;
+	type?: keyof typeof MODAL_CONFIG;
 }
 
 export const AddAppModal = (props: AddAppProps) => {
@@ -110,7 +129,8 @@ export const AddAppModal = (props: AddAppProps) => {
 	const [_addAppFormSteps, setAddAppFormSteps] =
 		useState<AddAppFormStep[]>(appZipFormSteps);
 
-	const { open, handleClose } = props;
+	const { open, handleClose, type = "app" } = props;
+	const config = MODAL_CONFIG[type];
 	const { monolithStore, configStore } = useRootStore();
 
 	const defaultFormValues: AddAppForm = {
@@ -213,11 +233,11 @@ export const AddAppModal = (props: AddAppProps) => {
 		<SaveAppModal
 			open={open}
 			handleClose={handleClose}
-			title="Upload app from my computer"
+			title={config.title}
 			steps={projectZipFormSteps}
 			defaultFormValues={defaultFormValues}
 			handleFormSubmit={createApp}
-			errorMessage="There was an error creating your app. Please check your zip file and try again."
+			errorMessage={config.errorMessage}
 			submitBtnText="Upload"
 		/>
 	);

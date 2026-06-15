@@ -45,6 +45,9 @@
 		"close": "閉じる"
 	},
 	"permission": {
+		"owner": "オーナー",
+		"editor": "編集者",
+		"readOnly": "読み取り専用",
 		"accessRequested": "アクセスをリクエスト済み",
 		"requestAccess": "アクセスをリクエスト",
 		"noAccess": "アクセス権なし",

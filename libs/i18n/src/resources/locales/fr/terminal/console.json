@@ -4,7 +4,7 @@
 	},
 	"run": {
 		"button": "Exécuter",
-		"tooltip": "Exécuter (Ctrl+Entrée)"
+		"tooltip": "Exécuter (Entrée)"
 	},
 	"emptyState": {
 		"prefix": "Tapez une commande ci-dessus et appuyez sur",
