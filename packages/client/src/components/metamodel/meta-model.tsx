@@ -626,10 +626,7 @@ export const Metamodel = (props: MetamodelProps) => {
 	);
 
 	useEffect(() => {
-		if (
-			resetKeyRef.current !== null &&
-			resetKeyRef.current !== resetKey
-		) {
+		if (resetKeyRef.current !== null && resetKeyRef.current !== resetKey) {
 			const sourceKey = String(dataSourceId ?? "default");
 			isInitialMount.current[sourceKey] = false;
 
@@ -644,11 +641,22 @@ export const Metamodel = (props: MetamodelProps) => {
 
 			// Fit view after React commits the updated node positions.
 			setTimeout(() => {
-				flowInstanceRef.current?.fitView({ maxZoom: 0.75, padding: 0.2 });
+				flowInstanceRef.current?.fitView({
+					maxZoom: 0.75,
+					padding: 0.2,
+				});
 			}, 50);
 		}
 		resetKeyRef.current = resetKey ?? null;
-	}, [resetKey, dataSourceId, nodes, edges, injectIsAction, setFlowNodes, setFlowEdges]);
+	}, [
+		resetKey,
+		dataSourceId,
+		nodes,
+		edges,
+		injectIsAction,
+		setFlowNodes,
+		setFlowEdges,
+	]);
 
 	useEffect(() => {
 		if (isEditable) {
