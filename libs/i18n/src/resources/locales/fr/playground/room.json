@@ -19,7 +19,7 @@
 	},
 	"modes": {
 		"ask": "Demander",
-		"plan": "Planifier"
+		"agent": "Harnais d'agent"
 	},
 	"workspace": {
 		"publishTooltip": "Publier en tant qu'agent",

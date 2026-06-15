@@ -9,7 +9,7 @@ const ROOM_FILE_EXPLORER_ID = "FILE_EXPLORER";
 
 interface RoomInputMenuNewFileExplorerProps {
 	/** Current room mode */
-	mode: "chat" | "plan" | "workspace";
+	mode: "chat" | "agent" | "workspace";
 
 	/** Options from the temporary room store */
 	options: RoomStore["options"];
@@ -49,7 +49,7 @@ export const RoomInputMenuNewFileExplorer = ({
 					const room = new RoomStore(root.theme, roomId, insightId);
 
 					room.setModel(chat.models.selected);
-					room.setMode(mode === "plan" ? "planning" : "chat");
+					room.setMode(mode === "agent" ? "agent" : "chat");
 					await room.initialize();
 					await room.updateRoomOptions(options);
 

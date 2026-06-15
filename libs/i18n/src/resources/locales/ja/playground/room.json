@@ -19,7 +19,7 @@
 	},
 	"modes": {
 		"ask": "質問",
-		"plan": "プラン"
+		"agent": "エージェントハーネス"
 	},
 	"workspace": {
 		"publishTooltip": "エージェントとして公開",

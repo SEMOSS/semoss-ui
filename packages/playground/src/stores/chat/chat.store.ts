@@ -239,7 +239,7 @@ export class ChatStore {
 	 * Create a new room
 	 */
 	createRoom = async (
-		mode: "planning" | "chat",
+		mode: "agent" | "chat",
 		prompt: string,
 		files: File[],
 		options: RoomStore["options"],

@@ -19,7 +19,7 @@
 	},
 	"modes": {
 		"ask": "اسأل",
-		"plan": "خطة"
+		"agent": "إطار تشغيل الوكيل"
 	},
 	"workspace": {
 		"publishTooltip": "نشر كوكيل",
