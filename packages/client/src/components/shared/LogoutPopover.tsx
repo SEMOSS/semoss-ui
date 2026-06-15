@@ -86,7 +86,28 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 							{configStore.store.user.name}
 						</span>
 					</div>
-
+					{/* Last login info row */}
+					{configStore.store.user.lastLoginFromTracking && (
+						<div className="flex items-center justify-center border-border border-b px-4 py-2">
+							<span className="text-muted-foreground text-xs">
+								Last login:{" "}
+								{`${new Date(
+									configStore.store.user
+										.lastLoginFromTracking,
+								)
+									.toLocaleString("sv-SE", {
+										year: "numeric",
+										month: "2-digit",
+										day: "2-digit",
+										hour: "2-digit",
+										minute: "2-digit",
+										second: "2-digit",
+										hour12: false,
+									})
+									.replace(",", "")} UTC`}
+							</span>
+						</div>
+					)}
 					{/* Logout button row */}
 					<div className="flex items-center justify-center border-border border-b px-4 py-3">
 						<Button
