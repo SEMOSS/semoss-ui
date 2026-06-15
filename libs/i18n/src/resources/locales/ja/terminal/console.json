@@ -4,7 +4,7 @@
 	},
 	"run": {
 		"button": "実行",
-		"tooltip": "実行 (Ctrl+Enter)"
+		"tooltip": "実行 (Enter)"
 	},
 	"emptyState": {
 		"prefix": "上にコマンドを入力して、",

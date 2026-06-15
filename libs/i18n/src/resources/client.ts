@@ -34,4 +34,8 @@ export const clientResources = {
 		...sharedResources.ja,
 		// Add client namespaces here
 	},
+	nl: {
+		...coreResources.nl,
+		// Add client namespaces here
+	},
 } as const;

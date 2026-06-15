@@ -55,6 +55,12 @@ interface FileCodeEditorProps {
 	/** Optional content rendered at the start of the toolbar row */
 	leadingToolbar?: React.ReactNode;
 
+	/**
+	 * Optional handler invoked when the user runs the file via Ctrl/Cmd+Enter
+	 * (or the editor context menu). When omitted, no run keybinding is added.
+	 */
+	onRun?: () => void;
+
 	/** When true, the built-in toolbar (Refresh/Save/Download) is not rendered.
 	 *  Use this when the parent renders its own unified toolbar. */
 	hideToolbar?: boolean;
@@ -70,6 +76,7 @@ export const FileCodeEditor = forwardRef<
 			path,
 			onChange = () => null,
 			leadingToolbar,
+			onRun,
 			hideToolbar = false,
 		},
 		actionsRef,
@@ -77,6 +84,10 @@ export const FileCodeEditor = forwardRef<
 		const insight = useInsight();
 		const { t } = useTranslation("common");
 		const [isLoading, setIsLoading] = useState(false);
+		// The Monaco run action is wired once on mount; read the latest onRun
+		// through a ref so the keybinding always calls the current handler.
+		const onRunRef = useRef(onRun);
+		onRunRef.current = onRun;
 		const targetInsightId =
 			mode.type === "INSIGHT"
 				? mode.insightId || insight.insightId
@@ -194,6 +205,88 @@ export const FileCodeEditor = forwardRef<
 			}
 
 			monaco.editor.setTheme(computeMonacoTheme(!!config?.theme));
+
+			// editor.addAction({
+			// 	contextMenuGroupId: "1_modification",
+			// 	contextMenuOrder: 1,
+			// 	id: "prompt-LLM",
+			// 	label: "Generate Code",
+			// 	keybindings: [
+			// 		monaco.KeyMod.CtrlCmd |
+			// 			monaco.KeyMod.Shift |
+			// 			monaco.KeyCode.KeyG,
+			// 	],
+
+			// 	run: async (editor) => {
+			// 		const selection = editor.getSelection();
+			// 		const selectedText = editor
+			// 			.getModel()
+			// 			.getValueInRange(selection);
+
+			// 		const content = editor.getValue();
+
+			// 		const command = `
+			// 			You are a ${ext} assistant. Respond to the user prompt: "${selectedText}"
+
+			// 			Based on the following data:
+
+			// 			file: ${path}
+			// 			content: ${content}
+
+			// 			Do not include any explanations, only provide the code.
+			// 			`;
+
+			// 		const { pixelReturn } = await insight.actions.run<
+			// 			[{ response: string }]
+			// 		>(
+			// 			`LLM(engine = "", command = "<encode>${command}</encode>", paramValues = [ {} ] );`,
+			// 		);
+
+			// 		const response = pixelReturn[0].output.response;
+
+			// 		// adds LLM response after response
+			// 		editor.executeEdits("custom-action", [
+			// 			{
+			// 				range: new monaco.Range(
+			// 					selection.endLineNumber + 2,
+			// 					1,
+			// 					selection.endLineNumber + 2,
+			// 					1,
+			// 				),
+			// 				text: `\n\n${response}\n`,
+			// 				forceMoveMarkers: true,
+			// 			},
+			// 		]);
+
+			// 		// highligts LLM response after response
+			// 		editor.setSelection(
+			// 			new monaco.Range(
+			// 				selection.endLineNumber + 3,
+			// 				1,
+			// 				selection.endLineNumber +
+			// 					3 +
+			// 					response.split("\n").length,
+			// 				1,
+			// 			),
+			// 		);
+			// 	},
+			// });
+
+			// Ctrl/Cmd+Enter → run the file. Only registered when the consumer
+			// opts in via onRun (e.g. the terminal's file tab). addAction scopes
+			// the keybinding to this editor, so it never leaks to other editors.
+			if (onRunRef.current) {
+				editor.addAction({
+					contextMenuGroupId: "1_modification",
+					contextMenuOrder: 0,
+					id: "run",
+					label: "Run",
+					keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+					run: () => {
+						onRunRef.current?.();
+					},
+				});
+			}
 
 			editor.addAction({
 				contextMenuGroupId: "1_modification",

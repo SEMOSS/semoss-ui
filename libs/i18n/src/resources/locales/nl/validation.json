@@ -1,0 +1,7 @@
+{
+	"required": "{{field}} is verplicht",
+	"nameRequired": "Voer een naam in voor de kennisopslag",
+	"embeddingRequired": "Selecteer een embedding-engine",
+	"filesRequired": "Selecteer ten minste één document",
+	"descriptionRequired": "Voer een beschrijving in"
+}
