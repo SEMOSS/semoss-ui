@@ -1,10 +1,10 @@
 import {
 	Archive,
 	Bolt,
-	Bot,
 	Briefcase,
 	ChartBar,
 	CircleUserRound,
+	Cpu,
 	Database,
 	DatabaseZap,
 	FileText,
@@ -49,7 +49,7 @@ const CardMapper: Record<string, CardConfig> = {
 		color: "#00A593",
 	},
 	"Model Settings": {
-		icon: <Bot className={ICON_CLASS} />,
+		icon: <Cpu className={ICON_CLASS} />,
 		color: "#0471F0",
 	},
 	"Storage Settings": {
