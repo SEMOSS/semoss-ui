@@ -2,8 +2,8 @@ import { BookOpenIcon, HammerIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "@semoss/i18n";
 import { Badge, DropdownMenuItem } from "@semoss/ui/next";
-import { isKnowledgeMcp } from "@/components/mcp/utility";
 import type { RoomStore } from "@/stores";
+import { isKnowledgeMcp } from "@/utility/mcp-utils";
 
 interface RoomInputMenuMCPProps {
 	type: "KNOWLEDGE" | "TOOLBOX";

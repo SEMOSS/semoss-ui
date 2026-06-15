@@ -1,9 +1,14 @@
 import { observer } from "mobx-react-lite";
 import { createElement, lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { Spinner } from "@semoss/ui/next";
 import { useRootStore } from "@/hooks";
 import { APP_DETAIL_TABS } from "./app/app-detail.constants";
+
+const AppIdRedirect = () => {
+	const { appId } = useParams();
+	return <Navigate to={`/app/${appId}`} replace />;
+};
 
 const AuthenticatedLayout = lazy(() =>
 	import("./AuthenticatedLayout").then((m) => ({
@@ -67,6 +72,32 @@ const SettingsRouter = lazy(() =>
 		default: m.SettingsRouter,
 	})),
 );
+const SkillPage = lazy(() =>
+	import("./skill/skill-page").then((m) => ({ default: m.SkillPage })),
+);
+const CreateSkillPage = lazy(() =>
+	import("./skill/create-skill-page").then((m) => ({
+		default: m.CreateSkillPage,
+	})),
+);
+const SkillEditPage = lazy(() =>
+	import("./skill/skill-edit-page").then((m) => ({
+		default: m.SkillEditPage,
+	})),
+);
+const AgentPage = lazy(() =>
+	import("./agent/agent-page").then((m) => ({ default: m.AgentPage })),
+);
+const CreateAgentPage = lazy(() =>
+	import("./agent/create-agent-page").then((m) => ({
+		default: m.CreateAgentPage,
+	})),
+);
+const AgentEditPage = lazy(() =>
+	import("./agent/agent-edit-page").then((m) => ({
+		default: m.AgentEditPage,
+	})),
+);
 const SharePage = lazy(() =>
 	import("./share-page").then((m) => ({ default: m.SharePage })),
 );
@@ -126,6 +157,7 @@ export const Router = observer(() => {
 										/>
 									),
 								)}
+								<Route path="*" element={<AppIdRedirect />} />
 							</Route>
 							<Route
 								path=":appId/view/*"
@@ -145,6 +177,30 @@ export const Router = observer(() => {
 						<Route path="engine/*" element={<EngineRouter />} />
 						<Route path="prompt/*" element={<PromptRouter />} />
 						<Route path="settings/*" element={<SettingsRouter />} />
+						<Route path="skill/*">
+							<Route index element={<SkillPage />} />
+							<Route path="new" element={<CreateSkillPage />} />
+							<Route
+								path=":appId/edit/*"
+								element={<SkillEditPage />}
+							/>
+							<Route
+								path=":appId/*"
+								element={<AppIdRedirect />}
+							/>
+						</Route>
+						<Route path="agent/*">
+							<Route index element={<AgentPage />} />
+							<Route path="new" element={<CreateAgentPage />} />
+							<Route
+								path=":appId/edit/*"
+								element={<AgentEditPage />}
+							/>
+							<Route
+								path=":appId/*"
+								element={<AppIdRedirect />}
+							/>
+						</Route>
 						<Route path="*" element={<Navigate to="/" replace />} />
 					</Route>
 				</Route>

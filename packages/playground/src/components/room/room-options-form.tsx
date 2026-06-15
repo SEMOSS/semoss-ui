@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type { MouseEvent } from "react";
 import { useState } from "react";
 import { useTranslation } from "@semoss/i18n";
-import { EngineSelect } from "@semoss/shared";
+import { EngineSelect, type MCPConfig } from "@semoss/shared";
 import {
 	Badge,
 	Button,
@@ -21,10 +21,10 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { MCPOverlay, splitMcpByType } from "@/components";
+import { MCPOverlay } from "@/components";
 import { useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { MCPConfig } from "@/types";
+import { splitMcpByType } from "@/utility/mcp-utils";
 
 interface RoomOptionsFormProps {
 	/** Model of the room */
