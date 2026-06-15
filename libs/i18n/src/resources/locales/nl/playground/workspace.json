@@ -1,0 +1,164 @@
+{
+	"welcomeTitle": "Welkom bij Agent Manager",
+	"welcomeDescription": "Ontdek aangepaste AI-agents die zijn ontworpen om aan uw unieke behoeften te voldoen en naadloos in uw processen te integreren.",
+	"form": {
+		"nameLabel": "Naam",
+		"descriptionLabel": "Beschrijving",
+		"instructionsLabel": "Instructies",
+		"knowledgeLabel": "Kennis",
+		"toolboxLabel": "Toolboxes",
+		"promptsLabel": "Promptbibliotheek"
+	},
+	"actions": {
+		"create": "Aanmaken",
+		"save": "Opslaan",
+		"createAgent": "Een agent aanmaken",
+		"edit": "Bewerken",
+		"delete": "Verwijderen",
+		"newChat": "Nieuwe chat"
+	},
+	"card": {
+		"deleteConfirmTitle": "Weet u het zeker?",
+		"deleteConfirmDescription": "Deze actie is onomkeerbaar. Hiermee wordt de werkruimte {{name}} permanent verwijderd.",
+		"createdAgo": "Aangemaakt {{when}}"
+	},
+	"sharing": {
+		"title": "Leden toevoegen",
+		"description": "Nodig leden uit om toegang te krijgen tot deze agent en eraan samen te werken.",
+		"searchPlaceholder": "Zoek naar een gebruiker...",
+		"searchUsers": "Gebruikers zoeken...",
+		"noUsersFound": "Geen gebruikers gevonden",
+		"hasAccess": "Heeft toegang",
+		"pendingInvite": "Uitnodiging in behandeling",
+		"membersToAdd": "Toe te voegen leden",
+		"emptyState": "Voeg gebruikers toe om deze werkruimte te delen",
+		"buttonAdding": "Toevoegen...",
+		"buttonAdd": "Leden toevoegen"
+	},
+	"members": {
+		"autoSaveHint": "Toevoegingen, verwijderingen en wijzigingen van rechten van leden worden automatisch opgeslagen.",
+		"heading": "Wie heeft toegang",
+		"you": "(U)",
+		"owner": "Eigenaar",
+		"editor": "Bewerker",
+		"readOnly": "Alleen-lezen",
+		"removeAccess": "Toegang intrekken",
+		"removeSelfTitle": "Uzelf van de agent verwijderen",
+		"removeSelfDescription": "U staat op het punt uw toegang tot deze agent in te trekken. U moet opnieuw worden uitgenodigd om weer toegang te krijgen. Deze actie kan niet ongedaan worden gemaakt.",
+		"removeUserTitle": "Agenttoegang intrekken",
+		"removeUserDescription": "Weet u zeker dat u de toegang van {{name}} tot deze agent wilt intrekken? Deze actie kan niet ongedaan worden gemaakt.",
+		"changePermissionTitle": "Uw rechten wijzigen",
+		"changePermissionDescription": "U staat op het punt uw eigen rechten te wijzigen van {{oldPermission}} naar {{newPermission}}. Dit heeft invloed op welke acties u in deze agent kunt uitvoeren.",
+		"changePermissionButton": "Rechten wijzigen"
+	},
+	"mcp": {
+		"noToolboxes": "Geen toolboxes gevonden",
+		"noKnowledge": "Geen kennisbibliotheken gevonden",
+		"failedToLoad": "Laden van werkruimtebronnen mislukt",
+		"requestedSuccess": "Toegang aangevraagd tot {{name}}",
+		"requestedFailed": "Aanvragen van toegang mislukt"
+	},
+	"chat": {
+		"noChats": "Geen chats gevonden",
+		"error": "Fout:",
+		"selectRoom": "Ruimte selecteren",
+		"newChat": "Nieuwe chat",
+		"delete": "Verwijderen",
+		"cancel": "Annuleren",
+		"deleteSuccess": "Chat verwijderd",
+		"deleteFailed": "Verwijderen van chat mislukt",
+		"deleteConfirmTitle": "Chat verwijderen?",
+		"deleteConfirmDescription": "Hiermee wordt \"{{name}}\" permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+		"rename": "Naam wijzigen",
+		"renameSave": "Opslaan",
+		"renameEmpty": "Chatnaam mag niet leeg zijn",
+		"renameSuccess": "Naam van chat gewijzigd",
+		"renameFailed": "Wijzigen van chatnaam mislukt",
+		"pin": "Favoriet",
+		"unpin": "Favoriet verwijderen",
+		"pinFailed": "Chat als favoriet markeren mislukt",
+		"unpinFailed": "Favoriet verwijderen van chat mislukt",
+		"dayToday": "Vandaag",
+		"dayYesterday": "Gisteren",
+		"daysAgo": "{{count}} dagen geleden"
+	},
+	"images": {
+		"agentIllustration": "Agentillustratie"
+	},
+	"messages": {
+		"noResults": "Geen resultaten gevonden",
+		"userAlreadyAdded": "Gebruiker al toegevoegd",
+		"fetchUsersFailed": "Ophalen van gebruikers mislukt",
+		"addAtLeastOne": "Voeg ten minste één gebruiker toe",
+		"addMembersSuccess": "{{count}} lid succesvol toegevoegd",
+		"addMembersSuccess_plural": "{{count}} leden succesvol toegevoegd",
+		"addMembersFailed": "Toevoegen van leden mislukt",
+		"permissionUpdated": "Rechten succesvol bijgewerkt",
+		"permissionUpdateFailed": "Bijwerken van rechten mislukt",
+		"userRemoved": "Gebruiker succesvol verwijderd",
+		"userRemoveFailed": "Verwijderen van gebruiker mislukt",
+		"fetchPermissionsFailed": "Ophalen van gebruikersrechten mislukt"
+	},
+	"breadcrumbs": {
+		"home": "Home",
+		"agent": "Agent",
+		"loading": "Laden",
+		"edit": "Bewerken",
+		"new": "Nieuw",
+		"room": "Ruimte"
+	},
+	"detail": {
+		"tabs": {
+			"myChats": "Mijn chats",
+			"knowledge": "Kennis",
+			"toolbox": "Toolboxes",
+			"prompts": "Prompts",
+			"members": "Leden"
+		},
+		"about": {
+			"title": "Over",
+			"noInstructions": "Geen instructies geconfigureerd."
+		},
+		"recentChats": {
+			"title": "Een eerdere chat voortzetten"
+		},
+		"failedToDelete": "Verwijderen van agent mislukt",
+		"failedToLoad": "Laden van agent mislukt: {{error}}"
+	},
+	"edit": {
+		"title": "Agent bewerken",
+		"subtitle": "Werk uw agentgegevens bij",
+		"errorTitle": "Fout bij laden van agent",
+		"errorDescription": "Laden van de agentgegevens mislukt",
+		"failedToLoad": "Laden van werkruimte mislukt: {{error}}"
+	},
+	"new": {
+		"title": "Nieuwe agent",
+		"subtitle": "Maak een nieuwe agent aan om te beginnen"
+	},
+	"prompts": {
+		"noPrompts": "Geen prompts gevonden",
+		"searchPlaceholder": "Prompts zoeken..."
+	},
+	"chats": {
+		"title": "Alle chats",
+		"subtitle": "Blader door, zoek en ruim uw chats op.",
+		"selectAll": "Alles selecteren",
+		"selectChat": "Chat {{name}} selecteren",
+		"selectedCount": "{{count}} geselecteerd",
+		"totalCount": "{{count}} chats",
+		"deleteSelected": "{{count}} geselecteerde verwijderen",
+		"bulkDeleteConfirmTitle": "{{count}} chats verwijderen?",
+		"bulkDeleteConfirmDescription": "Hiermee worden {{count}} chats permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+		"bulkDeleteSuccess": "{{count}} chats verwijderd",
+		"bulkDeletePartialFail": "Verwijderen van {{failed}} van {{total}} chats mislukt"
+	},
+	"instructions": {
+		"expand": "Uitvouwen",
+		"viewTitle": "Instructies",
+		"viewDescription": "De systeemprompt die het gedrag van deze agent stuurt.",
+		"editTitle": "Instructies bewerken",
+		"editDescription": "Werk de systeemprompt bij die het gedrag van deze agent stuurt.",
+		"charCount": "{{count}} tekens"
+	}
+}

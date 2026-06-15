@@ -1,0 +1,59 @@
+{
+	"status": {
+		"failed": "Mislukt",
+		"cancelled": "Geannuleerd",
+		"completed": "Voltooid",
+		"ready": "Gereed",
+		"autoExecute": "Automatisch uitvoeren",
+		"paused": "Gepauzeerd",
+		"queued": "In wachtrij voor automatische uitvoering",
+		"loadingTool": "Tool laden…",
+		"waitingForArguments": "Wachten op argumenten…"
+	},
+	"actions": {
+		"cancel": "Annuleren",
+		"expand": "Uitvouwen",
+		"collapse": "Samenvouwen",
+		"openInSidebar": "Openen in zijbalk",
+		"closeInSidebar": "Zijbalk sluiten",
+		"openInline": "Inline openen"
+	},
+	"group": {
+		"labelClosed": "{{toolName}} + nog {{count}}",
+		"labelOpen": "Uitgevoerde tools ({{count}})",
+		"summaryCompleted": "{{count}} voltooid",
+		"summaryError": "{{count}} mislukt",
+		"summaryCancelled": "{{count}} geannuleerd",
+		"summaryPaused": "{{count}} gepauzeerd"
+	},
+	"form": {
+		"result": "Resultaat",
+		"schemaLoadFailed": "Laden van toolschema mislukt",
+		"schemaLoadFailedDescription": "Kan toolconfiguratie niet ophalen. Probeer het later opnieuw.",
+		"schemaLoading": "Toolschema laden...",
+		"noParameters": "Geen parameters vereist",
+		"showParameters": "Parameters tonen ({{count}})",
+		"hideParameters": "Parameters verbergen ({{count}})",
+		"showOptionalFields": "Optionele velden tonen ({{count}})",
+		"hideOptionalFields": "Optionele velden verbergen ({{count}})",
+		"execute": "Tool uitvoeren",
+		"executing": "Uitvoeren..."
+	},
+	"playwright": {
+		"details": "Details van Playwright-script",
+		"projectId": "Project-ID",
+		"recordedFile": "Opgenomen bestand"
+	},
+	"extension": {
+		"required": "Browserextensie vereist",
+		"notResponding": "De browserextensie reageert niet. Zorg ervoor dat de SEMOSS Chrome-extensie is geïnstalleerd en het zijpaneel is geopend om Playwright-scripts uit te voeren.",
+		"stepsTitle": "Stappen om de extensie te openen:",
+		"step1": "Zoek naar het SEMOSS-extensiepictogram in de werkbalk van uw browser (puzzelstukpictogram)",
+		"step2": "Klik op het extensiepictogram om het zijpaneel te openen",
+		"step3": "Wacht tot het paneel volledig is geladen",
+		"step4": "Klik hieronder op \"Opnieuw proberen\" om door te gaan",
+		"cancel": "Annuleren",
+		"retry": "Opnieuw proberen",
+		"checking": "Controleren..."
+	}
+}

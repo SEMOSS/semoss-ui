@@ -26,6 +26,10 @@ import chromeJA from "./locales/ja/terminal/chrome.json";
 import consoleJA from "./locales/ja/terminal/console.json";
 import dialogJA from "./locales/ja/terminal/dialog.json";
 import fileJA from "./locales/ja/terminal/file.json";
+import chromeNL from "./locales/nl/terminal/chrome.json";
+import consoleNL from "./locales/nl/terminal/console.json";
+import dialogNL from "./locales/nl/terminal/dialog.json";
+import fileNL from "./locales/nl/terminal/file.json";
 
 export const terminalResources = {
 	en: {
@@ -69,5 +73,12 @@ export const terminalResources = {
 		file: fileJA,
 		chrome: chromeJA,
 		dialog: dialogJA,
+	},
+	nl: {
+		...coreResources.nl,
+		console: consoleNL,
+		file: fileNL,
+		chrome: chromeNL,
+		dialog: dialogNL,
 	},
 } as const;
