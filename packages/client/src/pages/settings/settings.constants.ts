@@ -256,6 +256,14 @@ export const SETTINGS_ROUTES: {
 		admin: true,
 	},
 	{
+		title: "Usage Limits",
+		path: "usage-limits",
+		description: "Configure platform-wide room token limits.",
+		icon: mdiChatProcessingOutline,
+		history: ["settings/"],
+		admin: true,
+	},
+	{
 		title: "Add Jobs",
 		path: "jobs/add-new-job",
 		description:
