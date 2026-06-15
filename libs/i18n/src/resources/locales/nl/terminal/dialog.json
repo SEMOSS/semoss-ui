@@ -1,0 +1,52 @@
+{
+	"help": {
+		"title": "Terminalhulp",
+		"emptyMessage": "Er zijn geen gestructureerde gebruiksvoorbeelden geretourneerd voor {{type}}.",
+		"rawResponse": "Onbewerkt antwoord",
+		"copy": "Kopiëren",
+		"copied": "Gekopieerd",
+		"copyFailed": "Kopiëren van code mislukt",
+		"fetchFailed": "Ophalen van gebruik mislukt (geen antwoord)",
+		"usageReturnedError": "GetEngineUsage(type=[\"{{type}}\"]) heeft een fout geretourneerd."
+	},
+	"save": {
+		"title": "Opslaan",
+		"fields": {
+			"name": "Naam:",
+			"comment": "Opmerking:"
+		},
+		"buttons": {
+			"save": "Opslaan",
+			"cancel": "Annuleren"
+		},
+		"comment": "Opslaan om {{timestamp}}",
+		"errors": {
+			"nameRequired": "Bestand heeft een naam nodig.",
+			"commentRequired": "Voeg een opmerking toe om uw wijzigingen te beschrijven.",
+			"saveFailed": "Opslaan van asset mislukt.",
+			"unknown": "Opslaan mislukt"
+		}
+	},
+	"upload": {
+		"title": "Uploaden",
+		"fields": {
+			"selectFile": "Bestand selecteren:",
+			"comment": "Opmerking:"
+		},
+		"dropzone": {
+			"drag": "Sleep bestanden hierheen",
+			"or": "of upload"
+		},
+		"buttons": {
+			"upload": "Uploaden",
+			"cancel": "Annuleren",
+			"remove": "Verwijderen"
+		},
+		"comment": "Uploaden om {{timestamp}}",
+		"errors": {
+			"filesRequired": "Selecteer bestanden om te uploaden.",
+			"commentRequired": "Voeg een opmerking toe om uw nieuw toegevoegde bestand(en) te beschrijven.",
+			"unknown": "Uploaden mislukt"
+		}
+	}
+}

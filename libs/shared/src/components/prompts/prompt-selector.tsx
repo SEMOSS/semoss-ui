@@ -1,5 +1,4 @@
 import { SearchIcon, SquareArrowOutUpRightIcon, XIcon } from "lucide-react";
-import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { useTranslation } from "@semoss/i18n";
 import { useIteratorPixel } from "@semoss/sdk/react";
@@ -26,8 +25,7 @@ import {
 	useDebouncedValue,
 	useInfiniteScroll,
 } from "@semoss/ui/next";
-import type { Prompt } from "@/types";
-import { promptToPlatformUrl } from "./utility";
+import type { Prompt } from "../../types";
 
 interface PromptSelectorProps {
 	/** Selected prompt IDs */
@@ -41,18 +39,25 @@ interface PromptSelectorProps {
 
 	/** Extra classes appended to the outer wrapper (e.g. for sizing) */
 	className?: string;
+
+	/**
+	 * Optional callback to generate an external platform URL for each Prompt.
+	 * When provided, an external link icon is shown next to each prompt.
+	 */
+	getPlatformUrl?: (prompt: Prompt) => string;
 }
 
 /**
  * Renders the PromptSelector component for selecting prompts
  */
-const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
+export const PromptSelector: React.FC<PromptSelectorProps> = ({
 	values,
 	disabled,
 	onChange,
 	className,
+	getPlatformUrl,
 }) => {
-	const { t } = useTranslation("workspace");
+	const { t } = useTranslation("prompts");
 	const [search, setSearch] = useState<string>("");
 
 	const debouncedSearch = useDebouncedValue(search, 500);
@@ -129,7 +134,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 			<div className="flex w-full shrink-0 flex-row gap-2 border-border bg-muted p-4">
 				<InputGroup className="bg-background">
 					<InputGroupInput
-						placeholder={t("prompts.searchPlaceholder")}
+						placeholder={t("selector.searchPlaceholder")}
 						value={search}
 						disabled={disabled || getPrompts.isLoading}
 						onChange={(e) => setSearch(e.target.value)}
@@ -151,7 +156,7 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 				)}
 				{!getPrompts.isLoading && getPrompts.data.length === 0 && (
 					<div className="flex h-24 w-full items-center justify-center">
-						<Muted>{t("prompts.noPrompts")}</Muted>
+						<Muted>{t("selector.noPrompts")}</Muted>
 					</div>
 				)}
 				{!getPrompts.isLoading && getPrompts.data.length !== 0 && (
@@ -194,23 +199,25 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 											}}
 										/>
 									</Field>
-									<div className="flex w-full flex-row justify-end px-4 pb-4">
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<a
-													target="_blank"
-													href={promptToPlatformUrl(
-														prompt,
-													)}
-												>
-													<SquareArrowOutUpRightIcon className="size-4" />
-												</a>
-											</TooltipTrigger>
-											<TooltipContent>
-												{t("prompts.viewDetails")}
-											</TooltipContent>
-										</Tooltip>
-									</div>
+									{getPlatformUrl && (
+										<div className="flex w-full flex-row justify-end px-4 pb-4">
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<a
+														target="_blank"
+														href={getPlatformUrl(
+															prompt,
+														)}
+													>
+														<SquareArrowOutUpRightIcon className="size-4" />
+													</a>
+												</TooltipTrigger>
+												<TooltipContent>
+													{t("selector.viewDetails")}
+												</TooltipContent>
+											</Tooltip>
+										</div>
+									)}
 								</FieldLabel>
 							);
 						})}
@@ -254,5 +261,3 @@ const PromptSelectorInner: React.FC<PromptSelectorProps> = ({
 		</div>
 	);
 };
-
-export const PromptSelector = observer(PromptSelectorInner);

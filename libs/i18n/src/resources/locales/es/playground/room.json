@@ -21,7 +21,7 @@
 	},
 	"modes": {
 		"ask": "Preguntar",
-		"plan": "Planificar"
+		"agent": "Arnés de agente"
 	},
 	"workspace": {
 		"publishTooltip": "Publicar como agente",
